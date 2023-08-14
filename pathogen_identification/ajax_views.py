@@ -1,5 +1,6 @@
 import mimetypes
 import os
+from django.contrib.auth.models import User
 
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
@@ -51,10 +52,12 @@ def deploy_ProjectPI(request):
         data = {"is_ok": False, "is_deployed": False}
 
         process_SGE = ProcessSGE()
-        user = request.user
 
         project_id = int(request.POST["project_id"])
         project = Projects.objects.get(id=int(project_id))
+
+        user_id = int(request.POST["user_id"])
+        user = User.objects.get(id=int(user_id))
 
         utils = Utils_Manager()
         runs_to_deploy = utils.check_runs_to_deploy_project(user, project)
@@ -63,7 +66,7 @@ def deploy_ProjectPI(request):
             if len(runs_to_deploy) > 0:
                 for sample, leafs_to_deploy in runs_to_deploy.items():
                     taskID = process_SGE.set_submit_televir_sample(
-                        user=request.user,
+                        user=user,
                         project_pk=project.pk,
                         sample_pk=sample.pk,
                     )
@@ -80,6 +83,53 @@ def deploy_ProjectPI(request):
 
 @login_required
 @require_POST
+def deploy_ProjectPI_runs(request):
+    """
+    prepare data for deployment of pathogen identification.
+    """
+
+    if request.is_ajax():
+        data = {"is_ok": False, "is_deployed": False}
+
+        process_SGE = ProcessSGE()
+        print(request.POST)
+
+        project_id = int(request.POST["project_id"])
+        project = Projects.objects.get(id=int(project_id))
+
+        user_id = int(request.POST["user_id"])
+        user = User.objects.get(id=int(user_id))
+
+        utils = Utils_Manager()
+        runs_to_deploy = utils.check_runs_to_deploy_project(user, project)
+
+        try:
+            if len(runs_to_deploy) > 0:
+                for sample, leaves_to_deploy in runs_to_deploy.items():
+                    for leaf in leaves_to_deploy:
+                        print(sample, leaf)
+
+                        taskID = process_SGE.set_submit_televir_run(
+                            user=request.user,
+                            project_pk=project.pk,
+                            sample_pk=sample.pk,
+                            leaf_pk=leaf.pk,
+                        )
+
+                data["is_deployed"] = True
+
+        except Exception as e:
+            print(e)
+            data["is_deployed"] = False
+
+        data["is_ok"] = True
+        return JsonResponse(data)
+
+
+
+
+@login_required
+@require_POST
 def submit_televir_project_sample_runs(request):
     """
     submit a new sample to televir project
@@ -91,12 +141,15 @@ def submit_televir_project_sample_runs(request):
         process_SGE = ProcessSGE()
         user = request.user
 
+        print(request.POST)
+
         sample_id = int(request.POST["sample_id"])
         sample = PIProject_Sample.objects.get(id=int(sample_id))
         project = Projects.objects.get(id=int(sample.project.pk))
 
         utils = Utils_Manager()
         runs_to_deploy = utils.check_runs_to_deploy_sample(user, project, sample)
+
 
         try:
             if len(runs_to_deploy) > 0:
@@ -158,48 +211,6 @@ def submit_televir_project_sample(request):
 
         data["is_ok"] = True
         return JsonResponse(data)
-
-
-@login_required
-@require_POST
-def deploy_ProjectPI_runs(request):
-    """
-    prepare data for deployment of pathogen identification.
-    """
-
-    if request.is_ajax():
-        data = {"is_ok": False, "is_deployed": False}
-
-        process_SGE = ProcessSGE()
-        user = request.user
-
-        project_id = int(request.POST["project_id"])
-        project = Projects.objects.get(id=int(project_id))
-
-        utils = Utils_Manager()
-        runs_to_deploy = utils.check_runs_to_deploy_project(user, project)
-
-        try:
-            if len(runs_to_deploy) > 0:
-                for sample, leaves_to_deploy in runs_to_deploy.items():
-                    for leaf in leaves_to_deploy:
-
-                        taskID = process_SGE.set_submit_televir_run(
-                            user=request.user,
-                            project_pk=project.pk,
-                            sample_pk=sample.pk,
-                            leaf_pk=leaf.pk,
-                        )
-
-                data["is_deployed"] = True
-
-        except Exception as e:
-            print(e)
-            data["is_deployed"] = False
-
-        data["is_ok"] = True
-        return JsonResponse(data)
-
 
 
 @login_required
@@ -402,44 +413,6 @@ def deploy_televir_map(request):
 
         return JsonResponse(data)
 
-
-def set_control_reports(project_pk: int):
-    """
-    set control reports
-    """
-
-    try:
-        project = Projects.objects.get(pk=project_pk)
-
-        control_samples = PIProject_Sample.objects.filter(
-            project=project, is_control=True
-        )
-
-        control_reports = FinalReport.objects.filter(sample__in=control_samples)
-
-        control_report_taxids = control_reports.values_list("taxid", flat=True)
-        control_report_taxids_set = set(control_report_taxids)
-        print(control_report_taxids_set)
-
-        other_reports = FinalReport.objects.filter(sample__project=project).exclude(
-            sample__in=control_samples
-        )
-
-        for sample_report in other_reports:
-            if sample_report.taxid in control_report_taxids_set:
-                sample_report.control_flag = FinalReport.CONTROL_FLAG_PRESENT
-            else:
-                sample_report.control_flag = FinalReport.CONTROL_FLAG_NONE
-
-            sample_report.save()
-
-        for report in control_reports:
-            report.control_flag = FinalReport.CONTROL_FLAG_NONE
-            report.save()
-
-    except Exception as e:
-        print(e)
-        pass
 
 
 @login_required

@@ -82,6 +82,7 @@ class PathogenIdentification_deployment:
         self.technology = technology
         self.install_registry = Televir_Metadata
         self.parameter_set = ParameterSet.objects.get(pk=pk)
+        self.user = self.parameter_set.project.owner
         self.tree_makup = self.parameter_set.leaf.software_tree.global_index
 
         self.threads = threads
@@ -173,7 +174,7 @@ class PathogenIdentification_deployment:
 
         utils = Utils_Manager()
 
-        all_paths = utils.get_all_technology_pipelines(self.technology, self.tree_makup)
+        all_paths = utils.get_all_technology_pipelines(self.technology, self.tree_makup, self.user)
 
         self.run_params_db = all_paths.get(self.pipeline_index, None)
 

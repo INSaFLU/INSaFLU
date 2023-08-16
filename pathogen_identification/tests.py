@@ -178,10 +178,10 @@ def reset_project_makeup(project: Projects):
         software.save()
 
 
-def get_global_tree(technology, tree_makeup):
+def get_global_tree(technology, tree_makeup, user: User):
     utils_manager = Utils_Manager()
-    pipeline_tree = utils_manager.generate_software_tree(technology, tree_makeup)
-    pipeline_tree_index = utils_manager.get_software_tree_index(technology, tree_makeup)
+    pipeline_tree = utils_manager.generate_software_tree(technology, tree_makeup, user)
+    pipeline_tree_index = utils_manager.get_software_tree_index(technology, tree_makeup, user)
     pipeline_tree_query = SoftwareTree.objects.get(pk=pipeline_tree_index)
 
     return pipeline_tree, pipeline_tree_query
@@ -195,7 +195,7 @@ def determine_available_paths(project: Projects, user: User):
 
     tree_makeup = local_tree.makeup
     pipeline_tree, pipeline_tree_query = get_global_tree(
-        project.technology, tree_makeup
+        project.technology, tree_makeup, user
     )
 
     matched_paths = {
@@ -320,7 +320,7 @@ class Televir_Software_Test(TestCase):
         )
 
         ont_pipeline_tree = utils_manager.generate_software_tree(
-            CS.TECHNOLOGY_minion, 0
+            CS.TECHNOLOGY_minion, 0, self.test_user
         )
 
         self.assertEqual(ont_pipeline_tree.__class__.__name__, "PipelineTree")
@@ -649,10 +649,10 @@ class Televir_Project_Test(TestCase):
             tree_makeup = local_tree.makeup
 
             pipeline_tree = utils_manager.generate_software_tree(
-                self.project_ont.technology, tree_makeup
+                self.project_ont.technology, tree_makeup, self.test_user
             )
             pipeline_tree_index = utils_manager.get_software_tree_index(
-                self.project_ont.technology, tree_makeup
+                self.project_ont.technology, tree_makeup, self.test_user
             )
 
             matched_paths = {
@@ -687,7 +687,7 @@ class Televir_Project_Test(TestCase):
                 self.project_ont, self.test_user
             )
             pipeline_tree_index = utils_manager.get_software_tree_index(
-                self.project_ont.technology, tree
+                self.project_ont.technology, tree, self.test_user
             )
 
             available_path_nodes = {

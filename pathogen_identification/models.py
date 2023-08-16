@@ -98,6 +98,8 @@ class SoftwareTree(models.Model):
         null=True,
     )  # encoding
 
+    #owner= models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
+
     class Meta:
         ordering = ["global_index"]
 

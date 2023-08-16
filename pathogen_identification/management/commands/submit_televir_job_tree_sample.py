@@ -101,8 +101,8 @@ class Command(BaseCommand):
         tree_makeup = local_tree.makeup
 
         #pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
-        pipeline_tree= utils.generate_software_tree_extend(local_tree)
-        pipeline_tree_index = utils.get_software_tree_index(technology, tree_makeup)
+        pipeline_tree= utils.generate_software_tree_extend(local_tree, user)
+        pipeline_tree_index = utils.get_software_tree_index(technology, tree_makeup, user)
 
         # MANAGEMENT
         matched_paths = {
@@ -137,6 +137,7 @@ class Command(BaseCommand):
         pipeline_utils = Utility_Pipeline_Manager()
 
         reduced_tree = utils.tree_subset(pipeline_tree, list(matched_paths.values()))
+        reduced_tree= utils.prep_tree_for_extend(reduced_tree, user)
 
         module_tree = pipeline_utils.compress_software_tree(reduced_tree)
 

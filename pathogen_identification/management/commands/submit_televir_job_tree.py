@@ -129,6 +129,7 @@ class Command(BaseCommand):
                     reduced_tree = utils.tree_subset(
                         pipeline_tree, list(matched_paths_sample.values())
                     )
+                    reduced_tree= utils.prep_tree_for_extend(reduced_tree, user)
 
                     module_tree = pipeline_utils.compress_software_tree(reduced_tree)
 

@@ -1855,12 +1855,10 @@ class Parameter_DB_Utility:
         """
         parent_dict = tree.get_parents_dict()
 
-        
+        print("updating")
         for index, node in enumerate(tree.nodes):
             is_leaf = int(index in tree.leaves)
-            tree_node = SoftwareTreeNode.objects.get(
-                software_tree=software_tree, index=index
-            )
+
             try:
                 tree_node = SoftwareTreeNode.objects.get(
                     software_tree=software_tree, index=index
@@ -1888,6 +1886,8 @@ class Parameter_DB_Utility:
             
             except Exception as e:
                 print(e)
+
+        print("udpated")
         
     def update_software_tree(self, tree: PipelineTree, user: User):
         """
@@ -1900,6 +1900,8 @@ class Parameter_DB_Utility:
                 technology=tree.technology, 
                 user= user
             )
+        
+        print("queried")
 
         if not software_tree:
             self.logger.info("Creating new software tree")
@@ -1993,6 +1995,7 @@ class Utils_Manager:
 
         #pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
         pipeline_tree= utils.generate_software_tree_extend(local_tree=local_tree, user= user)
+        print("extended")
         pipeline_tree_index = utils.get_software_tree_index(technology, tree_makeup, user)
 
         ### MANAGEMENT
@@ -2149,7 +2152,6 @@ class Utils_Manager:
             pipeline_tree= self.utility_manager.match_path_to_tree_extend(
                 path, pipeline_tree
             )
-        
         self.parameter_util.update_software_tree(pipeline_tree, user)
 
         return pipeline_tree

@@ -129,7 +129,7 @@ class DefaultSoftware(object):
                 self.remove_all_televir_software(user)
                 self.test_all_defaults_pathogen_identification(user)
 
-    def test_all_defaults(self, user):
+    def test_all_defaults(self, user: User):
         ### test all defaults
         self.test_default_db(
             SoftwareNames.SOFTWARE_TRIMMOMATIC_name,

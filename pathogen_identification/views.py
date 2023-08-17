@@ -628,6 +628,7 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
 
     def get_context_data(self, **kwargs):
         context = super(MainPage, self).get_context_data(**kwargs)
+        tag_search = "search_projects"
 
         try:
             project = Projects.objects.get(pk=self.kwargs["pk"])
@@ -656,6 +657,13 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
             query_set = PIProject_Sample.objects.none()
             project_name = "project"
             context["project_owner"] = False
+        
+        if self.request.GET.get(tag_search) != None and self.request.GET.get(
+            tag_search
+        ):
+            query_set= query_set.filter(
+                Q(name__icontains=self.request.GET.get(tag_search))
+            ).distinct()
 
         samples = SampleTable(query_set)
         RequestConfig(

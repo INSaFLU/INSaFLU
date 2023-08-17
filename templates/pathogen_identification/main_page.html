@@ -33,7 +33,7 @@
             <thead>
                 {% if project_owner %}
                 <tr>
-                    <th colspan="9">
+                    <th colspan="10">
                         {% if not demo %}
                         <div class="btn-group">
                             <button type="button" class="btn btn-primary dark" id="deploypi_btn" deploy-url="{% url deploy_url %}" aria-haspopup="true" aria-expanded="false">
@@ -59,7 +59,17 @@
                                 <a href="{% url "pathogenID_pipeline" level=project_index %}"><span class="hidden-phone" style="color:white"><i>Project Settings</i></span></a>
                                     </button>
                         </div>
-                    </th>               
+
+                        <form method="get" class="form-inline form-search pull-right">
+                            {% csrf_token %}
+                            <input id="search_form_id" name="search_projects" type="text" class="form-control col-md-8"
+                                placeholder="Name, Reference, Sample" {% if search_projects %}
+                                value="{{ search_projects }}" {% endif %}>
+                            <button type="submit" class="btn btn-small btn-dark"><i class="fa fa-search"></i>
+                                Search</button>
+                        </form>  
+
+                    </th>             
                 </tr>
                 {% endif %}
                 <tr>

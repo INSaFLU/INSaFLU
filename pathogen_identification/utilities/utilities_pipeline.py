@@ -1200,13 +1200,19 @@ class Utility_Pipeline_Manager:
         nodes= [x[1] for x in nodes]
         edges= []
 
+        explicit_edge_dict= {x: y for x, y in explicit_edge_dict.items() if x in nodes_index_dict.keys()}
+
 
         for node, child_index in explicit_edge_dict.items():
-
+            
             for child in child_index.index:
                 edges.append([nodes_index_dict[node], nodes_index_dict[child]])
             
-        leaves= [nodes_index_dict[x] for x in nodes_index_dict.keys() if len(explicit_edge_dict[x]) == 0]
+        leaves= []
+        for node in nodes_index_dict.keys():
+            if node in explicit_edge_dict.keys():
+                if len(explicit_edge_dict[node]) == 0:
+                    leaves.append(nodes_index_dict[node])
 
         return PipelineTree(
             technology=technology, 
@@ -1265,7 +1271,7 @@ class Utility_Pipeline_Manager:
             df = df.append(pd.DataFrame([[new_node]], columns=["child"]).set_index("child"))
             return df
 
-        def update_explicit_edge_dict(explicit_edge_dict: Dict[tuple, pd.DataFrame], parent_main: tuple):
+        def update_explicit_edge_dict(explicit_edge_dict: Dict[tuple, pd.DataFrame], parent_main: tuple, child_main: tuple):
             """ Add new node to nodes index dict 
             """
 
@@ -1298,7 +1304,7 @@ class Utility_Pipeline_Manager:
                 child_main= (add_node(child, tree_nodes), child[1])
                 nodes_index_dict[child_main] = child_main[0]
 
-                explicit_edge_dict= update_explicit_edge_dict(explicit_edge_dict, parent_main)
+                explicit_edge_dict= update_explicit_edge_dict(explicit_edge_dict, parent_main, child_main)
 
             self.logger.info(f"Child main: {child_main}")
 
@@ -2212,6 +2218,8 @@ class Utils_Manager:
             tree.makeup,
             user= user
             )
+        
+        return tree
 
     def check_pipeline_possible(self, combined_table: pd.DataFrame, tree_makeup: int):
         """

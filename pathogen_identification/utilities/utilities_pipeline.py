@@ -112,7 +112,7 @@ class Pipeline_Makeup:
                 G.add_edge(pipeline_step, dependency)
         return G
 
-    def process_path(self, dpath: list):
+    def process_path(self, dpath: List[str]):
         """
         Processes the path to remove the root node
         """

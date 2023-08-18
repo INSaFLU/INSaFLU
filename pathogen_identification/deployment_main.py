@@ -527,6 +527,8 @@ class Run_Main_from_Leaf:
 
     def register_error(self):
         self.set_run_process_error()
+        print("REGISTERING ERROR")
+        print("RUN PS PK", self.pk)
 
         new_run = ParameterSet.objects.get(pk=self.pk)
         new_run.register_error()

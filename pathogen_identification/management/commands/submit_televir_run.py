@@ -100,7 +100,7 @@ class Command(BaseCommand):
         local_tree = utils.generate_project_tree(technology, project, user)
 
         tree_makeup = local_tree.makeup
-        pipeline_tree= utils.generate_software_tree_extend(local_tree, user)
+        #pipeline_tree= utils.generate_software_tree_extend(local_tree, user)
         pipeline_tree_index = utils.get_software_tree_index(technology, tree_makeup, user)
         pipeline_tree_query = SoftwareTree.objects.get(pk=pipeline_tree_index)
 

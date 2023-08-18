@@ -21,6 +21,7 @@ from pathogen_identification.utilities.utilities_televir_dbs import \
     Utility_Repository
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
+from utils.lock_atomic_transaction import LockedAtomicTransaction
 
 tree = lambda: defaultdict(tree)
 
@@ -1289,6 +1290,10 @@ class Utility_Pipeline_Manager:
         self.logger.info(f"Child main: {child_main}")
         self.logger.info("Matching nodes iterating through explicit path")
 
+        if parent_main not in explicit_edge_dict.keys():
+            explicit_edge_dict[parent_main]= pd.DataFrame(columns=["child"]).set_index("child")
+            nodes_index_dict[parent_main]= 0
+
         for child in explicit_path[1:]:
             self.logger.info("--------------------")
             self.logger.info(f"Parent: {parent}")
@@ -1607,6 +1612,8 @@ class Parameter_DB_Utility:
                 return True
             else:
                 return False
+            
+
 
         except SoftwareTree.DoesNotExist:
             return False
@@ -1795,6 +1802,7 @@ class Parameter_DB_Utility:
 
     @staticmethod
     def software_pipeline_tree(software_tree: SoftwareTree) -> PipelineTree:
+
         tree_nodes = SoftwareTreeNode.objects.filter(software_tree=software_tree)
 
         edges = []
@@ -1850,6 +1858,9 @@ class Parameter_DB_Utility:
                 technology=technology, 
                 user= user
             )
+        
+        if not software_tree:
+            return None
 
         return self.software_pipeline_tree(software_tree)
 
@@ -1859,35 +1870,47 @@ class Parameter_DB_Utility:
         """
         Update the nodes of a software tree
         """
+ 
         parent_dict = tree.get_parents_dict()
 
         for index, node in enumerate(tree.nodes):
             is_leaf = int(index in tree.leaves)
+            name=node[0]
+            value=node[1]
+            node_type=node[2]
 
             try:
                 tree_node = SoftwareTreeNode.objects.get(
-                    software_tree=software_tree, index=index
+                    software_tree=software_tree, index=index,
+                    name= name, value= value, node_type= node_type,
                 )
 
             except SoftwareTreeNode.DoesNotExist:
 
-                parent_node = parent_dict.get(index, None)
+                with LockedAtomicTransaction(SoftwareTreeNode):
 
-                if parent_node != None:
-                    parent_node = SoftwareTreeNode.objects.get(
-                        software_tree=software_tree, index=parent_dict[index]
+                    parent_node_index = parent_dict.get(index, None)
+
+                    if parent_node_index != None:
+                        parent_node= tree.nodes[parent_node_index]
+                        parent_name= parent_node[0]
+                        parent_value= parent_node[1]
+                        parent_type= parent_node[2]
+                        parent_node = SoftwareTreeNode.objects.get(
+                            software_tree=software_tree, index=parent_dict[index],
+                            name= parent_name, value= parent_value, node_type= parent_type,
+                        )
+
+                    tree_node = SoftwareTreeNode(
+                        software_tree=software_tree,
+                        index=index,
+                        name=node[0],
+                        value=node[1],
+                        node_type=node[2],
+                        parent=parent_node,
+                        node_place=is_leaf,
                     )
-
-                tree_node = SoftwareTreeNode(
-                    software_tree=software_tree,
-                    index=index,
-                    name=node[0],
-                    value=node[1],
-                    node_type=node[2],
-                    parent=parent_node,
-                    node_place=is_leaf,
-                )
-                tree_node.save()
+                    tree_node.save()
             
             except Exception as e:
                 print(e)
@@ -2013,9 +2036,9 @@ class Utils_Manager:
 
         available_path_nodes = {
             leaf: SoftwareTreeNode.objects.get(
-                software_tree__pk=pipeline_tree_index, index=path
+                software_tree__pk=pipeline_tree_index, index=leaf_index
             )
-            for leaf, path in available_paths.items()
+            for leaf, leaf_index in available_paths.items()
         }
 
         return available_path_nodes
@@ -2139,6 +2162,13 @@ class Utils_Manager:
         if self.parameter_util.check_default_software_tree_exists(
             technology, global_index=tree_makeup, user= user
         ) is False:
+            self.parameter_util.update_software_tree(local_tree, user)
+        
+        pipeline_tree= self.parameter_util.query_software_default_tree(
+                technology, global_index=tree_makeup, user=user
+            )
+        
+        if len(pipeline_tree.nodes) == 0:
             self.parameter_util.update_software_tree(local_tree, user)
         
         return self.parameter_util.query_software_default_tree(

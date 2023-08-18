@@ -1887,30 +1887,38 @@ class Parameter_DB_Utility:
 
             except SoftwareTreeNode.DoesNotExist:
 
-                with LockedAtomicTransaction(SoftwareTreeNode):
+                try:
 
-                    parent_node_index = parent_dict.get(index, None)
+                    with LockedAtomicTransaction(SoftwareTreeNode):
 
-                    if parent_node_index != None:
-                        parent_node= tree.nodes[parent_node_index]
-                        parent_name= parent_node[0]
-                        parent_value= parent_node[1]
-                        parent_type= parent_node[2]
-                        parent_node = SoftwareTreeNode.objects.get(
-                            software_tree=software_tree, index=parent_dict[index],
-                            name= parent_name, value= parent_value, node_type= parent_type,
+                        parent_node_index = parent_dict.get(index, None)
+                        parent_node= None
+
+                        if parent_node_index != None:
+                            parent_node= tree.nodes[parent_node_index]
+                            parent_name= parent_node[0]
+                            parent_value= parent_node[1]
+                            parent_type= parent_node[2]
+                            parent_node = SoftwareTreeNode.objects.get(
+                                software_tree=software_tree, index=parent_dict[index],
+                                name= parent_name, value= parent_value, node_type= parent_type,
+                            )
+                        
+                        
+                        tree_node = SoftwareTreeNode(
+                            software_tree=software_tree,
+                            index=index,
+                            name=node[0],
+                            value=node[1],
+                            node_type=node[2],
+                            parent=parent_node,
+                            node_place=is_leaf,
                         )
-
-                    tree_node = SoftwareTreeNode(
-                        software_tree=software_tree,
-                        index=index,
-                        name=node[0],
-                        value=node[1],
-                        node_type=node[2],
-                        parent=parent_node,
-                        node_place=is_leaf,
-                    )
-                    tree_node.save()
+                        tree_node.save()
+                
+                except Exception as e:
+                    print(e)
+                    print(index, name, value)
             
             except Exception as e:
                 print(e)
@@ -2158,6 +2166,7 @@ class Utils_Manager:
         """
         tree_makeup = local_tree.makeup
         technology = local_tree.technology
+        
 
         if self.parameter_util.check_default_software_tree_exists(
             technology, global_index=tree_makeup, user= user
@@ -2167,6 +2176,8 @@ class Utils_Manager:
         pipeline_tree= self.parameter_util.query_software_default_tree(
                 technology, global_index=tree_makeup, user=user
             )
+        print("pipeline_tree", pipeline_tree)
+        print(len(pipeline_tree.nodes))
         
         if len(pipeline_tree.nodes) == 0:
             self.parameter_util.update_software_tree(local_tree, user)
@@ -2179,6 +2190,7 @@ class Utils_Manager:
         """ Generate Software Tree Register and extend with local paths
         """
         local_paths= local_tree.get_all_graph_paths_explicit()
+        print("local_paths", local_paths)
         pipeline_tree= self.generate_software_tree_register(local_tree, user= user)
         for leaf, path in local_paths.items():
             pipeline_tree= self.utility_manager.match_path_to_tree_extend(

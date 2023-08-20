@@ -793,12 +793,7 @@
                     </tr>
                     {% endfor %}
                     {% if excluded_reports_exist %}
-                    <tr class="detail" style="background-color: #f2f2f2; padding: 0px; margin: 0px; border: 0px;">
-                        <td colspan="15" align="center" style="padding: 0px; margin: 0px">
-                            <hr class="solid" style="height: 1px; background-color: #000000; margin: 0px;">
-                        </td>
-                    </tr>
-                        {% for value in final_report %}
+                        {% for value in empty_reports %}
                         <tr class="parent">
                             <td data-title="Description"><a href="#" id="plot_show" >{{value.description}}</a></td>
                             <td data-title="Taxid">{{value.taxid}}</td>

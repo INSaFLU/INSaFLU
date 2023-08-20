@@ -998,7 +998,8 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         )
 
         print("EXCLUDED REPORTS EXIST: ", excluded_reports_exist)
-        
+        print("EMPTY REPORTS: ", empty_reports)
+
 
         context = {
             "project": project_name,

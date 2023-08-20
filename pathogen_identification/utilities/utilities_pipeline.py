@@ -2022,6 +2022,9 @@ class Utils_Manager:
         technology = project.technology
         user = project.owner
 
+        import time
+        t1= time.time()
+
         local_tree = utils.generate_project_tree(technology, project, user)
         local_paths = local_tree.get_all_graph_paths_explicit()
 
@@ -2029,6 +2032,10 @@ class Utils_Manager:
 
         #pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
         pipeline_tree= utils.generate_software_tree_extend(local_tree=local_tree, user= user)
+
+        t2= time.time()
+        print("time to generate tree, in seconds: ", t2-t1)
+
         pipeline_tree_index = utils.get_software_tree_index(technology, tree_makeup, user)
 
         ### MANAGEMENT

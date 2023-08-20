@@ -278,6 +278,7 @@ class RunMain:
             self.static_dir_plots, self.media_dir_igv
         )
         self.remap_manager.export_reference_fastas_if_failed(self.media_dir_igv)
+        self.remap_manager.export_mapping_files(self.media_dir_igv)
 
         self.remap_manager.merge_mapping_reports()
         self.remap_manager.collect_final_report_summary_statistics()

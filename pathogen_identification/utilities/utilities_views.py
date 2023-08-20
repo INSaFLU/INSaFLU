@@ -81,6 +81,11 @@ class ReportSorter:
             for report in reports
             if self.retrieved_mapped_subset(report)
         }
+        self.excluded_dict= {
+            report.accid: report
+            for report in reports
+            if not self.retrieved_mapped_subset(report)
+        }
         self.metadata_df = self.prep_metadata_df()
 
         self.fasta_files = self.metadata_df.file.tolist()

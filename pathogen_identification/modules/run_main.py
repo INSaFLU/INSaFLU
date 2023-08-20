@@ -313,6 +313,8 @@ class RunDetail_main:
             rundir=self.deployment_dir,
         )
 
+        self.max_remap = remap_params.max_accids
+        self.taxid_limit = remap_params.max_taxids
         self.remap_params = remap_params
 
         ### methods

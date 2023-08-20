@@ -25,7 +25,7 @@ from pathogen_identification.modules.remap_class import (
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.update_DBs import (
     Update_FinalReport,
-    Update_ReferenceMap,
+    Update_ReferenceMap_Update,
 )
 from pathogen_identification.utilities.utilities_general import simplify_name_lower
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
@@ -432,7 +432,7 @@ class Input_Generator:
         Update_FinalReport(run_class, run, sample)
 
         for ref_map in run_class.remap_manager.mapped_instances:
-            Update_ReferenceMap(ref_map, run, sample)
+            Update_ReferenceMap_Update(ref_map, run, sample)
 
     def run_reference_overlap_analysis(self):
         run = self.reference.run

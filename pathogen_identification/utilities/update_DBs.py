@@ -1250,3 +1250,78 @@ def Update_ReferenceMap(
 
             # map_db_seq.report = run_class.report
             # map_db_seq.save()
+
+
+
+def Update_ReferenceMap_Update(
+    ref_map: Mapping_Instance,
+    run: RunMain,
+    sample: PIProject_Sample,
+):
+    """
+    Updates the reference map data to TABLES.
+    - ReferenceMap_Main,
+    - ReferenceContigs
+    """
+
+    try:
+        map_db = ReferenceMap_Main.objects.get(
+            reference=ref_map.reference.target.acc_simple,
+            taxid=ref_map.reference.target.taxid,
+            sample=sample,
+            run=run,
+        )
+        map_db.reference=ref_map.reference.target.acc_simple
+        map_db.bam_file_path=ref_map.reference.read_map_sorted_bam
+        map_db.bai_file_path=ref_map.reference.read_map_sorted_bam_index
+        map_db.fasta_file_path=ref_map.reference.reference_file
+        map_db.fai_file_path=ref_map.reference.reference_fasta_index
+        map_db.mapped_subset_r1=ref_map.reference.mapped_subset_r1
+        map_db.mapped_subset_r2=ref_map.reference.mapped_subset_r2
+        map_db.mapped_subset_r1_fasta=ref_map.reference.mapped_subset_r1_fasta
+        map_db.mapped_subset_r2_fasta=ref_map.reference.mapped_subset_r2_fasta
+        map_db.vcf=ref_map.reference.vcf
+        
+        map_db.save()
+
+
+
+    except ReferenceMap_Main.DoesNotExist:
+        map_db = ReferenceMap_Main(
+            reference=ref_map.reference.target.acc_simple,
+            sample=sample,
+            run=run,
+            taxid=ref_map.reference.target.taxid,
+            bam_file_path=ref_map.reference.read_map_sorted_bam,
+            bai_file_path=ref_map.reference.read_map_sorted_bam_index,
+            fasta_file_path=ref_map.reference.reference_file,
+            fai_file_path=ref_map.reference.reference_fasta_index,
+            mapped_subset_r1=ref_map.reference.mapped_subset_r1,
+            mapped_subset_r2=ref_map.reference.mapped_subset_r2,
+            mapped_subset_r1_fasta=ref_map.reference.mapped_subset_r1_fasta,
+            mapped_subset_r2_fasta=ref_map.reference.mapped_subset_r2_fasta,
+            vcf=ref_map.reference.vcf,
+        )
+        map_db.save()
+
+    if ref_map.assembly is not None:
+        remap_stats = ref_map.assembly.report.set_index("ID")
+
+        for seqid, row in remap_stats.iterrows():
+            try:
+                map_db_seq = ReferenceContigs.objects.get(
+                    reference=map_db, run=run, contig=seqid
+                )
+            except ReferenceContigs.DoesNotExist:
+                map_db_seq = ReferenceContigs(
+                    contig=seqid,
+                    reference=map_db,
+                    run=run,
+                    depth=row["Hdepth"],
+                    depthr=row["HdepthR"],
+                    coverage=row["coverage"],
+                )
+                map_db_seq.save()
+
+            # map_db_seq.report = run_class.report
+            # map_db_seq.save()

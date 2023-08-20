@@ -1465,7 +1465,7 @@ class DefaultParameters(object):
         type_of_use,
         technology_name,
         sample=None,
-        is_to_run=True,
+        is_to_run=False,
     ):
         """
         remapping parameters, namely:

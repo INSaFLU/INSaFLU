@@ -378,7 +378,7 @@ class ReportSorter:
 
         return False
 
-    def get_reports_empty(self) -> List[List[FinalReport]]:
+    def get_reports_empty(self) -> List[FinalReport]:
         """return reports in excluded report_dict"""
 
         return list(self.excluded_dict.values())

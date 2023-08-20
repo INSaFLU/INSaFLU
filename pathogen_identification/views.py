@@ -982,6 +982,8 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         report_sorter = ReportSorter(final_report, report_layout_params)
 
         sorted_reports = report_sorter.get_reports()
+        excluded_reports_exist= report_sorter.check_excluded_exist()
+        empty_reports = report_sorter.get_reports_empty()
 
         # check has control_flag present
         has_controlled_flag = False if sample_main.is_control else True
@@ -994,6 +996,9 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         reference_remap_main = ReferenceMap_Main.objects.filter(
             sample=sample_main, run=run_main
         )
+
+        print("EXCLUDED REPORTS EXIST: ", excluded_reports_exist)
+        
 
         context = {
             "project": project_name,
@@ -1016,6 +1021,8 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "in_control": has_controlled_flag,
             "report_list": sorted_reports,
             "data_exists": True if not run_main.data_deleted else False,
+            "excluded_exist": excluded_reports_exist,
+            "empty_reports": empty_reports,
         }
 
         ### downloadable files

@@ -187,6 +187,9 @@ class ReportSorter:
         """
         Return subset of retrieved and mapped reads
         """
+        if report.depth == 0:
+            return None
+
         try:
             simple_accid = simplify_name(report.accid)
 
@@ -323,7 +326,7 @@ class ReportSorter:
             overlap_analysis = self.read_overlap_analysis()
             overlap_analysis.to_csv(self.analysis_df_path, sep="\t", index=False)
 
-    def get_sorted_reports(self):
+    def get_sorted_reports(self) -> List[List[FinalReport]]:
         overlap_analysis = self.read_overlap_analysis()
 
         overlap_groups = list(overlap_analysis.groupby(["total_counts", "clade"]))[::-1]
@@ -366,7 +369,19 @@ class ReportSorter:
         print("sorted reports")
 
         return self.get_sorted_reports()
+    
+    def check_excluded_exist(self) -> bool:
+        """return True if there are excluded reports"""
 
+        if len(self.excluded_dict) > 0:
+            return True
+
+        return False
+
+    def get_reports_empty(self) -> List[List[FinalReport]]:
+        """return reports in excluded report_dict"""
+
+        return list(self.excluded_dict.values())
 
 def calculate_reports_overlaps(sample: PIProject_Sample):
     final_reports = FinalReport.objects.filter(sample=sample)

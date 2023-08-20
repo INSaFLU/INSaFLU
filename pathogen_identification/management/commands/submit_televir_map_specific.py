@@ -235,6 +235,9 @@ class RunMain:
         ]
         self.log_dir = config["directories"]["log_dir"]
 
+    def export_sequences(self):
+        self.sample.export_reads(self.media_dir)
+
     def generate_targets(self):
         result_df = pd.DataFrame(columns=["qseqid", "taxid"])
         if self.taxid:
@@ -511,7 +514,7 @@ class Command(BaseCommand):
             run_engine.generate_targets()
             print("running")
             run_engine.run()
-
+            run_engine.export_sequences()
             input_generator.update_raw_reference_status_mapped()
             input_generator.update_final_report(run_engine)
             print("done")

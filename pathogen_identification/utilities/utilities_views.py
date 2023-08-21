@@ -268,9 +268,7 @@ class ReportSorter:
         end= datetime.datetime.now()
         # time in seconds
         time = (end-start).total_seconds()
-        print("time to get statistics: ", time)
-
-        # statistics_dict_inner = overlap_manager.node_statistics(inner_node_leaf_dict)
+        #print("time to get statistics: ", time)
 
         selected_clades = overlap_manager.filter_clades(statistics_dict_all)
 

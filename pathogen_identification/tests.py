@@ -5,6 +5,7 @@ from pathogen_identification.models import PIProject_Sample
 from pathogen_identification.utilities.utilities_pipeline import (
     Utils_Manager,
     Pipeline_Makeup,
+    SoftwareTreeUtils,
 )
 from settings.default_software import DefaultSoftware
 import os
@@ -178,10 +179,12 @@ def reset_project_makeup(project: Projects):
         software.save()
 
 
-def get_global_tree(technology, tree_makeup, user: User):
+def get_global_tree(technology, tree_makeup, project: Projects):
+    user = project.owner
     utils_manager = Utils_Manager()
-    pipeline_tree = utils_manager.generate_software_tree(technology, tree_makeup, user)
-    pipeline_tree_index = utils_manager.get_software_tree_index(technology, tree_makeup, user)
+    software_tree_manager = SoftwareTreeUtils(user, project)
+    pipeline_tree = software_tree_manager.generate_software_tree(tree_makeup)
+    pipeline_tree_index = software_tree_manager.get_software_tree_index(tree_makeup)
     pipeline_tree_query = SoftwareTree.objects.get(pk=pipeline_tree_index)
 
     return pipeline_tree, pipeline_tree_query
@@ -189,13 +192,14 @@ def get_global_tree(technology, tree_makeup, user: User):
 
 def determine_available_paths(project: Projects, user: User):
     utils_manager = Utils_Manager()
+    softwaretree_manager= SoftwareTreeUtils(user, project)
 
-    local_tree = utils_manager.generate_project_tree(project.technology, project, user)
+    local_tree = softwaretree_manager.generate_project_tree(project.technology)
     local_paths = local_tree.get_all_graph_paths_explicit()
 
     tree_makeup = local_tree.makeup
     pipeline_tree, pipeline_tree_query = get_global_tree(
-        project.technology, tree_makeup, user
+        project.technology, tree_makeup, project
     )
 
     matched_paths = {
@@ -304,6 +308,8 @@ class Televir_Software_Test(TestCase):
         default_software = DefaultSoftware()
         default_software.test_all_defaults_pathogen_identification(self.test_user)
         utils_manager = Utils_Manager()
+        software_tree_manager = SoftwareTreeUtils(self.test_user)
+
         utils_manager.generate_default_trees(self.test_user)
         all_trees = SoftwareTree.objects.all()
 
@@ -319,8 +325,8 @@ class Televir_Software_Test(TestCase):
             False,
         )
 
-        ont_pipeline_tree = utils_manager.generate_software_tree(
-            CS.TECHNOLOGY_minion, 0, self.test_user
+        ont_pipeline_tree = software_tree_manager.generate_software_tree(
+            0
         )
 
         self.assertEqual(ont_pipeline_tree.__class__.__name__, "PipelineTree")
@@ -612,14 +618,13 @@ class Televir_Project_Test(TestCase):
 
     def test_project_trees_exist_ont(self):
         utils_manager = Utils_Manager()
+        software_tree_utils = SoftwareTreeUtils(self.test_user, self.project_ont)
 
         for tree, makeup in self.pipeline_makeup.MAKEUP.items():
             reset_project_makeup(self.project_ont)
             set_project_makeup(self.project_ont, makeup)
 
-            local_tree = utils_manager.generate_project_tree(
-                self.project_ont.technology, self.project_ont, self.test_user
-            )
+            local_tree = software_tree_utils.generate_project_tree()
 
             self.assertEqual(local_tree.__class__.__name__, "PipelineTree")
 
@@ -628,14 +633,12 @@ class Televir_Project_Test(TestCase):
     @tag("slow")
     def test_all_project_paths_matched_ont(self):
         utils_manager = Utils_Manager()
-
+        software_tree_utils = SoftwareTreeUtils(self.test_user, self.project_ont)
         for tree, makeup in self.pipeline_makeup.MAKEUP.items():
             reset_project_makeup(self.project_ont)
             set_project_makeup(self.project_ont, makeup)
 
-            local_tree = utils_manager.generate_project_tree(
-                self.project_ont.technology, self.project_ont, self.test_user
-            )
+            local_tree = software_tree_utils.generate_project_tree()
 
             combined_table= utils_manager.parameter_util.generate_combined_parameters_table(
                 self.project_ont.technology, self.test_user)
@@ -648,12 +651,8 @@ class Televir_Project_Test(TestCase):
 
             tree_makeup = local_tree.makeup
 
-            pipeline_tree = utils_manager.generate_software_tree(
-                self.project_ont.technology, tree_makeup, self.test_user
-            )
-            pipeline_tree_index = utils_manager.get_software_tree_index(
-                self.project_ont.technology, tree_makeup, self.test_user
-            )
+            pipeline_tree = software_tree_utils.generate_software_tree()
+            pipeline_tree_index = software_tree_utils.get_software_tree_index()
 
             matched_paths = {
                 leaf: utils_manager.utility_manager.match_path_to_tree_safe(
@@ -678,6 +677,7 @@ class Televir_Project_Test(TestCase):
     def test_run_submit(self):
         utils_manager = Utils_Manager()
         pipeline_makeup_manager = Pipeline_Makeup()
+        software_tree_utils = SoftwareTreeUtils(self.test_user, self.project_ont)
 
         for tree, makeup in self.pipeline_makeup.MAKEUP.items():
             reset_project_makeup(self.project_ont)
@@ -686,9 +686,7 @@ class Televir_Project_Test(TestCase):
             pipeline_tree, available_paths = determine_available_paths(
                 self.project_ont, self.test_user
             )
-            pipeline_tree_index = utils_manager.get_software_tree_index(
-                self.project_ont.technology, tree, self.test_user
-            )
+            pipeline_tree_index = software_tree_utils.get_software_tree_index()
 
             available_path_nodes = {
                 leaf: SoftwareTreeNode.objects.get(

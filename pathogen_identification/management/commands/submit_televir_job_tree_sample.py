@@ -19,6 +19,7 @@ from pathogen_identification.utilities.tree_deployment import (
 from pathogen_identification.utilities.utilities_pipeline import (
     Utility_Pipeline_Manager,
     Utils_Manager,
+    SoftwareTreeUtils,
 )
 from utils.process_SGE import ProcessSGE
 from pathogen_identification.utilities.utilities_views import set_control_reports
@@ -94,15 +95,15 @@ class Command(BaseCommand):
 
         # UTILITIES
         utils = Utils_Manager()
-
+        software_utils= SoftwareTreeUtils(user, project)
         ####
-        local_tree = utils.generate_project_tree(technology, project, user)
+        local_tree = software_utils.generate_project_tree()
         local_paths = local_tree.get_all_graph_paths_explicit()
         tree_makeup = local_tree.makeup
 
         #pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
-        pipeline_tree= utils.generate_software_tree_extend(local_tree, user)
-        pipeline_tree_index = utils.get_software_tree_index(technology, tree_makeup, user)
+        pipeline_tree= software_utils.generate_software_tree_extend(local_tree)
+        pipeline_tree_index = local_tree.software_tree_pk
 
         # MANAGEMENT
         matched_paths = {
@@ -136,10 +137,11 @@ class Command(BaseCommand):
 
         pipeline_utils = Utility_Pipeline_Manager()
 
-        reduced_tree = utils.tree_subset(pipeline_tree, list(matched_paths.values()))
-        reduced_tree= utils.prep_tree_for_extend(reduced_tree, user)
+        module_tree = utils.module_tree(pipeline_tree, list(matched_paths.values()))
 
-        module_tree = pipeline_utils.compress_software_tree(reduced_tree)
+        #reduced_tree = utils.tree_subset(pipeline_tree, )
+        #reduced_tree= utils.prep_tree_for_extend(reduced_tree, user)
+        #module_tree = pipeline_utils.compress_software_tree(reduced_tree)
 
         try:
             for project_sample in samples:

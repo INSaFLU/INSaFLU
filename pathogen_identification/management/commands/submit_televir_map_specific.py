@@ -371,7 +371,7 @@ class Input_Generator:
     def generate_method_args(self):
         parameter_set = self.reference.run.parameter_set
 
-        pipeline_tree = self.utils.parameter_util.software_pipeline_tree(
+        pipeline_tree = self.utils.parameter_util.convert_softwaretree_to_pipeline_tree(
             parameter_set.leaf.software_tree
         )
         ps_leaves= self.utils.get_parameterset_leaves(parameter_set, pipeline_tree)

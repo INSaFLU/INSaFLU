@@ -22,7 +22,7 @@ from pathogen_identification.models import (
 )
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.utilities_general import infer_run_media_dir
-from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
+from pathogen_identification.utilities.utilities_pipeline import Utils_Manager, SoftwareTreeUtils
 from pathogen_identification.utilities.utilities_views import (
     ReportSorter,
     set_control_reports,
@@ -59,8 +59,8 @@ def deploy_ProjectPI(request):
         user_id = int(request.POST["user_id"])
         user = User.objects.get(id=int(user_id))
 
-        utils = Utils_Manager()
-        runs_to_deploy = utils.check_runs_to_deploy_project(user, project)
+        software_utils= SoftwareTreeUtils(user, project)
+        runs_to_deploy = software_utils.check_runs_to_deploy_project()
 
         try:
             if len(runs_to_deploy) > 0:
@@ -100,8 +100,8 @@ def deploy_ProjectPI_runs(request):
         user_id = int(request.POST["user_id"])
         user = User.objects.get(id=int(user_id))
 
-        utils = Utils_Manager()
-        runs_to_deploy = utils.check_runs_to_deploy_project(user, project)
+        software_utils= SoftwareTreeUtils(user, project)
+        runs_to_deploy = software_utils.check_runs_to_deploy_project()
 
         try:
             if len(runs_to_deploy) > 0:
@@ -147,9 +147,9 @@ def submit_televir_project_sample_runs(request):
         sample = PIProject_Sample.objects.get(id=int(sample_id))
         project = Projects.objects.get(id=int(sample.project.pk))
 
-        utils = Utils_Manager()
+        software_utils= SoftwareTreeUtils(user, project)
         print("CHECK RUNS TO DEPLOY SAMPLE")
-        runs_to_deploy = utils.check_runs_to_deploy_sample(user, project, sample)
+        runs_to_deploy = software_utils.check_runs_to_deploy_sample(sample)
         print("RUNS TO DEPLOY")
         print(runs_to_deploy)
         
@@ -193,8 +193,8 @@ def submit_televir_project_sample(request):
         sample = PIProject_Sample.objects.get(id=int(sample_id))
         project = Projects.objects.get(id=int(sample.project.pk))
 
-        utils = Utils_Manager()
-        runs_to_deploy = utils.check_runs_to_deploy_sample(user, project, sample)
+        software_utils= SoftwareTreeUtils(user, project)
+        runs_to_deploy = software_utils.check_runs_to_deploy_sample(sample)
 
         try:
             if len(runs_to_deploy) > 0:

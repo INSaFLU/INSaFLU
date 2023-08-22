@@ -5,9 +5,7 @@ import traceback
 
 import pandas as pd
 from django.contrib.auth.models import User
-from django.db import IntegrityError, transaction
 
-from constants.constants import Constants, FileType
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from constants.constants import TypePath
 from managing_files.models import ProcessControler
@@ -21,7 +19,7 @@ from pathogen_identification.models import (
     SoftwareTree,
     SoftwareTreeNode,
 )
-from pathogen_identification.modules.run_main import RunMain_class, RunMainTree_class
+from pathogen_identification.modules.run_main import RunMainTree_class
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.update_DBs import (
     Update_Assembly,
@@ -37,7 +35,7 @@ from pathogen_identification.utilities.utilities_general import (
     simplify_name,
     simplify_name_lower,
 )
-from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
+from pathogen_identification.utilities.utilities_pipeline import Utils_Manager, SoftwareTreeUtils
 from pathogen_identification.utilities.utilities_views import ReportSorter
 from utils.process_SGE import ProcessSGE
 
@@ -172,9 +170,9 @@ class PathogenIdentification_deployment:
     def configure_params(self):
         """get pipeline parameters from database"""
 
-        utils = Utils_Manager()
+        software_tree_utils = SoftwareTreeUtils(self.parameter_set.project.owner, self.parameter_set.project)
 
-        all_paths = utils.get_all_technology_pipelines(self.technology, self.tree_makup, self.user)
+        all_paths = software_tree_utils.get_all_technology_pipelines()
 
         self.run_params_db = all_paths.get(self.pipeline_index, None)
 

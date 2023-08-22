@@ -1264,7 +1264,7 @@ class TreeProgressGraph:
         }
 
         pipetrees_dict = {
-            tree_pk: pipeline_utils.parameter_util.software_pipeline_tree(tree)
+            tree_pk: pipeline_utils.parameter_util.convert_softwaretree_to_pipeline_tree(tree)
             for tree_pk, tree in software_tree_dict.items()
         }
 

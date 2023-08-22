@@ -2017,7 +2017,9 @@ class SoftwareTreeUtils:
                 SoftwareTree.objects.filter(
                     global_index=global_index, 
                     technology=self.technology, 
-                    model= ConstantsSettings.PIPELINE_MODEL
+                    model= ConstantsSettings.PIPELINE_MODEL,
+                    project= self.project,
+                    owner= self.user,
                 )
                 .order_by("date_created")
                 .last()
@@ -2054,6 +2056,11 @@ class SoftwareTreeUtils:
         Get software tree index db
         """
 
+        print("CHECKING")
+        print(
+            self.check_default_software_tree_exists(global_index)
+        )
+
         if self.check_default_software_tree_exists(global_index):
             software_tree = self.query_software_tree(
                     global_index=global_index, 
@@ -2062,7 +2069,6 @@ class SoftwareTreeUtils:
             return software_tree.pk
         else:
             return None
-
 
     @staticmethod
     def software_pipeline_tree(software_tree: SoftwareTree) -> PipelineTree:
@@ -2088,7 +2094,7 @@ class SoftwareTreeUtils:
         )
 
     def query_software_default_tree(
-        self, technology: str, global_index: int, 
+        self, global_index: int, 
     ) -> PipelineTree:
         """
         Generate a default pipeline tree for a user
@@ -2100,7 +2106,7 @@ class SoftwareTreeUtils:
         
         if not software_tree:
             return None
-
+        print("SOFTWARE TREE")
         return self.software_pipeline_tree(software_tree)
 
 
@@ -2121,11 +2127,14 @@ class SoftwareTreeUtils:
                 technology=tree.technology,
                 version=0,
                 model=ConstantsSettings.PIPELINE_MODEL,
+                project= self.project,
+                owner= self.user,
             )
 
             software_tree.save()
 
         self.update_SoftwareTree_nodes(software_tree, tree)
+        print("DONE")
 
     def update_SoftwareTree_nodes(
         self, software_tree: SoftwareTree, tree: PipelineTree
@@ -2237,10 +2246,10 @@ class SoftwareTreeUtils:
         pipeline_tree = self.utility_manager.generate_default_software_tree()
 
         if self.check_default_software_tree_exists(
-            technology, global_index=tree_makeup, user= self.user
+            global_index=tree_makeup
         ):
             existing_pipeline_tree = self.query_software_default_tree(
-                technology, global_index=tree_makeup, user= self.user
+                global_index=tree_makeup
             )
 
             tree_are_equal = self.utility_manager.compare_software_trees(
@@ -2294,12 +2303,15 @@ class SoftwareTreeUtils:
                 leaves=[],
                 makeup=0,
             )
+        
+        print("input success", input_success)
 
         self.logger.info("Generating project tree")
 
         pipeline_tree = utility_drone.generate_default_software_tree()
+        print("pipeline tree 1", pipeline_tree)
 
-        pipeline_tree.software_tree_pk= self.prep_tree_for_extend(pipeline_tree)
+        pipeline_tree= self.prep_tree_for_extend(pipeline_tree)
 
         return pipeline_tree
 
@@ -2311,11 +2323,16 @@ class SoftwareTreeUtils:
 
         import time
         t1= time.time()
+        print("time to start, in seconds: ", t1)
 
         local_tree = self.generate_project_tree()
+        print("GOT local tree: ", local_tree)
+
+        print(local_tree.nodes, local_tree.edges)
         local_paths = local_tree.get_all_graph_paths_explicit()
 
         tree_makeup = local_tree.makeup
+        print("GOT Tree makeup: ", tree_makeup)
 
         #pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
         pipeline_tree= self.generate_software_tree_extend(local_tree=local_tree)
@@ -2378,7 +2395,7 @@ class SoftwareTreeUtils:
         Get all pipelines for a technology
         """
 
-        pipeline_tree = self.generate_software_tree(self.technology, tree_makeup)
+        pipeline_tree = self.generate_software_tree(tree_makeup)
 
         all_paths = pipeline_tree.get_all_graph_paths()
         return all_paths
@@ -2403,16 +2420,21 @@ class SoftwareTreeUtils:
         """
         tree_makeup = local_tree.makeup
         technology = local_tree.technology
+
+        print(self.check_default_software_tree_exists(
+            global_index=tree_makeup
+        ))
         
 
         if self.check_default_software_tree_exists(
-            technology, global_index=tree_makeup, user= self.user
+            global_index=tree_makeup
         ) is False:
             self.update_software_tree(local_tree)
         
         pipeline_tree= self.query_software_default_tree(
-                technology, global_index=tree_makeup, user=self.user
+                global_index=tree_makeup
             )
+        print(len(pipeline_tree.nodes))
 
         if len(pipeline_tree.nodes) == 0:
             self.update_software_tree(local_tree)
@@ -2425,10 +2447,14 @@ class SoftwareTreeUtils:
         local_paths= local_tree.get_all_graph_paths_explicit()
         print("local_paths", local_paths)
         pipeline_tree= self.generate_software_tree_register(local_tree)
+        print("registered")
         for leaf, path in local_paths.items():
             pipeline_tree= self.utility_manager.match_path_to_tree_extend(
                 path, pipeline_tree
             )
+
+        print("got tree")
+        print("UPDATING TREE")
         self.update_software_tree(pipeline_tree)
 
         pipeline_tree= self.prep_tree_for_extend(pipeline_tree)
@@ -2438,9 +2464,7 @@ class SoftwareTreeUtils:
     def prep_tree_for_extend(self, tree: PipelineTree):
 
         tree.software_tree_pk= self.get_software_tree_index(
-            tree.technology, 
             tree.makeup,
-            self.project
             )
         
         return tree

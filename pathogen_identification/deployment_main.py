@@ -172,7 +172,7 @@ class PathogenIdentification_deployment:
 
         software_tree_utils = SoftwareTreeUtils(self.parameter_set.project.owner, self.parameter_set.project)
 
-        all_paths = software_tree_utils.get_all_technology_pipelines()
+        all_paths = software_tree_utils.get_all_technology_pipelines(self.tree_makup)
 
         self.run_params_db = all_paths.get(self.pipeline_index, None)
 

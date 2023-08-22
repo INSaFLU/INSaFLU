@@ -83,7 +83,6 @@ class TelevirParameters:
         """
         Retrieve software parameters for a project
         """
-        print(project_name)
         try:
             project = Projects.objects.get(
                 name=project_name, owner__username=username, is_deleted=False

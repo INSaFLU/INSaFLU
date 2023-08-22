@@ -54,7 +54,7 @@ def set_control_reports(project_pk: int):
             sample_report.save()
 
         for report in control_reports:
-            report.control_flag = FinalReport.CONTROL_FLAG_NONE
+            report.control_flag = FinalReport.CONTROL_FLAG_SOURCE
             report.save()
 
     except Exception as e:
@@ -364,8 +364,6 @@ class ReportSorter:
         if not self.check_analyzed():
             return [self.reports]
 
-        print("sorted reports")
-
         return self.get_sorted_reports()
     
     def check_excluded_exist(self) -> bool:
@@ -417,6 +415,9 @@ class FinalReportCompound(LoginRequiredMixin, generic.TemplateView):
         self.run_main = self.get_report_runmain(report)
         self.run_index = self.run_main.pk
         self.data_exists = self.check_data_exists(report)
+        print("control flag: ", report.control_flag)
+        self.control_flag = report.control_flag
+
 
     def get_identical_reports_ps(self, report: FinalReport) -> list:
         reports_unique = FinalReport.objects.filter(

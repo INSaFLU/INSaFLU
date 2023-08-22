@@ -567,8 +567,8 @@ class SoftwareNames(object):
     SOFTWARE_televir_report_layout_version = "1.0.0"
     SOFTWARE_televir_report_layout_flag_name = "--flag-type"
     SOFTWARE_televir_report_layout_threshold_name = "--r-overlap"
-    SOFTWARE_REMAP_PARAMS_min_quality = "--min-quality"
-    SOFTWARE_REMAP_PARAMS_max_mismatch = "--max-mismatch"
+    SOFTWARE_REMAP_PARAMS_min_quality = "--qualityThreshold" # "--min-quality"
+    SOFTWARE_REMAP_PARAMS_max_mismatch = "--defaultQualityInt" # "--max-mismatch"
 
     ### QC SOFTWARE
     SOFTWARE_PRINSEQ = os.path.join(

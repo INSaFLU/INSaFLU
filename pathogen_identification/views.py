@@ -998,10 +998,6 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             sample=sample_main, run=run_main
         )
 
-        print("EXCLUDED REPORTS EXIST: ", excluded_reports_exist)
-        print("EMPTY REPORTS: ", empty_reports)
-
-
         context = {
             "project": project_name,
             "run_name": run_name,
@@ -1020,7 +1016,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "run_index": run_pk,
             "reference_table": raw_reference_table,
             "owner": True,
-            "in_control": has_controlled_flag,
+            "in_control": True, #has_controlled_flag,
             "report_list": sorted_reports,
             "data_exists": True if not run_main.data_deleted else False,
             "excluded_exist": excluded_reports_exist,
@@ -1091,6 +1087,7 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         ####
         project_name = project_main.name
         sample_name = sample.name
+        has_controlled_flag = False if sample.is_control else True
 
         #
 
@@ -1133,6 +1130,7 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
             "runs": runs,
             "runs_number": runs_number,
             "owner": True,
+            "in_control": has_controlled_flag,
         }
 
         return context

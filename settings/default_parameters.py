@@ -1509,9 +1509,9 @@ class DefaultParameters(object):
         parameter.can_change = True
         parameter.is_to_run = True  ### by default it's True
         parameter.sequence_out = 3
-        parameter.range_available = "[0:100]"
-        parameter.range_max = "100"
-        parameter.range_min = "0"
+        parameter.range_available = "[20:60]"
+        parameter.range_max = "60"
+        parameter.range_min = "20"
         parameter.description = "Bamutil, maximum sum of the mismatch qualities before marking a read unmapped. (Defaults to 20)"
         vect_parameters.append(parameter)
 

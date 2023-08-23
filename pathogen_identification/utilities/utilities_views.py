@@ -415,7 +415,6 @@ class FinalReportCompound(LoginRequiredMixin, generic.TemplateView):
         self.run_main = self.get_report_runmain(report)
         self.run_index = self.run_main.pk
         self.data_exists = self.check_data_exists(report)
-        print("control flag: ", report.control_flag)
         self.control_flag = report.control_flag
 
 

@@ -2056,11 +2056,6 @@ class SoftwareTreeUtils:
         Get software tree index db
         """
 
-        print("CHECKING")
-        print(
-            self.check_default_software_tree_exists(global_index)
-        )
-
         if self.check_default_software_tree_exists(global_index):
             software_tree = self.query_software_tree(
                     global_index=global_index, 
@@ -2106,7 +2101,6 @@ class SoftwareTreeUtils:
         
         if not software_tree:
             return None
-        print("SOFTWARE TREE")
         return self.software_pipeline_tree(software_tree)
 
 
@@ -2133,8 +2127,9 @@ class SoftwareTreeUtils:
 
             software_tree.save()
 
+            tree.software_tree_pk= software_tree.pk
+
         self.update_SoftwareTree_nodes(software_tree, tree)
-        print("DONE")
 
     def update_SoftwareTree_nodes(
         self, software_tree: SoftwareTree, tree: PipelineTree
@@ -2304,12 +2299,9 @@ class SoftwareTreeUtils:
                 makeup=0,
             )
         
-        print("input success", input_success)
-
         self.logger.info("Generating project tree")
 
         pipeline_tree = utility_drone.generate_default_software_tree()
-        print("pipeline tree 1", pipeline_tree)
 
         pipeline_tree= self.prep_tree_for_extend(pipeline_tree)
 
@@ -2323,23 +2315,16 @@ class SoftwareTreeUtils:
 
         import time
         t1= time.time()
-        print("time to start, in seconds: ", t1)
 
         local_tree = self.generate_project_tree()
-        print("GOT local tree: ", local_tree)
 
-        print(local_tree.nodes, local_tree.edges)
         local_paths = local_tree.get_all_graph_paths_explicit()
 
         tree_makeup = local_tree.makeup
-        print("GOT Tree makeup: ", tree_makeup)
 
         #pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
         pipeline_tree= self.generate_software_tree_extend(local_tree=local_tree)
-
         t2= time.time()
-        print("time to generate tree, in seconds: ", t2-t1)
-
         ### MANAGEMENT
 
         matched_paths = {
@@ -2357,6 +2342,7 @@ class SoftwareTreeUtils:
             )
             for leaf, leaf_index in available_paths.items()
         }
+
 
         return available_path_nodes
 
@@ -2421,11 +2407,6 @@ class SoftwareTreeUtils:
         tree_makeup = local_tree.makeup
         technology = local_tree.technology
 
-        print(self.check_default_software_tree_exists(
-            global_index=tree_makeup
-        ))
-        
-
         if self.check_default_software_tree_exists(
             global_index=tree_makeup
         ) is False:
@@ -2434,7 +2415,6 @@ class SoftwareTreeUtils:
         pipeline_tree= self.query_software_default_tree(
                 global_index=tree_makeup
             )
-        print(len(pipeline_tree.nodes))
 
         if len(pipeline_tree.nodes) == 0:
             self.update_software_tree(local_tree)
@@ -2445,20 +2425,13 @@ class SoftwareTreeUtils:
         """ Generate Software Tree Register and extend with local paths
         """
         local_paths= local_tree.get_all_graph_paths_explicit()
-        print("local_paths", local_paths)
         pipeline_tree= self.generate_software_tree_register(local_tree)
-        print("registered")
         for leaf, path in local_paths.items():
             pipeline_tree= self.utility_manager.match_path_to_tree_extend(
                 path, pipeline_tree
             )
-
-        print("got tree")
-        print("UPDATING TREE")
         self.update_software_tree(pipeline_tree)
-
         pipeline_tree= self.prep_tree_for_extend(pipeline_tree)
-
         return pipeline_tree
     
     def prep_tree_for_extend(self, tree: PipelineTree):

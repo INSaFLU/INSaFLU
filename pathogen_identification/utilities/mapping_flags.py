@@ -13,12 +13,11 @@ class MappingFlagBuild(ABC):
         self.windows_covered = windows_covered
 
     @abstractmethod
-    def assert_false_positive(self):
+    def assert_false_positive(self) -> bool:
         pass
 
-    @staticmethod
     @abstractmethod
-    def assert_vestigial(self):
+    def assert_vestigial(self) -> bool:
         pass
 
 

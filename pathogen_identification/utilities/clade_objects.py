@@ -71,7 +71,6 @@ class CladeFilterComposed(CladeFilterMethod):
 class CladeFilter:
     def __init__(self, reference_clade: Clade):
         self.reference_clade = reference_clade
-        print("reference_clade", reference_clade)
         self.filters: List[CladeFilterMethod] = [
             CladeFilterByPrivateProportion(self.reference_clade),
             CladeFilterBySharedProportion(self.reference_clade),
@@ -87,9 +86,7 @@ class CladeFilter:
         """
         Return True if clade passes filter
         """
-        print("FILTERING CLADE", clade)
         assessments = [filter.filter_clade(clade) for filter in self.filters]
-        print("ASSESSMENTS", assessments)
         return all(assessments)
 
     def filter_clades(self, clades: List[Clade]) -> List[Clade]:

@@ -1484,7 +1484,7 @@ class DefaultParameters(object):
         )
         software.technology = self.get_technology(technology_name)
         software.can_be_on_off_in_pipeline = (
-            False  ## set to True if can be ON/OFF in pipeline, otherwise always ON
+            True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
         )
         software.is_to_run = is_to_run  ## set to True if it is going to run, for example Trimmomatic can run or not
 
@@ -1501,7 +1501,7 @@ class DefaultParameters(object):
 
         parameter = Parameter()
         parameter.name = SoftwareNames.SOFTWARE_REMAP_PARAMS_min_quality
-        parameter.parameter = "20"
+        parameter.parameter = "60"
         parameter.type_data = Parameter.PARAMETER_int
         parameter.software = software
         parameter.sample = sample
@@ -1509,10 +1509,10 @@ class DefaultParameters(object):
         parameter.can_change = True
         parameter.is_to_run = True  ### by default it's True
         parameter.sequence_out = 3
-        parameter.range_available = "[20:60]"
+        parameter.range_available = "[20:120]"
         parameter.range_max = "60"
-        parameter.range_min = "20"
-        parameter.description = "Bamutil, maximum sum of the mismatch qualities before marking a read unmapped. (Defaults to 20)"
+        parameter.range_min = "60"
+        parameter.description = "Bamutil, maximum sum of the mismatch qualities before marking a read unmapped. (Defaults to  60)"
         vect_parameters.append(parameter)
 
         parameter = Parameter()

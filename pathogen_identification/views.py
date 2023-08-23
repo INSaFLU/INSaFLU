@@ -878,7 +878,6 @@ def recover_assembly_contigs(run_main: RunMain, run_assembly: RunAssembly):
         assembly_contigs = os.path.join(media_dir, "assembly", assembly_contigs)
         assembly_contigs_exist = os.path.exists(assembly_contigs)
         if assembly_contigs_exist:
-            print("assembly recovered")
             run_assembly.assembly_contigs = assembly_contigs
             run_assembly.save()
 
@@ -1117,7 +1116,6 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         runs = set([fr.run.pk for fr in final_report])
         runs = RunMain.objects.filter(pk__in=runs)
         runs_number= len(runs) > 0
-        print(runs_number)
 
         context = {
             "project": project_name,

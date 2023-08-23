@@ -10,7 +10,7 @@ from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import MEDIA_ROOT, ConstantsSettings
 from pathogen_identification.install_registry import Params_Illumina, Params_Nanopore
-from pathogen_identification.models import FinalReport, RawReference, RunMain, Projects, SoftwareTreeNode
+from pathogen_identification.models import FinalReport, RawReference, RunMain, Projects, SoftwareTreeNode, RunAssembly
 from pathogen_identification.modules.metadata_handler import Metadata_handler
 from pathogen_identification.modules.object_classes import (
     Read_class,
@@ -32,6 +32,7 @@ from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from pathogen_identification.utilities.utilities_views import (
     ReportSorter,
     TelevirParameters,
+    recover_assembly_contigs,
 )
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
@@ -153,6 +154,8 @@ class RunMain:
             ),
             threads=self.threads,
         )
+        
+        self.contigs= config["contig_file"]
 
         ### mapping parameters
         self.min_scaffold_length = config["assembly_contig_min_length"]
@@ -160,7 +163,6 @@ class RunMain:
         self.maximum_coverage = 1000000000
 
         ### metadata
-        print(self.project_name)
         remap_params = TelevirParameters.get_remap_software(
             self.username, self.project_name
         )
@@ -259,7 +261,7 @@ class RunMain:
             self.sample.r1,
             self.sample.r2,
             self.software_remap,
-            "Dummy",
+            self.contigs,
             self.type,
             self.prefix,
             self.threads,
@@ -350,6 +352,7 @@ class Input_Generator:
             if reference.run.sample.sample.exist_file_2()
             else ""
         )
+        self.contigs_path= self.find_run_contigs(reference.run)
 
         self.taxid = reference.taxid
         self.accid = reference.accid
@@ -359,7 +362,22 @@ class Input_Generator:
         else:
             self.params = Params_Illumina
 
-    def input_read_project_path(self, filepath):
+    def find_run_contigs(self, run_main: RunMain) -> str:
+
+        if not run_main:
+            return ""
+
+        try:
+            run_assembly = RunAssembly.objects.get(run=run_main)
+            recover_assembly_contigs(run_main, run_assembly)
+            assembly_contigs= run_assembly.assembly_contigs
+        except RunAssembly.DoesNotExist:
+            run_assembly = None
+            assembly_contigs= ""
+        
+        return assembly_contigs
+
+    def input_read_project_path(self, filepath) -> str:
         if not os.path.isfile(filepath):
             return ""
         rname = os.path.basename(filepath)
@@ -417,6 +435,7 @@ class Input_Generator:
 
         self.config["r1"] = self.input_read_project_path(self.r1_path)
         self.config["r2"] = self.input_read_project_path(self.r2_path)
+        self.config["contig_file"] = self.contigs_path
         self.config["type"] = ["SE", "PE"][int(os.path.isfile(self.config["r2"]))]
 
         self.config.update(self.params.CONSTANTS)

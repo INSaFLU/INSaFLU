@@ -8,6 +8,7 @@ from pathogen_identification.models import (
     ReferenceMap_Main,
     Projects,
     PIProject_Sample,
+    RunAssembly,
 )
 from pathogen_identification.utilities.televir_parameters import LayoutParams
 
@@ -60,6 +61,35 @@ def set_control_reports(project_pk: int):
     except Exception as e:
         print(e)
         pass
+
+
+def recover_assembly_contigs(run_main: RunMain, run_assembly: RunAssembly):
+    """
+    check contigs exist, if not, replace path with media path check again, if so, replace with media path.
+    """
+    ##
+    assembly_contigs = run_assembly.assembly_contigs
+
+    if not assembly_contigs:
+        return
+
+    assembly_contigs_exist = os.path.exists(assembly_contigs)
+
+    if assembly_contigs_exist:
+        return
+
+    media_dir = infer_run_media_dir(run_main)
+
+    if not media_dir:
+        return
+
+    if not assembly_contigs_exist:
+        assembly_contigs = os.path.basename(assembly_contigs)
+        assembly_contigs = os.path.join(media_dir, "assembly", assembly_contigs)
+        assembly_contigs_exist = os.path.exists(assembly_contigs)
+        if assembly_contigs_exist:
+            run_assembly.assembly_contigs = assembly_contigs
+            run_assembly.save()
 
 
 

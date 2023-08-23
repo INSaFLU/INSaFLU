@@ -1694,7 +1694,7 @@ class Tandem_Remap:
         self.r1 = r1.current
         self.r2 = r2.current
 
-    def reciprocal_map(self, remap_target):
+    def reciprocal_map(self, remap_target) -> Mapping_Instance:
         reference_remap_drone = self.reference_map(remap_target)
         assembly_map = self.assembly_map(reference_remap_drone)
 

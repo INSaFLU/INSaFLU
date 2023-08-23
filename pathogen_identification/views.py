@@ -66,7 +66,7 @@ from pathogen_identification.modules.object_classes import RunQC_report
 from pathogen_identification.utilities.utilities_general import infer_run_media_dir
 from pathogen_identification.utilities.utilities_views import (
     ReportSorter,
-    set_control_reports,
+    recover_assembly_contigs,
     final_report_best_cov_by_accid,
     FinalReportCompound,
 )
@@ -853,33 +853,6 @@ def Sample_reports(requesdst, pk1, pk2):
     )
 
 
-def recover_assembly_contigs(run_main: RunMain, run_assembly: RunAssembly):
-    """
-    check contigs exist, if not, replace path with media path check again, if so, replace with media path.
-    """
-    ##
-    assembly_contigs = run_assembly.assembly_contigs
-
-    if not assembly_contigs:
-        return
-
-    assembly_contigs_exist = os.path.exists(assembly_contigs)
-
-    if assembly_contigs_exist:
-        return
-
-    media_dir = infer_run_media_dir(run_main)
-
-    if not media_dir:
-        return
-
-    if not assembly_contigs_exist:
-        assembly_contigs = os.path.basename(assembly_contigs)
-        assembly_contigs = os.path.join(media_dir, "assembly", assembly_contigs)
-        assembly_contigs_exist = os.path.exists(assembly_contigs)
-        if assembly_contigs_exist:
-            run_assembly.assembly_contigs = assembly_contigs
-            run_assembly.save()
 
 
 class Sample_detail(LoginRequiredMixin, generic.CreateView):

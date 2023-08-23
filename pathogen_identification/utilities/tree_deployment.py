@@ -769,6 +769,7 @@ class Tree_Progress:
                 node.run_manager.run_engine.assembly_performed
                 and node.run_manager.assembly_udated == False
             ):
+                node.run_manager.run_engine.export_assembly()
                 db_updated = Update_Assembly(
                     node.run_manager.run_engine, node.parameter_set
                 )

@@ -1522,6 +1522,9 @@ class Mapping_Instance:
         self.apres = self.assert_contigs_mapped()
         self.mapping_success = self.assert_mapping_success()
         self.classification_success = self.assert_classification_success()
+        self.produce_mapping_report()
+    
+    def produce_mapping_report(self):
 
         self.mapping_main_info = pd.DataFrame(
             [

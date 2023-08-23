@@ -353,6 +353,7 @@ class Input_Generator:
             else ""
         )
         self.contigs_path= self.find_run_contigs(reference.run)
+        print("contigs_path", self.contigs_path)
 
         self.taxid = reference.taxid
         self.accid = reference.accid
@@ -448,9 +449,29 @@ class Input_Generator:
         self.reference.status = RawReference.STATUS_FAIL
         self.reference.save()
 
+    def engine_report_modify_mapping_success(self, run_class: RunMain):
+
+        def render_classification_source(record: RawReference):
+            if record.classification_source == "1":
+                return "reads"
+
+            if record.classification_source == "2":
+                return "contigs"
+
+            if record.classification_source == "3":
+                return "reads / contigs"
+            
+            return "unknown"
+        
+
+        run_class.report["mapping_success"] = render_classification_source(self.reference)
+
+
     def update_final_report(self, run_class: RunMain):
         run = self.reference.run
         sample = run.sample
+
+        self.engine_report_modify_mapping_success(run_class)
 
         Update_FinalReport(run_class, run, sample)
 
@@ -521,7 +542,6 @@ class Command(BaseCommand):
         try:
             input_generator.generate_method_args()
             input_generator.generate_config()
-            print("config generated")
 
             run_engine = RunMain(
                 input_generator.config,
@@ -529,14 +549,11 @@ class Command(BaseCommand):
                 project_name,
                 user.username,
             )
-            print("generating")
             run_engine.generate_targets()
-            print("running")
             run_engine.run()
             run_engine.export_sequences()
             input_generator.update_raw_reference_status_mapped()
             input_generator.update_final_report(run_engine)
-            print("done")
             input_generator.run_reference_overlap_analysis()
 
             ######## register map sucess

@@ -141,17 +141,13 @@ def submit_televir_project_sample_runs(request):
         process_SGE = ProcessSGE()
         user = request.user
 
-        print(request.POST)
-
         sample_id = int(request.POST["sample_id"])
         sample = PIProject_Sample.objects.get(id=int(sample_id))
         project = Projects.objects.get(id=int(sample.project.pk))
 
         software_utils= SoftwareTreeUtils(user, project)
-        print("CHECK RUNS TO DEPLOY SAMPLE")
         runs_to_deploy = software_utils.check_runs_to_deploy_sample(sample)
-        print("RUNS TO DEPLOY")
-        print(runs_to_deploy)
+
         
         try:
             if len(runs_to_deploy) > 0:

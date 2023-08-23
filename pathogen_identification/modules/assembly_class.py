@@ -467,22 +467,24 @@ class Assembly_class:
             self.assembly_mean = self.contig_summary["contig_length"].fillna(0).mean()
             self.assembly_number = self.contig_summary.shape[0]
 
-    def export_assembly(self, directory):
+    def export_assembly(self, directory: str):
         """
         Export assembly file to directory
         """
         subdirectory = os.path.join(directory, "assembly")
 
         os.makedirs(subdirectory, exist_ok=True)
+
         final_file = os.path.join(
             subdirectory, os.path.basename(self.assembly_file_fasta_gz)
         )
 
         self.assembly_exists = self.assembly_file_check_fasta_gz()
 
-        if os.path.exists(final_file):
-            if self.assembly_exists:
-                os.remove(final_file)
+        print(subdirectory, final_file, self.assembly_file_fasta_gz)
+
+        if self.assembly_exists:
+            if os.path.exists(final_file) is False:
 
                 shutil.move(self.assembly_file_fasta_gz, subdirectory)
 

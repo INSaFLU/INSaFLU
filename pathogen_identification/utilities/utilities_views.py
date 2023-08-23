@@ -9,6 +9,7 @@ from pathogen_identification.models import (
     Projects,
     PIProject_Sample,
     RunAssembly,
+    RunMain,
 )
 from pathogen_identification.utilities.televir_parameters import LayoutParams
 

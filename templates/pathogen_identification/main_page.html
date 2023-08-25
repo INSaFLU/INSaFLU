@@ -346,7 +346,9 @@
                     else if (data["is_ok"] == true && data["is_deployed"] == true) {
                         alert("Runs deployed");
                     }
-
+                    else if (data["is_ok"] == true && data["sorted"] == true) {
+                        alert("Results sorted");
+                    }
                 }
         
             });
@@ -373,6 +375,9 @@
                     }
                     else if (data["is_ok"] == true && data["is_deployed"] == true) {
                         alert("Sort deployed");
+                    }
+                    else if (data["is_ok"] == true && data["sorted"] == true) {
+                        alert("Results sorted");
                     }
                 }
 

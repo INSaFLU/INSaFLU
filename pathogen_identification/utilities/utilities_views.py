@@ -322,20 +322,13 @@ class ReportSorter:
 
         return True
 
-    def check_analyzed(self):
-        """
-        Return True if all accids have been analyzed
-        """
-
+    def check_parsed(self):
         overlap_manager = ReadOverlapManager(
             self.metadata_df,
             self.reference_clade,
             self.media_dir,
             str(self.model.pk),
         )
-
-        if not os.path.exists(self.analysis_df_path):
-            return False
 
         if not os.path.exists(overlap_manager.distance_matrix_path):
             return False
@@ -351,12 +344,34 @@ class ReportSorter:
 
         return True
 
+    def check_analysis_exists(self):
+        """
+        Return True if analysis exists
+        """
+        if not os.path.exists(self.analysis_df_path):
+            return False
+
+        return True
+
+    def check_analyzed(self):
+        """
+        Return True if all accids have been analyzed
+        """
+
+        if not self.check_analysis_exists():
+            return False
+
+        if not self.check_parsed():
+            return False
+
+        return True
+
     def sort_reports_save(self):
         """
         Return sorted reports
         """
         if self.model is not None:
-            overlap_analysis = self.read_overlap_analysis()
+            overlap_analysis = self.read_overlap_analysis(force=True)
             overlap_analysis.to_csv(self.analysis_df_path, sep="\t", index=False)
 
     def get_sorted_reports(self) -> List[List[FinalReport]]:

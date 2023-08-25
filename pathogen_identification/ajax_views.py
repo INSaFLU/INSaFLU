@@ -305,7 +305,7 @@ def sort_report_projects(request):
     sort report projects
     """
     if request.is_ajax():
-        data = {"is_ok": False, "is_deployed": False}
+        data = {"is_ok": False, "is_deployed": False, "sorted": False}
         process_SGE = ProcessSGE()
         samples = PIProject_Sample.objects.filter(
             project__pk=int(request.POST["project_id"])
@@ -324,14 +324,16 @@ def sort_report_projects(request):
 
                 if report_sorter.run is None:
                     pass
-                elif report_sorter.check_analyzed():
-                    pass
-                else:
-                    taskID = process_SGE.set_submit_televir_sort_pisample_reports(
-                        user=request.user,
-                        pisample_pk=sample.pk,
-                    )
-                    data["is_deployed"] = True
+                elif not report_sorter.check_analysis_exists():
+                    if report_sorter.check_parsed():
+                        calculate_reports_overlaps(sample)
+                        data["sorted"] = True
+                    else:
+                        taskID = process_SGE.set_submit_televir_sort_pisample_reports(
+                            user=request.user,
+                            pisample_pk=sample.pk,
+                        )
+                        data["is_deployed"] = True
 
         except Exception as e:
             print(e)
@@ -341,6 +343,9 @@ def sort_report_projects(request):
         return JsonResponse(data)
 
 
+from pathogen_identification.utilities.utilities_views import calculate_reports_overlaps
+
+
 @login_required
 @require_POST
 def sort_report_sample(request):
@@ -348,7 +353,7 @@ def sort_report_sample(request):
     sort report projects
     """
     if request.is_ajax():
-        data = {"is_ok": False, "is_deployed": False}
+        data = {"is_ok": False, "is_deployed": False, "sorted": False}
         process_SGE = ProcessSGE()
         sample = PIProject_Sample.objects.get(pk=int(request.POST["sample_id"]))
 
@@ -362,14 +367,16 @@ def sort_report_sample(request):
 
             if report_sorter.run is None:
                 pass
-            elif report_sorter.check_analyzed():
-                pass
-            else:
-                taskID = process_SGE.set_submit_televir_sort_pisample_reports(
-                    user=request.user,
-                    pisample_pk=sample.pk,
-                )
-                data["is_deployed"] = True
+            elif not report_sorter.check_analysis_exists():
+                if report_sorter.check_parsed():
+                    calculate_reports_overlaps(sample)
+                    data["sorted"] = True
+                else:
+                    taskID = process_SGE.set_submit_televir_sort_pisample_reports(
+                        user=request.user,
+                        pisample_pk=sample.pk,
+                    )
+                    data["is_deployed"] = True
 
         except Exception as e:
             print(e)

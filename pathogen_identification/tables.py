@@ -2,15 +2,14 @@ import os
 from typing import DefaultDict
 
 import django_tables2 as tables
+from crequest.middleware import CrequestMiddleware
 from django.conf import settings
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
-from pathogen_identification.utilities.utilities_views import (
-    ReportSorter,
-)
+
 from constants.constants import Constants
 from managing_files.manage_database import ManageDatabase
+from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.models import (
     ContigClassification,
     FinalReport,
@@ -24,10 +23,8 @@ from pathogen_identification.models import (
     RunMain,
     SampleQC,
 )
-
-from crequest.middleware import CrequestMiddleware
-from pathogen_identification.constants_settings import ConstantsSettings as CS
-
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.utilities_views import ReportSorter
 from settings.models import Parameter, Technology
 
 
@@ -227,7 +224,9 @@ class ProjectTable(tables.Table):
 
 class SampleTable(tables.Table):
     name = tables.Column(verbose_name="Sample Name")
-    report = tables.Column(verbose_name="Sample Report", orderable=False, empty_values=())
+    report = tables.Column(
+        verbose_name="Sample Report", orderable=False, empty_values=()
+    )
     runs = tables.Column(verbose_name="Workflows", orderable=False, empty_values=())
     sorting = tables.Column("Sorting", orderable=False, empty_values=())
     deploy = tables.Column(verbose_name="Run", orderable=False, empty_values=())
@@ -320,55 +319,57 @@ class SampleTable(tables.Table):
         ).count()
 
     def render_sorting(self, record):
-        
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
 
         if user.username == Constants.USER_ANONYMOUS:
             return mark_safe("report")
-        
-        final_report = FinalReport.objects.filter(
-            sample=record
-        ).order_by("-coverage")
+
+        final_report = FinalReport.objects.filter(sample=record).order_by("-coverage")
 
         ## return empty square if no report
         if final_report.count() == 0:
             return mark_safe('<i class="fa fa-square-o" title="Empty"></i>')
         ## check sorted
 
-        report_layout_params = TelevirParameters.get_report_layout_params(project_pk=record.project.pk)
+        report_layout_params = TelevirParameters.get_report_layout_params(
+            project_pk=record.project.pk
+        )
         report_sorter = ReportSorter(final_report, report_layout_params)
-        sorted= report_sorter.check_analyzed()
+        sorted = report_sorter.check_analysis_exists()
 
         ## sorted icon, green if sorted, red if not
-        sorted_icon=  ""
+        sorted_icon = ""
         if sorted:
-            sorted_icon = ' <i class="fa fa-check" style="color: green;" title="Sorted"></i>'
+            sorted_icon = (
+                ' <i class="fa fa-check" style="color: green;" title="Sorted"></i>'
+            )
             return mark_safe(sorted_icon)
         else:
-            sorted_icon = ' <i class="fa fa-times" style="color: red;" title="un-sorted"></i>'
+            sorted_icon = (
+                ' <i class="fa fa-times" style="color: red;" title="un-sorted"></i>'
+            )
             request_sorting = (
                 ' <a href="#" id="sort_sample_btn" class="kill-button" data-toggle="modal" data-toggle="tooltip" title="Sort"'
                 + ' sample_id="'
                 + str(record.pk)
                 + '"'
                 + ' sort-url="'
-                + reverse(
-                "sort_sample_reports"
-                )
+                + reverse("sort_sample_reports")
                 + '"'
                 + '><i class="fa fa-sort"></i></span> </a>'
             )
             return mark_safe(sorted_icon + request_sorting)
 
     def render_report(self, record):
-
         current_request = CrequestMiddleware.get_request()
-        user = current_request.user        
+        user = current_request.user
 
         record_name = (
-            '<a href="' 
-            + reverse("televir_sample_compound_report", args=[record.project.pk, record.pk])
+            '<a href="'
+            + reverse(
+                "televir_sample_compound_report", args=[record.project.pk, record.pk]
+            )
             + '">'
             + " <fa class='fa fa-code-fork'></fa>"
             + " Combined Report"
@@ -380,7 +381,6 @@ class SampleTable(tables.Table):
             return mark_safe(record_name)
 
     def render_runs(self, record):
-
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
 
@@ -398,7 +398,6 @@ class SampleTable(tables.Table):
             return mark_safe(record_name)
 
     def render_deploy(self, record):
-
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
 
@@ -409,7 +408,7 @@ class SampleTable(tables.Table):
 
         record_name = '<a><i class="fa fa-bug"></i></span> </a>'
 
-        TELEVIR_DEPLOY_URL= "submit_televir_project_sample"
+        TELEVIR_DEPLOY_URL = "submit_televir_project_sample"
         if CS.DEPLOYMENT_DEFAULT == CS.DEPLOYMENT_TYPE_PIPELINE:
             TELEVIR_DEPLOY_URL = "submit_televir_runs_project_sample"
 
@@ -646,7 +645,7 @@ class RunMainTable(tables.Table):
             "runtime",
         )
 
-    def render_name(self,record):
+    def render_name(self, record):
         return record.parameter_set.leaf.index
 
     def render_success(self, record):

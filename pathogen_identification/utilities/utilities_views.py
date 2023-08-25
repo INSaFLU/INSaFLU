@@ -371,7 +371,7 @@ class ReportSorter:
         Return sorted reports
         """
         if self.model is not None:
-            overlap_analysis = self.read_overlap_analysis(force=True)
+            overlap_analysis = self.read_overlap_analysis()
             overlap_analysis.to_csv(self.analysis_df_path, sep="\t", index=False)
 
     def get_sorted_reports(self) -> List[List[FinalReport]]:

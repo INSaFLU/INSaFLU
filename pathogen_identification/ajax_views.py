@@ -1,8 +1,8 @@
 import mimetypes
 import os
-from django.contrib.auth.models import User
 
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.http import HttpResponse, JsonResponse
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
@@ -22,7 +22,10 @@ from pathogen_identification.models import (
 )
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.utilities_general import infer_run_media_dir
-from pathogen_identification.utilities.utilities_pipeline import Utils_Manager, SoftwareTreeUtils
+from pathogen_identification.utilities.utilities_pipeline import (
+    SoftwareTreeUtils,
+    Utils_Manager,
+)
 from pathogen_identification.utilities.utilities_views import (
     ReportSorter,
     set_control_reports,
@@ -38,7 +41,6 @@ def simplify_name(name):
         .replace(".", "_")
         .lower()
     )
-
 
 
 @login_required
@@ -59,7 +61,7 @@ def deploy_ProjectPI(request):
         user_id = int(request.POST["user_id"])
         user = User.objects.get(id=int(user_id))
 
-        software_utils= SoftwareTreeUtils(user, project)
+        software_utils = SoftwareTreeUtils(user, project)
         runs_to_deploy = software_utils.check_runs_to_deploy_project()
 
         try:
@@ -92,7 +94,6 @@ def deploy_ProjectPI_runs(request):
         data = {"is_ok": False, "is_deployed": False}
 
         process_SGE = ProcessSGE()
-        print(request.POST)
 
         project_id = int(request.POST["project_id"])
         project = Projects.objects.get(id=int(project_id))
@@ -100,15 +101,13 @@ def deploy_ProjectPI_runs(request):
         user_id = int(request.POST["user_id"])
         user = User.objects.get(id=int(user_id))
 
-        software_utils= SoftwareTreeUtils(user, project)
+        software_utils = SoftwareTreeUtils(user, project)
         runs_to_deploy = software_utils.check_runs_to_deploy_project()
 
         try:
             if len(runs_to_deploy) > 0:
                 for sample, leaves_to_deploy in runs_to_deploy.items():
                     for leaf in leaves_to_deploy:
-                        print(sample, leaf)
-
                         taskID = process_SGE.set_submit_televir_run(
                             user=request.user,
                             project_pk=project.pk,
@@ -124,8 +123,6 @@ def deploy_ProjectPI_runs(request):
 
         data["is_ok"] = True
         return JsonResponse(data)
-
-
 
 
 @login_required
@@ -145,15 +142,13 @@ def submit_televir_project_sample_runs(request):
         sample = PIProject_Sample.objects.get(id=int(sample_id))
         project = Projects.objects.get(id=int(sample.project.pk))
 
-        software_utils= SoftwareTreeUtils(user, project)
+        software_utils = SoftwareTreeUtils(user, project)
         runs_to_deploy = software_utils.check_runs_to_deploy_sample(sample)
 
-        
         try:
             if len(runs_to_deploy) > 0:
                 for sample, leafs_to_deploy in runs_to_deploy.items():
                     for leaf in leafs_to_deploy:
-
                         taskID = process_SGE.set_submit_televir_run(
                             user=request.user,
                             project_pk=project.pk,
@@ -171,7 +166,6 @@ def submit_televir_project_sample_runs(request):
         return JsonResponse(data)
 
 
-
 @login_required
 @require_POST
 def submit_televir_project_sample(request):
@@ -179,7 +173,6 @@ def submit_televir_project_sample(request):
     submit a new sample to televir project
     """
     if request.is_ajax():
-        print("submit_televir_project_sample")
         data = {"is_ok": False, "is_deployed": False}
 
         process_SGE = ProcessSGE()
@@ -189,7 +182,7 @@ def submit_televir_project_sample(request):
         sample = PIProject_Sample.objects.get(id=int(sample_id))
         project = Projects.objects.get(id=int(sample.project.pk))
 
-        software_utils= SoftwareTreeUtils(user, project)
+        software_utils = SoftwareTreeUtils(user, project)
         runs_to_deploy = software_utils.check_runs_to_deploy_sample(sample)
 
         try:
@@ -305,7 +298,6 @@ def kill_televir_project_tree_sample(request):
         return JsonResponse(data)
 
 
-
 @login_required
 @require_POST
 def sort_report_projects(request):
@@ -319,7 +311,7 @@ def sort_report_projects(request):
             project__pk=int(request.POST["project_id"])
         )
 
-        project= Projects.objects.get(id=int(request.POST["project_id"]))
+        project = Projects.objects.get(id=int(request.POST["project_id"]))
         samples = PIProject_Sample.objects.filter(project=project)
         report_layout_params = TelevirParameters.get_report_layout_params(
             project_pk=project.pk
@@ -347,7 +339,7 @@ def sort_report_projects(request):
 
         data["is_ok"] = True
         return JsonResponse(data)
-    
+
 
 @login_required
 @require_POST
@@ -358,16 +350,13 @@ def sort_report_sample(request):
     if request.is_ajax():
         data = {"is_ok": False, "is_deployed": False}
         process_SGE = ProcessSGE()
-        sample = PIProject_Sample.objects.get(
-            pk=int(request.POST["sample_id"])
-        )
+        sample = PIProject_Sample.objects.get(pk=int(request.POST["sample_id"]))
 
-        project= sample.project
+        project = sample.project
         report_layout_params = TelevirParameters.get_report_layout_params(
             project_pk=project.pk
         )
         try:
-
             final_reports = FinalReport.objects.filter(sample=sample)
             report_sorter = ReportSorter(final_reports, report_layout_params)
 
@@ -390,7 +379,6 @@ def sort_report_sample(request):
         return JsonResponse(data)
 
 
-
 @login_required
 @require_POST
 def deploy_televir_map(request):
@@ -404,13 +392,14 @@ def deploy_televir_map(request):
         user = request.user
 
         reference_id = int(request.POST["reference_id"])
-        project_id= int(request.POST["project_id"])
-        taskID = process_SGE.set_submit_televir_map(user, reference_pk=reference_id, project_pk=project_id)
+        project_id = int(request.POST["project_id"])
+        taskID = process_SGE.set_submit_televir_map(
+            user, reference_pk=reference_id, project_pk=project_id
+        )
 
         data["is_ok"] = True
 
         return JsonResponse(data)
-
 
 
 @login_required

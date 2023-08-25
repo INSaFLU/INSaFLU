@@ -1,4 +1,5 @@
 import datetime
+import logging
 import os
 from typing import List
 
@@ -124,6 +125,11 @@ class ReportSorter:
 
         self.model = self.set_level(reports, level)
         self.run = self.infer_run()
+
+        self.logger = logging.getLogger(__name__)
+        self.logger.info("ReportSorter: {}".format(self.run))
+        # set logger level
+        self.logger.setLevel(logging.INFO)
 
         if self.model is not None:
             self.media_dir = self.infer_media_dir()
@@ -273,7 +279,7 @@ class ReportSorter:
             str(self.model.pk),
         )
         ### time operations
-        print("generating tree")
+        self.logger.info("generating tree")
 
         ### generate tree
         start = datetime.datetime.now()
@@ -283,7 +289,7 @@ class ReportSorter:
 
         # time in seconds
         time = (end - start).total_seconds()
-        print("time to generate tree: ", time)
+        self.logger.info("time to generate tree: ", time)
 
         ### inner node to leaf dict
         tree_manager = PhyloTreeManager(njtree)
@@ -297,14 +303,13 @@ class ReportSorter:
         end = datetime.datetime.now()
         # time in seconds
         time = (end - start).total_seconds()
-        print("time to get statistics: ", time)
+        self.logger.info("time to get statistics: ", time)
 
         selected_clades = overlap_manager.filter_clades(statistics_dict_all)
 
         leaf_clades = tree_manager.leaf_clades_clean(selected_clades)
 
         clades = overlap_manager.leaf_clades_to_pandas(leaf_clades, statistics_dict_all)
-        print(clades)
         return clades
 
     def check_all_accids_analyzed(self, df: pd.DataFrame):

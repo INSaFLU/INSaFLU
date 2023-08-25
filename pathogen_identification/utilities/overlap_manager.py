@@ -28,6 +28,9 @@ def accid_from_metadata(metadata: pd.DataFrame, read_name: str) -> str:
         return read_name
 
 
+import logging
+
+
 class ReadOverlapManager:
     distance_matrix_filename: str = "distance_matrix_{} .tsv"
     clade_statistics_filename: str = "clade_statistics_{}.tsv"
@@ -46,6 +49,10 @@ class ReadOverlapManager:
         self.fasta_list = metadata_df["file"].tolist()
         self.clade_filter = CladeFilter(reference_clade=reference_clade)
         self.media_dir = media_dir
+
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.INFO)
+
         self.distance_matrix_path = os.path.join(
             self.media_dir, self.distance_matrix_filename.format(pid)
         )
@@ -120,7 +127,6 @@ class ReadOverlapManager:
         """
         Return dictionary of read overlap between all pairs of lists
         """
-        print("Calculating read overlap between all pairs of lists")
         read_overlap_dict = {}
         for i in range(len(read_lists)):
             for j in range(len(read_lists)):
@@ -248,7 +254,7 @@ class ReadOverlapManager:
 
         if self.max_reads:
             if read_profile_matrix.shape[1] > self.max_reads:
-                print(
+                self.logger.info(
                     f"More than {self.max_reads} reads ({read_profile_matrix.shape[1]}) - sampling"
                 )
                 ## sample reads
@@ -262,7 +268,7 @@ class ReadOverlapManager:
         """
         Generate read matrix
         """
-        print("generating read matrix")
+        self.logger.info("generating read matrix")
 
         readname_dict = self.get_accid_readname_dict()
         all_reads = self.all_reads_set(list(readname_dict.values()))
@@ -409,9 +415,6 @@ class ReadOverlapManager:
         combinations = pd.DataFrame(
             pair_proportions_df, columns=["accid_A", "accid_B", "proportion_shared"]
         )
-        print(accids)
-        print(subset_clade)
-        print(combinations)
 
         combinations["proportion_max"] = combinations.proportion_shared.apply(
             lambda x: max(x)
@@ -547,7 +550,7 @@ class ReadOverlapManager:
                     x for x in inner_node_leaf_dict.keys() if x.name == node
                 ][0]
             except IndexError:
-                print("node not found in tree")
+                self.logger.error("node not found in tree")
                 continue
 
             node_stats_dict[node_phylo_clade] = Clade(
@@ -664,7 +667,7 @@ class ReadOverlapManager:
                         )
                     )
                 except KeyError:
-                    print("clade not found")
+                    self.logger.error("clade not found")
                     leaf_clades_dict.append(
                         (
                             leaf,

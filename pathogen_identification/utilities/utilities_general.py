@@ -47,7 +47,7 @@ def description_passes_filter(description: str, filter_list: list):
     return False
 
 
-def reverse_dict_of_lists(dict_of_lists):
+def reverse_dict_of_lists(dict_of_lists: dict) -> dict:
     """
     Return dictionary of lists with keys as values and values as keys
     """

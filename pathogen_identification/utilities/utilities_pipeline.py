@@ -844,7 +844,7 @@ class Utility_Pipeline_Manager:
 
             if row.type_data == Parameter.PARAMETER_float:
                 if row.parameter and row.can_change:
-                    new_param = round(float(row.parameter), 2)
+                    new_param = round(float(row.parameter), 3)
                     new_param = str(new_param)
 
             return new_param

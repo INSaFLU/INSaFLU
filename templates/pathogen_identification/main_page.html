@@ -346,9 +346,6 @@
                     else if (data["is_ok"] == true && data["is_deployed"] == true) {
                         alert("Runs deployed");
                     }
-                    else if (data["is_ok"] == true && data["sorted"] == true) {
-                        alert("Results sorted");
-                    }
                 }
         
             });
@@ -371,13 +368,13 @@
                 success: function(data){
                     console.log(data);
                     if (data["is_ok"] == true && data["is_deployed"] == false) { 
-                        alert("No Results to Sort");
+                        alert("No Results to Sort.");
                     }
                     else if (data["is_ok"] == true && data["is_deployed"] == true) {
-                        alert("Sort deployed");
+                        alert("Sort deployed.");
                     }
                     else if (data["is_ok"] == true && data["sorted"] == true) {
-                        alert("Results sorted");
+                        alert("Results sorted.");
                     }
                 }
 
@@ -412,10 +409,10 @@
             success: function(data){
                 console.log(data);
                 if (data["is_ok"] == true && data["is_deployed"] == false) { 
-                    alert("No runs to deploy");
+                    alert("No runs to deploy.");
                 }
                 else if (data["is_ok"] == true && data["is_deployed"] == true) {
-                    alert("Runs deployed");
+                    alert("Runs deployed.");
                 }
             }
 
@@ -436,10 +433,13 @@
             success: function(data){
                 console.log(data);
                 if (data["is_ok"] == true && data["is_deployed"] == false) { 
-                    alert("No sort to deploy");
+                    alert("No sort to deploy.");
                 }
                 else if (data["is_ok"] == true && data["is_deployed"] == true) {
-                    alert("Sort deployed");
+                    alert("Sort deployed.");
+                }
+                else if (data["is_ok"] == true && data["sorted"] == true) {
+                    alert("Results sorted.");
                 }
             }
 

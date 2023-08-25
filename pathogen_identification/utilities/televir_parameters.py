@@ -3,13 +3,9 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple, Union
 
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.constants_settings import ConstantsSettings as PI_CS
 from pathogen_identification.models import Projects, RunMain
-from pathogen_identification.utilities.mapping_flags import (
-    MapFlagViruses,
-    MappingFlagBuild,
-)
+from pathogen_identification.utilities.mapping_flags import MappingFlagBuild
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, Software
 
@@ -185,7 +181,9 @@ class TelevirParameters:
         """
         Get layout parameters
         """
-        report_layout_params = LayoutParams(0.8, 0.1, "viruses")
+        report_layout_params = LayoutParams(
+            PI_CS.clade_private_proportion, PI_CS.clade_shared_proportion_std, "viruses"
+        )
 
         for param in run_params:
             if param.name == SoftwareNames.SOFTWARE_televir_report_layout_flag_name:

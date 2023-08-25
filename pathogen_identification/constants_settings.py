@@ -26,7 +26,7 @@ class ConstantsSettings:
     USER_TREE_INDEX = 0
 
     ################################### Pipeline model
-    
+
     PIPELINE_MODEL = 1
 
     ################################### Pipeline steps
@@ -36,7 +36,12 @@ class ConstantsSettings:
         CS.PIPELINE_NAME_host_depletion,
         CS.PIPELINE_NAME_read_classification,
         CS.PIPELINE_NAME_contig_classification,
-    ] 
+    ]
+
+    #################################### Tree sort default Parameters
+
+    clade_private_proportion = 0.5
+    clade_shared_proportion_std = 0.8
 
     ################################### pipeline_deployment_type
 

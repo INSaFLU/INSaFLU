@@ -1,10 +1,8 @@
 ## pairwise matrix by individual reads
 
-from typing import List
-
-from dataclasses import dataclass
-
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import List
 
 
 @dataclass
@@ -59,21 +57,25 @@ class CladeFilterBySharedProportion(CladeFilterMethod):
 
 class CladeFilterComposed(CladeFilterMethod):
     def filter_clade(self, clade_obj: Clade) -> bool:
-        if clade_obj.private_proportion < self.reference_clade.private_proportion:
-            return False
+        assessment = False
 
-        if clade_obj.shared_proportion_min < self.reference_clade.shared_proportion_min:
-            return False
+        if clade_obj.private_proportion >= self.reference_clade.private_proportion:
+            assessment = True
 
-        return True
+        if (
+            clade_obj.shared_proportion_min
+            >= self.reference_clade.shared_proportion_min
+        ):
+            assessment = True
+
+        return assessment
 
 
 class CladeFilter:
     def __init__(self, reference_clade: Clade):
         self.reference_clade = reference_clade
         self.filters: List[CladeFilterMethod] = [
-            CladeFilterByPrivateProportion(self.reference_clade),
-            CladeFilterBySharedProportion(self.reference_clade),
+            CladeFilterComposed(self.reference_clade),
         ]
 
     def add_filter(self, filter: CladeFilterMethod):

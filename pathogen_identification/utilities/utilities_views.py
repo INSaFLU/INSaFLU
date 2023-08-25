@@ -304,7 +304,7 @@ class ReportSorter:
         leaf_clades = tree_manager.leaf_clades_clean(selected_clades)
 
         clades = overlap_manager.leaf_clades_to_pandas(leaf_clades, statistics_dict_all)
-
+        print(clades)
         return clades
 
     def check_all_accids_analyzed(self, df: pd.DataFrame):
@@ -351,7 +351,7 @@ class ReportSorter:
         Return sorted reports
         """
         if self.model is not None:
-            overlap_analysis = self.read_overlap_analysis(force=True)
+            overlap_analysis = self.read_overlap_analysis()
             overlap_analysis.to_csv(self.analysis_df_path, sep="\t", index=False)
 
     def get_sorted_reports(self) -> List[List[FinalReport]]:

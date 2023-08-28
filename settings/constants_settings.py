@@ -7,6 +7,7 @@ Created on Dec 14, 2017
 from re import S
 from typing import Dict, List
 
+
 class ConstantsSettings(object):
     """
     classdocs

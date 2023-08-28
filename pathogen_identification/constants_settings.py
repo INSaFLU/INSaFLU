@@ -120,4 +120,7 @@ class ConstantsSettings:
         "assembly_contig_min_length": 500,
     }
 
-    ################################## SOFTWARE
+    ################################## constants
+
+    PAIR_END= "PE"
+    SINGLE_END= "SE"

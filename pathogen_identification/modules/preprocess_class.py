@@ -6,11 +6,9 @@ import subprocess
 import sys
 from typing import Type
 
-from pathogen_identification.modules.object_classes import (
-    Read_class,
-    RunCMD,
-    SoftwareUnit,
-)
+from pathogen_identification.constants_settings import ConstantsSettings as CS
+from pathogen_identification.modules.object_classes import (Read_class, RunCMD,
+                                                            SoftwareUnit)
 
 
 class Preprocess:
@@ -110,9 +108,9 @@ class Preprocess:
         """
         Check if preprocessed files exist
         """
-        if self.preprocess_type == "PE":
+        if self.preprocess_type == CS.PAIR_END:
             return self.check_already_preprocessed_PE()
-        elif self.preprocess_type == "SE":
+        elif self.preprocess_type == CS.SINGLE_END:
             return self.check_already_preprocessed_SE()
 
     def check_already_preprocessed_PE(self):
@@ -233,9 +231,9 @@ class Preprocess:
         """
         Fastqc
         """
-        if self.preprocess_type == "PE":
+        if self.preprocess_type == CS.PAIR_END:
             self.fastqc_PE()
-        elif self.preprocess_type == "SE":
+        elif self.preprocess_type == CS.SINGLE_END:
             self.fastqc_SE()
         else:
             raise ValueError("read type {} not supported".format(self.preprocess_type))
@@ -302,9 +300,9 @@ class Preprocess:
         """
         Fastqc
         """
-        if self.preprocess_type == "PE":
+        if self.preprocess_type == CS.PAIR_END:
             self.fastqc_processed_PE()
-        elif self.preprocess_type == "SE":
+        elif self.preprocess_type == CS.SINGLE_END:
             self.fastqc_processed_SE()
         else:
             raise ValueError("read type {} not supported".format(self.preprocess_type))
@@ -371,9 +369,9 @@ class Preprocess:
         """
         Trimmomatic
         """
-        if self.preprocess_type == "PE":
+        if self.preprocess_type == CS.PAIR_END:
             self.trimmomatic_PE()
-        elif self.preprocess_type == "SE":
+        elif self.preprocess_type == CS.SINGLE_END:
             self.trimmomatic_SE()
         else:
             raise ValueError("read type {} not supported".format(self.preprocess_type))
@@ -384,7 +382,7 @@ class Preprocess:
         """
         trimmomatic_cmd = [
             "trimmomatic",
-            "PE",
+            CS.PAIR_END,
             "-threads",
             self.threads,
             self.r1,
@@ -413,7 +411,7 @@ class Preprocess:
         """
         trimmomatic_cmd = [
             "trimmomatic",
-            "SE",
+            CS.SINGLE_END,
             "-threads",
             self.threads,
             self.r1,
@@ -426,9 +424,9 @@ class Preprocess:
     def run_prinseq(self):
         """filter low complexity reads using prinseq"""
 
-        if self.preprocess_type == "PE":
+        if self.preprocess_type == CS.SINGLE_END:
             self.prinseq_PE()
-        elif self.preprocess_type == "SE":
+        elif self.preprocess_type == CS.PAIR_END:
             self.prinseq_SE()
 
     def prinseq_PE(self):
@@ -489,9 +487,9 @@ class Preprocess:
         """
         Nanofilt
         """
-        if self.preprocess_type == "PE":
+        if self.preprocess_type == CS.PAIR_END:
             self.nanofilt_PE()
-        elif self.preprocess_type == "SE":
+        elif self.preprocess_type == CS.SINGLE_END:
             self.nanofilt_SE()
         else:
             raise ValueError("read type {} not supported".format(self.preprocess_type))
@@ -509,7 +507,7 @@ class Preprocess:
             "-o",
             self.preprocess_name_fastq,
             "-p",
-            "pe",
+            CS.PAIR_END.lower(),
             self.args,
         ]
 
@@ -544,11 +542,11 @@ class Preprocess:
         """
         Clean read names
         """
-        if self.preprocess_type == "PE":
+        if self.preprocess_type == CS.PAIR_END:
             self.clean_read_names_single(self.preprocess_name_fastq)
             self.clean_read_names_single(self.preprocess_name_r2_fastq)
 
-        elif self.preprocess_type == "SE":
+        elif self.preprocess_type == CS.SINGLE_END:
             self.clean_read_names_single(self.preprocess_name_fastq)
         else:
             raise ValueError("read type {} not supported".format(self.preprocess_type))
@@ -587,9 +585,9 @@ class Preprocess:
         )
 
     def subsample_reads(self):
-        if self.preprocess_type == "SE":
+        if self.preprocess_type == CS.SINGLE_END:
             self.subsample_SE()
-        if self.preprocess_type == "PE":
+        if self.preprocess_type == CS.PAIR_END:
             self.subsample_PE()
             self.clean_unpaired()
 
@@ -735,7 +733,7 @@ class Preprocess:
 
         trimmomatic_cmd = [
             "trimmomatic",
-            "PE",
+            CS.PAIR_END,
             "-phred33",
             "-threads",
             self.threads,

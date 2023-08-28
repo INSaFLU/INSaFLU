@@ -1079,7 +1079,7 @@ class RunMain_class(Run_Deployment_Methods):
         self.logger.info(f"prefix: {self.prefix}")
         with open(os.path.join(self.log_dir, self.prefix + "_latest.fofn"), "w") as f:
             f.write(self.sample.r1.current + "\n")
-            if self.type == "PE":
+            if self.type == ConstantsSettings.PAIR_END:
                 f.write(self.sample.r2.current + "\n")
 
         with open(os.path.join(self.log_dir, "reads_latest.stats"), "w") as f:
@@ -1124,7 +1124,7 @@ class RunMain_class(Run_Deployment_Methods):
         enriched_reads = len(self.enrichment_drone.classified_reads_list)
         depleted_reads = len(self.depletion_drone.classified_reads_list)
 
-        if self.type == "PE":
+        if self.type == ConstantsSettings.PAIR_END:
             enriched_reads = enriched_reads * 2
             depleted_reads = depleted_reads * 2
 
@@ -1502,7 +1502,7 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.logger.info(f"prefix: {self.prefix}")
         with open(os.path.join(self.log_dir, self.prefix + "_latest.fofn"), "w") as f:
             f.write(self.sample.r1.current + "\n")
-            if self.type == "PE":
+            if self.type == ConstantsSettings.PAIR_END:
                 f.write(self.sample.r2.current + "\n")
 
         with open(os.path.join(self.log_dir, "reads_latest.stats"), "w") as f:
@@ -1556,7 +1556,7 @@ class RunMainTree_class(Run_Deployment_Methods):
         enriched_reads = len(self.enrichment_drone.classified_reads_list)
         depleted_reads = len(self.depletion_drone.classified_reads_list)
 
-        if self.type == "PE":
+        if self.type == ConstantsSettings.PAIR_END:
             enriched_reads = enriched_reads * 2
             depleted_reads = depleted_reads * 2
 

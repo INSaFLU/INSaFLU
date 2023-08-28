@@ -948,7 +948,7 @@ class Sample_runClass:
         self.r2.remove_duplicate_reads()
 
     def clean_unique(self):
-        if self.type == "SE":
+        if self.type == ConstantsSettings.SINGLE_END:
             self.clean_unique_SE()
         else:
             self.clean_unique_PE()
@@ -1008,7 +1008,7 @@ class Sample_runClass:
         self.r2.read_filter_inplace(common_reads)
 
     def trimmomatic_sort(self):
-        if self.type == "SE":
+        if self.type == ConstantsSettings.SINGLE_END:
             self.trimmomatic_sort_SE()
         else:
             self.trimmomatic_sort_PE()
@@ -1019,7 +1019,7 @@ class Sample_runClass:
 
         cmd_trimsort = [
             "trimmomatic",
-            "SE",
+            ConstantsSettings.SINGLE_END,
             "-phred33",
             "-threads",
             f"{self.threads}",
@@ -1041,7 +1041,7 @@ class Sample_runClass:
                 os.rename(tempfq, self.r1.current)
 
     def trimmomatic_sort_PE(self):
-        if self.type == "SE":
+        if self.type == ConstantsSettings.SINGLE_END:
             return
 
         tempdir = os.path.dirname(self.r1.current)
@@ -1065,7 +1065,7 @@ class Sample_runClass:
         :param reads_dir:
         :return: None
         """
-        if self.type == "SE":
+        if self.type == ConstantsSettings.SINGLE_END:
             self.r1.export_reads(reads_dir)
         else:
             self.r1.export_reads(reads_dir)

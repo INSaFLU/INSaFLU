@@ -8,6 +8,7 @@ import pandas as pd
 from Bio import SeqIO
 
 from fluwebvirus.settings import STATICFILES_DIRS
+from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.modules.object_classes import RunCMD
 
 
@@ -39,6 +40,18 @@ class Assembly_init:
             return False
         else:
             return True
+        
+    def run_PE(self, threads: int = 3):
+        """
+        Assembly with assembler
+        """
+        pass
+
+    def run_SE(self, threads: int = 3):
+        """
+        Assembly with assembler
+        """
+        pass
 
 
 class Assembly_spades(Assembly_init):
@@ -326,9 +339,9 @@ class Assembly_class:
 
         os.makedirs(self.output_dir, exist_ok=True)
 
-        if self.type == "PE":
+        if self.type == CS.PAIR_END:
             self.assembler.run_PE(self.threads)
-        elif self.type == "SE":
+        elif self.type == CS.SINGLE_END:
             self.assembler.run_SE(self.threads)
 
     def check_assembler_output(self):

@@ -10,22 +10,16 @@ import pandas as pd
 from Bio.SeqIO.FastaIO import SimpleFastaParser
 from scipy.stats import kstest
 
-from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.modules.object_classes import (
-    Bedgraph,
-    Read_class,
-    Remap_Target,
-    RunCMD,
-    Software_detail,
-    SoftwareRemap,
-)
-from pathogen_identification.utilities.utilities_general import (
-    plot_dotplot,
-    read_paf_coordinates,
-)
+from pathogen_identification.constants_settings import ConstantsSettings as CS
+from pathogen_identification.modules.object_classes import (Bedgraph,
+                                                            Read_class,
+                                                            Remap_Target,
+                                                            RunCMD,
+                                                            Software_detail,
+                                                            SoftwareRemap)
 from pathogen_identification.utilities.televir_parameters import RemapParams
-
-from scipy.stats import kstest
+from pathogen_identification.utilities.utilities_general import (
+    plot_dotplot, read_paf_coordinates)
 
 pd.options.mode.chained_assignment = None
 np.warnings.filterwarnings("ignore")
@@ -1437,7 +1431,7 @@ class Remapping:
         self.coverage_plot_exists = os.path.exists(self.coverage_plot)
 
         self.full_path_coverage_plot = os.path.join(
-            ConstantsSettings.static_directory, new_coverage_plot
+            CS.static_directory, new_coverage_plot
         )
 
         if self.coverage_plot_exists:
@@ -1450,7 +1444,7 @@ class Remapping:
         new_dotplot = os.path.join(static_dir_plots, os.path.basename(self.dotplot))
 
         self.full_path_dotplot = os.path.join(
-            ConstantsSettings.static_directory, new_dotplot
+            CS.static_directory, new_dotplot
         )
 
         self.dotplot_exists = os.path.exists(self.dotplot)

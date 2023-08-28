@@ -4,23 +4,19 @@ from typing import List
 
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
+
 from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.deployment_main import Run_Main_from_Leaf
-from pathogen_identification.models import (
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
-from pathogen_identification.utilities.utilities_pipeline import Utils_Manager,SoftwareTreeUtils
+from pathogen_identification.models import (ParameterSet, PIProject_Sample,
+                                            Projects, SoftwareTree,
+                                            SoftwareTreeNode)
+from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
+from pathogen_identification.utilities.utilities_pipeline import (
+    SoftwareTreeUtils, Utils_Manager)
+from pathogen_identification.utilities.utilities_views import \
+    set_control_reports
 from utils.process_SGE import ProcessSGE
-
-from pathogen_identification.utilities.tree_deployment import (
-    TreeProgressGraph,
-)
-from pathogen_identification.utilities.utilities_views import set_control_reports
 
 
 class Sample_Staging:

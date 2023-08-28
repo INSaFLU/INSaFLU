@@ -1,12 +1,14 @@
+import csv
 import logging
 import os
 import re
 import shutil
 from random import randint
 from typing import Type
-import csv
+
 import pandas as pd
 
+from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.modules.object_classes import (RunCMD,
                                                             Software_detail)
 
@@ -1205,7 +1207,7 @@ class Classifier:
         self,
         classifier_method: Software_detail,
         query_path: str = "",
-        type: str = "SE",
+        type: str = ConstantsSettings.SINGLE_END,
         r2: str = "",
         prefix: str = "",
         threads: int = 1,
@@ -1339,7 +1341,7 @@ class Classifier:
         """
         Classify a sequencem, deploy classifier method adjusted for the type of sequence.
         """
-        if self.type == "SE":
+        if self.type == ConstantsSettings.SINGLE_END:
             self.classifier.run_SE(threads=self.threads)
         else:
             self.classifier.run_PE(threads=self.threads)

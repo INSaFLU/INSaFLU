@@ -201,6 +201,10 @@ class ReadOverlapManager:
         """
         Return dataframe of pairwise shared reads
         """
+
+        if read_profile_matrix.shape[1] == 0:
+            return pd.DataFrame()
+        
         return pd.DataFrame(
             squareform(pdist(read_profile_matrix, metric="jaccard")),
             columns=read_profile_matrix.index,
@@ -245,24 +249,32 @@ class ReadOverlapManager:
         Filter read matrix, reads as columns, accids as rows
         """
 
+        if read_profile_matrix.shape[1] == 0:
+            self.logger.info("No reads with frequency > min_freq")
+            return read_profile_matrix
+
         read_counts = read_profile_matrix.sum(axis=0)
         read_freqs = read_counts / read_profile_matrix.shape[0]
         # filter out reads that are only present in one accession
-        read_profile_matrix = read_profile_matrix.loc[:, read_counts > 1]
+        read_profile_matrix_filtered = read_profile_matrix.loc[:, read_counts > 1]
         # filter reads with less than min_freq
-        read_profile_matrix = read_profile_matrix.loc[:, read_freqs > self.min_freq]
+        read_profile_matrix_filtered = read_profile_matrix_filtered.loc[:, read_freqs > self.min_freq]
+
+        if read_profile_matrix_filtered.shape[1] == 0:
+            self.logger.info("No reads with frequency > min_freq")
+            return read_profile_matrix_filtered
 
         if self.max_reads:
-            if read_profile_matrix.shape[1] > self.max_reads:
+            if read_profile_matrix_filtered.shape[1] > self.max_reads:
                 self.logger.info(
-                    f"More than {self.max_reads} reads ({read_profile_matrix.shape[1]}) - sampling"
+                    f"More than {self.max_reads} reads ({read_profile_matrix_filtered.shape[1]}) - sampling"
                 )
                 ## sample reads
-                read_profile_matrix = read_profile_matrix.sample(
+                read_profile_matrix_filtered = read_profile_matrix_filtered.sample(
                     n=self.max_reads, axis=1
                 )
 
-        return read_profile_matrix
+        return read_profile_matrix_filtered
 
     def generate_read_matrix(self):
         """
@@ -434,6 +446,8 @@ class ReadOverlapManager:
         return int(self.read_profile_matrix.loc[leaves].sum().sum())
 
     def clade_private_proportions(self, leaves: list) -> float:
+        """
+        """
         group = self.read_profile_matrix.loc[leaves]
         group_sum = group.sum(axis=0)
         group_sum_as_bool = group_sum > 0
@@ -456,6 +470,11 @@ class ReadOverlapManager:
         self.parse_for_data()
 
         node_stats_dict = {}
+
+        if self.read_profile_matrix.shape[1] == 0:
+            self.logger.info("No reads with frequency > min_freq")
+            return node_stats_dict
+
         for node, leaves in inner_node_leaf_dict.items():
             if len(leaves) == 0:
                 node_stats_dict[node] = Clade(

@@ -1,41 +1,31 @@
-from django.test import TestCase
-from django.contrib.auth.models import User
-from pathogen_identification.models import Projects
-from pathogen_identification.models import PIProject_Sample
-from pathogen_identification.utilities.utilities_pipeline import (
-    Utils_Manager,
-    Pipeline_Makeup,
-    SoftwareTreeUtils,
-)
-from settings.default_software import DefaultSoftware
 import os
+from random import sample
+from typing import Dict, Tuple
+
 from django.conf import settings
-from settings.models import Software, Parameter, Sample
-from settings.constants_settings import ConstantsSettings as CS
-from pathogen_identification.constants_settings import (
-    ConstantsSettings as PI_CS,
-)
-from pathogen_identification.models import SoftwareTree, ParameterSet, SoftwareTreeNode
+from django.contrib.auth.models import User
+from django.test import TestCase, tag
+
+from constants.constants import Constants
 from constants.constantsTestsCase import ConstantsTestsCase
+from constants.software_names import SoftwareNames
+from fluwebvirus.settings import STATIC_ROOT
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PI_CS
+from pathogen_identification.deployment_main import Run_Main_from_Leaf
+from pathogen_identification.install_registry import Deployment_Params
+from pathogen_identification.models import (ParameterSet, PIProject_Sample,
+                                            Projects, SoftwareTree,
+                                            SoftwareTreeNode)
+from pathogen_identification.modules.object_classes import (
+    Operation_Temp_Files, Read_class, RunCMD, Temp_File)
+from pathogen_identification.utilities.utilities_pipeline import (
+    Pipeline_Makeup, SoftwareTreeUtils, Utils_Manager)
+from settings.constants_settings import ConstantsSettings as CS
+from settings.default_software import DefaultSoftware
+from settings.models import Parameter, Sample, Software
 from utils.software import Software as SoftwareUtils
 from utils.utils import Utils
-from constants.software_names import SoftwareNames
-from constants.constants import Constants
-from typing import Tuple, Dict
-from pathogen_identification.deployment_main import Run_Main_from_Leaf
-from pathogen_identification.modules.object_classes import (
-    Operation_Temp_Files,
-    Temp_File,
-    RunCMD,
-    Read_class,
-    Sample_runClass,
-    Software_detail,
-    Bedgraph,
-)
-from pathogen_identification.install_registry import Deployment_Params
-from random import sample
-from django.test import tag
-from fluwebvirus.settings import STATIC_ROOT
 
 # Create your tests here.
 

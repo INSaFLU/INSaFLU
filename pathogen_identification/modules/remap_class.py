@@ -362,9 +362,9 @@ class Remap_Snippy(RemapMethod_init):
     def remap(self):
         """
         Remap reads to reference using snippy."""
-        if self.type == "SE":
+        if self.type == CS.SINGLE_END:
             self.remap_SE()
-        elif self.type == "PE":
+        elif self.type == CS.PAIR_END:
             self.remap_PE()
         else:
             raise ValueError
@@ -414,9 +414,9 @@ class Remap_Bwa(RemapMethod_init):
     def remap(self):
         """
         Remap reads to reference using bwa."""
-        if self.type == "SE":
+        if self.type == CS.SINGLE_END:
             self.remap_SE()
-        elif self.type == "PE":
+        elif self.type == CS.PAIR_END:
             self.remap_PE()
         else:
             raise ValueError
@@ -480,9 +480,9 @@ class Remap_Minimap2(RemapMethod_init):
     def remap(self):
         """
         Remap reads to reference using minimap2."""
-        if self.type == "SE":
+        if self.type == CS.SINGLE_END:
             self.remap_SE()
-        elif self.type == "PE":
+        elif self.type == CS.PAIR_END:
             self.remap_PE()
         else:
             raise ValueError
@@ -548,9 +548,9 @@ class Remap_Bowtie2(RemapMethod_init):
     def remap(self):
         """
         Remap reads to reference using bowtie2."""
-        if self.type == "SE":
+        if self.type == CS.SINGLE_END:
             self.remap_SE()
-        elif self.type == "PE":
+        elif self.type == CS.PAIR_END:
             self.remap_PE()
         else:
             raise ValueError
@@ -844,7 +844,7 @@ class Remapping:
         rnumber = self.cmd.run_bash_return(cmd)
         rnumber = int(rnumber) // 4
 
-        if self.type == "PE":
+        if self.type == CS.PAIR_END:
             cmd = "zcat %s | wc -l" % self.r2
             rnumber += int(self.cmd.run_bash_return(cmd)) // 4
 
@@ -1372,9 +1372,9 @@ class Remapping:
         tempfile = os.path.join(self.rdir, f"temp{randint(1,1999)}.rlst")
         self.cmd.run_bash(f"cat {self.mapped_reads} | cut -f1 > {tempfile}")
 
-        if self.type == "SE":
+        if self.type == CS.SINGLE_END:
             self.subset_mapped_reads_r1(tempfile)
-        elif self.type == "PE":
+        elif self.type == CS.PAIR_END:
             self.subset_mapped_reads_r1(tempfile)
             self.subset_mapped_reads_r2(tempfile)
 
@@ -1382,12 +1382,12 @@ class Remapping:
 
     def mapped_reads_to_fasta(self):
         """convert fastq subsets to fasta"""
-        if self.type == "SE":
+        if self.type == CS.SINGLE_END:
             cmd = (
                 f"seqtk seq -a {self.mapped_subset_r1} > {self.mapped_subset_r1_fasta}"
             )
             self.cmd.run_script_software(cmd)
-        elif self.type == "PE":
+        elif self.type == CS.PAIR_END:
             cmd = (
                 f"seqtk seq -a {self.mapped_subset_r1} > {self.mapped_subset_r1_fasta}"
             )

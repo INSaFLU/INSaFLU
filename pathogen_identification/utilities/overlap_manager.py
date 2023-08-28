@@ -12,9 +12,9 @@ from Bio.Phylo.TreeConstruction import DistanceMatrix, DistanceTreeConstructor
 from scipy.spatial.distance import pdist, squareform
 
 from pathogen_identification.utilities.clade_objects import Clade, CladeFilter
-
 ## pairwise matrix by individual reads
-from pathogen_identification.utilities.utilities_general import readname_from_fasta
+from pathogen_identification.utilities.utilities_general import \
+    readname_from_fasta
 
 
 def accid_from_metadata(metadata: pd.DataFrame, read_name: str) -> str:
@@ -32,11 +32,11 @@ import logging
 
 
 class ReadOverlapManager:
-    distance_matrix_filename: str = "distance_matrix_{} .tsv"
+    distance_matrix_filename: str = "distance_matrix_{}.tsv"
     clade_statistics_filename: str = "clade_statistics_{}.tsv"
     accid_statistics_filename: str = "accid_statistics_{}.tsv"
     min_freq: float = 0.05
-    max_reads: int = 100000
+    max_reads: int = 10000
 
     def __init__(
         self,

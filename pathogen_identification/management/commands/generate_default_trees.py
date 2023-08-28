@@ -20,7 +20,7 @@ class Command(BaseCommand):
         default_software.test_all_defaults_pathogen_identification(user_system)
 
         utils = Utils_Manager()
-        utils.generate_default_trees(user_system)
+        #utils.generate_default_trees(user_system)
 
         default_software.remove_all_parameters(user_system)
 

@@ -13,14 +13,28 @@ from pathogen_identification.modules.assembly_class import Assembly_class
 from pathogen_identification.modules.classification_class import Classifier
 from pathogen_identification.modules.metadata_handler import Metadata_handler
 from pathogen_identification.modules.object_classes import (
-    Assembly_results, Contig_classification_results, Read_class,
-    Read_classification_results, Remap_main, Run_detail_report, RunCMD,
-    RunQC_report, Sample_runClass, Software_detail, SoftwareUnit, SoftwareRemap,)
+    Assembly_results,
+    Contig_classification_results,
+    Read_class,
+    Read_classification_results,
+    Remap_main,
+    Run_detail_report,
+    RunCMD,
+    RunQC_report,
+    Sample_runClass,
+    Software_detail,
+    SoftwareRemap,
+    SoftwareUnit,
+)
 from pathogen_identification.modules.preprocess_class import Preprocess
-from pathogen_identification.modules.remap_class import (Mapping_Instance,
-                                                         Mapping_Manager)
+from pathogen_identification.modules.remap_class import (
+    Mapping_Instance,
+    Mapping_Manager,
+)
 from pathogen_identification.utilities.televir_parameters import (
-    RemapParams, TelevirParameters)
+    RemapParams,
+    TelevirParameters,
+)
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -367,7 +381,7 @@ class RunDetail_main:
         )
 
         self.remap_filtering_method = Software_detail(
-            CS.PIPELINE_NAME_remap_filtering, 
+            CS.PIPELINE_NAME_remap_filtering,
             method_args,
             config,
             self.prefix,
@@ -375,7 +389,7 @@ class RunDetail_main:
 
         ###
 
-        self.software_remap= SoftwareRemap(
+        self.software_remap = SoftwareRemap(
             self.remapping_method,
             self.remap_filtering_method,
         )
@@ -384,18 +398,28 @@ class RunDetail_main:
         self.subsample = False
         self.quality_control = bool(
             self.preprocess_method.name != Software_detail.SOFTWARE_NOT_FOUND
-        )  
+        )
         self.sift = config["actions"]["SIFT"]
-        self.depletion = bool(self.depletion_method.name != Software_detail.SOFTWARE_NOT_FOUND)
-        self.enrichment = bool(self.enrichment_method.name != Software_detail.SOFTWARE_NOT_FOUND)
-        self.assembly = bool(self.assembly_method.name != Software_detail.SOFTWARE_NOT_FOUND)
+        self.depletion = bool(
+            self.depletion_method.name != Software_detail.SOFTWARE_NOT_FOUND
+        )
+        self.enrichment = bool(
+            self.enrichment_method.name != Software_detail.SOFTWARE_NOT_FOUND
+        )
+        self.assembly = bool(
+            self.assembly_method.name != Software_detail.SOFTWARE_NOT_FOUND
+        )
         self.contig_classification = bool(
             self.contig_classification_method.name != Software_detail.SOFTWARE_NOT_FOUND
         )
-        self.read_classification = bool(self.read_classification_method.name != Software_detail.SOFTWARE_NOT_FOUND)
+        self.read_classification = bool(
+            self.read_classification_method.name != Software_detail.SOFTWARE_NOT_FOUND
+        )
         self.classification = config["actions"]["CLASSIFY"]
         self.remapping = config["actions"]["REMAP"]
-        self.remapping_filtering = bool(self.remap_filtering_method.name != Software_detail.SOFTWARE_NOT_FOUND)
+        self.remapping_filtering = bool(
+            self.remap_filtering_method.name != Software_detail.SOFTWARE_NOT_FOUND
+        )
         self.house_cleaning = config["actions"]["CLEAN"]
 
         ### drones
@@ -534,8 +558,11 @@ class RunDetail_main:
 
         if self.software_remap.remap_filter.name == Software_detail.SOFTWARE_NOT_FOUND:
             self.software_remap.remap_filter = self.remap_filtering_method
-        
-        if self.software_remap.remap_software.name == Software_detail.SOFTWARE_NOT_FOUND:
+
+        if (
+            self.software_remap.remap_software.name
+            == Software_detail.SOFTWARE_NOT_FOUND
+        ):
             self.software_remap.remap_software = self.remapping_method
 
         print("remap filtering method")
@@ -543,17 +570,31 @@ class RunDetail_main:
 
         # actions
         self.subsample = False
-        self.quality_control = bool(self.preprocess_method.name != Software_detail.SOFTWARE_NOT_FOUND)
+        self.quality_control = bool(
+            self.preprocess_method.name != Software_detail.SOFTWARE_NOT_FOUND
+        )
         self.sift = config["actions"]["SIFT"]
-        self.depletion = bool(self.depletion_method.name != Software_detail.SOFTWARE_NOT_FOUND)
-        self.enrichment = bool(self.enrichment_method.name != Software_detail.SOFTWARE_NOT_FOUND)
-        self.assembly = bool(self.assembly_method.name != Software_detail.SOFTWARE_NOT_FOUND)
-        self.read_classification = bool(self.read_classification_method.name != Software_detail.SOFTWARE_NOT_FOUND)
+        self.depletion = bool(
+            self.depletion_method.name != Software_detail.SOFTWARE_NOT_FOUND
+        )
+        self.enrichment = bool(
+            self.enrichment_method.name != Software_detail.SOFTWARE_NOT_FOUND
+        )
+        self.assembly = bool(
+            self.assembly_method.name != Software_detail.SOFTWARE_NOT_FOUND
+        )
+        self.read_classification = bool(
+            self.read_classification_method.name != Software_detail.SOFTWARE_NOT_FOUND
+        )
         self.contig_classification = bool(
             self.contig_classification_method.name != Software_detail.SOFTWARE_NOT_FOUND
         )
-        self.remapping = bool(self.remapping_method.name != Software_detail.SOFTWARE_NOT_FOUND)
-        self.remapping_filtering = bool(self.remap_filtering_method.name != Software_detail.SOFTWARE_NOT_FOUND)
+        self.remapping = bool(
+            self.remapping_method.name != Software_detail.SOFTWARE_NOT_FOUND
+        )
+        self.remapping_filtering = bool(
+            self.remap_filtering_method.name != Software_detail.SOFTWARE_NOT_FOUND
+        )
         self.classification = self.read_classification or self.contig_classification
         self.house_cleaning = config["actions"]["CLEAN"]
 
@@ -709,8 +750,6 @@ class Run_Deployment_Methods(RunDetail_main):
             logdir=self.config["directories"]["log_dir"],
         )
 
-        
-
     def deploy_QC(self, fake_run: bool = False):
         self.logger.info(f"r1 reads: {self.sample.r1.get_current_fastq_read_number()}")
         self.logger.info(f"r2 reads: {self.sample.r2.get_current_fastq_read_number()}")
@@ -823,7 +862,6 @@ class Run_Deployment_Methods(RunDetail_main):
         )
 
     def deploy_REMAPPING(self):
-
         self.remap_manager = Mapping_Manager(
             self.metadata_tool.remap_targets,
             self.sample.r1,
@@ -869,9 +907,7 @@ class RunMain_class(Run_Deployment_Methods):
         self.logger.info(f"remapping: {self.remapping}")
         self.logger.info(f"current reads: {self.sample.r1.current}")
 
-
     def Run_Full_Pipeline(self):
-
         self.Prep_deploy()
         self.Run_QC()
         self.Run_PreProcess()
@@ -881,7 +917,6 @@ class RunMain_class(Run_Deployment_Methods):
         self.Run_Remapping()
 
     def Run_QC(self):
-
         if self.quality_control:
             print("Deploying QC")
             self.deploy_QC()
@@ -1066,7 +1101,7 @@ class RunMain_class(Run_Deployment_Methods):
 
     def generate_output_data_classes(self):
         ### transfer to sample class
-        input_reads= self.sample.reads_before_processing
+        input_reads = self.sample.reads_before_processing
         processed_reads = self.sample.reads_after_processing
 
         filtered_reads = (
@@ -1082,7 +1117,6 @@ class RunMain_class(Run_Deployment_Methods):
         final_processing_percent = (final_processing_reads / input_reads) * 100
 
         ### transfer to assembly class / drone.
-        print(self.aclass_summary)
         minhit_assembly = self.aclass_summary["counts"].min()
         if not minhit_assembly or not self.aclass_summary.shape[0]:
             minhit_assembly = 0
@@ -1203,7 +1237,6 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.logger.info(f"current reads: {self.sample.r1.current}")
 
     def Run_Full_Pipeline(self):
-
         self.Prep_deploy()
         self.Run_QC()
         self.Run_PreProcess()
@@ -1388,7 +1421,7 @@ class RunMainTree_class(Run_Deployment_Methods):
 
     def plan_remap_prep_safe(self):
         self.plan_remap_prep()
-        #self.export_intermediate_reports()
+        # self.export_intermediate_reports()
         self.remap_prepped = True
 
     def plan_remap_prep(self):
@@ -1410,8 +1443,7 @@ class RunMainTree_class(Run_Deployment_Methods):
             return
 
         if self.remapping and self.remapping_performed is False:
-
-            if self.remap_prepped== False:
+            if self.remap_prepped == False:
                 self.plan_remap_prep_safe()
 
             print("merged targets: ", self.merged_targets)
@@ -1476,7 +1508,6 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.sample.export_reads(self.media_dir)
         self.assembly_drone.export_assembly(self.media_dir)
 
-
     def export_assembly(self):
         self.assembly_drone.export_assembly(self.media_dir)
 
@@ -1509,11 +1540,10 @@ class RunMainTree_class(Run_Deployment_Methods):
         )
 
         if processed_reads == 0:
-            filtered_reads_perc= 0
+            filtered_reads_perc = 0
             final_processing_percent = 0
             processed_reads = 1
         else:
-
             filtered_reads_perc = (int(filtered_reads) / processed_reads) * 100
             final_processing_percent = (final_processing_reads / processed_reads) * 100
 
@@ -1567,7 +1597,7 @@ class RunMainTree_class(Run_Deployment_Methods):
         )
 
         self.qc_report = RunQC_report(
-            performed=self.quality_control,
+            performed=self.qc_performed,
             method=self.preprocess_drone.preprocess_method.name,
             args=self.preprocess_drone.preprocess_method.args,
             input_reads=self.sample.reads_before_processing,

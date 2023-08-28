@@ -480,8 +480,8 @@ class ReadOverlapManager:
                     group_counts=clade_counts,
                     private_proportion=proportion_private,
                     shared_proportion_std=0,
-                    shared_proportion_min=0,
-                    shared_proportion_max=0,
+                    shared_proportion_min=1,
+                    shared_proportion_max=1,
                 )
 
                 continue
@@ -493,7 +493,7 @@ class ReadOverlapManager:
                 leaves=leaves,
                 private_proportion=proportion_private,
                 group_counts=clade_counts,
-                shared_proportion_min=min(pairwise_shared_clade.proportion_max),
+                shared_proportion_min=min(pairwise_shared_clade.proportion_min),
                 shared_proportion_max=max(pairwise_shared_clade.proportion_max),
                 shared_proportion_std=np.std(pairwise_shared_clade.proportion_std),
             )

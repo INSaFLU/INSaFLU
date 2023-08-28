@@ -182,7 +182,9 @@ class TelevirParameters:
         Get layout parameters
         """
         report_layout_params = LayoutParams(
-            PI_CS.clade_private_proportion, PI_CS.clade_shared_proportion_std, "viruses"
+            PI_CS.clade_private_proportion,
+            PI_CS.clade_shared_proportion_threshold,
+            "viruses",
         )
 
         for param in run_params:

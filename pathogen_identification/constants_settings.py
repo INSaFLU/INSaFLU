@@ -41,7 +41,7 @@ class ConstantsSettings:
     #################################### Tree sort default Parameters
 
     clade_private_proportion = 0.5
-    clade_shared_proportion_std = 0.8
+    clade_shared_proportion_threshold = 0.05
 
     ################################### pipeline_deployment_type
 

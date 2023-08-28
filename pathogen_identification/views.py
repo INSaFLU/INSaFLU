@@ -24,15 +24,16 @@ from django.views import generic
 from django.views.generic import ListView
 from django_tables2 import RequestConfig
 
-from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
+from constants.constants import Constants
 from constants.meta_key_and_values import MetaKeyAndValue
 from extend_user.models import Profile
-from fluwebvirus.settings import STATICFILES_DIRS
+from fluwebvirus.settings import MEDIA_ROOT, STATICFILES_DIRS
 from managing_files.forms import AddSampleProjectForm
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Sample
 from managing_files.tables import SampleToProjectsTable
 from pathogen_identification.constants_settings import ConstantsSettings
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.models import (
     ContigClassification,
     FinalReport,
@@ -40,7 +41,6 @@ from pathogen_identification.models import (
     PIProject_Sample,
     Projects,
     RawReference,
-    TelevirRunQC,
     ReadClassification,
     ReferenceContigs,
     ReferenceMap_Main,
@@ -49,7 +49,9 @@ from pathogen_identification.models import (
     RunMain,
     RunRemapMain,
     Sample,
+    TelevirRunQC,
 )
+from pathogen_identification.modules.object_classes import RunQC_report
 from pathogen_identification.tables import (
     ContigTable,
     ProjectTable,
@@ -57,25 +59,20 @@ from pathogen_identification.tables import (
     RunMainTable,
     SampleTable,
 )
-from pathogen_identification.utilities.tree_deployment import (
-    TreeProgressGraph,
-)
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
-from pathogen_identification.modules.object_classes import RunQC_report
-
+from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
 from pathogen_identification.utilities.utilities_general import infer_run_media_dir
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter,
-    recover_assembly_contigs,
-    final_report_best_cov_by_accid,
     FinalReportCompound,
+    ReportSorter,
+    final_report_best_cov_by_accid,
+    recover_assembly_contigs,
 )
 from settings.constants_settings import ConstantsSettings as CS
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from utils.process_SGE import ProcessSGE
 from utils.support_django_template import get_link_for_dropdown_item
 from utils.utils import ShowInfoMainPage, Utils
-from fluwebvirus.settings import MEDIA_ROOT
+
 
 def clean_check_box_in_session(request):
     """
@@ -657,11 +654,11 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
             query_set = PIProject_Sample.objects.none()
             project_name = "project"
             context["project_owner"] = False
-        
+
         if self.request.GET.get(tag_search) != None and self.request.GET.get(
             tag_search
         ):
-            query_set= query_set.filter(
+            query_set = query_set.filter(
                 Q(name__icontains=self.request.GET.get(tag_search))
             ).distinct()
 
@@ -670,13 +667,12 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
             self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
         ).configure(samples)
 
-
         ### type of deployment
-        DEPLOY_TYPE= PICS.DEPLOYMENT_DEFAULT
-        DEPLOY_URL= 'deploy_ProjectPI'
+        DEPLOY_TYPE = PICS.DEPLOYMENT_DEFAULT
+        DEPLOY_URL = "deploy_ProjectPI"
 
         if DEPLOY_TYPE == PICS.DEPLOYMENT_TYPE_PIPELINE:
-            DEPLOY_URL= 'deploy_runs_ProjectPI'
+            DEPLOY_URL = "deploy_runs_ProjectPI"
 
         context["table"] = samples
         context["deploy_url"] = DEPLOY_URL
@@ -853,8 +849,6 @@ def Sample_reports(requesdst, pk1, pk2):
     )
 
 
-
-
 class Sample_detail(LoginRequiredMixin, generic.CreateView):
     """
     home page
@@ -909,35 +903,35 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         #
         run_detail = RunDetail.objects.get(sample=sample_main, run=run_main)
         #
-        try: 
+        try:
             run_qc = TelevirRunQC.objects.get(run=run_main)
-            qc_report= RunQC_report(
-                performed= run_qc.performed,
-                method= run_qc.method,
-                args= run_qc.args,
-                input_reads= run_qc.input_reads,
-                output_reads= run_qc.output_reads,
-                output_reads_percent= run_qc.output_reads_percent,
+            qc_report = RunQC_report(
+                performed=run_qc.performed,
+                method=run_qc.method,
+                args=run_qc.args,
+                input_reads=run_qc.input_reads,
+                output_reads=run_qc.output_reads,
+                output_reads_percent=run_qc.output_reads_percent,
             )
-        
+
         except TelevirRunQC.DoesNotExist:
-            qc_report= RunQC_report(
-                performed= False,
-                method= "None",
-                args= "None",
-                input_reads= run_detail.input,
-                output_reads= run_detail.input,
-                output_reads_percent= "1",
+            qc_report = RunQC_report(
+                performed=False,
+                method="None",
+                args="None",
+                input_reads=run_detail.input,
+                output_reads=run_detail.input,
+                output_reads_percent="1",
             )
 
         #
         try:
             run_assembly = RunAssembly.objects.get(sample=sample_main, run=run_main)
             recover_assembly_contigs(run_main, run_assembly)
-            assembly_available= run_assembly.performed
+            assembly_available = run_assembly.performed
         except RunAssembly.DoesNotExist:
             run_assembly = None
-            assembly_available= False
+            assembly_available = False
 
         #
         run_remap = RunRemapMain.objects.get(sample=sample_main, run=run_main)
@@ -954,7 +948,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         report_sorter = ReportSorter(final_report, report_layout_params)
 
         sorted_reports = report_sorter.get_reports()
-        excluded_reports_exist= report_sorter.check_excluded_exist()
+        excluded_reports_exist = report_sorter.check_excluded_exist()
         empty_reports = report_sorter.get_reports_empty()
         sorted_reports.append(empty_reports)
 
@@ -976,7 +970,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "sample": sample_name,
             "run_main": run_main,
             "run_detail": run_detail,
-            "qc_report":qc_report,
+            "qc_report": qc_report,
             "assembly": run_assembly,
             "contig_classification": contig_classification,
             "read_classification": read_classification,
@@ -988,7 +982,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "run_index": run_pk,
             "reference_table": raw_reference_table,
             "owner": True,
-            "in_control": True, #has_controlled_flag,
+            "in_control": True,  # has_controlled_flag,
             "report_list": sorted_reports,
             "data_exists": True if not run_main.data_deleted else False,
             "excluded_exist": excluded_reports_exist,
@@ -1022,8 +1016,10 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
 
         for fpath in context["files"]:
             cwd = os.getcwd()
-            
-            context["files"][fpath] = eliminate_path_before_media(context["files"][fpath])
+
+            context["files"][fpath] = eliminate_path_before_media(
+                context["files"][fpath]
+            )
             context["files"][fpath] = get_link_for_dropdown_item(
                 context["files"][fpath]
             )
@@ -1088,7 +1084,7 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         ####
         runs = set([fr.run.pk for fr in final_report])
         runs = RunMain.objects.filter(pk__in=runs)
-        runs_number= len(runs) > 0
+        runs_number = len(runs) > 0
 
         context = {
             "project": project_name,
@@ -1310,7 +1306,6 @@ import zipfile
 
 
 def generate_zip_file(file_list: list, zip_file_path: str) -> str:
-
     try:
         with zipfile.ZipFile(zip_file_path, "w") as zip_file:
             for file_path in file_list:
@@ -1327,8 +1322,7 @@ def get_create_zip(file_list: list, outdir: str, zip_file_name: str) -> str:
     zip_file_path = os.path.join(outdir, zip_file_name)
 
     if os.path.exists(zip_file_path):
-
-            return zip_file_path
+        return zip_file_path
 
     zip_file_path = generate_zip_file(file_list, zip_file_path)
 

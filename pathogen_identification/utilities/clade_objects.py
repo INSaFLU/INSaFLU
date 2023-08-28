@@ -52,7 +52,7 @@ class CladeFilterBySharedProportion(CladeFilterMethod):
         """
         Return True if clade passes filter
         """
-        return clade.shared_proportion_max >= self.reference_clade.shared_proportion_max
+        return clade.shared_proportion_min >= self.reference_clade.shared_proportion_min
 
 
 class CladeFilterComposed(CladeFilterMethod):
@@ -75,7 +75,8 @@ class CladeFilter:
     def __init__(self, reference_clade: Clade):
         self.reference_clade = reference_clade
         self.filters: List[CladeFilterMethod] = [
-            CladeFilterComposed(self.reference_clade),
+            CladeFilterByPrivateProportion(self.reference_clade),
+            CladeFilterBySharedProportion(self.reference_clade),
         ]
 
     def add_filter(self, filter: CladeFilterMethod):

@@ -12,9 +12,9 @@ from Bio.Phylo.TreeConstruction import DistanceMatrix, DistanceTreeConstructor
 from scipy.spatial.distance import pdist, squareform
 
 from pathogen_identification.utilities.clade_objects import Clade, CladeFilter
+
 ## pairwise matrix by individual reads
-from pathogen_identification.utilities.utilities_general import \
-    readname_from_fasta
+from pathogen_identification.utilities.utilities_general import readname_from_fasta
 
 
 def accid_from_metadata(metadata: pd.DataFrame, read_name: str) -> str:
@@ -204,7 +204,7 @@ class ReadOverlapManager:
 
         if read_profile_matrix.shape[1] == 0:
             return pd.DataFrame()
-        
+
         return pd.DataFrame(
             squareform(pdist(read_profile_matrix, metric="jaccard")),
             columns=read_profile_matrix.index,
@@ -258,11 +258,13 @@ class ReadOverlapManager:
         # filter out reads that are only present in one accession
         read_profile_matrix_filtered = read_profile_matrix.loc[:, read_counts > 1]
         # filter reads with less than min_freq
-        read_profile_matrix_filtered = read_profile_matrix_filtered.loc[:, read_freqs > self.min_freq]
+        read_profile_matrix_filtered = read_profile_matrix_filtered.loc[
+            :, read_freqs > self.min_freq
+        ]
 
         if read_profile_matrix_filtered.shape[1] == 0:
             self.logger.info("No reads with frequency > min_freq")
-            return read_profile_matrix_filtered
+            return read_profile_matrix
 
         if self.max_reads:
             if read_profile_matrix_filtered.shape[1] > self.max_reads:
@@ -446,8 +448,7 @@ class ReadOverlapManager:
         return int(self.read_profile_matrix.loc[leaves].sum().sum())
 
     def clade_private_proportions(self, leaves: list) -> float:
-        """
-        """
+        """ """
         group = self.read_profile_matrix.loc[leaves]
         group_sum = group.sum(axis=0)
         group_sum_as_bool = group_sum > 0

@@ -7,8 +7,11 @@ import sys
 from typing import Type
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.modules.object_classes import (Read_class, RunCMD,
-                                                            SoftwareUnit)
+from pathogen_identification.modules.object_classes import (
+    Read_class,
+    RunCMD,
+    SoftwareUnit,
+)
 
 
 class Preprocess:
@@ -424,9 +427,9 @@ class Preprocess:
     def run_prinseq(self):
         """filter low complexity reads using prinseq"""
 
-        if self.preprocess_type == CS.SINGLE_END:
+        if self.preprocess_type == CS.PAIR_END:
             self.prinseq_PE()
-        elif self.preprocess_type == CS.PAIR_END:
+        elif self.preprocess_type == CS.SINGLE_END:
             self.prinseq_SE()
 
     def prinseq_PE(self):

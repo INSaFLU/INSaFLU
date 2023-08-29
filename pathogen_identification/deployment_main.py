@@ -10,21 +10,34 @@ from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from constants.constants import TypePath
 from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import (FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RunMain, SoftwareTree,
-                                            SoftwareTreeNode)
+from pathogen_identification.models import (
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
 from pathogen_identification.modules.run_main import RunMainTree_class
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.update_DBs import (
-    Update_Assembly, Update_Classification, Update_Remap,
-    Update_RunMain_Initial, Update_RunMain_Secondary, Update_Sample_Runs,
-    get_run_parents)
+    Update_Assembly,
+    Update_Classification,
+    Update_Remap,
+    Update_RunMain_Initial,
+    Update_RunMain_Secondary,
+    Update_Sample_Runs,
+    get_run_parents,
+)
 from pathogen_identification.utilities.utilities_general import (
-    simplify_name, simplify_name_lower)
+    simplify_name,
+    simplify_name_lower,
+)
 from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils, Utils_Manager)
+    SoftwareTreeUtils,
+    Utils_Manager,
+)
 from pathogen_identification.utilities.utilities_views import ReportSorter
 from utils.process_SGE import ProcessSGE
 
@@ -145,8 +158,11 @@ class PathogenIdentification_deployment:
         self.config["sample_name"] = self.sample
         self.config["r1"] = new_r1_path
         self.config["r2"] = new_r2_path
-        
-        self.config["type"] = [ConstantsSettings.SINGLE_END, ConstantsSettings.PAIR_END][int(os.path.isfile(self.config["r2"]))]
+
+        self.config["type"] = [
+            ConstantsSettings.SINGLE_END,
+            ConstantsSettings.PAIR_END,
+        ][int(os.path.isfile(self.config["r2"]))]
 
         return True
 
@@ -160,7 +176,9 @@ class PathogenIdentification_deployment:
     def configure_params(self):
         """get pipeline parameters from database"""
 
-        software_tree_utils = SoftwareTreeUtils(self.parameter_set.project.owner, self.parameter_set.project)
+        software_tree_utils = SoftwareTreeUtils(
+            self.parameter_set.project.owner, self.parameter_set.project
+        )
 
         all_paths = software_tree_utils.get_all_technology_pipelines(self.tree_makup)
 
@@ -229,7 +247,9 @@ class PathogenIdentification_deployment:
         """prepare run_main object from config dictionary"""
         self.prepped = True
 
-        self.run_engine = RunMainTree_class(self.config, self.run_params_db, self.username)
+        self.run_engine = RunMainTree_class(
+            self.config, self.run_params_db, self.username
+        )
 
         utils = Utils_Manager()
 
@@ -536,8 +556,18 @@ class Run_Main_from_Leaf:
         )
         #
         report_layout_params = TelevirParameters.get_report_layout_params(run.pk)
+
+        if final_report.exists() is False:
+            return
+
         report_sorter = ReportSorter(final_report, report_layout_params)
-        report_sorter.sort_reports_save()
+
+        try:
+            report_sorter.sort_reports_save()
+        except Exception as e:
+            print(e)
+            print("Error in report sorter")
+            return
 
     def register_completion(self):
         self.set_run_process_finished()
@@ -552,13 +582,12 @@ class Run_Main_from_Leaf:
         if not self.check_submission() and not self.check_processed():
             self.register_submission()
 
-            try: 
+            try:
                 configured = self.configure()
             except Exception as e:
                 print(e)
                 self.register_error()
                 return
-            
 
             if configured:
                 run_success = self.Deploy_Parts()
@@ -568,8 +597,6 @@ class Run_Main_from_Leaf:
                 return
 
             if run_success:
-                # update_successful = self.Update_dbs()
-                # if update_successful:
                 self.run_reference_overlap_analysis()
                 self.register_completion()
                 self.update_project_change_date()

@@ -2,6 +2,7 @@ import logging
 import os
 import shutil
 import time
+from dataclasses import dataclass
 from random import randint
 from typing import List, Type
 
@@ -13,15 +14,28 @@ from pathogen_identification.modules.assembly_class import Assembly_class
 from pathogen_identification.modules.classification_class import Classifier
 from pathogen_identification.modules.metadata_handler import Metadata_handler
 from pathogen_identification.modules.object_classes import (
-    Assembly_results, Contig_classification_results, Read_class,
-    Read_classification_results, Remap_main, Run_detail_report, RunCMD,
-    RunQC_report, Sample_runClass, Software_detail, SoftwareRemap,
-    SoftwareUnit)
+    Assembly_results,
+    Contig_classification_results,
+    Read_class,
+    Read_classification_results,
+    Remap_main,
+    Run_detail_report,
+    RunCMD,
+    RunQC_report,
+    Sample_runClass,
+    Software_detail,
+    SoftwareRemap,
+    SoftwareUnit,
+)
 from pathogen_identification.modules.preprocess_class import Preprocess
-from pathogen_identification.modules.remap_class import (Mapping_Instance,
-                                                         Mapping_Manager)
+from pathogen_identification.modules.remap_class import (
+    Mapping_Instance,
+    Mapping_Manager,
+)
 from pathogen_identification.utilities.televir_parameters import (
-    RemapParams, TelevirParameters)
+    RemapParams,
+    TelevirParameters,
+)
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -36,6 +50,25 @@ def get_bindir_from_binaries(binaries, key, value: str = ""):
             return os.path.join(binaries["ROOT"], binaries[key][value], "bin")
         except KeyError:
             return ""
+
+
+@dataclass
+class RunMainConfig:
+    project_name: str
+    sample_name: str
+    r1: str
+    r2: str
+    type: str
+    prefix: str
+    source: str
+    deployment_root_dir: str
+    sub_directory: str
+    directories: dict
+    threads: int
+    metadata: dict
+    technology: str
+    bin: dict
+    actions: dict
 
 
 class RunDetail_main:

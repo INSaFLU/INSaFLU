@@ -293,7 +293,7 @@ class ReadOverlapManager:
 
     def pairwise_shared_count(self, read_profile_matrix: pd.DataFrame) -> pd.DataFrame:
         """
-        Return dataframe of pairwise shared read proportions,
+        Return dataframe of pairwise shared read counts,
         use matrix multiplication to sum shared reads from binary matrix for each pair.
         """
 

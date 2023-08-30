@@ -13,21 +13,32 @@ from django.db.models import QuerySet
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from constants.constants import TypePath
 from fluwebvirus.settings import STATIC_ROOT
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PIConstants
-from pathogen_identification.models import (FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RunMain, SoftwareTree,
-                                            SoftwareTreeNode)
+from pathogen_identification.constants_settings import ConstantsSettings as PIConstants
+from pathogen_identification.models import (
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunMainTree_class
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.update_DBs_tree import (
-    Update_Assembly, Update_Classification, Update_Remap,
-    Update_RunMain_Initial, Update_RunMain_Secondary, get_run_parents)
+    Update_Assembly,
+    Update_Classification,
+    Update_Remap,
+    Update_RunMain_Initial,
+    Update_RunMain_Secondary,
+    get_run_parents,
+)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Pipeline_Makeup, PipelineTree, Utils_Manager)
+    Pipeline_Makeup,
+    PipelineTree,
+    Utils_Manager,
+)
 from pathogen_identification.utilities.utilities_views import ReportSorter
 from settings.constants_settings import ConstantsSettings
 from utils.utils import Utils
@@ -117,7 +128,9 @@ class PathogenIdentification_Deployment_Manager:
         self.config["sample_name"] = self.sample
         self.config["r1"] = new_r1_path
         self.config["r2"] = new_r2_path
-        self.config["type"] = [PIConstants.SINGLE_END, PIConstants.PAIR_END][int(os.path.isfile(self.config["r2"]))]
+        self.config["type"] = [PIConstants.SINGLE_END, PIConstants.PAIR_END][
+            int(os.path.isfile(self.config["r2"]))
+        ]
 
         return True
 
@@ -205,8 +218,6 @@ class PathogenIdentification_Deployment_Manager:
         self.run_engine.Run_Assembly()
         self.run_engine.Run_Contig_classification()
         self.run_engine.Run_Read_classification()
-        # self.run_engine.plan_remap_prep_safe()
-        # self.run_engine.Run_Classification()
         self.run_engine.Run_Remapping()
 
     def update_engine(self):
@@ -214,7 +225,6 @@ class PathogenIdentification_Deployment_Manager:
         print(self.run_params_db)
 
         if "module" in self.run_params_db.columns:
-
             self.run_engine.Update(self.config, self.run_params_db)
 
     def update_merged_targets(self, merged_targets: pd.DataFrame):
@@ -308,13 +318,12 @@ class Tree_Node:
         return len(self.children) == 0
 
     def generate_software_tree_node_entry(self, pipe_tree: PipelineTree):
-
         if not self._is_node_leaf():
             return
 
         node_metadata = pipe_tree.node_index.loc[self.node_index].node
         software_tree = SoftwareTree.objects.get(pk=self.software_tree_pk)
-        
+
         try:
             tree_node = SoftwareTreeNode.objects.get(
                 software_tree=software_tree,
@@ -347,7 +356,6 @@ class Tree_Node:
         return parameter_set
 
     def register(self, project: Projects, sample: PIProject_Sample, tree: PipelineTree):
-        
         tree_node = self.generate_software_tree_node_entry(tree)
         if tree_node is None:
             return False
@@ -707,7 +715,6 @@ class Tree_Progress:
         return new_node
 
     def spawn_node_child_prepped(self, node: Tree_Node, child: int) -> Tree_Node:
-
         new_node = self.spawn_node_child(node, child)
 
         new_node.run_manager.update_engine()
@@ -1038,7 +1045,7 @@ class Tree_Progress:
             for child in children:
                 new_node = self.spawn_node_child_prepped(node, child)
                 new_nodes.append(new_node)
-        
+
         self.update_current_module(new_nodes)
 
     def run_node(self, node: Tree_Node):
@@ -1254,7 +1261,9 @@ class TreeProgressGraph:
         }
 
         pipetrees_dict = {
-            tree_pk: pipeline_utils.parameter_util.convert_softwaretree_to_pipeline_tree(tree)
+            tree_pk: pipeline_utils.parameter_util.convert_softwaretree_to_pipeline_tree(
+                tree
+            )
             for tree_pk, tree in software_tree_dict.items()
         }
 
@@ -1283,6 +1292,7 @@ class TreeProgressGraph:
         ## columns are not the same.
         column_order = [
             ConstantsSettings.PIPELINE_NAME_read_quality_analysis,
+            ConstantsSettings.PIPELINE_NAME_extra_qc,
             ConstantsSettings.PIPELINE_NAME_viral_enrichment,
             ConstantsSettings.PIPELINE_NAME_host_depletion,
             ConstantsSettings.PIPELINE_NAME_assembly,

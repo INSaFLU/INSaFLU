@@ -207,7 +207,6 @@ class PathogenIdentification_deployment:
                 x: os.path.join(self.install_registry.METADATA["ROOT"], g)
                 for x, g in self.install_registry.METADATA.items()
             },
-            "technology": self.technology,
             "bin": self.install_registry.BINARIES,
             "actions": {},
         }
@@ -286,7 +285,8 @@ class Run_Main_from_Leaf:
         self.project = project
         self.pipeline_leaf = pipeline_leaf
         self.pipeline_tree = pipeline_tree
-        prefix = f"{simplify_name_lower(input_data.name)}_{user.pk}_{project.pk}_{pipeline_leaf.pk}"
+        # prefix = f"{simplify_name_lower(input_data.name)}_{user.pk}_{project.pk}_{pipeline_leaf.pk}"
+        prefix = f"{simplify_name_lower(input_data.name)}_run{pipeline_leaf.index}"
         self.date_submitted = datetime.datetime.now()
 
         self.file_r1 = input_data.sample.get_fastq_available(TypePath.MEDIA_ROOT, True)

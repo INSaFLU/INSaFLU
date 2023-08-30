@@ -15,8 +15,8 @@ from django.utils.translation import ugettext_lazy as _
 from constants.software_names import SoftwareNames
 from datasets.models import Dataset
 from managing_files.models import Project, ProjectSample
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.models import Projects as TelevirProject
-from pathogen_identification.utilities.mapping_flags import MappingFlagBuild
 from pathogen_identification.utilities.utilities_pipeline import (
     Utility_Pipeline_Manager,
 )
@@ -197,7 +197,7 @@ class SoftwareForm(forms.ModelForm):
                 ):
                     list_data = [
                         [flag.build_name, flag.build_name]
-                        for flag in MappingFlagBuild.__subclasses__()
+                        for flag in PICS.FLAGS_AVAILABLE
                     ]
                 else:
                     list_data = [[parameter.parameter, parameter.parameter]]

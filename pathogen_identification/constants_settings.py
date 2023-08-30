@@ -8,7 +8,11 @@ import os
 import networkx as nx
 
 from fluwebvirus.settings import MEDIA_ROOT, STATIC_ROOT, STATICFILES_DIRS
-from pathogen_identification.utilities.mapping_flags import MapFlagViruses
+from pathogen_identification.utilities.mapping_flags import (
+    MapFlagBacteria,
+    MapFlagProbes,
+    MapFlagViruses,
+)
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -93,6 +97,12 @@ class ConstantsSettings:
     ################################## FLAG BUILDS
     FLAG_BUILD_DEFAULT = MapFlagViruses
 
+    FLAGS_AVAILABLE = [
+        MapFlagViruses,
+        MapFlagProbes,
+        # MapFlagBacteria,
+    ]
+
     ################################## Description filters
 
     DESCRIPTION_FILTERS = ["phage"]
@@ -122,5 +132,5 @@ class ConstantsSettings:
 
     ################################## constants
 
-    PAIR_END= "PE"
-    SINGLE_END= "SE"
+    PAIR_END = "PE"
+    SINGLE_END = "SE"

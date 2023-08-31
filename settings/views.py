@@ -107,6 +107,8 @@ class PISettingsView(LoginRequiredMixin, ListView):
         duplicate software global to project
         """
         ### get all global software
+        project_software_exist = self.check_project_params_exist(project)
+
         query_set = Software.objects.filter(
             owner=self.request.user,
             type_of_use__in=[
@@ -145,6 +147,11 @@ class PISettingsView(LoginRequiredMixin, ListView):
                 pass
 
             except Software.DoesNotExist:
+                if software.type_of_use == Software.TYPE_OF_USE_televir_project:
+                    if project_software_exist:
+                        if software.can_be_on_off_in_pipeline is True:
+                            software.is_to_run = False
+
                 software.save()
 
                 for parameter in software_parameters:

@@ -165,8 +165,9 @@ class Pipeline_Makeup:
         return list(self.MAKEUP.values())
 
     def match_makeup_name_from_list(self, makeup_list: list) -> Optional[int]:
+        makeup_safe= [x for x in makeup_list if x not in CS.PIPELINE_NAME_reporting]
         for makeup, mlist in self.MAKEUP.items():
-            if set(makeup_list) == set(mlist):
+            if set(makeup_safe) == set(mlist):
                 return makeup
         return None
 
@@ -176,15 +177,9 @@ class Pipeline_Makeup:
     def get_software_pipeline_list_including(
         self, software: Software, televir_project: Optional[Projects] = None
     ):
-        use_types = [
-            Software.TYPE_OF_USE_televir_global,
-            Software.TYPE_OF_USE_televir_settings,
-        ]
+        use_types = Software.TELEVIR_GLOBAL_TYPES
         if televir_project:
-            use_types = [
-                Software.TYPE_OF_USE_televir_project,
-                Software.TYPE_OF_USE_televir_project_settings,
-            ]
+            use_types = Software.TELEVIR_PROJECT_TYPES
 
         pipeline_steps_project = Software.objects.filter(
             type_of_use__in=use_types,
@@ -193,20 +188,19 @@ class Pipeline_Makeup:
             is_to_run=True,
             owner=software.owner,
         ).values_list("pipeline_step__name", flat=True)
-        return list(pipeline_steps_project)
+
+        pipeline_steps_project = list(pipeline_steps_project)
+
+        pipeline_steps_project.append(software.pipeline_step.name)
+
+        return pipeline_steps_project
 
     def get_software_pipeline_list_excluding(
         self, software: Software, televir_project: Optional[Projects] = None
     ):
-        use_types = [
-            Software.TYPE_OF_USE_televir_global,
-            Software.TYPE_OF_USE_televir_settings,
-        ]
+        use_types = Software.TELEVIR_GLOBAL_TYPES
         if televir_project:
-            use_types = [
-                Software.TYPE_OF_USE_televir_project,
-                Software.TYPE_OF_USE_televir_project_settings,
-            ]
+            use_types = Software.TELEVIR_PROJECT_TYPES
 
         pipeline_steps_project = (
             Software.objects.filter(
@@ -223,7 +217,7 @@ class Pipeline_Makeup:
         return list(pipeline_steps_project)
 
     def get_pipeline_makeup_result_of_operation(
-        self, software, turn_off=True, televir_project: Projects = None
+        self, software, turn_off=True, televir_project: Optional[Projects] = None
     ):
         pipeline_steps_project = []
 
@@ -934,7 +928,7 @@ class Utility_Pipeline_Manager:
 
     def get_software_list(self):
         self.software_name_list = Software.objects.filter(
-            type_of_use=Software.TYPE_OF_USE_televir_global
+            type_of_use__in=Software.TELEVIR_GLOBAL_TYPES,
         ).values_list("name", flat=True)
 
     def get_software_db_dict(self):
@@ -1494,7 +1488,7 @@ class Parameter_DB_Utility:
         """
 
         software_available = Software.objects.filter(
-            type_of_use=Software.TYPE_OF_USE_televir_global,
+            type_of_use__in=Software.TELEVIR_GLOBAL_TYPES,
             technology__name=technology,
             is_to_run=True,
             owner=owner,
@@ -1517,7 +1511,7 @@ class Parameter_DB_Utility:
         """
 
         software_available = Software.objects.filter(
-            type_of_use=Software.TYPE_OF_USE_televir_global,
+            type_of_use__in=Software.TELEVIR_GLOBAL_TYPES,
             technology__name=technology,
             owner=user,
         ).distinct()
@@ -1537,9 +1531,10 @@ class Parameter_DB_Utility:
         """
         Get software tables for a user
         """
+
         software_available = Software.objects.filter(
             owner=owner,
-            type_of_use=Software.TYPE_OF_USE_televir_project,
+            type_of_use__in=Software.TELEVIR_PROJECT_TYPES,
             technology__name=project.technology,
             is_to_run=True,
         )
@@ -1558,7 +1553,8 @@ class Parameter_DB_Utility:
         self, software_table: pd.DataFrame, parameters_table: pd.DataFrame
     ):
         """"""
-
+        print("just before merge")
+        print(software_table.name.unique())
         combined_table = pd.merge(
             software_table, parameters_table, left_on="id", right_on="software_id"
         )
@@ -1575,7 +1571,11 @@ class Parameter_DB_Utility:
             }
         )
 
-        combined_table = combined_table[combined_table.type_of_use.isin([5, 6])]
+        combined_table = combined_table[
+            combined_table.type_of_use.isin(
+                Software.TELEVIR_GLOBAL_TYPES + Software.TELEVIR_PROJECT_TYPES
+            )
+        ]
 
         combined_table["pipeline_step"] = combined_table["pipeline_step_id"].apply(
             lambda x: PipelineStep.objects.get(id=int(x)).name
@@ -1992,6 +1992,7 @@ class Utils_Manager:
         combined_table = self.parameter_util.generate_combined_parameters_table(
             technology, user
         )
+        print(combined_table.software_name.unique())
 
         for makeup in pipeline_setup.get_makeup_list():
             if self.check_pipeline_possible(combined_table, makeup):

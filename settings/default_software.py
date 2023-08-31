@@ -4,6 +4,7 @@ Created on 03/05/2020
 @author: mmp
 """
 from curses.ascii import SO
+
 from django.contrib.auth.models import User
 
 from constants.software_names import SoftwareNames
@@ -11,11 +12,10 @@ from pathogen_identification.utilities.utilities_pipeline import (
     Utility_Pipeline_Manager,
     Utils_Manager,
 )
-from utils.lock_atomic_transaction import LockedAtomicTransaction
-
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.models import Parameter, Software
+from utils.lock_atomic_transaction import LockedAtomicTransaction
 
 
 class DefaultSoftware(object):
@@ -231,7 +231,6 @@ class DefaultSoftware(object):
         self.test_all_defaults_pathogen_identification(user)
 
     def test_all_defaults_pathogen_identification(self, user):
-
         self.test_default_db(
             SoftwareNames.SOFTWARE_REMAP_PARAMS_name,
             self.default_parameters.get_remap_defaults(
@@ -723,7 +722,7 @@ class DefaultSoftware(object):
             technology_name,
         )
         return "" if result is None else result
-    
+
     def get_prinseq_parameters(self, user, technology_name):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_PRINSEQ_name,
@@ -747,7 +746,7 @@ class DefaultSoftware(object):
             technology_name,
         )
         return "" if result is None else result
-    
+
     def get_televir_report_layout_parameters(self, user, technology_name):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_televir_report_layout_name,
@@ -1139,7 +1138,7 @@ class DefaultSoftware(object):
                 user,
             )
             return self.get_remap_parameters(user, technology_name)
-        
+
         if software_name == SoftwareNames.SOFTWARE_PRINSEQ_name:
             self.test_default_db(
                 SoftwareNames.SOFTWARE_PRINSEQ_name,
@@ -1163,7 +1162,7 @@ class DefaultSoftware(object):
                 user,
             )
             return self.get_bamutil_parameters(user, technology_name)
-        
+
         if software_name == SoftwareNames.SOFTWARE_televir_report_layout_name:
             self.test_default_db(
                 SoftwareNames.SOFTWARE_televir_report_layout_name,

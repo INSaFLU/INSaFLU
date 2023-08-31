@@ -129,7 +129,6 @@ class PISettingsView(LoginRequiredMixin, ListView):
         )
         project = Televir_Project.objects.get(pk=project.pk)
         for software in query_set:
-            print(software.name)
             software_parameters = Parameter.objects.filter(
                 software=software,
             )

@@ -112,7 +112,6 @@ class DefaultParameters(object):
         persist a specific software by default
         param: type_of_use Can by Software.TYPE_OF_USE_project; Software.TYPE_OF_USE_project_sample
         """
-        print("persisting parameters: " + str(len(vect_parameters)), type_of_use)
         software = None
         dt_out_sequential = {}
         for parameter in vect_parameters:

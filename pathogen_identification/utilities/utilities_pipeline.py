@@ -2,7 +2,7 @@ import itertools as it
 import logging
 import os
 from collections import defaultdict
-from typing import Dict, List, Tuple, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import networkx as nx
 import numpy as np
@@ -24,6 +24,7 @@ from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
 
 tree = lambda: defaultdict(tree)
+
 
 def make_tree(lst):
     d = tree()
@@ -58,23 +59,26 @@ class Pipeline_Makeup:
     ROOT = "root"
     ASSEMBLY_SPECIAL_STEP = "ASSEMBLY_SPECIAL"
     VIRAL_ENRICHMENT_SPECIAL_STEP = "VIRAL_ENRICHMENT"
-    SINK= "sink"
+    SINK = "sink"
 
     dependencies_graph_edges = {
         CS.PIPELINE_NAME_extra_qc: [ROOT],
         CS.PIPELINE_NAME_viral_enrichment: [ROOT, CS.PIPELINE_NAME_extra_qc],
         VIRAL_ENRICHMENT_SPECIAL_STEP: [ROOT, CS.PIPELINE_NAME_extra_qc],
         CS.PIPELINE_NAME_host_depletion: [
-            ROOT, CS.PIPELINE_NAME_extra_qc,
+            ROOT,
+            CS.PIPELINE_NAME_extra_qc,
             CS.PIPELINE_NAME_viral_enrichment,
         ],
         CS.PIPELINE_NAME_read_classification: [
-            ROOT, CS.PIPELINE_NAME_extra_qc,
+            ROOT,
+            CS.PIPELINE_NAME_extra_qc,
             VIRAL_ENRICHMENT_SPECIAL_STEP,
             CS.PIPELINE_NAME_host_depletion,
         ],
         CS.PIPELINE_NAME_assembly: [
-            ROOT, CS.PIPELINE_NAME_extra_qc,
+            ROOT,
+            CS.PIPELINE_NAME_extra_qc,
             CS.PIPELINE_NAME_read_classification,
             CS.PIPELINE_NAME_host_depletion,
             VIRAL_ENRICHMENT_SPECIAL_STEP,
@@ -93,7 +97,7 @@ class Pipeline_Makeup:
             CS.PIPELINE_NAME_contig_classification,
             CS.PIPELINE_NAME_read_classification,
             ASSEMBLY_SPECIAL_STEP,
-            ],
+        ],
         SINK: [CS.PIPELINE_NAME_remapping],
     }
 
@@ -124,7 +128,6 @@ class Pipeline_Makeup:
             for x in dpath
             if x not in [self.ROOT, self.SINK]
         ]
-
 
         return dpath[::-1]
 
@@ -161,24 +164,30 @@ class Pipeline_Makeup:
     ):
         return list(self.MAKEUP.values())
 
-    def match_makeup_name_from_list(self, makeup_list: list):
+    def match_makeup_name_from_list(self, makeup_list: list) -> Optional[int]:
         for makeup, mlist in self.MAKEUP.items():
             if set(makeup_list) == set(mlist):
                 return makeup
         return None
 
-    def makeup_available(self, makeup: int):
+    def makeup_available(self, makeup: int) -> bool:
         return makeup in self.MAKEUP
 
     def get_software_pipeline_list_including(
-        self, software: Software, televir_project: Projects = None
+        self, software: Software, televir_project: Optional[Projects] = None
     ):
-        type_of_use = Software.TYPE_OF_USE_televir_global
+        use_types = [
+            Software.TYPE_OF_USE_televir_global,
+            Software.TYPE_OF_USE_televir_settings,
+        ]
         if televir_project:
-            type_of_use = Software.TYPE_OF_USE_televir_project
+            use_types = [
+                Software.TYPE_OF_USE_televir_project,
+                Software.TYPE_OF_USE_televir_project_settings,
+            ]
 
         pipeline_steps_project = Software.objects.filter(
-            type_of_use=type_of_use,
+            type_of_use__in=use_types,
             technology=software.technology,
             parameter__televir_project=televir_project,
             is_to_run=True,
@@ -187,15 +196,21 @@ class Pipeline_Makeup:
         return list(pipeline_steps_project)
 
     def get_software_pipeline_list_excluding(
-        self, software: Software, televir_project: Projects = None
+        self, software: Software, televir_project: Optional[Projects] = None
     ):
-        type_of_use = Software.TYPE_OF_USE_televir_global
+        use_types = [
+            Software.TYPE_OF_USE_televir_global,
+            Software.TYPE_OF_USE_televir_settings,
+        ]
         if televir_project:
-            type_of_use = Software.TYPE_OF_USE_televir_project
+            use_types = [
+                Software.TYPE_OF_USE_televir_project,
+                Software.TYPE_OF_USE_televir_project_settings,
+            ]
 
         pipeline_steps_project = (
             Software.objects.filter(
-                type_of_use=type_of_use,
+                type_of_use__in=use_types,
                 technology=software.technology,
                 parameter__televir_project=televir_project,
                 is_to_run=True,
@@ -582,22 +597,21 @@ class PipelineTree:
             for leaf in self.leaves:
                 if leaf in list:
                     return leaf
-            
+
             return None
-                
-                
-        nodes_with_leaves= {}
+
+        nodes_with_leaves = {}
         for node in new_nodes:
             if node[0] in self.leaves:
                 continue
-            leaf_found= check_leaf_in_list(node[1])
+            leaf_found = check_leaf_in_list(node[1])
             if leaf_found is not None:
-                nodes_with_leaves[node[0]]= leaf_found
-        
+                nodes_with_leaves[node[0]] = leaf_found
+
         for node, leaf in nodes_with_leaves.items():
             new_nodes.append([leaf, ()])
             edge_compress.append([node, leaf])
-        
+
         self.nodes_compress = new_nodes
         self.edge_compress = edge_compress
 
@@ -808,6 +822,7 @@ class Utility_Pipeline_Manager:
         pipe_makeup_manager = Pipeline_Makeup()
 
         pipelines_available = combined_table.pipeline_step.unique().tolist()
+
         self.pipeline_makeup = pipe_makeup_manager.match_makeup_name_from_list(
             pipelines_available
         )
@@ -1107,7 +1122,7 @@ class Utility_Pipeline_Manager:
             parent = (edge[0], pipeline_tree.nodes[edge[0]])
             child = (edge[1], pipeline_tree.nodes[edge[1]])
             nodes_dict[parent].append(child)
-        
+
         nodes_dict = {
             x: pd.DataFrame([[z] for z in y], columns=["child"]).set_index("child")
             for x, y in nodes_dict.items()
@@ -1193,60 +1208,77 @@ class Utility_Pipeline_Manager:
             parent_main = child_main
 
     @staticmethod
-    def pipe_tree_reconstruct(nodes_index_dict: dict, explicit_edge_dict: dict, technology: str, makeup: int):
+    def pipe_tree_reconstruct(
+        nodes_index_dict: dict, explicit_edge_dict: dict, technology: str, makeup: int
+    ):
         """
         Reconstruct pipeline tree from nodes index dict and explicit edge dict
         """
-        nodes= sorted(nodes_index_dict.keys(), key=lambda x: x[0])
-        nodes= [x[1] for x in nodes]
-        edges= []
+        nodes = sorted(nodes_index_dict.keys(), key=lambda x: x[0])
+        nodes = [x[1] for x in nodes]
+        edges = []
 
-        explicit_edge_dict= {x: y for x, y in explicit_edge_dict.items() if x in nodes_index_dict.keys()}
-
+        explicit_edge_dict = {
+            x: y for x, y in explicit_edge_dict.items() if x in nodes_index_dict.keys()
+        }
 
         for node, child_index in explicit_edge_dict.items():
-            
             for child in child_index.index:
                 edges.append([nodes_index_dict[node], nodes_index_dict[child]])
-            
-        leaves= []
+
+        leaves = []
         for node in nodes_index_dict.keys():
             if node in explicit_edge_dict.keys():
                 if len(explicit_edge_dict[node]) == 0:
                     leaves.append(nodes_index_dict[node])
 
         return PipelineTree(
-            technology=technology, 
-            nodes=nodes, edges=edges, 
-            leaves=leaves, 
-            makeup=makeup, 
-            sorted= True)
+            technology=technology,
+            nodes=nodes,
+            edges=edges,
+            leaves=leaves,
+            makeup=makeup,
+            sorted=True,
+        )
 
-    
-    def match_path_to_tree_extend(self, explicit_path: list, pipe_tree: PipelineTree) -> PipelineTree:
+    def match_path_to_tree_extend(
+        self, explicit_path: list, pipe_tree: PipelineTree
+    ) -> PipelineTree:
         """
         Match explicit path to pipeline tree and extend the tree if necessary
         """
 
         self.logger.info("Matching path to tree")
-        tree_nodes= pipe_tree.nodes.copy()
+        tree_nodes = pipe_tree.nodes.copy()
         self.logger.info("Generating node index dict")
         nodes_index_dict = self.node_index_dict(pipe_tree)
         self.logger.info("Generating explicit edge dict")
         explicit_edge_dict = self.generate_explicit_edge_dict(pipe_tree)
 
-        nodes_index_dict_ext, explicit_edge_dict_ext, tree_nodes_ext= self.extend_tree_dicts(
-            explicit_path, 
-            nodes_index_dict, 
-            explicit_edge_dict, 
-            tree_nodes)
-        
-        extended_tree= self.pipe_tree_reconstruct(nodes_index_dict_ext, explicit_edge_dict_ext, pipe_tree.technology, pipe_tree.makeup)
+        (
+            nodes_index_dict_ext,
+            explicit_edge_dict_ext,
+            tree_nodes_ext,
+        ) = self.extend_tree_dicts(
+            explicit_path, nodes_index_dict, explicit_edge_dict, tree_nodes
+        )
+
+        extended_tree = self.pipe_tree_reconstruct(
+            nodes_index_dict_ext,
+            explicit_edge_dict_ext,
+            pipe_tree.technology,
+            pipe_tree.makeup,
+        )
 
         return extended_tree
-    
-    def extend_tree_dicts(self, explicit_path: list, nodes_index_dict: dict, explicit_edge_dict: dict, tree_nodes: list):
 
+    def extend_tree_dicts(
+        self,
+        explicit_path: list,
+        nodes_index_dict: dict,
+        explicit_edge_dict: dict,
+        tree_nodes: list,
+    ):
         parent = explicit_path[0]
         parent_main = (0, ("root", None, None))
         child_main = None
@@ -1257,31 +1289,39 @@ class Utility_Pipeline_Manager:
                     return nd
 
             raise KeyError
-        
+
         def add_node(node, nodes: list):
-            """ Add node to nodes list and return index"""
-            #if node[1] in nodes:
+            """Add node to nodes list and return index"""
+            # if node[1] in nodes:
             #    return nodes.index(node[1])
-            #else:
+            # else:
             nodes.append(node[1])
             return len(nodes) - 1
-        
+
         def update_nodes_index(new_node, df: pd.DataFrame):
-            """ Add new node to nodes index dict 
-            """
-            df = df.append(pd.DataFrame([[new_node]], columns=["child"]).set_index("child"))
+            """Add new node to nodes index dict"""
+            df = df.append(
+                pd.DataFrame([[new_node]], columns=["child"]).set_index("child")
+            )
             return df
 
-        def update_explicit_edge_dict(explicit_edge_dict: Dict[tuple, pd.DataFrame], parent_main: tuple, child_main: tuple):
-            """ Add new node to nodes index dict 
-            """
+        def update_explicit_edge_dict(
+            explicit_edge_dict: Dict[tuple, pd.DataFrame],
+            parent_main: tuple,
+            child_main: tuple,
+        ):
+            """Add new node to nodes index dict"""
 
             if parent_main in explicit_edge_dict.keys():
-                explicit_edge_dict[parent_main]= update_nodes_index(child_main, explicit_edge_dict[parent_main])
-            
-            else: 
-                explicit_edge_dict[parent_main]= pd.DataFrame([[child_main]], columns=["child"]).set_index("child")
-            
+                explicit_edge_dict[parent_main] = update_nodes_index(
+                    child_main, explicit_edge_dict[parent_main]
+                )
+
+            else:
+                explicit_edge_dict[parent_main] = pd.DataFrame(
+                    [[child_main]], columns=["child"]
+                ).set_index("child")
+
             return explicit_edge_dict
 
         self.logger.info("Initialize matching nodes")
@@ -1291,8 +1331,10 @@ class Utility_Pipeline_Manager:
         self.logger.info("Matching nodes iterating through explicit path")
 
         if parent_main not in explicit_edge_dict.keys():
-            explicit_edge_dict[parent_main]= pd.DataFrame(columns=["child"]).set_index("child")
-            nodes_index_dict[parent_main]= 0
+            explicit_edge_dict[parent_main] = pd.DataFrame(columns=["child"]).set_index(
+                "child"
+            )
+            nodes_index_dict[parent_main] = 0
 
         for child in explicit_path[1:]:
             self.logger.info("--------------------")
@@ -1306,10 +1348,12 @@ class Utility_Pipeline_Manager:
                 )
 
             except KeyError:
-                child_main= (add_node(child, tree_nodes), child[1])
+                child_main = (add_node(child, tree_nodes), child[1])
                 nodes_index_dict[child_main] = child_main[0]
 
-                explicit_edge_dict= update_explicit_edge_dict(explicit_edge_dict, parent_main, child_main)
+                explicit_edge_dict = update_explicit_edge_dict(
+                    explicit_edge_dict, parent_main, child_main
+                )
 
             self.logger.info(f"Child main: {child_main}")
 
@@ -1317,33 +1361,27 @@ class Utility_Pipeline_Manager:
                 nodes_index_dict[child_main]
             except KeyError:
                 self.logger.info(f"{child_main} node not in tree nodes")
-                #return None
+                # return None
 
             if child_main not in explicit_edge_dict[parent_main].index:
                 self.logger.info(f"Child {child} not in parent {parent}")
-                #return None
+                # return None
 
             parent = child
             parent_main = child_main
-        
-        if child_main not in explicit_edge_dict.keys():
-            explicit_edge_dict[child_main]= pd.DataFrame(columns=["child"]).set_index("child")
 
+        if child_main not in explicit_edge_dict.keys():
+            explicit_edge_dict[child_main] = pd.DataFrame(columns=["child"]).set_index(
+                "child"
+            )
 
         return nodes_index_dict, explicit_edge_dict, tree_nodes
-        
-        
-
 
     def update_tree_paths(self, pipe_tree: PipelineTree, explicit_paths: list):
-
         for path in explicit_paths:
-            pipe_tree= self.match_path_to_tree_extend(path, pipe_tree)
-        
-        
+            pipe_tree = self.match_path_to_tree_extend(path, pipe_tree)
 
     def compress_software_tree(self, software_tree: PipelineTree):
-
         software_tree.compress_tree()
 
         software_tree.split_modules()
@@ -1525,7 +1563,7 @@ class Parameter_DB_Utility:
             software_table, parameters_table, left_on="id", right_on="software_id"
         )
 
-        combined_table= combined_table.rename(
+        combined_table = combined_table.rename(
             columns={
                 "id_x": "software_id",
                 "id_y": "parameter_id",
@@ -1548,7 +1586,7 @@ class Parameter_DB_Utility:
         )
 
         combined_table = combined_table.reset_index(drop=True)
-        software_names= combined_table["software_name"].values 
+        software_names = combined_table["software_name"].values
 
         ## remove duplicate columns
         #
@@ -1556,7 +1594,7 @@ class Parameter_DB_Utility:
             :, ~combined_table.T.duplicated(keep="last")
         ]
 
-        combined_table["software_name"]= software_names
+        combined_table["software_name"] = software_names
 
         return combined_table
 
@@ -1599,8 +1637,9 @@ class Parameter_DB_Utility:
         return merged_table
 
     @staticmethod
-    def convert_softwaretree_to_pipeline_tree(software_tree: SoftwareTree) -> PipelineTree:
-
+    def convert_softwaretree_to_pipeline_tree(
+        software_tree: SoftwareTree,
+    ) -> PipelineTree:
         tree_nodes = SoftwareTreeNode.objects.filter(software_tree=software_tree)
 
         edges = []
@@ -1633,7 +1672,6 @@ class Parameter_DB_Utility:
 
         except ParameterSet.DoesNotExist:
             return False
-    
 
     def check_ParameterSet_available(
         self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
@@ -1691,7 +1729,6 @@ class Parameter_DB_Utility:
     def check_ParameterSet_available_to_run(
         self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
     ):
-
         if not self.check_ParameterSet_exists(sample, leaf, project):
             return True
 
@@ -1764,7 +1801,6 @@ class Parameter_DB_Utility:
             pass
 
 
-
 class Utils_Manager:
     """Combines Utility classes to create a manager for the pipeline."""
 
@@ -1775,7 +1811,6 @@ class Utils_Manager:
     def __init__(self):
         ###
         self.parameter_util = Parameter_DB_Utility()
-        
 
         self.utility_repository = Utility_Repository(
             db_path=Televir_Directories.docker_app_directory,
@@ -1847,7 +1882,6 @@ class Utils_Manager:
         samples_leaf_dict = {sample: [] for sample in submission_dict.keys()}
 
         for sample in submission_dict.keys():
-
             for leaf, matched_path_node in available_path_nodes.items():
                 exists = self.parameter_util.check_ParameterSet_exists(
                     sample=sample, leaf=matched_path_node, project=project
@@ -1886,14 +1920,13 @@ class Utils_Manager:
         if len(leaves) == 0:
             return tree
 
-
         reduced_dag, reduced_node_index = tree.reduced_tree(leaves)
 
         reduced_tree = self.pipe_tree_from_dag_dict(
             reduced_dag, reduced_node_index, tree.technology, tree.makeup
         )
 
-        reduced_tree.software_tree_pk= tree.software_tree_pk
+        reduced_tree.software_tree_pk = tree.software_tree_pk
 
         return reduced_tree
 
@@ -1990,54 +2023,49 @@ class Utils_Manager:
 
 
 class SoftwareTreeUtils:
-
     def __init__(self, user: User, project: Projects):
-
-        self.user= user
-        self.project= project
-        self.technology= project.technology
-        self.logger= logging.getLogger(__name__)
+        self.user = user
+        self.project = project
+        self.technology = project.technology
+        self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.ERROR)
 
-        self.utils_manager= Utils_Manager()
-        self.parameter_util= Parameter_DB_Utility()
-        self.utility_manager= Utility_Pipeline_Manager()
-    
+        self.utils_manager = Utils_Manager()
+        self.parameter_util = Parameter_DB_Utility()
+        self.utility_manager = Utility_Pipeline_Manager()
+
     ###############################################
     ###############################################  SOFTWARE TREE CONNECTIONS
 
-    def query_software_tree(
-        self, global_index: int) -> SoftwareTree:
+    def query_software_tree(self, global_index: int) -> SoftwareTree:
         """
         Query software tree
         """
         try:
-
             software_tree = (
                 SoftwareTree.objects.filter(
-                    global_index=global_index, 
-                    technology=self.technology, 
-                    model= ConstantsSettings.PIPELINE_MODEL,
-                    project= self.project,
-                    owner= self.user,
+                    global_index=global_index,
+                    technology=self.technology,
+                    model=ConstantsSettings.PIPELINE_MODEL,
+                    project=self.project,
+                    owner=self.user,
                 )
                 .order_by("date_created")
                 .last()
             )
-        
+
         except SoftwareTree.DoesNotExist:
             software_tree = None
         return software_tree
 
-
     def check_default_software_tree_exists(
-        self, global_index: int, 
+        self,
+        global_index: int,
     ):
         try:
-
             software_tree = self.query_software_tree(
-                    global_index=global_index, 
-                )
+                global_index=global_index,
+            )
 
             if software_tree:
                 return True
@@ -2046,10 +2074,9 @@ class SoftwareTreeUtils:
 
         except SoftwareTree.DoesNotExist:
             return False
-        
+
         except Exception as e:
             print(e)
-        
 
     def get_software_tree_index(self, global_index: int) -> Optional[int]:
         """
@@ -2058,8 +2085,8 @@ class SoftwareTreeUtils:
 
         if self.check_default_software_tree_exists(global_index):
             software_tree = self.query_software_tree(
-                    global_index=global_index, 
-                )
+                global_index=global_index,
+            )
 
             return software_tree.pk
         else:
@@ -2067,7 +2094,6 @@ class SoftwareTreeUtils:
 
     @staticmethod
     def software_pipeline_tree(software_tree: SoftwareTree) -> PipelineTree:
-
         tree_nodes = SoftwareTreeNode.objects.filter(software_tree=software_tree)
 
         edges = []
@@ -2089,20 +2115,20 @@ class SoftwareTreeUtils:
         )
 
     def query_software_default_tree(
-        self, global_index: int, 
+        self,
+        global_index: int,
     ) -> PipelineTree:
         """
         Generate a default pipeline tree for a user
         """
 
         software_tree = self.query_software_tree(
-                global_index=global_index, 
-            )
-        
+            global_index=global_index,
+        )
+
         if not software_tree:
             return None
         return self.software_pipeline_tree(software_tree)
-
 
     def update_software_tree(self, tree: PipelineTree):
         """
@@ -2111,9 +2137,9 @@ class SoftwareTreeUtils:
         global_index = tree.makeup
 
         software_tree = self.query_software_tree(
-                global_index=global_index, 
-            )
-        
+            global_index=global_index,
+        )
+
         if not software_tree:
             self.logger.info("Creating new software tree")
             software_tree = SoftwareTree(
@@ -2121,13 +2147,13 @@ class SoftwareTreeUtils:
                 technology=tree.technology,
                 version=0,
                 model=ConstantsSettings.PIPELINE_MODEL,
-                project= self.project,
-                owner= self.user,
+                project=self.project,
+                owner=self.user,
             )
 
             software_tree.save()
 
-            tree.software_tree_pk= software_tree.pk
+            tree.software_tree_pk = software_tree.pk
 
         self.update_SoftwareTree_nodes(software_tree, tree)
 
@@ -2137,44 +2163,45 @@ class SoftwareTreeUtils:
         """
         Update the nodes of a software tree
         """
- 
+
         parent_dict = tree.get_parents_dict()
 
         for index, node in enumerate(tree.nodes):
             is_leaf = int(index in tree.leaves)
-            name=node[0]
-            value=node[1]
-            node_type=node[2]
+            name = node[0]
+            value = node[1]
+            node_type = node[2]
 
             try:
                 tree_node = SoftwareTreeNode.objects.get(
-                    software_tree=software_tree, index=index,
-                    name= name, value= value, node_type= node_type,
+                    software_tree=software_tree,
+                    index=index,
+                    name=name,
+                    value=value,
+                    node_type=node_type,
                 )
 
             except SoftwareTreeNode.DoesNotExist:
-
                 try:
-
                     with LockedAtomicTransaction(SoftwareTreeNode):
-
                         parent_node_index = parent_dict.get(index, None)
-                        parent_node= None
+                        parent_node = None
 
                         if parent_node_index != None:
-                            parent_node= tree.nodes[parent_node_index]
-                            parent_name= parent_node[0]
-                            parent_value= parent_node[1]
-                            parent_type= parent_node[2]
+                            parent_node = tree.nodes[parent_node_index]
+                            parent_name = parent_node[0]
+                            parent_value = parent_node[1]
+                            parent_type = parent_node[2]
                             parent_node = SoftwareTreeNode.objects.filter(
-                                software_tree=software_tree, index=parent_dict[index],
-                                name= parent_name, value= parent_value, node_type= parent_type,
+                                software_tree=software_tree,
+                                index=parent_dict[index],
+                                name=parent_name,
+                                value=parent_value,
+                                node_type=parent_type,
                             )
                             if parent_node.exists():
-                                parent_node= parent_node.first()
-                            
-                        
-                        
+                                parent_node = parent_node.first()
+
                         tree_node = SoftwareTreeNode(
                             software_tree=software_tree,
                             index=index,
@@ -2185,18 +2212,17 @@ class SoftwareTreeUtils:
                             node_place=is_leaf,
                         )
                         tree_node.save()
-                
+
                 except Exception as e:
                     print(e)
                     print(index, name, value)
-            
+
             except Exception as e:
                 print(e)
-    
+
     ############################################################################
     ####################################################### PROJECT TREE METHODS
     ########## #### OLD METHODS
-
 
     def generate_software_base_tree(self, technology, tree_makeup: int):
         """
@@ -2240,9 +2266,7 @@ class SoftwareTreeUtils:
 
         pipeline_tree = self.utility_manager.generate_default_software_tree()
 
-        if self.check_default_software_tree_exists(
-            global_index=tree_makeup
-        ):
+        if self.check_default_software_tree_exists(global_index=tree_makeup):
             existing_pipeline_tree = self.query_software_default_tree(
                 global_index=tree_makeup
             )
@@ -2258,7 +2282,6 @@ class SoftwareTreeUtils:
 
         return pipeline_tree
 
-
     def generate_default_trees(self):
         """
         Generate default trees for all technologies and makeups
@@ -2267,17 +2290,18 @@ class SoftwareTreeUtils:
         pipeline_makeup = Pipeline_Makeup()
 
         for technology in self.utils_manager.utility_technologies:
-            if not self.utils_manager.check_any_pipeline_possible(technology, self.user):
+            if not self.utils_manager.check_any_pipeline_possible(
+                technology, self.user
+            ):
                 continue
             for makeup in pipeline_makeup.get_makeup_list():
                 technology_trees[technology] = self.generate_software_base_tree(
                     technology, makeup, self.user
                 )
 
-
     ################################
     ################################ NEW METHODS
-    
+
     def generate_project_tree(self) -> PipelineTree:
         """
         Generate a project tree
@@ -2298,12 +2322,12 @@ class SoftwareTreeUtils:
                 leaves=[],
                 makeup=0,
             )
-        
+
         self.logger.info("Generating project tree")
 
         pipeline_tree = utility_drone.generate_default_software_tree()
 
-        pipeline_tree= self.prep_tree_for_extend(pipeline_tree)
+        pipeline_tree = self.prep_tree_for_extend(pipeline_tree)
 
         return pipeline_tree
 
@@ -2314,7 +2338,8 @@ class SoftwareTreeUtils:
         utils = Utils_Manager()
 
         import time
-        t1= time.time()
+
+        t1 = time.time()
 
         local_tree = self.generate_project_tree()
 
@@ -2322,16 +2347,16 @@ class SoftwareTreeUtils:
 
         tree_makeup = local_tree.makeup
 
-        #pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
-        pipeline_tree= self.generate_software_tree_extend(local_tree=local_tree)
-        t2= time.time()
+        # pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
+        pipeline_tree = self.generate_software_tree_extend(local_tree=local_tree)
+        t2 = time.time()
         ### MANAGEMENT
 
         matched_paths = {
             leaf: utils.utility_manager.match_path_to_tree_safe(path, pipeline_tree)
             for leaf, path in local_paths.items()
         }
-        
+
         available_paths = {
             leaf: path for leaf, path in matched_paths.items() if path is not None
         }
@@ -2342,7 +2367,6 @@ class SoftwareTreeUtils:
             )
             for leaf, leaf_index in available_paths.items()
         }
-
 
         return available_path_nodes
 
@@ -2360,9 +2384,7 @@ class SoftwareTreeUtils:
 
         return clean_samples_leaf_dict
 
-    def check_runs_to_deploy_sample(
-        self, sample: PIProject_Sample
-    ) -> dict:
+    def check_runs_to_deploy_sample(self, sample: PIProject_Sample) -> dict:
         """
         Check if there are runs to run. sets to queue if there are.
         """
@@ -2391,15 +2413,11 @@ class SoftwareTreeUtils:
         Generate a software tree for a technology and a tree makeup
         """
 
-        if self.check_default_software_tree_exists(
-            global_index=tree_makeup
-        ):
-            return self.query_software_default_tree(
-                global_index=tree_makeup
-            )
+        if self.check_default_software_tree_exists(global_index=tree_makeup):
+            return self.query_software_default_tree(global_index=tree_makeup)
         else:
             raise Exception("No software tree for technology")
-    
+
     def generate_software_tree_register(self, local_tree: PipelineTree):
         """
         Generate a software tree for a technology and a tree makeup
@@ -2407,37 +2425,31 @@ class SoftwareTreeUtils:
         tree_makeup = local_tree.makeup
         technology = local_tree.technology
 
-        if self.check_default_software_tree_exists(
-            global_index=tree_makeup
-        ) is False:
+        if self.check_default_software_tree_exists(global_index=tree_makeup) is False:
             self.update_software_tree(local_tree)
-        
-        pipeline_tree= self.query_software_default_tree(
-                global_index=tree_makeup
-            )
+
+        pipeline_tree = self.query_software_default_tree(global_index=tree_makeup)
 
         if len(pipeline_tree.nodes) == 0:
             self.update_software_tree(local_tree)
-        
+
         return pipeline_tree
 
     def generate_software_tree_extend(self, local_tree: PipelineTree):
-        """ Generate Software Tree Register and extend with local paths
-        """
-        local_paths= local_tree.get_all_graph_paths_explicit()
-        pipeline_tree= self.generate_software_tree_register(local_tree)
+        """Generate Software Tree Register and extend with local paths"""
+        local_paths = local_tree.get_all_graph_paths_explicit()
+        pipeline_tree = self.generate_software_tree_register(local_tree)
         for leaf, path in local_paths.items():
-            pipeline_tree= self.utility_manager.match_path_to_tree_extend(
+            pipeline_tree = self.utility_manager.match_path_to_tree_extend(
                 path, pipeline_tree
             )
         self.update_software_tree(pipeline_tree)
-        pipeline_tree= self.prep_tree_for_extend(pipeline_tree)
+        pipeline_tree = self.prep_tree_for_extend(pipeline_tree)
         return pipeline_tree
-    
-    def prep_tree_for_extend(self, tree: PipelineTree):
 
-        tree.software_tree_pk= self.get_software_tree_index(
+    def prep_tree_for_extend(self, tree: PipelineTree):
+        tree.software_tree_pk = self.get_software_tree_index(
             tree.makeup,
-            )
-        
+        )
+
         return tree

@@ -1,23 +1,24 @@
 from braces.views import LoginRequiredMixin
-from constants.meta_key_and_values import MetaKeyAndValue
-from datasets.models import Dataset, DatasetConsensus
 from django.contrib import messages
 from django.db import transaction
 from django.urls import reverse_lazy
 from django.views.generic import ListView, TemplateView, UpdateView
+
+from constants.meta_key_and_values import MetaKeyAndValue
+from constants.software_names import SoftwareNames
+from datasets.manage_database import ManageDatabase as ManageDatasetDatabase
+from datasets.models import Dataset, DatasetConsensus
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
-from datasets.manage_database import ManageDatabase as ManageDatasetDatabase
 from managing_files.models import Project, ProjectSample, Sample
 from pathogen_identification.models import Projects as Televir_Project
-from utils.process_SGE import ProcessSGE
-from utils.utils import ShowInfoMainPage
-from constants.software_names import SoftwareNames
 from settings.constants_settings import ConstantsSettings
 from settings.default_software import DefaultSoftware
 from settings.forms import SoftwareForm
 from settings.models import Parameter, Software
 from settings.tables import SoftwaresTable
+from utils.process_SGE import ProcessSGE
+from utils.utils import ShowInfoMainPage
 
 # Create your views here.
 
@@ -99,7 +100,9 @@ class PISettingsView(LoginRequiredMixin, ListView):
                     parameter.televir_project = project
                     parameter.save()
 
-    def duplicate_software_params_global_project(self, project):
+    def duplicate_software_params_global_project_if_missing(
+        self, project: Televir_Project
+    ):
         """
         duplicate software global to project
         """
@@ -115,6 +118,8 @@ class PISettingsView(LoginRequiredMixin, ListView):
                 Software.TYPE_INSAFLU_PARAMETER,
             ],
             is_obsolete=False,
+            technology__name=project.technology,
+            parameter__televir_project=None,
         )
         project = Televir_Project.objects.get(pk=project.pk)
         for software in query_set:
@@ -128,13 +133,25 @@ class PISettingsView(LoginRequiredMixin, ListView):
             else:
                 software.type_of_use = Software.TYPE_OF_USE_televir_project_settings
 
-            software.save()
+            try:
+                Software.objects.get(
+                    name=software.name,
+                    type_of_use=software.type_of_use,
+                    parameter__televir_project=project,
+                    pipeline_step=software.pipeline_step,
+                )
 
-            for parameter in software_parameters:
-                parameter.pk = None
-                parameter.software = software
-                parameter.televir_project = project
-                parameter.save()
+            except Software.MultipleObjectsReturned:
+                pass
+
+            except Software.DoesNotExist:
+                software.save()
+
+                for parameter in software_parameters:
+                    parameter.pk = None
+                    parameter.software = software
+                    parameter.televir_project = project
+                    parameter.save()
 
     def check_project_params_exist(self, project):
         """
@@ -195,10 +212,10 @@ class PISettingsView(LoginRequiredMixin, ListView):
 
         ### project parameters
         if televir_project:
-            if not self.check_project_params_exist(televir_project):
-                self.duplicate_software_params_global_project(televir_project)
-            else:
-                self.update_software_params_global_project(televir_project)
+            # if not self.check_project_params_exist(televir_project):
+            self.duplicate_software_params_global_project_if_missing(televir_project)
+            # else:
+            self.update_software_params_global_project(televir_project)
 
             technologies = [televir_project.technology]
 
@@ -212,11 +229,11 @@ class PISettingsView(LoginRequiredMixin, ListView):
         ## Mix parameters with software
         ### IMPORTANT, must have technology__name, because old versions don't
         constant_settings = ConstantsSettings()
-        condensed_pipeline_names= constant_settings.vect_pipeline_names_condensed
+        condensed_pipeline_names = constant_settings.vect_pipeline_names_condensed
         for technology in technologies:  ## run over all technology
             vect_pipeline_step = []
             for pipeline_step_name, pipeline_steps in condensed_pipeline_names.items():
-            #for pipeline_step in ConstantsSettings.vect_pipeline_names:
+                # for pipeline_step in ConstantsSettings.vect_pipeline_names:
 
                 # print(f"type of use {Software.TYPE_OF_USE_pident}")
                 if televir_project is None:

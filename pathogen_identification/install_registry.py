@@ -2,7 +2,6 @@ from settings.constants_settings import ConstantsSettings as CS
 
 
 class Deployment_Params:
-
     SOURCE = {
         "ENVSDIR": "/televir/mngs_benchmark/mngs_environments/",
         "CONDA": "/opt/conda/",
@@ -51,6 +50,7 @@ class Deployment_Params:
             "bwa": "remap/remap",
             "bowtie2": "remap/remap",
             "prinseq": "preprocess/prinseq",
+            "prinseq++": "preprocess/prinseq",
         },
         CS.PIPELINE_NAME_remapping: {"default": "remap/remap"},
         CS.PIPELINE_NAME_read_quality_analysis: {"default": "preprocess/preproc"},

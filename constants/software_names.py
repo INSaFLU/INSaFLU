@@ -236,19 +236,16 @@ class SoftwareNames(object):
         "--no-alt-contigs "  ## genomeSize=<number>[g|m|k] file1 file2
     )
 
-    ## raven -t {params.threads} -k {params.kmer} -p {params.polishing} {input} 
-    ##    --graphical-fragment-assembly {output.gfa} --disable-checkpoints || 
-    ## (touch {output.gfa} && echo Warning: raven failed, were created empty files) ; 
-    ## awk \'/^S/{{ printf(">%s\\n%s\\n", $2, $3) }}\' {output.gfa} > {output.fasta} || 
+    ## raven -t {params.threads} -k {params.kmer} -p {params.polishing} {input}
+    ##    --graphical-fragment-assembly {output.gfa} --disable-checkpoints ||
+    ## (touch {output.gfa} && echo Warning: raven failed, were created empty files) ;
+    ## awk \'/^S/{{ printf(">%s\\n%s\\n", $2, $3) }}\' {output.gfa} > {output.fasta} ||
     ## touch {output.fasta}
     SOFTWARE_RAVEN = os.path.join(settings.DIR_SOFTWARE, "raven/raven.sh")
     SOFTWARE_RAVEN_name = "Raven"
     SOFTWARE_RAVEN_name_extended = "Assembly ONT (Raven)"
     SOFTWARE_RAVEN_VERSION = "1.8.1"
-    SOFTWARE_RAVEN_PARAMETERS = (
-        "-k 15 -p 2 --disable-checkpoints "
-    )
-
+    SOFTWARE_RAVEN_PARAMETERS = "-k 15 -p 2 --disable-checkpoints "
 
     ### used to create a file with variations table
     ## git: https://github.com/SantosJGND/INSA
@@ -567,17 +564,17 @@ class SoftwareNames(object):
     SOFTWARE_televir_report_layout_version = "1.0.0"
     SOFTWARE_televir_report_layout_flag_name = "--flag-type"
     SOFTWARE_televir_report_layout_threshold_name = "--r-overlap"
-    SOFTWARE_REMAP_PARAMS_min_quality = "--qualityThreshold" # "--min-quality"
-    SOFTWARE_REMAP_PARAMS_max_mismatch = "--mismatchThreshold" # "--max-mismatch"
+    SOFTWARE_REMAP_PARAMS_min_quality = "--qualityThreshold"  # "--min-quality"
+    SOFTWARE_REMAP_PARAMS_max_mismatch = "--mismatchThreshold"  # "--max-mismatch"
 
     ### QC SOFTWARE
     SOFTWARE_PRINSEQ = os.path.join(
         settings.DIR_SOFTWARE,
         "preprocess/prinseq/bin/prinseq++",
     )
-    SOFTWARE_PRINSEQ_name = "Prinseq"
+    SOFTWARE_PRINSEQ_name = "Prinseq++"
     SOFTWARE_PRINSEQ_name_extended = (
-        "Preprocessing - Prinseq (remove low complexity reads)"
+        "Preprocessing - Prinseq++ (remove low complexity reads)"
     )
     SOFTWARE_PRINSEQ_VERSION = "1.2.4"
     SOFTWARE_PRINSEQ_lc_entropy = "--lc_entropy"
@@ -709,11 +706,11 @@ class SoftwareNames(object):
     SOFTWARE_DESAMBA_parameters = ""
     ### RAVEN
 
-    #SOFTWARE_RAVEN_name = "Raven"
-    #SOFTWARE_RAVEN_name_extended = "Raven"
-    #SOFTWARE_RAVEN = os.path.join(settings.DIR_SOFTWARE, "assembly/assembly/bin/raven")
-    #SOFTWARE_RAVEN_VERSION = "1.8.1"
-    #SOFTWARE_RAVEN_parameters = "--threads 4 --gzip-compressed -p2"
+    # SOFTWARE_RAVEN_name = "Raven"
+    # SOFTWARE_RAVEN_name_extended = "Raven"
+    # SOFTWARE_RAVEN = os.path.join(settings.DIR_SOFTWARE, "assembly/assembly/bin/raven")
+    # SOFTWARE_RAVEN_VERSION = "1.8.1"
+    # SOFTWARE_RAVEN_parameters = "--threads 4 --gzip-compressed -p2"
 
     ### SNIPPY
 

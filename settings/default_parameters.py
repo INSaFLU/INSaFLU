@@ -10,10 +10,13 @@ from django.conf import settings
 
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PI_ConstantsSettings
+from pathogen_identification.constants_settings import (
+    ConstantsSettings as PI_ConstantsSettings,
+)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility, Utility_Pipeline_Manager)
+    Parameter_DB_Utility,
+    Utility_Pipeline_Manager,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -610,7 +613,7 @@ class DefaultParameters(object):
 
     def get_vect_parameters(self, software):
         """return all parameters, by software instance"""
-        
+
         if software.name == SoftwareNames.SOFTWARE_SNIPPY_name:
             return self.get_snippy_default(
                 software.owner,
@@ -707,7 +710,7 @@ class DefaultParameters(object):
                 Software.TYPE_OF_USE_televir_settings,
                 software.technology.name,
             )
-        
+
         elif software.name == SoftwareNames.SOFTWARE_BAMUTIL_name:
             return self.get_bamutil_defaults(
                 software.owner,
@@ -1530,7 +1533,6 @@ class DefaultParameters(object):
 
         return vect_parameters
 
-
     def get_remap_defaults(
         self,
         user,
@@ -1602,7 +1604,6 @@ class DefaultParameters(object):
         parameter.range_min = "1"
         parameter.description = "Number of accession IDs to map against."
         vect_parameters.append(parameter)
-
 
         return vect_parameters
 
@@ -3415,10 +3416,10 @@ class DefaultParameters(object):
         parameter.can_change = True
         parameter.is_to_run = True
         parameter.sequence_out = 1
-        parameter.range_available = "[20:30]"
-        parameter.range_max = "30"
+        parameter.range_available = "[20:60]"
+        parameter.range_max = "60"
         parameter.range_min = "20"
-        parameter.description = "minimum mapping quality, default 40"
+        parameter.description = "minimum mapping quality, default 20"
         vect_parameters.append(parameter)
 
         parameter = Parameter()

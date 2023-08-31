@@ -66,8 +66,12 @@ class PISettingsView(LoginRequiredMixin, ListView):
                 Software.TYPE_OF_USE_televir_global,
                 Software.TYPE_OF_USE_televir_settings,
             ],
-            type_of_software=Software.TYPE_SOFTWARE,
+            type_of_software__in=[
+                Software.TYPE_SOFTWARE,
+                Software.TYPE_INSAFLU_PARAMETER,
+            ],
             is_obsolete=False,
+            technology__name=project.technology,
         )
         project = Televir_Project.objects.get(pk=project.pk)
         for software in query_set:
@@ -125,6 +129,7 @@ class PISettingsView(LoginRequiredMixin, ListView):
         )
         project = Televir_Project.objects.get(pk=project.pk)
         for software in query_set:
+            print(software.name)
             software_parameters = Parameter.objects.filter(
                 software=software,
             )
@@ -147,10 +152,9 @@ class PISettingsView(LoginRequiredMixin, ListView):
                 pass
 
             except Software.DoesNotExist:
-                if software.type_of_use == Software.TYPE_OF_USE_televir_project:
-                    if project_software_exist:
-                        if software.can_be_on_off_in_pipeline is True:
-                            software.is_to_run = False
+                if project_software_exist:
+                    if software.can_be_on_off_in_pipeline is True:
+                        software.is_to_run = False
 
                 software.save()
 

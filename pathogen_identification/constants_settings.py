@@ -33,6 +33,10 @@ class ConstantsSettings:
 
     TEST_SOFTWARE = True
 
+    ################################### Pipeline steps
+
+    METAGENOMICS = True
+
     ################################### Pipeline model
 
     PIPELINE_MODEL = 1

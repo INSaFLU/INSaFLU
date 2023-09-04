@@ -1553,8 +1553,7 @@ class Parameter_DB_Utility:
         self, software_table: pd.DataFrame, parameters_table: pd.DataFrame
     ):
         """"""
-        print("just before merge")
-        print(software_table.name.unique())
+
         combined_table = pd.merge(
             software_table, parameters_table, left_on="id", right_on="software_id"
         )
@@ -1992,7 +1991,6 @@ class Utils_Manager:
         combined_table = self.parameter_util.generate_combined_parameters_table(
             technology, user
         )
-        print(combined_table.software_name.unique())
 
         for makeup in pipeline_setup.get_makeup_list():
             if self.check_pipeline_possible(combined_table, makeup):

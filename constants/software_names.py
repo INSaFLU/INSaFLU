@@ -745,6 +745,15 @@ class SoftwareNames(object):
     SOFTWARE_MINIMAP2_DEPLETE_ONT_VERSION = "2.24"
     SOFTWARE_MINIMAP2_DEPLETE_ONT_parameters = "-a -x map-ont -t 4"
 
+    SOFTWARE_MINIMAP2_DEPLETE_ILLU_name = "Minimap2_ILLU"
+    SOFTWARE_MINIMAP2_DEPLETE_ILLU_name_extended = "Minimap2"
+    SOFTWARE_MINIMAP2_DEPLETE_ILLU = os.path.join(
+        settings.DIR_SOFTWARE,
+        "hostDepletion/hostdep_env/bin/minimap2",
+    )
+    SOFTWARE_MINIMAP2_DEPLETE_ILLU_VERSION = "2.24"
+    SOFTWARE_MINIMAP2_DEPLETE_ILLU_parameters = "-a -x sr -t 4"
+
     ### Bowtie2 DEPLETE
 
     SOFTWARE_BOWTIE2_DEPLETE_name = "Bowtie2"

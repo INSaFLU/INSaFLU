@@ -29,6 +29,10 @@ class ConstantsSettings:
 
     USER_TREE_INDEX = 0
 
+    ################################### Pipeline steps
+
+    TEST_SOFTWARE = True
+
     ################################### Pipeline model
 
     PIPELINE_MODEL = 1

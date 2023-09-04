@@ -8,6 +8,7 @@ from curses.ascii import SO
 from django.contrib.auth.models import User
 
 from constants.software_names import SoftwareNames
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.utilities.utilities_pipeline import (
     Utility_Pipeline_Manager,
     Utils_Manager,
@@ -528,6 +529,22 @@ class DefaultSoftware(object):
             user,
         )
 
+        if PICS.TEST_SOFTWARE:
+            self.test_defaults_test_televir(user)
+
+    def test_defaults_test_televir(self, user):
+        """
+        test if exist, if not persist in database, for televir"""
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ILLU_name,
+            self.default_parameters.get_minimap2_depletion_illumina_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            ),
+            user,
+        )
+
     def assess_db_dependency_met(self, vect_parameters, software_name):
         """for pipeline steps where sequence dbs are required, check that they exist."""
         if (
@@ -941,6 +958,18 @@ class DefaultSoftware(object):
         )
         return "" if result is None else result
 
+    def get_minimap2_deplete_illumina(self, user):
+        result = self.default_parameters.get_parameters(
+            SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ILLU_name,
+            user,
+            Software.TYPE_OF_USE_televir_global,
+            None,
+            None,
+            None,
+            ConstantsSettings.TECHNOLOGY_illumina,
+        )
+        return "" if result is None else result
+
     def get_nextstrain_parameters(self, user):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_NEXTSTRAIN_name,
@@ -1258,6 +1287,20 @@ class DefaultSoftware(object):
             )
 
             return self.get_minimap2_deplete_ont_parameters(user)
+
+        if software_name == SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ILLU_name:
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ILLU_name,
+                self.default_parameters.get_minimap2_depletion_illumina_default(
+                    user,
+                    Software.TYPE_OF_USE_televir_global,
+                    ConstantsSettings.TECHNOLOGY_illumina,
+                    pipeline_step=ConstantsSettings.PIPELINE_NAME_host_depletion,
+                ),
+                user,
+            )
+
+            return self.get_minimap2_deplete_illumina(user)
 
         if software_name == SoftwareNames.SOFTWARE_KRAKEN2_name:
             self.test_default_db(

@@ -535,6 +535,17 @@ class DefaultSoftware(object):
     def test_defaults_test_televir(self, user):
         """
         test if exist, if not persist in database, for televir"""
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name,
+            self.default_parameters.get_bowtie2_remap_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            ),
+            user,
+        )
+
         self.test_default_db(
             SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ILLU_name,
             self.default_parameters.get_minimap2_depletion_illumina_default(
@@ -946,6 +957,18 @@ class DefaultSoftware(object):
         )
         return "" if result is None else result
 
+    def get_bowtie2_remap_parameters(self, user, technology_name):
+        result = self.default_parameters.get_parameters(
+            SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name,
+            user,
+            Software.TYPE_OF_USE_televir_global,
+            None,
+            None,
+            None,
+            technology_name,
+        )
+        return "" if result is None else result
+
     def get_minimap2_deplete_ont_parameters(self, user):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ONT_name,
@@ -1273,6 +1296,20 @@ class DefaultSoftware(object):
                 user,
             )
             return self.get_bowtie2_deplete_parameters(user, technology_name)
+
+        if software_name == SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name:
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name,
+                self.default_parameters.get_bowtie2_remap_default(
+                    user,
+                    Software.TYPE_OF_USE_televir_global,
+                    ConstantsSettings.TECHNOLOGY_illumina,
+                    pipeline_step=ConstantsSettings.PIPELINE_NAME_remapping,
+                ),
+                user,
+            )
+
+            return self.get_bowtie2_remap_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ONT_name:
             self.test_default_db(

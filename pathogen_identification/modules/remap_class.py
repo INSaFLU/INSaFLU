@@ -11,15 +11,19 @@ from Bio.SeqIO.FastaIO import SimpleFastaParser
 from scipy.stats import kstest
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.modules.object_classes import (Bedgraph,
-                                                            Read_class,
-                                                            Remap_Target,
-                                                            RunCMD,
-                                                            Software_detail,
-                                                            SoftwareRemap)
+from pathogen_identification.modules.object_classes import (
+    Bedgraph,
+    Read_class,
+    Remap_Target,
+    RunCMD,
+    Software_detail,
+    SoftwareRemap,
+)
 from pathogen_identification.utilities.televir_parameters import RemapParams
 from pathogen_identification.utilities.utilities_general import (
-    plot_dotplot, read_paf_coordinates)
+    plot_dotplot,
+    read_paf_coordinates,
+)
 
 pd.options.mode.chained_assignment = None
 np.warnings.filterwarnings("ignore")
@@ -306,12 +310,12 @@ class RemapMethod_init:
     ):
         self.r1 = r1
         self.r2 = r2
-        self.args = args
-        self.type = type
-        self.prefix = prefix
-        self.reference = reference
-        self.outdir = outdir
-        self.threads = threads
+        self.args: str = args
+        self.type: str = type
+        self.prefix: str = prefix
+        self.reference: str = reference
+        self.outdir: str = outdir
+        self.threads: str = threads
         self.force = force
 
         self.outbam = os.path.join(outdir, prefix + ".bam")
@@ -545,6 +549,9 @@ class Remap_Minimap2(RemapMethod_init):
 
 
 class Remap_Bowtie2(RemapMethod_init):
+    modes = ["--end-to-end", "--local"]
+    preset_options = ["--very-fast", "--fast", "--sensitive", "--very-sensitive"]
+
     def remap(self):
         """
         Remap reads to reference using bowtie2."""
@@ -555,16 +562,34 @@ class Remap_Bowtie2(RemapMethod_init):
         else:
             raise ValueError
 
+    def process_arguments(self):
+        self.args.replace("preset", "").replace("mode", "")
+
+    def index_reference(self):
+        index_name = os.path.basename(self.reference)
+        index_name = os.path.splitext(index_name)[0]
+
+        cmd = ["bowtie2-build", self.reference, index_name]
+
+        self.cmd.run(cmd)
+
+        return index_name
+
     def remap_SE(self):
         """
         Remap reads to reference using bowtie2 for single end reads."""
+
+        index_name = self.index_reference()
+
+        self.process_arguments()
+
         cmd = [
             "bowtie2",
             self.args,
             "-p",
             self.threads,
             "-x",
-            self.reference,
+            index_name,
             "-U",
             self.r1,
             "-S",
@@ -575,13 +600,17 @@ class Remap_Bowtie2(RemapMethod_init):
     def remap_PE(self):
         """
         Remap reads to reference using bowtie2 for paired end reads."""
+
+        index_name = self.index_reference()
+        self.process_arguments()
+
         cmd = [
             "bowtie2",
             self.args,
             "-p",
             self.threads,
             "-x",
-            self.reference,
+            index_name,
             "-1",
             self.r1,
             "-2",
@@ -627,8 +656,8 @@ class Remapping:
         :param bin: path to bin directory.
         :param logging_level: logging level to use.
         """
-        remap_method= methods.remap_software
-        self.remap_filter= methods.remap_filter
+        remap_method = methods.remap_software
+        self.remap_filter = methods.remap_filter
         self.method = remap_method.name.split("_")[0]
         self.method_object = remap_method
         self.args = remap_method.args
@@ -967,7 +996,7 @@ class Remapping:
         """
         filter bam file by mapping quality.
         """
-        
+
         if self.remap_filter.name == "None":
             self.logger.info("No bam filtering performed.")
             self.read_map_filtered_bam = self.read_map_bam
@@ -1189,7 +1218,8 @@ class Remapping:
             "snippy": Remap_Snippy,
             "snippy_pi": Remap_Snippy,
             "minimap2": Remap_Minimap2,
-            "bowtie": Remap_Bowtie2,
+            "bowtie2": Remap_Bowtie2,
+            "bowtie2_remap": Remap_Bowtie2,
         }
 
         if self.method in available_methods:
@@ -1443,9 +1473,7 @@ class Remapping:
 
         new_dotplot = os.path.join(static_dir_plots, os.path.basename(self.dotplot))
 
-        self.full_path_dotplot = os.path.join(
-            CS.static_directory, new_dotplot
-        )
+        self.full_path_dotplot = os.path.join(CS.static_directory, new_dotplot)
 
         self.dotplot_exists = os.path.exists(self.dotplot)
 
@@ -1517,9 +1545,8 @@ class Mapping_Instance:
         self.mapping_success = self.assert_mapping_success()
         self.classification_success = self.assert_classification_success()
         self.produce_mapping_report()
-    
-    def produce_mapping_report(self):
 
+    def produce_mapping_report(self):
         self.mapping_main_info = pd.DataFrame(
             [
                 [

@@ -68,6 +68,7 @@ class Televir_Metadata_Constants:
             "bamutil": "remap/remap",
             "bwa": "remap/remap",
             "bowtie2": "remap/remap",
+            "bowtie2_remap": "remap/remap",
             "minimap2_illu": "hostDepletion/hostdep_env",
             "snippy_pi": "/software/snippy",
             "prinseq": "preprocess/prinseq",

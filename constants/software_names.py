@@ -765,6 +765,17 @@ class SoftwareNames(object):
     SOFTWARE_BOWTIE2_DEPLETE_VERSION = "2.4.5"
     SOFTWARE_BOWTIE2_DEPLETE_parameters = "-p 4"
 
+    ### Bowtie2 REMAP
+
+    SOFTWARE_BOWTIE2_REMAP_name = "Bowtie2_remap"
+    SOFTWARE_BOWTIE2_REMAP_name_extended = "Bowtie2"
+    SOFTWARE_BOWTIE2_REMAP = os.path.join(
+        settings.DIR_SOFTWARE,
+        "remap/remap/bin/bowtie2",
+    )
+    SOFTWARE_BOWTIE2_REMAP_VERSION = "2.4.5"
+    SOFTWARE_BOWTIE2_REMAP_parameters = "-p 4"
+
     ###################################
     ###################################
     #####

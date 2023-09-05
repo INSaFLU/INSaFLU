@@ -10,13 +10,10 @@ from django.conf import settings
 
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import (
-    ConstantsSettings as PI_ConstantsSettings,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PI_ConstantsSettings
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility,
-    Utility_Pipeline_Manager,
-)
+    Parameter_DB_Utility, Utility_Pipeline_Manager)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -826,6 +823,14 @@ class DefaultParameters(object):
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
             )
+        
+        elif software.name == SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name:
+            return self.get_bowtie2_remap_default(
+                software.owner,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            )
+
         elif software.name == SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ILLU_name:
             return self.get_minimap2_depletion_illumina_default(
                 software.owner,
@@ -2304,6 +2309,79 @@ class DefaultParameters(object):
         parameter.range_max = ""
         parameter.range_min = ""
         parameter.description = "Database to use"
+        vect_parameters.append(parameter)
+
+        return vect_parameters
+
+    def get_bowtie2_remap_default(
+        self, user, type_of_use, technology_name, sample=None, pipeline_step=""
+    ):
+        if not pipeline_step:
+            pipeline_step = ConstantsSettings.PIPELINE_NAME_remapping
+
+        software = Software()
+        software.name = SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name
+        software.name_extended = SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name_extended
+        software.type_of_use = type_of_use
+        software.type_of_software = Software.TYPE_SOFTWARE
+        software.version = SoftwareNames.SOFTWARE_BOWTIE2_REMAP_VERSION
+        software.version_parameters = self.get_software_parameters_version(
+            software.name
+        )
+        software.technology = self.get_technology(technology_name)
+        software.can_be_on_off_in_pipeline = (
+            True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
+        )
+
+        software.is_to_run = False  ## set to True if it is going to run, for example Trimmomatic can run or not
+
+        ###  small description of software
+        software.help_text = ""
+
+        ###  which part of pipeline is going to run; NEED TO CHECK
+        software.pipeline_step = self._get_pipeline(pipeline_step)
+
+        software.owner = user
+
+        vect_parameters = []
+
+        parameter = Parameter()
+        parameter.name = "--no-unal"
+        parameter.parameter = ""
+        parameter.type_data = Parameter.PARAMETER_null
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = ""
+        parameter.can_change = False
+        parameter.is_to_run = True  ### by default it's True
+        parameter.sequence_out = 1
+        parameter.description = "suppress SAM records for unaligned reads."
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "[mode]"
+        parameter.parameter = "--end-to-end"
+        parameter.type_data = Parameter.PARAMETER_char_list
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True  ### by default it's True
+        parameter.sequence_out = 2
+        parameter.description = "end-to-end alignment (default) or local alignment."
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "[preset]"
+        parameter.parameter = "--sensitive"
+        parameter.type_data = Parameter.PARAMETER_char_list
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True  ### by default it's True
+        parameter.sequence_out = 3
+        parameter.description = "preset to use (default: --sensitive)."
         vect_parameters.append(parameter)
 
         return vect_parameters

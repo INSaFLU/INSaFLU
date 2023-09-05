@@ -11,8 +11,7 @@ from datasets.models import Dataset, DatasetConsensus
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project, ProjectSample, Sample
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.models import Projects as Televir_Project
 from settings.constants_settings import ConstantsSettings
 from settings.default_software import DefaultSoftware
@@ -462,6 +461,41 @@ class SettingsView(LoginRequiredMixin, ListView):
         return context
 
 
+def bowtie_post_process(form, software: Software):
+    if software.name != SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name:
+        return form
+
+    mode = Parameter.objects.filter(name="[mode]", software=software).first()
+    if mode is None:
+        return form
+
+    preset = Parameter.objects.filter(name="[preset]", software=software).first()
+    if preset is None:
+        return form
+
+    mode_unique_id = mode.get_unique_id()
+    preset_unique_id = preset.get_unique_id()
+
+    if mode_unique_id not in form.cleaned_data:
+        return form
+
+    if preset_unique_id not in form.cleaned_data:
+        return form
+
+    mode_value = form.cleaned_data[mode_unique_id]
+    preset_value = form.cleaned_data[preset_unique_id]
+    if mode_value == "--local":
+        form.cleaned_data[preset_unique_id] = preset_value.strip(" ") + "-local"
+
+    return form
+
+
+def post_process_args(form, software: Software):
+    form = bowtie_post_process(form, software)
+
+    return form
+
+
 class UpdateParametersView(LoginRequiredMixin, UpdateView):
     model = Software
     form_class = SoftwareForm
@@ -516,6 +550,7 @@ class UpdateParametersView(LoginRequiredMixin, UpdateView):
             paramers = Parameter.objects.filter(software=software)
 
             b_change = False
+            form = post_process_args(form, software)
             for parameter in paramers:
                 if not parameter.can_change:
                     continue
@@ -613,6 +648,9 @@ class UpdateParametersTelevirProjView(LoginRequiredMixin, UpdateView):
                 software=software, televir_project=project
             )
             b_change = False
+
+            form = post_process_args(form, software)
+
             for parameter in paramers:
                 if not parameter.can_change:
                     continue

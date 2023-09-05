@@ -11,8 +11,8 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from managing_files.models import Sample
-from pathogen_identification.data_classes import IntermediateFiles
 from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.data_classes import IntermediateFiles
 
 # Create your models here.
 
@@ -86,7 +86,8 @@ class Projects(models.Model):
 
 class SoftwareTree(models.Model):
     """"""
-    model= models.IntegerField(default=0)
+
+    model = models.IntegerField(default=0)
     version = models.IntegerField(default=0)
     date_created = models.DateTimeField(auto_now_add=True, blank=True, null=True)
 
@@ -98,9 +99,11 @@ class SoftwareTree(models.Model):
         null=True,
     )  # encoding
 
-    owner= models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
-    project= models.ForeignKey(Projects, on_delete=models.CASCADE, blank=True, null=True)
-    
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
+    project = models.ForeignKey(
+        Projects, on_delete=models.CASCADE, blank=True, null=True
+    )
+
     class Meta:
         ordering = ["global_index"]
 
@@ -460,7 +463,7 @@ class RunMain(models.Model):
     )  # enrichment method if any
     enrichment_performed = models.BooleanField(blank=True)  # enrichment performed
     enrichment_args = models.CharField(
-        max_length=50, blank=True, null=True
+        max_length=150, blank=True, null=True
     )  # enrichment args
 
     enrichment_db = models.CharField(
@@ -475,7 +478,7 @@ class RunMain(models.Model):
     )  # host depletion performed
 
     host_depletion_args = models.CharField(
-        max_length=50, blank=True, null=True
+        max_length=150, blank=True, null=True
     )  # enrichment args
 
     host_depletion_db = models.CharField(
@@ -497,7 +500,6 @@ class RunMain(models.Model):
         max_length=50, blank=True, null=True
     )  # assembly method if any
 
-
     assembly_max = models.CharField(
         max_length=100, blank=True, null=True
     )  # max length of contig.
@@ -510,7 +512,7 @@ class RunMain(models.Model):
     remap = models.CharField(
         max_length=50, blank=True, null=True
     )  # remap method if any
-    remap_args = models.CharField(max_length=50, blank=True, null=True)
+    remap_args = models.CharField(max_length=150, blank=True, null=True)
 
     finished = models.CharField(max_length=10, blank=True, null=True)  # SE or PE
     runtime = models.CharField(max_length=100, blank=True, null=True)
@@ -612,20 +614,18 @@ class RunMain(models.Model):
 
 
 class TelevirRunQC(models.Model):
-
     run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)
-    performed= models.BooleanField(default= False)
-    method= models.CharField(max_length=50, blank=True, null=True)
-    args= models.CharField(max_length=50, blank=True, null=True)
-    input_reads= models.CharField(max_length=50, blank=True, null=True)
-    output_reads= models.CharField(max_length=50, blank=True, null=True)
-    output_reads_percent= models.CharField(max_length=50, blank=True, null=True)
+    performed = models.BooleanField(default=False)
+    method = models.CharField(max_length=50, blank=True, null=True)
+    args = models.CharField(max_length=50, blank=True, null=True)
+    input_reads = models.CharField(max_length=50, blank=True, null=True)
+    output_reads = models.CharField(max_length=50, blank=True, null=True)
+    output_reads_percent = models.CharField(max_length=50, blank=True, null=True)
 
     class Meta:
         ordering = [
             "run",
         ]
-
 
 
 class RunDetail(models.Model):

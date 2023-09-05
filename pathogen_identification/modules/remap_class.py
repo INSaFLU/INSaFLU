@@ -563,7 +563,7 @@ class Remap_Bowtie2(RemapMethod_init):
             raise ValueError
 
     def process_arguments(self):
-        self.args.replace("preset", "").replace("mode", "")
+        self.args.replace("[preset]", "").replace("[mode]", "")
 
     def index_reference(self):
         index_name = os.path.basename(self.reference)

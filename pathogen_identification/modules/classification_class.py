@@ -9,7 +9,8 @@ from typing import Type
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.modules.object_classes import RunCMD, Software_detail
+from pathogen_identification.modules.object_classes import (RunCMD,
+                                                            Software_detail)
 
 
 def check_report_empty(file, comment="@"):
@@ -903,7 +904,7 @@ class run_minimap2_illumina(Classifier_init):
 
         report = pd.read_csv(
             self.report_path, sep="\t", header=None, usecols=[0, 2], comment="@"
-        ).rename(columns={0: "acc", 1: "qseqid"})
+        ).rename(columns={0: "qseqid", 2: "acc"})
 
         report = report[report["acc"] != "*"]
         return report

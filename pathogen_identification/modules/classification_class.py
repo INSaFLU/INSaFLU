@@ -1181,7 +1181,7 @@ class Classifier:
         "desamba": run_deSamba,
         "kraken2": run_kraken2,
         "minimap2_illumina": run_minimap2_illumina,
-        "Minimap2_ILLU": run_minimap2_illumina,
+        "minimap2_illu": run_minimap2_illumina,
         "minimap2": run_minimap2_ONT,
         "minimap2_asm": run_minimap2_asm,
         "diamond": run_diamond,

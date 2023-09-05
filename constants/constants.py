@@ -4,6 +4,7 @@ Created on Oct 13, 2017
 @author: mmp
 """
 from enum import Enum
+
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -67,6 +68,7 @@ class Televir_Metadata_Constants:
             "bamutil": "remap/remap",
             "bwa": "remap/remap",
             "bowtie2": "remap/remap",
+            "minimap2_illu": "hostDepletion/hostdep_env",
             "snippy_pi": "/software/snippy",
             "prinseq": "preprocess/prinseq",
             "collapsibleTree": "remap/Renv",

@@ -585,9 +585,6 @@ class RunDetail_main:
         ):
             self.software_remap.remap_software = self.remapping_method
 
-        print("remap filtering method")
-        print(self.software_remap.remap_filter)
-
         # actions
         self.subsample = False
         self.quality_control = bool(

@@ -11,15 +11,19 @@ from Bio.SeqIO.FastaIO import SimpleFastaParser
 from scipy.stats import kstest
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.modules.object_classes import (Bedgraph,
-                                                            Read_class,
-                                                            Remap_Target,
-                                                            RunCMD,
-                                                            Software_detail,
-                                                            SoftwareRemap)
+from pathogen_identification.modules.object_classes import (
+    Bedgraph,
+    Read_class,
+    Remap_Target,
+    RunCMD,
+    Software_detail,
+    SoftwareRemap,
+)
 from pathogen_identification.utilities.televir_parameters import RemapParams
 from pathogen_identification.utilities.utilities_general import (
-    plot_dotplot, read_paf_coordinates)
+    plot_dotplot,
+    read_paf_coordinates,
+)
 
 pd.options.mode.chained_assignment = None
 np.warnings.filterwarnings("ignore")
@@ -566,7 +570,7 @@ class Remap_Bowtie2(RemapMethod_init):
     def index_reference(self):
         """
         Index reference using bowtie2."""
-        index_name = os.path.splitext(index_name)[0] + "_index"
+        index_name = os.path.splitext(self.reference)[0] + "_index"
 
         cmd = ["bowtie2-build", self.reference, index_name]
 

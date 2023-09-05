@@ -10,10 +10,13 @@ from django.conf import settings
 
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PI_ConstantsSettings
+from pathogen_identification.constants_settings import (
+    ConstantsSettings as PI_ConstantsSettings,
+)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility, Utility_Pipeline_Manager)
+    Parameter_DB_Utility,
+    Utility_Pipeline_Manager,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -202,6 +205,11 @@ class DefaultParameters(object):
 
         return software_list[0]
 
+    def hide_parameter_name_check(self, par_name: str):
+        if par_name.startswith("[") and par_name.endswith("]"):
+            return True
+        return False
+
     def get_parameters(
         self,
         software_name,
@@ -292,11 +300,15 @@ class DefaultParameters(object):
                 ]
 
         return_parameter = ""
+        # print(software_name, vect_order_ouput, dict_out)
         for par_name in vect_order_ouput:
+            if self.hide_parameter_name_check(par_name) is False:
+                return_parameter += " {}".format(par_name)
+
             if len(dict_out[par_name][1]) == 1 and len(dict_out[par_name][1][0]) == 0:
-                return_parameter += " {}".format(par_name)
+                continue
             else:
-                return_parameter += " {}".format(par_name)
+                # return_parameter += " {}".format(par_name)
                 ### exception SOFTWARE_TRIMMOMATIC_illuminaclip SOFTWARE_TRIMMOMATIC_name
                 if (
                     software_name == SoftwareNames.SOFTWARE_TRIMMOMATIC_name
@@ -823,7 +835,7 @@ class DefaultParameters(object):
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
             )
-        
+
         elif software.name == SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name:
             return self.get_bowtie2_remap_default(
                 software.owner,

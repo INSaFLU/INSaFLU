@@ -11,19 +11,15 @@ from Bio.SeqIO.FastaIO import SimpleFastaParser
 from scipy.stats import kstest
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.modules.object_classes import (
-    Bedgraph,
-    Read_class,
-    Remap_Target,
-    RunCMD,
-    Software_detail,
-    SoftwareRemap,
-)
+from pathogen_identification.modules.object_classes import (Bedgraph,
+                                                            Read_class,
+                                                            Remap_Target,
+                                                            RunCMD,
+                                                            Software_detail,
+                                                            SoftwareRemap)
 from pathogen_identification.utilities.televir_parameters import RemapParams
 from pathogen_identification.utilities.utilities_general import (
-    plot_dotplot,
-    read_paf_coordinates,
-)
+    plot_dotplot, read_paf_coordinates)
 
 pd.options.mode.chained_assignment = None
 np.warnings.filterwarnings("ignore")
@@ -563,11 +559,14 @@ class Remap_Bowtie2(RemapMethod_init):
             raise ValueError
 
     def process_arguments(self):
-        self.args.replace("[preset]", "").replace("[mode]", "")
+        """
+        Process arguments to remove preset and mode option flags"""
+        self.args = self.args.replace("[preset]", "").replace("[mode]", "")
 
     def index_reference(self):
-        index_name = os.path.basename(self.reference)
-        index_name = os.path.splitext(index_name)[0]
+        """
+        Index reference using bowtie2."""
+        index_name = os.path.splitext(index_name)[0] + "_index"
 
         cmd = ["bowtie2-build", self.reference, index_name]
 
@@ -580,7 +579,6 @@ class Remap_Bowtie2(RemapMethod_init):
         Remap reads to reference using bowtie2 for single end reads."""
 
         index_name = self.index_reference()
-
         self.process_arguments()
 
         cmd = [

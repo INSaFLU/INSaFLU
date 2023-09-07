@@ -22,10 +22,11 @@ from pathogen_identification.models import (
     RunAssembly,
     RunMain,
     SampleQC,
+    TelevirRunQC,
 )
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.utilities_views import ReportSorter
-from settings.models import Parameter, Technology
+from settings.models import Parameter, Software
 
 
 class ProjectTable(tables.Table):
@@ -600,6 +601,11 @@ class RunMainTable(tables.Table):
     name = tables.Column(verbose_name="Run")
     report = tables.Column(verbose_name="Report", orderable=False, empty_values=())
     success = tables.Column(verbose_name="Success", orderable=False, empty_values=())
+
+    extra_filtering = tables.Column(
+        verbose_name="Extra filtering", orderable=False, empty_values=()
+    )
+
     enrichment = tables.Column(
         verbose_name="Enrichment", orderable=False, empty_values=()
     )
@@ -612,6 +618,11 @@ class RunMainTable(tables.Table):
     read_classification = tables.Column(
         verbose_name="Read Classification", orderable=False, empty_values=()
     )
+
+    remapping = tables.Column(
+        verbose_name="Remapping", orderable=False, empty_values=()
+    )
+
     contig_classification = tables.Column(
         verbose_name="Contig Classification", orderable=False, empty_values=()
     )
@@ -623,9 +634,11 @@ class RunMainTable(tables.Table):
         attrs = {
             "class": "paleblue",
         }
+
         fields = (
             "name",
             "report",
+            "extra_filtering",
             "enrichment",
             "host_depletion",
             "assembly_method",
@@ -636,14 +649,30 @@ class RunMainTable(tables.Table):
         sequence = (
             "name",
             "report",
+            "extra_filtering",
             "enrichment",
             "host_depletion",
             "assembly_method",
             "contig_classification",
             "read_classification",
+            "remapping",
             "success",
             "runtime",
         )
+
+    def get_software_extended_name(self, software_name):
+        name_extended = software_name
+
+        try:
+            software = Software.objects.filter(name__iexact=software_name).first()
+            name_extended = software.name_extended
+        except:
+            name_extended = software_name
+
+        if "-" in name_extended:
+            name_extended = name_extended.split("-")[0]
+
+        return name_extended
 
     def render_name(self, record):
         return record.parameter_set.leaf.index
@@ -659,6 +688,51 @@ class RunMainTable(tables.Table):
             return mark_safe('<i class="fa fa-check"></i>')
         else:
             return mark_safe('<i class="fa fa-times"></i>')
+
+    def render_enrichment(self, record: RunMain):
+        method = record.enrichment
+        method_name = self.get_software_extended_name(method)
+
+        return mark_safe(method_name)
+
+    def render_host_depletion(self, record: RunMain):
+        method = record.host_depletion
+        method_name = self.get_software_extended_name(method)
+
+        return mark_safe(method_name)
+
+    def render_assembly_method(self, record: RunMain):
+        method = record.assembly_method
+        method_name = self.get_software_extended_name(method)
+
+        return mark_safe(method_name)
+
+    def render_contig_classification(self, record: RunMain):
+        method = record.contig_classification
+        method_name = self.get_software_extended_name(method)
+
+        return mark_safe(method_name)
+
+    def render_read_classification(self, record: RunMain):
+        method = record.read_classification
+        method_name = self.get_software_extended_name(method)
+
+        return mark_safe(method_name)
+
+    def render_extra_filtering(self, record):
+        try:
+            run_qc = TelevirRunQC.objects.get(run=record)
+            method = run_qc.method
+            method_name = self.get_software_extended_name(method)
+            return mark_safe(method_name)
+        except:
+            return mark_safe("None")
+
+    def render_remapping(self, record: RunMain):
+        method = record.remap
+        method_name = self.get_software_extended_name(method)
+
+        return mark_safe(method_name)
 
     def render_report(self, record: RunMain):
         from crequest.middleware import CrequestMiddleware

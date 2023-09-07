@@ -1005,7 +1005,7 @@ class Remapping:
         """
         filter reads marked as unmapped"""
 
-        bam_path = self.read_map_bam
+        bam_path = self.read_map_filtered_bam
 
         filtered_bam_path = os.path.splitext(bam_path)[0] + ".filtered.bam"
 

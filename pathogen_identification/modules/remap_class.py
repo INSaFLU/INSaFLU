@@ -984,7 +984,7 @@ class Remapping:
         4) get number of mapped reads."""
 
         self.filter_bamfile_read_names()
-        self.filter_mapping_bamutil()
+        self.filter_bamfile()
         self.sort_bam()
         self.index_sorted_bam()
         self.generate_vcf()
@@ -993,6 +993,29 @@ class Remapping:
         self.filter_sam_file_mapped()
         self.subset_mapped_reads()
         self.mapped_reads_to_fasta()
+
+    def filter_bamfile(self):
+        self.filter_mapping_bamutil()
+        self.filter_bam_unmapped()
+
+    def filter_bam_unmapped(self):
+        """
+        filter reads marked as unmapped"""
+
+        bam_path = self.read_map_bam
+
+        filtered_bam_path = os.path.basename(bam_path) + ".mapped"
+
+        bash_cmd = "samtools view -F 4 %s > %s" % (
+            bam_path,
+            filtered_bam_path,
+        )
+
+        self.cmd.run_bash(bash_cmd)
+
+        if os.path.isfile(filtered_bam_path) and os.path.getsize(filtered_bam_path) > 0:
+            os.remove(bam_path)
+            shutil.move(filtered_bam_path, bam_path)
 
     def filter_mapping_bamutil(self):
         """

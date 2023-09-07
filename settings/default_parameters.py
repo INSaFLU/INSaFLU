@@ -1630,7 +1630,7 @@ class DefaultParameters(object):
         return vect_parameters
 
     def get_prinseq_defaults(
-        self, user, type_of_use, technology_name, sample=None, is_to_run=True
+        self, user, type_of_use, technology_name, sample=None, is_to_run=False
     ):
         """
         -lc_entropy <float>  Filter on a minimum entropy score. Range: [0.0:1.0].
@@ -1751,7 +1751,7 @@ class DefaultParameters(object):
         parameter = Parameter()
 
         parameter.name = SoftwareNames.SOFTWARE_televir_report_layout_threshold_name
-        parameter.parameter = "0.95"
+        parameter.parameter = "0.5"
         parameter.type_data = Parameter.PARAMETER_float
         parameter.software = software
         parameter.sample = sample

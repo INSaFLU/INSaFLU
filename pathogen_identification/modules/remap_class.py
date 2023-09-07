@@ -1009,7 +1009,7 @@ class Remapping:
 
         filtered_bam_path = os.path.splitext(bam_path)[0] + ".filtered.bam"
 
-        bash_cmd = f"samtools view -F 4 {bam_path} > {filtered_bam_path}"
+        bash_cmd = f"samtools view -b -F 4 {bam_path} > {filtered_bam_path}"
 
         self.cmd.run_script_software(bash_cmd)
 

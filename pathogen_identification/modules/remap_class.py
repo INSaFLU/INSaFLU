@@ -1394,7 +1394,7 @@ class Remapping:
     def get_mapped_reads_no_header(self):
         """
         Get number of mapped reads without header, use samtools."""
-        temp_file = os.path.join(self.rdir, f"temp{randint(1,1999)}.bam")
+        # temp_file = os.path.join(self.rdir, f"temp{randint(1,1999)}.bam")
 
         # cmd = f"samtools view -b -F 4 {self.read_map_sorted_bam} > {temp_file}"
         # self.cmd.run(cmd)

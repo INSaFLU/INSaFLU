@@ -8,29 +8,39 @@ from django.core.management.base import BaseCommand
 
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from managing_files.models import ProcessControler
-from pathogen_identification.constants_settings import (MEDIA_ROOT,
-                                                        ConstantsSettings)
-from pathogen_identification.install_registry import (Params_Illumina,
-                                                      Params_Nanopore)
-from pathogen_identification.models import (FinalReport, Projects,
-                                            RawReference, RunAssembly, RunMain,
-                                            SoftwareTreeNode)
+from pathogen_identification.constants_settings import MEDIA_ROOT, ConstantsSettings
+from pathogen_identification.install_registry import Params_Illumina, Params_Nanopore
+from pathogen_identification.models import (
+    FinalReport,
+    Projects,
+    RawReference,
+    RunAssembly,
+    RunMain,
+    SoftwareTreeNode,
+)
 from pathogen_identification.modules.metadata_handler import Metadata_handler
-from pathogen_identification.modules.object_classes import (Read_class,
-                                                            Sample_runClass,
-                                                            Software_detail,
-                                                            SoftwareRemap)
-from pathogen_identification.modules.remap_class import (Mapping_Instance,
-                                                         Mapping_Manager)
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
+from pathogen_identification.modules.object_classes import (
+    Read_class,
+    Sample_runClass,
+    Software_detail,
+    SoftwareRemap,
+)
+from pathogen_identification.modules.remap_class import (
+    Mapping_Instance,
+    Mapping_Manager,
+)
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.update_DBs import (
-    Update_FinalReport, Update_ReferenceMap_Update)
-from pathogen_identification.utilities.utilities_general import \
-    simplify_name_lower
+    Update_FinalReport,
+    Update_ReferenceMap_Update,
+)
+from pathogen_identification.utilities.utilities_general import simplify_name_lower
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter, TelevirParameters, recover_assembly_contigs)
+    ReportSorter,
+    TelevirParameters,
+    recover_assembly_contigs,
+)
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
 
@@ -151,8 +161,8 @@ class RunMain:
             ),
             threads=self.threads,
         )
-        
-        self.contigs= config["contig_file"]
+
+        self.contigs = config["contig_file"]
 
         ### mapping parameters
         self.min_scaffold_length = config["assembly_contig_min_length"]
@@ -164,7 +174,7 @@ class RunMain:
             self.username, self.project_name
         )
         self.metadata_tool = Metadata_handler(
-            self.username,  
+            self.username,
             self.config,
             sift_query=config["sift_query"],
             prefix=self.prefix,
@@ -173,7 +183,7 @@ class RunMain:
 
         self.max_remap = remap_params.max_accids
         self.taxid_limit = remap_params.max_taxids
-        self.remap_params= remap_params
+        self.remap_params = remap_params
 
         ### methods
         self.remapping_method = Software_detail(
@@ -184,7 +194,7 @@ class RunMain:
         )
 
         self.remap_filtering_method = Software_detail(
-            CS.PIPELINE_NAME_remap_filtering, 
+            CS.PIPELINE_NAME_remap_filtering,
             method_args,
             config,
             self.prefix,
@@ -192,7 +202,7 @@ class RunMain:
 
         ###
 
-        self.software_remap= SoftwareRemap(
+        self.software_remap = SoftwareRemap(
             self.remapping_method,
             self.remap_filtering_method,
         )
@@ -349,8 +359,7 @@ class Input_Generator:
             if reference.run.sample.sample.exist_file_2()
             else ""
         )
-        self.contigs_path= self.find_run_contigs(reference.run)
-        print("contigs_path", self.contigs_path)
+        self.contigs_path = self.find_run_contigs(reference.run)
 
         self.taxid = reference.taxid
         self.accid = reference.accid
@@ -361,18 +370,17 @@ class Input_Generator:
             self.params = Params_Illumina
 
     def find_run_contigs(self, run_main: RunMain) -> str:
-
         if not run_main:
             return ""
 
         try:
             run_assembly = RunAssembly.objects.get(run=run_main)
             recover_assembly_contigs(run_main, run_assembly)
-            assembly_contigs= run_assembly.assembly_contigs
+            assembly_contigs = run_assembly.assembly_contigs
         except RunAssembly.DoesNotExist:
             run_assembly = None
-            assembly_contigs= ""
-        
+            assembly_contigs = ""
+
         return assembly_contigs
 
     def input_read_project_path(self, filepath) -> str:
@@ -390,10 +398,11 @@ class Input_Generator:
         pipeline_tree = self.utils.parameter_util.convert_softwaretree_to_pipeline_tree(
             parameter_set.leaf.software_tree
         )
-        ps_leaves= self.utils.get_parameterset_leaves(parameter_set, pipeline_tree)
-        parameter_leaf_index= ps_leaves[0]
-        parameter_leaf= SoftwareTreeNode.objects.get(index=parameter_leaf_index, software_tree= parameter_set.leaf.software_tree)
-
+        ps_leaves = self.utils.get_parameterset_leaves(parameter_set, pipeline_tree)
+        parameter_leaf_index = ps_leaves[0]
+        parameter_leaf = SoftwareTreeNode.objects.get(
+            index=parameter_leaf_index, software_tree=parameter_set.leaf.software_tree
+        )
 
         run_df = self.utils.get_leaf_parameters(parameter_leaf)
 
@@ -434,7 +443,10 @@ class Input_Generator:
         self.config["r1"] = self.input_read_project_path(self.r1_path)
         self.config["r2"] = self.input_read_project_path(self.r2_path)
         self.config["contig_file"] = self.contigs_path
-        self.config["type"] = [ConstantsSettings.SINGLE_END, ConstantsSettings.PAIR_END][int(os.path.isfile(self.config["r2"]))]
+        self.config["type"] = [
+            ConstantsSettings.SINGLE_END,
+            ConstantsSettings.PAIR_END,
+        ][int(os.path.isfile(self.config["r2"]))]
 
         self.config.update(self.params.CONSTANTS)
 
@@ -447,7 +459,6 @@ class Input_Generator:
         self.reference.save()
 
     def engine_report_modify_mapping_success(self, run_class: RunMain):
-
         def render_classification_source(record: RawReference):
             if record.classification_source == "1":
                 return "reads"
@@ -457,12 +468,12 @@ class Input_Generator:
 
             if record.classification_source == "3":
                 return "reads / contigs"
-            
+
             return "unknown"
-        
 
-        run_class.report["mapping_success"] = render_classification_source(self.reference)
-
+        run_class.report["mapping_success"] = render_classification_source(
+            self.reference
+        )
 
     def update_final_report(self, run_class: RunMain):
         run = self.reference.run

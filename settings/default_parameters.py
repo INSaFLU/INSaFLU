@@ -1543,7 +1543,7 @@ class DefaultParameters(object):
         parameter.range_available = "[40:640]"
         parameter.range_max = "640"
         parameter.range_min = "40"
-        parameter.description = "Bamutil, maximum sum of the mismatch qualities before marking a read unmapped. (Defaults to  60)"
+        parameter.description = "Bamutil, maximum sum of the mismatch qualities before marking a read unmapped. (Defaults to  120)"
         vect_parameters.append(parameter)
 
         parameter = Parameter()

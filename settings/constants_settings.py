@@ -13,6 +13,14 @@ class ConstantsSettings(object):
     classdocs
     """
 
+    ## setup
+    SETUP_DEVELOP = 0
+    SETUP_PREPRODUCTION = 1
+    SETUP_PRODUCTION = 2
+
+    CURRENT_SETUP = SETUP_DEVELOP
+    ## constants
+
     PIPELINE_NAME_read_quality_analysis = "Read quality analysis and improvement"
     PIPELINE_NAME_type_and_subtype_analysis = "Classification"
     PIPELINE_NAME_variant_detection = "Mutation detection and consensus generation"
@@ -66,11 +74,10 @@ class ConstantsSettings(object):
         TECHNOLOGY_minion,
         TECHNOLOGY_Undefined,
     ]
-    
+
     @property
     def vect_pipeline_names_condensed(self) -> Dict[str, List[str]]:
-
-        pipeline_steps_dict= {
+        pipeline_steps_dict = {
             pipeline_step: self.pipeline_step_to_pipeline_name(pipeline_step)
             for pipeline_step in self.vect_pipeline_names
         }
@@ -79,12 +86,12 @@ class ConstantsSettings(object):
             new_dict: Dict[str, list] = {}
             for key, value in dict.items():
                 if value not in new_dict:
-                    new_dict[value]= []
+                    new_dict[value] = []
 
                 new_dict[value].append(key)
             return new_dict
-        
-        pipeline_names_dict= reverse_set_dict(pipeline_steps_dict)
+
+        pipeline_names_dict = reverse_set_dict(pipeline_steps_dict)
 
         return pipeline_names_dict
 

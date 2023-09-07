@@ -7,12 +7,12 @@ from django.contrib.auth.models import User
 from django.test import TestCase, tag
 
 from constants.constants import Constants
+from constants.constants import Televir_Metadata_Constants as Deployment_Params
 from constants.constantsTestsCase import ConstantsTestsCase
 from constants.software_names import SoftwareNames
 from fluwebvirus.settings import STATIC_ROOT
 from pathogen_identification.constants_settings import ConstantsSettings as PI_CS
 from pathogen_identification.deployment_main import Run_Main_from_Leaf
-from pathogen_identification.install_registry import Deployment_Params
 from pathogen_identification.models import (
     ParameterSet,
     PIProject_Sample,

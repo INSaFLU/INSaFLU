@@ -11,15 +11,19 @@ from Bio.SeqIO.FastaIO import SimpleFastaParser
 from scipy.stats import kstest
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.modules.object_classes import (Bedgraph,
-                                                            Read_class,
-                                                            Remap_Target,
-                                                            RunCMD,
-                                                            Software_detail,
-                                                            SoftwareRemap)
+from pathogen_identification.modules.object_classes import (
+    Bedgraph,
+    Read_class,
+    Remap_Target,
+    RunCMD,
+    Software_detail,
+    SoftwareRemap,
+)
 from pathogen_identification.utilities.televir_parameters import RemapParams
 from pathogen_identification.utilities.utilities_general import (
-    plot_dotplot, read_paf_coordinates)
+    plot_dotplot,
+    read_paf_coordinates,
+)
 
 pd.options.mode.chained_assignment = None
 np.warnings.filterwarnings("ignore")
@@ -1003,16 +1007,16 @@ class Remapping:
 
         bam_path = self.read_map_bam
 
-        filtered_bam_path = os.path.basename(bam_path) + ".mapped"
+        filtered_bam_path = os.path.splitext(bam_path)[0] + ".filtered.bam"
 
-        bash_cmd = "samtools view -F 4 %s > %s" % (
-            bam_path,
-            filtered_bam_path,
-        )
+        bash_cmd = f"samtools view -F 4 {bam_path} > {filtered_bam_path}"
 
-        self.cmd.run_bash(bash_cmd)
+        self.cmd.run_script_software(bash_cmd)
 
-        if os.path.isfile(filtered_bam_path) and os.path.getsize(filtered_bam_path) > 0:
+        if (
+            os.path.isfile(filtered_bam_path)
+            and os.path.getsize(filtered_bam_path) > 100
+        ):
             os.remove(bam_path)
             shutil.move(filtered_bam_path, bam_path)
 

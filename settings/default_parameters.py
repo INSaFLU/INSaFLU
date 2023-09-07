@@ -10,13 +10,10 @@ from django.conf import settings
 
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import (
-    ConstantsSettings as PI_ConstantsSettings,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PI_ConstantsSettings
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility,
-    Utility_Pipeline_Manager,
-)
+    Parameter_DB_Utility, Utility_Pipeline_Manager)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -1523,7 +1520,7 @@ class DefaultParameters(object):
 
         parameter = Parameter()
         parameter.name = SoftwareNames.SOFTWARE_REMAP_PARAMS_min_quality
-        parameter.parameter = "60"
+        parameter.parameter = "120"
         parameter.type_data = Parameter.PARAMETER_int
         parameter.software = software
         parameter.sample = sample
@@ -1531,9 +1528,9 @@ class DefaultParameters(object):
         parameter.can_change = True
         parameter.is_to_run = True  ### by default it's True
         parameter.sequence_out = 3
-        parameter.range_available = "[20:120]"
-        parameter.range_max = "60"
-        parameter.range_min = "60"
+        parameter.range_available = "[40:640]"
+        parameter.range_max = "640"
+        parameter.range_min = "40"
         parameter.description = "Bamutil, maximum sum of the mismatch qualities before marking a read unmapped. (Defaults to  60)"
         vect_parameters.append(parameter)
 

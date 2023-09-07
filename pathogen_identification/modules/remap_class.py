@@ -11,19 +11,15 @@ from Bio.SeqIO.FastaIO import SimpleFastaParser
 from scipy.stats import kstest
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.modules.object_classes import (
-    Bedgraph,
-    Read_class,
-    Remap_Target,
-    RunCMD,
-    Software_detail,
-    SoftwareRemap,
-)
+from pathogen_identification.modules.object_classes import (Bedgraph,
+                                                            Read_class,
+                                                            Remap_Target,
+                                                            RunCMD,
+                                                            Software_detail,
+                                                            SoftwareRemap)
 from pathogen_identification.utilities.televir_parameters import RemapParams
 from pathogen_identification.utilities.utilities_general import (
-    plot_dotplot,
-    read_paf_coordinates,
-)
+    plot_dotplot, read_paf_coordinates)
 
 pd.options.mode.chained_assignment = None
 np.warnings.filterwarnings("ignore")
@@ -983,16 +979,19 @@ class Remapping:
         3) index bam file.
         4) get number of mapped reads."""
 
-        self.filter_bamfile_read_names()
-        self.filter_bamfile()
-        self.sort_bam()
-        self.index_sorted_bam()
+        self.process_bam()
         self.generate_vcf()
         self.get_genomecoverage()
         self.get_mapped_reads_no_header()
         self.filter_sam_file_mapped()
         self.subset_mapped_reads()
         self.mapped_reads_to_fasta()
+
+    def process_bam(self):
+        self.filter_bamfile_read_names()
+        self.filter_bamfile()
+        self.sort_bam()
+        self.index_sorted_bam()
 
     def filter_bamfile(self):
         self.filter_mapping_bamutil()

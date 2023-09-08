@@ -31,11 +31,11 @@ class ConstantsSettings:
 
     ################################### Pipeline steps
 
-    TEST_SOFTWARE = True
+    TEST_SOFTWARE = False
 
     ################################### Pipeline steps
 
-    METAGENOMICS = True
+    METAGENOMICS = False
 
     ################################### Pipeline model
 
@@ -60,7 +60,7 @@ class ConstantsSettings:
     DEPLOYMENT_TYPE_TREE = "tree"
     DEPLOYMENT_TYPE_PIPELINE = "pipeline"
 
-    DEPLOYMENT_DEFAULT = DEPLOYMENT_TYPE_TREE
+    DEPLOYMENT_DEFAULT = DEPLOYMENT_TYPE_PIPELINE
 
     ################################### Threads
 

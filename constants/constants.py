@@ -7,6 +7,8 @@ from abc import ABC
 from enum import Enum
 from typing import Dict
 
+from django.conf import settings
+
 from constants.televir_directories import Televir_Directory_Constants
 from settings.constants_settings import ConstantsSettings as CS
 
@@ -56,13 +58,14 @@ class Televir_Metadata_Constants:
             "minimap2_asm": "hostDepletion/hostdep_env",
             "blastn": "hostDepletion/hostdep_env",
             "blastp": "hostDepletion/hostdep_env",
-            "snippy": "/software/snippy",
+            "snippy": settings.DIR_SOFTWARE + "/snippy",
             "bamutil": "remap/remap",
             "bwa": "remap/remap",
             "bowtie2": "remap/remap",
             "bowtie2_remap": "remap/remap",
             "minimap2_illu": "hostDepletion/hostdep_env",
-            "snippy_pi": "/software/snippy",
+            "snippy_pi": settings.DIR_SOFTWARE + "/snippy",
+            "prinseq++": "preprocess/prinseq",
             "prinseq": "preprocess/prinseq",
             "collapsibleTree": "remap/Renv",
             "entrez_direct": "entrez_direct",

@@ -1543,7 +1543,7 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.remap_manager.collect_final_report_summary_statistics()
         self.report = self.remap_manager.report
         # transfer to sample class
-        processed_reads = self.sample.reads_after_processing
+        processed_reads = self.sample.reads_before_processing
 
         filtered_reads = (
             self.sample.r1.read_number_filtered + self.sample.r2.read_number_filtered
@@ -1581,9 +1581,10 @@ class RunMainTree_class(Run_Deployment_Methods):
             )
         )
 
-        enriched_reads = self.sample.r1.reads_enriched + self.sample.r2.reads_enriched
-        depleted_reads = self.sample.r1.reads_depleted + self.sample.r2.reads_depleted
-        # depleted_reads = len(self.depletion_drone.classified_reads_list)
+        # enriched_reads = self.sample.r1.reads_enriched + self.sample.r2.reads_enriched
+        # depleted_reads = self.sample.r1.reads_depleted + self.sample.r2.reads_depleted
+        depleted_reads = len(self.depletion_drone.classified_reads_list)
+        enriched_reads = len(self.enrichment_drone.classified_reads_list)
 
         if self.type == ConstantsSettings.PAIR_END:
             enriched_reads = enriched_reads * 2

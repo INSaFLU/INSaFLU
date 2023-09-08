@@ -502,6 +502,14 @@ class Read_class:
         self.read_number_filtered = 0
         self.history = [self.current]
 
+    @property
+    def reads_enriched(self):
+        return self.read_number_clean - self.read_number_enriched
+
+    @property
+    def reads_depleted(self):
+        return self.read_number_clean - self.read_number_depleted
+
     def create_link(self, file_path, new_path):
         if os.path.isfile(file_path):
             if os.path.isfile(new_path):
@@ -1073,7 +1081,6 @@ class Sample_runClass:
 
 
 class SoftwareUnit:
-
     name: str
 
     SOFTWARE_NOT_FOUND = "None"
@@ -1114,7 +1121,6 @@ class SoftwareUnit:
 
 
 class Software_detail(SoftwareUnit):
-
     def __init__(self, module, args_df: pd.DataFrame, config: dict, prefix: str):
         """
 
@@ -1211,11 +1217,10 @@ class Software_detail(SoftwareUnit):
 
 
 class SoftwareRemap:
-
     def __init__(self, remap_software: Software_detail, remap_filter: Software_detail):
-
         self.remap_software = remap_software
         self.remap_filter = remap_filter
+
 
 class Bedgraph:
     """Class to store and work with bedgraph files
@@ -1435,6 +1440,7 @@ class Run_detail_report:
     merged_number: int
     merged_files: str
 
+
 @dataclass(frozen=True)
 class RunQC_report:
     performed: bool
@@ -1443,6 +1449,7 @@ class RunQC_report:
     input_reads: int
     output_reads: int
     output_reads_percent: float
+
 
 @dataclass(frozen=True)
 class Contig_classification_results:

@@ -1581,8 +1581,9 @@ class RunMainTree_class(Run_Deployment_Methods):
             )
         )
 
-        enriched_reads = len(self.enrichment_drone.classified_reads_list)
-        depleted_reads = len(self.depletion_drone.classified_reads_list)
+        enriched_reads = self.sample.r1.reads_enriched + self.sample.r2.reads_enriched
+        depleted_reads = self.sample.r1.reads_depleted + self.sample.r2.reads_depleted
+        # depleted_reads = len(self.depletion_drone.classified_reads_list)
 
         if self.type == ConstantsSettings.PAIR_END:
             enriched_reads = enriched_reads * 2

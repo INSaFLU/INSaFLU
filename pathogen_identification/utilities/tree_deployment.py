@@ -128,7 +128,9 @@ class PathogenIdentification_Deployment_Manager:
         self.config["sample_name"] = self.sample
         self.config["r1"] = new_r1_path
         self.config["r2"] = new_r2_path
-        self.config["type"] = ["SE", "PE"][int(os.path.isfile(self.config["r2"]))]
+        self.config["type"] = [PIConstants.SINGLE_END, PIConstants.PAIR_END][
+            int(os.path.isfile(self.config["r2"]))
+        ]
 
         return True
 
@@ -197,7 +199,8 @@ class PathogenIdentification_Deployment_Manager:
 
     def run_main_prep_check_first(self):
         """
-        check if run_main has been prepped and not root, if so, prep it"""
+        check if run_main has been prepped and not root, if so, prep it
+        by equiping it with the run_engine"""
         if self.prepped or self.run_params_db.empty:
             return
 
@@ -215,13 +218,14 @@ class PathogenIdentification_Deployment_Manager:
         self.run_engine.Run_Assembly()
         self.run_engine.Run_Contig_classification()
         self.run_engine.Run_Read_classification()
-        # self.run_engine.plan_remap_prep_safe()
-        # self.run_engine.Run_Classification()
         self.run_engine.Run_Remapping()
 
     def update_engine(self):
         self.update_config()
-        self.run_engine.Update(self.config, self.run_params_db)
+        print(self.run_params_db)
+
+        if "module" in self.run_params_db.columns:
+            self.run_engine.Update(self.config, self.run_params_db)
 
     def update_merged_targets(self, merged_targets: pd.DataFrame):
         self.run_engine.update_merged_targets(merged_targets)
@@ -286,6 +290,9 @@ class Tree_Node:
         self.software_tree_pk = software_tree_pk
         self.leaves = pipe_tree.leaves_from_node_compress(node_index)
 
+        print("#################### node ####################")
+        print(f"node {node_index} has leaves {self.leaves}")
+
     def run_reference_overlap_analysis(self):
         run = RunMain.objects.get(parameter_set=self.parameter_set)
         final_report = FinalReport.objects.filter(
@@ -316,14 +323,6 @@ class Tree_Node:
 
         node_metadata = pipe_tree.node_index.loc[self.node_index].node
         software_tree = SoftwareTree.objects.get(pk=self.software_tree_pk)
-
-        tree_node = SoftwareTreeNode.objects.filter(
-            software_tree=software_tree,
-            index=self.node_index,
-            name=node_metadata[0],
-            value=node_metadata[1],
-            node_type=node_metadata[2],
-        )
 
         try:
             tree_node = SoftwareTreeNode.objects.get(
@@ -594,6 +593,8 @@ class Tree_Progress:
         )
 
         self.logger = logging.getLogger(__name__)
+        ## set logger level
+        self.logger.setLevel(logging.INFO)
 
         self.tree = pipe_tree
         self.sample = sample
@@ -604,7 +605,7 @@ class Tree_Progress:
         self.updated_classification = False
 
         self.initialize_nodes()
-        self.determine_current_module()
+        self.determine_current_module_from_nodes()
 
     def setup_deployment_manager(self):
         utils = Utils()
@@ -642,7 +643,7 @@ class Tree_Progress:
 
     def update_node_leaves_dbs(self, node: Tree_Node):
         for leaf in node.leaves:
-            leaf_node = self.spawn_node_child(node, leaf)
+            leaf_node = self.spawn_node_child_prepped(node, leaf)
             self.register_node(leaf_node)
             self.update_node_dbs(leaf_node)
 
@@ -690,15 +691,32 @@ class Tree_Progress:
     def get_current_module(self):
         return self.current_module
 
-    def determine_current_module(self):
+    def update_current_module(self, new_nodes: List[Tree_Node]):
+        node_indices = [node.node_index for node in new_nodes]
+
+        if len(new_nodes) == 0:
+            self.current_module = "end"
+        elif set(node_indices) == set(self.tree.leaves):
+            self.current_module = "end"
+        else:
+            self.current_nodes = new_nodes
+            self.determine_current_module_from_nodes()
+
+    def determine_current_module_from_nodes(self):
         self.current_module = self.current_nodes[0].module
 
-    def spawn_node_child(self, node: Tree_Node, child: int):
+    def spawn_node_child(self, node: Tree_Node, child: int) -> Tree_Node:
         new_node = Tree_Node(self.tree, child, node.software_tree_pk)
         # node.run_manager.run_engine.logger = None
 
         run_manager_copy = copy.deepcopy(node.run_manager)
         new_node.receive_run_manager(run_manager_copy)
+
+        return new_node
+
+    def spawn_node_child_prepped(self, node: Tree_Node, child: int) -> Tree_Node:
+        new_node = self.spawn_node_child(node, child)
+
         new_node.run_manager.update_engine()
 
         return new_node
@@ -747,6 +765,7 @@ class Tree_Progress:
                 node.run_manager.run_engine.assembly_performed
                 and node.run_manager.assembly_udated == False
             ):
+                node.run_manager.run_engine.export_assembly()
                 db_updated = Update_Assembly(
                     node.run_manager.run_engine, node.parameter_set
                 )
@@ -1024,14 +1043,10 @@ class Tree_Progress:
         for node in self.current_nodes:
             children = node.children
             for child in children:
-                new_node = self.spawn_node_child(node, child)
+                new_node = self.spawn_node_child_prepped(node, child)
                 new_nodes.append(new_node)
 
-        if len(new_nodes) == 0:
-            self.current_module = "end"
-        else:
-            self.current_nodes = new_nodes
-            self.determine_current_module()
+        self.update_current_module(new_nodes)
 
     def run_node(self, node: Tree_Node):
         try:
@@ -1062,7 +1077,7 @@ class Tree_Progress:
     def run_nodes_sequential(self):
         self.run_current_nodes()
 
-    def run_nodes_simply(self):
+    def run_nodes_remap(self):
         self.run_simplified_mapping()
 
     def run_nodes_classification_reads(self):
@@ -1096,19 +1111,21 @@ class Tree_Progress:
         """
 
         map_actions = {
+            ConstantsSettings.PIPELINE_NAME_extra_qc: self.run_nodes_sequential,
             ConstantsSettings.PIPELINE_NAME_read_classification: self.run_nodes_classification_reads,
             ConstantsSettings.PIPELINE_NAME_contig_classification: self.run_nodes_sequential,
             ConstantsSettings.PIPELINE_NAME_viral_enrichment: self.run_nodes_sequential,
             ConstantsSettings.PIPELINE_NAME_host_depletion: self.run_nodes_sequential,
             ConstantsSettings.PIPELINE_NAME_assembly: self.run_nodes_sequential,
-            ConstantsSettings.PIPELINE_NAME_remapping: self.run_nodes_simply,
+            ConstantsSettings.PIPELINE_NAME_remapping: self.run_nodes_remap,
+            ConstantsSettings.PIPELINE_NAME_remap_filtering: self.run_nodes_sequential,
         }
 
         if self.current_module in ["end"]:
             return
 
         if self.current_module == "root":
-            self.update_node_leaves_dbs(self.current_nodes[0])
+            self.register_node_leaves(self.current_nodes[0])
             self.update_tree_nodes()
             return
 
@@ -1244,7 +1261,9 @@ class TreeProgressGraph:
         }
 
         pipetrees_dict = {
-            tree_pk: pipeline_utils.parameter_util.software_pipeline_tree(tree)
+            tree_pk: pipeline_utils.parameter_util.convert_softwaretree_to_pipeline_tree(
+                tree
+            )
             for tree_pk, tree in software_tree_dict.items()
         }
 
@@ -1273,6 +1292,7 @@ class TreeProgressGraph:
         ## columns are not the same.
         column_order = [
             ConstantsSettings.PIPELINE_NAME_read_quality_analysis,
+            ConstantsSettings.PIPELINE_NAME_extra_qc,
             ConstantsSettings.PIPELINE_NAME_viral_enrichment,
             ConstantsSettings.PIPELINE_NAME_host_depletion,
             ConstantsSettings.PIPELINE_NAME_assembly,
@@ -1311,7 +1331,6 @@ class TreeProgressGraph:
         existing_parameter_sets = ParameterSet.objects.filter(
             project=self.project,
             status__in=[
-                ParameterSet.STATUS_RUNNING,
                 ParameterSet.STATUS_FINISHED,
             ],
             sample=self.sample,

@@ -5,9 +5,7 @@ import traceback
 
 import pandas as pd
 from django.contrib.auth.models import User
-from django.db import IntegrityError, transaction
 
-from constants.constants import Constants, FileType
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from constants.constants import TypePath
 from managing_files.models import ProcessControler
@@ -21,7 +19,7 @@ from pathogen_identification.models import (
     SoftwareTree,
     SoftwareTreeNode,
 )
-from pathogen_identification.modules.run_main import RunMain_class
+from pathogen_identification.modules.run_main import RunMainTree_class
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.update_DBs import (
     Update_Assembly,
@@ -32,12 +30,14 @@ from pathogen_identification.utilities.update_DBs import (
     Update_Sample_Runs,
     get_run_parents,
 )
-
 from pathogen_identification.utilities.utilities_general import (
     simplify_name,
     simplify_name_lower,
 )
-from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
+from pathogen_identification.utilities.utilities_pipeline import (
+    SoftwareTreeUtils,
+    Utils_Manager,
+)
 from pathogen_identification.utilities.utilities_views import ReportSorter
 from utils.process_SGE import ProcessSGE
 
@@ -47,7 +47,7 @@ class PathogenIdentification_deployment:
     prefix: str
     rdir: str
     threads: int
-    run_engine: RunMain_class
+    run_engine: RunMainTree_class
     params = dict
     run_params_db = pd.DataFrame()
     pk: int = 0
@@ -82,6 +82,7 @@ class PathogenIdentification_deployment:
         self.technology = technology
         self.install_registry = Televir_Metadata
         self.parameter_set = ParameterSet.objects.get(pk=pk)
+        self.user = self.parameter_set.project.owner
         self.tree_makup = self.parameter_set.leaf.software_tree.global_index
 
         self.threads = threads
@@ -114,7 +115,7 @@ class PathogenIdentification_deployment:
     def retrieve_runmain(self):
         """retrieve runmain object from database"""
 
-        self.run_engine = RunMain_class(
+        self.run_engine = RunMainTree_class(
             self.project,
             self.prefix,
             self.dir,
@@ -157,7 +158,11 @@ class PathogenIdentification_deployment:
         self.config["sample_name"] = self.sample
         self.config["r1"] = new_r1_path
         self.config["r2"] = new_r2_path
-        self.config["type"] = ["SE", "PE"][int(os.path.isfile(self.config["r2"]))]
+
+        self.config["type"] = [
+            ConstantsSettings.SINGLE_END,
+            ConstantsSettings.PAIR_END,
+        ][int(os.path.isfile(self.config["r2"]))]
 
         return True
 
@@ -171,9 +176,11 @@ class PathogenIdentification_deployment:
     def configure_params(self):
         """get pipeline parameters from database"""
 
-        utils = Utils_Manager()
+        software_tree_utils = SoftwareTreeUtils(
+            self.parameter_set.project.owner, self.parameter_set.project
+        )
 
-        all_paths = utils.get_all_technology_pipelines(self.technology, self.tree_makup)
+        all_paths = software_tree_utils.get_all_technology_pipelines(self.tree_makup)
 
         self.run_params_db = all_paths.get(self.pipeline_index, None)
 
@@ -200,7 +207,6 @@ class PathogenIdentification_deployment:
                 x: os.path.join(self.install_registry.METADATA["ROOT"], g)
                 for x, g in self.install_registry.METADATA.items()
             },
-            "technology": self.technology,
             "bin": self.install_registry.BINARIES,
             "actions": {},
         }
@@ -240,7 +246,9 @@ class PathogenIdentification_deployment:
         """prepare run_main object from config dictionary"""
         self.prepped = True
 
-        self.run_engine = RunMain_class(self.config, self.run_params_db, self.username)
+        self.run_engine = RunMainTree_class(
+            self.config, self.run_params_db, self.username
+        )
 
         utils = Utils_Manager()
 
@@ -277,7 +285,8 @@ class Run_Main_from_Leaf:
         self.project = project
         self.pipeline_leaf = pipeline_leaf
         self.pipeline_tree = pipeline_tree
-        prefix = f"{simplify_name_lower(input_data.name)}_{user.pk}_{project.pk}_{pipeline_leaf.pk}"
+        # prefix = f"{simplify_name_lower(input_data.name)}_{user.pk}_{project.pk}_{pipeline_leaf.pk}"
+        prefix = f"{simplify_name_lower(input_data.name)}_run{pipeline_leaf.index}"
         self.date_submitted = datetime.datetime.now()
 
         self.file_r1 = input_data.sample.get_fastq_available(TypePath.MEDIA_ROOT, True)
@@ -479,7 +488,10 @@ class Run_Main_from_Leaf:
             return False
 
         try:
-            self.container.run_engine.Run_Classification()
+            self.container.run_engine.Run_Read_classification()
+            self.container.run_engine.Run_Contig_classification()
+            self.container.run_engine.plan_remap_prep_safe()
+            self.container.run_engine.generate_output_data_classes()
             db_updated = Update_Classification(
                 self.container.run_engine, self.parameter_set
             )
@@ -491,8 +503,10 @@ class Run_Main_from_Leaf:
             return False
 
         try:
+            self.container.run_engine.remap_prepped = True
             self.container.run_engine.Run_Remapping()
             self.container.run_engine.export_sequences()
+            self.container.run_engine.export_intermediate_reports()
             self.container.run_engine.Summarize()
             self.container.run_engine.generate_output_data_classes()
             self.container.run_engine.export_logdir()
@@ -522,6 +536,8 @@ class Run_Main_from_Leaf:
 
     def register_error(self):
         self.set_run_process_error()
+        print("REGISTERING ERROR")
+        print("RUN PS PK", self.pk)
 
         new_run = ParameterSet.objects.get(pk=self.pk)
         new_run.register_error()
@@ -541,8 +557,18 @@ class Run_Main_from_Leaf:
         )
         #
         report_layout_params = TelevirParameters.get_report_layout_params(run.pk)
+
+        if final_report.exists() is False:
+            return
+
         report_sorter = ReportSorter(final_report, report_layout_params)
-        report_sorter.sort_reports_save()
+
+        try:
+            report_sorter.sort_reports_save()
+        except Exception as e:
+            print(e)
+            print("Error in report sorter")
+            return
 
     def register_completion(self):
         self.set_run_process_finished()
@@ -557,13 +583,12 @@ class Run_Main_from_Leaf:
         if not self.check_submission() and not self.check_processed():
             self.register_submission()
 
-            try: 
+            try:
                 configured = self.configure()
             except Exception as e:
                 print(e)
                 self.register_error()
                 return
-            
 
             if configured:
                 run_success = self.Deploy_Parts()
@@ -573,8 +598,6 @@ class Run_Main_from_Leaf:
                 return
 
             if run_success:
-                # update_successful = self.Update_dbs()
-                # if update_successful:
                 self.run_reference_overlap_analysis()
                 self.register_completion()
                 self.update_project_change_date()

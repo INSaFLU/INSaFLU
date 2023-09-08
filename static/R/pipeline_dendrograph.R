@@ -19,10 +19,10 @@ columns= strsplit(columns, ",")[[1]]
 columns= gsub(" ", ".", columns)
 
 ### read the data frame
-df = read.table(df_path, header = TRUE, sep = "\t")
+input = read.table(df_path, header = TRUE, sep = "\t")
 ### create the dendrogram
 
-p <- collapsibleTree( df, columns, 
+p <- collapsibleTree( input, columns, 
     collapsed= FALSE, fontSize = 15, fill = "lightsteelblue", linkLength= 150
 )
 

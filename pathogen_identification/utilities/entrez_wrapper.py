@@ -123,8 +123,6 @@ class EntrezWrapper:
 
         cmd_long = [cmd, ">>", os.path.join(self.outdir, self.outfile)]
 
-        print(" ".join(cmd_long))
-
         return " ".join(cmd_long)
 
     def split_query(self, query: List[str]) -> List[List[str]]:
@@ -141,8 +139,6 @@ class EntrezWrapper:
         """
         run queries using entrez direct binaries"""
         cmds = self.cmd_chunks(query)
-
-        print("CMD CHUNKS")
 
         if os.path.exists(self.output_path):
             os.remove(self.output_path)

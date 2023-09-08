@@ -1,6 +1,7 @@
-from datasets.models import Dataset
 from django.contrib.auth.models import User
 from django.db import models
+
+from datasets.models import Dataset
 from managing_files.models import Project, ProjectSample, Sample
 from pathogen_identification.models import Projects as TelevirProject
 
@@ -8,7 +9,6 @@ from pathogen_identification.models import Projects as TelevirProject
 
 
 class Technology(models.Model):
-
     name = models.CharField(max_length=100, db_index=True, blank=True, null=True)
     name_extended = models.CharField(
         max_length=100, db_index=True, blank=True, null=True
@@ -60,11 +60,20 @@ class Software(models.Model):
     TYPE_OF_USE_televir_global = 5  ### used for pathogen_identification.
     TYPE_OF_USE_televir_project = 6  ### Used for  pathogen_identification_projects.
     TYPE_OF_USE_dataset = 7  ### Used in a particular dataset
-    TYPE_OF_USE_televir_settings= 8 ### Used in televir settings
-    TYPE_OF_USE_televir_project_settings= 9 ### Used in televir project settings
+    TYPE_OF_USE_televir_settings = 8  ### Used in televir settings
+    TYPE_OF_USE_televir_project_settings = 9  ### Used in televir project settings
     ### if it is a software parameter or a general parameter (INSaFLU parameter)
     TYPE_SOFTWARE = 0  ### normal software
     TYPE_INSAFLU_PARAMETER = 1  ### it is a general parameter (INSaFLU parameter)
+
+    TELEVIR_GLOBAL_TYPES = [
+        TYPE_OF_USE_televir_global,
+        TYPE_OF_USE_televir_settings,
+    ]
+    TELEVIR_PROJECT_TYPES = [
+        TYPE_OF_USE_televir_project,
+        TYPE_OF_USE_televir_project_settings,
+    ]
 
     name = models.CharField(max_length=100, db_index=True, blank=True, null=True)
     name_extended = models.CharField(

@@ -43,7 +43,8 @@
     {% elif settings_pathid_project %}	<!-- Default settings QC -->
         {% breadcrumb "Project Index" "project-index" %}
         {% breadcrumb "TELEVIR Projects" "PIprojects_main" %}
-		{% breadcrumb project_name "pathogenID_pipeline" project_id %}		
+		{% breadcrumb project_name "PIproject_samples" project_id %}		
+		{% breadcrumb "Settings" "pathogenID_pipeline" project_id %}
     {% else %}	<!-- Default settings -->
 		{% breadcrumb "Settings Index" "settings-index" %}
 		{% breadcrumb "Settings RefMap" "settings" %}

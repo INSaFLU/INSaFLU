@@ -8,7 +8,11 @@ import os
 import networkx as nx
 
 from fluwebvirus.settings import MEDIA_ROOT, STATIC_ROOT, STATICFILES_DIRS
-from pathogen_identification.utilities.mapping_flags import MapFlagViruses
+from pathogen_identification.utilities.mapping_flags import (
+    MapFlagBacteria,
+    MapFlagProbes,
+    MapFlagViruses,
+)
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -27,12 +31,29 @@ class ConstantsSettings:
 
     ################################### Pipeline steps
 
+    TEST_SOFTWARE = False
+
+    ################################### Pipeline steps
+
+    METAGENOMICS = False
+
+    ################################### Pipeline model
+
+    PIPELINE_MODEL = 1
+
+    ################################### Pipeline steps
+
     PIPELINE_STEPS_DB_DEPENDENT = [
         CS.PIPELINE_NAME_viral_enrichment,
         CS.PIPELINE_NAME_host_depletion,
         CS.PIPELINE_NAME_read_classification,
         CS.PIPELINE_NAME_contig_classification,
-    ] 
+    ]
+
+    #################################### Tree sort default Parameters
+
+    clade_private_proportion = 0.5
+    clade_shared_proportion_threshold = 0.05
 
     ################################### pipeline_deployment_type
 
@@ -53,6 +74,7 @@ class ConstantsSettings:
 
     DIRS = {
         CS.PIPELINE_NAME_read_quality_analysis: "reads/clean/",
+        CS.PIPELINE_NAME_extra_qc: "reads/clean/",
         "reads_depleted_dir": "reads/hd_filtered/",
         "reads_enriched_dir": "reads/enriched/",
         CS.PIPELINE_NAME_host_depletion: "host_depletion/",
@@ -83,6 +105,12 @@ class ConstantsSettings:
     ################################## FLAG BUILDS
     FLAG_BUILD_DEFAULT = MapFlagViruses
 
+    FLAGS_AVAILABLE = [
+        MapFlagViruses,
+        MapFlagProbes,
+        # MapFlagBacteria,
+    ]
+
     ################################## Description filters
 
     DESCRIPTION_FILTERS = ["phage"]
@@ -110,4 +138,7 @@ class ConstantsSettings:
         "assembly_contig_min_length": 500,
     }
 
-    ################################## SOFTWARE
+    ################################## constants
+
+    PAIR_END = "PE"
+    SINGLE_END = "SE"

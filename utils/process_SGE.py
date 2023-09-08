@@ -525,7 +525,7 @@ class ProcessSGE(object):
         """
         process_controler = ProcessControler()
         vect_command = [
-            "python3 {} run_trimmomatic_species --sample_id {} --user_id {} {}".format(
+            "/usr/bin/python3 {} run_trimmomatic_species --sample_id {} --user_id {} {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 sample.pk,
                 user.pk,
@@ -564,7 +564,7 @@ class ProcessSGE(object):
         """
         process_controler = ProcessControler()
         vect_command = [
-            "python3 {} run_clean_minion --sample_id {} --user_id {} {}".format(
+            "/usr/bin/python3 {} run_clean_minion --sample_id {} --user_id {} {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 sample.pk,
                 user.pk,
@@ -646,7 +646,7 @@ class ProcessSGE(object):
         """
         process_controler = ProcessControler()
         vect_command = [
-            "python3 {} create_sample_list_by_user --user_id {} {}".format(
+            "/usr/bin/python3 {} create_sample_list_by_user --user_id {} {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user.pk,
                 "--settings fluwebvirus.settings_test" if b_test else "",
@@ -835,7 +835,7 @@ class ProcessSGE(object):
             queue_name,
             vect_command,
             job_name,
-            False,
+            True,
             [job_name_wait],
             alternative_temp_dir=out_dir,
         )
@@ -885,7 +885,7 @@ class ProcessSGE(object):
             queue_name,
             vect_command,
             job_name,
-            False,
+            True,
             [job_name_wait],
             alternative_temp_dir=out_dir,
         )

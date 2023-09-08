@@ -236,19 +236,16 @@ class SoftwareNames(object):
         "--no-alt-contigs "  ## genomeSize=<number>[g|m|k] file1 file2
     )
 
-    ## raven -t {params.threads} -k {params.kmer} -p {params.polishing} {input} 
-    ##    --graphical-fragment-assembly {output.gfa} --disable-checkpoints || 
-    ## (touch {output.gfa} && echo Warning: raven failed, were created empty files) ; 
-    ## awk \'/^S/{{ printf(">%s\\n%s\\n", $2, $3) }}\' {output.gfa} > {output.fasta} || 
+    ## raven -t {params.threads} -k {params.kmer} -p {params.polishing} {input}
+    ##    --graphical-fragment-assembly {output.gfa} --disable-checkpoints ||
+    ## (touch {output.gfa} && echo Warning: raven failed, were created empty files) ;
+    ## awk \'/^S/{{ printf(">%s\\n%s\\n", $2, $3) }}\' {output.gfa} > {output.fasta} ||
     ## touch {output.fasta}
     SOFTWARE_RAVEN = os.path.join(settings.DIR_SOFTWARE, "raven/raven.sh")
-    SOFTWARE_RAVEN_name = "raven"
+    SOFTWARE_RAVEN_name = "Raven"
     SOFTWARE_RAVEN_name_extended = "Assembly ONT (Raven)"
     SOFTWARE_RAVEN_VERSION = "1.8.1"
-    SOFTWARE_RAVEN_PARAMETERS = (
-        "-k 15 -p 2 --disable-checkpoints "
-    )
-
+    SOFTWARE_RAVEN_PARAMETERS = "-k 15 -p 2 --disable-checkpoints "
 
     ### used to create a file with variations table
     ## git: https://github.com/SantosJGND/INSA
@@ -562,26 +559,34 @@ class SoftwareNames(object):
     ### REPORT LAYOUT
     SOFTWARE_televir_report_layout = "report_layout"
     SOFTWARE_televir_report_layout_name = "Final Report"
-    SOFTWARE_televir_report_layout_name_extended = "Final Report"
+    SOFTWARE_televir_report_layout_name_extended = "Final Report - Flagging and Sorting"
     SOFTWARE_televir_report_layout_default = ""
     SOFTWARE_televir_report_layout_version = "1.0.0"
     SOFTWARE_televir_report_layout_flag_name = "--flag-type"
     SOFTWARE_televir_report_layout_threshold_name = "--r-overlap"
-    SOFTWARE_REMAP_PARAMS_min_quality = "--min-quality"
-    SOFTWARE_REMAP_PARAMS_max_mismatch = "--max-mismatch"
+    SOFTWARE_REMAP_PARAMS_min_quality = "--qualityThreshold"  # "--min-quality"
+    SOFTWARE_REMAP_PARAMS_max_mismatch = "--mismatchThreshold"  # "--max-mismatch"
 
     ### QC SOFTWARE
     SOFTWARE_PRINSEQ = os.path.join(
         settings.DIR_SOFTWARE,
         "preprocess/prinseq/bin/prinseq++",
     )
-    SOFTWARE_PRINSEQ_name = "Prinseq"
+    SOFTWARE_PRINSEQ_name = "Prinseq++"
     SOFTWARE_PRINSEQ_name_extended = (
-        "Preprocessing - Prinseq (remove low complexity reads)"
+        "Preprocessing - Prinseq++ (remove low complexity reads)"
     )
     SOFTWARE_PRINSEQ_VERSION = "1.2.4"
     SOFTWARE_PRINSEQ_lc_entropy = "--lc_entropy"
     SOFTWARE_PRINSEQ_lc_dust = "--lc_dust"
+
+    SOFTWARE_BAMUTIL_name = "BamUtil"
+    SOFTWARE_BAMUTIL_name_extended = "BamUtil - Mapping Stringency"
+    SOFTWARE_BAMUTIL = os.path.join(
+        settings.DIR_SOFTWARE,
+        "preprocess/bamUtil/bin/bam",
+    )
+    SOFTWARE_BAMUTIL_VERSION = "1.0.15"
 
     ###
 
@@ -701,16 +706,16 @@ class SoftwareNames(object):
     SOFTWARE_DESAMBA_parameters = ""
     ### RAVEN
 
-    #SOFTWARE_RAVEN_name = "Raven"
-    #SOFTWARE_RAVEN_name_extended = "Raven"
-    #SOFTWARE_RAVEN = os.path.join(settings.DIR_SOFTWARE, "assembly/assembly/bin/raven")
-    #SOFTWARE_RAVEN_VERSION = "1.8.1"
-    #SOFTWARE_RAVEN_parameters = "--threads 4 --gzip-compressed -p2"
+    # SOFTWARE_RAVEN_name = "Raven"
+    # SOFTWARE_RAVEN_name_extended = "Raven"
+    # SOFTWARE_RAVEN = os.path.join(settings.DIR_SOFTWARE, "assembly/assembly/bin/raven")
+    # SOFTWARE_RAVEN_VERSION = "1.8.1"
+    # SOFTWARE_RAVEN_parameters = "--threads 4 --gzip-compressed -p2"
 
     ### SNIPPY
 
     SOFTWARE_SNIPPY_PI_name = "Snippy_PI"
-    SOFTWARE_SNIPPY_PI_name_extended = "Snippy"
+    SOFTWARE_SNIPPY_PI_name_extended = "Snippy - Remapping"
     SOFTWARE_SNIPPY_PI = os.path.join(
         settings.DIR_SOFTWARE,
         "preprocess/preproc/bin/snippy",
@@ -721,7 +726,7 @@ class SoftwareNames(object):
     ### MINIMAP2 REMAP
 
     SOFTWARE_MINIMAP2_REMAP_ONT_name = "Minimap2"
-    SOFTWARE_MINIMAP2_REMAP_ONT_name_extended = "Minimap2"
+    SOFTWARE_MINIMAP2_REMAP_ONT_name_extended = "Minimap2 - Remapping"
     SOFTWARE_MINIMAP2_REMAP_ONT = os.path.join(
         settings.DIR_SOFTWARE,
         "preprocess/preproc/bin/minimap2",
@@ -740,6 +745,15 @@ class SoftwareNames(object):
     SOFTWARE_MINIMAP2_DEPLETE_ONT_VERSION = "2.24"
     SOFTWARE_MINIMAP2_DEPLETE_ONT_parameters = "-a -x map-ont -t 4"
 
+    SOFTWARE_MINIMAP2_DEPLETE_ILLU_name = "Minimap2_ILLU"
+    SOFTWARE_MINIMAP2_DEPLETE_ILLU_name_extended = "Minimap2"
+    SOFTWARE_MINIMAP2_DEPLETE_ILLU = os.path.join(
+        settings.DIR_SOFTWARE,
+        "hostDepletion/hostdep_env/bin/minimap2",
+    )
+    SOFTWARE_MINIMAP2_DEPLETE_ILLU_VERSION = "2.24"
+    SOFTWARE_MINIMAP2_DEPLETE_ILLU_parameters = "-a -x sr -t 4"
+
     ### Bowtie2 DEPLETE
 
     SOFTWARE_BOWTIE2_DEPLETE_name = "Bowtie2"
@@ -750,6 +764,17 @@ class SoftwareNames(object):
     )
     SOFTWARE_BOWTIE2_DEPLETE_VERSION = "2.4.5"
     SOFTWARE_BOWTIE2_DEPLETE_parameters = "-p 4"
+
+    ### Bowtie2 REMAP
+
+    SOFTWARE_BOWTIE2_REMAP_name = "Bowtie2_remap"
+    SOFTWARE_BOWTIE2_REMAP_name_extended = "Bowtie2"
+    SOFTWARE_BOWTIE2_REMAP = os.path.join(
+        settings.DIR_SOFTWARE,
+        "remap/remap/bin/bowtie2",
+    )
+    SOFTWARE_BOWTIE2_REMAP_VERSION = "2.4.5"
+    SOFTWARE_BOWTIE2_REMAP_parameters = "-p 4"
 
     ###################################
     ###################################

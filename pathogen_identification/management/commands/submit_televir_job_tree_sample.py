@@ -17,9 +17,11 @@ from pathogen_identification.utilities.tree_deployment import (
     TreeProgressGraph,
 )
 from pathogen_identification.utilities.utilities_pipeline import (
+    SoftwareTreeUtils,
     Utility_Pipeline_Manager,
     Utils_Manager,
 )
+from pathogen_identification.utilities.utilities_views import set_control_reports
 from utils.process_SGE import ProcessSGE
 
 
@@ -94,14 +96,15 @@ class Command(BaseCommand):
 
         # UTILITIES
         utils = Utils_Manager()
-
+        software_utils = SoftwareTreeUtils(user, project)
         ####
-        local_tree = utils.generate_project_tree(technology, project, user)
+        local_tree = software_utils.generate_project_tree()
         local_paths = local_tree.get_all_graph_paths_explicit()
         tree_makeup = local_tree.makeup
 
-        pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
-        pipeline_tree_index = utils.get_software_tree_index(technology, tree_makeup)
+        # pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
+        pipeline_tree = software_utils.generate_software_tree_extend(local_tree)
+        pipeline_tree_index = local_tree.software_tree_pk
 
         # MANAGEMENT
         matched_paths = {
@@ -130,16 +133,20 @@ class Command(BaseCommand):
         }
 
         # SUBMISSION
+        print("MATCHED PATHS")
+        print(matched_paths)
 
-        pipeline_utils = Utility_Pipeline_Manager()
+        module_tree = utils.module_tree(pipeline_tree, list(matched_paths.values()))
 
-        reduced_tree = utils.tree_subset(pipeline_tree, list(matched_paths.values()))
-
-        module_tree = pipeline_utils.compress_software_tree(reduced_tree)
+        # reduced_tree = utils.tree_subset(pipeline_tree, )
+        # reduced_tree= utils.prep_tree_for_extend(reduced_tree, user)
+        # module_tree = pipeline_utils.compress_software_tree(reduced_tree)
 
         try:
             for project_sample in samples:
-                if not project_sample.is_deleted:
+                if project_sample.is_deleted:
+                    continue
+                if len(matched_paths) > 0:
                     graph_progress = TreeProgressGraph(project_sample)
 
                     deployment_tree = Tree_Progress(
@@ -151,6 +158,7 @@ class Command(BaseCommand):
                     deployment_tree.cycle_process()
 
                     graph_progress.generate_graph()
+                    set_control_reports(project.pk)
 
                     break
 

@@ -432,7 +432,6 @@ def Update_RunMain(run_class: RunMain_class, parameter_set: ParameterSet):
         runmain = RunMain.objects.get(
             project__name=run_class.sample.project_name,
             sample=sample,
-            name=run_class.prefix,
             parameter_set=parameter_set,
         )
     except RunMain.DoesNotExist:
@@ -521,6 +520,9 @@ def Update_RunMain_noCheck(
     :return: None
     """
     sample, runmain, project = get_run_parents(run_class, parameter_set)
+
+    print("RUNMAIN: ", runmain.pk)
+    print("PARAMETER_SET: ", parameter_set.pk)
 
     if sample is None or runmain is None:
         return

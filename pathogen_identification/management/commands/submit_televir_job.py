@@ -14,7 +14,7 @@ from pathogen_identification.models import (
     SoftwareTree,
     SoftwareTreeNode,
 )
-from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
+from pathogen_identification.utilities.utilities_pipeline import Utils_Manager,SoftwareTreeUtils
 from utils.process_SGE import ProcessSGE
 
 
@@ -72,16 +72,19 @@ class Command(BaseCommand):
 
         ### UTILITIES
         utils = Utils_Manager()
+        software_utils= SoftwareTreeUtils(user, project)
+
         samples = PIProject_Sample.objects.filter(project=project)
-        local_tree = utils.generate_project_tree(technology, project, user)
+        local_tree = software_utils.generate_project_tree()
         local_paths = local_tree.get_all_graph_paths_explicit()
 
         tree_makeup = local_tree.makeup
 
-        pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
-        global_paths = pipeline_tree.get_all_graph_paths_explicit()
+        #pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
+        pipeline_tree= software_utils.generate_software_tree_extend(local_tree)
+        #global_paths = pipeline_tree.get_all_graph_paths_explicit()
 
-        pipeline_tree_index = utils.get_software_tree_index(technology, tree_makeup)
+        pipeline_tree_index = local_tree.software_tree_pk
         pipeline_tree_query = SoftwareTree.objects.get(pk=pipeline_tree_index)
 
         ### MANAGEMENT

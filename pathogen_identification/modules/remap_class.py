@@ -10,21 +10,20 @@ import pandas as pd
 from Bio.SeqIO.FastaIO import SimpleFastaParser
 from scipy.stats import kstest
 
-from pathogen_identification.constants_settings import ConstantsSettings
+from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.modules.object_classes import (
     Bedgraph,
     Read_class,
     Remap_Target,
     RunCMD,
     Software_detail,
+    SoftwareRemap,
 )
+from pathogen_identification.utilities.televir_parameters import RemapParams
 from pathogen_identification.utilities.utilities_general import (
     plot_dotplot,
     read_paf_coordinates,
 )
-from pathogen_identification.utilities.televir_parameters import RemapParams
-
-from scipy.stats import kstest
 
 pd.options.mode.chained_assignment = None
 np.warnings.filterwarnings("ignore")
@@ -311,12 +310,12 @@ class RemapMethod_init:
     ):
         self.r1 = r1
         self.r2 = r2
-        self.args = args
-        self.type = type
-        self.prefix = prefix
-        self.reference = reference
-        self.outdir = outdir
-        self.threads = threads
+        self.args: str = args
+        self.type: str = type
+        self.prefix: str = prefix
+        self.reference: str = reference
+        self.outdir: str = outdir
+        self.threads: str = threads
         self.force = force
 
         self.outbam = os.path.join(outdir, prefix + ".bam")
@@ -367,9 +366,9 @@ class Remap_Snippy(RemapMethod_init):
     def remap(self):
         """
         Remap reads to reference using snippy."""
-        if self.type == "SE":
+        if self.type == CS.SINGLE_END:
             self.remap_SE()
-        elif self.type == "PE":
+        elif self.type == CS.PAIR_END:
             self.remap_PE()
         else:
             raise ValueError
@@ -419,9 +418,9 @@ class Remap_Bwa(RemapMethod_init):
     def remap(self):
         """
         Remap reads to reference using bwa."""
-        if self.type == "SE":
+        if self.type == CS.SINGLE_END:
             self.remap_SE()
-        elif self.type == "PE":
+        elif self.type == CS.PAIR_END:
             self.remap_PE()
         else:
             raise ValueError
@@ -485,9 +484,9 @@ class Remap_Minimap2(RemapMethod_init):
     def remap(self):
         """
         Remap reads to reference using minimap2."""
-        if self.type == "SE":
+        if self.type == CS.SINGLE_END:
             self.remap_SE()
-        elif self.type == "PE":
+        elif self.type == CS.PAIR_END:
             self.remap_PE()
         else:
             raise ValueError
@@ -550,26 +549,49 @@ class Remap_Minimap2(RemapMethod_init):
 
 
 class Remap_Bowtie2(RemapMethod_init):
+    modes = ["--end-to-end", "--local"]
+    preset_options = ["--very-fast", "--fast", "--sensitive", "--very-sensitive"]
+
     def remap(self):
         """
         Remap reads to reference using bowtie2."""
-        if self.type == "SE":
+        if self.type == CS.SINGLE_END:
             self.remap_SE()
-        elif self.type == "PE":
+        elif self.type == CS.PAIR_END:
             self.remap_PE()
         else:
             raise ValueError
 
+    def process_arguments(self):
+        """
+        Process arguments to remove preset and mode option flags"""
+        self.args = self.args.replace("[preset]", "").replace("[mode]", "")
+
+    def index_reference(self):
+        """
+        Index reference using bowtie2."""
+        index_name = os.path.splitext(self.reference)[0] + "_index"
+
+        cmd = ["bowtie2-build", self.reference, index_name]
+
+        self.cmd.run(cmd)
+
+        return index_name
+
     def remap_SE(self):
         """
         Remap reads to reference using bowtie2 for single end reads."""
+
+        index_name = self.index_reference()
+        self.process_arguments()
+
         cmd = [
             "bowtie2",
             self.args,
             "-p",
             self.threads,
             "-x",
-            self.reference,
+            index_name,
             "-U",
             self.r1,
             "-S",
@@ -580,13 +602,17 @@ class Remap_Bowtie2(RemapMethod_init):
     def remap_PE(self):
         """
         Remap reads to reference using bowtie2 for paired end reads."""
+
+        index_name = self.index_reference()
+        self.process_arguments()
+
         cmd = [
             "bowtie2",
             self.args,
             "-p",
             self.threads,
             "-x",
-            self.reference,
+            index_name,
             "-1",
             self.r1,
             "-2",
@@ -604,7 +630,7 @@ class Remapping:
         self,
         r1: str,
         target: Remap_Target,
-        method: Software_detail,
+        methods: SoftwareRemap,
         assembly_path: str,
         type: str,
         prefix: str,
@@ -632,9 +658,11 @@ class Remapping:
         :param bin: path to bin directory.
         :param logging_level: logging level to use.
         """
-        self.method = method.name.split("_")[0]
-        self.method_object = method
-        self.args = method.args
+        remap_method = methods.remap_software
+        self.remap_filter = methods.remap_filter
+        self.method = remap_method.name.split("_")[0]
+        self.method_object = remap_method
+        self.args = remap_method.args
         self.rdir = rdir
         self.cleanup = cleanup
         self.remap_params = remap_params
@@ -847,7 +875,7 @@ class Remapping:
         rnumber = self.cmd.run_bash_return(cmd)
         rnumber = int(rnumber) // 4
 
-        if self.type == "PE":
+        if self.type == CS.PAIR_END:
             cmd = "zcat %s | wc -l" % self.r2
             rnumber += int(self.cmd.run_bash_return(cmd)) // 4
 
@@ -955,10 +983,7 @@ class Remapping:
         3) index bam file.
         4) get number of mapped reads."""
 
-        self.filter_bamfile_read_names()
-        self.filter_mapping_bamutil()
-        self.sort_bam()
-        self.index_sorted_bam()
+        self.process_bam()
         self.generate_vcf()
         self.get_genomecoverage()
         self.get_mapped_reads_no_header()
@@ -966,10 +991,44 @@ class Remapping:
         self.subset_mapped_reads()
         self.mapped_reads_to_fasta()
 
+    def process_bam(self):
+        self.filter_bamfile_read_names()
+        self.filter_bamfile()
+        self.sort_bam()
+        self.index_sorted_bam()
+
+    def filter_bamfile(self):
+        self.filter_mapping_bamutil()
+        self.filter_bam_unmapped()
+
+    def filter_bam_unmapped(self):
+        """
+        filter reads marked as unmapped"""
+
+        bam_path = self.read_map_filtered_bam
+
+        filtered_bam_path = os.path.splitext(bam_path)[0] + ".filtered.bam"
+
+        bash_cmd = f"samtools view -b -F 4 {bam_path} > {filtered_bam_path}"
+
+        self.cmd.run_script_software(bash_cmd)
+
+        if (
+            os.path.isfile(filtered_bam_path)
+            and os.path.getsize(filtered_bam_path) > 100
+        ):
+            os.remove(bam_path)
+            shutil.move(filtered_bam_path, bam_path)
+
     def filter_mapping_bamutil(self):
         """
         filter bam file by mapping quality.
         """
+
+        if self.remap_filter.name == "None":
+            self.logger.info("No bam filtering performed.")
+            self.read_map_filtered_bam = self.read_map_bam
+            return
 
         cmd = [
             "bam",
@@ -978,16 +1037,11 @@ class Remapping:
             self.read_map_bam,
             "--refFile",
             self.reference_file,
-            "--qualityThreshold",
-            str(self.remap_params.min_quality),
-            "--mismatchThreshold",
-            str(self.remap_params.max_mismatch),
+            self.remap_filter.args,
             "--out",
             self.read_map_filtered_bam,
+            "--noPhoneHome",
         ]
-
-        print("BAMUTIL FILTERING")
-        print(" ".join([self.cmd.bin] + cmd))
 
         try:
             self.cmd.run(cmd)
@@ -999,7 +1053,7 @@ class Remapping:
             return
 
         if not os.path.isfile(self.read_map_filtered_bam):
-            self.logger.error("Bam filtering failed.")
+            self.logger.error("Bam filtering failed, file missing.")
             self.read_map_filtered_bam = self.read_map_bam
             return
 
@@ -1191,8 +1245,10 @@ class Remapping:
         available_methods = {
             "bwa": Remap_Bwa,
             "snippy": Remap_Snippy,
+            "snippy_pi": Remap_Snippy,
             "minimap2": Remap_Minimap2,
-            "bowtie": Remap_Bowtie2,
+            "bowtie2": Remap_Bowtie2,
+            "bowtie2_remap": Remap_Bowtie2,
         }
 
         if self.method in available_methods:
@@ -1339,14 +1395,9 @@ class Remapping:
     def get_mapped_reads_no_header(self):
         """
         Get number of mapped reads without header, use samtools."""
-        temp_file = os.path.join(self.rdir, f"temp{randint(1,1999)}.bam")
 
-        cmd = f"samtools view -b -F 4 {self.read_map_sorted_bam} > {temp_file}"
-        self.cmd.run(cmd)
-
-        cmd2 = f"samtools view -h {temp_file} | grep -v '^@' | cut -f1 | sort | uniq > {self.mapped_reads}"
+        cmd2 = f"samtools view -F 0x4 {self.read_map_sorted_bam} | cut -f 1 | sort | uniq > {self.mapped_reads}"
         self.cmd.run_script_software(cmd2)
-        os.remove(temp_file)
 
     def get_mapped_reads_number(self):
         try:
@@ -1375,9 +1426,9 @@ class Remapping:
         tempfile = os.path.join(self.rdir, f"temp{randint(1,1999)}.rlst")
         self.cmd.run_bash(f"cat {self.mapped_reads} | cut -f1 > {tempfile}")
 
-        if self.type == "SE":
+        if self.type == CS.SINGLE_END:
             self.subset_mapped_reads_r1(tempfile)
-        elif self.type == "PE":
+        elif self.type == CS.PAIR_END:
             self.subset_mapped_reads_r1(tempfile)
             self.subset_mapped_reads_r2(tempfile)
 
@@ -1385,12 +1436,12 @@ class Remapping:
 
     def mapped_reads_to_fasta(self):
         """convert fastq subsets to fasta"""
-        if self.type == "SE":
+        if self.type == CS.SINGLE_END:
             cmd = (
                 f"seqtk seq -a {self.mapped_subset_r1} > {self.mapped_subset_r1_fasta}"
             )
             self.cmd.run_script_software(cmd)
-        elif self.type == "PE":
+        elif self.type == CS.PAIR_END:
             cmd = (
                 f"seqtk seq -a {self.mapped_subset_r1} > {self.mapped_subset_r1_fasta}"
             )
@@ -1434,7 +1485,7 @@ class Remapping:
         self.coverage_plot_exists = os.path.exists(self.coverage_plot)
 
         self.full_path_coverage_plot = os.path.join(
-            ConstantsSettings.static_directory, new_coverage_plot
+            CS.static_directory, new_coverage_plot
         )
 
         if self.coverage_plot_exists:
@@ -1446,9 +1497,7 @@ class Remapping:
 
         new_dotplot = os.path.join(static_dir_plots, os.path.basename(self.dotplot))
 
-        self.full_path_dotplot = os.path.join(
-            ConstantsSettings.static_directory, new_dotplot
-        )
+        self.full_path_dotplot = os.path.join(CS.static_directory, new_dotplot)
 
         self.dotplot_exists = os.path.exists(self.dotplot)
 
@@ -1519,7 +1568,9 @@ class Mapping_Instance:
         self.apres = self.assert_contigs_mapped()
         self.mapping_success = self.assert_mapping_success()
         self.classification_success = self.assert_classification_success()
+        self.produce_mapping_report()
 
+    def produce_mapping_report(self):
         self.mapping_main_info = pd.DataFrame(
             [
                 [
@@ -1659,7 +1710,7 @@ class Tandem_Remap:
         self,
         r1,
         r2,
-        remapping_method: Software_detail,
+        remapping_methods: SoftwareRemap,
         remapping_params: RemapParams,
         assembly_file: str,
         type: str,
@@ -1678,7 +1729,7 @@ class Tandem_Remap:
         self.logger.propagate = False
         self.logger.info("Reciprocal Remap started")
 
-        self.remapping_method = remapping_method
+        self.remapping_methods = remapping_methods
         self.remapping_params = remapping_params
         self.assembly_file = assembly_file
         self.type = type
@@ -1691,7 +1742,7 @@ class Tandem_Remap:
         self.r1 = r1.current
         self.r2 = r2.current
 
-    def reciprocal_map(self, remap_target):
+    def reciprocal_map(self, remap_target) -> Mapping_Instance:
         reference_remap_drone = self.reference_map(remap_target)
         assembly_map = self.assembly_map(reference_remap_drone)
 
@@ -1707,7 +1758,7 @@ class Tandem_Remap:
 
     def reference_map(self, remap_target: Remap_Target):
         rdir = os.path.join(
-            self.remapping_method.dir,
+            self.remapping_methods.remap_software.dir,
             remap_target.name,
             "reference",
         )
@@ -1715,7 +1766,7 @@ class Tandem_Remap:
         target_remap_drone = Remapping(
             self.r1,
             remap_target,
-            self.remapping_method,
+            self.remapping_methods,
             self.assembly_file,
             self.type,
             self.prefix,
@@ -1738,7 +1789,7 @@ class Tandem_Remap:
             return None
 
         output_directory = os.path.join(
-            self.remapping_method.dir,
+            self.remapping_methods.remap_software.dir,
             reference_remap.target.name,
             "assembly",
         )
@@ -1756,7 +1807,7 @@ class Tandem_Remap:
         assembly_remap_drone = Remapping(
             reference_remap.mapped_subset_r1,
             assembly_target,
-            self.remapping_method,
+            self.remapping_methods,
             self.assembly_file,
             self.type,
             self.prefix,
@@ -1788,7 +1839,7 @@ class Mapping_Manager(Tandem_Remap):
         remap_targets: List[Remap_Target],
         r1: Read_class,
         r2: Read_class,
-        remapping_method: Software_detail,
+        remapping_methods: SoftwareRemap,
         assembly_file: str,
         type: str,
         prefix,
@@ -1802,7 +1853,7 @@ class Mapping_Manager(Tandem_Remap):
         super().__init__(
             r1,
             r2,
-            remapping_method,
+            remapping_methods,
             remap_params,
             assembly_file,
             type,

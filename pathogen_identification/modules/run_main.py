@@ -2,6 +2,7 @@ import logging
 import os
 import shutil
 import time
+from dataclasses import dataclass
 from random import randint
 from typing import List, Type
 
@@ -13,14 +14,28 @@ from pathogen_identification.modules.assembly_class import Assembly_class
 from pathogen_identification.modules.classification_class import Classifier
 from pathogen_identification.modules.metadata_handler import Metadata_handler
 from pathogen_identification.modules.object_classes import (
-    Assembly_results, Contig_classification_results, Read_class,
-    Read_classification_results, Remap_main, Run_detail_report, RunCMD,
-    RunQC_report, Sample_runClass, Software_detail, SoftwareUnit)
+    Assembly_results,
+    Contig_classification_results,
+    Read_class,
+    Read_classification_results,
+    Remap_main,
+    Run_detail_report,
+    RunCMD,
+    RunQC_report,
+    Sample_runClass,
+    Software_detail,
+    SoftwareRemap,
+    SoftwareUnit,
+)
 from pathogen_identification.modules.preprocess_class import Preprocess
-from pathogen_identification.modules.remap_class import (Mapping_Instance,
-                                                         Mapping_Manager)
+from pathogen_identification.modules.remap_class import (
+    Mapping_Instance,
+    Mapping_Manager,
+)
 from pathogen_identification.utilities.televir_parameters import (
-    RemapParams, TelevirParameters)
+    RemapParams,
+    TelevirParameters,
+)
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -35,6 +50,25 @@ def get_bindir_from_binaries(binaries, key, value: str = ""):
             return os.path.join(binaries["ROOT"], binaries[key][value], "bin")
         except KeyError:
             return ""
+
+
+@dataclass
+class RunMainConfig:
+    project_name: str
+    sample_name: str
+    r1: str
+    r2: str
+    type: str
+    prefix: str
+    source: str
+    deployment_root_dir: str
+    sub_directory: str
+    directories: dict
+    threads: int
+    metadata: dict
+    technology: str
+    bin: dict
+    actions: dict
 
 
 class RunDetail_main:
@@ -95,6 +129,7 @@ class RunDetail_main:
     remapping_method: Software_detail
     remap_manager: Mapping_Manager
     remap_params: RemapParams
+    software_remap: SoftwareRemap
     ## directories.
     root: str
 
@@ -178,7 +213,6 @@ class RunDetail_main:
         self.contig_classification_performed: bool = False
         self.remap_prepped: bool = False
         self.remapping_performed: bool = False
-        self.remap_prepped: bool = False
 
         ######## DIRECTORIES ########
 
@@ -313,30 +347,19 @@ class RunDetail_main:
             rundir=self.deployment_dir,
         )
 
+        self.max_remap = remap_params.max_accids
+        self.taxid_limit = remap_params.max_taxids
         self.remap_params = remap_params
 
         ### methods
-
-        prinseq_soft = TelevirParameters.get_prinseq_software(
-            self.username, self.project_name
+        self.preprocess_method = Software_detail(
+            CS.PIPELINE_NAME_extra_qc,
+            method_args,
+            config,
+            self.prefix,
         )
-        if prinseq_soft.is_to_run:
-            self.preprocess_method = SoftwareUnit(
-                module=CS.PIPELINE_NAME_read_quality_analysis,
-                name="prinseq",
-                args=f"-lc_entropy={prinseq_soft.entropy_threshold} -lc_dust={prinseq_soft.dust_threshold}",
-            )
-            self.preprocess_method.get_bin(config)
-        else:
-            self.preprocess_method = Software_detail(
-                CS.PIPELINE_NAME_read_quality_analysis,
-                method_args,
-                config,
-                self.prefix,
-            )
 
         ###
-
         self.assembly_method = Software_detail(
             CS.PIPELINE_NAME_assembly,
             method_args,
@@ -377,23 +400,46 @@ class RunDetail_main:
             self.prefix,
         )
 
+        self.remap_filtering_method = Software_detail(
+            CS.PIPELINE_NAME_remap_filtering,
+            method_args,
+            config,
+            self.prefix,
+        )
+
+        ###
+
+        self.software_remap = SoftwareRemap(
+            self.remapping_method,
+            self.remap_filtering_method,
+        )
+
         ### actions
         self.subsample = False
         self.quality_control = bool(
-            self.preprocess_method.name != None
-        )  # config["actions"]["QCONTROL"]
-        self.sift = config["actions"]["SIFT"]
-        self.depletion = bool(self.depletion_method.name != "None")
-        self.depletion = bool(self.depletion_method.name != "None")
-        self.enrichment = bool(self.enrichment_method.name != "None")
-        self.assembly = bool(self.assembly_method.name != "None")
-        self.contig_classification = bool(
-            self.contig_classification_method.name != "None"
+            self.preprocess_method.name != Software_detail.SOFTWARE_NOT_FOUND
         )
-        self.read_classification = bool(self.read_classification_method.name != "None")
-
+        self.sift = config["actions"]["SIFT"]
+        self.depletion = bool(
+            self.depletion_method.name != Software_detail.SOFTWARE_NOT_FOUND
+        )
+        self.enrichment = bool(
+            self.enrichment_method.name != Software_detail.SOFTWARE_NOT_FOUND
+        )
+        self.assembly = bool(
+            self.assembly_method.name != Software_detail.SOFTWARE_NOT_FOUND
+        )
+        self.contig_classification = bool(
+            self.contig_classification_method.name != Software_detail.SOFTWARE_NOT_FOUND
+        )
+        self.read_classification = bool(
+            self.read_classification_method.name != Software_detail.SOFTWARE_NOT_FOUND
+        )
         self.classification = config["actions"]["CLASSIFY"]
         self.remapping = config["actions"]["REMAP"]
+        self.remapping_filtering = bool(
+            self.remap_filtering_method.name != Software_detail.SOFTWARE_NOT_FOUND
+        )
         self.house_cleaning = config["actions"]["CLEAN"]
 
         ### drones
@@ -441,9 +487,6 @@ class RunDetail_main:
         # with open(config_json) as json_file:
         #    config = json.load(json_file)
 
-        print("METHOD ARGS")
-        print(self.method_args)
-
         self.config = config
         self.prefix = config["prefix"]
         # self.type = config["type"]
@@ -478,23 +521,12 @@ class RunDetail_main:
 
         ### methods
 
-        prinseq_soft = TelevirParameters.get_prinseq_software(
-            self.username, self.project_name
+        self.preprocess_method = Software_detail(
+            CS.PIPELINE_NAME_extra_qc,
+            method_args,
+            config,
+            self.prefix,
         )
-        if prinseq_soft.is_to_run:
-            self.preprocess_method = SoftwareUnit(
-                module=CS.PIPELINE_NAME_read_quality_analysis,
-                name="prinseq",
-                args=f"-lc_entropy={prinseq_soft.entropy_threshold} -lc_dust={prinseq_soft.dust_threshold}",
-            )
-            self.preprocess_method.get_bin(config)
-        else:
-            self.preprocess_method = Software_detail(
-                CS.PIPELINE_NAME_read_quality_analysis,
-                method_args,
-                config,
-                self.prefix,
-            )
 
         self.assembly_method = Software_detail(
             CS.PIPELINE_NAME_assembly,
@@ -537,18 +569,49 @@ class RunDetail_main:
             self.prefix,
         )
 
+        self.remap_filtering_method = Software_detail(
+            CS.PIPELINE_NAME_remap_filtering,
+            method_args,
+            config,
+            self.prefix,
+        )
+
+        if self.software_remap.remap_filter.name == Software_detail.SOFTWARE_NOT_FOUND:
+            self.software_remap.remap_filter = self.remap_filtering_method
+
+        if (
+            self.software_remap.remap_software.name
+            == Software_detail.SOFTWARE_NOT_FOUND
+        ):
+            self.software_remap.remap_software = self.remapping_method
+
         # actions
         self.subsample = False
-        self.quality_control = bool(self.preprocess_method.name != None)
-        self.sift = config["actions"]["SIFT"]
-        self.depletion = bool(self.depletion_method.name != "None")
-        self.enrichment = bool(self.enrichment_method.name != "None")
-        self.assembly = bool(self.assembly_method.name != "None")
-        self.read_classification = bool(self.read_classification_method.name != "None")
-        self.contig_classification = bool(
-            self.contig_classification_method.name != "None"
+        self.quality_control = bool(
+            self.preprocess_method.name != Software_detail.SOFTWARE_NOT_FOUND
         )
-        self.remapping = bool(self.remapping_method.name != "None")
+        self.sift = config["actions"]["SIFT"]
+        self.depletion = bool(
+            self.depletion_method.name != Software_detail.SOFTWARE_NOT_FOUND
+        )
+        self.enrichment = bool(
+            self.enrichment_method.name != Software_detail.SOFTWARE_NOT_FOUND
+        )
+        self.assembly = bool(
+            self.assembly_method.name != Software_detail.SOFTWARE_NOT_FOUND
+        )
+        self.read_classification = bool(
+            self.read_classification_method.name != Software_detail.SOFTWARE_NOT_FOUND
+        )
+        self.contig_classification = bool(
+            self.contig_classification_method.name != Software_detail.SOFTWARE_NOT_FOUND
+        )
+        self.remapping = bool(
+            self.remapping_method.name != Software_detail.SOFTWARE_NOT_FOUND
+        )
+        self.remapping_filtering = bool(
+            self.remap_filtering_method.name != Software_detail.SOFTWARE_NOT_FOUND
+        )
         self.classification = self.read_classification or self.contig_classification
         self.house_cleaning = config["actions"]["CLEAN"]
 
@@ -692,7 +755,7 @@ class Run_Deployment_Methods(RunDetail_main):
             [],
             self.sample.r1,
             self.sample.r2,
-            self.remapping_method,
+            self.software_remap,
             self.assembly_drone.assembly_file_fasta_gz,
             self.type,
             self.prefix,
@@ -703,8 +766,6 @@ class Run_Deployment_Methods(RunDetail_main):
             remap_params=self.remap_params,
             logdir=self.config["directories"]["log_dir"],
         )
-
-        
 
     def deploy_QC(self, fake_run: bool = False):
         self.logger.info(f"r1 reads: {self.sample.r1.get_current_fastq_read_number()}")
@@ -805,7 +866,7 @@ class Run_Deployment_Methods(RunDetail_main):
             self.metadata_tool.remap_targets,
             self.sample.r1,
             self.sample.r2,
-            self.remapping_method,
+            self.software_remap,
             self.assembly_drone.assembly_file_fasta_gz,
             self.type,
             self.prefix,
@@ -822,7 +883,7 @@ class Run_Deployment_Methods(RunDetail_main):
             self.metadata_tool.remap_targets,
             self.sample.r1,
             self.sample.r2,
-            self.remapping_method,
+            self.software_remap,
             self.assembly_drone.assembly_file_fasta_gz,
             self.type,
             self.prefix,
@@ -852,6 +913,17 @@ class RunMain_class(Run_Deployment_Methods):
     ):
         super().__init__(config_json, method_args, username)
 
+        self.logger.info("Starting Pipeline")
+
+        self.logger.info(f"quality control: {self.quality_control}")
+        self.logger.info(f"enrichment: {self.enrichment}")
+        self.logger.info(f"depletion: {self.depletion}")
+        self.logger.info(f"assembly: {self.assembly}")
+        self.logger.info(f"classification: {self.classification}")
+        self.logger.info(f"sift: {self.sift}")
+        self.logger.info(f"remapping: {self.remapping}")
+        self.logger.info(f"current reads: {self.sample.r1.current}")
+
     def Run_Full_Pipeline(self):
         self.Prep_deploy()
         self.Run_QC()
@@ -862,16 +934,6 @@ class RunMain_class(Run_Deployment_Methods):
         self.Run_Remapping()
 
     def Run_QC(self):
-        self.logger.info("Starting Pipeline")
-
-        self.logger.info(f"quality control: {self.quality_control}")
-        self.logger.info(f"enrichment: {self.enrichment}")
-        self.logger.info(f"depletion: {self.depletion}")
-        self.logger.info(f"assembly: {self.assembly}")
-        self.logger.info(f"classification: {self.classification}")
-        self.logger.info(f"sift: {self.sift}")
-        self.logger.info(f"remapping: {self.remapping}")
-
         if self.quality_control:
             print("Deploying QC")
             self.deploy_QC()
@@ -1047,7 +1109,7 @@ class RunMain_class(Run_Deployment_Methods):
         self.logger.info(f"prefix: {self.prefix}")
         with open(os.path.join(self.log_dir, self.prefix + "_latest.fofn"), "w") as f:
             f.write(self.sample.r1.current + "\n")
-            if self.type == "PE":
+            if self.type == ConstantsSettings.PAIR_END:
                 f.write(self.sample.r2.current + "\n")
 
         with open(os.path.join(self.log_dir, "reads_latest.stats"), "w") as f:
@@ -1056,7 +1118,7 @@ class RunMain_class(Run_Deployment_Methods):
 
     def generate_output_data_classes(self):
         ### transfer to sample class
-        input_reads= self.sample.reads_before_processing
+        input_reads = self.sample.reads_before_processing
         processed_reads = self.sample.reads_after_processing
 
         filtered_reads = (
@@ -1072,7 +1134,6 @@ class RunMain_class(Run_Deployment_Methods):
         final_processing_percent = (final_processing_reads / input_reads) * 100
 
         ### transfer to assembly class / drone.
-        print(self.aclass_summary)
         minhit_assembly = self.aclass_summary["counts"].min()
         if not minhit_assembly or not self.aclass_summary.shape[0]:
             minhit_assembly = 0
@@ -1093,7 +1154,7 @@ class RunMain_class(Run_Deployment_Methods):
         enriched_reads = len(self.enrichment_drone.classified_reads_list)
         depleted_reads = len(self.depletion_drone.classified_reads_list)
 
-        if self.type == "PE":
+        if self.type == ConstantsSettings.PAIR_END:
             enriched_reads = enriched_reads * 2
             depleted_reads = depleted_reads * 2
 
@@ -1181,7 +1242,6 @@ class RunMainTree_class(Run_Deployment_Methods):
     ):
         super().__init__(config_json, method_args, username)
 
-    def Run_Full_Pipeline(self):
         self.logger.info("Starting Pipeline")
 
         self.logger.info(f"quality control: {self.quality_control}")
@@ -1193,6 +1253,7 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.logger.info(f"remapping: {self.remapping}")
         self.logger.info(f"current reads: {self.sample.r1.current}")
 
+    def Run_Full_Pipeline(self):
         self.Prep_deploy()
         self.Run_QC()
         self.Run_PreProcess()
@@ -1377,7 +1438,7 @@ class RunMainTree_class(Run_Deployment_Methods):
 
     def plan_remap_prep_safe(self):
         self.plan_remap_prep()
-        self.export_intermediate_reports()
+        # self.export_intermediate_reports()
         self.remap_prepped = True
 
     def plan_remap_prep(self):
@@ -1399,8 +1460,8 @@ class RunMainTree_class(Run_Deployment_Methods):
             return
 
         if self.remapping and self.remapping_performed is False:
-            self.plan_remap_prep()
-            self.export_intermediate_reports()
+            if self.remap_prepped == False:
+                self.plan_remap_prep_safe()
 
             print("merged targets: ", self.merged_targets)
 
@@ -1464,11 +1525,14 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.sample.export_reads(self.media_dir)
         self.assembly_drone.export_assembly(self.media_dir)
 
+    def export_assembly(self):
+        self.assembly_drone.export_assembly(self.media_dir)
+
     def Summarize(self):
         self.logger.info(f"prefix: {self.prefix}")
         with open(os.path.join(self.log_dir, self.prefix + "_latest.fofn"), "w") as f:
             f.write(self.sample.r1.current + "\n")
-            if self.type == "PE":
+            if self.type == ConstantsSettings.PAIR_END:
                 f.write(self.sample.r2.current + "\n")
 
         with open(os.path.join(self.log_dir, "reads_latest.stats"), "w") as f:
@@ -1493,11 +1557,10 @@ class RunMainTree_class(Run_Deployment_Methods):
         )
 
         if processed_reads == 0:
-            filtered_reads_perc= 0
+            filtered_reads_perc = 0
             final_processing_percent = 0
             processed_reads = 1
         else:
-
             filtered_reads_perc = (int(filtered_reads) / processed_reads) * 100
             final_processing_percent = (final_processing_reads / processed_reads) * 100
 
@@ -1523,7 +1586,7 @@ class RunMainTree_class(Run_Deployment_Methods):
         enriched_reads = len(self.enrichment_drone.classified_reads_list)
         depleted_reads = len(self.depletion_drone.classified_reads_list)
 
-        if self.type == "PE":
+        if self.type == ConstantsSettings.PAIR_END:
             enriched_reads = enriched_reads * 2
             depleted_reads = depleted_reads * 2
 
@@ -1551,7 +1614,7 @@ class RunMainTree_class(Run_Deployment_Methods):
         )
 
         self.qc_report = RunQC_report(
-            performed=self.quality_control,
+            performed=self.qc_performed,
             method=self.preprocess_drone.preprocess_method.name,
             args=self.preprocess_drone.preprocess_method.args,
             input_reads=self.sample.reads_before_processing,

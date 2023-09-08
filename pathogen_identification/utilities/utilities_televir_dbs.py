@@ -114,7 +114,6 @@ class Utility_Repository:
         self.delete_table("database")
 
     def delete_table(self, table_name):
-        print("Deleting table: " + table_name)
         self.engine.execute(f"DROP TABLE {table_name}")
 
     def clear_tables(self):

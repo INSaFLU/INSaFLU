@@ -1,8 +1,11 @@
-import networkx as nx
+from typing import Dict, List
+
 import Bio
+import networkx as nx
 from Bio import Phylo
-from pathogen_identification.utilities.utilities_general import reverse_dict_of_lists
+
 from pathogen_identification.utilities.clade_objects import Clade
+from pathogen_identification.utilities.utilities_general import reverse_dict_of_lists
 
 
 class PhyloTreeManager:
@@ -66,7 +69,7 @@ class PhyloTreeManager:
 
         return inner_nodes
 
-    def inner_node_children_dict_get(self):
+    def inner_node_children_dict_get(self, private_clades=[]):
         """
         Return dictionary of inner nodes and children
         """
@@ -75,6 +78,13 @@ class PhyloTreeManager:
         inner_node_children_dict = {
             node: self.get_node_children(node) for node in inner_nodes
         }
+
+        if private_clades:
+            inner_node_children_dict = {
+                clade: nodes
+                for clade, nodes in inner_node_children_dict.items()
+                if clade in private_clades
+            }
 
         inner_node_children_dict = {
             node: [child.name for child in children]
@@ -145,33 +155,45 @@ class PhyloTreeManager:
             }
 
         inner_node_leaf_dict = {
-            node: [leaf for leaf in leaves if leaf not in inner_nodes]
-            for node, leaves in inner_node_leaf_dict.items()
-        }
-        inner_node_leaf_dict = {
             node: [leaf.name for leaf in leaves]
             for node, leaves in inner_node_leaf_dict.items()
         }
         return inner_node_leaf_dict
 
-    def inner_node_clades_get_clean(self, private_clades: list = []):
+    def inner_node_clades_get_clean(
+        self, private_clades: List[Clade] = []
+    ) -> Dict[Clade, List[Clade]]:
         """
-        Return dictionary of inner node clades
+        Return dictionary of inner node clades, filter hierarchy -> remove nodes that are children of other nodes
         """
-        inner_node_clades = self.clades_get_leaves_clades()
+        inner_node_clades = self.inner_node_children_dict_get()
+        # print(inner_node_clades)
         if private_clades:
             inner_node_clades = {
                 clade: nodes
                 for clade, nodes in inner_node_clades.items()
                 if clade in private_clades
             }
+
+        all_values = inner_node_clades.values()
+        all_values = [item for sublist in all_values for item in sublist]
+
+        inner_node_clades = {
+            clade: nodes
+            for clade, nodes in inner_node_clades.items()
+            if clade.name not in all_values
+        }
+
         return inner_node_clades
 
-    def leaf_clades_clean(self, private_clades):
+    def leaf_clades_clean(self, private_clades: List[Clade]):
         """
         Return dictionary of node clades
         """
         inner_node_clades = self.inner_node_clades_get_clean(private_clades)
+
+        # innder_node_clades_clean = {}
+
         leaf_clades = reverse_dict_of_lists(inner_node_clades)
 
         tree_leaf_names_dict = {leaf.name: leaf for leaf in self.tree.get_terminals()}

@@ -408,3 +408,15 @@ NOSE_ARGS = [
     "--with-coverage",
     "--cover-package=foo,bar",
 ]
+
+
+## TELEVIR
+class TelevirSetup:
+    """
+    televir setup definition. To be changed on local installation without docker."""
+
+    SETUP_DEVELOP = 0
+    SETUP_PREPRODUCTION = 1
+    SETUP_PRODUCTION = 2
+
+    CURRENT_SETUP = SETUP_DEVELOP

@@ -100,7 +100,6 @@ def depth_color(depth_value, max_value):
 def flag_false_positive(depth, depthc, coverage, mapped, windows_covered, project_pk):
     flag_build = TelevirParameters.get_flag_build(project_pk)
     flag_build = flag_build(depth, depthc, coverage, mapped, windows_covered)
-    print(flag_build.build_name)
 
     if flag_build.assert_false_positive():
         return "Likely False Positive"

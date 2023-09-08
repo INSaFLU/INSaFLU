@@ -4,22 +4,20 @@ from typing import List
 
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
+
 from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.deployment_main import Run_Main_from_Leaf
-from pathogen_identification.models import (
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
-from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
+from pathogen_identification.models import (ParameterSet, PIProject_Sample,
+                                            Projects, SoftwareTree,
+                                            SoftwareTreeNode)
+from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
+from pathogen_identification.utilities.utilities_pipeline import (
+    SoftwareTreeUtils, Utils_Manager)
+from pathogen_identification.utilities.utilities_views import \
+    set_control_reports
 from utils.process_SGE import ProcessSGE
 
-from pathogen_identification.utilities.tree_deployment import (
-    TreeProgressGraph,
-)
 
 class Sample_Staging:
     """
@@ -95,10 +93,13 @@ class Command(BaseCommand):
 
         ### UTILITIES
         utils = Utils_Manager()
-        local_tree = utils.generate_project_tree(technology, project, user)
+        software_utils= SoftwareTreeUtils(user, project)
 
-        tree_makeup = local_tree.makeup
-        pipeline_tree_index = utils.get_software_tree_index(technology, tree_makeup)
+        local_tree = software_utils.generate_project_tree()
+
+        #tree_makeup = local_tree.makeup
+        #pipeline_tree= utils.generate_software_tree_extend(local_tree, user)
+        pipeline_tree_index = local_tree.software_tree_pk
         pipeline_tree_query = SoftwareTree.objects.get(pk=pipeline_tree_index)
 
         ### MANAGEMENT
@@ -150,13 +151,14 @@ class Command(BaseCommand):
                 if run.is_available:
                     run.get_in_line()
                     submission_dict[target_sample].append(run)
-                
-                graph_progress.generate_graph()
 
                 for sample, runs in submission_dict.items():
                     for run in runs:
 
                         run.Submit()
+                
+                graph_progress.generate_graph()
+                set_control_reports(project.pk)
 
             process_SGE.set_process_controler(
                 user,
@@ -170,6 +172,8 @@ class Command(BaseCommand):
 
         except Exception as e:
             print(e)
+            graph_progress.generate_graph()
+
             process_SGE.set_process_controler(
                 user,
                 process_controler.get_name_televir_run(

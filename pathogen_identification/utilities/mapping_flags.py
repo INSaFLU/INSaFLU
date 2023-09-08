@@ -13,12 +13,11 @@ class MappingFlagBuild(ABC):
         self.windows_covered = windows_covered
 
     @abstractmethod
-    def assert_false_positive(self):
+    def assert_false_positive(self) -> bool:
         pass
 
-    @staticmethod
     @abstractmethod
-    def assert_vestigial(self):
+    def assert_vestigial(self) -> bool:
         pass
 
 
@@ -26,6 +25,10 @@ class MapFlagViruses(MappingFlagBuild):
     build_name = "viruses"
 
     def assert_false_positive(self):
+
+        if self.depth == 0:
+            return True
+        
         if self.depthc / self.depth > 10 and self.coverage < 5:
             return True
 
@@ -42,6 +45,10 @@ class MapFlagBacteria(MappingFlagBuild):
     build_name = "bacteria"
 
     def assert_false_positive(self):
+
+        if self.depth == 0:
+            return True
+
         if self.depthc / self.depth > 10 and self.coverage < 5:
             return True
 

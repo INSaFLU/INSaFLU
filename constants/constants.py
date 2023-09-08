@@ -3,32 +3,26 @@ Created on Oct 13, 2017
 
 @author: mmp
 """
+from abc import ABC
 from enum import Enum
+from typing import Dict
+
+from constants.televir_directories import Televir_Directory_Constants
 from settings.constants_settings import ConstantsSettings as CS
-
-
-class Televir_Directory_Constants:
-    """
-    directory constants. To be changed on local installation without docker.
-    """
-
-    project_directory = "/tmp/televir/projects/"
-    docker_app_directory = "/televir/mngs_benchmark/"
-    docker_install_directory = "/televir/mngs_benchmark/mngs_environments/"
 
 
 class Televir_Metadata_Constants:
     SOURCE = {
-        "ENVSDIR": "/televir/mngs_benchmark/mngs_environments/",
-        "CONDA": "/opt/conda/",
-        "DBDIR_MAIN": "/televir/mngs_benchmark/ref_db/",
-        "REF_FASTA": "/televir/mngs_benchmark/ref_fasta/",
-        "METAD": "/televir/mngs_benchmark/metadata/",
-        "BIN": "/insaflu_web/TELEVIR/deployment_scripts/scripts/",
+        "ENVSDIR": Televir_Directory_Constants.environments_directory,
+        "CONDA": Televir_Directory_Constants.conda_directory,
+        "DBDIR_MAIN": Televir_Directory_Constants.ref_db_directory,
+        "REF_FASTA": Televir_Directory_Constants.ref_fasta_directory,
+        "METAD": Televir_Directory_Constants.metadata_directory,
+        "BIN": Televir_Directory_Constants.docker_install_directory,
     }
 
     METADATA = {
-        "ROOT": "/televir/mngs_benchmark/metadata/",
+        "ROOT": Televir_Directory_Constants.metadata_directory,
         "input_accession_to_taxid_path": "acc2taxid.tsv",
         "input_taxonomy_to_descriptor_path": "taxid2desc.tsv",
         "input_protein_accession_to_protid_path": "protein_acc2protid.tsv",
@@ -63,19 +57,26 @@ class Televir_Metadata_Constants:
             "blastn": "hostDepletion/hostdep_env",
             "blastp": "hostDepletion/hostdep_env",
             "snippy": "/software/snippy",
+            "bamutil": "remap/remap",
             "bwa": "remap/remap",
             "bowtie2": "remap/remap",
+            "bowtie2_remap": "remap/remap",
+            "minimap2_illu": "hostDepletion/hostdep_env",
+            "snippy_pi": "/software/snippy",
             "prinseq": "preprocess/prinseq",
             "collapsibleTree": "remap/Renv",
             "entrez_direct": "entrez_direct",
         },
         CS.PIPELINE_NAME_remapping: {"default": "remap/remap"},
+        CS.PIPELINE_NAME_remap_filtering: {"default": "remap/remap"},
         CS.PIPELINE_NAME_read_quality_analysis: {"default": "preprocess/preproc"},
+        CS.PIPELINE_NAME_extra_qc: {"default": "preprocess/preproc"},
         CS.PIPELINE_NAME_assembly: {"default": "assembly/assembly"},
     }
 
     DIRS = {
         CS.PIPELINE_NAME_read_quality_analysis: "reads/clean/",
+        CS.PIPELINE_NAME_extra_qc: "reads/clean/",
         "reads_depleted_dir": "reads/hd_filtered/",
         "reads_enriched_dir": "reads/enriched/",
         CS.PIPELINE_NAME_host_depletion: "host_depletion/",

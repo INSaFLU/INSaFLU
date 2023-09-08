@@ -63,11 +63,11 @@ class Televir_Directory_Constants_Production(TelevirConstantsBase):
     docker_app_directory = "/usr/local/web_site/televir/mngs_benchmark/"
     docker_install_directory = "/usr/local/web_site/televir/mngs_environments/"
     environments_directory = "/usr/local/web_site/televir/mngs_environments/"
-    conda_directory = "/usr/local/software/insaflu/miniconda/"
+    conda_directory = "/usr/local/software/insaflu/miniconda3/"
     ref_db_directory = "/usr/local/web_site/televir/ref_db/"
     ref_fasta_directory = "/usr/local/web_site/televir/ref_fasta/"
     metadata_directory = "/usr/local/web_site/televir/metadata/"
-    scripts_directory = "/usr/local/web_site/televir/deployment_scripts/scripts/"
+    scripts_directory = "/usr/local/web_site/TELEVIR/deployment_scripts/scripts/"
 
 
 def get_televir_directory_constants() -> TelevirConstantsBase:

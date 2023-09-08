@@ -77,7 +77,7 @@ def get_televir_directory_constants() -> TelevirConstantsBase:
 
     setup_map: Dict[int, TelevirConstantsBase] = {
         TelevirSetup.SETUP_DEVELOP: Televir_Directory_Constants_Docker(),
-        TelevirSetup.SETUP_PREPRODUCTION: Televir_Directory_Constants_Docker(),
+        TelevirSetup.SETUP_PREPRODUCTION: Televir_Directory_Constants_PreProduction(),
         TelevirSetup.SETUP_PRODUCTION: Televir_Directory_Constants_Production(),
     }
 

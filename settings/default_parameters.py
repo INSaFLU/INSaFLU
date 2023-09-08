@@ -10,13 +10,10 @@ from django.conf import settings
 
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import (
-    ConstantsSettings as PI_ConstantsSettings,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PI_ConstantsSettings
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility,
-    Utility_Pipeline_Manager,
-)
+    Parameter_DB_Utility, Utility_Pipeline_Manager)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -117,16 +114,6 @@ class DefaultParameters(object):
         for parameter in vect_parameters:
             assert parameter.sequence_out not in dt_out_sequential
             if software is None:
-                print(
-                    Software.objects.filter(
-                        name=parameter.software.name,
-                        owner=parameter.software.owner,
-                        type_of_use=type_of_use,
-                        technology=parameter.software.technology,
-                        version_parameters=parameter.software.version_parameters,
-                        pipeline_step=parameter.software.pipeline_step,
-                    ).count()
-                )
 
                 try:
                     software = Software.objects.get(

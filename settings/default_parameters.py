@@ -3460,7 +3460,7 @@ class DefaultParameters(object):
 
         parameter = Parameter()
         parameter.name = "--mincov"
-        parameter.parameter = "30"
+        parameter.parameter = "40"
         parameter.type_data = Parameter.PARAMETER_int
         parameter.software = software
         parameter.sample = sample

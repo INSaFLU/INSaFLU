@@ -32,8 +32,8 @@ class Televir_Metadata_Constants:
     REFERENCE_MAIN = "/televir/mngs_benchmark/ref_fasta/"
 
     BINARIES = {
-        "SOURCE": "/opt/conda/",
-        "ROOT": "/televir/mngs_benchmark/mngs_environments/",
+        "SOURCE": Televir_Directory_Constants.conda_directory,
+        "ROOT": Televir_Directory_Constants.environments_directory,
         "software": {
             CS.PIPELINE_NAME_contig_classification: "hostDepletion/hostdep_env",
             CS.PIPELINE_NAME_read_classification: "hostDepletion/hostdep_env",

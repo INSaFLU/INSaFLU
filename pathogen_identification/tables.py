@@ -669,8 +669,8 @@ class RunMainTable(tables.Table):
         except:
             name_extended = software_name
 
-        if "-" in name_extended:
-            name_extended = name_extended.split("-")[0]
+        # if "-" in name_extended:
+        #    name_extended = name_extended.split("-")[0]
 
         return name_extended
 

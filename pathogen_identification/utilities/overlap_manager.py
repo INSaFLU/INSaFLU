@@ -36,7 +36,7 @@ class ReadOverlapManager:
     clade_statistics_filename: str = "clade_statistics_{}.tsv"
     accid_statistics_filename: str = "accid_statistics_{}.tsv"
     min_freq: float = 0.05
-    max_reads: int = 10000
+    max_reads: int = 100000
 
     def __init__(
         self,

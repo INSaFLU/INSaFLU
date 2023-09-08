@@ -5,17 +5,25 @@ from typing import List
 
 import pandas as pd
 
-from pathogen_identification.models import (FinalReport, PIProject_Sample,
-                                            Projects, ReferenceMap_Main,
-                                            RunAssembly, RunMain)
+from pathogen_identification.models import (
+    FinalReport,
+    PIProject_Sample,
+    Projects,
+    ReferenceMap_Main,
+    RunAssembly,
+    RunMain,
+)
 from pathogen_identification.utilities.clade_objects import Clade
-from pathogen_identification.utilities.overlap_manager import \
-    ReadOverlapManager
+from pathogen_identification.utilities.overlap_manager import ReadOverlapManager
 from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
 from pathogen_identification.utilities.televir_parameters import (
-    LayoutParams, TelevirParameters)
+    LayoutParams,
+    TelevirParameters,
+)
 from pathogen_identification.utilities.utilities_general import (
-    infer_run_media_dir, simplify_name)
+    infer_run_media_dir,
+    simplify_name,
+)
 
 
 def set_control_reports(project_pk: int):
@@ -297,17 +305,11 @@ class ReportSorter:
         time = (end - start).total_seconds()
         self.logger.info(f"time to get statistics: {time}")
 
-        for node, clade in statistics_dict_all.items():
-            print(node, clade)
-            print("")
-
         selected_clades = overlap_manager.filter_clades(statistics_dict_all)
 
         leaf_clades = tree_manager.leaf_clades_clean(selected_clades)
 
         clades = overlap_manager.leaf_clades_to_pandas(leaf_clades, statistics_dict_all)
-
-        print(clades)
 
         return clades
 
@@ -445,8 +447,7 @@ from django.db.models.query import QuerySet
 from django.views import generic
 from django.views.generic import ListView
 
-from pathogen_identification.models import (FinalReport, ParameterSet,
-                                            RunDetail, RunMain)
+from pathogen_identification.models import FinalReport, ParameterSet, RunDetail, RunMain
 
 
 class FinalReportCompound(LoginRequiredMixin, generic.TemplateView):

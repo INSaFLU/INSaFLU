@@ -51,7 +51,7 @@ class Televir_Directory_Constants_PreProduction(TelevirConstantsBase):
     ref_db_directory = "/usr/local/web_site/televir/ref_db/"
     ref_fasta_directory = "/usr/local/web_site/televir/ref_fasta/"
     metadata_directory = "/usr/local/web_site/televir/metadata/"
-    scripts_directory = "/usr/local/web_site/televir/deployment/scripts/"
+    scripts_directory = "/usr/local/web_site/televir/deployment_scripts/scripts/"
 
 
 class Televir_Directory_Constants_Production(TelevirConstantsBase):
@@ -67,7 +67,7 @@ class Televir_Directory_Constants_Production(TelevirConstantsBase):
     ref_db_directory = "/usr/local/web_site/televir/ref_db/"
     ref_fasta_directory = "/usr/local/web_site/televir/ref_fasta/"
     metadata_directory = "/usr/local/web_site/televir/metadata/"
-    scripts_directory = "/usr/local/web_site/televir/deployment/scripts/"
+    scripts_directory = "/usr/local/web_site/televir/deployment_scripts/scripts/"
 
 
 def get_televir_directory_constants() -> TelevirConstantsBase:

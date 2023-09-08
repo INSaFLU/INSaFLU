@@ -117,6 +117,17 @@ class DefaultParameters(object):
         for parameter in vect_parameters:
             assert parameter.sequence_out not in dt_out_sequential
             if software is None:
+                print(
+                    Software.objects.filter(
+                        name=parameter.software.name,
+                        owner=parameter.software.owner,
+                        type_of_use=type_of_use,
+                        technology=parameter.software.technology,
+                        version_parameters=parameter.software.version_parameters,
+                        pipeline_step=parameter.software.pipeline_step,
+                    ).count()
+                )
+
                 try:
                     software = Software.objects.get(
                         name=parameter.software.name,

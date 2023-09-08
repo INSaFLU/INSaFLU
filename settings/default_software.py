@@ -588,7 +588,6 @@ class DefaultSoftware(object):
             type_of_use = vect_parameters[0].software.type_of_use
         except:
             pass
-
         try:
             Software.objects.get(
                 name=software_name,
@@ -600,8 +599,31 @@ class DefaultSoftware(object):
                 ),
                 pipeline_step__name=vect_parameters[0].software.pipeline_step,
             )
+
+        except Software.MultipleObjectsReturned:
+            print("MultipleObjectsReturned: " + software_name, " - ", user)
+            ## keep the first one, delete the rest
+            software_query = Software.objects.filter(
+                name=software_name,
+                owner=user,
+                type_of_use=vect_parameters[0].software.type_of_use,
+                technology__name=vect_parameters[0].software.technology.name,
+                version_parameters=self.default_parameters.get_software_parameters_version(
+                    software_name
+                ),
+                pipeline_step__name=vect_parameters[0].software.pipeline_step,
+            ).order_by("id")
+
+            if software_query.count() > 1:
+                software = software_query.exclude(id=software_query.last().id)
+                parameters = Parameter.objects.filter(software__in=software)
+                with LockedAtomicTransaction(Parameter):
+                    parameters.delete()
+                with LockedAtomicTransaction(Software):
+                    software.delete()
+
         except Software.DoesNotExist:  ### if not exist save it
-            print("persisting default parameters for software: " + software_name)
+            # print("persisting default parameters for software: " + software_name)
             self.default_parameters.persist_parameters(vect_parameters, type_of_use)
 
     def get_trimmomatic_parameters(self, user):

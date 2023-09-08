@@ -7,7 +7,7 @@ Created on Sept 7, 2023
 from abc import ABC
 from typing import Dict
 
-from settings.constants_settings import ConstantsSettings as CS
+from fluwebvirus.settings import TelevirSetup
 
 
 class TelevirConstantsBase(ABC):
@@ -76,12 +76,12 @@ def get_televir_directory_constants() -> TelevirConstantsBase:
     """
 
     setup_map: Dict[int, TelevirConstantsBase] = {
-        CS.SETUP_DEVELOP: Televir_Directory_Constants_Docker(),
-        CS.SETUP_PREPRODUCTION: Televir_Directory_Constants_Docker(),
-        CS.SETUP_PRODUCTION: Televir_Directory_Constants_Production(),
+        TelevirSetup.SETUP_DEVELOP: Televir_Directory_Constants_Docker(),
+        TelevirSetup.SETUP_PREPRODUCTION: Televir_Directory_Constants_Docker(),
+        TelevirSetup.SETUP_PRODUCTION: Televir_Directory_Constants_Production(),
     }
 
-    return setup_map[CS.CURRENT_SETUP]
+    return setup_map[TelevirSetup.CURRENT_SETUP]
 
 
 Televir_Directory_Constants = get_televir_directory_constants()

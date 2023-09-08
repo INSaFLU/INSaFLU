@@ -9,12 +9,8 @@ from django.contrib import messages
 from django.db import transaction
 from django.db.models import Q
 from django.forms.models import model_to_dict
-from django.http import (
-    Http404,
-    HttpResponseNotFound,
-    HttpResponseRedirect,
-    JsonResponse,
-)
+from django.http import (Http404, HttpResponseNotFound, HttpResponseRedirect,
+                         JsonResponse)
 from django.http.response import HttpResponse
 from django.shortcuts import render
 from django.template.defaultfilters import filesizeformat, pluralize
@@ -33,41 +29,28 @@ from managing_files.manage_database import ManageDatabase
 from managing_files.models import Sample
 from managing_files.tables import SampleToProjectsTable
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
-from pathogen_identification.models import (
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReadClassification,
-    ReferenceContigs,
-    ReferenceMap_Main,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    RunRemapMain,
-    Sample,
-    TelevirRunQC,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
+from pathogen_identification.models import (ContigClassification, FinalReport,
+                                            ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            ReadClassification,
+                                            ReferenceContigs,
+                                            ReferenceMap_Main, RunAssembly,
+                                            RunDetail, RunMain, RunRemapMain,
+                                            Sample, TelevirRunQC)
 from pathogen_identification.modules.object_classes import RunQC_report
-from pathogen_identification.tables import (
-    ContigTable,
-    ProjectTable,
-    RawReferenceTable,
-    RunMainTable,
-    SampleTable,
-)
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.tables import (ContigTable, ProjectTable,
+                                            RawReferenceTable, RunMainTable,
+                                            SampleTable)
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
-from pathogen_identification.utilities.utilities_general import infer_run_media_dir
+from pathogen_identification.utilities.utilities_general import \
+    infer_run_media_dir
 from pathogen_identification.utilities.utilities_views import (
-    FinalReportCompound,
-    ReportSorter,
-    final_report_best_cov_by_accid,
-    recover_assembly_contigs,
-)
+    FinalReportCompound, ReportSorter, final_report_best_cov_by_accid,
+    recover_assembly_contigs)
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
 from utils.support_django_template import get_link_for_dropdown_item
@@ -724,7 +707,7 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
                     ParameterSet.STATUS_FINISHED,
                     ParameterSet.STATUS_RUNNING,
                 ],
-            )
+            ).order_by("-parameter_set__leaf__index")
             sample_name = sample.sample.name
             project_name = project.name
 

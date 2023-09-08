@@ -7,12 +7,11 @@ import logging
 
 from constants.software_names import SoftwareNames
 from managing_files.models import Project, ProjectSample, Sample
-from utils.lock_atomic_transaction import LockedAtomicTransaction
-
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software import DefaultSoftware
 from settings.models import Parameter, Software
+from utils.lock_atomic_transaction import LockedAtomicTransaction
 
 
 class DefaultProjectSoftware(object):

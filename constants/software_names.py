@@ -7,8 +7,9 @@ Created on Nov 26, 2017
 import os
 
 from django.conf import settings
-from settings.constants_settings import ConstantsSettings
+
 from constants.constants import Constants
+from settings.constants_settings import ConstantsSettings
 
 
 class SoftwareNames(object):
@@ -191,7 +192,7 @@ class SoftwareNames(object):
     # SOFTWARE_Pangolin = "pangolin"
     SOFTWARE_Pangolin = "{}".format(
         os.path.join(settings.DIR_SOFTWARE, "pangolin/pangolin.sh")
-    )    
+    )
     # SOFTWARE_Pangolin_VERSION = "v3.1.14"  ## Version Name: pangolin
     SOFTWARE_Pangolin_VERSION = "v4.2"  ## Version Name: pangolin
     SOFTWARE_Pangolin_name = "Pangolin"  ## Pangolin
@@ -235,6 +236,17 @@ class SoftwareNames(object):
         "--no-alt-contigs "  ## genomeSize=<number>[g|m|k] file1 file2
     )
 
+    ## raven -t {params.threads} -k {params.kmer} -p {params.polishing} {input}
+    ##    --graphical-fragment-assembly {output.gfa} --disable-checkpoints ||
+    ## (touch {output.gfa} && echo Warning: raven failed, were created empty files) ;
+    ## awk \'/^S/{{ printf(">%s\\n%s\\n", $2, $3) }}\' {output.gfa} > {output.fasta} ||
+    ## touch {output.fasta}
+    SOFTWARE_RAVEN = os.path.join(settings.DIR_SOFTWARE, "raven/raven.sh")
+    SOFTWARE_RAVEN_name = "Raven"
+    SOFTWARE_RAVEN_name_extended = "Assembly ONT (Raven)"
+    SOFTWARE_RAVEN_VERSION = "1.8.1"
+    SOFTWARE_RAVEN_PARAMETERS = "-k 15 -p 2 --disable-checkpoints "
+
     ### used to create a file with variations table
     ## git: https://github.com/SantosJGND/INSA
     ## python algn2pheno.py --db DB_COG_UK_antigenic_mutations_2022-05-30.tsv -g S --algn Alignment_aa_SARS_CoV_2_S.fasta -r <referenceName inside Alignment> --odir algn2pheno --output COG_UK_antigenic_mutations
@@ -261,13 +273,13 @@ class SoftwareNames(object):
     SOFTWARE_SNIPPY_VERSION = "3.2-dev"
     SOFTWARE_SNIPPY_PARAMETERS = "--mapqual 20 --mincov 10 --minfrac 0.51"
     SOFTWARE_SNIPPY_no_primer = "None"
-    SOFTWARE_SNIPPY_PRIMERS =   [
+    SOFTWARE_SNIPPY_PRIMERS = [
         SOFTWARE_SNIPPY_no_primer,
         "SARS_CoV_2_MN908947_artic_3.fa",
         "SARS_CoV_2_MN908947_artic_4.1.fa",
         "MPXV_MT903345_Yale_PrimalSeq_v.1.fa",
         "MPXV_comb-ccc7sszn.fa",
-    ]      
+    ]
 
     #### VERY important, change in snippy-vcf
     #     mmp@california:/usr/local/software/insaflu/snippy/bin$ diff snippy-vcf_to_tab_add_freq snippy-vcf_to_tab_add_freq~
@@ -444,16 +456,15 @@ class SoftwareNames(object):
     )
 
     ### Nextstrain
-    SOFTWARE_NEXTSTRAIN_DIR = os.path.join(
-        settings.DIR_SOFTWARE, "nextstrain/"
-    )
+    SOFTWARE_NEXTSTRAIN_DIR = os.path.join(settings.DIR_SOFTWARE, "nextstrain/")
     SOFTWARE_NEXTSTRAIN_VERSION = "0.1"
     SOFTWARE_NEXTSTRAIN = os.path.join(
         settings.DIR_SOFTWARE, "nextstrain/nextstrain.sh"
     )
     SOFTWARE_NEXTSTRAIN_snakemake = os.path.join(
         settings.DIR_SOFTWARE, "nextstrain/nextstrain_snake.sh"
-    )    
+    )
+
     SOFTWARE_NEXTSTRAIN_MPX = os.path.join(
         settings.DIR_SOFTWARE, "nextstrain/nextstrain_mpx.sh"
     )
@@ -488,11 +499,11 @@ class SoftwareNames(object):
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y,
     ]
-    
+
     SOFTWARE_NEXTSTRAIN_BUILDS_avianflu = [
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha,
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na,
-        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2,
     ]
 
     SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a = "rsv_a"
@@ -501,7 +512,7 @@ class SoftwareNames(object):
     SOFTWARE_NEXTSTRAIN_BUILDS_rsv = [
         SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a,
         SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b,
-    ]   
+    ]
 
     SOFTWARE_NEXTSTRAIN_BUILDS = [
         SOFTWARE_NEXTSTRAIN_BUILDS_generic,
@@ -516,7 +527,7 @@ class SoftwareNames(object):
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2,
         SOFTWARE_NEXTSTRAIN_BUILDS_mpx,
         SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a,
-        SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b,        
+        SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b,
     ]
     SOFTWARE_NEXTSTRAIN_BUILDS_DESC = [
         [SOFTWARE_NEXTSTRAIN_BUILDS_generic, "Generic"],
@@ -528,10 +539,10 @@ class SoftwareNames(object):
         [SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y, "Influenza (Yam HA 12years)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha, "Avian Influenza (H5N1 HA)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na, "Avian Influenza (H5N1 NA)"],
-        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2, "Avian Influenza (H5N1 PB2)"],                
+        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2, "Avian Influenza (H5N1 PB2)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_mpx, "mpox (hMPXV)"],
-        [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a,"RSV (A)"],
-        [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b,"RSV (B)"]
+        [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a, "RSV (A)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b, "RSV (B)"],
     ]
 
     # default build
@@ -541,6 +552,43 @@ class SoftwareNames(object):
     SOFTWARE_NEXTSTRAIN_name_extended = "Nextstrain pathogen evolution"
 
     ### PATHOGEN IDENTIFICATION SOFTWARE
+    ### REMAP PARAMETERS
+    SOFTWARE_REMAP_PARAMS_max_taxids = "--max-taxids"
+    SOFTWARE_REMAP_PARAMS_max_accids = "--max-accids"
+
+    ### REPORT LAYOUT
+    SOFTWARE_televir_report_layout = "report_layout"
+    SOFTWARE_televir_report_layout_name = "Final Report"
+    SOFTWARE_televir_report_layout_name_extended = "Final Report - Flagging and Sorting"
+    SOFTWARE_televir_report_layout_default = ""
+    SOFTWARE_televir_report_layout_version = "1.0.0"
+    SOFTWARE_televir_report_layout_flag_name = "--flag-type"
+    SOFTWARE_televir_report_layout_threshold_name = "--r-overlap"
+    SOFTWARE_REMAP_PARAMS_min_quality = "--qualityThreshold"  # "--min-quality"
+    SOFTWARE_REMAP_PARAMS_max_mismatch = "--mismatchThreshold"  # "--max-mismatch"
+
+    ### QC SOFTWARE
+    SOFTWARE_PRINSEQ = os.path.join(
+        settings.DIR_SOFTWARE,
+        "preprocess/prinseq/bin/prinseq++",
+    )
+    SOFTWARE_PRINSEQ_name = "Prinseq++"
+    SOFTWARE_PRINSEQ_name_extended = (
+        "Preprocessing - Prinseq++ (remove low complexity reads)"
+    )
+    SOFTWARE_PRINSEQ_VERSION = "1.2.4"
+    SOFTWARE_PRINSEQ_lc_entropy = "--lc_entropy"
+    SOFTWARE_PRINSEQ_lc_dust = "--lc_dust"
+
+    SOFTWARE_BAMUTIL_name = "BamUtil"
+    SOFTWARE_BAMUTIL_name_extended = "BamUtil - Mapping Stringency"
+    SOFTWARE_BAMUTIL = os.path.join(
+        settings.DIR_SOFTWARE,
+        "preprocess/bamUtil/bin/bam",
+    )
+    SOFTWARE_BAMUTIL_VERSION = "1.0.15"
+
+    ###
 
     PATHOGEN_IDENTIFICATION_name = "Pathogen Identification"
     PATHOGEN_IDENTIFICATION_deplete = True
@@ -658,16 +706,16 @@ class SoftwareNames(object):
     SOFTWARE_DESAMBA_parameters = ""
     ### RAVEN
 
-    SOFTWARE_RAVEN_name = "Raven"
-    SOFTWARE_RAVEN_name_extended = "Raven"
-    SOFTWARE_RAVEN = os.path.join(settings.DIR_SOFTWARE, "assembly/assembly/bin/raven")
-    SOFTWARE_RAVEN_VERSION = "1.8.1"
-    SOFTWARE_RAVEN_parameters = "--threads 4 --gzip-compressed -p2"
+    # SOFTWARE_RAVEN_name = "Raven"
+    # SOFTWARE_RAVEN_name_extended = "Raven"
+    # SOFTWARE_RAVEN = os.path.join(settings.DIR_SOFTWARE, "assembly/assembly/bin/raven")
+    # SOFTWARE_RAVEN_VERSION = "1.8.1"
+    # SOFTWARE_RAVEN_parameters = "--threads 4 --gzip-compressed -p2"
 
     ### SNIPPY
 
     SOFTWARE_SNIPPY_PI_name = "Snippy_PI"
-    SOFTWARE_SNIPPY_PI_name_extended = "Snippy"
+    SOFTWARE_SNIPPY_PI_name_extended = "Snippy - Remapping"
     SOFTWARE_SNIPPY_PI = os.path.join(
         settings.DIR_SOFTWARE,
         "preprocess/preproc/bin/snippy",
@@ -678,7 +726,7 @@ class SoftwareNames(object):
     ### MINIMAP2 REMAP
 
     SOFTWARE_MINIMAP2_REMAP_ONT_name = "Minimap2"
-    SOFTWARE_MINIMAP2_REMAP_ONT_name_extended = "Minimap2"
+    SOFTWARE_MINIMAP2_REMAP_ONT_name_extended = "Minimap2 - Remapping"
     SOFTWARE_MINIMAP2_REMAP_ONT = os.path.join(
         settings.DIR_SOFTWARE,
         "preprocess/preproc/bin/minimap2",
@@ -697,6 +745,15 @@ class SoftwareNames(object):
     SOFTWARE_MINIMAP2_DEPLETE_ONT_VERSION = "2.24"
     SOFTWARE_MINIMAP2_DEPLETE_ONT_parameters = "-a -x map-ont -t 4"
 
+    SOFTWARE_MINIMAP2_DEPLETE_ILLU_name = "Minimap2_ILLU"
+    SOFTWARE_MINIMAP2_DEPLETE_ILLU_name_extended = "Minimap2"
+    SOFTWARE_MINIMAP2_DEPLETE_ILLU = os.path.join(
+        settings.DIR_SOFTWARE,
+        "hostDepletion/hostdep_env/bin/minimap2",
+    )
+    SOFTWARE_MINIMAP2_DEPLETE_ILLU_VERSION = "2.24"
+    SOFTWARE_MINIMAP2_DEPLETE_ILLU_parameters = "-a -x sr -t 4"
+
     ### Bowtie2 DEPLETE
 
     SOFTWARE_BOWTIE2_DEPLETE_name = "Bowtie2"
@@ -707,6 +764,17 @@ class SoftwareNames(object):
     )
     SOFTWARE_BOWTIE2_DEPLETE_VERSION = "2.4.5"
     SOFTWARE_BOWTIE2_DEPLETE_parameters = "-p 4"
+
+    ### Bowtie2 REMAP
+
+    SOFTWARE_BOWTIE2_REMAP_name = "Bowtie2_remap"
+    SOFTWARE_BOWTIE2_REMAP_name_extended = "Bowtie2"
+    SOFTWARE_BOWTIE2_REMAP = os.path.join(
+        settings.DIR_SOFTWARE,
+        "remap/remap/bin/bowtie2",
+    )
+    SOFTWARE_BOWTIE2_REMAP_VERSION = "2.4.5"
+    SOFTWARE_BOWTIE2_REMAP_parameters = "-p 4"
 
     ###################################
     ###################################
@@ -758,7 +826,12 @@ class SoftwareNames(object):
     #####
     #####    END Global parameters for INSaFLU
     #####
-    ###################################
+    ###################################a
+    #####   Global parameters for TELEVIR
+
+    SOFTWARE_REMAP_PARAMS_name = "Remapping - Management"
+    SOFTWARE_REMAP_PARAMS_extended = "Remapping - Management"
+    SOFTWARE_REMAP_PARAMS_VERSION = "1"
 
     ###################################
     ###################################
@@ -820,7 +893,8 @@ class SoftwareNames(object):
         ],
         SOFTWARE_BWA_name: [
             ConstantsSettings.PIPELINE_NAME_host_depletion,
-            ConstantsSettings.PIPELINE_NAME_read_classification,]
+            ConstantsSettings.PIPELINE_NAME_read_classification,
+        ],
     }
 
     ###################################
@@ -1581,6 +1655,7 @@ class SoftwareNames(object):
     ### it's a way to define a threshold to mask consensus sequences, with regions with low coverage, obtained by snippy
     ### It's a global parameter for INSaFLU
     """
+
     ### Define the Minimum percentage of horizontal coverage to generate consensus, otherwise drop sequence
     ##def get_insaflu_parameter_mask_consensus(self): return ""
     def get_insaflu_parameter_mask_consensus_name(self):

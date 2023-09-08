@@ -1,8 +1,9 @@
 # from sqlalchemy import create_engine, Column, Integer, String, Boolean, ForeignKey
 
+import datetime
 import os
 from abc import abstractmethod
-import datetime
+
 from sqlalchemy import Boolean, Column, MetaData, String, Table, create_engine
 
 
@@ -51,7 +52,6 @@ class Utility_Repository:
         self.create_tables()
 
     def setup_engine(self, install_type):
-
         if not os.path.exists(self.db_path):
             os.makedirs(self.db_path, exist_ok=True)
         if install_type == "local":
@@ -66,7 +66,6 @@ class Utility_Repository:
         )
 
     def setup_engine_docker(self):
-
         self.engine = create_engine(
             f"{self.dbtype_local}:////"
             + os.path.join(*self.db_path.split("/"), "utility_docker.db")
@@ -80,7 +79,6 @@ class Utility_Repository:
         )
 
     def create_software_table(self):
-
         self.software = Table(
             "software",
             self.metadata,
@@ -116,7 +114,6 @@ class Utility_Repository:
         self.delete_table("database")
 
     def delete_table(self, table_name):
-        print("Deleting table: " + table_name)
         self.engine.execute(f"DROP TABLE {table_name}")
 
     def clear_tables(self):

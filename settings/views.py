@@ -1,23 +1,25 @@
 from braces.views import LoginRequiredMixin
-from constants.meta_key_and_values import MetaKeyAndValue
-from datasets.models import Dataset, DatasetConsensus
 from django.contrib import messages
 from django.db import transaction
 from django.urls import reverse_lazy
 from django.views.generic import ListView, TemplateView, UpdateView
+
+from constants.meta_key_and_values import MetaKeyAndValue
+from constants.software_names import SoftwareNames
+from datasets.manage_database import ManageDatabase as ManageDatasetDatabase
+from datasets.models import Dataset, DatasetConsensus
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
-from datasets.manage_database import ManageDatabase as ManageDatasetDatabase
 from managing_files.models import Project, ProjectSample, Sample
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.models import Projects as Televir_Project
-from utils.process_SGE import ProcessSGE
-from utils.utils import ShowInfoMainPage
-from constants.software_names import SoftwareNames
 from settings.constants_settings import ConstantsSettings
 from settings.default_software import DefaultSoftware
 from settings.forms import SoftwareForm
 from settings.models import Parameter, Software
 from settings.tables import SoftwaresTable
+from utils.process_SGE import ProcessSGE
+from utils.utils import ShowInfoMainPage
 
 # Create your views here.
 
@@ -61,9 +63,13 @@ class PISettingsView(LoginRequiredMixin, ListView):
         ### get all global software
         query_set = Software.objects.filter(
             owner=self.request.user,
-            type_of_use=Software.TYPE_OF_USE_televir_global,
-            type_of_software=Software.TYPE_SOFTWARE,
+            type_of_use__in=Software.TELEVIR_GLOBAL_TYPES,
+            type_of_software__in=[
+                Software.TYPE_SOFTWARE,
+                Software.TYPE_INSAFLU_PARAMETER,
+            ],
             is_obsolete=False,
+            technology__name=project.technology,
         )
         project = Televir_Project.objects.get(pk=project.pk)
         for software in query_set:
@@ -72,12 +78,15 @@ class PISettingsView(LoginRequiredMixin, ListView):
             )
 
             software.pk = None
-            software.type_of_use = Software.TYPE_OF_USE_televir_project
+            if software.type_of_use == Software.TYPE_OF_USE_televir_global:
+                software.type_of_use = Software.TYPE_OF_USE_televir_project
+            else:
+                software.type_of_use = Software.TYPE_OF_USE_televir_project_settings
 
             try:
                 Software.objects.get(
                     name=software.name,
-                    type_of_use=Software.TYPE_OF_USE_televir_project,
+                    type_of_use=software.type_of_use,
                     parameter__televir_project=project,
                     pipeline_step=software.pipeline_step,
                 )
@@ -93,16 +102,28 @@ class PISettingsView(LoginRequiredMixin, ListView):
                     parameter.televir_project = project
                     parameter.save()
 
-    def duplicate_software_params_global_project(self, project):
+    def duplicate_software_params_global_project_if_missing(
+        self, project: Televir_Project
+    ):
         """
         duplicate software global to project
         """
         ### get all global software
+        project_software_exist = self.check_project_params_exist(project)
+
         query_set = Software.objects.filter(
             owner=self.request.user,
-            type_of_use=Software.TYPE_OF_USE_televir_global,
-            type_of_software=Software.TYPE_SOFTWARE,
+            type_of_use__in=[
+                Software.TYPE_OF_USE_televir_global,
+                Software.TYPE_OF_USE_televir_settings,
+            ],
+            type_of_software__in=[
+                Software.TYPE_SOFTWARE,
+                Software.TYPE_INSAFLU_PARAMETER,
+            ],
             is_obsolete=False,
+            technology__name=project.technology,
+            parameter__televir_project=None,
         )
         project = Televir_Project.objects.get(pk=project.pk)
         for software in query_set:
@@ -111,15 +132,34 @@ class PISettingsView(LoginRequiredMixin, ListView):
             )
 
             software.pk = None
-            software.type_of_use = Software.TYPE_OF_USE_televir_project
+            if software.type_of_use == Software.TYPE_OF_USE_televir_global:
+                software.type_of_use = Software.TYPE_OF_USE_televir_project
+            else:
+                software.type_of_use = Software.TYPE_OF_USE_televir_project_settings
 
-            software.save()
+            try:
+                Software.objects.get(
+                    name=software.name,
+                    type_of_use=software.type_of_use,
+                    parameter__televir_project=project,
+                    pipeline_step=software.pipeline_step,
+                )
 
-            for parameter in software_parameters:
-                parameter.pk = None
-                parameter.software = software
-                parameter.televir_project = project
-                parameter.save()
+            except Software.MultipleObjectsReturned:
+                pass
+
+            except Software.DoesNotExist:
+                if project_software_exist:
+                    if software.can_be_on_off_in_pipeline is True:
+                        software.is_to_run = False
+
+                software.save()
+
+                for parameter in software_parameters:
+                    parameter.pk = None
+                    parameter.software = software
+                    parameter.televir_project = project
+                    parameter.save()
 
     def check_project_params_exist(self, project):
         """
@@ -142,6 +182,9 @@ class PISettingsView(LoginRequiredMixin, ListView):
                 ConstantsSettings.PIPELINE_NAME_read_classification
             ]
         }
+
+        if PICS.METAGENOMICS is True:
+            return True
 
         if software.name in filter_dict:
             if pipeline_step in filter_dict[software.name]:
@@ -180,10 +223,10 @@ class PISettingsView(LoginRequiredMixin, ListView):
 
         ### project parameters
         if televir_project:
-            if not self.check_project_params_exist(televir_project):
-                self.duplicate_software_params_global_project(televir_project)
-            else:
-                self.update_software_params_global_project(televir_project)
+            # if not self.check_project_params_exist(televir_project):
+            self.duplicate_software_params_global_project_if_missing(televir_project)
+            # else:
+            self.update_software_params_global_project(televir_project)
 
             technologies = [televir_project.technology]
 
@@ -196,48 +239,52 @@ class PISettingsView(LoginRequiredMixin, ListView):
         ## Technology goes to NAV-container, PipelineStep goes to NAV-container, then table
         ## Mix parameters with software
         ### IMPORTANT, must have technology__name, because old versions don't
+        constant_settings = ConstantsSettings()
+        condensed_pipeline_names = constant_settings.vect_pipeline_names_condensed
         for technology in technologies:  ## run over all technology
             vect_pipeline_step = []
-            for pipeline_step in ConstantsSettings.vect_pipeline_names:
+            for pipeline_step_name, pipeline_steps in condensed_pipeline_names.items():
+                # for pipeline_step in ConstantsSettings.vect_pipeline_names:
+
                 # print(f"type of use {Software.TYPE_OF_USE_pident}")
                 if televir_project is None:
                     query_set = Software.objects.filter(
                         owner=self.request.user,
-                        type_of_use=Software.TYPE_OF_USE_televir_global,
+                        type_of_use__in=Software.TELEVIR_GLOBAL_TYPES,
                         type_of_software__in=[
                             Software.TYPE_SOFTWARE,
                             Software.TYPE_INSAFLU_PARAMETER,
                         ],
                         technology__name=technology,
-                        pipeline_step__name=pipeline_step,
+                        pipeline_step__name__in=pipeline_steps,
                         is_obsolete=False,
                     )
 
                 else:
                     query_set = Software.objects.filter(
                         owner=self.request.user,
-                        type_of_use=Software.TYPE_OF_USE_televir_project,
+                        type_of_use__in=Software.TELEVIR_PROJECT_TYPES,
                         type_of_software__in=[
                             Software.TYPE_SOFTWARE,
                             Software.TYPE_INSAFLU_PARAMETER,
                         ],
                         technology__name=technology,
-                        pipeline_step__name=pipeline_step,
+                        pipeline_step__name__in=pipeline_steps,
                         parameter__televir_project=televir_project,
                         is_obsolete=False,
                     ).distinct()
 
-                query_set = self.patch_filter_queryset(query_set, pipeline_step)
+                query_set = self.patch_filter_queryset(query_set, pipeline_step_name)
 
                 ### if there are software
                 if query_set.count() > 0:
                     vect_pipeline_step.append(
                         [
                             "{}_{}".format(
-                                pipeline_step.replace(" ", "").replace("/", ""),
+                                pipeline_step_name.replace(" ", "").replace("/", ""),
                                 technology.replace(" ", "").replace("/", ""),
                             ),
-                            pipeline_step,
+                            pipeline_step_name,
                             SoftwaresTable(query_set, televir_project=televir_project),
                         ]
                     )
@@ -414,6 +461,41 @@ class SettingsView(LoginRequiredMixin, ListView):
         return context
 
 
+def bowtie_post_process(form, software: Software):
+    if software.name != SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name:
+        return form
+
+    mode = Parameter.objects.filter(name="[mode]", software=software).first()
+    if mode is None:
+        return form
+
+    preset = Parameter.objects.filter(name="[preset]", software=software).first()
+    if preset is None:
+        return form
+
+    mode_unique_id = mode.get_unique_id()
+    preset_unique_id = preset.get_unique_id()
+
+    if mode_unique_id not in form.cleaned_data:
+        return form
+
+    if preset_unique_id not in form.cleaned_data:
+        return form
+
+    mode_value = form.cleaned_data[mode_unique_id]
+    preset_value = form.cleaned_data[preset_unique_id]
+    if mode_value == "--local":
+        form.cleaned_data[preset_unique_id] = preset_value.strip(" ") + "-local"
+
+    return form
+
+
+def post_process_args(form, software: Software):
+    form = bowtie_post_process(form, software)
+
+    return form
+
+
 class UpdateParametersView(LoginRequiredMixin, UpdateView):
     model = Software
     form_class = SoftwareForm
@@ -437,7 +519,10 @@ class UpdateParametersView(LoginRequiredMixin, UpdateView):
         context = super(UpdateParametersView, self).get_context_data(**self.kwargs)
         type_of_use = context["software"].type_of_use
 
-        if type_of_use == Software.TYPE_OF_USE_televir_global:
+        if type_of_use in [
+            Software.TYPE_OF_USE_televir_global,
+            Software.TYPE_OF_USE_televir_settings,
+        ]:
             return reverse_lazy("pathogenID_pipeline", args=(0,))
 
         return reverse_lazy("settings-index")
@@ -465,6 +550,7 @@ class UpdateParametersView(LoginRequiredMixin, UpdateView):
             paramers = Parameter.objects.filter(software=software)
 
             b_change = False
+            form = post_process_args(form, software)
             for parameter in paramers:
                 if not parameter.can_change:
                     continue
@@ -562,6 +648,9 @@ class UpdateParametersTelevirProjView(LoginRequiredMixin, UpdateView):
                 software=software, televir_project=project
             )
             b_change = False
+
+            form = post_process_args(form, software)
+
             for parameter in paramers:
                 if not parameter.can_change:
                     continue

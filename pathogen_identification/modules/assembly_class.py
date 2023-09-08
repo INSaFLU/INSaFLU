@@ -6,7 +6,9 @@ from typing import Type
 
 import pandas as pd
 from Bio import SeqIO
+
 from fluwebvirus.settings import STATICFILES_DIRS
+from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.modules.object_classes import RunCMD
 
 
@@ -22,7 +24,6 @@ class Assembly_init:
         log_dir: str = "",
         prefix: str = "",
     ):
-
         self.r1 = r1
         self.r2 = r2
         self.assembly_dir = assembly_dir
@@ -39,6 +40,18 @@ class Assembly_init:
             return False
         else:
             return True
+        
+    def run_PE(self, threads: int = 3):
+        """
+        Assembly with assembler
+        """
+        pass
+
+    def run_SE(self, threads: int = 3):
+        """
+        Assembly with assembler
+        """
+        pass
 
 
 class Assembly_spades(Assembly_init):
@@ -211,10 +224,10 @@ class Assembly_raven(Assembly_init):
 
 
 class Assembly_class:
-
     assemblers_available = {
         "spades": Assembly_spades,
         "raven": Assembly_raven,
+        "assembly ont (raven)": Assembly_raven,
         "trinity": Assembly_trinity,
         "velvet": Assembly_velvet,
         "flye": Assembly_flye,
@@ -266,7 +279,7 @@ class Assembly_class:
         self.assembly_mean = 0
         self.assembly_number = 0
 
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger(f"{__name__}_{prefix}")
         self.logger.setLevel(logging_level)
         self.logger.addHandler(logging.StreamHandler())
         self.logger.info("Assembly class initialized")
@@ -326,9 +339,9 @@ class Assembly_class:
 
         os.makedirs(self.output_dir, exist_ok=True)
 
-        if self.type == "PE":
+        if self.type == CS.PAIR_END:
             self.assembler.run_PE(self.threads)
-        elif self.type == "SE":
+        elif self.type == CS.SINGLE_END:
             self.assembler.run_SE(self.threads)
 
     def check_assembler_output(self):
@@ -370,7 +383,6 @@ class Assembly_class:
         self.assembly_index_exists = self.assembly_file_check_index()
 
     def assembly_file_check_index(self):
-
         if os.path.isfile(self.assembly_file_fasta_gz_index):
             return True
         else:
@@ -439,7 +451,6 @@ class Assembly_class:
 
             with open(self.assembly_file_fasta, "w") as handle:
                 for record in short_seq_iterator:
-
                     handle.write("{}\n".format(record.format("fasta")))
 
     def get_contig_summary(self):
@@ -469,21 +480,25 @@ class Assembly_class:
             self.assembly_mean = self.contig_summary["contig_length"].fillna(0).mean()
             self.assembly_number = self.contig_summary.shape[0]
 
-    def export_assembly(self, directory):
+    def export_assembly(self, directory: str):
         """
         Export assembly file to directory
         """
         subdirectory = os.path.join(directory, "assembly")
 
         os.makedirs(subdirectory, exist_ok=True)
+
         final_file = os.path.join(
             subdirectory, os.path.basename(self.assembly_file_fasta_gz)
         )
 
+        self.assembly_exists = self.assembly_file_check_fasta_gz()
+
+        print(subdirectory, final_file, self.assembly_file_fasta_gz)
+
         if self.assembly_exists:
-            if os.path.exists(final_file):
-                os.remove(final_file)
+            if os.path.exists(final_file) is False:
 
-            shutil.move(self.assembly_file_fasta_gz, subdirectory)
+                shutil.move(self.assembly_file_fasta_gz, subdirectory)
 
-        self.assembly_file_fasta_gz = final_file
+            self.assembly_file_fasta_gz = final_file

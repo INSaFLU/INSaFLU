@@ -2,17 +2,19 @@
 
 import logging
 import os
+import subprocess
 import time
 from datetime import datetime
+from typing import List
+
+from django.conf import settings
 from django.contrib.auth.models import User
+from django.db import transaction
 
 from constants.constants import Constants, FileExtensions, TypePath
-from django.conf import settings
 from extend_user.models import Profile
 from managing_files.models import ProcessControler
-import subprocess
 from utils.utils import Utils
-from django.db import transaction
 
 # http://www.socher.org/index.php/Main/HowToInstallSunGridEngineOnUbuntu
 # https://peteris.rocks/blog/sun-grid-engine-installation-on-ubuntu-server/
@@ -33,10 +35,10 @@ from django.db import transaction
 # <sge_root>/<sge_cell>/common/accounting
 # <sge_root>/<sge_cell>/common/statistics
 
+
 ## default configuration
 # /etc/default/gridengine
 class ProcessSGE(object):
-
     utils: Utils = Utils()
 
     FILE_NAME_SCRIPT_SGE = "launch_job_insa.sh"
@@ -523,7 +525,7 @@ class ProcessSGE(object):
         """
         process_controler = ProcessControler()
         vect_command = [
-            "python3 {} run_trimmomatic_species --sample_id {} --user_id {} {}".format(
+            "/usr/bin/python3 {} run_trimmomatic_species --sample_id {} --user_id {} {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 sample.pk,
                 user.pk,
@@ -562,7 +564,7 @@ class ProcessSGE(object):
         """
         process_controler = ProcessControler()
         vect_command = [
-            "python3 {} run_clean_minion --sample_id {} --user_id {} {}".format(
+            "/usr/bin/python3 {} run_clean_minion --sample_id {} --user_id {} {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 sample.pk,
                 user.pk,
@@ -644,7 +646,7 @@ class ProcessSGE(object):
         """
         process_controler = ProcessControler()
         vect_command = [
-            "python3 {} create_sample_list_by_user --user_id {} {}".format(
+            "/usr/bin/python3 {} create_sample_list_by_user --user_id {} {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user.pk,
                 "--settings fluwebvirus.settings_test" if b_test else "",
@@ -833,7 +835,7 @@ class ProcessSGE(object):
             queue_name,
             vect_command,
             job_name,
-            False,
+            True,
             [job_name_wait],
             alternative_temp_dir=out_dir,
         )
@@ -862,7 +864,7 @@ class ProcessSGE(object):
         out_dir = self.utils.get_temp_dir()
 
         vect_command = [
-            "python3 {} submit_televir_sample --user_id {} --project_id {} --sample_id {} -o {}".format(
+            "/usr/bin/python3 {} submit_televir_job_tree_sample --user_id {} --project_id {} --sample_id {} -o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user_pk,
                 project_pk,
@@ -946,7 +948,7 @@ class ProcessSGE(object):
             raise Exception("Fail to submit the job.")
         return sge_id
 
-    def set_submit_televir_map(self, user, reference_pk):
+    def set_submit_televir_sort_pisample_reports(self, user, pisample_pk):
         """
         submit the job to televir
         """
@@ -955,9 +957,56 @@ class ProcessSGE(object):
         out_dir = self.utils.get_temp_dir()
 
         vect_command = [
-            "python3 {} submit_televir_map --ref_id {} -o {}".format(
+            "python3 {} submit_televir_job_sort_sample_reports --user_id {} --pisample_id {} -o {}".format(
+                os.path.join(settings.BASE_DIR, "manage.py"),
+                user_pk,
+                pisample_pk,
+                out_dir,
+            )
+        ]
+
+        self.logger_production.info("Processing: " + ";".join(vect_command))
+        self.logger_debug.info("Processing: " + ";".join(vect_command))
+        queue_name = user.profile.queue_name_sge
+        (job_name_wait, job_name) = user.profile.get_name_sge_seq(
+            Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
+        )
+        outdir_sge = self.utils.get_temp_dir()
+        path_file = self.set_script_run_sge(
+            outdir_sge,
+            queue_name,
+            vect_command,
+            job_name,
+            True,
+            [job_name_wait],
+            alternative_temp_dir=out_dir,
+        )
+        try:
+            sge_id = self.submitte_job(path_file)
+            print("project submitted, sge_id: " + str(sge_id))
+            if sge_id != None:
+                self.set_process_controlers(
+                    user,
+                    process_controler.get_name_televir_project_sample_sort(pisample_pk),
+                    sge_id,
+                )
+        except:
+            raise Exception("Fail to submit the job.")
+        return sge_id
+
+    def set_submit_televir_map(self, user, reference_pk, project_pk):
+        """
+        submit the job to televir
+        """
+        user_pk = user.pk
+        process_controler = ProcessControler()
+        out_dir = self.utils.get_temp_dir()
+
+        vect_command = [
+            "python3 {} submit_televir_map_specific --ref_id {} --project_id {} -o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 reference_pk,
+                project_pk,
                 out_dir,
             )
         ]
@@ -1041,13 +1090,12 @@ class ProcessSGE(object):
         exit_status = os.system(bash_command)
 
         if exit_status != 0:
-
-            raise Exception("Fail to kill the process")
+            print("Fail to kill the process")
 
         return exit_status
 
     @transaction.atomic
-    def kill_televir_process_controler(
+    def kill_televir_process_controler_runs(
         self, user_pk: int, project_pk: int, sample_pk: int, leaf_pk: int
     ):
         """
@@ -1062,8 +1110,43 @@ class ProcessSGE(object):
             is_finished=False,
         )
 
-        for process in processes:
+        self.kill_processes(processes)
 
+        processes = ProcessControler.objects.filter(
+            owner__id=user_pk,
+            name=process_controler.get_name_televir_project_sample(
+                project_pk=project_pk, sample_pk=sample_pk
+            ),
+            is_error=False,
+            is_finished=False,
+        )
+
+        self.kill_processes(processes)
+
+    @transaction.atomic
+    def kill_televir_process_controler_samples(
+        self, user_pk: int, project_pk: int, sample_pk: int
+    ):
+        """
+        Kill the process in process controler.
+        """
+        process_controler = ProcessControler()
+
+        processes = ProcessControler.objects.filter(
+            owner__id=user_pk,
+            name=process_controler.get_name_televir_project_sample(
+                project_pk=project_pk, sample_pk=sample_pk
+            ),
+            is_error=False,
+            is_finished=False,
+        )
+
+        self.kill_processes(processes)
+
+    def kill_processes(self, processes: List[ProcessControler]):
+        """ """
+
+        for process in processes:
             print("Killing process {}".format(process.name_sge_id))
 
             if process.name_sge_id:
@@ -1075,7 +1158,6 @@ class ProcessSGE(object):
             process.save()
 
     def set_specific_controler_flag(self, user, name_of_process, sge_id, flags):
-
         try:
             process_controler = ProcessControler.objects.get(
                 owner__id=user.pk,

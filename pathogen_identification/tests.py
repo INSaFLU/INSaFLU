@@ -1,39 +1,42 @@
-from django.test import TestCase
-from django.contrib.auth.models import User
-from pathogen_identification.models import Projects
-from pathogen_identification.models import PIProject_Sample
-from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
-from pathogen_identification.constants_settings import Pipeline_Makeup
-from settings.default_software import DefaultSoftware
 import os
+from random import sample
+from typing import Dict, Tuple
+
 from django.conf import settings
-from settings.models import Software, Parameter, Sample
-from settings.constants_settings import ConstantsSettings as CS
-from pathogen_identification.constants_settings import (
-    ConstantsSettings as PI_CS,
-    Pipeline_Makeup,
-)
-from pathogen_identification.models import SoftwareTree, ParameterSet, SoftwareTreeNode
-from constants.constantsTestsCase import ConstantsTestsCase
-from utils.software import Software as SoftwareUtils
-from utils.utils import Utils
-from constants.software_names import SoftwareNames
+from django.contrib.auth.models import User
+from django.test import TestCase, tag
+
 from constants.constants import Constants
-from typing import Tuple, Dict
+from constants.constants import Televir_Metadata_Constants as Deployment_Params
+from constants.constantsTestsCase import ConstantsTestsCase
+from constants.software_names import SoftwareNames
+from fluwebvirus.settings import STATIC_ROOT
+from pathogen_identification.constants_settings import ConstantsSettings as PI_CS
 from pathogen_identification.deployment_main import Run_Main_from_Leaf
+from pathogen_identification.models import (
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
 from pathogen_identification.modules.object_classes import (
     Operation_Temp_Files,
-    Temp_File,
-    RunCMD,
     Read_class,
-    Sample_runClass,
-    Software_detail,
-    Bedgraph,
+    RunCMD,
+    Temp_File,
 )
-from pathogen_identification.install_registry import Deployment_Params
-from random import sample
-from django.test import tag
-from fluwebvirus.settings import STATIC_ROOT
+from pathogen_identification.utilities.utilities_pipeline import (
+    Pipeline_Makeup,
+    PipelineTree,
+    SoftwareTreeUtils,
+    Utils_Manager,
+)
+from settings.constants_settings import ConstantsSettings as CS
+from settings.default_software import DefaultSoftware
+from settings.models import Parameter, Sample, Software
+from utils.software import Software as SoftwareUtils
+from utils.utils import Utils
 
 # Create your tests here.
 
@@ -45,7 +48,6 @@ class AttrDict(dict):
 
 
 def get_bindir_from_binaries(binaries, key, value: str = ""):
-
     if value == "":
         try:
             return os.path.join(binaries["ROOT"], binaries[key]["default"], "bin")
@@ -65,13 +67,19 @@ def update_software_params_global_project(project, user):
     ### get all global software
     query_set = Software.objects.filter(
         owner=user,
-        type_of_use=Software.TYPE_OF_USE_televir_global,
-        type_of_software=Software.TYPE_SOFTWARE,
+        type_of_use__in=[
+            Software.TYPE_OF_USE_televir_global,
+            Software.TYPE_OF_USE_televir_settings,
+        ],
+        type_of_software__in=[
+            Software.TYPE_SOFTWARE,
+            Software.TYPE_INSAFLU_PARAMETER,
+        ],
         is_obsolete=False,
+        technology__name=project.technology,
     )
     project = Projects.objects.get(pk=project.pk)
     for software in query_set:
-
         software_parameters = Parameter.objects.filter(
             software=software,
         )
@@ -106,27 +114,49 @@ def duplicate_software_params_global_project(user, project):
     ### get all global software
     query_set = Software.objects.filter(
         owner=user,
-        type_of_use=Software.TYPE_OF_USE_televir_global,
-        type_of_software=Software.TYPE_SOFTWARE,
+        type_of_use__in=[
+            Software.TYPE_OF_USE_televir_global,
+            Software.TYPE_OF_USE_televir_settings,
+        ],
+        type_of_software__in=[
+            Software.TYPE_SOFTWARE,
+            Software.TYPE_INSAFLU_PARAMETER,
+        ],
         is_obsolete=False,
+        technology__name=project.technology,
+        parameter__televir_project=None,
     )
 
     for software in query_set:
-
         software_parameters = Parameter.objects.filter(
             software=software,
         )
 
         software.pk = None
-        software.type_of_use = Software.TYPE_OF_USE_televir_project
+        if software.type_of_use == Software.TYPE_OF_USE_televir_global:
+            software.type_of_use = Software.TYPE_OF_USE_televir_project
+        else:
+            software.type_of_use = Software.TYPE_OF_USE_televir_project_settings
 
-        software.save()
+        try:
+            Software.objects.get(
+                name=software.name,
+                type_of_use=software.type_of_use,
+                parameter__televir_project=project,
+                pipeline_step=software.pipeline_step,
+            )
 
-        for parameter in software_parameters:
-            parameter.pk = None
-            parameter.software = software
-            parameter.televir_project = project
-            parameter.save()
+        except Software.MultipleObjectsReturned:
+            pass
+
+        except Software.DoesNotExist:
+            software.save()
+
+            for parameter in software_parameters:
+                parameter.pk = None
+                parameter.software = software
+                parameter.televir_project = project
+                parameter.save()
 
 
 def check_project_params_exist(project):
@@ -141,7 +171,6 @@ def check_project_params_exist(project):
 
 
 def create_project_params(user, televir_project):
-
     if not check_project_params_exist(televir_project):
         duplicate_software_params_global_project(user, televir_project)
     else:
@@ -149,7 +178,6 @@ def create_project_params(user, televir_project):
 
 
 def reset_project_params(televir_project):
-
     if not check_project_params_exist(televir_project):
         return
 
@@ -158,22 +186,22 @@ def reset_project_params(televir_project):
 
 
 def set_project_makeup(project: Projects, makeup: list):
-
     project_software = Software.objects.filter(
-        type_of_use=Software.TYPE_OF_USE_televir_project,
+        type_of_use__in=[
+            Software.TYPE_OF_USE_televir_project,
+            Software.TYPE_OF_USE_televir_project_settings,
+        ],
         parameter__televir_project=project,
         owner=project.owner,
     )
 
     for software in project_software:
-
         if software.pipeline_step.name not in makeup:
             software.is_to_run = False
             software.save()
 
 
 def reset_project_makeup(project: Projects):
-
     project_software = Software.objects.filter(
         type_of_use=Software.TYPE_OF_USE_televir_project,
         parameter__televir_project=project,
@@ -185,10 +213,13 @@ def reset_project_makeup(project: Projects):
         software.save()
 
 
-def get_global_tree(technology, tree_makeup):
-    utils_manager = Utils_Manager()
-    pipeline_tree = utils_manager.generate_software_tree(technology, tree_makeup)
-    pipeline_tree_index = utils_manager.get_software_tree_index(technology, tree_makeup)
+def get_global_tree(local_tree: PipelineTree, project: Projects):
+    user = project.owner
+    software_tree_manager = SoftwareTreeUtils(user, project)
+    # local_tree = software_tree_manager.generate_project_tree()
+    tree_makeup = local_tree.makeup
+    pipeline_tree = software_tree_manager.generate_software_tree_extend(local_tree)
+    pipeline_tree_index = software_tree_manager.get_software_tree_index(tree_makeup)
     pipeline_tree_query = SoftwareTree.objects.get(pk=pipeline_tree_index)
 
     return pipeline_tree, pipeline_tree_query
@@ -196,14 +227,12 @@ def get_global_tree(technology, tree_makeup):
 
 def determine_available_paths(project: Projects, user: User):
     utils_manager = Utils_Manager()
+    softwaretree_manager = SoftwareTreeUtils(user, project)
 
-    local_tree = utils_manager.generate_project_tree(project.technology, project, user)
+    local_tree = softwaretree_manager.generate_project_tree()
     local_paths = local_tree.get_all_graph_paths_explicit()
 
-    tree_makeup = local_tree.makeup
-    pipeline_tree, pipeline_tree_query = get_global_tree(
-        project.technology, tree_makeup
-    )
+    pipeline_tree, pipeline_tree_query = get_global_tree(local_tree, project)
 
     matched_paths = {
         leaf: utils_manager.utility_manager.match_path_to_tree_safe(path, pipeline_tree)
@@ -225,7 +254,6 @@ class Televir_Software_Test(TestCase):
     pipeline_makeup = Pipeline_Makeup()
 
     def setUp(self):
-
         self.baseDirectory = os.path.join(
             getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS
         )
@@ -274,11 +302,16 @@ class Televir_Software_Test(TestCase):
         )
         self.assertEqual(minimap2.count(), 2)
 
-        snippy = Software.objects.filter(name_extended="Snippy", owner=self.test_user)
+        snippy = Software.objects.filter(name="Snippy_PI", owner=self.test_user)
         self.assertEqual(snippy.count(), 1)
 
-        bowtie2 = Software.objects.filter(name_extended="Bowtie2", owner=self.test_user)
-        self.assertEqual(bowtie2.count(), 1)
+        bamutil = Software.objects.filter(name="BamUtil", owner=self.test_user)
+        self.assertEqual(bamutil.count(), 2)
+
+        prinseqplusplus = Software.objects.filter(
+            name="Prinseq++", owner=self.test_user
+        )
+        self.assertEqual(prinseqplusplus.count(), 2)
 
     def test_pipeline_makeup(self):
         default_software = DefaultSoftware()
@@ -302,28 +335,15 @@ class Televir_Software_Test(TestCase):
 
         self.assertEqual(
             {
-                "Remapping",
-                "Contig classification",
-                "Read classification",
-                "Viral enrichment",
+                CS.PIPELINE_NAME_extra_qc,
+                CS.PIPELINE_NAME_viral_enrichment,
+                CS.PIPELINE_NAME_contig_classification,
+                CS.PIPELINE_NAME_read_classification,
+                CS.PIPELINE_NAME_remapping,
+                CS.PIPELINE_NAME_reporting,
             },
             set(pipeline_excluding_raven),
         )
-
-    def test_generate_default_trees(self):
-        default_software = DefaultSoftware()
-        default_software.test_all_defaults_pathogen_identification(self.test_user)
-        utils_manager = Utils_Manager()
-        utils_manager.generate_default_trees(self.test_user)
-        all_trees = SoftwareTree.objects.all()
-
-        self.assertEqual(all_trees.count(), len(self.pipeline_makeup.MAKEUP) * 2)
-
-        ont_pipeline_tree = utils_manager.generate_software_tree(
-            CS.TECHNOLOGY_minion, 0
-        )
-
-        self.assertEqual(ont_pipeline_tree.__class__.__name__, "PipelineTree")
 
 
 def televir_test_project(user: User, project_ont_name: str = "project_televir"):
@@ -343,7 +363,6 @@ def televir_test_project(user: User, project_ont_name: str = "project_televir"):
 
 
 def televir_test_sample(project_ont, sample_ont: Sample):
-
     try:
         ont_project_sample = PIProject_Sample.objects.get(
             project__id=project_ont.pk, sample__id=sample_ont.pk
@@ -374,7 +393,6 @@ def test_user():
 def test_fastq_file(
     baseDirectory, user: User, sample_name: str = "televir_sample_minion_1"
 ):
-
     utils = Utils()
 
     file_name = os.path.join(
@@ -442,7 +460,6 @@ class Televir_Objects_TestCase(TestCase):
         self.assertFalse(os.path.exists(tpf))
 
     def test_runCMD_strings(self):
-
         runcmd = RunCMD(
             self.baseDirectory,
             logdir=self.baseDirectory,
@@ -468,7 +485,6 @@ class Televir_Objects_TestCase(TestCase):
         )
 
     def test_runCMD_deployment(self):
-
         runcmd = RunCMD(
             self.baseDirectory,
             logdir=self.baseDirectory,
@@ -504,7 +520,6 @@ class Televir_Objects_TestCase(TestCase):
                     self.assertEqual(f.read().strip(), "Hello World")
 
         with tempf as tmp:
-
             cmd = f"echo hello world > {tmp}"
             runcmd.run_bash(cmd)
             self.assertTrue(os.path.exists(tmp))
@@ -516,7 +531,6 @@ class Televir_Objects_TestCase(TestCase):
         self.assertEqual(cmd_return.strip(), "hello world")
 
     def test_read_class(self):
-
         r1_path = self.sample_ont.path_name_1.name
 
         clean_dir = os.path.join(self.temp_directory, "clean")
@@ -558,9 +572,7 @@ class Televir_Objects_TestCase(TestCase):
         read_names_subset = sample(read_names, 100)
         temp_read_file = Temp_File(self.temp_directory, suffix=".fq.gz")
 
-        print(self.temp_directory)
         with temp_read_file as tpf:
-            print(tpf)
             r1.read_filter_move(read_names_subset, tpf)
 
             temp_read = Read_class(
@@ -599,7 +611,6 @@ class Televir_Project_Test(TestCase):
     pipeline_makeup = Pipeline_Makeup()
 
     def setUp(self):
-
         self.baseDirectory = os.path.join(
             getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS
         )
@@ -614,20 +625,16 @@ class Televir_Project_Test(TestCase):
         ######
         default_software = DefaultSoftware()
         default_software.test_all_defaults_pathogen_identification(self.test_user)
-        utils_manager = Utils_Manager()
-        utils_manager.generate_default_trees(self.test_user)
         duplicate_software_params_global_project(self.test_user, self.project_ont)
 
     def test_project_trees_exist_ont(self):
-        utils_manager = Utils_Manager()
+        software_tree_utils = SoftwareTreeUtils(self.test_user, self.project_ont)
 
-        for tree, makeup in self.pipeline_makeup.MAKEUP.items():
+        for _, makeup in self.pipeline_makeup.MAKEUP.items():
             reset_project_makeup(self.project_ont)
             set_project_makeup(self.project_ont, makeup)
 
-            local_tree = utils_manager.generate_project_tree(
-                self.project_ont.technology, self.project_ont, self.test_user
-            )
+            local_tree = software_tree_utils.generate_project_tree()
 
             self.assertEqual(local_tree.__class__.__name__, "PipelineTree")
 
@@ -636,23 +643,33 @@ class Televir_Project_Test(TestCase):
     @tag("slow")
     def test_all_project_paths_matched_ont(self):
         utils_manager = Utils_Manager()
-
-        for tree, makeup in self.pipeline_makeup.MAKEUP.items():
+        software_tree_utils = SoftwareTreeUtils(self.test_user, self.project_ont)
+        for _, makeup in self.pipeline_makeup.MAKEUP.items():
             reset_project_makeup(self.project_ont)
             set_project_makeup(self.project_ont, makeup)
 
-            local_tree = utils_manager.generate_project_tree(
-                self.project_ont.technology, self.project_ont, self.test_user
+            local_tree = software_tree_utils.generate_project_tree()
+
+            combined_table = (
+                utils_manager.parameter_util.generate_combined_parameters_table(
+                    self.project_ont.technology, self.test_user
+                )
             )
+
+            if not utils_manager.check_pipeline_possible(
+                combined_table, local_tree.makeup
+            ):
+                continue
+
             local_paths = local_tree.get_all_graph_paths_explicit()
 
             tree_makeup = local_tree.makeup
 
-            pipeline_tree = utils_manager.generate_software_tree(
-                self.project_ont.technology, tree_makeup
+            pipeline_tree = software_tree_utils.generate_software_tree_extend(
+                local_tree
             )
-            pipeline_tree_index = utils_manager.get_software_tree_index(
-                self.project_ont.technology, tree_makeup
+            pipeline_tree_index = software_tree_utils.get_software_tree_index(
+                tree_makeup
             )
 
             matched_paths = {
@@ -667,7 +684,7 @@ class Televir_Project_Test(TestCase):
 
             self.assertEqual(len(local_paths), len(available_paths))
 
-            for leaf, path in available_paths.items():
+            for _, path in available_paths.items():
                 node = SoftwareTreeNode.objects.filter(
                     software_tree__pk=pipeline_tree_index, index=path
                 ).exists()
@@ -678,17 +695,17 @@ class Televir_Project_Test(TestCase):
     def test_run_submit(self):
         utils_manager = Utils_Manager()
         pipeline_makeup_manager = Pipeline_Makeup()
+        software_tree_utils = SoftwareTreeUtils(self.test_user, self.project_ont)
 
-        for tree, makeup in self.pipeline_makeup.MAKEUP.items():
+        for makeup, makeup_explicit in self.pipeline_makeup.MAKEUP.items():
             reset_project_makeup(self.project_ont)
-            set_project_makeup(self.project_ont, makeup)
+            set_project_makeup(self.project_ont, makeup_explicit)
 
             pipeline_tree, available_paths = determine_available_paths(
                 self.project_ont, self.test_user
             )
-            pipeline_tree_index = utils_manager.get_software_tree_index(
-                self.project_ont.technology, tree
-            )
+
+            pipeline_tree_index = software_tree_utils.get_software_tree_index(makeup)
 
             available_path_nodes = {
                 leaf: SoftwareTreeNode.objects.get(
@@ -697,8 +714,7 @@ class Televir_Project_Test(TestCase):
                 for leaf, path in available_paths.items()
             }
 
-            for leaf, matched_path_node in available_path_nodes.items():
-
+            for _, matched_path_node in available_path_nodes.items():
                 run = Run_Main_from_Leaf(
                     user=self.test_user,
                     input_data=self.ont_project_sample,
@@ -726,7 +742,8 @@ class Televir_Project_Test(TestCase):
                 )
 
                 self.assertEqual(
-                    makeup, pipeline_makeup_manager.get_makeup(run.container.tree_makup)
+                    makeup_explicit,
+                    pipeline_makeup_manager.get_makeup(run.container.tree_makup),
                 )
 
                 ##### Test submission
@@ -746,7 +763,7 @@ class Televir_Project_Test(TestCase):
                     ),
                     run.container.config["r1"],
                 )
-                self.assertEqual(run.container.config["type"], "SE")
+                self.assertEqual(run.container.config["type"], PI_CS.SINGLE_END)
                 self.assertEqual(os.path.exists(run.container.dir), True)
                 self.assertEqual(
                     os.path.exists(

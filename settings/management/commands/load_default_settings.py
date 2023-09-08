@@ -71,6 +71,7 @@ class Command(BaseCommand):
                 software.save()
             else:  ### if PipelineStep not none, test if it is correct
                 vect_parameters = default_parameters.get_vect_parameters(software)
+
                 if software.name in SoftwareNames.polyvalent_software:
                     if (
                         software.pipeline_step.name
@@ -114,7 +115,6 @@ class Command(BaseCommand):
 
     # A command must define handle()
     def handle(self, *args, **options):
-
         #### replace old name technologies; Important, must be in first place
         self.stdout.write("Replace old technology names...")
         self.replace_old_technology_names()

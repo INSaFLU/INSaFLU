@@ -36,8 +36,11 @@
 		{% breadcrumb "Samples" "samples" %}
 		{% breadcrumb "Samples settings" "sample-settings" sample.pk %}
 		{% breadcrumb "Update parameters" "software-update" %}
-
     {% elif type_of_use == 5 %}
+        {% breadcrumb "Settings Index" "settings-index" %}
+        {% breadcrumb "Settings Pathogen Identification" "pathogenID_pipeline" 0 %}	
+		{% breadcrumb "Update parameters" "software-update" %}
+	{% elif type_of_use == 8 %}
         {% breadcrumb "Settings Index" "settings-index" %}
         {% breadcrumb "Settings Pathogen Identification" "pathogenID_pipeline" 0 %}	
 		{% breadcrumb "Update parameters" "software-update" %}

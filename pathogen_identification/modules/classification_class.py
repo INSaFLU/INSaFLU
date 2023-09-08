@@ -1,3 +1,4 @@
+import csv
 import logging
 import os
 import re
@@ -6,11 +7,13 @@ from random import randint
 from typing import Type
 
 import pandas as pd
-from pathogen_identification.modules.object_classes import RunCMD, Software_detail
+
+from pathogen_identification.constants_settings import ConstantsSettings
+from pathogen_identification.modules.object_classes import (RunCMD,
+                                                            Software_detail)
 
 
 def check_report_empty(file, comment="@"):
-
     if not os.path.exists(file):
         return True
 
@@ -58,7 +61,6 @@ class Classifier_init:
         )
 
     def filter_samfile_read_names(self, same=True, output_sam="", sep=",", idx=0):
-
         if not output_sam:
             output_sam = os.path.join(self.out_path, f"temp{randint(1,1999)}.sam")
 
@@ -67,7 +69,6 @@ class Classifier_init:
         with open(self.report_path, "r") as f:
             column_number = 0
             with open(output_sam, "w") as f2:
-
                 for line in f:
                     if line.startswith(tuple(["@HD", "@SQ", "@PG", "@RG", "@CO"])):
                         f2.write(line)
@@ -304,7 +305,6 @@ class run_CLARK(Classifier_init):
         return report
 
     def get_report(self) -> pd.DataFrame:
-
         return self.read_report()
 
     def get_report_simple(self) -> pd.DataFrame:
@@ -493,7 +493,6 @@ class run_blast_p(Classifier_init):
 
 
 class run_centrifuge(Classifier_init):
-
     method_name = "centrifuge"
     report_suffix = ".report.tsv"
     full_report_suffix = ".centrifuge"
@@ -572,10 +571,12 @@ class run_centrifuge(Classifier_init):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
         report = pd.read_csv(
-            self.full_report_path, sep="\t", header=None, usecols=[0, 6]
-        ).rename(columns={0: "qseqid", 6: "acc"})
+            self.full_report_path, sep="\t", header=None, usecols=[0, 2, 6]
+        ).rename(columns={0: "qseqid", 2: "taxid", 6: "acc"})
 
-        report = report[report.acc != "unclassified"][["qseqid", "acc"]]
+        report = report[report.acc != "unclassified"][["qseqid", "taxid"]]
+        report = report[report.taxid != 0][["qseqid", "taxid"]]
+
         return pd.DataFrame(report)
 
 
@@ -758,7 +759,6 @@ class run_diamond(Classifier_init):
         return acc
 
     def get_report(self) -> pd.DataFrame:
-
         if check_report_empty(self.report_path):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
@@ -867,15 +867,14 @@ class run_minimap2_illumina(Classifier_init):
     full_report_suffix = ".minimap2_illumina"
 
     def run_SE(self, threads: int = 3):
-        cmd = f"minimap2 -a -t {threads} {self.args} --cs {self.db_path} {self.query_path} > {self.report_path}"
+        cmd = f"minimap2 -a -t {threads} {self.args} {self.db_path} {self.query_path} > {self.report_path}"
         self.cmd.run(cmd)
 
     def run_PE(self, threads: int = 3):
-        cmd = f"minimap2 -a -t {threads} {self.args} --cs {self.db_path} {self.query_path} {self.r2} > {self.report_path}"
+        cmd = f"minimap2 -a -t {threads} {self.args} {self.db_path} {self.query_path} {self.r2} > {self.report_path}"
         self.cmd.run(cmd)
 
     def get_report(self) -> pd.DataFrame:
-
         if check_report_empty(self.report_path):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
@@ -905,7 +904,7 @@ class run_minimap2_illumina(Classifier_init):
 
         report = pd.read_csv(
             self.report_path, sep="\t", header=None, usecols=[0, 2], comment="@"
-        ).rename(columns={0: "acc", 1: "qseqid"})
+        ).rename(columns={0: "qseqid", 2: "acc"})
 
         report = report[report["acc"] != "*"]
         return report
@@ -984,7 +983,6 @@ class run_bwa_mem(Classifier_init):
         self.cmd.run(cmd)
 
     def get_report(self) -> pd.DataFrame:
-
         if check_report_empty(self.report_path):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
@@ -1013,7 +1011,12 @@ class run_bwa_mem(Classifier_init):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
         report = pd.read_csv(
-            self.report_path, sep="\t", header=None, usecols=[0, 2], comment="@"
+            self.report_path,
+            sep="\t",
+            header=None,
+            usecols=[0, 2],
+            comment="@",
+            quoting=csv.QUOTE_NONE,
         ).rename(columns={0: "qseqid", 2: "acc"})
 
         report = report[report["acc"] != "*"]
@@ -1083,7 +1086,6 @@ class run_minimap2_ONT(Classifier_init):
         self.cmd.run(cmd)
 
     def get_report(self) -> pd.DataFrame:
-
         if check_report_empty(self.report_path):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
@@ -1129,7 +1131,6 @@ class run_minimap2_asm(Classifier_init):
         self.cmd.run(cmd)
 
     def get_report(self) -> pd.DataFrame:
-
         if check_report_empty(self.report_path):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
@@ -1181,6 +1182,7 @@ class Classifier:
         "desamba": run_deSamba,
         "kraken2": run_kraken2,
         "minimap2_illumina": run_minimap2_illumina,
+        "minimap2_illu": run_minimap2_illumina,
         "minimap2": run_minimap2_ONT,
         "minimap2_asm": run_minimap2_asm,
         "diamond": run_diamond,
@@ -1194,9 +1196,9 @@ class Classifier:
 
     def __init__(
         self,
-        classifier_method: Type[Software_detail],
+        classifier_method: Software_detail,
         query_path: str = "",
-        type: str = "SE",
+        type: str = ConstantsSettings.SINGLE_END,
         r2: str = "",
         prefix: str = "",
         threads: int = 1,
@@ -1216,7 +1218,7 @@ class Classifier:
         :param bin: bin path
         :param logging_level: logging level
         """
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger(f"{__name__}_{classifier_method.name}_{prefix}")
         if self.logger.hasHandlers():
             self.logger.handlers.clear()
         self.logger.propagate = False
@@ -1224,7 +1226,10 @@ class Classifier:
         self.logger.addHandler(logging.StreamHandler())
         self.log_dir = log_dir
         self.cmd = RunCMD(
-            bin, logdir=self.log_dir, prefix=prefix, task="classification"
+            bin,
+            logdir=self.log_dir,
+            prefix=prefix,
+            task=f"classification_{classifier_method.name}_{prefix}",
         )
         self.prefix = prefix
         self.classifier_method = classifier_method
@@ -1330,7 +1335,7 @@ class Classifier:
         """
         Classify a sequencem, deploy classifier method adjusted for the type of sequence.
         """
-        if self.type == "SE":
+        if self.type == ConstantsSettings.SINGLE_END:
             self.classifier.run_SE(threads=self.threads)
         else:
             self.classifier.run_PE(threads=self.threads)

@@ -812,6 +812,7 @@ class Utils(object):
 				vcf_hanlder_write_removed_by_filter.header.add_sample(variant_sample)
 
 		for variant in vcf_hanlder:
+
 			### DP must be replaced by DPSP. DPSP is the sum of all reads Span and Ambiguous
 			if ("SR" in variant.info and "DPSP" in variant.info and "AR" in variant.info):	## SR=0,0,15,6
 				### don't process this VCF because has a low coverage
@@ -823,7 +824,6 @@ class Utils(object):
 				if ( ((len(variant.info['SR']) // 2) - 1) != len(variant.alts)):
 					#vcf_hanlder_write.write(variant) 
 					continue		### different numbers of Alleles and References
-
 				#### extra info				
 				vect_out_ao = []	### AO
 				out_ro = -1			### RO
@@ -835,7 +835,7 @@ class Utils(object):
 				for value_ in range(0, len(variant.info['SR']), 2):
 					if (value_ > 0):
 						allele_count = int(variant.info['SR'][value_]) + int(variant.info['SR'][value_ + 1])
-						
+
 						if (total_deep > 0):
 							### incongruences in Medaka, 
 							### these values are collected in different stages of the Medaka workflow, (email from support@nanoporetech.com at 23 Dec 2020)
@@ -847,6 +847,9 @@ class Utils(object):
 								elif (not vcf_file_out_removed_by_filter is None): 
 									vect_out_freq_filtered.append(float("{:.1f}".format(freq_value * 100)))
 							#print(variant.pos, variant.ref, str(variant.alts), variant.info['DP'], vect_out_ao[-1], vect_out_freq[-1])
+						else: # If total_deep == 0 (some sort of error?)
+							if (not vcf_file_out_removed_by_filter is None): 								
+								vect_out_freq_filtered.append(float("{:.1f}".format(0)))
 						
 						vect_out_ao.append(allele_count)
 						vect_out_type.append(self._get_type_variation(variant.ref, variant.alts[(value_ - 2) >> 1]))

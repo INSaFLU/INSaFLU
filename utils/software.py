@@ -413,6 +413,42 @@ class Software(object):
 
         return cmd
 
+    def run_raven(self, fastq_1, out_dir):
+        """
+        Run raven
+        """
+        if not os.path.exists(fastq_1):
+            self.logger_production.error("Fastq 1 not found: " + fastq_1)
+            self.logger_debug.error("Fastq 1 not found: " + fastq_1)
+            raise Exception("Fastq 1 not found: " + fastq_1)
+        
+        cmd = "%s -t %d %s %s --graphical-fragment-assembly %s" % (
+            self.software_names.SOFTWARE_RAVEN,
+            settings.THREADS_TO_RUN_FAST,
+            self.software_names.SOFTWARE_RAVEN_PARAMETERS,
+            fastq_1,
+            os.path.join(out_dir, "contigs.gfa")
+        )
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise Exception("Fail to run raven")
+        
+        if os.path.exists(os.path.join(out_dir, "contigs.gfa")):
+            cmd = "cut -f 2,3 %s | sed 's/^/>/' | sed 's/\\s/\\n/' > %s" % (
+                os.path.join(out_dir, "contigs.gfa"),                         
+                os.path.join(out_dir, "contigs.fasta")
+            )
+            exit_status = os.system(cmd)
+            if exit_status != 0:
+                self.logger_production.error("Fail to run: " + cmd)
+                self.logger_debug.error("Fail to run: " + cmd)
+                raise Exception("Fail to run raven postprocessing")
+
+        return cmd
+
+
     def convert_fastq_to_fasta(self, fastq_1, fasta_out_file):
         """
         Convert fastq to Fasta
@@ -564,14 +600,32 @@ class Software(object):
                 return False
         else:  ### for minion
             try:
-                cmd = self.convert_fastq_to_fasta(
-                    fastq1_1, os.path.join(out_dir_result, "contigs.fasta")
+                cmd = self.run_raven(fastq_1=fastq1_1, out_dir=out_dir_result)
+                #cmd = self.convert_fastq_to_fasta(
+                #    fastq1_1, os.path.join(out_dir_result, "contigs.fasta")
+                #)
+                result_all.add_software(
+                    SoftwareDesc(
+                        self.software_names.SOFTWARE_RAVEN_name,
+                        self.software_names.SOFTWARE_RAVEN_VERSION,
+                        self.software_names.SOFTWARE_RAVEN_PARAMETERS,
+                    )
                 )
-
             except Exception:
                 result = Result()
-                result.set_error("Fail to convert fastq to fasta.")
-                result.add_software(SoftwareDesc("sed", "", ""))
+                #result.set_error("Fail to convert fastq to fasta.")
+                #result.add_software(SoftwareDesc("sed", "", ""))
+                result.set_error(
+                    "Raven (%s) fail to run"
+                    % (self.software_names.SOFTWARE_RAVEN_VERSION)
+                )
+                result.add_software(
+                    SoftwareDesc(
+                        self.software_names.SOFTWARE_RAVEN_name,
+                        self.software_names.SOFTWARE_RAVEN_VERSION,
+                        self.software_names.SOFTWARE_RAVEN_PARAMETERS,
+                    )
+                )                
                 manageDatabase.set_sample_metakey(
                     sample,
                     owner,
@@ -602,10 +656,21 @@ class Software(object):
                     )
                 )
             else:
+                #result.set_error(
+                #    "Low number of reads in fasta file. Came from fastq.gz"
+                #)
+                #result.add_software(SoftwareDesc("sed", "", ""))
                 result.set_error(
-                    "Low number of reads in fasta file. Came from fastq.gz"
+                    "Raven (%s) fail to run, empty contigs.fasta file."
+                    % (self.software_names.SOFTWARE_RAVEN_VERSION)
                 )
-                result.add_software(SoftwareDesc("sed", "", ""))
+                result.add_software(
+                    SoftwareDesc(
+                        self.software_names.SOFTWARE_RAVEN_name,
+                        self.software_names.SOFTWARE_RAVEN_VERSION,
+                        self.software_names.SOFTWARE_RAVEN_PARAMETERS,
+                    )
+                )                
             manageDatabase.set_sample_metakey(
                 sample,
                 owner,
@@ -654,7 +719,7 @@ class Software(object):
                 )
                 result.add_software(
                     SoftwareDesc(
-                        self.softwafile_outre_names.get_abricate_name(),
+                        self.software_names.get_abricate_name(),
                         self.software_names.get_abricate_version(),
                         self.software_names.get_abricate_parameters(),
                     )
@@ -776,44 +841,28 @@ class Software(object):
 
         ## Only identify Contigs for Illuminua, because Spades runs. In ONT doesn't run because it is identify in reads.
         try:
+            ## copy the contigs from spades/raven
             contigs_2_sequences = Contigs2Sequences(b_run_tests)
             (
                 out_file_clean,
                 clean_abricate_file,
             ) = contigs_2_sequences.identify_contigs(
-                file_out_contigs,
-                os.path.basename(
+                file_name=file_out_contigs,
+                file_name_out=os.path.basename(
                     sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)
-                )
-                if sample.is_type_fastq_gz_sequencing()
-                else os.path.basename(
-                    sample.get_draft_reads_abricate_output(TypePath.MEDIA_ROOT)
-                ),
-                True if sample.is_type_fastq_gz_sequencing() else False,
+                ), b_create_fasta=True
             )
-            ## copy the contigs from spades
-            if sample.is_type_fastq_gz_sequencing():  ## illumina
-                if os.path.exists(out_file_clean):
-                    self.utils.copy_file(
-                        out_file_clean,
-                        sample.get_draft_contigs_output(TypePath.MEDIA_ROOT),
-                    )
-                if os.path.exists(clean_abricate_file):
-                    self.utils.copy_file(
-                        clean_abricate_file,
-                        sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT),
-                    )
-            else:
-                print(
-                    "Should be writing abricate results to {}".format(
-                        sample.get_draft_reads_abricate_output(TypePath.MEDIA_ROOT)
-                    )
+            ## copy the contigs from spades    
+            if os.path.exists(out_file_clean):
+                self.utils.copy_file(
+                    out_file_clean,
+                    sample.get_draft_contigs_output(TypePath.MEDIA_ROOT),
                 )
-                if os.path.exists(clean_abricate_file):
-                    self.utils.copy_file(
-                        clean_abricate_file,
-                        sample.get_draft_reads_abricate_output(TypePath.MEDIA_ROOT),
-                    )
+            if os.path.exists(clean_abricate_file):             
+                self.utils.copy_file(
+                    clean_abricate_file,
+                    sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT),
+                )
             result_all.add_software(
                 SoftwareDesc(
                     self.software_names.get_abricate_name(),
@@ -868,7 +917,11 @@ class Software(object):
                 owner,
                 MetaKeyAndValue.META_KEY_Identify_Sample,
                 MetaKeyAndValue.META_VALUE_Success,
-                "Success, Abricate(%s)" % (self.software_names.get_abricate_version()),
+                "Success, Raven(%s), Abricate(%s)"
+                % (
+                    self.software_names.SOFTWARE_RAVEN_VERSION,
+                    self.software_names.get_abricate_version(),
+                ),
             )
         manageDatabase.set_sample_metakey(
             sample,
@@ -4993,6 +5046,7 @@ class Contigs2Sequences(object):
         out_file = self.utils.get_temp_file(
             "abricate_contig2seq", FileExtensions.FILE_TXT
         )
+   
         ### run abricate
         software.run_abricate(
             database_name,

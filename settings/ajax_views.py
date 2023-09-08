@@ -3,23 +3,23 @@ Created on Dec 6, 2017
 
 @author: mmp
 """
-from constants.meta_key_and_values import MetaKeyAndValue
-from constants.software_names import SoftwareNames
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
+
+from constants.meta_key_and_values import MetaKeyAndValue
+from constants.software_names import SoftwareNames
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project, ProjectSample, Sample
-from pathogen_identification.constants_settings import Pipeline_Makeup
 from pathogen_identification.models import Projects as PIProjects
-from utils.process_SGE import ProcessSGE
-from utils.result import DecodeObjects, MaskingConsensus
-
+from pathogen_identification.utilities.utilities_pipeline import Pipeline_Makeup
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software import DefaultSoftware
 from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.models import Parameter, Software
+from utils.process_SGE import ProcessSGE
+from utils.result import DecodeObjects, MaskingConsensus
 
 
 @csrf_protect
@@ -616,7 +616,6 @@ def get_mask_consensus_actual_values(request):
     """
     data = {"is_ok": False}
     if request.is_ajax():
-
         ## some pre-requisites
         if not request.user.is_active or not request.user.is_authenticated:
             return JsonResponse(data)
@@ -766,7 +765,6 @@ def turn_on_off_software(request):
                 software = Software.objects.get(pk=software_id)
                 current_is_to_run = software.is_to_run
                 if not televir_project_id is None:
-
                     televir_project = PIProjects.objects.get(pk=televir_project_id)
                     pipeline_steps_project = (
                         pipeline_makeup.get_pipeline_makeup_result_of_operation(
@@ -780,16 +778,14 @@ def turn_on_off_software(request):
                         pipeline_steps_project
                     )
                     if makeup is None:
-                        if current_is_to_run:
-                            data[
-                                "message"
-                            ] = f"You cannot perform this operation. Project '{televir_project}' would not meet minimum pipeline step requirements."
+                        data[
+                            "message"
+                        ] = f"You cannot perform this operation. Project '{televir_project}' would not meet minimum pipeline step requirements."
 
-                            return JsonResponse(data)
+                        return JsonResponse(data)
 
                 if not type_of_use_id is None:
-                    if type_of_use_id == Software.TYPE_OF_USE_televir_global:
-
+                    if type_of_use_id in Software.TELEVIR_GLOBAL_TYPES:
                         pipeline_steps_project = (
                             pipeline_makeup.get_pipeline_makeup_result_of_operation(
                                 software, turn_off=current_is_to_run
@@ -801,13 +797,11 @@ def turn_on_off_software(request):
                         )
 
                         if makeup is None:
-                            if current_is_to_run:
+                            data[
+                                "message"
+                            ] = "You cannot perform this operation. Deployment would not meet minimum pipeline step requirements."
 
-                                data[
-                                    "message"
-                                ] = "You cannot perform this operation. Deployment would not meet minimum pipeline step requirements."
-
-                                return JsonResponse(data)
+                            return JsonResponse(data)
 
                 if not project_id is None:  ##    project
                     project = Project.objects.get(pk=project_id)
@@ -966,11 +960,9 @@ def turn_on_off_software(request):
 
 @csrf_protect
 def get_software_name_to_turn_on_off(request):
-
     data = {"is_ok": False, "message": "You are not allow to do this operation."}
 
     if request.is_ajax():
-
         software_id_a = "software_id"
         sample_id_a = "sample_id"
         project_id_a = "project_id"
@@ -1057,12 +1049,10 @@ def get_software_name_to_turn_on_off(request):
 def reset_project_settings(request):
     data = {"is_ok": False, "message": "You are not allow to do this operation."}
     if request.is_ajax():
-
         televir_project_id_a = "project_id"
         televir_id = int(request.GET[televir_project_id_a])
 
         try:
-
             project_parameters = Parameter.objects.filter(
                 televir_project__pk=televir_id
             )

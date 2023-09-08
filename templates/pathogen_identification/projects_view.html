@@ -29,3 +29,14 @@
     </div>
 </div>
 {% endblock %}
+
+{% block js %}
+
+<script>
+    window.onbeforeunload = function (e) {
+        $.unblockUI();
+    };
+</script>
+
+{% endblock %}
+

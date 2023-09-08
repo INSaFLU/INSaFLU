@@ -7,24 +7,15 @@ from typing import Type
 from django.contrib.auth.models import User
 from django.core.files import File
 from django.db import IntegrityError, transaction
-from pathogen_identification.models import (
-    QC_REPORT,
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReadClassification,
-    ReferenceContigs,
-    ReferenceMap_Main,
-    RunAssembly,
-    RunDetail,
-    RunIndex,
-    RunMain,
-    RunRemapMain,
-    SampleQC,
-)
+
+from pathogen_identification.models import (QC_REPORT, ContigClassification,
+                                            FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference, ReadClassification,
+                                            ReferenceContigs,
+                                            ReferenceMap_Main, RunAssembly,
+                                            RunDetail, TelevirRunQC, RunMain,
+                                            RunRemapMain, SampleQC)
 from pathogen_identification.modules.object_classes import Sample_runClass
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunMain_class
@@ -287,6 +278,8 @@ def Update_RunMain_Secondary(run_class: RunMain_class, parameter_set: ParameterS
         with transaction.atomic():
             Update_RunMain_noCheck(run_class, parameter_set)
             Update_Run_Detail_noCheck(run_class, parameter_set)
+            Update_Run_QC(run_class, parameter_set)
+
         return True
 
     except IntegrityError as e:
@@ -318,7 +311,9 @@ def Update_Assembly(run_class: RunMain_class, parameter_set: ParameterSet):
 
 
 @transaction.atomic
-def Update_Classification(run_class: RunMain_class, parameter_set: ParameterSet):
+def Update_Classification(
+    run_class: RunMain_class, parameter_set: ParameterSet, tag="secondary"
+):
     """get run data
     Update TABLES:
     - RunMain,
@@ -331,7 +326,7 @@ def Update_Classification(run_class: RunMain_class, parameter_set: ParameterSet)
 
     try:
         with transaction.atomic():
-            Update_RunMain_noCheck(run_class, parameter_set)
+            Update_RunMain_noCheck(run_class, parameter_set, tag=tag)
             Update_Run_Classification(run_class, parameter_set)
 
         return True
@@ -390,29 +385,6 @@ def retrieve_number_of_runs(project_name, sample_name, username):
     return RunMain.objects.filter(project=project, sample=sample).count() + 1
 
 
-def RunIndex_Update_Retrieve_Key(project_name, sample_name):
-
-    run_index = retrieve_number_of_runs(project_name, sample_name)
-
-    new_name = f"run_{run_index}"
-
-    project = Projects.objects.get(name=project_name, is_deleted=False)
-    sample = PIProject_Sample.objects.get(
-        name=sample_name,
-        project__name=project_name,
-    )
-
-    try:
-        run_index = RunIndex.objects.get(
-            project=project, sample=sample, name=new_name
-        )  # check if run_index already exists
-    except RunIndex.DoesNotExist:
-        run_index = RunIndex(project=project, sample=sample, name=new_name)
-        run_index.save()
-
-    return new_name
-
-
 def Update_RunMain(run_class: RunMain_class, parameter_set: ParameterSet):
     """update run data for run_class. Update run_class.run_data.
 
@@ -453,7 +425,6 @@ def Update_RunMain(run_class: RunMain_class, parameter_set: ParameterSet):
             parameter_set=parameter_set,
         )
     except RunMain.DoesNotExist:
-
         runmain = RunMain(
             parameter_set=parameter_set,
             suprun=run_class.suprun,
@@ -490,7 +461,6 @@ def Update_RunMain(run_class: RunMain_class, parameter_set: ParameterSet):
 
 
 def Sample_update_combinations(run_class: Type[RunMain_class]):
-
     user = User.objects.get(username=run_class.username)
     project = Projects.objects.get(
         name=run_class.project_name, owner=user, is_deleted=False
@@ -743,6 +713,41 @@ def Update_Run_Detail_noCheck(run_class: RunMain_class, parameter_set: Parameter
         run_detail.save()
 
 
+
+
+def Update_Run_QC(run_class: RunMain_class, parameter_set: ParameterSet):
+    sample, runmain, _ = get_run_parents(run_class, parameter_set)
+
+    if sample is None or runmain is None:
+        return
+
+    run_qc_exists = TelevirRunQC.objects.filter(run=runmain).exists()
+
+    if run_qc_exists:
+        run_qc = TelevirRunQC.objects.get(run=runmain)
+
+        run_qc.run = runmain
+        run_qc.performed = run_class.qc_report.performed
+        run_qc.method = run_class.qc_report.method
+        run_qc.args = run_class.qc_report.args
+        run_qc.input_reads = f"{run_class.qc_report.input_reads:,}"
+        run_qc.output_reads = f"{run_class.qc_report.output_reads:,}"
+        run_qc.output_reads_percent = str(run_class.qc_report.output_reads_percent * 100)
+        run_qc.save()
+
+    else:
+        run_qc = TelevirRunQC(
+            run=runmain,
+            performed=run_class.qc_report.performed,
+            method=run_class.qc_report.method,
+            args=run_class.qc_report.args,
+            input_reads=f"{run_class.qc_report.input_reads:,}",
+            output_reads=f"{run_class.qc_report.output_reads:,}",
+            output_reads_percent=str(run_class.qc_report.output_reads_percent * 100),
+        )
+
+        run_qc.save()
+
 def Update_Run_Assembly(run_class: RunMain_class, parameter_set: ParameterSet):
     """
     Update ALL run TABLES for one run_class.:
@@ -768,8 +773,18 @@ def Update_Run_Assembly(run_class: RunMain_class, parameter_set: ParameterSet):
 
     try:
         run_assembly = RunAssembly.objects.get(run=runmain, sample=sample)
-    except RunAssembly.DoesNotExist:
+        run_assembly.performed = run_class.assembly_report.performed
+        run_assembly.method = run_class.assembly_report.assembly_soft
+        run_assembly.args = run_class.assembly_report.assembly_args
+        run_assembly.contig_number = run_class.assembly_report.assembly_number
+        run_assembly.contig_max = run_class.assembly_report.assembly_max
+        run_assembly.contig_min = run_class.assembly_report.assembly_min
+        run_assembly.contig_mean = run_class.assembly_report.assembly_mean
+        run_assembly.contig_trim = run_class.assembly_report.assembly_trim
+        run_assembly.assembly_contigs = run_class.assembly_drone.assembly_file_fasta_gz
+        run_assembly.save()
 
+    except RunAssembly.DoesNotExist:
         run_assembly = RunAssembly(
             run=runmain,
             sample=sample,
@@ -808,8 +823,23 @@ def Update_Run_Classification(run_class: RunMain_class, parameter_set: Parameter
 
     try:
         read_classification = ReadClassification.objects.get(run=runmain, sample=sample)
-    except ReadClassification.DoesNotExist:
+        read_classification.read_classification_report = (
+            run_class.read_classification_summary
+        )
+        read_classification.performed = run_class.read_classification_results.performed
+        read_classification.method = run_class.read_classification_results.method
+        read_classification.args = run_class.read_classification_results.args
+        read_classification.db = run_class.read_classification_results.db
+        read_classification.classification_number = (
+            run_class.read_classification_results.classification_number
+        )
+        read_classification.classification_minhit = (
+            run_class.read_classification_results.classification_minhit
+        )
+        read_classification.success = run_class.read_classification_results.success
+        read_classification.save()
 
+    except ReadClassification.DoesNotExist:
         read_classification = ReadClassification(
             run=runmain,
             sample=sample,
@@ -829,8 +859,24 @@ def Update_Run_Classification(run_class: RunMain_class, parameter_set: Parameter
             run=runmain, sample=sample
         )
 
-    except ContigClassification.DoesNotExist:
+        contig_classification.contig_classification_report = (
+            run_class.assembly_classification_summary
+        )
+        contig_classification.performed = (
+            run_class.contig_classification_results.performed
+        )
+        contig_classification.method = run_class.contig_classification_results.method
+        contig_classification.args = run_class.contig_classification_results.args
+        contig_classification.db = run_class.contig_classification_results.db
+        contig_classification.classification_number = (
+            run_class.contig_classification_results.classification_number
+        )
+        contig_classification.classification_minhit = (
+            run_class.contig_classification_results.classification_minhit
+        )
+        contig_classification.save()
 
+    except ContigClassification.DoesNotExist:
         contig_classification = ContigClassification(
             run=runmain,
             sample=sample,
@@ -847,6 +893,15 @@ def Update_Run_Classification(run_class: RunMain_class, parameter_set: Parameter
 
     try:
         remap_main = RunRemapMain.objects.get(run=runmain, sample=sample)
+        remap_main.merged_log = run_class.merged_classification_summary
+        remap_main.remap_plan = run_class.remap_plan_path
+        remap_main.performed = run_class.remap_main.performed
+        remap_main.method = run_class.remap_main.method
+        remap_main.found_total = run_class.remap_main.found_total
+        remap_main.coverage_maximum = run_class.remap_main.coverage_max
+        remap_main.coverage_minimum = run_class.remap_main.coverage_min
+        remap_main.success = run_class.remap_main.success
+        remap_main.save()
 
     except RunRemapMain.DoesNotExist:
         remap_main = RunRemapMain(
@@ -864,7 +919,6 @@ def Update_Run_Classification(run_class: RunMain_class, parameter_set: Parameter
         remap_main.save()
 
     for ref, row in run_class.raw_targets.iterrows():
-
         if row.status:
             status = RawReference.STATUS_MAPPED
         else:
@@ -932,7 +986,6 @@ def Update_Sample_Runs_DB(run_class: RunMain_class, parameter_set: ParameterSet)
     try:
         run_detail = RunDetail.objects.get(run=runmain, sample=sample)
     except RunDetail.DoesNotExist:
-
         run_detail = RunDetail(
             run=runmain,
             sample=sample,
@@ -963,7 +1016,6 @@ def Update_Sample_Runs_DB(run_class: RunMain_class, parameter_set: ParameterSet)
     try:
         run_assembly = RunAssembly.objects.get(run=runmain, sample=sample)
     except RunAssembly.DoesNotExist:
-
         run_assembly = RunAssembly(
             run=runmain,
             sample=sample,
@@ -982,7 +1034,6 @@ def Update_Sample_Runs_DB(run_class: RunMain_class, parameter_set: ParameterSet)
     try:
         read_classification = ReadClassification.objects.get(run=runmain, sample=sample)
     except ReadClassification.DoesNotExist:
-
         read_classification = ReadClassification(
             run=runmain,
             sample=sample,
@@ -1003,7 +1054,6 @@ def Update_Sample_Runs_DB(run_class: RunMain_class, parameter_set: ParameterSet)
         )
 
     except ContigClassification.DoesNotExist:
-
         contig_classification = ContigClassification(
             run=runmain,
             sample=sample,
@@ -1037,7 +1087,6 @@ def Update_Sample_Runs_DB(run_class: RunMain_class, parameter_set: ParameterSet)
         remap_main.save()
 
     for ref, row in run_class.raw_targets.iterrows():
-
         if row.status:
             status = RawReference.STATUS_MAPPED
         else:
@@ -1065,7 +1114,6 @@ def Update_Sample_Runs_DB(run_class: RunMain_class, parameter_set: ParameterSet)
 
 
 def Update_FinalReport(run_class, runmain, sample):
-
     for i, row in run_class.report.iterrows():
         if row["ID"] == "None":
             continue
@@ -1077,7 +1125,6 @@ def Update_FinalReport(run_class, runmain, sample):
                 unique_id=row["unique_id"],
             )
         except FinalReport.DoesNotExist:
-
             report_row = FinalReport(
                 run=runmain,
                 sample=sample,
@@ -1143,7 +1190,6 @@ def Update_RefMap_DB(run_class: RunMain_class, parameter_set: ParameterSet):
     )
 
     for ref_map in run_class.remap_manager.mapped_instances:
-
         Update_ReferenceMap(ref_map, run, sample)
 
 
@@ -1184,7 +1230,81 @@ def Update_ReferenceMap(
         map_db.save()
 
     if ref_map.assembly is not None:
+        remap_stats = ref_map.assembly.report.set_index("ID")
 
+        for seqid, row in remap_stats.iterrows():
+            try:
+                map_db_seq = ReferenceContigs.objects.get(
+                    reference=map_db, run=run, contig=seqid
+                )
+            except ReferenceContigs.DoesNotExist:
+                map_db_seq = ReferenceContigs(
+                    contig=seqid,
+                    reference=map_db,
+                    run=run,
+                    depth=row["Hdepth"],
+                    depthr=row["HdepthR"],
+                    coverage=row["coverage"],
+                )
+                map_db_seq.save()
+
+            # map_db_seq.report = run_class.report
+            # map_db_seq.save()
+
+
+
+def Update_ReferenceMap_Update(
+    ref_map: Mapping_Instance,
+    run: RunMain,
+    sample: PIProject_Sample,
+):
+    """
+    Updates the reference map data to TABLES.
+    - ReferenceMap_Main,
+    - ReferenceContigs
+    """
+
+    try:
+        map_db = ReferenceMap_Main.objects.get(
+            reference=ref_map.reference.target.acc_simple,
+            taxid=ref_map.reference.target.taxid,
+            sample=sample,
+            run=run,
+        )
+        map_db.reference=ref_map.reference.target.acc_simple
+        map_db.bam_file_path=ref_map.reference.read_map_sorted_bam
+        map_db.bai_file_path=ref_map.reference.read_map_sorted_bam_index
+        map_db.fasta_file_path=ref_map.reference.reference_file
+        map_db.fai_file_path=ref_map.reference.reference_fasta_index
+        map_db.mapped_subset_r1=ref_map.reference.mapped_subset_r1
+        map_db.mapped_subset_r2=ref_map.reference.mapped_subset_r2
+        map_db.mapped_subset_r1_fasta=ref_map.reference.mapped_subset_r1_fasta
+        map_db.mapped_subset_r2_fasta=ref_map.reference.mapped_subset_r2_fasta
+        map_db.vcf=ref_map.reference.vcf
+        
+        map_db.save()
+
+
+
+    except ReferenceMap_Main.DoesNotExist:
+        map_db = ReferenceMap_Main(
+            reference=ref_map.reference.target.acc_simple,
+            sample=sample,
+            run=run,
+            taxid=ref_map.reference.target.taxid,
+            bam_file_path=ref_map.reference.read_map_sorted_bam,
+            bai_file_path=ref_map.reference.read_map_sorted_bam_index,
+            fasta_file_path=ref_map.reference.reference_file,
+            fai_file_path=ref_map.reference.reference_fasta_index,
+            mapped_subset_r1=ref_map.reference.mapped_subset_r1,
+            mapped_subset_r2=ref_map.reference.mapped_subset_r2,
+            mapped_subset_r1_fasta=ref_map.reference.mapped_subset_r1_fasta,
+            mapped_subset_r2_fasta=ref_map.reference.mapped_subset_r2_fasta,
+            vcf=ref_map.reference.vcf,
+        )
+        map_db.save()
+
+    if ref_map.assembly is not None:
         remap_stats = ref_map.assembly.report.set_index("ID")
 
         for seqid, row in remap_stats.iterrows():

@@ -6,7 +6,12 @@ import subprocess
 import sys
 from typing import Type
 
-from pathogen_identification.modules.object_classes import Read_class, RunCMD
+from pathogen_identification.constants_settings import ConstantsSettings as CS
+from pathogen_identification.modules.object_classes import (
+    Read_class,
+    RunCMD,
+    SoftwareUnit,
+)
 
 
 class Preprocess:
@@ -14,10 +19,10 @@ class Preprocess:
         self,
         r1: Read_class,
         r2: Read_class,
-        preprocess_dir,
-        preprocess_type,
-        preprocess_method,
-        preprocess_name_fastq_gz,
+        preprocess_dir: str,
+        preprocess_type: str,
+        preprocess_method: SoftwareUnit,
+        preprocess_name_fastq_gz: str,
         preprocess_name_r2_fastq_gz="",
         threads: int = 1,
         subsample: bool = False,
@@ -79,7 +84,10 @@ class Preprocess:
             self.preprocess_dir, "processed_data.html"
         )
 
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger(f"{__name__}_{prefix}")
+        if self.logger.hasHandlers():
+            self.logger.handlers.clear()
+        self.logger.propagate = False
         self.logger.setLevel(logging_level)
         self.logger.addHandler(logging.StreamHandler())
         self.logger.info("Preprocess class initialized")
@@ -93,7 +101,7 @@ class Preprocess:
         """
         cmd = "gunzip -c {} | grep '^>\|^@' | wc -l".format(file)
         number_of_sequences = int(self.cmd.run_bash_return(cmd))
-        print("Number of sequences: {}".format(number_of_sequences))
+
         if number_of_sequences > 0:
             return True
         else:
@@ -103,9 +111,9 @@ class Preprocess:
         """
         Check if preprocessed files exist
         """
-        if self.preprocess_type == "PE":
+        if self.preprocess_type == CS.PAIR_END:
             return self.check_already_preprocessed_PE()
-        elif self.preprocess_type == "SE":
+        elif self.preprocess_type == CS.SINGLE_END:
             return self.check_already_preprocessed_SE()
 
     def check_already_preprocessed_PE(self):
@@ -164,7 +172,6 @@ class Preprocess:
             return False
 
     def run(self):
-
         if self.check_already_preprocessed():
             self.logger.info(
                 "Preprocessed files already exist. Skipping preprocessing."
@@ -175,10 +182,7 @@ class Preprocess:
             self.subsample_reads()
 
         self.fastqc_input()
-
         self.preprocess_QC()
-        self.clean_read_names()
-
         self.fastqc_processed()
 
     def fake_run(self):
@@ -219,6 +223,10 @@ class Preprocess:
             self.run_trimmomatic()
         elif self.preprocess_method.name == "nanofilt":
             self.run_nanofilt()
+        elif self.preprocess_method.name == "prinseq":
+            self.run_prinseq()
+        elif self.preprocess_method.name == "prinseq++":
+            self.run_prinseq()
         else:
             raise ValueError(
                 "preprocess method {} not supported".format(self.preprocess_method.name)
@@ -228,12 +236,17 @@ class Preprocess:
         """
         Fastqc
         """
-        if self.preprocess_type == "PE":
+        if self.preprocess_type == CS.PAIR_END:
             self.fastqc_PE()
-        elif self.preprocess_type == "SE":
+        elif self.preprocess_type == CS.SINGLE_END:
             self.fastqc_SE()
         else:
             raise ValueError("read type {} not supported".format(self.preprocess_type))
+
+    def move_fastqc_input_reports(self, suffix="input_data"):
+        """
+        Move fastqc reports to correct location
+        """
 
         subprocess.run(
             [
@@ -292,12 +305,17 @@ class Preprocess:
         """
         Fastqc
         """
-        if self.preprocess_type == "PE":
+        if self.preprocess_type == CS.PAIR_END:
             self.fastqc_processed_PE()
-        elif self.preprocess_type == "SE":
+        elif self.preprocess_type == CS.SINGLE_END:
             self.fastqc_processed_SE()
         else:
             raise ValueError("read type {} not supported".format(self.preprocess_type))
+
+    def move_fastqc_reports(self, suffix="processed_data"):
+        """
+        Move fastqc reports to correct location
+        """
 
         subprocess.run(
             [
@@ -356,9 +374,9 @@ class Preprocess:
         """
         Trimmomatic
         """
-        if self.preprocess_type == "PE":
+        if self.preprocess_type == CS.PAIR_END:
             self.trimmomatic_PE()
-        elif self.preprocess_type == "SE":
+        elif self.preprocess_type == CS.SINGLE_END:
             self.trimmomatic_SE()
         else:
             raise ValueError("read type {} not supported".format(self.preprocess_type))
@@ -369,7 +387,7 @@ class Preprocess:
         """
         trimmomatic_cmd = [
             "trimmomatic",
-            "PE",
+            CS.PAIR_END,
             "-threads",
             self.threads,
             self.r1,
@@ -398,7 +416,7 @@ class Preprocess:
         """
         trimmomatic_cmd = [
             "trimmomatic",
-            "SE",
+            CS.SINGLE_END,
             "-threads",
             self.threads,
             self.r1,
@@ -408,13 +426,75 @@ class Preprocess:
 
         self.cmd.run(trimmomatic_cmd)
 
+    def run_prinseq(self):
+        """filter low complexity reads using prinseq"""
+
+        if self.preprocess_type == CS.PAIR_END:
+            self.prinseq_PE()
+        elif self.preprocess_type == CS.SINGLE_END:
+            self.prinseq_SE()
+
+    def prinseq_PE(self):
+        """
+        filter low complexity reads using prinseq
+        """
+
+        prinseq_cmd = [
+            "prinseq++",
+            "-fastq",
+            self.r1,
+            "-fastq2",
+            self.r2,
+            "-out_good",
+            self.preprocess_name_fastq,
+            "-out_good2",
+            self.preprocess_name_r2_fastq,
+            "-out_bad",
+            "/dev/null",
+            "-out_bad2",
+            "/dev/null",
+            "-out_single",
+            "/dev/null",
+            "-out_single2",
+            "/dev/null",
+            self.args,
+        ]
+
+        self.cmd.run(prinseq_cmd)
+        compress_f1_cmd = ["bgzip", self.preprocess_name_fastq]
+        compress_f2_cmd = ["bgzip", self.preprocess_name_r2_fastq]
+        self.cmd.run(compress_f1_cmd)
+        self.cmd.run(compress_f2_cmd)
+
+    def prinseq_SE(self):
+        """
+        filter low complexity reads using prinseq
+        """
+
+        prinseq_cmd = [
+            "prinseq++",
+            "-fastq",
+            self.r1,
+            "-out_good",
+            self.preprocess_name_fastq,
+            "-out_bad",
+            "/dev/null",
+            "-out_single",
+            "/dev/null",
+            self.args,
+        ]
+
+        self.cmd.run(prinseq_cmd)
+        compress_cmd = ["bgzip", self.preprocess_name_fastq]
+        self.cmd.run(compress_cmd)
+
     def run_nanofilt(self):
         """
         Nanofilt
         """
-        if self.preprocess_type == "PE":
+        if self.preprocess_type == CS.PAIR_END:
             self.nanofilt_PE()
-        elif self.preprocess_type == "SE":
+        elif self.preprocess_type == CS.SINGLE_END:
             self.nanofilt_SE()
         else:
             raise ValueError("read type {} not supported".format(self.preprocess_type))
@@ -432,7 +512,7 @@ class Preprocess:
             "-o",
             self.preprocess_name_fastq,
             "-p",
-            "pe",
+            CS.PAIR_END.lower(),
             self.args,
         ]
 
@@ -467,11 +547,11 @@ class Preprocess:
         """
         Clean read names
         """
-        if self.preprocess_type == "PE":
+        if self.preprocess_type == CS.PAIR_END:
             self.clean_read_names_single(self.preprocess_name_fastq)
             self.clean_read_names_single(self.preprocess_name_r2_fastq)
 
-        elif self.preprocess_type == "SE":
+        elif self.preprocess_type == CS.SINGLE_END:
             self.clean_read_names_single(self.preprocess_name_fastq)
         else:
             raise ValueError("read type {} not supported".format(self.preprocess_type))
@@ -510,9 +590,9 @@ class Preprocess:
         )
 
     def subsample_reads(self):
-        if self.preprocess_type == "SE":
+        if self.preprocess_type == CS.SINGLE_END:
             self.subsample_SE()
-        if self.preprocess_type == "PE":
+        if self.preprocess_type == CS.PAIR_END:
             self.subsample_PE()
             self.clean_unpaired()
 
@@ -562,7 +642,7 @@ class Preprocess:
             "-n",
             "-i",
             self.r1.current,
-            self.r1.current,
+            self.r2.current,
             "|",
             "paste",
             "- - - -",
@@ -658,7 +738,7 @@ class Preprocess:
 
         trimmomatic_cmd = [
             "trimmomatic",
-            "PE",
+            CS.PAIR_END,
             "-phred33",
             "-threads",
             self.threads,

@@ -33,23 +33,43 @@
             <thead>
                 {% if project_owner %}
                 <tr>
-                    <th colspan="9">
+                    <th colspan="10">
                         {% if not demo %}
                         <div class="btn-group">
-                            
-                            <button type="button" class="btn btn-primary dark" id="deploypi_btn" deploy-url="{% url 'deploy_ProjectPI' %}" aria-haspopup="true" aria-expanded="false">
+                            <button type="button" class="btn btn-primary dark" id="deploypi_btn" deploy-url="{% url deploy_url %}" aria-haspopup="true" aria-expanded="false">
                                 <i class="fa fa-flask"></i>
                                 <a><span class="hidden-phone"> Run </span></a>
-                              </button>
-                               
+                            </button>
                         </div>
                         {% endif %}
-                        </div class="btn-group">
-                        <button type="button" class="btn btn-primary dark" aria-haspopup="true" aria-expanded="false">
-                            <a href="{% url "all_PIproject_reports" pk1=project_index %}"><span class="hidden-phone" style="color:white"><i>View all reports</i></span></a>
-                                </button>                        
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-primary dark" aria-haspopup="true" aria-expanded="false">
+                                <a href="{% url "all_PIproject_reports" pk1=project_index %}"><span class="hidden-phone" style="color:white"><i>View Project reports</i></span></a>
+                                    </button>
                         </div>
-                    </th>               
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-primary dark" id="sortpi_btn" deploy-url="{% url 'sort_project_reports' %}" aria-haspopup="true" aria-expanded="false">
+                                <i class="fa fa-align-left"></i>
+                                <a><span class="hidden-phone"> Sort sample reports </span></a>
+                            </button>
+                        </div>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-primary dark" aria-haspopup="true" aria-expanded="false">
+                                <i class="fa fa-cog" aria-hidden="true" ></i>
+                                <a href="{% url "pathogenID_pipeline" level=project_index %}"><span class="hidden-phone" style="color:white"><i>Project Settings</i></span></a>
+                                    </button>
+                        </div>
+
+                        <form method="get" class="form-inline form-search pull-right">
+                            {% csrf_token %}
+                            <input id="search_form_id" name="search_projects" type="text" class="form-control col-md-8"
+                                placeholder="Name, Reference, Sample" {% if search_projects %}
+                                value="{{ search_projects }}" {% endif %}>
+                            <button type="submit" class="btn btn-small btn-dark"><i class="fa fa-search"></i>
+                                Search</button>
+                        </form>  
+
+                    </th>             
                 </tr>
                 {% endif %}
                 <tr>
@@ -295,10 +315,17 @@
 </script>
 
 <script>
+    window.onbeforeunload = function (e) {
+        $.unblockUI();
+    };
+</script>
+
+<script>
 
     $(document).on("click", "a", function (e) {
 
         if ($(this).attr("id") == "deploypi_sample_btn") {
+            console.log("deploy pi sample");
             e.preventDefault();
         
             url= $(this).attr("deploy-url");
@@ -308,7 +335,7 @@
                 type: "POST",
                 data: {
                     'csrfmiddlewaretoken': '{{ csrf_token }}',
-                    'sample_id': $(this).attr("pk"),
+                    'sample_id': $(this).attr("sample_id"),
                 },
                 data_type: 'json',
                 success: function(data){
@@ -325,6 +352,44 @@
             });
 
         }
+
+        if ($(this).attr("id") == "sort_sample_btn") {
+            e.preventDefault();
+        
+            url= $(this).attr("sort-url");
+            console.log(url);
+            $.ajax({
+                url: $(this).attr("sort-url"),
+                type: "POST",
+                data: {
+                    'csrfmiddlewaretoken': '{{ csrf_token }}',
+                    'sample_id': $(this).attr("sample_id"),
+                },
+                data_type: 'json',
+                success: function(data){
+                    console.log(data);
+                    if (data["is_ok"] == true && data["is_deployed"] == false) { 
+                        alert("No Results to Sort");
+                    }
+                    else if (data["is_ok"] == true && data["is_deployed"] == true) {
+                        alert("Sort deployed");
+                    }
+                }
+
+            });
+
+        }
+
+        /// set wait screen
+		var id_ = $(this).attr('id');
+		var href = $(this).attr('href');
+		var onclick = $(this).attr('onclick');
+        console.log(href);
+        console.log(id_);
+		if (href !== '#id_set_default_modal' && id_ !== "deploypi_sample_btn" && id_ !== "sort_sample_btn" && onclick !== 'return false;' && id_ !== 'sidenavToggler' &&
+			!href.startsWith('/media') && !href.startsWith('http')) {
+			wait_screen();
+		}
 
     })
 
@@ -351,6 +416,32 @@
 
         });
     })
+
+    $("#sortpi_btn").click(function(){
+        $.ajax({
+            url: $('#sortpi_btn').attr("deploy-url"),
+            type: "POST",
+            data: {
+                'csrfmiddlewaretoken': '{{ csrf_token }}',
+                'id': $(this).attr('id'),
+                'user_id': '{{ request.user.id }}',
+                'project_id': '{{ project_index }}',
+            },
+            data_type: 'json',
+            success: function(data){
+                console.log(data);
+                if (data["is_ok"] == true && data["is_deployed"] == false) { 
+                    alert("No sort to deploy");
+                }
+                else if (data["is_ok"] == true && data["is_deployed"] == true) {
+                    alert("Sort deployed");
+                }
+            }
+
+        });
+    })
+    
+
 </script>
 
 
@@ -371,17 +462,7 @@
 	});
 
 	/// set wait screen
-	$(document).on("click", "a", function (e) {
-		var id_ = $(this).attr('id');
-		var href = $(this).attr('href');
-		var onclick = $(this).attr('onclick');
-        console.log(href);
-        console.log("id_");
-		if (href !== '#id_set_default_modal' && id_ !== "deploypi_sample_btn" && onclick !== 'return false;' && id_ !== 'sidenavToggler' &&
-			!href.startsWith('/media') && !href.startsWith('http')) {
-			wait_screen();
-		}
-	});
+
 </script>
 
 {% endblock js %}

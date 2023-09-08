@@ -1307,8 +1307,6 @@ class RunMainTree_class(Run_Deployment_Methods):
             self.sample.r1.clean_read_names()
             self.sample.r2.clean_read_names()
 
-            self.qc_performed = True
-
         self.Update_exec_time()
         self.generate_output_data_classes()
 
@@ -1545,7 +1543,7 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.remap_manager.collect_final_report_summary_statistics()
         self.report = self.remap_manager.report
         # transfer to sample class
-        processed_reads = self.sample.reads_before_processing
+        processed_reads = self.sample.reads_after_processing
 
         filtered_reads = (
             self.sample.r1.read_number_filtered + self.sample.r2.read_number_filtered

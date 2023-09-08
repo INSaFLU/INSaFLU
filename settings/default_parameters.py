@@ -10,10 +10,13 @@ from django.conf import settings
 
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PI_ConstantsSettings
+from pathogen_identification.constants_settings import (
+    ConstantsSettings as PI_ConstantsSettings,
+)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility, Utility_Pipeline_Manager)
+    Parameter_DB_Utility,
+    Utility_Pipeline_Manager,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -323,9 +326,10 @@ class DefaultParameters(object):
                 elif (
                     software_name == SoftwareNames.SOFTWARE_SNIPPY_name
                     and par_name == DefaultParameters.SNIPPY_PRIMER_NAME
-                    and dict_out[par_name][1][0] == SoftwareNames.SOFTWARE_SNIPPY_no_primer
-                ): 
-                    return_parameter += " {}".format(dict_out[par_name][1][0])                    
+                    and dict_out[par_name][1][0]
+                    == SoftwareNames.SOFTWARE_SNIPPY_no_primer
+                ):
+                    return_parameter += " {}".format(dict_out[par_name][1][0])
                 elif (
                     software_name == SoftwareNames.SOFTWARE_SNIPPY_name
                     and par_name == DefaultParameters.SNIPPY_PRIMER_NAME
@@ -337,8 +341,10 @@ class DefaultParameters(object):
                             dict_out[par_name][1][0],
                         )
                     )
-                elif (par_name == DefaultParameters.MEDAKA_PRIMER_NAME
-                      and dict_out[par_name][1][0] == SoftwareNames.SOFTWARE_SNIPPY_no_primer
+                elif (
+                    par_name == DefaultParameters.MEDAKA_PRIMER_NAME
+                    and dict_out[par_name][1][0]
+                    == SoftwareNames.SOFTWARE_SNIPPY_no_primer
                 ):
                     return_parameter += " {}".format(dict_out[par_name][1][0])
                 elif par_name == DefaultParameters.MEDAKA_PRIMER_NAME:
@@ -995,7 +1001,7 @@ class DefaultParameters(object):
         parameter = Parameter()
         parameter.name = DefaultParameters.SNIPPY_PRIMER_NAME
         parameter.parameter = SoftwareNames.SOFTWARE_SNIPPY_no_primer
-        #parameter.not_set_value = SoftwareNames.SOFTWARE_SNIPPY_no_primer
+        # parameter.not_set_value = SoftwareNames.SOFTWARE_SNIPPY_no_primer
         parameter.not_set_value = "NA"
         parameter.type_data = Parameter.PARAMETER_char_list
         parameter.software = software
@@ -1476,7 +1482,7 @@ class DefaultParameters(object):
         parameter = Parameter()
         parameter.name = DefaultParameters.MEDAKA_PRIMER_NAME
         parameter.parameter = SoftwareNames.SOFTWARE_SNIPPY_no_primer
-        #parameter.not_set_value = SoftwareNames.SOFTWARE_SNIPPY_no_primer
+        # parameter.not_set_value = SoftwareNames.SOFTWARE_SNIPPY_no_primer
         parameter.not_set_value = "NA"
         parameter.type_data = Parameter.PARAMETER_char_list
         parameter.software = software
@@ -1543,7 +1549,7 @@ class DefaultParameters(object):
         parameter.range_available = "[40:640]"
         parameter.range_max = "640"
         parameter.range_min = "40"
-        parameter.description = "Bamutil, maximum sum of the mismatch qualities before marking a read unmapped. (Defaults to  120)"
+        parameter.description = "Filter: maximum sum of the mismatch qualities before marking a read unmapped. (Defaults to  120)"
         vect_parameters.append(parameter)
 
         parameter = Parameter()
@@ -1559,7 +1565,7 @@ class DefaultParameters(object):
         parameter.range_available = "[0:1]"
         parameter.range_max = "1"
         parameter.range_min = "0"
-        parameter.description = "Bamutil, maximum fraction of mismatches before marking a read unmapped. (Defaults to 0.1)"
+        parameter.description = "Soft clipping: maximum fraction of mismatches allowed before clipping from the ends. (Defaults to 0.1)"
         vect_parameters.append(parameter)
 
         return vect_parameters

@@ -1040,6 +1040,7 @@ class Remapping:
             self.remap_filter.args,
             "--out",
             self.read_map_filtered_bam,
+            "--noPhoneHome",
         ]
 
         try:
@@ -1394,15 +1395,9 @@ class Remapping:
     def get_mapped_reads_no_header(self):
         """
         Get number of mapped reads without header, use samtools."""
-        # temp_file = os.path.join(self.rdir, f"temp{randint(1,1999)}.bam")
 
-        # cmd = f"samtools view -b -F 4 {self.read_map_sorted_bam} > {temp_file}"
-        # self.cmd.run(cmd)
-
-        # cmd2 = f"samtools view -h {temp_file} | grep -v '^@' | cut -f1 | sort | uniq > {self.mapped_reads}"
         cmd2 = f"samtools view -F 0x4 {self.read_map_sorted_bam} | cut -f 1 | sort | uniq > {self.mapped_reads}"
         self.cmd.run_script_software(cmd2)
-        # os.remove(temp_file)
 
     def get_mapped_reads_number(self):
         try:

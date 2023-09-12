@@ -12,6 +12,7 @@ from Bio.Phylo.TreeConstruction import DistanceMatrix, DistanceTreeConstructor
 from scipy.spatial.distance import pdist, squareform
 
 from pathogen_identification.utilities.clade_objects import Clade, CladeFilter
+from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
 
 ## pairwise matrix by individual reads
 from pathogen_identification.utilities.utilities_general import readname_from_fasta
@@ -48,6 +49,7 @@ class ReadOverlapManager:
         self.metadata = metadata_df
         self.fasta_list = metadata_df["file"].tolist()
         self.clade_filter = CladeFilter(reference_clade=reference_clade)
+        self.excluded_leaves = []
         self.media_dir = media_dir
 
         self.logger = logging.getLogger(__name__)
@@ -68,6 +70,8 @@ class ReadOverlapManager:
         )
 
         self.metadata["filepath"] = self.metadata["file"]
+
+        self.tree_manager = self.prep_tree_for_clade_analysis()
 
     def all_accs_analyzed(self):
         if not os.path.exists(self.accid_statistics_path):
@@ -100,6 +104,14 @@ class ReadOverlapManager:
             lambda x: self.get_proportion_counts(x)
         )
         accid_df.to_csv(self.accid_statistics_path, sep="\t", index=False)
+
+    def update_excluded_leaves(self, read_profile_matrix: pd.DataFrame):
+        all_node_leaves = self.tree_manager.all_clades_leaves()
+
+        for _, leaves in all_node_leaves.items():
+            for leaf in leaves:
+                if leaf not in read_profile_matrix.index:
+                    self.excluded_leaves.append(leaf)
 
     def get_accid_readname_dict(self):
         """
@@ -467,8 +479,9 @@ class ReadOverlapManager:
 
         return proportion_private
 
-    def node_statistics(self, inner_node_leaf_dict: dict) -> dict:
+    def node_statistics(self) -> dict:
         self.parse_for_data()
+        self.update_excluded_leaves(self.read_profile_matrix)
 
         node_stats_dict = {}
 
@@ -476,7 +489,7 @@ class ReadOverlapManager:
             self.logger.info("No reads with frequency > min_freq")
             return node_stats_dict
 
-        for node, leaves in inner_node_leaf_dict.items():
+        for node, leaves in self.all_clade_leaves_filtered.items():
             if len(leaves) == 0:
                 node_stats_dict[node] = Clade(
                     name=node,
@@ -585,21 +598,35 @@ class ReadOverlapManager:
 
         return node_stats_dict
 
-    def get_node_statistics(
-        self, tree, inner_node_leaf_dict: dict, force=False
-    ) -> Dict[Phylo.BaseTree.Clade, Clade]:
+    def prep_tree_for_clade_analysis(self) -> PhyloTreeManager:
+        njtree = self.generate_tree()
+        ### inner node to leaf dict
+        tree_manager = PhyloTreeManager(njtree)
+        # inner_node_leaf_dict = tree_manager.clades_get_leaves_clades()
+        return tree_manager
+
+    @property
+    def all_clade_leaves_filtered(self) -> Dict[Phylo.BaseTree.Clade, list]:
+        all_node_leaves = self.tree_manager.all_clades_leaves()
+
+        all_node_leaves = {
+            node: [leaf for leaf in leaves if leaf not in self.excluded_leaves]
+            for node, leaves in all_node_leaves.items()
+        }
+
+        return all_node_leaves
+
+    def get_node_statistics(self, force=False) -> Dict[Phylo.BaseTree.Clade, Clade]:
         if os.path.isfile(self.clade_statistics_path) and not force:
             clade_summary = pd.read_csv(self.clade_statistics_path)
             node_statistics_dict = self.clade_dict_from_summary(
                 clade_summary=clade_summary,
-                tree=tree,
-                inner_node_leaf_dict=inner_node_leaf_dict,
+                tree=self.tree_manager.tree,
+                inner_node_leaf_dict=self.all_clade_leaves_filtered,
             )
 
         else:
-            node_statistics_dict = self.node_statistics(
-                inner_node_leaf_dict=inner_node_leaf_dict
-            )
+            node_statistics_dict = self.node_statistics()
 
             clade_summary = self.all_clades_summary(
                 node_stats_dict=node_statistics_dict
@@ -747,3 +774,14 @@ class ReadOverlapManager:
 
         leaf_clades_df.reset_index(drop=True, inplace=True)
         return leaf_clades_df
+
+    def get_leaf_clades(self, force=False) -> pd.DataFrame:
+        statistics_dict_all = self.get_node_statistics(force=force)
+
+        selected_clades = self.filter_clades(statistics_dict_all)
+
+        leaf_clades = self.tree_manager.leaf_clades_clean(selected_clades)
+
+        clades = self.leaf_clades_to_pandas(leaf_clades, statistics_dict_all)
+
+        return clades

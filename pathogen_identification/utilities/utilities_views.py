@@ -1,7 +1,7 @@
 import datetime
 import logging
 import os
-from typing import List
+from typing import Dict, List
 
 import pandas as pd
 
@@ -98,6 +98,8 @@ def recover_assembly_contigs(run_main: RunMain, run_assembly: RunAssembly):
 class ReportSorter:
     analysis_filename = "overlap_analysis_{}.tsv"
     all_clade_filename = "all_clades_{}.tsv"
+    report_dict: Dict[str, List[FinalReport]]
+    excluded_dict: Dict[str, List[FinalReport]]
 
     def __init__(
         self,
@@ -133,7 +135,6 @@ class ReportSorter:
 
         if self.model is not None:
             self.media_dir = self.infer_media_dir()
-            # self.run_media_dir = self.inferred_run_media_dir()
 
             self.all_clades_df_path = os.path.join(
                 self.media_dir, self.all_clade_filename
@@ -282,36 +283,32 @@ class ReportSorter:
         self.logger.info("generating tree")
 
         ### generate tree
-        start = datetime.datetime.now()
-
-        njtree = overlap_manager.generate_tree()
-        end = datetime.datetime.now()
-
-        # time in seconds
-        time = (end - start).total_seconds()
-        self.logger.info(f"time to generate tree: {time}")
+        # njtree = overlap_manager.generate_tree()
 
         ### inner node to leaf dict
-        tree_manager = PhyloTreeManager(njtree)
+        # tree_manager = PhyloTreeManager(njtree)
         # inner_node_leaf_dict = tree_manager.clades_get_leaves_clades()
-        all_node_leaves = tree_manager.all_clades_leaves()
 
         ### get statistics
-        statistics_dict_all = overlap_manager.get_node_statistics(
-            njtree, all_node_leaves, force=force
-        )
-        end = datetime.datetime.now()
-        # time in seconds
-        time = (end - start).total_seconds()
-        self.logger.info(f"time to get statistics: {time}")
-
-        selected_clades = overlap_manager.filter_clades(statistics_dict_all)
-
-        leaf_clades = tree_manager.leaf_clades_clean(selected_clades)
-
-        clades = overlap_manager.leaf_clades_to_pandas(leaf_clades, statistics_dict_all)
+        # statistics_dict_all = overlap_manager.get_node_statistics(force=force)
+        # selected_clades = overlap_manager.filter_clades(statistics_dict_all)
+        # leaf_clades = overlap_manager.tree_manager.leaf_clades_clean(selected_clades)
+        # clades = overlap_manager.leaf_clades_to_pandas(leaf_clades, statistics_dict_all)
+        clades = overlap_manager.get_leaf_clades(force=force)
+        self.update_report_excluded_dicts(overlap_manager)
 
         return clades
+
+    def update_report_excluded_dicts(self, overlap_manager: ReadOverlapManager):
+        new_report_dict = {}
+
+        for accid, report in self.report_dict.items():
+            if accid in overlap_manager.excluded_leaves:
+                self.excluded_dict[accid] = report
+            else:
+                new_report_dict[accid] = report
+
+        self.report_dict = new_report_dict
 
     def check_all_accids_analyzed(self, df: pd.DataFrame):
         """

@@ -147,6 +147,41 @@ class EntrezWrapper:
         except pd.errors.EmptyDataError:
             pass
 
+    def entrez_get_taxid_descriptions(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Get taxid descriptions from entrez.
+        """
+        assert "taxid" in df.columns
+
+        taxid_df = df.dropna(subset=["taxid"])
+        taxid_list = taxid_df.taxid.unique().tolist()
+        taxid_list = [str(int(i)) for i in taxid_list]
+
+        if len(taxid_list) == 0:
+            return pd.DataFrame(columns=["taxid", "counts", "description"])
+
+        self.run_query_strategies(taxid_list)
+
+        taxid_descriptions = self.read_output()
+
+        if taxid_descriptions.shape[0] == 0:
+            df["description"] = ""
+            return df
+
+        taxid_descriptions.rename(
+            columns={"scientific_name": "description"}, inplace=True
+        )
+
+        df["taxid"] = df["taxid"].astype(int)
+        taxid_descriptions["taxid"] = taxid_descriptions["taxid"].astype(int)
+
+        df = df.merge(taxid_descriptions, on="taxid", how="left")
+
+        df["taxid"] = df["taxid"].astype(float)
+        df["taxid"] = df["taxid"].astype(int)
+
+        return df
+
     def run_queries_binaries(self, query: List[str]) -> None:
         """
         run queries using entrez direct binaries"""
@@ -159,8 +194,12 @@ class EntrezWrapper:
             os.system(cmd)
 
         output_path = os.path.join(self.outdir, self.outfile)
-        df = pd.read_csv(output_path, sep="\t", header=None)
-        df.columns = ["taxid", "scientific_name"]
+        try:
+            df = pd.read_csv(output_path, sep="\t", header=None)
+            df.columns = ["taxid", "scientific_name"]
+        except pd.errors.EmptyDataError:
+            df = pd.DataFrame(columns=["taxid", "scientific_name"])
+
         df.to_csv(self.output_path, sep="\t", index=False)
 
         return None

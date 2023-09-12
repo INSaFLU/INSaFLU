@@ -14,28 +14,15 @@ from pathogen_identification.modules.assembly_class import Assembly_class
 from pathogen_identification.modules.classification_class import Classifier
 from pathogen_identification.modules.metadata_handler import Metadata_handler
 from pathogen_identification.modules.object_classes import (
-    Assembly_results,
-    Contig_classification_results,
-    Read_class,
-    Read_classification_results,
-    Remap_main,
-    Run_detail_report,
-    RunCMD,
-    RunQC_report,
-    Sample_runClass,
-    Software_detail,
-    SoftwareRemap,
-    SoftwareUnit,
-)
+    Assembly_results, Contig_classification_results, Read_class,
+    Read_classification_results, Remap_main, Run_detail_report, RunCMD,
+    RunQC_report, Sample_runClass, Software_detail, SoftwareRemap,
+    SoftwareUnit)
 from pathogen_identification.modules.preprocess_class import Preprocess
-from pathogen_identification.modules.remap_class import (
-    Mapping_Instance,
-    Mapping_Manager,
-)
+from pathogen_identification.modules.remap_class import (Mapping_Instance,
+                                                         Mapping_Manager)
 from pathogen_identification.utilities.televir_parameters import (
-    RemapParams,
-    TelevirParameters,
-)
+    RemapParams, TelevirParameters)
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -1119,9 +1106,14 @@ class RunMain_class(Run_Deployment_Methods):
             )
         )
 
-        enriched_reads = len(self.enrichment_drone.classified_reads_list)
-        depleted_reads = len(self.depletion_drone.classified_reads_list)
-
+        # enriched_reads = len(self.enrichment_drone.classified_reads_list)
+        # depleted_reads = len(self.depletion_drone.classified_reads_list)
+        enriched_reads = (
+            self.sample.r1.enriched_read_number + self.sample.r2.enriched_read_number
+        )
+        depleted_reads = (
+            self.sample.r1.depleted_read_number + self.sample.r2.depleted_read_number
+        )
         if self.type == ConstantsSettings.PAIR_END:
             enriched_reads = enriched_reads * 2
             depleted_reads = depleted_reads * 2
@@ -1551,12 +1543,19 @@ class RunMainTree_class(Run_Deployment_Methods):
             )
         )
 
-        enriched_reads = len(self.enrichment_drone.classified_reads_list)
-        depleted_reads = len(self.depletion_drone.classified_reads_list)
+        # enriched_reads = len(self.enrichment_drone.classified_reads_list)
+        # depleted_reads = len(self.depletion_drone.classified_reads_list)
+        enriched_reads = (
+            self.sample.r1.read_number_enriched + self.sample.r2.read_number_enriched
+        )
+        depleted_reads = (
+            self.sample.r1.depleted_read_number + self.sample.r2.depleted_read_number
+        )
+        
 
-        if self.type == ConstantsSettings.PAIR_END:
-            enriched_reads = enriched_reads * 2
-            depleted_reads = depleted_reads * 2
+        # if self.type == ConstantsSettings.PAIR_END:
+        #    enriched_reads = enriched_reads * 2
+        #    depleted_reads = depleted_reads * 2
 
         self.run_detail_report = Run_detail_report(
             self.remap_manager.max_depth,

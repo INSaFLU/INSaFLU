@@ -1,4 +1,6 @@
+import http.client
 import os
+import urllib.error
 from abc import ABC, abstractmethod
 from typing import List
 
@@ -135,6 +137,16 @@ class EntrezWrapper:
 
         return [self.cmd_long(chunk) for chunk in chunks]
 
+    def run_query_strategies(self, query: List[str]) -> None:
+        try:
+            self.run_queries_biopy(query)
+        except urllib.error.URLError:
+            self.run_queries_binaries(query)
+        except http.client.RemoteDisconnected:
+            self.run_queries_binaries(query)
+        except pd.errors.EmptyDataError:
+            pass
+
     def run_queries_binaries(self, query: List[str]) -> None:
         """
         run queries using entrez direct binaries"""
@@ -174,7 +186,10 @@ class EntrezWrapper:
 
     def read_output(self) -> pd.DataFrame:
         output_path = os.path.join(self.outdir, self.outfile)
-        return pd.read_csv(output_path, sep="\t")
+        try:
+            return pd.read_csv(output_path, sep="\t")
+        except FileNotFoundError:
+            return pd.DataFrame()
 
     def run(self, query: List[str]) -> pd.DataFrame:
         self.run_queries_biopy(query)

@@ -1,8 +1,8 @@
+import http.client
 import logging
 import os
 import urllib.error
 from typing import List
-import http.client 
 
 import pandas as pd
 
@@ -332,16 +332,14 @@ class Metadata_handler:
         if len(taxid_list) == 0:
             return pd.DataFrame(columns=["taxid", "counts", "description"])
 
-        try:
-            self.entrez_conn.run_queries_biopy(taxid_list)
-        except urllib.error.URLError:
-            self.entrez_conn.run_queries_binaries(taxid_list)
-        except http.client.RemoteDisconnected:
-            self.entrez_conn.run_queries_binaries(taxid_list)
-
-                
+        self.entrez_conn.run_query_strategies(taxid_list)
 
         taxid_descriptions = self.entrez_conn.read_output()
+
+        if taxid_descriptions.shape[0] == 0:
+            df["description"] = ""
+            return df
+
         taxid_descriptions.rename(
             columns={"scientific_name": "description"}, inplace=True
         )

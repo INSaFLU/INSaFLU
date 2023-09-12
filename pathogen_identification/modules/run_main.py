@@ -4,7 +4,7 @@ import shutil
 import time
 from dataclasses import dataclass
 from random import randint
-from typing import List, Type
+from typing import Dict, List
 
 import numpy as np
 import pandas as pd
@@ -96,6 +96,8 @@ class RunDetail_main:
     taxid_limit: int
 
     ## actions
+    modules: List[str]
+
     quality_control: bool
     sift: bool
     depletion: bool
@@ -130,6 +132,7 @@ class RunDetail_main:
     remap_manager: Mapping_Manager
     remap_params: RemapParams
     software_remap: SoftwareRemap
+    active_methods: Dict[str, SoftwareUnit]
     ## directories.
     root: str
 
@@ -147,6 +150,9 @@ class RunDetail_main:
     report: pd.DataFrame
 
     def set_logger(self):
+        self.logger_level_main = logging.ERROR
+        self.logger_level_detail = logging.ERROR
+
         self.logger = logging.getLogger("main {}".format(self.prefix))
         self.logger.setLevel(self.logger_level_main)
 
@@ -162,6 +168,147 @@ class RunDetail_main:
     def delete_logger(self):
         self.logger = None
 
+    def set_preprocess_check(self, config: dict, method_args: pd.DataFrame):
+        self.preprocess_method = Software_detail(
+            CS.PIPELINE_NAME_extra_qc,
+            method_args,
+            config,
+            self.prefix,
+        )
+
+        self.check_preprocess_exists()
+
+    def check_preprocess_exists(self):
+        self.quality_control = self.preprocess_method.check_exists()
+
+    def set_depletion_check(self, config: dict, method_args: pd.DataFrame):
+        self.depletion_method = Software_detail(
+            CS.PIPELINE_NAME_host_depletion,
+            method_args,
+            config,
+            self.prefix,
+        )
+
+        self.check_depletion_exists()
+
+    def check_depletion_exists(self):
+        self.depletion = self.depletion_method.check_exists()
+
+    def set_enrichment_check(self, config: dict, method_args: pd.DataFrame):
+        self.enrichment_method = Software_detail(
+            CS.PIPELINE_NAME_viral_enrichment,
+            method_args,
+            config,
+            self.prefix,
+        )
+
+        self.enrichment = self.enrichment_method.check_exists()
+
+    def check_enrichment_exists(self):
+        self.enrichment = self.enrichment_method.check_exists()
+
+    def set_assembly_check(self, config: dict, method_args: pd.DataFrame):
+        self.assembly_method = Software_detail(
+            CS.PIPELINE_NAME_assembly,
+            method_args,
+            config,
+            self.prefix,
+        )
+
+        self.assembly = self.assembly_method.check_exists()
+
+    def check_assembly_exists(self):
+        self.assembly = self.assembly_method.check_exists()
+
+    def set_contig_classification_check(self, config: dict, method_args: pd.DataFrame):
+        self.contig_classification_method = Software_detail(
+            CS.PIPELINE_NAME_contig_classification,
+            method_args,
+            config,
+            self.prefix,
+        )
+
+        self.contig_classification = self.contig_classification_method.check_exists()
+
+    def check_contig_classification_exists(self):
+        self.contig_classification = self.contig_classification_method.check_exists()
+
+    def set_read_classification_check(self, config: dict, method_args: pd.DataFrame):
+        self.read_classification_method = Software_detail(
+            CS.PIPELINE_NAME_read_classification,
+            method_args,
+            config,
+            self.prefix,
+        )
+
+        self.read_classification = self.read_classification_method.check_exists()
+
+    def check_read_classification_exists(self):
+        self.read_classification = self.read_classification_method.check_exists()
+
+    def set_remapping_check(self, config: dict, method_args: pd.DataFrame):
+        self.remapping_method = Software_detail(
+            CS.PIPELINE_NAME_remapping,
+            method_args,
+            config,
+            self.prefix,
+        )
+
+        self.check_remapping_exists()
+
+    def check_remapping_exists(self):
+        self.remapping = self.remapping_method.check_exists()
+
+    def set_remapping_filtering_check(self, config: dict, method_args: pd.DataFrame):
+        self.remap_filtering_method = Software_detail(
+            CS.PIPELINE_NAME_remap_filtering,
+            method_args,
+            config,
+            self.prefix,
+        )
+
+        self.check_remap_filtering_exists()
+
+    def check_remap_filtering_exists(self):
+        self.remapping_filtering = self.remap_filtering_method.check_exists()
+
+    def set_settings_dict(self):
+        self.settings_dict = {
+            CS.PIPELINE_NAME_extra_qc: self.set_preprocess_check,
+            CS.PIPELINE_NAME_host_depletion: self.set_depletion_check,
+            CS.PIPELINE_NAME_viral_enrichment: self.set_enrichment_check,
+            CS.PIPELINE_NAME_assembly: self.set_assembly_check,
+            CS.PIPELINE_NAME_contig_classification: self.set_contig_classification_check,
+            CS.PIPELINE_NAME_read_classification: self.set_read_classification_check,
+            CS.PIPELINE_NAME_remapping: self.set_remapping_check,
+            CS.PIPELINE_NAME_remap_filtering: self.set_remapping_filtering_check,
+        }
+
+    def software_check_map(self):
+        self.module_software_check_map = {
+            CS.PIPELINE_NAME_extra_qc: self.quality_control,
+            CS.PIPELINE_NAME_host_depletion: self.depletion,
+            CS.PIPELINE_NAME_viral_enrichment: self.enrichment,
+            CS.PIPELINE_NAME_assembly: self.assembly,
+            CS.PIPELINE_NAME_contig_classification: self.contig_classification,
+            CS.PIPELINE_NAME_read_classification: self.read_classification,
+            CS.PIPELINE_NAME_remapping: self.remapping,
+            CS.PIPELINE_NAME_remap_filtering: self.remapping_filtering,
+        }
+
+    def set_methods(self, config: dict, method_args: pd.DataFrame):
+        self.set_settings_dict()
+
+        for _, software_get_function in self.settings_dict.items():
+            software_get_function(config, method_args)
+
+        ###
+
+        self.software_remap = SoftwareRemap(
+            self.remapping_method,
+            self.remap_filtering_method,
+        )
+
     def __init__(self, config: dict, method_args: pd.DataFrame, username: str):
         self.project_name = config["project_name"]
         self.username = username
@@ -169,6 +316,7 @@ class RunDetail_main:
         self.suprun = self.prefix
 
         self.method_args = method_args
+        self.modules = list(self.method_args["module"].unique())
         self.config = config
         self.log_dir = config["directories"]["log_dir"]
         print("logdir", self.log_dir)
@@ -184,21 +332,7 @@ class RunDetail_main:
         )
         self.threads = config["threads"]
 
-        self.logger_level_main = logging.ERROR
-        self.logger_level_detail = logging.ERROR
-        self.logger = logging.getLogger("main {}".format(self.prefix))
-        self.logger.setLevel(self.logger_level_main)
-
-        logFormatter = logging.Formatter(
-            fmt="{} {} %(levelname)s :%(message)s".format(
-                config["sample_name"], self.prefix
-            )
-        )
-
-        consoleHandler = logging.StreamHandler()
-        consoleHandler.setFormatter(logFormatter)
-        self.logger.addHandler(consoleHandler)
-        self.logger.propagate = False
+        self.set_logger()
         self.runtime = 0
         self.start_time = time.perf_counter()
         self.exec_time = 0
@@ -351,95 +485,17 @@ class RunDetail_main:
         self.taxid_limit = remap_params.max_taxids
         self.remap_params = remap_params
 
-        ### methods
-        self.preprocess_method = Software_detail(
-            CS.PIPELINE_NAME_extra_qc,
-            method_args,
-            config,
-            self.prefix,
-        )
+        ### set software methods and actions
 
-        ###
-        self.assembly_method = Software_detail(
-            CS.PIPELINE_NAME_assembly,
-            method_args,
-            config,
-            self.prefix,
-        )
-        self.depletion_method = Software_detail(
-            CS.PIPELINE_NAME_host_depletion,
-            method_args,
-            config,
-            self.prefix,
-        )
+        self.set_methods(config, method_args)
 
-        self.enrichment_method = Software_detail(
-            CS.PIPELINE_NAME_viral_enrichment,
-            method_args,
-            config,
-            self.prefix,
-        )
-
-        self.contig_classification_method = Software_detail(
-            CS.PIPELINE_NAME_contig_classification,
-            method_args,
-            config,
-            self.prefix,
-        )
-        self.read_classification_method = Software_detail(
-            CS.PIPELINE_NAME_read_classification,
-            method_args,
-            config,
-            self.prefix,
-        )
-
-        self.remapping_method = Software_detail(
-            CS.PIPELINE_NAME_remapping,
-            method_args,
-            config,
-            self.prefix,
-        )
-
-        self.remap_filtering_method = Software_detail(
-            CS.PIPELINE_NAME_remap_filtering,
-            method_args,
-            config,
-            self.prefix,
-        )
-
-        ###
-
-        self.software_remap = SoftwareRemap(
-            self.remapping_method,
-            self.remap_filtering_method,
-        )
-
-        ### actions
+        ### set default actions
         self.subsample = False
-        self.quality_control = bool(
-            self.preprocess_method.name != Software_detail.SOFTWARE_NOT_FOUND
-        )
         self.sift = config["actions"]["SIFT"]
-        self.depletion = bool(
-            self.depletion_method.name != Software_detail.SOFTWARE_NOT_FOUND
-        )
-        self.enrichment = bool(
-            self.enrichment_method.name != Software_detail.SOFTWARE_NOT_FOUND
-        )
-        self.assembly = bool(
-            self.assembly_method.name != Software_detail.SOFTWARE_NOT_FOUND
-        )
-        self.contig_classification = bool(
-            self.contig_classification_method.name != Software_detail.SOFTWARE_NOT_FOUND
-        )
-        self.read_classification = bool(
-            self.read_classification_method.name != Software_detail.SOFTWARE_NOT_FOUND
-        )
+
         self.classification = config["actions"]["CLASSIFY"]
         self.remapping = config["actions"]["REMAP"]
-        self.remapping_filtering = bool(
-            self.remap_filtering_method.name != Software_detail.SOFTWARE_NOT_FOUND
-        )
+
         self.house_cleaning = config["actions"]["CLEAN"]
 
         ### drones
@@ -519,100 +575,12 @@ class RunDetail_main:
             depleted_dir=config["directories"]["reads_depleted_dir"],
         )
 
-        ### methods
+        ### set software methods and actions
 
-        self.preprocess_method = Software_detail(
-            CS.PIPELINE_NAME_extra_qc,
-            method_args,
-            config,
-            self.prefix,
-        )
+        self.set_methods(config, method_args)
 
-        self.assembly_method = Software_detail(
-            CS.PIPELINE_NAME_assembly,
-            method_args,
-            config,
-            self.prefix,
-        )
-
-        self.depletion_method = Software_detail(
-            CS.PIPELINE_NAME_host_depletion,
-            method_args,
-            config,
-            self.prefix,
-        )
-
-        self.enrichment_method = Software_detail(
-            CS.PIPELINE_NAME_viral_enrichment,
-            method_args,
-            config,
-            self.prefix,
-        )
-
-        self.contig_classification_method = Software_detail(
-            CS.PIPELINE_NAME_contig_classification,
-            method_args,
-            config,
-            self.prefix,
-        )
-        self.read_classification_method = Software_detail(
-            CS.PIPELINE_NAME_read_classification,
-            method_args,
-            config,
-            self.prefix,
-        )
-
-        self.remapping_method = Software_detail(
-            CS.PIPELINE_NAME_remapping,
-            method_args,
-            config,
-            self.prefix,
-        )
-
-        self.remap_filtering_method = Software_detail(
-            CS.PIPELINE_NAME_remap_filtering,
-            method_args,
-            config,
-            self.prefix,
-        )
-
-        if self.software_remap.remap_filter.name == Software_detail.SOFTWARE_NOT_FOUND:
-            self.software_remap.remap_filter = self.remap_filtering_method
-
-        if (
-            self.software_remap.remap_software.name
-            == Software_detail.SOFTWARE_NOT_FOUND
-        ):
-            self.software_remap.remap_software = self.remapping_method
-
-        # actions
-        self.subsample = False
-        self.quality_control = bool(
-            self.preprocess_method.name != Software_detail.SOFTWARE_NOT_FOUND
-        )
+        ### set default actions
         self.sift = config["actions"]["SIFT"]
-        self.depletion = bool(
-            self.depletion_method.name != Software_detail.SOFTWARE_NOT_FOUND
-        )
-        self.enrichment = bool(
-            self.enrichment_method.name != Software_detail.SOFTWARE_NOT_FOUND
-        )
-        self.assembly = bool(
-            self.assembly_method.name != Software_detail.SOFTWARE_NOT_FOUND
-        )
-        self.read_classification = bool(
-            self.read_classification_method.name != Software_detail.SOFTWARE_NOT_FOUND
-        )
-        self.contig_classification = bool(
-            self.contig_classification_method.name != Software_detail.SOFTWARE_NOT_FOUND
-        )
-        self.remapping = bool(
-            self.remapping_method.name != Software_detail.SOFTWARE_NOT_FOUND
-        )
-        self.remapping_filtering = bool(
-            self.remap_filtering_method.name != Software_detail.SOFTWARE_NOT_FOUND
-        )
-        self.classification = self.read_classification or self.contig_classification
         self.house_cleaning = config["actions"]["CLEAN"]
 
         ### output files

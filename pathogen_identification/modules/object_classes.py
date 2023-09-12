@@ -1098,6 +1098,9 @@ class SoftwareUnit:
         self.dir = dir
         self.output_dir = output_dir
 
+    def check_exists(self):
+        return bool(self.name != Software_detail.SOFTWARE_NOT_FOUND)
+
     def get_bin(self, config: dict):
         try:
             self.bin = os.path.join(

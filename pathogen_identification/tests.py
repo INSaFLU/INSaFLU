@@ -314,6 +314,7 @@ class Televir_Software_Test(TestCase):
         self.assertEqual(prinseqplusplus.count(), 2)
 
     def test_pipeline_makeup(self):
+        """THIS TEST IS NOT COMPLETE"""
         default_software = DefaultSoftware()
         default_software.test_all_defaults_pathogen_identification(self.test_user)
         self.assertTrue(len(self.pipeline_makeup.MAKEUP), 16)
@@ -335,7 +336,6 @@ class Televir_Software_Test(TestCase):
 
         self.assertEqual(
             {
-                CS.PIPELINE_NAME_extra_qc,
                 CS.PIPELINE_NAME_viral_enrichment,
                 CS.PIPELINE_NAME_contig_classification,
                 CS.PIPELINE_NAME_read_classification,
@@ -691,9 +691,16 @@ class Televir_Project_Test(TestCase):
 
                 self.assertTrue(node)
 
+    def contained_test_workflow_software_exist(self, run: Run_Main_from_Leaf):
+        run.container.run_engine.software_check_map()
+
+        for module in run.container.run_engine.modules:
+            self.assertTrue(
+                run.container.run_engine.module_software_check_map[module],
+            )
+
     @tag("slow")
     def test_run_submit(self):
-        utils_manager = Utils_Manager()
         pipeline_makeup_manager = Pipeline_Makeup()
         software_tree_utils = SoftwareTreeUtils(self.test_user, self.project_ont)
 
@@ -791,6 +798,8 @@ class Televir_Project_Test(TestCase):
                 self.assertEqual(
                     os.path.exists(run.container.run_engine.media_dir_igv), True
                 )
+
+                self.contained_test_workflow_software_exist(run)
 
                 ##### test closing
                 run.container.close()

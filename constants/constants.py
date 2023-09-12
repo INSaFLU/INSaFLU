@@ -64,6 +64,7 @@ class Televir_Metadata_Constants:
             "bowtie2": "remap/remap",
             "bowtie2_remap": "remap/remap",
             "minimap2_illu": "hostDepletion/hostdep_env",
+            "minimap2_ont": "hostDepletion/hostdep_env",
             "snippy_pi": config("DIR_SOFTWARE") + "/snippy",
             "prinseq++": "preprocess/prinseq",
             "prinseq": "preprocess/prinseq",

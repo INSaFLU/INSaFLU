@@ -1073,7 +1073,6 @@ class Sample_runClass:
 
 
 class SoftwareUnit:
-
     name: str
 
     SOFTWARE_NOT_FOUND = "None"
@@ -1114,7 +1113,6 @@ class SoftwareUnit:
 
 
 class Software_detail(SoftwareUnit):
-
     def __init__(self, module, args_df: pd.DataFrame, config: dict, prefix: str):
         """
 
@@ -1211,11 +1209,10 @@ class Software_detail(SoftwareUnit):
 
 
 class SoftwareRemap:
-
     def __init__(self, remap_software: Software_detail, remap_filter: Software_detail):
-
         self.remap_software = remap_software
         self.remap_filter = remap_filter
+
 
 class Bedgraph:
     """Class to store and work with bedgraph files
@@ -1435,6 +1432,7 @@ class Run_detail_report:
     merged_number: int
     merged_files: str
 
+
 @dataclass(frozen=True)
 class RunQC_report:
     performed: bool
@@ -1443,6 +1441,7 @@ class RunQC_report:
     input_reads: int
     output_reads: int
     output_reads_percent: float
+
 
 @dataclass(frozen=True)
 class Contig_classification_results:

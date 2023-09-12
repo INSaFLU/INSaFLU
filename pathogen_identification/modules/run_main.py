@@ -1307,7 +1307,7 @@ class RunMainTree_class(Run_Deployment_Methods):
             self.sample.r1.clean_read_names()
             self.sample.r2.clean_read_names()
 
-            self.qc_performed = True
+            # self.qc_performed = True
 
         self.Update_exec_time()
         self.generate_output_data_classes()

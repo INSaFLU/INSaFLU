@@ -9,8 +9,7 @@ from typing import Type
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.modules.object_classes import (RunCMD,
-                                                            Software_detail)
+from pathogen_identification.modules.object_classes import RunCMD, Software_detail
 
 
 def check_report_empty(file, comment="@"):
@@ -1184,6 +1183,7 @@ class Classifier:
         "minimap2_illumina": run_minimap2_illumina,
         "minimap2_illu": run_minimap2_illumina,
         "minimap2": run_minimap2_ONT,
+        "minimap2_ont": run_minimap2_ONT,
         "minimap2_asm": run_minimap2_asm,
         "diamond": run_diamond,
         "kaiju": run_kaiju,

@@ -502,14 +502,6 @@ class Read_class:
         self.read_number_filtered = 0
         self.history = [self.current]
 
-    @property
-    def reads_enriched(self):
-        return self.read_number_clean - self.read_number_enriched
-
-    @property
-    def reads_depleted(self):
-        return self.read_number_clean - self.read_number_depleted
-
     def create_link(self, file_path, new_path):
         if os.path.isfile(file_path):
             if os.path.isfile(new_path):

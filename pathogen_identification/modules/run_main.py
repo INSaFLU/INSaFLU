@@ -1307,6 +1307,8 @@ class RunMainTree_class(Run_Deployment_Methods):
             self.sample.r1.clean_read_names()
             self.sample.r2.clean_read_names()
 
+            # self.qc_performed = True
+
         self.Update_exec_time()
         self.generate_output_data_classes()
 
@@ -1581,10 +1583,8 @@ class RunMainTree_class(Run_Deployment_Methods):
             )
         )
 
-        # enriched_reads = self.sample.r1.reads_enriched + self.sample.r2.reads_enriched
-        # depleted_reads = self.sample.r1.reads_depleted + self.sample.r2.reads_depleted
-        depleted_reads = len(self.depletion_drone.classified_reads_list)
         enriched_reads = len(self.enrichment_drone.classified_reads_list)
+        depleted_reads = len(self.depletion_drone.classified_reads_list)
 
         if self.type == ConstantsSettings.PAIR_END:
             enriched_reads = enriched_reads * 2

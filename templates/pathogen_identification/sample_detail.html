@@ -324,7 +324,7 @@
                         {% endif %}
                         {% endif %}
                         {% if run_detail.processed != "0" %}
-                        <p>Output reads: <strong>{{ run_detail.processed }} </strong> ({{run_detail.processed_percent}} %) </p>
+                        <p>Output reads: <strong>{{ run_detail.processing_final }} </strong> ({{run_detail.processing_final_percent}} %) </p>
                         {% endif %}
                     {% else %}
                         <p> No pre-processing step was performed </p>
@@ -887,7 +887,7 @@
     // Draw the chart and set the chart values
     function drawChart() {
         var raw_data= [['Input', "Number"]];
-        raw_data.push(["Kept", parseFloat("{{run_detail.processed|reconvert_string_to_int}}")]);
+        raw_data.push(["Kept", parseFloat("{{run_detail.processing_final|reconvert_string_to_int}}")]);
         console.log("{{qc_report.performed}}");
         console.log("{{qc_report.input_reads}}");
         if ("{{qc_report.performed}}" == "True" ) {

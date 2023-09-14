@@ -1,8 +1,8 @@
+import http.client
 import logging
 import os
 import urllib.error
 from typing import List
-import http.client 
 
 import pandas as pd
 
@@ -171,6 +171,7 @@ class Metadata_handler:
         df = self.map_hit_report(df)
 
         df = self.entrez_get_taxid_descriptions(df)
+        # df = self.entrez_conn.entrez_get_taxid_descriptions(df)
         # df = self.merge_report_to_metadata_description(df)
 
         df = df.reset_index(drop=True)
@@ -325,36 +326,8 @@ class Metadata_handler:
         """
         Get taxid descriptions from entrez.
         """
-        taxid_df = df.dropna(subset=["taxid"])
-        taxid_list = taxid_df.taxid.unique().tolist()
-        taxid_list = [str(int(i)) for i in taxid_list]
 
-        if len(taxid_list) == 0:
-            return pd.DataFrame(columns=["taxid", "counts", "description"])
-
-        try:
-            self.entrez_conn.run_queries_biopy(taxid_list)
-        except urllib.error.URLError:
-            self.entrez_conn.run_queries_binaries(taxid_list)
-        except http.client.RemoteDisconnected:
-            self.entrez_conn.run_queries_binaries(taxid_list)
-
-                
-
-        taxid_descriptions = self.entrez_conn.read_output()
-        taxid_descriptions.rename(
-            columns={"scientific_name": "description"}, inplace=True
-        )
-
-        df["taxid"] = df["taxid"].astype(int)
-        taxid_descriptions["taxid"] = taxid_descriptions["taxid"].astype(int)
-
-        df = df.merge(taxid_descriptions, on="taxid", how="left")
-
-        df["taxid"] = df["taxid"].astype(float)
-        df["taxid"] = df["taxid"].astype(int)
-
-        return df
+        return self.entrez_conn.entrez_get_taxid_descriptions(df)
 
     def merge_report_to_metadata_description(self, df: pd.DataFrame) -> pd.DataFrame:
         """

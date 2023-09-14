@@ -567,6 +567,8 @@ class Run_Main_from_Leaf:
             report_sorter.sort_reports_save()
         except Exception as e:
             print(e)
+            print(traceback.format_exc())
+
             print("Error in report sorter")
             return
 

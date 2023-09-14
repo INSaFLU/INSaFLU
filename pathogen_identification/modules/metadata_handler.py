@@ -176,10 +176,6 @@ class Metadata_handler:
 
         df = df.reset_index(drop=True)
 
-        # replace nan by "NA" in description column
-        print("FIND NA")
-        print(df.head())
-
         def get_acc(df: pd.DataFrame):
             if "acc_x" in df.columns:
                 df["accid"] = df["acc_x"]
@@ -198,22 +194,6 @@ class Metadata_handler:
         if df.shape[0] > 0:
             df = get_acc(df)
             df["description"] = df["description"].fillna("NA")
-
-            def fill_description(row) -> pd.Series:
-                """
-                Fill description column with scraped description if description is "NA".
-                """
-
-                if row["description"] == "NA" or row["description"] == "":
-                    print(row)
-                    row["description"] = scrape_description(row["accid"])
-                    print(row["description"])
-
-                return row
-
-            print("FIND DESCRIPTION")
-            # df = df.apply(fill_description, axis=1)
-            print(df[["description", "counts", "taxid"]].head())
 
         if sift:
             sifted_df = self.sift_report_filter(df, query=self.sift_query)

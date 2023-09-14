@@ -647,16 +647,9 @@ class Read_class:
         reads_start = self.get_current_fastq_read_number()
         current_reads = self.get_read_names_fastq()
 
-        print("current reads: %s" % len(current_reads))
-        print(current_reads[:10])
-        print(read_list[:10])
+
 
         read_list_to_keep = list(set(current_reads) - set(read_list))
-        # read_list_to_keep = [i for i in read_list_to_keep if i != ""]
-        # read_list_to_keep = list(set(read_list_to_keep))
-        print(read_list_to_keep[:10])
-
-        print("reads to keep: %s" % len(read_list_to_keep))
 
         if len(read_list) > 0:
             self.read_filter_move(read_list_to_keep, self.depleted)
@@ -664,18 +657,6 @@ class Read_class:
             self.is_depleted()
 
         reads_end = self.get_current_fastq_read_number()
-
-        print("reads start: %s" % reads_start)
-        print("reads end: %s" % reads_end)
-
-        print("################")
-        print("reads depleted: %s" % (reads_end - reads_start))
-
-        if reads_end > reads_start:
-            print("ERROR: reads end > reads start")
-            print("reads start: %s" % reads_start)
-            print("reads end: %s" % reads_end)
-            raise Exception("reads end > reads start")
 
         self.depleted_read_number = reads_start - reads_end
 

@@ -279,6 +279,10 @@ class ProjectTableMetagenomics(ProjectTable):
                 + '><i class="fa fa-spinner fa-spin"></i></span> </a>'
             )
 
+        eye_blue = '><i class="fa fa-eye"></i></span> </a>'
+        eye_purple = '><i class="fa fa-eye" style="color: purple;"></i></span> </a>'
+        eye_show = eye_blue
+
         deploy_explify = (
             "<a "
             + 'href="#id_merge_televir_explify_modal" data-toggle="modal" data-toggle="tooltip" '
@@ -286,17 +290,18 @@ class ProjectTableMetagenomics(ProjectTable):
             + 'title="Merge Explify"'
             + f"project_id={record.pk} "
             + f"ref_name={record.name} "
-            + '><i class="fa fa-eye"></i></span> </a>'
         )
 
         project_dir = get_project_dir(record)
         merge_explify_file = project_dir + CS.EXPLIFY_MERGE_SUFFIX + f".{record.pk}.tsv"
 
         found_explify_result = os.path.isfile(merge_explify_file)
+        download_button = ""
 
         if found_explify_result:
             # display icon and download on click
-            deploy_explify += (
+
+            download_button = (
                 '<a href="'
                 + merge_explify_file
                 + '" '
@@ -304,6 +309,18 @@ class ProjectTableMetagenomics(ProjectTable):
                 + 'title="Download Explify Merge" '
                 + '><i class="fa fa-download"></i></span> </a>'
             )
+
+        else:
+            #
+            if ProcessControler.objects.filter(
+                owner__id=record.owner.pk,
+                name=process_controler.get_name_televir_project_merge_explify(
+                    project_pk=record.pk,
+                ),
+            ).exists():
+                eye_show = eye_purple
+
+        deploy_explify = deploy_explify + eye_show + download_button
 
         return mark_safe(deploy_explify)
 

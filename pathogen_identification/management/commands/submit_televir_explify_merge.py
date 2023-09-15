@@ -1,3 +1,4 @@
+import os
 from typing import List
 
 import pandas as pd
@@ -5,18 +6,15 @@ from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
 from managing_files.models import ProcessControler
-from pathogen_identification.models import (
-    FinalReport,
-    Projects,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.constants_settings import ConstantsSettings as CS
+from pathogen_identification.models import FinalReport, Projects
 from pathogen_identification.utilities.explify_merge import (
     get_illumina_found,
     merge_panels,
     process_televir,
     read_panel,
 )
+from pathogen_identification.utilities.utilities_general import get_project_dir
 from utils.process_SGE import ProcessSGE
 
 
@@ -67,8 +65,9 @@ class Command(BaseCommand):
 
         user = project.owner
 
-        outdir = options["outdir"]
-        output_file_merged = outdir + f"merged_explify_project.{project.pk}.tsv"
+        output_file_merged = os.path.join(
+            get_project_dir(project), CS.EXPLIFY_MERGE_SUFFIX + f".{project.pk}.tsv"
+        )
 
         # PROCESS CONTROLER
 
@@ -80,26 +79,26 @@ class Command(BaseCommand):
             ProcessControler.FLAG_RUNNING,
         )
 
-        process = ProcessControler.objects.filter(
-            owner__id=user.pk,
-            name=process_controler.get_name_televir_project_merge_explify(
-                project_pk=project.pk,
-            ),
-        )
-
         all_reports = FinalReport.objects.filter(
             run__project__pk=int(project.pk)
         ).order_by("-coverage")
+        output_dir = options["outdir"]
 
         televir_reports = pd.DataFrame.from_records(all_reports.values())
 
         try:
-            rpip_panel = read_panel(
-                options["rpip_panel"], panel="Microorganisms (RPIP)"
+            print(output_file_merged)
+            rpip_panel = read_panel(options["rpip"], panel="Microorganisms (RPIP)")
+            upip_panel = read_panel(options["upip"], panel="Microorganisms (UPIP)")
+
+            illumina_found = get_illumina_found(
+                [rpip_panel, upip_panel], tmp_dir=output_dir
             )
-            upip_panel = read_panel(
-                options["upip_panel"], panel="Microorganisms (UPIP)"
-            )
+            telebac_found = process_televir(televir_reports)
+
+            merged_panel = merge_panels(illumina_found, telebac_found)
+            merged_panel.to_csv(output_file_merged, sep="\t", index=False)
+
         except Exception as e:
             print(e)
             process_SGE.set_process_controler(
@@ -111,16 +110,10 @@ class Command(BaseCommand):
             )
             return
 
-        illumina_found = get_illumina_found([rpip_panel, upip_panel])
-        telebac_found = process_televir(televir_reports)
-
-        merged_panel = merge_panels(illumina_found, telebac_found)
-        merged_panel.to_csv(output_file_merged, sep="\t", index=False)
-
-        if process.exists():
-            process = process.first()
-
-            print(f"Process {process.pk} has been submitted")
-
-        else:
-            print("Process does not exist")
+        process_SGE.set_process_controler(
+            user,
+            process_controler.get_name_televir_project_merge_explify(
+                project_pk=project.pk,
+            ),
+            ProcessControler.FLAG_FINISHED,
+        )

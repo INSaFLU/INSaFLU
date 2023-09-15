@@ -21,7 +21,7 @@ def merge_files(args: MergeArguments, temp_dir: str):
     rpip_panel = read_panel(temp_dir + args.file2, panel="Microorganisms (RPIP)")
     upip_panel = read_panel(temp_dir + args.file3, panel="Microorganisms (UPIP)")
 
-    illumina_found = get_illumina_found([rpip_panel, upip_panel])
+    illumina_found = get_illumina_found([rpip_panel, upip_panel], temp_dir)
     telebac_found = process_televir(televir_reports)
 
     merged_panel = merge_panels(illumina_found, telebac_found)
@@ -68,11 +68,11 @@ def read_panel(report, panel="Microorganisms"):
     read excel extract spreadsheet name Microorganisms
 
     """
-    panel = pd.read_excel(report, sheet_name=panel)
+    panel = pd.read_excel(report, sheet_name=panel, engine="openpyxl")
     return panel
 
 
-def get_illumina_found(panel_list: list):
+def get_illumina_found(panel_list: list, tmp_dir: str = "/tmp"):
     """
     merge rpip and upip panels, retrieve taxids
     """
@@ -84,8 +84,14 @@ def get_illumina_found(panel_list: list):
     ].drop_duplicates(subset=["Accession", "Microorganism Name"])
 
     taxid_only = illumina_found[["Microorganism Name"]]
+
+    def run_entrez_with_temp_dir(description: str):
+        return entrez_fetch_taxid_from_org_description_curate(
+            description, tmp_dir=tmp_dir
+        )
+
     taxid_only["Taxid"] = taxid_only["Microorganism Name"].apply(
-        entrez_fetch_taxid_from_org_description_curate
+        run_entrez_with_temp_dir
     )
 
     illumina_found = pd.merge(

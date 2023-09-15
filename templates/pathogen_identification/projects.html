@@ -219,6 +219,10 @@
         $('#id-deploy-explify-button').click(function () {
             $.unblockUI();
         });
+		// unblock when click in button class close
+		$('.close').click(function () {
+			$.unblockUI();
+		});
 	});
 
 	/// set wait screen
@@ -259,6 +263,8 @@
 			console.log("merge explify");
 			console.log(ref_name);
 			console.log(tr_to_remove);
+			// change text in modal body div
+			$('#id-modal-body-deploy-merge-explify').text('Do you want to merge explify files for \'' + ref_name + '\'?');
 			$('#id-modal-body-deploy-merge-explify').attr('pk', $(this).attr('project_id'));
 			$('#id-modal-body-deploy-merge-explify').attr('project_name', ref_name);
 			$('#id-modal-body-deploy-merge-explify').attr('tr_to_remove', tr_to_remove);

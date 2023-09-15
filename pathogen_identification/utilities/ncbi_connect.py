@@ -1,7 +1,16 @@
+import os
 import time
 
+from constants.constants import Televir_Metadata_Constants
 
-def query_taxid(description: str) -> list:
+entrez_direct_bin = os.path.join(
+    Televir_Metadata_Constants.BINARIES["ROOT"],
+    Televir_Metadata_Constants.BINARIES["software"]["entrez_direct"],
+    "bin",
+)
+
+
+def query_taxid(description: str, tmp_dir) -> list:
     # 20 second max wait time
     wait_time_max = 20
     print(description)
@@ -11,17 +20,18 @@ def query_taxid(description: str) -> list:
         + description.replace(" ", "_").replace("(", "").replace(")", "")
         + ".txt"
     )
+    tempfilename = os.path.join(tmp_dir, tempfilename)
+    tmp_bash_script = os.path.join(tmp_dir, "tempfile.sh")
 
-    query = f'/usr/bin/esearch -db genome -query "{description}" | /usr/bin/efetch -format docsum | /usr/bin/xtract -pattern DocumentSummary -element TaxId > {tempfilename}'
-    with open("tempfile.sh", "w") as tempfile:
+    query = f'{entrez_direct_bin}/esearch -db genome -query "{description}" | {entrez_direct_bin}/efetch -format docsum | {entrez_direct_bin}/xtract -pattern DocumentSummary -element TaxId > {tempfilename}'
+    with open(tmp_bash_script, "w") as tempfile:
         tempfile.write(query)
-
-    import os
 
     # deploy job in background
     open(tempfilename, "w").close()
-    os.system("chmod +x tempfile.sh")
-    os.system("./tempfile.sh &")
+
+    os.system(f"chmod +x {tmp_bash_script}")
+    os.system(f"sh {tmp_bash_script} &")
     start_time = time.time()
     # while file is empty and time is less than 20 seconds:
 
@@ -106,16 +116,16 @@ def specific_amends(description: str) -> str:
 
 
 def entrez_fetch_taxid_from_org_description_curate(
-    description: str, db: str = "taxonomy"
+    description: str, tmp_dir: str = "/tmp"
 ) -> list:
     description = specific_amends(description)
 
-    taxid = query_taxid(description)
+    taxid = query_taxid(description, tmp_dir)
 
     if not taxid_passes_test(taxid):
         desc_small = remove_parenthesis(description)
         desc_small = cut_after_virus(desc_small)
-        taxid = query_taxid(desc_small)
+        taxid = query_taxid(desc_small, tmp_dir)
 
     if not taxid_passes_test(taxid):
         taxid = entrez_fetch_taxid_from_org_description(description)

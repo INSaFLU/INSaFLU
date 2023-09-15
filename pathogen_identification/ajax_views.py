@@ -212,7 +212,6 @@ def Project_explify_merge(request):
     """
     submit a new sample to televir project
     """
-    print("HELL")
     if request.is_ajax():
         data = {"is_ok": False, "is_deployed": False}
 
@@ -221,10 +220,6 @@ def Project_explify_merge(request):
         utils: Utils = Utils()
         try:
             temp_directory = utils.get_temp_dir()
-            print(request.POST)
-            print(request)
-            print(request.FILES)
-            print(request.FILES.keys())
 
             project_id = int(request.POST["project_id"])
             project = Projects.objects.get(id=int(project_id))
@@ -233,10 +228,12 @@ def Project_explify_merge(request):
             upip_file = request.FILES["upip_file"]
 
             rpip_report_path = os.path.join(
-                temp_directory, rpip_file.name.replace(" ", "_")
+                temp_directory,
+                rpip_file.name.replace(" ", "_").replace("(", "_").replace(")", "_"),
             )
             upip_report_path = os.path.join(
-                temp_directory, upip_file.name.replace(" ", "_")
+                temp_directory,
+                upip_file.name.replace(" ", "_").replace("(", "_").replace(")", "_"),
             )
 
             with open(rpip_report_path, "wb") as f:
@@ -244,29 +241,43 @@ def Project_explify_merge(request):
             with open(upip_report_path, "wb") as f:
                 f.write(upip_file.file.read())
 
-            print("HOIIJOINOI")
-
         except Exception as e:
             print(e)
             return JsonResponse(data)
 
-        all_reports = FinalReport.objects.filter(
-            run__project__pk=int(project.pk)
-        ).order_by("-coverage")
+        ### check process not running for this project
+        process_controler = ProcessControler()
+        try:
+            ProcessControler.objects.get(
+                owner__id=user.pk,
+                name=process_controler.get_name_televir_project_merge_explify(
+                    project_pk=project.pk,
+                ),
+                is_running=True,
+            )
 
-        televir_reports = pd.DataFrame.from_records(all_reports.values())
+        except ProcessControler.DoesNotExist:
+            all_reports = FinalReport.objects.filter(
+                run__project__pk=int(project.pk)
+            ).order_by("-coverage")
 
-        report_path = os.path.join(temp_directory, f"televir_project.{project.pk}.tsv")
-        televir_reports.to_csv(report_path, sep="\t", index=False)
+            televir_reports = pd.DataFrame.from_records(all_reports.values())
 
-        taskID = process_SGE.set_submit_televir_explify_merge(
-            user=request.user,
-            project_pk=project.pk,
-            rpip_filepath=rpip_report_path,
-            upip_filepath=upip_report_path,
-            televir_report_filepath=report_path,
-            out_dir=temp_directory,
-        )
+            report_path = os.path.join(
+                temp_directory, f"televir_project.{project.pk}.tsv"
+            )
+            televir_reports.to_csv(report_path, sep="\t", index=False)
+
+            taskID = process_SGE.set_submit_televir_explify_merge(
+                user=request.user,
+                project_pk=project.pk,
+                rpip_filepath=rpip_report_path,
+                upip_filepath=upip_report_path,
+                televir_report_filepath=report_path,
+                out_dir=temp_directory,
+            )
+
+            data["is_deployed"] = True
 
         data["is_ok"] = True
         return JsonResponse(data)

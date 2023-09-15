@@ -14,8 +14,9 @@ from typing import Optional
 import matplotlib.pyplot as plt
 import pandas as pd
 
+from fluwebvirus.settings import MEDIA_ROOT
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import RunMain
+from pathogen_identification.models import Projects, RunMain
 
 
 def generate_zip_file(file_list: list, zip_file_path: str) -> str:
@@ -413,6 +414,12 @@ def merge_classes(r1: pd.DataFrame, r2: pd.DataFrame, maxt=6, exclude="phage"):
     merged_final = merged_final[["taxid", "counts", "source"]]
 
     return merged_final, full_descriptor
+
+
+def get_project_dir(project: Projects):
+    return os.path.join(
+        MEDIA_ROOT, CS.televir_subdirectory, str(project.owner.pk), project.name
+    )
 
 
 def infer_run_media_dir(run_main: RunMain) -> Optional[str]:

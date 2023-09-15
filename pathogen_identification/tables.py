@@ -9,6 +9,7 @@ from django.utils.safestring import mark_safe
 
 from constants.constants import Constants
 from managing_files.manage_database import ManageDatabase
+from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.models import (
     ContigClassification,
@@ -25,6 +26,7 @@ from pathogen_identification.models import (
     TelevirRunQC,
 )
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.utilities_general import get_project_dir
 from pathogen_identification.utilities.utilities_views import ReportSorter
 from settings.models import Parameter, Software
 
@@ -256,12 +258,28 @@ class ProjectTableMetagenomics(ProjectTable):
             "finished_processes",
         )
 
-    def render_merge_explify(self, record):
+    def render_merge_explify(self, record: Projects):
         """
         return merge tables modal button
         """
 
-        return mark_safe(
+        process_controler = ProcessControler()
+
+        if ProcessControler.objects.filter(
+            owner__id=record.owner.pk,
+            name=process_controler.get_name_televir_project_merge_explify(
+                project_pk=record.pk,
+            ),
+            is_running=True,
+        ).exists():
+            return mark_safe(
+                '<a href="#" '
+                + 'data-toggle="tooltip" '
+                + 'title="Running"'
+                + '><i class="fa fa-spinner fa-spin"></i></span> </a>'
+            )
+
+        deploy_explify = (
             "<a "
             + 'href="#id_merge_televir_explify_modal" data-toggle="modal" data-toggle="tooltip" '
             + 'id="merge_explify_modal" '
@@ -270,6 +288,24 @@ class ProjectTableMetagenomics(ProjectTable):
             + f"ref_name={record.name} "
             + '><i class="fa fa-eye"></i></span> </a>'
         )
+
+        project_dir = get_project_dir(record)
+        merge_explify_file = project_dir + CS.EXPLIFY_MERGE_SUFFIX + f".{record.pk}.tsv"
+
+        found_explify_result = os.path.isfile(merge_explify_file)
+
+        if found_explify_result:
+            # display icon and download on click
+            deploy_explify += (
+                '<a href="'
+                + merge_explify_file
+                + '" '
+                + 'data-toggle="tooltip" '
+                + 'title="Download Explify Merge" '
+                + '><i class="fa fa-download"></i></span> </a>'
+            )
+
+        return mark_safe(deploy_explify)
 
 
 class SampleTable(tables.Table):

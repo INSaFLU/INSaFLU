@@ -142,3 +142,7 @@ class ConstantsSettings:
 
     PAIR_END = "PE"
     SINGLE_END = "SE"
+
+    ################################## ACTIONS DETAILS
+
+    EXPLIFY_MERGE_SUFFIX = "merged_explify_project"

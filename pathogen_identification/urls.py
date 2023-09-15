@@ -1,8 +1,8 @@
 from django.conf.urls import url
-from managing_files import ajax_views, views
 
 import pathogen_identification.ajax_views as PIajax_views
 import pathogen_identification.views as PIviews
+from managing_files import ajax_views, views
 
 urlpatterns = [
     url(
@@ -44,6 +44,11 @@ urlpatterns = [
         r"Projects/(?P<pk1>\d+)/all_reports$",
         PIviews.Project_reports,
         name="all_PIproject_reports",
+    ),
+    url(
+        r"Projects/explify_merge$",
+        PIajax_views.Project_explify_merge,
+        name="explify_merge",
     ),
     url(
         r"Projects/project_(?P<pk1>\d+)/sample_(?P<pk2>\d+)",

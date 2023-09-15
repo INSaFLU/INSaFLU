@@ -2,7 +2,10 @@ import os
 from dataclasses import dataclass
 
 import pandas as pd
-from modules.ncbi_connect import entrez_fetch_taxid_from_org_description_curate
+
+from pathogen_identification.utilities.ncbi_connect import (
+    entrez_fetch_taxid_from_org_description_curate,
+)
 
 
 @dataclass
@@ -18,7 +21,7 @@ def merge_files(args: MergeArguments, temp_dir: str):
     rpip_panel = read_panel(temp_dir + args.file2, panel="Microorganisms (RPIP)")
     upip_panel = read_panel(temp_dir + args.file3, panel="Microorganisms (UPIP)")
 
-    illumina_found = get_illumina_found(rpip_panel, upip_panel)
+    illumina_found = get_illumina_found([rpip_panel, upip_panel])
     telebac_found = process_televir(televir_reports)
 
     merged_panel = merge_panels(illumina_found, telebac_found)
@@ -69,11 +72,11 @@ def read_panel(report, panel="Microorganisms"):
     return panel
 
 
-def get_illumina_found(rpip_panel, upip_panel):
+def get_illumina_found(panel_list: list):
     """
     merge rpip and upip panels, retrieve taxids
     """
-    illumina_found_full = pd.concat([rpip_panel, upip_panel], axis=0, ignore_index=True)
+    illumina_found_full = pd.concat(panel_list, axis=0, ignore_index=True)
 
     ## discard description= "None"
     illumina_found = illumina_found_full[

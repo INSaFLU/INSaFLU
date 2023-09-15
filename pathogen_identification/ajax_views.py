@@ -1,6 +1,7 @@
 import mimetypes
 import os
 
+import pandas as pd
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.http import HttpResponse, JsonResponse
@@ -31,6 +32,7 @@ from pathogen_identification.utilities.utilities_views import (
     set_control_reports,
 )
 from utils.process_SGE import ProcessSGE
+from utils.utils import Utils
 
 
 def simplify_name(name):
@@ -199,6 +201,72 @@ def submit_televir_project_sample(request):
         except Exception as e:
             print(e)
             data["is_deployed"] = False
+
+        data["is_ok"] = True
+        return JsonResponse(data)
+
+
+@login_required
+@require_POST
+def Project_explify_merge(request):
+    """
+    submit a new sample to televir project
+    """
+    print("HELL")
+    if request.is_ajax():
+        data = {"is_ok": False, "is_deployed": False}
+
+        process_SGE = ProcessSGE()
+        user = request.user
+        utils: Utils = Utils()
+        try:
+            temp_directory = utils.get_temp_dir()
+            print(request.POST)
+            print(request)
+            print(request.FILES)
+            print(request.FILES.keys())
+
+            project_id = int(request.POST["project_id"])
+            project = Projects.objects.get(id=int(project_id))
+
+            rpip_file = request.FILES["rpip_file"]
+            upip_file = request.FILES["upip_file"]
+
+            rpip_report_path = os.path.join(
+                temp_directory, rpip_file.name.replace(" ", "_")
+            )
+            upip_report_path = os.path.join(
+                temp_directory, upip_file.name.replace(" ", "_")
+            )
+
+            with open(rpip_report_path, "wb") as f:
+                f.write(rpip_file.file.read())
+            with open(upip_report_path, "wb") as f:
+                f.write(upip_file.file.read())
+
+            print("HOIIJOINOI")
+
+        except Exception as e:
+            print(e)
+            return JsonResponse(data)
+
+        all_reports = FinalReport.objects.filter(
+            run__project__pk=int(project.pk)
+        ).order_by("-coverage")
+
+        televir_reports = pd.DataFrame.from_records(all_reports.values())
+
+        report_path = os.path.join(temp_directory, f"televir_project.{project.pk}.tsv")
+        televir_reports.to_csv(report_path, sep="\t", index=False)
+
+        taskID = process_SGE.set_submit_televir_explify_merge(
+            user=request.user,
+            project_pk=project.pk,
+            rpip_filepath=rpip_report_path,
+            upip_filepath=upip_report_path,
+            televir_report_filepath=report_path,
+            out_dir=temp_directory,
+        )
 
         data["is_ok"] = True
         return JsonResponse(data)

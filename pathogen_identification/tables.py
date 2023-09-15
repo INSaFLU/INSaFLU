@@ -223,6 +223,55 @@ class ProjectTable(tables.Table):
         return record.last_change_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE)
 
 
+class ProjectTableMetagenomics(ProjectTable):
+    merge_explify = tables.Column("Actions", orderable=False, empty_values=())
+
+    class Meta:
+        model = Projects
+
+        fields = (
+            "name",
+            "results",
+            "samples",
+            "merge_explify",
+            "last_change_date",
+            "creation_date",
+            "description",
+            "technology",
+            "running_processes",
+        )
+        attrs = {"class": "table-striped table-bordered"}
+        empty_text = "There are no Projects to show..."
+
+        sequence = (
+            "name",
+            "results",
+            "merge_explify",
+            "settings",
+            "samples",
+            "description",
+            "technology",
+            "running_processes",
+            "queued_processes",
+            "finished_processes",
+        )
+
+    def render_merge_explify(self, record):
+        """
+        return merge tables modal button
+        """
+
+        return mark_safe(
+            "<a "
+            + 'href="#id_merge_televir_explify_modal" data-toggle="modal" data-toggle="tooltip" '
+            + 'id="merge_explify_modal" '
+            + 'title="Merge Explify"'
+            + f"project_id={record.pk} "
+            + f"ref_name={record.name} "
+            + '><i class="fa fa-eye"></i></span> </a>'
+        )
+
+
 class SampleTable(tables.Table):
     name = tables.Column(verbose_name="Sample Name")
     report = tables.Column(
@@ -270,6 +319,8 @@ class SampleTable(tables.Table):
                 + record.name
                 + '" pk="'
                 + str(record.pk)
+                + "deploy-merge-explify-url="
+                + reverse("explify_merge_sample")
                 + '"><i class="fa fa-circle"></i></span> </a>'
             )
         else:

@@ -1,7 +1,7 @@
-from settings.models import Technology
+from django.utils.html import format_html
 
 from pathogen_identification.models import Projects
-from django.utils.html import format_html
+from settings.models import Technology
 
 
 class ReferenceProjectForm(forms.ModelForm):

@@ -159,6 +159,43 @@
 	</div>
 </div>
 
+<!-- The upload Files for analysis modal -->
+<div class="modal fade" id="id_merge_televir_explify_modal">
+	<div class="modal-dialog">
+		<div class="modal-content">
+
+			<!-- Modal Header -->
+			<div class="modal-header alert alert-warning">
+				<h4 class="modal-title-remove">Merge Explify File</h4>
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+			</div>
+
+			<!-- Modal body -->
+			<div class="modal-body mx-auto mw-100">
+				<div id="id-modal-body-deploy-merge-explify" deploy-merge-explify-url="{% url 'explify_merge' %}">
+					<label id="id-settings-reset" class="col-form-label">Folder Name</label>
+				</div>
+			</div>
+			<!-- Modal footer -->
+			<div class="modal-footer" id="id-modal-footer-deloy_merge_explify">
+				<div id="rpip_file">
+					<label> RPIP File </label>
+					
+					<input type="file" name="table_rpip" id="rpip_table" class="form-control" required>
+				</div>
+				<div id="upip_file">
+					<label> UPIP File </label>
+					<input type="file" name="table_upip" id="upip_table" class="form-control" required>
+					<input type="hidden" name="project_id" id="project_id" value="{{ project_id }}">
+				</div>
+				<button id="id-deploy-explify-button" type="button" class="btn btn-primary" data-dismiss="modal">Deploy</button>
+				<button id="id-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal"
+					aria-hidden="true">Cancel</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 
 {% endblock content %}
 
@@ -179,6 +216,9 @@
         $('#id-remove-button').click(function () {
             $.unblockUI();
         });
+        $('#id-deploy-explify-button').click(function () {
+            $.unblockUI();
+        });
 	});
 
 	/// set wait screen
@@ -196,12 +236,13 @@
 
 <script type="text/javascript">
     $(document).on("click", "a", function(e){
+		console.log("HELLO");
         var attr = $(this).attr('id');
         var ref_name = $(this).attr('ref_name');
         var tr_to_remove = e.target.parentNode.parentNode.parentNode.id;
-        
+        console.log(tr_to_remove);
         // For some browsers, `attr` is undefined; for others `attr` is false.  Check for both.
-        console.log(attr)
+        console.log(attr);
         if (attr === 'id_reset_parameters_modal'){
             $('#id-settings-reset').text('Do you want to reset parameters for \'' + ref_name + '\'?');
             $('#id-modal-body-reset-parameters').attr('pk', $(this).attr('pk'));
@@ -214,6 +255,14 @@
                     '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
                     '</div>');
         }
+		else if (attr === "merge_explify_modal"){
+			console.log("merge explify");
+			console.log(ref_name);
+			console.log(tr_to_remove);
+			$('#id-modal-body-deploy-merge-explify').attr('pk', $(this).attr('project_id'));
+			$('#id-modal-body-deploy-merge-explify').attr('project_name', ref_name);
+			$('#id-modal-body-deploy-merge-explify').attr('tr_to_remove', tr_to_remove);
+		}
     });
 
 
@@ -252,6 +301,57 @@
             }
         });
     });
+
+
+	$('#id-deploy-explify-button').on('click', function(){
+		console.log("explify");
+		console.log($("#rpip_table").files);
+		var rpip_file = document.getElementById("rpip_table");
+		var upip_file = document.getElementById("upip_table");
+		console.log(upip_file.files[0]);
+		var project_pk = $('#id-modal-body-deploy-merge-explify').attr('pk');
+		console.log(project_pk);
+		
+		var formData = new FormData();
+
+		formData.append('rpip_file', rpip_file.files[0]);
+		formData.append('upip_file', upip_file.files[0]);
+		formData.append('project_id', project_pk);
+		formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+
+
+		console.log(formData);
+		$.ajax({
+			url: $('#id-modal-body-deploy-merge-explify').attr("deploy-merge-explify-url"),
+			type: 'POST',
+			processData: false,
+			contentType: false,
+			data : formData, // data sent with the post request
+
+			success: function(data) {
+				if (data['is_ok']) {
+					/// remove line
+					document.getElementById($('#id-modal-body-deploy-merge-explify').attr('tr_to_remove')).remove();
+					document.location.reload();
+					/// add message with informaton
+
+					$('#id_messages_set_control').append('<div class="alert alert-dismissible alert-success">' +
+						'Project \'' + $('#id-modal-body-deploy-merge-explify').attr('project_name') + '\' merge explify file successfully.' +
+						'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+						'</div>');
+				}
+				else {
+					/// add message with informaton
+					$('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+						'Project \'' + $('#id-modal-body-deploy-merge-explify').attr('project_name') + '\' merge explify file failed.' +
+						'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+						'</div>');
+				}
+			}
+		})
+	}
+	)
 
 </script>
 

@@ -1457,6 +1457,9 @@ class RunMainTree_class(Run_Deployment_Methods):
             references_table = references_table.sort_values(
                 "read_counts", ascending=False
             )
+            references_table["read_counts"] = references_table["read_counts"].astype(
+                int
+            )
             references_table = references_table[references_table["read_counts"] > 1]
 
             return references_table

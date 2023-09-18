@@ -181,6 +181,7 @@ class Metadata_handler:
             references_table,
             prefix=self.prefix,
             max_remap=1,
+            skip_scrape=True,
         )
 
         self.remap_targets = remap_targets
@@ -571,6 +572,7 @@ class Metadata_handler:
         targets,
         prefix: str,
         max_remap: int = 9,
+        skip_scrape: bool = False,
     ):
         """
         check for presence of taxid in targets in self.accession_to_taxid.
@@ -638,7 +640,8 @@ class Metadata_handler:
                         description = sorted(description, key=len)
 
                     description = description[0]
-                    description = scrape_description(pref, description)
+                    if not skip_scrape:
+                        description = scrape_description(pref, description)
 
                     if description_passes_filter(description, CS.DESCRIPTION_FILTERS):
                         continue

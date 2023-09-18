@@ -10,7 +10,10 @@ from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
 from pathogen_identification.utilities.utilities_general import (
-    description_passes_filter, merge_classes, scrape_description)
+    description_passes_filter,
+    merge_classes,
+    scrape_description,
+)
 
 
 class Metadata_handler:
@@ -178,6 +181,15 @@ class Metadata_handler:
             references_table = references_table.sort_values(
                 by="read_counts", ascending=False
             )
+
+        ## group by taxids
+        references_table = (
+            references_table.groupby(["taxid"])
+            .agg({"acc": "first", "description": "first", "read_counts": "first"})
+            .reset_index()
+        )
+        print(references_table.shape)
+
         # take max 400 taxids
         references_table = references_table.iloc[:400, :]
 

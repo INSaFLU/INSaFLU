@@ -308,6 +308,8 @@ class RunDetail_main:
         }
 
     def check_software_print(self):
+        self.software_check_map()
+
         for module, software in self.module_software_check_map.items():
             print(f"{module} : {software}")
 

@@ -9,8 +9,7 @@ from typing import Type
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.modules.object_classes import (RunCMD,
-                                                            Software_detail)
+from pathogen_identification.modules.object_classes import RunCMD, Software_detail
 
 
 def check_report_empty(file, comment="@"):
@@ -916,12 +915,34 @@ class run_bowtie2(Classifier_init):
     full_report_suffix = ".bowtie2"
 
     def run_SE(self, threads: int = 3):
-        cmd = f"bowtie2 -t --sam-nohead --sam-nosq --no-unal --end-to-end  -x {self.db_path} -U {self.query_path} {self.args} -S {self.report_path}"
+        index_name = self.index_reference()
+        self.process_arguments()
+
+        cmd = f"bowtie2 -t --sam-nohead --sam-nosq -x {index_name} -U {self.query_path} {self.args} -S {self.report_path}"
         self.cmd.run(cmd)
 
     def run_PE(self, threads: int = 3):
-        cmd = f"bowtie2 -t --sam-nohead --sam-nosq --no-unal -x {self.db_path} -1 {self.query_path} -2 {self.r2} --end-to-end {self.args} -S {self.report_path}"
+        index_name = self.index_reference()
+        self.process_arguments()
+
+        cmd = f"bowtie2 -t --sam-nohead --sam-nosq -x {index_name} -1 {self.query_path} -2 {self.r2} {self.args} -S {self.report_path}"
         self.cmd.run(cmd)
+
+    def index_reference(self):
+        """
+        Index reference using bowtie2."""
+        index_name = os.path.splitext(self.db_path)[0] + "_index"
+
+        cmd = ["bowtie2-build", self.db_path, index_name]
+
+        self.cmd.run(cmd)
+
+        return index_name
+
+    def process_arguments(self):
+        """
+        Process arguments to remove preset and mode option flags"""
+        self.args = self.args.replace("[preset]", "").replace("[mode]", "")
 
     def get_report(self) -> pd.DataFrame:
         if check_report_empty(self.report_path):

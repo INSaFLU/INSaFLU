@@ -15,15 +15,28 @@ from pathogen_identification.modules.assembly_class import Assembly_class
 from pathogen_identification.modules.classification_class import Classifier
 from pathogen_identification.modules.metadata_handler import Metadata_handler
 from pathogen_identification.modules.object_classes import (
-    Assembly_results, Contig_classification_results, Read_class,
-    Read_classification_results, Remap_main, Run_detail_report, RunCMD,
-    RunQC_report, Sample_runClass, Software_detail, SoftwareRemap,
-    SoftwareUnit)
+    Assembly_results,
+    Contig_classification_results,
+    Read_class,
+    Read_classification_results,
+    Remap_main,
+    Run_detail_report,
+    RunCMD,
+    RunQC_report,
+    Sample_runClass,
+    Software_detail,
+    SoftwareRemap,
+    SoftwareUnit,
+)
 from pathogen_identification.modules.preprocess_class import Preprocess
-from pathogen_identification.modules.remap_class import (Mapping_Instance,
-                                                         Mapping_Manager)
+from pathogen_identification.modules.remap_class import (
+    Mapping_Instance,
+    Mapping_Manager,
+)
 from pathogen_identification.utilities.televir_parameters import (
-    RemapParams, TelevirParameters)
+    RemapParams,
+    TelevirParameters,
+)
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -835,6 +848,8 @@ class Run_Deployment_Methods(RunDetail_main):
         self.contig_classification_drone.run()
 
     def deploy_METAGENOMICS_CLASSIFICATION_reads(self):
+        print("deploying metagenomics classification reads")
+        print(self.metagenomics_classification_method)
         self.metagenomics_classification_drone = Classifier(
             self.metagenomics_classification_method,
             self.sample.r1.current,
@@ -1423,7 +1438,7 @@ class RunMainTree_class(Run_Deployment_Methods):
     def Prep_Metagenomics_Classification(self):
         def collect_references_table() -> pd.DataFrame:
             references = RawReference.objects.filter(run__sample=self.sample_registered)
-            #references = references.distinct("taxid")
+            # references = references.distinct("taxid")
 
             references_table = pd.DataFrame(references.values())
             return references_table
@@ -1445,7 +1460,7 @@ class RunMainTree_class(Run_Deployment_Methods):
             self.Prep_Metagenomics_Classification()
 
             self.metagenomics_classification_method.set_db(
-                self.remap_manager.combined_fasta_path
+                self.remap_manager.combined_fasta_gz_path
             )
 
             print("DEPLOYING METAGENOMICS CLASSIFICATION")

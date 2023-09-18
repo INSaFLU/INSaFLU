@@ -1926,6 +1926,9 @@ class Mapping_Manager(Tandem_Remap):
                 cmd = f"samtools faidx {target.file} '{accid}' >> {self.combined_fasta_path}"
                 self.cmd.run(cmd)
 
+        cmd_bgzip = f"bgzip {self.combined_fasta_path}"
+        self.cmd.run(cmd_bgzip)
+
     def run_mappings(self):
         for target in self.remap_targets:
             mapped_instance = self.reciprocal_map(target)

@@ -171,7 +171,11 @@ class Metadata_handler:
         references_table = self.filter_references_table(df)
         # references_table = references_table.drop_duplicates(subset=["taxid"])
         references_table.rename(columns={"accid": "acc"}, inplace=True)
+
+        print("MERGE REPORT TO METADATA TAXID")
+        print(references_table.shape)
         references_table = self.merge_report_to_metadata_taxid(references_table)
+        print(references_table.head())
 
         remap_targets, _ = self.generate_mapping_targets(
             references_table,

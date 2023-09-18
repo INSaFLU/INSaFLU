@@ -850,6 +850,7 @@ class Run_Deployment_Methods(RunDetail_main):
     def deploy_METAGENOMICS_CLASSIFICATION_reads(self):
         print("deploying metagenomics classification reads")
         print(self.metagenomics_classification_method)
+
         self.metagenomics_classification_drone = Classifier(
             self.metagenomics_classification_method,
             self.sample.r1.current,

@@ -153,8 +153,24 @@ class Metadata_handler:
 
         return df
 
+    def filter_references_table(self, references_table: pd.DataFrame) -> pd.DataFrame:
+        references_table["taxid"] = references_table["taxid"].astype(str)
+
+        references_table = references_table[references_table.taxid != "0"]
+        references_table = references_table[references_table.taxid != "1"]
+        references_table = references_table[
+            ~references_table.description.isin(["root", "NA"])
+        ]
+        references_table = references_table[~references_table.accid.isin(["-"])]
+
+        references_table["taxid"] = references_table["taxid"].astype(int)
+
+        return references_table
+
     def generate_targets_from_report(self, df: pd.DataFrame):
-        references_table = self.results_collect_metadata(df)
+        references_table = self.filter_references_table(df)
+        # references_table = references_table.drop_duplicates(subset=["taxid"])
+        references_table = self.merge_report_to_metadata_taxid(references_table)
 
         remap_targets, _ = self.generate_mapping_targets(
             references_table,

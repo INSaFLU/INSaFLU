@@ -15,15 +15,28 @@ from pathogen_identification.modules.assembly_class import Assembly_class
 from pathogen_identification.modules.classification_class import Classifier
 from pathogen_identification.modules.metadata_handler import Metadata_handler
 from pathogen_identification.modules.object_classes import (
-    Assembly_results, Contig_classification_results, Read_class,
-    Read_classification_results, Remap_main, Run_detail_report, RunCMD,
-    RunQC_report, Sample_runClass, Software_detail, SoftwareRemap,
-    SoftwareUnit)
+    Assembly_results,
+    Contig_classification_results,
+    Read_class,
+    Read_classification_results,
+    Remap_main,
+    Run_detail_report,
+    RunCMD,
+    RunQC_report,
+    Sample_runClass,
+    Software_detail,
+    SoftwareRemap,
+    SoftwareUnit,
+)
 from pathogen_identification.modules.preprocess_class import Preprocess
-from pathogen_identification.modules.remap_class import (Mapping_Instance,
-                                                         Mapping_Manager)
+from pathogen_identification.modules.remap_class import (
+    Mapping_Instance,
+    Mapping_Manager,
+)
 from pathogen_identification.utilities.televir_parameters import (
-    RemapParams, TelevirParameters)
+    RemapParams,
+    TelevirParameters,
+)
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -1433,7 +1446,6 @@ class RunMainTree_class(Run_Deployment_Methods):
                 table.append(
                     {
                         "taxid": ref.taxid,
-                        "file": ref.file,
                         "description": ref.description,
                         "counts_str": ref.counts,
                         "read_counts": ref.read_counts,
@@ -1445,8 +1457,8 @@ class RunMainTree_class(Run_Deployment_Methods):
             references_table = references_table.sort_values(
                 "read_counts", ascending=False
             )
-            references_table= references_table[references_table["read_counts"] > 1]
-            
+            references_table = references_table[references_table["read_counts"] > 1]
+
             return references_table
 
         print("COLLECTING")

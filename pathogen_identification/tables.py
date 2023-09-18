@@ -521,7 +521,7 @@ class SampleTable(tables.Table):
             return mark_safe(record_name)
 
         record_name = (
-            '<a href="#" id="deploypi_sample_btn" class="kill-button" data-toggle="modal" data-toggle="tooltip" title="Run"'
+            '<a href="#" id="deploypi_sample_btn" class="kill-button" data-toggle="modal" data-toggle="tooltip" title="Run Televir"'
             + ' ref_name="'
             + record.name
             + '"sample_id="'
@@ -552,7 +552,7 @@ class SampleTable(tables.Table):
             parameters = (
                 "<a href="
                 + reverse("pathogenID_sample_settings", kwargs={"sample": record.pk})
-                + ' data-toggle="tooltip" title="Manage settings">'
+                + ' data-toggle="tooltip" title="Manage combine settings">'
                 + f'<span ><i class="padding-button-table fa fa-pencil-square padding-button-table" {color}></i></span></a>'
             )
 
@@ -560,7 +560,7 @@ class SampleTable(tables.Table):
                 "<a "
                 + 'href="#id_deploy_metagenomics_modal" data-toggle="modal" data-toggle="tooltip" '
                 + 'id="deploy_metagenomics_modal" '
-                + 'title="Deploy Metagenomics"'
+                + 'title="Run combined metagenomics"'
                 + f"pk={record.pk} "
                 + f"ref_name={record.name} "
                 + '><i class="fa fa-paw"></i></span> </a>'

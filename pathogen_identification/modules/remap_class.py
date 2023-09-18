@@ -1910,20 +1910,32 @@ class Mapping_Manager(Tandem_Remap):
         self.combined_fasta_path = os.path.join(
             self.remapping_methods.output_dir, self.combined_fasta_filename
         )
+        self.combined_fasta_gz_path = self.combined_fasta_path + ".gz"
         self.remap_params = remap_params
         self.cmd = RunCMD(bin, logdir=self.logdir, prefix=prefix, task="remapping_main")
 
     def check_targets_combined_fasta_exists(self):
-        return os.path.exists(self.combined_fasta_path)
+        return os.path.exists(self.combined_fasta_gz_path)
 
     def generate_remap_targets_fasta(self):
         if self.check_targets_combined_fasta_exists():
             return
         open(self.combined_fasta_path, "w", encoding="utf-8").close()
 
+        def process_accid(accid):
+            if "kraken:taxid" in accid:
+                accid = accid.split("|")[-1]
+            if ":" in accid:
+                accid = accid.split(":")[0]
+            if accid.endswith(";"):
+                accid = accid[:-1]
+
+            return accid
+
         for target in self.remap_targets:
             for accid in target.accid_in_file:
-                cmd = f"samtools faidx {target.file} '{accid}' >> {self.combined_fasta_path}"
+                accid_clean = process_accid(accid)
+                cmd = f"samtools faidx {target.file} '{accid_clean}' >> {self.combined_fasta_path}"
                 self.cmd.run(cmd)
 
         cmd_bgzip = f"bgzip {self.combined_fasta_path}"

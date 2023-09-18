@@ -15,28 +15,15 @@ from pathogen_identification.modules.assembly_class import Assembly_class
 from pathogen_identification.modules.classification_class import Classifier
 from pathogen_identification.modules.metadata_handler import Metadata_handler
 from pathogen_identification.modules.object_classes import (
-    Assembly_results,
-    Contig_classification_results,
-    Read_class,
-    Read_classification_results,
-    Remap_main,
-    Run_detail_report,
-    RunCMD,
-    RunQC_report,
-    Sample_runClass,
-    Software_detail,
-    SoftwareRemap,
-    SoftwareUnit,
-)
+    Assembly_results, Contig_classification_results, Read_class,
+    Read_classification_results, Remap_main, Run_detail_report, RunCMD,
+    RunQC_report, Sample_runClass, Software_detail, SoftwareRemap,
+    SoftwareUnit)
 from pathogen_identification.modules.preprocess_class import Preprocess
-from pathogen_identification.modules.remap_class import (
-    Mapping_Instance,
-    Mapping_Manager,
-)
+from pathogen_identification.modules.remap_class import (Mapping_Instance,
+                                                         Mapping_Manager)
 from pathogen_identification.utilities.televir_parameters import (
-    RemapParams,
-    TelevirParameters,
-)
+    RemapParams, TelevirParameters)
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -320,6 +307,10 @@ class RunDetail_main:
             CS.PIPELINE_NAME_remap_filtering: self.remapping_filtering,
         }
 
+    def check_software_print(self):
+        for module, software in self.module_software_check_map.items():
+            print(f"{module} : {software}")
+
     def set_methods(self, config: dict, method_args: pd.DataFrame):
         self.set_settings_dict()
 
@@ -514,6 +505,7 @@ class RunDetail_main:
         ### set software methods and actions
 
         self.set_methods(config, method_args)
+        self.check_software_print()
 
         ### set default actions
         self.subsample = False

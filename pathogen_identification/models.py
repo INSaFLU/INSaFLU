@@ -2,6 +2,7 @@ import codecs
 import datetime
 import os
 
+import numpy as np
 import pandas as pd
 from django import forms
 from django.contrib.auth.models import User
@@ -814,6 +815,63 @@ class RawReference(models.Model):
     description = models.CharField(max_length=100, blank=True, null=True)
     counts = models.CharField(max_length=100, blank=True, null=True)
     classification_source = models.CharField(max_length=15, blank=True, null=True)
+
+    @property
+    def classification_source_str(self):
+        if self.classification_source == "1":
+            return "reads"
+
+        if self.classification_source == "2":
+            return "contigs"
+
+        if self.classification_source == "3":
+            return "reads / contigs"
+
+        return "unknown"
+
+    @property
+    def read_counts(self):
+        if self.classification_source == "1":
+            return self.counts
+
+        if self.classification_source == "2":
+            return "NA"
+
+        if self.counts is None:
+            return "NA"
+
+        if self.classification_source == "3":
+            return self.counts.split("/")[0]
+
+        return "unknown"
+
+    @property
+    def contig_counts(self):
+        if self.classification_source == "1":
+            return "NA"
+
+        if self.classification_source == "2":
+            return self.counts
+
+        if self.counts is None:
+            return "NA"
+
+        if self.classification_source == "3":
+            return self.counts.split("/")[1]
+
+        return "unknown"
+
+    @property
+    def counts_int_array(self):
+        return np.array([self.read_counts, self.contig_counts], dtype=np.int64)
+
+    def update_raw_reference_status_mapped(self):
+        self.status = self.STATUS_MAPPED
+        self.save()
+
+    def update_raw_reference_status_fail(self):
+        self.status = self.STATUS_FAIL
+        self.save()
 
 
 class RunRemapMain(models.Model):

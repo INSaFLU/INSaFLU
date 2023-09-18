@@ -531,6 +531,34 @@ class DefaultSoftware(object):
 
         if PICS.TEST_SOFTWARE:
             self.test_defaults_test_televir(user)
+        if PICS.METAGENOMICS:
+            self.test_defaults_metagenomics(user)
+
+    def test_defaults_metagenomics(self, user):
+        """
+        test if exist, if not persist in database, for metagenomics"""
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name,
+            self.default_parameters.get_minimap2_remap_ONT_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_metagenomics_combine,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name,
+            self.default_parameters.get_bowtie2_remap_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_metagenomics_combine,
+            ),
+            user,
+        )
 
     def test_defaults_test_televir(self, user):
         """

@@ -761,7 +761,7 @@ class Televir_Project_Test(TestCase):
 
                 self.assertEqual(configured, True)
                 self.assertEqual(
-                    run.container.config["sample_name"], run.container.sample
+                    run.container.config["sample_name"], run.container.sample.name
                 )
                 self.assertEqual(
                     os.path.join(

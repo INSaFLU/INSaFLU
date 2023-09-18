@@ -517,24 +517,62 @@ class SampleTable(tables.Table):
         if CS.DEPLOYMENT_DEFAULT == CS.DEPLOYMENT_TYPE_PIPELINE:
             TELEVIR_DEPLOY_URL = "submit_televir_runs_project_sample"
 
-        if user.username == record.project.owner.username:
-            record_name = (
-                '<a href="#" id="deploypi_sample_btn" class="kill-button" data-toggle="modal" data-toggle="tooltip" title="Run"'
-                + ' ref_name="'
-                + record.name
-                + '"sample_id="'
-                + str(record.pk)
-                + '" deploy-url="'
-                + reverse(
-                    TELEVIR_DEPLOY_URL,
-                )
-                + '"'
-                + '"><i class="fa fa-flask"></i></span> </a>'
+        if user.username != record.project.owner.username:
+            return mark_safe(record_name)
+
+        record_name = (
+            '<a href="#" id="deploypi_sample_btn" class="kill-button" data-toggle="modal" data-toggle="tooltip" title="Run"'
+            + ' ref_name="'
+            + record.name
+            + '"sample_id="'
+            + str(record.pk)
+            + '" deploy-url="'
+            + reverse(
+                TELEVIR_DEPLOY_URL,
+            )
+            + '"'
+            + '"><i class="fa fa-flask"></i></span> </a>'
+        )
+
+        if (
+            ParameterSet.objects.filter(
+                sample=record,
+                status=ParameterSet.STATUS_FINISHED,
+            ).count()
+            > 1
+            and CS.METAGENOMICS
+        ):
+            ## add light gray background using span
+
+            color = ""
+
+            ## encase following butons in a tooltip
+            metagen_buttons = " <span class='tooltip-wrap' data-toggle='tooltip' style='display: inline-block; visibility: visible;' >"
+
+            parameters = (
+                "<a href="
+                + reverse("pathogenID_sample_settings", kwargs={"sample": record.pk})
+                + ' data-toggle="tooltip" title="Manage settings">'
+                + f'<span ><i class="padding-button-table fa fa-pencil-square padding-button-table" {color}></i></span></a>'
             )
 
-        if active_runs.count() > 0:
-            color = 'style="color: red;"'
+            deploy_metagenomics = (
+                "<a "
+                + 'href="#id_deploy_metagenomics_modal" data-toggle="modal" data-toggle="tooltip" '
+                + 'id="deploy_metagenomics_modal" '
+                + 'title="Deploy Metagenomics"'
+                + f"pk={record.pk} "
+                + f"ref_name={record.name} "
+                + '><i class="fa fa-paw"></i></span> </a>'
+            )
 
+            metagen_buttons = (
+                metagen_buttons + parameters + deploy_metagenomics + "</span>"
+            )
+
+            record_name += metagen_buttons
+
+        if active_runs.count() > 0:
             record_name += (
                 '<a href="#id_kill_modal" id="id_kill_reference_modal" data-toggle="modal" data-toggle="tooltip" title="Cancel"'
                 + ' ref_name="'
@@ -546,7 +584,7 @@ class SampleTable(tables.Table):
 
         return mark_safe(record_name)
 
-    def render_name(self, record):
+    def render_name(self, record: PIProject_Sample):
         from crequest.middleware import CrequestMiddleware
 
         current_request = CrequestMiddleware.get_request()
@@ -596,6 +634,63 @@ class SampleTable(tables.Table):
     report = tables.LinkColumn(
         "sample_main", text="Report", args=[tables.A("project__pk"), tables.A("pk")]
     )
+
+
+class SampleTableMetagenomics(SampleTable):
+    combined_analysis = tables.Column(
+        "Combined Analysis", orderable=False, empty_values=()
+    )
+
+    class Meta:
+        model = PIProject_Sample
+
+        attrs = {"class": "paleblue"}
+        fields = (
+            "name",
+            "report",
+            "combined_analysis",
+            "runs",
+            "sorting",
+            "deploy",
+            "input",
+            "combinations",
+            "running_processes",
+            "queued_processes",
+            "set_control",
+        )
+
+    def render_combined_analysis(self, record):
+        """
+        row with two buttons, one for settings, one for deploy
+        """
+        color = ""
+        parameters = (
+            "<a href="
+            + reverse("pathogenID_sample_settings", kwargs={"sample": record.pk})
+            + ' data-toggle="tooltip" title="Manage settings">'
+            + f'<span ><i class="padding-button-table fa fa-pencil padding-button-table" {color}></i></span></a>'
+        )
+
+        deploy_metagenomics = (
+            "<a "
+            + 'href="#id_deploy_metagenomics_modal" data-toggle="modal" data-toggle="tooltip" '
+            + 'id="deploy_metagenomics_modal" '
+            + 'title="Deploy Metagenomics"'
+            + f"pk={record.pk} "
+            + f"ref_name={record.name} "
+            + '><i class="fa fa-flask"></i></span> </a>'
+        )
+
+        if (
+            ParameterSet.objects.filter(
+                sample=record,
+                status=ParameterSet.STATUS_FINISHED,
+            ).count()
+            > 1
+        ):
+            parameters = parameters + deploy_metagenomics
+
+        return mark_safe(parameters)
 
 
 class RawReferenceTable(tables.Table):

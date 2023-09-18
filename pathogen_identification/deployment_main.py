@@ -57,7 +57,7 @@ class PathogenIdentification_deployment:
     def __init__(
         self,
         pipeline_index: int,
-        sample,  # sample name
+        sample: PIProject_Sample,  # sample name
         project: str = "test",
         prefix: str = "main",
         username: str = "admin",
@@ -155,7 +155,8 @@ class PathogenIdentification_deployment:
         new_r1_path = self.input_read_project_path(r1_path)
         new_r2_path = self.input_read_project_path(r2_path)
 
-        self.config["sample_name"] = self.sample
+        self.config["sample_registered"] = self.sample
+        self.config["sample_name"] = self.sample.name
         self.config["r1"] = new_r1_path
         self.config["r2"] = new_r2_path
 
@@ -322,7 +323,7 @@ class Run_Main_from_Leaf:
 
         self.container = PathogenIdentification_deployment(
             pipeline_index=pipeline_leaf.index,
-            sample=input_data.name,
+            sample=input_data,
             project=self.project_name,
             prefix=prefix,
             username=self.user.username,
@@ -490,6 +491,20 @@ class Run_Main_from_Leaf:
         try:
             self.container.run_engine.Run_Read_classification()
             self.container.run_engine.Run_Contig_classification()
+            self.container.run_engine.plan_remap_prep_safe()
+            self.container.run_engine.generate_output_data_classes()
+            db_updated = Update_Classification(
+                self.container.run_engine, self.parameter_set
+            )
+            if not db_updated:
+                return False
+        except Exception as e:
+            print(traceback.format_exc())
+            print(e)
+            return False
+
+        try:
+            self.container.run_engine.Run_Metagenomcs_Classification()
             self.container.run_engine.plan_remap_prep_safe()
             self.container.run_engine.generate_output_data_classes()
             db_updated = Update_Classification(

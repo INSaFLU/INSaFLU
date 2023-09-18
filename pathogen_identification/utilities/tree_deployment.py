@@ -52,7 +52,8 @@ copy._deepcopy_dispatch[logging.Logger] = logger_copy
 
 
 class PathogenIdentification_Deployment_Manager:
-    project: str
+    project: Projects
+    sample: PIProject_Sample
     prefix: str
     rdir: str
     threads: int
@@ -84,8 +85,8 @@ class PathogenIdentification_Deployment_Manager:
         threads: int = 3,
     ) -> None:
         self.username = username
-        self.project = project.name
-        self.sample = sample.name
+        self.project = project
+        self.sample = sample
 
         self.deployment_root_dir = deployment_root_dir
         self.dir_branch = dir_branch
@@ -125,7 +126,9 @@ class PathogenIdentification_Deployment_Manager:
         new_r1_path = self.input_read_project_path(self.file_r1)
         new_r2_path = self.input_read_project_path(self.file_r2)
 
-        self.config["sample_name"] = self.sample
+        self.config["sample_name"] = self.sample.name
+        self.config["sample_registered"] = self.sample
+
         self.config["r1"] = new_r1_path
         self.config["r2"] = new_r2_path
         self.config["type"] = [PIConstants.SINGLE_END, PIConstants.PAIR_END][
@@ -143,14 +146,14 @@ class PathogenIdentification_Deployment_Manager:
 
     def generate_config_file(self):
         self.config = {
-            "project": self.project,
+            "project": self.project.name,
             "source": self.install_registry.SOURCE,
             "deployment_root_dir": self.deployment_root_dir,
             "sub_directory": self.dir_branch,
             "directories": {},
             "threads": self.threads,
             "prefix": self.prefix,
-            "project_name": self.project,
+            "project_name": self.project.name,
             "metadata": {
                 x: os.path.join(self.install_registry.METADATA["ROOT"], g)
                 for x, g in self.install_registry.METADATA.items()

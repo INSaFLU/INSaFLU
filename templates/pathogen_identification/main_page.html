@@ -183,6 +183,32 @@
 </div>
 
 
+<!-- The sample metagenomics submit modal -->
+<div class="modal fade" id="id_deploy_metagenomics_modal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <!-- Modal Header -->
+            <div class="modal-header alert alert-warning">
+                <h4 class="modal-title-submit">Submit sample deployment</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+
+            <!-- Modal body -->
+            <div class="modal-body mx-auto mw-100">
+                <div id="id-modal-body-deploy-metagenomics-sample" deploy-metagenomics-single-value-url="{% url 'deploy_metagenomics_televir_project_sample' %}">
+                    <label id="id-label-deploy-metagenomics" class="col-form-label">Folder Name</label>
+                </div>
+            </div>
+            <!-- Modal footer -->
+            <div class="modal-footer" id="id-modal-footer-remove">
+                <button id="id-deploy-metagenomics-button" type="button" class="btn btn-primary" data-dismiss="modal">Deploy</button>
+                <button id="id-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal"
+                    aria-hidden="true">Cancel</button>
+            </div>
+        </div>
+    </div>
+
 <!-- The sample set control Modal -->
 <div class="modal fade" id="id_set_control_modal">
     <div class="modal-dialog">
@@ -223,6 +249,7 @@
 <script>
     $(document).on("click", "a", function (e) {
         console.log("clicked");
+        console.log($(this).attr("id"));
         if ($(this).attr("id") === "id_set_control") {
     
             console.log("set control modal");
@@ -254,14 +281,61 @@
                 $('#id-modal-body-set-control').attr('pk', sample_pk);
                 $('#id-modal-body-set-control').attr('ref_name', ref_name);
             }
-            else if (attr === 'id_add_set_control_message'){
-                $('#id_messages_set_control').append('<div class="alert alert-dismissible alert-warning">' +
-                        'No jobs to deploy.' +
-                        '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-                        '</div>');
-            }
         }
+        else if ($(this).attr("id") === 'id_add_set_control_message'){
+            $('#id_messages_set_control').append('<div class="alert alert-dismissible alert-warning">' +
+                    'No jobs to deploy.' +
+                    '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                    '</div>');
+        }
+        else if ($(this).attr("id") === 'deploy_metagenomics_modal'){
+            console.log("deploying metagenomics modal");
+            var ref_name = $(this).attr('ref_name');
+            var sample_pk = $(this).attr('pk');
+            console.log("HG")
+            console.log(attr);
+            console.log(ref_name);
+            console.log(sample_pk);
+            $('#id-label-deploy-metagenomics').text('Deploy metagenomics combined analysis for sample \'' + ref_name + '\'?');
+            $('#id-modal-body-deploy-metagenomics-sample').attr('sample_id', sample_pk);
+            $('#id-modal-body-deploy-metagenomics-sample').attr('ref_name', ref_name);
+        }
+        
     });
+
+    $('#id-deploy-metagenomics-button').on('click', function(){
+        url= $('#id-modal-body-deploy-metagenomics-sample').attr("deploy-metagenomics-single-value-url");
+        sample_id = $('#id-modal-body-deploy-metagenomics-sample').attr('sample_id');
+        console.log(url);
+        console.log(sample_id);
+        console.log("HIII")
+        $.ajax({
+            url: url, 
+            type: 'POST',
+            data: {
+                sample_id : sample_id,
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+            }, // data sent with the post request
+            success: function(data) {
+                if (data['is_ok'] && data['is_deployed']){
+                    /// add message with informaton
+                    $('#id_messages_deploy_metagenomics').append('<div class="alert alert-dismissible alert-success">' +
+                    'The sample \'' + $('#id-modal-body-deploy-metagenomics-sample').attr('ref_name') + '\' was successfully deployed.' +
+                    '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                    '</div>');
+                    location.reload() 
+                }
+                else{
+                    /// add message with informaton
+                    $('#id_messages_deploy_metagenomics').append('<div class="alert alert-dismissible alert-warning">' +
+                    'The sample \'' + $('#id-modal-body-deploy-metagenomics-sample').attr('ref_name') + '\' was not deployed.' +
+                    '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                    '</div>');
+                }
+            }
+        })
+    }
+    )
     
     
     $('#id-set-control-button').on('click', function(){
@@ -318,6 +392,22 @@
     window.onbeforeunload = function (e) {
         $.unblockUI();
     };
+	$(document).ready(function () {
+		$('#id-cancel-button').click(function () {
+			$.unblockUI();
+		});
+        $('#id-remove-button').click(function () {
+            $.unblockUI();
+        });
+        $('#id-deploy-metagenomics-button').click(function () {
+            $.unblockUI();
+        });
+		// unblock when click in button class close
+		$('.close').click(function () {
+			$.unblockUI();
+		});
+	});
+
 </script>
 
 <script>

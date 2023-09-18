@@ -5,8 +5,9 @@ Created on 29/11/2021
 """
 import logging
 
-from constants.software_names import SoftwareNames
 from django.core.management import BaseCommand
+
+from constants.software_names import SoftwareNames
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.models import PipelineStep, Software, Technology
@@ -83,6 +84,9 @@ class Command(BaseCommand):
                             0
                         ].software.pipeline_step
                         software.save()
+
+                if vect_parameters is None:
+                    continue
                 elif (
                     software.pipeline_step.name
                     != vect_parameters[0].software.pipeline_step.name

@@ -78,21 +78,6 @@ class Televir_Metadata_Constants:
         CS.PIPELINE_NAME_assembly: {"default": "assembly/assembly"},
     }
 
-    DIRS = {
-        CS.PIPELINE_NAME_read_quality_analysis: "reads/clean/",
-        CS.PIPELINE_NAME_extra_qc: "reads/clean/",
-        "reads_depleted_dir": "reads/hd_filtered/",
-        "reads_enriched_dir": "reads/enriched/",
-        CS.PIPELINE_NAME_host_depletion: "host_depletion/",
-        CS.PIPELINE_NAME_viral_enrichment: "enrichment/",
-        CS.PIPELINE_NAME_assembly: "assembly/",
-        CS.PIPELINE_NAME_contig_classification: "classification/assembly/",
-        CS.PIPELINE_NAME_read_classification: "classification/reads/",
-        CS.PIPELINE_NAME_remapping: "remap/",
-        "log_dir": "logs/",
-        "OUTD": "output/",
-    }
-
 
 class Constants(object):
     """

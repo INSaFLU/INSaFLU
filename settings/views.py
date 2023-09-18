@@ -11,7 +11,9 @@ from datasets.models import Dataset, DatasetConsensus
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project, ProjectSample, Sample
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
+from pathogen_identification.models import PIProject_Sample
 from pathogen_identification.models import Projects as Televir_Project
 from settings.constants_settings import ConstantsSettings
 from settings.default_software import DefaultSoftware
@@ -41,6 +43,157 @@ class index(TemplateView):
 
 class Maintenance(TemplateView):
     template_name = "settings/maintenance.html"
+
+
+class PIMetagenSampleView(LoginRequiredMixin, ListView):
+    """
+    Home page
+    """
+
+    #     model = Software
+    #     context_object_name = 'software'
+    template_name = "settings/settings.html"
+
+    def get_queryset(self):
+        """overwrite queryset to not get all software itens available in Software table"""
+        return []
+
+    def duplicate_metagenomics_software(
+        self, project: Televir_Project, sample: PIProject_Sample
+    ):
+        query_set = Software.objects.filter(
+            owner=self.request.user,
+            type_of_use__in=[
+                Software.TYPE_OF_USE_televir_global,
+                Software.TYPE_OF_USE_televir_settings,
+            ],
+            type_of_software__in=[
+                Software.TYPE_SOFTWARE,
+                Software.TYPE_INSAFLU_PARAMETER,
+            ],
+            is_obsolete=False,
+            technology__name=project.technology,
+            parameter__televir_project=None,
+            parameter__televir_project_sample=None,
+            pipeline_step__name__in=[
+                ConstantsSettings.PIPELINE_NAME_metagenomics_combine,
+                ConstantsSettings.PIPELINE_NAME_remapping,
+                ConstantsSettings.PIPELINE_NAME_remap_filtering,
+                ConstantsSettings.PIPELINE_NAME_reporting,
+            ],
+        )
+        project = Televir_Project.objects.get(pk=project.pk)
+        for software in query_set:
+            software_parameters = Parameter.objects.filter(
+                software=software,
+            )
+
+            software.pk = None
+            if software.type_of_use == Software.TYPE_OF_USE_televir_global:
+                software.type_of_use = Software.TYPE_OF_USE_televir_project
+            else:
+                software.type_of_use = Software.TYPE_OF_USE_televir_project_settings
+
+            try:
+                Software.objects.get(
+                    name=software.name,
+                    type_of_use=software.type_of_use,
+                    parameter__televir_project=project,
+                    parameter__televir_project_sample=sample,
+                    pipeline_step=software.pipeline_step,
+                )
+
+            except Software.MultipleObjectsReturned:
+                pass
+
+            except Software.DoesNotExist:
+                software.save()
+                for parameter in software_parameters:
+                    parameter.pk = None
+                    parameter.software = software
+                    parameter.televir_project = project
+                    parameter.televir_project_sample = sample
+                    parameter.save()
+
+    def get_context_data(self, **kwargs):
+        context = super(PIMetagenSampleView, self).get_context_data(**kwargs)
+
+        sample_id = int(self.kwargs.get("sample", 0))
+        sample = PIProject_Sample.objects.get(pk=sample_id)
+        televir_project = sample.project
+
+        self.duplicate_metagenomics_software(televir_project, sample)
+
+        technologies = [televir_project.technology]
+        all_tables = []  ## order by Technology, PipelineStep, table
+        ## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],
+        ##    [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...], etc
+        ## Technology goes to NAV-container, PipelineStep goes to NAV-container, then table
+        ## Mix parameters with software
+        ### IMPORTANT, must have technology__name, because old versions don't
+        constant_settings = ConstantsSettings()
+        print("HIII")
+
+        condensed_pipeline_names = (
+            constant_settings.vect_pipeline_televir_metagenomics_condensed
+        )
+        for technology in technologies:  ## run over all technology
+            vect_pipeline_step = []
+            for pipeline_step_name, pipeline_steps in condensed_pipeline_names.items():
+                # for (
+                #    pipeline_step_name
+                # ) in ConstantsSettings.vect_pipeline_televir_metagenomics:
+                query_set = Software.objects.filter(
+                    owner=self.request.user,
+                    type_of_use__in=Software.TELEVIR_PROJECT_TYPES,
+                    type_of_software__in=[
+                        Software.TYPE_SOFTWARE,
+                        Software.TYPE_INSAFLU_PARAMETER,
+                    ],
+                    technology__name=technology,
+                    pipeline_step__name__in=pipeline_steps,
+                    parameter__televir_project=televir_project,
+                    parameter__televir_project_sample=sample,
+                    is_obsolete=False,
+                ).distinct()
+
+                print(query_set)
+
+                ### if there are software
+                if query_set.count() > 0:
+                    vect_pipeline_step.append(
+                        [
+                            "{}_{}".format(
+                                pipeline_step_name.replace(" ", "").replace("/", ""),
+                                technology.replace(" ", "").replace("/", ""),
+                            ),
+                            pipeline_step_name,
+                            SoftwaresTable(query_set, televir_project=televir_project),
+                        ]
+                    )
+            ## if there is software for the pipeline step
+            if len(vect_pipeline_step) > 0:
+                all_tables.append(
+                    [
+                        technology.replace(" ", "").replace("/", ""),
+                        technology,
+                        vect_pipeline_step,
+                    ]
+                )
+
+        context["all_softwares"] = all_tables
+        context["nav_settings"] = True
+        ## True for global softwares
+        if televir_project:
+            context["settings_pathid_project"] = True  ## True for project softwares
+            context["project_name"] = televir_project.name
+            context["project_id"] = televir_project.pk
+        else:
+            context["settings_pathogenid"] = True
+        context[
+            "show_info_main_page"
+        ] = ShowInfoMainPage()  ## show main information about the institute
+        return context
 
 
 class PISettingsView(LoginRequiredMixin, ListView):
@@ -212,8 +365,9 @@ class PISettingsView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super(PISettingsView, self).get_context_data(**kwargs)
         televir_project = None
+        level = int(self.kwargs.get("level", 0))
 
-        if int(self.kwargs["level"]) > 0:
+        if level > 0:
             televir_project = Televir_Project.objects.get(pk=int(self.kwargs["level"]))
         ### test all defaults first, if exist in database
         default_software = DefaultSoftware()

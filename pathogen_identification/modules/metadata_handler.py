@@ -111,7 +111,6 @@ class Metadata_handler:
             self.merged_targets,
             prefix=self.prefix,
             max_remap=max_remap,
-            fasta_main_dir=self.config["source"]["REF_FASTA"],
         )
 
         self.remap_targets = remap_targets
@@ -154,7 +153,20 @@ class Metadata_handler:
 
         return df
 
-    def results_process(self, df: pd.DataFrame, sift: bool = True) -> pd.DataFrame:
+    def generate_targets_from_report(self, df: pd.DataFrame):
+        references_table = self.results_collect_metadata(df)
+
+        remap_targets, _ = self.generate_mapping_targets(
+            references_table,
+            prefix=self.prefix,
+            max_remap=1,
+        )
+
+        self.remap_targets = remap_targets
+
+    def results_collect_metadata(
+        self, df: pd.DataFrame, sift: bool = True
+    ) -> pd.DataFrame:
         """
         Process results.
         merge df with metadata to create taxid columns.
@@ -444,8 +456,8 @@ class Metadata_handler:
         report_1: pd.DataFrame,
         report_2: pd.DataFrame,
     ):
-        self.rclass = self.results_process(report_1)
-        self.aclass = self.results_process(report_2)
+        self.rclass = self.results_collect_metadata(report_1)
+        self.aclass = self.results_collect_metadata(report_2)
 
     def get_taxid_representative_accid(self, taxid: int) -> str:
         """
@@ -538,7 +550,6 @@ class Metadata_handler:
         targets,
         prefix: str,
         max_remap: int = 9,
-        fasta_main_dir: str = "",
     ):
         """
         check for presence of taxid in targets in self.accession_to_taxid.
@@ -546,6 +557,7 @@ class Metadata_handler:
         for each accession ID.
 
         """
+        fasta_main_dir = self.config["source"]["REF_FASTA"]
 
         remap_targets = []
         remap_absent = []

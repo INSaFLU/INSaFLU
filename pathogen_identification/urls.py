@@ -91,6 +91,11 @@ urlpatterns = [
         name="scaffold_remap",
     ),
     url(
+        r"ajax/submit_sample_metagenomics_televir$",
+        PIajax_views.submit_sample_metagenomics_televir,
+        name="deploy_metagenomics_televir_project_sample",
+    ),
+    url(
         r"ajax/deploy_ProjectPI$",
         PIajax_views.deploy_ProjectPI,
         name="deploy_ProjectPI",

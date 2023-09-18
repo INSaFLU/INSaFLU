@@ -11,8 +11,10 @@ from constants.software_names import SoftwareNames
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project, ProjectSample, Sample
+from pathogen_identification.models import PIProject_Sample
 from pathogen_identification.models import Projects as PIProjects
-from pathogen_identification.utilities.utilities_pipeline import Pipeline_Makeup
+from pathogen_identification.utilities.utilities_pipeline import \
+    Pipeline_Makeup
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software import DefaultSoftware
@@ -721,6 +723,7 @@ def turn_on_off_software(request):
         project_sample_id_a = "project_sample_id"
         type_of_use_id_a = "type_of_use_id"
         televir_project_id_a = "televir_project_id"
+        televir_project_sample_id_a = "televir_project_sample_id"
 
         ## some pre-requisites
         if not request.user.is_active or not request.user.is_authenticated:
@@ -737,6 +740,7 @@ def turn_on_off_software(request):
         sample_id = None
         project_id = None
         televir_project_id = None
+        televir_project_sample_id = None
         project_sample_id = None
         type_of_use_id = None
 
@@ -750,6 +754,8 @@ def turn_on_off_software(request):
             project_id = request.GET[project_id_a]
         elif project_sample_id_a in request.GET:
             project_sample_id = request.GET[project_sample_id_a]
+        elif televir_project_sample_id_a in request.GET:
+            televir_project_sample_id = request.GET[televir_project_sample_id_a]
 
         default_parameters = DefaultParameters()
         if software_id_a in request.GET:
@@ -764,6 +770,28 @@ def turn_on_off_software(request):
                 )
                 software = Software.objects.get(pk=software_id)
                 current_is_to_run = software.is_to_run
+                if not televir_project_sample_id is None:
+                    televir_project_sample = PIProject_Sample.objects.get(
+                        pk=televir_project_sample_id
+                    )
+                    pipeline_steps_project_sample = (
+                        pipeline_makeup.get_pipeline_makeup_result_of_operation(
+                            software,
+                            turn_off=current_is_to_run,
+                            project_sample=televir_project_sample,
+                        )
+                    )
+
+                    makeup = pipeline_makeup.match_makeup_name_from_list(
+                        pipeline_steps_project_sample
+                    )
+                    if makeup is None:
+                        data[
+                            "message"
+                        ] = f"You cannot perform this operation. Project '{televir_project_sample.project.name}' with sample '{televir_project_sample.sample.name}' would not meet minimum pipeline step requirements."
+
+                        return JsonResponse(data)
+
                 if not televir_project_id is None:
                     televir_project = PIProjects.objects.get(pk=televir_project_id)
                     pipeline_steps_project = (

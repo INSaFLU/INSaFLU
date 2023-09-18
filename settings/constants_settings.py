@@ -34,6 +34,7 @@ class ConstantsSettings(object):
     PIPELINE_NAME_host_depletion = "Host depletion"
     PIPELINE_NAME_contig_classification = "Contig classification"
     PIPELINE_NAME_read_classification = "Read classification"
+    PIPELINE_NAME_metagenomics_combine = "Combined analysis"
     PIPELINE_NAME_assembly = "Assembly"
     PIPELINE_NAME_remapping = "Remapping"
     PIPELINE_NAME_remap_filtering = "Remap filtering"
@@ -58,6 +59,13 @@ class ConstantsSettings(object):
         PIPELINE_NAME_reporting,
     ]
 
+    vect_pipeline_televir_metagenomics = [
+        PIPELINE_NAME_metagenomics_combine,
+        PIPELINE_NAME_remapping,
+        PIPELINE_NAME_remap_filtering,
+        PIPELINE_NAME_reporting,
+    ]
+
     ###############################
     ### technology available
     TECHNOLOGY_illumina_old = "Illumina"
@@ -75,6 +83,16 @@ class ConstantsSettings(object):
         TECHNOLOGY_Undefined,
     ]
 
+    @staticmethod
+    def reverse_set_dict(dict: Dict[str, str]):
+        new_dict: Dict[str, list] = {}
+        for key, value in dict.items():
+            if value not in new_dict:
+                new_dict[value] = []
+
+            new_dict[value].append(key)
+        return new_dict
+
     @property
     def vect_pipeline_names_condensed(self) -> Dict[str, List[str]]:
         pipeline_steps_dict = {
@@ -82,16 +100,18 @@ class ConstantsSettings(object):
             for pipeline_step in self.vect_pipeline_names
         }
 
-        def reverse_set_dict(dict: Dict[str, str]):
-            new_dict: Dict[str, list] = {}
-            for key, value in dict.items():
-                if value not in new_dict:
-                    new_dict[value] = []
+        pipeline_names_dict = self.reverse_set_dict(pipeline_steps_dict)
 
-                new_dict[value].append(key)
-            return new_dict
+        return pipeline_names_dict
 
-        pipeline_names_dict = reverse_set_dict(pipeline_steps_dict)
+    @property
+    def vect_pipeline_televir_metagenomics_condensed(self) -> Dict[str, List[str]]:
+        pipeline_steps_dict = {
+            pipeline_step: self.pipeline_step_to_pipeline_name(pipeline_step)
+            for pipeline_step in self.vect_pipeline_televir_metagenomics
+        }
+
+        pipeline_names_dict = self.reverse_set_dict(pipeline_steps_dict)
 
         return pipeline_names_dict
 

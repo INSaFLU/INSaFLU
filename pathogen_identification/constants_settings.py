@@ -36,6 +36,14 @@ class ConstantsSettings:
     ################################### Pipeline steps
 
     METAGENOMICS = True
+    METAGENOMICS_file_limit = 1000000
+
+    ################################### pipeline_deployment_type
+
+    DEPLOYMENT_TYPE_TREE = "tree"
+    DEPLOYMENT_TYPE_PIPELINE = "pipeline"
+
+    DEPLOYMENT_DEFAULT = DEPLOYMENT_TYPE_PIPELINE
 
     ################################### Pipeline model
 
@@ -54,13 +62,6 @@ class ConstantsSettings:
 
     clade_private_proportion = 0.5
     clade_shared_proportion_threshold = 0.05
-
-    ################################### pipeline_deployment_type
-
-    DEPLOYMENT_TYPE_TREE = "tree"
-    DEPLOYMENT_TYPE_PIPELINE = "pipeline"
-
-    DEPLOYMENT_DEFAULT = DEPLOYMENT_TYPE_TREE
 
     ################################### Threads
 
@@ -82,6 +83,7 @@ class ConstantsSettings:
         CS.PIPELINE_NAME_assembly: "assembly/",
         CS.PIPELINE_NAME_contig_classification: "classification/assembly/",
         CS.PIPELINE_NAME_read_classification: "classification/reads/",
+        CS.PIPELINE_NAME_metagenomics_combine: "metagenomics/",
         CS.PIPELINE_NAME_remapping: "remap/",
         "log_dir": "logs/",
         "OUTD": "output/",

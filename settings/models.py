@@ -3,6 +3,7 @@ from django.db import models
 
 from datasets.models import Dataset
 from managing_files.models import Project, ProjectSample, Sample
+from pathogen_identification.models import PIProject_Sample as TelevirProjectSample
 from pathogen_identification.models import Projects as TelevirProject
 
 # Create your models here.
@@ -196,6 +197,14 @@ class Parameter(models.Model):
     project_sample = models.ForeignKey(
         ProjectSample,
         related_name="parameter",
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+    )
+    ### this allow to have televir software parameters in sample
+    televir_project_sample = models.ForeignKey(
+        TelevirProjectSample,
+        related_name="televir_sample_parameter",
         on_delete=models.PROTECT,
         blank=True,
         null=True,

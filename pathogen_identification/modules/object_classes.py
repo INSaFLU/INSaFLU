@@ -647,8 +647,6 @@ class Read_class:
         reads_start = self.get_current_fastq_read_number()
         current_reads = self.get_read_names_fastq()
 
-
-
         read_list_to_keep = list(set(current_reads) - set(read_list))
 
         if len(read_list) > 0:
@@ -1175,6 +1173,13 @@ class Software_detail(SoftwareUnit):
         except IndexError:
             pass
 
+    def set_db(self, filepath, name=""):
+        if name == "":
+            name = os.path.basename(filepath)
+
+        self.db = filepath
+        self.db_name = name
+
     def extract_args(self, method_details: pd.DataFrame):
         try:
             args_string = method_details[
@@ -1223,6 +1228,10 @@ class SoftwareRemap:
     def __init__(self, remap_software: Software_detail, remap_filter: Software_detail):
         self.remap_software = remap_software
         self.remap_filter = remap_filter
+
+    @property
+    def output_dir(self):
+        return self.remap_software.dir
 
 
 class Bedgraph:

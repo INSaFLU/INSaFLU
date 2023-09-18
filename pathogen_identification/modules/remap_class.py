@@ -687,7 +687,7 @@ class Remapping:
         # self.minimum_coverage = minimum_coverage
         self.logdir = log_dir
 
-        self.cmd = RunCMD(bin, logdir=log_dir, prefix=prefix, task="remapping_main")
+        self.cmd = RunCMD(bin, logdir=log_dir, prefix=prefix, task="remapping_instance")
 
         os.makedirs(self.rdir, exist_ok=True)
 
@@ -1833,6 +1833,7 @@ class Mapping_Manager(Tandem_Remap):
     """
 
     mapped_instances: List[Mapping_Instance]
+    combined_fasta_filename: str = "reference_combined.fasta"
 
     def __init__(
         self,
@@ -1906,7 +1907,24 @@ class Mapping_Manager(Tandem_Remap):
                 "Gsize",
             ],
         )
+        self.combined_fasta_path = os.path.join(
+            self.remapping_methods.output_dir, self.combined_fasta_filename
+        )
         self.remap_params = remap_params
+        self.cmd = RunCMD(bin, logdir=self.logdir, prefix=prefix, task="remapping_main")
+
+    def check_targets_combined_fasta_exists(self):
+        return os.path.exists(self.combined_fasta_path)
+
+    def generate_remap_targets_fasta(self):
+        if self.check_targets_combined_fasta_exists():
+            return
+        open(self.combined_fasta_path, "w", encoding="utf-8").close()
+
+        for target in self.remap_targets:
+            for accid in target.accid_in_file:
+                cmd = f"samtools faidx {target.file} '{accid}' >> {self.combined_fasta_path}"
+                self.cmd.run(cmd)
 
     def run_mappings(self):
         for target in self.remap_targets:

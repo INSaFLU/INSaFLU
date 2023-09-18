@@ -11,8 +11,7 @@ from datasets.models import Dataset, DatasetConsensus
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project, ProjectSample, Sample
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.models import PIProject_Sample
 from pathogen_identification.models import Projects as Televir_Project
 from settings.constants_settings import ConstantsSettings
@@ -107,6 +106,7 @@ class PIMetagenSampleView(LoginRequiredMixin, ListView):
                 pass
 
             except Software.DoesNotExist:
+                software.is_to_run = True
                 software.save()
                 for parameter in software_parameters:
                     parameter.pk = None

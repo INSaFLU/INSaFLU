@@ -13,8 +13,7 @@ from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project, ProjectSample, Sample
 from pathogen_identification.models import PIProject_Sample
 from pathogen_identification.models import Projects as PIProjects
-from pathogen_identification.utilities.utilities_pipeline import \
-    Pipeline_Makeup
+from pathogen_identification.utilities.utilities_pipeline import Pipeline_Makeup
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software import DefaultSoftware
@@ -778,6 +777,7 @@ def turn_on_off_software(request):
                         pipeline_makeup.get_pipeline_makeup_result_of_operation(
                             software,
                             turn_off=current_is_to_run,
+                            televir_project=televir_project_sample.project,
                             project_sample=televir_project_sample,
                         )
                     )

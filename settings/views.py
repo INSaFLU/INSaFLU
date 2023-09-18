@@ -11,7 +11,8 @@ from datasets.models import Dataset, DatasetConsensus
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project, ProjectSample, Sample
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from pathogen_identification.models import PIProject_Sample
 from pathogen_identification.models import Projects as Televir_Project
 from settings.constants_settings import ConstantsSettings
@@ -132,7 +133,6 @@ class PIMetagenSampleView(LoginRequiredMixin, ListView):
         ## Mix parameters with software
         ### IMPORTANT, must have technology__name, because old versions don't
         constant_settings = ConstantsSettings()
-        print("HIII")
 
         condensed_pipeline_names = (
             constant_settings.vect_pipeline_televir_metagenomics_condensed
@@ -168,7 +168,7 @@ class PIMetagenSampleView(LoginRequiredMixin, ListView):
                                 technology.replace(" ", "").replace("/", ""),
                             ),
                             pipeline_step_name,
-                            SoftwaresTable(query_set, televir_project=televir_project),
+                            SoftwaresTable(query_set, televir_project_sample=sample),
                         ]
                     )
             ## if there is software for the pipeline step
@@ -223,6 +223,8 @@ class PISettingsView(LoginRequiredMixin, ListView):
             ],
             is_obsolete=False,
             technology__name=project.technology,
+            parameter__televir_project=None,
+            parameter__televir_project_sample=None,
         )
         project = Televir_Project.objects.get(pk=project.pk)
         for software in query_set:
@@ -277,6 +279,7 @@ class PISettingsView(LoginRequiredMixin, ListView):
             is_obsolete=False,
             technology__name=project.technology,
             parameter__televir_project=None,
+            parameter__televir_project_sample=None,
         )
         project = Televir_Project.objects.get(pk=project.pk)
         for software in query_set:
@@ -411,8 +414,10 @@ class PISettingsView(LoginRequiredMixin, ListView):
                         ],
                         technology__name=technology,
                         pipeline_step__name__in=pipeline_steps,
+                        parameter__televir_project=None,
+                        parameter__televir_project_sample=None,
                         is_obsolete=False,
-                    )
+                    ).distinct()
 
                 else:
                     query_set = Software.objects.filter(
@@ -425,6 +430,7 @@ class PISettingsView(LoginRequiredMixin, ListView):
                         technology__name=technology,
                         pipeline_step__name__in=pipeline_steps,
                         parameter__televir_project=televir_project,
+                        parameter__televir_project_sample=None,
                         is_obsolete=False,
                     ).distinct()
 

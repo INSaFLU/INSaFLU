@@ -245,7 +245,7 @@ class Pipeline_Makeup(Pipeline_Graph):
             type_of_use__in=use_types,
             technology=software.technology,
             parameter__televir_project=televir_project,
-            parameter_televir_project_sample=project_sample,
+            parameter__televir_project_sample=project_sample,
             is_to_run=True,
             owner=software.owner,
         ).values_list("pipeline_step__name", flat=True)
@@ -266,6 +266,8 @@ class Pipeline_Makeup(Pipeline_Graph):
         if televir_project:
             use_types = Software.TELEVIR_PROJECT_TYPES
 
+        print("use_types", use_types)
+
         pipeline_steps_project = (
             Software.objects.filter(
                 type_of_use__in=use_types,
@@ -278,6 +280,7 @@ class Pipeline_Makeup(Pipeline_Graph):
             .exclude(pk=software.pk)
             .values_list("pipeline_step__name", flat=True)
         )
+        print("pipeline_steps_project", pipeline_steps_project)
 
         return list(pipeline_steps_project)
 

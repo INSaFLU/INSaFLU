@@ -10,7 +10,8 @@ $('#id-set-turn-on-off-button').on('click', function(){
 	var project_id = $('#id-set-turn-on-off-button').attr('project_id');
 	var project_sample_id = $('#id-set-turn-on-off-button').attr('project_sample_id');
 	var sample_id = $('#id-set-turn-on-off-button').attr('sample_id');
-	var televir_project_id= $('#id-set-turn-on-off-button').attr('televir_project_id');
+	var televir_project_id = $('#id-set-turn-on-off-button').attr('televir_project_id');
+	var televir_project_sample_id = $('#id-set-turn-on-off-button').attr('televir_project_sample_id');
 	var type_of_use_id = $('#id-set-turn-on-off-button').attr('type_of_use_id');
 	//block all page
 	wait_screen();
@@ -24,6 +25,7 @@ $('#id-set-turn-on-off-button').on('click', function(){
         	sample_id : sample_id,
 			type_of_use_id: type_of_use_id,
 			televir_project_id: televir_project_id,
+			televir_project_sample_id: televir_project_sample_id,
     		csrfmiddlewaretoken: '{{ csrf_token }}'
         }, // data sent with the post request
         		
@@ -69,7 +71,8 @@ $(document).on("click", "a", function(e){
 		var software_id = $(this).attr('software_id');
 		var type_of_use_id = $(this).attr('type_of_use_id');
         var technology_id = $(this).attr('technology_id');
-		var televir_project_id= $(this).attr('televir_project_id');
+		var televir_project_id = $(this).attr('televir_project_id');
+		var televir_project_sample_id = $(this).attr('televir_project_sample_id');
 		var project_id = $('#id_show_turn_on_off_modal').attr('project_id');
 		var project_sample_id = $('#id_show_turn_on_off_modal').attr('project_sample_id');
 		var sample_id = $('#id_show_turn_on_off_modal').attr('sample_id');
@@ -97,6 +100,7 @@ $(document).on("click", "a", function(e){
 					$('#id-set-turn-on-off-button').attr('project_sample_id', project_sample_id);
 					$('#id-set-turn-on-off-button').attr('sample_id', sample_id);
 					$('#id-set-turn-on-off-button').attr('televir_project_id', televir_project_id);
+					$('#id-set-turn-on-off-button').attr('televir_project_sample_id', televir_project_sample_id);
 					$('#id-set-turn-on-off-button').attr('type_of_use_id', type_of_use_id);
 					$('#id-set-turn-on-off-button').attr('technology_id', technology_id);
 					$('#id-label-turn-on-off').text(data['message']);

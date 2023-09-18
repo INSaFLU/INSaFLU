@@ -1428,7 +1428,25 @@ class RunMainTree_class(Run_Deployment_Methods):
             references = RawReference.objects.filter(run__sample=self.sample_registered)
             # references = references.distinct("taxid")
 
-            references_table = pd.DataFrame(references.values())
+            table = []
+            for ref in references:
+                table.append(
+                    {
+                        "taxid": ref.taxid,
+                        "file": ref.file,
+                        "description": ref.description,
+                        "counts_str": ref.counts,
+                        "read_counts": ref.read_counts,
+                        "contig_counts": ref.contig_counts,
+                    }
+                )
+
+            references_table = pd.DataFrame(table)
+            references_table = references_table.sort_values(
+                "read_counts", ascending=False
+            )
+            references_table= references_table[references_table["read_counts"] > 1]
+            
             return references_table
 
         print("COLLECTING")

@@ -835,31 +835,31 @@ class RawReference(models.Model):
             return self.counts
 
         if self.classification_source == "2":
-            return "NA"
+            return "0"
 
         if self.counts is None:
-            return "NA"
+            return "0"
 
         if self.classification_source == "3":
             return self.counts.split("/")[0]
 
-        return "unknown"
+        return "NA"
 
     @property
     def contig_counts(self):
         if self.classification_source == "1":
-            return "NA"
+            return "0"
 
         if self.classification_source == "2":
             return self.counts
 
         if self.counts is None:
-            return "NA"
+            return "0"
 
         if self.classification_source == "3":
             return self.counts.split("/")[1]
 
-        return "unknown"
+        return "NA"
 
     @property
     def counts_int_array(self):

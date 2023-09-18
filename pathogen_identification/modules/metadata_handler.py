@@ -10,10 +10,7 @@ from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
 from pathogen_identification.utilities.utilities_general import (
-    description_passes_filter,
-    merge_classes,
-    scrape_description,
-)
+    description_passes_filter, merge_classes, scrape_description)
 
 
 class Metadata_handler:
@@ -174,8 +171,15 @@ class Metadata_handler:
 
         print("MERGE REPORT TO METADATA TAXID")
         print(references_table.shape)
-        references_table = self.merge_report_to_metadata_taxid(references_table)
+        # references_table = self.merge_report_to_metadata_taxid(references_table)
         print(references_table.head())
+
+        if "read_counts" in references_table.columns:
+            references_table = references_table.sort_values(
+                by="read_counts", ascending=False
+            )
+        # take max 400 taxids
+        references_table = references_table.iloc[:400, :]
 
         remap_targets, _ = self.generate_mapping_targets(
             references_table,

@@ -9,7 +9,8 @@ from typing import Type
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.modules.object_classes import RunCMD, Software_detail
+from pathogen_identification.modules.object_classes import (RunCMD,
+                                                            Software_detail)
 
 
 def check_report_empty(file, comment="@"):
@@ -655,7 +656,6 @@ class run_kraken2(Classifier_init):
             f"{threads}",
             "--db",
             self.db_path,
-            "--fastq-input",
             "--gzip-compressed",
             "--output",
             self.report_path,
@@ -1148,7 +1148,7 @@ class run_minimap2_asm(Classifier_init):
     full_report_suffix = ".minimap2"
 
     def run_SE(self, threads: int = 3):
-        cmd = f"minimap2 -t {threads} -cx asm10 {self.args} {self.db_path} {self.query_path} > {self.report_path}"
+        cmd = f"minimap2 -t {threads} -c {self.args} {self.db_path} {self.query_path} > {self.report_path}"
         self.cmd.run(cmd)
 
     def get_report(self) -> pd.DataFrame:
@@ -1181,8 +1181,8 @@ class run_minimap2_asm(Classifier_init):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
         return pd.read_csv(
-            self.report_path, sep="\t", header=None, usecols=[0, 5], comment="@"
-        ).rename(columns={0: "qseqid", 5: "acc"})
+            self.report_path, sep="\t", header=None, usecols=[0, 5, 10], comment="@"
+        ).rename(columns={0: "qseqid", 5: "acc", 10: "length"})
 
 
 class Empty_classifier(Classifier_init):

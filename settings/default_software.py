@@ -565,6 +565,26 @@ class DefaultSoftware(object):
         test if exist, if not persist in database, for televir"""
 
         self.test_default_db(
+            SoftwareNames.SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name,
+            self.default_parameters.get_minimap2_map_assembly_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name,
+            self.default_parameters.get_minimap2_map_assembly_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            ),
+            user,
+        )
+
+        self.test_default_db(
             SoftwareNames.SOFTWARE_KRAKEN2_name,
             self.default_parameters.get_kraken2_default(
                 user,
@@ -1053,6 +1073,18 @@ class DefaultSoftware(object):
         )
         return "" if result is None else result
 
+    def get_minimap2_map_assembly_parameters(self, user):
+        result = self.default_parameters.get_parameters(
+            SoftwareNames.SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name,
+            user,
+            Software.TYPE_OF_USE_televir_global,
+            None,
+            None,
+            None,
+            ConstantsSettings.TECHNOLOGY_minion,
+        )
+        return "" if result is None else result
+
     def get_minimap2_deplete_illumina(self, user):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ILLU_name,
@@ -1396,6 +1428,19 @@ class DefaultSoftware(object):
             )
 
             return self.get_minimap2_deplete_ont_parameters(user)
+
+        if software_name == SoftwareNames.SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name:
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name,
+                self.default_parameters.get_minimap2_map_assembly_default(
+                    user,
+                    Software.TYPE_OF_USE_televir_global,
+                    ConstantsSettings.TECHNOLOGY_minion,
+                ),
+                user,
+            )
+
+            return self.get_minimap2_map_assembly_parameters(user)
 
         if software_name == SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ILLU_name:
             self.test_default_db(

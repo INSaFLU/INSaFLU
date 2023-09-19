@@ -754,6 +754,18 @@ class SoftwareNames(object):
     SOFTWARE_MINIMAP2_DEPLETE_ILLU_VERSION = "2.24"
     SOFTWARE_MINIMAP2_DEPLETE_ILLU_parameters = "-a -x sr -t 4"
 
+    ### Minimap2 Map Assembly
+
+    SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name = "Minimap2_asm"
+    SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name_extended = "Minimap2"
+    SOFTWARE_MINIMAP2_MAP_ASSEMBLY = os.path.join(
+        settings.DIR_SOFTWARE,
+        "assembly/assembly/bin/minimap2",
+    )
+    SOFTWARE_MINIMAP2_MAP_ASSEMBLY_VERSION = "2.24"
+    SOFTWARE_MINIMAP2_MAP_ASSEMBLY_parameters = "-cx asm10"
+    SOFTWARE_MINIMAP2_ASM_vect_available = ["asm5", "asm10", "asm20"]
+
     ### Bowtie2 DEPLETE
 
     SOFTWARE_BOWTIE2_DEPLETE_name = "Bowtie2"

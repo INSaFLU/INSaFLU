@@ -193,6 +193,14 @@ class SoftwareForm(forms.ModelForm):
                         )
                     ]
                 elif (
+                    parameter.name == "-x" and parameter.software.name == "Minimap2_asm"
+                ):
+                    list_data = [
+                        [data_, data_]
+                        for data_ in SoftwareNames.SOFTWARE_MINIMAP2_ASM_vect_available
+                    ]
+
+                elif (
                     parameter.name
                     == SoftwareNames.SOFTWARE_televir_report_layout_flag_name
                 ):

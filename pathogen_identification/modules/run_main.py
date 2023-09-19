@@ -15,28 +15,15 @@ from pathogen_identification.modules.assembly_class import Assembly_class
 from pathogen_identification.modules.classification_class import Classifier
 from pathogen_identification.modules.metadata_handler import Metadata_handler
 from pathogen_identification.modules.object_classes import (
-    Assembly_results,
-    Contig_classification_results,
-    Read_class,
-    Read_classification_results,
-    Remap_main,
-    Run_detail_report,
-    RunCMD,
-    RunQC_report,
-    Sample_runClass,
-    Software_detail,
-    SoftwareRemap,
-    SoftwareUnit,
-)
+    Assembly_results, Contig_classification_results, Read_class,
+    Read_classification_results, Remap_main, Remap_Target, Run_detail_report,
+    RunCMD, RunQC_report, Sample_runClass, Software_detail, SoftwareRemap,
+    SoftwareUnit)
 from pathogen_identification.modules.preprocess_class import Preprocess
-from pathogen_identification.modules.remap_class import (
-    Mapping_Instance,
-    Mapping_Manager,
-)
+from pathogen_identification.modules.remap_class import (Mapping_Instance,
+                                                         Mapping_Manager)
 from pathogen_identification.utilities.televir_parameters import (
-    RemapParams,
-    TelevirParameters,
-)
+    RemapParams, TelevirParameters)
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -643,16 +630,12 @@ class RunDetail_main:
             f"{self.prefix}_mclass_summary.tsv",
         )
 
-    def update_merged_targets(self, targets_df: pd.DataFrame):
+    def update_merged_targets(self, targets_list: List[Remap_Target]):
         """
         Update the merged classification summary file.
         """
 
-        if "taxid" in targets_df.columns:
-            targets_df["taxid"] = targets_df["taxid"].astype(str)
-
-        self.metadata_tool.merged_targets = targets_df
-        self.merged_targets = targets_df
+        self.metadata_tool.remap_targets= targets_list
 
     def Update_exec_time(self):
         """
@@ -895,7 +878,7 @@ class Run_Deployment_Methods(RunDetail_main):
             self.logger_level_detail,
             True,
             remap_params=self.remap_params,
-            logdir=self.config["directories"]["log_dir"],
+            logdir=self.log_dir,
         )
 
     def deploy_REMAPPING(self):
@@ -912,7 +895,7 @@ class Run_Deployment_Methods(RunDetail_main):
             self.logger_level_detail,
             True,
             remap_params=self.remap_params,
-            logdir=self.config["directories"]["log_dir"],
+            logdir=self.log_dir,
         )
 
         self.logger.info(

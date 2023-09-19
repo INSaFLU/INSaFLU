@@ -13,32 +13,22 @@ from django.db.models import QuerySet
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from constants.constants import TypePath
 from fluwebvirus.settings import STATIC_ROOT
-from pathogen_identification.constants_settings import ConstantsSettings as PIConstants
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PIConstants
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RunMain, SoftwareTree,
+                                            SoftwareTreeNode)
+from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunMainTree_class
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.update_DBs_tree import (
-    Update_Assembly,
-    Update_Classification,
-    Update_Remap,
-    Update_RunMain_Initial,
-    Update_RunMain_Secondary,
-    get_run_parents,
-)
+    Update_Assembly, Update_Classification, Update_Remap,
+    Update_RunMain_Initial, Update_RunMain_Secondary, get_run_parents)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Pipeline_Makeup,
-    PipelineTree,
-    Utils_Manager,
-)
+    Pipeline_Makeup, PipelineTree, Utils_Manager)
 from pathogen_identification.utilities.utilities_views import ReportSorter
 from settings.constants_settings import ConstantsSettings
 from utils.utils import Utils
@@ -230,7 +220,7 @@ class PathogenIdentification_Deployment_Manager:
         if "module" in self.run_params_db.columns:
             self.run_engine.Update(self.config, self.run_params_db)
 
-    def update_merged_targets(self, merged_targets: pd.DataFrame):
+    def update_merged_targets(self, merged_targets: List[Remap_Target]):
         self.run_engine.update_merged_targets(merged_targets)
 
     def delete_run_media(self):
@@ -837,30 +827,19 @@ class Tree_Progress:
 
         return nodes
 
-    def merge_node_targets_list(self, targetdf_list: List[Tree_Node]):
-        """
-        Merge targets from a list of nodes
-
-        :param targetdf_list: list of nodes
-        """
-        node_merged_targets = [
-            n.run_manager.run_engine.merged_targets for n in targetdf_list
-        ]
-
-        node_merged_targets = pd.concat(node_merged_targets, axis=0).reset_index()
-
-        return node_merged_targets
-
-    def get_node_node_targets(self, nodes_list: List[Tree_Node]):
+    def get_node_node_targets(self, nodes_list: List[Tree_Node]) -> List[Remap_Target]:
         """
         Get merged targets from a list of nodes
 
         :param nodes_list: list of nodes"""
-        node_merged_targets = self.merge_node_targets_list(nodes_list)
+        combined_list = []
 
-        node_merged_targets = self.process_mapping_managerdf(node_merged_targets)
+        for node in targetdf_list:
+            combined_list.extend(
+                node.run_manager.run_engine.metadata_tool.remap_targets
+            )
 
-        return node_merged_targets
+        return combined_list
 
     @staticmethod
     def process_mapping_managerdf(df: pd.DataFrame):
@@ -936,10 +915,11 @@ class Tree_Progress:
             nodes_by_module[node.module].append(node)
         return nodes_by_module
 
-    def process_subject(self, volonteer: Tree_Node, group_targets: pd.DataFrame):
-        original_targets = copy.deepcopy(
-            volonteer.run_manager.run_engine.merged_targets
-        )
+    def process_subject(self, volonteer: Tree_Node, group_targets: List[Remap_Target]):
+        original_targets = [
+            copy.deepcopy(x)
+            for x in volonteer.run_manager.run_engine.metadata_tool.remap_targets
+        ]
 
         volonteer.run_manager.update_merged_targets(group_targets)
 

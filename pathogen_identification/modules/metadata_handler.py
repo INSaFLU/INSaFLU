@@ -107,14 +107,11 @@ class Metadata_handler:
         #######
         #######
 
-        remap_targets, remap_absent = self.generate_mapping_targets(
+        self.generate_mapping_targets(
             self.merged_targets,
             prefix=self.prefix,
             max_remap=max_remap,
         )
-
-        self.remap_targets = remap_targets
-        self.remap_absent_taxid_list = remap_absent
 
     @staticmethod
     def prettify_reports(df: pd.DataFrame) -> pd.DataFrame:
@@ -193,14 +190,12 @@ class Metadata_handler:
         # take max 400 taxids
         references_table = references_table.iloc[:400, :]
 
-        remap_targets, _ = self.generate_mapping_targets(
+        self.generate_mapping_targets(
             references_table,
             prefix=self.prefix,
             max_remap=1,
             skip_scrape=True,
         )
-
-        self.remap_targets = remap_targets
 
     def results_collect_metadata(
         self, df: pd.DataFrame, sift: bool = True
@@ -695,4 +690,5 @@ class Metadata_handler:
             remap_plan, columns=["taxid", "acc", "file", "description"]
         )
 
-        return remap_targets, remap_absent
+        self.remap_targets = remap_targets
+        self.remap_absent = remap_absent

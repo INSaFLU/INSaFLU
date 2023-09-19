@@ -11,19 +11,15 @@ from Bio.SeqIO.FastaIO import SimpleFastaParser
 from scipy.stats import kstest
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.modules.object_classes import (
-    Bedgraph,
-    Read_class,
-    Remap_Target,
-    RunCMD,
-    Software_detail,
-    SoftwareRemap,
-)
+from pathogen_identification.modules.object_classes import (Bedgraph,
+                                                            Read_class,
+                                                            Remap_Target,
+                                                            RunCMD,
+                                                            Software_detail,
+                                                            SoftwareRemap)
 from pathogen_identification.utilities.televir_parameters import RemapParams
 from pathogen_identification.utilities.utilities_general import (
-    plot_dotplot,
-    read_paf_coordinates,
-)
+    plot_dotplot, read_paf_coordinates)
 
 pd.options.mode.chained_assignment = None
 np.warnings.filterwarnings("ignore")
@@ -1921,6 +1917,9 @@ class Mapping_Manager(Tandem_Remap):
         if self.check_targets_combined_fasta_exists():
             return
         open(self.combined_fasta_path, "w", encoding="utf-8").close()
+        
+        if os.path.exists(self.combined_fasta_gz_path):
+            os.remove(self.combined_fasta_gz_path)
 
         def process_accid(accid):
             if "kraken:taxid" in accid:

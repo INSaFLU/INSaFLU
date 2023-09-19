@@ -2700,7 +2700,7 @@ class DefaultParameters(object):
             True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
         )
 
-        software.is_to_run = True
+        software.is_to_run = False
 
         ###  small description of software
         software.help_text = ""

@@ -27,7 +27,11 @@ from pathogen_identification.models import (
 )
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.utilities_general import get_project_dir
-from pathogen_identification.utilities.utilities_views import ReportSorter
+from pathogen_identification.utilities.utilities_views import (
+    ReportSorter,
+    check_sample_software_exists,
+    duplicate_metagenomics_software,
+)
 from settings.models import Parameter, Software
 
 
@@ -502,7 +506,7 @@ class SampleTable(tables.Table):
         if user.username == record.project.owner.username:
             return mark_safe(record_name)
 
-    def render_deploy(self, record):
+    def render_deploy(self, record: PIProject_Sample):
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
 
@@ -542,6 +546,8 @@ class SampleTable(tables.Table):
             > 1
             and CS.METAGENOMICS
         ):
+            if check_sample_software_exists(record) is False:
+                duplicate_metagenomics_software(record.project, record)
             ## add light gray background using span
 
             color = ""

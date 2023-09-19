@@ -38,7 +38,7 @@ def get_create_zip(file_list: list, outdir: str, zip_file_name: str) -> str:
     return zip_file_path
 
 
-def description_passes_filter(description: str, filter_list: list):
+def description_fails_filter(description: str, filter_list: list):
     """
     Check if description contains any of the strings in filter_list
     """

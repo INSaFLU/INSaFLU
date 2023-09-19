@@ -10,7 +10,7 @@ from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
 from pathogen_identification.utilities.utilities_general import (
-    description_passes_filter,
+    description_fails_filter,
     merge_classes,
     scrape_description,
 )
@@ -659,7 +659,7 @@ class Metadata_handler:
                     if not skip_scrape:
                         description = scrape_description(pref, description)
 
-                    if description_passes_filter(description, CS.DESCRIPTION_FILTERS):
+                    if description_fails_filter(description, CS.DESCRIPTION_FILTERS):
                         continue
 
                     def determine_taxid_in_file(taxid, df: pd.DataFrame):

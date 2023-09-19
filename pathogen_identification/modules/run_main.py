@@ -1439,7 +1439,6 @@ class RunMainTree_class(Run_Deployment_Methods):
     def Prep_Metagenomics_Classification(self):
         def collect_references_table() -> pd.DataFrame:
             references = RawReference.objects.filter(run__sample=self.sample_registered)
-            # references = references.distinct("taxid")
 
             table = []
             for ref in references:

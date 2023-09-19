@@ -24,6 +24,79 @@ from pathogen_identification.utilities.utilities_general import (
     infer_run_media_dir,
     simplify_name,
 )
+from settings.constants_settings import ConstantsSettings
+from settings.models import Parameter, Software
+
+
+def check_sample_software_exists(sample: PIProject_Sample) -> bool:
+    """
+    Return True if sample software exists
+    """
+
+    parameters_exist = Parameter.objects.filter(
+        televir_project=sample.project,
+        televir_project_sample=sample,
+    ).exists()
+
+    return parameters_exist
+
+
+def duplicate_metagenomics_software(project: Projects, sample: PIProject_Sample):
+    owner = project.owner
+    query_set = Software.objects.filter(
+        owner=owner,
+        type_of_use__in=[
+            Software.TYPE_OF_USE_televir_global,
+            Software.TYPE_OF_USE_televir_settings,
+        ],
+        type_of_software__in=[
+            Software.TYPE_SOFTWARE,
+            Software.TYPE_INSAFLU_PARAMETER,
+        ],
+        is_obsolete=False,
+        technology__name=project.technology,
+        parameter__televir_project=None,
+        parameter__televir_project_sample=None,
+        pipeline_step__name__in=[
+            ConstantsSettings.PIPELINE_NAME_metagenomics_combine,
+            ConstantsSettings.PIPELINE_NAME_remapping,
+            ConstantsSettings.PIPELINE_NAME_remap_filtering,
+            ConstantsSettings.PIPELINE_NAME_reporting,
+        ],
+    )
+    project = Projects.objects.get(pk=project.pk)
+    for software in query_set:
+        software_parameters = Parameter.objects.filter(
+            software=software,
+        )
+
+        software.pk = None
+        if software.type_of_use == Software.TYPE_OF_USE_televir_global:
+            software.type_of_use = Software.TYPE_OF_USE_televir_project
+        else:
+            software.type_of_use = Software.TYPE_OF_USE_televir_project_settings
+
+        try:
+            Software.objects.get(
+                name=software.name,
+                type_of_use=software.type_of_use,
+                parameter__televir_project=project,
+                parameter__televir_project_sample=sample,
+                pipeline_step=software.pipeline_step,
+            )
+
+        except Software.MultipleObjectsReturned:
+            pass
+
+        except Software.DoesNotExist:
+            software.is_to_run = True
+            software.save()
+            for parameter in software_parameters:
+                parameter.pk = None
+                parameter.software = software
+                parameter.televir_project = project
+                parameter.televir_project_sample = sample
+                parameter.save()
 
 
 def set_control_reports(project_pk: int):

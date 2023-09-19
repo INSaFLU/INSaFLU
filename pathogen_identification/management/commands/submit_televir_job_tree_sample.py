@@ -100,7 +100,6 @@ class Command(BaseCommand):
         ####
         local_tree = software_utils.generate_project_tree()
         local_paths = local_tree.get_all_graph_paths_explicit()
-        tree_makeup = local_tree.makeup
 
         # pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
         pipeline_tree = software_utils.generate_software_tree_extend(local_tree)

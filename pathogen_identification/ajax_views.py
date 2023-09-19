@@ -52,7 +52,6 @@ def submit_sample_metagenomics_televir(request):
         data = {"is_ok": False, "is_deployed": False}
 
         process_SGE = ProcessSGE()
-        print(request.POST)
 
         sample_id = int(request.POST["sample_id"])
         sample = PIProject_Sample.objects.get(id=int(sample_id))
@@ -61,9 +60,8 @@ def submit_sample_metagenomics_televir(request):
         project = sample.project
 
         software_utils = SoftwareTreeUtils(user, project, sample=sample)
-        runs_to_deploy = software_utils.check_runs_to_deploy_sample(sample)
+        runs_to_deploy = software_utils.check_runs_to_submit_metagenomics_sample(sample)
 
-        print("runs_to_deploy", runs_to_deploy)
         try:
             if len(runs_to_deploy) > 0:
                 for sample, leaves_to_deploy in runs_to_deploy.items():
@@ -215,16 +213,18 @@ def submit_televir_project_sample(request):
     """
     if request.is_ajax():
         data = {"is_ok": False, "is_deployed": False}
-
+        print("submit_televir_project_sample")
         process_SGE = ProcessSGE()
         user = request.user
 
         sample_id = int(request.POST["sample_id"])
+        print("sample_id", sample_id)
         sample = PIProject_Sample.objects.get(id=int(sample_id))
         project = Projects.objects.get(id=int(sample.project.pk))
 
-        software_utils = SoftwareTreeUtils(user, project)
+        software_utils = SoftwareTreeUtils(user, project=project)
         runs_to_deploy = software_utils.check_runs_to_deploy_sample(sample)
+        print("runs_to_deploy", runs_to_deploy)
 
         try:
             if len(runs_to_deploy) > 0:

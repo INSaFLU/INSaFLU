@@ -10,17 +10,15 @@ import pandas as pd
 from django.contrib.auth.models import User
 from django.db.models import Q, QuerySet
 
-from constants.constants import Televir_Directory_Constants as Televir_Directories
+from constants.constants import \
+    Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import (
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
-from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
+from pathogen_identification.models import (ParameterSet, PIProject_Sample,
+                                            Projects, SoftwareTree,
+                                            SoftwareTreeNode)
+from pathogen_identification.utilities.utilities_televir_dbs import \
+    Utility_Repository
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -888,10 +886,13 @@ class Utility_Pipeline_Manager:
         pipe_makeup_manager = Pipeline_Makeup()
 
         pipelines_available = combined_table.pipeline_step.unique().tolist()
+        print(set(pipelines_available))
 
         self.pipeline_makeup = pipe_makeup_manager.match_makeup_name_from_list(
             pipelines_available
         )
+
+        print(self.pipeline_makeup)
 
         if self.pipeline_makeup is None:
             self.logger.info("No pipeline makeup found")
@@ -1586,6 +1587,7 @@ class Parameter_DB_Utility:
         software_available = Software.objects.filter(
             type_of_use__in=Software.TELEVIR_GLOBAL_TYPES,
             technology__name=technology,
+            pipeline_step__name__in=CS.vect_pipeline_names,
             owner=user,
         ).distinct()
 
@@ -1610,6 +1612,8 @@ class Parameter_DB_Utility:
             owner=owner,
             type_of_use__in=Software.TELEVIR_PROJECT_TYPES,
             technology__name=project.technology,
+            parameter__televir_project_sample=None,
+            pipeline_step__name__in=CS.vect_pipeline_names,
             is_to_run=True,
         )
 
@@ -1626,7 +1630,7 @@ class Parameter_DB_Utility:
 
         return software_table, parameters_table
 
-    def get_software_tables_project_sample(
+    def get_software_tables_project_sample_metagenomics(
         self, owner: User, project_sample: PIProject_Sample
     ):
         """
@@ -1637,6 +1641,8 @@ class Parameter_DB_Utility:
             owner=owner,
             type_of_use__in=Software.TELEVIR_PROJECT_TYPES,
             technology__name=project_sample.project.technology,
+            parameter__televir_project_sample=project_sample,
+            pipeline_step__name__in=CS.vect_pipeline_televir_metagenomics,
             is_to_run=True,
         )
 
@@ -1742,9 +1748,10 @@ class Parameter_DB_Utility:
     def generate_combined_parameters_table_sample(
         self, owner, sample: PIProject_Sample
     ):
-        software_table, parameters_table = self.get_software_tables_project_sample(
-            owner, sample
-        )
+        (
+            software_table,
+            parameters_table,
+        ) = self.get_software_tables_project_sample_metagenomics(owner, sample)
 
         if parameters_table.shape[0] == 0:
             self.logger.info("No parameters for this project, using global")
@@ -2439,6 +2446,7 @@ class SoftwareTreeUtils:
         combined_table = self.parameter_util.generate_combined_parameters_table_project(
             self.user, self.project
         )
+        print(combined_table)
 
         return self.generate_tree_from_combined_table(combined_table)
 
@@ -2454,6 +2462,7 @@ class SoftwareTreeUtils:
     ) -> PipelineTree:
         utility_drone = Utility_Pipeline_Manager()
         input_success = utility_drone.input(combined_table, technology=self.technology)
+        print(input_success)
 
         if not input_success:
             return PipelineTree(
@@ -2476,6 +2485,7 @@ class SoftwareTreeUtils:
         """
         Get all pathnodes for a project
         """
+        print("get_project_pathnodes")
         local_tree = self.generate_project_tree()
 
         return self.get_available_pathnodes(local_tree)
@@ -2562,7 +2572,7 @@ class SoftwareTreeUtils:
 
         submission_dict = {sample: []}
 
-        available_path_nodes = self.get_sample_pathnodes()
+        available_path_nodes = self.get_project_pathnodes()
         clean_samples_leaf_dict = self.utils_manager.sample_nodes_check(
             submission_dict, available_path_nodes, self.project
         )

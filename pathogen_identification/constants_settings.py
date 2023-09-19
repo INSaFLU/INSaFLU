@@ -43,7 +43,7 @@ class ConstantsSettings:
     DEPLOYMENT_TYPE_TREE = "tree"
     DEPLOYMENT_TYPE_PIPELINE = "pipeline"
 
-    DEPLOYMENT_DEFAULT = DEPLOYMENT_TYPE_PIPELINE
+    DEPLOYMENT_DEFAULT = DEPLOYMENT_TYPE_TREE
 
     ################################### Pipeline model
 

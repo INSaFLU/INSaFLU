@@ -723,7 +723,6 @@ def turn_on_off_software(request):
         type_of_use_id_a = "type_of_use_id"
         televir_project_id_a = "televir_project_id"
         televir_project_sample_id_a = "televir_project_sample_id"
-        print("HIIIII")
 
         ## some pre-requisites
         if not request.user.is_active or not request.user.is_authenticated:
@@ -756,9 +755,6 @@ def turn_on_off_software(request):
             project_sample_id = request.GET[project_sample_id_a]
         elif televir_project_sample_id_a in request.GET:
             televir_project_sample_id = request.GET[televir_project_sample_id_a]
-
-        print("televir_project sample id: ", televir_project_sample_id)
-        print("televir_project_id", televir_project_id)
 
         default_parameters = DefaultParameters()
         if software_id_a in request.GET:
@@ -802,11 +798,9 @@ def turn_on_off_software(request):
                         ] = f"You cannot perform this operation. Project '{televir_project_sample.project.name}' with sample '{televir_project_sample.sample.name}' would not meet minimum pipeline step requirements."
 
                         return JsonResponse(data)
-                print("televir_project_id", televir_project_id)
                 if not televir_project_id is None:
                     televir_project = PIProjects.objects.get(pk=televir_project_id)
 
-                    print(current_is_to_run)
                     pipeline_steps_project = (
                         pipeline_makeup.get_pipeline_makeup_result_of_operation(
                             software,
@@ -814,7 +808,6 @@ def turn_on_off_software(request):
                             televir_project=televir_project,
                         )
                     )
-                    print("pipeline steps project: ", set(pipeline_steps_project))
 
                     makeup = pipeline_makeup.match_makeup_name_from_list(
                         pipeline_steps_project

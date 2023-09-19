@@ -565,6 +565,28 @@ class DefaultSoftware(object):
         test if exist, if not persist in database, for televir"""
 
         self.test_default_db(
+            SoftwareNames.SOFTWARE_KRAKEN2_name,
+            self.default_parameters.get_kraken2_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_contig_classification,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_KRAKEN2_name,
+            self.default_parameters.get_kraken2_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_contig_classification,
+            ),
+            user,
+        )
+
+        self.test_default_db(
             SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name,
             self.default_parameters.get_bowtie2_remap_default(
                 user,

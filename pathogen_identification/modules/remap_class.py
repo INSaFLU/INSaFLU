@@ -1928,7 +1928,10 @@ class Mapping_Manager(Tandem_Remap):
         for target in self.remap_targets:
             for accid in target.accid_in_file:
                 accid_clean = (
-                    accid.replace(";", "_").replace(":", "_").replace(".", "_")
+                    accid.replace(";", "_")
+                    .replace(":", "_")
+                    .replace(".", "_")
+                    .replace("|", "_")
                 )
                 tmp_fasta = os.path.join(
                     self.remapping_methods.output_dir, f"{accid_clean}.fasta"

@@ -6,7 +6,7 @@ import subprocess
 import time
 from dataclasses import dataclass, field
 from random import randint
-from typing import Type
+from typing import List, Type
 
 import matplotlib
 import pandas as pd
@@ -1421,7 +1421,7 @@ class Remap_Target:
     file: str
     run_prefix: str
     description: str = ""
-    accid_in_file: list = field(default_factory=lambda: [])
+    accid_in_file: List[str] = field(default_factory=lambda: [])
     reads: bool = False
     contigs: bool = False
 

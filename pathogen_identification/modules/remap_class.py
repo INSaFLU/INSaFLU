@@ -1917,28 +1917,47 @@ class Mapping_Manager(Tandem_Remap):
         if self.check_targets_combined_fasta_exists():
             return
         open(self.combined_fasta_path, "w", encoding="utf-8").close()
-        
+
         if os.path.exists(self.combined_fasta_gz_path):
             os.remove(self.combined_fasta_gz_path)
 
-        def process_accid(accid):
-            if "kraken:taxid" in accid:
-                accid = accid.split("|")[-1]
-            if ":" in accid:
-                accid = accid.split(":")[0]
-            if accid.endswith(";"):
-                accid = accid[:-1]
-
-            return accid
-
         for target in self.remap_targets:
             for accid in target.accid_in_file:
-                accid_clean = process_accid(accid)
-                cmd = f"samtools faidx {target.file} '{accid_clean}' >> {self.combined_fasta_path}"
+                accid_clean = (
+                    accid.replace(";", "_").replace(":", "_").replace(".", "_")
+                )
+                tmp_fasta = os.path.join(
+                    self.remapping_methods.output_dir, f"{accid_clean}.fasta"
+                )
+                # accid_clean = accid #process_accid(accid)
+                cmd = f"samtools faidx {target.file} '{accid}' > {tmp_fasta}"
+
                 self.cmd.run(cmd)
+
+                if self.check_fasta_empty(tmp_fasta) is False:
+                    self.append_fasta(tmp_fasta)
+                
+                os.remove(tmp_fasta)
 
         cmd_bgzip = f"bgzip {self.combined_fasta_path}"
         self.cmd.run(cmd_bgzip)
+
+    def check_fasta_empty(self, fasta):
+        """check if empty or only header"""
+
+        with open(fasta, "r") as f:
+            for line in f:
+                if not line.startswith(">"):
+                    return False
+        return True
+
+    def append_fasta(self, fasta):
+        """append fasta to combined fasta"""
+
+        with open(self.combined_fasta_path, "a") as f:
+            with open(fasta, "r") as f2:
+                for line in f2:
+                    f.write(line)
 
     def run_mappings(self):
         for target in self.remap_targets:

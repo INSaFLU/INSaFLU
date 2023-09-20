@@ -790,11 +790,11 @@ class SoftwareNames(object):
 
     ### empty software to be used in the pipeline.
 
-    PIPELINE_NAME_empty = "empty"
-    PIPELINE_NAME_empty_name = "Empty"
-    PIPELINE_NAME_empty_name_extended = "Empty"
-    PIPELINE_NAME_empty_version = "1.0.0"
-    PIPELINE_NAME_empty_parameters = ""
+    SOFTWARE_EMPTY_name = "Empty"
+    SOFTWARE_EMPTY_name_extended = "Empty"
+    SOFTWARE_EMPTY_VERSION = "1"
+    SOFTWARE_EMPTY_parameters = ""
+    
 
     ###################################
     ###################################

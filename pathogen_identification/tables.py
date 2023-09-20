@@ -574,7 +574,7 @@ class SampleTable(tables.Table):
             parameters = (
                 "<a href="
                 + reverse("pathogenID_sample_settings", kwargs={"sample": record.pk})
-                + ' data-toggle="tooltip" title="Manage combine settings">'
+                + ' data-toggle="tooltip" data-toggle="modal" title="Manage combine settings">'
                 + f'<span ><i class="padding-button-table fa fa-pencil-square padding-button-table" {color}></i></span></a>'
             )
 
@@ -585,7 +585,7 @@ class SampleTable(tables.Table):
                 + 'title="Run combined metagenomics"'
                 + f"pk={record.pk} "
                 + f"ref_name={record.name} "
-                + '><i class="fa fa-paw"></i></span> </a>'
+                + f'><span><i class="padding-button-table fa fa-paw padding-button-table" {color}></i></span></a>'
             )
 
             metagen_buttons = (

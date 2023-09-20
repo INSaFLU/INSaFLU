@@ -422,6 +422,10 @@ def get_project_dir(project: Projects):
     )
 
 
+def get_project_dir_no_media_root(project: Projects):
+    return os.path.join(CS.televir_subdirectory, str(project.owner.pk), str(project.pk))
+
+
 def infer_run_media_dir(run_main: RunMain) -> Optional[str]:
     if run_main.params_file_path:
         params_exist = os.path.exists(run_main.params_file_path)

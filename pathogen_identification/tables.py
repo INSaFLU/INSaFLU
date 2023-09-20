@@ -26,7 +26,10 @@ from pathogen_identification.models import (
     TelevirRunQC,
 )
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
-from pathogen_identification.utilities.utilities_general import get_project_dir
+from pathogen_identification.utilities.utilities_general import (
+    get_project_dir,
+    get_project_dir_no_media_root,
+)
 from pathogen_identification.utilities.utilities_views import (
     ReportSorter,
     check_sample_software_exists,
@@ -296,8 +299,18 @@ class ProjectTableMetagenomics(ProjectTable):
             + f"ref_name={record.name} "
         )
 
+        project_dir_structure = get_project_dir_no_media_root(record)
         project_dir = get_project_dir(record)
-        merge_explify_file = project_dir + CS.EXPLIFY_MERGE_SUFFIX + f".{record.pk}.tsv"
+        merge_explify_file = os.path.join(
+            project_dir, CS.EXPLIFY_MERGE_SUFFIX + f".{record.pk}.tsv"
+        )
+        merge_explify_file_provide = os.path.join(
+            "/media/",
+            project_dir_structure,
+            CS.EXPLIFY_MERGE_SUFFIX + f".{record.pk}.tsv",
+        )
+
+        print(merge_explify_file)
 
         found_explify_result = os.path.isfile(merge_explify_file)
         download_button = ""
@@ -306,11 +319,14 @@ class ProjectTableMetagenomics(ProjectTable):
             # display icon and download on click
 
             download_button = (
-                '<a href="'
-                + merge_explify_file
+                '<a rel="nofollow" href="'
+                + merge_explify_file_provide
+                + '" download="'
+                + CS.EXPLIFY_MERGE_SUFFIX
+                + f".{record.pk}.tsv"
                 + '" '
                 + 'data-toggle="tooltip" '
-                + 'title="Download Explify Merge" '
+                + 'title="Download"'
                 + '><i class="fa fa-download"></i></span> </a>'
             )
 

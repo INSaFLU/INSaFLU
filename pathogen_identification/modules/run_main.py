@@ -1481,6 +1481,9 @@ class RunMainTree_class(Run_Deployment_Methods):
         """
         This is a special case where we only want to run contig classification"""
 
+        print("RUNNING CONTIG CLASSIFICATION")
+        print(self.contig_classification, self.contig_classification_performed)
+
         if self.contig_classification and not self.contig_classification_performed:
             self.deploy_CONTIG_CLASSIFICATION()
             self.contig_classification_performed = True

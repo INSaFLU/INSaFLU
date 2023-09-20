@@ -9,8 +9,7 @@ from typing import Type
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.modules.object_classes import (RunCMD,
-                                                            Software_detail)
+from pathogen_identification.modules.object_classes import RunCMD, Software_detail
 
 
 def check_report_empty(file, comment="@"):
@@ -723,9 +722,11 @@ class run_kraken2(Classifier_init):
         if check_report_empty(self.report_path):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
-        return pd.read_csv(
+        report = pd.read_csv(
             self.report_path, sep="\t", header=None, usecols=[1, 2], comment="@"
         ).rename(columns={1: "qseqid", 2: "taxid"})
+        report = report[report.taxid != 0][["qseqid", "taxid"]]  # remove unclassified
+        return report
 
 
 class run_diamond(Classifier_init):
@@ -1278,10 +1279,14 @@ class Classifier:
         """
         deploy classifier method. read classifier output, return only query and reference sequence id columns.
         """
+        print(self.classifier.method_name)
 
         if self.classifier.method_name == "None":
             self.logger.info("No classifier method selected.")
             return
+
+        print(self.check_r1())
+        print(self.check_classifier_output())
 
         if not self.check_r1():
             self.collect_report()

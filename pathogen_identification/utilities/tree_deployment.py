@@ -4,7 +4,7 @@ import os
 import shutil
 import traceback  # for debugging
 from copy import _copy_immutable, _deepcopy_dispatch
-from typing import List, Optional, Tuple, Union
+from typing import Callable, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -944,8 +944,46 @@ class Tree_Progress:
 
         return mapped_instances_shared, run_success
 
-    def stacked_deployment_classification(
+    @staticmethod
+    def transfer_read_classification_drone(node: Tree_Node, volonteer: Tree_Node):
+        """
+        Transfer read classification drone from volonteer to node"""
+        node.run_manager.run_engine.read_classification_drone = (
+            volonteer.run_manager.run_engine.read_classification_drone
+        )
+        node.run_manager.run_engine.read_classification_performed = True
+
+        return node
+
+    @staticmethod
+    def transfer_contig_classification_drone(node: Tree_Node, volonteer: Tree_Node):
+        """
+        Transfer contig classification drone from volonteer to node"""
+        node.run_manager.run_engine.contig_classification_drone = (
+            volonteer.run_manager.run_engine.contig_classification_drone
+        )
+        node.run_manager.run_engine.contig_classification_performed = True
+
+        return node
+
+    def stacked_deployment_read_classification(
         self, nodes_by_sample_sources: List[List[Tree_Node]]
+    ):
+        self.loop_nodes_deploy(
+            nodes_by_sample_sources, self.transfer_read_classification_drone
+        )
+
+    def stacked_deployment_contig_classification(
+        self, nodes_by_sample_sources: List[List[Tree_Node]]
+    ):
+        self.loop_nodes_deploy(
+            nodes_by_sample_sources, self.transfer_contig_classification_drone
+        )
+
+    def loop_nodes_deploy(
+        self,
+        nodes_by_sample_sources: List[List[Tree_Node]],
+        transfer_function: Callable,
     ):
         new_nodes = []
 
@@ -958,10 +996,8 @@ class Tree_Progress:
 
             if run_success:
                 for node in nodes_subset:
-                    node.run_manager.run_engine.read_classification_drone = (
-                        volonteer.run_manager.run_engine.read_classification_drone
-                    )
-                    node.run_manager.run_engine.read_classification_performed = True
+                    node = transfer_function(node, volonteer)
+
                     new_nodes.append(node)
             else:
                 for node in nodes_subset:
@@ -971,7 +1007,8 @@ class Tree_Progress:
             self.current_nodes = new_nodes
 
     def stacked_deployement_mapping(
-        self, nodes_by_sample_sources: List[List[Tree_Node]]
+        self,
+        nodes_by_sample_sources: List[List[Tree_Node]],
     ):
         """
         deploy nodes remap by sample sources."""
@@ -1027,10 +1064,15 @@ class Tree_Progress:
 
         self.stacked_deployement_mapping(nodes_by_sample_sources)
 
-    def run_simplified_classification(self):
+    def run_simplified_classification_reads(self):
         nodes_by_sample_sources = self.group_nodes_by_source_and_parameters()
 
-        self.stacked_deployment_classification(nodes_by_sample_sources)
+        self.stacked_deployment_read_classification(nodes_by_sample_sources)
+
+    def run_simplified_classification_contigs(self):
+        nodes_by_sample_sources = self.group_nodes_by_source_and_parameters()
+
+        self.stacked_deployment_contig_classification(nodes_by_sample_sources)
 
     def update_tree_nodes(self):
         new_nodes = []
@@ -1074,13 +1116,6 @@ class Tree_Progress:
     def run_nodes_remap(self):
         self.run_simplified_mapping()
 
-    def run_nodes_classification_reads(self):
-        self.run_simplified_classification()
-        print("RAN CLASSIFICATION")
-
-    def run_nodes_classification_contigs(self):
-        self.run_simplified_classification()
-
     def register_leaves_finished(self):
         for node in self.current_nodes:
             for leaf in node.leaves:
@@ -1106,8 +1141,8 @@ class Tree_Progress:
 
         map_actions = {
             ConstantsSettings.PIPELINE_NAME_extra_qc: self.run_nodes_sequential,
-            ConstantsSettings.PIPELINE_NAME_read_classification: self.run_nodes_classification_reads,
-            ConstantsSettings.PIPELINE_NAME_contig_classification: self.run_nodes_sequential,
+            ConstantsSettings.PIPELINE_NAME_read_classification: self.run_simplified_classification_reads,
+            ConstantsSettings.PIPELINE_NAME_contig_classification: self.run_simplified_classification_contigs,
             ConstantsSettings.PIPELINE_NAME_viral_enrichment: self.run_nodes_sequential,
             ConstantsSettings.PIPELINE_NAME_host_depletion: self.run_nodes_sequential,
             ConstantsSettings.PIPELINE_NAME_assembly: self.run_nodes_sequential,

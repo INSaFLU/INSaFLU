@@ -11,15 +11,19 @@ from Bio.SeqIO.FastaIO import SimpleFastaParser
 from scipy.stats import kstest
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.modules.object_classes import (Bedgraph,
-                                                            Read_class,
-                                                            Remap_Target,
-                                                            RunCMD,
-                                                            Software_detail,
-                                                            SoftwareRemap)
+from pathogen_identification.modules.object_classes import (
+    Bedgraph,
+    Read_class,
+    Remap_Target,
+    RunCMD,
+    Software_detail,
+    SoftwareRemap,
+)
 from pathogen_identification.utilities.televir_parameters import RemapParams
 from pathogen_identification.utilities.utilities_general import (
-    plot_dotplot, read_paf_coordinates)
+    plot_dotplot,
+    read_paf_coordinates,
+)
 
 pd.options.mode.chained_assignment = None
 np.warnings.filterwarnings("ignore")
@@ -1929,14 +1933,13 @@ class Mapping_Manager(Tandem_Remap):
                 tmp_fasta = os.path.join(
                     self.remapping_methods.output_dir, f"{accid_clean}.fasta"
                 )
-                # accid_clean = accid #process_accid(accid)
                 cmd = f"samtools faidx {target.file} '{accid}' > {tmp_fasta}"
 
                 self.cmd.run(cmd)
 
                 if self.check_fasta_empty(tmp_fasta) is False:
                     self.append_fasta(tmp_fasta)
-                
+
                 os.remove(tmp_fasta)
 
         cmd_bgzip = f"bgzip {self.combined_fasta_path}"
@@ -1960,6 +1963,8 @@ class Mapping_Manager(Tandem_Remap):
                     f.write(line)
 
     def run_mappings(self):
+        """
+        Run mappings for all targets."""
         for target in self.remap_targets:
             mapped_instance = self.reciprocal_map(target)
 

@@ -830,7 +830,8 @@ def turn_on_off_software(request):
                         makeup = pipeline_makeup.match_makeup_name_from_list(
                             pipeline_steps_project
                         )
-
+                        print(is_to_run)
+                        print(set(pipeline_steps_project))
                         if makeup is None:
                             data[
                                 "message"

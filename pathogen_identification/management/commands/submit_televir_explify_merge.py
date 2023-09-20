@@ -90,11 +90,14 @@ class Command(BaseCommand):
             print(output_file_merged)
             rpip_panel = read_panel(options["rpip"], panel="Microorganisms (RPIP)")
             upip_panel = read_panel(options["upip"], panel="Microorganisms (UPIP)")
+            print("PANELS READ")
 
             illumina_found = get_illumina_found(
                 [rpip_panel, upip_panel], tmp_dir=output_dir
             )
+            print("ILLUMINA FOUND")
             telebac_found = process_televir(televir_reports)
+            print("TELEBAC FOUND")
 
             merged_panel = merge_panels(illumina_found, telebac_found)
             merged_panel.to_csv(output_file_merged, sep="\t", index=False)

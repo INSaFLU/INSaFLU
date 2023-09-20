@@ -2458,9 +2458,9 @@ class DefaultParameters(object):
         )
         software.technology = self.get_technology(technology_name)
         software.can_be_on_off_in_pipeline = (
-            False  ## set to True if can be ON/OFF in pipeline, otherwise always ON
+            True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
         )
-        software.is_to_run = True
+        software.is_to_run = False
 
         ###  small description of software
         software.help_text = ""
@@ -2776,7 +2776,7 @@ class DefaultParameters(object):
 
         parameter = Parameter()
         parameter.name = "-x"
-        parameter.parameter = "asm5"
+        parameter.parameter = "asm10"
         parameter.type_data = Parameter.PARAMETER_char_list
         parameter.software = software
         parameter.sample = sample

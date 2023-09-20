@@ -11,12 +11,12 @@ from datasets.models import Dataset, DatasetConsensus
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project, ProjectSample, Sample
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.models import PIProject_Sample
 from pathogen_identification.models import Projects as Televir_Project
-from pathogen_identification.utilities.utilities_views import \
-    duplicate_metagenomics_software
+from pathogen_identification.utilities.utilities_views import (
+    duplicate_metagenomics_software,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.default_software import DefaultSoftware
 from settings.forms import SoftwareForm
@@ -376,6 +376,13 @@ class PISettingsView(LoginRequiredMixin, ListView):
                     ).distinct()
 
                 query_set = self.patch_filter_queryset(query_set, pipeline_step_name)
+
+                if PICS.METAGENOMICS is True:
+                    if (
+                        pipeline_step_name
+                        == ConstantsSettings.PIPELINE_NAME_viral_enrichment
+                    ):
+                        pipeline_step_name = ConstantsSettings.PIPELINE_NAME_enrichment
 
                 ### if there are software
                 if query_set.count() > 0:

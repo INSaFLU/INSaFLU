@@ -31,6 +31,7 @@ class ConstantsSettings(object):
     )
     PIPELINE_NAME_extra_qc = "Extra QC"
     PIPELINE_NAME_viral_enrichment = "Viral enrichment"
+    PIPELINE_NAME_enrichment = "Enrichment"
     PIPELINE_NAME_host_depletion = "Host depletion"
     PIPELINE_NAME_contig_classification = "Contig classification"
     PIPELINE_NAME_read_classification = "Read classification"

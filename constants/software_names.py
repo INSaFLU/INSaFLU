@@ -788,6 +788,14 @@ class SoftwareNames(object):
     SOFTWARE_BOWTIE2_REMAP_VERSION = "2.4.5"
     SOFTWARE_BOWTIE2_REMAP_parameters = "-p 4"
 
+    ### empty software to be used in the pipeline.
+
+    PIPELINE_NAME_empty = "empty"
+    PIPELINE_NAME_empty_name = "Empty"
+    PIPELINE_NAME_empty_name_extended = "Empty"
+    PIPELINE_NAME_empty_version = "1.0.0"
+    PIPELINE_NAME_empty_parameters = ""
+
     ###################################
     ###################################
     #####

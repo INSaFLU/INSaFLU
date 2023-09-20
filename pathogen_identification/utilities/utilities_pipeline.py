@@ -2558,7 +2558,7 @@ class SoftwareTreeUtils:
 
         submission_dict = {sample: []}
 
-        available_path_nodes = self.get_project_pathnodes()
+        available_path_nodes = self.get_sample_pathnodes()
         clean_samples_leaf_dict = self.utils_manager.sample_nodes_check(
             submission_dict, available_path_nodes, self.project
         )

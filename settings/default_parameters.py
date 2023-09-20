@@ -2674,6 +2674,43 @@ class DefaultParameters(object):
 
         return vect_parameters
 
+    def get_empty_software_default(
+        self, user, type_of_use, technology_name, sample=None, pipeline_step=""
+    ):
+        """
+        empty software default
+        """
+        if not pipeline_step:
+            pipeline_step = ConstantsSettings.PIPELINE_NAME_extra_qc
+
+        software = Software()
+        software.name = SoftwareNames.SOFTWARE_EMPTY_name
+        software.name_extended = SoftwareNames.SOFTWARE_EMPTY_name_extended
+        software.type_of_use = type_of_use
+        software.type_of_software = Software.TYPE_SOFTWARE
+        software.version = SoftwareNames.SOFTWARE_EMPTY_VERSION
+        software.version_parameters = self.get_software_parameters_version(
+            software.name
+        )
+        software.technology = self.get_technology(technology_name)
+
+        software.can_be_on_off_in_pipeline = (
+            False  ## set to True if can be ON/OFF in pipeline, otherwise always ON
+        )
+
+        software.is_to_run = False
+
+        ###  small description of software
+        software.help_text = ""
+
+        ###  which part of pipeline is going to run
+        software.pipeline_step = self._get_pipeline(pipeline_step)
+        software.owner = user
+
+        vect_parameters = []
+
+        return vect_parameters
+
     def get_minimap2_map_assembly_default(
         self, user, type_of_use, technology_name, sample=None, pipeline_step=""
     ):

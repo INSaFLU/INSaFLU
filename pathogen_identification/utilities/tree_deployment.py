@@ -1123,8 +1123,9 @@ class Tree_Progress:
             self.update_tree_nodes()
             return
 
-        action = map_actions[self.current_module]
         print("CURRENT MODULE", self.current_module)
+        action = map_actions[self.current_module]
+
         action()
 
         for node in self.current_nodes:

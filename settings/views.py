@@ -11,12 +11,12 @@ from datasets.models import Dataset, DatasetConsensus
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project, ProjectSample, Sample
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from pathogen_identification.models import PIProject_Sample
 from pathogen_identification.models import Projects as Televir_Project
-from pathogen_identification.utilities.utilities_views import (
-    duplicate_metagenomics_software,
-)
+from pathogen_identification.utilities.utilities_views import \
+    duplicate_metagenomics_software
 from settings.constants_settings import ConstantsSettings
 from settings.default_software import DefaultSoftware
 from settings.forms import SoftwareForm
@@ -100,8 +100,6 @@ class PIMetagenSampleView(LoginRequiredMixin, ListView):
                     parameter__televir_project_sample=sample,
                     is_obsolete=False,
                 ).distinct()
-
-                print(query_set)
 
                 ### if there are software
                 if query_set.count() > 0:
@@ -347,7 +345,6 @@ class PISettingsView(LoginRequiredMixin, ListView):
             for pipeline_step_name, pipeline_steps in condensed_pipeline_names.items():
                 # for pipeline_step in ConstantsSettings.vect_pipeline_names:
 
-                # print(f"type of use {Software.TYPE_OF_USE_pident}")
                 if televir_project is None:
                     query_set = Software.objects.filter(
                         owner=self.request.user,

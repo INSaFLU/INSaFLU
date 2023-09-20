@@ -91,9 +91,8 @@ class SoftwaresTable(tables.Table):
 
     def render_select_to_run(self, value, record):
         ## test if its to run and get IDs from others
-        print(value, record)
         is_to_run, sz_ids = self._is_to_run(record)
-        print(is_to_run)
+
         ### When in sample you can not turn ON|OFF the software
         b_enable_options = self.b_enable_options
         if not self.sample is None:

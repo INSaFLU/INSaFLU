@@ -266,9 +266,6 @@ class Pipeline_Makeup(Pipeline_Graph):
         if televir_project:
             use_types = Software.TELEVIR_PROJECT_TYPES
 
-        print("use_types", use_types)
-        print(televir_project, project_sample)
-
         pipeline_steps_project = (
             Software.objects.filter(
                 type_of_use__in=use_types,
@@ -281,7 +278,6 @@ class Pipeline_Makeup(Pipeline_Graph):
             .exclude(pk=software.pk)
             .values_list("pipeline_step__name", flat=True)
         )
-        print("pipeline_steps_project", set(pipeline_steps_project))
 
         return list(pipeline_steps_project)
 
@@ -889,13 +885,10 @@ class Utility_Pipeline_Manager:
         pipe_makeup_manager = Pipeline_Makeup()
 
         pipelines_available = combined_table.pipeline_step.unique().tolist()
-        print(set(pipelines_available))
 
         self.pipeline_makeup = pipe_makeup_manager.match_makeup_name_from_list(
             pipelines_available
         )
-
-        print(self.pipeline_makeup)
 
         if self.pipeline_makeup is None:
             self.logger.info("No pipeline makeup found")
@@ -2016,12 +2009,6 @@ class Utils_Manager:
                 exists = self.parameter_util.check_ParameterSet_exists(
                     sample=sample, leaf=matched_path_node, project=project
                 )
-                print("exists", exists)
-                print(
-                    utils.parameter_util.check_ParameterSet_available(
-                        sample=sample, leaf=matched_path_node, project=project
-                    )
-                )
 
                 if exists:
                     if (
@@ -2449,7 +2436,6 @@ class SoftwareTreeUtils:
         combined_table = self.parameter_util.generate_combined_parameters_table_project(
             self.user, self.project
         )
-        print(combined_table)
 
         return self.generate_tree_from_combined_table(combined_table)
 
@@ -2465,7 +2451,6 @@ class SoftwareTreeUtils:
     ) -> PipelineTree:
         utility_drone = Utility_Pipeline_Manager()
         input_success = utility_drone.input(combined_table, technology=self.technology)
-        print(input_success)
 
         if not input_success:
             return PipelineTree(
@@ -2488,7 +2473,6 @@ class SoftwareTreeUtils:
         """
         Get all pathnodes for a project
         """
-        print("get_project_pathnodes")
         local_tree = self.generate_project_tree()
 
         return self.get_available_pathnodes(local_tree)
@@ -2510,7 +2494,6 @@ class SoftwareTreeUtils:
         import time
 
         t1 = time.time()
-        print(local_paths)
 
         pipeline_tree = self.generate_software_tree_extend(local_tree=local_tree)
         t2 = time.time()
@@ -2520,8 +2503,6 @@ class SoftwareTreeUtils:
             leaf: utils.utility_manager.match_path_to_tree_safe(path, pipeline_tree)
             for leaf, path in local_paths.items()
         }
-
-        print("matched_paths", matched_paths)
 
         available_paths = {
             leaf: path for leaf, path in matched_paths.items() if path is not None
@@ -2533,8 +2514,6 @@ class SoftwareTreeUtils:
             )
             for leaf, leaf_index in available_paths.items()
         }
-
-        print("available_path_nodes", available_path_nodes)
 
         return available_path_nodes
 

@@ -831,8 +831,6 @@ class Run_Deployment_Methods(RunDetail_main):
         self.contig_classification_drone.run()
 
     def deploy_METAGENOMICS_CLASSIFICATION_reads(self):
-        print("deploying metagenomics classification reads")
-        print(self.metagenomics_classification_method)
 
         self.metagenomics_classification_drone = Classifier(
             self.metagenomics_classification_method,
@@ -1447,15 +1445,9 @@ class RunMainTree_class(Run_Deployment_Methods):
 
             return references_table
 
-        print("COLLECTING")
         reference_table = collect_references_table()
-        print(reference_table.head())
-        print(reference_table.shape)
-
-        print("GENERATING TARGETS")
         self.metadata_tool.generate_targets_from_report(reference_table)
 
-        print("GENERATING FASTA")
         self.prep_REMAPPING()
         self.remap_manager.generate_remap_targets_fasta()
 

@@ -418,7 +418,7 @@ def merge_classes(r1: pd.DataFrame, r2: pd.DataFrame, maxt=6, exclude="phage"):
 
 def get_project_dir(project: Projects):
     return os.path.join(
-        MEDIA_ROOT, CS.televir_subdirectory, str(project.owner.pk), project.name
+        MEDIA_ROOT, CS.televir_subdirectory, str(project.owner.pk), str(project.pk)
     )
 
 

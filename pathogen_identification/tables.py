@@ -971,7 +971,9 @@ class RunMainTable(tables.Table):
             ContigClassification.objects.filter(run=record).exists()
             and ReadClassification.objects.filter(run=record).exists()
         )
-        finished_processing = FinalReport.objects.filter(run=record).count() > 0
+
+        finished_processing = record.parameter_set.status = ParameterSet.STATUS_FINISHED
+        # finished_processing = FinalReport.objects.filter(run=record).count() > 0
         finished_remapping = record.report == "finished"
 
         if (

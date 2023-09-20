@@ -7,7 +7,8 @@ from django.core.management.base import BaseCommand
 
 from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import FinalReport, Projects
+from pathogen_identification.models import FinalReport, PIProject_Sample, Projects
+from pathogen_identification.templatetags.report_colors import flag_false_positive
 from pathogen_identification.utilities.explify_merge import (
     get_illumina_found,
     merge_panels,
@@ -84,7 +85,53 @@ class Command(BaseCommand):
         ).order_by("-coverage")
         output_dir = options["outdir"]
 
-        televir_reports = pd.DataFrame.from_records(all_reports.values())
+        def retrieve_sample_name(sample_id: int):
+            sample = PIProject_Sample.objects.filter(pk=sample_id).first()
+            if sample:
+                return sample.name
+            return ""
+
+        def apply_warning_filter(row: pd.Series):
+            return flag_false_positive(
+                row.depth,
+                row.depthR,
+                row.coverage,
+                row.mapped_reads,
+                row.windows_covered,
+                project.pk,
+            )
+
+        televir_reports = pd.DataFrame(all_reports.values())
+        televir_reports["sample"] = televir_reports["sample_id"].apply(
+            retrieve_sample_name
+        )
+        televir_reports["warning"] = televir_reports.apply(apply_warning_filter, axis=1)
+        televir_reports = televir_reports[
+            [
+                "sample",
+                "taxid",
+                "description",
+                "accid",
+                "coverage",
+                "depth",
+                "depthR",
+                "mapped_reads",
+                "windows_covered",
+                "warning",
+            ]
+        ]
+        televir_reports.columns = [
+            "Sample",
+            "Taxid",
+            "Description",
+            "accID",
+            "Cov (%)",
+            "Depth",
+            "DepthC",
+            "Mapped reads",
+            "Windows Covered",
+            "Warning",
+        ]
 
         try:
             print(output_file_merged)

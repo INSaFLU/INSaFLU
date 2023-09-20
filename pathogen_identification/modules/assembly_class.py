@@ -40,7 +40,7 @@ class Assembly_init:
             return False
         else:
             return True
-        
+
     def run_PE(self, threads: int = 3):
         """
         Assembly with assembler
@@ -498,7 +498,6 @@ class Assembly_class:
 
         if self.assembly_exists:
             if os.path.exists(final_file) is False:
-
-                shutil.move(self.assembly_file_fasta_gz, subdirectory)
+                shutil.copy(self.assembly_file_fasta_gz, subdirectory)
 
             self.assembly_file_fasta_gz = final_file

@@ -40,7 +40,6 @@ def process_televir(televir_reports):
         "Mapped reads",
         "Windows Covered",
         "Warning",
-        "Control",
     ]
     if "Run" in televir_reports.columns:
         columns_to_keep.append("Run")
@@ -189,7 +188,6 @@ def merge_panels(illumina_found, telebac_found):
                     "Mapped reads",
                     "Windows Covered",
                     "Warning",
-                    "Control",
                     "Description_x",
                     "Class Type",
                     "Coverage",
@@ -212,7 +210,6 @@ def merge_panels(illumina_found, telebac_found):
                     "Mapped reads",
                     "Windows Covered",
                     "Warning",
-                    "Control",
                     "Description_x",
                     "Class Type",
                     "Coverage",

@@ -753,7 +753,7 @@ def turn_on_off_software(request):
             project_id = request.GET[project_id_a]
         elif project_sample_id_a in request.GET:
             project_sample_id = request.GET[project_sample_id_a]
-        elif televir_project_sample_id_a in request.GET:
+        if televir_project_sample_id_a in request.GET:
             televir_project_sample_id = request.GET[televir_project_sample_id_a]
 
         default_parameters = DefaultParameters()
@@ -798,7 +798,7 @@ def turn_on_off_software(request):
                         ] = f"You cannot perform this operation. Project '{televir_project_sample.project.name}' with sample '{televir_project_sample.sample.name}' would not meet minimum pipeline step requirements."
 
                         return JsonResponse(data)
-                if not televir_project_id is None:
+                elif not televir_project_id is None:
                     televir_project = PIProjects.objects.get(pk=televir_project_id)
 
                     pipeline_steps_project = (
@@ -1025,9 +1025,9 @@ def get_software_name_to_turn_on_off(request):
         if type_of_use_id_a in request.GET:
             type_of_use_id = request.GET[type_of_use_id_a]
         if televir_project_id_a in request.GET:
-            televir_project_id = request.GET[televir_project_id_a]
+            televir_project_id = int(request.GET[televir_project_id_a])
         if televir_project_sample_id_a in request.GET:
-            televir_project_sample_id = request.GET[televir_project_sample_id_a]
+            televir_project_sample_id = int(request.GET[televir_project_sample_id_a])
         if sample_id_a in request.GET:
             sample_id = request.GET[sample_id_a]
         elif project_id_a in request.GET:

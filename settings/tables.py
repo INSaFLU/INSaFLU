@@ -276,6 +276,7 @@ class SoftwaresTable(tables.Table):
                         dataset=self.dataset,
                     )
                 )
+            print(self.televir_project.pk)
 
             str_links = (
                 "<a href="

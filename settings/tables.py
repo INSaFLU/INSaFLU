@@ -147,7 +147,7 @@ class SoftwaresTable(tables.Table):
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
 
-        record = kwargs.pop("record")
+        record: Software = kwargs.pop("record")
         technology_name = (
             ConstantsSettings.TECHNOLOGY_illumina
             if record.technology is None

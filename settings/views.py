@@ -102,6 +102,7 @@ class PIMetagenSampleView(LoginRequiredMixin, ListView):
                 ).distinct()
 
                 ### if there are software
+
                 if query_set.count() > 0:
                     vect_pipeline_step.append(
                         [

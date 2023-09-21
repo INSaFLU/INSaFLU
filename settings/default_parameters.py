@@ -157,6 +157,7 @@ class DefaultParameters(object):
             pipeline_step__name=pipeline_step,
             parameter__televir_project=televir_project,
         )
+        print("gettings software: ", software_name, technology_name, pipeline_step)
 
         if len(software_list) == 0:
             software_list = Software.objects.filter(
@@ -225,7 +226,6 @@ class DefaultParameters(object):
         """
         # logger = logging.getLogger("fluWebVirus.debug")
         # logger.debug("Get parameters: software-{} user-{} typeofuse-{} project-{} psample-{} sample-{} tec-{} dataset-{}",software_name, user, type_of_use, project, project_sample, sample, technology_name, dataset)
-
         if self.check_software_is_polyvalent(software_name):
             if pipeline_step is None:
                 prefered_pipeline = self.get_polyvalent_software_pipeline(software_name)
@@ -840,6 +840,13 @@ class DefaultParameters(object):
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
             )
+        elif software.name == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ILLU_name:
+            return self.get_minimap2_remap_illumina_default(
+                software.owner,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_metagenomics_combine,
+            )
 
         elif (
             software.name_extended
@@ -860,16 +867,6 @@ class DefaultParameters(object):
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_minion,
             )
-        elif (
-            software.name_extended
-            == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ILLU_name_extended
-        ):
-            return self.get_minimap2_remap_illumina_default(
-                software.owner,
-                Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_illumina,
-            )
-
         elif (
             software.name_extended
             == SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ONT_name_extended

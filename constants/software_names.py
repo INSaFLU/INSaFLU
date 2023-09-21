@@ -734,7 +734,7 @@ class SoftwareNames(object):
     SOFTWARE_MINIMAP2_REMAP_ONT_VERSION = "2.24"
     SOFTWARE_MINIMAP2_REMAP_ONT_parameters = "-a -x map-ont -t 4"
 
-    SOFTWARE_MINIMAP2_REMAP_ILLU_name = "Minimap2"
+    SOFTWARE_MINIMAP2_REMAP_ILLU_name = "Minimap2_remap"
     SOFTWARE_MINIMAP2_REMAP_ILLU_name_extended = "Minimap2 - Remapping"
     SOFTWARE_MINIMAP2_REMAP_ILLU = os.path.join(
         settings.DIR_SOFTWARE,

@@ -8,11 +8,10 @@ from curses.ascii import SO
 from django.contrib.auth.models import User
 
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from pathogen_identification.utilities.utilities_pipeline import (
-    Utility_Pipeline_Manager,
-    Utils_Manager,
-)
+    Utility_Pipeline_Manager, Utils_Manager)
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.models import Parameter, Software
@@ -551,7 +550,7 @@ class DefaultSoftware(object):
 
         self.test_default_db(
             SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ILLU_name,
-            self.default_parameters.get_minimap2_depletion_illumina_default(
+            self.default_parameters.get_minimap2_remap_illumina_default(
                 user,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
@@ -1452,7 +1451,7 @@ class DefaultSoftware(object):
 
             return self.get_minimap2_deplete_ont_parameters(user)
 
-        if software_name == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ILLU:
+        if software_name == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ILLU_name:
             self.test_default_db(
                 SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ILLU,
                 self.default_parameters.get_minimap2_remap_illumina_default(

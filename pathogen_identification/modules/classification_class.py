@@ -1209,7 +1209,7 @@ class Classifier:
         "minimap2": run_minimap2_ONT,
         "minimap2_ont": run_minimap2_ONT,
         "minimap2_asm": run_minimap2_asm,
-        "minimap2_remap": run_minimap2_asm,
+        "minimap2_remap": run_minimap2_illumina,
         "diamond": run_diamond,
         "kaiju": run_kaiju,
         "krakenuniq": run_krakenuniq,

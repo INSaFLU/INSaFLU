@@ -11,7 +11,6 @@ from pathogen_identification.deployment_main import Run_Main_from_Leaf
 from pathogen_identification.models import (
     ParameterSet,
     PIProject_Sample,
-    Projects,
     SoftwareTree,
     SoftwareTreeNode,
 )

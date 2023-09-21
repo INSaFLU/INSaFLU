@@ -734,6 +734,13 @@ class SoftwareNames(object):
     SOFTWARE_MINIMAP2_REMAP_ONT_VERSION = "2.24"
     SOFTWARE_MINIMAP2_REMAP_ONT_parameters = "-a -x map-ont -t 4"
 
+    SOFTWARE_MINIMAP2_REMAP_ILLU_name = "Minimap2"
+    SOFTWARE_MINIMAP2_REMAP_ILLU_name_extended = "Minimap2 - Remapping"
+    SOFTWARE_MINIMAP2_REMAP_ILLU = os.path.join(
+        settings.DIR_SOFTWARE,
+        "preprocess/preproc/bin/minimap2",
+    )
+    SOFTWARE_MINIMAP2_REMAP_ILLU_VERSION = "2.24"
     ### MINIMAP2 DEPLETE
 
     SOFTWARE_MINIMAP2_DEPLETE_ONT_name = "Minimap2_ONT"
@@ -794,7 +801,6 @@ class SoftwareNames(object):
     SOFTWARE_EMPTY_name_extended = "Empty"
     SOFTWARE_EMPTY_VERSION = "1"
     SOFTWARE_EMPTY_parameters = ""
-    
 
     ###################################
     ###################################

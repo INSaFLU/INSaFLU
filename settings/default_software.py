@@ -550,6 +550,17 @@ class DefaultSoftware(object):
         )
 
         self.test_default_db(
+            SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ILLU_name,
+            self.default_parameters.get_minimap2_depletion_illumina_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_metagenomics_combine,
+            ),
+            user,
+        )
+
+        self.test_default_db(
             SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name,
             self.default_parameters.get_bowtie2_remap_default(
                 user,
@@ -1073,6 +1084,18 @@ class DefaultSoftware(object):
         )
         return "" if result is None else result
 
+    def get_minimap2_remap_illumina_parameters(self, user):
+        result = self.default_parameters.get_parameters(
+            SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ILLU_name,
+            user,
+            Software.TYPE_OF_USE_televir_global,
+            None,
+            None,
+            None,
+            ConstantsSettings.TECHNOLOGY_illumina,
+        )
+        return "" if result is None else result
+
     def get_minimap2_map_assembly_parameters(self, user):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name,
@@ -1428,6 +1451,20 @@ class DefaultSoftware(object):
             )
 
             return self.get_minimap2_deplete_ont_parameters(user)
+
+        if software_name == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ILLU:
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ILLU,
+                self.default_parameters.get_minimap2_remap_illumina_default(
+                    user,
+                    Software.TYPE_OF_USE_televir_global,
+                    ConstantsSettings.TECHNOLOGY_illumina,
+                    pipeline_step=ConstantsSettings.PIPELINE_NAME_remapping,
+                ),
+                user,
+            )
+
+            return self.get_minimap2_remap_illumina_parameters(user)
 
         if software_name == SoftwareNames.SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name:
             self.test_default_db(

@@ -923,6 +923,21 @@ class SoftwareNames(object):
         ],
     }
 
+    ###### Relation between software and technology
+    def get_list_software_names_by_technology(self, technology_name):
+        """
+        :param technology_name TECHNOLOGY_illumina, TECHNOLOGY_minion
+        """
+        return self.DICT_SOFTWARE_RELATION.get(technology_name, [])
+
+    def is_software_in_technology(self, technology_name, software_name):
+        """
+        :param technology_name TECHNOLOGY_illumina, TECHNOLOGY_minion
+        """
+        return software_name in self.get_list_software_names_by_technology(
+            technology_name
+        )
+
     ###################################
 
     def __init__(self):

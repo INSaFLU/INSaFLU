@@ -41,8 +41,23 @@ def check_sample_software_exists(sample: PIProject_Sample) -> bool:
     return parameters_exist
 
 
+def check_project_params_exist(project: Projects) -> bool:
+    """
+    check if project parameters exist
+    """
+
+    query_set = Parameter.objects.filter(
+        televir_project=project.pk, televir_project_sample=None
+    )
+    if query_set.count() == 0:
+        return False
+    return True
+
+
 def duplicate_metagenomics_software(project: Projects, sample: PIProject_Sample):
     owner = project.owner
+    project_call = project if check_project_params_exist(project) else None
+    print(project_call)
     query_set = Software.objects.filter(
         owner=owner,
         type_of_use__in=[
@@ -55,7 +70,7 @@ def duplicate_metagenomics_software(project: Projects, sample: PIProject_Sample)
         ],
         is_obsolete=False,
         technology__name=project.technology,
-        parameter__televir_project=None,
+        parameter__televir_project=project_call,
         parameter__televir_project_sample=None,
         pipeline_step__name__in=[
             ConstantsSettings.PIPELINE_NAME_metagenomics_combine,
@@ -89,7 +104,6 @@ def duplicate_metagenomics_software(project: Projects, sample: PIProject_Sample)
             pass
 
         except Software.DoesNotExist:
-            software.is_to_run = True
             software.save()
             for parameter in software_parameters:
                 parameter.pk = None

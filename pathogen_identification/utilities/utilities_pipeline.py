@@ -236,8 +236,14 @@ class Pipeline_Makeup(Pipeline_Graph):
         project_sample: Optional[PIProject_Sample] = None,
     ):
         use_types = Software.TELEVIR_GLOBAL_TYPES
+
         if televir_project:
             use_types = Software.TELEVIR_PROJECT_TYPES
+
+        exclude_steps = [CS.PIPELINE_NAME_reporting]
+
+        if project_sample is None:
+            exclude_steps.append(CS.PIPELINE_NAME_metagenomics_combine)
 
         pipeline_steps_project = (
             Software.objects.filter(
@@ -248,13 +254,14 @@ class Pipeline_Makeup(Pipeline_Graph):
                 is_to_run=True,
                 owner=software.owner,
             )
-            .exclude(pipeline_step__name=CS.PIPELINE_NAME_reporting)
+            .exclude(pipeline_step__name__in=exclude_steps)
             .values_list("pipeline_step__name", flat=True)
         )
 
         pipeline_steps_project = list(pipeline_steps_project)
 
-        pipeline_steps_project.append(software.pipeline_step.name)
+        if software.pipeline_step.name not in exclude_steps:
+            pipeline_steps_project.append(software.pipeline_step.name)
 
         return pipeline_steps_project
 
@@ -268,6 +275,11 @@ class Pipeline_Makeup(Pipeline_Graph):
         if televir_project:
             use_types = Software.TELEVIR_PROJECT_TYPES
 
+        exclude_steps = [CS.PIPELINE_NAME_reporting]
+
+        if project_sample is None:
+            exclude_steps.append(CS.PIPELINE_NAME_metagenomics_combine)
+
         pipeline_steps_project = (
             Software.objects.filter(
                 type_of_use__in=use_types,
@@ -278,7 +290,7 @@ class Pipeline_Makeup(Pipeline_Graph):
                 owner=software.owner,
             )
             .exclude(pk=software.pk)
-            .exclude(pipeline_step__name=CS.PIPELINE_NAME_reporting)
+            .exclude(pipeline_step__name__in=exclude_steps)
             .values_list("pipeline_step__name", flat=True)
         )
 
@@ -1470,6 +1482,7 @@ class Parameter_DB_Utility:
             self.logger.handlers.clear()
         self.logger.setLevel(logging.ERROR)
         self.logger.addHandler(logging.StreamHandler())
+        self.televir_constants = ConstantsSettings()
 
     def get_technologies_available(self):
         """
@@ -1578,15 +1591,23 @@ class Parameter_DB_Utility:
 
         return software_table, parameters_table
 
-    def get_software_tables_global(self, technology: str, user: User):
+    def get_software_tables_global(
+        self, technology: str, user: User, metagenomics: bool = False
+    ):
         """
         Get software tables for a user
         """
 
+        steps = (
+            CS.vect_pipeline_televir_metagenomics
+            if metagenomics
+            else self.televir_constants.vect_pipeline_names_default
+        )
+
         software_available = Software.objects.filter(
             type_of_use__in=Software.TELEVIR_GLOBAL_TYPES,
             technology__name=technology,
-            pipeline_step__name__in=CS.vect_pipeline_names,
+            pipeline_step__name__in=steps,
             owner=user,
         ).distinct()
 
@@ -1612,7 +1633,7 @@ class Parameter_DB_Utility:
             type_of_use__in=Software.TELEVIR_PROJECT_TYPES,
             technology__name=project.technology,
             parameter__televir_project_sample=None,
-            pipeline_step__name__in=CS.vect_pipeline_names,
+            pipeline_step__name__in=self.televir_constants.vect_pipeline_names_default,
             is_to_run=True,
         )
 
@@ -1736,7 +1757,7 @@ class Parameter_DB_Utility:
 
         if parameters_table.shape[0] == 0:
             self.logger.info("No parameters for this project, using global")
-            software_table, parameters_table = self.get_user_active_software_tables(
+            software_table, parameters_table = self.get_software_tables_global(
                 project.technology, owner
             )
 
@@ -1754,8 +1775,8 @@ class Parameter_DB_Utility:
 
         if parameters_table.shape[0] == 0:
             self.logger.info("No parameters for this project, using global")
-            software_table, parameters_table = self.get_user_active_software_tables(
-                sample.project.technology, owner
+            software_table, parameters_table = self.get_software_tables_global(
+                sample.project.technology, owner, metagenomics=True
             )
 
         merged_table = self.merge_software_tables(software_table, parameters_table)

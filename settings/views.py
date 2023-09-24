@@ -15,6 +15,7 @@ from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.models import PIProject_Sample
 from pathogen_identification.models import Projects as Televir_Project
 from pathogen_identification.utilities.utilities_views import (
+    check_project_params_exist,
     duplicate_metagenomics_software,
 )
 from settings.constants_settings import ConstantsSettings
@@ -76,7 +77,7 @@ class PIMetagenSampleView(LoginRequiredMixin, ListView):
         ## Technology goes to NAV-container, PipelineStep goes to NAV-container, then table
         ## Mix parameters with software
         ### IMPORTANT, must have technology__name, because old versions don't
-        constant_settings = ConstantsSettings()
+        constant_settings = PICS()
 
         condensed_pipeline_names = (
             constant_settings.vect_pipeline_televir_metagenomics_condensed
@@ -156,7 +157,7 @@ class PISettingsView(LoginRequiredMixin, ListView):
         """overwrite queryset to not get all software itens available in Software table"""
         return []
 
-    def update_software_params_global_project(self, project):
+    def update_software_params_global_project(self, project: Televir_Project):
         """
         update software global to project
         """
@@ -190,6 +191,7 @@ class PISettingsView(LoginRequiredMixin, ListView):
                     name=software.name,
                     type_of_use=software.type_of_use,
                     parameter__televir_project=project,
+                    parameter__televir_project_sample=None,
                     pipeline_step=software.pipeline_step,
                 )
 
@@ -245,6 +247,7 @@ class PISettingsView(LoginRequiredMixin, ListView):
                     name=software.name,
                     type_of_use=software.type_of_use,
                     parameter__televir_project=project,
+                    parameter__televir_project_sample=None,
                     pipeline_step=software.pipeline_step,
                 )
 
@@ -343,7 +346,7 @@ class PISettingsView(LoginRequiredMixin, ListView):
         ## Technology goes to NAV-container, PipelineStep goes to NAV-container, then table
         ## Mix parameters with software
         ### IMPORTANT, must have technology__name, because old versions don't
-        constant_settings = ConstantsSettings()
+        constant_settings = PICS()
         condensed_pipeline_names = constant_settings.vect_pipeline_names_condensed
         for technology in technologies:  ## run over all technology
             vect_pipeline_step = []

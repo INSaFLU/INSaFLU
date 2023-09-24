@@ -776,7 +776,10 @@ def turn_on_off_software(request):
                 )
                 software = Software.objects.get(pk=software_id)
                 current_is_to_run = software.is_to_run
-                if not televir_project_sample_id is None:
+                if (
+                    not televir_project_sample_id is None
+                    and not televir_project_id is None
+                ):
                     televir_project_sample = PIProject_Sample.objects.get(
                         pk=televir_project_sample_id
                     )
@@ -798,10 +801,10 @@ def turn_on_off_software(request):
                         ] = f"You cannot perform this operation. Project '{televir_project_sample.project.name}' with sample '{televir_project_sample.sample.name}' would not meet minimum pipeline step requirements."
 
                         return JsonResponse(data)
-                elif not televir_project_id is None:
+                if not televir_project_id is None:
                     televir_project = PIProjects.objects.get(pk=televir_project_id)
 
-                    pipeline_steps_project = (
+                    pipeline_steps_televir_project = (
                         pipeline_makeup.get_pipeline_makeup_result_of_operation(
                             software,
                             turn_off=current_is_to_run,
@@ -810,7 +813,7 @@ def turn_on_off_software(request):
                     )
 
                     makeup = pipeline_makeup.match_makeup_name_from_list(
-                        pipeline_steps_project
+                        pipeline_steps_televir_project
                     )
                     if makeup is None:
                         data[
@@ -821,14 +824,15 @@ def turn_on_off_software(request):
 
                 if not type_of_use_id is None:
                     if type_of_use_id in Software.TELEVIR_GLOBAL_TYPES:
-                        pipeline_steps_project = (
+                        pipeline_steps_televir_global = (
                             pipeline_makeup.get_pipeline_makeup_result_of_operation(
                                 software, turn_off=current_is_to_run
                             )
                         )
+                        print(set(pipeline_steps_televir_global))
 
                         makeup = pipeline_makeup.match_makeup_name_from_list(
-                            pipeline_steps_project
+                            pipeline_steps_televir_global
                         )
                         if makeup is None:
                             data[

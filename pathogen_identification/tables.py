@@ -562,8 +562,8 @@ class SampleTable(tables.Table):
             > 1
             and CS.METAGENOMICS
         ):
-            if check_sample_software_exists(record) is False:
-                duplicate_metagenomics_software(record.project, record)
+            # if check_sample_software_exists(record) is False:
+            #    duplicate_metagenomics_software(record.project, record)
             ## add light gray background using span
 
             color = ""

@@ -10,10 +10,13 @@ from django.conf import settings
 
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PI_ConstantsSettings
+from pathogen_identification.constants_settings import (
+    ConstantsSettings as PI_ConstantsSettings,
+)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility, Utility_Pipeline_Manager)
+    Parameter_DB_Utility,
+    Utility_Pipeline_Manager,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -2445,7 +2448,13 @@ class DefaultParameters(object):
         return vect_parameters
 
     def get_minimap2_remap_ONT_default(
-        self, user, type_of_use, technology_name, sample=None, pipeline_step=""
+        self,
+        user,
+        type_of_use,
+        technology_name,
+        sample=None,
+        pipeline_step="",
+        is_to_run=False,
     ):
         """
         minimap remap ONT default
@@ -2466,7 +2475,7 @@ class DefaultParameters(object):
         software.can_be_on_off_in_pipeline = (
             True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
         )
-        software.is_to_run = False
+        software.is_to_run = is_to_run
 
         ###  small description of software
         software.help_text = ""
@@ -2510,7 +2519,13 @@ class DefaultParameters(object):
         return vect_parameters
 
     def get_minimap2_remap_illumina_default(
-        self, user, type_of_use, technology_name, sample=None, pipeline_step=""
+        self,
+        user,
+        type_of_use,
+        technology_name,
+        sample=None,
+        pipeline_step="",
+        is_to_run=False,
     ):
         """
         minimap remap illlumina default
@@ -2534,7 +2549,7 @@ class DefaultParameters(object):
         software.can_be_on_off_in_pipeline = (
             True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
         )
-        software.is_to_run = False
+        software.is_to_run = is_to_run
 
         ###  small description of software
         software.help_text = ""

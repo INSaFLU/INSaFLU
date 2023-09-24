@@ -109,8 +109,6 @@ class SoftwaresTable(tables.Table):
 
         ## need to remove # in href, otherwise still active
 
-        print(self.televir_project)
-        print(self.televir_project_sample)
         sz_href = (
             '<a href="{}id_turn_software_on_off" {} '.format(
                 "#" if record.can_be_on_off_in_pipeline and b_enable_options else "",
@@ -279,7 +277,6 @@ class SoftwaresTable(tables.Table):
                         dataset=self.dataset,
                     )
                 )
-            print(self.televir_project.pk)
 
             str_links = (
                 "<a href="

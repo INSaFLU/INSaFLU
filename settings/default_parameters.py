@@ -160,7 +160,6 @@ class DefaultParameters(object):
             pipeline_step__name=pipeline_step,
             parameter__televir_project=televir_project,
         )
-        print("gettings software: ", software_name, technology_name, pipeline_step)
 
         if len(software_list) == 0:
             software_list = Software.objects.filter(

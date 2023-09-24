@@ -28,6 +28,18 @@ from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
 
 
+class EmptyRemapMain:
+    run = None
+    sample = None
+    merged_log = None
+    performed = False
+    found_total = 0
+    coverage_minimum = 0
+    coverage_maximum = 0
+    success = False
+    coverage_mean = ""
+
+
 def check_sample_software_exists(sample: PIProject_Sample) -> bool:
     """
     Return True if sample software exists
@@ -57,7 +69,6 @@ def check_project_params_exist(project: Projects) -> bool:
 def duplicate_metagenomics_software(project: Projects, sample: PIProject_Sample):
     owner = project.owner
     project_call = project if check_project_params_exist(project) else None
-    print(project_call)
     query_set = Software.objects.filter(
         owner=owner,
         type_of_use__in=[

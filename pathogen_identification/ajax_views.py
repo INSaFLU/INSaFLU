@@ -213,17 +213,16 @@ def submit_televir_project_sample(request):
     """
     if request.is_ajax():
         data = {"is_ok": False, "is_deployed": False}
-        print("submit_televir_project_sample")
         process_SGE = ProcessSGE()
         user = request.user
 
         sample_id = int(request.POST["sample_id"])
-        print("sample_id", sample_id)
         sample = PIProject_Sample.objects.get(id=int(sample_id))
         project = Projects.objects.get(id=int(sample.project.pk))
 
         software_utils = SoftwareTreeUtils(user, project=project)
         runs_to_deploy = software_utils.check_runs_to_deploy_sample(sample)
+
         print("runs_to_deploy", runs_to_deploy)
 
         try:

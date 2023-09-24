@@ -310,8 +310,6 @@ class ProjectTableMetagenomics(ProjectTable):
             CS.EXPLIFY_MERGE_SUFFIX + f".{record.pk}.tsv",
         )
 
-        print(merge_explify_file)
-
         found_explify_result = os.path.isfile(merge_explify_file)
         download_button = ""
 
@@ -559,7 +557,7 @@ class SampleTable(tables.Table):
                 sample=record,
                 status=ParameterSet.STATUS_FINISHED,
             ).count()
-            > 1
+            > 0
             and CS.METAGENOMICS
         ):
             # if check_sample_software_exists(record) is False:

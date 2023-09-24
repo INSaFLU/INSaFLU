@@ -26,7 +26,6 @@ from extend_user.models import Profile
 from fluwebvirus.settings import MEDIA_ROOT, STATICFILES_DIRS
 from managing_files.forms import AddSampleProjectForm
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import Sample
 from managing_files.tables import SampleToProjectsTable
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.constants_settings import \
@@ -51,8 +50,8 @@ from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
 from pathogen_identification.utilities.utilities_general import \
     infer_run_media_dir
 from pathogen_identification.utilities.utilities_views import (
-    FinalReportCompound, ReportSorter, final_report_best_cov_by_accid,
-    recover_assembly_contigs)
+    EmptyRemapMain, FinalReportCompound, ReportSorter,
+    final_report_best_cov_by_accid, recover_assembly_contigs)
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
 from utils.support_django_template import get_link_for_dropdown_item
@@ -651,7 +650,7 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
             ).distinct()
 
         samples = SampleTable(query_set)
-            
+
         RequestConfig(
             self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
         ).configure(samples)
@@ -923,7 +922,12 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             assembly_available = False
 
         #
-        run_remap = RunRemapMain.objects.get(sample=sample_main, run=run_main)
+        try:
+            run_remap = RunRemapMain.objects.get(sample=sample_main, run=run_main)
+            remap_available = run_remap.performed
+        except RunRemapMain.DoesNotExist:
+            run_remap = EmptyRemapMain
+            remap_available = False
         #
         read_classification = ReadClassification.objects.get(
             sample=sample_main, run=run_main

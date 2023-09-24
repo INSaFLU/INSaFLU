@@ -749,7 +749,6 @@ class UpdateParametersTelevirProjView(LoginRequiredMixin, UpdateView):
             software = form.save(commit=False)
 
             project_id = self.kwargs.get("pk_televir_project")
-            print("########################")
 
             project = None
             if not project_id is None:

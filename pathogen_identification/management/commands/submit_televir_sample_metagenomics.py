@@ -50,12 +50,6 @@ class Command(BaseCommand):
         )
 
         parser.add_argument(
-            "--leaf_id",
-            type=int,
-            help="televir leaf to be run on sample (pk)",
-        )
-
-        parser.add_argument(
             "-o",
             "--outdir",
             type=str,
@@ -69,8 +63,6 @@ class Command(BaseCommand):
         user = User.objects.get(pk=options["user_id"])
         target_sample = PIProject_Sample.objects.get(pk=options["sample_id"])
         project = target_sample.project
-        leaf_index = options["leaf_id"]
-        matched_path_node = SoftwareTreeNode.objects.get(pk=leaf_index)
 
         ### PROCESS CONTROLER
         process_controler = ProcessControler()
@@ -80,7 +72,6 @@ class Command(BaseCommand):
             user,
             process_controler.get_name_televir_project_sample_metagenomics(
                 sample_pk=target_sample.pk,
-                leaf_pk=matched_path_node.pk,
             ),
             ProcessControler.FLAG_RUNNING,
         )
@@ -88,7 +79,6 @@ class Command(BaseCommand):
         ### UTILITIES
         utils = Utils_Manager()
         software_utils = SoftwareTreeUtils(user, project, sample=target_sample)
-
         local_tree = software_utils.generate_sample_metagenomics_tree()
 
         # tree_makeup = local_tree.makeup
@@ -96,77 +86,81 @@ class Command(BaseCommand):
         pipeline_tree_index = local_tree.software_tree_pk
         pipeline_tree_query = SoftwareTree.objects.get(pk=pipeline_tree_index)
 
-        ### MANAGEMENT
-        submission_dict = {target_sample: []}
+        runs_to_deploy = software_utils.check_runs_to_submit_metagenomics_sample(sample)
 
-        was_run_killed = utils.parameter_util.check_ParameterSet_killed(
-            sample=target_sample, leaf=matched_path_node, project=project
-        )
-
-        print("was_run_killed", was_run_killed)
-
-        ### draw graph
-        graph_progress = TreeProgressGraph(target_sample)
-
-        ### SUBMISSION
-        try:
-            if was_run_killed:
-                utils.parameter_util.parameterset_update_status(
-                    sample=target_sample,
-                    leaf=matched_path_node,
-                    project=project,
-                    status=ParameterSet.STATUS_NOT_STARTED,
+        for sample, matched_nodes_list in runs_to_deploy.items():
+            submission_dict = {sample: []}
+            for matched_path_node in matched_nodes_list:
+                was_run_killed = utils.parameter_util.check_ParameterSet_killed(
+                    sample=target_sample, leaf=matched_path_node, project=project
                 )
 
-            else:
-                if (
-                    utils.parameter_util.check_ParameterSet_available_to_run(
-                        sample=target_sample, leaf=matched_path_node, project=project
+                print("was_run_killed", was_run_killed)
+
+                ### draw graph
+                graph_progress = TreeProgressGraph(target_sample)
+
+                ### SUBMISSION
+                try:
+                    if was_run_killed:
+                        utils.parameter_util.parameterset_update_status(
+                            sample=target_sample,
+                            leaf=matched_path_node,
+                            project=project,
+                            status=ParameterSet.STATUS_NOT_STARTED,
+                        )
+
+                    else:
+                        if (
+                            utils.parameter_util.check_ParameterSet_available_to_run(
+                                sample=target_sample,
+                                leaf=matched_path_node,
+                                project=project,
+                            )
+                            is False
+                        ):
+                            raise Exception("ParameterSet not available")
+
+                        run = Run_Main_from_Leaf(
+                            user=user,
+                            input_data=target_sample,
+                            project=project,
+                            pipeline_leaf=matched_path_node,
+                            pipeline_tree=pipeline_tree_query,
+                            odir=options["outdir"],
+                            threads=ConstantsSettings.DEPLOYMENT_THREADS,
+                        )
+
+                        if run.is_available:
+                            run.get_in_line()
+                            submission_dict[target_sample].append(run)
+
+                        for sample, runs in submission_dict.items():
+                            for run in runs:
+                                run.Submit()
+
+                        graph_progress.generate_graph()
+                        set_control_reports(project.pk)
+
+                    process_SGE.set_process_controler(
+                        user,
+                        process_controler.get_name_televir_project_sample_metagenomics_run(
+                            sample_pk=target_sample.pk,
+                            leaf_pk=matched_path_node.pk,
+                        ),
+                        ProcessControler.FLAG_FINISHED,
                     )
-                    is False
-                ):
-                    raise Exception("ParameterSet not available")
 
-                run = Run_Main_from_Leaf(
-                    user=user,
-                    input_data=target_sample,
-                    project=project,
-                    pipeline_leaf=matched_path_node,
-                    pipeline_tree=pipeline_tree_query,
-                    odir=options["outdir"],
-                    threads=ConstantsSettings.DEPLOYMENT_THREADS,
-                )
+                except Exception as e:
+                    print(e)
+                    graph_progress.generate_graph()
 
-                if run.is_available:
-                    run.get_in_line()
-                    submission_dict[target_sample].append(run)
-
-                for sample, runs in submission_dict.items():
-                    for run in runs:
-                        run.Submit()
-
-                graph_progress.generate_graph()
-                set_control_reports(project.pk)
-
-            process_SGE.set_process_controler(
-                user,
-                process_controler.get_name_televir_project_sample_metagenomics(
-                    sample_pk=target_sample.pk,
-                    leaf_pk=matched_path_node.pk,
-                ),
-                ProcessControler.FLAG_FINISHED,
-            )
-
-        except Exception as e:
-            print(e)
-            graph_progress.generate_graph()
-
-            process_SGE.set_process_controler(
-                user,
-                process_controler.get_name_televir_project_sample_metagenomics(
-                    sample_pk=target_sample.pk,
-                    leaf_pk=matched_path_node.pk,
-                ),
-                ProcessControler.FLAG_ERROR,
-            )
-            raise e
+                    process_SGE.set_process_controler(
+                        user,
+                        process_controler.get_name_televir_project_sample_metagenomics_run(
+                            sample_pk=target_sample.pk,
+                            leaf_pk=matched_path_node.pk,
+                        ),
+                        ProcessControler.FLAG_ERROR,
+                    )
+                    raise e

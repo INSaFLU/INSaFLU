@@ -4,8 +4,10 @@ from datetime import datetime
 from operator import itemgetter
 
 from django.conf import settings
+
 # from django.db.models import Manager as GeoManager
 from django.contrib.auth.models import User
+
 # Create your models here.
 from django.contrib.gis.db.models import GeoManager  # #  change to django  2.x
 from django.contrib.gis.db.models import PointField
@@ -2204,11 +2206,16 @@ class ProcessControler(models.Model):
         return "{}{}_sample_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, project_pk, sample_pk
         )
-    def get_name_televir_project_sample_metagenomics(self, sample_pk, leaf_pk):
+
+    def get_name_televir_project_sample_metagenomics_run(self, sample_pk, leaf_pk):
         return "{}_combined_metagen_{}_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, sample_pk, leaf_pk
         )
 
+    def get_name_televir_project_sample_metagenomics(self, sample_pk):
+        return "{}_combined_metagen_{}_{}".format(
+            ProcessControler.PREFIX_TELEVIR_PROJECT, sample_pk
+        )
 
     def get_name_televir_project_sample_sort(self, sample_pk):
         return "{}_report_sort_{}".format(

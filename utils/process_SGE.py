@@ -962,7 +962,9 @@ class ProcessSGE(object):
             raise Exception("Fail to submit the job.")
         return sge_id
 
-    def set_submit_televir_sample_metagenomics(self, user, sample_pk: int, leaf_pk: int):
+    def set_submit_televir_sample_metagenomics(
+        self, user, sample_pk: int, leaf_pk: int
+    ):
         """
         submit the job to televir
         """
@@ -971,7 +973,7 @@ class ProcessSGE(object):
         out_dir = self.utils.get_temp_dir()
 
         vect_command = [
-            "python3 {} submit_televir_sample_metagenomics --user_id {} --sample_id {} --leaf_id {} -o {}".format(
+            "python3 {} submit_televir_sample_metagenomics_run --user_id {} --sample_id {} --leaf_id {} -o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user_pk,
                 sample_pk,
@@ -1002,7 +1004,7 @@ class ProcessSGE(object):
             if sge_id != None:
                 self.set_process_controlers(
                     user,
-                    process_controler.get_name_televir_project_sample_metagenomics(
+                    process_controler.get_name_televir_project_sample_metagenomics_run(
                         sample_pk,
                         leaf_pk,
                     ),

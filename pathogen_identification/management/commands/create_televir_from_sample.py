@@ -67,14 +67,20 @@ class Command(BaseCommand):
         sample_name = options["sample_name"]
         account = options["user_login"]
 
+        user = User.objects.get(username=account)
+
+        try:
+            sample = Sample.objects.get(name=sample_name, owner=user, is_deleted=False)
+        except Sample.DoesNotExist:
+            self.stdout.write(f"Sample {sample_name} does not exist.")
+            return False
+
+        process_SGE = ProcessSGE()
+
         if options["test"]:
             self.success_message(1)
 
         try:
-            process_SGE = ProcessSGE()
-            user = User.objects.get(username=account)
-            sample = Sample.objects.get(name=sample_name, owner=user)
-
             try:
                 project = Projects.objects.get(
                     name__iexact=project_name,

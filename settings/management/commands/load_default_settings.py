@@ -72,7 +72,8 @@ class Command(BaseCommand):
                 software.save()
             else:  ### if PipelineStep not none, test if it is correct
                 vect_parameters = default_parameters.get_vect_parameters(software)
-
+                if vect_parameters is None:
+                    continue
                 if software.name in SoftwareNames.polyvalent_software:
                     if (
                         software.pipeline_step.name
@@ -85,8 +86,6 @@ class Command(BaseCommand):
                         ].software.pipeline_step
                         software.save()
 
-                if vect_parameters is None:
-                    continue
                 elif (
                     software.pipeline_step.name
                     != vect_parameters[0].software.pipeline_step.name

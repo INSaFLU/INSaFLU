@@ -3,16 +3,18 @@ Created on January 30, 2023
 
 @author: daniel.sobral
 """
-from django.core.management import BaseCommand
-from django.contrib.auth.models import User
-from managing_files.models import Sample
-import os
 import logging
+import os
+
+from django.contrib.auth.models import User
+from django.core.management import BaseCommand
+
+from managing_files.models import Sample
 
 
 def get_sample_name(user: User, sample_name: str) -> Sample:
     sample = (
-        Sample.objects.filter(name=sample_name, owner=user)
+        Sample.objects.filter(name=sample_name, owner=user, is_deleted=False)
         .order_by("creation_date")
         .last()
     )
@@ -65,15 +67,12 @@ class Command(BaseCommand):
 
     # A command must define handle()
     def success_message(self, sample_name: str, is_ready: bool):
-
         self.stdout.write(f"Sample {sample_name}. Is Ready: {is_ready}")
 
     def sample_does_not_exist_message(self, sample_name: str):
-
         self.stdout.write(f"Sample {sample_name} does not exist.")
 
     def handle(self, *args, **options):
-
         sample_name = options["name"]
         account = options["user_login"]
 
@@ -86,7 +85,6 @@ class Command(BaseCommand):
             return False
 
         try:
-
             user = User.objects.get(username=account)
             sample = get_sample_name(user, sample_name)
 

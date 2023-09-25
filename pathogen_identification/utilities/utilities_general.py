@@ -302,6 +302,8 @@ def merge_classes(r1: pd.DataFrame, r2: pd.DataFrame, maxt=6, exclude="phage"):
     ###
 
     r1 = r1[["taxid", "counts"]]
+    r1 = r1.sort_values("counts", ascending=False)
+    r2 = r2.sort_values("counts", ascending=False)
     r1_raw = r1.copy()
     r2_raw = r2.copy()
 

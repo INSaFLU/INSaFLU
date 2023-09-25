@@ -1630,6 +1630,7 @@ class Parameter_DB_Utility:
             type_of_use__in=Software.TELEVIR_GLOBAL_TYPES,
             technology__name=technology,
             pipeline_step__name__in=steps,
+            is_to_run=True,
             owner=user,
         ).distinct()
 

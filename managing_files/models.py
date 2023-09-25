@@ -2213,7 +2213,7 @@ class ProcessControler(models.Model):
         )
 
     def get_name_televir_project_sample_metagenomics(self, sample_pk):
-        return "{}_combined_metagen_{}_{}".format(
+        return "{}_combined_metagen_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, sample_pk
         )
 

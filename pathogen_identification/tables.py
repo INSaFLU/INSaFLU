@@ -390,8 +390,6 @@ class SampleTable(tables.Table):
                 + record.name
                 + '" pk="'
                 + str(record.pk)
-                + "deploy-merge-explify-url="
-                + reverse("explify_merge_sample")
                 + '"><i class="fa fa-circle"></i></span> </a>'
             )
         else:

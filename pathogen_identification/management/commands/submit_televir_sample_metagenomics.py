@@ -86,7 +86,9 @@ class Command(BaseCommand):
         pipeline_tree_index = local_tree.software_tree_pk
         pipeline_tree_query = SoftwareTree.objects.get(pk=pipeline_tree_index)
 
-        runs_to_deploy = software_utils.check_runs_to_submit_metagenomics_sample(sample)
+        runs_to_deploy = software_utils.check_runs_to_submit_metagenomics_sample(
+            target_sample
+        )
 
         for sample, matched_nodes_list in runs_to_deploy.items():
             print("sample", sample)

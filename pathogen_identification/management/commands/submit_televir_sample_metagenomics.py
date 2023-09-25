@@ -89,6 +89,8 @@ class Command(BaseCommand):
         runs_to_deploy = software_utils.check_runs_to_submit_metagenomics_sample(sample)
 
         for sample, matched_nodes_list in runs_to_deploy.items():
+            print("sample", sample)
+            print("matched_nodes_list", matched_nodes_list)
             submission_dict = {sample: []}
             for matched_path_node in matched_nodes_list:
                 was_run_killed = utils.parameter_util.check_ParameterSet_killed(

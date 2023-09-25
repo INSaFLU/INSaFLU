@@ -68,13 +68,17 @@ def check_project_params_exist(project: Projects) -> bool:
 
 def duplicate_metagenomics_software(project: Projects, sample: PIProject_Sample):
     owner = project.owner
+    project_exists = check_project_params_exist(project)
+    if project_exists:
+        project_call = project
+        types_of_use = Software.TELEVIR_PROJECT_TYPES
+    else:
+        project_call = None
+        types_of_use = Software.TELEVIR_GLOBAL_TYPES
     project_call = project if check_project_params_exist(project) else None
     query_set = Software.objects.filter(
         owner=owner,
-        type_of_use__in=[
-            Software.TYPE_OF_USE_televir_global,
-            Software.TYPE_OF_USE_televir_settings,
-        ],
+        type_of_use__in=types_of_use,
         type_of_software__in=[
             Software.TYPE_SOFTWARE,
             Software.TYPE_INSAFLU_PARAMETER,

@@ -695,10 +695,13 @@ class DefaultSoftware(object):
                     software_name
                 ),
                 pipeline_step__name=vect_parameters[0].software.pipeline_step,
+                parameter__televir_project=None,
+                parameter__televir_project_sample=None,
             ).order_by("id")
 
             if software_query.count() > 1:
-                software = software_query.exclude(id=software_query.last().id)
+                software = software_query.exclude(pk=software_query.last().pk)
+
                 parameters = Parameter.objects.filter(software__in=software)
                 with LockedAtomicTransaction(Parameter):
                     parameters.delete()

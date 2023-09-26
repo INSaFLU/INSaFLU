@@ -842,6 +842,7 @@ class DefaultParameters(object):
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
             )
+
         elif software.name == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ILLU_name:
             return self.get_minimap2_remap_illumina_default(
                 software.owner,
@@ -849,40 +850,27 @@ class DefaultParameters(object):
                 ConstantsSettings.TECHNOLOGY_illumina,
                 pipeline_step=ConstantsSettings.PIPELINE_NAME_metagenomics_combine,
             )
-
-        elif (
-            software.name_extended
-            == SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ILLU_name_extended
-        ):
+        elif software.name == SoftwareNames.SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name:
+            return self.get_minimap2_map_assembly_default(
+                software.owner,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
+            )
+        elif software.name == SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ILLU_name:
             return self.get_minimap2_depletion_illumina_default(
                 software.owner,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
             )
 
-        elif (
-            software.name_extended
-            == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name_extended
-        ):
+        elif software.name == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name:
             return self.get_minimap2_remap_ONT_default(
                 software.owner,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_minion,
             )
-        elif (
-            software.name_extended
-            == SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ONT_name_extended
-        ):
+        elif software.name == SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ONT_name:
             return self.get_minimap2_depletion_ONT_default(
-                software.owner,
-                Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_minion,
-            )
-        elif (
-            software.name_extended
-            == SoftwareNames.SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name_extended
-        ):
-            return self.get_minimap2_map_assembly_default(
                 software.owner,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_minion,

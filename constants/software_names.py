@@ -902,9 +902,24 @@ class SoftwareNames(object):
         SOFTWARE_CENTRIFUGE_name,
         SOFTWARE_SNIPPY_name,
         SOFTWARE_BWA_name,
+        SOFTWARE_BOWTIE2_REMAP_name,
+        SOFTWARE_KRAKEN2_name,
+        SOFTWARE_MINIMAP2_REMAP_ONT_name,
     ]
     # pipeline_steps per software, for software with multiple pipeline_steps.
     polyvalent_software_pipelines = {
+        SOFTWARE_MINIMAP2_REMAP_ONT_name: [
+            ConstantsSettings.PIPELINE_NAME_remapping,
+            ConstantsSettings.PIPELINE_NAME_metagenomics_combine,
+        ],
+        SOFTWARE_KRAKEN2_name: [
+            ConstantsSettings.PIPELINE_NAME_contig_classification,
+            ConstantsSettings.PIPELINE_NAME_read_classification,
+        ],
+        SOFTWARE_BOWTIE2_REMAP_name: [
+            ConstantsSettings.PIPELINE_NAME_remapping,
+            ConstantsSettings.PIPELINE_NAME_metagenomics_combine,
+        ],
         SOFTWARE_CENTRIFUGE_name: [
             ConstantsSettings.PIPELINE_NAME_viral_enrichment,
             ConstantsSettings.PIPELINE_NAME_read_classification,

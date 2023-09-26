@@ -61,8 +61,14 @@ class Command(BaseCommand):
                 continue
 
             ### need to set the pipeline...
+            vect_parameters = default_parameters.get_vect_parameters(software)
+            if vect_parameters is None:
+                print(
+                    "Error, software parameters not found for software:", software.name
+                )
+                continue
+
             if software.pipeline_step is None:
-                vect_parameters = default_parameters.get_vect_parameters(software)
                 software.can_be_on_off_in_pipeline = vect_parameters[
                     0
                 ].software.can_be_on_off_in_pipeline
@@ -71,9 +77,6 @@ class Command(BaseCommand):
                 software.help_text = vect_parameters[0].software.help_text
                 software.save()
             else:  ### if PipelineStep not none, test if it is correct
-                vect_parameters = default_parameters.get_vect_parameters(software)
-                if vect_parameters is None:
-                    continue
                 if software.name in SoftwareNames.polyvalent_software:
                     if (
                         software.pipeline_step.name

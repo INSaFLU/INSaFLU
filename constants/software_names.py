@@ -907,6 +907,7 @@ class SoftwareNames(object):
         SOFTWARE_MINIMAP2_REMAP_ONT_name,
     ]
     # pipeline_steps per software, for software with multiple pipeline_steps.
+
     polyvalent_software_pipelines = {
         SOFTWARE_MINIMAP2_REMAP_ONT_name: [
             ConstantsSettings.PIPELINE_NAME_remapping,

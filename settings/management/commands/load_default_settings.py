@@ -73,7 +73,6 @@ class Command(BaseCommand):
             else:  ### if PipelineStep not none, test if it is correct
                 vect_parameters = default_parameters.get_vect_parameters(software)
                 if vect_parameters is None:
-                    print(f"Error: software parameters not found for: {software.name}")
                     continue
                 if software.name in SoftwareNames.polyvalent_software:
                     if (

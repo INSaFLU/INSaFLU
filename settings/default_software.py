@@ -685,6 +685,7 @@ class DefaultSoftware(object):
 
         except Software.MultipleObjectsReturned:
             print("MultipleObjectsReturned: " + software_name, " - ", user)
+            print(f"pipeline step: {vect_parameters[0].software.pipeline_step}")
             ## keep the first one, delete the rest
             software_query = Software.objects.filter(
                 name=software_name,

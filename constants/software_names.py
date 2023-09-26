@@ -909,10 +909,6 @@ class SoftwareNames(object):
     # pipeline_steps per software, for software with multiple pipeline_steps.
 
     polyvalent_software_pipelines = {
-        SOFTWARE_MINIMAP2_REMAP_ONT_name: [
-            ConstantsSettings.PIPELINE_NAME_remapping,
-            ConstantsSettings.PIPELINE_NAME_metagenomics_combine,
-        ],
         SOFTWARE_KRAKEN2_name: [
             ConstantsSettings.PIPELINE_NAME_contig_classification,
             ConstantsSettings.PIPELINE_NAME_read_classification,
@@ -932,6 +928,7 @@ class SoftwareNames(object):
         SOFTWARE_MINIMAP2_REMAP_ONT_name: [
             ConstantsSettings.PIPELINE_NAME_remapping,
             ConstantsSettings.PIPELINE_NAME_host_depletion,
+            ConstantsSettings.PIPELINE_NAME_metagenomics_combine,
         ],
         SOFTWARE_BWA_name: [
             ConstantsSettings.PIPELINE_NAME_host_depletion,

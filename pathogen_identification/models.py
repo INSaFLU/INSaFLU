@@ -2,6 +2,7 @@ import codecs
 import datetime
 import os
 
+import networkx as nx
 import numpy as np
 import pandas as pd
 from django import forms
@@ -150,6 +151,28 @@ class SoftwareTreeNode(models.Model):
     class Meta:
         ordering = ["name"]
 
+    def get_descendants(self, include_self: bool = True):
+        """return all descendants of this node"""
+
+        nodes = SoftwareTreeNode.objects.filter(
+            SoftwareTree=self.software_tree
+        ).values_list("id", flat=True)
+        edges = [
+            (node.parent, node.id)
+            for node in SoftwareTreeNode.objects.filter(SoftwareTree=self.software_tree)
+        ]
+
+        graph = nx.DiGraph()
+        graph.add_nodes_from(nodes)
+        graph.add_edges_from(edges)
+
+        descendants = nx.descendants(graph, self.id)
+
+        if include_self:
+            descendants = descendants | {self.id}
+
+        return SoftwareTreeNode.objects.filter(id__in=descendants)
+
 
 # class SoftwareTree_Path(models.Model):
 #    software_tree = models.ForeignKey(SoftwareTree, on_delete=models.CASCADE)
@@ -274,6 +297,16 @@ class ParameterSet(models.Model):
     project = models.ForeignKey(Projects, on_delete=models.CASCADE, null=True)
     leaf = models.ForeignKey(SoftwareTreeNode, on_delete=models.PROTECT, null=True)
     status = models.IntegerField(choices=STATUS_CHOICES, default=STATUS_NOT_STARTED)
+
+    def get_leaf_descendants(self):
+        """return software tree nodes that are descendants of the leaf node"""
+
+        if self.leaf is None:
+            return []
+
+        descendants = self.leaf.get_descendants(include_self=True)
+
+        return descendants
 
     def register_subprocess(self):
         self.status = self.STATUS_RUNNING

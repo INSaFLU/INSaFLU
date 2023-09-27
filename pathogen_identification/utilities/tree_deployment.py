@@ -284,6 +284,7 @@ class Tree_Node:
 
         self.module = node_metadata[0]
         self.node_index = node_index
+        print(pipe_tree.nodes_df)
 
         self.branch = pipe_tree.nodes_df.loc[node_index].branch
         self.children = pipe_tree.edge_df[
@@ -292,7 +293,7 @@ class Tree_Node:
 
         self.parameters = self.determine_params(pipe_tree)
         self.software_tree_pk = software_tree_pk
-        self.leaves = pipe_tree.leaves_from_node_compress(node_index)
+        self.leaves = pipe_tree.leaves_from_node_using_graph(node_index)
 
         print("#################### node ####################")
         print(f"node {node_index} has leaves {self.leaves}")
@@ -1300,16 +1301,19 @@ class TreeProgressGraph:
         stacked_df_dict = {}
 
         for ps in existing_parameter_sets:
-            index = ps.leaf.index
-            tree_pk = ps.leaf.software_tree.pk
-            pipetree = pipetrees_dict[tree_pk]
-            node_leaves = pipetree.leaves_from_node(index)
-            if len(node_leaves) == 0:
-                continue
-            leaf_node_index = node_leaves[0]
-            leaf_node = SoftwareTreeNode.objects.get(
-                index=leaf_node_index, software_tree=ps.leaf.software_tree
-            )
+            # index = ps.leaf.index
+            # tree_pk = ps.leaf.software_tree.pk
+            # pipetree = pipetrees_dict[tree_pk]
+            # node_leaves = pipetree.leaves_from_node(index)
+            # if len(node_leaves) == 0:
+            #    continue
+
+            # leaf_node_index = node_leaves[0]
+            # leaf_node = SoftwareTreeNode.objects.get(
+            #    index=leaf_node_index, software_tree=ps.leaf.software_tree
+            # )
+            node_leaves = ps.get_leaf_descendants()
+            leaf_node = node_leaves[0]
             node_params = self.pipeline_utils.get_leaf_parameters(leaf_node)
             node_params = node_params[["module", "software"]]
             node_params = node_params.set_index("module")

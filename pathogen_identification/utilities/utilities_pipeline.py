@@ -10,15 +10,17 @@ import pandas as pd
 from django.contrib.auth.models import User
 from django.db.models import Q, QuerySet
 
-from constants.constants import \
-    Televir_Directory_Constants as Televir_Directories
+from constants.constants import Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import (ParameterSet, PIProject_Sample,
-                                            Projects, SoftwareTree,
-                                            SoftwareTreeNode)
-from pathogen_identification.utilities.utilities_televir_dbs import \
-    Utility_Repository
+from pathogen_identification.models import (
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
+from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -344,6 +346,8 @@ class PipelineTree:
     edges: dict
     leaves: list
     makeup: int
+    graph: nx.DiGraph
+    node_index: pd.DataFrame
 
     def __init__(
         self,
@@ -441,13 +445,16 @@ class PipelineTree:
         """
         Generate a graph of pipeline
         """
-        nodes_index = [i for i, x in enumerate(self.nodes)]
+        # nodes_index = [i for i, x in enumerate(self.nodes)]
 
-        nodes_index = self.node_index.index.tolist()
+        # nodes_index = self.node_index.index.tolist()
 
         self.graph = nx.DiGraph()
+
         self.graph.add_edges_from(self.edge_dict)
-        self.graph.add_nodes_from(nodes_index)
+        print("NODE INDEX")
+        print(self.node_index)
+        self.graph.add_nodes_from(self.node_index.index.tolist())
 
     def get_all_graph_paths(self) -> dict:
         """
@@ -556,16 +563,30 @@ class PipelineTree:
 
         return leaves
 
-    def leaves_from_node_compress(self, node):
+    def leaves_from_node_compress_recursive(self, node):
         """ """
         leaves = []
         if len(self.compress_dag_dict[node]) == 0:
             return [node]
 
         for n in self.compress_dag_dict[node]:
-            leaves.extend(self.leaves_from_node_compress(n))
+            leaves.extend(self.leaves_from_node_compress_recursive(n))
 
         return leaves
+
+    def leaves_from_node_using_graph(self, node):
+        """
+        Get all leaves from a node"""
+        self.generate_graph()
+
+        leaves = nx.descendants(self.graph, node)
+        print(leaves)
+
+        leaves = [x for x in leaves if self.graph.out_degree(x) == 0]
+
+        return leaves
+
+        # leaves = []
 
     def reduced_tree(self, leaves_list: list) -> Tuple[dict, pd.DataFrame]:
         """trims paths not leading to provided leaves"""
@@ -800,6 +821,9 @@ class PipelineTree:
 
             return nodes_df, edge_df
 
+        print("##### nodes compress init")
+        print(self.nodes_compress)
+
         for node in self.nodes_compress:
             node_name = self.node_index.loc[node[0]].node
 
@@ -844,9 +868,15 @@ class PipelineTree:
                 new_nodes, new_edges, nodes_df, edge_df
             )
 
+        print("##### NODES DF")
+
+        print(nodes_df)
+        print(edge_df)
+
         self.nodes_compress = (
             nodes_df.drop_duplicates(subset=["node"]).to_numpy().tolist()
         )
+
         self.edge_compress = edge_df.drop_duplicates().to_numpy().tolist()
 
         self.compress_dag_dict = {
@@ -1737,7 +1767,7 @@ class Parameter_DB_Utility:
 
         combined_table = combined_table.reset_index(drop=True)
         software_names = combined_table["software_name"].values
-        can_change= combined_table["can_change"].values
+        can_change = combined_table["can_change"].values
 
         ## remove duplicate columns
         #
@@ -2339,7 +2369,10 @@ class SoftwareTreeUtils:
 
         parent_dict = tree.get_parents_dict()
 
-        for index, node in enumerate(tree.nodes):
+        for index, row in tree.node_index.iterrows():
+            index = int(index)
+            node = row.node
+
             is_leaf = int(index in tree.leaves)
             name = node[0]
             value = node[1]

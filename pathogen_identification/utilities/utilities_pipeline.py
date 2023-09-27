@@ -10,17 +10,15 @@ import pandas as pd
 from django.contrib.auth.models import User
 from django.db.models import Q, QuerySet
 
-from constants.constants import Televir_Directory_Constants as Televir_Directories
+from constants.constants import \
+    Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import (
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
-from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
+from pathogen_identification.models import (ParameterSet, PIProject_Sample,
+                                            Projects, SoftwareTree,
+                                            SoftwareTreeNode)
+from pathogen_identification.utilities.utilities_televir_dbs import \
+    Utility_Repository
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -1739,6 +1737,7 @@ class Parameter_DB_Utility:
 
         combined_table = combined_table.reset_index(drop=True)
         software_names = combined_table["software_name"].values
+        can_change= combined_table["can_change"].values
 
         ## remove duplicate columns
         #
@@ -1747,6 +1746,7 @@ class Parameter_DB_Utility:
         ]
 
         combined_table["software_name"] = software_names
+        combined_table["can_change"] = can_change
 
         return combined_table
 

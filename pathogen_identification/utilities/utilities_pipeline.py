@@ -452,8 +452,7 @@ class PipelineTree:
         self.graph = nx.DiGraph()
 
         self.graph.add_edges_from(self.edge_dict)
-        print("NODE INDEX")
-        print(self.node_index)
+
         self.graph.add_nodes_from(self.node_index.index.tolist())
 
     def get_all_graph_paths(self) -> dict:
@@ -580,7 +579,6 @@ class PipelineTree:
         self.generate_graph()
 
         leaves = nx.descendants(self.graph, node)
-        print(leaves)
 
         leaves = [x for x in leaves if self.graph.out_degree(x) == 0]
 
@@ -821,9 +819,6 @@ class PipelineTree:
 
             return nodes_df, edge_df
 
-        print("##### nodes compress init")
-        print(self.nodes_compress)
-
         for node in self.nodes_compress:
             node_name = self.node_index.loc[node[0]].node
 
@@ -867,11 +862,6 @@ class PipelineTree:
             nodes_df, edge_df = merge_new_branches(
                 new_nodes, new_edges, nodes_df, edge_df
             )
-
-        print("##### NODES DF")
-
-        print(nodes_df)
-        print(edge_df)
 
         self.nodes_compress = (
             nodes_df.drop_duplicates(subset=["node"]).to_numpy().tolist()

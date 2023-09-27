@@ -226,7 +226,6 @@ class PathogenIdentification_Deployment_Manager:
 
     def update_engine(self):
         self.update_config()
-        print(self.run_params_db)
 
         if "module" in self.run_params_db.columns:
             self.run_engine.Update(self.config, self.run_params_db)
@@ -284,7 +283,6 @@ class Tree_Node:
 
         self.module = node_metadata[0]
         self.node_index = node_index
-        print(pipe_tree.nodes_df)
 
         self.branch = pipe_tree.nodes_df.loc[node_index].branch
         self.children = pipe_tree.edge_df[
@@ -294,9 +292,6 @@ class Tree_Node:
         self.parameters = self.determine_params(pipe_tree)
         self.software_tree_pk = software_tree_pk
         self.leaves = pipe_tree.leaves_from_node_using_graph(node_index)
-
-        print("#################### node ####################")
-        print(f"node {node_index} has leaves {self.leaves}")
 
     def run_reference_overlap_analysis(self):
         run = RunMain.objects.get(parameter_set=self.parameter_set)
@@ -593,6 +588,7 @@ class Tree_Progress:
         pipe_tree.nodes_df = pd.DataFrame(
             pipe_tree.nodes_compress, columns=["node", "branch"]
         ).set_index("node")
+
         pipe_tree.edge_df = pd.DataFrame(
             pipe_tree.edge_compress, columns=["parent", "child"]
         )

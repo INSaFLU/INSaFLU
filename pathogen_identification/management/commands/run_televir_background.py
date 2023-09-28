@@ -45,6 +45,14 @@ def check_sample_deployed(sample: PIProject_Sample):
     return False
 
 
+def check_sample_future(sample: PIProject_Sample):
+    parameter_set = ParameterSet.objects.filter(sample=sample)
+    if parameter_set.exists():
+        False
+
+    return True
+
+
 def count_samples_available(project_id: int):
     samples = PIProject_Sample.objects.filter(project__pk=project_id)
     count = 0
@@ -60,6 +68,16 @@ def count_samples_deployed(project_id: int):
     count = 0
     for sample in samples:
         if check_sample_deployed(sample):
+            count += 1
+
+    return count
+
+
+def count_samples_future(project_id: int):
+    samples = PIProject_Sample.objects.filter(project__pk=project_id)
+    count = 0
+    for sample in samples:
+        if check_sample_future(sample):
             count += 1
 
     return count
@@ -148,6 +166,13 @@ class DeploymentManager:
 
         return None
 
+    def samples_remain(self):
+        samples_remaining_n = count_samples_future(self.project_id)
+        if samples_remaining_n > 0:
+            return True
+
+        return False
+
 
 class Command(BaseCommand):
     help = "nohup televir command to run in background"
@@ -208,8 +233,9 @@ class Command(BaseCommand):
                     print(f"Sample {sample_to_deploy.pk} not deployed")
                     break
             else:
-                print("No sample to deploy")
-                stop = True
+                if manager.samples_remain():
+                    print("No sample to deploy")
+                    stop = True
 
             ## wait for 60 seconds
 

@@ -225,13 +225,15 @@ class Command(BaseCommand):
             )
             sample_to_deploy = manager.find_sample_to_deploy()
 
-            if sample_to_deploy is not None:
+            while sample_to_deploy is not None:
                 sys_out = manager.deploy_sample_in_background(sample_to_deploy)
                 if sys_out == 0:
                     print(f"Sample {sample_to_deploy.pk} deployed")
                 else:
                     print(f"Sample {sample_to_deploy.pk} not deployed")
                     break
+
+                sample_to_deploy = manager.find_sample_to_deploy()
             else:
                 if manager.samples_remain():
                     print("No sample to deploy")

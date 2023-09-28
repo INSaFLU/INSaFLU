@@ -942,10 +942,14 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         #
         try:
             run_remap = RunRemapMain.objects.get(sample=sample_main, run=run_main)
-            remap_available = True
+            remap_available = run_remap.method != "None"
+
         except RunRemapMain.DoesNotExist:
             run_remap = EmptyRemapMain
             remap_available = False
+
+        print(remap_available)
+        print(run_remap)
         #
         read_classification = ReadClassification.objects.get(
             sample=sample_main, run=run_main

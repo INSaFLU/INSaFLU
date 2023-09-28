@@ -235,7 +235,7 @@ class Command(BaseCommand):
 
                 sample_to_deploy = manager.find_sample_to_deploy()
             else:
-                if manager.samples_remain():
+                if manager.samples_remain() is False:
                     print("No sample to deploy")
                     stop = True
 

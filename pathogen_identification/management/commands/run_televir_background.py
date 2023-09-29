@@ -4,6 +4,7 @@ from datetime import date
 
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
+from django.db.models import Q
 
 from pathogen_identification.models import ParameterSet, PIProject_Sample
 
@@ -20,16 +21,6 @@ def check_sample_available(sample: PIProject_Sample):
                 return False
 
     return True
-
-
-def get_samples_available(project_id: int):
-    samples = PIProject_Sample.objects.filter(project__pk=project_id)
-    samples_available = []
-    for sample in samples:
-        if check_sample_available(sample):
-            samples_available.append(sample)
-
-    return samples_available
 
 
 def check_sample_deployed(sample: PIProject_Sample):
@@ -68,16 +59,6 @@ def count_samples_deployed(project_id: int):
     count = 0
     for sample in samples:
         if check_sample_deployed(sample):
-            count += 1
-
-    return count
-
-
-def count_samples_future(project_id: int):
-    samples = PIProject_Sample.objects.filter(project__pk=project_id)
-    count = 0
-    for sample in samples:
-        if check_sample_future(sample):
             count += 1
 
     return count
@@ -132,12 +113,35 @@ class DeploymentManager:
         self.output_dir = output_dir
         self.log_dir = log_dir
         self.max_threads = max_threads
+        self.pid_deployed = []
 
     @staticmethod
     def nohup_wrapper(command: str, output_dir: str):
         nohup = f"nohup {command} > {output_dir}/nohup.out 2> {output_dir}/nohup.err &"
 
         return nohup
+
+    def get_samples_available(self, project_id: int):
+        samples = PIProject_Sample.objects.filter(project__pk=project_id).exclude(
+            pk__in=self.pid_deployed
+        )
+        samples_available = []
+        for sample in samples:
+            if check_sample_available(sample):
+                samples_available.append(sample)
+
+        return samples_available
+
+    def count_samples_future(self, project_id: int):
+        samples = PIProject_Sample.objects.filter(project__pk=project_id).exclude(
+            pk__in=self.pid_deployed
+        )
+        count = 0
+        for sample in samples:
+            if check_sample_future(sample):
+                count += 1
+
+        return count
 
     def deploy_sample_in_background(self, sample: PIProject_Sample):
         project_id = self.project_id
@@ -148,9 +152,9 @@ class DeploymentManager:
         command = f"{self.python_bin} manage.py {command_base} "
 
         nohup = self.nohup_wrapper(command, self.log_dir)
-        print(nohup)
 
         sys_out = os.system(nohup)
+        self.pid_deployed.append(sample.pk)
 
         return sys_out
 
@@ -158,7 +162,8 @@ class DeploymentManager:
         samples_deployed = count_samples_deployed(self.project_id)
         if samples_deployed >= self.max_threads:
             return None
-        samples_available = get_samples_available(self.project_id)
+
+        samples_available = self.get_samples_available(self.project_id)
 
         for sample in samples_available:
             if check_sample_available(sample):
@@ -167,7 +172,7 @@ class DeploymentManager:
         return None
 
     def samples_remain(self):
-        samples_remaining_n = count_samples_future(self.project_id)
+        samples_remaining_n = self.count_samples_future(self.project_id)
         if samples_remaining_n > 0:
             return True
 
@@ -202,9 +207,16 @@ class Command(BaseCommand):
             help="maximum number of threads",
         )
 
+        parser.add_argument(
+            "--wait_time",
+            type=int,
+            help="wait time between checks",
+            default=60,
+        )
+
     def handle(self, *args, **options):
         stop = False
-        wait_time = 60
+        wait_time = options["wait_time"]
 
         # break if log_dir or out_dir does not exist
         if not os.path.exists(options["log_dir"]):
@@ -215,25 +227,29 @@ class Command(BaseCommand):
             print(f"out_dir {options['out_dir']} does not exist")
             stop = True
 
+        manager = DeploymentManager(
+            options["project_id"],
+            options["out_dir"],
+            options["log_dir"],
+            options["max_threads"],
+        )
+
         while not stop:
             ##
-            manager = DeploymentManager(
-                options["project_id"],
-                options["out_dir"],
-                options["log_dir"],
-                options["max_threads"],
-            )
+
             sample_to_deploy = manager.find_sample_to_deploy()
 
             while sample_to_deploy is not None:
                 sys_out = manager.deploy_sample_in_background(sample_to_deploy)
+
                 if sys_out == 0:
                     print(f"Sample {sample_to_deploy.pk} deployed")
                 else:
                     print(f"Sample {sample_to_deploy.pk} not deployed")
-                    break
+                    stop = True
 
                 sample_to_deploy = manager.find_sample_to_deploy()
+
             else:
                 if manager.samples_remain() is False:
                     print("No sample to deploy")

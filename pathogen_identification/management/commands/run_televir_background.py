@@ -168,7 +168,7 @@ class DeploymentManager:
 
         command = f"{self.python_bin} manage.py {command_base} "
 
-        nohup = self.nohup_wrapper(command, self.log_dir)
+        nohup = self.nohup_wrapper(command, self.log_dir, sample.pk)
 
         sys_out = os.system(nohup)
         self.pid_deployed.append(sample.pk)

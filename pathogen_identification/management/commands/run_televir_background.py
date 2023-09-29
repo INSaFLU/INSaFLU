@@ -19,7 +19,6 @@ def check_sample_available(sample: PIProject_Sample):
                 ParameterSet.STATUS_QUEUED,
             ]:
                 return False
-
     return True
 
 
@@ -171,7 +170,7 @@ class DeploymentManager:
         )
         count = 0
         for sample in samples:
-            if check_sample_available(sample):
+            if check_sample_available(sample) is True:
                 count += 1
 
         return count

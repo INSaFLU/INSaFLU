@@ -37,7 +37,9 @@ def check_sample_deployed(sample: PIProject_Sample):
 
 
 def check_sample_future(sample: PIProject_Sample):
-    parameter_set = ParameterSet.objects.filter(sample=sample)
+    parameter_set = ParameterSet.objects.filter(sample=sample).exclude(
+        status__in=[ParameterSet.STATUS_ERROR, ParameterSet.STATUS_KILLED]
+    )
     if parameter_set.exists():
         False
 
@@ -210,12 +212,13 @@ class Command(BaseCommand):
         parser.add_argument(
             "--wait_time",
             type=int,
-            help="wait time between checks",
-            default=60,
+            help="wait time between checks, default 5 minutes",
+            default=5 * 60,
         )
 
     def handle(self, *args, **options):
         stop = False
+
         wait_time = options["wait_time"]
 
         # break if log_dir or out_dir does not exist

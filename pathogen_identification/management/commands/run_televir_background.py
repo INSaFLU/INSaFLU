@@ -105,6 +105,9 @@ class TelevirTreeSample(InsafluCommand):
         return args
 
 
+import logging
+
+
 class DeploymentManager:
     python_bin = "/usr/bin/python3"
 
@@ -116,6 +119,18 @@ class DeploymentManager:
         self.log_dir = log_dir
         self.max_threads = max_threads
         self.pid_deployed = []
+
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.INFO)
+
+        # create a file handler
+        handler = logging.FileHandler(f"{self.log_dir}/deployment_manager.log")
+        handler.setLevel(logging.INFO)
+        formatter = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        )
+        handler.setFormatter(formatter)
+        self.logger.addHandler(handler)
 
     @staticmethod
     def nohup_wrapper(command: str, output_dir: str, id_job: int):
@@ -166,6 +181,7 @@ class DeploymentManager:
             return None
 
         samples_available = self.get_samples_available(self.project_id)
+        self.logger.info(f"Samples available: {len(samples_available)}")
 
         for sample in samples_available:
             if check_sample_available(sample):
@@ -175,6 +191,7 @@ class DeploymentManager:
 
     def samples_remain(self):
         samples_remaining_n = self.count_samples_future(self.project_id)
+        self.logger.info(f"Samples remaining: {samples_remaining_n}")
         if samples_remaining_n > 0:
             return True
 

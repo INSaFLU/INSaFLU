@@ -234,6 +234,8 @@ class Command(BaseCommand):
             options["max_threads"],
         )
 
+        time_elased = 0
+
         while not stop:
             ##
 
@@ -258,3 +260,4 @@ class Command(BaseCommand):
             ## wait for 60 seconds
 
             time.sleep(wait_time)
+            time_elased += wait_time

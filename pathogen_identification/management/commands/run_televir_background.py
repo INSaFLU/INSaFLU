@@ -23,19 +23,6 @@ def check_sample_available(sample: PIProject_Sample):
     return True
 
 
-def check_sample_deployed(sample: PIProject_Sample):
-    parameter_set = ParameterSet.objects.filter(sample=sample)
-    if parameter_set.exists():
-        for ps in parameter_set:
-            if ps.status in [
-                ParameterSet.STATUS_RUNNING,
-                ParameterSet.STATUS_QUEUED,
-            ]:
-                return True
-
-    return False
-
-
 def check_sample_future(sample: PIProject_Sample):
     parameter_set = ParameterSet.objects.filter(sample=sample).exclude(
         status__in=[ParameterSet.STATUS_FINISHED]
@@ -51,16 +38,6 @@ def count_samples_available(project_id: int):
     count = 0
     for sample in samples:
         if check_sample_available(sample):
-            count += 1
-
-    return count
-
-
-def count_samples_deployed(project_id: int):
-    samples = PIProject_Sample.objects.filter(project__pk=project_id)
-    count = 0
-    for sample in samples:
-        if check_sample_deployed(sample):
             count += 1
 
     return count
@@ -132,6 +109,45 @@ class DeploymentManager:
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
 
+    def update_pid_deployed(self):
+        """Update pid_deployed list with samples that are running or queued, remove samples that are finished"""
+        new_pid_list = []
+        for pid in self.pid_deployed:
+            if ParameterSet.objects.filter(
+                sample__pk=pid,
+                status__in=[
+                    ParameterSet.STATUS_RUNNING,
+                    ParameterSet.STATUS_QUEUED,
+                ],
+            ).exists():
+                new_pid_list.append(pid)
+
+        self.pid_deployed = new_pid_list
+
+    def check_sample_deployed(self, sample: PIProject_Sample):
+        if sample.pk in self.pid_deployed:
+            return True
+
+        parameter_set = ParameterSet.objects.filter(sample=sample)
+        if parameter_set.exists():
+            for ps in parameter_set:
+                if ps.status in [
+                    ParameterSet.STATUS_RUNNING,
+                    ParameterSet.STATUS_QUEUED,
+                ]:
+                    return True
+
+        return False
+
+    def count_samples_deployed(self, project_id):
+        samples = PIProject_Sample.objects.filter(project__pk=project_id)
+        count = 0
+        for sample in samples:
+            if self.check_sample_deployed(sample):
+                count += 1
+
+        return count
+
     @staticmethod
     def nohup_wrapper(command: str, output_dir: str, id_job: int):
         nohup = f"nohup {command} > {output_dir}/nohup.{id_job}.out 2> {output_dir}/nohup.{id_job}.err &"
@@ -176,7 +192,7 @@ class DeploymentManager:
         return sys_out
 
     def find_sample_to_deploy(self):
-        samples_deployed = count_samples_deployed(self.project_id)
+        samples_deployed = self.count_samples_deployed(self.project_id)
         if samples_deployed >= self.max_threads:
             return None
 
@@ -258,7 +274,7 @@ class Command(BaseCommand):
 
         while not stop:
             ##
-
+            manager.update_pid_deployed()
             sample_to_deploy = manager.find_sample_to_deploy()
 
             while sample_to_deploy is not None:
@@ -267,7 +283,7 @@ class Command(BaseCommand):
                 if sys_out == 0:
                     print(f"Sample {sample_to_deploy.pk} deployed")
                 else:
-                    print(f"Sample {sample_to_deploy.pk} not deployed")
+                    print(f"Error, Sample {sample_to_deploy.pk} not deployed")
                     stop = True
 
                 sample_to_deploy = manager.find_sample_to_deploy()

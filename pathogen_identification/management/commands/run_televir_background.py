@@ -38,7 +38,7 @@ def check_sample_deployed(sample: PIProject_Sample):
 
 def check_sample_future(sample: PIProject_Sample):
     parameter_set = ParameterSet.objects.filter(sample=sample).exclude(
-        status__in=[ParameterSet.STATUS_ERROR, ParameterSet.STATUS_KILLED]
+        status__in=[ParameterSet.STATUS_FINISHED]
     )
     if parameter_set.exists():
         False
@@ -155,7 +155,7 @@ class DeploymentManager:
         )
         count = 0
         for sample in samples:
-            if check_sample_future(sample):
+            if check_sample_available(sample):
                 count += 1
 
         return count

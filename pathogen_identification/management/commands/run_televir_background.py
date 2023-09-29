@@ -116,8 +116,8 @@ class DeploymentManager:
         self.pid_deployed = []
 
     @staticmethod
-    def nohup_wrapper(command: str, output_dir: str):
-        nohup = f"nohup {command} > {output_dir}/nohup.out 2> {output_dir}/nohup.err &"
+    def nohup_wrapper(command: str, output_dir: str, id_job: int):
+        nohup = f"nohup {command} > {output_dir}/nohup.{id_job}.out 2> {output_dir}/nohup.{id_job}.err &"
 
         return nohup
 

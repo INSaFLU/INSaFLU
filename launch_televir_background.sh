@@ -6,5 +6,6 @@ PROJECT_ID=$1
 --project_id $PROJECT_ID \
 --out_dir /tmp/insaFlu/test_bg \
 --log_dir ../tmp_log \
+--metagenomics \
 --max_threads 6
 

@@ -83,11 +83,12 @@ class DeploymentManager(ABC):
         self.pid_deployed = []
 
         self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.INFO)
+        logging_level = logging.ERROR
+        self.logger.setLevel(logging_level)
 
         # create a file handler
         handler = logging.FileHandler(f"{self.log_dir}/deployment_manager.log")
-        handler.setLevel(logging.INFO)
+        handler.setLevel(logging_level)
         formatter = logging.Formatter(
             "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         )
@@ -185,6 +186,7 @@ class DeploymentManager(ABC):
 
     def find_sample_to_deploy(self):
         samples_deployed = self.count_samples_deployed(self.project_id)
+        print("Samples deployed: ", samples_deployed)
         if samples_deployed >= self.max_threads:
             return None
 
@@ -226,10 +228,12 @@ class TelevirMetagenomicsDeploymentManager(DeploymentManager):
         self.indicies_allowed = self.get_indeces_allowed()
         self.metagenomics = True
         self.set_insaflu_command(TelevirMetagenomicsSample())
+        self.logger.info("TelevirMetagenomicsDeploymentManager initialized")
+        self.logger.info(f"Pipeline steps: {self.pipeline_steps}")
+        self.logger.info(f"Software Tree indicies allowed: {self.indicies_allowed}")
 
     def check_software_tree_index_allowed(self, software_tree_index: int):
         index_makeup = self.pipeline_makeup.get_makeup(software_tree_index)
-
         for module in index_makeup:
             if module not in self.pipeline_steps:
                 return False
@@ -238,7 +242,7 @@ class TelevirMetagenomicsDeploymentManager(DeploymentManager):
 
     def get_indeces_allowed(self):
         indeces_allowed = []
-        for index in range(0, 2 ** len(self.pipeline_steps)):
+        for index in self.pipeline_makeup.MAKEUP.keys():
             if self.check_software_tree_index_allowed(index):
                 indeces_allowed.append(index)
 
@@ -252,16 +256,17 @@ class TelevirMetagenomicsDeploymentManager(DeploymentManager):
         )
 
         if local_tree.makeup not in self.indicies_allowed:
+            self.logger.error(f"tree {local_tree.makeup} not allowed")
             return False
-
-        runs_to_deploy = self.software_utils.check_runs_to_submit_metagenomics_sample(
-            sample
-        )
+        # runs_to_deploy = self.software_utils.check_runs_to_submit_metagenomics_sample(
+        #    sample
+        # )
+        runs_to_deploy = self.software_utils.get_available_pathnodes(local_tree)
 
         sets = ParameterSet.objects.filter(
             sample=sample,
-            leaf__software_tree__index__in=self.indicies_allowed,
-            leaf__in=runs_to_deploy[sample],
+            leaf__software_tree__global_index__in=self.indicies_allowed,
+            leaf__in=runs_to_deploy.values(),
         )
 
         if sets.exists() is False:
@@ -327,6 +332,12 @@ class Command(BaseCommand):
         )
 
         parser.add_argument(
+            "--metagenomics",
+            action="store_true",
+            help="metagenomics",
+        )
+
+        parser.add_argument(
             "--wait_time",
             type=int,
             help="wait time between checks, default 5 minutes",
@@ -347,7 +358,13 @@ class Command(BaseCommand):
             print(f"out_dir {options['out_dir']} does not exist")
             stop = True
 
-        manager = TelevirDeploymentManager(
+        manager_class = (
+            TelevirMetagenomicsDeploymentManager
+            if options["metagenomics"]
+            else TelevirDeploymentManager
+        )
+
+        manager = manager_class(
             options["project_id"],
             options["out_dir"],
             options["log_dir"],

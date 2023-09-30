@@ -1650,7 +1650,6 @@ class Parameter_DB_Utility:
         )
 
         software_available = Software.objects.filter(
-            type_of_use__in=Software.TELEVIR_GLOBAL_TYPES,
             technology__name=technology,
             pipeline_step__name__in=steps,
             is_to_run=True,
@@ -1659,12 +1658,18 @@ class Parameter_DB_Utility:
 
         if project:
             software_available = software_available.filter(
-                parameter__televir_project=project
+                parameter__televir_project=project,
+                type_of_use__in=Software.TELEVIR_PROJECT_TYPES,
             )
 
         if sample:
             software_available = software_available.filter(
                 parameter__televir_project_sample=sample
+            )
+
+        if not project and not sample:
+            software_available = software_available.filter(
+                type_of_use__in=Software.TELEVIR_GLOBAL_TYPES
             )
 
         parameters_available = Parameter.objects.filter(
@@ -1830,7 +1835,10 @@ class Parameter_DB_Utility:
         if parameters_table.shape[0] == 0:
             self.logger.info("No parameters for this project, using global")
             software_table, parameters_table = self.get_software_tables(
-                sample.project.technology, owner, metagenomics=True
+                sample.project.technology,
+                owner,
+                project=sample.project,
+                metagenomics=True,
             )
 
         merged_table = self.merge_software_tables(software_table, parameters_table)
@@ -2299,7 +2307,6 @@ class SoftwareTreeUtils:
         """
         Get software tree index db
         """
-
         if self.check_default_software_tree_exists(global_index):
             software_tree = self.query_software_tree(
                 global_index=global_index,
@@ -2533,17 +2540,12 @@ class SoftwareTreeUtils:
         """
 
         software_table, parameters_table = self.parameter_util.get_software_tables(
-            project.technology, project.owner, project, sample, metagenomics
+            project.technology,
+            project.owner,
+            project=project,
+            sample=sample,
+            metagenomics=metagenomics,
         )
-
-        if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
-            if sample is not None:
-                (
-                    software_table,
-                    parameters_table,
-                ) = self.parameter_util.get_software_tables(
-                    project.technology, project.owner, project
-                )
 
         if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
             if project is not None:
@@ -2551,8 +2553,19 @@ class SoftwareTreeUtils:
                     software_table,
                     parameters_table,
                 ) = self.parameter_util.get_software_tables(
-                    project.technology, project.owner
+                    project.technology,
+                    project.owner,
+                    project=project,
+                    metagenomics=metagenomics,
                 )
+
+        if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
+            (
+                software_table,
+                parameters_table,
+            ) = self.parameter_util.get_software_tables(
+                project.technology, project.owner, metagenomics=metagenomics
+            )
 
         if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
             return PipelineTree(
@@ -2634,10 +2647,7 @@ class SoftwareTreeUtils:
         local_paths = local_tree.get_all_graph_paths_explicit()
         import time
 
-        t1 = time.time()
-
         pipeline_tree = self.generate_software_tree_extend(local_tree=local_tree)
-        t2 = time.time()
         ### MANAGEMENT
 
         matched_paths = {
@@ -2755,5 +2765,4 @@ class SoftwareTreeUtils:
         tree.software_tree_pk = self.get_software_tree_index(
             tree.makeup,
         )
-
         return tree

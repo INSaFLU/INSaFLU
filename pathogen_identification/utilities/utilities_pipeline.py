@@ -1631,8 +1631,13 @@ class Parameter_DB_Utility:
 
         return software_table, parameters_table
 
-    def get_software_tables_global(
-        self, technology: str, user: User, metagenomics: bool = False
+    def get_software_tables(
+        self,
+        technology: str,
+        user: User,
+        project: Optional[Projects] = None,
+        sample: Optional[PIProject_Sample] = None,
+        metagenomics: bool = False,
     ):
         """
         Get software tables for a user
@@ -1652,10 +1657,18 @@ class Parameter_DB_Utility:
             owner=user,
         ).distinct()
 
+        if project:
+            software_available = software_available.filter(
+                parameter__televir_project=project
+            )
+
+        if sample:
+            software_available = software_available.filter(
+                parameter__televir_project_sample=sample
+            )
+
         parameters_available = Parameter.objects.filter(
             software__in=software_available,
-            televir_project=None,
-            televir_project_sample=None,
         ).distinct()
 
         software_table = pd.DataFrame(software_available.values())
@@ -1772,9 +1785,7 @@ class Parameter_DB_Utility:
 
     def generate_combined_parameters_table(self, technology: str, user: User):
         """"""
-        software_table, parameters_table = self.get_software_tables_global(
-            technology, user
-        )
+        software_table, parameters_table = self.get_software_tables(technology, user)
 
         if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
             return pd.DataFrame(
@@ -1800,7 +1811,7 @@ class Parameter_DB_Utility:
 
         if parameters_table.shape[0] == 0:
             self.logger.info("No parameters for this project, using global")
-            software_table, parameters_table = self.get_software_tables_global(
+            software_table, parameters_table = self.get_software_tables(
                 project.technology, owner
             )
 
@@ -1818,7 +1829,7 @@ class Parameter_DB_Utility:
 
         if parameters_table.shape[0] == 0:
             self.logger.info("No parameters for this project, using global")
-            software_table, parameters_table = self.get_software_tables_global(
+            software_table, parameters_table = self.get_software_tables(
                 sample.project.technology, owner, metagenomics=True
             )
 
@@ -2214,12 +2225,18 @@ class Utils_Manager:
 
 class SoftwareTreeUtils:
     def __init__(
-        self, user: User, project: Projects, sample: Optional[PIProject_Sample] = None
+        self,
+        user: User,
+        project: Optional[Projects] = None,
+        sample: Optional[PIProject_Sample] = None,
     ):
         self.user = user
         self.project = project
         self.sample = sample
-        self.technology = project.technology
+        if project:
+            self.technology = project.technology
+        else:
+            self.technology = None
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.ERROR)
 
@@ -2229,6 +2246,13 @@ class SoftwareTreeUtils:
 
     ###############################################
     ###############################################  SOFTWARE TREE CONNECTIONS
+
+    def set_project(self, project: Projects):
+        self.project = project
+        self.technology = project.technology
+
+    def set_sample(self, sample: PIProject_Sample):
+        self.sample = sample
 
     def query_software_tree(self, global_index: int) -> SoftwareTree:
         """
@@ -2497,6 +2521,53 @@ class SoftwareTreeUtils:
 
     ################################
     ################################ NEW METHODS
+
+    def generate_software_tree_safe(
+        self,
+        project: Optional[Projects] = None,
+        sample: Optional[PIProject_Sample] = None,
+        metagenomics: bool = False,
+    ):
+        """
+        Generate a software tree for a technology and a tree makeup
+        """
+
+        software_table, parameters_table = self.parameter_util.get_software_tables(
+            project.technology, project.owner, project, sample, metagenomics
+        )
+
+        if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
+            if sample is not None:
+                (
+                    software_table,
+                    parameters_table,
+                ) = self.parameter_util.get_software_tables(
+                    project.technology, project.owner, project
+                )
+
+        if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
+            if project is not None:
+                (
+                    software_table,
+                    parameters_table,
+                ) = self.parameter_util.get_software_tables(
+                    project.technology, project.owner
+                )
+
+        if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
+            return PipelineTree(
+                technology=project.technology,
+                nodes=[],
+                edges={},
+                leaves=[],
+                makeup=0,
+            )
+
+        merged_table = self.parameter_util.merge_software_tables(
+            software_table, parameters_table
+        )
+
+        return self.generate_tree_from_combined_table(merged_table)
 
     def generate_project_tree(self) -> PipelineTree:
         """

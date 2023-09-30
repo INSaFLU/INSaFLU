@@ -1,52 +1,22 @@
 import os
 import time
+from abc import ABC, abstractmethod
 from datetime import date
 
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 from django.db.models import Q
 
-from pathogen_identification.models import ParameterSet, PIProject_Sample
-
-
-def check_sample_available(sample: PIProject_Sample):
-    parameter_set = ParameterSet.objects.filter(sample=sample)
-    if parameter_set.exists():
-        for ps in parameter_set:
-            if ps.status in [
-                ParameterSet.STATUS_FINISHED,
-                ParameterSet.STATUS_RUNNING,
-                ParameterSet.STATUS_QUEUED,
-            ]:
-                return False
-    return True
-
-
-def check_sample_future(sample: PIProject_Sample):
-    parameter_set = ParameterSet.objects.filter(sample=sample).exclude(
-        status__in=[ParameterSet.STATUS_FINISHED]
-    )
-    if parameter_set.exists():
-        False
-
-    return True
-
-
-def count_samples_available(project_id: int):
-    samples = PIProject_Sample.objects.filter(project__pk=project_id)
-    count = 0
-    for sample in samples:
-        if check_sample_available(sample):
-            count += 1
-
-    return count
-
-
-from abc import ABC, abstractmethod
+from pathogen_identification.models import ParameterSet, PIProject_Sample, Projects
+from pathogen_identification.utilities.utilities_pipeline import Pipeline_Makeup
+from settings.constants_settings import ConstantsSettings
 
 
 class InsafluCommand(ABC):
     command = "submit_televir_job_tree_sample"
+
+    def __init__(self):
+        pass
 
     def command_wrapper(self, args: dict):
         command = f"{self.command} {' '.join([f'{k} {v}' for k, v in args.items()])}"
@@ -81,11 +51,27 @@ class TelevirTreeSample(InsafluCommand):
         return args
 
 
+class TelevirMetagenomicsSample(InsafluCommand):
+    command = "submit_televir_sample_metagenomics"
+
+    def command_args(
+        self, project_id: int, sample: PIProject_Sample, output_dir: str
+    ) -> dict:
+        args = {
+            "--sample_id": sample.pk,
+            "-o": output_dir,
+            "--user_id": sample.project.owner.pk,
+        }
+
+        return args
+
+
 import logging
 
 
-class DeploymentManager:
+class DeploymentManager(ABC):
     python_bin = "/usr/bin/python3"
+    insaflu_command: InsafluCommand
 
     def __init__(
         self, project_id: int, output_dir: str, log_dir: str, max_threads: int
@@ -108,6 +94,9 @@ class DeploymentManager:
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
 
+    def set_insaflu_command(self, insaflu_command: InsafluCommand):
+        self.insaflu_command = insaflu_command
+
     def update_pid_deployed(self):
         """Update pid_deployed list with samples that are running or queued, remove samples that are finished"""
         new_pid_list = []
@@ -122,6 +111,38 @@ class DeploymentManager:
                 new_pid_list.append(pid)
 
         self.pid_deployed = new_pid_list
+
+    @staticmethod
+    def nohup_wrapper(command: str, output_dir: str, id_job: int):
+        nohup = f"nohup {command} > {output_dir}/nohup.{id_job}.out 2> {output_dir}/nohup.{id_job}.err &"
+
+        return nohup
+
+    @abstractmethod
+    def check_sample_available(self, sample: PIProject_Sample):
+        pass
+
+    def get_samples_available(self, project_id: int):
+        samples = PIProject_Sample.objects.filter(project__pk=project_id).exclude(
+            pk__in=self.pid_deployed
+        )
+        samples_available = []
+        for sample in samples:
+            if self.check_sample_available(sample):
+                samples_available.append(sample)
+
+        return samples_available
+
+    def count_samples_future(self, project_id: int):
+        samples = PIProject_Sample.objects.filter(project__pk=project_id).exclude(
+            pk__in=self.pid_deployed
+        )
+        count = 0
+        for sample in samples:
+            if self.check_sample_available(sample) is True:
+                count += 1
+
+        return count
 
     def check_sample_deployed(self, sample: PIProject_Sample):
         if sample.pk in self.pid_deployed:
@@ -147,37 +168,9 @@ class DeploymentManager:
 
         return count
 
-    @staticmethod
-    def nohup_wrapper(command: str, output_dir: str, id_job: int):
-        nohup = f"nohup {command} > {output_dir}/nohup.{id_job}.out 2> {output_dir}/nohup.{id_job}.err &"
-
-        return nohup
-
-    def get_samples_available(self, project_id: int):
-        samples = PIProject_Sample.objects.filter(project__pk=project_id).exclude(
-            pk__in=self.pid_deployed
-        )
-        samples_available = []
-        for sample in samples:
-            if check_sample_available(sample):
-                samples_available.append(sample)
-
-        return samples_available
-
-    def count_samples_future(self, project_id: int):
-        samples = PIProject_Sample.objects.filter(project__pk=project_id).exclude(
-            pk__in=self.pid_deployed
-        )
-        count = 0
-        for sample in samples:
-            if check_sample_available(sample) is True:
-                count += 1
-
-        return count
-
     def deploy_sample_in_background(self, sample: PIProject_Sample):
         project_id = self.project_id
-        command_base = TelevirTreeSample().command_args_wrapper(
+        command_base = self.insaflu_command.command_args_wrapper(
             project_id, sample, self.output_dir
         )
 
@@ -199,7 +192,7 @@ class DeploymentManager:
         self.logger.info(f"Samples available: {len(samples_available)}")
 
         for sample in samples_available:
-            if check_sample_available(sample):
+            if self.check_sample_available(sample):
                 return sample
 
         return None
@@ -211,6 +204,98 @@ class DeploymentManager:
             return True
 
         return False
+
+
+from pathogen_identification.utilities.utilities_pipeline import (
+    SoftwareTreeUtils,
+    Utils_Manager,
+)
+
+
+class TelevirMetagenomicsDeploymentManager(DeploymentManager):
+    def __init__(
+        self, project_id: int, output_dir: str, log_dir: str, max_threads: int
+    ):
+        super().__init__(project_id, output_dir, log_dir, max_threads)
+
+        self.project = Projects.objects.get(pk=project_id)
+        self.pipeline_makeup = Pipeline_Makeup()
+        self.software_utils = SoftwareTreeUtils(self.project.owner, self.project)
+
+        self.pipeline_steps = ConstantsSettings.vect_pipeline_televir_metagenomics
+        self.indicies_allowed = self.get_indeces_allowed()
+        self.metagenomics = True
+        self.set_insaflu_command(TelevirMetagenomicsSample())
+
+    def check_software_tree_index_allowed(self, software_tree_index: int):
+        index_makeup = self.pipeline_makeup.get_makeup(software_tree_index)
+
+        for module in index_makeup:
+            if module not in self.pipeline_steps:
+                return False
+
+        return True
+
+    def get_indeces_allowed(self):
+        indeces_allowed = []
+        for index in range(0, 2 ** len(self.pipeline_steps)):
+            if self.check_software_tree_index_allowed(index):
+                indeces_allowed.append(index)
+
+        return indeces_allowed
+
+    def check_sample_available(self, sample: PIProject_Sample):
+        self.software_utils.set_sample(sample)
+
+        local_tree = self.software_utils.generate_software_tree_safe(
+            self.project, sample, self.metagenomics
+        )
+
+        if local_tree.makeup not in self.indicies_allowed:
+            return False
+
+        runs_to_deploy = self.software_utils.check_runs_to_submit_metagenomics_sample(
+            sample
+        )
+
+        sets = ParameterSet.objects.filter(
+            sample=sample,
+            leaf__software_tree__index__in=self.indicies_allowed,
+            leaf__in=runs_to_deploy[sample],
+        )
+
+        if sets.exists() is False:
+            return True
+
+        for ps in sets:
+            if ps.status in [
+                ParameterSet.STATUS_FINISHED,
+                ParameterSet.STATUS_RUNNING,
+                ParameterSet.STATUS_QUEUED,
+            ]:
+                return False
+
+        return True
+
+
+class TelevirDeploymentManager(DeploymentManager):
+    def __init__(
+        self, project_id: int, output_dir: str, log_dir: str, max_threads: int
+    ):
+        super().__init__(project_id, output_dir, log_dir, max_threads)
+        self.set_insaflu_command(TelevirTreeSample())
+
+    def check_sample_available(self, sample: PIProject_Sample):
+        parameter_set = ParameterSet.objects.filter(sample=sample)
+        if parameter_set.exists():
+            for ps in parameter_set:
+                if ps.status in [
+                    ParameterSet.STATUS_FINISHED,
+                    ParameterSet.STATUS_RUNNING,
+                    ParameterSet.STATUS_QUEUED,
+                ]:
+                    return False
+        return True
 
 
 class Command(BaseCommand):
@@ -262,7 +347,7 @@ class Command(BaseCommand):
             print(f"out_dir {options['out_dir']} does not exist")
             stop = True
 
-        manager = DeploymentManager(
+        manager = TelevirDeploymentManager(
             options["project_id"],
             options["out_dir"],
             options["log_dir"],
@@ -287,10 +372,9 @@ class Command(BaseCommand):
 
                 sample_to_deploy = manager.find_sample_to_deploy()
 
-            else:
-                if manager.samples_remain() is False:
-                    print("No sample to deploy")
-                    stop = True
+            if manager.samples_remain() is False:
+                print("No sample to deploy")
+                stop = True
 
             ## wait for 60 seconds
 

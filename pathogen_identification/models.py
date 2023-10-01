@@ -155,11 +155,13 @@ class SoftwareTreeNode(models.Model):
         """return all descendants of this node"""
 
         nodes = SoftwareTreeNode.objects.filter(
-            SoftwareTree=self.software_tree
+            software_tree=self.software_tree
         ).values_list("id", flat=True)
         edges = [
             (node.parent, node.id)
-            for node in SoftwareTreeNode.objects.filter(SoftwareTree=self.software_tree)
+            for node in SoftwareTreeNode.objects.filter(
+                software_tree=self.software_tree
+            )
         ]
 
         graph = nx.DiGraph()

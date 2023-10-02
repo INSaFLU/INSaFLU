@@ -21,6 +21,7 @@ from pathogen_identification.models import (
     ReadClassification,
     ReferenceContigs,
     RunAssembly,
+    RunDetail,
     RunMain,
     SampleQC,
     TelevirRunQC,
@@ -968,29 +969,27 @@ class RunMainTable(tables.Table):
             and ReadClassification.objects.filter(run=record).exists()
         )
 
-        finished_processing = record.parameter_set.status = ParameterSet.STATUS_FINISHED
+        finished_processing = (
+            record.parameter_set.status == ParameterSet.STATUS_FINISHED
+        )
         # finished_processing = FinalReport.objects.filter(run=record).count() > 0
         finished_remapping = record.report == "finished"
-
-        if (
-            finished_processing
-            or finished_remapping
-            or record.parameter_set.status == ParameterSet.STATUS_FINISHED
-        ):
-            record_name = (
-                '<a href="'
-                + reverse(
-                    "sample_detail",
-                    args=[record.project.pk, record.sample.pk, record.pk],
-                )
-                + '">'
-                + "<i class='fa fa-bar-chart'></i>"
-                + "</a>"
+        report_link = (
+            '<a href="'
+            + reverse(
+                "sample_detail",
+                args=[record.project.pk, record.sample.pk, record.pk],
             )
+            + '">'
+            + "<i class='fa fa-bar-chart'></i>"
+            + "</a>"
+        )
+
+        if finished_processing or finished_remapping:
             if user.username == Constants.USER_ANONYMOUS:
                 return mark_safe("report")
             if user.username == record.project.owner.username:
-                return mark_safe(record_name)
+                return mark_safe(report_link)
 
         else:
             runlog = " <a " + 'href="#" >'
@@ -1041,5 +1040,8 @@ class RunMainTable(tables.Table):
             else:
                 runlog += 'title="Validation mapping" style="color: gray;"></i>'
             runlog += "</a>"
+
+            if RawReference.objects.filter(run=record).count() > 0:
+                runlog += " " + report_link
 
             return mark_safe(runlog)

@@ -32,11 +32,11 @@ class ConstantsSettings:
 
     ################################### Pipeline steps
 
-    TEST_SOFTWARE = False
+    TEST_SOFTWARE = True
 
     ################################### Pipeline steps
 
-    METAGENOMICS = False
+    METAGENOMICS = True
     METAGENOMICS_file_limit = 1000000
 
     ################################### pipeline_deployment_type
@@ -44,7 +44,7 @@ class ConstantsSettings:
     DEPLOYMENT_TYPE_TREE = "tree"
     DEPLOYMENT_TYPE_PIPELINE = "pipeline"
 
-    DEPLOYMENT_DEFAULT = DEPLOYMENT_TYPE_PIPELINE
+    DEPLOYMENT_DEFAULT = DEPLOYMENT_TYPE_TREE
 
     ################################### Pipeline model
 

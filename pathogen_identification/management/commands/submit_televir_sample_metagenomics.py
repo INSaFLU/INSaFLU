@@ -79,16 +79,16 @@ class Command(BaseCommand):
         ### UTILITIES
         utils = Utils_Manager()
         software_utils = SoftwareTreeUtils(user, project, sample=target_sample)
-        local_tree = software_utils.generate_sample_metagenomics_tree()
+        local_tree = software_utils.generate_software_tree_safe(
+            project, sample=target_sample, metagenomics=True
+        )
 
         # tree_makeup = local_tree.makeup
         # pipeline_tree= utils.generate_software_tree_extend(local_tree, user)
         pipeline_tree_index = local_tree.software_tree_pk
         pipeline_tree_query = SoftwareTree.objects.get(pk=pipeline_tree_index)
 
-        runs_to_deploy = software_utils.check_runs_to_submit_metagenomics_sample(
-            target_sample
-        )
+        runs_to_deploy = software_utils.get_available_pathnodes(local_tree)
 
         for sample, matched_nodes_list in runs_to_deploy.items():
             print("sample", sample)

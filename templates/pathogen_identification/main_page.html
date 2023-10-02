@@ -306,9 +306,7 @@
     $('#id-deploy-metagenomics-button').on('click', function(){
         url= $('#id-modal-body-deploy-metagenomics-sample').attr("deploy-metagenomics-single-value-url");
         sample_id = $('#id-modal-body-deploy-metagenomics-sample').attr('sample_id');
-        console.log(url);
-        console.log(sample_id);
-        console.log("HIII")
+
         $.ajax({
             url: url, 
             type: 'POST',

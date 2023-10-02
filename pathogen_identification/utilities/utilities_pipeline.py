@@ -1843,63 +1843,6 @@ class Parameter_DB_Utility:
 
         return merged_table
 
-    #    def generate_combined_parameters_table(self, technology: str, user: User):
-    #        """"""
-    #        software_table, parameters_table = self.get_software_tables(technology, user)
-    #
-    #        if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
-    #            return pd.DataFrame(
-    #                columns=[
-    #                    "software_id",
-    #                    "parameter_id",
-    #                    "technology",
-    #                    "can_change",
-    #                    "pipeline_step",
-    #                    "software_name",
-    #                ]
-    #            )
-    #
-    #        return self.merge_software_tables(software_table, parameters_table)
-
-    #    def generate_combined_parameters_table_project(
-    #        self, owner: User, project: Projects
-    #    ):
-    #        """"""
-    #        software_table, parameters_table = self.get_software_tables_project(
-    #            owner, project
-    #        )
-    #
-    #        if parameters_table.shape[0] == 0:
-    #            self.logger.info("No parameters for this project, using global")
-    #            software_table, parameters_table = self.get_software_tables(
-    #                project.technology, owner
-    #            )
-    #
-    #        merged_table = self.merge_software_tables(software_table, parameters_table)
-    #
-    #        return merged_table
-    #
-    #    def generate_combined_parameters_table_sample(
-    #        self, owner, sample: PIProject_Sample
-    #    ):
-    #        (
-    #            software_table,
-    #            parameters_table,
-    #        ) = self.get_software_tables_project_sample_metagenomics(owner, sample)
-    #
-    #        if parameters_table.shape[0] == 0:
-    #            self.logger.info("No parameters for this project, using global")
-    #            software_table, parameters_table = self.get_software_tables(
-    #                sample.project.technology,
-    #                owner,
-    #                project=sample.project,
-    #                metagenomics=True,
-    #            )
-    #
-    #        merged_table = self.merge_software_tables(software_table, parameters_table)
-    #
-    #        return merged_table
-
     @staticmethod
     def convert_softwaretree_to_pipeline_tree(
         software_tree: SoftwareTree,
@@ -2537,18 +2480,6 @@ class SoftwareTreeUtils:
         """
 
         return self.generate_software_tree_safe(self.project)
-
-        # combined_table = self.parameter_util.generate_combined_parameters_table_project(
-        #    self.user, self.project
-        # )
-
-        # return self.generate_tree_from_combined_table(combined_table)
-
-    # def generate_sample_metagenomics_tree(self) -> PipelineTree:
-    #    combined_table = self.parameter_util.generate_combined_parameters_table_sample(
-    #        self.user, self.sample
-    #    )
-    #    return self.generate_tree_from_combined_table(combined_table)
 
     def generate_tree_from_combined_table(
         self, combined_table: pd.DataFrame

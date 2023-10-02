@@ -11,30 +11,20 @@ from constants.constants import Constants
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReadClassification,
-    ReferenceContigs,
-    RunAssembly,
-    RunMain,
-    SampleQC,
-    TelevirRunQC,
-)
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.models import (ContigClassification, FinalReport,
+                                            ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            ReadClassification,
+                                            ReferenceContigs, RunAssembly,
+                                            RunDetail, RunMain, SampleQC,
+                                            TelevirRunQC)
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.utilities_general import (
-    get_project_dir,
-    get_project_dir_no_media_root,
-)
+    get_project_dir, get_project_dir_no_media_root)
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter,
-    check_sample_software_exists,
-    duplicate_metagenomics_software,
-)
+    ReportSorter, check_sample_software_exists,
+    duplicate_metagenomics_software)
 from settings.models import Parameter, Software
 
 
@@ -968,29 +958,27 @@ class RunMainTable(tables.Table):
             and ReadClassification.objects.filter(run=record).exists()
         )
 
-        finished_processing = record.parameter_set.status = ParameterSet.STATUS_FINISHED
+        finished_processing = (
+            record.parameter_set.status == ParameterSet.STATUS_FINISHED
+        )
         # finished_processing = FinalReport.objects.filter(run=record).count() > 0
         finished_remapping = record.report == "finished"
-
-        if (
-            finished_processing
-            or finished_remapping
-            or record.parameter_set.status == ParameterSet.STATUS_FINISHED
-        ):
-            record_name = (
-                '<a href="'
-                + reverse(
-                    "sample_detail",
-                    args=[record.project.pk, record.sample.pk, record.pk],
-                )
-                + '">'
-                + "<i class='fa fa-bar-chart'></i>"
-                + "</a>"
+        report_link = (
+            '<a href="'
+            + reverse(
+                "sample_detail",
+                args=[record.project.pk, record.sample.pk, record.pk],
             )
+            + '">'
+            + "<i class='fa fa-bar-chart'></i>"
+            + "</a>"
+        )
+
+        if finished_processing or finished_remapping:
             if user.username == Constants.USER_ANONYMOUS:
                 return mark_safe("report")
             if user.username == record.project.owner.username:
-                return mark_safe(record_name)
+                return mark_safe(report_link)
 
         else:
             runlog = " <a " + 'href="#" >'
@@ -1041,5 +1029,8 @@ class RunMainTable(tables.Table):
             else:
                 runlog += 'title="Validation mapping" style="color: gray;"></i>'
             runlog += "</a>"
+
+            if RunDetail.objects.filter(run=record).count() > 0:
+                runlog += " " + report_link
 
             return mark_safe(runlog)

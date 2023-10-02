@@ -734,6 +734,13 @@ class SoftwareNames(object):
     SOFTWARE_MINIMAP2_REMAP_ONT_VERSION = "2.24"
     SOFTWARE_MINIMAP2_REMAP_ONT_parameters = "-a -x map-ont -t 4"
 
+    SOFTWARE_MINIMAP2_REMAP_ILLU_name = "Minimap2_remap"
+    SOFTWARE_MINIMAP2_REMAP_ILLU_name_extended = "Minimap2 - Remapping"
+    SOFTWARE_MINIMAP2_REMAP_ILLU = os.path.join(
+        settings.DIR_SOFTWARE,
+        "preprocess/preproc/bin/minimap2",
+    )
+    SOFTWARE_MINIMAP2_REMAP_ILLU_VERSION = "2.24"
     ### MINIMAP2 DEPLETE
 
     SOFTWARE_MINIMAP2_DEPLETE_ONT_name = "Minimap2_ONT"
@@ -753,6 +760,18 @@ class SoftwareNames(object):
     )
     SOFTWARE_MINIMAP2_DEPLETE_ILLU_VERSION = "2.24"
     SOFTWARE_MINIMAP2_DEPLETE_ILLU_parameters = "-a -x sr -t 4"
+
+    ### Minimap2 Map Assembly
+
+    SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name = "Minimap2_asm"
+    SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name_extended = "Minimap2"
+    SOFTWARE_MINIMAP2_MAP_ASSEMBLY = os.path.join(
+        settings.DIR_SOFTWARE,
+        "assembly/assembly/bin/minimap2",
+    )
+    SOFTWARE_MINIMAP2_MAP_ASSEMBLY_VERSION = "2.24"
+    SOFTWARE_MINIMAP2_MAP_ASSEMBLY_parameters = "-cx asm10"
+    SOFTWARE_MINIMAP2_ASM_vect_available = ["asm5", "asm10", "asm20"]
 
     ### Bowtie2 DEPLETE
 
@@ -775,6 +794,13 @@ class SoftwareNames(object):
     )
     SOFTWARE_BOWTIE2_REMAP_VERSION = "2.4.5"
     SOFTWARE_BOWTIE2_REMAP_parameters = "-p 4"
+
+    ### empty software to be used in the pipeline.
+
+    SOFTWARE_EMPTY_name = "Empty"
+    SOFTWARE_EMPTY_name_extended = "Empty"
+    SOFTWARE_EMPTY_VERSION = "1"
+    SOFTWARE_EMPTY_parameters = ""
 
     ###################################
     ###################################
@@ -876,9 +902,21 @@ class SoftwareNames(object):
         SOFTWARE_CENTRIFUGE_name,
         SOFTWARE_SNIPPY_name,
         SOFTWARE_BWA_name,
+        SOFTWARE_BOWTIE2_REMAP_name,
+        SOFTWARE_KRAKEN2_name,
+        SOFTWARE_MINIMAP2_REMAP_ONT_name,
     ]
     # pipeline_steps per software, for software with multiple pipeline_steps.
+
     polyvalent_software_pipelines = {
+        SOFTWARE_KRAKEN2_name: [
+            ConstantsSettings.PIPELINE_NAME_contig_classification,
+            ConstantsSettings.PIPELINE_NAME_read_classification,
+        ],
+        SOFTWARE_BOWTIE2_REMAP_name: [
+            ConstantsSettings.PIPELINE_NAME_remapping,
+            ConstantsSettings.PIPELINE_NAME_metagenomics_combine,
+        ],
         SOFTWARE_CENTRIFUGE_name: [
             ConstantsSettings.PIPELINE_NAME_viral_enrichment,
             ConstantsSettings.PIPELINE_NAME_read_classification,
@@ -890,12 +928,28 @@ class SoftwareNames(object):
         SOFTWARE_MINIMAP2_REMAP_ONT_name: [
             ConstantsSettings.PIPELINE_NAME_remapping,
             ConstantsSettings.PIPELINE_NAME_host_depletion,
+            ConstantsSettings.PIPELINE_NAME_metagenomics_combine,
         ],
         SOFTWARE_BWA_name: [
             ConstantsSettings.PIPELINE_NAME_host_depletion,
             ConstantsSettings.PIPELINE_NAME_read_classification,
         ],
     }
+
+    ###### Relation between software and technology
+    def get_list_software_names_by_technology(self, technology_name):
+        """
+        :param technology_name TECHNOLOGY_illumina, TECHNOLOGY_minion
+        """
+        return self.DICT_SOFTWARE_RELATION.get(technology_name, [])
+
+    def is_software_in_technology(self, technology_name, software_name):
+        """
+        :param technology_name TECHNOLOGY_illumina, TECHNOLOGY_minion
+        """
+        return software_name in self.get_list_software_names_by_technology(
+            technology_name
+        )
 
     ###################################
 

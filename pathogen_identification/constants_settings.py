@@ -4,6 +4,7 @@ Ceated on 06/05/2022
 """
 
 import os
+from typing import Dict, List
 
 import networkx as nx
 
@@ -36,6 +37,14 @@ class ConstantsSettings:
     ################################### Pipeline steps
 
     METAGENOMICS = False
+    METAGENOMICS_file_limit = 1000000
+
+    ################################### pipeline_deployment_type
+
+    DEPLOYMENT_TYPE_TREE = "tree"
+    DEPLOYMENT_TYPE_PIPELINE = "pipeline"
+
+    DEPLOYMENT_DEFAULT = DEPLOYMENT_TYPE_PIPELINE
 
     ################################### Pipeline model
 
@@ -54,13 +63,6 @@ class ConstantsSettings:
 
     clade_private_proportion = 0.5
     clade_shared_proportion_threshold = 0.05
-
-    ################################### pipeline_deployment_type
-
-    DEPLOYMENT_TYPE_TREE = "tree"
-    DEPLOYMENT_TYPE_PIPELINE = "pipeline"
-
-    DEPLOYMENT_DEFAULT = DEPLOYMENT_TYPE_PIPELINE
 
     ################################### Threads
 
@@ -82,6 +84,7 @@ class ConstantsSettings:
         CS.PIPELINE_NAME_assembly: "assembly/",
         CS.PIPELINE_NAME_contig_classification: "classification/assembly/",
         CS.PIPELINE_NAME_read_classification: "classification/reads/",
+        CS.PIPELINE_NAME_metagenomics_combine: "metagenomics/",
         CS.PIPELINE_NAME_remapping: "remap/",
         "log_dir": "logs/",
         "OUTD": "output/",
@@ -142,3 +145,50 @@ class ConstantsSettings:
 
     PAIR_END = "PE"
     SINGLE_END = "SE"
+
+    ################################## ACTIONS DETAILS
+
+    EXPLIFY_MERGE_SUFFIX = "merged_explify_project"
+
+    @property
+    def vect_pipeline_names_default(self) -> List[str]:
+        vect_pipeline_names = CS.vect_pipeline_names
+
+        return [
+            pipeline_name
+            for pipeline_name in vect_pipeline_names
+            if pipeline_name != CS.PIPELINE_NAME_metagenomics_combine
+        ]
+
+    @property
+    def vect_pipeline_names_condensed(self) -> Dict[str, List[str]]:
+        constant_settings = CS()
+        vect_pipeline_names = CS.vect_pipeline_names
+        if self.METAGENOMICS is False:
+            vect_pipeline_names = self.vect_pipeline_names_default
+
+        pipeline_steps_dict = {
+            pipeline_step: constant_settings.pipeline_step_to_pipeline_name(
+                pipeline_step
+            )
+            for pipeline_step in vect_pipeline_names
+        }
+
+        pipeline_names_dict = CS.reverse_set_dict(pipeline_steps_dict)
+
+        return pipeline_names_dict
+
+    @property
+    def vect_pipeline_televir_metagenomics_condensed(self) -> Dict[str, List[str]]:
+        constant_settings = CS()
+
+        pipeline_steps_dict = {
+            pipeline_step: constant_settings.pipeline_step_to_pipeline_name(
+                pipeline_step
+            )
+            for pipeline_step in constant_settings.vect_pipeline_televir_metagenomics
+        }
+
+        pipeline_names_dict = constant_settings.reverse_set_dict(pipeline_steps_dict)
+
+        return pipeline_names_dict

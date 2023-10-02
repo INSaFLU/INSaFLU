@@ -3,6 +3,7 @@ from django.db import models
 
 from datasets.models import Dataset
 from managing_files.models import Project, ProjectSample, Sample
+from pathogen_identification.models import PIProject_Sample as TelevirProjectSample
 from pathogen_identification.models import Projects as TelevirProject
 
 # Create your models here.
@@ -62,6 +63,7 @@ class Software(models.Model):
     TYPE_OF_USE_dataset = 7  ### Used in a particular dataset
     TYPE_OF_USE_televir_settings = 8  ### Used in televir settings
     TYPE_OF_USE_televir_project_settings = 9  ### Used in televir project settings
+    TYPE_OF_USE_metagenomics = 10  ### Used in metagenomics
     ### if it is a software parameter or a general parameter (INSaFLU parameter)
     TYPE_SOFTWARE = 0  ### normal software
     TYPE_INSAFLU_PARAMETER = 1  ### it is a general parameter (INSaFLU parameter)
@@ -196,6 +198,14 @@ class Parameter(models.Model):
     project_sample = models.ForeignKey(
         ProjectSample,
         related_name="parameter",
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+    )
+    ### this allow to have televir software parameters in sample
+    televir_project_sample = models.ForeignKey(
+        TelevirProjectSample,
+        related_name="televir_sample_parameter",
         on_delete=models.PROTECT,
         blank=True,
         null=True,

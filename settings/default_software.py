@@ -531,10 +531,93 @@ class DefaultSoftware(object):
 
         if PICS.TEST_SOFTWARE:
             self.test_defaults_test_televir(user)
+        if PICS.METAGENOMICS:
+            self.test_defaults_metagenomics(user)
+
+    def test_defaults_metagenomics(self, user):
+        """
+        test if exist, if not persist in database, for metagenomics"""
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name,
+            self.default_parameters.get_minimap2_remap_ONT_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_metagenomics_combine,
+                is_to_run=True,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ILLU_name,
+            self.default_parameters.get_minimap2_remap_illumina_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_metagenomics_combine,
+                is_to_run=True,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name,
+            self.default_parameters.get_bowtie2_remap_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_metagenomics_combine,
+            ),
+            user,
+        )
 
     def test_defaults_test_televir(self, user):
         """
         test if exist, if not persist in database, for televir"""
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name,
+            self.default_parameters.get_minimap2_map_assembly_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name,
+            self.default_parameters.get_minimap2_map_assembly_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_KRAKEN2_name,
+            self.default_parameters.get_kraken2_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_contig_classification,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_KRAKEN2_name,
+            self.default_parameters.get_kraken2_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_contig_classification,
+            ),
+            user,
+        )
 
         self.test_default_db(
             SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name,
@@ -602,6 +685,7 @@ class DefaultSoftware(object):
 
         except Software.MultipleObjectsReturned:
             print("MultipleObjectsReturned: " + software_name, " - ", user)
+            print(f"pipeline step: {vect_parameters[0].software.pipeline_step}")
             ## keep the first one, delete the rest
             software_query = Software.objects.filter(
                 name=software_name,
@@ -612,10 +696,13 @@ class DefaultSoftware(object):
                     software_name
                 ),
                 pipeline_step__name=vect_parameters[0].software.pipeline_step,
+                parameter__televir_project=None,
+                parameter__televir_project_sample=None,
             ).order_by("id")
 
             if software_query.count() > 1:
-                software = software_query.exclude(id=software_query.last().id)
+                software = software_query.exclude(pk=software_query.last().pk)
+
                 parameters = Parameter.objects.filter(software__in=software)
                 with LockedAtomicTransaction(Parameter):
                     parameters.delete()
@@ -1003,6 +1090,30 @@ class DefaultSoftware(object):
         )
         return "" if result is None else result
 
+    def get_minimap2_remap_illumina_parameters(self, user):
+        result = self.default_parameters.get_parameters(
+            SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ILLU_name,
+            user,
+            Software.TYPE_OF_USE_televir_global,
+            None,
+            None,
+            None,
+            ConstantsSettings.TECHNOLOGY_illumina,
+        )
+        return "" if result is None else result
+
+    def get_minimap2_map_assembly_parameters(self, user):
+        result = self.default_parameters.get_parameters(
+            SoftwareNames.SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name,
+            user,
+            Software.TYPE_OF_USE_televir_global,
+            None,
+            None,
+            None,
+            ConstantsSettings.TECHNOLOGY_minion,
+        )
+        return "" if result is None else result
+
     def get_minimap2_deplete_illumina(self, user):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ILLU_name,
@@ -1346,6 +1457,33 @@ class DefaultSoftware(object):
             )
 
             return self.get_minimap2_deplete_ont_parameters(user)
+
+        if software_name == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ILLU_name:
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ILLU,
+                self.default_parameters.get_minimap2_remap_illumina_default(
+                    user,
+                    Software.TYPE_OF_USE_televir_global,
+                    ConstantsSettings.TECHNOLOGY_illumina,
+                    pipeline_step=ConstantsSettings.PIPELINE_NAME_remapping,
+                ),
+                user,
+            )
+
+            return self.get_minimap2_remap_illumina_parameters(user)
+
+        if software_name == SoftwareNames.SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name:
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name,
+                self.default_parameters.get_minimap2_map_assembly_default(
+                    user,
+                    Software.TYPE_OF_USE_televir_global,
+                    ConstantsSettings.TECHNOLOGY_minion,
+                ),
+                user,
+            )
+
+            return self.get_minimap2_map_assembly_parameters(user)
 
         if software_name == SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ILLU_name:
             self.test_default_db(

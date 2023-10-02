@@ -28,4 +28,5 @@ p <- collapsibleTree( input, columns,
 
 ### save the dendrogram as html file
 
-htmltools::save_html(p, file = output_path) 
+htmltools::save_html(p, file = output_path)
+

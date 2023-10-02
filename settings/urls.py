@@ -14,6 +14,11 @@ urlpatterns = [
         name="pathogenID_pipeline",
     ),
     url(
+        r"pathogenID-pipeline-sample/(?P<sample>\d+)$",
+        views.PIMetagenSampleView.as_view(),
+        name="pathogenID_sample_settings",
+    ),
+    url(
         r"pathogenID-pipeline-reset$",
         ajax_views.reset_project_settings,
         name="reset_project_parameters",

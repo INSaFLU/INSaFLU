@@ -4,8 +4,10 @@ from datetime import datetime
 from operator import itemgetter
 
 from django.conf import settings
+
 # from django.db.models import Manager as GeoManager
 from django.contrib.auth.models import User
+
 # Create your models here.
 from django.contrib.gis.db.models import GeoManager  # #  change to django  2.x
 from django.contrib.gis.db.models import PointField
@@ -75,7 +77,6 @@ class MetaKey(models.Model):
 
 
 class Reference(models.Model):
-
     constants = Constants()
 
     ### species
@@ -456,6 +457,7 @@ class MixedInfections(models.Model):
     has_master_vector = models.BooleanField(
         default=False
     )  ## if it has the master vector, has the vector to compare to all others
+
     ## and is not used in projectSample,
     ## It can change across time
     ## to trace the change of tag is set a metaValue in ProjectSample
@@ -849,7 +851,6 @@ class Sample(models.Model):
                 vect_identify_virus.append(identify_virus)
 
         if len(vect_identify_virus) > 0:
-
             ### Corona/monkeypox
             sz_return_c = self.__get_type__(
                 vect_identify_virus,
@@ -1109,7 +1110,6 @@ class Sample(models.Model):
         if self.__exists_type(
             vect_identify_virus, ConstantsVirus.TYPE_A
         ) and self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_B):
-
             if (
                 self.__get_number_type__(
                     vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE
@@ -1137,7 +1137,6 @@ class Sample(models.Model):
         ) or self.__exists_type(
             vect_identify_virus, "", ConstantsVirus.SEQ_VIRUS_SPECIES
         ):
-
             if (
                 self.__get_number_type__(
                     vect_identify_virus, ConstantsVirus.SEQ_VIRUS_GENUS
@@ -1396,12 +1395,8 @@ class Project(models.Model):
     PROJECT_FILE_NAME_Aln2pheno_flagged_pokay = (
         "aln2pheno_flagged_mutation_report_pokay.tsv"  ### has results of aln2pheno
     )
-    PROJECT_FILE_NAME_Aln2pheno_report_carabelli = (
-        "aln2pheno_final_report_EpitopeResidues_Carabelli_2023.tsv"  ### has results of aln2pheno
-    )
-    PROJECT_FILE_NAME_Aln2pheno_flagged_carabelli = (
-        "aln2pheno_flagged_mutation_report_EpitopeResidues_Carabelli_2023.tsv"  ### has results of aln2pheno
-    )    
+    PROJECT_FILE_NAME_Aln2pheno_report_carabelli = "aln2pheno_final_report_EpitopeResidues_Carabelli_2023.tsv"  ### has results of aln2pheno
+    PROJECT_FILE_NAME_Aln2pheno_flagged_carabelli = "aln2pheno_flagged_mutation_report_EpitopeResidues_Carabelli_2023.tsv"  ### has results of aln2pheno
     PROJECT_FILE_NAME_Aln2pheno_zip = "aln2pheno.zip"  ### has results of aln2pheno
 
     PROJECT_FILE_NAME_all_files_zipped = "AllFiles.zip"  ### Several files zipped
@@ -1572,7 +1567,6 @@ class Project(models.Model):
         return os.path.join(self.__get_global_path__(type_path, None), file_name)
 
     def get_global_file_by_project_web(self, file_name):
-
         out_file = self.get_global_file_by_project(TypePath.MEDIA_ROOT, file_name)
         if os.path.exists(out_file):
             return mark_safe(
@@ -1661,7 +1655,6 @@ class CountVariations(models.Model):
 
 
 class ProjectSample(models.Model):
-
     constants = Constants()
 
     PATH_MAIN_RESULT = "main_result"
@@ -2213,10 +2206,25 @@ class ProcessControler(models.Model):
         return "{}{}_sample_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, project_pk, sample_pk
         )
-    
+
+    def get_name_televir_project_sample_metagenomics_run(self, sample_pk, leaf_pk):
+        return "{}_combined_metagen_{}_{}".format(
+            ProcessControler.PREFIX_TELEVIR_PROJECT, sample_pk, leaf_pk
+        )
+
+    def get_name_televir_project_sample_metagenomics(self, sample_pk):
+        return "{}_combined_metagen_{}".format(
+            ProcessControler.PREFIX_TELEVIR_PROJECT, sample_pk
+        )
+
     def get_name_televir_project_sample_sort(self, sample_pk):
         return "{}_report_sort_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, sample_pk
+        )
+
+    def get_name_televir_project_merge_explify(self, project_pk):
+        return "{}_report_merge_explify_{}".format(
+            ProcessControler.PREFIX_TELEVIR_PROJECT, project_pk
         )
 
     def get_name_televir_run(self, project_pk, sample_pk, leaf_pk) -> str:

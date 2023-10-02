@@ -451,25 +451,14 @@ class Input_Generator:
         self.config.update(self.params.CONSTANTS)
 
     def update_raw_reference_status_mapped(self):
-        self.reference.status = RawReference.STATUS_MAPPED
-        self.reference.save()
+        self.reference.update_raw_reference_status_fail()
 
     def update_raw_reference_status_fail(self):
-        self.reference.status = RawReference.STATUS_FAIL
-        self.reference.save()
+        self.reference.update_raw_reference_status_fail()
 
     def engine_report_modify_mapping_success(self, run_class: RunMain):
         def render_classification_source(record: RawReference):
-            if record.classification_source == "1":
-                return "reads"
-
-            if record.classification_source == "2":
-                return "contigs"
-
-            if record.classification_source == "3":
-                return "reads / contigs"
-
-            return "unknown"
+            return record.classification_source_str
 
         run_class.report["mapping_success"] = render_classification_source(
             self.reference

@@ -9,6 +9,7 @@ from django.utils.safestring import mark_safe
 
 from constants.constants import Constants
 from managing_files.manage_database import ManageDatabase
+from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.models import (
     ContigClassification,
@@ -25,7 +26,15 @@ from pathogen_identification.models import (
     TelevirRunQC,
 )
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
-from pathogen_identification.utilities.utilities_views import ReportSorter
+from pathogen_identification.utilities.utilities_general import (
+    get_project_dir,
+    get_project_dir_no_media_root,
+)
+from pathogen_identification.utilities.utilities_views import (
+    ReportSorter,
+    check_sample_software_exists,
+    duplicate_metagenomics_software,
+)
 from settings.models import Parameter, Software
 
 
@@ -223,6 +232,117 @@ class ProjectTable(tables.Table):
         return record.last_change_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE)
 
 
+class ProjectTableMetagenomics(ProjectTable):
+    merge_explify = tables.Column("Actions", orderable=False, empty_values=())
+
+    class Meta:
+        model = Projects
+
+        fields = (
+            "name",
+            "results",
+            "samples",
+            "merge_explify",
+            "last_change_date",
+            "creation_date",
+            "description",
+            "technology",
+            "running_processes",
+        )
+        attrs = {"class": "table-striped table-bordered"}
+        empty_text = "There are no Projects to show..."
+
+        sequence = (
+            "name",
+            "results",
+            "merge_explify",
+            "settings",
+            "samples",
+            "description",
+            "technology",
+            "running_processes",
+            "queued_processes",
+            "finished_processes",
+        )
+
+    def render_merge_explify(self, record: Projects):
+        """
+        return merge tables modal button
+        """
+
+        process_controler = ProcessControler()
+
+        if ProcessControler.objects.filter(
+            owner__id=record.owner.pk,
+            name=process_controler.get_name_televir_project_merge_explify(
+                project_pk=record.pk,
+            ),
+            is_running=True,
+        ).exists():
+            return mark_safe(
+                '<a href="#" '
+                + 'data-toggle="tooltip" '
+                + 'title="Running"'
+                + '><i class="fa fa-spinner fa-spin"></i></span> </a>'
+            )
+
+        eye_blue = '><i class="fa fa-eye"></i></span> </a>'
+        eye_purple = '><i class="fa fa-eye" style="color: purple;"></i></span> </a>'
+        eye_show = eye_blue
+
+        deploy_explify = (
+            "<a "
+            + 'href="#id_merge_televir_explify_modal" data-toggle="modal" data-toggle="tooltip" '
+            + 'id="merge_explify_modal" '
+            + 'title="Merge Explify"'
+            + f"project_id={record.pk} "
+            + f"ref_name={record.name} "
+        )
+
+        project_dir_structure = get_project_dir_no_media_root(record)
+        project_dir = get_project_dir(record)
+        merge_explify_file = os.path.join(
+            project_dir, CS.EXPLIFY_MERGE_SUFFIX + f".{record.pk}.tsv"
+        )
+        merge_explify_file_provide = os.path.join(
+            "/media/",
+            project_dir_structure,
+            CS.EXPLIFY_MERGE_SUFFIX + f".{record.pk}.tsv",
+        )
+
+        found_explify_result = os.path.isfile(merge_explify_file)
+        download_button = ""
+
+        if found_explify_result:
+            # display icon and download on click
+
+            download_button = (
+                '<a rel="nofollow" href="'
+                + merge_explify_file_provide
+                + '" download="'
+                + CS.EXPLIFY_MERGE_SUFFIX
+                + f".{record.pk}.tsv"
+                + '" '
+                + 'data-toggle="tooltip" '
+                + 'title="Download"'
+                + '><i class="fa fa-download"></i></span> </a>'
+            )
+
+        else:
+            #
+            if ProcessControler.objects.filter(
+                owner__id=record.owner.pk,
+                name=process_controler.get_name_televir_project_merge_explify(
+                    project_pk=record.pk,
+                ),
+            ).exists():
+                eye_show = eye_purple
+
+        deploy_explify = deploy_explify + eye_show + download_button
+
+        return mark_safe(deploy_explify)
+
+
 class SampleTable(tables.Table):
     name = tables.Column(verbose_name="Sample Name")
     report = tables.Column(
@@ -398,7 +518,7 @@ class SampleTable(tables.Table):
         if user.username == record.project.owner.username:
             return mark_safe(record_name)
 
-    def render_deploy(self, record):
+    def render_deploy(self, record: PIProject_Sample):
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
 
@@ -413,24 +533,64 @@ class SampleTable(tables.Table):
         if CS.DEPLOYMENT_DEFAULT == CS.DEPLOYMENT_TYPE_PIPELINE:
             TELEVIR_DEPLOY_URL = "submit_televir_runs_project_sample"
 
-        if user.username == record.project.owner.username:
-            record_name = (
-                '<a href="#" id="deploypi_sample_btn" class="kill-button" data-toggle="modal" data-toggle="tooltip" title="Run"'
-                + ' ref_name="'
-                + record.name
-                + '"sample_id="'
-                + str(record.pk)
-                + '" deploy-url="'
-                + reverse(
-                    TELEVIR_DEPLOY_URL,
-                )
-                + '"'
-                + '"><i class="fa fa-flask"></i></span> </a>'
+        if user.username != record.project.owner.username:
+            return mark_safe(record_name)
+
+        record_name = (
+            '<a href="#" id="deploypi_sample_btn" class="kill-button" data-toggle="modal" data-toggle="tooltip" title="Run Televir"'
+            + ' ref_name="'
+            + record.name
+            + '"sample_id="'
+            + str(record.pk)
+            + '" deploy-url="'
+            + reverse(
+                TELEVIR_DEPLOY_URL,
+            )
+            + '"'
+            + '"><i class="fa fa-flask"></i></span> </a>'
+        )
+
+        if (
+            ParameterSet.objects.filter(
+                sample=record,
+                status=ParameterSet.STATUS_FINISHED,
+            ).count()
+            > 0
+            and CS.METAGENOMICS
+        ):
+            # if check_sample_software_exists(record) is False:
+            #    duplicate_metagenomics_software(record.project, record)
+            ## add light gray background using span
+
+            color = ""
+
+            ## encase following butons in a tooltip
+            metagen_buttons = " <span class='tooltip-wrap' data-toggle='tooltip' style='display: inline-block; visibility: visible;' >"
+
+            parameters = (
+                "<a href="
+                + reverse("pathogenID_sample_settings", kwargs={"sample": record.pk})
+                + ' data-toggle="tooltip" data-toggle="modal" title="Manage combine settings">'
+                + f'<span ><i class="padding-button-table fa fa-pencil-square padding-button-table" {color}></i></span></a>'
             )
 
-        if active_runs.count() > 0:
-            color = 'style="color: red;"'
+            deploy_metagenomics = (
+                "<a "
+                + 'href="#id_deploy_metagenomics_modal" data-toggle="modal" data-toggle="tooltip" '
+                + 'id="deploy_metagenomics_modal" '
+                + 'title="Run combined metagenomics"'
+                + f"pk={record.pk} "
+                + f"ref_name={record.name} "
+                + f'><span><i class="padding-button-table fa fa-paw padding-button-table" {color}></i></span></a>'
+            )
 
+            metagen_buttons = (
+                metagen_buttons + parameters + deploy_metagenomics + "</span>"
+            )
+
+            record_name += metagen_buttons
+
+        if active_runs.count() > 0:
             record_name += (
                 '<a href="#id_kill_modal" id="id_kill_reference_modal" data-toggle="modal" data-toggle="tooltip" title="Cancel"'
                 + ' ref_name="'
@@ -442,7 +602,7 @@ class SampleTable(tables.Table):
 
         return mark_safe(record_name)
 
-    def render_name(self, record):
+    def render_name(self, record: PIProject_Sample):
         from crequest.middleware import CrequestMiddleware
 
         current_request = CrequestMiddleware.get_request()
@@ -492,6 +652,63 @@ class SampleTable(tables.Table):
     report = tables.LinkColumn(
         "sample_main", text="Report", args=[tables.A("project__pk"), tables.A("pk")]
     )
+
+
+class SampleTableMetagenomics(SampleTable):
+    combined_analysis = tables.Column(
+        "Combined Analysis", orderable=False, empty_values=()
+    )
+
+    class Meta:
+        model = PIProject_Sample
+
+        attrs = {"class": "paleblue"}
+        fields = (
+            "name",
+            "report",
+            "combined_analysis",
+            "runs",
+            "sorting",
+            "deploy",
+            "input",
+            "combinations",
+            "running_processes",
+            "queued_processes",
+            "set_control",
+        )
+
+    def render_combined_analysis(self, record):
+        """
+        row with two buttons, one for settings, one for deploy
+        """
+        color = ""
+        parameters = (
+            "<a href="
+            + reverse("pathogenID_sample_settings", kwargs={"sample": record.pk})
+            + ' data-toggle="tooltip" title="Manage settings">'
+            + f'<span ><i class="padding-button-table fa fa-pencil padding-button-table" {color}></i></span></a>'
+        )
+
+        deploy_metagenomics = (
+            "<a "
+            + 'href="#id_deploy_metagenomics_modal" data-toggle="modal" data-toggle="tooltip" '
+            + 'id="deploy_metagenomics_modal" '
+            + 'title="Deploy Metagenomics"'
+            + f"pk={record.pk} "
+            + f"ref_name={record.name} "
+            + '><i class="fa fa-flask"></i></span> </a>'
+        )
+
+        if (
+            ParameterSet.objects.filter(
+                sample=record,
+                status=ParameterSet.STATUS_FINISHED,
+            ).count()
+            > 1
+        ):
+            parameters = parameters + deploy_metagenomics
+
+        return mark_safe(parameters)
 
 
 class RawReferenceTable(tables.Table):
@@ -750,7 +967,9 @@ class RunMainTable(tables.Table):
             ContigClassification.objects.filter(run=record).exists()
             and ReadClassification.objects.filter(run=record).exists()
         )
-        finished_processing = FinalReport.objects.filter(run=record).count() > 0
+
+        finished_processing = record.parameter_set.status = ParameterSet.STATUS_FINISHED
+        # finished_processing = FinalReport.objects.filter(run=record).count() > 0
         finished_remapping = record.report == "finished"
 
         if (

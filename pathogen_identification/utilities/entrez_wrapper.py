@@ -140,7 +140,11 @@ class EntrezWrapper:
     def run_query_strategies(self, query: List[str]) -> None:
         try:
             self.run_queries_biopy(query)
-        except urllib.error.URLError:
+        except (
+            urllib.error.URLError,
+            http.client.RemoteDisconnected,
+            http.client.IncompleteRead,
+        ):
             self.run_queries_binaries(query)
         except http.client.RemoteDisconnected:
             self.run_queries_binaries(query)

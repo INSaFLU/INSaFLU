@@ -11,6 +11,7 @@ from constants.software_names import SoftwareNames
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project, ProjectSample, Sample
+from pathogen_identification.models import PIProject_Sample
 from pathogen_identification.models import Projects as PIProjects
 from pathogen_identification.utilities.utilities_pipeline import Pipeline_Makeup
 from settings.constants_settings import ConstantsSettings
@@ -721,6 +722,7 @@ def turn_on_off_software(request):
         project_sample_id_a = "project_sample_id"
         type_of_use_id_a = "type_of_use_id"
         televir_project_id_a = "televir_project_id"
+        televir_project_sample_id_a = "televir_project_sample_id"
 
         ## some pre-requisites
         if not request.user.is_active or not request.user.is_authenticated:
@@ -737,6 +739,7 @@ def turn_on_off_software(request):
         sample_id = None
         project_id = None
         televir_project_id = None
+        televir_project_sample_id = None
         project_sample_id = None
         type_of_use_id = None
 
@@ -750,13 +753,22 @@ def turn_on_off_software(request):
             project_id = request.GET[project_id_a]
         elif project_sample_id_a in request.GET:
             project_sample_id = request.GET[project_sample_id_a]
+        if televir_project_sample_id_a in request.GET:
+            televir_project_sample_id = request.GET[televir_project_sample_id_a]
 
         default_parameters = DefaultParameters()
         if software_id_a in request.GET:
             software_id = request.GET[software_id_a]
 
             try:
-                project, televir_project, project_sample, sample = (
+                (
+                    project,
+                    televir_project,
+                    televir_project_sample,
+                    project_sample,
+                    sample,
+                ) = (
+                    None,
                     None,
                     None,
                     None,
@@ -764,9 +776,35 @@ def turn_on_off_software(request):
                 )
                 software = Software.objects.get(pk=software_id)
                 current_is_to_run = software.is_to_run
+                if (
+                    not televir_project_sample_id is None
+                    and not televir_project_id is None
+                ):
+                    televir_project_sample = PIProject_Sample.objects.get(
+                        pk=televir_project_sample_id
+                    )
+                    pipeline_steps_project_sample = (
+                        pipeline_makeup.get_pipeline_makeup_result_of_operation(
+                            software,
+                            turn_off=current_is_to_run,
+                            televir_project=televir_project_sample.project,
+                            project_sample=televir_project_sample,
+                        )
+                    )
+
+                    makeup = pipeline_makeup.match_makeup_name_from_list(
+                        pipeline_steps_project_sample
+                    )
+                    if makeup is None:
+                        data[
+                            "message"
+                        ] = f"You cannot perform this operation. Project '{televir_project_sample.project.name}' with sample '{televir_project_sample.sample.name}' would not meet minimum pipeline step requirements."
+
+                        return JsonResponse(data)
                 if not televir_project_id is None:
                     televir_project = PIProjects.objects.get(pk=televir_project_id)
-                    pipeline_steps_project = (
+
+                    pipeline_steps_televir_project = (
                         pipeline_makeup.get_pipeline_makeup_result_of_operation(
                             software,
                             turn_off=current_is_to_run,
@@ -775,7 +813,7 @@ def turn_on_off_software(request):
                     )
 
                     makeup = pipeline_makeup.match_makeup_name_from_list(
-                        pipeline_steps_project
+                        pipeline_steps_televir_project
                     )
                     if makeup is None:
                         data[
@@ -786,16 +824,16 @@ def turn_on_off_software(request):
 
                 if not type_of_use_id is None:
                     if type_of_use_id in Software.TELEVIR_GLOBAL_TYPES:
-                        pipeline_steps_project = (
+                        pipeline_steps_televir_global = (
                             pipeline_makeup.get_pipeline_makeup_result_of_operation(
                                 software, turn_off=current_is_to_run
                             )
                         )
+                        print(set(pipeline_steps_televir_global))
 
                         makeup = pipeline_makeup.match_makeup_name_from_list(
-                            pipeline_steps_project
+                            pipeline_steps_televir_global
                         )
-
                         if makeup is None:
                             data[
                                 "message"
@@ -969,6 +1007,7 @@ def get_software_name_to_turn_on_off(request):
         project_sample_id_a = "project_sample_id"
         type_of_use_id_a = "type_of_use_id"
         televir_project_id_a = "televir_project_id"
+        televir_project_sample_id_a = "televir_project_sample_id"
 
         ## some pre-requisites
         if not request.user.is_active or not request.user.is_authenticated:
@@ -985,11 +1024,14 @@ def get_software_name_to_turn_on_off(request):
         project_sample_id = None
         type_of_use_id = None
         televir_project_id = None
+        televir_project_sample_id = None
 
         if type_of_use_id_a in request.GET:
             type_of_use_id = request.GET[type_of_use_id_a]
         if televir_project_id_a in request.GET:
-            televir_project_id = request.GET[televir_project_id_a]
+            televir_project_id = int(request.GET[televir_project_id_a])
+        if televir_project_sample_id_a in request.GET:
+            televir_project_sample_id = int(request.GET[televir_project_sample_id_a])
         if sample_id_a in request.GET:
             sample_id = request.GET[sample_id_a]
         elif project_id_a in request.GET:
@@ -1000,8 +1042,21 @@ def get_software_name_to_turn_on_off(request):
         if software_id_a in request.GET:
             software_id = request.GET[software_id_a]
             try:
-                project, project_sample, sample = None, None, None
+                (
+                    project,
+                    project_sample,
+                    sample,
+                    televir_project,
+                    televir_project_sample,
+                ) = (None, None, None, None, None)
                 software = Software.objects.get(pk=software_id)
+                if not televir_project_id is None:
+                    televir_project = PIProjects.objects.get(pk=televir_project_id)
+                if not televir_project_sample_id is None:
+                    televir_project_sample = PIProject_Sample.objects.get(
+                        pk=televir_project_sample_id
+                    )
+
                 if not project_id is None:
                     project = Project.objects.get(pk=project_id)
                 elif not project_sample_id is None:
@@ -1016,12 +1071,14 @@ def get_software_name_to_turn_on_off(request):
                         project=project,
                         project_sample=project_sample,
                         sample=sample,
+                        televir_project=televir_project,
+                        televir_project_sample=televir_project_sample,
                     )
 
                     if software.type_of_use == Software.TYPE_OF_USE_global:
                         is_to_run = software.is_to_run
-                    elif len(parameters) > 0:
-                        is_to_run = parameters[0].is_to_run
+                    elif len(parameters) > 1:
+                        is_to_run = parameters[0].software.is_to_run
                     else:
                         is_to_run = software.is_to_run
 

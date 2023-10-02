@@ -481,11 +481,13 @@
                             </form>
                             {% endif %}
                             {% if read_classification.classification_number > 0 and contig_classification.classification_number > 0 %}
+                            {% if run_remap.merged_log %}
                             <form id="merged_report_download" action="{% url 'download_file' %}" method="POST">
                                 {% csrf_token %}
                                 <input type=submit value="merged classification report" name="btn3">
                                 <input type="hidden" name="file_path" value="{{run_remap.merged_log}}">
                             </form>
+                            {% endif %}
                             {% endif %}
                         </div>
                         {% endif %}
@@ -494,6 +496,7 @@
             </div>
         </div>
     </div>
+    {% if remap_available %}
     <div class="card">
         <div class="card-header" role="tab" id="headingRemap">
             <h5 class="mb-0">
@@ -531,6 +534,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
     </div>
 </div>
 

@@ -6,7 +6,7 @@ import subprocess
 import time
 from dataclasses import dataclass, field
 from random import randint
-from typing import Type
+from typing import List, Type
 
 import matplotlib
 import pandas as pd
@@ -647,16 +647,7 @@ class Read_class:
         reads_start = self.get_current_fastq_read_number()
         current_reads = self.get_read_names_fastq()
 
-        print("current reads: %s" % len(current_reads))
-        print(current_reads[:10])
-        print(read_list[:10])
-
         read_list_to_keep = list(set(current_reads) - set(read_list))
-        # read_list_to_keep = [i for i in read_list_to_keep if i != ""]
-        # read_list_to_keep = list(set(read_list_to_keep))
-        print(read_list_to_keep[:10])
-
-        print("reads to keep: %s" % len(read_list_to_keep))
 
         if len(read_list) > 0:
             self.read_filter_move(read_list_to_keep, self.depleted)
@@ -664,18 +655,6 @@ class Read_class:
             self.is_depleted()
 
         reads_end = self.get_current_fastq_read_number()
-
-        print("reads start: %s" % reads_start)
-        print("reads end: %s" % reads_end)
-
-        print("################")
-        print("reads depleted: %s" % (reads_end - reads_start))
-
-        if reads_end > reads_start:
-            print("ERROR: reads end > reads start")
-            print("reads start: %s" % reads_start)
-            print("reads end: %s" % reads_end)
-            raise Exception("reads end > reads start")
 
         self.depleted_read_number = reads_start - reads_end
 
@@ -1194,6 +1173,13 @@ class Software_detail(SoftwareUnit):
         except IndexError:
             pass
 
+    def set_db(self, filepath, name=""):
+        if name == "":
+            name = os.path.basename(filepath)
+
+        self.db = filepath
+        self.db_name = name
+
     def extract_args(self, method_details: pd.DataFrame):
         try:
             args_string = method_details[
@@ -1242,6 +1228,10 @@ class SoftwareRemap:
     def __init__(self, remap_software: Software_detail, remap_filter: Software_detail):
         self.remap_software = remap_software
         self.remap_filter = remap_filter
+
+    @property
+    def output_dir(self):
+        return self.remap_software.dir
 
 
 class Bedgraph:
@@ -1431,7 +1421,7 @@ class Remap_Target:
     file: str
     run_prefix: str
     description: str = ""
-    accid_in_file: list = field(default_factory=lambda: [])
+    accid_in_file: List[str] = field(default_factory=lambda: [])
     reads: bool = False
     contigs: bool = False
 

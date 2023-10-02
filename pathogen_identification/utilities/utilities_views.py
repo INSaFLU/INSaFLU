@@ -24,6 +24,108 @@ from pathogen_identification.utilities.utilities_general import (
     infer_run_media_dir,
     simplify_name,
 )
+from settings.constants_settings import ConstantsSettings
+from settings.models import Parameter, Software
+
+
+class EmptyRemapMain:
+    run = None
+    sample = None
+    merged_log = None
+    performed = False
+    found_total = 0
+    coverage_minimum = 0
+    coverage_maximum = 0
+    success = False
+    coverage_mean = ""
+
+
+def check_sample_software_exists(sample: PIProject_Sample) -> bool:
+    """
+    Return True if sample software exists
+    """
+
+    parameters_exist = Parameter.objects.filter(
+        televir_project=sample.project,
+        televir_project_sample=sample,
+    ).exists()
+
+    return parameters_exist
+
+
+def check_project_params_exist(project: Projects) -> bool:
+    """
+    check if project parameters exist
+    """
+
+    query_set = Parameter.objects.filter(
+        televir_project=project.pk, televir_project_sample=None
+    )
+    if query_set.count() == 0:
+        return False
+    return True
+
+
+def duplicate_metagenomics_software(project: Projects, sample: PIProject_Sample):
+    owner = project.owner
+    project_exists = check_project_params_exist(project)
+    if project_exists:
+        project_call = project
+        types_of_use = Software.TELEVIR_PROJECT_TYPES
+    else:
+        project_call = None
+        types_of_use = Software.TELEVIR_GLOBAL_TYPES
+    project_call = project if check_project_params_exist(project) else None
+    query_set = Software.objects.filter(
+        owner=owner,
+        type_of_use__in=types_of_use,
+        type_of_software__in=[
+            Software.TYPE_SOFTWARE,
+            Software.TYPE_INSAFLU_PARAMETER,
+        ],
+        is_obsolete=False,
+        technology__name=project.technology,
+        parameter__televir_project=project_call,
+        parameter__televir_project_sample=None,
+        pipeline_step__name__in=[
+            ConstantsSettings.PIPELINE_NAME_metagenomics_combine,
+            ConstantsSettings.PIPELINE_NAME_remapping,
+            ConstantsSettings.PIPELINE_NAME_remap_filtering,
+            ConstantsSettings.PIPELINE_NAME_reporting,
+        ],
+    )
+    project = Projects.objects.get(pk=project.pk)
+    for software in query_set:
+        software_parameters = Parameter.objects.filter(
+            software=software,
+        )
+
+        software.pk = None
+        if software.type_of_use == Software.TYPE_OF_USE_televir_global:
+            software.type_of_use = Software.TYPE_OF_USE_televir_project
+        else:
+            software.type_of_use = Software.TYPE_OF_USE_televir_project_settings
+
+        try:
+            Software.objects.get(
+                name=software.name,
+                type_of_use=software.type_of_use,
+                parameter__televir_project=project,
+                parameter__televir_project_sample=sample,
+                pipeline_step=software.pipeline_step,
+            )
+
+        except Software.MultipleObjectsReturned:
+            pass
+
+        except Software.DoesNotExist:
+            software.save()
+            for parameter in software_parameters:
+                parameter.pk = None
+                parameter.software = software
+                parameter.televir_project = project
+                parameter.televir_project_sample = sample
+                parameter.save()
 
 
 def set_control_reports(project_pk: int):

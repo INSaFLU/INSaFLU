@@ -5,8 +5,9 @@ Created on 29/11/2021
 """
 import logging
 
-from constants.software_names import SoftwareNames
 from django.core.management import BaseCommand
+
+from constants.software_names import SoftwareNames
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.models import PipelineStep, Software, Technology
@@ -60,8 +61,14 @@ class Command(BaseCommand):
                 continue
 
             ### need to set the pipeline...
+            vect_parameters = default_parameters.get_vect_parameters(software)
+            if vect_parameters is None:
+                print(
+                    "Error, software parameters not found for software:", software.name
+                )
+                continue
+
             if software.pipeline_step is None:
-                vect_parameters = default_parameters.get_vect_parameters(software)
                 software.can_be_on_off_in_pipeline = vect_parameters[
                     0
                 ].software.can_be_on_off_in_pipeline
@@ -70,8 +77,6 @@ class Command(BaseCommand):
                 software.help_text = vect_parameters[0].software.help_text
                 software.save()
             else:  ### if PipelineStep not none, test if it is correct
-                vect_parameters = default_parameters.get_vect_parameters(software)
-
                 if software.name in SoftwareNames.polyvalent_software:
                     if (
                         software.pipeline_step.name
@@ -83,10 +88,16 @@ class Command(BaseCommand):
                             0
                         ].software.pipeline_step
                         software.save()
+
                 elif (
                     software.pipeline_step.name
                     != vect_parameters[0].software.pipeline_step.name
                 ):
+                    print(
+                        software.name,
+                        software.pipeline_step.name,
+                        vect_parameters[0].software.pipeline_step.name,
+                    )
                     software.pipeline_step = vect_parameters[0].software.pipeline_step
                     software.save()
 

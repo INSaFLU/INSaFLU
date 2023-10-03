@@ -1028,14 +1028,12 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         def eliminate_path_before_media(path: str):
             if PICS.televir_subdirectory in path:
                 path = path.split(PICS.televir_subdirectory)[1]
-                path = os.path.join(MEDIA_ROOT, PICS.televir_subdirectory, path)
-                return path
+                televir_sbdir = os.path.join(MEDIA_ROOT, PICS.televir_subdirectory)
+                return televir_sbdir + path
 
             return path.replace(MEDIA_ROOT, "/media")
 
         for fpath in context["files"]:
-            cwd = os.getcwd()
-
             context["files"][fpath] = eliminate_path_before_media(
                 context["files"][fpath]
             )

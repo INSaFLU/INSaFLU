@@ -17,7 +17,10 @@ def query_taxid(description: str, tmp_dir) -> list:
 
     tempfilename = (
         "query_"
-        + description.replace(" ", "_").replace("(", "").replace(")", "")
+        + description.replace(" ", "_")
+        .replace("(", "")
+        .replace(")", "")
+        .replace(";", "")
         + ".txt"
     )
     tempfilename = os.path.join(tmp_dir, tempfilename)

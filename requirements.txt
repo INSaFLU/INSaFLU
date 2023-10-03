@@ -17,7 +17,7 @@ crispy-forms-foundation==0.7.0
 NumPy==1.16.1
 biopython==1.78
 plotly==3.9.0
-Pillow==8.1.2
+Pillow==10.0.1
 psycopg2-binary
 pysam
 portalocker==1.4.0

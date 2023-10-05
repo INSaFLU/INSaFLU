@@ -903,6 +903,11 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         #
 
         raw_references = RawReference.objects.filter(run=run_main).order_by("status")
+        raw_references = sorted(
+            raw_references,
+            key=lambda x: int(x.read_counts if x.read_counts else 0),
+            reverse=True,
+        )
 
         raw_reference_table = RawReferenceTable(raw_references)
 

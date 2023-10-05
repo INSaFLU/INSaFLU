@@ -2,7 +2,7 @@ import http.client
 import logging
 import os
 import urllib.error
-from typing import List
+from typing import List, Optional
 
 import pandas as pd
 
@@ -164,19 +164,16 @@ class Metadata_handler:
 
         return references_table
 
-    def generate_targets_from_report(self, df: pd.DataFrame):
+    def generate_targets_from_report(
+        self, df: pd.DataFrame, max_taxids: Optional[int] = None
+    ):
         references_table = self.filter_references_table(df)
         # references_table = references_table.drop_duplicates(subset=["taxid"])
         references_table.rename(columns={"accid": "acc"}, inplace=True)
 
-        print("MERGE REPORT TO METADATA TAXID")
-        print(references_table.shape)
-        # references_table = self.merge_report_to_metadata_taxid(references_table)
-        print(references_table.head())
-
-        if "read_counts" in references_table.columns:
+        if "standard_score" in references_table.columns:
             references_table = references_table.sort_values(
-                by="read_counts", ascending=False
+                by="standard_score", ascending=False
             )
 
         ## group by taxids
@@ -185,10 +182,12 @@ class Metadata_handler:
             .agg({"acc": "first", "description": "first", "read_counts": "first"})
             .reset_index()
         )
-        print(references_table.shape)
 
-        # take max 400 taxids
-        references_table = references_table.iloc[:400, :]
+        if max_taxids is not None:
+            references_table = references_table.iloc[:max_taxids, :]
+            print(f"max_taxids: {max_taxids}")
+
+            print(references_table.head())
 
         self.generate_mapping_targets(
             references_table,
@@ -551,6 +550,8 @@ class Metadata_handler:
         taxid_limit: int = 15,
     ):
         """merge the reports and filter them."""
+        print("MERGING REPORTS")
+        print(self.rclass.shape, self.aclass.shape)
 
         targets, raw_targets = merge_classes(self.rclass, self.aclass, maxt=taxid_limit)
 
@@ -572,6 +573,10 @@ class Metadata_handler:
         # raw_targets["description"] = raw_targets["taxid"].apply(
         #    self.get_taxid_representative_description
         # )
+
+        print("##### RAW STATUS #####")
+        print(targets.shape)
+        print(raw_targets.shape)
 
         raw_targets["status"] = raw_targets["taxid"].isin(targets["taxid"].to_list())
 

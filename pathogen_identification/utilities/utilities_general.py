@@ -329,7 +329,7 @@ def merge_classes(r1: pd.DataFrame, r2: pd.DataFrame, maxt=6, exclude="phage"):
 
         maxt = maxt - shared.shape[0]
 
-        if maxt < 0:
+        if maxt <= 0:
             r1 = shared
 
         else:

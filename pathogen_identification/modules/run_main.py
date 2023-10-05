@@ -10,20 +10,35 @@ import numpy as np
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import PIProject_Sample, RawReference
+from pathogen_identification.models import PIProject_Sample, RawReference, RunMain
 from pathogen_identification.modules.assembly_class import Assembly_class
 from pathogen_identification.modules.classification_class import Classifier
 from pathogen_identification.modules.metadata_handler import Metadata_handler
 from pathogen_identification.modules.object_classes import (
-    Assembly_results, Contig_classification_results, Read_class,
-    Read_classification_results, Remap_main, Remap_Target, Run_detail_report,
-    RunCMD, RunQC_report, Sample_runClass, Software_detail, SoftwareRemap,
-    SoftwareUnit)
+    Assembly_results,
+    Contig_classification_results,
+    Read_class,
+    Read_classification_results,
+    Remap_main,
+    Remap_Target,
+    Run_detail_report,
+    RunCMD,
+    RunQC_report,
+    Sample_runClass,
+    Software_detail,
+    SoftwareRemap,
+    SoftwareUnit,
+)
 from pathogen_identification.modules.preprocess_class import Preprocess
-from pathogen_identification.modules.remap_class import (Mapping_Instance,
-                                                         Mapping_Manager)
+from pathogen_identification.modules.remap_class import (
+    Mapping_Instance,
+    Mapping_Manager,
+)
 from pathogen_identification.utilities.televir_parameters import (
-    RemapParams, TelevirParameters)
+    RemapParams,
+    TelevirParameters,
+)
+from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -635,7 +650,7 @@ class RunDetail_main:
         Update the merged classification summary file.
         """
 
-        self.metadata_tool.remap_targets= targets_list
+        self.metadata_tool.remap_targets = targets_list
 
     def Update_exec_time(self):
         """
@@ -831,7 +846,6 @@ class Run_Deployment_Methods(RunDetail_main):
         self.contig_classification_drone.run()
 
     def deploy_METAGENOMICS_CLASSIFICATION_reads(self):
-
         self.metagenomics_classification_drone = Classifier(
             self.metagenomics_classification_method,
             self.sample.r1.current,
@@ -1418,34 +1432,14 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.generate_output_data_classes()
 
     def Prep_Metagenomics_Classification(self):
-        def collect_references_table() -> pd.DataFrame:
-            references = RawReference.objects.filter(run__sample=self.sample_registered)
+        from typing import List, Union
 
-            table = []
-            for ref in references:
-                table.append(
-                    {
-                        "taxid": ref.taxid,
-                        "accid": ref.accid,
-                        "description": ref.description,
-                        "counts_str": ref.counts,
-                        "read_counts": ref.read_counts,
-                        "contig_counts": ref.contig_counts,
-                    }
-                )
+        from django.db.models import QuerySet
 
-            references_table = pd.DataFrame(table)
-            references_table = references_table.sort_values(
-                "read_counts", ascending=False
-            )
-            references_table["read_counts"] = references_table["read_counts"].astype(
-                float
-            )
-            references_table = references_table[references_table["read_counts"] > 1]
+        reference_utils = RawReferenceUtils(self.sample_registered)
 
-            return references_table
-
-        reference_table = collect_references_table()
+        # reference_table = collect_references_table_all()
+        reference_table = reference_utils.sample_reference_tables()
         self.metadata_tool.generate_targets_from_report(reference_table)
 
         self.prep_REMAPPING()
@@ -1507,6 +1501,9 @@ class RunMainTree_class(Run_Deployment_Methods):
             self.remap_params.max_taxids,
         )
 
+        self.import_from_remap_prep()
+
+    def import_from_remap_prep(self):
         self.aclass_summary = self.metadata_tool.aclass
         self.rclass_summary = self.metadata_tool.rclass
         self.merged_targets = self.metadata_tool.merged_targets
@@ -1627,6 +1624,9 @@ class RunMainTree_class(Run_Deployment_Methods):
         minhit_assembly = self.aclass_summary["counts"].min()
         if not minhit_assembly or not self.aclass_summary.shape[0]:
             minhit_assembly = 0
+
+        print("#################################")
+        print(self.rclass_summary)
 
         minhit_reads = self.rclass_summary["counts"].min()
         if np.isnan(minhit_reads):

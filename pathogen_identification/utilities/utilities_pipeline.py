@@ -17,6 +17,8 @@ from pathogen_identification.models import (
     ParameterSet,
     PIProject_Sample,
     Projects,
+    RawReference,
+    RunMain,
     SoftwareTree,
     SoftwareTreeNode,
 )
@@ -2701,3 +2703,190 @@ class SoftwareTreeUtils:
             tree.makeup,
         )
         return tree
+
+
+class RawReferenceUtils:
+    def __init__(self, sample: PIProject_Sample):
+        self.sample_registered = sample
+        self.runs_found = 0
+
+    def references_table_from_query(
+        self, references: Union[QuerySet, List[RawReference]]
+    ) -> pd.DataFrame:
+        table = []
+        for ref in references:
+            table.append(
+                {
+                    "taxid": ref.taxid,
+                    "accid": ref.accid,
+                    "description": ref.description,
+                    "counts_str": ref.counts,
+                    "read_counts": ref.read_counts,
+                    "contig_counts": ref.contig_counts,
+                }
+            )
+
+        if len(table) == 0:
+            return pd.DataFrame(
+                columns=[
+                    "taxid",
+                    "accid",
+                    "description",
+                    "counts_str",
+                    "read_counts",
+                    "contig_counts",
+                ]
+            )
+        references_table = pd.DataFrame(table)
+
+        references_table["read_counts"] = references_table["read_counts"].astype(float)
+
+        references_table = references_table.sort_values("read_counts", ascending=False)
+        references_table = references_table[references_table["read_counts"] > 1]
+
+        return references_table
+
+    def run_references_standard_score_reads(
+        self,
+        references_table: pd.DataFrame,
+    ) -> pd.DataFrame:
+        # references = RawReference.objects.filter(run=run)
+
+        # references_table = references_table_from_query(references)
+
+        if references_table.shape[0] == 0:
+            return pd.DataFrame(
+                columns=list(references_table.columns) + ["read_counts_standard_score"]
+            )
+
+        if max(references_table["read_counts"]) == 0:
+            references_table["read_counts_standard_score"] = 1
+            return references_table
+
+        references_table["read_counts"] = references_table["read_counts"].astype(float)
+
+        references_table["read_counts_standard_score"] = (
+            references_table["read_counts"] - references_table["read_counts"].mean()
+        ) / references_table["read_counts"].std()
+
+        references_table["read_counts_standard_score"] = (
+            references_table["read_counts_standard_score"]
+            - references_table["read_counts_standard_score"].min()
+        ) / (
+            references_table["read_counts_standard_score"].max()
+            - references_table["read_counts_standard_score"].min()
+        )
+
+        return references_table
+
+    def run_references_standard_score_contigs(
+        self,
+        references_table: pd.DataFrame,
+    ) -> pd.DataFrame:
+        # references = RawReference.objects.filter(run=run)
+
+        # references_table = references_table_from_query(references)
+
+        if references_table.shape[0] == 0:
+            return pd.DataFrame(
+                columns=list(references_table.columns)
+                + ["contig_counts_standard_score"]
+            )
+
+        references_table["contig_counts"] = references_table["contig_counts"].astype(
+            float
+        )
+        if max(references_table["contig_counts"]) == 0:
+            references_table["contig_counts_standard_score"] = 1
+            return references_table
+
+        references_table["contig_counts_standard_score"] = (
+            references_table["contig_counts"] - references_table["contig_counts"].mean()
+        ) / references_table["contig_counts"].std()
+
+        references_table["contig_counts_standard_score"] = (
+            references_table["contig_counts_standard_score"]
+            - references_table["contig_counts_standard_score"].min()
+        ) / (
+            references_table["contig_counts_standard_score"].max()
+            - references_table["contig_counts_standard_score"].min()
+        )
+
+        return references_table
+
+    def merge_standard_scores(self, table: pd.DataFrame):
+        if table.shape[0] == 0:
+            return pd.DataFrame(columns=list(table.columns) + ["standard_score"])
+        table["standard_score"] = (
+            table["read_counts_standard_score"] + table["contig_counts_standard_score"]
+        ) / 2
+        return table
+
+    def run_references_standard_scores(self, table):
+        table = self.run_references_standard_score_reads(table)
+
+        table = self.run_references_standard_score_contigs(table)
+        table = self.merge_standard_scores(table)
+        # print(table.columns)
+        return table
+
+    def merge_ref_tables_use_standard_score(
+        self,
+        list_tables: List[pd.DataFrame],
+    ) -> pd.DataFrame:
+        joint_tables = [
+            self.run_references_standard_scores(table) for table in list_tables
+        ]
+        print([x.shape for x in joint_tables])
+
+        joint_tables = pd.concat(joint_tables)
+        # group tables: average read_counts_standard_score, sum counts, read_counts, contig_counts
+        joint_tables = joint_tables.groupby(["taxid", "accid", "description"]).agg(
+            {
+                "taxid": "first",
+                "accid": "first",
+                "description": "first",
+                "standard_score": "mean",
+                "counts_str": "sum",
+                "read_counts": "sum",
+                "contig_counts": "sum",
+            }
+        )
+        print(joint_tables.columns)
+
+        joint_tables = joint_tables.sort_values("standard_score", ascending=False)
+        joint_tables = joint_tables.reset_index(drop=True)
+
+        return joint_tables
+
+    def run_references_table(self, run: RunMain) -> pd.DataFrame:
+        references = RawReference.objects.filter(run=run)
+
+        references_table = self.references_table_from_query(references)
+
+        return references_table
+
+    def sample_reference_tables(
+        self,
+    ) -> pd.DataFrame:
+        sample_runs = RunMain.objects.filter(sample=self.sample_registered)
+        self.runs_found = sample_runs.count()
+
+        run_references_tables = [self.run_references_table(run) for run in sample_runs]
+
+        run_references_tables = self.merge_ref_tables_use_standard_score(
+            run_references_tables
+        )
+
+        run_references_tables = run_references_tables[run_references_tables.taxid != 0]
+
+        return run_references_tables
+
+    def collect_references_table_all(
+        self,
+    ) -> pd.DataFrame:
+        references = RawReference.objects.filter(run__sample=self.sample_registered)
+
+        references_table = self.references_table_from_query(references)
+        # references_table= sample_reference_tables()
+        return references_table

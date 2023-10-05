@@ -185,9 +185,6 @@ class Metadata_handler:
 
         if max_taxids is not None:
             references_table = references_table.iloc[:max_taxids, :]
-            print(f"max_taxids: {max_taxids}")
-
-            print(references_table.head())
 
         self.generate_mapping_targets(
             references_table,
@@ -205,8 +202,6 @@ class Metadata_handler:
         summarize merged dataframe to get counts per taxid.
         if sift is true, filter results to only include self.sift_query.
         """
-
-        print("MERGE REPORT TO METADATA TAXID")
 
         df = self.clean_report(df)
 
@@ -550,8 +545,6 @@ class Metadata_handler:
         taxid_limit: int = 15,
     ):
         """merge the reports and filter them."""
-        print("MERGING REPORTS")
-        print(self.rclass.shape, self.aclass.shape)
 
         targets, raw_targets = merge_classes(self.rclass, self.aclass, maxt=taxid_limit)
 
@@ -569,14 +562,6 @@ class Metadata_handler:
             taxid_descriptions.dropna(subset=["description"], inplace=True)
             taxid_descriptions.drop_duplicates(subset=["taxid"], inplace=True)
             raw_targets = raw_targets.merge(taxid_descriptions, on="taxid", how="left")
-
-        # raw_targets["description"] = raw_targets["taxid"].apply(
-        #    self.get_taxid_representative_description
-        # )
-
-        print("##### RAW STATUS #####")
-        print(targets.shape)
-        print(raw_targets.shape)
 
         raw_targets["status"] = raw_targets["taxid"].isin(targets["taxid"].to_list())
 

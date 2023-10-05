@@ -1625,9 +1625,6 @@ class RunMainTree_class(Run_Deployment_Methods):
         if not minhit_assembly or not self.aclass_summary.shape[0]:
             minhit_assembly = 0
 
-        print("#################################")
-        print(self.rclass_summary)
-
         minhit_reads = self.rclass_summary["counts"].min()
         if np.isnan(minhit_reads):
             minhit_reads = 0

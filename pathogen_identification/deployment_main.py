@@ -186,8 +186,6 @@ class PathogenIdentification_deployment:
 
         self.run_params_db = all_paths.get(self.pipeline_index, None)
 
-        print(self.run_params_db)
-
         if self.run_params_db is None:
             print("Pipeline index not found")
             return False
@@ -555,7 +553,6 @@ class Run_Main_from_Leaf:
                 reference_table,
                 max_taxids=self.container.run_engine.remap_params.max_taxids,
             )
-            print("runs found: ", reference_utils.runs_found)
             self.container.run_engine.generate_output_data_classes()
             self.container.run_engine.prep_REMAPPING()
             self.container.run_engine.remap_prepped = True

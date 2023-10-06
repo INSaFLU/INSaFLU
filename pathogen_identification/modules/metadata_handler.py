@@ -165,7 +165,10 @@ class Metadata_handler:
         return references_table
 
     def generate_targets_from_report(
-        self, df: pd.DataFrame, max_taxids: Optional[int] = None
+        self,
+        df: pd.DataFrame,
+        max_taxids: Optional[int] = None,
+        skip_scrape: bool = True,
     ):
         references_table = self.filter_references_table(df)
         # references_table = references_table.drop_duplicates(subset=["taxid"])
@@ -200,7 +203,7 @@ class Metadata_handler:
             references_table,
             prefix=self.prefix,
             max_remap=1,
-            skip_scrape=True,
+            skip_scrape=skip_scrape,
         )
 
     def results_collect_metadata(
@@ -653,7 +656,7 @@ class Metadata_handler:
                         description = sorted(description, key=len)
 
                     description = description[0]
-                    if not skip_scrape:
+                    if skip_scrape is False:
                         description = scrape_description(pref, description)
 
                     if description_fails_filter(description, CS.DESCRIPTION_FILTERS):

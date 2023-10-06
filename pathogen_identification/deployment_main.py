@@ -549,6 +549,7 @@ class Run_Main_from_Leaf:
             self.container.run_engine.metadata_tool.generate_targets_from_report(
                 reference_table,
                 max_taxids=self.container.run_engine.remap_params.max_taxids,
+                skip_scrape=False,
             )
             self.container.run_engine.generate_output_data_classes()
             self.container.run_engine.prep_REMAPPING()

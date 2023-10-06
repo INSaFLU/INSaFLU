@@ -505,11 +505,12 @@ class Run_Main_from_Leaf:
 
         try:
             self.container.run_engine.Run_Metagenomcs_Classification()
-            self.container.run_engine.plan_remap_prep_safe()
+            # self.container.run_engine.plan_remap_prep_safe()
             reference_utils = RawReferenceUtils(
                 self.container.run_engine.sample_registered
             )
             reference_table = reference_utils.sample_reference_tables()
+            print("REFERENCE TABLE")
             print(reference_table.head())
             proxy_rclass = reference_table.rename(
                 columns={
@@ -521,16 +522,18 @@ class Run_Main_from_Leaf:
             proxy_rclass = proxy_rclass[proxy_rclass["counts"] > 0]
             proxy_rclass = proxy_rclass[proxy_rclass["taxid"] > 0]
             proxy_rclass = proxy_rclass[proxy_rclass["description"] != "-"]
+            proxy_rclass = proxy_rclass[proxy_rclass["accid"] != "-"]
             proxy_aclass = reference_table.rename(
                 columns={
                     "contig_counts": "counts",
                 }
             )
             proxy_aclass["taxid"] = proxy_aclass["taxid"].astype(int)
-            proxy_rclass["counts"] = proxy_rclass["counts"].astype(float).astype(int)
+            proxy_aclass["counts"] = proxy_aclass["counts"].astype(float).astype(int)
             proxy_aclass = proxy_aclass[proxy_aclass["counts"] > 0]
             proxy_aclass = proxy_aclass[proxy_aclass["taxid"] > 0]
             proxy_aclass = proxy_aclass[proxy_aclass["description"] != "-"]
+            proxy_aclass = proxy_aclass[proxy_aclass["accid"] != "-"]
 
             print(proxy_rclass.head())
 
@@ -541,12 +544,6 @@ class Run_Main_from_Leaf:
                 self.container.run_engine.remap_params.max_taxids,
             )
 
-            # self.container.run_engine.metadata_tool.match_and_select_targets(
-            #    reference_table,
-            #    self.container.run_engine.contig_classification_drone.classification_report,
-            #    self.container.run_engine.remap_params.max_accids,
-            #    self.container.run_engine.remap_params.max_taxids,
-            # )
             self.container.run_engine.import_from_remap_prep()
 
             self.container.run_engine.metadata_tool.generate_targets_from_report(

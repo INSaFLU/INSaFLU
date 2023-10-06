@@ -10,7 +10,7 @@
 {% block extra_messages %}
 	<!-- set the messages -->
 	<div class="container">
-		<div id="id_messages_terminate"></div>
+		<div id="id_messages_remove"></div>
 	</div>
 {% endblock %}
 
@@ -315,18 +315,26 @@
                 csrfmiddlewaretoken: '{{ csrf_token }}',
             }, // data sent with the post request
             success: function(data) {
-                if (data['is_ok'] && data['is_deployed']){
+                console.log(data);
+                if (data['is_ok'] === true && data['is_deployed'] === true){
                     /// add message with informaton
-                    $('#id_messages_deploy_metagenomics').append('<div class="alert alert-dismissible alert-success">' +
+                    $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
                     'The sample \'' + $('#id-modal-body-deploy-metagenomics-sample').attr('ref_name') + '\' was successfully deployed.' +
                     '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
                     '</div>');
                     location.reload() 
                 }
+                else if (data['is_ok'] === true && data['is_deployed'] === false){
+                    /// add message with informaton
+                    $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+                    'The sample \'' + $('#id-modal-body-deploy-metagenomics-sample').attr('ref_name') + '\' was not deployed. Check if metagenomics settings are correctly set.' +
+                    '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                    '</div>');
+                }
                 else{
                     /// add message with informaton
-                    $('#id_messages_deploy_metagenomics').append('<div class="alert alert-dismissible alert-warning">' +
-                    'The sample \'' + $('#id-modal-body-deploy-metagenomics-sample').attr('ref_name') + '\' was not deployed.' +
+                    $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+                    'The sample \'' + $('#id-modal-body-deploy-metagenomics-sample').attr('ref_name') + '\' was not deployed. Check if metagenomics settings are correctly set.' +
                     '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
                     '</div>');
                 }
@@ -350,11 +358,12 @@
             }, // data sent with the post request
                     
             success: function (data) {
+                
 
                 if (data['is_ok'] && data['set_control']){
                   
                   /// add message with informaton
-                  $('#id_messages_set_control').append('<div class="alert alert-dismissible alert-success">' +
+                  $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
                     'The sample \'' + $('#id-modal-body-set-control').attr('ref_name') + '\' was successfully set as control.' +
                     '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
                     '</div>');
@@ -362,7 +371,7 @@
                 }
                 if (data['is_ok'] && data['set_control'] == false){
                     /// add message with informaton
-                    $('#id_messages_set_control').append('<div class="alert alert-dismissible alert-warning">' +
+                    $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
                     'The sample \'' + $('#id-modal-body-set-control').attr('ref_name') + '\' was unset as control.' +
                     '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
                     '</div>');

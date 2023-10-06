@@ -8,14 +8,24 @@ from django.contrib.auth.models import User
 from django.core.files import File
 from django.db import IntegrityError, transaction
 
-from pathogen_identification.models import (QC_REPORT, ContigClassification,
-                                            FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RawReference, ReadClassification,
-                                            ReferenceContigs,
-                                            ReferenceMap_Main, RunAssembly,
-                                            RunDetail, TelevirRunQC, RunMain,
-                                            RunRemapMain, SampleQC)
+from pathogen_identification.models import (
+    QC_REPORT,
+    ContigClassification,
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReadClassification,
+    ReferenceContigs,
+    ReferenceMap_Main,
+    RunAssembly,
+    RunDetail,
+    RunMain,
+    RunRemapMain,
+    SampleQC,
+    TelevirRunQC,
+)
 from pathogen_identification.modules.object_classes import Sample_runClass
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunMain_class
@@ -350,8 +360,8 @@ def Update_Remap(run_class: RunMain_class, parameter_set: ParameterSet):
     sample, runmain, _ = get_run_parents(run_class, parameter_set)
     try:
         with transaction.atomic():
-            Update_FinalReport(run_class, runmain, sample)
             Update_RefMap_DB(run_class, parameter_set)
+            Update_FinalReport(run_class, runmain, sample)
             Update_Run_Detail_noCheck(run_class, parameter_set)
             Update_RunMain_noCheck(run_class, parameter_set, tag="finished")
         return True
@@ -713,8 +723,6 @@ def Update_Run_Detail_noCheck(run_class: RunMain_class, parameter_set: Parameter
         run_detail.save()
 
 
-
-
 def Update_Run_QC(run_class: RunMain_class, parameter_set: ParameterSet):
     sample, runmain, _ = get_run_parents(run_class, parameter_set)
 
@@ -732,7 +740,9 @@ def Update_Run_QC(run_class: RunMain_class, parameter_set: ParameterSet):
         run_qc.args = run_class.qc_report.args
         run_qc.input_reads = f"{run_class.qc_report.input_reads:,}"
         run_qc.output_reads = f"{run_class.qc_report.output_reads:,}"
-        run_qc.output_reads_percent = str(run_class.qc_report.output_reads_percent * 100)
+        run_qc.output_reads_percent = str(
+            run_class.qc_report.output_reads_percent * 100
+        )
         run_qc.save()
 
     else:
@@ -747,6 +757,7 @@ def Update_Run_QC(run_class: RunMain_class, parameter_set: ParameterSet):
         )
 
         run_qc.save()
+
 
 def Update_Run_Assembly(run_class: RunMain_class, parameter_set: ParameterSet):
     """
@@ -1118,6 +1129,17 @@ def Update_FinalReport(run_class, runmain, sample):
         if row["ID"] == "None":
             continue
 
+        remap_targets = RawReference.objects.filter(
+            run=runmain,
+            taxid=row["taxid"],
+            accid=row["ID"],
+        )
+
+        if remap_targets.exists():
+            for target in remap_targets:
+                target.status = RawReference.STATUS_MAPPED
+                target.save()
+
         try:
             report_row = FinalReport.objects.get(
                 run=runmain,
@@ -1204,6 +1226,15 @@ def Update_ReferenceMap(
     - ReferenceContigs
     """
 
+    remap_targets = RawReference.objects.filter(
+        run=run,
+        taxid=ref_map.reference.target.taxid,
+    )
+
+    if remap_targets.exists():
+        for target in remap_targets:
+            target.status = RawReference.STATUS_MAPPED
+            target.save()
     try:
         map_db = ReferenceMap_Main.objects.get(
             reference=ref_map.reference.target.acc_simple,
@@ -1252,7 +1283,6 @@ def Update_ReferenceMap(
             # map_db_seq.save()
 
 
-
 def Update_ReferenceMap_Update(
     ref_map: Mapping_Instance,
     run: RunMain,
@@ -1271,20 +1301,18 @@ def Update_ReferenceMap_Update(
             sample=sample,
             run=run,
         )
-        map_db.reference=ref_map.reference.target.acc_simple
-        map_db.bam_file_path=ref_map.reference.read_map_sorted_bam
-        map_db.bai_file_path=ref_map.reference.read_map_sorted_bam_index
-        map_db.fasta_file_path=ref_map.reference.reference_file
-        map_db.fai_file_path=ref_map.reference.reference_fasta_index
-        map_db.mapped_subset_r1=ref_map.reference.mapped_subset_r1
-        map_db.mapped_subset_r2=ref_map.reference.mapped_subset_r2
-        map_db.mapped_subset_r1_fasta=ref_map.reference.mapped_subset_r1_fasta
-        map_db.mapped_subset_r2_fasta=ref_map.reference.mapped_subset_r2_fasta
-        map_db.vcf=ref_map.reference.vcf
-        
+        map_db.reference = ref_map.reference.target.acc_simple
+        map_db.bam_file_path = ref_map.reference.read_map_sorted_bam
+        map_db.bai_file_path = ref_map.reference.read_map_sorted_bam_index
+        map_db.fasta_file_path = ref_map.reference.reference_file
+        map_db.fai_file_path = ref_map.reference.reference_fasta_index
+        map_db.mapped_subset_r1 = ref_map.reference.mapped_subset_r1
+        map_db.mapped_subset_r2 = ref_map.reference.mapped_subset_r2
+        map_db.mapped_subset_r1_fasta = ref_map.reference.mapped_subset_r1_fasta
+        map_db.mapped_subset_r2_fasta = ref_map.reference.mapped_subset_r2_fasta
+        map_db.vcf = ref_map.reference.vcf
+
         map_db.save()
-
-
 
     except ReferenceMap_Main.DoesNotExist:
         map_db = ReferenceMap_Main(

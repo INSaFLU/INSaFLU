@@ -10,15 +10,19 @@ import pandas as pd
 from django.contrib.auth.models import User
 from django.db.models import Q, QuerySet
 
-from constants.constants import \
-    Televir_Directory_Constants as Televir_Directories
+from constants.constants import Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import (ParameterSet, PIProject_Sample,
-                                            Projects, RawReference, RunMain,
-                                            SoftwareTree, SoftwareTreeNode)
-from pathogen_identification.utilities.utilities_televir_dbs import \
-    Utility_Repository
+from pathogen_identification.models import (
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
+from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -2467,7 +2471,7 @@ class SoftwareTreeUtils:
                 nodes=[],
                 edges={},
                 leaves=[],
-                makeup=0,
+                makeup=-1,
             )
 
         return self.generate_tree_from_combined_table(merged_table)
@@ -2491,7 +2495,7 @@ class SoftwareTreeUtils:
                 nodes=[],
                 edges={},
                 leaves=[],
-                makeup=0,
+                makeup=-1,
             )
 
         self.logger.info("Generating project tree")
@@ -2570,6 +2574,11 @@ class SoftwareTreeUtils:
             self.project, self.sample, metagenomics=True
         )
 
+        print(local_tree.makeup)
+
+        if local_tree.makeup == -1:
+            return {}
+
         return self.get_available_pathnodes(local_tree)
 
     def get_available_pathnodes(self, local_tree: PipelineTree) -> dict:
@@ -2625,6 +2634,7 @@ class SoftwareTreeUtils:
         submission_dict = {sample: []}
 
         available_path_nodes = self.get_sample_pathnodes()
+        print(available_path_nodes)
         clean_samples_leaf_dict = self.utils_manager.sample_nodes_check(
             submission_dict, available_path_nodes, self.project
         )

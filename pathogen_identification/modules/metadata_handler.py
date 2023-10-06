@@ -171,17 +171,27 @@ class Metadata_handler:
         # references_table = references_table.drop_duplicates(subset=["taxid"])
         references_table.rename(columns={"accid": "acc"}, inplace=True)
 
+        ## group by taxids
+        references_table = (
+            references_table.groupby(["taxid"])
+            .agg(
+                {
+                    "acc": "first",
+                    "description": "first",
+                    "read_counts": "first",
+                    "standard_score": "first",
+                    "contig_counts": "first",
+                }
+            )
+            .reset_index()
+        )
+
         if "standard_score" in references_table.columns:
             references_table = references_table.sort_values(
                 by="standard_score", ascending=False
             )
-
-        ## group by taxids
-        references_table = (
-            references_table.groupby(["taxid"])
-            .agg({"acc": "first", "description": "first", "read_counts": "first"})
-            .reset_index()
-        )
+            print("##### standard score ######")
+            print(references_table.head(10))
 
         if max_taxids is not None:
             references_table = references_table.iloc[:max_taxids, :]
@@ -563,7 +573,9 @@ class Metadata_handler:
             taxid_descriptions.drop_duplicates(subset=["taxid"], inplace=True)
             raw_targets = raw_targets.merge(taxid_descriptions, on="taxid", how="left")
 
-        raw_targets["status"] = raw_targets["taxid"].isin(targets["taxid"].to_list())
+        raw_targets[
+            "status"
+        ] = False  # raw_targets["taxid"].isin(targets["taxid"].to_list())
 
         self.raw_targets = raw_targets
         self.merged_targets = targets

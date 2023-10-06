@@ -60,6 +60,7 @@ def submit_sample_metagenomics_televir(request):
         project = sample.project
 
         software_utils = SoftwareTreeUtils(user, project, sample=sample)
+        print("HERE")
         runs_to_deploy = software_utils.check_runs_to_submit_metagenomics_sample(sample)
         print(runs_to_deploy)
 
@@ -80,6 +81,7 @@ def submit_sample_metagenomics_televir(request):
             data["is_deployed"] = False
 
         data["is_ok"] = True
+        print(data)
         return JsonResponse(data)
 
 

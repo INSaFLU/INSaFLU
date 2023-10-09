@@ -2749,6 +2749,8 @@ class RawReferenceUtils:
 
         references_table = references_table.sort_values("read_counts", ascending=False)
         references_table = references_table[references_table["read_counts"] > 1]
+        references_table = references_table[references_table["accid"] != "-"]
+        references_table = references_table[references_table["accid"] != ""]
 
         return references_table
 

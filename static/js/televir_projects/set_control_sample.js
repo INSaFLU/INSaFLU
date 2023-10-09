@@ -5,9 +5,6 @@ $(document).on("click", "a", function (e) {
         var attr = $(this).attr('id');
         var ref_name = $(this).attr('ref_name');
         var sample_pk = $(this).attr('pk');
-
-        console.log("oioin");
-
         
         // For some browsers, `attr` is undefined; for others `attr` is false.  Check for both.
 
@@ -22,52 +19,56 @@ $(document).on("click", "a", function (e) {
                 '</div>');
         }
     }
-    );
+);
 
-    $('#id-set-control-button').on('click', function(){
-    
-        url = $('#id-modal-body-set-control').attr("set-control-url");
-        sample_id = $('#id-modal-body-set-control').attr('pk');
-        $.ajax({
-            url: url,
-            type: 'POST',
-            data : {
-                sample_id : sample_id,
-                csrfmiddlewaretoken: '{{ csrf_token }}',
-            }, // data sent with the post request
-                    
-            success: function (data) {
+$('#id-set-control-button').on('click', function(){
+
+    url = $('#id-modal-body-set-control').attr("set-control-url");
+    sample_id = $('#id-modal-body-set-control').attr('pk');
+    token= $('#id-modal-body-set-control').attr('token');
+    $.ajax({
+        url: url,
+        type: 'POST',
+        data : {
+            sample_id : sample_id,
+            csrfmiddlewaretoken: token,
+        }, // data sent with the post request
                 
+        success: function (data) {
+            
 
-                if (data['is_ok'] && data['set_control']){
-                  /// add message with informaton
-                  $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
-                    'The sample \'' + $('#id-modal-body-set-control').attr('ref_name') + '\' was successfully set as control.' +
-                    '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-                    '</div>');
-                    
-                }
-                if (data['is_ok'] && data['set_control'] == false){
-                    /// add message with informaton
-                    
-                    $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-                    'The sample \'' + $('#id-modal-body-set-control').attr('ref_name') + '\' was unset as control.' +
-                    '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-                    '</div>');
-                    
-                }
-                else{
-                    /// add message with informaton
-                    $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-                    'The sample \'' + $('#id-modal-body-set-control').attr('ref_name') + '\' was not set as control.' +
-                    '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-                    '</div>');
-                }
-            },
-    
-            error: function (data) {
-                console.log('error');
-                console.log(data);
+            if (data['is_ok'] && data['set_control']){
+                /// add message with informaton
+                $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
+                'The sample \'' + $('#id-modal-body-set-control').attr('ref_name') + '\' was successfully set as control.' +
+                '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                '</div>');
+                var icon = document.querySelector('#id_set_control[ref_name="' + $('#id-modal-body-set-control').attr('ref_name') + '"]').querySelector('i');
+                icon.setAttribute('class', 'fa fa-circle');
+                
             }
-        });
+            else if (data['is_ok'] && data['set_control'] == false){
+                /// add message with informaton
+                
+                $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
+                'The sample \'' + $('#id-modal-body-set-control').attr('ref_name') + '\' was unset as control.' +
+                '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                '</div>');
+                var icon = document.querySelector('#id_set_control[ref_name="' + $('#id-modal-body-set-control').attr('ref_name') + '"]').querySelector('i');
+                icon.setAttribute('class', 'fa fa-circle-o');
+                
+            }
+            else{
+                /// add message with informaton
+                $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+                'The sample \'' + $('#id-modal-body-set-control').attr('ref_name') + '\' was not set as control.' +
+                '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                '</div>');
+            }
+        },
+        error: function (data) {
+            console.log('error');
+            console.log(data);
+        }
     });
+});

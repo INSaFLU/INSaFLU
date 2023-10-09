@@ -532,7 +532,6 @@ def set_sample_reports_control(request):
         data = {"is_ok": False}
         data["set_control"] = False
         sample_id = int(request.POST["sample_id"])
-
         try:
             sample = PIProject_Sample.objects.get(pk=int(sample_id))
 

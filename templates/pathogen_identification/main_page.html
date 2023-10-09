@@ -208,6 +208,7 @@
             </div>
         </div>
     </div>
+</div>
 
 <!-- The sample set control Modal -->
 <div class="modal fade" id="id_set_control_modal">
@@ -242,45 +243,44 @@
 
 <script type="text/javascript" src="{% static 'js/televir_projects/televir_kill_sample.js' %}"></script> 
 <script type="text/javascript" src="{% static 'js/televir_projects/remove_project_sample.js' %}"></script>
-
+<script type="text/javascript" src="{% static 'js/televir_projects/set_control_sample.js' %}"></script>
 
 {% load static from staticfiles %}
 
 <script>
+
+
     $(document).on("click", "a", function (e) {
-        console.log("clicked");
-        console.log($(this).attr("id"));
+
         if ($(this).attr("id") === "id_set_control") {
-    
-            console.log("set control modal");
-            
+
             var attr = $(this).attr('id');
             var ref_name = $(this).attr('ref_name');
             var sample_pk = $(this).attr('pk');
 
-            console.log(attr);
-            console.log(ref_name);
-            console.log(sample_pk);
+            
+
             
             // For some browsers, `attr` is undefined; for others `attr` is false.  Check for both.
-            if (attr === 'id_set_control'){
-                // add show to class 
-                //check if class icon is filled circle or empty circle
-                var icon = $(this).find('i');
-                var icon_class = icon.attr('class');
-                console.log(icon_class);
-                
-                if (icon_class === 'fa fa-circle-o'){
-                    $('#id-label-set-control').text('Set \'' + ref_name + '\' as control?');
-                }
-                else {
-                    $('#id-label-set-control').text('Unset \'' + ref_name + '\' as control?');
-                    $('#id-set-control-button').text('Unset');
-                }
-                
-                $('#id-modal-body-set-control').attr('pk', sample_pk);
-                $('#id-modal-body-set-control').attr('ref_name', ref_name);
+
+            // add show to class 
+            //check if class icon is filled circle or empty circle
+            var icon = $(this).find('i');
+            var icon_class = icon.attr('class');
+
+            console.log(icon_class);
+            
+            if (icon_class === 'fa fa-circle-o'){
+                $('#id-label-set-control').text('Set \'' + ref_name + '\' as control?');
             }
+            else {
+                $('#id-label-set-control').text('Unset \'' + ref_name + '\' as control?');
+                $('#id-set-control-button').text('Unset');
+            }
+            
+            $('#id-modal-body-set-control').attr('pk', sample_pk);
+            $('#id-modal-body-set-control').attr('ref_name', ref_name);
+
         }
         else if ($(this).attr("id") === 'id_add_set_control_message'){
             $('#id_messages_set_control').append('<div class="alert alert-dismissible alert-warning">' +
@@ -289,13 +289,9 @@
                     '</div>');
         }
         else if ($(this).attr("id") === 'deploy_metagenomics_modal'){
-            console.log("deploying metagenomics modal");
             var ref_name = $(this).attr('ref_name');
             var sample_pk = $(this).attr('pk');
-            console.log("HG")
-            console.log(attr);
-            console.log(ref_name);
-            console.log(sample_pk);
+
             $('#id-label-deploy-metagenomics').text('Deploy metagenomics combined analysis for sample \'' + ref_name + '\'?');
             $('#id-modal-body-deploy-metagenomics-sample').attr('sample_id', sample_pk);
             $('#id-modal-body-deploy-metagenomics-sample').attr('ref_name', ref_name);
@@ -315,7 +311,6 @@
                 csrfmiddlewaretoken: '{{ csrf_token }}',
             }, // data sent with the post request
             success: function(data) {
-                console.log(data);
                 if (data['is_ok'] === true && data['is_deployed'] === true){
                     /// add message with informaton
                     $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
@@ -344,55 +339,83 @@
     )
     
     
-    $('#id-set-control-button').on('click', function(){
-    
-        url = $('#id-modal-body-set-control').attr("set-control-url");
-        sample_id = $('#id-modal-body-set-control').attr('pk');
-    
-        $.ajax({
-            url: url,
-            type: 'POST',
-            data : {
-                sample_id : sample_id,
-                csrfmiddlewaretoken: '{{ csrf_token }}',
-            }, // data sent with the post request
-                    
-            success: function (data) {
-                
 
-                if (data['is_ok'] && data['set_control']){
-                  
-                  /// add message with informaton
-                  $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
-                    'The sample \'' + $('#id-modal-body-set-control').attr('ref_name') + '\' was successfully set as control.' +
-                    '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-                    '</div>');
-                    location.reload() 
-                }
-                if (data['is_ok'] && data['set_control'] == false){
-                    /// add message with informaton
-                    $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-                    'The sample \'' + $('#id-modal-body-set-control').attr('ref_name') + '\' was unset as control.' +
-                    '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-                    '</div>');
-                    location.reload() 
-                }
-                else{
-                    /// add message with informaton
-                    $('#id_messages_set_control').append('<div class="alert alert-dismissible alert-warning">' +
-                    'The sample \'' + $('#id-modal-body-set-control').attr('ref_name') + '\' was not set as control.' +
-                    '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-                    '</div>');
-                }
-            },
+    $(document).on("click", "a", function (e) {
+        if ($(this).attr("id") === "id_set_control_modal") {
+            
+            var attr = $(this).attr('id');
+            var ref_name = $(this).attr('ref_name');
+            var sample_pk = $(this).attr('pk');
     
-            error: function (data) {
-                console.log('error');
-                console.log(data);
+            console.log("oioin");
+    
+            
+            // For some browsers, `attr` is undefined; for others `attr` is false.  Check for both.
+    
+            $('#id-label-set-control').text('Set \'' + ref_name + '\' as control?');
+            $('#id-modal-body-set-control').attr('pk', sample_pk);
+            $('#id-modal-body-set-control').attr('ref_name', ref_name);
+        }
+        else if (attr === 'id_add_set_control_message'){
+            $('#id_messages_set_control').append('<div class="alert alert-dismissible alert-warning">' +
+                    'No jobs to deploy.' +
+                    '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                    '</div>');
             }
+        }
+        );
+    
+        $('#id-set-control-button').on('click', function(){
+        
+            url = $('#id-modal-body-set-control').attr("set-control-url");
+            sample_id = $('#id-modal-body-set-control').attr('pk');
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data : {
+                    sample_id : sample_id,
+                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                }, // data sent with the post request
+                        
+                success: function (data) {
+                    
+    
+                    if (data['is_ok'] && data['set_control']){
+                      /// add message with informaton
+                      $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
+                        'The sample \'' + $('#id-modal-body-set-control').attr('ref_name') + '\' was successfully set as control.' +
+                        '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                        '</div>');
+                        var icon = document.querySelector('#id_set_control[ref_name="' + $('#id-modal-body-set-control').attr('ref_name') + '"]').querySelector('i');
+                        icon.setAttribute('class', 'fa fa-circle');
+                        
+                    }
+                    if (data['is_ok'] && data['set_control'] == false){
+                        /// add message with informaton
+                        
+                        $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+                        'The sample \'' + $('#id-modal-body-set-control').attr('ref_name') + '\' was unset as control.' +
+                        '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                        '</div>');
+                        var icon = document.querySelector('#id_set_control[ref_name="' + $('#id-modal-body-set-control').attr('ref_name') + '"]').querySelector('i');
+                        icon.setAttribute('class', 'fa fa-circle-o');
+                        
+                    }
+                    else{
+                        /// add message with informaton
+                        $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+                        'The sample \'' + $('#id-modal-body-set-control').attr('ref_name') + '\' was not set as control.' +
+                        '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                        '</div>');
+                    }
+                },
+        
+                error: function (data) {
+                    console.log('error');
+                    console.log(data);
+                }
+            });
         });
-    });
-
 </script>
 
 <script>
@@ -422,11 +445,9 @@
     $(document).on("click", "a", function (e) {
 
         if ($(this).attr("id") == "deploypi_sample_btn") {
-            console.log("deploy pi sample");
             e.preventDefault();
         
             url= $(this).attr("deploy-url");
-            console.log(url);
             $.ajax({
                 url: $(this).attr("deploy-url"),
                 type: "POST",
@@ -436,7 +457,6 @@
                 },
                 data_type: 'json',
                 success: function(data){
-                    console.log(data);
                     if (data["is_ok"] == true && data["is_deployed"] == false) { 
                         alert("No runs to deploy");
                     }
@@ -454,7 +474,6 @@
             e.preventDefault();
         
             url= $(this).attr("sort-url");
-            console.log(url);
             $.ajax({
                 url: $(this).attr("sort-url"),
                 type: "POST",
@@ -464,7 +483,6 @@
                 },
                 data_type: 'json',
                 success: function(data){
-                    console.log(data);
                     if (data["is_ok"] == true && data["is_deployed"] == false) { 
                         alert("No Results to Sort");
                     }
@@ -481,8 +499,7 @@
 		var id_ = $(this).attr('id');
 		var href = $(this).attr('href');
 		var onclick = $(this).attr('onclick');
-        console.log(href);
-        console.log(id_);
+
 		if (href !== '#id_set_default_modal' && id_ !== "deploypi_sample_btn" && id_ !== "sort_sample_btn" && onclick !== 'return false;' && id_ !== 'sidenavToggler' &&
 			!href.startsWith('/media') && !href.startsWith('http')) {
 			wait_screen();
@@ -502,7 +519,6 @@
             },
             data_type: 'json',
             success: function(data){
-                console.log(data);
                 if (data["is_ok"] == true && data["is_deployed"] == false) { 
                     alert("No runs to deploy");
                 }
@@ -526,7 +542,6 @@
             },
             data_type: 'json',
             success: function(data){
-                console.log(data);
                 if (data["is_ok"] == true && data["is_deployed"] == false) { 
                     alert("No sort to deploy");
                 }

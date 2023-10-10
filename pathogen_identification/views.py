@@ -909,7 +909,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         )
         raw_references = sorted(
             raw_references,
-            key=lambda x: int(x.read_counts if x.read_counts else 0),
+            key=lambda x: float(x.read_counts if x.read_counts else 0),
             reverse=True,
         )
 

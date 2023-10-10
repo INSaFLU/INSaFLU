@@ -878,7 +878,7 @@ class RawReference(models.Model):
         if self.classification_source == "3":
             return self.counts.split("/")[0]
 
-        return "NA"
+        return None
 
     @property
     def contig_counts(self):
@@ -894,7 +894,7 @@ class RawReference(models.Model):
         if self.classification_source == "3":
             return self.counts.split("/")[1]
 
-        return "NA"
+        return None
 
     @property
     def counts_int_array(self):

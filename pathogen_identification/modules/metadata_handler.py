@@ -2,7 +2,7 @@ import http.client
 import logging
 import os
 import urllib.error
-from typing import List
+from typing import List, Optional
 
 import pandas as pd
 
@@ -164,37 +164,46 @@ class Metadata_handler:
 
         return references_table
 
-    def generate_targets_from_report(self, df: pd.DataFrame):
+    def generate_targets_from_report(
+        self,
+        df: pd.DataFrame,
+        max_taxids: Optional[int] = None,
+        skip_scrape: bool = True,
+    ):
         references_table = self.filter_references_table(df)
         # references_table = references_table.drop_duplicates(subset=["taxid"])
         references_table.rename(columns={"accid": "acc"}, inplace=True)
 
-        print("MERGE REPORT TO METADATA TAXID")
-        print(references_table.shape)
-        # references_table = self.merge_report_to_metadata_taxid(references_table)
-        print(references_table.head())
-
-        if "read_counts" in references_table.columns:
-            references_table = references_table.sort_values(
-                by="read_counts", ascending=False
-            )
-
         ## group by taxids
         references_table = (
             references_table.groupby(["taxid"])
-            .agg({"acc": "first", "description": "first", "read_counts": "first"})
+            .agg(
+                {
+                    "acc": "first",
+                    "description": "first",
+                    "read_counts": "first",
+                    "standard_score": "first",
+                    "contig_counts": "first",
+                }
+            )
             .reset_index()
         )
-        print(references_table.shape)
 
-        # take max 400 taxids
-        references_table = references_table.iloc[:400, :]
+        if "standard_score" in references_table.columns:
+            references_table = references_table.sort_values(
+                by="standard_score", ascending=False
+            )
+            print("##### standard score ######")
+            print(references_table.head(10))
+
+        if max_taxids is not None:
+            references_table = references_table.iloc[:max_taxids, :]
 
         self.generate_mapping_targets(
             references_table,
             prefix=self.prefix,
             max_remap=1,
-            skip_scrape=True,
+            skip_scrape=skip_scrape,
         )
 
     def results_collect_metadata(
@@ -206,8 +215,6 @@ class Metadata_handler:
         summarize merged dataframe to get counts per taxid.
         if sift is true, filter results to only include self.sift_query.
         """
-
-        print("MERGE REPORT TO METADATA TAXID")
 
         df = self.clean_report(df)
 
@@ -569,11 +576,9 @@ class Metadata_handler:
             taxid_descriptions.drop_duplicates(subset=["taxid"], inplace=True)
             raw_targets = raw_targets.merge(taxid_descriptions, on="taxid", how="left")
 
-        # raw_targets["description"] = raw_targets["taxid"].apply(
-        #    self.get_taxid_representative_description
-        # )
-
-        raw_targets["status"] = raw_targets["taxid"].isin(targets["taxid"].to_list())
+        raw_targets[
+            "status"
+        ] = False  # raw_targets["taxid"].isin(targets["taxid"].to_list())
 
         self.raw_targets = raw_targets
         self.merged_targets = targets
@@ -651,7 +656,7 @@ class Metadata_handler:
                         description = sorted(description, key=len)
 
                     description = description[0]
-                    if not skip_scrape:
+                    if skip_scrape is False:
                         description = scrape_description(pref, description)
 
                     if description_fails_filter(description, CS.DESCRIPTION_FILTERS):

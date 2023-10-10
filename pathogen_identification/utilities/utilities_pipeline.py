@@ -17,6 +17,8 @@ from pathogen_identification.models import (
     ParameterSet,
     PIProject_Sample,
     Projects,
+    RawReference,
+    RunMain,
     SoftwareTree,
     SoftwareTreeNode,
 )
@@ -1788,9 +1790,44 @@ class Parameter_DB_Utility:
 
         return combined_table
 
-    def generate_combined_parameters_table(self, technology: str, user: User):
-        """"""
-        software_table, parameters_table = self.get_software_tables(technology, user)
+    def generate_merged_table_safe(
+        self,
+        owner: User,
+        technology: str,
+        project: Optional[Projects] = None,
+        sample: Optional[PIProject_Sample] = None,
+        metagenomics: bool = False,
+    ) -> pd.DataFrame:
+        """
+        Generate a software tree for a technology and a tree makeup"""
+
+        software_table, parameters_table = self.get_software_tables(
+            technology,
+            owner,
+            project=project,
+            sample=sample,
+            metagenomics=metagenomics,
+        )
+
+        if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
+            if project is not None:
+                (
+                    software_table,
+                    parameters_table,
+                ) = self.get_software_tables(
+                    project.technology,
+                    project.owner,
+                    project=project,
+                    metagenomics=metagenomics,
+                )
+
+        if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
+            (
+                software_table,
+                parameters_table,
+            ) = self.get_software_tables(
+                project.technology, project.owner, metagenomics=metagenomics
+            )
 
         if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
             return pd.DataFrame(
@@ -1802,43 +1839,6 @@ class Parameter_DB_Utility:
                     "pipeline_step",
                     "software_name",
                 ]
-            )
-
-        return self.merge_software_tables(software_table, parameters_table)
-
-    def generate_combined_parameters_table_project(
-        self, owner: User, project: Projects
-    ):
-        """"""
-        software_table, parameters_table = self.get_software_tables_project(
-            owner, project
-        )
-
-        if parameters_table.shape[0] == 0:
-            self.logger.info("No parameters for this project, using global")
-            software_table, parameters_table = self.get_software_tables(
-                project.technology, owner
-            )
-
-        merged_table = self.merge_software_tables(software_table, parameters_table)
-
-        return merged_table
-
-    def generate_combined_parameters_table_sample(
-        self, owner, sample: PIProject_Sample
-    ):
-        (
-            software_table,
-            parameters_table,
-        ) = self.get_software_tables_project_sample_metagenomics(owner, sample)
-
-        if parameters_table.shape[0] == 0:
-            self.logger.info("No parameters for this project, using global")
-            software_table, parameters_table = self.get_software_tables(
-                sample.project.technology,
-                owner,
-                project=sample.project,
-                metagenomics=True,
             )
 
         merged_table = self.merge_software_tables(software_table, parameters_table)
@@ -2153,7 +2153,6 @@ class Utils_Manager:
         nodes = node_index.node.unique()
 
         nodes = []
-        edges = {}
         edge_list = []
         leaves = []
         for node in dag_dict:
@@ -2173,6 +2172,7 @@ class Utils_Manager:
             sorted=False,
         )
 
+    ### Copied to softwareTreeUtils
     def check_pipeline_possible(self, combined_table: pd.DataFrame, tree_makeup: int):
         """
         Check if a pipeline is possible
@@ -2198,8 +2198,8 @@ class Utils_Manager:
         """
         pipeline_setup = Pipeline_Makeup()
 
-        combined_table = self.parameter_util.generate_combined_parameters_table(
-            technology, user
+        combined_table = self.parameter_util.generate_merged_table_safe(
+            user, technology
         )
 
         for makeup in pipeline_setup.get_makeup_list():
@@ -2447,138 +2447,32 @@ class SoftwareTreeUtils:
             except Exception as e:
                 print(e)
 
-    ############################################################################
-    ####################################################### PROJECT TREE METHODS
-    ########## #### OLD METHODS
-
-    def generate_software_base_tree(self, technology, tree_makeup: int):
-        """
-        Generate a software tree for a technology and a tree makeup
-        """
-
-        pipeline_setup = Pipeline_Makeup()
-        makeup_steps = pipeline_setup.get_makeup(tree_makeup)
-
-        combined_table = self.parameter_util.generate_combined_parameters_table(
-            technology, self.user
-        )
-
-        combined_table = combined_table[combined_table.pipeline_step.isin(makeup_steps)]
-
-        if len(combined_table) == 0 or "can_change" not in combined_table.columns:
-            return PipelineTree(
-                technology=technology,
-                nodes=[],
-                edges={},
-                leaves=[],
-                makeup=tree_makeup,
-            )
-
-        self.utility_manager.get_software_db_dict()
-
-        full_table = self.parameter_util.expand_parameters_table(
-            combined_table, software_db_dict=self.utility_manager.software_dbs_dict
-        )
-
-        input_success = self.utility_manager.input(full_table, technology=technology)
-
-        if not input_success:
-            return PipelineTree(
-                technology=technology,
-                nodes=[],
-                edges={},
-                leaves=[],
-                makeup=tree_makeup,
-            )
-
-        pipeline_tree = self.utility_manager.generate_default_software_tree()
-
-        if self.check_default_software_tree_exists(global_index=tree_makeup):
-            existing_pipeline_tree = self.query_software_default_tree(
-                global_index=tree_makeup
-            )
-
-            tree_are_equal = self.utility_manager.compare_software_trees(
-                existing_pipeline_tree
-            )
-
-            if not tree_are_equal:
-                self.update_software_tree(pipeline_tree)
-        else:
-            self.update_software_tree(pipeline_tree)
-
-        return pipeline_tree
-
-    def generate_default_trees(self):
-        """
-        Generate default trees for all technologies and makeups
-        """
-        technology_trees = {}
-        pipeline_makeup = Pipeline_Makeup()
-
-        for technology in self.utils_manager.utility_technologies:
-            if not self.utils_manager.check_any_pipeline_possible(
-                technology, self.user
-            ):
-                continue
-            for makeup in pipeline_makeup.get_makeup_list():
-                technology_trees[technology] = self.generate_software_base_tree(
-                    technology, makeup, self.user
-                )
-
-    ################################
-    ################################ NEW METHODS
-
     def generate_software_tree_safe(
         self,
-        project: Optional[Projects] = None,
+        project: Projects,
         sample: Optional[PIProject_Sample] = None,
         metagenomics: bool = False,
-    ):
+    ) -> PipelineTree:
         """
         Generate a software tree for a technology and a tree makeup
         """
 
-        software_table, parameters_table = self.parameter_util.get_software_tables(
-            project.technology,
+        merged_table = self.parameter_util.generate_merged_table_safe(
             project.owner,
-            project=project,
+            project.technology,
+            project,
             sample=sample,
             metagenomics=metagenomics,
         )
 
-        if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
-            if project is not None:
-                (
-                    software_table,
-                    parameters_table,
-                ) = self.parameter_util.get_software_tables(
-                    project.technology,
-                    project.owner,
-                    project=project,
-                    metagenomics=metagenomics,
-                )
-
-        if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
-            (
-                software_table,
-                parameters_table,
-            ) = self.parameter_util.get_software_tables(
-                project.technology, project.owner, metagenomics=metagenomics
-            )
-
-        if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
+        if merged_table.shape[0] == 0:
             return PipelineTree(
                 technology=project.technology,
                 nodes=[],
                 edges={},
                 leaves=[],
-                makeup=0,
+                makeup=-1,
             )
-
-        merged_table = self.parameter_util.merge_software_tables(
-            software_table, parameters_table
-        )
 
         return self.generate_tree_from_combined_table(merged_table)
 
@@ -2587,18 +2481,7 @@ class SoftwareTreeUtils:
         Generate a project tree
         """
 
-        combined_table = self.parameter_util.generate_combined_parameters_table_project(
-            self.user, self.project
-        )
-
-        return self.generate_tree_from_combined_table(combined_table)
-
-    def generate_sample_metagenomics_tree(self) -> PipelineTree:
-        combined_table = self.parameter_util.generate_combined_parameters_table_sample(
-            self.user, self.sample
-        )
-
-        return self.generate_tree_from_combined_table(combined_table)
+        return self.generate_software_tree_safe(self.project)
 
     def generate_tree_from_combined_table(
         self, combined_table: pd.DataFrame
@@ -2612,7 +2495,7 @@ class SoftwareTreeUtils:
                 nodes=[],
                 edges={},
                 leaves=[],
-                makeup=0,
+                makeup=-1,
             )
 
         self.logger.info("Generating project tree")
@@ -2623,11 +2506,60 @@ class SoftwareTreeUtils:
 
         return pipeline_tree
 
+    def check_pipeline_possible(self, combined_table: pd.DataFrame, tree_makeup: int):
+        """
+        Check if a pipeline is possible
+        """
+
+        pipeline_setup = Pipeline_Makeup()
+        makeup_steps = pipeline_setup.get_makeup(tree_makeup)
+
+        pipelines_available = combined_table.pipeline_step.unique().tolist()
+        pipelines_available = [x for x in pipelines_available if x in makeup_steps]
+        self.pipeline_makeup = pipeline_setup.match_makeup_name_from_list(
+            pipelines_available
+        )
+
+        if not self.pipeline_makeup:
+            return False
+
+        return True
+
+    def check_any_pipeline_possible(self, technology: str, user: User):
+        """
+        Check if a pipeline is possible
+        """
+        pipeline_setup = Pipeline_Makeup()
+
+        combined_table = self.parameter_util.generate_merged_table_safe(
+            user, technology
+        )
+
+        for makeup in pipeline_setup.get_makeup_list():
+            if self.check_pipeline_possible(combined_table, makeup):
+                return True
+
+        return False
+
+    def test_televir_pipelines_available(self, user_system: User):
+        """
+        Test if televir is available
+        """
+
+        for technology in self.parameter_util.get_technologies_available():
+            if self.check_any_pipeline_possible(technology, user_system):
+                return True
+
+        return False
+
     def get_project_pathnodes(self) -> dict:
         """
         Get all pathnodes for a project
         """
-        local_tree = self.generate_project_tree()
+        # local_tree = self.generate_project_tree()
+        if self.project is None:
+            return {}
+        local_tree = self.generate_software_tree_safe(self.project)
 
         return self.get_available_pathnodes(local_tree)
 
@@ -2635,7 +2567,17 @@ class SoftwareTreeUtils:
         """
         Get all pathnodes for a project
         """
-        local_tree = self.generate_sample_metagenomics_tree()
+        if self.sample is None:
+            return {}
+
+        local_tree = self.generate_software_tree_safe(
+            self.project, self.sample, metagenomics=True
+        )
+
+        print(local_tree.makeup)
+
+        if local_tree.makeup == -1:
+            return {}
 
         return self.get_available_pathnodes(local_tree)
 
@@ -2692,6 +2634,7 @@ class SoftwareTreeUtils:
         submission_dict = {sample: []}
 
         available_path_nodes = self.get_sample_pathnodes()
+        print(available_path_nodes)
         clean_samples_leaf_dict = self.utils_manager.sample_nodes_check(
             submission_dict, available_path_nodes, self.project
         )
@@ -2766,3 +2709,190 @@ class SoftwareTreeUtils:
             tree.makeup,
         )
         return tree
+
+
+class RawReferenceUtils:
+    def __init__(self, sample: PIProject_Sample):
+        self.sample_registered = sample
+        self.runs_found = 0
+
+    def references_table_from_query(
+        self, references: Union[QuerySet, List[RawReference]]
+    ) -> pd.DataFrame:
+        table = []
+        for ref in references:
+            table.append(
+                {
+                    "taxid": ref.taxid,
+                    "accid": ref.accid,
+                    "description": ref.description,
+                    "counts_str": ref.counts,
+                    "read_counts": ref.read_counts,
+                    "contig_counts": ref.contig_counts,
+                }
+            )
+
+        if len(table) == 0:
+            return pd.DataFrame(
+                columns=[
+                    "taxid",
+                    "accid",
+                    "description",
+                    "counts_str",
+                    "read_counts",
+                    "contig_counts",
+                ]
+            )
+        references_table = pd.DataFrame(table)
+
+        references_table["read_counts"] = references_table["read_counts"].astype(float)
+
+        references_table = references_table.sort_values("read_counts", ascending=False)
+        references_table = references_table[references_table["read_counts"] > 1]
+        references_table = references_table[references_table["accid"] != "-"]
+        references_table = references_table[references_table["accid"] != ""]
+
+        return references_table
+
+    def run_references_standard_score_reads(
+        self,
+        references_table: pd.DataFrame,
+    ) -> pd.DataFrame:
+        # references = RawReference.objects.filter(run=run)
+
+        # references_table = references_table_from_query(references)
+
+        if references_table.shape[0] == 0:
+            return pd.DataFrame(
+                columns=list(references_table.columns) + ["read_counts_standard_score"]
+            )
+
+        if max(references_table["read_counts"]) == 0:
+            references_table["read_counts_standard_score"] = 1
+            return references_table
+
+        references_table["read_counts"] = references_table["read_counts"].astype(float)
+
+        references_table["read_counts_standard_score"] = (
+            references_table["read_counts"] - references_table["read_counts"].mean()
+        ) / references_table["read_counts"].std()
+
+        references_table["read_counts_standard_score"] = (
+            references_table["read_counts_standard_score"]
+            - references_table["read_counts_standard_score"].min()
+        ) / (
+            references_table["read_counts_standard_score"].max()
+            - references_table["read_counts_standard_score"].min()
+        )
+
+        return references_table
+
+    def run_references_standard_score_contigs(
+        self,
+        references_table: pd.DataFrame,
+    ) -> pd.DataFrame:
+        # references = RawReference.objects.filter(run=run)
+
+        # references_table = references_table_from_query(references)
+
+        if references_table.shape[0] == 0:
+            return pd.DataFrame(
+                columns=list(references_table.columns)
+                + ["contig_counts_standard_score"]
+            )
+
+        references_table["contig_counts"] = references_table["contig_counts"].astype(
+            float
+        )
+        if max(references_table["contig_counts"]) == 0:
+            references_table["contig_counts_standard_score"] = 1
+            return references_table
+
+        references_table["contig_counts_standard_score"] = (
+            references_table["contig_counts"] - references_table["contig_counts"].mean()
+        ) / references_table["contig_counts"].std()
+
+        references_table["contig_counts_standard_score"] = (
+            references_table["contig_counts_standard_score"]
+            - references_table["contig_counts_standard_score"].min()
+        ) / (
+            references_table["contig_counts_standard_score"].max()
+            - references_table["contig_counts_standard_score"].min()
+        )
+
+        return references_table
+
+    def merge_standard_scores(self, table: pd.DataFrame):
+        if table.shape[0] == 0:
+            return pd.DataFrame(columns=list(table.columns) + ["standard_score"])
+        table["standard_score"] = (
+            table["read_counts_standard_score"] + table["contig_counts_standard_score"]
+        ) / 2
+        return table
+
+    def run_references_standard_scores(self, table):
+        table = self.run_references_standard_score_reads(table)
+
+        table = self.run_references_standard_score_contigs(table)
+        table = self.merge_standard_scores(table)
+        # print(table.columns)
+        return table
+
+    def merge_ref_tables_use_standard_score(
+        self,
+        list_tables: List[pd.DataFrame],
+    ) -> pd.DataFrame:
+        joint_tables = [
+            self.run_references_standard_scores(table) for table in list_tables
+        ]
+
+        joint_tables = pd.concat(joint_tables)
+        # group tables: average read_counts_standard_score, sum counts, read_counts, contig_counts
+        joint_tables = joint_tables.groupby(["taxid", "accid", "description"]).agg(
+            {
+                "taxid": "first",
+                "accid": "first",
+                "description": "first",
+                "standard_score": "mean",
+                "counts_str": "sum",
+                "read_counts": "sum",
+                "contig_counts": "sum",
+            }
+        )
+
+        joint_tables = joint_tables.sort_values("standard_score", ascending=False)
+        joint_tables = joint_tables.reset_index(drop=True)
+
+        return joint_tables
+
+    def run_references_table(self, run: RunMain) -> pd.DataFrame:
+        references = RawReference.objects.filter(run=run)
+
+        references_table = self.references_table_from_query(references)
+
+        return references_table
+
+    def sample_reference_tables(
+        self,
+    ) -> pd.DataFrame:
+        sample_runs = RunMain.objects.filter(sample=self.sample_registered)
+        self.runs_found = sample_runs.count()
+
+        run_references_tables = [self.run_references_table(run) for run in sample_runs]
+
+        run_references_tables = self.merge_ref_tables_use_standard_score(
+            run_references_tables
+        )
+
+        run_references_tables = run_references_tables[run_references_tables.taxid != 0]
+
+        return run_references_tables
+
+    def collect_references_table_all(
+        self,
+    ) -> pd.DataFrame:
+        references = RawReference.objects.filter(run__sample=self.sample_registered)
+
+        references_table = self.references_table_from_query(references)
+        # references_table= sample_reference_tables()
+        return references_table

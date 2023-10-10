@@ -123,6 +123,16 @@ def get_illumina_found(panel_list: list, tmp_dir: str = "/tmp"):
     return illumina_found
 
 
+def sample_in_televir(sample: str, televir_reports: pd.DataFrame) -> str:
+    if sample in televir_reports["Sample"].values:
+        return sample
+
+    sample_safe = sample.replace("-", "_")
+    if sample_safe in televir_reports["Sample"].values:
+        return sample_safe
+    return sample
+
+
 def merge_panels(illumina_found, telebac_found):
     """
     merge illumina_found and televir_reports
@@ -136,6 +146,9 @@ def merge_panels(illumina_found, telebac_found):
         illumina_sample = illumina_found[
             illumina_found["Sample"] == sample
         ].reset_index(drop=True)
+
+        sample = sample_in_televir(sample, telebac_found)
+
         telebac_sample = telebac_found[telebac_found["Sample"] == sample].reset_index(
             drop=True
         )

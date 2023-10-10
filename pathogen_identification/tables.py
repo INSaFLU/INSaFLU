@@ -357,7 +357,7 @@ class SampleTable(tables.Table):
     combinations = tables.Column(
         verbose_name="Combinations", orderable=False, empty_values=()
     )
-    running_processes = tables.Column("Running", orderable=False, empty_values=())
+    running_processes = tables.Column("Running", orderable=True, empty_values=())
     queued_processes = tables.Column("Queued", orderable=False, empty_values=())
     set_control = tables.Column("Control", orderable=False, empty_values=())
 

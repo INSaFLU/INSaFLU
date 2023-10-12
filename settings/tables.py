@@ -139,7 +139,7 @@ class SoftwaresTable(tables.Table):
         )
         return mark_safe(sz_href)
 
-    def render_parameters(self, **kwargs):
+    def render_parameters(self, record: Software, **kwargs):
         """
         render parameters for the software
         """
@@ -148,12 +148,13 @@ class SoftwaresTable(tables.Table):
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
 
-        record: Software = kwargs.pop("record")
+        # record: Software = kwargs.pop("record")
         technology_name = (
             ConstantsSettings.TECHNOLOGY_illumina
             if record.technology is None
             else record.technology.name
         )
+        pipeline_step = record.pipeline_step.name if record.pipeline_step else None
 
         if (
             self.project is None
@@ -190,7 +191,8 @@ class SoftwaresTable(tables.Table):
                 self.project,
                 None,
                 None,
-                technology_name,
+                technology_name=technology_name,
+                pipeline_step=record.pipeline_step.name,
             )
             if parameters == DefaultParameters.MASK_DONT_care:
                 if record.name == SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name:
@@ -777,7 +779,7 @@ class INSaFLUParametersTable(tables.Table):
             else record.technology.name
         )
 
-    def render_parameters(self, **kwargs):
+    def render_parameters(self, record: Software, **kwargs):
         """
         render parameters for the software
         """
@@ -786,15 +788,19 @@ class INSaFLUParametersTable(tables.Table):
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
 
-        record = kwargs.pop("record")
+        pipeline_step = record.pipeline_step.name
         technology_name = (
             ConstantsSettings.TECHNOLOGY_illumina
             if record.technology is None
             else record.technology.name
         )
+        print("HHHHHHH")
+        print(record.name, record.pipeline_step.name, technology_name)
         if self.project is None and self.project_sample is None:
             default_software = DefaultSoftware()
-            return default_software.get_parameters(record.name, user, technology_name)
+            return default_software.get_parameters(
+                record.name, user, technology_name, pipeline_step=pipeline_step
+            )
         elif self.project_sample is None:
             default_software_projects = DefaultProjectSoftware()
             return default_software_projects.get_parameters(
@@ -804,7 +810,8 @@ class INSaFLUParametersTable(tables.Table):
                 self.project,
                 None,
                 None,
-                technology_name,
+                technology_name=technology_name,
+                pipeline_step=pipeline_step,
             )
         elif self.project is None:
             default_software_projects = DefaultProjectSoftware()
@@ -815,7 +822,8 @@ class INSaFLUParametersTable(tables.Table):
                 None,
                 self.project_sample,
                 None,
-                technology_name,
+                technology_name=technology_name,
+                pipeline_step=pipeline_step,
             )
         return ""
 

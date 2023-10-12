@@ -8,11 +8,10 @@ from curses.ascii import SO
 from django.contrib.auth.models import User
 
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from pathogen_identification.utilities.utilities_pipeline import (
-    Utility_Pipeline_Manager,
-    Utils_Manager,
-)
+    Utility_Pipeline_Manager, Utils_Manager)
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.models import Parameter, Software
@@ -934,7 +933,7 @@ class DefaultSoftware(object):
         )
         return "" if result is None else result
 
-    def get_kraken2_parameters(self, user, technology_name):
+    def get_kraken2_parameters(self, user, technology_name, pipeline_step=None):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_KRAKEN2_name,
             user,
@@ -942,7 +941,8 @@ class DefaultSoftware(object):
             None,
             None,
             None,
-            technology_name,
+            technology_name= technology_name,
+            pipeline_step=pipeline_step,
         )
         return "" if result is None else result
 
@@ -1402,7 +1402,9 @@ class DefaultSoftware(object):
                 ),
                 user,
             )
-            return self.get_centrifuge_parameters(user, technology_name)
+            return self.get_centrifuge_parameters(
+                user, technology_name, pipeline_step=pipeline_step
+            )
 
         if software_name == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name:
             self.test_default_db(
@@ -1507,7 +1509,9 @@ class DefaultSoftware(object):
                 ),
                 user,
             )
-            return self.get_kraken2_parameters(user, technology_name)
+            return self.get_kraken2_parameters(
+                user, technology_name, pipeline_step=pipeline_step
+            )
 
         if software_name == SoftwareNames.SOFTWARE_BWA_name:
             self.test_default_db(

@@ -2888,6 +2888,17 @@ class RawReferenceUtils:
 
         return run_references_tables
 
+    def simplify_by_description(df: pd.DataFrame):
+        if "description" not in df.columns:
+            return df
+
+        df["description_first"] = df["description"].str.split(" ").str[0]
+        df = df.drop_duplicates(subset=["description_first"])
+
+        df.drop(columns=["description_first"], inplace=True)
+
+        return df
+
     def collect_references_table_all(
         self,
     ) -> pd.DataFrame:

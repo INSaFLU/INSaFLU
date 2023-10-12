@@ -9,7 +9,8 @@ from typing import Any, Type
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.modules.object_classes import RunCMD, Software_detail
+from pathogen_identification.modules.object_classes import (RunCMD,
+                                                            Software_detail)
 
 
 def check_report_empty(file, comment="@"):
@@ -667,9 +668,20 @@ class run_kraken2(Classifier_init):
     report_suffix = ".tsv"
     full_report_suffix = ".kraken2"
 
-    def __init__(self, db_path: str, query_path: str, out_path: str, args="", r2=""):
-        super().__init__(db_path, query_path, out_path, args, r2)
-        self.args.replace("--mode", "")
+    def __init__(
+        self,
+        db_path: str,
+        query_path: str,
+        out_path: str,
+        args="",
+        r2: str = "",
+        prefix: str = "",
+        bin: str = "",
+        log_dir="",
+    ):
+        super().__init__(db_path, query_path, out_path, args, r2, prefix, bin, log_dir)
+        self.args.replace("--quick OFF", "")
+        self.args.replace("--quick ON", "--quick")
 
     def run_SE(self, threads: int = 3, **kwargs):
         """

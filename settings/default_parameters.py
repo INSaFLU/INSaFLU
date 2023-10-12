@@ -10,10 +10,13 @@ from django.conf import settings
 
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PI_ConstantsSettings
+from pathogen_identification.constants_settings import (
+    ConstantsSettings as PI_ConstantsSettings,
+)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility, Utility_Pipeline_Manager)
+    Parameter_DB_Utility,
+    Utility_Pipeline_Manager,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -2277,7 +2280,7 @@ class DefaultParameters(object):
         parameter.is_to_run = True  ### by default it's True
         parameter.sequence_out = 2
         parameter.range_available = "[1:5]"
-        parameter.range_max = "3"
+        parameter.range_max = "5"
         parameter.range_min = "1"
         parameter.description = "report up to k distinc assignments per read or pair."
         vect_parameters.append(parameter)

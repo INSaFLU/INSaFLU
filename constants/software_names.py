@@ -180,7 +180,9 @@ class SoftwareNames(object):
     SOFTWARE_Medaka_name_variants = "Medaka variants"
     SOFTWARE_Medaka_default_model = "r941_min_high_g360"
     SOFTWARE_Medaka_remove_tags_model = ["_snp_", "_fast_"]
-    SOFTWARE_Medaka_name_extended_consensus = "Consensus Generation (Medaka) and Optional Primer Clipping (iVar)"
+    SOFTWARE_Medaka_name_extended_consensus = (
+        "Consensus Generation (Medaka) and Optional Primer Clipping (iVar)"
+    )
     SOFTWARE_Medaka_name_extended_variant = "Call Variants (Medaka)"
     SOFTWARE_Medaka_PARAMETERS_variant = "--verbose"
     SOFTWARE_Medaka_PARAMETERS_consensus = "-m {}".format(SOFTWARE_Medaka_default_model)
@@ -269,7 +271,9 @@ class SoftwareNames(object):
 
     SOFTWARE_SNIPPY = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/snippy")
     SOFTWARE_SNIPPY_name = "Snippy"
-    SOFTWARE_SNIPPY_name_extended = "Mapping (Snippy) and Optional Primer Clipping (iVar)"
+    SOFTWARE_SNIPPY_name_extended = (
+        "Mapping (Snippy) and Optional Primer Clipping (iVar)"
+    )
     SOFTWARE_SNIPPY_VERSION = "3.2-dev"
     SOFTWARE_SNIPPY_PARAMETERS = "--mapqual 20 --mincov 10 --minfrac 0.51"
     SOFTWARE_SNIPPY_no_primer = "None"
@@ -635,6 +639,8 @@ class SoftwareNames(object):
     SOFTWARE_KRAKEN2_PARAMETERS_TWO_SEQUENCES = (
         "--threads 4 --gzip-compressed  --confidence .5"
     )
+    SOFTWARE_KRAKEN2_QUICK_vect_available = ["OFF", "ON"]
+
     ### KRAKENUNIQ
     SOFTARE_KRAKENUNIQ = os.path.join(
         settings.DIR_SOFTWARE,

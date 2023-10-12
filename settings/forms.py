@@ -199,11 +199,21 @@ class SoftwareForm(forms.ModelForm):
                         )
                     ]
                 elif (
-                    parameter.name == "-x" and parameter.software.name == "Minimap2_asm"
+                    parameter.name == "-x"
+                    and parameter.software.name
+                    == SoftwareNames.SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name
                 ):
                     list_data = [
                         [data_, data_]
                         for data_ in SoftwareNames.SOFTWARE_MINIMAP2_ASM_vect_available
+                    ]
+                elif (
+                    parameter.name == "--quick"
+                    and parameter.software.name == SoftwareNames.SOFTWARE_KRAKEN2_name
+                ):
+                    list_data = [
+                        [data_, data_]
+                        for data_ in SoftwareNames.SOFTWARE_KRAKEN2_QUICK_vect_available
                     ]
 
                 elif (

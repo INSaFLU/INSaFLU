@@ -4,13 +4,12 @@ import os
 import re
 import shutil
 from random import randint
-from typing import Type
+from typing import Any, Type
 
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.modules.object_classes import (RunCMD,
-                                                            Software_detail)
+from pathogen_identification.modules.object_classes import RunCMD, Software_detail
 
 
 def check_report_empty(file, comment="@"):
@@ -88,6 +87,28 @@ class Classifier_init:
         if same:
             os.remove(self.report_path)
             os.rename(output_sam, self.report_path)
+
+    def filter_secondary_alignments(self):
+        """
+        Filter secondary alignments from bam file."""
+        cmd = [
+            "samtools",
+            "view",
+            "-F0x900",
+            self.report_path,
+            ">",
+            self.report_path.replace(".sam", ".filtered.sam"),
+        ]
+
+        try:
+            self.cmd.run(cmd)
+            if os.path.isfile(self.report_path.replace(".sam", ".filtered.sam")):
+                os.remove(self.report_path)
+                shutil.copy(
+                    self.report_path.replace(".sam", ".filtered.sam"), self.report_path
+                )
+        except:
+            pass
 
 
 class run_kaiju(Classifier_init):
@@ -646,6 +667,10 @@ class run_kraken2(Classifier_init):
     report_suffix = ".tsv"
     full_report_suffix = ".kraken2"
 
+    def __init__(self, db_path: str, query_path: str, out_path: str, args="", r2=""):
+        super().__init__(db_path, query_path, out_path, args, r2)
+        self.args.replace("--mode", "")
+
     def run_SE(self, threads: int = 3, **kwargs):
         """
         run single read file classification.
@@ -992,6 +1017,7 @@ class run_bwa_mem(Classifier_init):
         cmd = f"bwa mem -t {threads} {self.args} {os.path.splitext(self.db_path)[0]} {rundir}/seq.fq > {self.report_path}"
 
         self.cmd.run(cmd)
+        self.filter_secondary_alignments()
 
     def run_PE(self, threads: int = 3):
         rundir = os.path.dirname(self.report_path)
@@ -1004,6 +1030,7 @@ class run_bwa_mem(Classifier_init):
         cmd = f"bwa mem -t {threads} {self.args} {os.path.splitext(self.db_path)[0]} {rundir}/seq.fq {rundir}/seq2.fq > {self.report_path}"
 
         self.cmd.run(cmd)
+        self.filter_secondary_alignments()
 
     def get_report(self) -> pd.DataFrame:
         if check_report_empty(self.report_path):
@@ -1197,6 +1224,8 @@ class Classifier:
     """
     Classifier class.
     """
+
+    classifier: Classifier_init
 
     available_software: dict = {
         "blastn": run_blast,

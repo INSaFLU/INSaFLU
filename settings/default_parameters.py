@@ -10,13 +10,10 @@ from django.conf import settings
 
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import (
-    ConstantsSettings as PI_ConstantsSettings,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PI_ConstantsSettings
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility,
-    Utility_Pipeline_Manager,
-)
+    Parameter_DB_Utility, Utility_Pipeline_Manager)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -2911,15 +2908,15 @@ class DefaultParameters(object):
 
         parameter = Parameter()
         parameter.name = "--quick"
-        parameter.parameter = ""
-        parameter.type_data = Parameter.PARAMETER_null
+        parameter.parameter = "ON"
+        parameter.type_data = Parameter.PARAMETER_char_list
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = False
+        parameter.can_change = True
         parameter.is_to_run = True  ### by default it's True
         parameter.sequence_out = 1
-        parameter.description = "quick operation mode"
+        parameter.description = "operation mode"
         vect_parameters.append(parameter)
 
         parameter = Parameter()
@@ -2929,7 +2926,7 @@ class DefaultParameters(object):
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = False
+        parameter.can_change = True
         parameter.is_to_run = True  ### by default it's True
         parameter.sequence_out = 2
         parameter.range_available = "[0.4:1.0]"
@@ -3325,6 +3322,21 @@ class DefaultParameters(object):
         parameter.range_min = ""
         parameter.description = "Database to use"
 
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "-M"
+        parameter.parameter = ""
+        parameter.type_data = Parameter.PARAMETER_null
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = ""
+        parameter.can_change = False
+        parameter.is_to_run = True
+        parameter.sequence_out = 2
+        parameter.description = (
+            "Mark shorter split hits as secondary (for Picard compatibility)."
+        )
         vect_parameters.append(parameter)
 
         return vect_parameters

@@ -16,7 +16,6 @@ from constants.software_names import SoftwareNames
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProjectSample
-from pathogen_identification.utilities.televir_parameters import LayoutParams
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software import DefaultSoftware
@@ -154,7 +153,6 @@ class SoftwaresTable(tables.Table):
             if record.technology is None
             else record.technology.name
         )
-        pipeline_step = record.pipeline_step.name if record.pipeline_step else None
 
         if (
             self.project is None
@@ -794,8 +792,7 @@ class INSaFLUParametersTable(tables.Table):
             if record.technology is None
             else record.technology.name
         )
-        print("HHHHHHH")
-        print(record.name, record.pipeline_step.name, technology_name)
+
         if self.project is None and self.project_sample is None:
             default_software = DefaultSoftware()
             return default_software.get_parameters(

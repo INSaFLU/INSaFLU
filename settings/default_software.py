@@ -8,10 +8,11 @@ from curses.ascii import SO
 from django.contrib.auth.models import User
 
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.utilities.utilities_pipeline import (
-    Utility_Pipeline_Manager, Utils_Manager)
+    Utility_Pipeline_Manager,
+    Utils_Manager,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.models import Parameter, Software
@@ -550,7 +551,7 @@ class DefaultSoftware(object):
         )
 
         self.test_default_db(
-            SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ILLU_name,
+            SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ILLU_name,
             self.default_parameters.get_minimap2_remap_illumina_default(
                 user,
                 Software.TYPE_OF_USE_televir_global,
@@ -683,8 +684,6 @@ class DefaultSoftware(object):
             )
 
         except Software.MultipleObjectsReturned:
-            print("MultipleObjectsReturned: " + software_name, " - ", user)
-            print(f"pipeline step: {vect_parameters[0].software.pipeline_step}")
             ## keep the first one, delete the rest
             software_query = Software.objects.filter(
                 name=software_name,
@@ -709,7 +708,6 @@ class DefaultSoftware(object):
                     software.delete()
 
         except Software.DoesNotExist:  ### if not exist save it
-            # print("persisting default parameters for software: " + software_name)
             self.default_parameters.persist_parameters(vect_parameters, type_of_use)
 
     def get_trimmomatic_parameters(self, user):
@@ -941,7 +939,7 @@ class DefaultSoftware(object):
             None,
             None,
             None,
-            technology_name= technology_name,
+            technology_name=technology_name,
             pipeline_step=pipeline_step,
         )
         return "" if result is None else result
@@ -1462,7 +1460,7 @@ class DefaultSoftware(object):
 
         if software_name == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ILLU_name:
             self.test_default_db(
-                SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ILLU,
+                SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ILLU_name,
                 self.default_parameters.get_minimap2_remap_illumina_default(
                     user,
                     Software.TYPE_OF_USE_televir_global,

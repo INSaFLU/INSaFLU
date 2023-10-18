@@ -119,20 +119,18 @@ class DefaultParameters(object):
                     software = Software.objects.get(
                         name=parameter.software.name,
                         owner=parameter.software.owner,
-                        type_of_use=type_of_use,
+                        type_of_use=parameter.software.type_of_use,
                         technology=parameter.software.technology,
                         version_parameters=parameter.software.version_parameters,
                         pipeline_step=parameter.software.pipeline_step,
-                        parameter__televir_project=None,
-                        parameter__televir_project_sample=None,
                     )
                 except Software.DoesNotExist:
-                    # with LockedAtomicTransaction(Software):
                     software = parameter.software
                     software.save()
 
-            # if parameter.software.pk != software.pk:
-            # with LockedAtomicTransaction(Parameter):
+                except Software.MultipleObjectsReturned:
+                    raise Exception("MultipleObjectsReturned")
+
             parameter.software = software
             parameter.save()
 
@@ -2260,7 +2258,7 @@ class DefaultParameters(object):
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = False
+        parameter.can_change = True if PI_ConstantsSettings.METAGENOMICS else False
         parameter.is_to_run = True  ### by default it's True
         parameter.sequence_out = 1
         parameter.range_available = "[16:30]"
@@ -2276,7 +2274,7 @@ class DefaultParameters(object):
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = False
+        parameter.can_change = True if PI_ConstantsSettings.METAGENOMICS else False
         parameter.is_to_run = True  ### by default it's True
         parameter.sequence_out = 2
         parameter.range_available = "[1:5]"
@@ -2916,7 +2914,7 @@ class DefaultParameters(object):
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = True
+        parameter.can_change = True if PI_ConstantsSettings.METAGENOMICS else False
         parameter.is_to_run = True  ### by default it's True
         parameter.sequence_out = 1
         parameter.description = "operation mode"
@@ -2929,7 +2927,7 @@ class DefaultParameters(object):
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = True
+        parameter.can_change = True if PI_ConstantsSettings.METAGENOMICS else False
         parameter.is_to_run = True  ### by default it's True
         parameter.sequence_out = 2
         parameter.range_available = "[0.4:1.0]"
@@ -3005,7 +3003,7 @@ class DefaultParameters(object):
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = False
+        parameter.can_change = True if PI_ConstantsSettings.METAGENOMICS else False
         parameter.is_to_run = True
         parameter.sequence_out = 1
         parameter.range_available = "[1:5]"
@@ -3021,7 +3019,7 @@ class DefaultParameters(object):
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = False
+        parameter.can_change = True if PI_ConstantsSettings.METAGENOMICS else False
         parameter.is_to_run = True
         parameter.sequence_out = 2
         parameter.range_available = "[60:80]"

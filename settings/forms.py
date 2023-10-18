@@ -51,6 +51,7 @@ class SoftwareForm(forms.ModelForm):
         self.televir_utiltity = Utility_Pipeline_Manager()
         self.televir_utiltity.get_software_list()
         self.televir_utiltity.get_software_db_dict()
+        self.televir_utiltity.get_host_dbs()
         ###
         if not pk_project is None:
             kwargs.pop("pk_project")
@@ -193,8 +194,8 @@ class SoftwareForm(forms.ModelForm):
                     in self.televir_utiltity.steps_db_dependant
                 ):
                     list_data = [
-                        [data_, os.path.basename(data_)]
-                        for data_ in self.televir_utiltity.get_from_software_db_dict(
+                        [data_[0], data_[1]]
+                        for data_ in self.televir_utiltity.get_from_host_db(
                             parameter.software.name.lower(), []
                         )
                     ]

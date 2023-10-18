@@ -5,18 +5,16 @@ Created on 10/04/2021
 """
 import logging
 import os
+from typing import List
 
 from django.conf import settings
 
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import (
-    ConstantsSettings as PI_ConstantsSettings,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PI_ConstantsSettings
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility,
-    Utility_Pipeline_Manager,
-)
+    Parameter_DB_Utility, Utility_Pipeline_Manager)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -107,7 +105,7 @@ class DefaultParameters(object):
                     software.is_obsolete = True
                     software.save()
 
-    def persist_parameters(self, vect_parameters, type_of_use):
+    def persist_parameters(self, vect_parameters: List[Parameter], type_of_use: int):
         """
         persist a specific software by default
         param: type_of_use Can by Software.TYPE_OF_USE_project; Software.TYPE_OF_USE_project_sample
@@ -125,6 +123,8 @@ class DefaultParameters(object):
                         technology=parameter.software.technology,
                         version_parameters=parameter.software.version_parameters,
                         pipeline_step=parameter.software.pipeline_step,
+                        parameter__televir_project=None,
+                        parameter__televir_project_sample=None,
                     )
                 except Software.DoesNotExist:
                     # with LockedAtomicTransaction(Software):

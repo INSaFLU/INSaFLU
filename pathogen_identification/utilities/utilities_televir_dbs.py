@@ -3,6 +3,7 @@
 import datetime
 import os
 from abc import abstractmethod
+from typing import List
 
 from sqlalchemy import Boolean, Column, MetaData, String, Table, create_engine
 
@@ -210,11 +211,13 @@ class Utility_Repository:
         find = [i[0] for i in find]
         return find
 
-    def select_explicit_statement(self, table_name, field, id):
+    def select_explicit_statement(self, table_name, field, id, filters=List[tuple]):
         """
         select from table.
         """
         sql_statement = f"SELECT * FROM {table_name} WHERE {field}='{id}'"
+        for filter in filters:
+            sql_statement += f" AND {filter[0]}='{filter[1]}'"
 
         return sql_statement
 

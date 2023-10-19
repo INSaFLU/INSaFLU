@@ -60,6 +60,33 @@ class PhlebotomusPapatasi(Host):
         self.common_name = "sandfly"
 
 
+class FelisCatus(Host):
+    def __init__(self):
+        self.remote_host = "ftp.ncbi.nlm.nih.gov"
+        self.remote_path = "/genomes/refseq/vertebrate_mammalian/Felis_catus/latest_assembly_versions/GCF_018350175.1_F.catus_Fca126_mat1.0/"
+        self.remote_filename = "GCF_018350175.1_F.catus_Fca126_mat1.0_genomic.fna.gz"
+        self.host_name = "felis_catus"
+        self.common_name = "cat"
+
+
+class CanisLupusFamiliaris(Host):
+    def __init__(self):
+        self.remote_host = "ftp.ncbi.nlm.nih.gov"
+        self.remote_path = "/genomes/refseq/vertebrate_mammalian/Canis_lupus_familiaris/latest_assembly_versions/GCF_011100685.1_UU_Cfam_GSD_1.0/"
+        self.remote_filename = "GCF_011100685.1_UU_Cfam_GSD_1.0_genomic.fna.gz"
+        self.host_name = "canis_lupus_familiaris"
+        self.common_name = "dog"
+
+
+class CyprinusCarpio(Host):
+    def __init__(self):
+        self.remote_host = "ftp.ncbi.nlm.nih.gov"
+        self.remote_path = "/genomes/refseq/vertebrate_other/Cyprinus_carpio/latest_assembly_versions/GCF_018340385.1_ASM1834038v1/"
+        self.remote_filename = "GCF_018340385.1_ASM1834038v1_genomic.fna.gz"
+        self.host_name = "cyprinus_carpio"
+        self.common_name = "carp"
+
+
 class SusScrofa(Host):
     def __init__(self):
         self.remote_host = "ftp.ncbi.nlm.nih.gov"

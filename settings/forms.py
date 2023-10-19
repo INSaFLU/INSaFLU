@@ -21,6 +21,7 @@ from pathogen_identification.modules.remap_class import Remap_Bowtie2
 from pathogen_identification.utilities.utilities_pipeline import (
     Utility_Pipeline_Manager,
 )
+from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.models import Parameter, Sample, Software
 from utils.utils import Utils
@@ -193,12 +194,23 @@ class SoftwareForm(forms.ModelForm):
                     and parameter.software.pipeline_step.name
                     in self.televir_utiltity.steps_db_dependant
                 ):
-                    list_data = [
-                        [data_[0], data_[1]]
-                        for data_ in self.televir_utiltity.get_from_host_db(
-                            parameter.software.name.lower(), []
-                        )
-                    ]
+                    if (
+                        parameter.software.pipeline_step.name
+                        == ConstantsSettings.PIPELINE_NAME_host_depletion
+                    ):
+                        list_data = [
+                            [data_[0], data_[1]]
+                            for data_ in self.televir_utiltity.get_from_host_db(
+                                parameter.software.name.lower(), []
+                            )
+                        ]
+                    else:
+                        list_data = [
+                            [data_, os.path.basename(data_)]
+                            for data_ in self.televir_utiltity.get_from_software_db_dict(
+                                parameter.software.name.lower(), []
+                            )
+                        ]
                 elif (
                     parameter.name == "-x"
                     and parameter.software.name

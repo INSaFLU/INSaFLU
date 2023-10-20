@@ -1,8 +1,8 @@
 from django.conf.urls import url
-from managing_files import ajax_views, views
 
 import pathogen_identification.ajax_views as PIajax_views
 import pathogen_identification.views as PIviews
+from managing_files import ajax_views, views
 
 urlpatterns = [
     url(
@@ -46,6 +46,11 @@ urlpatterns = [
         name="all_PIproject_reports",
     ),
     url(
+        r"Projects/explify_merge$",
+        PIajax_views.Project_explify_merge,
+        name="explify_merge",
+    ),
+    url(
         r"Projects/project_(?P<pk1>\d+)/sample_(?P<pk2>\d+)",
         PIviews.Sample_main.as_view(),
         name="sample_main",
@@ -84,6 +89,11 @@ urlpatterns = [
         r"Scaffold/project_(?P<pk1>\d+)/sample_(?P<pk2>\d+)/run_(?P<pk3>\d+)/scaffold_(?P<reference>[a-zA-Z0-9_]+)",
         PIviews.Scaffold_Remap.as_view(),
         name="scaffold_remap",
+    ),
+    url(
+        r"ajax/submit_sample_metagenomics_televir$",
+        PIajax_views.submit_sample_metagenomics_televir,
+        name="deploy_metagenomics_televir_project_sample",
     ),
     url(
         r"ajax/deploy_ProjectPI$",

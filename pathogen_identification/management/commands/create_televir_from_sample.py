@@ -3,17 +3,22 @@ Created on January 30, 2023
 
 @author: daniel.sobral
 """
-import os
 import logging
-from django.core.management import BaseCommand
+import os
+
 from django.contrib.auth.models import User
+from django.core.management import BaseCommand
 from django.db import transaction
+
+from constants.constants import Constants
 from managing_files.models import Sample
-from pathogen_identification.models import Projects, PIProject_Sample
-from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
+from pathogen_identification.models import PIProject_Sample, Projects
+from pathogen_identification.utilities.utilities_pipeline import (
+    SoftwareTreeUtils,
+    Utils_Manager,
+)
 from settings.constants_settings import ConstantsSettings
 from utils.process_SGE import ProcessSGE
-from constants.constants import Constants
 
 
 class Command(BaseCommand):
@@ -58,20 +63,24 @@ class Command(BaseCommand):
         self.stdout.write(f"Project {project_id} submitted.")
 
     def handle(self, *args, **options):
-
         project_name = options["project_name"]
         sample_name = options["sample_name"]
         account = options["user_login"]
+
+        user = User.objects.get(username=account)
+
+        try:
+            sample = Sample.objects.get(name=sample_name, owner=user, is_deleted=False)
+        except Sample.DoesNotExist:
+            self.stdout.write(f"Sample {sample_name} does not exist.")
+            return False
+
+        process_SGE = ProcessSGE()
 
         if options["test"]:
             self.success_message(1)
 
         try:
-
-            process_SGE = ProcessSGE()
-            user = User.objects.get(username=account)
-            sample = Sample.objects.get(name=sample_name, owner=user)
-
             try:
                 project = Projects.objects.get(
                     name__iexact=project_name,
@@ -79,11 +88,10 @@ class Command(BaseCommand):
                     owner__username=user.username,
                 )
             except Projects.DoesNotExist:
-
                 project = Projects()
                 project.name = project_name
                 project.owner = user
-                project.owner_id = user.id
+
                 # TODO Check where these constants are, or define them somewhere...
                 technology = ConstantsSettings.TECHNOLOGY_minion
                 if sample.type_of_fastq == Sample.TYPE_OF_FASTQ_illumina:
@@ -98,7 +106,6 @@ class Command(BaseCommand):
                 )
 
             except PIProject_Sample.DoesNotExist:
-
                 with transaction.atomic():
                     project_sample = PIProject_Sample()
                     project_sample.project = project
@@ -122,16 +129,15 @@ class Command(BaseCommand):
                     project_sample.save()
 
             utils = Utils_Manager()
-            runs_to_deploy = utils.check_runs_to_deploy_sample(
-                user, project, project_sample
+            utils = SoftwareTreeUtils(
+                user=user,
+                project=project,
             )
+            runs_to_deploy = utils.check_runs_to_deploy_sample(project_sample)
 
             if len(runs_to_deploy) > 0:
-
                 for proj_sample, leafs_to_deploy in runs_to_deploy.items():
-
                     for leaf in leafs_to_deploy:
-
                         taskID = process_SGE.set_submit_televir_run(
                             user=user,
                             project_pk=project.pk,

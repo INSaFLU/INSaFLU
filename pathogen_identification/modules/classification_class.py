@@ -4,12 +4,13 @@ import os
 import re
 import shutil
 from random import randint
-from typing import Type
+from typing import Any, Type
 
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.modules.object_classes import RunCMD, Software_detail
+from pathogen_identification.modules.object_classes import (RunCMD,
+                                                            Software_detail)
 
 
 def check_report_empty(file, comment="@"):
@@ -87,6 +88,28 @@ class Classifier_init:
         if same:
             os.remove(self.report_path)
             os.rename(output_sam, self.report_path)
+
+    def filter_secondary_alignments(self):
+        """
+        Filter secondary alignments from bam file."""
+        cmd = [
+            "samtools",
+            "view",
+            "-F0x900",
+            self.report_path,
+            ">",
+            self.report_path.replace(".sam", ".filtered.sam"),
+        ]
+
+        try:
+            self.cmd.run(cmd)
+            if os.path.isfile(self.report_path.replace(".sam", ".filtered.sam")):
+                os.remove(self.report_path)
+                shutil.copy(
+                    self.report_path.replace(".sam", ".filtered.sam"), self.report_path
+                )
+        except:
+            pass
 
 
 class run_kaiju(Classifier_init):
@@ -645,6 +668,21 @@ class run_kraken2(Classifier_init):
     report_suffix = ".tsv"
     full_report_suffix = ".kraken2"
 
+    def __init__(
+        self,
+        db_path: str,
+        query_path: str,
+        out_path: str,
+        args="",
+        r2: str = "",
+        prefix: str = "",
+        bin: str = "",
+        log_dir="",
+    ):
+        super().__init__(db_path, query_path, out_path, args, r2, prefix, bin, log_dir)
+        self.args.replace("--quick OFF", "")
+        self.args.replace("--quick ON", "--quick")
+
     def run_SE(self, threads: int = 3, **kwargs):
         """
         run single read file classification.
@@ -655,7 +693,6 @@ class run_kraken2(Classifier_init):
             f"{threads}",
             "--db",
             self.db_path,
-            "--fastq-input",
             "--gzip-compressed",
             "--output",
             self.report_path,
@@ -723,9 +760,11 @@ class run_kraken2(Classifier_init):
         if check_report_empty(self.report_path):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
-        return pd.read_csv(
+        report = pd.read_csv(
             self.report_path, sep="\t", header=None, usecols=[1, 2], comment="@"
         ).rename(columns={1: "qseqid", 2: "taxid"})
+        report = report[report.taxid != 0][["qseqid", "taxid"]]  # remove unclassified
+        return report
 
 
 class run_diamond(Classifier_init):
@@ -915,12 +954,34 @@ class run_bowtie2(Classifier_init):
     full_report_suffix = ".bowtie2"
 
     def run_SE(self, threads: int = 3):
-        cmd = f"bowtie2 -t --sam-nohead --sam-nosq --no-unal --end-to-end  -x {self.db_path} -U {self.query_path} {self.args} -S {self.report_path}"
+        index_name = self.index_reference()
+        self.process_arguments()
+
+        cmd = f"bowtie2 -t --sam-nohead --sam-nosq -x {index_name} -U {self.query_path} {self.args} -S {self.report_path}"
         self.cmd.run(cmd)
 
     def run_PE(self, threads: int = 3):
-        cmd = f"bowtie2 -t --sam-nohead --sam-nosq --no-unal -x {self.db_path} -1 {self.query_path} -2 {self.r2} --end-to-end {self.args} -S {self.report_path}"
+        index_name = self.index_reference()
+        self.process_arguments()
+
+        cmd = f"bowtie2 -t --sam-nohead --sam-nosq -x {index_name} -1 {self.query_path} -2 {self.r2} {self.args} -S {self.report_path}"
         self.cmd.run(cmd)
+
+    def index_reference(self):
+        """
+        Index reference using bowtie2."""
+        index_name = os.path.splitext(self.db_path)[0] + "_index"
+
+        cmd = ["bowtie2-build", self.db_path, index_name]
+
+        self.cmd.run(cmd)
+
+        return index_name
+
+    def process_arguments(self):
+        """
+        Process arguments to remove preset and mode option flags"""
+        self.args = self.args.replace("[preset]", "").replace("[mode]", "")
 
     def get_report(self) -> pd.DataFrame:
         if check_report_empty(self.report_path):
@@ -968,6 +1029,7 @@ class run_bwa_mem(Classifier_init):
         cmd = f"bwa mem -t {threads} {self.args} {os.path.splitext(self.db_path)[0]} {rundir}/seq.fq > {self.report_path}"
 
         self.cmd.run(cmd)
+        self.filter_secondary_alignments()
 
     def run_PE(self, threads: int = 3):
         rundir = os.path.dirname(self.report_path)
@@ -980,6 +1042,7 @@ class run_bwa_mem(Classifier_init):
         cmd = f"bwa mem -t {threads} {self.args} {os.path.splitext(self.db_path)[0]} {rundir}/seq.fq {rundir}/seq2.fq > {self.report_path}"
 
         self.cmd.run(cmd)
+        self.filter_secondary_alignments()
 
     def get_report(self) -> pd.DataFrame:
         if check_report_empty(self.report_path):
@@ -1126,7 +1189,7 @@ class run_minimap2_asm(Classifier_init):
     full_report_suffix = ".minimap2"
 
     def run_SE(self, threads: int = 3):
-        cmd = f"minimap2 -t {threads} -cx asm10 {self.args} {self.db_path} {self.query_path} > {self.report_path}"
+        cmd = f"minimap2 -t {threads} -c {self.args} {self.db_path} {self.query_path} > {self.report_path}"
         self.cmd.run(cmd)
 
     def get_report(self) -> pd.DataFrame:
@@ -1159,8 +1222,8 @@ class run_minimap2_asm(Classifier_init):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
         return pd.read_csv(
-            self.report_path, sep="\t", header=None, usecols=[0, 5], comment="@"
-        ).rename(columns={0: "qseqid", 5: "acc"})
+            self.report_path, sep="\t", header=None, usecols=[0, 5, 10], comment="@"
+        ).rename(columns={0: "qseqid", 5: "acc", 10: "length"})
 
 
 class Empty_classifier(Classifier_init):
@@ -1174,6 +1237,8 @@ class Classifier:
     Classifier class.
     """
 
+    classifier: Classifier_init
+
     available_software: dict = {
         "blastn": run_blast,
         "blastp": run_blast_p,
@@ -1185,11 +1250,13 @@ class Classifier:
         "minimap2": run_minimap2_ONT,
         "minimap2_ont": run_minimap2_ONT,
         "minimap2_asm": run_minimap2_asm,
+        "minimap2_remap": run_minimap2_illumina,
         "diamond": run_diamond,
         "kaiju": run_kaiju,
         "krakenuniq": run_krakenuniq,
         "fastviromeexplorer": run_FastViromeExplorer,
         "clark": run_CLARK,
+        "bowtie2_remap": run_bowtie2,
         "bowtie2": run_bowtie2,
         "bwa": run_bwa_mem,
     }
@@ -1255,10 +1322,15 @@ class Classifier:
         """
         deploy classifier method. read classifier output, return only query and reference sequence id columns.
         """
+        print(self.classifier.method_name)
 
         if self.classifier.method_name == "None":
             self.logger.info("No classifier method selected.")
             return
+
+        print(self.check_r1())
+        print(self.r1)
+        print(self.check_classifier_output())
 
         if not self.check_r1():
             self.collect_report()

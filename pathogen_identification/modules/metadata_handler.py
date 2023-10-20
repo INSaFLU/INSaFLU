@@ -2,7 +2,7 @@ import http.client
 import logging
 import os
 import urllib.error
-from typing import List
+from typing import List, Optional
 
 import pandas as pd
 
@@ -10,7 +10,7 @@ from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
 from pathogen_identification.utilities.utilities_general import (
-    description_passes_filter,
+    description_fails_filter,
     merge_classes,
     scrape_description,
 )
@@ -107,15 +107,11 @@ class Metadata_handler:
         #######
         #######
 
-        remap_targets, remap_absent = self.generate_mapping_targets(
+        self.generate_mapping_targets(
             self.merged_targets,
             prefix=self.prefix,
             max_remap=max_remap,
-            fasta_main_dir=self.config["source"]["REF_FASTA"],
         )
-
-        self.remap_targets = remap_targets
-        self.remap_absent_taxid_list = remap_absent
 
     @staticmethod
     def prettify_reports(df: pd.DataFrame) -> pd.DataFrame:
@@ -154,15 +150,71 @@ class Metadata_handler:
 
         return df
 
-    def results_process(self, df: pd.DataFrame, sift: bool = True) -> pd.DataFrame:
+    def filter_references_table(self, references_table: pd.DataFrame) -> pd.DataFrame:
+        references_table["taxid"] = references_table["taxid"].astype(str)
+
+        references_table = references_table[references_table.taxid != "0"]
+        references_table = references_table[references_table.taxid != "1"]
+        references_table = references_table[
+            ~references_table.description.isin(["root", "NA"])
+        ]
+        references_table = references_table[~references_table.accid.isin(["-"])]
+
+        references_table["taxid"] = references_table["taxid"].astype(int)
+
+        return references_table
+
+    def generate_targets_from_report(
+        self,
+        df: pd.DataFrame,
+        max_taxids: Optional[int] = None,
+        skip_scrape: bool = True,
+    ):
+        references_table = self.filter_references_table(df)
+        # references_table = references_table.drop_duplicates(subset=["taxid"])
+        references_table.rename(columns={"accid": "acc"}, inplace=True)
+
+        ## group by taxids
+        references_table = (
+            references_table.groupby(["taxid"])
+            .agg(
+                {
+                    "acc": "first",
+                    "description": "first",
+                    "read_counts": "first",
+                    "standard_score": "first",
+                    "contig_counts": "first",
+                }
+            )
+            .reset_index()
+        )
+
+        if "standard_score" in references_table.columns:
+            references_table = references_table.sort_values(
+                by="standard_score", ascending=False
+            )
+            print("##### standard score ######")
+            print(references_table.head(10))
+
+        if max_taxids is not None:
+            references_table = references_table.iloc[:max_taxids, :]
+
+        self.generate_mapping_targets(
+            references_table,
+            prefix=self.prefix,
+            max_remap=1,
+            skip_scrape=skip_scrape,
+        )
+
+    def results_collect_metadata(
+        self, df: pd.DataFrame, sift: bool = True
+    ) -> pd.DataFrame:
         """
         Process results.
         merge df with metadata to create taxid columns.
         summarize merged dataframe to get counts per taxid.
         if sift is true, filter results to only include self.sift_query.
         """
-
-        print("MERGE REPORT TO METADATA TAXID")
 
         df = self.clean_report(df)
 
@@ -175,10 +227,6 @@ class Metadata_handler:
         # df = self.merge_report_to_metadata_description(df)
 
         df = df.reset_index(drop=True)
-
-        # replace nan by "NA" in description column
-        print("FIND NA")
-        print(df.head())
 
         def get_acc(df: pd.DataFrame):
             if "acc_x" in df.columns:
@@ -198,22 +246,6 @@ class Metadata_handler:
         if df.shape[0] > 0:
             df = get_acc(df)
             df["description"] = df["description"].fillna("NA")
-
-            def fill_description(row) -> pd.Series:
-                """
-                Fill description column with scraped description if description is "NA".
-                """
-
-                if row["description"] == "NA" or row["description"] == "":
-                    print(row)
-                    row["description"] = scrape_description(row["accid"])
-                    print(row["description"])
-
-                return row
-
-            print("FIND DESCRIPTION")
-            # df = df.apply(fill_description, axis=1)
-            print(df[["description", "counts", "taxid"]].head())
 
         if sift:
             sifted_df = self.sift_report_filter(df, query=self.sift_query)
@@ -464,8 +496,8 @@ class Metadata_handler:
         report_1: pd.DataFrame,
         report_2: pd.DataFrame,
     ):
-        self.rclass = self.results_process(report_1)
-        self.aclass = self.results_process(report_2)
+        self.rclass = self.results_collect_metadata(report_1)
+        self.aclass = self.results_collect_metadata(report_2)
 
     def get_taxid_representative_accid(self, taxid: int) -> str:
         """
@@ -544,11 +576,9 @@ class Metadata_handler:
             taxid_descriptions.drop_duplicates(subset=["taxid"], inplace=True)
             raw_targets = raw_targets.merge(taxid_descriptions, on="taxid", how="left")
 
-        # raw_targets["description"] = raw_targets["taxid"].apply(
-        #    self.get_taxid_representative_description
-        # )
-
-        raw_targets["status"] = raw_targets["taxid"].isin(targets["taxid"].to_list())
+        raw_targets[
+            "status"
+        ] = False  # raw_targets["taxid"].isin(targets["taxid"].to_list())
 
         self.raw_targets = raw_targets
         self.merged_targets = targets
@@ -558,7 +588,7 @@ class Metadata_handler:
         targets,
         prefix: str,
         max_remap: int = 9,
-        fasta_main_dir: str = "",
+        skip_scrape: bool = False,
     ):
         """
         check for presence of taxid in targets in self.accession_to_taxid.
@@ -566,6 +596,7 @@ class Metadata_handler:
         for each accession ID.
 
         """
+        fasta_main_dir = self.config["source"]["REF_FASTA"]
 
         remap_targets = []
         remap_absent = []
@@ -625,9 +656,10 @@ class Metadata_handler:
                         description = sorted(description, key=len)
 
                     description = description[0]
-                    description = scrape_description(pref, description)
+                    if skip_scrape is False:
+                        description = scrape_description(pref, description)
 
-                    if description_passes_filter(description, CS.DESCRIPTION_FILTERS):
+                    if description_fails_filter(description, CS.DESCRIPTION_FILTERS):
                         continue
 
                     def determine_taxid_in_file(taxid, df: pd.DataFrame):
@@ -663,4 +695,5 @@ class Metadata_handler:
             remap_plan, columns=["taxid", "acc", "file", "description"]
         )
 
-        return remap_targets, remap_absent
+        self.remap_targets = remap_targets
+        self.remap_absent = remap_absent

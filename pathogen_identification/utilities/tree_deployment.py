@@ -4,7 +4,7 @@ import os
 import shutil
 import traceback  # for debugging
 from copy import _copy_immutable, _deepcopy_dispatch
-from typing import List, Optional, Tuple, Union
+from typing import Callable, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -23,6 +23,7 @@ from pathogen_identification.models import (
     SoftwareTree,
     SoftwareTreeNode,
 )
+from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunMainTree_class
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
@@ -52,7 +53,8 @@ copy._deepcopy_dispatch[logging.Logger] = logger_copy
 
 
 class PathogenIdentification_Deployment_Manager:
-    project: str
+    project: Projects
+    sample: PIProject_Sample
     prefix: str
     rdir: str
     threads: int
@@ -84,8 +86,8 @@ class PathogenIdentification_Deployment_Manager:
         threads: int = 3,
     ) -> None:
         self.username = username
-        self.project = project.name
-        self.sample = sample.name
+        self.project = project
+        self.sample = sample
 
         self.deployment_root_dir = deployment_root_dir
         self.dir_branch = dir_branch
@@ -125,7 +127,9 @@ class PathogenIdentification_Deployment_Manager:
         new_r1_path = self.input_read_project_path(self.file_r1)
         new_r2_path = self.input_read_project_path(self.file_r2)
 
-        self.config["sample_name"] = self.sample
+        self.config["sample_name"] = self.sample.name
+        self.config["sample_registered"] = self.sample
+
         self.config["r1"] = new_r1_path
         self.config["r2"] = new_r2_path
         self.config["type"] = [PIConstants.SINGLE_END, PIConstants.PAIR_END][
@@ -143,14 +147,14 @@ class PathogenIdentification_Deployment_Manager:
 
     def generate_config_file(self):
         self.config = {
-            "project": self.project,
+            "project": self.project.name,
             "source": self.install_registry.SOURCE,
             "deployment_root_dir": self.deployment_root_dir,
             "sub_directory": self.dir_branch,
             "directories": {},
             "threads": self.threads,
             "prefix": self.prefix,
-            "project_name": self.project,
+            "project_name": self.project.name,
             "metadata": {
                 x: os.path.join(self.install_registry.METADATA["ROOT"], g)
                 for x, g in self.install_registry.METADATA.items()
@@ -222,12 +226,11 @@ class PathogenIdentification_Deployment_Manager:
 
     def update_engine(self):
         self.update_config()
-        print(self.run_params_db)
 
         if "module" in self.run_params_db.columns:
             self.run_engine.Update(self.config, self.run_params_db)
 
-    def update_merged_targets(self, merged_targets: pd.DataFrame):
+    def update_merged_targets(self, merged_targets: List[Remap_Target]):
         self.run_engine.update_merged_targets(merged_targets)
 
     def delete_run_media(self):
@@ -288,10 +291,7 @@ class Tree_Node:
 
         self.parameters = self.determine_params(pipe_tree)
         self.software_tree_pk = software_tree_pk
-        self.leaves = pipe_tree.leaves_from_node_compress(node_index)
-
-        print("#################### node ####################")
-        print(f"node {node_index} has leaves {self.leaves}")
+        self.leaves = pipe_tree.leaves_from_node_using_graph(node_index)
 
     def run_reference_overlap_analysis(self):
         run = RunMain.objects.get(parameter_set=self.parameter_set)
@@ -588,6 +588,7 @@ class Tree_Progress:
         pipe_tree.nodes_df = pd.DataFrame(
             pipe_tree.nodes_compress, columns=["node", "branch"]
         ).set_index("node")
+
         pipe_tree.edge_df = pd.DataFrame(
             pipe_tree.edge_compress, columns=["parent", "child"]
         )
@@ -834,30 +835,19 @@ class Tree_Progress:
 
         return nodes
 
-    def merge_node_targets_list(self, targetdf_list: List[Tree_Node]):
-        """
-        Merge targets from a list of nodes
-
-        :param targetdf_list: list of nodes
-        """
-        node_merged_targets = [
-            n.run_manager.run_engine.merged_targets for n in targetdf_list
-        ]
-
-        node_merged_targets = pd.concat(node_merged_targets, axis=0).reset_index()
-
-        return node_merged_targets
-
-    def get_node_node_targets(self, nodes_list: List[Tree_Node]):
+    def get_node_node_targets(self, nodes_list: List[Tree_Node]) -> List[Remap_Target]:
         """
         Get merged targets from a list of nodes
 
         :param nodes_list: list of nodes"""
-        node_merged_targets = self.merge_node_targets_list(nodes_list)
+        combined_list = []
 
-        node_merged_targets = self.process_mapping_managerdf(node_merged_targets)
+        for node in nodes_list:
+            combined_list.extend(
+                node.run_manager.run_engine.metadata_tool.remap_targets
+            )
 
-        return node_merged_targets
+        return combined_list
 
     @staticmethod
     def process_mapping_managerdf(df: pd.DataFrame):
@@ -933,10 +923,11 @@ class Tree_Progress:
             nodes_by_module[node.module].append(node)
         return nodes_by_module
 
-    def process_subject(self, volonteer: Tree_Node, group_targets: pd.DataFrame):
-        original_targets = copy.deepcopy(
-            volonteer.run_manager.run_engine.merged_targets
-        )
+    def process_subject(self, volonteer: Tree_Node, group_targets: List[Remap_Target]):
+        original_targets = [
+            copy.deepcopy(x)
+            for x in volonteer.run_manager.run_engine.metadata_tool.remap_targets
+        ]
 
         volonteer.run_manager.update_merged_targets(group_targets)
 
@@ -950,8 +941,46 @@ class Tree_Progress:
 
         return mapped_instances_shared, run_success
 
-    def stacked_deployment_classification(
+    @staticmethod
+    def transfer_read_classification_drone(node: Tree_Node, volonteer: Tree_Node):
+        """
+        Transfer read classification drone from volonteer to node"""
+        node.run_manager.run_engine.read_classification_drone = (
+            volonteer.run_manager.run_engine.read_classification_drone
+        )
+        node.run_manager.run_engine.read_classification_performed = True
+
+        return node
+
+    @staticmethod
+    def transfer_contig_classification_drone(node: Tree_Node, volonteer: Tree_Node):
+        """
+        Transfer contig classification drone from volonteer to node"""
+        node.run_manager.run_engine.contig_classification_drone = (
+            volonteer.run_manager.run_engine.contig_classification_drone
+        )
+        node.run_manager.run_engine.contig_classification_performed = True
+
+        return node
+
+    def stacked_deployment_read_classification(
         self, nodes_by_sample_sources: List[List[Tree_Node]]
+    ):
+        self.loop_nodes_deploy(
+            nodes_by_sample_sources, self.transfer_read_classification_drone
+        )
+
+    def stacked_deployment_contig_classification(
+        self, nodes_by_sample_sources: List[List[Tree_Node]]
+    ):
+        self.loop_nodes_deploy(
+            nodes_by_sample_sources, self.transfer_contig_classification_drone
+        )
+
+    def loop_nodes_deploy(
+        self,
+        nodes_by_sample_sources: List[List[Tree_Node]],
+        transfer_function: Callable,
     ):
         new_nodes = []
 
@@ -964,10 +993,8 @@ class Tree_Progress:
 
             if run_success:
                 for node in nodes_subset:
-                    node.run_manager.run_engine.read_classification_drone = (
-                        volonteer.run_manager.run_engine.read_classification_drone
-                    )
-                    node.run_manager.run_engine.read_classification_performed = True
+                    node = transfer_function(node, volonteer)
+
                     new_nodes.append(node)
             else:
                 for node in nodes_subset:
@@ -977,7 +1004,8 @@ class Tree_Progress:
             self.current_nodes = new_nodes
 
     def stacked_deployement_mapping(
-        self, nodes_by_sample_sources: List[List[Tree_Node]]
+        self,
+        nodes_by_sample_sources: List[List[Tree_Node]],
     ):
         """
         deploy nodes remap by sample sources."""
@@ -1033,10 +1061,15 @@ class Tree_Progress:
 
         self.stacked_deployement_mapping(nodes_by_sample_sources)
 
-    def run_simplified_classification(self):
+    def run_simplified_classification_reads(self):
         nodes_by_sample_sources = self.group_nodes_by_source_and_parameters()
 
-        self.stacked_deployment_classification(nodes_by_sample_sources)
+        self.stacked_deployment_read_classification(nodes_by_sample_sources)
+
+    def run_simplified_classification_contigs(self):
+        nodes_by_sample_sources = self.group_nodes_by_source_and_parameters()
+
+        self.stacked_deployment_contig_classification(nodes_by_sample_sources)
 
     def update_tree_nodes(self):
         new_nodes = []
@@ -1080,13 +1113,6 @@ class Tree_Progress:
     def run_nodes_remap(self):
         self.run_simplified_mapping()
 
-    def run_nodes_classification_reads(self):
-        self.run_simplified_classification()
-        print("RAN CLASSIFICATION")
-
-    def run_nodes_classification_contigs(self):
-        self.run_simplified_classification()
-
     def register_leaves_finished(self):
         for node in self.current_nodes:
             for leaf in node.leaves:
@@ -1112,8 +1138,8 @@ class Tree_Progress:
 
         map_actions = {
             ConstantsSettings.PIPELINE_NAME_extra_qc: self.run_nodes_sequential,
-            ConstantsSettings.PIPELINE_NAME_read_classification: self.run_nodes_classification_reads,
-            ConstantsSettings.PIPELINE_NAME_contig_classification: self.run_nodes_sequential,
+            ConstantsSettings.PIPELINE_NAME_read_classification: self.run_simplified_classification_reads,
+            ConstantsSettings.PIPELINE_NAME_contig_classification: self.run_simplified_classification_contigs,
             ConstantsSettings.PIPELINE_NAME_viral_enrichment: self.run_nodes_sequential,
             ConstantsSettings.PIPELINE_NAME_host_depletion: self.run_nodes_sequential,
             ConstantsSettings.PIPELINE_NAME_assembly: self.run_nodes_sequential,
@@ -1129,8 +1155,9 @@ class Tree_Progress:
             self.update_tree_nodes()
             return
 
-        action = map_actions[self.current_module]
         print("CURRENT MODULE", self.current_module)
+        action = map_actions[self.current_module]
+
         action()
 
         for node in self.current_nodes:
@@ -1270,16 +1297,9 @@ class TreeProgressGraph:
         stacked_df_dict = {}
 
         for ps in existing_parameter_sets:
-            index = ps.leaf.index
-            tree_pk = ps.leaf.software_tree.pk
-            pipetree = pipetrees_dict[tree_pk]
-            node_leaves = pipetree.leaves_from_node(index)
-            if len(node_leaves) == 0:
-                continue
-            leaf_node_index = node_leaves[0]
-            leaf_node = SoftwareTreeNode.objects.get(
-                index=leaf_node_index, software_tree=ps.leaf.software_tree
-            )
+            node_leaves = ps.get_leaf_descendants()
+            leaf_node = node_leaves[0]
+            leaf_node_index = leaf_node.index
             node_params = self.pipeline_utils.get_leaf_parameters(leaf_node)
             node_params = node_params[["module", "software"]]
             node_params = node_params.set_index("module")
@@ -1298,6 +1318,7 @@ class TreeProgressGraph:
             ConstantsSettings.PIPELINE_NAME_assembly,
             ConstantsSettings.PIPELINE_NAME_contig_classification,
             ConstantsSettings.PIPELINE_NAME_read_classification,
+            ConstantsSettings.PIPELINE_NAME_metagenomics_combine,
             ConstantsSettings.PIPELINE_NAME_remapping,
             "leaves",
         ]

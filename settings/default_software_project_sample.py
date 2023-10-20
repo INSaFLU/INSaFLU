@@ -143,7 +143,6 @@ class DefaultProjectSoftware(object):
 
             ## only for project sample and by technology
         elif not project_sample is None:
-
             ### both technologies
             self.test_default_db(
                 SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name,
@@ -298,7 +297,7 @@ class DefaultProjectSoftware(object):
         test if exist, if not persist in database
         """
         ## lock because more than one process can duplicate software names
-        
+
         list_software = Software.objects.filter(
             name=software_name,
             owner=user,
@@ -330,9 +329,7 @@ class DefaultProjectSoftware(object):
                 dataset,
             )
             if len(vect_parameters) > 0:  ### persist
-                self.default_parameters.persist_parameters(
-                    vect_parameters, type_of_use
-                )
+                self.default_parameters.persist_parameters(vect_parameters, type_of_use)
 
     def _get_default_parameters(
         self,
@@ -2375,6 +2372,7 @@ class DefaultProjectSoftware(object):
             technology_name,
             dataset,
         )
+
         return self.default_parameters.get_parameters(
             software_name,
             user,
@@ -2420,12 +2418,12 @@ class DefaultProjectSoftware(object):
         type_of_use = Software.TYPE_OF_USE_global
         if project is None:
             type_of_use = Software.TYPE_OF_USE_global
-            if(software_name==self.software_names.get_abricate_name()):
+            if software_name == self.software_names.get_abricate_name():
                 type_of_use = Software.TYPE_OF_USE_qc
-            if(software_name==self.software_names.get_trimmomatic_name()):
-                type_of_use = Software.TYPE_OF_USE_qc 
-            if(software_name==self.software_names.get_NanoFilt_name()):
-                type_of_use = Software.TYPE_OF_USE_qc   
+            if software_name == self.software_names.get_trimmomatic_name():
+                type_of_use = Software.TYPE_OF_USE_qc
+            if software_name == self.software_names.get_NanoFilt_name():
+                type_of_use = Software.TYPE_OF_USE_qc
         elif type(project) is Project:
             type_of_use = Software.TYPE_OF_USE_project
         elif type(project) is ProjectSample:

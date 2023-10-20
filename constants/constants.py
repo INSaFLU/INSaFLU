@@ -54,8 +54,6 @@ class Televir_Metadata_Constants:
             "minimap-rem": "hostDepletion/hostdep_env",
             "flye": "assembly/Flye",
             "clark": "classification/Clark",
-            "minimap2": "hostDepletion/hostdep_env",
-            "minimap2_asm": "hostDepletion/hostdep_env",
             "blastn": "hostDepletion/hostdep_env",
             "blastp": "hostDepletion/hostdep_env",
             "snippy": config("DIR_SOFTWARE") + "/snippy",
@@ -63,7 +61,10 @@ class Televir_Metadata_Constants:
             "bwa": "remap/remap",
             "bowtie2": "remap/remap",
             "bowtie2_remap": "remap/remap",
+            "minimap2": "hostDepletion/hostdep_env",
+            "minimap2_asm": "hostDepletion/hostdep_env",
             "minimap2_illu": "hostDepletion/hostdep_env",
+            "minimap2_remap": "hostDepletion/hostdep_env",
             "minimap2_ont": "hostDepletion/hostdep_env",
             "snippy_pi": config("DIR_SOFTWARE") + "/snippy",
             "prinseq++": "preprocess/prinseq",
@@ -76,21 +77,6 @@ class Televir_Metadata_Constants:
         CS.PIPELINE_NAME_read_quality_analysis: {"default": "preprocess/preproc"},
         CS.PIPELINE_NAME_extra_qc: {"default": "preprocess/preproc"},
         CS.PIPELINE_NAME_assembly: {"default": "assembly/assembly"},
-    }
-
-    DIRS = {
-        CS.PIPELINE_NAME_read_quality_analysis: "reads/clean/",
-        CS.PIPELINE_NAME_extra_qc: "reads/clean/",
-        "reads_depleted_dir": "reads/hd_filtered/",
-        "reads_enriched_dir": "reads/enriched/",
-        CS.PIPELINE_NAME_host_depletion: "host_depletion/",
-        CS.PIPELINE_NAME_viral_enrichment: "enrichment/",
-        CS.PIPELINE_NAME_assembly: "assembly/",
-        CS.PIPELINE_NAME_contig_classification: "classification/assembly/",
-        CS.PIPELINE_NAME_read_classification: "classification/reads/",
-        CS.PIPELINE_NAME_remapping: "remap/",
-        "log_dir": "logs/",
-        "OUTD": "output/",
     }
 
 

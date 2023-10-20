@@ -2,6 +2,8 @@ import codecs
 import datetime
 import os
 
+import networkx as nx
+import numpy as np
 import pandas as pd
 from django import forms
 from django.contrib.auth.models import User
@@ -149,6 +151,30 @@ class SoftwareTreeNode(models.Model):
     class Meta:
         ordering = ["name"]
 
+    def get_descendants(self, include_self: bool = True):
+        """return all descendants of this node"""
+
+        nodes = SoftwareTreeNode.objects.filter(
+            software_tree=self.software_tree
+        ).values_list("id", flat=True)
+        edges = [
+            (node.parent, node.id)
+            for node in SoftwareTreeNode.objects.filter(
+                software_tree=self.software_tree
+            )
+        ]
+
+        graph = nx.DiGraph()
+        graph.add_nodes_from(nodes)
+        graph.add_edges_from(edges)
+
+        descendants = nx.descendants(graph, self.id)
+
+        if include_self:
+            descendants = descendants | {self.id}
+
+        return SoftwareTreeNode.objects.filter(id__in=descendants)
+
 
 # class SoftwareTree_Path(models.Model):
 #    software_tree = models.ForeignKey(SoftwareTree, on_delete=models.CASCADE)
@@ -273,6 +299,16 @@ class ParameterSet(models.Model):
     project = models.ForeignKey(Projects, on_delete=models.CASCADE, null=True)
     leaf = models.ForeignKey(SoftwareTreeNode, on_delete=models.PROTECT, null=True)
     status = models.IntegerField(choices=STATUS_CHOICES, default=STATUS_NOT_STARTED)
+
+    def get_leaf_descendants(self):
+        """return software tree nodes that are descendants of the leaf node"""
+
+        if self.leaf is None:
+            return []
+
+        descendants = self.leaf.get_descendants(include_self=True)
+
+        return descendants
 
     def register_subprocess(self):
         self.status = self.STATUS_RUNNING
@@ -814,6 +850,63 @@ class RawReference(models.Model):
     description = models.CharField(max_length=100, blank=True, null=True)
     counts = models.CharField(max_length=100, blank=True, null=True)
     classification_source = models.CharField(max_length=15, blank=True, null=True)
+
+    @property
+    def classification_source_str(self):
+        if self.classification_source == "1":
+            return "reads"
+
+        if self.classification_source == "2":
+            return "contigs"
+
+        if self.classification_source == "3":
+            return "reads / contigs"
+
+        return "unknown"
+
+    @property
+    def read_counts(self):
+        if self.classification_source == "1":
+            return self.counts
+
+        if self.classification_source == "2":
+            return "0"
+
+        if self.counts is None:
+            return "0"
+
+        if self.classification_source == "3":
+            return self.counts.split("/")[0]
+
+        return None
+
+    @property
+    def contig_counts(self):
+        if self.classification_source == "1":
+            return "0"
+
+        if self.classification_source == "2":
+            return self.counts
+
+        if self.counts is None:
+            return "0"
+
+        if self.classification_source == "3":
+            return self.counts.split("/")[1]
+
+        return None
+
+    @property
+    def counts_int_array(self):
+        return np.array([self.read_counts, self.contig_counts], dtype=np.int64)
+
+    def update_raw_reference_status_mapped(self):
+        self.status = self.STATUS_MAPPED
+        self.save()
+
+    def update_raw_reference_status_fail(self):
+        self.status = self.STATUS_FAIL
+        self.save()
 
 
 class RunRemapMain(models.Model):

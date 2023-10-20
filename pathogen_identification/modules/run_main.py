@@ -10,19 +10,35 @@ import numpy as np
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings
+from pathogen_identification.models import PIProject_Sample, RawReference, RunMain
 from pathogen_identification.modules.assembly_class import Assembly_class
 from pathogen_identification.modules.classification_class import Classifier
 from pathogen_identification.modules.metadata_handler import Metadata_handler
 from pathogen_identification.modules.object_classes import (
-    Assembly_results, Contig_classification_results, Read_class,
-    Read_classification_results, Remap_main, Run_detail_report, RunCMD,
-    RunQC_report, Sample_runClass, Software_detail, SoftwareRemap,
-    SoftwareUnit)
+    Assembly_results,
+    Contig_classification_results,
+    Read_class,
+    Read_classification_results,
+    Remap_main,
+    Remap_Target,
+    Run_detail_report,
+    RunCMD,
+    RunQC_report,
+    Sample_runClass,
+    Software_detail,
+    SoftwareRemap,
+    SoftwareUnit,
+)
 from pathogen_identification.modules.preprocess_class import Preprocess
-from pathogen_identification.modules.remap_class import (Mapping_Instance,
-                                                         Mapping_Manager)
+from pathogen_identification.modules.remap_class import (
+    Mapping_Instance,
+    Mapping_Manager,
+)
 from pathogen_identification.utilities.televir_parameters import (
-    RemapParams, TelevirParameters)
+    RemapParams,
+    TelevirParameters,
+)
+from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -76,6 +92,7 @@ class RunDetail_main:
     r2: Read_class
 
     sample: Sample_runClass
+    sample_registered: PIProject_Sample
     ##  metadata
     metadata_tool: Metadata_handler
     sift_query: str
@@ -93,6 +110,7 @@ class RunDetail_main:
     classification: bool
     contig_classification: bool
     read_classification: bool
+    metagenomics_classification: bool
     remapping: bool
     house_cleaning: bool
 
@@ -115,6 +133,7 @@ class RunDetail_main:
     assembly_method: Software_detail
     assembly_classification_method: Software_detail
     read_classification_method: Software_detail
+    metagenomics_classification_method: Software_detail
     remapping_method: Software_detail
     remap_manager: Mapping_Manager
     remap_params: RemapParams
@@ -233,6 +252,25 @@ class RunDetail_main:
     def check_read_classification_exists(self):
         self.read_classification = self.read_classification_method.check_exists()
 
+    def set_metagenomics_classification_check(
+        self, config: dict, method_args: pd.DataFrame
+    ):
+        self.metagenomics_classification_method = Software_detail(
+            CS.PIPELINE_NAME_metagenomics_combine,
+            method_args,
+            config,
+            self.prefix,
+        )
+
+        self.metagenomics_classification = (
+            self.metagenomics_classification_method.check_exists()
+        )
+
+    def check_metagenomics_classification_exists(self):
+        self.metagenomics_classification = (
+            self.metagenomics_classification_method.check_exists()
+        )
+
     def set_remapping_check(self, config: dict, method_args: pd.DataFrame):
         self.remapping_method = Software_detail(
             CS.PIPELINE_NAME_remapping,
@@ -267,6 +305,7 @@ class RunDetail_main:
             CS.PIPELINE_NAME_assembly: self.set_assembly_check,
             CS.PIPELINE_NAME_contig_classification: self.set_contig_classification_check,
             CS.PIPELINE_NAME_read_classification: self.set_read_classification_check,
+            CS.PIPELINE_NAME_metagenomics_combine: self.set_metagenomics_classification_check,
             CS.PIPELINE_NAME_remapping: self.set_remapping_check,
             CS.PIPELINE_NAME_remap_filtering: self.set_remapping_filtering_check,
         }
@@ -279,9 +318,16 @@ class RunDetail_main:
             CS.PIPELINE_NAME_assembly: self.assembly,
             CS.PIPELINE_NAME_contig_classification: self.contig_classification,
             CS.PIPELINE_NAME_read_classification: self.read_classification,
+            CS.PIPELINE_NAME_metagenomics_combine: self.metagenomics_classification,
             CS.PIPELINE_NAME_remapping: self.remapping,
             CS.PIPELINE_NAME_remap_filtering: self.remapping_filtering,
         }
+
+    def check_software_print(self):
+        self.software_check_map()
+
+        for module, software in self.module_software_check_map.items():
+            print(f"{module} : {software}")
 
     def set_methods(self, config: dict, method_args: pd.DataFrame):
         self.set_settings_dict()
@@ -332,6 +378,7 @@ class RunDetail_main:
         self.assembly_performed: bool = False
         self.read_classification_performed: bool = False
         self.contig_classification_performed: bool = False
+        self.read_metagenomics_classification_performed: bool = False
         self.remap_prepped: bool = False
         self.remapping_performed: bool = False
 
@@ -392,6 +439,7 @@ class RunDetail_main:
         ]
 
         ######### INPUT
+        self.sample_registered = config["sample_registered"]
         self.sample_name = config["sample_name"]
         self.type = config["type"]
         self.run_detail_report = pd.DataFrame()
@@ -475,6 +523,7 @@ class RunDetail_main:
         ### set software methods and actions
 
         self.set_methods(config, method_args)
+        self.check_software_print()
 
         ### set default actions
         self.subsample = False
@@ -596,16 +645,12 @@ class RunDetail_main:
             f"{self.prefix}_mclass_summary.tsv",
         )
 
-    def update_merged_targets(self, targets_df: pd.DataFrame):
+    def update_merged_targets(self, targets_list: List[Remap_Target]):
         """
         Update the merged classification summary file.
         """
 
-        if "taxid" in targets_df.columns:
-            targets_df["taxid"] = targets_df["taxid"].astype(str)
-
-        self.metadata_tool.merged_targets = targets_df
-        self.merged_targets = targets_df
+        self.metadata_tool.remap_targets = targets_list
 
     def Update_exec_time(self):
         """
@@ -800,6 +845,21 @@ class Run_Deployment_Methods(RunDetail_main):
 
         self.contig_classification_drone.run()
 
+    def deploy_METAGENOMICS_CLASSIFICATION_reads(self):
+        self.metagenomics_classification_drone = Classifier(
+            self.metagenomics_classification_method,
+            self.sample.r1.current,
+            r2="",
+            prefix=self.prefix,
+            threads=self.threads,
+            bin=get_bindir_from_binaries(
+                self.config["bin"], CS.PIPELINE_NAME_remapping
+            ),
+            logging_level=self.logger_level_detail,
+            log_dir=self.log_dir,
+        )
+        self.metagenomics_classification_drone.run()
+
     def deploy_READ_CLASSIFICATION(self):
         self.read_classification_drone = Classifier(
             self.read_classification_method,
@@ -830,7 +890,7 @@ class Run_Deployment_Methods(RunDetail_main):
             self.logger_level_detail,
             True,
             remap_params=self.remap_params,
-            logdir=self.config["directories"]["log_dir"],
+            logdir=self.log_dir,
         )
 
     def deploy_REMAPPING(self):
@@ -847,7 +907,7 @@ class Run_Deployment_Methods(RunDetail_main):
             self.logger_level_detail,
             True,
             remap_params=self.remap_params,
-            logdir=self.config["directories"]["log_dir"],
+            logdir=self.log_dir,
         )
 
         self.logger.info(
@@ -1300,7 +1360,7 @@ class RunMainTree_class(Run_Deployment_Methods):
                 sift_query=self.config["sift_query"],
                 prefix=self.prefix,
             )
-            hd_clean = hd_metadata_tool.results_process(
+            hd_clean = hd_metadata_tool.results_collect_metadata(
                 self.depletion_drone.classification_report,
             )
 
@@ -1368,8 +1428,37 @@ class RunMainTree_class(Run_Deployment_Methods):
 
             self.export_intermediate_reports()
 
-            print("#################################")
-            print(self.merged_targets)
+        self.Update_exec_time()
+        self.generate_output_data_classes()
+
+    def Prep_Metagenomics_Classification(self):
+        from typing import List, Union
+
+        from django.db.models import QuerySet
+
+        reference_utils = RawReferenceUtils(self.sample_registered)
+
+        # reference_table = collect_references_table_all()
+        reference_table = reference_utils.sample_reference_tables()
+        self.metadata_tool.generate_targets_from_report(reference_table)
+
+        self.prep_REMAPPING()
+        self.remap_manager.generate_remap_targets_fasta()
+
+    def Run_Metagenomcs_Classification(self):
+        if self.metagenomics_classification:
+            self.Prep_Metagenomics_Classification()
+
+            self.metagenomics_classification_method.set_db(
+                self.remap_manager.combined_fasta_gz_path
+            )
+
+            print("DEPLOYING METAGENOMICS CLASSIFICATION")
+
+            self.deploy_METAGENOMICS_CLASSIFICATION_reads()
+            self.read_classification_drone = self.metagenomics_classification_drone
+            self.read_classification_performed = True
+            self.read_metagenomics_classification_performed = True
 
         self.Update_exec_time()
         self.generate_output_data_classes()
@@ -1377,6 +1466,9 @@ class RunMainTree_class(Run_Deployment_Methods):
     def Run_Contig_classification(self):
         """
         This is a special case where we only want to run contig classification"""
+
+        print("RUNNING CONTIG CLASSIFICATION")
+        print(self.contig_classification, self.contig_classification_performed)
 
         if self.contig_classification and not self.contig_classification_performed:
             self.deploy_CONTIG_CLASSIFICATION()
@@ -1409,6 +1501,9 @@ class RunMainTree_class(Run_Deployment_Methods):
             self.remap_params.max_taxids,
         )
 
+        self.import_from_remap_prep()
+
+    def import_from_remap_prep(self):
         self.aclass_summary = self.metadata_tool.aclass
         self.rclass_summary = self.metadata_tool.rclass
         self.merged_targets = self.metadata_tool.merged_targets
@@ -1551,7 +1646,6 @@ class RunMainTree_class(Run_Deployment_Methods):
         depleted_reads = (
             self.sample.r1.depleted_read_number + self.sample.r2.depleted_read_number
         )
-        
 
         # if self.type == ConstantsSettings.PAIR_END:
         #    enriched_reads = enriched_reads * 2

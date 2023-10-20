@@ -7,22 +7,21 @@ import logging
 import os
 
 import django_tables2 as tables
+from django.urls import reverse
+from django.utils.safestring import mark_safe
+
 from constants.constants import Constants, TypePath
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
-from django.urls import reverse
-from django.utils.safestring import mark_safe
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProjectSample
-from utils.result import DecodeObjects
-
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software import DefaultSoftware
 from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.models import Parameter, Software
-from pathogen_identification.utilities.televir_parameters import LayoutParams
+from utils.result import DecodeObjects
 
 
 class CheckBoxColumnWithName(tables.CheckBoxColumn):
@@ -53,6 +52,7 @@ class SoftwaresTable(tables.Table):
         project_sample=None,
         sample=None,
         televir_project=None,
+        televir_project_sample=None,
         b_enable_options=True,
         dataset=None,
     ):
@@ -63,6 +63,7 @@ class SoftwaresTable(tables.Table):
         self.sample = sample
         self.b_enable_options = b_enable_options
         self.televir_project = televir_project
+        self.televir_project_sample = televir_project_sample
 
         self.count_project_sample = 0
         ### get number of samples inside of this project, if project exist
@@ -90,6 +91,7 @@ class SoftwaresTable(tables.Table):
     def render_select_to_run(self, value, record):
         ## test if its to run and get IDs from others
         is_to_run, sz_ids = self._is_to_run(record)
+
         ### When in sample you can not turn ON|OFF the software
         b_enable_options = self.b_enable_options
         if not self.sample is None:
@@ -105,6 +107,7 @@ class SoftwaresTable(tables.Table):
             )
 
         ## need to remove # in href, otherwise still active
+
         sz_href = (
             '<a href="{}id_turn_software_on_off" {} '.format(
                 "#" if record.can_be_on_off_in_pipeline and b_enable_options else "",
@@ -112,10 +115,13 @@ class SoftwaresTable(tables.Table):
                 if record.can_be_on_off_in_pipeline and b_enable_options
                 else "",
             )
-            + 'data-toggle="modal" type_of_use_id="{}" {} software_id="{}" {}'.format(
+            + 'data-toggle="modal" type_of_use_id="{}" {} {} software_id="{}" {}'.format(
                 record.type_of_use,
                 f'televir_project_id="{self.televir_project.id}"'
                 if self.televir_project
+                else "",
+                f'televir_project_sample_id="{self.televir_project_sample.id}"'
+                if self.televir_project_sample
                 else "",
                 record.id,
                 sz_ids,
@@ -132,7 +138,7 @@ class SoftwaresTable(tables.Table):
         )
         return mark_safe(sz_href)
 
-    def render_parameters(self, **kwargs):
+    def render_parameters(self, record: Software, **kwargs):
         """
         render parameters for the software
         """
@@ -141,7 +147,7 @@ class SoftwaresTable(tables.Table):
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
 
-        record = kwargs.pop("record")
+        # record: Software = kwargs.pop("record")
         technology_name = (
             ConstantsSettings.TECHNOLOGY_illumina
             if record.technology is None
@@ -183,7 +189,8 @@ class SoftwaresTable(tables.Table):
                 self.project,
                 None,
                 None,
-                technology_name,
+                technology_name=technology_name,
+                pipeline_step=record.pipeline_step.name,
             )
             if parameters == DefaultParameters.MASK_DONT_care:
                 if record.name == SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name:
@@ -625,7 +632,7 @@ class SoftwaresTable(tables.Table):
             sz_ids += ' sample_id="{}"'.format(self.sample.id)
 
         is_to_run = record.is_to_run
-        
+
         if len(sz_ids) > 0:
             parameters = Parameter.objects.filter(
                 software=record,
@@ -770,7 +777,7 @@ class INSaFLUParametersTable(tables.Table):
             else record.technology.name
         )
 
-    def render_parameters(self, **kwargs):
+    def render_parameters(self, record: Software, **kwargs):
         """
         render parameters for the software
         """
@@ -779,15 +786,18 @@ class INSaFLUParametersTable(tables.Table):
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
 
-        record = kwargs.pop("record")
+        pipeline_step = record.pipeline_step.name
         technology_name = (
             ConstantsSettings.TECHNOLOGY_illumina
             if record.technology is None
             else record.technology.name
         )
+
         if self.project is None and self.project_sample is None:
             default_software = DefaultSoftware()
-            return default_software.get_parameters(record.name, user, technology_name)
+            return default_software.get_parameters(
+                record.name, user, technology_name, pipeline_step=pipeline_step
+            )
         elif self.project_sample is None:
             default_software_projects = DefaultProjectSoftware()
             return default_software_projects.get_parameters(
@@ -797,7 +807,8 @@ class INSaFLUParametersTable(tables.Table):
                 self.project,
                 None,
                 None,
-                technology_name,
+                technology_name=technology_name,
+                pipeline_step=pipeline_step,
             )
         elif self.project is None:
             default_software_projects = DefaultProjectSoftware()
@@ -808,7 +819,8 @@ class INSaFLUParametersTable(tables.Table):
                 None,
                 self.project_sample,
                 None,
-                technology_name,
+                technology_name=technology_name,
+                pipeline_step=pipeline_step,
             )
         return ""
 

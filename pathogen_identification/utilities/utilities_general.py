@@ -14,8 +14,9 @@ from typing import Optional
 import matplotlib.pyplot as plt
 import pandas as pd
 
+from fluwebvirus.settings import MEDIA_ROOT
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import RunMain
+from pathogen_identification.models import Projects, RunMain
 
 
 def generate_zip_file(file_list: list, zip_file_path: str) -> str:
@@ -37,7 +38,7 @@ def get_create_zip(file_list: list, outdir: str, zip_file_name: str) -> str:
     return zip_file_path
 
 
-def description_passes_filter(description: str, filter_list: list):
+def description_fails_filter(description: str, filter_list: list):
     """
     Check if description contains any of the strings in filter_list
     """
@@ -301,6 +302,8 @@ def merge_classes(r1: pd.DataFrame, r2: pd.DataFrame, maxt=6, exclude="phage"):
     ###
 
     r1 = r1[["taxid", "counts"]]
+    r1 = r1.sort_values("counts", ascending=False)
+    r2 = r2.sort_values("counts", ascending=False)
     r1_raw = r1.copy()
     r2_raw = r2.copy()
 
@@ -326,7 +329,7 @@ def merge_classes(r1: pd.DataFrame, r2: pd.DataFrame, maxt=6, exclude="phage"):
 
         maxt = maxt - shared.shape[0]
 
-        if maxt < 0:
+        if maxt <= 0:
             r1 = shared
 
         else:
@@ -413,6 +416,16 @@ def merge_classes(r1: pd.DataFrame, r2: pd.DataFrame, maxt=6, exclude="phage"):
     merged_final = merged_final[["taxid", "counts", "source"]]
 
     return merged_final, full_descriptor
+
+
+def get_project_dir(project: Projects):
+    return os.path.join(
+        MEDIA_ROOT, CS.televir_subdirectory, str(project.owner.pk), str(project.pk)
+    )
+
+
+def get_project_dir_no_media_root(project: Projects):
+    return os.path.join(CS.televir_subdirectory, str(project.owner.pk), str(project.pk))
 
 
 def infer_run_media_dir(run_main: RunMain) -> Optional[str]:

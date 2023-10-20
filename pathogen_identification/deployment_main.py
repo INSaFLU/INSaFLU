@@ -35,6 +35,7 @@ from pathogen_identification.utilities.utilities_general import (
     simplify_name_lower,
 )
 from pathogen_identification.utilities.utilities_pipeline import (
+    RawReferenceUtils,
     SoftwareTreeUtils,
     Utils_Manager,
 )
@@ -57,7 +58,7 @@ class PathogenIdentification_deployment:
     def __init__(
         self,
         pipeline_index: int,
-        sample,  # sample name
+        sample: PIProject_Sample,  # sample name
         project: str = "test",
         prefix: str = "main",
         username: str = "admin",
@@ -155,7 +156,8 @@ class PathogenIdentification_deployment:
         new_r1_path = self.input_read_project_path(r1_path)
         new_r2_path = self.input_read_project_path(r2_path)
 
-        self.config["sample_name"] = self.sample
+        self.config["sample_registered"] = self.sample
+        self.config["sample_name"] = self.sample.name
         self.config["r1"] = new_r1_path
         self.config["r2"] = new_r2_path
 
@@ -183,8 +185,6 @@ class PathogenIdentification_deployment:
         all_paths = software_tree_utils.get_all_technology_pipelines(self.tree_makup)
 
         self.run_params_db = all_paths.get(self.pipeline_index, None)
-
-        print(self.run_params_db)
 
         if self.run_params_db is None:
             print("Pipeline index not found")
@@ -322,7 +322,7 @@ class Run_Main_from_Leaf:
 
         self.container = PathogenIdentification_deployment(
             pipeline_index=pipeline_leaf.index,
-            sample=input_data.name,
+            sample=input_data,
             project=self.project_name,
             prefix=prefix,
             username=self.user.username,
@@ -491,7 +491,69 @@ class Run_Main_from_Leaf:
             self.container.run_engine.Run_Read_classification()
             self.container.run_engine.Run_Contig_classification()
             self.container.run_engine.plan_remap_prep_safe()
+            self.container.run_engine.export_intermediate_reports()
             self.container.run_engine.generate_output_data_classes()
+            db_updated = Update_Classification(
+                self.container.run_engine, self.parameter_set
+            )
+            if not db_updated:
+                return False
+        except Exception as e:
+            print(traceback.format_exc())
+            print(e)
+            return False
+
+        try:
+            self.container.run_engine.Run_Metagenomcs_Classification()
+            # self.container.run_engine.plan_remap_prep_safe()
+            reference_utils = RawReferenceUtils(
+                self.container.run_engine.sample_registered
+            )
+            reference_table = reference_utils.sample_reference_tables()
+            print("REFERENCE TABLE")
+            print(reference_table.head())
+            proxy_rclass = reference_table.rename(
+                columns={
+                    "read_counts": "counts",
+                }
+            )
+            proxy_rclass["taxid"] = proxy_rclass["taxid"].astype(int)
+            proxy_rclass["counts"] = proxy_rclass["counts"].astype(float).astype(int)
+            proxy_rclass = proxy_rclass[proxy_rclass["counts"] > 0]
+            proxy_rclass = proxy_rclass[proxy_rclass["taxid"] > 0]
+            proxy_rclass = proxy_rclass[proxy_rclass["description"] != "-"]
+            proxy_rclass = proxy_rclass[proxy_rclass["accid"] != "-"]
+            proxy_aclass = reference_table.rename(
+                columns={
+                    "contig_counts": "counts",
+                }
+            )
+            proxy_aclass["taxid"] = proxy_aclass["taxid"].astype(int)
+            proxy_aclass["counts"] = proxy_aclass["counts"].astype(float).astype(int)
+            proxy_aclass = proxy_aclass[proxy_aclass["counts"] > 0]
+            proxy_aclass = proxy_aclass[proxy_aclass["taxid"] > 0]
+            proxy_aclass = proxy_aclass[proxy_aclass["description"] != "-"]
+            proxy_aclass = proxy_aclass[proxy_aclass["accid"] != "-"]
+
+            print(proxy_rclass.head())
+
+            self.container.run_engine.metadata_tool.rclass = proxy_rclass
+            self.container.run_engine.metadata_tool.aclass = proxy_aclass
+
+            self.container.run_engine.metadata_tool.merge_reports_clean(
+                self.container.run_engine.remap_params.max_taxids,
+            )
+
+            self.container.run_engine.import_from_remap_prep()
+
+            self.container.run_engine.metadata_tool.generate_targets_from_report(
+                reference_table,
+                max_taxids=self.container.run_engine.remap_params.max_taxids,
+                skip_scrape=False,
+            )
+            self.container.run_engine.generate_output_data_classes()
+            self.container.run_engine.prep_REMAPPING()
+            self.container.run_engine.remap_prepped = True
             db_updated = Update_Classification(
                 self.container.run_engine, self.parameter_set
             )

@@ -11,27 +11,16 @@ from constants.constants import Televir_Metadata_Constants as Deployment_Params
 from constants.constantsTestsCase import ConstantsTestsCase
 from constants.software_names import SoftwareNames
 from fluwebvirus.settings import STATIC_ROOT
-from pathogen_identification.constants_settings import ConstantsSettings as PI_CS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PI_CS
 from pathogen_identification.deployment_main import Run_Main_from_Leaf
-from pathogen_identification.models import (
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.models import (ParameterSet, PIProject_Sample,
+                                            Projects, SoftwareTree,
+                                            SoftwareTreeNode)
 from pathogen_identification.modules.object_classes import (
-    Operation_Temp_Files,
-    Read_class,
-    RunCMD,
-    Temp_File,
-)
+    Operation_Temp_Files, Read_class, RunCMD, Temp_File)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Pipeline_Makeup,
-    PipelineTree,
-    SoftwareTreeUtils,
-    Utils_Manager,
-)
+    Pipeline_Makeup, PipelineTree, SoftwareTreeUtils, Utils_Manager)
 from settings.constants_settings import ConstantsSettings as CS
 from settings.default_software import DefaultSoftware
 from settings.models import Parameter, Sample, Software
@@ -651,8 +640,8 @@ class Televir_Project_Test(TestCase):
             local_tree = software_tree_utils.generate_project_tree()
 
             combined_table = (
-                utils_manager.parameter_util.generate_combined_parameters_table(
-                    self.project_ont.technology, self.test_user
+                utils_manager.parameter_util.generate_merged_table_safe(
+                    self.test_user, self.project_ont.technology
                 )
             )
 
@@ -761,7 +750,7 @@ class Televir_Project_Test(TestCase):
 
                 self.assertEqual(configured, True)
                 self.assertEqual(
-                    run.container.config["sample_name"], run.container.sample
+                    run.container.config["sample_name"], run.container.sample.name
                 )
                 self.assertEqual(
                     os.path.join(

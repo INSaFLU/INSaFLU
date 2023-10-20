@@ -583,7 +583,7 @@ class ReadOverlapManager:
                     x for x in inner_node_leaf_dict.keys() if x.name == node
                 ][0]
             except IndexError:
-                self.logger.error("node not found in tree")
+                # self.logger.error("node not found in tree")
                 continue
 
             node_stats_dict[node_phylo_clade] = Clade(
@@ -714,7 +714,7 @@ class ReadOverlapManager:
                         )
                     )
                 except KeyError:
-                    self.logger.error("clade not found")
+                    # self.logger.error("clade not found")
                     leaf_clades_dict.append(
                         (
                             leaf,

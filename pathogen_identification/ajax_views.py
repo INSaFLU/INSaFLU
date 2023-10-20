@@ -1,6 +1,7 @@
 import mimetypes
 import os
 
+import pandas as pd
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.http import HttpResponse, JsonResponse
@@ -31,6 +32,7 @@ from pathogen_identification.utilities.utilities_views import (
     set_control_reports,
 )
 from utils.process_SGE import ProcessSGE
+from utils.utils import Utils
 
 
 def simplify_name(name):
@@ -41,6 +43,46 @@ def simplify_name(name):
         .replace(".", "_")
         .lower()
     )
+
+
+@login_required
+@require_POST
+def submit_sample_metagenomics_televir(request):
+    if request.is_ajax():
+        data = {"is_ok": False, "is_deployed": False}
+
+        process_SGE = ProcessSGE()
+
+        sample_id = int(request.POST["sample_id"])
+        sample = PIProject_Sample.objects.get(id=int(sample_id))
+
+        user = sample.project.owner
+        project = sample.project
+
+        software_utils = SoftwareTreeUtils(user, project, sample=sample)
+        print("HERE")
+        runs_to_deploy = software_utils.check_runs_to_submit_metagenomics_sample(sample)
+        print(runs_to_deploy)
+
+        try:
+            if len(runs_to_deploy) > 0:
+                for sample, leaves_to_deploy in runs_to_deploy.items():
+                    for leaf in leaves_to_deploy:
+                        taskID = process_SGE.set_submit_televir_sample_metagenomics(
+                            user=request.user,
+                            sample_pk=sample.pk,
+                            leaf_pk=leaf.pk,
+                        )
+
+                data["is_deployed"] = True
+
+        except Exception as e:
+            print(e)
+            data["is_deployed"] = False
+
+        data["is_ok"] = True
+        print(data)
+        return JsonResponse(data)
 
 
 @login_required
@@ -174,7 +216,6 @@ def submit_televir_project_sample(request):
     """
     if request.is_ajax():
         data = {"is_ok": False, "is_deployed": False}
-
         process_SGE = ProcessSGE()
         user = request.user
 
@@ -182,8 +223,10 @@ def submit_televir_project_sample(request):
         sample = PIProject_Sample.objects.get(id=int(sample_id))
         project = Projects.objects.get(id=int(sample.project.pk))
 
-        software_utils = SoftwareTreeUtils(user, project)
+        software_utils = SoftwareTreeUtils(user, project=project)
         runs_to_deploy = software_utils.check_runs_to_deploy_sample(sample)
+
+        print("runs_to_deploy", runs_to_deploy)
 
         try:
             if len(runs_to_deploy) > 0:
@@ -199,6 +242,83 @@ def submit_televir_project_sample(request):
         except Exception as e:
             print(e)
             data["is_deployed"] = False
+
+        data["is_ok"] = True
+        return JsonResponse(data)
+
+
+@login_required
+@require_POST
+def Project_explify_merge(request):
+    """
+    submit a new sample to televir project
+    """
+    if request.is_ajax():
+        data = {"is_ok": False, "is_deployed": False}
+
+        process_SGE = ProcessSGE()
+        user = request.user
+        utils: Utils = Utils()
+        try:
+            temp_directory = utils.get_temp_dir()
+
+            project_id = int(request.POST["project_id"])
+            project = Projects.objects.get(id=int(project_id))
+
+            rpip_file = request.FILES["rpip_file"]
+            upip_file = request.FILES["upip_file"]
+
+            rpip_report_path = os.path.join(
+                temp_directory,
+                rpip_file.name.replace(" ", "_").replace("(", "_").replace(")", "_"),
+            )
+            upip_report_path = os.path.join(
+                temp_directory,
+                upip_file.name.replace(" ", "_").replace("(", "_").replace(")", "_"),
+            )
+
+            with open(rpip_report_path, "wb") as f:
+                f.write(rpip_file.file.read())
+            with open(upip_report_path, "wb") as f:
+                f.write(upip_file.file.read())
+
+        except Exception as e:
+            print(e)
+            return JsonResponse(data)
+
+        ### check process not running for this project
+        process_controler = ProcessControler()
+        try:
+            ProcessControler.objects.get(
+                owner__id=user.pk,
+                name=process_controler.get_name_televir_project_merge_explify(
+                    project_pk=project.pk,
+                ),
+                is_running=True,
+            )
+
+        except ProcessControler.DoesNotExist:
+            all_reports = FinalReport.objects.filter(
+                run__project__pk=int(project.pk)
+            ).order_by("-coverage")
+
+            televir_reports = pd.DataFrame.from_records(all_reports.values())
+
+            report_path = os.path.join(
+                temp_directory, f"televir_project.{project.pk}.tsv"
+            )
+            televir_reports.to_csv(report_path, sep="\t", index=False)
+
+            taskID = process_SGE.set_submit_televir_explify_merge(
+                user=request.user,
+                project_pk=project.pk,
+                rpip_filepath=rpip_report_path,
+                upip_filepath=upip_report_path,
+                televir_report_filepath=report_path,
+                out_dir=temp_directory,
+            )
+
+            data["is_deployed"] = True
 
         data["is_ok"] = True
         return JsonResponse(data)
@@ -412,7 +532,6 @@ def set_sample_reports_control(request):
         data = {"is_ok": False}
         data["set_control"] = False
         sample_id = int(request.POST["sample_id"])
-
         try:
             sample = PIProject_Sample.objects.get(pk=int(sample_id))
 

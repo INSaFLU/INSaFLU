@@ -9,8 +9,12 @@ from django.contrib import messages
 from django.db import transaction
 from django.db.models import Q
 from django.forms.models import model_to_dict
-from django.http import (Http404, HttpResponseNotFound, HttpResponseRedirect,
-                         JsonResponse)
+from django.http import (
+    Http404,
+    HttpResponseNotFound,
+    HttpResponseRedirect,
+    JsonResponse,
+)
 from django.http.response import HttpResponse
 from django.shortcuts import render
 from django.template.defaultfilters import filesizeformat, pluralize
@@ -26,31 +30,46 @@ from extend_user.models import Profile
 from fluwebvirus.settings import MEDIA_ROOT, STATICFILES_DIRS
 from managing_files.forms import AddSampleProjectForm
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import Sample
 from managing_files.tables import SampleToProjectsTable
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
-from pathogen_identification.models import (ContigClassification, FinalReport,
-                                            ParameterSet, PIProject_Sample,
-                                            Projects, RawReference,
-                                            ReadClassification,
-                                            ReferenceContigs,
-                                            ReferenceMap_Main, RunAssembly,
-                                            RunDetail, RunMain, RunRemapMain,
-                                            Sample, TelevirRunQC)
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.models import (
+    ContigClassification,
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReadClassification,
+    ReferenceContigs,
+    ReferenceMap_Main,
+    RunAssembly,
+    RunDetail,
+    RunMain,
+    RunRemapMain,
+    Sample,
+    TelevirRunQC,
+)
 from pathogen_identification.modules.object_classes import RunQC_report
-from pathogen_identification.tables import (ContigTable, ProjectTable,
-                                            RawReferenceTable, RunMainTable,
-                                            SampleTable)
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
+from pathogen_identification.tables import (
+    ContigTable,
+    ProjectTable,
+    ProjectTableMetagenomics,
+    RawReferenceTable,
+    RunMainTable,
+    SampleTable,
+    SampleTableMetagenomics,
+)
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
-from pathogen_identification.utilities.utilities_general import \
-    infer_run_media_dir
+from pathogen_identification.utilities.utilities_general import infer_run_media_dir
 from pathogen_identification.utilities.utilities_views import (
-    FinalReportCompound, ReportSorter, final_report_best_cov_by_accid,
-    recover_assembly_contigs)
+    EmptyRemapMain,
+    FinalReportCompound,
+    ReportSorter,
+    final_report_best_cov_by_accid,
+    recover_assembly_contigs,
+)
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
 from utils.support_django_template import get_link_for_dropdown_item
@@ -177,7 +196,10 @@ class PathId_ProjectsView(LoginRequiredMixin, ListView):
                 | Q(project_samples__name__icontains=self.request.GET.get(tag_search))
             ).distinct()
 
-        table = ProjectTable(query_set)
+        if PICS.METAGENOMICS:
+            table = ProjectTableMetagenomics(query_set)
+        else:
+            table = ProjectTable(query_set)
 
         RequestConfig(
             self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
@@ -646,6 +668,7 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
             ).distinct()
 
         samples = SampleTable(query_set)
+
         RequestConfig(
             self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
         ).configure(samples)
@@ -879,7 +902,16 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         sample_main = run_main.sample
         #
 
-        raw_references = RawReference.objects.filter(run=run_main).order_by("status")
+        raw_references = (
+            RawReference.objects.filter(run=run_main)
+            .order_by("status")
+            .exclude(accid="-")
+        )
+        raw_references = sorted(
+            raw_references,
+            key=lambda x: float(x.read_counts if x.read_counts else 0),
+            reverse=True,
+        )
 
         raw_reference_table = RawReferenceTable(raw_references)
 
@@ -917,7 +949,14 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             assembly_available = False
 
         #
-        run_remap = RunRemapMain.objects.get(sample=sample_main, run=run_main)
+        try:
+            run_remap = RunRemapMain.objects.get(sample=sample_main, run=run_main)
+            remap_available = run_remap.method != "None"
+
+        except RunRemapMain.DoesNotExist:
+            run_remap = EmptyRemapMain
+            remap_available = False
+
         #
         read_classification = ReadClassification.objects.get(
             sample=sample_main, run=run_main
@@ -958,6 +997,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "contig_classification": contig_classification,
             "read_classification": read_classification,
             "run_remap": run_remap,
+            "remap_available": remap_available,
             "reference_remap_main": reference_remap_main,
             "number_validated": len(final_report),
             "project_index": project_pk,
@@ -995,11 +1035,14 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         context["files"]["final_reports_csv"] = file_path
 
         def eliminate_path_before_media(path: str):
+            if PICS.televir_subdirectory in path:
+                path = path.split(PICS.televir_subdirectory)[1]
+                televir_sbdir = os.path.join("/media", PICS.televir_subdirectory)
+                return televir_sbdir + path
+
             return path.replace(MEDIA_ROOT, "/media")
 
         for fpath in context["files"]:
-            cwd = os.getcwd()
-
             context["files"][fpath] = eliminate_path_before_media(
                 context["files"][fpath]
             )

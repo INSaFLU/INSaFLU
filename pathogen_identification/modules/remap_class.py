@@ -687,7 +687,7 @@ class Remapping:
         # self.minimum_coverage = minimum_coverage
         self.logdir = log_dir
 
-        self.cmd = RunCMD(bin, logdir=log_dir, prefix=prefix, task="remapping_main")
+        self.cmd = RunCMD(bin, logdir=log_dir, prefix=prefix, task="remapping_instance")
 
         os.makedirs(self.rdir, exist_ok=True)
 
@@ -1742,7 +1742,7 @@ class Tandem_Remap:
         self.r1 = r1.current
         self.r2 = r2.current
 
-    def reciprocal_map(self, remap_target) -> Mapping_Instance:
+    def reciprocal_map(self, remap_target: Remap_Target) -> Mapping_Instance:
         reference_remap_drone = self.reference_map(remap_target)
         assembly_map = self.assembly_map(reference_remap_drone)
 
@@ -1833,6 +1833,7 @@ class Mapping_Manager(Tandem_Remap):
     """
 
     mapped_instances: List[Mapping_Instance]
+    combined_fasta_filename: str = "reference_combined.fasta"
 
     def __init__(
         self,
@@ -1906,9 +1907,67 @@ class Mapping_Manager(Tandem_Remap):
                 "Gsize",
             ],
         )
+        self.combined_fasta_path = os.path.join(
+            self.remapping_methods.output_dir, self.combined_fasta_filename
+        )
+        self.combined_fasta_gz_path = self.combined_fasta_path + ".gz"
         self.remap_params = remap_params
+        self.cmd = RunCMD(bin, logdir=self.logdir, prefix=prefix, task="remapping_main")
+
+    def check_targets_combined_fasta_exists(self):
+        return os.path.exists(self.combined_fasta_gz_path)
+
+    def generate_remap_targets_fasta(self):
+        if self.check_targets_combined_fasta_exists():
+            return
+        open(self.combined_fasta_path, "w", encoding="utf-8").close()
+
+        if os.path.exists(self.combined_fasta_gz_path):
+            os.remove(self.combined_fasta_gz_path)
+
+        for target in self.remap_targets:
+            for accid in target.accid_in_file:
+                accid_clean = (
+                    accid.replace(";", "_")
+                    .replace(":", "_")
+                    .replace(".", "_")
+                    .replace("|", "_")
+                )
+                tmp_fasta = os.path.join(
+                    self.remapping_methods.output_dir, f"{accid_clean}.fasta"
+                )
+                cmd = f"samtools faidx {target.file} '{accid}' > {tmp_fasta}"
+
+                self.cmd.run(cmd)
+
+                if self.check_fasta_empty(tmp_fasta) is False:
+                    self.append_fasta(tmp_fasta)
+
+                os.remove(tmp_fasta)
+
+        cmd_bgzip = f"bgzip {self.combined_fasta_path}"
+        self.cmd.run(cmd_bgzip)
+
+    def check_fasta_empty(self, fasta):
+        """check if empty or only header"""
+
+        with open(fasta, "r") as f:
+            for line in f:
+                if not line.startswith(">"):
+                    return False
+        return True
+
+    def append_fasta(self, fasta):
+        """append fasta to combined fasta"""
+
+        with open(self.combined_fasta_path, "a") as f:
+            with open(fasta, "r") as f2:
+                for line in f2:
+                    f.write(line)
 
     def run_mappings(self):
+        """
+        Run mappings for all targets."""
         for target in self.remap_targets:
             mapped_instance = self.reciprocal_map(target)
 

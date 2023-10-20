@@ -78,9 +78,9 @@ def get_illumina_found(panel_list: list, tmp_dir: str = "/tmp"):
     illumina_found_full = pd.concat(panel_list, axis=0, ignore_index=True)
 
     ## discard description= "None"
-    illumina_found = illumina_found_full[
-        illumina_found_full["Microorganism Name"] != "None"
-    ].drop_duplicates(subset=["Accession", "Microorganism Name"])
+    illumina_found = illumina_found_full.drop_duplicates(
+        subset=["Accession", "Microorganism Name"]
+    )
 
     taxid_only = illumina_found[["Microorganism Name"]]
 
@@ -141,8 +141,10 @@ def merge_panels(illumina_found, telebac_found):
     all_samples = illumina_found.Sample.unique()
 
     final_set = pd.DataFrame()
-
+    print("Merging samples")
     for sample in all_samples:
+        print(sample)
+
         illumina_sample = illumina_found[
             illumina_found["Sample"] == sample
         ].reset_index(drop=True)

@@ -21,6 +21,7 @@ from pathogen_identification.modules.remap_class import Remap_Bowtie2
 from pathogen_identification.utilities.utilities_pipeline import (
     Utility_Pipeline_Manager,
 )
+from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.models import Parameter, Sample, Software
 from utils.utils import Utils
@@ -51,6 +52,7 @@ class SoftwareForm(forms.ModelForm):
         self.televir_utiltity = Utility_Pipeline_Manager()
         self.televir_utiltity.get_software_list()
         self.televir_utiltity.get_software_db_dict()
+        self.televir_utiltity.get_host_dbs()
         ###
         if not pk_project is None:
             kwargs.pop("pk_project")
@@ -192,18 +194,39 @@ class SoftwareForm(forms.ModelForm):
                     and parameter.software.pipeline_step.name
                     in self.televir_utiltity.steps_db_dependant
                 ):
-                    list_data = [
-                        [data_, os.path.basename(data_)]
-                        for data_ in self.televir_utiltity.get_from_software_db_dict(
-                            parameter.software.name.lower(), []
-                        )
-                    ]
+                    if (
+                        parameter.software.pipeline_step.name
+                        == ConstantsSettings.PIPELINE_NAME_host_depletion
+                    ):
+                        list_data = [
+                            [data_[0], data_[1]]
+                            for data_ in self.televir_utiltity.get_from_host_db(
+                                parameter.software.name.lower(), []
+                            )
+                        ]
+                    else:
+                        list_data = [
+                            [data_, os.path.basename(data_)]
+                            for data_ in self.televir_utiltity.get_from_software_db_dict(
+                                parameter.software.name.lower(), []
+                            )
+                        ]
                 elif (
-                    parameter.name == "-x" and parameter.software.name == "Minimap2_asm"
+                    parameter.name == "-x"
+                    and parameter.software.name
+                    == SoftwareNames.SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name
                 ):
                     list_data = [
                         [data_, data_]
                         for data_ in SoftwareNames.SOFTWARE_MINIMAP2_ASM_vect_available
+                    ]
+                elif (
+                    parameter.name == "--quick"
+                    and parameter.software.name == SoftwareNames.SOFTWARE_KRAKEN2_name
+                ):
+                    list_data = [
+                        [data_, data_]
+                        for data_ in SoftwareNames.SOFTWARE_KRAKEN2_QUICK_vect_available
                     ]
 
                 elif (

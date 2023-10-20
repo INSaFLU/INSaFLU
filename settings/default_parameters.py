@@ -5,18 +5,16 @@ Created on 10/04/2021
 """
 import logging
 import os
+from typing import List
 
 from django.conf import settings
 
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import (
-    ConstantsSettings as PI_ConstantsSettings,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PI_ConstantsSettings
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility,
-    Utility_Pipeline_Manager,
-)
+    Parameter_DB_Utility, Utility_Pipeline_Manager)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -107,7 +105,7 @@ class DefaultParameters(object):
                     software.is_obsolete = True
                     software.save()
 
-    def persist_parameters(self, vect_parameters, type_of_use):
+    def persist_parameters(self, vect_parameters: List[Parameter], type_of_use: int):
         """
         persist a specific software by default
         param: type_of_use Can by Software.TYPE_OF_USE_project; Software.TYPE_OF_USE_project_sample
@@ -121,18 +119,18 @@ class DefaultParameters(object):
                     software = Software.objects.get(
                         name=parameter.software.name,
                         owner=parameter.software.owner,
-                        type_of_use=type_of_use,
+                        type_of_use=parameter.software.type_of_use,
                         technology=parameter.software.technology,
                         version_parameters=parameter.software.version_parameters,
                         pipeline_step=parameter.software.pipeline_step,
                     )
                 except Software.DoesNotExist:
-                    # with LockedAtomicTransaction(Software):
                     software = parameter.software
                     software.save()
 
-            # if parameter.software.pk != software.pk:
-            # with LockedAtomicTransaction(Parameter):
+                except Software.MultipleObjectsReturned:
+                    raise Exception("MultipleObjectsReturned")
+
             parameter.software = software
             parameter.save()
 
@@ -2260,7 +2258,7 @@ class DefaultParameters(object):
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = False
+        parameter.can_change = True if PI_ConstantsSettings.METAGENOMICS else False
         parameter.is_to_run = True  ### by default it's True
         parameter.sequence_out = 1
         parameter.range_available = "[16:30]"
@@ -2276,11 +2274,11 @@ class DefaultParameters(object):
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = False
+        parameter.can_change = True if PI_ConstantsSettings.METAGENOMICS else False
         parameter.is_to_run = True  ### by default it's True
         parameter.sequence_out = 2
         parameter.range_available = "[1:5]"
-        parameter.range_max = "3"
+        parameter.range_max = "5"
         parameter.range_min = "1"
         parameter.description = "report up to k distinc assignments per read or pair."
         vect_parameters.append(parameter)
@@ -2911,15 +2909,15 @@ class DefaultParameters(object):
 
         parameter = Parameter()
         parameter.name = "--quick"
-        parameter.parameter = ""
-        parameter.type_data = Parameter.PARAMETER_null
+        parameter.parameter = "ON"
+        parameter.type_data = Parameter.PARAMETER_char_list
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = False
+        parameter.can_change = True if PI_ConstantsSettings.METAGENOMICS else False
         parameter.is_to_run = True  ### by default it's True
         parameter.sequence_out = 1
-        parameter.description = "quick operation mode"
+        parameter.description = "operation mode"
         vect_parameters.append(parameter)
 
         parameter = Parameter()
@@ -2929,7 +2927,7 @@ class DefaultParameters(object):
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = False
+        parameter.can_change = True if PI_ConstantsSettings.METAGENOMICS else False
         parameter.is_to_run = True  ### by default it's True
         parameter.sequence_out = 2
         parameter.range_available = "[0.4:1.0]"
@@ -3005,7 +3003,7 @@ class DefaultParameters(object):
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = False
+        parameter.can_change = True if PI_ConstantsSettings.METAGENOMICS else False
         parameter.is_to_run = True
         parameter.sequence_out = 1
         parameter.range_available = "[1:5]"
@@ -3021,7 +3019,7 @@ class DefaultParameters(object):
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = False
+        parameter.can_change = True if PI_ConstantsSettings.METAGENOMICS else False
         parameter.is_to_run = True
         parameter.sequence_out = 2
         parameter.range_available = "[60:80]"
@@ -3325,6 +3323,21 @@ class DefaultParameters(object):
         parameter.range_min = ""
         parameter.description = "Database to use"
 
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "-M"
+        parameter.parameter = ""
+        parameter.type_data = Parameter.PARAMETER_null
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = ""
+        parameter.can_change = False
+        parameter.is_to_run = True
+        parameter.sequence_out = 2
+        parameter.description = (
+            "Mark shorter split hits as secondary (for Picard compatibility)."
+        )
         vect_parameters.append(parameter)
 
         return vect_parameters

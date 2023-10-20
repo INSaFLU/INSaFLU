@@ -10,19 +10,16 @@ import pandas as pd
 from django.contrib.auth.models import User
 from django.db.models import Q, QuerySet
 
-from constants.constants import Televir_Directory_Constants as Televir_Directories
+from constants.constants import \
+    Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import (
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
-from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
+from pathogen_identification.host_library import Host
+from pathogen_identification.models import (ParameterSet, PIProject_Sample,
+                                            Projects, RawReference, RunMain,
+                                            SoftwareTree, SoftwareTreeNode)
+from pathogen_identification.utilities.utilities_televir_dbs import \
+    Utility_Repository
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -919,6 +916,7 @@ class Utility_Pipeline_Manager:
             self.logger.handlers.clear()
         self.logger.setLevel(logging.ERROR)
         self.logger.addHandler(logging.StreamHandler())
+        self.host_dbs = {}
 
     def input(self, combined_table: pd.DataFrame, technology="ONT"):
         """
@@ -1069,6 +1067,51 @@ class Utility_Pipeline_Manager:
             for software in software_list
         }
 
+    def get_host_dbs(self):
+        software_list = self.utility_repository.get_list_unique_field(
+            "software", "name"
+        )
+        hosts_dbs_dict = {
+            software.lower(): self.get_software_dbs_if_exist(
+                software,  # filters=[("tag", "host")]
+            )
+            for software in software_list
+        }
+
+        hosts_dbs_dict = {k: v for k, v in hosts_dbs_dict.items() if len(v) > 0}
+
+        def recover_host(database: str) -> Host:
+            for host in Host.__subclasses__():
+                if database.startswith(host().host_name):
+                    return host()
+
+            return None
+
+        def get_name_filename(row: pd.Series) -> pd.Series:
+            host = recover_host(row.database)
+            if host is None:
+                row["host_name"] = np.nan
+                row["host_filename"] = row.database
+                row["file_str"] = f"{row.database}"
+
+            else:
+                row["host_name"] = host.host_name
+                filename_simple = host.remote_filename
+                row["host_filename"] = filename_simple
+                row["file_str"] = f"{host.host_name} - {filename_simple}"
+
+            return row
+
+        for software in hosts_dbs_dict.keys():
+            hosts_dbs_dict[software] = hosts_dbs_dict[software].apply(
+                get_name_filename, axis=1
+            )
+            hosts_dbs_dict[software] = hosts_dbs_dict[software].dropna(
+                subset=["host_name"], axis=0
+            )
+
+        self.host_dbs = hosts_dbs_dict
+
     def get_from_software_db_dict(self, software_name: str, empty=[]):
         possibilities = [software_name, software_name.lower()]
         if "_" in software_name:
@@ -1083,14 +1126,34 @@ class Utility_Pipeline_Manager:
 
         return empty
 
-    def get_software_dbs_if_exist(self, software_name: str) -> pd.DataFrame:
+    def get_from_host_db(self, software_name: str, empty=[]):
+        possibilities = [software_name, software_name.lower()]
+        if "_" in software_name:
+            element = software_name.split("_")[0]
+
+            possibilities.append(element)
+            possibilities.append(element.lower())
+
+        for possibility in possibilities:
+            if possibility in self.host_dbs.keys():
+                host_df = self.host_dbs[possibility]
+                return list(
+                    host_df[["database", "file_str"]].itertuples(index=False, name=None)
+                )
+
+        return empty
+
+    def get_software_dbs_if_exist(
+        self, software_name: str, filters: List[tuple] = []
+    ) -> pd.DataFrame:
         fields = self.utility_repository.select_explicit_statement(
-            "software", "name", software_name.lower()
+            "software", "name", software_name.lower(), filters=filters
         )
 
         try:
             fields = pd.read_sql(fields, self.utility_repository.engine)
             fields = fields.drop_duplicates(subset=["database"])
+
             return fields
         except Exception as e:
             self.logger.error(
@@ -2574,8 +2637,6 @@ class SoftwareTreeUtils:
             self.project, self.sample, metagenomics=True
         )
 
-        print(local_tree.makeup)
-
         if local_tree.makeup == -1:
             return {}
 
@@ -2634,7 +2695,6 @@ class SoftwareTreeUtils:
         submission_dict = {sample: []}
 
         available_path_nodes = self.get_sample_pathnodes()
-        print(available_path_nodes)
         clean_samples_leaf_dict = self.utils_manager.sample_nodes_check(
             submission_dict, available_path_nodes, self.project
         )
@@ -2835,7 +2895,6 @@ class RawReferenceUtils:
 
         table = self.run_references_standard_score_contigs(table)
         table = self.merge_standard_scores(table)
-        # print(table.columns)
         return table
 
     def merge_ref_tables_use_standard_score(
@@ -2887,6 +2946,19 @@ class RawReferenceUtils:
         run_references_tables = run_references_tables[run_references_tables.taxid != 0]
 
         return run_references_tables
+
+    def simplify_by_description(df: pd.DataFrame):
+        if "description" not in df.columns:
+            return df
+
+        df["description_first"] = df["description"].str.split(" ").str[0]
+
+        df = df.sort_values("standard_score", ascending=False)
+        df = df.drop_duplicates(subset=["description_first"], keep="first")
+
+        df.drop(columns=["description_first"], inplace=True)
+
+        return df
 
     def collect_references_table_all(
         self,

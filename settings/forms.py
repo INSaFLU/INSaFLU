@@ -204,6 +204,7 @@ class SoftwareForm(forms.ModelForm):
                                 parameter.software.name.lower(), []
                             )
                         ]
+                        print(list_data)
                     else:
                         list_data = [
                             [data_, os.path.basename(data_)]

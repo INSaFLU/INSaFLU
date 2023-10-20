@@ -1041,7 +1041,7 @@ class RunMainTable(tables.Table):
                 runlog += 'title="Validation mapping" style="color: gray;"></i>'
             runlog += "</a>"
 
-            if RawReference.objects.filter(run=record).count() > 0:
+            if RawReference.objects.filter(run=record).count() > 0 and CS.METAGENOMICS:
                 runlog += " " + report_link
 
             return mark_safe(runlog)

@@ -12,6 +12,7 @@ django-bootstrap4==0.0.8
 pyyaml==6.0.1
 ua-parser==0.8.0
 user-agents==2.0
+NumPy==1.19.5
 scipy==1.11.3
 crispy-forms-foundation==0.7.0
 biopython==1.78

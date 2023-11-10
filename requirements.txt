@@ -14,7 +14,6 @@ ua-parser==0.8.0
 user-agents==2.0
 scipy==1.11.3
 crispy-forms-foundation==0.7.0
-NumPy==1.26.1
 biopython==1.78
 plotly==3.9.0
 psycopg2-binary

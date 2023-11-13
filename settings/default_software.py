@@ -620,6 +620,17 @@ class DefaultSoftware(object):
         )
 
         self.test_default_db(
+            SoftwareNames.SOFTWARE_KRAKEN2_name,
+            self.default_parameters.get_kraken2_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_viral_enrichment,
+            ),
+            user,
+        )
+
+        self.test_default_db(
             SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name,
             self.default_parameters.get_bowtie2_remap_default(
                 user,

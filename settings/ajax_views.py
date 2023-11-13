@@ -829,7 +829,6 @@ def turn_on_off_software(request):
                                 software, turn_off=current_is_to_run
                             )
                         )
-                        print(set(pipeline_steps_televir_global))
 
                         makeup = pipeline_makeup.match_makeup_name_from_list(
                             pipeline_steps_televir_global

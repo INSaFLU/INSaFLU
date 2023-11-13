@@ -84,11 +84,9 @@ class SoftwareForm(forms.ModelForm):
         super(SoftwareForm, self).__init__(*args, **kwargs)
 
         ### return the parameters that is possible to change
-        print(self.instance)
+
         ps = Parameter.objects.filter(software=self.instance)
-        for p in ps:
-            print(p.televir_project)
-        print(televir_project)
+
         paramers = Parameter.objects.filter(
             software=self.instance,
             project=project,
@@ -99,7 +97,6 @@ class SoftwareForm(forms.ModelForm):
         )
         dt_fields = {}
         vect_divs = []
-        print("paramers: ", paramers)
         for parameter in paramers:
             if not parameter.can_change or parameter.is_null():
                 dt_fields[parameter.get_unique_id()] = forms.CharField(

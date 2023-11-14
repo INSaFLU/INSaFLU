@@ -175,19 +175,20 @@ class Metadata_handler:
         references_table.rename(columns={"accid": "acc"}, inplace=True)
 
         ## group by taxids
-        references_table = (
-            references_table.groupby(["taxid"])
-            .agg(
-                {
-                    "acc": "first",
-                    "description": "first",
-                    "read_counts": "first",
-                    "standard_score": "first",
-                    "contig_counts": "first",
-                }
+        if references_table.shape[0] > 0:
+            references_table = (
+                references_table.groupby(["taxid"])
+                .agg(
+                    {
+                        "acc": "first",
+                        "description": "first",
+                        "read_counts": "first",
+                        "standard_score": "first",
+                        "contig_counts": "first",
+                    }
+                )
+                .reset_index()
             )
-            .reset_index()
-        )
 
         if "standard_score" in references_table.columns:
             references_table = references_table.sort_values(

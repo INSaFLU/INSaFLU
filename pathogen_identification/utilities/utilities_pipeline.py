@@ -587,8 +587,6 @@ class PipelineTree:
 
         return leaves
 
-        # leaves = []
-
     def reduced_tree(self, leaves_list: list) -> Tuple[dict, pd.DataFrame]:
         """trims paths not leading to provided leaves"""
         root_node = ("root", None, None)
@@ -2911,6 +2909,8 @@ class RawReferenceUtils:
 
         joint_tables = pd.concat(joint_tables)
         # group tables: average read_counts_standard_score, sum counts, read_counts, contig_counts
+        if joint_tables.shape[0] == 0:
+            return pd.DataFrame(columns=list(joint_tables.columns))
         joint_tables = joint_tables.groupby(["taxid", "accid", "description"]).agg(
             {
                 "taxid": "first",

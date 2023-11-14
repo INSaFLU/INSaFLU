@@ -84,7 +84,6 @@ class SoftwareForm(forms.ModelForm):
         super(SoftwareForm, self).__init__(*args, **kwargs)
 
         ### return the parameters that is possible to change
-
         ps = Parameter.objects.filter(software=self.instance)
 
         paramers = Parameter.objects.filter(

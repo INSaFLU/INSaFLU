@@ -130,7 +130,7 @@ def sample_in_televir(sample: str, televir_reports: pd.DataFrame) -> str:
     sample_safe = sample.replace("-", "_")
     if sample_safe in televir_reports["Sample"].values:
         return sample_safe
-    sample_safe = sample.split("_S")[0]
+    sample_safe = sample.replace("-", "_").split("_S")[0]
     if sample_safe in televir_reports["Sample"].values:
         return sample_safe
     return sample

@@ -115,6 +115,7 @@ class SoftwareNames(object):
         "SARS_CoV_2_MN908947_artic_4.1.fa",
         "MPXV_MT903345_Yale_PrimalSeq_v.1.fa",
         "MPXV_comb-ccc7sszn.fa",
+        "MPXV_xGEN_Mpox_Amplicon_panel_no_ITR.fa",
     ]
     ### collect stat data for ILLUMINA, in form of key value
     SOFTWARE_ILLUMINA_stat = "illumina_stat"
@@ -283,6 +284,7 @@ class SoftwareNames(object):
         "SARS_CoV_2_MN908947_artic_4.1.fa",
         "MPXV_MT903345_Yale_PrimalSeq_v.1.fa",
         "MPXV_comb-ccc7sszn.fa",
+        "MPXV_xGEN_Mpox_Amplicon_panel_no_ITR.fa",
     ]
 
     #### VERY important, change in snippy-vcf

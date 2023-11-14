@@ -130,9 +130,9 @@ def sample_in_televir(sample: str, televir_reports: pd.DataFrame) -> str:
     sample_safe = sample.replace("-", "_")
     if sample_safe in televir_reports["Sample"].values:
         return sample_safe
-    sample_safe = sample.replace("-", "_").split("_S")[0]
-    if sample_safe in televir_reports["Sample"].values:
-        return sample_safe
+    for sample_televir in televir_reports["Sample"].values:
+        if sample_safe in sample_televir:
+            return sample_televir
     return sample
 
 
@@ -152,11 +152,11 @@ def merge_panels(illumina_found, telebac_found):
             illumina_found["Sample"] == sample
         ].reset_index(drop=True)
 
-        sample = sample_in_televir(sample, telebac_found)
+        sample_televir = sample_in_televir(sample, telebac_found)
 
-        telebac_sample = telebac_found[telebac_found["Sample"] == sample].reset_index(
-            drop=True
-        )
+        telebac_sample = telebac_found[
+            telebac_found["Sample"] == sample_televir
+        ].reset_index(drop=True)
 
         new_set = pd.merge(
             illumina_sample, telebac_sample, on=["Sample", "Taxid"], how="outer"

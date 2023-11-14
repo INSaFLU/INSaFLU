@@ -587,8 +587,6 @@ class PipelineTree:
 
         return leaves
 
-        # leaves = []
-
     def reduced_tree(self, leaves_list: list) -> Tuple[dict, pd.DataFrame]:
         """trims paths not leading to provided leaves"""
         root_node = ("root", None, None)

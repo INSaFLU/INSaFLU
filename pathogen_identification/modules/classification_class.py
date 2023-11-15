@@ -680,8 +680,8 @@ class run_kraken2(Classifier_init):
         log_dir="",
     ):
         super().__init__(db_path, query_path, out_path, args, r2, prefix, bin, log_dir)
-        self.args.replace("--quick OFF", "")
-        self.args.replace("--quick ON", "--quick")
+        self.args= self.args.replace("--quick OFF", "")
+        self.args= self.args.replace("--quick ON", "--quick")
 
     def run_SE(self, threads: int = 3, **kwargs):
         """

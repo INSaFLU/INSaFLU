@@ -61,6 +61,11 @@ urlpatterns = [
         name="explify_merge_external",
     ),
     url(
+        "Projects/explify_external_delete$",
+        PIajax_views.Project_explify_delete_external,
+        name="explify_delete_external",
+    ),
+    url(
         r"Projects/project_(?P<pk1>\d+)/sample_(?P<pk2>\d+)",
         PIviews.Sample_main.as_view(),
         name="sample_main",

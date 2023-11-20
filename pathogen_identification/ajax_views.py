@@ -394,6 +394,35 @@ def Project_explify_merge_external(request):
         return JsonResponse(data)
 
 
+from pathogen_identification.utilities.utilities_general import get_services_dir
+
+
+@login_required
+@require_POST
+def Project_explify_delete_external(request):
+    """
+    delete external televir report
+    """
+
+    if request.is_ajax():
+        data = {"is_ok": False, "is_deployed": False}
+
+        process_SGE = ProcessSGE()
+        user = request.user
+        utils: Utils = Utils()
+        try:
+            output_file_merged = os.path.join(
+                get_services_dir(user), "merged_televir_explify.tsv"
+            )
+            os.remove(output_file_merged)
+        except Exception as e:
+            print(e)
+            return JsonResponse(data)
+
+        data["is_ok"] = True
+        return JsonResponse(data)
+
+
 @login_required
 @require_POST
 def kill_televir_project_sample(request):

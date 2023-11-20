@@ -31,7 +31,7 @@
                     <a href="#id_merge_televir_explify_modal" class="btn btn-primary" data-toggle="modal" data-toggle="tooltip"  id="merge_explify_modal">Merge</a>
                     {% if explify_file_exists %}
                     <a rel="nofollow" href={{explify_output_file}} class="btn btn-primary" data-toggle="tooltip" title="Download Explify File">Download</a>
-                    {% else %}
+                    <a href="#id_delete_explify_modal" class="btn btn-primary" data-toggle="modal" data-toggle="tooltip"  id="delete_explify_modal">Delete</a>
                     {% endif %}
 
                 </div>
@@ -80,6 +80,33 @@
 	</div>
 </div>
 
+<!-- The delete Explify file modal -->
+<div class="modal fade" id="id_delete_explify_modal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <!-- Modal Header -->
+            <div class="modal-header alert alert-warning">
+                <h4 class="modal-title-remove">Delete Explify File</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+
+            <!-- Modal body -->
+            <div class="modal-body mx-auto mw-100">
+                <div id="id-modal-body-delete-explify" delete-explify-url="{% url 'explify_delete_external' %}">
+                    <label id="id-settings-reset" class="col-form-label">Delete Explify file.</label>
+                </div>
+            </div>
+            <!-- Modal footer -->
+            <div class="modal-footer" id="id-modal-footer-delete-explify">
+                <button id="id-delete-explify-button" type="button" class="btn btn-primary" data-dismiss="modal">Delete</button>
+                <button id="id-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal"
+                    aria-hidden="true">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock content %}
 
 {% block js %}
@@ -116,6 +143,33 @@
                 },
                 error: function (data) {
                     alert("Explify files merge failed");
+                }
+            });
+        });
+
+        $('#id-delete-explify-button').on('click', function(){
+
+            var formData = new FormData();
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+            $.ajax({
+                url: $('#id-modal-body-delete-explify').attr("delete-explify-url"),
+                type: 'POST',
+                processData: false,
+                contentType: false,
+                data : formData, // data sent with the post request
+
+                success: function (data) {
+                    if (data['is_ok']){
+                        alert("Explify file deleted successfully");
+                        location.reload();
+                    }
+                    else{
+                        alert("Explify file delete failed");
+                    }
+                },
+                error: function (data) {
+                    alert("Explify file delete failed");
                 }
             });
         });

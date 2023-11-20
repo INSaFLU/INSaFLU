@@ -1,0 +1,127 @@
+{% extends '_layouts/base.html' %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% load static %}
+
+{% block css %}
+{% load static from staticfiles %}
+<link rel="stylesheet" href="{% static 'css/settings-index.css' %}" type="text/css" />
+{% endblock css %}
+
+{% block breadcrumbs %}
+{{ block.super }}
+{% breadcrumb "Project Index" "project-index"%}
+{% breadcrumb "Services" "services" %}
+{% endblock %}
+
+{% block content %}
+
+<!-- container for standalone application services-->
+<!-- set container to left of page -->
+
+
+
+<div class="container" style="margin-top: 20px; margin-left: 0px;">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Explify Merge</h5>
+                    <p class="card-text">Merge Explify data with televir project data. </p>
+                    <a href="#id_merge_televir_explify_modal" class="btn btn-primary" data-toggle="modal" data-toggle="tooltip"  id="merge_explify_modal">Merge</a>
+                    {% if explify_file_exists %}
+                    <a rel="nofollow" href={{explify_output_file}} class="btn btn-primary" data-toggle="tooltip" title="Download Explify File">Download</a>
+                    {% else %}
+                    {% endif %}
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- The upload Files for analysis modal -->
+<div class="modal fade" id="id_merge_televir_explify_modal">
+	<div class="modal-dialog">
+		<div class="modal-content">
+
+			<!-- Modal Header -->
+			<div class="modal-header alert alert-warning">
+				<h4 class="modal-title-remove">Merge Explify File</h4>
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+			</div>
+
+			<!-- Modal body -->
+			<div class="modal-body mx-auto mw-100">
+				<div id="id-modal-body-deploy-merge-explify" deploy-merge-explify-url="{% url 'explify_merge_external' %}">
+					<label id="id-settings-reset" class="col-form-label">Merge Explify files with TELEVIR results.</label>
+				</div>
+			</div>
+			<!-- Modal footer -->
+			<div class="modal-footer" id="id-modal-footer-deloy_merge_explify">
+				<div id="rpip_file">
+					<label> RPIP File </label>
+					<input type="file" name="table_rpip" id="rpip_table" class="form-control" required>
+				</div>
+				<div id="upip_file">
+					<label> UPIP File </label>
+					<input type="file" name="table_upip" id="upip_table" class="form-control" required>
+				</div>
+                <div id="project_file">
+                    <label> Project File </label>
+                    <input type="file" name="table_project" id="project_table" class="form-control" required>
+                </div>
+				<button id="id-deploy-explify-button" type="button" class="btn btn-primary" data-dismiss="modal">Deploy</button>
+				<button id="id-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal"
+					aria-hidden="true">Cancel</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+{% endblock content %}
+
+{% block js %}
+<script type="text/javascript">
+    $(document).on("click", "a", function(e){
+        console.log("clicked");
+        $('#id-deploy-explify-button').on('click', function(){
+
+            var rpip_file = document.getElementById("rpip_table");
+            var upip_file = document.getElementById("upip_table");
+            var project_file = document.getElementById("project_table");
+		
+            var formData = new FormData();
+
+            formData.append('rpip_file', rpip_file.files[0]);
+            formData.append('upip_file', upip_file.files[0]);
+            formData.append('project_file', project_file.files[0]);
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+            $.ajax({
+                url: $('#id-modal-body-deploy-merge-explify').attr("deploy-merge-explify-url"),
+                type: 'POST',
+                processData: false,
+                contentType: false,
+                data : formData, // data sent with the post request
+
+                success: function (data) {
+                    if (data['is_ok']){
+                        alert("Explify files merged successfully");
+                    }
+                    else{
+                        alert("Explify files merge failed");
+                    }
+                },
+                error: function (data) {
+                    alert("Explify files merge failed");
+                }
+            });
+        });
+    });
+</script>
+
+{% endblock js %}
+
+    

@@ -326,6 +326,76 @@ def Project_explify_merge(request):
 
 @login_required
 @require_POST
+def Project_explify_merge_external(request):
+    """
+    merge explify rpip and upip reports to televir report, all provided by user.
+    """
+    if request.is_ajax():
+        data = {"is_ok": False, "is_deployed": False}
+
+        process_SGE = ProcessSGE()
+        user = request.user
+        utils: Utils = Utils()
+        try:
+            temp_directory = utils.get_temp_dir()
+
+            rpip_file = request.FILES["rpip_file"]
+            upip_file = request.FILES["upip_file"]
+            project_file = request.FILES["project_file"]
+
+            rpip_report_path = os.path.join(
+                temp_directory,
+                rpip_file.name.replace(" ", "_").replace("(", "_").replace(")", "_"),
+            )
+            upip_report_path = os.path.join(
+                temp_directory,
+                upip_file.name.replace(" ", "_").replace("(", "_").replace(")", "_"),
+            )
+
+            report_path = os.path.join(
+                temp_directory,
+                project_file.name.replace(" ", "_").replace("(", "_").replace(")", "_"),
+            )
+
+            with open(rpip_report_path, "wb") as f:
+                f.write(rpip_file.file.read())
+            with open(upip_report_path, "wb") as f:
+                f.write(upip_file.file.read())
+            with open(report_path, "wb") as f:
+                f.write(project_file.file.read())
+
+        except Exception as e:
+            print(e)
+            return JsonResponse(data)
+
+        ### check process not running for this project
+        process_controler = ProcessControler()
+        try:
+            ProcessControler.objects.get(
+                owner__id=user.pk,
+                name=process_controler.get_name_televir_project_merge_explify_external(
+                    user_pk=user.pk,
+                ),
+                is_running=True,
+            )
+
+        except ProcessControler.DoesNotExist:
+            taskID = process_SGE.set_submit_televir_explify_merge_external(
+                user=request.user,
+                rpip_filepath=rpip_report_path,
+                upip_filepath=upip_report_path,
+                televir_report_filepath=report_path,
+                out_dir=temp_directory,
+            )
+
+            data["is_deployed"] = True
+
+        data["is_ok"] = True
+        return JsonResponse(data)
+
+
+@login_required
+@require_POST
 def kill_televir_project_sample(request):
     """
     kill all processes a sample, set queued to false

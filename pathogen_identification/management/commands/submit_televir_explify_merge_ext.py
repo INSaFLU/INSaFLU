@@ -15,7 +15,7 @@ from pathogen_identification.utilities.explify_merge import (
     process_televir,
     read_panel,
 )
-from pathogen_identification.utilities.utilities_general import get_project_dir
+from pathogen_identification.utilities.utilities_general import get_services_dir
 from utils.process_SGE import ProcessSGE
 
 
@@ -24,9 +24,9 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--project_id",
+            "--user_id",
             type=int,
-            help="televir project to be merged (pk)",
+            help="user id",
         )
 
         parser.add_argument(
@@ -60,82 +60,29 @@ class Command(BaseCommand):
         process_controler = ProcessControler()
         process_SGE = ProcessSGE()
 
-        project = Projects.objects.filter(
-            is_deleted=False, pk=options["project_id"]
-        ).first()
-
-        user = project.owner
+        user_pk = options["user_id"]
+        user = User.objects.get(pk=user_pk)
 
         output_file_merged = os.path.join(
-            get_project_dir(project), CS.EXPLIFY_MERGE_SUFFIX + f".{project.pk}.tsv"
+            get_services_dir(user), "merged_televir_explify.tsv"
         )
 
         # PROCESS CONTROLER
 
         process_SGE.set_process_controler(
             user,
-            process_controler.get_name_televir_project_merge_explify(
-                project_pk=project.pk,
+            process_controler.get_name_televir_project_merge_explify_external(
+                user_pk == user.pk,
             ),
             ProcessControler.FLAG_RUNNING,
         )
 
-        all_reports = FinalReport.objects.filter(
-            run__project__pk=int(project.pk)
-        ).order_by("-coverage")
         output_dir = options["outdir"]
-
-        def retrieve_sample_name(sample_id: int):
-            sample = PIProject_Sample.objects.filter(pk=sample_id).first()
-            if sample:
-                return sample.name
-            return ""
-
-        def apply_warning_filter(row: pd.Series):
-            return flag_false_positive(
-                row.depth,
-                row.depthR,
-                row.coverage,
-                row.mapped_reads,
-                row.windows_covered,
-                project.pk,
-            )
-
-        televir_reports = pd.DataFrame(all_reports.values())
-        televir_reports["sample"] = televir_reports["sample_id"].apply(
-            retrieve_sample_name
-        )
-        televir_reports["warning"] = televir_reports.apply(apply_warning_filter, axis=1)
-        televir_reports = televir_reports[
-            [
-                "sample",
-                "taxid",
-                "description",
-                "accid",
-                "coverage",
-                "depth",
-                "depthR",
-                "mapped_reads",
-                "windows_covered",
-                "warning",
-            ]
-        ]
-        televir_reports.columns = [
-            "Sample",
-            "Taxid",
-            "Description",
-            "accID",
-            "Cov (%)",
-            "Depth",
-            "DepthC",
-            "Mapped reads",
-            "Windows Covered",
-            "Warning",
-        ]
 
         try:
             rpip_panel = read_panel(options["rpip"], panel="Microorganisms (RPIP)")
             upip_panel = read_panel(options["upip"], panel="Microorganisms (UPIP)")
+            televir_reports = pd.read_csv(options["televir"], sep="\t")
 
             illumina_found = get_illumina_found(
                 [rpip_panel, upip_panel], tmp_dir=output_dir
@@ -149,8 +96,8 @@ class Command(BaseCommand):
             print(e)
             process_SGE.set_process_controler(
                 user,
-                process_controler.get_name_televir_project_merge_explify(
-                    project_pk=project.pk,
+                process_controler.get_name_televir_project_merge_explify_external(
+                    user_pk=user.pk,
                 ),
                 ProcessControler.FLAG_ERROR,
             )
@@ -158,8 +105,8 @@ class Command(BaseCommand):
 
         process_SGE.set_process_controler(
             user,
-            process_controler.get_name_televir_project_merge_explify(
-                project_pk=project.pk,
+            process_controler.get_name_televir_project_merge_explify_external(
+                user_pk=user.pk,
             ),
             ProcessControler.FLAG_FINISHED,
         )

@@ -860,6 +860,65 @@ class ProcessSGE(object):
             raise Exception("Fail to submit the job.")
         return sge_id
 
+    def set_submit_televir_explify_merge_external(
+        self,
+        user: User,
+        rpip_filepath: str,
+        upip_filepath: str,
+        televir_report_filepath: str,
+        out_dir: str,
+    ):
+        """
+        submit the job to televir
+        """
+        user_pk = user.pk
+        process_controler = ProcessControler()
+
+        vect_command = [
+            "python3 {} submit_televir_explify_merge_ext --user_id {} --televir {} --rpip {} --upip {} -o {}".format(
+                user_pk,
+                os.path.join(settings.BASE_DIR, "manage.py"),
+                televir_report_filepath,
+                rpip_filepath,
+                upip_filepath,
+                out_dir,
+            )
+        ]
+
+        self.logger_production.info("Processing: " + ";".join(vect_command))
+        self.logger_debug.info("Processing: " + ";".join(vect_command))
+        queue_name = user.profile.queue_name_sge
+        (job_name_wait, job_name) = user.profile.get_name_sge_seq(
+            Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
+        )
+        outdir_sge = self.utils.get_temp_dir()
+        path_file = self.set_script_run_sge(
+            outdir_sge,
+            queue_name,
+            vect_command,
+            job_name,
+            False,
+            [job_name_wait],
+            alternative_temp_dir=out_dir,
+        )
+        try:
+            sge_id = self.submitte_job(path_file)
+            if sge_id != None:
+                pc_name = (
+                    process_controler.get_name_televir_project_merge_explify_external(
+                        user.pk,
+                    )
+                )
+                self.set_process_controlers(
+                    user,
+                    pc_name,
+                    sge_id,
+                )
+
+        except:
+            raise Exception("Fail to submit the job.")
+        return sge_id
+
     def set_submit_televir_run(
         self, user: User, project_pk: int, sample_pk: int, leaf_pk: int
     ):

@@ -240,13 +240,10 @@
 
 <script type="text/javascript">
     $(document).on("click", "a", function(e){
-		console.log("HELLO");
         var attr = $(this).attr('id');
         var ref_name = $(this).attr('ref_name');
         var tr_to_remove = e.target.parentNode.parentNode.parentNode.id;
-        console.log(tr_to_remove);
         // For some browsers, `attr` is undefined; for others `attr` is false.  Check for both.
-        console.log(attr);
         if (attr === 'id_reset_parameters_modal'){
             $('#id-settings-reset').text('Do you want to reset parameters for \'' + ref_name + '\'?');
             $('#id-modal-body-reset-parameters').attr('pk', $(this).attr('pk'));
@@ -260,9 +257,7 @@
                     '</div>');
         }
 		else if (attr === "merge_explify_modal"){
-			console.log("merge explify");
-			console.log(ref_name);
-			console.log(tr_to_remove);
+
 			// change text in modal body div
 			$('#id-modal-body-deploy-merge-explify').text('Do you want to merge explify files for \'' + ref_name + '\'?');
 			$('#id-modal-body-deploy-merge-explify').attr('pk', $(this).attr('project_id'));
@@ -310,13 +305,10 @@
 
 
 	$('#id-deploy-explify-button').on('click', function(){
-		console.log("explify");
-		console.log($("#rpip_table").files);
+
 		var rpip_file = document.getElementById("rpip_table");
 		var upip_file = document.getElementById("upip_table");
-		console.log(upip_file.files[0]);
 		var project_pk = $('#id-modal-body-deploy-merge-explify').attr('pk');
-		console.log(project_pk);
 		
 		var formData = new FormData();
 
@@ -325,9 +317,6 @@
 		formData.append('project_id', project_pk);
 		formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
 
-
-
-		console.log(formData);
 		$.ajax({
 			url: $('#id-modal-body-deploy-merge-explify').attr("deploy-merge-explify-url"),
 			type: 'POST',

@@ -79,5 +79,20 @@
             </div>
         </div>
     </div>
+    {% if services %}
+    <div class="col-md">
+      <div class="card mb-2">
+        <img class="img-index" src="{% static "img/dwemer.png" %}">
+        <div class="card-body">
+            <h5 class="card-title">{{ 'Services' }}</h5>
+            <p class="card-text">{{ 'General Purpose Tools' }}</p>
+        </div>
+        <div class="card-footer">
+            <a href="{% url 'PIservices_main' %}" class="btn btn-primary">
+                Services
+            </a>
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

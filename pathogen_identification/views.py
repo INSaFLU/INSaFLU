@@ -62,7 +62,10 @@ from pathogen_identification.tables import (
 )
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
-from pathogen_identification.utilities.utilities_general import infer_run_media_dir
+from pathogen_identification.utilities.utilities_general import (
+    get_services_dir,
+    infer_run_media_dir,
+)
 from pathogen_identification.utilities.utilities_views import (
     EmptyRemapMain,
     FinalReportCompound,
@@ -173,6 +176,50 @@ class download_ref_form(forms.Form):
 
 
 ################################################################
+
+
+class Services(LoginRequiredMixin, generic.CreateView):
+    """
+    Display a series of applications to run, independent of projects.
+    """
+
+    template_name = "pathogen_identification/services.html"
+
+    def get_context_data(self, **kwargs):
+        context = {}
+
+        context["nav_services"] = True
+
+        user = self.request.user
+        services_dir = get_services_dir(user)
+        context["services_dir"] = services_dir
+        explify_output_file = os.path.join(services_dir, "merged_televir_explify.tsv")
+        explify_file_exists = os.path.exists(explify_output_file)
+        merge_explify_file_provide = os.path.join(
+            "/media/",
+            "televir_projects",
+            str(user.pk),
+            "services",
+            "merged_televir_explify" + ".tsv",
+        )
+        download_button = (
+            '<a rel="nofollow" href="'
+            + explify_output_file
+            + '" download="'
+            + "merged_televir_explify"
+            + ".tsv"
+            + '" '
+            + 'data-toggle="tooltip" '
+            + 'title="Download"'
+            + '><i class="fa fa-download"></i></span> </a>'
+        )
+        context["explify_file_exists"] = explify_file_exists
+        context["explify_output_file"] = merge_explify_file_provide
+        print(merge_explify_file_provide)
+
+        context["tools"] = []
+
+        return context
 
 
 class PathId_ProjectsView(LoginRequiredMixin, ListView):

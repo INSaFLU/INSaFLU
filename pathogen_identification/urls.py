@@ -6,6 +6,11 @@ from managing_files import ajax_views, views
 
 urlpatterns = [
     url(
+        r"services$",
+        PIviews.Services.as_view(),
+        name="PIservices_main",
+    ),
+    url(
         r"projects$",
         PIviews.PathId_ProjectsView.as_view(),
         name="PIprojects_main",
@@ -49,6 +54,11 @@ urlpatterns = [
         r"Projects/explify_merge$",
         PIajax_views.Project_explify_merge,
         name="explify_merge",
+    ),
+    url(
+        r"Projects/explify_merge_external$",
+        PIajax_views.Project_explify_merge_external,
+        name="explify_merge_external",
     ),
     url(
         r"Projects/project_(?P<pk1>\d+)/sample_(?P<pk2>\d+)",

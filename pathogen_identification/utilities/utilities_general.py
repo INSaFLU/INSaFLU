@@ -13,6 +13,7 @@ from typing import Optional
 
 import matplotlib.pyplot as plt
 import pandas as pd
+from django.contrib.auth.models import User
 
 from fluwebvirus.settings import MEDIA_ROOT
 from pathogen_identification.constants_settings import ConstantsSettings as CS
@@ -422,6 +423,16 @@ def get_project_dir(project: Projects):
     return os.path.join(
         MEDIA_ROOT, CS.televir_subdirectory, str(project.owner.pk), str(project.pk)
     )
+
+
+def get_services_dir(user: User):
+    services_dir = os.path.join(
+        MEDIA_ROOT, CS.televir_subdirectory, str(user.pk), "services"
+    )
+    if not os.path.isdir(services_dir):
+        os.makedirs(services_dir)
+
+    return services_dir
 
 
 def get_project_dir_no_media_root(project: Projects):

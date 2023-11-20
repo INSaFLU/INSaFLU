@@ -876,8 +876,8 @@ class ProcessSGE(object):
 
         vect_command = [
             "python3 {} submit_televir_explify_merge_ext --user_id {} --televir {} --rpip {} --upip {} -o {}".format(
-                user_pk,
                 os.path.join(settings.BASE_DIR, "manage.py"),
+                user_pk,
                 televir_report_filepath,
                 rpip_filepath,
                 upip_filepath,

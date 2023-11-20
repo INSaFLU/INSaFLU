@@ -1,6 +1,7 @@
 import copy
 import logging
 import os
+import re
 import shutil
 import traceback  # for debugging
 from copy import _copy_immutable, _deepcopy_dispatch
@@ -1264,6 +1265,114 @@ class TreeProgressGraph:
 
         self.pipeline_utils = Utils_Manager()
 
+    def get_node_params_network(
+        self, existing_parameter_sets: Union[QuerySet, List[ParameterSet]]
+    ) -> pd.DataFrame:
+        pipeline_utils = Utils_Manager()
+
+        technologies = [ps.project.technology for ps in existing_parameter_sets]
+        if len(set(technologies)) > 1:
+            raise Exception("Multiple technologies found")
+
+        parameter_makeups = [ps.leaf.software_tree.pk for ps in existing_parameter_sets]
+        parameter_makeups = list(set(parameter_makeups))
+
+        tree_list = [ps.leaf.software_tree for ps in existing_parameter_sets]
+        trees_pk_list = [tree.pk for tree in tree_list]
+        trees_pk_list = list(set(trees_pk_list))
+
+        software_tree_dict = {
+            tree_pk: SoftwareTree.objects.get(pk=tree_pk) for tree_pk in trees_pk_list
+        }
+
+        pipetrees_dict = {
+            tree_pk: pipeline_utils.parameter_util.convert_softwaretree_to_pipeline_tree(
+                tree
+            )
+            for tree_pk, tree in software_tree_dict.items()
+        }
+
+        pipeline_steps_to_r_colours = {
+            "root": "lightblue",
+            ConstantsSettings.PIPELINE_NAME_read_quality_analysis: "cadetblue",
+            ConstantsSettings.PIPELINE_NAME_extra_qc: "cadetblue",
+            ConstantsSettings.PIPELINE_NAME_viral_enrichment: "darkgreen",
+            ConstantsSettings.PIPELINE_NAME_host_depletion: "chartreuse4",
+            ConstantsSettings.PIPELINE_NAME_assembly: "brown",
+            ConstantsSettings.PIPELINE_NAME_contig_classification: "darkorange",
+            ConstantsSettings.PIPELINE_NAME_read_classification: "deeppink",
+            ConstantsSettings.PIPELINE_NAME_metagenomics_combine: "dodgerblue",
+            ConstantsSettings.PIPELINE_NAME_remapping: "khaki",
+            ConstantsSettings.PIPELINE_NAME_remap_filtering: "darkslategray",
+            "leaves": "lightblue",
+        }
+
+        network_df = [["NA", "0", "root", "input", "input", "lightblue"]]
+
+        for tree_pk, tree in pipetrees_dict.items():
+            #
+            tree.compress_tree()
+            tree.split_modules()
+
+            for edge in tree.edge_compress:
+                child_metadata = tree.node_index.loc[edge[1]].node
+                if child_metadata[-1] != "module":
+                    continue
+
+                parent_metadata = tree.node_index.loc[edge[0]].node
+
+                parent = edge[0]
+                child = edge[1]
+                if parent == 0:
+                    parent = "0"
+                else:
+                    parent = f"{tree_pk}_{parent}"
+                child = f"{tree_pk}_{child}"
+                module = child_metadata[0]
+                colour = pipeline_steps_to_r_colours[module]
+                software_child = child_metadata[1]
+                software_parent = parent_metadata[1]
+                network_df.append(
+                    [parent, child, module, software_parent, software_child, colour]
+                )
+
+        network_df = pd.DataFrame(
+            network_df,
+            columns=[
+                "parent",
+                "child",
+                "module",
+                "software_parent",
+                "software_child",
+                "colour",
+            ],
+        )
+        unique_nodes = set(network_df["child"].values)
+        # replace node names with numbers paste to software
+
+        node_dict = {node: i for i, node in enumerate(unique_nodes)}
+        node_dict["NA"] = "NA"
+
+        def merge_names(row: pd.Series):
+            parent = row["parent"]
+            child = row["child"]
+            parent = node_dict[parent]
+            child = node_dict[child]
+            if parent == "NA":
+                row["parent"] = "NA"
+            else:
+                parent_software = row["software_parent"]
+                print(parent_software)
+                if parent_software is None:
+                    parent_software = "input"
+                row["parent"] = f"{parent_software}_{parent}"
+            row["child"] = f"{row['software_child']}_{child}"
+            return row
+
+        network_df = network_df.apply(merge_names, axis=1)
+        print(network_df)
+        return network_df
+
     def get_node_params(
         self, existing_parameter_sets: Union[QuerySet, List[ParameterSet]]
     ) -> pd.DataFrame:
@@ -1363,16 +1472,17 @@ class TreeProgressGraph:
         if existing_parameter_sets.count() == 0:
             return pd.DataFrame()
 
-        stacked_df = self.get_node_params(existing_parameter_sets)
+        # stacked_df = self.get_node_params(existing_parameter_sets)
+        test_df = self.get_node_params_network(existing_parameter_sets)
         #
 
         for ps in existing_parameter_sets:
             ps.status = current_status[ps.pk]
             ps.save()
 
-        stacked_df.to_csv(self.stacked_df_path, sep="\t")
+        test_df.to_csv(self.stacked_df_path, sep="\t", index=False)
 
-        return stacked_df
+        return test_df
 
     def get_tree_progress_df(self, tree: PipelineTree):
         ## setup a deployment and record the progress
@@ -1454,5 +1564,7 @@ class TreeProgressGraph:
 
         graph_id = self.extract_graph_id(graph_data)
         graph_json = self.extract_graph_json(graph_data)
+        if graph_json is not None:
+            graph_json = re.sub(r"_\d+", "", graph_json)
 
         return graph_json, graph_id

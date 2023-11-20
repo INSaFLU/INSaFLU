@@ -22,7 +22,10 @@ from pathogen_identification.models import (
     RunMain,
 )
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
-from pathogen_identification.utilities.utilities_general import infer_run_media_dir
+from pathogen_identification.utilities.utilities_general import (
+    get_services_dir,
+    infer_run_media_dir,
+)
 from pathogen_identification.utilities.utilities_pipeline import (
     SoftwareTreeUtils,
     Utils_Manager,
@@ -380,6 +383,7 @@ def Project_explify_merge_external(request):
             )
 
         except ProcessControler.DoesNotExist:
+            print("HERE")
             taskID = process_SGE.set_submit_televir_explify_merge_external(
                 user=request.user,
                 rpip_filepath=rpip_report_path,
@@ -392,9 +396,6 @@ def Project_explify_merge_external(request):
 
         data["is_ok"] = True
         return JsonResponse(data)
-
-
-from pathogen_identification.utilities.utilities_general import get_services_dir
 
 
 @login_required

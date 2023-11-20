@@ -4,8 +4,10 @@ from datetime import datetime
 from operator import itemgetter
 
 from django.conf import settings
+
 # from django.db.models import Manager as GeoManager
 from django.contrib.auth.models import User
+
 # Create your models here.
 from django.contrib.gis.db.models import GeoManager  # #  change to django  2.x
 from django.contrib.gis.db.models import PointField

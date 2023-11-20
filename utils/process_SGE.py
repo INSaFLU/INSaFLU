@@ -903,12 +903,12 @@ class ProcessSGE(object):
         )
         try:
             sge_id = self.submitte_job(path_file)
+            print("SGE_ID: " + str(sge_id))
+
             if sge_id != None:
-                pc_name = (
-                    process_controler.get_name_televir_project_merge_explify_external(
+                pc_name = process_controler.get_name_televir_project_merge_explify_external(
                         user.pk,
                     )
-                )
                 self.set_process_controlers(
                     user,
                     pc_name,

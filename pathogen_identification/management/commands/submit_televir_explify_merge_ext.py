@@ -72,7 +72,7 @@ class Command(BaseCommand):
         process_SGE.set_process_controler(
             user,
             process_controler.get_name_televir_project_merge_explify_external(
-                user_pk == user.pk,
+                user_pk=user.pk,
             ),
             ProcessControler.FLAG_RUNNING,
         )

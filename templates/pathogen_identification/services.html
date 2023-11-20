@@ -28,7 +28,11 @@
                 <div class="card-body">
                     <h5 class="card-title">Explify Merge</h5>
                     <p class="card-text">Merge Explify data with televir project data. </p>
+                    {% if merger_running %}
+                    <p class="card-text">Explify merge is currently running. </p>
+                    {% else %}
                     <a href="#id_merge_televir_explify_modal" class="btn btn-primary" data-toggle="modal" data-toggle="tooltip"  id="merge_explify_modal">Merge</a>
+                    {% endif %}
                     {% if explify_file_exists %}
                     <a rel="nofollow" href={{explify_output_file}} class="btn btn-primary" data-toggle="tooltip" title="Download Explify File">Download</a>
                     <a href="#id_delete_explify_modal" class="btn btn-primary" data-toggle="modal" data-toggle="tooltip"  id="delete_explify_modal">Delete</a>

@@ -30,6 +30,7 @@ from extend_user.models import Profile
 from fluwebvirus.settings import MEDIA_ROOT, STATICFILES_DIRS
 from managing_files.forms import AddSampleProjectForm
 from managing_files.manage_database import ManageDatabase
+from managing_files.models import ProcessControler
 from managing_files.tables import SampleToProjectsTable
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.constants_settings import ConstantsSettings as PICS
@@ -202,21 +203,20 @@ class Services(LoginRequiredMixin, generic.CreateView):
             "services",
             "merged_televir_explify" + ".tsv",
         )
-        download_button = (
-            '<a rel="nofollow" href="'
-            + explify_output_file
-            + '" download="'
-            + "merged_televir_explify"
-            + ".tsv"
-            + '" '
-            + 'data-toggle="tooltip" '
-            + 'title="Download"'
-            + '><i class="fa fa-download"></i></span> </a>'
-        )
+
+        ## check if merging is runnning
+        process_controler = ProcessControler()
+        merger_running = ProcessControler.objects.filter(
+            name=process_controler.get_name_televir_project_merge_explify_external(
+                user_pk=user.pk,
+            ),
+            is_running=True,
+        ).exists()
+        print(merger_running)
+
         context["explify_file_exists"] = explify_file_exists
         context["explify_output_file"] = merge_explify_file_provide
-        print(merge_explify_file_provide)
-
+        context["merger_running"] = merger_running
         context["tools"] = []
 
         return context

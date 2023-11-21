@@ -705,7 +705,7 @@ class run_kraken2(Classifier_init):
 
         cmd.append(self.query_path)
 
-        self.cmd.run(cmd)
+        self.cmd.run_script_software(cmd)
 
     def run_PE(self, threads: int = 3, **kwargs):
         """

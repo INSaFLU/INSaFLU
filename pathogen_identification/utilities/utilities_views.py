@@ -215,9 +215,11 @@ class ReportSorter:
         self.max_error_rate = 0
         self.max_quality_avg = 0
         self.max_mapped_prop = 0
+        self.max_coverage = 0
         self.error_rate_available = self.assess_error_rate_available()
         self.quality_avg_available = self.assess_quality_avg_available()
         self.assess_max_mapped_prop()
+        self.assess_max_coverage()
         self.reference_clade = self.generate_reference_clade(report_layout_params)
         self.report_dict = {
             report.accid: report
@@ -290,9 +292,22 @@ class ReportSorter:
         if report.mapped_proportion > self.max_mapped_prop:
             self.max_mapped_prop = report.mapped_proportion
 
+    def update_max_coverage(self, report: FinalReport):
+        """
+        update max quality avg"""
+        if report.coverage is None:
+            return
+
+        if report.coverage > self.max_coverage:
+            self.max_coverage = report.coverage
+
     def assess_max_mapped_prop(self):
         for report in self.reports:
             self.update_max_mapped_prop(report)
+
+    def assess_max_coverage(self):
+        for report in self.reports:
+            self.update_max_coverage(report)
 
     def assess_error_rate_available(self):
         if not self.reports:

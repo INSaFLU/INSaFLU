@@ -602,7 +602,7 @@
                             <td data-title="accID">
                                 <a href={{value.accid|link_ncbi}}>{{value.accid}}</a>
                             </td>
-                            <td data-title="Cov" style="{{ value.coverage|color_code }}">
+                            <td data-title="Cov" style="{% depth_color value.coverage max_coverage %}">
                                 {{value.coverage|round}}</td>
                             <td data-title="Depth" style="{% depth_color value.depth run_detail.max_depth %}">
                                 {{value.depth|round}}</td>

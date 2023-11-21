@@ -616,7 +616,7 @@
                                 {{value.mapped_proportion|round_to_int}}</td>
                             <td data-title="Gaps" style="{% depth_color value.ngaps run_detail.max_gaps %}">
                                 {{value.ngaps}}</td>
-                            <td data-title="Windows Covered">
+                            <td data-title="Windows Covered" style="{% depth_color_windows value.windows_covered max_windows_covered %}">
                                 {% windows_safe value.windows_covered %}</td>
                             {% if error_rate_available %}
                             <td data-title="Error rate" style="{% depth_color value.error_rate max_error_rate %}">

@@ -1063,6 +1063,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "max_quality_avg": report_sorter.max_quality_avg,
             "max_mapped_prop": report_sorter.max_mapped_prop,
             "max_coverage": report_sorter.max_coverage,
+            "max_windows_covered": report_sorter.max_windows_covered,
         }
 
         ### downloadable files
@@ -1185,6 +1186,7 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
             "max_quality_avg": report_sorter.max_quality_avg,
             "max_mapped_prop": report_sorter.max_mapped_prop,
             "max_coverage": report_sorter.max_coverage,
+            "max_windows_covered": report_sorter.max_windows_covered,
         }
 
         return context

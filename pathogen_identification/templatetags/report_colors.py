@@ -18,19 +18,21 @@ def coverage_col(coverage_value):
     ncol = f"background-color: rgba({cell_color}, {int(coverage_value)}%);"
     return ncol
 
+
 @register.filter(name="round_str")
 def round_str(value):
     if value is None or value == "":
         value = 0
-    value= float(value)
+    value = float(value)
     ncol = round(value, 2)
     return ncol
+
 
 @register.filter(name="round_str_perc_invert")
 def round_str(value):
     if value is None or value == "":
         value = 0
-    value= float(value)
+    value = float(value)
     ncol = round(100 - value, 2)
     return ncol
 
@@ -89,6 +91,21 @@ def map_success_col(success_count):
 def depth_color(depth_value, max_value):
     if depth_value and max_value:
         ncol = float(depth_value) * 100 / float(max_value)
+    else:
+        ncol = 0
+
+    ncol = f"background-color: rgba({cell_color}, {int(ncol)}%);"
+    return ncol
+
+
+@register.simple_tag
+def depth_color_windows(window_value: str, max_prop):
+    if window_value and max_prop:
+        if "/" in window_value:
+            window_value = window_value.split("/")
+
+            window_value = int(window_value[0]) / int(window_value[1])
+        ncol = float(window_value) * 100 / float(max_prop)
     else:
         ncol = 0
 

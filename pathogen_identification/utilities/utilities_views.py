@@ -212,10 +212,11 @@ class ReportSorter:
         level=0,
     ):
         self.reports = reports
-        self.max_error_rate = 0
-        self.max_quality_avg = 0
-        self.max_mapped_prop = 0
-        self.max_coverage = 0
+        self.max_error_rate = 1
+        self.max_quality_avg = 1
+        self.max_mapped_prop = 1
+        self.max_coverage = 1
+        self.max_windows_covered = 1
         self.error_rate_available = self.assess_error_rate_available()
         self.quality_avg_available = self.assess_quality_avg_available()
         self.assess_max_mapped_prop()
@@ -300,6 +301,26 @@ class ReportSorter:
 
         if report.coverage > self.max_coverage:
             self.max_coverage = report.coverage
+
+    def update_max_windows_covered(self, report: FinalReport):
+        """
+        update max quality avg"""
+        if report.windows_covered is None:
+            return
+
+        windows_covered = report.windows_covered
+        if "/" in report.windows_covered:
+            windows_covered = report.windows_covered.split("/")
+            try:
+                windows_covered = int(windows_covered[0]) / int(windows_covered[1])
+            except Exception as e:
+                print(e)
+                windows_covered = 0
+        else:
+            windows_covered = int(windows_covered)
+
+        if windows_covered > self.max_windows_covered:
+            self.max_windows_covered = windows_covered
 
     def assess_max_mapped_prop(self):
         for report in self.reports:

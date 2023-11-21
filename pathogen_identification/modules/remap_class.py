@@ -1465,6 +1465,7 @@ class Remapping:
         self.output_analyser.draft_report()
 
         bedfile_report = self.output_analyser.report
+        self.generate_samtools_stats()
         mapping_stats = self.extract_mapping_stats()
         bedfile_report["error_rate"] = mapping_stats.error_rate
         bedfile_report["quality_avg"] = mapping_stats.quality_avg

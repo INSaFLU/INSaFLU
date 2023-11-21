@@ -212,11 +212,11 @@ class ReportSorter:
         level=0,
     ):
         self.reports = reports
-        self.max_error_rate = 1
+        self.max_error_rate = 0
         self.max_quality_avg = 1
-        self.max_mapped_prop = 1
-        self.max_coverage = 1
-        self.max_windows_covered = 1
+        self.max_mapped_prop = 0
+        self.max_coverage = 0
+        self.max_windows_covered = 0
         self.error_rate_available = self.assess_error_rate_available()
         self.quality_avg_available = self.assess_quality_avg_available()
         self.assess_max_mapped_prop()

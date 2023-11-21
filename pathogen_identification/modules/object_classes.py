@@ -1234,6 +1234,17 @@ class SoftwareRemap:
         return self.remap_software.dir
 
 
+@dataclass
+class MappingStats:
+    def __init__(
+        self,
+        error_rate: float,
+        quality_avg: float,
+    ):
+        self.error_rate = error_rate
+        self.quality_avg = quality_avg
+
+
 class Bedgraph:
     """Class to store and work with bedgraph files
 

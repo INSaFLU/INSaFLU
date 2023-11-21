@@ -202,6 +202,7 @@ class ReportSorter:
     all_clade_filename = "all_clades_{}.tsv"
     report_dict: Dict[str, List[FinalReport]]
     excluded_dict: Dict[str, List[FinalReport]]
+    error_rate_available: bool
 
     def __init__(
         self,
@@ -211,6 +212,10 @@ class ReportSorter:
         level=0,
     ):
         self.reports = reports
+        self.max_error_rate = 0
+        self.max_quality_avg = 0
+        self.error_rate_available = self.assess_error_rate_available()
+        self.quality_avg_available = self.assess_quality_avg_available()
         self.reference_clade = self.generate_reference_clade(report_layout_params)
         self.report_dict = {
             report.accid: report
@@ -255,6 +260,46 @@ class ReportSorter:
             self.analysis_df_path = None
             self.all_clades_df_path = None
             self.force = False
+
+    def update_max_error_rate(self, report: FinalReport):
+        """
+        update max error rate"""
+        if report.error_rate is None:
+            return
+
+        if report.error_rate > self.max_error_rate:
+            self.max_error_rate = report.error_rate
+
+    def update_max_quality_avg(self, report: FinalReport):
+        """
+        update max quality avg"""
+        if report.quality_avg is None:
+            return
+
+        if report.quality_avg > self.max_quality_avg:
+            self.max_quality_avg = report.quality_avg
+
+    def assess_error_rate_available(self):
+        if not self.reports:
+            return False
+        for report in self.reports:
+            print(report.error_rate)
+            if report.error_rate is None:
+                return False
+            self.update_max_error_rate(report)
+
+        return True
+
+    def assess_quality_avg_available(self):
+        if not self.reports:
+            return False
+
+        for report in self.reports:
+            if report.quality_avg is None:
+                return False
+            self.update_max_quality_avg(report)
+
+        return True
 
     def set_level(self, final_report_list: List[FinalReport], level):
         if len(final_report_list) == 0:

@@ -479,6 +479,9 @@ class Metadata_handler:
             counts = pd.DataFrame(counts).reset_index()
             counts.columns = ["taxid", "counts"]
 
+            merged_table["taxid"] = merged_table["taxid"].astype(int)
+            counts["taxid"] = counts["taxid"].astype(int)
+
             new_table = pd.merge(
                 left=merged_table, right=counts, on="taxid"
             ).drop_duplicates(subset="taxid")
@@ -575,6 +578,8 @@ class Metadata_handler:
             )
             taxid_descriptions.dropna(subset=["description"], inplace=True)
             taxid_descriptions.drop_duplicates(subset=["taxid"], inplace=True)
+            raw_targets["taxid"] = raw_targets["taxid"].astype(int)
+            taxid_descriptions["taxid"] = taxid_descriptions["taxid"].astype(int)
             raw_targets = raw_targets.merge(taxid_descriptions, on="taxid", how="left")
 
         raw_targets[

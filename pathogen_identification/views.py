@@ -1032,6 +1032,8 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         reference_remap_main = ReferenceMap_Main.objects.filter(
             sample=sample_main, run=run_main
         )
+        print(report_sorter.error_rate_available)
+        print(report_sorter.quality_avg_available)
 
         context = {
             "project": project_name,
@@ -1057,6 +1059,10 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "data_exists": True if not run_main.data_deleted else False,
             "excluded_exist": excluded_reports_exist,
             "empty_reports": empty_reports,
+            "error_rate_available": report_sorter.error_rate_available,
+            "max_error_rate": report_sorter.max_error_rate,
+            "quality_avg_available": report_sorter.quality_avg_available,
+            "max_quality_avg": report_sorter.max_quality_avg,
         }
 
         ### downloadable files

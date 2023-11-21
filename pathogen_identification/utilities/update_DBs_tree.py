@@ -8,15 +8,25 @@ from django.contrib.auth.models import User
 from django.core.files import File
 from django.db import IntegrityError, transaction
 
-from pathogen_identification.models import (QC_REPORT, ContigClassification,
-                                            FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RawReference, ReadClassification,
-                                            ReferenceContigs,
-                                            ReferenceMap_Main, RunAssembly,
-                                            RunDetail, RunIndex, RunMain,
-                                            RunRemapMain, SampleQC,
-                                            TelevirRunQC)
+from pathogen_identification.models import (
+    QC_REPORT,
+    ContigClassification,
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReadClassification,
+    ReferenceContigs,
+    ReferenceMap_Main,
+    RunAssembly,
+    RunDetail,
+    RunIndex,
+    RunMain,
+    RunRemapMain,
+    SampleQC,
+    TelevirRunQC,
+)
 from pathogen_identification.modules.object_classes import Sample_runClass
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunMain_class
@@ -771,7 +781,9 @@ def Update_Run_QC(run_class: RunMain_class, parameter_set: ParameterSet):
         run_qc.args = run_class.qc_report.args
         run_qc.input_reads = f"{run_class.qc_report.input_reads:,}"
         run_qc.output_reads = f"{run_class.qc_report.output_reads:,}"
-        run_qc.output_reads_percent = str(run_class.qc_report.output_reads_percent * 100)
+        run_qc.output_reads_percent = str(
+            run_class.qc_report.output_reads_percent * 100
+        )
         run_qc.save()
 
     else:
@@ -1154,7 +1166,7 @@ def Update_Sample_Runs_DB(run_class: RunMain_class, parameter_set: ParameterSet)
     Update_FinalReport(run_class, runmain, sample)
 
 
-def Update_FinalReport(run_class, runmain, sample):
+def Update_FinalReport(run_class: RunMain_class, runmain, sample):
     print("# REPORT")
     print(run_class.report)
     for i, row in run_class.report.iterrows():
@@ -1185,6 +1197,8 @@ def Update_FinalReport(run_class, runmain, sample):
                 depthR=row["HdepthR"],
                 ngaps=row["ngaps"],
                 mapped_reads=row["mapped"],
+                error_rate=row["error_rate"],
+                quality_avg=row["quality_avg"],
                 ref_proportion=row["ref_prop"],
                 mapped_proportion=row["mapped_prop"],
                 mapping_success=row["mapping_success"],

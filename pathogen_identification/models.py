@@ -1055,6 +1055,8 @@ class FinalReport(models.Model):
     mapped_reads = models.IntegerField(blank=True, null=True)
     ref_proportion = models.FloatField(blank=True, null=True)
     mapped_proportion = models.FloatField(blank=True, null=True)
+    error_rate = models.FloatField(blank=True, null=True)
+    quality_avg = models.FloatField(blank=True, null=True)
     ngaps = models.IntegerField(blank=True, null=True)
     mapping_success = models.CharField(max_length=20, blank=True, null=True)
     classification_success = models.CharField(max_length=20, blank=True, null=True)

@@ -13,6 +13,7 @@ from scipy.stats import kstest
 from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.modules.object_classes import (
     Bedgraph,
+    MappingStats,
     Read_class,
     Remap_Target,
     RunCMD,
@@ -704,6 +705,9 @@ class Remapping:
         )
         self.read_map_sorted_bam_index = (
             f"{self.rdir}/{self.prefix}.{target.acc_simple}.sorted.bam.bai"
+        )
+        self.read_map_sorted_bam_stats = (
+            f"{self.rdir}/{self.prefix}.{target.acc_simple}.sorted.bam.stats"
         )
 
         self.genome_coverage = f"{self.rdir}/{self.prefix}.sorted.bedgraph"
@@ -1460,7 +1464,42 @@ class Remapping:
         self.output_analyser.read_bedfile()
         self.output_analyser.draft_report()
 
-        return self.output_analyser.report
+        bedfile_report = self.output_analyser.report
+        mapping_stats = self.extract_mapping_stats()
+        bedfile_report["error_rate"] = mapping_stats.error_rate
+        bedfile_report["quality_avg"] = mapping_stats.quality_avg
+
+        return bedfile_report
+
+    def generate_samtools_stats(self):
+        """
+        Generate samtools stats file.
+        """
+        cmd = [
+            "samtools",
+            "stats",
+            self.read_map_sorted_bam,
+            "|",
+            "grep ^SN",
+            "|",
+            "cut -f 2-",
+            ">",
+            self.read_map_sorted_bam_stats,
+        ]
+
+        self.cmd.run_script_software(cmd)
+
+    def extract_mapping_stats(self) -> MappingStats:
+        """
+        read stats as pd data frame, pass to class"""
+
+        stats_df = pd.read_csv(
+            self.read_map_sorted_bam_stats, sep="\t", header=None, index_col=0
+        ).rename(columns={0: "stat", 1: "value", 2: "comment"})
+        error_rate = stats_df.loc["error rate:", "value"]
+        quality_avg = stats_df.loc["average quality:", "value"]
+
+        return MappingStats(error_rate, quality_avg)
 
     def plot_coverage(self):
         if os.path.getsize(self.genome_coverage):
@@ -1905,6 +1944,8 @@ class Mapping_Manager(Tandem_Remap):
                 "ngaps",
                 "Gdist",
                 "Gsize",
+                "error_rate",
+                "quality_avg",
             ],
         )
         self.combined_fasta_path = os.path.join(

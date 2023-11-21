@@ -65,7 +65,7 @@ class Command(BaseCommand):
         else:
             reports = FinalReport.objects.filter(sample__pk=int(sample_pk))
 
-        # sort reports by sample pk
+        # sort reports query by sample pk
         reports = sorted(reports, key=lambda x: x.sample.pk)
 
         env_bin = os.path.join(

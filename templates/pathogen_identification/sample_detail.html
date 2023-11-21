@@ -612,7 +612,7 @@
                                 {{value.mapped_reads|round}}</td>
                             <td data-title="start prop" style="{% depth_color value.ref_proportion run_detail.max_prop %}">
                                 {{value.ref_proportion|round_to_int}}</td>
-                            <td data-title="mapped_prop" style="{% depth_color value.mapped_proportion run_detail.max_prop %}">
+                            <td data-title="mapped_prop" style="{% depth_color value.mapped_proportion max_mapped_prop %}">
                                 {{value.mapped_proportion|round_to_int}}</td>
                             <td data-title="Gaps" style="{% depth_color value.ngaps run_detail.max_gaps %}">
                                 {{value.ngaps}}</td>

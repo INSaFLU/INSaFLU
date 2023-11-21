@@ -1032,8 +1032,8 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         reference_remap_main = ReferenceMap_Main.objects.filter(
             sample=sample_main, run=run_main
         )
-        print(report_sorter.error_rate_available)
-        print(report_sorter.quality_avg_available)
+
+        print(report_sorter.max_mapped_prop)
 
         context = {
             "project": project_name,
@@ -1063,6 +1063,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "max_error_rate": report_sorter.max_error_rate,
             "quality_avg_available": report_sorter.quality_avg_available,
             "max_quality_avg": report_sorter.max_quality_avg,
+            "max_mapped_prop": report_sorter.max_mapped_prop,
         }
 
         ### downloadable files

@@ -760,9 +760,11 @@ class run_kraken2(Classifier_init):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
         report = pd.read_csv(
-            self.report_path, sep="\t", header=None, usecols=[1, 2, 3], comment="@"
-        ).rename(columns={1: "qseqid", 2: "success", 3: "taxid"})
-        report = report[report.success != 0][["qseqid", "taxid"]]  # remove unclassified
+            self.report_path, sep="\t", header=None, usecols=[0, 1, 2, 3], comment="@"
+        ).rename(columns={0: "status", 1: "qseqid", 2: "success", 3: "taxid"})
+        report = report[report.status != "U"][
+            ["qseqid", "taxid"]
+        ]  # remove unclassified
         return report
 
 

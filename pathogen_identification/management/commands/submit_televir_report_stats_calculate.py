@@ -61,9 +61,9 @@ class Command(BaseCommand):
             raise ValueError("Must provide either sample or project")
 
         if project_pk is not None:
-            reports = FinalReport.objects.filter(run__project_pk=project_pk)
+            reports = FinalReport.objects.filter(run__project_pk=int(project_pk))
         else:
-            reports = FinalReport.objects.filter(sample__pk=sample_pk)
+            reports = FinalReport.objects.filter(sample__pk=int(sample_pk))
 
         env_bin = os.path.join(
             Televir_Metadata_Constants.BINARIES["ROOT"],

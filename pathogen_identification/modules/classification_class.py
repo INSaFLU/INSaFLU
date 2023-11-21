@@ -9,8 +9,7 @@ from typing import Any, Type
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.modules.object_classes import (RunCMD,
-                                                            Software_detail)
+from pathogen_identification.modules.object_classes import RunCMD, Software_detail
 
 
 def check_report_empty(file, comment="@"):
@@ -680,8 +679,8 @@ class run_kraken2(Classifier_init):
         log_dir="",
     ):
         super().__init__(db_path, query_path, out_path, args, r2, prefix, bin, log_dir)
-        self.args= self.args.replace("--quick OFF", "")
-        self.args= self.args.replace("--quick ON", "--quick")
+        self.args = self.args.replace("--quick OFF", "")
+        self.args = self.args.replace("--quick ON", "--quick")
 
     def run_SE(self, threads: int = 3, **kwargs):
         """
@@ -761,9 +760,9 @@ class run_kraken2(Classifier_init):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
         report = pd.read_csv(
-            self.report_path, sep="\t", header=None, usecols=[1, 2], comment="@"
-        ).rename(columns={1: "qseqid", 2: "taxid"})
-        report = report[report.taxid != 0][["qseqid", "taxid"]]  # remove unclassified
+            self.report_path, sep="\t", header=None, usecols=[1, 2, 3], comment="@"
+        ).rename(columns={1: "qseqid", 2: "success", 3: "taxid"})
+        report = report[report.success != 0][["qseqid", "taxid"]]  # remove unclassified
         return report
 
 

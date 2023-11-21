@@ -1033,8 +1033,6 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             sample=sample_main, run=run_main
         )
 
-        print(report_sorter.max_mapped_prop)
-
         context = {
             "project": project_name,
             "run_name": run_name,
@@ -1166,6 +1164,8 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         runs = RunMain.objects.filter(pk__in=runs)
         runs_number = len(runs) > 0
 
+        print(report_sorter.error_rate_available)
+
         context = {
             "project": project_name,
             "graph_json": graph_json,
@@ -1178,6 +1178,11 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
             "runs_number": runs_number,
             "owner": True,
             "in_control": has_controlled_flag,
+            "error_rate_available": report_sorter.error_rate_available,
+            "max_error_rate": report_sorter.max_error_rate,
+            "quality_avg_available": report_sorter.quality_avg_available,
+            "max_quality_avg": report_sorter.max_quality_avg,
+            "max_mapped_prop": report_sorter.max_mapped_prop,
         }
 
         return context

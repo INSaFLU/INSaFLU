@@ -83,6 +83,7 @@ class Command(BaseCommand):
         )
 
         for report in reports:
+            print(f"sample {report.sample.name} report {report.pk}")
             bam_path = report.bam_path
             stats_report = os.path.join(
                 outdir,
@@ -113,6 +114,6 @@ class Command(BaseCommand):
             error_rate = stats_df.loc["error rate:", "value"]
             quality_avg = stats_df.loc["average quality:", "value"]
 
-            report.error_rate = int(error_rate)
-            report.quality_avg = int(quality_avg)
+            report.error_rate = float(error_rate)
+            report.quality_avg = float(quality_avg)
             report.save()

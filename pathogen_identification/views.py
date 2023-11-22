@@ -1017,8 +1017,11 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         report_sorter = ReportSorter(final_report, report_layout_params)
 
         sorted_reports = report_sorter.get_reports()
+        print(sorted_reports)
         excluded_reports_exist = report_sorter.check_excluded_exist()
+
         empty_reports = report_sorter.get_reports_empty()
+        print(empty_reports)
         sorted_reports.append(empty_reports)
 
         # check has control_flag present
@@ -1032,6 +1035,8 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         reference_remap_main = ReferenceMap_Main.objects.filter(
             sample=sample_main, run=run_main
         )
+
+        print(sorted_reports[0].name)
 
         context = {
             "project": project_name,
@@ -1151,11 +1156,7 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         )
 
         report_sorter = ReportSorter(unique_reports, report_layout_params)
-        sorted_reports = report_sorter.get_reports()
-        sorted_reports_compound = [
-            [FinalReportCompound(report) for report in clade]
-            for clade in sorted_reports
-        ]
+        sorted_reports = report_sorter.get_reports_compound()
 
         #### graph
         graph_progress = TreeProgressGraph(sample)
@@ -1175,7 +1176,7 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
             "sample": sample_name,
             "project_index": project_pk,
             "sample_index": sample_pk,
-            "report_list": sorted_reports_compound,
+            "report_list": sorted_reports,
             "runs": runs,
             "runs_number": runs_number,
             "owner": True,

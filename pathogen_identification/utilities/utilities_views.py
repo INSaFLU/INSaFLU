@@ -40,6 +40,25 @@ class EmptyRemapMain:
     coverage_mean = ""
 
 
+class FinalReportGroup:
+    name: str
+    shared_proportion: str
+    private_proportion: str
+    group_list: List[FinalReport]
+
+    def __init__(
+        self,
+        name: str,
+        shared_proportion: float,
+        private_proportion: float,
+        group_list: List[FinalReport],
+    ):
+        self.name = name
+        self.shared_proportion = f"shared proportion {shared_proportion:.2f}"
+        self.private_proportion = f"private proportion {private_proportion:.2f}"
+        self.group_list = group_list
+
+
 def check_sample_software_exists(sample: PIProject_Sample) -> bool:
     """
     Return True if sample software exists
@@ -570,7 +589,7 @@ class ReportSorter:
             overlap_analysis = self.read_overlap_analysis(force=True)
             overlap_analysis.to_csv(self.analysis_df_path, sep="\t", index=False)
 
-    def get_sorted_reports(self) -> List[List[FinalReport]]:
+    def get_sorted_reports(self) -> List[FinalReportGroup]:
         overlap_analysis = self.read_overlap_analysis()
 
         overlap_groups = list(overlap_analysis.groupby(["total_counts", "clade"]))[::-1]
@@ -585,32 +604,53 @@ class ReportSorter:
             group_list = [self.report_dict[accid] for accid in group_accids]
             # sort by coverage
             group_list.sort(key=lambda x: x.coverage, reverse=True)
+            name = group_df.clade.iloc[0]
             if len(group_list):
-                sorted_reports.append(group_list)
+                report_group = FinalReportGroup(
+                    name=name,
+                    shared_proportion=group_df.shared_proportion.iloc[0],
+                    private_proportion=group_df.private_proportion.iloc[0],
+                    group_list=group_list,
+                )
+                sorted_reports.append(report_group)
 
         # sort groups by max coverage among group
 
-        def get_max_coverage(group: List[FinalReport]):
-            return max(y.coverage for y in group)
+        def get_max_coverage(group: FinalReportGroup):
+            return max(y.coverage for y in group.group_list)
 
         sorted_groups = sorted(sorted_reports, key=get_max_coverage, reverse=True)
 
         return sorted_groups
 
-    def get_reports(self):
+    def get_reports(self) -> List[FinalReportGroup]:
         """
         Return sorted reports
         """
+
         if self.model is None:
-            return [self.reports]
+            return []
 
         if self.metadata_df.empty:
-            return [self.reports]
+            return []
 
         if not self.check_analyzed():
-            return [self.reports]
+            return []
 
         return self.get_sorted_reports()
+
+    def get_reports_compound(self) -> List[FinalReportGroup]:
+        reports = self.get_reports()
+
+        if len(reports) == 0:
+            return []
+
+        for report_groups in reports:
+            report_groups.group_list = [
+                FinalReportCompound(report) for report in report_groups.group_list
+            ]
+
+        return reports
 
     def check_excluded_exist(self) -> bool:
         """return True if there are excluded reports"""
@@ -620,10 +660,19 @@ class ReportSorter:
 
         return False
 
-    def get_reports_empty(self) -> List[FinalReport]:
+    def get_reports_empty(self) -> FinalReportGroup:
         """return reports in excluded report_dict"""
 
-        return list(self.excluded_dict.values())
+        reports = list(self.excluded_dict.values())
+
+        report_group = FinalReportGroup(
+            name="Excluded",
+            shared_proportion=0,
+            private_proportion=0,
+            group_list=reports,
+        )
+
+        return report_group
 
 
 def calculate_reports_overlaps(sample: PIProject_Sample):

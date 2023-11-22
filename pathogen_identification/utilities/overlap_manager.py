@@ -13,9 +13,9 @@ from scipy.spatial.distance import pdist, squareform
 
 from pathogen_identification.utilities.clade_objects import Clade, CladeFilter
 from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
-
 ## pairwise matrix by individual reads
-from pathogen_identification.utilities.utilities_general import readname_from_fasta
+from pathogen_identification.utilities.utilities_general import \
+    readname_from_fasta
 
 
 def accid_from_metadata(metadata: pd.DataFrame, read_name: str) -> str:
@@ -318,6 +318,11 @@ class ReadOverlapManager:
 
             shared_reads.append(prod0)
 
+        print(shared_reads, "shared reads")
+        if len(shared_reads) == 0:
+            return pd.DataFrame(
+                index=read_profile_matrix.index, columns=read_profile_matrix.index
+            )
         shared_reads = np.concatenate(shared_reads, axis=0)
 
         shared_reads = pd.DataFrame(
@@ -783,5 +788,6 @@ class ReadOverlapManager:
         leaf_clades = self.tree_manager.leaf_clades_clean(selected_clades)
 
         clades = self.leaf_clades_to_pandas(leaf_clades, statistics_dict_all)
+        print(clades, "clades")
 
         return clades

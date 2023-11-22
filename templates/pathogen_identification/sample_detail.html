@@ -595,7 +595,12 @@
                     </thead>
                     <tbody>
                         {% for final_report in report_list %}
-                        {% for value in final_report %}
+                        <tr class="parent" style="background-color: lightblue; border-radius: 10px;">
+                            <td data-title="Column 1">{{final_report.name}}</td>
+                            <td data-title="Column 2">{{final_report.shared_proportion}}</td>
+                            <td data-title="Column 3">{{final_report.private_proportion}}</td>
+                        </tr>
+                        {% for value in final_report.group_list %}
                         <tr class="parent">
                             <td data-title="Description"><a href="#" id="plot_show" >{{value.description}}</a></td>
                             <td data-title="Taxid">{{value.taxid}}</td>

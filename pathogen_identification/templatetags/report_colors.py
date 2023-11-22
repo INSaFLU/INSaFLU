@@ -95,6 +95,8 @@ def depth_color_error(depth_value, max_value):
     else:
         ncol = 0
 
+    ncol = 100 - ncol
+
     ncol = f"background-color: rgba({cell_color}, {int(ncol)}%);"
     return ncol
 

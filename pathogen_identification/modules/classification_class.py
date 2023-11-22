@@ -9,7 +9,8 @@ from typing import Any, Type
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.modules.object_classes import RunCMD, Software_detail
+from pathogen_identification.modules.object_classes import (RunCMD,
+                                                            Software_detail)
 
 
 def check_report_empty(file, comment="@"):
@@ -761,9 +762,9 @@ class run_kraken2(Classifier_init):
 
         report = pd.read_csv(
             self.report_path, sep="\t", header=None, usecols=[0, 1, 2, 3], comment="@"
-        ).rename(columns={0: "status", 1: "qseqid", 2: "success", 3: "taxid"})
+        ).rename(columns={0: "status", 1: "qseqid", 2: "taxid", 3: "length"})
         report = report[report.status != "U"][
-            ["qseqid", "taxid"]
+            ["qseqid", "taxid", "length"]
         ]  # remove unclassified
         return report
 

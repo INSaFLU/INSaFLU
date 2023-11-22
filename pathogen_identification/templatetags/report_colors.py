@@ -88,6 +88,17 @@ def map_success_col(success_count):
 
 
 @register.simple_tag
+def depth_color_error(depth_value, max_value):
+    if depth_value and max_value:
+        ncol = (1 - float(depth_value)) * 100 / float(max_value)
+    else:
+        ncol = 0
+
+    ncol = f"background-color: rgba({cell_color}, {int(ncol)}%);"
+    return ncol
+
+
+@register.simple_tag
 def depth_color(depth_value, max_value):
     if depth_value and max_value:
         ncol = float(depth_value) * 100 / float(max_value)

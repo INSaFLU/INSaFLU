@@ -639,7 +639,7 @@
                             <td data-title="Windows Covered" style="{% depth_color_windows value.windows_covered max_windows_covered %}">
                                 {% windows_safe value.windows_covered %}</td>
                             {% if error_rate_available %}
-                            <td data-title="Error rate" style="{% depth_color value.error_rate max_error_rate %}">
+                            <td data-title="Error rate" style="{% depth_color_error value.error_rate max_error_rate %}">
                                 {{value.error_rate}}</td>
                             {% endif %}
                             <td data-title="class. success" style="{% success_count_color value.classification_success %}">

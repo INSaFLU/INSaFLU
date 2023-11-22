@@ -291,8 +291,8 @@ class ReportSorter:
         if report.error_rate is None:
             return
 
-        if report.error_rate > self.max_error_rate:
-            self.max_error_rate = report.error_rate
+        if (1 - report.error_rate) > self.max_error_rate:
+            self.max_error_rate = 1 - report.error_rate
 
     def update_max_quality_avg(self, report: FinalReport):
         """

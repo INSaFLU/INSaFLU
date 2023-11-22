@@ -1022,7 +1022,8 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
 
         empty_reports = report_sorter.get_reports_empty()
         print(empty_reports)
-        sorted_reports.append(empty_reports)
+        if empty_reports:
+            sorted_reports.append(empty_reports)
 
         # check has control_flag present
         has_controlled_flag = False if sample_main.is_control else True

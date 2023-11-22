@@ -595,10 +595,28 @@
                     </thead>
                     <tbody>
                         {% for final_report in report_list %}
-                        <tr class="parent" style="background-color: lightblue; border-radius: 10px;">
-                            <td data-title="Column 1">{{final_report.name}}</td>
-                            <td data-title="Column 2">{{final_report.shared_proportion}}</td>
-                            <td data-title="Column 3">{{final_report.private_proportion}}</td>
+                        <tr>
+                            <td colspan="100%">
+                                <div style="display: flex; border-radius: 5px; overflow: hidden;">
+                                    <!-- First section -->
+                                    <div style="flex: 1; padding: 5px; padding: 5px;border-right: 1px solid #ccc; border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
+                                        {{final_report.name}}
+                                    </div>
+                                    
+                                    <!-- Second section -->
+                                    <div style="flex: 1; padding: 5px; padding: 5px;border-right: 1px solid #ccc; border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
+                                        {{final_report.shared_proportion}}
+                                    </div>
+                                    <!-- Third section -->
+                                    <div style="flex: 1; padding: 10px; padding: 5px;border-radius: 5px; text-align: center; background-color: #d9e5ff; color: #333;">
+                                        {{final_report.private_proportion}}
+                                    </div>
+                                    <!-- Third section -->
+                                    <div style="flex: 1; padding: 10px; padding: 5px;border-radius: 5px; text-align: center; background-color: #d9e5ff; color: #333;">
+                                        {{final_report.group_list|length}}
+                                    </div>
+                                </div>
+                            </td>
                         </tr>
                         {% for value in final_report.group_list %}
                         <tr class="parent">

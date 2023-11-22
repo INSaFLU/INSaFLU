@@ -348,7 +348,30 @@
                     </thead>
                     <tbody>
                         {% for final_report in report_list %}
-                        {% for value in final_report %}
+                        <tr>
+                            <td colspan="100%">
+                                <div style="display: flex; border-radius: 5px; overflow: hidden;">
+                                    <!-- First section -->
+                                    <div style="flex: 1; padding: 5px; padding: 5px;border-right: 1px solid #ccc; border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
+                                        {{final_report.name}}
+                                    </div>
+                                    
+                                    <!-- Second section -->
+                                    <div style="flex: 1; padding: 5px; padding: 5px;border-right: 1px solid #ccc; border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
+                                        {{final_report.shared_proportion}}
+                                    </div>
+                                    <!-- Third section -->
+                                    <div style="flex: 1; padding: 10px; padding: 5px;border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
+                                        {{final_report.private_proportion}}
+                                    </div>
+                                    <!-- Third section -->
+                                    <div style="flex: 1; padding: 10px; padding: 5px;border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
+                                        {{final_report.group_list|length}}
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% for value in final_report.group_list %}
                         <tr class="parent">
                             <td data-title="Description"><a href="#" id="plot_show" >{{value.description}}</a></td>
                             <td data-title="Taxid">{{value.taxid}}</td>

@@ -9,8 +9,7 @@ from typing import Any, Type
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.modules.object_classes import (RunCMD,
-                                                            Software_detail)
+from pathogen_identification.modules.object_classes import RunCMD, Software_detail
 
 
 def check_report_empty(file, comment="@"):
@@ -766,6 +765,12 @@ class run_kraken2(Classifier_init):
         report = report[report.status != "U"][
             ["qseqid", "taxid", "length"]
         ]  # remove unclassified
+
+        print("########## kraken2 run ##########")
+        print("query file: ", self.query_path)
+        print("report file: ", self.report_path)
+        print(report.head())
+        print("#################################")
         return report
 
 

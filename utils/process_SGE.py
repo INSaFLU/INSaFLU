@@ -906,9 +906,11 @@ class ProcessSGE(object):
             print("SGE_ID: " + str(sge_id))
 
             if sge_id != None:
-                pc_name = process_controler.get_name_televir_project_merge_explify_external(
+                pc_name = (
+                    process_controler.get_name_televir_project_merge_explify_external(
                         user.pk,
                     )
+                )
                 self.set_process_controlers(
                     user,
                     pc_name,
@@ -1002,7 +1004,7 @@ class ProcessSGE(object):
             queue_name,
             vect_command,
             job_name,
-            True,
+            False,
             [job_name_wait],
             alternative_temp_dir=out_dir,
         )

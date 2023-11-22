@@ -582,9 +582,6 @@
                             {% if error_rate_available %}
                             <th>Error rate</th>
                             {% endif %}
-                            {% if quality_avg_available %}
-                            <th>Quality avg</th>
-                            {% endif %}
                             <th>class. success</th>
                             <th>mapping success</th>                
                             <th>Warning</th>
@@ -644,10 +641,6 @@
                             {% if error_rate_available %}
                             <td data-title="Error rate" style="{% depth_color value.error_rate max_error_rate %}">
                                 {{value.error_rate}}</td>
-                            {% endif %}
-                            {% if quality_avg_available %}
-                            <td data-title="Quality avg" style="{% depth_color value.quality_avg max_quality_avg %}">
-                                {{value.quality_avg}}</td>
                             {% endif %}
                             <td data-title="class. success" style="{% success_count_color value.classification_success %}">
                                 {{value.classification_success}}</td>
@@ -827,7 +820,7 @@
                         </tr>
                     {% endfor %}
                     <tr class="detail" style="background-color: #f2f2f2; padding: 0px; margin: 0px; border: 0px;">
-                        <td colspan="17" align="center" style="padding: 0px; margin: 0px">
+                        <td colspan="16" align="center" style="padding: 0px; margin: 0px">
                             <hr class="solid" style="height: 1px; background-color: #000000; margin: 0px;">
                         </td>
                     </tr>

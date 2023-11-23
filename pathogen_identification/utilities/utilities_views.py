@@ -295,6 +295,8 @@ class ReportSorter:
             self.analysis_df_path = None
             self.all_clades_df_path = None
             self.force = False
+            self.tree_plot_exists = False
+            self.tree_plot_path = None
 
     def update_max_error_rate(self, report: FinalReport):
         """

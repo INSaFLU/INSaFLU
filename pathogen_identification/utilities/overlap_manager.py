@@ -348,6 +348,9 @@ class ReadOverlapManager:
             )
         shared_reads = np.concatenate(shared_reads, axis=0)
 
+        # set diagonal to 0
+        np.fill_diagonal(shared_reads, 0)
+
         shared_reads = pd.DataFrame(
             shared_reads,
             index=read_profile_matrix.index,

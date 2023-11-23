@@ -8,21 +8,8 @@ from django.core.management.base import BaseCommand
 from constants.constants import Televir_Metadata_Constants
 from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import ConstantsSettings as PICS
-from pathogen_identification.models import (
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    SoftwareTreeNode,
-)
-from pathogen_identification.utilities.tree_deployment import (
-    Tree_Progress,
-    TreeProgressGraph,
-)
-from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility,
-    Utility_Pipeline_Manager,
-    Utils_Manager,
-)
+from pathogen_identification.models import PIProject_Sample, Projects
+from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
 from utils.process_SGE import ProcessSGE
 
 

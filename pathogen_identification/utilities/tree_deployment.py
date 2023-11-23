@@ -14,33 +14,22 @@ from django.db.models import QuerySet
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from constants.constants import TypePath
 from fluwebvirus.settings import STATIC_ROOT
-from pathogen_identification.constants_settings import ConstantsSettings as PIConstants
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PIConstants
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RunMain, SoftwareTree,
+                                            SoftwareTreeNode)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunMainTree_class
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.update_DBs_tree import (
-    Update_Assembly,
-    Update_Classification,
-    Update_Remap,
-    Update_RunMain_Initial,
-    Update_RunMain_Secondary,
-    get_run_parents,
-)
+    Update_Assembly, Update_Classification, Update_Remap,
+    Update_RunMain_Initial, Update_RunMain_Secondary, get_run_parents)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Pipeline_Makeup,
-    PipelineTree,
-    Utils_Manager,
-)
+    Pipeline_Makeup, PipelineTree, Utils_Manager)
 from pathogen_identification.utilities.utilities_views import ReportSorter
 from settings.constants_settings import ConstantsSettings
 from utils.utils import Utils
@@ -1297,7 +1286,7 @@ class TreeProgressGraph:
             ConstantsSettings.PIPELINE_NAME_read_quality_analysis: "cadetblue",
             ConstantsSettings.PIPELINE_NAME_extra_qc: "cadetblue",
             ConstantsSettings.PIPELINE_NAME_viral_enrichment: "darkgreen",
-            ConstantsSettings.PIPELINE_NAME_host_depletion: "chartreuse4",
+            ConstantsSettings.PIPELINE_NAME_host_depletion: "chartreuse",
             ConstantsSettings.PIPELINE_NAME_assembly: "brown",
             ConstantsSettings.PIPELINE_NAME_contig_classification: "darkorange",
             ConstantsSettings.PIPELINE_NAME_read_classification: "deeppink",

@@ -608,7 +608,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% if tree_plot_exists %} 
+                        {% if overlap_heatmap_available %} 
                         <tr>
                             <td colspan="100%">
                                 <div class="collapsible">
@@ -617,7 +617,7 @@
                                     </div>
                                     <div class="collapsible-body">
                                         <div id="plot" class="plot-container">
-                                            <img src={{tree_plot_path}} alt="Image">
+                                            <img src={{overlap_heatmap_path}} alt="Image">
                                         </div>
                                     </div>
                                 </div>

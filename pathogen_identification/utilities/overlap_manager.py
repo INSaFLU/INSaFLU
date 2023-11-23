@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Dict, List, Tuple
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from Bio import Phylo
@@ -13,9 +14,9 @@ from scipy.spatial.distance import pdist, squareform
 
 from pathogen_identification.utilities.clade_objects import Clade, CladeFilter
 from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
-
 ## pairwise matrix by individual reads
-from pathogen_identification.utilities.utilities_general import readname_from_fasta
+from pathogen_identification.utilities.utilities_general import \
+    readname_from_fasta
 
 
 def accid_from_metadata(metadata: pd.DataFrame, read_name: str) -> str:
@@ -37,6 +38,7 @@ class ReadOverlapManager:
     clade_statistics_filename: str = "clade_statistics_{}.tsv"
     accid_statistics_filename: str = "accid_statistics_{}.tsv"
     tree_plot_filename: str = "tree_{}.png"
+    overlap_matrix_plot_filename: str = "overlap_matrix_{}.png"
     min_freq: float = 0.05
     max_reads: int = 100000
 
@@ -68,6 +70,9 @@ class ReadOverlapManager:
         self.tree_plot_path = os.path.join(
             self.media_dir, self.tree_plot_filename.format(pid)
         )
+        self.overlap_matrix_plot_path = os.path.join(
+            self.media_dir, self.overlap_matrix_plot_filename.format(pid)
+        )
 
         self.metadata["filename"] = self.metadata["file"].apply(
             lambda x: x.split("/")[-1]
@@ -80,6 +85,13 @@ class ReadOverlapManager:
             self.tree_manager.plot_tree(self.tree_plot_path)
 
         self.tree_plot_exists = os.path.exists(self.tree_plot_path)
+
+        if not os.path.exists(
+            self.overlap_matrix_plot_path):
+            self.overlap_heatmap_plot()
+        
+        self.overlap_matrix_plot_exists = os.path.exists(self.overlap_matrix_plot_path)
+        
 
     def all_accs_analyzed(self):
         if not os.path.exists(self.accid_statistics_path):
@@ -112,6 +124,14 @@ class ReadOverlapManager:
             lambda x: self.get_proportion_counts(x)
         )
         accid_df.to_csv(self.accid_statistics_path, sep="\t", index=False)
+
+    def overlap_heatmap_plot(self) -> None:
+        """
+        Plot heatmap of read overlap between all pairs of lists
+        """
+        plt.figure(figsize=(15, 6))
+        sns.heatmap(self.overlap_matrix, annot=True)
+        plt.savefig(self.overlap_matrix_plot_path)
 
     def update_excluded_leaves(self, read_profile_matrix: pd.DataFrame):
         all_node_leaves = self.tree_manager.all_clades_leaves()

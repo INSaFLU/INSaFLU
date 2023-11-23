@@ -283,6 +283,9 @@ class ReportSorter:
             # remove everything before media dir
             self.tree_plot_exists = os.path.exists(self.tree_plot_path)
             self.tree_plot_path = "/media/" + self.tree_plot_path.split("media/")[-1]
+
+            self.overlap_heatmap_exists= os.path.exists(self.overlap_manager.overlap_matrix_plot_path)
+            self.overlap_heatmap_path = "/media/" + self.overlap_manager.overlap_matrix_plot_path.split("media/")[-1]
             
 
         else:

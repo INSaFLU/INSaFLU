@@ -1072,8 +1072,8 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "max_mapped_prop": report_sorter.max_mapped_prop,
             "max_coverage": report_sorter.max_coverage,
             "max_windows_covered": report_sorter.max_windows_covered,
-            "tree_plot_path": report_sorter.tree_plot_path,
-            "tree_plot_exists": report_sorter.tree_plot_exists,
+            "overlap_heatmap_available": report_sorter.overlap_heatmap_exists,
+            "overlap_heatmap_path": report_sorter.overlap_heatmap_path,
         }
 
         ### downloadable files
@@ -1193,8 +1193,8 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
             "max_mapped_prop": report_sorter.max_mapped_prop,
             "max_coverage": report_sorter.max_coverage,
             "max_windows_covered": report_sorter.max_windows_covered,
-            "tree_plot_path": report_sorter.tree_plot_path,
-            "tree_plot_exists": report_sorter.tree_plot_exists,
+            "overlap_heatmap_available": report_sorter.overlap_heatmap_exists,
+            "overlap_heatmap_path": report_sorter.overlap_heatmap_path,
         }
 
         return context

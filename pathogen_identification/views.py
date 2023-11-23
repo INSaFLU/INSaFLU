@@ -1039,6 +1039,8 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
 
         print(sorted_reports[0].name)
 
+        print("tree plot avail : ", report_sorter.tree_plot_path)
+
         context = {
             "project": project_name,
             "run_name": run_name,

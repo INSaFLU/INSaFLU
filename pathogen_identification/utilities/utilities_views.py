@@ -615,7 +615,7 @@ class ReportSorter:
             if len(group_list):
                 report_group = FinalReportGroup(
                     name=name,
-                    total_counts=0,
+                    total_counts=group_df.total_counts.iloc[0],
                     shared_proportion=group_df.shared_proportion.iloc[0],
                     private_proportion=group_df.private_proportion.iloc[0],
                     group_list=group_list,

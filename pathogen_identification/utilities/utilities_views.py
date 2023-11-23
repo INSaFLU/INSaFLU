@@ -518,7 +518,7 @@ class ReportSorter:
         # leaf_clades = overlap_manager.tree_manager.leaf_clades_clean(selected_clades)
         # clades = overlap_manager.leaf_clades_to_pandas(leaf_clades, statistics_dict_all)
         clades = self.overlap_manager.get_leaf_clades(force=force)
-        self.update_report_excluded_dicts(overlap_manager)
+        self.update_report_excluded_dicts(self.overlap_manager)
 
         return clades
 

@@ -209,7 +209,7 @@ class PhyloTreeManager:
         plt.figure(figsize=(20, 8))
         self.tree.root.color = "blue"
         Phylo.draw(self.tree, axes=plt.gca())
-        plt.savefig(outpath, dpi=300)
+        plt.savefig(outpath)
 
     def plot_tree_newick(self, outpath: str, force=False):
         Phylo.draw(self.tree, do_show=False, branch_labels=None)

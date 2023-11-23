@@ -1,6 +1,7 @@
 from typing import Dict, List
 
 import Bio
+import matplotlib.pyplot as plt
 import networkx as nx
 from Bio import Phylo
 
@@ -203,3 +204,13 @@ class PhyloTreeManager:
                 leaf_clades[leafname] = leaf
 
         return leaf_clades
+
+    def plot_tree(self, outpath: str, force=False):
+        plt.figure(figsize=(15, 6))
+        self.tree.root.color = "blue"
+        Phylo.draw(self.tree)
+        plt.savefig(outpath)
+
+    def plot_tree_newick(self, outpath: str, force=False):
+        Phylo.draw(self.tree, do_show=False, branch_labels=None)
+        Phylo.write(self.tree, outpath, "newick")

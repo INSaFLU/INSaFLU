@@ -5,25 +5,17 @@ from typing import Dict, List
 
 import pandas as pd
 
-from pathogen_identification.models import (
-    FinalReport,
-    PIProject_Sample,
-    Projects,
-    ReferenceMap_Main,
-    RunAssembly,
-    RunMain,
-)
+from pathogen_identification.models import (FinalReport, PIProject_Sample,
+                                            Projects, ReferenceMap_Main,
+                                            RunAssembly, RunMain)
 from pathogen_identification.utilities.clade_objects import Clade
-from pathogen_identification.utilities.overlap_manager import ReadOverlapManager
+from pathogen_identification.utilities.overlap_manager import \
+    ReadOverlapManager
 from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
 from pathogen_identification.utilities.televir_parameters import (
-    LayoutParams,
-    TelevirParameters,
-)
+    LayoutParams, TelevirParameters)
 from pathogen_identification.utilities.utilities_general import (
-    infer_run_media_dir,
-    simplify_name,
-)
+    infer_run_media_dir, simplify_name)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
 
@@ -42,6 +34,7 @@ class EmptyRemapMain:
 
 class FinalReportGroup:
     name: str
+    total_counts: int
     shared_proportion: str
     private_proportion: str
     group_list: List[FinalReport]
@@ -49,11 +42,13 @@ class FinalReportGroup:
     def __init__(
         self,
         name: str,
+        total_counts: int,
         shared_proportion: float,
         private_proportion: float,
         group_list: List[FinalReport],
     ):
         self.name = name
+        self.total_counts = total_counts
         self.shared_proportion = f"shared proportion {shared_proportion:.2f}"
         self.private_proportion = f"private proportion {private_proportion:.2f}"
         self.group_list = group_list
@@ -278,6 +273,12 @@ class ReportSorter:
                 ),
             )
             self.force = force
+            self.overlap_manager = ReadOverlapManager(
+                self.metadata_df,
+                self.reference_clade,
+                self.media_dir,
+                str(self.model.pk),
+            )
 
         else:
             self.media_dir = None
@@ -489,13 +490,6 @@ class ReportSorter:
         Return read overlap analysis as dataframe
         columns: leaf (accid), clade, read_count, group_count
         """
-
-        overlap_manager = ReadOverlapManager(
-            self.metadata_df,
-            self.reference_clade,
-            self.media_dir,
-            str(self.model.pk),
-        )
         ### time operations
         self.logger.info("generating tree")
 
@@ -511,7 +505,7 @@ class ReportSorter:
         # selected_clades = overlap_manager.filter_clades(statistics_dict_all)
         # leaf_clades = overlap_manager.tree_manager.leaf_clades_clean(selected_clades)
         # clades = overlap_manager.leaf_clades_to_pandas(leaf_clades, statistics_dict_all)
-        clades = overlap_manager.get_leaf_clades(force=force)
+        clades = self.overlap_manager.get_leaf_clades(force=force)
         self.update_report_excluded_dicts(overlap_manager)
 
         return clades
@@ -581,7 +575,7 @@ class ReportSorter:
 
         return True
 
-    def sort_reports_save(self):
+    def sort_reports_save(self, force=False):
         """
         Return sorted reports
         """
@@ -608,6 +602,7 @@ class ReportSorter:
             if len(group_list):
                 report_group = FinalReportGroup(
                     name=name,
+                    total_counts=group_df.total_counts.iloc[0],
                     shared_proportion=group_df.shared_proportion.iloc[0],
                     private_proportion=group_df.private_proportion.iloc[0],
                     group_list=group_list,
@@ -674,6 +669,7 @@ class ReportSorter:
 
         report_group = FinalReportGroup(
             name="Excluded",
+            total_counts= 0,
             shared_proportion=0,
             private_proportion=0,
             group_list=reports,
@@ -682,7 +678,10 @@ class ReportSorter:
         return report_group
 
 
-def calculate_reports_overlaps(sample: PIProject_Sample):
+def calculate_reports_overlaps(sample: PIProject_Sample, force=False):
+    """
+    calculate reports overlaps
+    """
     final_reports = FinalReport.objects.filter(sample=sample)
     report_layout_params = TelevirParameters.get_report_layout_params(
         project_pk=sample.project.pk
@@ -698,7 +697,8 @@ from django.db.models.query import QuerySet
 from django.views import generic
 from django.views.generic import ListView
 
-from pathogen_identification.models import FinalReport, ParameterSet, RunDetail, RunMain
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            RunDetail, RunMain)
 
 
 class FinalReportCompound(LoginRequiredMixin, generic.TemplateView):

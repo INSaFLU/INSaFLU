@@ -609,10 +609,11 @@ class ReportSorter:
             # sort by coverage
             group_list.sort(key=lambda x: x.coverage, reverse=True)
             name = group_df.clade.iloc[0]
+            print(group_df.columns)
             if len(group_list):
                 report_group = FinalReportGroup(
                     name=name,
-                    total_counts=group_df.total_counts.iloc[0],
+                    total_counts=0,
                     shared_proportion=group_df.shared_proportion.iloc[0],
                     private_proportion=group_df.private_proportion.iloc[0],
                     group_list=group_list,
@@ -643,6 +644,7 @@ class ReportSorter:
             return [
                 FinalReportGroup(
                     name="Full report, no overlap analysis",
+                    total_counts=0,
                     shared_proportion=0,
                     private_proportion=0,
                     group_list=self.reports,

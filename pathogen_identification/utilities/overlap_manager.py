@@ -8,15 +8,16 @@ from typing import Dict, List, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
 from Bio import Phylo
 from Bio.Phylo.TreeConstruction import DistanceMatrix, DistanceTreeConstructor
 from scipy.spatial.distance import pdist, squareform
 
 from pathogen_identification.utilities.clade_objects import Clade, CladeFilter
 from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
+
 ## pairwise matrix by individual reads
-from pathogen_identification.utilities.utilities_general import \
-    readname_from_fasta
+from pathogen_identification.utilities.utilities_general import readname_from_fasta
 
 
 def accid_from_metadata(metadata: pd.DataFrame, read_name: str) -> str:
@@ -86,12 +87,10 @@ class ReadOverlapManager:
 
         self.tree_plot_exists = os.path.exists(self.tree_plot_path)
 
-        if not os.path.exists(
-            self.overlap_matrix_plot_path):
+        if not os.path.exists(self.overlap_matrix_plot_path):
             self.overlap_heatmap_plot()
-        
+
         self.overlap_matrix_plot_exists = os.path.exists(self.overlap_matrix_plot_path)
-        
 
     def all_accs_analyzed(self):
         if not os.path.exists(self.accid_statistics_path):

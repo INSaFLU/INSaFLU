@@ -507,7 +507,7 @@ class ReadOverlapManager:
 
         return proportion_private
 
-    def clade_reads_matrix(self) -> pd.DataFrame:
+    def clade_reads_matrix(self, filter_names=[]) -> pd.DataFrame:
         """
         Return dataframe reads per clade"""
         clade_read_matrix = []
@@ -519,6 +519,10 @@ class ReadOverlapManager:
             # continue clade is leaf:
             if len(leaves) == 1:
                 continue
+
+            if filter_names:
+                if clade.name not in filter_names:
+                    continue
 
             reads_in_clade = self.read_profile_matrix.loc[leaves]
             reads_in_clade_sum = reads_in_clade.sum(axis=0)
@@ -534,22 +538,29 @@ class ReadOverlapManager:
             index=belonging,
             columns=self.read_profile_matrix.columns,
         )
+        # sort rows by row sum in descending order
+        clade_read_matrix = clade_read_matrix.loc[
+            clade_read_matrix.sum(axis=1).sort_values(ascending=False).index
+        ]
+
         return clade_read_matrix
 
-    def pairwise_clade_shared_reads(self) -> pd.DataFrame:
+    def pairwise_clade_shared_reads(self, clades_filter=[]) -> pd.DataFrame:
         """
         Return dataframe of pairwise shared reads between all pairs of clades"""
-        clade_read_matrix = self.clade_reads_matrix()
+        clade_read_matrix = self.clade_reads_matrix(filter_names=clades_filter)
         print(clade_read_matrix)
         shared_clade_reads = self.pairwise_shared_count(clade_read_matrix)
         print(shared_clade_reads)
         return shared_clade_reads
 
-    def plot_pairwise_shared_clade_reads(self) -> None:
+    def plot_pairwise_shared_clade_reads(self, clades_filter=[]) -> None:
         """
         Plot heatmap of pairwise shared reads between all pairs of leaves
         """
-        pairwise_shared_clade = self.pairwise_clade_shared_reads()
+        pairwise_shared_clade = self.pairwise_clade_shared_reads(
+            clades_filter=clades_filter
+        )
         plt.figure(figsize=(15, 6))
         sns.heatmap(pairwise_shared_clade, annot=True)
         plt.savefig(self.overlap_matrix_plot_path)
@@ -702,7 +713,6 @@ class ReadOverlapManager:
 
         else:
             node_statistics_dict = self.node_statistics()
-            self.plot_pairwise_shared_clade_reads()
 
             clade_summary = self.all_clades_summary(
                 node_stats_dict=node_statistics_dict

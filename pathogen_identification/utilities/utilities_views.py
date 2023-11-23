@@ -604,6 +604,27 @@ class ReportSorter:
             overlap_analysis = self.read_overlap_analysis(force=True)
             overlap_analysis.to_csv(self.analysis_df_path, sep="\t", index=False)
 
+            overlap_groups = list(overlap_analysis.groupby(["total_counts", "clade"]))[
+                ::-1
+            ]
+
+            clades_to_keep = []
+
+            for group in overlap_groups:
+                group_df = group[1]
+
+                group_accids = group_df.leaf.tolist()
+                group_accids = [x for x in group_accids if x in self.report_dict]
+                group_list = [self.report_dict[accid] for accid in group_accids]
+                # sort by coverage
+                group_list.sort(key=lambda x: x.coverage, reverse=True)
+                name = group_df.clade.iloc[0]
+                print(group_df.columns)
+                if len(group_list):
+                    clades_to_keep.append(name)
+
+            self.overlap_manager.plot_pairwise_shared_clade_reads(clades_to_keep)
+
     def get_sorted_reports(self) -> List[FinalReportGroup]:
         overlap_analysis = self.read_overlap_analysis()
 

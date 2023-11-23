@@ -511,6 +511,7 @@ class ReadOverlapManager:
         """
         Return dataframe reads per clade"""
         clade_read_matrix = []
+        belonging = []
         for clade, leaves in self.all_clade_leaves_filtered.items():
             if len(leaves) == 0:
                 continue
@@ -522,10 +523,11 @@ class ReadOverlapManager:
                 int
             ).tolist()
             clade_read_matrix.append(reads_in_clade_sum_as_int_list)
+            belonging.append(clade.name)
 
         clade_read_matrix = pd.DataFrame(
             clade_read_matrix,
-            index=list(self.all_clade_leaves_filtered.keys()),
+            index=belonging,
             columns=self.read_profile_matrix.columns,
         )
         return clade_read_matrix
@@ -534,7 +536,9 @@ class ReadOverlapManager:
         """
         Return dataframe of pairwise shared reads between all pairs of clades"""
         clade_read_matrix = self.clade_reads_matrix()
+        print(clade_read_matrix)
         shared_clade_reads = self.pairwise_shared_count(clade_read_matrix)
+        print(shared_clade_reads)
         return shared_clade_reads
 
     def plot_pairwise_shared_clade_reads(self) -> None:

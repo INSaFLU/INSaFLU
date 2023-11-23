@@ -244,7 +244,10 @@
         cursor: pointer;
         text-align: center;
       }
-
+      .plot-container {
+        display: flex;
+        justify-content: center;
+      }
 </style>
 
 {% if owner %}
@@ -610,12 +613,13 @@
                                   <span>plot</span>
                                 </div>
                                 <div class="collapsible-body">
-                                  <div id="plot"></div>
+                                  <div id="plot" class="plot-container">
                                   <img src={{tree_plot_path}} alt="Plot">
+                                  </div>
                                 </div>
                               </div>
                             </td>
-                          </tr>
+                        </tr>
                         {% endif %}
                         {% for final_report in report_list %}
                         <tr>

@@ -516,6 +516,10 @@ class ReadOverlapManager:
             if len(leaves) == 0:
                 continue
 
+            # continue clade is leaf:
+            if len(leaves) == 1:
+                continue
+
             reads_in_clade = self.read_profile_matrix.loc[leaves]
             reads_in_clade_sum = reads_in_clade.sum(axis=0)
             reads_in_clade_sum_as_bool = reads_in_clade_sum > 0

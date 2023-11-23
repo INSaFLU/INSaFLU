@@ -361,7 +361,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% if tree_plot_exists %} 
+                        {% if overlap_heatmap_available %} 
                         <tr>
                             <td colspan="100%">
                               <div class="collapsible">
@@ -370,7 +370,7 @@
                                 </div>
                                 <div class="collapsible-body">
                                   <div id="plot" class="plot-container">
-                                  <img src={{tree_plot_path}} alt="Plot">
+                                  <img src={{overlap_heatmap_path}} alt="Plot">
                                   </div>
                                 </div>
                               </div>
@@ -388,7 +388,7 @@
                                     
                                     <!-- Second section -->
                                     <div style="flex: 1; padding: 5px; padding: 5px;border-right: 1px solid #ccc; border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
-                                        {{final_report.shared_proportion}}
+                                        {{final_report.total_counts}}
                                     </div>
                                     <!-- Third section -->
                                     <div style="flex: 1; padding: 10px; padding: 5px;border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
@@ -396,7 +396,7 @@
                                     </div>
                                     <!-- Third section -->
                                     <div style="flex: 1; padding: 10px; padding: 5px;border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
-                                        {{final_report.group_list|length}}
+                                        # hits: {{final_report.group_list|length}}
                                     </div>
                                 </div>
                             </td>

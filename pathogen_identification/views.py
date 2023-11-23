@@ -1073,7 +1073,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "max_coverage": report_sorter.max_coverage,
             "max_windows_covered": report_sorter.max_windows_covered,
             "tree_plot_path": report_sorter.tree_plot_path,
-            "tree_plot_path_exists": report_sorter.tree_plot_exists,
+            "tree_plot_exists": report_sorter.tree_plot_exists,
         }
 
         ### downloadable files

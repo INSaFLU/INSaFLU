@@ -288,6 +288,8 @@ class ReportSorter:
                 str(self.model.pk),
             )
             self.tree_plot_path = self.overlap_manager.tree_plot_path
+            # remove everything before media dir
+            self.tree_plot_path = "/media/" + self.tree_plot_path.split("media/")[-1]
             self.tree_plot_exists = os.path.exists(self.tree_plot_path)
 
         else:

@@ -235,6 +235,17 @@
         display: none;
     }
 
+    .expand-button {
+        display: block;
+        width: 100%;
+        background-color: #e6f2ff;
+        color: #333;
+        padding: 10px 20px;
+        border-radius: 10px;
+        cursor: pointer;
+        text-align: center;
+      }
+
 </style>
 
 {% if owner %}
@@ -347,6 +358,21 @@
                         </tr>
                     </thead>
                     <tbody>
+                        {% if tree_plot_exists %} 
+                        <tr>
+                            <td colspan="100%">
+                              <div class="collapsible">
+                                <div class="collapsible-header">
+                                  <span>Read Overlap Tree</span>
+                                </div>
+                                <div class="collapsible-body">
+                                  <div id="plot"></div>
+                                  <img src={{tree_plot_path}} alt="Plot">
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        {% endif %}
                         {% for final_report in report_list %}
                         <tr>
                             <td colspan="100%">

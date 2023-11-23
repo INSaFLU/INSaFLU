@@ -608,16 +608,16 @@
                         {% if tree_plot_exists %} 
                         <tr>
                             <td colspan="100%">
-                              <div class="collapsible">
-                                <div class="collapsible-header">
-                                    <span class="expand-button">Read Overlap</span>
+                                <div class="collapsible">
+                                    <div class="collapsible-header">
+                                        <span class="expand-button">Read Overlap</span>
+                                    </div>
+                                    <div class="collapsible-body">
+                                        <div id="plot" class="plot-container">
+                                            <img src={{tree_plot_path}} alt="Image">
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="collapsible-body">
-                                  <div id="plot" class="plot-container">
-                                  <img src={{tree_plot_path}} alt="Plot">
-                                  </div>
-                                </div>
-                              </div>
                             </td>
                         </tr>
                         {% endif %}

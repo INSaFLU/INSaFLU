@@ -206,10 +206,10 @@ class PhyloTreeManager:
         return leaf_clades
 
     def plot_tree(self, outpath: str, force=False):
-        plt.figure(figsize=(35, 6))
+        plt.figure(figsize=(20, 8))
         self.tree.root.color = "blue"
-        Phylo.draw(self.tree, do_show=False, branch_labels=None)
-        Phylo.write(self.tree, outpath, "newick")
+        Phylo.draw(self.tree, axes=plt.gca())
+        plt.savefig(outpath, dpi=300)
 
     def plot_tree_newick(self, outpath: str, force=False):
         Phylo.draw(self.tree, do_show=False, branch_labels=None)

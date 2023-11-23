@@ -591,6 +591,21 @@
                         </tr>
                     </thead>
                     <tbody>
+                        {% if tree_plot_exists %} 
+                        <tr>
+                            <td colspan="100%">
+                              <div class="collapsible">
+                                <div class="collapsible-header">
+                                  <span>plot</span>
+                                </div>
+                                <div class="collapsible-body">
+                                  <div id="plot"></div>
+                                  <img src={{tree_plot_path}} alt="Plot">
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        {% endif %}
                         {% for final_report in report_list %}
                         <tr>
                             <td colspan="100%">
@@ -602,7 +617,7 @@
                                     
                                     <!-- Second section -->
                                     <div style="flex: 1; padding: 5px; padding: 5px;border-right: 1px solid #ccc; border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
-                                        {{final_report.shared_proportion}}
+                                        {{final_report.total_counts}}
                                     </div>
                                     <!-- Third section -->
                                     <div style="flex: 1; padding: 10px; padding: 5px;border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
@@ -891,6 +906,13 @@
 {% block js %}
 
 <script type="text/javascript">
+    $(document).ready(function() {
+        $('.collapsible-header').click(function() {
+          $(this).toggleClass('active');
+          $(this).siblings('.collapsible-body').slideToggle();
+        });
+      });
+
 
     $("tr.parent").find("A#plot_show").click(function(e) {
 
@@ -1232,6 +1254,7 @@
 
 
 <script>
+
     document.getElementById("report_download").addEventListener("click", function(e){
         console.log("download");
         e.preventDefault();

@@ -79,6 +79,8 @@ class ReadOverlapManager:
         if not os.path.exists(self.tree_plot_path):
             self.tree_manager.plot_tree(self.tree_plot_path)
 
+        self.tree_plot_exists = os.path.exists(self.tree_plot_path)
+
     def all_accs_analyzed(self):
         if not os.path.exists(self.accid_statistics_path):
             return False

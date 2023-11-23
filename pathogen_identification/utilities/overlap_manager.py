@@ -86,10 +86,6 @@ class ReadOverlapManager:
             self.tree_manager.plot_tree(self.tree_plot_path)
 
         self.tree_plot_exists = os.path.exists(self.tree_plot_path)
-
-        if not os.path.exists(self.overlap_matrix_plot_path):
-            self.overlap_heatmap_plot()
-
         self.overlap_matrix_plot_exists = os.path.exists(self.overlap_matrix_plot_path)
 
     def all_accs_analyzed(self):
@@ -110,6 +106,8 @@ class ReadOverlapManager:
         self.overlap_matrix: pd.DataFrame = self.pairwise_shared_count(
             self.read_profile_matrix
         )
+        self.overlap_heatmap_plot()
+
         accid_df = self.metadata[["accid", "description"]]
         accid_df["read_count"] = accid_df["accid"].apply(
             lambda x: self.get_accession_total_counts(x)

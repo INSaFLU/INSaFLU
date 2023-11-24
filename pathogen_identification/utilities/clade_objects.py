@@ -90,7 +90,7 @@ class CladeFilter:
         Return True if clade passes filter
         """
         assessments = [filter.filter_clade(clade) for filter in self.filters]
-        return all(assessments)
+        return any(assessments)
 
     def filter_clades(self, clades: List[Clade]) -> List[Clade]:
         """

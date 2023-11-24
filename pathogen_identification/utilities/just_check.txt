@@ -1,0 +1,260 @@
+clades_dict
+Clade(name='ref', leaves=[], group_counts=0, private_proportion=0.2, shared_proportion_std=0.05, shared_proportion_min=0.05, shared_proportion_max=0.05)
+###########
+Inner31
+Clade(name=Clade(branch_length=0, name='Inner31'), leaves=[], group_counts=0, private_proportion=0, shared_proportion_std=0, shared_proportion_min=0, shared_proportion_max=0)
+False
+###########
+FONX01000001.1
+Clade(name=Clade(branch_length=0.4995369805835703, name='FONX01000001.1'), leaves=['FONX01000001.1'], group_counts=9, private_proportion=0.0, shared_proportion_std=0, shared_proportion_min=1, shared_proportion_max=1)
+False
+###########
+Inner30
+Clade(name=Clade(branch_length=0.0004630194164296775, name='Inner30'), leaves=['NZ_CP046903.1', 'NZ_CP069443.1', 'NC_003210.1', 'NZ_CP023861.1'], group_counts=19798, private_proportion=0.9888888888888889, shared_proportion_std=0.4714045207910317, shared_proportion_min=0.0, shared_proportion_max=1.0)
+False
+###########
+Inner16
+Clade(name=Clade(branch_length=0.2002586635014394, name='Inner16'), leaves=['NZ_CP046903.1', 'NZ_CP069443.1'], group_counts=10, private_proportion=0.6666666666666666, shared_proportion_std=0.0, shared_proportion_min=1.0, shared_proportion_max=1.0)
+True
+###########
+NZ_CP046903.1
+Clade(name=Clade(branch_length=0.2999631901393962, name='NZ_CP046903.1'), leaves=['NZ_CP046903.1'], group_counts=6, private_proportion=0.0, shared_proportion_std=0, shared_proportion_min=1, shared_proportion_max=1)
+False
+###########
+NZ_CP069443.1
+Clade(name=Clade(branch_length=0.30003680986060377, name='NZ_CP069443.1'), leaves=['NZ_CP069443.1'], group_counts=4, private_proportion=0.0, shared_proportion_std=0, shared_proportion_min=1, shared_proportion_max=1)
+False
+###########
+Inner1
+Clade(name=Clade(branch_length=0.49974133649856056, name='Inner1'), leaves=['NC_003210.1', 'NZ_CP023861.1'], group_counts=19788, private_proportion=0.989084293511219, shared_proportion_std=0.0, shared_proportion_min=1.0, shared_proportion_max=1.0)
+True
+###########
+NC_003210.1
+Clade(name=Clade(branch_length=0.0, name='NC_003210.1'), leaves=['NC_003210.1'], group_counts=9894, private_proportion=0.0, shared_proportion_std=0, shared_proportion_min=1, shared_proportion_max=1)
+False
+###########
+NZ_CP023861.1
+Clade(name=Clade(branch_length=0.0, name='NZ_CP023861.1'), leaves=['NZ_CP023861.1'], group_counts=9894, private_proportion=0.0, shared_proportion_std=0, shared_proportion_min=1, shared_proportion_max=1)
+False
+###########
+Inner29
+Clade(name=Clade(branch_length=0.0017348993679429103, name='Inner29'), leaves=['QFVP01000001.1', 'NC_002695.2', 'BA000007.3', 'NC_016845.1', 'CP003200.1', 'NZ_CP033744.1', 'NC_003197.2', 'AE006468.2', 'NZ_CP129519.1', 'NZ_CP053028.1', 'NZ_CP036186.1', 'AP013070.1', 'NC_021505.1', 'NZ_CP029551.1', 'NZ_CP094655.1', 'NC_000964.3', 'NZ_CP010052.1', 'NC_010002.1', 'CP000884.1', 'NZ_CP050992.1', 'NZ_CP022053.2', 'NZ_LR134301.1', 'NC_010170.1', 'AM902716.1', 'NZ_CP021395.1', 'NZ_CP052846.1', 'NZ_LN890335.1', 'NZ_CP014028.1'], group_counts=201440, private_proportion=0.9986808557809556, shared_proportion_std=0.3313675273089894, shared_proportion_min=0.0, shared_proportion_max=1.0)
+False
+###########
+Inner27
+Clade(name=Clade(branch_length=0.004013735242303557, name='Inner27'), leaves=['QFVP01000001.1', 'NC_002695.2', 'BA000007.3', 'NC_016845.1', 'CP003200.1', 'NZ_CP033744.1', 'NC_003197.2', 'AE006468.2'], group_counts=12866, private_proportion=0.9346299297676931, shared_proportion_std=0.16063301190324106, shared_proportion_min=0.34375, shared_proportion_max=1.0)
+True
+###########
+QFVP01000001.1
+Clade(name=Clade(branch_length=0.4962461193505242, name='QFVP01000001.1'), leaves=['QFVP01000001.1'], group_counts=32, private_proportion=0.0, shared_proportion_std=0, shared_proportion_min=1, shared_proportion_max=1)
+False
+###########
+Inner18
+Clade(name=Clade(branch_length=0.14936485905210717, name='Inner18'), leaves=['NC_002695.2', 'BA000007.3', 'NC_016845.1', 'CP003200.1', 'NZ_CP033744.1', 'NC_003197.2', 'AE006468.2'], group_counts=12834, private_proportion=0.9259859535386278, shared_proportion_std=0.10229559715901254, shared_proportion_min=0.6943419434194342, shared_proportion_max=1.0)
+True
+###########
+Inner6
+Clade(name=Clade(branch_length=0.34464631891427433, name='Inner6'), leaves=['NC_002695.2', 'BA000007.3'], group_counts=6239, private_proportion=0.5491829541813521, shared_proportion_std=0.0, shared_proportion_min=1.0, shared_proportion_max=1.0)
+True
+###########
+NC_002695.2
+Clade(name=Clade(branch_length=0.0006912039293485717, name='NC_002695.2'), leaves=['NC_002695.2'], group_counts=3118, private_proportion=0.0, shared_proportion_std=0, shared_proportion_min=1, shared_proportion_max=1)
+False
+###########
+BA000007.3
+Clade(name=Clade(branch_length=0.000606233631468814, name='BA000007.3'), leaves=['BA000007.3'], group_counts=3121, private_proportion=0.0, shared_proportion_std=0, shared_proportion_min=1, shared_proportion_max=1)
+False
+###########
+Inner15
+Clade(name=Clade(branch_length=0.09828368175722069, name='Inner15'), leaves=['NC_016845.1', 'CP003200.1', 'NZ_CP033744.1', 'NC_003197.2', 'AE006468.2'], group_counts=6595, private_proportion=0.24508320726172467, shared_proportion_std=0.09048637064700187, shared_proportion_min=0.7472527472527473, shared_proportion_max=1.0)
+True
+###########
+Inner9
+Clade(name=Clade(branch_length=0.2375966671498974, name='Inner9'), leaves=['NC_016845.1', 'CP003200.1'], group_counts=2183, private_proportion=0.0, shared_proportion_std=0.0, shared_proportion_min=1.0, shared_proportion_max=1.0)
+False
+###########
+NC_016845.1
+Clade(name=Clade(branch_length=0.0013826966073045566, name='NC_016845.1'), leaves=['NC_016845.1'], group_counts=1091, private_proportion=0.0, shared_proportion_std=0, shared_proportion_min=1, shared_proportion_max=1)
+False
+###########
+CP003200.1
+Clade(name=Clade(branch_length=0.0013371583337652526, name='CP003200.1'), leaves=['CP003200.1'], group_counts=1092, private_proportion=0.0, shared_proportion_std=0, shared_proportion_min=1, shared_proportion_max=1)
+False
+###########
+Inner14
+Clade(name=Clade(branch_length=0.0273559132263681, name='Inner14'), leaves=['NZ_CP033744.1', 'NC_003197.2', 'AE006468.2'], group_counts=4412, private_proportion=0.25027870680044595, shared_proportion_std=0.06821357406795289, shared_proportion_min=0.8552971576227391, shared_proportion_max=1.0)
+True
+###########
+NZ_CP033744.1
+Clade(name=Clade(branch_length=0.2115553463478741, name='NZ_CP033744.1'), leaves=['NZ_CP033744.1'], group_counts=1161, private_proportion=0.0, shared_proportion_std=0, shared_proportion_min=1, shared_proportion_max=1)
+False
+###########
+Inner8
+Clade(name=Clade(branch_length=0.21909379645888705, name='Inner8'), leaves=['NC_003197.2', 'AE006468.2'], group_counts=3251, private_proportion=0.24907749077490776, shared_proportion_std=0.0, shared_proportion_min=1.0, shared_proportion_max=1.0)
+True
+###########
+NC_003197.2
+Clade(name=Clade(branch_length=0.0009096994656331847, name='NC_003197.2'), leaves=['NC_003197.2'], group_counts=1625, private_proportion=0.0, shared_proportion_std=0, shared_proportion_min=1, shared_proportion_max=1)
+False
+###########
+AE006468.2
+Clade(name=Clade(branch_length=0.000967647217721008, name='AE006468.2'), leaves=['AE006468.2'], group_counts=1626, private_proportion=0.0, shared_proportion_std=0, shared_proportion_min=1, shared_proportion_max=1)
+False
+###########
+Inner28
+Clade(name=Clade(branch_length=0.000841360109960429, name='Inner28'), leaves=['NZ_CP129519.1', 'NZ_CP053028.1', 'NZ_CP036186.1', 'AP013070.1', 'NC_021505.1', 'NZ_CP029551.1', 'NZ_CP094655.1', 'NC_000964.3', 'NZ_CP010052.1', 'NC_010002.1', 'CP000884.1', 'NZ_CP050992.1', 'NZ_CP022053.2', 'NZ_LR134301.1', 'NC_010170.1', 'AM902716.1', 'NZ_CP021395.1', 'NZ_CP052846.1', 'NZ_LN890335.1', 'NZ_CP014028.1'], group_counts=188574, private_proportion=0.9959077809798271, shared_proportion_std=0.3391428565697413, shared_proportion_min=0.007220216606498195, shared_proportion_max=1.0)
+False
+###########
+Inner25
+Clade(name=Clade(branch_length=0.014651685335508507, name='Inner25'), leaves=['NZ_CP129519.1', 'NZ_CP053028.1', 'NZ_CP036186.1', 'AP013070.1', 'NC_021505.1'], group_counts=182788, private_proportion=0.9857619396306241, shared_proportion_std=0.13200602194640687, shared_proportion_min=0.6673701983959477, shared_proportion_max=1.0)
+True
+###########
+Inner2
+Clade(name=Clade(branch_length=0.48517170498702084, name='Inner2'), leaves=['NZ_CP129519.1', 'NZ_CP053028.1'], group_counts=172030, private_proportion=0.9337921573642419, shared_proportion_std=0.0, shared_proportion_min=1.0, shared_proportion_max=1.0)
+True
+###########
+NZ_CP129519.1
+Clade(name=Clade(branch_length=2.161537437911365e-05, name='NZ_CP129519.1'), leaves=['NZ_CP129519.1'], group_counts=86017, private_proportion=0.0, shared_proportion_std=0, shared_proportion_min=1, shared_proportion_max=1)
+False
+###########
+NZ_CP053028.1
+Clade(name=Clade(branch_length=2.484115392452621e-05, name='NZ_CP053028.1'), leaves=['NZ_CP053028.1'], group_counts=86013, private_proportion=0.0, shared_proportion_std=0, shared_proportion_min=1, shared_proportion_max=1)
+False
+###########
+Inner17
+Clade(name=Clade(branch_length=0.14144722161790063, name='Inner17'), leaves=['NZ_CP036186.1', 'AP013070.1', 'NC_021505.1'], group_counts=10758, private_proportion=0.0012040939193257074, shared_proportion_std=0.15680319222597422, shared_proportion_min=0.6673701983959477, shared_proportion_max=1.0)
+False
+###########
+NZ_CP036186.1
+Clade(name=Clade(branch_length=0.3347084417745861, name='NZ_CP036186.1'), leaves=['NZ_CP036186.1'], group_counts=2369, private_proportion=0.0, shared_proportion_std=0, shared_proportion_min=1, shared_proportion_max=1)
+False
+###########
+Inner4
+Clade(name=Clade(branch_length=0.33657465394842817, name='Inner4'), leaves=['AP013070.1', 'NC_021505.1'], group_counts=8389, private_proportion=0.0011918951132300357, shared_proportion_std=0.0, shared_proportion_min=1.0, shared_proportion_max=1.0)
+False
+###########
+AP013070.1
+Clade(name=Clade(branch_length=0.0, name='AP013070.1'), leaves=['AP013070.1'], group_counts=4195, private_proportion=0.0, shared_proportion_std=0, shared_proportion_min=1, shared_proportion_max=1)
+False
+###########
+NC_021505.1
+Clade(name=Clade(branch_length=0.0, name='NC_021505.1'), leaves=['NC_021505.1'], group_counts=4194, private_proportion=0.0, shared_proportion_std=0, shared_proportion_min=1, shared_proportion_max=1)
+False
+###########
+Inner26
+Clade(name=Clade(branch_length=0.007698455220796874, name='Inner26'), leaves=['NZ_CP029551.1', 'NZ_CP094655.1', 'NC_000964.3', 'NZ_CP010052.1', 'NC_010002.1', 'CP000884.1', 'NZ_CP050992.1', 'NZ_CP022053.2', 'NZ_LR134301.1', 'NC_010170.1', 'AM902716.1', 'NZ_CP021395.1', 'NZ_CP052846.1', 'NZ_LN890335.1', 'NZ_CP014028.1'], group_counts=5786, private_proportion=0.34641255605381166, shared_proportion_std=0.30207863161046433, shared_proportion_min=0.007220216606498195, shared_proportion_max=1.0)
+False
+###########
+Inner24
+Clade(name=Clade(branch_length=0.017727304619122447, name='Inner24'), leaves=['NZ_CP029551.1', 'NZ_CP094655.1', 'NC_000964.3', 'NZ_CP010052.1'], group_counts=1196, private_proportion=0.7724137931034483, shared_proportion_std=0.3742818378343425, shared_proportion_min=0.1875, shared_proportion_max=1.0)
+True
+###########
+NZ_CP029551.1
+Clade(name=Clade(branch_length=0.47119930463830534, name='NZ_CP029551.1'), leaves=['NZ_CP029551.1'], group_counts=32, private_proportion=0.0, shared_proportion_std=0, shared_proportion_min=1, shared_proportion_max=1)
+False
+###########
+Inner22
+Clade(name=Clade(branch_length=0.027285416249813343, name='Inner22'), leaves=['NZ_CP094655.1', 'NC_000964.3', 'NZ_CP010052.1'], group_counts=1164, private_proportion=0.8057553956834532, shared_proportion_std=0.016835875742536838, shared_proportion_min=0.9642857142857143, shared_proportion_max=1.0)
+True
+###########
+NZ_CP094655.1
+Clade(name=Clade(branch_length=0.4404534448264788, name='NZ_CP094655.1'), leaves=['NZ_CP094655.1'], group_counts=56, private_proportion=0.0, shared_proportion_std=0, shared_proportion_min=1, shared_proportion_max=1)
+False
+###########
+Inner3
+Clade(name=Clade(branch_length=0.45100562990661713, name='Inner3'), leaves=['NC_000964.3', 'NZ_CP010052.1'], group_counts=1108, private_proportion=0.8086642599277978, shared_proportion_std=0.0, shared_proportion_min=1.0, shared_proportion_max=1.0)
+True
+###########
+NC_000964.3
+Clade(name=Clade(branch_length=0.0, name='NC_000964.3'), leaves=['NC_000964.3'], group_counts=554, private_proportion=0.0, shared_proportion_std=0, shared_proportion_min=1, shared_proportion_max=1)
+False
+###########
+NZ_CP010052.1
+Clade(name=Clade(branch_length=0.0, name='NZ_CP010052.1'), leaves=['NZ_CP010052.1'], group_counts=554, private_proportion=0.0, shared_proportion_std=0, shared_proportion_min=1, shared_proportion_max=1)
+False
+###########
+Inner23
+Clade(name=Clade(branch_length=0.036865022460321056, name='Inner23'), leaves=['NC_010002.1', 'CP000884.1', 'NZ_CP050992.1', 'NZ_CP022053.2', 'NZ_LR134301.1', 'NC_010170.1', 'AM902716.1', 'NZ_CP021395.1', 'NZ_CP052846.1', 'NZ_LN890335.1', 'NZ_CP014028.1'], group_counts=4590, private_proportion=0.13754045307443366, shared_proportion_std=0.26662659027613056, shared_proportion_min=0.14028776978417265, shared_proportion_max=1.0)
+False
+###########
+Inner5
+Clade(name=Clade(branch_length=0.4483357140423897, name='Inner5'), leaves=['NC_010002.1', 'CP000884.1'], group_counts=557, private_proportion=0.13261648745519714, shared_proportion_std=0.0, shared_proportion_min=1.0, shared_proportion_max=1.0)
+False
+###########
+NC_010002.1
+Clade(name=Clade(branch_length=0.0, name='NC_010002.1'), leaves=['NC_010002.1'], group_counts=279, private_proportion=0.0, shared_proportion_std=0, shared_proportion_min=1, shared_proportion_max=1)
+False
+###########
+CP000884.1
+Clade(name=Clade(branch_length=0.0, name='CP000884.1'), leaves=['CP000884.1'], group_counts=278, private_proportion=0.0, shared_proportion_std=0, shared_proportion_min=1, shared_proportion_max=1)
+False
+###########
+Inner21
+Clade(name=Clade(branch_length=0.03451974449898526, name='Inner21'), leaves=['NZ_CP050992.1', 'NZ_CP022053.2', 'NZ_LR134301.1', 'NC_010170.1', 'AM902716.1', 'NZ_CP021395.1', 'NZ_CP052846.1', 'NZ_LN890335.1', 'NZ_CP014028.1'], group_counts=4033, private_proportion=0.07685352622061482, shared_proportion_std=0.227180089930791, shared_proportion_min=0.18333333333333332, shared_proportion_max=1.0)
+False
+###########
+Inner20
+Clade(name=Clade(branch_length=0.0029386020289074444, name='Inner20'), leaves=['NZ_CP050992.1', 'NZ_CP022053.2', 'NZ_LR134301.1'], group_counts=938, private_proportion=0.020036429872495445, shared_proportion_std=0.26474012839778377, shared_proportion_min=0.3346613545816733, shared_proportion_max=0.9021406727828746)
+False
+###########
+NZ_CP050992.1
+Clade(name=Clade(branch_length=0.40715510245335396, name='NZ_CP050992.1'), leaves=['NZ_CP050992.1'], group_counts=251, private_proportion=0.0, shared_proportion_std=0, shared_proportion_min=1, shared_proportion_max=1)
+False
+###########
+Inner12
+Clade(name=Clade(branch_length=0.3125867121160468, name='Inner12'), leaves=['NZ_CP022053.2', 'NZ_LR134301.1'], group_counts=687, private_proportion=0.02806122448979592, shared_proportion_std=0.0, shared_proportion_min=0.9021406727828746, shared_proportion_max=0.9021406727828746)
+False
+###########
+NZ_CP022053.2
+Clade(name=Clade(branch_length=0.10025686760114211, name='NZ_CP022053.2'), leaves=['NZ_CP022053.2'], group_counts=360, private_proportion=0.0, shared_proportion_std=0, shared_proportion_min=1, shared_proportion_max=1)
+False
+###########
+NZ_LR134301.1
+Clade(name=Clade(branch_length=0.10133464433519748, name='NZ_LR134301.1'), leaves=['NZ_LR134301.1'], group_counts=327, private_proportion=0.0, shared_proportion_std=0, shared_proportion_min=1, shared_proportion_max=1)
+False
+###########
+Inner19
+Clade(name=Clade(branch_length=0.08060883031186722, name='Inner19'), leaves=['NC_010170.1', 'AM902716.1', 'NZ_CP021395.1', 'NZ_CP052846.1', 'NZ_LN890335.1', 'NZ_CP014028.1'], group_counts=3095, private_proportion=0.08624708624708624, shared_proportion_std=0.13680536326088602, shared_proportion_min=0.6543535620052771, shared_proportion_max=1.0)
+False
+###########
+Inner7
+Clade(name=Clade(branch_length=0.3383417572526353, name='Inner7'), leaves=['NC_010170.1', 'AM902716.1'], group_counts=757, private_proportion=0.1503957783641161, shared_proportion_std=0.0, shared_proportion_min=1.0, shared_proportion_max=1.0)
+False
+###########
+NC_010170.1
+Clade(name=Clade(branch_length=0.0, name='NC_010170.1'), leaves=['NC_010170.1'], group_counts=378, private_proportion=0.0, shared_proportion_std=0, shared_proportion_min=1, shared_proportion_max=1)
+False
+###########
+AM902716.1
+Clade(name=Clade(branch_length=0.0, name='AM902716.1'), leaves=['AM902716.1'], group_counts=379, private_proportion=0.0, shared_proportion_std=0, shared_proportion_min=1, shared_proportion_max=1)
+False
+###########
+Inner13
+Clade(name=Clade(branch_length=0.14227473638499238, name='Inner13'), leaves=['NZ_CP021395.1', 'NZ_CP052846.1', 'NZ_LN890335.1', 'NZ_CP014028.1'], group_counts=2338, private_proportion=0.021476510067114093, shared_proportion_std=0.0426447827024571, shared_proportion_min=0.8856015779092702, shared_proportion_max=0.9938144329896907)
+False
+###########
+Inner10
+Clade(name=Clade(branch_length=0.17512903977753586, name='Inner10'), leaves=['NZ_CP021395.1', 'NZ_CP052846.1'], group_counts=992, private_proportion=0.01764705882352941, shared_proportion_std=0.0, shared_proportion_min=0.9938144329896907, shared_proportion_max=0.9938144329896907)
+False
+###########
+NZ_CP021395.1
+Clade(name=Clade(branch_length=0.01618686402598124, name='NZ_CP021395.1'), leaves=['NZ_CP021395.1'], group_counts=485, private_proportion=0.0, shared_proportion_std=0, shared_proportion_min=1, shared_proportion_max=1)
+False
+###########
+NZ_CP052846.1
+Clade(name=Clade(branch_length=0.015933050320913834, name='NZ_CP052846.1'), leaves=['NZ_CP052846.1'], group_counts=507, private_proportion=0.0, shared_proportion_std=0, shared_proportion_min=1, shared_proportion_max=1)
+False
+###########
+Inner11
+Clade(name=Clade(branch_length=0.1621647462984332, name='Inner11'), leaves=['NZ_LN890335.1', 'NZ_CP014028.1'], group_counts=1346, private_proportion=0.0, shared_proportion_std=0.0, shared_proportion_min=0.9731343283582089, shared_proportion_max=0.9731343283582089)
+False
+###########
+NZ_LN890335.1
+Clade(name=Clade(branch_length=0.030661786469555252, name='NZ_LN890335.1'), leaves=['NZ_LN890335.1'], group_counts=670, private_proportion=0.0, shared_proportion_std=0, shared_proportion_min=1, shared_proportion_max=1)
+False
+###########
+NZ_CP014028.1
+Clade(name=Clade(branch_length=0.032496108267286855, name='NZ_CP014028.1'), leaves=['NZ_CP014028.1'], group_counts=676, private_proportion=0.0, shared_proportion_std=0, shared_proportion_min=1, shared_proportion_max=1)
+False
+#### selected_clades
+[Clade(branch_length=0.2002586635014394, name='Inner16'), Clade(branch_length=0.49974133649856056, name='Inner1'), Clade(branch_length=0.004013735242303557, name='Inner27'), Clade(branch_length=0.14936485905210717, name='Inner18'), Clade(branch_length=0.34464631891427433, name='Inner6'), Clade(branch_length=0.09828368175722069, name='Inner15'), Clade(branch_length=0.0273559132263681, name='Inner14'), Clade(branch_length=0.21909379645888705, name='Inner8'), Clade(branch_length=0.014651685335508507, name='Inner25'), Clade(branch_length=0.48517170498702084, name='Inner2'), Clade(branch_length=0.017727304619122447, name='Inner24'), Clade(branch_length=0.027285416249813343, name='Inner22'), Clade(branch_length=0.45100562990661713, name='Inner3')]

@@ -500,9 +500,11 @@ class ReadOverlapManager:
         sum_group = self.read_profile_matrix.loc[leaves].sum(axis=0)
 
         private_reads = sum_group - sum_all
-        private_reads = sum(private_reads > 0)
+        private_reads = sum(private_reads == 0)
 
         proportion_private = private_reads / len(group_sum_as_bool_list)
+
+        # print(proportion_private)
 
         return proportion_private
 

@@ -328,7 +328,8 @@ class ReadOverlapManager:
         return read_profile_matrix
 
     def pairwise_shared_count(
-        self, read_profile_matrix: pd.DataFrame, fill_diagonal=False
+        self,
+        read_profile_matrix: pd.DataFrame,
     ) -> pd.DataFrame:
         """
         Return dataframe of pairwise shared read counts,
@@ -448,7 +449,7 @@ class ReadOverlapManager:
         group_pairwise_shared = self.pairwise_shared_count(group)
 
         # divide shared rows by group row sums
-        group_pairwise_shared = group_pairwise_shared.div(group.sum(axis=0), axis=1)
+        group_pairwise_shared = group_pairwise_shared.div(group.sum(axis=1), axis=1)
         print(group_pairwise_shared.shape)
 
         # get lower triangle of shared
@@ -467,7 +468,7 @@ class ReadOverlapManager:
         if "NC_021505.1" in leaves and "AP013070.1" in leaves:
             print("##########")
             print(leaves)
-            print(group_pairwise_shared)
+            print(group_pairwise_shared.shape)
 
         min_shared = min(group_pairwise_shared)
         max_shared = max(group_pairwise_shared)

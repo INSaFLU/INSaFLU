@@ -489,13 +489,33 @@ class ReadOverlapManager:
         """
         return int(self.read_profile_matrix.loc[leaves].sum().sum())
 
-    def clade_private_proportions(self, leaves: list) -> float:
+    def clade_private_proportions_old(self, leaves: list) -> float:
         """ """
         group = self.read_profile_matrix.loc[leaves]
         group_sum = group.sum(axis=0)
         group_sum_as_bool = group_sum > 0
         group_sum_as_bool_list = group_sum_as_bool.tolist()
 
+        group_reads = self.read_profile_matrix.iloc[:, group_sum_as_bool_list]
+
+        group_reads_sum_all = group_reads.sum(axis=0)
+        group_reads_sum_group = group_reads.loc[leaves].sum(axis=0)
+        group_reads_sum_group = group_reads_sum_group.fillna(0)
+
+        read_proportions = group_reads_sum_group / group_reads_sum_all
+        read_proportions = read_proportions.fillna(0)
+
+        # proportion of reads in group that are private
+        proportion_private = read_proportions.sum() / len(read_proportions)
+
+        return proportion_private
+
+    def clade_private_proportions(self, leaves: list) -> float:
+        """ """
+        group = self.read_profile_matrix.loc[leaves]
+        group_sum = group.sum(axis=0)
+        group_sum_as_bool = group_sum > 0
+        group_sum_as_bool_list = group_sum_as_bool.tolist()
         sum_all = self.read_profile_matrix.iloc[:, group_sum_as_bool_list].sum(axis=0)
         sum_group = self.read_profile_matrix.loc[leaves]
         sum_group = sum_group.iloc[:, group_sum_as_bool_list].sum(axis=0)
@@ -511,10 +531,6 @@ class ReadOverlapManager:
         )
 
         proportion_private = private_reads / sum(group_sum_as_bool_list)
-
-        # print(proportion_private)
-
-        return proportion_private
 
     def clade_reads_matrix(self, filter_names=[], remove_leaves=True) -> pd.DataFrame:
         """
@@ -608,8 +624,6 @@ class ReadOverlapManager:
 
                 continue
 
-            print("#####")
-            print(node, leaves)
             proportion_private = self.clade_private_proportions(leaves)
             clade_counts = self.clade_total_counts(leaves)
 
@@ -774,9 +788,12 @@ class ReadOverlapManager:
 
         print("clades_dict")
         print(self.clade_filter.reference_clade)
+
         for clade, clade_obj in clades_dict.items():
+            print("###########")
             print(clade)
             print(clade_obj)
+            print(self.clade_filter.filter_clade(clade_obj))
 
         clades_filtered = [
             clade
@@ -894,6 +911,8 @@ class ReadOverlapManager:
 
         selected_clades = self.filter_clades(statistics_dict_all)
 
+        print("#### selected_clades")
+        print(selected_clades)
         leaf_clades = self.tree_manager.leaf_clades_clean(selected_clades)
 
         clades = self.leaf_clades_to_pandas(leaf_clades, statistics_dict_all)

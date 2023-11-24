@@ -62,7 +62,7 @@ class ConstantsSettings:
     #################################### Tree sort default Parameters
 
     clade_private_proportion = 0.5
-    clade_shared_proportion_threshold = 0.05
+    clade_shared_proportion_threshold = 0.2
 
     ################################### Threads
 

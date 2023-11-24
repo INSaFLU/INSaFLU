@@ -253,7 +253,6 @@
 
 {% if owner %}
 
-
 <div id="accordion1" role="tablist" aria-multiselectable="true">
     <div class="card">
         <div class="card">
@@ -632,6 +631,13 @@
 {% block js %}
 
 <script type="text/javascript">
+
+    $(document).ready(function() {
+        $('.collapsible-header').click(function() {
+          $(this).toggleClass('active');
+          $(this).siblings('.collapsible-body').slideToggle();
+        });
+      });
 
     $("tr.parent").find("A#plot_show").click(function(e) {
 

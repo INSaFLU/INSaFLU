@@ -496,16 +496,13 @@ class ReadOverlapManager:
         group_sum_as_bool = group_sum > 0
         group_sum_as_bool_list = group_sum_as_bool.tolist()
 
-        group_reads = self.read_profile_matrix.iloc[:, group_sum_as_bool_list]
-        group_reads_sum_all = group_reads.sum(axis=0)
-        group_reads_sum_group = group_reads.loc[leaves].sum(axis=0)
-        group_reads_sum_group = group_reads_sum_group.fillna(0)
+        sum_all = self.read_profile_matrix.iloc[:, group_sum_as_bool_list].sum(axis=0)
+        sum_group = self.read_profile_matrix.loc[leaves].sum(axis=0)
 
-        read_proportions = group_reads_sum_group / group_reads_sum_all
-        read_proportions = read_proportions.fillna(0)
+        private_reads = sum_group - sum_all
+        private_reads = sum(private_reads > 0)
 
-        # proportion of reads in group that are private
-        proportion_private = read_proportions.sum() / len(read_proportions)
+        proportion_private = private_reads / len(group_sum_as_bool_list)
 
         return proportion_private
 
@@ -553,7 +550,7 @@ class ReadOverlapManager:
         )
 
         # set diagonal to 1
-        np.fill_diagonal(shared_clade_matrix.values, 1)
+        np.fill_diagonal(shared_clade_matrix.values, 0)
 
         return shared_clade_matrix
 

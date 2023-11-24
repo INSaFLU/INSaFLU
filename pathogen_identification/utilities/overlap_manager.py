@@ -532,6 +532,8 @@ class ReadOverlapManager:
 
         proportion_private = private_reads / sum(group_sum_as_bool_list)
 
+        return proportion_private
+
     def clade_reads_matrix(self, filter_names=[], remove_leaves=True) -> pd.DataFrame:
         """
         Return dataframe reads per clade"""

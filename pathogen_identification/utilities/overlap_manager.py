@@ -682,16 +682,16 @@ class ReadOverlapManager:
 
                 continue
 
-            min_shared, max_shared, std_shared = self.clade_shared_by_pair(leaves)
+            combinations = self.clade_shared_by_pair_old(leaves)
 
             node_stats_dict[node] = Clade(
                 name=node,
                 leaves=leaves,
                 private_proportion=proportion_private,
                 group_counts=clade_counts,
-                shared_proportion_min=min_shared,
-                shared_proportion_max=max_shared,
-                shared_proportion_std=std_shared,
+                shared_proportion_min=min(combinations.proportion_max),
+                shared_proportion_max=max(combinations.proportion_max),
+                shared_proportion_std=np.std(combinations.proportion_max),
             )
 
         return node_stats_dict

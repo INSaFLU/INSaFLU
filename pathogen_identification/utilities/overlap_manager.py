@@ -676,8 +676,8 @@ class ReadOverlapManager:
                     group_counts=clade_counts,
                     private_proportion=proportion_private,
                     shared_proportion_std=0,
-                    shared_proportion_min=1,
-                    shared_proportion_max=1,
+                    shared_proportion_min=0,
+                    shared_proportion_max=0,
                 )
 
                 continue

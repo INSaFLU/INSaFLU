@@ -497,7 +497,7 @@ class ReadOverlapManager:
         group_sum_as_bool_list = group_sum_as_bool.tolist()
 
         sum_all = self.read_profile_matrix.iloc[:, group_sum_as_bool_list].sum(axis=0)
-        sum_group = self.read_profile_matrix.loc[leaves, group_sum_as_bool_list].sum(
+        sum_group = self.read_profile_matrix.iloc[leaves, group_sum_as_bool_list].sum(
             axis=0
         )
 

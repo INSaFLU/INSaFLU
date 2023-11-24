@@ -168,6 +168,7 @@ class PhyloTreeManager:
         Return dictionary of inner node clades, filter hierarchy -> remove nodes that are children of other nodes
         """
         inner_node_clades = self.inner_node_children_dict_get()
+
         # print(inner_node_clades)
         if private_clades:
             inner_node_clades = {
@@ -192,6 +193,7 @@ class PhyloTreeManager:
         Return dictionary of node clades
         """
         inner_node_clades = self.inner_node_clades_get_clean(private_clades)
+        print(inner_node_clades)
 
         # innder_node_clades_clean = {}
 

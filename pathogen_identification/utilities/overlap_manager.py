@@ -442,7 +442,23 @@ class ReadOverlapManager:
     ## private clades ##
     ####################
 
-    def clade_shared_by_pair(self, leaves: list) -> pd.DataFrame:
+    def clade_shared_by_pair(self, leaves: list) -> Tuple[float, float, float]:
+        group = self.read_profile_matrix.loc[leaves]
+
+        group_pairwise_shared = self.pairwise_shared_count(group)
+
+        # get lower triangle
+        group_pairwise_shared = self.matrix_lower_triangle(group_pairwise_shared)
+        # flatten
+        group_pairwise_shared = group_pairwise_shared.stack().reset_index()
+
+        min_shared = group_pairwise_shared.groupby("level_0")[0].min()
+        max_shared = group_pairwise_shared.groupby("level_0")[0].max()
+        std_shared = group_pairwise_shared.groupby("level_0")[0].std()
+
+        return min_shared, max_shared, std_shared
+
+    def clade_shared_by_pair_old(self, leaves: list) -> pd.DataFrame:
         """
         return tuple of proportions of reads shared by each pair of leaves
         """
@@ -642,16 +658,16 @@ class ReadOverlapManager:
 
                 continue
 
-            pairwise_shared_clade = self.clade_shared_by_pair(leaves)
+            min_shared, max_shared, std_shared = self.clade_shared_by_pair(leaves)
 
             node_stats_dict[node] = Clade(
                 name=node,
                 leaves=leaves,
                 private_proportion=proportion_private,
                 group_counts=clade_counts,
-                shared_proportion_min=min(pairwise_shared_clade.proportion_min),
-                shared_proportion_max=max(pairwise_shared_clade.proportion_max),
-                shared_proportion_std=np.std(pairwise_shared_clade.proportion_std),
+                shared_proportion_min=min_shared,
+                shared_proportion_max=max_shared,
+                shared_proportion_std=std_shared,
             )
 
         return node_stats_dict

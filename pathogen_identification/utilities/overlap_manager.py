@@ -449,11 +449,12 @@ class ReadOverlapManager:
 
         # divide shared rows by group row sums
         group_pairwise_shared = group_pairwise_shared.div(group.sum(axis=0), axis=1)
+        print(group_pairwise_shared.shape)
 
         # get lower triangle of shared
         lower_triangle = self.matrix_lower_triangle(group_pairwise_shared)
         # get upper triangle from matrix, without diagonal
-        upper_triangle = group_pairwise_shared.T.where(
+        upper_triangle = group_pairwise_shared.where(
             np.triu(np.ones(group_pairwise_shared.shape), k=1).astype(bool)
         )
 
@@ -548,6 +549,7 @@ class ReadOverlapManager:
         group_sum = group.sum(axis=0)
         group_sum_as_bool = group_sum > 0
         group_sum_as_bool_list = group_sum_as_bool.tolist()
+
         sum_all = self.read_profile_matrix.iloc[:, group_sum_as_bool_list].sum(axis=0)
         sum_group = self.read_profile_matrix.loc[leaves]
         sum_group = sum_group.iloc[:, group_sum_as_bool_list].sum(axis=0)

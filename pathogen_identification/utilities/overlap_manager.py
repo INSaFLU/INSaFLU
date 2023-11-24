@@ -506,7 +506,7 @@ class ReadOverlapManager:
         print(private_reads.shape)
 
         private_reads = sum(private_reads == 0)
-        print(private_reads, len(group_sum_as_bool_list))
+        print(private_reads, sum(group_sum_as_bool_list))
 
         proportion_private = private_reads / sum(group_sum_as_bool_list)
 

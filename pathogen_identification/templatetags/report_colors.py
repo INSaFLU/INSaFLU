@@ -89,7 +89,6 @@ def map_success_col(success_count):
 
 @register.simple_tag
 def depth_color_error(depth_value, max_value):
-    print(depth_value, max_value)
     if depth_value and max_value:
         ncol = float(depth_value) * 100 / float(max_value)
     else:

@@ -638,6 +638,8 @@ class ReadOverlapManager:
         )
         plt.figure(figsize=(15, 6))
         sns.heatmap(pairwise_shared_clade, annot=True)
+        # center figure
+        plt.tight_layout()
         plt.savefig(self.overlap_matrix_plot_path)
 
     def node_statistics(self) -> dict:
@@ -664,8 +666,6 @@ class ReadOverlapManager:
 
                 continue
 
-            print("########")
-            print(node)
             proportion_private = self.clade_private_proportions(leaves)
             clade_counts = self.clade_total_counts(leaves)
 

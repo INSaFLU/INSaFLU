@@ -447,10 +447,25 @@ class ReadOverlapManager:
 
         group_pairwise_shared = self.pairwise_shared_count(group)
 
-        # get lower triangle
+        # divide shared rows by group row sums
+        group_pairwise_shared_copy = group_pairwise_shared.copy()
+        group_pairwise_shared = group_pairwise_shared.div(group.sum(axis=0), axis=1)
+        group_pairwise_shared_copy = group_pairwise_shared_copy.div(
+            group.sum(axis=0), axis=1
+        )
+
+        # get lower triangle of shared
         group_pairwise_shared = self.matrix_lower_triangle(group_pairwise_shared)
-        # flatten
-        group_pairwise_shared = group_pairwise_shared.stack().reset_index()
+        group_pairwise_shared_copy = self.matrix_lower_triangle(
+            group_pairwise_shared_copy
+        )
+
+        # flatten both to list and append
+        group_pairwise_shared = group_pairwise_shared.values.flatten().tolist()
+        group_pairwise_shared_copy = (
+            group_pairwise_shared_copy.values.flatten().tolist()
+        )
+        group_pairwise_shared.extend(group_pairwise_shared_copy)
 
         min_shared = group_pairwise_shared.groupby("level_0")[0].min()
         max_shared = group_pairwise_shared.groupby("level_0")[0].max()

@@ -552,9 +552,7 @@ class ReadOverlapManager:
         """
         Return dataframe of pairwise shared reads between all pairs of clades"""
         clade_read_matrix = self.clade_reads_matrix(filter_names=clades_filter)
-        print(clade_read_matrix)
         shared_clade_reads = self.pairwise_shared_count(clade_read_matrix)
-        print(shared_clade_reads)
         return shared_clade_reads
 
     def plot_pairwise_shared_clade_reads(self, clades_filter=[]) -> None:
@@ -753,6 +751,7 @@ class ReadOverlapManager:
     def filter_clades(self, clades_dict):
         """
         Return list of clades with private reads above threshold"""
+        print(clades_dict)
         clades_filtered = [
             clade
             for clade, clade_obj in clades_dict.items()

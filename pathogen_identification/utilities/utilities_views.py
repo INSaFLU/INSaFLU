@@ -527,6 +527,7 @@ class ReportSorter:
         # leaf_clades = overlap_manager.tree_manager.leaf_clades_clean(selected_clades)
         # clades = overlap_manager.leaf_clades_to_pandas(leaf_clades, statistics_dict_all)
         clades = self.overlap_manager.get_leaf_clades(force=force)
+        print(clades)
         self.update_report_excluded_dicts(self.overlap_manager)
 
         return clades
@@ -640,7 +641,6 @@ class ReportSorter:
             # sort by coverage
             group_list.sort(key=lambda x: x.coverage, reverse=True)
             name = group_df.clade.iloc[0]
-            print(group_df.columns)
             if len(group_list):
                 report_group = FinalReportGroup(
                     name=name,

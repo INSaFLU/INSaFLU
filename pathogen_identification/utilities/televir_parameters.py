@@ -194,7 +194,9 @@ class TelevirParameters:
                 param.name
                 == SoftwareNames.SOFTWARE_televir_report_layout_threshold_name
             ):
-                report_layout_params.read_overlap_threshold = float(param.parameter)
+                report_layout_params.shared_proportion_threshold = float(
+                    param.parameter
+                )
 
         return report_layout_params
 

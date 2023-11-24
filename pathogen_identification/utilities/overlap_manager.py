@@ -350,10 +350,6 @@ class ReadOverlapManager:
             )
         shared_reads = np.concatenate(shared_reads, axis=0)
 
-        # set diagonal to 0
-        if fill_diagonal:
-            np.fill_diagonal(shared_reads, 0)
-
         shared_reads = pd.DataFrame(
             shared_reads,
             index=read_profile_matrix.index,
@@ -513,7 +509,7 @@ class ReadOverlapManager:
 
         return proportion_private
 
-    def clade_reads_matrix(self, filter_names=[]) -> pd.DataFrame:
+    def clade_reads_matrix(self, filter_names=[], remove_leaves=True) -> pd.DataFrame:
         """
         Return dataframe reads per clade"""
         clade_read_matrix = []
@@ -523,7 +519,7 @@ class ReadOverlapManager:
                 continue
 
             # continue clade is leaf:
-            if len(leaves) == 1:
+            if len(leaves) == 1 and remove_leaves:
                 continue
 
             if filter_names:
@@ -544,21 +540,31 @@ class ReadOverlapManager:
             index=belonging,
             columns=self.read_profile_matrix.columns,
         )
-        # sort rows by row sum in descending order
-        clade_read_matrix = clade_read_matrix.loc[
-            clade_read_matrix.sum(axis=1).sort_values(ascending=False).index
-        ]
+        ## sort rows by row sum in descending order
+        # clade_read_matrix = clade_read_matrix.loc[
+        #    clade_read_matrix.sum(axis=1).sort_values(ascending=False).index
+        # ]
 
-        return clade_read_matrix
+        shared_clade_matrix = self.pairwise_shared_count(clade_read_matrix)
+
+        ## divide rows of shared_clade_matrix by clade_read_matrix row sums
+        shared_clade_matrix = shared_clade_matrix.div(
+            clade_read_matrix.sum(axis=1), axis=0
+        )
+
+        # set diagonal to 1
+        np.fill_diagonal(shared_clade_matrix.values, 1)
+
+        return shared_clade_matrix
 
     def pairwise_clade_shared_reads(self, clades_filter=[]) -> pd.DataFrame:
         """
         Return dataframe of pairwise shared reads between all pairs of clades"""
-        clade_read_matrix = self.clade_reads_matrix(filter_names=clades_filter)
-        shared_clade_reads = self.pairwise_shared_count(
-            clade_read_matrix, fill_diagonal=True
+        clade_read_matrix = self.clade_reads_matrix(
+            filter_names=clades_filter, remove_leaves=False
         )
-        return shared_clade_reads
+
+        return clade_read_matrix
 
     def plot_pairwise_shared_clade_reads(self, clades_filter=[]) -> None:
         """

@@ -75,7 +75,7 @@ class CladeFilter:
     def __init__(self, reference_clade: Clade):
         self.reference_clade = reference_clade
         self.filters: List[CladeFilterMethod] = [
-            CladeFilterByPrivateProportion(self.reference_clade),
+            # CladeFilterByPrivateProportion(self.reference_clade),
             CladeFilterBySharedProportion(self.reference_clade),
         ]
 

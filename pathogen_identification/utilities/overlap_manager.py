@@ -468,7 +468,7 @@ class ReadOverlapManager:
         if "NC_021505.1" in leaves and "AP013070.1" in leaves:
             print("##########")
             print(leaves)
-            print(group_pairwise_shared.shape)
+            print(group_pairwise_shared)
 
         min_shared = min(group_pairwise_shared)
         max_shared = max(group_pairwise_shared)

@@ -448,24 +448,25 @@ class ReadOverlapManager:
         group_pairwise_shared = self.pairwise_shared_count(group)
 
         # divide shared rows by group row sums
-        group_pairwise_shared_copy = group_pairwise_shared.copy()
         group_pairwise_shared = group_pairwise_shared.div(group.sum(axis=0), axis=1)
-        group_pairwise_shared_copy = group_pairwise_shared_copy.div(
-            group.sum(axis=0), axis=1
-        )
 
         # get lower triangle of shared
-        group_pairwise_shared = self.matrix_lower_triangle(group_pairwise_shared)
-        group_pairwise_shared_copy = self.matrix_lower_triangle(
-            group_pairwise_shared_copy
+        lower_triangle = self.matrix_lower_triangle(group_pairwise_shared)
+        # get upper triangle from matrix, without diagonal
+        upper_triangle = group_pairwise_shared.T.where(
+            np.triu(np.ones(group_pairwise_shared.shape), k=1).astype(bool)
         )
 
         # flatten both to list and append
-        group_pairwise_shared = group_pairwise_shared.values.flatten().tolist()
-        group_pairwise_shared_copy = (
-            group_pairwise_shared_copy.values.flatten().tolist()
-        )
+        group_pairwise_shared = lower_triangle.values.flatten().tolist()
+        group_pairwise_shared_copy = upper_triangle.values.flatten().tolist()
+
         group_pairwise_shared.extend(group_pairwise_shared_copy)
+
+        if "NC_021505.1" in leaves and "AP013070.1" in leaves:
+            print("##########")
+            print(leaves)
+            print(group_pairwise_shared)
 
         min_shared = min(group_pairwise_shared)
         max_shared = max(group_pairwise_shared)
@@ -556,6 +557,7 @@ class ReadOverlapManager:
         private_reads = sum(private_reads == 0)
 
         print(
+            leaves,
             private_reads,
             sum(group_sum_as_bool_list),
             private_reads / sum(group_sum_as_bool_list),
@@ -657,6 +659,8 @@ class ReadOverlapManager:
 
                 continue
 
+            print("########")
+            print(node)
             proportion_private = self.clade_private_proportions(leaves)
             clade_counts = self.clade_total_counts(leaves)
 

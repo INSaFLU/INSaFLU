@@ -464,6 +464,8 @@ class ReadOverlapManager:
         group_pairwise_shared_copy = upper_triangle.values.flatten().tolist()
 
         group_pairwise_shared.extend(group_pairwise_shared_copy)
+        # remove nan values
+        group_pairwise_shared = [x for x in group_pairwise_shared if str(x) != "nan"]
 
         if "NC_021505.1" in leaves and "AP013070.1" in leaves:
             print("##########")

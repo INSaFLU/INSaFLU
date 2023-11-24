@@ -467,9 +467,9 @@ class ReadOverlapManager:
         )
         group_pairwise_shared.extend(group_pairwise_shared_copy)
 
-        min_shared = group_pairwise_shared.groupby("level_0")[0].min()
-        max_shared = group_pairwise_shared.groupby("level_0")[0].max()
-        std_shared = group_pairwise_shared.groupby("level_0")[0].std()
+        min_shared = min(group_pairwise_shared)
+        max_shared = max(group_pairwise_shared)
+        std_shared = np.std(group_pairwise_shared)
 
         return min_shared, max_shared, std_shared
 

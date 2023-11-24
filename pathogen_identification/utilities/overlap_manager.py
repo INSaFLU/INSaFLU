@@ -500,13 +500,15 @@ class ReadOverlapManager:
         sum_group = self.read_profile_matrix.loc[leaves]
         sum_group = sum_group.iloc[:, group_sum_as_bool_list].sum(axis=0)
 
-        print(sum_group.shape)
-        print(sum_all.shape)
         private_reads = sum_group - sum_all
-        print(private_reads.shape)
 
         private_reads = sum(private_reads == 0)
-        print(private_reads, sum(group_sum_as_bool_list))
+
+        print(
+            private_reads,
+            sum(group_sum_as_bool_list),
+            private_reads / sum(group_sum_as_bool_list),
+        )
 
         proportion_private = private_reads / sum(group_sum_as_bool_list)
 
@@ -606,6 +608,8 @@ class ReadOverlapManager:
 
                 continue
 
+            print("#####")
+            print(node, leaves)
             proportion_private = self.clade_private_proportions(leaves)
             clade_counts = self.clade_total_counts(leaves)
 

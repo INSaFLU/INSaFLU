@@ -327,7 +327,9 @@ class ReadOverlapManager:
         read_profile_matrix = self.filter_read_matrix(read_profile_matrix)
         return read_profile_matrix
 
-    def pairwise_shared_count(self, read_profile_matrix: pd.DataFrame) -> pd.DataFrame:
+    def pairwise_shared_count(
+        self, read_profile_matrix: pd.DataFrame, fill_diagonal=False
+    ) -> pd.DataFrame:
         """
         Return dataframe of pairwise shared read counts,
         use matrix multiplication to sum shared reads from binary matrix for each pair.
@@ -349,7 +351,8 @@ class ReadOverlapManager:
         shared_reads = np.concatenate(shared_reads, axis=0)
 
         # set diagonal to 0
-        np.fill_diagonal(shared_reads, 0)
+        if fill_diagonal:
+            np.fill_diagonal(shared_reads, 0)
 
         shared_reads = pd.DataFrame(
             shared_reads,
@@ -552,7 +555,9 @@ class ReadOverlapManager:
         """
         Return dataframe of pairwise shared reads between all pairs of clades"""
         clade_read_matrix = self.clade_reads_matrix(filter_names=clades_filter)
-        shared_clade_reads = self.pairwise_shared_count(clade_read_matrix)
+        shared_clade_reads = self.pairwise_shared_count(
+            clade_read_matrix, fill_diagonal=True
+        )
         return shared_clade_reads
 
     def plot_pairwise_shared_clade_reads(self, clades_filter=[]) -> None:

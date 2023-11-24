@@ -751,7 +751,13 @@ class ReadOverlapManager:
     def filter_clades(self, clades_dict):
         """
         Return list of clades with private reads above threshold"""
-        print(clades_dict)
+
+        print("clades_dict")
+        print(self.clade_filter.reference_clade)
+        for clade, clade_obj in clades_dict.items():
+            print(clade)
+            print(clade_obj)
+
         clades_filtered = [
             clade
             for clade, clade_obj in clades_dict.items()

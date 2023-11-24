@@ -5,25 +5,17 @@ from typing import Dict, List
 
 import pandas as pd
 
-from pathogen_identification.models import (
-    FinalReport,
-    PIProject_Sample,
-    Projects,
-    ReferenceMap_Main,
-    RunAssembly,
-    RunMain,
-)
+from pathogen_identification.models import (FinalReport, PIProject_Sample,
+                                            Projects, ReferenceMap_Main,
+                                            RunAssembly, RunMain)
 from pathogen_identification.utilities.clade_objects import Clade
-from pathogen_identification.utilities.overlap_manager import ReadOverlapManager
+from pathogen_identification.utilities.overlap_manager import \
+    ReadOverlapManager
 from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
 from pathogen_identification.utilities.televir_parameters import (
-    LayoutParams,
-    TelevirParameters,
-)
+    LayoutParams, TelevirParameters)
 from pathogen_identification.utilities.utilities_general import (
-    infer_run_media_dir,
-    simplify_name,
-)
+    infer_run_media_dir, simplify_name)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
 
@@ -631,6 +623,7 @@ class ReportSorter:
         overlap_groups = list(overlap_analysis.groupby(["total_counts", "clade"]))[::-1]
 
         sorted_reports = []
+        print(overlap_groups)
 
         for group in overlap_groups:
             group_df = group[1]
@@ -740,7 +733,8 @@ from django.db.models.query import QuerySet
 from django.views import generic
 from django.views.generic import ListView
 
-from pathogen_identification.models import FinalReport, ParameterSet, RunDetail, RunMain
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            RunDetail, RunMain)
 
 
 class FinalReportCompound(LoginRequiredMixin, generic.TemplateView):

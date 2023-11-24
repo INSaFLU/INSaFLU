@@ -277,7 +277,7 @@ class ReportSorter:
             self.analysis_df_path = os.path.join(
                 self.media_dir,
                 self.analysis_filename.format(
-                    report_layout_params.read_overlap_threshold
+                    report_layout_params.shared_proportion_threshold
                 ),
             )
             self.force = force

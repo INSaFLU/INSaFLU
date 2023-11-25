@@ -41,7 +41,7 @@ class ReadOverlapManager:
     tree_plot_filename: str = "tree_{}.png"
     overlap_matrix_plot_filename: str = "overlap_matrix_{}.png"
     min_freq: float = 0.05
-    max_reads: int = 100000
+    max_reads: int = 500000
 
     def __init__(
         self,

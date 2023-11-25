@@ -561,14 +561,10 @@ class ReadOverlapManager:
 
         private_reads = sum(private_reads == 0)
 
-        print(
-            leaves,
-            private_reads,
-            sum(group_sum_as_bool_list),
-            private_reads / sum(group_sum_as_bool_list),
-        )
-
-        proportion_private = private_reads / sum(group_sum_as_bool_list)
+        if sum(group_sum_as_bool_list) == 0:
+            proportion_private = 0
+        else:
+            proportion_private = private_reads / sum(group_sum_as_bool_list)
 
         return proportion_private
 

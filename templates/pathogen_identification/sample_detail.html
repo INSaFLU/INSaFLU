@@ -647,14 +647,14 @@
                                     </div>
                                     {% if final_report.heatmap_exists %}
                                     <div style="flex: 1; padding: 10px; padding: 5px;border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
-                                        <a href="#" id="plot_show" >Read Overlap</a>
+                                        <a href="#" id="showButton" onclick="toggleRowVisibility()">Read Overlap</a>
                                     </div>
                                     {% endif %}
                                 </div>
                             </td>
                         </tr>
                         {% if final_report.heatmap_exists %}
-                        <tr class="collapse-report">
+                        <tr class="collapse-report" id="rowToToggle" style="display: none;">
                             <td colspan="14">
                                 <div id="plot" class="plot-container">
                                     <img src={{final_report.heatmap_path}} alt="Image">
@@ -958,7 +958,14 @@
 
       });
 
-      
+      function toggleRowVisibility() {
+        var row = document.getElementById("rowToToggle");
+        if (row.style.display === "none") {
+            row.style.display = "table-row";
+        } else {
+            row.style.display = "none";
+        }
+    }
 </script>
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.min.js"></script>

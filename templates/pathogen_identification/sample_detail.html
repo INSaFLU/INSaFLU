@@ -241,7 +241,7 @@
       }
     
     .row-to-toggle.active {
-    max-height: 500px; /* Adjust the value to the desired height */
+    max-height: 500px; 
     }
 
     .expand-button {
@@ -254,7 +254,7 @@
         cursor: pointer;
         text-align: center;
       }
-      .plot-container {
+    .plot-container {
         margin: none;
         display: flex;
         justify-content: center;
@@ -644,7 +644,6 @@
                                     <div style="flex: 1; padding: 5px; padding: 5px;border-right: 1px solid #ccc; border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
                                         {{final_report.name}}
                                     </div>
-                                    
                                     <!-- Second section -->
                                     <div style="flex: 1; padding: 5px; padding: 5px;border-right: 1px solid #ccc; border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
                                         {{final_report.total_counts}}
@@ -714,7 +713,7 @@
 
                         </tr>
                         <tr class="collapse-report">
-                        <td colspan="14">
+                        <td colspan="16">
                             <div class="table__wrapper">
                             <table class="table table-inner">
                                 <tbody>
@@ -757,7 +756,7 @@
         
                                     {% if value.coverage > 0 %}
                                     <tr class="igv_tab" id="igv_display_{{value.accid}}">
-                                        <td colspan="14" align="center">
+                                        <td colspan="16" align="center">
                                             <div class="card-block">
                                                 <div class="container-fluid">
                                                     <div class="igv-loader" id="loader_igv_{{value.accid}}"><img src="{{ spinner_url }}"/></div>
@@ -973,7 +972,7 @@
     function toggleRowVisibility(e) {
         var row = document.getElementById("rowToToggle");
         if (row.style.display === "none") {
-            row.style.display = "table-row";
+            row.style.display = "active";
         } else {
             row.style.display = "none";
         }

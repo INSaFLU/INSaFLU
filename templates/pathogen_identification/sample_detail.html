@@ -958,8 +958,25 @@
 
       });
 
-      function toggleRowVisibility() {
+      $(document).ready(function() {
+        $('.collapsible-header').click(function() {
+          $(this).toggleClass('active');
+          $(this).siblings('.collapsible-body').slideToggle('slow');
+        });
+    });
+
+    $("tr.parent").find("A#plot_show").click(function(e) {
+        if (e.target.tagName === "A" && e.target.id === "plot_show") {
+            e.preventDefault();
+            var parent_tr = e.target.parentNode.parentNode;
+            var child_tr = nextTr(parent_tr);
+            $(child_tr).toggleClass("active");
+        }   
+    });
+
+    function toggleRowVisibility() {
         var row = document.getElementById("rowToToggle");
+        e.preventDefault();
         if (row.style.display === "none") {
             row.style.display = "table-row";
         } else {

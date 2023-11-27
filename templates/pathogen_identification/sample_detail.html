@@ -237,7 +237,7 @@
     .row-to-toggle {
         max-height: 0;
         overflow: hidden;
-        transition: max-height 0.3s ease;
+        transition: max-height 0.8s ease;
       }
     
     .row-to-toggle.active {
@@ -973,10 +973,10 @@
         var row = document.getElementById("rowToToggle");
         if (row.style.display === "none") {
             // open slowly 
-            $(row).slideDown(300);
+            $(row).toggleClass("active");
+            row.style.display = "table-row";
         } else {
-            // close slowly 
-            $(row).slideUp(300);
+            row.style.display = "none";
         }
     }
       

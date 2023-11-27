@@ -15,9 +15,9 @@ from scipy.spatial.distance import pdist, squareform
 
 from pathogen_identification.utilities.clade_objects import Clade, CladeFilter
 from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
-
 ## pairwise matrix by individual reads
-from pathogen_identification.utilities.utilities_general import readname_from_fasta
+from pathogen_identification.utilities.utilities_general import \
+    readname_from_fasta
 
 
 def accid_from_metadata(metadata: pd.DataFrame, read_name: str) -> str:
@@ -702,6 +702,7 @@ class ReadOverlapManager:
                     shared_proportion_std=0,
                     shared_proportion_min=0,
                     shared_proportion_max=0,
+                    overlap_df=pd.DataFrame(),
                 )
 
                 continue
@@ -725,6 +726,7 @@ class ReadOverlapManager:
                     shared_proportion_std=0,
                     shared_proportion_min=0,
                     shared_proportion_max=0,
+                    overlap_df=pd.DataFrame(),
                 )
 
                 continue
@@ -740,6 +742,7 @@ class ReadOverlapManager:
                 shared_proportion_min=min(combinations.proportion_max),
                 shared_proportion_max=max(combinations.proportion_max),
                 shared_proportion_std=np.std(combinations.proportion_max),
+                overlap_df=combinations,
             )
 
         return node_stats_dict
@@ -808,6 +811,7 @@ class ReadOverlapManager:
                 shared_proportion_std=stats.shared_proportion_std,
                 shared_proportion_min=stats.shared_proportion_min,
                 shared_proportion_max=stats.shared_proportion_max,
+                overlap_df=pd.DataFrame(),
             )
 
         return node_stats_dict

@@ -433,6 +433,7 @@ class ReportSorter:
             shared_proportion_std=layout_params.shared_proportion_threshold,
             shared_proportion_min=layout_params.shared_proportion_threshold,
             shared_proportion_max=layout_params.shared_proportion_threshold,
+            overlap_df=pd.DataFrame(),
         )
 
         return ref_clade

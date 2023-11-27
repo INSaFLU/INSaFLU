@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import List
 
+import pandas as pd
+
 
 @dataclass
 class Clade:
@@ -19,6 +21,7 @@ class Clade:
     shared_proportion_std: float
     shared_proportion_min: float
     shared_proportion_max: float
+    overlap_df: pd.DataFrame
 
 
 class CladeFilterMethod(ABC):

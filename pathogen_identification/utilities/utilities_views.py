@@ -631,12 +631,13 @@ class ReportSorter:
                 name = group_df.clade.iloc[0]
                 if len(group_list):
                     clades_to_keep.append(name)
-                    pairwise_shared_within_clade = (
-                        self.overlap_manager.within_clade_shared_reads(clade=name)
-                    )
-                    self.overlap_manager.plot_pairwise_shared_clade_reads(
-                        pairwise_shared_within_clade
-                    )
+                    if len(group_list) > 1:
+                        pairwise_shared_within_clade = (
+                            self.overlap_manager.within_clade_shared_reads(clade=name)
+                        )
+                        self.overlap_manager.plot_pairwise_shared_clade_reads(
+                            pairwise_shared_within_clade, subplot=True, clade_str=name
+                        )
 
             pairwise_shared_among_clade = (
                 self.overlap_manager.between_clade_shared_reads(
@@ -665,6 +666,7 @@ class ReportSorter:
             name = group_df.clade.iloc[0]
             group_heatmap = self.overlap_manager.get_media_path_heatmap_clade(name)
             group_heatmap_exists = os.path.exists(group_heatmap)
+
             if group_heatmap_exists:
                 group_heatmap = "/media/" + group_heatmap.split("media/")[-1]
             if len(group_list):

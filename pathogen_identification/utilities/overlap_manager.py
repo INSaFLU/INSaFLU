@@ -89,7 +89,8 @@ class ReadOverlapManager:
         self.tree_plot_exists = os.path.exists(self.tree_plot_path)
         self.overlap_matrix_plot_exists = os.path.exists(self.overlap_matrix_plot_path)
 
-    def get_media_path_heatmap_clade(self, clade_str):
+    def get_media_path_heatmap_clade(self, clade_str: str):
+        clade_str_keep = clade_str.replace(" ", "_").lower()
         return os.path.join(self.media_dir, f"heatmap_clade_{clade_str}.{self.pid}.png")
 
     def all_accs_analyzed(self):

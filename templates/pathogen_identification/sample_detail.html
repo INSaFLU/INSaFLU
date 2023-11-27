@@ -645,21 +645,19 @@
                                     <div style="flex: 1; padding: 10px; padding: 5px;border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
                                         {{final_report.group_list|length}}
                                     </div>
+                                    {% if final_report.heatmap_exists %}
+                                    <div style="flex: 1; padding: 10px; padding: 5px;border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
+                                        <a href="#" id="plot_show" >Read Overlap</a>
+                                    </div>
+                                    {% endif %}
                                 </div>
                             </td>
                         </tr>
                         {% if final_report.heatmap_exists %}
-                        <tr>
-                            <td colspan="100%">
-                                <div class="collapsible">
-                                    <div class="collapsible-header">
-                                        <span class="expand-button">Read Overlap</span>
-                                    </div>
-                                    <div class="collapsible-body">
-                                        <div id="plot" class="plot-container">
-                                            <img src={{final_report.heatmap_path}} alt="Image">
-                                        </div>
-                                    </div>
+                        <tr class="collapse-report">
+                            <td colspan="14">
+                                <div id="plot" class="plot-container">
+                                    <img src={{final_report.heatmap_path}} alt="Image">
                                 </div>
                             </td>
                         </tr>
@@ -959,6 +957,7 @@
         }   
 
       });
+
       
 </script>
 

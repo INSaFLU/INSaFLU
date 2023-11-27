@@ -648,6 +648,21 @@
                                 </div>
                             </td>
                         </tr>
+                        {% if final_report.heatmap_exists %}
+                        <tr>
+                            <td colspan="100%">
+                                <div class="collapsible">
+                                    <div class="collapsible-header">
+                                        <span class="expand-button">Read Overlap</span>
+                                    </div>
+                                    <div class="collapsible-body">
+                                        <div id="plot" class="plot-container">
+                                            <img src={{final_report.heatmap_path}} alt="Image">
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
                         {% for value in final_report.group_list %}
                         <tr class="parent">
                             <td data-title="Description"><a href="#" id="plot_show" >{{value.description}}</a></td>

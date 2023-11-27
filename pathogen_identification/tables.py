@@ -551,6 +551,20 @@ class SampleTable(tables.Table):
             + '"><i class="fa fa-flask"></i></span> </a>'
         )
 
+        manual_add_reference_button = (
+            '<a href="#id_add_reference_modal" id="id_add_reference_modal" data-toggle="modal" data-toggle="tooltip" title="Add references"'
+            + ' ref_name="'
+            + record.name
+            + '" pk="'
+            + str(record.pk)
+            + ' "deploy-url="'
+            + reverse("add_reference_to_sample")
+            + '"'
+            + '><i class="fa fa-plus"></i></span> </a>'
+        )
+
+        record_name = manual_add_reference_button + record_name
+
         if (
             ParameterSet.objects.filter(
                 sample=record,

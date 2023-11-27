@@ -1017,11 +1017,9 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         report_sorter = ReportSorter(final_report, report_layout_params)
 
         sorted_reports = report_sorter.get_reports()
-        print(sorted_reports)
         excluded_reports_exist = report_sorter.check_excluded_exist()
 
         empty_reports = report_sorter.get_reports_empty()
-        print(empty_reports)
         if empty_reports:
             sorted_reports.append(empty_reports)
 
@@ -1036,10 +1034,6 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         reference_remap_main = ReferenceMap_Main.objects.filter(
             sample=sample_main, run=run_main
         )
-
-        print(sorted_reports[0].name)
-
-        print("tree plot avail : ", report_sorter.tree_plot_path)
 
         context = {
             "project": project_name,

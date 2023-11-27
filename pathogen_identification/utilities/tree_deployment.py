@@ -1445,7 +1445,7 @@ class TreeProgressGraph:
 
         return stacked_df
 
-    def get__combined_progress_df(self):
+    def get_combined_progress_df(self):
         ## setup a deployment and record the progress
         existing_parameter_sets = ParameterSet.objects.filter(
             project=self.project,
@@ -1498,7 +1498,7 @@ class TreeProgressGraph:
         return None
 
     def generate_graph(self):
-        stacked_df = self.get__combined_progress_df()
+        stacked_df = self.get_combined_progress_df()
         if stacked_df.shape[0] == 0:
             if os.path.exists(self.graph_html_path):
                 os.remove(self.graph_html_path)

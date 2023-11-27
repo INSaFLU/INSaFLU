@@ -136,6 +136,11 @@ urlpatterns = [
         name="sort_project_reports",
     ),
     url(
+        r"ajax/add_references_to_sample$",
+        PIajax_views.add_references_to_sample,
+        name="add_reference_to_sample",
+    ),
+    url(
         r"ajax/sort_sample$",
         PIajax_views.sort_report_sample,
         name="sort_sample_reports",

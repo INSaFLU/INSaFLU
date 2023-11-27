@@ -307,6 +307,8 @@ class ReportSorter:
             self.force = False
             self.tree_plot_exists = False
             self.tree_plot_path = None
+            self.overlap_heatmap_exists = False
+            self.overlap_heatmap_path = None
 
     def update_max_error_rate(self, report: FinalReport):
         """
@@ -417,15 +419,18 @@ class ReportSorter:
     def generate_reference_clade(layout_params: LayoutParams):
         """
         Return reference clade"""
+
         ref_clade = Clade(
             name="ref",
             leaves=[],
             private_proportion=layout_params.read_overlap_threshold,
+            total_proportion=0,
             group_counts=0,
             shared_proportion_std=layout_params.shared_proportion_threshold,
             shared_proportion_min=layout_params.shared_proportion_threshold,
             shared_proportion_max=layout_params.shared_proportion_threshold,
         )
+
         return ref_clade
 
     def infer_run(self):

@@ -15,7 +15,7 @@ class Clade:
     leaves: list
     group_counts: int
     private_proportion: float
-
+    total_proportion: float
     shared_proportion_std: float
     shared_proportion_min: float
     shared_proportion_max: float

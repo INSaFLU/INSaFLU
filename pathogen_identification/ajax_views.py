@@ -383,7 +383,6 @@ def Project_explify_merge_external(request):
             )
 
         except ProcessControler.DoesNotExist:
-            print("HERE")
             taskID = process_SGE.set_submit_televir_explify_merge_external(
                 user=request.user,
                 rpip_filepath=rpip_report_path,
@@ -596,6 +595,50 @@ def sort_report_sample(request):
             return JsonResponse(data)
 
         data["is_ok"] = True
+        return JsonResponse(data)
+
+
+@login_required
+@require_POST
+def add_references_to_sample(request):
+    """
+    add references to sample
+    """
+    if request.is_ajax():
+        temp_directory = Utils().get_temp_dir()
+        sample_id = int(request.POST["sample_id"])
+        references_file = request.FILES["references_file"]
+
+        references_filepath = os.path.join(
+            temp_directory,
+            references_file.name.replace(" ", "_").replace("(", "_").replace(")", "_"),
+        )
+
+        with open(references_filepath, "wb") as f:
+            f.write(references_file.file.read())
+
+        process_controler = ProcessControler()
+
+        try:
+            ProcessControler.objects.get(
+                owner__id=request.user.pk,
+                name=process_controler.get_name_add_references_to_sample(
+                    sample_pk=sample_id,
+                ),
+                is_running=True,
+            )
+
+        except ProcessControler.DoesNotExist:
+            process_SGE = ProcessSGE()
+            taskID = process_SGE.set_submit_add_references_to_sample(
+                user=request.user,
+                sample_pk=sample_id,
+                reference_filepath=references_filepath,
+                out_dir=temp_directory,
+            )
+            data["is_deployed"] = True
+
+        data = {"is_ok": True}
         return JsonResponse(data)
 
 

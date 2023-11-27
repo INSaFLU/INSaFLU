@@ -4,10 +4,8 @@ from datetime import datetime
 from operator import itemgetter
 
 from django.conf import settings
-
 # from django.db.models import Manager as GeoManager
 from django.contrib.auth.models import User
-
 # Create your models here.
 from django.contrib.gis.db.models import GeoManager  # #  change to django  2.x
 from django.contrib.gis.db.models import PointField
@@ -2225,6 +2223,11 @@ class ProcessControler(models.Model):
     def get_name_televir_project_merge_explify(self, project_pk):
         return "{}_report_merge_explify_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, project_pk
+        )
+
+    def get_name_add_references_to_sample(self, sample_pk):
+        return "{}_add_references_to_sample_{}".format(
+            ProcessControler.PREFIX_TELEVIR_PROJECT, sample_pk
         )
 
     def get_name_televir_project_merge_explify_external(self, user_pk):

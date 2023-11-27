@@ -546,7 +546,7 @@ class ReadOverlapManager:
 
         return proportion_private
 
-    def clade_private_proportions(self, leaves: list) -> float:
+    def clade_private_proportions(self, leaves: list) -> Tuple[float, float, float]:
         """ """
         group = self.read_profile_matrix.loc[leaves]
         group_sum = group.sum(axis=0)
@@ -562,11 +562,14 @@ class ReadOverlapManager:
         private_reads = sum(private_reads == 0)
 
         if sum(group_sum_as_bool_list) == 0:
+            private_reads = 0
+            total_reads = 0
             proportion_private = 0
         else:
-            proportion_private = private_reads / sum(group_sum_as_bool_list)
+            total_reads = sum(group_sum_as_bool_list)
+            proportion_private = private_reads / total_reads
 
-        return proportion_private
+        return private_reads, total_reads, proportion_private
 
     def clade_reads_matrix(self, filter_names=[], remove_leaves=True) -> pd.DataFrame:
         """
@@ -599,20 +602,20 @@ class ReadOverlapManager:
             index=belonging,
             columns=self.read_profile_matrix.columns,
         )
-        ## sort rows by row sum in descending order
-        # clade_read_matrix = clade_read_matrix.loc[
-        #    clade_read_matrix.sum(axis=1).sort_values(ascending=False).index
-        # ]
 
         shared_clade_matrix = self.pairwise_shared_count(clade_read_matrix)
 
         ## divide rows of shared_clade_matrix by clade_read_matrix row sums
         shared_clade_matrix = shared_clade_matrix.div(
-            clade_read_matrix.sum(axis=1), axis=0
+            clade_read_matrix.sum(axis=1),
+            axis=0,
         )
 
-        # set diagonal to 1
+        # set diagonal to 0
         np.fill_diagonal(shared_clade_matrix.values, 0)
+
+        # fill na with 0
+        shared_clade_matrix = shared_clade_matrix.fillna(0)
 
         return shared_clade_matrix
 
@@ -655,6 +658,7 @@ class ReadOverlapManager:
                     leaves=leaves,
                     group_counts=0,
                     private_proportion=0,
+                    total_proportion=0,
                     shared_proportion_std=0,
                     shared_proportion_min=0,
                     shared_proportion_max=0,
@@ -662,7 +666,13 @@ class ReadOverlapManager:
 
                 continue
 
-            proportion_private = self.clade_private_proportions(leaves)
+            (
+                private_reads,
+                total_reads,
+                proportion_private,
+            ) = self.clade_private_proportions(leaves)
+            total_proportion = total_reads / self.read_profile_matrix.shape[1]
+
             clade_counts = self.clade_total_counts(leaves)
 
             if len(leaves) == 1:
@@ -671,6 +681,7 @@ class ReadOverlapManager:
                     leaves=leaves,
                     group_counts=clade_counts,
                     private_proportion=proportion_private,
+                    total_proportion=total_proportion,
                     shared_proportion_std=0,
                     shared_proportion_min=0,
                     shared_proportion_max=0,
@@ -684,6 +695,7 @@ class ReadOverlapManager:
                 name=node,
                 leaves=leaves,
                 private_proportion=proportion_private,
+                total_proportion=total_proportion,
                 group_counts=clade_counts,
                 shared_proportion_min=min(combinations.proportion_max),
                 shared_proportion_max=max(combinations.proportion_max),
@@ -701,6 +713,7 @@ class ReadOverlapManager:
                 [
                     node,
                     stats.private_proportion,
+                    stats.total_proportion,
                     stats.group_counts,
                     stats.shared_proportion_std,
                     stats.shared_proportion_min,
@@ -713,6 +726,7 @@ class ReadOverlapManager:
             columns=[
                 "node",
                 "private_proportion",
+                "total_proportion",
                 "total_counts",
                 "shared_proportion_std",
                 "shared_proportion_min",
@@ -749,6 +763,7 @@ class ReadOverlapManager:
                 name=str(node),
                 leaves=inner_node_leaf_dict[node_phylo_clade],
                 private_proportion=stats.private_proportion,
+                total_proportion=stats.private_proportion,
                 group_counts=stats.total_counts,
                 shared_proportion_std=stats.shared_proportion_std,
                 shared_proportion_min=stats.shared_proportion_min,

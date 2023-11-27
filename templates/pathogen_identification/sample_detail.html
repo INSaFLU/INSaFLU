@@ -972,9 +972,11 @@
     function toggleRowVisibility(e) {
         var row = document.getElementById("rowToToggle");
         if (row.style.display === "none") {
-            row.style.display = "table-row";
+            // open slowly 
+            $(row).slideDown(300);
         } else {
-            row.style.display = "none";
+            // close slowly 
+            $(row).slideUp(300);
         }
     }
       

@@ -616,16 +616,8 @@ class ReadOverlapManager:
         """
         Return dataframe reads per clade"""
         reads_in_clade = self.read_profile_matrix.loc[leaves]
-        reads_in_clade_sum = reads_in_clade.sum(axis=0)
-        reads_in_clade_sum_as_bool = reads_in_clade_sum > 0
-        reads_in_clade_sum_as_int_list = reads_in_clade_sum_as_bool.astype(int).tolist()
-        clade_read_matrix = pd.DataFrame(
-            [reads_in_clade_sum_as_int_list],
-            index=[leaves],
-            columns=self.read_profile_matrix.columns,
-        )
 
-        return clade_read_matrix
+        return reads_in_clade
 
     def square_and_fill_diagonal(self, clade_read_matrix: pd.DataFrame) -> pd.DataFrame:
         shared_clade_matrix = self.pairwise_shared_count(clade_read_matrix)

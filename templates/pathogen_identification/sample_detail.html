@@ -654,7 +654,7 @@
                             </td>
                         </tr>
                         {% if final_report.heatmap_exists %}
-                        <tr class="collapse-heatmap">
+                        <tr class="collapse-heatmap" id="rowToToggle" style="display: none;">
                             <td colspan="14">
                                 <div id="plot" class="plot-container">
                                     <img src={{final_report.heatmap_path}} alt="Image">

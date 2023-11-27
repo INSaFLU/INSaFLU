@@ -255,6 +255,7 @@
         text-align: center;
       }
       .plot-container {
+        margin: none;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -666,7 +667,7 @@
                         </tr>
                         {% if final_report.heatmap_exists %}
                         <tr class="row-to-toggle" id="rowToToggle" style="display: none;">
-                            <td colspan="14">
+                            <td colspan="16">
                                 <div id="plot" class="plot-container">
                                     <img src={{final_report.heatmap_path}} alt="Image">
                                 </div>

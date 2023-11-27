@@ -615,7 +615,7 @@
                                     <div class="collapsible-header">
                                         <span class="expand-button">Read Overlap</span>
                                     </div>
-                                    <div class="collapsible-body">
+                                    <div class="collapsible-body" style="display: none;">
                                         <div id="plot" class="plot-container">
                                             <img src={{overlap_heatmap_path}} alt="Image">
                                         </div>
@@ -959,7 +959,6 @@
       });
 
     function toggleRowVisibility(e) {
-        e.preventDefault();
         var row = document.getElementById("rowToToggle");
         if (row.style.display === "none") {
             row.style.display = "table-row";

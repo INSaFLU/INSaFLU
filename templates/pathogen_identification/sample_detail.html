@@ -658,7 +658,7 @@
                                     </div>
                                     {% if final_report.heatmap_exists %}
                                     <div style="flex: 1; padding: 10px; padding: 5px;border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
-                                        <a href="#" id="showButton" onclick="toggleRowVisibility()">Read Overlap</a>
+                                        <a href="#" id="showButton">Read Overlap</a>
                                     </div>
                                     {% endif %}
                                 </div>
@@ -965,20 +965,23 @@
             var child_tr = nextTr(parent_tr);
             $(child_tr).toggleClass("active");
             
-        }   
+        }
+
+      });
+    
+    $("tr.parent").find("A#showButton").click(function(e) {
+
+        if (e.target.tagName === "A" && e.target.id === "showButton") {
+            e.preventDefault();
+            var parent_tr = e.target.parentNode.parentNode;
+            var child_tr = nextTr(parent_tr);
+            $(child_tr).toggleClass("active");
+            
+        }
 
       });
 
-    function toggleRowVisibility(e) {
-        var row = document.getElementById("rowToToggle");
-        if (row.style.display === "none") {
-            // open slowly 
-            $(row).toggleClass("active");
-            row.style.display = "table-row";
-        } else {
-            row.style.display = "none";
-        }
-    }
+    
       
 </script>
 

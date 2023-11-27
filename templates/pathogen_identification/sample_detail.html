@@ -654,7 +654,7 @@
                             </td>
                         </tr>
                         {% if final_report.heatmap_exists %}
-                        <tr class="collapse-report" id="rowToToggle" style="display: none;">
+                        <tr class="collapse-heatmap">
                             <td colspan="14">
                                 <div id="plot" class="plot-container">
                                     <img src={{final_report.heatmap_path}} alt="Image">
@@ -941,7 +941,7 @@
     $(document).ready(function() {
         $('.collapsible-header').click(function() {
           $(this).toggleClass('active');
-          $(this).siblings('.collapsible-body').slideToggle();
+          $(this).siblings('.collapsible-body').slideToggle('slow');
         });
       });
 
@@ -958,23 +958,7 @@
 
       });
 
-      $(document).ready(function() {
-        $('.collapsible-header').click(function() {
-          $(this).toggleClass('active');
-          $(this).siblings('.collapsible-body').slideToggle('slow');
-        });
-    });
-
-    $("tr.parent").find("A#plot_show").click(function(e) {
-        if (e.target.tagName === "A" && e.target.id === "plot_show") {
-            e.preventDefault();
-            var parent_tr = e.target.parentNode.parentNode;
-            var child_tr = nextTr(parent_tr);
-            $(child_tr).toggleClass("active");
-        }   
-    });
-
-    function toggleRowVisibility() {
+      function toggleRowVisibility() {
         var row = document.getElementById("rowToToggle");
         e.preventDefault();
         if (row.style.display === "none") {
@@ -983,6 +967,7 @@
             row.style.display = "none";
         }
     }
+      
 </script>
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.min.js"></script>

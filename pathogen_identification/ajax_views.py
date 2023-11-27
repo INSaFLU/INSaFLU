@@ -630,7 +630,7 @@ def add_references_to_sample(request):
 
         except ProcessControler.DoesNotExist:
             process_SGE = ProcessSGE()
-            taskID = process_SGE.set_submit_add_references_to_sample(
+            taskID = process_SGE.set_submit_add_references_metagenomics(
                 user=request.user,
                 sample_pk=sample_id,
                 reference_filepath=references_filepath,

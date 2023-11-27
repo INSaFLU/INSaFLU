@@ -54,12 +54,16 @@ class FinalReportGroup:
         shared_proportion: float,
         private_proportion: float,
         group_list: List[FinalReport],
+        heatmap_path: str = "",
+        heatmap_exists: bool = False,
     ):
         self.name = name
         self.total_counts = f"total counts {total_counts}"
         self.shared_proportion = f"shared proportion {shared_proportion:.2f}"
         self.private_proportion = f"private proportion {private_proportion:.2f}"
         self.group_list = group_list
+        self.heatmap_path = heatmap_path
+        self.heatmap_exists = heatmap_exists
 
 
 def check_sample_software_exists(sample: PIProject_Sample) -> bool:
@@ -627,8 +631,21 @@ class ReportSorter:
                 name = group_df.clade.iloc[0]
                 if len(group_list):
                     clades_to_keep.append(name)
+                    pairwise_shared_within_clade = (
+                        self.overlap_manager.within_clade_shared_reads(clade=name)
+                    )
+                    self.overlap_manager.plot_pairwise_shared_clade_reads(
+                        pairwise_shared_within_clade
+                    )
 
-            self.overlap_manager.plot_pairwise_shared_clade_reads(clades_to_keep)
+            pairwise_shared_among_clade = (
+                self.overlap_manager.between_clade_shared_reads(
+                    clades_filter=clades_to_keep
+                )
+            )
+            self.overlap_manager.plot_pairwise_shared_clade_reads(
+                pairwise_shared_among_clade
+            )
 
     def get_sorted_reports(self) -> List[FinalReportGroup]:
         overlap_analysis = self.read_overlap_analysis()
@@ -647,6 +664,8 @@ class ReportSorter:
             # sort by coverage
             group_list.sort(key=lambda x: x.coverage, reverse=True)
             name = group_df.clade.iloc[0]
+            group_heatmap = self.overlap_manager.get_media_path_heatmap_clade(name)
+            group_heatmap_exists = os.path.exists(group_heatmap)
             if len(group_list):
                 report_group = FinalReportGroup(
                     name=name,
@@ -654,6 +673,8 @@ class ReportSorter:
                     shared_proportion=group_df.shared_proportion.iloc[0],
                     private_proportion=group_df.private_proportion.iloc[0],
                     group_list=group_list,
+                    heatmap_path=group_heatmap,
+                    heatmap_exists=group_heatmap_exists,
                 )
                 sorted_reports.append(report_group)
 

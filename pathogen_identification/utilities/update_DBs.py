@@ -28,7 +28,7 @@ from pathogen_identification.models import (
 )
 from pathogen_identification.modules.object_classes import Sample_runClass
 from pathogen_identification.modules.remap_class import Mapping_Instance
-from pathogen_identification.modules.run_main import RunMain_class
+from pathogen_identification.modules.run_main import RunEngine_class
 
 
 ####################################################################################################################
@@ -223,7 +223,7 @@ def Update_QC_report(sample_class: Sample_runClass, parameter_set: ParameterSet)
 
 
 @transaction.atomic
-def Update_Sample_Runs(run_class: RunMain_class, parameter_set: ParameterSet):
+def Update_Sample_Runs(run_class: RunEngine_class, parameter_set: ParameterSet):
     """get run data
     Update ALL run TABLES:
     - RunMain,
@@ -255,7 +255,7 @@ def Update_Sample_Runs(run_class: RunMain_class, parameter_set: ParameterSet):
 
 
 @transaction.atomic
-def Update_RunMain_Initial(run_class: RunMain_class, parameter_set: ParameterSet):
+def Update_RunMain_Initial(run_class: RunEngine_class, parameter_set: ParameterSet):
     """get run data
     Update ALL run TABLES:
     - RunMain,
@@ -275,7 +275,7 @@ def Update_RunMain_Initial(run_class: RunMain_class, parameter_set: ParameterSet
 
 
 @transaction.atomic
-def Update_RunMain_Secondary(run_class: RunMain_class, parameter_set: ParameterSet):
+def Update_RunMain_Secondary(run_class: RunEngine_class, parameter_set: ParameterSet):
     """get run data
     Update ALL run TABLES:
     - RunMain,
@@ -298,7 +298,7 @@ def Update_RunMain_Secondary(run_class: RunMain_class, parameter_set: ParameterS
 
 
 @transaction.atomic
-def Update_Assembly(run_class: RunMain_class, parameter_set: ParameterSet):
+def Update_Assembly(run_class: RunEngine_class, parameter_set: ParameterSet):
     """get run data
     Update TABLES:
     - RunMain,
@@ -322,7 +322,7 @@ def Update_Assembly(run_class: RunMain_class, parameter_set: ParameterSet):
 
 @transaction.atomic
 def Update_Classification(
-    run_class: RunMain_class, parameter_set: ParameterSet, tag="secondary"
+    run_class: RunEngine_class, parameter_set: ParameterSet, tag="secondary"
 ):
     """get run data
     Update TABLES:
@@ -347,7 +347,7 @@ def Update_Classification(
 
 
 @transaction.atomic
-def Update_Remap(run_class: RunMain_class, parameter_set: ParameterSet):
+def Update_Remap(run_class: RunEngine_class, parameter_set: ParameterSet):
     """get run data
     Update TABLES:
     - RunMain,
@@ -395,7 +395,7 @@ def retrieve_number_of_runs(project_name, sample_name, username):
     return RunMain.objects.filter(project=project, sample=sample).count() + 1
 
 
-def Update_RunMain(run_class: RunMain_class, parameter_set: ParameterSet):
+def Update_RunMain(run_class: RunEngine_class, parameter_set: ParameterSet):
     """update run data for run_class. Update run_class.run_data.
 
     :param run_class:
@@ -470,7 +470,7 @@ def Update_RunMain(run_class: RunMain_class, parameter_set: ParameterSet):
         runmain.save()
 
 
-def Sample_update_combinations(run_class: Type[RunMain_class]):
+def Sample_update_combinations(run_class: Type[RunEngine_class]):
     user = User.objects.get(username=run_class.username)
     project = Projects.objects.get(
         name=run_class.project_name, owner=user, is_deleted=False
@@ -486,7 +486,7 @@ def Sample_update_combinations(run_class: Type[RunMain_class]):
     sample.save()
 
 
-def get_run_parents(run_class: RunMain_class, parameter_set: ParameterSet):
+def get_run_parents(run_class: RunEngine_class, parameter_set: ParameterSet):
     """get run parents for run_class. Update run_class.run_data."""
     user = User.objects.get(username=run_class.username)
     project = Projects.objects.get(
@@ -514,7 +514,7 @@ def get_run_parents(run_class: RunMain_class, parameter_set: ParameterSet):
 
 
 def Update_RunMain_noCheck(
-    run_class: RunMain_class, parameter_set: ParameterSet, tag="secondary"
+    run_class: RunEngine_class, parameter_set: ParameterSet, tag="secondary"
 ):
     """update run data for run_class. Update run_class.run_data.
 
@@ -581,7 +581,7 @@ def Update_RunMain_noCheck(
     runmain.save()
 
 
-def Update_Run_Detail(run_class: RunMain_class, parameter_set: ParameterSet):
+def Update_Run_Detail(run_class: RunEngine_class, parameter_set: ParameterSet):
     """
     Update ALL run TABLES for one run_class.:
     - RunMain,
@@ -635,7 +635,7 @@ def Update_Run_Detail(run_class: RunMain_class, parameter_set: ParameterSet):
         run_detail.save()
 
 
-def Update_Run_Detail_noCheck(run_class: RunMain_class, parameter_set: ParameterSet):
+def Update_Run_Detail_noCheck(run_class: RunEngine_class, parameter_set: ParameterSet):
     """
     Update ALL run TABLES for one run_class.:
     - RunMain,
@@ -723,7 +723,7 @@ def Update_Run_Detail_noCheck(run_class: RunMain_class, parameter_set: Parameter
         run_detail.save()
 
 
-def Update_Run_QC(run_class: RunMain_class, parameter_set: ParameterSet):
+def Update_Run_QC(run_class: RunEngine_class, parameter_set: ParameterSet):
     sample, runmain, _ = get_run_parents(run_class, parameter_set)
 
     if sample is None or runmain is None:
@@ -759,7 +759,7 @@ def Update_Run_QC(run_class: RunMain_class, parameter_set: ParameterSet):
         run_qc.save()
 
 
-def Update_Run_Assembly(run_class: RunMain_class, parameter_set: ParameterSet):
+def Update_Run_Assembly(run_class: RunEngine_class, parameter_set: ParameterSet):
     """
     Update ALL run TABLES for one run_class.:
     - RunMain,
@@ -812,7 +812,7 @@ def Update_Run_Assembly(run_class: RunMain_class, parameter_set: ParameterSet):
         run_assembly.save()
 
 
-def Update_Run_Classification(run_class: RunMain_class, parameter_set: ParameterSet):
+def Update_Run_Classification(run_class: RunEngine_class, parameter_set: ParameterSet):
     """
     Update ALL run TABLES for one run_class.:
     - RunMain,
@@ -954,7 +954,7 @@ def Update_Run_Classification(run_class: RunMain_class, parameter_set: Parameter
             remap_target.save()
 
 
-def Update_Sample_Runs_DB(run_class: RunMain_class, parameter_set: ParameterSet):
+def Update_Sample_Runs_DB(run_class: RunEngine_class, parameter_set: ParameterSet):
     """
     Update ALL run TABLES for one run_class.:
     - RunMain,
@@ -1184,7 +1184,7 @@ def Update_FinalReport(run_class, runmain, sample):
             report_row.save()
 
 
-def Update_RefMap_DB(run_class: RunMain_class, parameter_set: ParameterSet):
+def Update_RefMap_DB(run_class: RunEngine_class, parameter_set: ParameterSet):
     """
     Update Remap TABLES with info on this run.
 

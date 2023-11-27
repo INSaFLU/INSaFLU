@@ -45,7 +45,7 @@ from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
 
 
-class RunMain:
+class RunEngine:
     remap_manager: Mapping_Manager
     mapping_instance: Mapping_Instance
     metadata_tool: Metadata_handler
@@ -456,7 +456,7 @@ class Input_Generator:
     def update_raw_reference_status_fail(self):
         self.reference.update_raw_reference_status_fail()
 
-    def engine_report_modify_mapping_success(self, run_class: RunMain):
+    def engine_report_modify_mapping_success(self, run_class: RunEngine):
         def render_classification_source(record: RawReference):
             return record.classification_source_str
 
@@ -464,7 +464,7 @@ class Input_Generator:
             self.reference
         )
 
-    def update_final_report(self, run_class: RunMain):
+    def update_final_report(self, run_class: RunEngine):
         run = self.reference.run
         sample = run.sample
 
@@ -540,7 +540,7 @@ class Command(BaseCommand):
             input_generator.generate_method_args()
             input_generator.generate_config()
 
-            run_engine = RunMain(
+            run_engine = RunEngine(
                 input_generator.config,
                 input_generator.method_args,
                 project_name,

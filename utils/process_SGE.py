@@ -802,7 +802,7 @@ class ProcessSGE(object):
             raise Exception("Fail to submit the job.")
         return sge_id
 
-    def set_submit_add_references_to_sample(
+    def set_submit_add_references_metagenomics(
         self, sample_pk: int, reference_filepath: str, out_dir: str, user: User
     ):
         """
@@ -811,7 +811,7 @@ class ProcessSGE(object):
         process_controler = ProcessControler()
 
         vect_command = [
-            "python3 {} submit_add_references_to_sample --sample_id {} --reference {} -o {}".format(
+            "python3 {} submit_add_references_metagenomics --sample_id {} --reference {} -o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 sample_pk,
                 reference_filepath,

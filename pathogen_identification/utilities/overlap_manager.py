@@ -15,9 +15,9 @@ from scipy.spatial.distance import pdist, squareform
 
 from pathogen_identification.utilities.clade_objects import Clade, CladeFilter
 from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
-
 ## pairwise matrix by individual reads
-from pathogen_identification.utilities.utilities_general import readname_from_fasta
+from pathogen_identification.utilities.utilities_general import \
+    readname_from_fasta
 
 
 def accid_from_metadata(metadata: pd.DataFrame, read_name: str) -> str:
@@ -55,6 +55,7 @@ class ReadOverlapManager:
         self.clade_filter = CladeFilter(reference_clade=reference_clade)
         self.excluded_leaves = []
         self.media_dir = media_dir
+        self.pid= pid
 
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
@@ -87,6 +88,9 @@ class ReadOverlapManager:
 
         self.tree_plot_exists = os.path.exists(self.tree_plot_path)
         self.overlap_matrix_plot_exists = os.path.exists(self.overlap_matrix_plot_path)
+    
+    def get_media_path_heatmap_clade(self, clade_str):
+        return os.path.join(self.media_dir, f"heatmap_clade_{clade_str}.{self.pid}.png")
 
     def all_accs_analyzed(self):
         if not os.path.exists(self.accid_statistics_path):
@@ -571,7 +575,9 @@ class ReadOverlapManager:
 
         return private_reads, total_reads, proportion_private
 
-    def clade_reads_matrix(self, filter_names=[], remove_leaves=True) -> pd.DataFrame:
+    def between_clade_reads_matrix(
+        self, filter_names=[], remove_leaves=True
+    ) -> pd.DataFrame:
         """
         Return dataframe reads per clade"""
         clade_read_matrix = []
@@ -603,6 +609,24 @@ class ReadOverlapManager:
             columns=self.read_profile_matrix.columns,
         )
 
+        return clade_read_matrix
+
+    def within_clade_reads_matrix(self, leaves: list) -> pd.DataFrame:
+        """
+        Return dataframe reads per clade"""
+        reads_in_clade = self.read_profile_matrix.loc[leaves]
+        reads_in_clade_sum = reads_in_clade.sum(axis=0)
+        reads_in_clade_sum_as_bool = reads_in_clade_sum > 0
+        reads_in_clade_sum_as_int_list = reads_in_clade_sum_as_bool.astype(int).tolist()
+        clade_read_matrix = pd.DataFrame(
+            [reads_in_clade_sum_as_int_list],
+            index=[leaves],
+            columns=self.read_profile_matrix.columns,
+        )
+
+        return clade_read_matrix
+
+    def square_and_fill_diagonal(self, clade_read_matrix: pd.DataFrame) -> pd.DataFrame:
         shared_clade_matrix = self.pairwise_shared_count(clade_read_matrix)
 
         ## divide rows of shared_clade_matrix by clade_read_matrix row sums
@@ -619,27 +643,38 @@ class ReadOverlapManager:
 
         return shared_clade_matrix
 
-    def pairwise_clade_shared_reads(self, clades_filter=[]) -> pd.DataFrame:
+    def between_clade_shared_reads(self, clades_filter=[]) -> pd.DataFrame:
         """
         Return dataframe of pairwise shared reads between all pairs of clades"""
-        clade_read_matrix = self.clade_reads_matrix(
+        clade_read_matrix = self.between_clade_reads_matrix(
             filter_names=clades_filter, remove_leaves=False
         )
+        shared_clade_matrix = self.square_and_fill_diagonal(clade_read_matrix)
 
-        return clade_read_matrix
+        return shared_clade_matrix
 
-    def plot_pairwise_shared_clade_reads(self, clades_filter=[]) -> None:
+    def within_clade_shared_reads(self, clade) -> pd.DataFrame:
+        leaves = self.all_clade_leaves_filtered[clade]
+        clade_read_matrix = self.within_clade_reads_matrix(leaves)
+        shared_clade_matrix = self.square_and_fill_diagonal(clade_read_matrix)
+        return shared_clade_matrix
+
+    def plot_pairwise_shared_clade_reads(
+        self, pairwise_shared_clade: pd.DataFrame, subplot= False, clade_str= ""
+    ) -> None:
         """
         Plot heatmap of pairwise shared reads between all pairs of leaves
         """
-        pairwise_shared_clade = self.pairwise_clade_shared_reads(
-            clades_filter=clades_filter
-        )
+
         plt.figure(figsize=(15, 6))
         sns.heatmap(pairwise_shared_clade, annot=True)
         # center figure
         plt.tight_layout()
-        plt.savefig(self.overlap_matrix_plot_path)
+        if subplot is False:
+            plot_path= self.overlap_matrix_plot_path
+        else:
+            plot_path= self.get_media_path_heatmap_clade(clade_str)
+        plt.savefig(plot_path)
 
     def node_statistics(self) -> dict:
         self.parse_for_data()

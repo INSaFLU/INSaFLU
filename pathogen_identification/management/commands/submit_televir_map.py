@@ -8,26 +8,33 @@ from django.core.management.base import BaseCommand
 
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from managing_files.models import ProcessControler
-from pathogen_identification.constants_settings import (MEDIA_ROOT,
-                                                        ConstantsSettings)
-from pathogen_identification.install_registry import (Params_Illumina,
-                                                      Params_Nanopore)
+from pathogen_identification.constants_settings import MEDIA_ROOT, ConstantsSettings
+from pathogen_identification.install_registry import Params_Illumina, Params_Nanopore
 from pathogen_identification.models import FinalReport, RawReference, RunMain
 from pathogen_identification.modules.metadata_handler import Metadata_handler
-from pathogen_identification.modules.object_classes import (Read_class,
-                                                            Sample_runClass,
-                                                            Software_detail)
-from pathogen_identification.modules.remap_class import (Mapping_Instance,
-                                                         Mapping_Manager)
+from pathogen_identification.modules.object_classes import (
+    Read_class,
+    Sample_runClass,
+    Software_detail,
+)
+from pathogen_identification.modules.remap_class import (
+    Mapping_Instance,
+    Mapping_Manager,
+)
 from pathogen_identification.utilities.televir_parameters import (
-    RemapParams, TelevirParameters)
-from pathogen_identification.utilities.update_DBs import (Update_FinalReport,
-                                                          Update_ReferenceMap)
-from pathogen_identification.utilities.utilities_general import \
-    simplify_name_lower
+    RemapParams,
+    TelevirParameters,
+)
+from pathogen_identification.utilities.update_DBs import (
+    Update_FinalReport,
+    Update_ReferenceMap,
+)
+from pathogen_identification.utilities.utilities_general import simplify_name_lower
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter, TelevirParameters)
+    ReportSorter,
+    TelevirParameters,
+)
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
 
@@ -162,7 +169,9 @@ class RunMain:
 
         self.metadata_tool = Metadata_handler(
             self.username,
-            self.config, sift_query=config["sift_query"], prefix=self.prefix
+            self.config,
+            sift_query=config["sift_query"],
+            prefix=self.prefix,
         )
 
         self.max_remap = self.remap_params.max_accids
@@ -381,7 +390,10 @@ class Input_Generator:
 
         self.config["r1"] = self.input_read_project_path(self.r1_path)
         self.config["r2"] = self.input_read_project_path(self.r2_path)
-        self.config["type"] = [ConstantsSettings.SINGLE_END, ConstantsSettings.PAIR_END][int(os.path.isfile(self.config["r2"]))]
+        self.config["type"] = [
+            ConstantsSettings.SINGLE_END,
+            ConstantsSettings.PAIR_END,
+        ][int(os.path.isfile(self.config["r2"]))]
 
         self.config.update(self.params.CONSTANTS)
 

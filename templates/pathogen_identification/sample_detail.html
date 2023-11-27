@@ -241,7 +241,7 @@
       }
     
     .row-to-toggle.active {
-    max-height: 500px; 
+    max-height: 500px; /* Adjust the value to the desired height */
     }
 
     .expand-button {
@@ -254,7 +254,7 @@
         cursor: pointer;
         text-align: center;
       }
-    .plot-container {
+      .plot-container {
         margin: none;
         display: flex;
         justify-content: center;
@@ -972,7 +972,7 @@
     function toggleRowVisibility(e) {
         var row = document.getElementById("rowToToggle");
         if (row.style.display === "none") {
-            row.style.display = "active";
+            row.style.display = "table-row";
         } else {
             row.style.display = "none";
         }

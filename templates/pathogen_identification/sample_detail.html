@@ -992,8 +992,8 @@
             var nextRowElementClass = nextRowElement.attr('class');
             console.log(nextRowElementClass);
             if (nextRowElementClass == "row-to-toggle") {
-                // toggle slow
-                nextRowElement.toggle('slow');
+                // toggle slide up and down
+                nextRowElement.slideToggle();
             }
         }
 

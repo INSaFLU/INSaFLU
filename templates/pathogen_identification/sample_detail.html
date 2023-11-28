@@ -234,12 +234,16 @@
         display: none;
     }
 
-    .table tr.row-to-toggle .table__wrapper {
+    .row-to-toggle {
         max-height: 0;
         overflow: hidden;
         transition: max-height 0.8s ease;
       }
     
+    .row-to-toggle.active {
+    max-height: 500px; /* Adjust the value to the desired height */
+    }
+
     .expand-button {
         display: block;
         width: 100%;
@@ -630,7 +634,7 @@
                         </tr>
                         {% endif %}
                         {% for final_report in report_list %}
-                        <tr class="parent">
+                        <tr>
                             <td colspan="100%">
                                 <div style="display: flex; border-radius: 5px; overflow: hidden;">
                                     <!-- First section -->
@@ -654,7 +658,7 @@
                             </td>
                         </tr>
                         {% if final_report.heatmap_exists %}
-                        <tr class="collapse-report">
+                        <tr class="row-to-toggle" id="rowToToggle" style="display: none;">
                             <td colspan="16">
                                 <div id="plot" class="plot-container">
                                     <img src={{final_report.heatmap_path}} alt="Image">
@@ -989,7 +993,7 @@
             console.log(nextRowElementClass);
             if (nextRowElementClass == "row-to-toggle") {
                 // toggle slow
-                nextRowElement.toggleClass("active");
+                nextRowElement.toggleC('slow');
             }
         }
 

@@ -649,6 +649,8 @@ class ReportSorter:
                 pairwise_shared_among_clade
             )
 
+            self.overlap_manager.plot_pca_full()
+
     def get_sorted_reports(self) -> List[FinalReportGroup]:
         overlap_analysis = self.read_overlap_analysis()
 

@@ -40,6 +40,7 @@ class ReadOverlapManager:
     accid_statistics_filename: str = "accid_statistics_{}.tsv"
     tree_plot_filename: str = "tree_{}.png"
     overlap_matrix_plot_filename: str = "overlap_matrix_{}.png"
+    overlap_pca_plot_filename: str = "overlap_pca_{}.png"
     min_freq: float = 0.05
     max_reads: int = 200000
 
@@ -75,6 +76,9 @@ class ReadOverlapManager:
         self.overlap_matrix_plot_path = os.path.join(
             self.media_dir, self.overlap_matrix_plot_filename.format(pid)
         )
+        self.overlap_pca_plot_path = os.path.join(
+            self.media_dir, self.overlap_pca_plot_filename.format(pid)
+        )
 
         self.metadata["filename"] = self.metadata["file"].apply(
             lambda x: x.split("/")[-1]
@@ -91,7 +95,9 @@ class ReadOverlapManager:
 
     def get_media_path_heatmap_clade(self, clade_str: str):
         clade_str_keep = clade_str.replace(" ", "_").lower()
-        return os.path.join(self.media_dir, f"heatmap_clade_{clade_str}.{self.pid}.png")
+        return os.path.join(
+            self.media_dir, f"heatmap_clade_{clade_str_keep}.{self.pid}.png"
+        )
 
     def all_accs_analyzed(self):
         if not os.path.exists(self.accid_statistics_path):
@@ -690,6 +696,64 @@ class ReadOverlapManager:
         else:
             plot_path = self.get_media_path_heatmap_clade(clade_str)
         plt.savefig(plot_path)
+
+    def plot_pca_full(self):
+        """
+        plot pca of all hits using reads as features
+        for colors, assign colors to hits in clades with private proportion > 0.5.
+        draw two plots: 1/2 pc and 2/3 pc
+        """
+
+        from sklearn.decomposition import PCA
+        from sklearn.preprocessing import StandardScaler
+
+        pca = PCA(n_components=3)
+        pca.fit(self.read_profile_matrix)
+
+        pca_df = pd.DataFrame(
+            pca.transform(self.read_profile_matrix),
+            index=self.read_profile_matrix.index,
+            columns=["pc1", "pc2", "pc3"],
+        )
+
+        pca_df["accid"] = pca_df.index
+        pca_df["clade"] = "None"
+
+        # colors
+        for clade, leaves in self.all_clade_leaves_filtered.items():
+            if len(leaves) == 0:
+                continue
+
+            (
+                private_reads,
+                total_reads,
+                proportion_private,
+            ) = self.clade_private_proportions(leaves)
+
+            if proportion_private < 0.5:
+                continue
+
+            pca_df.loc[pca_df.accid.isin(leaves), "clade"] = clade
+
+        pca_df["clade"] = pca_df["clade"].astype("category")
+
+        fig, ax = plt.subplots(1, 2, figsize=(15, 6))
+        sns.scatterplot(
+            data=pca_df,
+            x="pc1",
+            y="pc2",
+            hue="clade",
+            ax=ax[0],
+        )
+        sns.scatterplot(
+            data=pca_df,
+            x="pc2",
+            y="pc3",
+            hue="clade",
+            ax=ax[1],
+        )
+        plt.tight_layout()
+        plt.savefig(self.overlap_pca_plot_path)
 
     def node_statistics(self) -> dict:
         self.parse_for_data()

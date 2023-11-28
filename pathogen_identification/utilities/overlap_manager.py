@@ -15,9 +15,9 @@ from scipy.spatial.distance import pdist, squareform
 
 from pathogen_identification.utilities.clade_objects import Clade, CladeFilter
 from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
+
 ## pairwise matrix by individual reads
-from pathogen_identification.utilities.utilities_general import \
-    readname_from_fasta
+from pathogen_identification.utilities.utilities_general import readname_from_fasta
 
 
 def accid_from_metadata(metadata: pd.DataFrame, read_name: str) -> str:
@@ -577,12 +577,13 @@ class ReadOverlapManager:
         return private_reads, total_reads, proportion_private
 
     def between_clade_reads_matrix(
-        self, filter_names=[], remove_leaves=True
+        self, filter_names=[], remove_leaves=True, sort_private=False
     ) -> pd.DataFrame:
         """
         Return dataframe reads per clade"""
         clade_read_matrix = []
         belonging = []
+        private_sort = {}
         for clade, leaves in self.all_clade_leaves_filtered.items():
             if len(leaves) == 0:
                 continue
@@ -603,12 +604,29 @@ class ReadOverlapManager:
             ).tolist()
             clade_read_matrix.append(reads_in_clade_sum_as_int_list)
             belonging.append(clade.name)
+            if sort_private:
+                (
+                    private_reads,
+                    total_reads,
+                    proportion_private,
+                ) = self.clade_private_proportions(leaves)
+
+                private_sort[clade.name] = proportion_private
 
         clade_read_matrix = pd.DataFrame(
             clade_read_matrix,
             index=belonging,
             columns=self.read_profile_matrix.columns,
         )
+
+        if sort_private:
+            private_sort = {
+                k: v
+                for k, v in sorted(
+                    private_sort.items(), key=lambda item: item[1], reverse=True
+                )
+            }
+            clade_read_matrix = clade_read_matrix.reindex(private_sort.keys())
 
         return clade_read_matrix
 

@@ -630,7 +630,7 @@
                         </tr>
                         {% endif %}
                         {% for final_report in report_list %}
-                        <tr>
+                        <tr class="parent">
                             <td colspan="100%">
                                 <div style="display: flex; border-radius: 5px; overflow: hidden;">
                                     <!-- First section -->
@@ -654,7 +654,7 @@
                             </td>
                         </tr>
                         {% if final_report.heatmap_exists %}
-                        <tr class="row-to-toggle" id="rowToToggle">
+                        <tr class="collapse-report">
                             <td colspan="16">
                                 <div id="plot" class="plot-container">
                                     <img src={{final_report.heatmap_path}} alt="Image">

@@ -303,6 +303,13 @@ class ReportSorter:
                 "/media/"
                 + self.overlap_manager.overlap_matrix_plot_path.split("media/")[-1]
             )
+            self.overlap_pca_exists = os.path.exists(
+                self.overlap_manager.overlap_pca_plot_path
+            )
+            self.overlap_pca_path = (
+                "/media/"
+                + self.overlap_manager.overlap_pca_plot_path.split("media/")[-1]
+            )
 
         else:
             self.media_dir = None

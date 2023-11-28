@@ -461,7 +461,6 @@ class ReadOverlapManager:
 
         # divide shared rows by group row sums
         group_pairwise_shared = group_pairwise_shared.div(group.sum(axis=1), axis=1)
-        print(group_pairwise_shared.shape)
 
         # get lower triangle of shared
         lower_triangle = self.matrix_lower_triangle(group_pairwise_shared)
@@ -477,11 +476,6 @@ class ReadOverlapManager:
         group_pairwise_shared.extend(group_pairwise_shared_copy)
         # remove nan values
         group_pairwise_shared = [x for x in group_pairwise_shared if str(x) != "nan"]
-
-        if "NC_021505.1" in leaves and "AP013070.1" in leaves:
-            print("##########")
-            print(leaves)
-            print(group_pairwise_shared)
 
         min_shared = min(group_pairwise_shared)
         max_shared = max(group_pairwise_shared)
@@ -733,7 +727,11 @@ class ReadOverlapManager:
             if proportion_private < 0.5:
                 continue
 
-            pca_df.loc[pca_df.accid.isin(leaves), "clade"] = clade
+            pca_df.clade = pca_df.apply(
+                lambda x: clade if x.accid in leaves else x.clade, axis=1
+            )
+
+            # pca_df.loc[pca_df.accid.isin(leaves), "clade"] = clade
 
         pca_df["clade"] = pca_df["clade"].astype("category")
 
@@ -957,15 +955,6 @@ class ReadOverlapManager:
         """
         Return list of clades with private reads above threshold"""
 
-        print("clades_dict")
-        print(self.clade_filter.reference_clade)
-
-        for clade, clade_obj in clades_dict.items():
-            print("###########")
-            print(clade)
-            print(clade_obj)
-            print(self.clade_filter.filter_clade(clade_obj))
-
         clades_filtered = [
             clade
             for clade, clade_obj in clades_dict.items()
@@ -1082,8 +1071,6 @@ class ReadOverlapManager:
 
         selected_clades = self.filter_clades(statistics_dict_all)
 
-        print("#### selected_clades")
-        print(selected_clades)
         leaf_clades = self.tree_manager.leaf_clades_clean(selected_clades)
 
         clades = self.leaf_clades_to_pandas(leaf_clades, statistics_dict_all)

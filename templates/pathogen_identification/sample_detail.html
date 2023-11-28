@@ -259,9 +259,6 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        width: 2500px; /* Set a fixed width for the div */
-        height: 800px; /* Set a fixed height for the div */
-        overflow: auto; /* Add scrollbars if the content overflow
       }
 </style>
 
@@ -966,12 +963,15 @@
       });
     
     $("tr.parent").find("A#showButton").click(function(e) {
+        console.log(e.target.tagName);
+        var parent_tr = $(this).parent().parent();
+        console.log(parent_tr);
 
         if (e.target.tagName === "A" && e.target.id === "showButton") {
             e.preventDefault();
-            var parent_tr = e.target.parentNode.parentNode;
+            var parent_tr = $(this).parent().parent();
             var child_tr = nextTr(parent_tr);
-            $(child_tr).toggleClass("active");
+            $(child_tr).slideToggle('slow');
             
         }
 

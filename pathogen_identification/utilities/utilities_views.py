@@ -687,7 +687,10 @@ class ReportSorter:
         def get_max_coverage(group: FinalReportGroup):
             return max(y.coverage for y in group.group_list)
 
-        sorted_groups = sorted(sorted_reports, key=get_max_coverage, reverse=True)
+        def get_private_proportion(group: FinalReportGroup):
+            return group.private_proportion
+
+        sorted_groups = sorted(sorted_reports, key=get_private_proportion, reverse=True)
 
         return sorted_groups
 

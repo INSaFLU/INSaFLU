@@ -649,11 +649,11 @@
                                     <div style="flex: 1; padding: 10px; padding: 5px;border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
                                         {{final_report.group_list|length}}
                                     </div>
-                                    {% if final_report.heatmap_exists %}
+                                    
                                     <div style="flex: 1; padding: 10px; padding: 5px;border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
-                                        <a href="#" id="showButton" onclick="toggleRowVisibility()">Read Overlap</a>
+                                        <a href="#" id="showButton">Read Overlap</a>
                                     </div>
-                                    {% endif %}
+                                    
                                 </div>
                             </td>
                         </tr>
@@ -942,6 +942,7 @@
 {% block js %}
 
 <script type="text/javascript">
+
     $(document).ready(function() {
         $('.collapsible-header').click(function() {
           $(this).toggleClass('active');
@@ -961,14 +962,43 @@
         }
 
       });
-    
-      function toggleRowVisibility() {
-        var row = document.getElementById("rowToToggle");
-        row.classList.toggle("active");
-        
-      }
 
-    
+      $("A").click(function(event) {
+        var clickedButton = event.target;
+        var buttonId = clickedButton.id;
+        var buttonText = clickedButton.innerText;
+        var parent_tr = $(clickedButton).parent();
+
+        var parent_id = parent_tr.attr('id');
+
+      });
+
+      $("a").click(function(event) {
+
+        console.log(event.target.tagName);
+        console.log(event.target.id);
+
+        if (event.target.id == "showButton") {
+            event.preventDefault();
+            var clickedLink = $(this);
+            var rowElement = clickedLink.closest("tr");
+            
+            // Access the row element or perform further actions
+            console.log(rowElement);
+
+            // Get the next row element
+            var nextRowElement = rowElement.next();
+            console.log(nextRowElement);
+            var nextRowElementClass = nextRowElement.attr('class');
+            console.log(nextRowElementClass);
+            if (nextRowElementClass == "row-to-toggle") {
+                // toggle slow
+                nextRowElement.toggle('slow');
+            }
+        }
+
+      });
+
       
 </script>
 

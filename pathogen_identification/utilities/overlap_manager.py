@@ -709,7 +709,7 @@ class ReadOverlapManager:
             .apply(lambda x: tuple(x.index))
             .tolist()
         )
-        duplicate_groups = [x for x in duplicate_groups if len(x) > 1]
+        # duplicate_groups = [x for x in duplicate_groups if len(x) > 1]
         return duplicate_groups
 
     def plot_pairwise_shared_clade_reads(

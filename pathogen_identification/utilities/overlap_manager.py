@@ -339,6 +339,28 @@ class ReadOverlapManager:
         read_profile_matrix = self.filter_read_matrix(read_profile_matrix)
         return read_profile_matrix
 
+    def get_private_reads_no_duplicates(
+        self,
+    ):
+        """ """
+
+        accid_df = pd.read_csv(self.accid_statistics_path, sep="\t")
+        duplicate_groups = self.duplicate_groups_from_dataframe(
+            self.read_profile_matrix
+        )
+
+        if "private_reads" not in accid_df.columns:
+            accid_df["private_reads"] = 0
+
+        for duplicate_group in duplicate_groups:
+            group_private_counts = self.get_accession_private_counts(duplicate_group)
+
+            accid_df.loc[
+                accid_df.accid.isin(duplicate_group), "private_reads"
+            ] = group_private_counts
+
+        accid_df.to_csv(self.accid_statistics_path, sep="\t", index=False)
+
     def pairwise_shared_count(
         self,
         read_profile_matrix: pd.DataFrame,
@@ -414,14 +436,15 @@ class ReadOverlapManager:
             self.read_profile_matrix.index.isin(other) == False
         ]
         first_counts = simplified_matrix.loc[first]
-        total_counts = simplified_matrix[
-            simplified_matrix.index.isin(duplicate_group) == False
-        ].sum(axis=0)
+        first_counts_as_bool = first_counts > 0
 
-        private_counts = first_counts - total_counts
+        total_counts = simplified_matrix.sum(axis=0)
 
-        private_counts = private_counts.fillna(0)
-        private_counts = private_counts == 0
+        private_counts = first_counts == total_counts
+        private_counts = private_counts[first_counts_as_bool]
+
+        # private_counts = private_counts.fillna(0)
+        # private_counts = private_counts == 0
         private_counts = sum(private_counts)
 
         return private_counts

@@ -694,9 +694,7 @@ class ReportSorter:
             overlap_analysis = self.read_overlap_analysis(force=True)
             overlap_analysis.to_csv(self.analysis_df_path, sep="\t", index=False)
 
-            self.get_private_reads_no_duplicates(
-                self.overlap_manager.read_profile_matrix
-            )
+            self.overlap_manager.get_private_reads_no_duplicates()
 
             overlap_groups = list(overlap_analysis.groupby(["total_counts", "clade"]))[
                 ::-1
@@ -734,31 +732,6 @@ class ReportSorter:
             )
 
             self.overlap_manager.plot_pca_full()
-
-    def get_private_reads_no_duplicates(
-        self, pairwise_shared_among_clade: pd.DataFrame
-    ):
-        """"""
-        accid_df = pd.read_csv(self.overlap_manager.accid_statistics_path, sep="\t")
-        duplicate_groups = self.overlap_manager.duplicate_groups_from_dataframe(
-            pairwise_shared_among_clade
-        )
-
-        if "private_reads" not in accid_df.columns:
-            accid_df["private_reads"] = 0
-
-        for duplicate_group in duplicate_groups:
-            group_private_counts = self.overlap_manager.get_accession_private_counts(
-                duplicate_group
-            )
-
-            accid_df.loc[
-                accid_df.accid.isin(duplicate_group), "private_reads"
-            ] = group_private_counts
-
-        accid_df.to_csv(
-            self.overlap_manager.accid_statistics_path, sep="\t", index=False
-        )
 
     def wrap_report(self, report: FinalReport) -> FinalReportWrapper:
         return FinalReportWrapper(report)

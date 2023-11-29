@@ -777,6 +777,27 @@ class ReportSorter:
 
             report_group.update_max_private_reads()
 
+        return report_groups
+
+    def sort_group_by_private_reads(self, group: FinalReportGroup) -> FinalReportGroup:
+        """
+        sort group by private reads
+        """
+        group.group_list.sort(key=lambda x: x.private_reads, reverse=True)
+
+        return group
+
+    def sort_group_list_reports(
+        self, report_groups: List[FinalReportGroup]
+    ) -> List[FinalReportGroup]:
+        """
+        sort group list reports
+        """
+        return [
+            self.sort_group_by_private_reads(report_group)
+            for report_group in report_groups
+        ]
+
     def get_sorted_reports(self) -> List[FinalReportGroup]:
         overlap_analysis = self.read_overlap_analysis()
 
@@ -816,6 +837,8 @@ class ReportSorter:
             return group.private_proportion
 
         sorted_groups = sorted(sorted_reports, key=get_private_proportion, reverse=True)
+        sorted_groups = self.get_reports_private_reads(sorted_groups)
+        sorted_groups = self.sort_group_list_reports(sorted_groups)
 
         return sorted_groups
 

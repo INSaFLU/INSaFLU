@@ -754,11 +754,13 @@ class ReadOverlapManager:
         pca_df["clade"] = pca_df["clade"].astype("category")
 
         fig, ax = plt.subplots(1, 2, figsize=(15, 6))
+        # scatterplot with large points
         sns.scatterplot(
             data=pca_df,
             x="pc1",
             y="pc2",
             hue="clade",
+            s=100,
             ax=ax[0],
         )
         sns.scatterplot(
@@ -766,6 +768,7 @@ class ReadOverlapManager:
             x="pc2",
             y="pc3",
             hue="clade",
+            s=100,
             ax=ax[1],
         )
         plt.tight_layout()

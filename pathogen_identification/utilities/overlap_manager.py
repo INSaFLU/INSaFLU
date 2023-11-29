@@ -776,9 +776,15 @@ class ReadOverlapManager:
             clusters.setdefault(v, []).append(k)
 
         clusters = [v for k, v in clusters.items()]
-        for acc in self.read_profile_matrix.index:
-            if acc not in clusters_assigment_dict.keys():
-                clusters.append([acc])
+        print(clusters)
+        for i in range(shared_read_matrix.shape[0]):
+            if i not in clusters_assigment_dict.keys():
+                clusters.append([i])
+
+        clusters = [x for x in clusters if len(x) > 1]
+        clusters = [
+            tuple([self.read_profile_matrix.index[y] for y in x]) for x in clusters
+        ]
 
         return clusters
 

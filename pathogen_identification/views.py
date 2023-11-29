@@ -1003,7 +1003,12 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             sorted_reports.append(empty_reports)
 
         # check has control_flag present
-        has_controlled_flag = False if sample_main.is_control else True
+        # has_controlled_flag = False if sample_main.is_control else True
+        private_reads_available = False
+        for report_group in sorted_reports:
+            if report_group.reports_have_private_reads:
+                private_reads_available = True
+                break
 
         contig_classification = ContigClassification.objects.get(
             sample=sample_main, run=run_main
@@ -1049,6 +1054,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "overlap_heatmap_path": report_sorter.overlap_heatmap_path,
             "overlap_pca_exists": report_sorter.overlap_pca_exists,
             "overlap_pca_path": report_sorter.overlap_pca_path,
+            "private_reads_available": private_reads_available,
         }
 
         ### downloadable files
@@ -1146,8 +1152,6 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         runs = set([fr.run.pk for fr in final_report])
         runs = RunMain.objects.filter(pk__in=runs)
         runs_number = len(runs) > 0
-
-        print(report_sorter.error_rate_available)
 
         context = {
             "project": project_name,

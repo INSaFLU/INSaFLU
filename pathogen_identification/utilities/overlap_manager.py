@@ -114,6 +114,7 @@ class ReadOverlapManager:
     def parse_for_data(self):
         # self.read_names_dict: Dict[str, List[str]] = self.get_accid_readname_dict()
         self.read_profile_matrix: pd.DataFrame = self.generate_read_matrix()
+
         self.overlap_matrix: pd.DataFrame = self.pairwise_shared_count(
             self.read_profile_matrix
         )
@@ -122,6 +123,10 @@ class ReadOverlapManager:
         accid_df["read_count"] = accid_df["accid"].apply(
             lambda x: self.get_accession_total_counts(x)
         )
+        accid_df["private_count"] = accid_df["accid"].apply(
+            lambda x: self.get_accession_private_counts(x)
+        )
+
         # sort table by accid and then by read count
         accid_df = accid_df.sort_values(["accid", "read_count"], ascending=False)
         # drop duplicates of accid
@@ -402,6 +407,19 @@ class ReadOverlapManager:
         Get total counts for accession
         """
         return self.read_profile_matrix.loc[accid].sum()
+
+    def get_accession_private_counts(self, accid: str):
+        """
+        Get private counts for accession
+        """
+
+        total_sum = self.read_profile_matrix.sum(axis=1)
+        accid_sum = self.read_profile_matrix.loc[accid]
+
+        private_reads = accid_sum - total_sum
+        private_reads = sum(private_reads == 0)
+
+        return private_reads
 
     def get_proportion_counts(self, accid: str):
         """

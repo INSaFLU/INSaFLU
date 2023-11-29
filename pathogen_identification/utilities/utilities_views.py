@@ -1,9 +1,13 @@
 import datetime
 import logging
 import os
-from typing import Dict, List
+from typing import Dict, List, Union
 
 import pandas as pd
+from braces.views import FormValidMessageMixin, LoginRequiredMixin
+from django.db.models.query import QuerySet
+from django.views import generic
+from django.views.generic import ListView
 
 from pathogen_identification.models import (
     FinalReport,
@@ -11,6 +15,7 @@ from pathogen_identification.models import (
     Projects,
     ReferenceMap_Main,
     RunAssembly,
+    RunDetail,
     RunMain,
 )
 from pathogen_identification.utilities.clade_objects import Clade
@@ -40,12 +45,79 @@ class EmptyRemapMain:
     coverage_mean = ""
 
 
+class FinalReportWrapper:
+    def __init__(self, report: FinalReport):
+        """
+        copy all attributes from report
+        """
+
+        for attr in dir(FinalReport):
+            if not attr.startswith("__"):
+                if attr == "objects":
+                    continue
+                try:
+                    setattr(self, attr, getattr(report, attr))
+                except Exception as e:
+                    raise e
+
+        self.private_reads = 0
+
+    def update_private_reads(self, private_reads: int):
+        self.private_reads = private_reads
+
+
+class FinalReportCompound(LoginRequiredMixin, generic.TemplateView):
+    def __init__(self, report: FinalReport):
+        """
+        copy all attributes from report
+        """
+
+        for attr in dir(FinalReport):
+            if not attr.startswith("__"):
+                if attr == "objects":
+                    continue
+                try:
+                    setattr(self, attr, getattr(report, attr))
+                except Exception as e:
+                    raise e
+
+        self.found_in = self.get_identical_reports_ps(report)
+        self.run_detail = self.get_report_rundetail(report)
+        self.run_main = self.get_report_runmain(report)
+        self.run_index = self.run_main.pk
+        self.data_exists = self.check_data_exists(report)
+        self.control_flag = report.control_flag
+        self.private_reads = 0
+
+    def update_private_reads(self, private_reads: int):
+        self.private_reads = private_reads
+
+    def get_identical_reports_ps(self, report: FinalReport) -> list:
+        reports_unique = FinalReport.objects.filter(
+            run__project__pk=report.run.project.pk,
+            sample__pk=report.sample.pk,
+            accid=report.accid,
+        )
+
+        sets = [r.run.parameter_set.leaf.index for r in reports_unique]
+        return ", ".join([str(s) for s in sets])
+
+    def check_data_exists(self, report: FinalReport) -> bool:
+        return report.run.data_deleted == False
+
+    def get_report_rundetail(self, report: FinalReport) -> RunDetail:
+        return RunDetail.objects.get(sample=report.sample, run=report.run)
+
+    def get_report_runmain(self, report: FinalReport) -> RunMain:
+        return report.run
+
+
 class FinalReportGroup:
     name: str
     total_counts: str
     shared_proportion: str
     private_proportion: str
-    group_list: List[FinalReport]
+    group_list: List[FinalReportWrapper]
 
     def __init__(
         self,
@@ -53,7 +125,7 @@ class FinalReportGroup:
         total_counts: int,
         shared_proportion: float,
         private_proportion: float,
-        group_list: List[FinalReport],
+        group_list: List[FinalReportWrapper],
         heatmap_path: str = "",
         heatmap_exists: bool = False,
     ):
@@ -64,6 +136,18 @@ class FinalReportGroup:
         self.group_list = group_list
         self.heatmap_path = heatmap_path
         self.heatmap_exists = heatmap_exists
+        self.max_private_reads = 0
+
+    def reports_have_private_reads(self) -> bool:
+        for report in self.group_list:
+            if report.private_reads > 0:
+                return True
+        return False
+
+    def update_max_private_reads(self):
+        for report in self.group_list:
+            if report.private_reads > self.max_private_reads:
+                self.max_private_reads = report.private_reads
 
 
 def check_sample_software_exists(sample: PIProject_Sample) -> bool:
@@ -658,6 +742,41 @@ class ReportSorter:
 
             self.overlap_manager.plot_pca_full()
 
+    def wrap_report(self, report: FinalReport) -> FinalReportWrapper:
+        return FinalReportWrapper(report)
+
+    def wrap_group_reports(self, report_group: FinalReportGroup) -> FinalReportGroup:
+        report_group.group_list = [
+            self.wrap_report(report) for report in report_group.group_list
+        ]
+        return report_group
+
+    def wrap_group_list_reports(
+        self, report_groups: List[FinalReportGroup]
+    ) -> List[FinalReportGroup]:
+        return [self.wrap_group_reports(report_group) for report_group in report_groups]
+
+    def get_reports_private_reads(
+        self, report_groups: List[FinalReportGroup]
+    ) -> List[FinalReportGroup]:
+        """
+        Update reports with private reads
+        """
+        accid_df = pd.read_csv(self.overlap_manager.accid_statistics_path, sep="\t")
+        if private_reads not in accid_df.columns:
+            report_groups = self.wrap_group_list_reports(report_groups)
+
+        for report_group in report_groups:
+            for report in report_group.group_list:
+                if report.accid not in accid_df.accid.tolist():
+                    continue
+                report = self.wrap_report(report)
+                accid_df_accid = accid_df[accid_df.accid == report.accid]
+                private_reads = accid_df_accid.private_reads.iloc[0]
+                report.update_private_reads(private_reads)
+
+            report_group.update_max_private_reads()
+
     def get_sorted_reports(self) -> List[FinalReportGroup]:
         overlap_analysis = self.read_overlap_analysis()
 
@@ -692,9 +811,6 @@ class ReportSorter:
                 sorted_reports.append(report_group)
 
         # sort groups by max coverage among group
-
-        def get_max_coverage(group: FinalReportGroup):
-            return max(y.coverage for y in group.group_list)
 
         def get_private_proportion(group: FinalReportGroup):
             return group.private_proportion
@@ -774,58 +890,6 @@ def calculate_reports_overlaps(sample: PIProject_Sample, force=False):
     )
     report_sorter = ReportSorter(final_reports, report_layout_params)
     report_sorter.sort_reports_save()
-
-
-from typing import List, Union
-
-from braces.views import FormValidMessageMixin, LoginRequiredMixin
-from django.db.models.query import QuerySet
-from django.views import generic
-from django.views.generic import ListView
-
-from pathogen_identification.models import FinalReport, ParameterSet, RunDetail, RunMain
-
-
-class FinalReportCompound(LoginRequiredMixin, generic.TemplateView):
-    def __init__(self, report: FinalReport):
-        """
-        copy all attributes from report
-        """
-
-        for attr in dir(FinalReport):
-            if not attr.startswith("__"):
-                if attr == "objects":
-                    continue
-                try:
-                    setattr(self, attr, getattr(report, attr))
-                except Exception as e:
-                    raise e
-
-        self.found_in = self.get_identical_reports_ps(report)
-        self.run_detail = self.get_report_rundetail(report)
-        self.run_main = self.get_report_runmain(report)
-        self.run_index = self.run_main.pk
-        self.data_exists = self.check_data_exists(report)
-        self.control_flag = report.control_flag
-
-    def get_identical_reports_ps(self, report: FinalReport) -> list:
-        reports_unique = FinalReport.objects.filter(
-            run__project__pk=report.run.project.pk,
-            sample__pk=report.sample.pk,
-            accid=report.accid,
-        )
-
-        sets = [r.run.parameter_set.leaf.index for r in reports_unique]
-        return ", ".join([str(s) for s in sets])
-
-    def check_data_exists(self, report: FinalReport) -> bool:
-        return report.run.data_deleted == False
-
-    def get_report_rundetail(self, report: FinalReport) -> RunDetail:
-        return RunDetail.objects.get(sample=report.sample, run=report.run)
-
-    def get_report_runmain(self, report: FinalReport) -> RunMain:
-        return report.run
 
 
 def final_report_best_cov_by_accid(reports: QuerySet) -> QuerySet:

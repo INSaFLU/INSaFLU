@@ -650,7 +650,6 @@
                                     <div style="flex: 1; padding: 10px; padding: 5px;border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
                                         {{final_report.group_list|length}}
                                     </div>
-                                    
                                     <div style="flex: 1; padding: 10px; padding: 5px;border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
                                         <a href="#" id="showButton">Read Overlap</a>
                                     </div>
@@ -976,22 +975,15 @@
 
       $("a").click(function(event) {
 
-        console.log(event.target.tagName);
-        console.log(event.target.id);
-
         if (event.target.id == "showButton") {
             event.preventDefault();
             var clickedLink = $(this);
             var rowElement = clickedLink.closest("tr");
             
             // Access the row element or perform further actions
-            console.log(rowElement);
-
             // Get the next row element
             var nextRowElement = rowElement.next();
-            console.log(nextRowElement);
             var nextRowElementClass = nextRowElement.attr('class');
-            console.log(nextRowElementClass);
             if (nextRowElementClass == "row-to-toggle") {
                 // toggle slow
                 nextRowElement.toggle('slow');

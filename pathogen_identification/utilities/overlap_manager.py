@@ -432,6 +432,7 @@ class ReadOverlapManager:
         """
         Get private counts for accession
         """
+        print(duplicate_group)
         first = duplicate_group[0]
         other = duplicate_group[1:]
         simplified_matrix = self.read_profile_matrix[
@@ -444,6 +445,9 @@ class ReadOverlapManager:
 
         private_counts = first_counts == total_counts
         private_counts = private_counts[first_counts_as_bool]
+        print(private_counts.shape)
+        print(private_counts)
+        print(private_counts)
 
         # private_counts = private_counts.fillna(0)
         # private_counts = private_counts == 0

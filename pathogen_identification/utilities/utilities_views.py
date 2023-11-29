@@ -763,7 +763,7 @@ class ReportSorter:
         Update reports with private reads
         """
         accid_df = pd.read_csv(self.overlap_manager.accid_statistics_path, sep="\t")
-        if private_reads not in accid_df.columns:
+        if "private_reads" not in accid_df.columns:
             report_groups = self.wrap_group_list_reports(report_groups)
 
         for report_group in report_groups:

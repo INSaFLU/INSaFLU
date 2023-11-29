@@ -15,9 +15,9 @@ from scipy.spatial.distance import pdist, squareform
 
 from pathogen_identification.utilities.clade_objects import Clade, CladeFilter
 from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
-
 ## pairwise matrix by individual reads
-from pathogen_identification.utilities.utilities_general import readname_from_fasta
+from pathogen_identification.utilities.utilities_general import \
+    readname_from_fasta
 
 
 def accid_from_metadata(metadata: pd.DataFrame, read_name: str) -> str:
@@ -345,16 +345,17 @@ class ReadOverlapManager:
         """ """
 
         accid_df = pd.read_csv(self.accid_statistics_path, sep="\t")
-        duplicate_groups = self.duplicate_groups_from_dataframe(
-            self.read_profile_matrix
-        )
+        #duplicate_groups = self.duplicate_groups_from_dataframe(
+        #    self.read_profile_matrix
+        #)
+        similar_groups= self.very_similar_groups_from_dataframe()
 
         print(duplicate_groups)
 
         if "private_reads" not in accid_df.columns:
             accid_df["private_reads"] = 0
 
-        for duplicate_group in duplicate_groups:
+        for duplicate_group in similar_groups:
             group_private_counts = self.get_accession_private_counts(duplicate_group)
 
             accid_df.loc[
@@ -737,6 +738,26 @@ class ReadOverlapManager:
         )
         # duplicate_groups = [x for x in duplicate_groups if len(x) > 1]
         return duplicate_groups
+
+    def very_similar_groups_from_dataframe(self) -> List[tuple]:
+        """
+        find very similar entries entries in pairwise shared clade
+        """
+
+        shared_read_matrix = self.square_and_fill_diagonal(self.read_profile_matrix)
+
+        from scipy.cluster.hierarchy import fcluster, linkage
+
+        Z = linkage(shared_read_matrix, "ward")
+        clusters = fcluster(Z, 0.99, criterion="distance")
+
+        clusters = pd.DataFrame(
+            {"cluster": clusters, "accid": shared_read_matrix.index}
+        ).set_index("accid")
+
+        clusters = clusters.groupby("cluster").apply(lambda x: tuple(x.index)).tolist()
+
+        return clusters
 
     def plot_pairwise_shared_clade_reads(
         self, pairwise_shared_clade: pd.DataFrame, subplot=False, clade_str=""

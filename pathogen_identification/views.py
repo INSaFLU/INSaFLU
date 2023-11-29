@@ -1006,7 +1006,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         # has_controlled_flag = False if sample_main.is_control else True
         private_reads_available = False
         for report_group in sorted_reports:
-            if report_group.reports_have_private_reads:
+            if report_group.reports_have_private_reads():
                 private_reads_available = True
                 break
 

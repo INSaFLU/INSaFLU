@@ -112,6 +112,19 @@ def depth_color(depth_value, max_value):
 
 
 @register.simple_tag
+def depth_color_gaps(depth_value, max_value):
+    if depth_value and max_value:
+        ncol = float(depth_value) * 100 / float(max_value)
+    else:
+        ncol = 0
+
+    ncol = 100 - ncol
+
+    ncol = f"background-color: rgba({cell_color}, {int(ncol)}%);"
+    return ncol
+
+
+@register.simple_tag
 def depth_color_windows(window_value: str, max_prop):
     if window_value and max_prop:
         if "/" in window_value:

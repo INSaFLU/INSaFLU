@@ -689,7 +689,7 @@
                                 {{value.ref_proportion|round_to_int}}</td>
                             <td data-title="mapped_prop" style="{% depth_color value.mapped_proportion max_mapped_prop %}">
                                 {{value.mapped_proportion|round_to_int}}</td>
-                            <td data-title="Gaps" style="{% depth_color value.ngaps run_detail.max_gaps %}">
+                            <td data-title="Gaps" style="{% depth_color_gaps value.ngaps run_detail.max_gaps %}">
                                 {{value.ngaps}}</td>
                             <td data-title="Windows Covered" style="{% depth_color_windows value.windows_covered max_windows_covered %}">
                                 {% windows_safe value.windows_covered %}</td>

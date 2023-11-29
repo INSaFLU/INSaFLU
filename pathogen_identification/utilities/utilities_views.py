@@ -727,6 +727,10 @@ class ReportSorter:
                         pairwise_shared_within_clade = (
                             self.overlap_manager.within_clade_shared_reads(clade=name)
                         )
+                        self.get_private_reads_no_duplicates(
+                            pairwise_shared_within_clade
+                        )
+
                         self.overlap_manager.plot_pairwise_shared_clade_reads(
                             pairwise_shared_within_clade, subplot=True, clade_str=name
                         )
@@ -740,8 +744,6 @@ class ReportSorter:
                 pairwise_shared_among_clade
             )
 
-            self.get_private_reads_no_duplicates(pairwise_shared_among_clade)
-
             self.overlap_manager.plot_pca_full()
 
     def get_private_reads_no_duplicates(
@@ -753,6 +755,8 @@ class ReportSorter:
         duplicate_groups = self.overlap_manager.duplicate_groups_from_dataframe(
             pairwise_shared_among_clade
         )
+        print("duplicate groups")
+        print(duplicate_groups)
         accid_df["private_reads"] = 0
 
         for duplicate_group in duplicate_groups:

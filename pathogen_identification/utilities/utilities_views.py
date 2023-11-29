@@ -787,16 +787,19 @@ class ReportSorter:
             return report_groups
 
         for report_group in report_groups:
+            new_group_list = []
             for report in report_group.group_list:
                 report = self.wrap_report(report)
                 print(report.accid)
                 if report.accid not in accid_df.accid.tolist():
+                    new_group_list.append(report)
                     continue
 
                 accid_df_accid = accid_df[accid_df.accid == report.accid]
                 private_reads = accid_df_accid.private_reads.iloc[0]
                 report.update_private_reads(private_reads)
-
+                new_group_list.append(report)
+            report_group.group_list = new_group_list
             report_group.update_max_private_reads()
 
         return report_groups

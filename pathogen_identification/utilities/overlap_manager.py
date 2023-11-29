@@ -120,11 +120,9 @@ class ReadOverlapManager:
         )
 
         accid_df = self.metadata[["accid", "description"]]
-        accid_df["read_count"] = accid_df["accid"].apply(
-            lambda x: self.get_accession_total_counts(x)
-        )
-        accid_df["private_count"] = accid_df["accid"].apply(
-            lambda x: self.get_accession_private_counts(x)
+        accid_df["read_count"] = accid_df.accid.apply(self.get_accession_total_counts)
+        accid_df["private_count"] = accid_df.accid.apply(
+            self.get_accession_private_counts
         )
 
         # sort table by accid and then by read count
@@ -412,12 +410,18 @@ class ReadOverlapManager:
         """
         Get private counts for accession
         """
-
+        if accid not in self.read_profile_matrix.index:
+            return 0
         total_sum = self.read_profile_matrix.sum(axis=1)
         accid_sum = self.read_profile_matrix.loc[accid]
 
+        print("####### private reads #########")
+        print(accid_sum.shape)
+        print(total_sum.shape)
+
         private_reads = accid_sum - total_sum
         private_reads = sum(private_reads == 0)
+        print(private_reads)
 
         return private_reads
 

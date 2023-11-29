@@ -339,11 +339,6 @@ class ReadOverlapManager:
         read_profile_dict = self.read_profile_dict_get(readname_dict, all_reads)
         read_profile_matrix = self.read_profile_matrix_get(read_profile_dict)
         ## create list of duplicated rows
-        duplicated_rows = read_profile_matrix.index[
-            read_profile_matrix.duplicated()
-        ].tolist()
-        print("duplicated rows")
-        print(duplicated_rows)
         read_profile_matrix = self.filter_read_matrix(read_profile_matrix)
         return read_profile_matrix
 
@@ -419,6 +414,8 @@ class ReadOverlapManager:
         if accid not in self.read_profile_matrix.index:
             return 0
         total_sum = self.read_profile_matrix.sum(axis=0)
+        total_sum = total_sum > 0
+        total_sum = np.array(total_sum, dtype=int)
         accid_sum = self.read_profile_matrix.loc[accid]
         accid_profile = accid_sum > 0
 

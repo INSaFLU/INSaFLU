@@ -15,9 +15,9 @@ from scipy.spatial.distance import pdist, squareform
 
 from pathogen_identification.utilities.clade_objects import Clade, CladeFilter
 from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
-
 ## pairwise matrix by individual reads
-from pathogen_identification.utilities.utilities_general import readname_from_fasta
+from pathogen_identification.utilities.utilities_general import \
+    readname_from_fasta
 
 
 def accid_from_metadata(metadata: pd.DataFrame, read_name: str) -> str:
@@ -748,12 +748,14 @@ class ReadOverlapManager:
 
         from scipy.cluster.hierarchy import fcluster, linkage
 
-        Z = linkage(shared_read_matrix, "ward")
+        Z = linkage(shared_read_matrix, method="complete", metric="jaccard")
         clusters = fcluster(Z, 0.99, criterion="distance")
 
         clusters = pd.DataFrame(
             {"cluster": clusters, "accid": shared_read_matrix.index}
         ).set_index("accid")
+
+        print(clusters)
 
         clusters = clusters.groupby("cluster").apply(lambda x: tuple(x.index)).tolist()
 

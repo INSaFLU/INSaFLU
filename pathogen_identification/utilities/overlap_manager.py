@@ -417,17 +417,12 @@ class ReadOverlapManager:
         total_counts = simplified_matrix[
             simplified_matrix.index.isin(duplicate_group) == False
         ].sum(axis=0)
-        print("############")
-        print(duplicate_group)
-        print(first_counts.shape, total_counts.shape)
 
         private_counts = first_counts - total_counts
-        print(private_counts.shape)
 
         private_counts = private_counts.fillna(0)
         private_counts = private_counts == 0
         private_counts = sum(private_counts)
-        print(private_counts)
 
         return private_counts
 

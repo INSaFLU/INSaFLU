@@ -615,18 +615,6 @@ class ReportSorter:
         ### time operations
         self.logger.info("generating tree")
 
-        ### generate tree
-        # njtree = overlap_manager.generate_tree()
-
-        ### inner node to leaf dict
-        # tree_manager = PhyloTreeManager(njtree)
-        # inner_node_leaf_dict = tree_manager.clades_get_leaves_clades()
-
-        ### get statistics
-        # statistics_dict_all = overlap_manager.get_node_statistics(force=force)
-        # selected_clades = overlap_manager.filter_clades(statistics_dict_all)
-        # leaf_clades = overlap_manager.tree_manager.leaf_clades_clean(selected_clades)
-        # clades = overlap_manager.leaf_clades_to_pandas(leaf_clades, statistics_dict_all)
         clades = self.overlap_manager.get_leaf_clades(force=force)
         print(clades)
         self.update_report_excluded_dicts(self.overlap_manager)
@@ -752,12 +740,10 @@ class ReportSorter:
     ):
         """"""
         accid_df = pd.read_csv(self.overlap_manager.accid_statistics_path, sep="\t")
-        print(pairwise_shared_among_clade.shape)
         duplicate_groups = self.overlap_manager.duplicate_groups_from_dataframe(
             pairwise_shared_among_clade
         )
-        print("duplicate groups")
-        print(duplicate_groups)
+
         if "private_reads" not in accid_df.columns:
             accid_df["private_reads"] = 0
 
@@ -770,7 +756,6 @@ class ReportSorter:
                 accid_df.accid.isin(duplicate_group), "private_reads"
             ] = group_private_counts
 
-        print(accid_df)
         accid_df.to_csv(
             self.overlap_manager.accid_statistics_path, sep="\t", index=False
         )
@@ -796,15 +781,18 @@ class ReportSorter:
         Update reports with private reads
         """
         accid_df = pd.read_csv(self.overlap_manager.accid_statistics_path, sep="\t")
+        print(accid_df)
         if "private_reads" not in accid_df.columns:
             report_groups = self.wrap_group_list_reports(report_groups)
             return report_groups
 
         for report_group in report_groups:
             for report in report_group.group_list:
+                report = self.wrap_report(report)
+                print(report.accid)
                 if report.accid not in accid_df.accid.tolist():
                     continue
-                report = self.wrap_report(report)
+
                 accid_df_accid = accid_df[accid_df.accid == report.accid]
                 private_reads = accid_df_accid.private_reads.iloc[0]
                 report.update_private_reads(private_reads)

@@ -706,6 +706,10 @@ class ReportSorter:
             overlap_analysis = self.read_overlap_analysis(force=True)
             overlap_analysis.to_csv(self.analysis_df_path, sep="\t", index=False)
 
+            self.get_private_reads_no_duplicates(
+                self.overlap_manager.read_profile_matrix
+            )
+
             overlap_groups = list(overlap_analysis.groupby(["total_counts", "clade"]))[
                 ::-1
             ]
@@ -726,9 +730,6 @@ class ReportSorter:
                     if len(group_list) > 1:
                         pairwise_shared_within_clade = (
                             self.overlap_manager.within_clade_shared_reads(clade=name)
-                        )
-                        self.get_private_reads_no_duplicates(
-                            pairwise_shared_within_clade
                         )
 
                         self.overlap_manager.plot_pairwise_shared_clade_reads(
@@ -751,7 +752,7 @@ class ReportSorter:
     ):
         """"""
         accid_df = pd.read_csv(self.overlap_manager.accid_statistics_path, sep="\t")
-        print(pairwise_shared_among_clade)
+        print(pairwise_shared_among_clade.shape)
         duplicate_groups = self.overlap_manager.duplicate_groups_from_dataframe(
             pairwise_shared_among_clade
         )

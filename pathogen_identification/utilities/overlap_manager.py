@@ -414,7 +414,9 @@ class ReadOverlapManager:
             self.read_profile_matrix.index.isin(other) == False
         ]
         first_counts = simplified_matrix.loc[first]
-        total_counts = simplified_matrix.sum(axis=0)
+        total_counts = simplified_matrix[
+            simplified_matrix.index.isin(duplicate_group) == False
+        ].sum(axis=0)
         print("############")
         print(duplicate_group)
         print(first_counts.shape, total_counts.shape)

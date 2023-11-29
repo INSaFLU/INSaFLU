@@ -412,7 +412,7 @@ class ReadOverlapManager:
         """
         if accid not in self.read_profile_matrix.index:
             return 0
-        total_sum = self.read_profile_matrix.sum(axis=1)
+        total_sum = self.read_profile_matrix.sum(axis=0)
         accid_sum = self.read_profile_matrix.loc[accid]
 
         print("####### private reads #########")

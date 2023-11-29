@@ -121,9 +121,6 @@ class ReadOverlapManager:
 
         accid_df = self.metadata[["accid", "description"]]
         accid_df["read_count"] = accid_df.accid.apply(self.get_accession_total_counts)
-        accid_df["private_count"] = accid_df.accid.apply(
-            self.get_accession_private_counts
-        )
 
         # sort table by accid and then by read count
         accid_df = accid_df.sort_values(["accid", "read_count"], ascending=False)
@@ -407,30 +404,30 @@ class ReadOverlapManager:
         """
         return self.read_profile_matrix.loc[accid].sum()
 
-    def get_accession_private_counts(self, accid: str):
+    def get_accession_private_counts(self, duplicate_group: tuple) -> int:
         """
         Get private counts for accession
         """
-        if accid not in self.read_profile_matrix.index:
-            return 0
-        total_sum = self.read_profile_matrix.sum(axis=0)
-        total_sum = total_sum > 0
-        total_sum = np.array(total_sum, dtype=int)
-        accid_sum = self.read_profile_matrix.loc[accid]
-        accid_profile = accid_sum > 0
+        first = duplicate_group[0]
+        other = duplicate_group[1:]
+        simplified_matrix = self.read_profile_matrix[
+            self.read_profile_matrix.index.isin(other) == False
+        ]
+        first_counts = simplified_matrix.loc[first]
+        total_counts = simplified_matrix.sum(axis=0)
+        print("############")
+        print(duplicate_group)
+        print(first_counts.shape, total_counts.shape)
 
-        print("####### private reads #########")
-        print(accid_sum.shape)
-        print(total_sum.shape)
+        private_counts = first_counts - total_counts
+        print(private_counts.shape)
 
-        private_reads = accid_sum - total_sum
-        print(private_reads.shape)
-        print(private_reads[accid_profile])
+        private_counts = private_counts.fillna(0)
+        private_counts = private_counts == 0
+        private_counts = sum(private_counts)
+        print(private_counts)
 
-        private_reads = sum(private_reads == 0)
-        print(private_reads)
-
-        return private_reads
+        return private_counts
 
     def get_proportion_counts(self, accid: str):
         """
@@ -702,6 +699,18 @@ class ReadOverlapManager:
         clade_read_matrix = self.within_clade_reads_matrix(leaves)
         shared_clade_matrix = self.square_and_fill_diagonal(clade_read_matrix)
         return shared_clade_matrix
+
+    def duplicate_groups_from_dataframe(self, pairwise_shared_clade: pd.DataFrame):
+        """
+        find duplicate entries in pairwise shared clade
+        """
+        duplicate_groups = (
+            pairwise_shared_clade.groupby(pairwise_shared_clade.columns.tolist())
+            .apply(lambda x: tuple(x.index))
+            .tolist()
+        )
+        duplicate_groups = [x for x in duplicate_groups if len(x) > 1]
+        return duplicate_groups
 
     def plot_pairwise_shared_clade_reads(
         self, pairwise_shared_clade: pd.DataFrame, subplot=False, clade_str=""

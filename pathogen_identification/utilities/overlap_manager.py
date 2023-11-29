@@ -338,6 +338,12 @@ class ReadOverlapManager:
         all_reads = self.all_reads_set(list(readname_dict.values()))
         read_profile_dict = self.read_profile_dict_get(readname_dict, all_reads)
         read_profile_matrix = self.read_profile_matrix_get(read_profile_dict)
+        ## create list of accessions with duplicated profiles
+        duplicated_profiles = read_profile_matrix.T.duplicated()
+        duplicated_profiles = duplicated_profiles[duplicated_profiles == True]
+        print("duplicated_profiles")
+        print(duplicated_profiles)
+
         read_profile_matrix = self.filter_read_matrix(read_profile_matrix)
         return read_profile_matrix
 

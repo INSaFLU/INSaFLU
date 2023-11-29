@@ -740,6 +740,8 @@ class ReportSorter:
                 pairwise_shared_among_clade
             )
 
+            self.get_private_reads_no_duplicates(pairwise_shared_among_clade)
+
             self.overlap_manager.plot_pca_full()
 
     def get_private_reads_no_duplicates(
@@ -761,6 +763,7 @@ class ReportSorter:
                 accid_df.accid.isin(duplicate_group), "private_reads"
             ] = group_private_counts
 
+        print(accid_df)
         accid_df.to_csv(
             self.overlap_manager.accid_statistics_path, sep="\t", index=False
         )

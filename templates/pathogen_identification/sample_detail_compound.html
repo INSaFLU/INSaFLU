@@ -661,6 +661,27 @@
         }   
 
       });
+
+
+      $("a").click(function(event) {
+
+        if (event.target.id == "showButton") {
+            event.preventDefault();
+            var clickedLink = $(this);
+            var rowElement = clickedLink.closest("tr");
+            
+            // Access the row element or perform further actions
+            // Get the next row element
+            var nextRowElement = rowElement.next();
+            var nextRowElementClass = nextRowElement.attr('class');
+            if (nextRowElementClass == "row-to-toggle") {
+                // toggle slow
+                nextRowElement.toggle('slow');
+            }
+        }
+
+      });
+
       
 </script>
 

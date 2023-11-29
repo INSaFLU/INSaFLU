@@ -748,9 +748,9 @@ class ReadOverlapManager:
 
         from scipy.cluster.hierarchy import fcluster, linkage
 
-        Z = linkage(shared_read_matrix, method="single", metric="hamming")
+        Z = linkage(shared_read_matrix, method="complete", metric="euclidean")
         print(Z)
-        clusters = fcluster(Z, 0.05, criterion="distance")
+        clusters = fcluster(Z, 0.95, criterion="distance")
 
         clusters = pd.DataFrame(
             {"cluster": clusters, "accid": shared_read_matrix.index}

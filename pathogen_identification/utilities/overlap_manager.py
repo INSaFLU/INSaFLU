@@ -414,6 +414,7 @@ class ReadOverlapManager:
             return 0
         total_sum = self.read_profile_matrix.sum(axis=0)
         accid_sum = self.read_profile_matrix.loc[accid]
+        accid_profile = accid_sum > 0
 
         print("####### private reads #########")
         print(accid_sum.shape)
@@ -421,7 +422,7 @@ class ReadOverlapManager:
 
         private_reads = accid_sum - total_sum
         print(private_reads.shape)
-        print(private_reads)
+        print(private_reads[accid_profile])
 
         private_reads = sum(private_reads == 0)
         print(private_reads)

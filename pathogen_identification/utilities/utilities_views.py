@@ -928,6 +928,8 @@ class ReportSorter:
             group_list=reports,
         )
 
+        report_group = self.wrap_group_reports(report_group)
+
         return report_group
 
 

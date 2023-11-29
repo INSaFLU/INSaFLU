@@ -753,6 +753,7 @@ class ReportSorter:
         duplicate_groups = self.overlap_manager.duplicate_groups_from_dataframe(
             pairwise_shared_among_clade
         )
+        accid_df["private_reads"] = 0
 
         for duplicate_group in duplicate_groups:
             group_private_counts = self.overlap_manager.get_accession_private_counts(

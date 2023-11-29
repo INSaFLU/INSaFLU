@@ -420,6 +420,9 @@ class ReadOverlapManager:
         print(total_sum.shape)
 
         private_reads = accid_sum - total_sum
+        print(private_reads.shape)
+        print(private_reads)
+
         private_reads = sum(private_reads == 0)
         print(private_reads)
 

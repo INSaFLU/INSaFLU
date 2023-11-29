@@ -349,6 +349,8 @@ class ReadOverlapManager:
             self.read_profile_matrix
         )
 
+        print(duplicate_groups)
+
         if "private_reads" not in accid_df.columns:
             accid_df["private_reads"] = 0
 

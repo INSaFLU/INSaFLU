@@ -750,7 +750,7 @@ class ReadOverlapManager:
 
         Z = linkage(shared_read_matrix, method="complete", metric="euclidean")
         print(Z)
-        clusters = fcluster(Z, 0.05, criterion="distance")
+        clusters = fcluster(Z, 0.99, criterion="distance")
 
         clusters = pd.DataFrame(
             {"cluster": clusters, "accid": shared_read_matrix.index}

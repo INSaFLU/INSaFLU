@@ -745,20 +745,40 @@ class ReadOverlapManager:
         """
 
         shared_read_matrix = self.square_and_fill_diagonal(self.read_profile_matrix)
+        threshold = 0.95
 
-        from scipy.cluster.hierarchy import fcluster, linkage
+        clusters_assigment_dict = {}
+        clusternum = 0
 
-        Z = linkage(shared_read_matrix, method="complete", metric="euclidean")
-        print(Z)
-        clusters = fcluster(Z, 0.99, criterion="distance")
+        for i in range(shared_read_matrix.shape[0]):
+            for j in range(shared_read_matrix.shape[1]):
+                if i == j:
+                    continue
+                if (
+                    shared_read_matrix.iloc[i, j] >= threshold
+                    and shared_read_matrix.iloc[j, i] >= threshold
+                ):
+                    assingments = [
+                        clusters_assigment_dict.get(i, None),
+                        clusters_assigment_dict.get(j, None),
+                    ]
+                    assingments = [x for x in assingments if x is not None]
+                    if len(assingments) == 0:
+                        clusters_assigment_dict[i] = clusternum
+                        clusters_assigment_dict[j] = clusternum
+                        clusternum += 1
+                    elif len(assingments) == 1:
+                        clusters_assigment_dict[i] = assingments[0]
+                        clusters_assigment_dict[j] = assingments[0]
 
-        clusters = pd.DataFrame(
-            {"cluster": clusters, "accid": shared_read_matrix.index}
-        ).set_index("accid")
+        clusters = {}
+        for k, v in clusters_assigment_dict.items():
+            clusters.setdefault(v, []).append(k)
 
-        print(clusters)
-
-        clusters = clusters.groupby("cluster").apply(lambda x: tuple(x.index)).tolist()
+        clusters = [v for k, v in clusters.items()]
+        for acc in self.read_profile_matrix.index:
+            if acc not in clusters_assigment_dict.keys():
+                clusters.append([acc])
 
         return clusters
 

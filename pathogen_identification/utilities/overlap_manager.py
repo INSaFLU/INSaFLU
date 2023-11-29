@@ -340,7 +340,7 @@ class ReadOverlapManager:
         read_profile_matrix = self.read_profile_matrix_get(read_profile_dict)
         ## create list of duplicated rows
         duplicated_rows = read_profile_matrix.index[
-            read_profile_matrix.index.duplicated()
+            read_profile_matrix.duplicated()
         ].tolist()
         print("duplicated rows")
         print(duplicated_rows)

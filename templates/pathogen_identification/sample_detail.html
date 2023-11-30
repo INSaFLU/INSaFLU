@@ -694,7 +694,7 @@
                             <td data-title="Windows Covered" style="{% depth_color_windows value.windows_covered max_windows_covered %}">
                                 {% windows_safe value.windows_covered %}</td>
                             {% if private_reads_available %}
-                            <td data-title="Private reads" style="{% depth_color value.private_reads run_detail.max_private_reads %}">
+                            <td data-title="Private reads" style="{% depth_color value.private_reads final_report.max_private_reads %}">
                                 {{value.private_reads}}</td>
                             {% endif %}
                             {% if error_rate_available %}

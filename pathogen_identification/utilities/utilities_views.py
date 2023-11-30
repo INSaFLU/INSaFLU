@@ -616,7 +616,7 @@ class ReportSorter:
         self.logger.info("generating tree")
 
         clades = self.overlap_manager.get_leaf_clades(force=force)
-        print(clades)
+
         self.update_report_excluded_dicts(self.overlap_manager)
 
         return clades

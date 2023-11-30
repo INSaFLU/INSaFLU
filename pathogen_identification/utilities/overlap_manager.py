@@ -828,7 +828,7 @@ class ReadOverlapManager:
             plot_path = self.get_media_path_heatmap_clade(clade_str)
         plt.savefig(plot_path, bbox_inches="tight")
 
-    def plot_pca_full(self):
+    def plot_pca_full(self, accid_df: pd.DataFrame) -> None:
         """
         plot pca of all hits using reads as features
         for colors, assign colors to hits in clades with private proportion > 0.5.
@@ -849,9 +849,6 @@ class ReadOverlapManager:
 
         pca_df["accid"] = pca_df.index
         pca_df["clade"] = "None"
-
-        accid_df = pd.read_csv(self.accid_statistics_path, sep="\t")
-        print(accid_df)
 
         def find_clade(string):
             if string in accid_df.accid.tolist():
@@ -1207,6 +1204,6 @@ class ReadOverlapManager:
 
         clades = self.leaf_clades_to_pandas(leaf_clades, statistics_dict_all)
 
-        self.plot_pca_full()
+        self.plot_pca_full(clades)
 
         return clades

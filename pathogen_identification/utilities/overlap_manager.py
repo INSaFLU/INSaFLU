@@ -113,13 +113,17 @@ class ReadOverlapManager:
 
     def parse_for_data(self):
         # self.read_names_dict: Dict[str, List[str]] = self.get_accid_readname_dict()
-        self.read_profile_matrix: pd.DataFrame = self.generate_read_matrix()
+        accid_df = self.metadata[["accid", "description"]]
 
-        self.overlap_matrix: pd.DataFrame = self.pairwise_shared_count(
+        self.read_profile_matrix: pd.DataFrame = self.generate_read_matrix()
+        self.read_profile_matrix_filtered: pd.DataFrame = self.filter_read_matrix(
             self.read_profile_matrix
         )
 
-        accid_df = self.metadata[["accid", "description"]]
+        self.overlap_matrix: pd.DataFrame = self.pairwise_shared_count(
+            self.read_profile_matrix_filtered
+        )
+
         accid_df["read_count"] = accid_df.accid.apply(self.get_accession_total_counts)
 
         # sort table by accid and then by read count
@@ -336,7 +340,6 @@ class ReadOverlapManager:
         read_profile_dict = self.read_profile_dict_get(readname_dict, all_reads)
         read_profile_matrix = self.read_profile_matrix_get(read_profile_dict)
         ## create list of duplicated rows
-        read_profile_matrix = self.filter_read_matrix(read_profile_matrix)
         return read_profile_matrix
 
     def get_private_reads_no_duplicates(
@@ -427,7 +430,7 @@ class ReadOverlapManager:
         """
         Get total counts for accession
         """
-        return self.read_profile_matrix.loc[accid].sum()
+        return self.read_profile_matrix_filtered.loc[accid].sum()
 
     def get_accession_private_counts(self, duplicate_group: tuple) -> int:
         """
@@ -463,7 +466,7 @@ class ReadOverlapManager:
 
         return (
             self.get_accession_total_counts(accid)
-            / self.read_profile_matrix.sum().sum()
+            / self.read_profile_matrix_filtered.sum().sum()
         )
 
     def check_all_accessions_in_distance_matrix(self, distance_matrix):
@@ -481,11 +484,15 @@ class ReadOverlapManager:
             distance_matrix = pd.read_csv(self.distance_matrix_path, index_col=0)
         else:
             self.parse_for_data()
-            distance_matrix = self.pairwise_shared_reads(self.read_profile_matrix)
+            distance_matrix = self.pairwise_shared_reads(
+                self.read_profile_matrix_filtered
+            )
 
         if not self.check_all_accessions_in_distance_matrix(distance_matrix):
             self.parse_for_data()
-            distance_matrix = self.pairwise_shared_reads(self.read_profile_matrix)
+            distance_matrix = self.pairwise_shared_reads(
+                self.read_profile_matrix_filtered
+            )
 
         try:  # Written only on job submisision. File not written on query.
             distance_matrix.to_csv(self.distance_matrix_path)
@@ -508,7 +515,7 @@ class ReadOverlapManager:
     ####################
 
     def clade_shared_by_pair(self, leaves: list) -> Tuple[float, float, float]:
-        group = self.read_profile_matrix.loc[leaves]
+        group = self.read_profile_matrix_filtered.loc[leaves]
 
         group_pairwise_shared = self.pairwise_shared_count(group)
 
@@ -581,16 +588,16 @@ class ReadOverlapManager:
         """
         return total counts of clade
         """
-        return int(self.read_profile_matrix.loc[leaves].sum().sum())
+        return int(self.read_profile_matrix_filtered.loc[leaves].sum().sum())
 
     def clade_private_proportions_old(self, leaves: list) -> float:
         """ """
-        group = self.read_profile_matrix.loc[leaves]
+        group = self.read_profile_matrix_filtered.loc[leaves]
         group_sum = group.sum(axis=0)
         group_sum_as_bool = group_sum > 0
         group_sum_as_bool_list = group_sum_as_bool.tolist()
 
-        group_reads = self.read_profile_matrix.iloc[:, group_sum_as_bool_list]
+        group_reads = self.read_profile_matrix_filtered.iloc[:, group_sum_as_bool_list]
 
         group_reads_sum_all = group_reads.sum(axis=0)
         group_reads_sum_group = group_reads.loc[leaves].sum(axis=0)
@@ -606,13 +613,15 @@ class ReadOverlapManager:
 
     def clade_private_proportions(self, leaves: list) -> Tuple[float, float, float]:
         """ """
-        group = self.read_profile_matrix.loc[leaves]
+        group = self.read_profile_matrix_filtered.loc[leaves]
         group_sum = group.sum(axis=0)
         group_sum_as_bool = group_sum > 0
         group_sum_as_bool_list = group_sum_as_bool.tolist()
 
-        sum_all = self.read_profile_matrix.iloc[:, group_sum_as_bool_list].sum(axis=0)
-        sum_group = self.read_profile_matrix.loc[leaves]
+        sum_all = self.read_profile_matrix_filtered.iloc[:, group_sum_as_bool_list].sum(
+            axis=0
+        )
+        sum_group = self.read_profile_matrix_filtered.loc[leaves]
         sum_group = sum_group.iloc[:, group_sum_as_bool_list].sum(axis=0)
 
         private_reads = sum_group - sum_all
@@ -649,7 +658,7 @@ class ReadOverlapManager:
                 if clade.name not in filter_names:
                     continue
 
-            reads_in_clade = self.read_profile_matrix.loc[leaves]
+            reads_in_clade = self.read_profile_matrix_filtered.loc[leaves]
             reads_in_clade_sum = reads_in_clade.sum(axis=0)
             reads_in_clade_sum_as_bool = reads_in_clade_sum > 0
             reads_in_clade_sum_as_int_list = reads_in_clade_sum_as_bool.astype(
@@ -669,7 +678,7 @@ class ReadOverlapManager:
         clade_read_matrix = pd.DataFrame(
             clade_read_matrix,
             index=belonging,
-            columns=self.read_profile_matrix.columns,
+            columns=self.read_profile_matrix_filtered.columns,
         )
 
         if sort_private:
@@ -686,7 +695,7 @@ class ReadOverlapManager:
     def within_clade_reads_matrix(self, leaves: list) -> pd.DataFrame:
         """
         Return dataframe reads per clade"""
-        reads_in_clade = self.read_profile_matrix.loc[leaves]
+        reads_in_clade = self.read_profile_matrix_filtered.loc[leaves]
 
         return reads_in_clade
 
@@ -744,7 +753,9 @@ class ReadOverlapManager:
         find very similar entries entries in pairwise shared clade
         """
 
-        shared_read_matrix = self.square_and_fill_diagonal(self.read_profile_matrix)
+        shared_read_matrix = self.square_and_fill_diagonal(
+            self.read_profile_matrix_filtered
+        )
         threshold = 0.95
 
         clusters_assigment_dict = {}
@@ -783,7 +794,8 @@ class ReadOverlapManager:
 
         clusters = [x for x in clusters if len(x) > 1]
         clusters = [
-            tuple([self.read_profile_matrix.index[y] for y in x]) for x in clusters
+            tuple([self.read_profile_matrix_filtered.index[y] for y in x])
+            for x in clusters
         ]
 
         return clusters
@@ -816,11 +828,11 @@ class ReadOverlapManager:
         from sklearn.preprocessing import StandardScaler
 
         pca = PCA(n_components=3)
-        pca.fit(self.read_profile_matrix)
+        pca.fit(self.read_profile_matrix_filtered)
 
         pca_df = pd.DataFrame(
-            pca.transform(self.read_profile_matrix),
-            index=self.read_profile_matrix.index,
+            pca.transform(self.read_profile_matrix_filtered),
+            index=self.read_profile_matrix_filtered.index,
             columns=["pc1", "pc2", "pc3"],
         )
 
@@ -872,11 +884,11 @@ class ReadOverlapManager:
 
     def node_statistics(self) -> dict:
         self.parse_for_data()
-        self.update_excluded_leaves(self.read_profile_matrix)
+        self.update_excluded_leaves(self.read_profile_matrix_filtered)
 
         node_stats_dict = {}
 
-        if self.read_profile_matrix.shape[1] == 0:
+        if self.read_profile_matrix_filtered.shape[1] == 0:
             self.logger.info("No reads with frequency > min_freq")
             return node_stats_dict
 
@@ -901,7 +913,7 @@ class ReadOverlapManager:
                 total_reads,
                 proportion_private,
             ) = self.clade_private_proportions(leaves)
-            total_proportion = total_reads / self.read_profile_matrix.shape[1]
+            total_proportion = total_reads / self.read_profile_matrix_filtered.shape[1]
 
             clade_counts = self.clade_total_counts(leaves)
 
@@ -1049,12 +1061,14 @@ class ReadOverlapManager:
         """
         node_private_dict = {}
         for node, leaves in inner_node_leaf_dict.items():
-            group = self.read_profile_matrix.loc[leaves]
+            group = self.read_profile_matrix_filtered.loc[leaves]
             group_sum = group.sum(axis=0)
             group_sum_as_bool = group_sum > 0
             group_sum_as_bool_list = group_sum_as_bool.tolist()
 
-            group_reads = self.read_profile_matrix.iloc[:, group_sum_as_bool_list]
+            group_reads = self.read_profile_matrix_filtered.iloc[
+                :, group_sum_as_bool_list
+            ]
             group_reads_sum_all = group_reads.sum(axis=0)
             group_reads_sum_group = group_reads.loc[leaves].sum(axis=0)
             group_reads_sum_group = group_reads_sum_group.fillna(0)

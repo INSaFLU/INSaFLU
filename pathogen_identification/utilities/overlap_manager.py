@@ -120,6 +120,8 @@ class ReadOverlapManager:
             self.read_profile_matrix
         )
 
+        print(self.read_profile_matrix.index)
+
         self.overlap_matrix: pd.DataFrame = self.pairwise_shared_count(
             self.read_profile_matrix_filtered
         )
@@ -440,8 +442,9 @@ class ReadOverlapManager:
         first = duplicate_group[0]
         other = duplicate_group[1:]
         simplified_matrix = self.read_profile_matrix[
-            self.read_profile_matrix.index.isin(other) == False
+            self.read_profile_matrix.index.isin(duplicate_group) == False
         ]
+        print(self.read_profile_matrix.index)
         duplicate_group_counts = self.read_profile_matrix.loc[duplicate_group].sum(
             axis=0
         )

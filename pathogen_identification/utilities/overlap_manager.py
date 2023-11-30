@@ -445,6 +445,9 @@ class ReadOverlapManager:
             self.read_profile_matrix.index.isin(duplicate_group) == False
         ]
         print(self.read_profile_matrix.index)
+        print(self.read_profile_matrix_filtered.index)
+        print(duplicate_group)
+
         duplicate_group_counts = self.read_profile_matrix.loc[duplicate_group].sum(
             axis=0
         )

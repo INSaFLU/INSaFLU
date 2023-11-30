@@ -15,9 +15,9 @@ from scipy.spatial.distance import pdist, squareform
 
 from pathogen_identification.utilities.clade_objects import Clade, CladeFilter
 from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
-
 ## pairwise matrix by individual reads
-from pathogen_identification.utilities.utilities_general import readname_from_fasta
+from pathogen_identification.utilities.utilities_general import \
+    readname_from_fasta
 
 
 def accid_from_metadata(metadata: pd.DataFrame, read_name: str) -> str:
@@ -850,25 +850,15 @@ class ReadOverlapManager:
         pca_df["accid"] = pca_df.index
         pca_df["clade"] = "None"
 
-        # colors
-        for clade, leaves in self.all_clade_leaves_filtered.items():
-            if len(leaves) == 0:
-                continue
+        accid_df= pd.read_csv(self.accid_statistics_path, sep="\t")
 
-            (
-                private_reads,
-                total_reads,
-                proportion_private,
-            ) = self.clade_private_proportions(leaves)
+        def find_clade(string):
+            if string in accid_df.accid.tolist():
+                return accid_df.loc[accid_df.accid == string, "clade"].values[0]
 
-            if proportion_private < 0.5:
-                continue
+            return "None"
 
-            pca_df.clade = pca_df.apply(
-                lambda x: clade if x.accid in leaves else x.clade, axis=1
-            )
-
-            # pca_df.loc[pca_df.accid.isin(leaves), "clade"] = clade
+        pca_df["clade"] = pca_df["accid"].apply(find_clade)
 
         pca_df["clade"] = pca_df["clade"].astype("category")
 

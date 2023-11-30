@@ -714,6 +714,9 @@ class ReadOverlapManager:
         shared_clade_matrix = self.pairwise_shared_count(clade_read_matrix)
 
         ## divide rows of shared_clade_matrix by clade_read_matrix row sums
+        print(clade_read_matrix.sum(axis=1))
+        print(shared_clade_matrix)
+
         shared_clade_matrix = shared_clade_matrix.div(
             clade_read_matrix.sum(axis=1),
             axis=0,
@@ -743,7 +746,11 @@ class ReadOverlapManager:
             x for x in self.all_clade_leaves_filtered.keys() if x.name == clade
         ][0]
         leaves = self.all_clade_leaves_filtered[clade_node]
+        print("#########################")
+        print(clade_node)
+        print(leaves)
         clade_read_matrix = self.within_clade_reads_matrix(leaves)
+        print(clade_read_matrix.sum(axis=1))
         shared_clade_matrix = self.square_and_fill_diagonal(clade_read_matrix)
         return shared_clade_matrix
 

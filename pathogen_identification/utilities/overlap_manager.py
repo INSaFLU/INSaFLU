@@ -311,7 +311,7 @@ class ReadOverlapManager:
         # filter out reads that are only present in one accession
         # read_profile_matrix_filtered = read_profile_matrix.loc[:, read_counts > 1]
         # filter reads with less than min_freq
-        read_profile_matrix_filtered = read_profile_matrix_filtered.loc[
+        read_profile_matrix_filtered = read_profile_matrix.loc[
             :, read_freqs > self.min_freq
         ]
 
@@ -826,7 +826,7 @@ class ReadOverlapManager:
             plot_path = self.overlap_matrix_plot_path
         else:
             plot_path = self.get_media_path_heatmap_clade(clade_str)
-        plt.savefig(plot_path)
+        plt.savefig(plot_path, bbox_inches="tight")
 
     def plot_pca_full(self):
         """

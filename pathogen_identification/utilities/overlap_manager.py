@@ -15,9 +15,9 @@ from scipy.spatial.distance import pdist, squareform
 
 from pathogen_identification.utilities.clade_objects import Clade, CladeFilter
 from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
+
 ## pairwise matrix by individual reads
-from pathogen_identification.utilities.utilities_general import \
-    readname_from_fasta
+from pathogen_identification.utilities.utilities_general import readname_from_fasta
 
 
 def accid_from_metadata(metadata: pd.DataFrame, read_name: str) -> str:
@@ -41,7 +41,7 @@ class ReadOverlapManager:
     tree_plot_filename: str = "tree_{}.png"
     overlap_matrix_plot_filename: str = "overlap_matrix_{}.png"
     overlap_pca_plot_filename: str = "overlap_pca_{}.png"
-    min_freq: float = 0.05
+    min_freq: float = 0.001
     max_reads: int = 500000
 
     def __init__(
@@ -850,7 +850,8 @@ class ReadOverlapManager:
         pca_df["accid"] = pca_df.index
         pca_df["clade"] = "None"
 
-        accid_df= pd.read_csv(self.accid_statistics_path, sep="\t")
+        accid_df = pd.read_csv(self.accid_statistics_path, sep="\t")
+        print(accid_df)
 
         def find_clade(string):
             if string in accid_df.accid.tolist():
@@ -859,7 +860,6 @@ class ReadOverlapManager:
             return "None"
 
         pca_df["clade"] = pca_df["accid"].apply(find_clade)
-
         pca_df["clade"] = pca_df["clade"].astype("category")
 
         fig, ax = plt.subplots(1, 2, figsize=(15, 6))

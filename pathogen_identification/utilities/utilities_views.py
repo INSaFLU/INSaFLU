@@ -695,6 +695,7 @@ class ReportSorter:
             overlap_analysis.to_csv(self.analysis_df_path, sep="\t", index=False)
 
             self.overlap_manager.get_private_reads_no_duplicates()
+            self.overlap_manager.plot_pca_full()
 
             overlap_groups = list(overlap_analysis.groupby(["total_counts", "clade"]))[
                 ::-1
@@ -730,8 +731,6 @@ class ReportSorter:
             self.overlap_manager.plot_pairwise_shared_clade_reads(
                 pairwise_shared_among_clade
             )
-
-            self.overlap_manager.plot_pca_full()
 
     def wrap_report(self, report: FinalReport) -> FinalReportWrapper:
         return FinalReportWrapper(report)

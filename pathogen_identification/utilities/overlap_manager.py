@@ -42,7 +42,7 @@ class ReadOverlapManager:
     overlap_matrix_plot_filename: str = "overlap_matrix_{}.png"
     overlap_pca_plot_filename: str = "overlap_pca_{}.png"
     min_freq: float = 0.05
-    max_reads: int = 200000
+    max_reads: int = 500000
 
     def __init__(
         self,
@@ -309,7 +309,7 @@ class ReadOverlapManager:
         read_counts = read_profile_matrix.sum(axis=0)
         read_freqs = read_counts / read_profile_matrix.shape[0]
         # filter out reads that are only present in one accession
-        read_profile_matrix_filtered = read_profile_matrix.loc[:, read_counts > 1]
+        # read_profile_matrix_filtered = read_profile_matrix.loc[:, read_counts > 1]
         # filter reads with less than min_freq
         read_profile_matrix_filtered = read_profile_matrix_filtered.loc[
             :, read_freqs > self.min_freq

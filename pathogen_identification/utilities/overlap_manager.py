@@ -15,9 +15,9 @@ from scipy.spatial.distance import pdist, squareform
 
 from pathogen_identification.utilities.clade_objects import Clade, CladeFilter
 from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
+
 ## pairwise matrix by individual reads
-from pathogen_identification.utilities.utilities_general import \
-    readname_from_fasta
+from pathogen_identification.utilities.utilities_general import readname_from_fasta
 
 
 def accid_from_metadata(metadata: pd.DataFrame, read_name: str) -> str:
@@ -42,7 +42,7 @@ class ReadOverlapManager:
     overlap_matrix_plot_filename: str = "overlap_matrix_{}.png"
     overlap_pca_plot_filename: str = "overlap_pca_{}.png"
     min_freq: float = 0.001
-    max_reads: int = 500000
+    max_reads: int = 2000000
 
     def __init__(
         self,

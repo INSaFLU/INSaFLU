@@ -47,7 +47,8 @@ class EmptyRemapMain:
 class FinalReportWrapper:
     accid: str
 
-    def __init__(self, report: Optional[FinalReport, FinalReport]):
+    # can take either FinalReport or EmptyRemapMain
+    def __init__(self, report: FinalReport):
         """
         copy all attributes from report
         """

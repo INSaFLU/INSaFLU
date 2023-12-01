@@ -363,7 +363,11 @@ class ReadOverlapManager:
 
         for duplicate_group in similar_groups:
             group_private_counts = self.get_accession_private_counts(duplicate_group)
-
+            (
+                private_reads,
+                total_reads,
+                proportion_private,
+            ) = self.clade_private_proportions(leaves)
             accid_df.loc[
                 accid_df.accid.isin(duplicate_group), "private_reads"
             ] = group_private_counts
@@ -433,7 +437,7 @@ class ReadOverlapManager:
         """
         Get total counts for accession
         """
-        return self.read_profile_matrix_filtered.loc[accid].sum()
+        return self.read_profile_matrix.loc[accid].sum()
 
     def get_accession_private_counts(self, duplicate_group: tuple) -> int:
         """
@@ -473,7 +477,7 @@ class ReadOverlapManager:
             total_reads = 0
             proportion_private = 0
         else:
-            total_reads = sum(group_sum_as_bool_list)
+            total_reads = len(group_sum_as_bool_list)
             proportion_private = private_reads / total_reads
 
         return private_reads, total_reads, proportion_private
@@ -484,8 +488,7 @@ class ReadOverlapManager:
         """
 
         return (
-            self.get_accession_total_counts(accid)
-            / self.read_profile_matrix_filtered.sum().sum()
+            self.get_accession_total_counts(accid) / self.read_profile_matrix.shape[1]
         )
 
     def check_all_accessions_in_distance_matrix(self, distance_matrix):

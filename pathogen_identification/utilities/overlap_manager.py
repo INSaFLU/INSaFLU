@@ -15,9 +15,9 @@ from scipy.spatial.distance import pdist, squareform
 
 from pathogen_identification.utilities.clade_objects import Clade, CladeFilter
 from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
-
 ## pairwise matrix by individual reads
-from pathogen_identification.utilities.utilities_general import readname_from_fasta
+from pathogen_identification.utilities.utilities_general import \
+    readname_from_fasta
 
 
 def accid_from_metadata(metadata: pd.DataFrame, read_name: str) -> str:
@@ -356,8 +356,6 @@ class ReadOverlapManager:
         # )
         similar_groups = self.very_similar_groups_from_dataframe()
 
-        print(similar_groups)
-
         if "private_reads" not in accid_df.columns:
             accid_df["private_reads"] = 0
 
@@ -607,7 +605,7 @@ class ReadOverlapManager:
 
         private_reads = sum_group == sum_all
 
-        private_reads = sum(private_reads == 0)
+        private_reads = sum(private_reads)
 
         if sum(group_sum_as_bool_list) == 0:
             private_reads = 0

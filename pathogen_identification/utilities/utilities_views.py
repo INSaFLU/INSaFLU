@@ -1,25 +1,33 @@
 import datetime
 import logging
 import os
-from typing import Dict, List, Union
+from typing import Dict, List, Optional
 
 import pandas as pd
 from braces.views import FormValidMessageMixin, LoginRequiredMixin
 from django.db.models.query import QuerySet
 from django.views import generic
-from django.views.generic import ListView
 
-from pathogen_identification.models import (FinalReport, PIProject_Sample,
-                                            Projects, ReferenceMap_Main,
-                                            RunAssembly, RunDetail, RunMain)
+from pathogen_identification.models import (
+    FinalReport,
+    PIProject_Sample,
+    Projects,
+    ReferenceMap_Main,
+    RunAssembly,
+    RunDetail,
+    RunMain,
+)
 from pathogen_identification.utilities.clade_objects import Clade
-from pathogen_identification.utilities.overlap_manager import \
-    ReadOverlapManager
+from pathogen_identification.utilities.overlap_manager import ReadOverlapManager
 from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
 from pathogen_identification.utilities.televir_parameters import (
-    LayoutParams, TelevirParameters)
+    LayoutParams,
+    TelevirParameters,
+)
 from pathogen_identification.utilities.utilities_general import (
-    infer_run_media_dir, simplify_name)
+    infer_run_media_dir,
+    simplify_name,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
 
@@ -37,7 +45,9 @@ class EmptyRemapMain:
 
 
 class FinalReportWrapper:
-    def __init__(self, report: FinalReport):
+    accid: str
+
+    def __init__(self, report: Optional[FinalReport, FinalReport]):
         """
         copy all attributes from report
         """
@@ -749,13 +759,17 @@ class ReportSorter:
         if "private_reads" not in accid_df.columns:
             report_groups = self.wrap_group_list_reports(report_groups)
             return report_groups
+        print(accid_df)
+        print(accid_df.columns)
+        print(accid_df.accid.tolist())
 
         for report_group in report_groups:
             new_group_list = []
-            for report in report_group.group_list:
-                report = self.wrap_report(report)
+            for report_original in report_group.group_list:
+                report = self.wrap_report(report_original)
                 print(report.accid)
                 if report.accid not in accid_df.accid.tolist():
+                    print(f"accid {report.accid} not in accid_df")
                     new_group_list.append(report)
                     continue
 

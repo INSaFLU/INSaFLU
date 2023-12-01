@@ -526,6 +526,7 @@ class ReportSorter:
             private_proportion=layout_params.read_overlap_threshold,
             total_proportion=0,
             group_counts=0,
+            private_counts=0,
             shared_proportion_std=layout_params.shared_proportion_threshold,
             shared_proportion_min=layout_params.shared_proportion_threshold,
             shared_proportion_max=layout_params.shared_proportion_threshold,

@@ -867,6 +867,7 @@ class ReportSorter:
                 FinalReportGroup(
                     name="Full report, no overlap analysis",
                     total_counts=0,
+                    private_counts=0,
                     shared_proportion=0,
                     private_proportion=0,
                     group_list=self.reports,
@@ -904,6 +905,7 @@ class ReportSorter:
         report_group = FinalReportGroup(
             name="Excluded",
             total_counts=0,
+            private_counts=0,
             shared_proportion=0,
             private_proportion=0,
             group_list=reports,

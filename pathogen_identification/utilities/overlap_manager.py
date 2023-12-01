@@ -1204,6 +1204,8 @@ class ReadOverlapManager:
         )
 
         leaf_clades_df.reset_index(drop=True, inplace=True)
+        print(accids_df)
+        print(leaf_clades_df)
         return leaf_clades_df
 
     def get_leaf_clades(self, force=False) -> pd.DataFrame:

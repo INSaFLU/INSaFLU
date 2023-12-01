@@ -439,32 +439,16 @@ class ReadOverlapManager:
         """
         Get private counts for accession
         """
-        print(duplicate_group)
-        first = duplicate_group[0]
-        other = duplicate_group[1:]
-        # simplified_matrix = self.read_profile_matrix
-        print(self.read_profile_matrix.index)
-        print(self.read_profile_matrix_filtered.index)
-        print(duplicate_group)
 
         duplicate_group_counts = self.read_profile_matrix.loc[
             self.read_profile_matrix.index.isin(duplicate_group) == True
         ].sum(axis=0)
 
         duplicate_counts_as_bool = duplicate_group_counts > 0
-        # first_counts = simplified_matrix.loc[first]
-        # first_counts_as_bool = first_counts > 0
-
-        # total_counts = self.read_profile_matrix.sum(axis=0)
 
         private_counts = duplicate_group_counts == self.total_read_counts
         private_counts = private_counts[duplicate_counts_as_bool]
-        print(private_counts.shape)
-        print(private_counts)
-        print(private_counts)
 
-        # private_counts = private_counts.fillna(0)
-        # private_counts = private_counts == 0
         private_counts = sum(private_counts)
 
         return private_counts
@@ -628,15 +612,13 @@ class ReadOverlapManager:
         group_sum_as_bool = group_sum > 0
         group_sum_as_bool_list = group_sum_as_bool.tolist()
 
-        sum_all = self.read_profile_matrix_filtered.iloc[:, group_sum_as_bool_list].sum(
-            axis=0
-        )
-        sum_group = self.read_profile_matrix_filtered.loc[leaves]
+        sum_all = self.read_profile_matrix.iloc[:, group_sum_as_bool_list].sum(axis=0)
+        sum_group = self.read_profile_matrix.loc[leaves]
         sum_group = sum_group.iloc[:, group_sum_as_bool_list].sum(axis=0)
 
-        private_reads = sum_group - sum_all
+        private_reads = sum_group == sum_all
 
-        private_reads = sum(private_reads == 0)
+        private_reads = sum(private_reads)
 
         if sum(group_sum_as_bool_list) == 0:
             private_reads = 0

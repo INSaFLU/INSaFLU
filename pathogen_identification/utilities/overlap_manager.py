@@ -370,9 +370,11 @@ class ReadOverlapManager:
                 proportion_private,
             ) = self.clade_private_proportions(list(duplicate_group))
             print(group_private_counts)
+            print(accid_df.loc[accid_df.accid.isin(duplicate_group), "private_reads"])
             accid_df.loc[
                 accid_df.accid.isin(duplicate_group), "private_reads"
             ] = group_private_counts
+            print(accid_df.loc[accid_df.accid.isin(duplicate_group), "private_reads"])
 
         accid_df.to_csv(self.accid_statistics_path, sep="\t", index=False)
 

@@ -607,7 +607,7 @@ class ReadOverlapManager:
 
     def clade_private_proportions(self, leaves: list) -> Tuple[float, float, float]:
         """ """
-        group = self.read_profile_matrix_filtered.loc[leaves]
+        group = self.read_profile_matrix.loc[leaves]
         group_sum = group.sum(axis=0)
         group_sum_as_bool = group_sum > 0
         group_sum_as_bool_list = group_sum_as_bool.tolist()

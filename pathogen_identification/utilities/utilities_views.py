@@ -827,7 +827,7 @@ class ReportSorter:
             group_heatmap_exists = os.path.exists(group_heatmap)
             print("#######")
             print(name)
-            print(group_df.private_counts)
+            print(group_df.private_counts.iloc[0])
             if group_heatmap_exists:
                 group_heatmap = "/media/" + group_heatmap.split("media/")[-1]
             if len(group_list):

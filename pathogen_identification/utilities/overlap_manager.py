@@ -362,7 +362,12 @@ class ReadOverlapManager:
             accid_df["private_reads"] = 0
 
         for duplicate_group in similar_groups:
-            group_private_counts = self.get_accession_private_counts(duplicate_group)
+            # group_private_counts = self.get_accession_private_counts(duplicate_group)
+            (
+                group_private_counts,
+                total_reads,
+                proportion_private,
+            ) = self.clade_private_proportions(list(duplicate_group))
 
             accid_df.loc[
                 accid_df.accid.isin(duplicate_group), "private_reads"
@@ -434,24 +439,6 @@ class ReadOverlapManager:
         Get total counts for accession
         """
         return self.read_profile_matrix_filtered.loc[accid].sum()
-
-    def get_accession_private_counts(self, duplicate_group: tuple) -> int:
-        """
-        Get private counts for accession
-        """
-
-        duplicate_group_counts = self.read_profile_matrix.loc[
-            self.read_profile_matrix.index.isin(duplicate_group) == True
-        ].sum(axis=0)
-
-        duplicate_counts_as_bool = duplicate_group_counts > 0
-
-        private_counts = duplicate_group_counts == self.total_read_counts
-        private_counts = private_counts[duplicate_counts_as_bool]
-
-        private_counts = sum(private_counts)
-
-        return private_counts
 
     def get_proportion_counts(self, accid: str):
         """
@@ -607,7 +594,7 @@ class ReadOverlapManager:
 
     def clade_private_proportions(self, leaves: list) -> Tuple[float, float, float]:
         """ """
-        group = self.read_profile_matrix_filtered.loc[leaves]
+        group = self.read_profile_matrix.loc[leaves]
         group_sum = group.sum(axis=0)
         group_sum_as_bool = group_sum > 0
         group_sum_as_bool_list = group_sum_as_bool.tolist()
@@ -615,10 +602,10 @@ class ReadOverlapManager:
         sum_all = self.read_profile_matrix_filtered.iloc[:, group_sum_as_bool_list].sum(
             axis=0
         )
-        sum_group = self.read_profile_matrix_filtered.loc[leaves]
+        sum_group = self.read_profile_matrix.loc[leaves]
         sum_group = sum_group.iloc[:, group_sum_as_bool_list].sum(axis=0)
 
-        private_reads = sum_group - sum_all
+        private_reads = sum_group == sum_all
 
         private_reads = sum(private_reads == 0)
 
@@ -631,6 +618,24 @@ class ReadOverlapManager:
             proportion_private = private_reads / total_reads
 
         return private_reads, total_reads, proportion_private
+
+    def get_accession_private_counts(self, duplicate_group: tuple) -> int:
+        """
+        Get private counts for accession
+        """
+
+        duplicate_group_counts = self.read_profile_matrix.loc[
+            self.read_profile_matrix.index.isin(duplicate_group) == True
+        ].sum(axis=0)
+
+        duplicate_counts_as_bool = duplicate_group_counts > 0
+
+        private_counts = duplicate_group_counts == self.total_read_counts
+        private_counts = private_counts[duplicate_counts_as_bool]
+
+        private_counts = sum(private_counts)
+
+        return private_counts
 
     def between_clade_reads_matrix(
         self, filter_names=[], remove_leaves=True, sort_private=False

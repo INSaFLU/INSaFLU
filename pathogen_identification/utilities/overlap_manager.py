@@ -313,7 +313,7 @@ class ReadOverlapManager:
         # read_profile_matrix_filtered = read_profile_matrix.loc[:, read_counts > 1]
         # filter reads with less than min_freq
         read_profile_matrix_filtered = read_profile_matrix.loc[
-            :, read_freqs > self.min_freq
+            :, read_freqs >= self.min_freq
         ]
 
         if read_profile_matrix_filtered.shape[1] == 0:
@@ -362,12 +362,12 @@ class ReadOverlapManager:
             accid_df["private_reads"] = 0
 
         for duplicate_group in similar_groups:
-            group_private_counts = self.get_accession_private_counts(duplicate_group)
+            # group_private_counts = self.get_accession_private_counts(duplicate_group)
             (
-                private_reads,
+                group_private_counts,
                 total_reads,
                 proportion_private,
-            ) = self.clade_private_proportions(leaves)
+            ) = self.clade_private_proportions(duplicate_group)
             accid_df.loc[
                 accid_df.accid.isin(duplicate_group), "private_reads"
             ] = group_private_counts

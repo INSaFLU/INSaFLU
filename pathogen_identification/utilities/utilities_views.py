@@ -863,18 +863,16 @@ class ReportSorter:
             return []
 
         if not self.check_analyzed():
-
-            report_group= FinalReportGroup(
+            report_group = FinalReportGroup(
                 name="Full report, no overlap analysis",
                 total_counts=0,
                 private_counts=0,
                 shared_proportion=0,
                 private_proportion=0,
-                group_list=
+                group_list=[self.wrap_report(report) for report in self.reports],
             )
-            report_group= self.wrap_group_reports(report_group)
+            report_group = self.wrap_group_reports(report_group)
             return [report_group]
-        
 
         return self.get_sorted_reports()
 

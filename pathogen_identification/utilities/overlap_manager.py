@@ -441,9 +441,7 @@ class ReadOverlapManager:
         print(duplicate_group)
         first = duplicate_group[0]
         other = duplicate_group[1:]
-        simplified_matrix = self.read_profile_matrix[
-            self.read_profile_matrix.index.isin(duplicate_group) == False
-        ]
+        # simplified_matrix = self.read_profile_matrix
         print(self.read_profile_matrix.index)
         print(self.read_profile_matrix_filtered.index)
         print(duplicate_group)
@@ -456,7 +454,7 @@ class ReadOverlapManager:
         # first_counts = simplified_matrix.loc[first]
         # first_counts_as_bool = first_counts > 0
 
-        total_counts = simplified_matrix.sum(axis=0)
+        total_counts = self.read_profile_matrix.sum(axis=0)
 
         private_counts = duplicate_group_counts == total_counts
         private_counts = private_counts[duplicate_counts_as_bool]

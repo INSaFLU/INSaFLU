@@ -453,6 +453,31 @@ class ReadOverlapManager:
 
         return private_counts
 
+    def clade_private_proportions(self, leaves: list) -> Tuple[float, float, float]:
+        """ """
+        group = self.read_profile_matrix.loc[leaves]
+        group_sum = group.sum(axis=0)
+        group_sum_as_bool = group_sum > 0
+        group_sum_as_bool_list = group_sum_as_bool.tolist()
+
+        sum_all = self.read_profile_matrix.iloc[:, group_sum_as_bool_list].sum(axis=0)
+        sum_group = self.read_profile_matrix.loc[leaves]
+        sum_group = sum_group.iloc[:, group_sum_as_bool_list].sum(axis=0)
+
+        private_reads = sum_group == sum_all
+
+        private_reads = sum(private_reads)
+
+        if sum(group_sum_as_bool_list) == 0:
+            private_reads = 0
+            total_reads = 0
+            proportion_private = 0
+        else:
+            total_reads = sum(group_sum_as_bool_list)
+            proportion_private = private_reads / total_reads
+
+        return private_reads, total_reads, proportion_private
+
     def get_proportion_counts(self, accid: str):
         """
         Get proportion counts for accession
@@ -604,31 +629,6 @@ class ReadOverlapManager:
         proportion_private = read_proportions.sum() / len(read_proportions)
 
         return proportion_private
-
-    def clade_private_proportions(self, leaves: list) -> Tuple[float, float, float]:
-        """ """
-        group = self.read_profile_matrix.loc[leaves]
-        group_sum = group.sum(axis=0)
-        group_sum_as_bool = group_sum > 0
-        group_sum_as_bool_list = group_sum_as_bool.tolist()
-
-        sum_all = self.read_profile_matrix.iloc[:, group_sum_as_bool_list].sum(axis=0)
-        sum_group = self.read_profile_matrix.loc[leaves]
-        sum_group = sum_group.iloc[:, group_sum_as_bool_list].sum(axis=0)
-
-        private_reads = sum_group == sum_all
-
-        private_reads = sum(private_reads)
-
-        if sum(group_sum_as_bool_list) == 0:
-            private_reads = 0
-            total_reads = 0
-            proportion_private = 0
-        else:
-            total_reads = sum(group_sum_as_bool_list)
-            proportion_private = private_reads / total_reads
-
-        return private_reads, total_reads, proportion_private
 
     def between_clade_reads_matrix(
         self, filter_names=[], remove_leaves=True, sort_private=False

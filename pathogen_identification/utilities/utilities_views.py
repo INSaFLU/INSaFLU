@@ -825,6 +825,8 @@ class ReportSorter:
             name = group_df.clade.iloc[0]
             group_heatmap = self.overlap_manager.get_media_path_heatmap_clade(name)
             group_heatmap_exists = os.path.exists(group_heatmap)
+            print("#######")
+            print(name)
             print(group_df.private_counts)
             if group_heatmap_exists:
                 group_heatmap = "/media/" + group_heatmap.split("media/")[-1]

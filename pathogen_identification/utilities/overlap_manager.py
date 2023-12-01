@@ -116,6 +116,7 @@ class ReadOverlapManager:
         accid_df = self.metadata[["accid", "description"]]
 
         self.read_profile_matrix: pd.DataFrame = self.generate_read_matrix()
+        self.total_read_counts = self.read_profile_matrix.sum(axis=0)
         self.read_profile_matrix_filtered: pd.DataFrame = self.filter_read_matrix(
             self.read_profile_matrix
         )
@@ -454,9 +455,9 @@ class ReadOverlapManager:
         # first_counts = simplified_matrix.loc[first]
         # first_counts_as_bool = first_counts > 0
 
-        total_counts = self.read_profile_matrix.sum(axis=0)
+        # total_counts = self.read_profile_matrix.sum(axis=0)
 
-        private_counts = duplicate_group_counts == total_counts
+        private_counts = duplicate_group_counts == self.total_read_counts
         private_counts = private_counts[duplicate_counts_as_bool]
         print(private_counts.shape)
         print(private_counts)

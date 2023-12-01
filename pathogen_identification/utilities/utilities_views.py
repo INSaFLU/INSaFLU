@@ -117,6 +117,7 @@ class FinalReportCompound(LoginRequiredMixin, generic.TemplateView):
 class FinalReportGroup:
     name: str
     total_counts: str
+    private_counts: str
     shared_proportion: str
     private_proportion: str
     group_list: List[FinalReportWrapper]
@@ -125,6 +126,7 @@ class FinalReportGroup:
         self,
         name: str,
         total_counts: int,
+        private_counts: int,
         shared_proportion: float,
         private_proportion: float,
         group_list: List[FinalReportWrapper],
@@ -133,6 +135,7 @@ class FinalReportGroup:
     ):
         self.name = name
         self.total_counts = f"total counts {total_counts}"
+        self.private_counts = f"private counts {private_counts}"
         self.shared_proportion = f"shared proportion {shared_proportion:.2f}"
         self.private_proportion = f"private proportion {private_proportion:.2f}"
         self.group_list = group_list
@@ -827,6 +830,7 @@ class ReportSorter:
                 report_group = FinalReportGroup(
                     name=name,
                     total_counts=group_df.total_counts.iloc[0],
+                    private_counts=group_df.private_counts.iloc[0],
                     shared_proportion=group_df.shared_proportion.iloc[0],
                     private_proportion=group_df.private_proportion.iloc[0],
                     group_list=group_list,

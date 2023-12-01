@@ -895,6 +895,7 @@ class ReadOverlapManager:
                     name=node,
                     leaves=leaves,
                     group_counts=0,
+                    private_counts=0,
                     private_proportion=0,
                     total_proportion=0,
                     shared_proportion_std=0,
@@ -919,6 +920,7 @@ class ReadOverlapManager:
                     name=node,
                     leaves=leaves,
                     group_counts=clade_counts,
+                    private_counts=private_reads,
                     private_proportion=proportion_private,
                     total_proportion=total_proportion,
                     shared_proportion_std=0,
@@ -937,6 +939,7 @@ class ReadOverlapManager:
                 private_proportion=proportion_private,
                 total_proportion=total_proportion,
                 group_counts=clade_counts,
+                private_counts=private_reads,
                 shared_proportion_min=min(combinations.proportion_max),
                 shared_proportion_max=max(combinations.proportion_max),
                 shared_proportion_std=np.std(combinations.proportion_max),
@@ -956,6 +959,7 @@ class ReadOverlapManager:
                     stats.private_proportion,
                     stats.total_proportion,
                     stats.group_counts,
+                    stats.private_counts,
                     stats.shared_proportion_std,
                     stats.shared_proportion_min,
                     stats.shared_proportion_max,
@@ -969,6 +973,7 @@ class ReadOverlapManager:
                 "private_proportion",
                 "total_proportion",
                 "total_counts",
+                "private_counts",
                 "shared_proportion_std",
                 "shared_proportion_min",
                 "shared_proportion_max",
@@ -990,6 +995,9 @@ class ReadOverlapManager:
 
         # set the index to the node name
         clade_summary = clade_summary.set_index("node")
+        private_counts = 0
+        if "private_counts" in clade_summary.columns:
+            private_counts = clade_summary.private_counts
 
         for node, stats in clade_summary.iterrows():
             try:
@@ -1006,6 +1014,7 @@ class ReadOverlapManager:
                 private_proportion=stats.private_proportion,
                 total_proportion=stats.private_proportion,
                 group_counts=stats.total_counts,
+                private_counts=private_counts,
                 shared_proportion_std=stats.shared_proportion_std,
                 shared_proportion_min=stats.shared_proportion_min,
                 shared_proportion_max=stats.shared_proportion_max,
@@ -1128,6 +1137,7 @@ class ReadOverlapManager:
                             leaf,
                             self.safe_clade_name(clade),
                             statistics_dict[clade].group_counts,
+                            statistics_dict[clade].private_counts,
                             statistics_dict[clade].private_proportion,
                             statistics_dict[clade].shared_proportion_max,
                         )
@@ -1138,6 +1148,7 @@ class ReadOverlapManager:
                         (
                             leaf,
                             "None",
+                            0,
                             0,
                             0,
                             0,
@@ -1152,6 +1163,7 @@ class ReadOverlapManager:
                 "leaf",
                 "clade",
                 "total_counts",
+                "private_counts",
                 "private_proportion",
                 "shared_proportion",
             ],

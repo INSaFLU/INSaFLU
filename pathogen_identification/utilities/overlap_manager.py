@@ -313,7 +313,7 @@ class ReadOverlapManager:
         # read_profile_matrix_filtered = read_profile_matrix.loc[:, read_counts > 1]
         # filter reads with less than min_freq
         read_profile_matrix_filtered = read_profile_matrix.loc[
-            :, read_freqs >= self.min_freq
+            :, read_freqs > self.min_freq
         ]
 
         if read_profile_matrix_filtered.shape[1] == 0:
@@ -362,12 +362,8 @@ class ReadOverlapManager:
             accid_df["private_reads"] = 0
 
         for duplicate_group in similar_groups:
-            # group_private_counts = self.get_accession_private_counts(duplicate_group)
-            (
-                group_private_counts,
-                total_reads,
-                proportion_private,
-            ) = self.clade_private_proportions(list(duplicate_group))
+            group_private_counts = self.get_accession_private_counts(duplicate_group)
+
             accid_df.loc[
                 accid_df.accid.isin(duplicate_group), "private_reads"
             ] = group_private_counts
@@ -437,7 +433,7 @@ class ReadOverlapManager:
         """
         Get total counts for accession
         """
-        return self.read_profile_matrix.loc[accid].sum()
+        return self.read_profile_matrix_filtered.loc[accid].sum()
 
     def get_accession_private_counts(self, duplicate_group: tuple) -> int:
         """
@@ -457,41 +453,14 @@ class ReadOverlapManager:
 
         return private_counts
 
-    def clade_private_proportions(self, leaves: list) -> Tuple[float, float, float]:
-        """ """
-        print(leaves)
-        print(self.read_profile_matrix.index)
-
-        group = self.read_profile_matrix.loc[leaves]
-        group_sum = group.sum(axis=0)
-        group_sum_as_bool = group_sum > 0
-        group_sum_as_bool_list = group_sum_as_bool.tolist()
-
-        sum_all = self.read_profile_matrix.iloc[:, group_sum_as_bool_list].sum(axis=0)
-        sum_group = self.read_profile_matrix.loc[leaves]
-        sum_group = sum_group.iloc[:, group_sum_as_bool_list].sum(axis=0)
-
-        private_reads = sum_group == sum_all
-
-        private_reads = sum(private_reads)
-
-        if sum(group_sum_as_bool_list) == 0:
-            private_reads = 0
-            total_reads = 0
-            proportion_private = 0
-        else:
-            total_reads = len(group_sum_as_bool_list)
-            proportion_private = private_reads / total_reads
-
-        return private_reads, total_reads, proportion_private
-
     def get_proportion_counts(self, accid: str):
         """
         Get proportion counts for accession
         """
 
         return (
-            self.get_accession_total_counts(accid) / self.read_profile_matrix.shape[1]
+            self.get_accession_total_counts(accid)
+            / self.read_profile_matrix_filtered.sum().sum()
         )
 
     def check_all_accessions_in_distance_matrix(self, distance_matrix):
@@ -635,6 +604,33 @@ class ReadOverlapManager:
         proportion_private = read_proportions.sum() / len(read_proportions)
 
         return proportion_private
+
+    def clade_private_proportions(self, leaves: list) -> Tuple[float, float, float]:
+        """ """
+        group = self.read_profile_matrix_filtered.loc[leaves]
+        group_sum = group.sum(axis=0)
+        group_sum_as_bool = group_sum > 0
+        group_sum_as_bool_list = group_sum_as_bool.tolist()
+
+        sum_all = self.read_profile_matrix_filtered.iloc[:, group_sum_as_bool_list].sum(
+            axis=0
+        )
+        sum_group = self.read_profile_matrix_filtered.loc[leaves]
+        sum_group = sum_group.iloc[:, group_sum_as_bool_list].sum(axis=0)
+
+        private_reads = sum_group - sum_all
+
+        private_reads = sum(private_reads == 0)
+
+        if sum(group_sum_as_bool_list) == 0:
+            private_reads = 0
+            total_reads = 0
+            proportion_private = 0
+        else:
+            total_reads = sum(group_sum_as_bool_list)
+            proportion_private = private_reads / total_reads
+
+        return private_reads, total_reads, proportion_private
 
     def between_clade_reads_matrix(
         self, filter_names=[], remove_leaves=True, sort_private=False

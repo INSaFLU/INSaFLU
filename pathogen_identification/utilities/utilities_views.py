@@ -810,6 +810,7 @@ class ReportSorter:
         overlap_analysis = self.read_overlap_analysis()
 
         overlap_groups = list(overlap_analysis.groupby(["total_counts", "clade"]))[::-1]
+        print(overlap_groups)
 
         sorted_reports = []
 
@@ -824,7 +825,7 @@ class ReportSorter:
             name = group_df.clade.iloc[0]
             group_heatmap = self.overlap_manager.get_media_path_heatmap_clade(name)
             group_heatmap_exists = os.path.exists(group_heatmap)
-
+            print(group_df.private_counts)
             if group_heatmap_exists:
                 group_heatmap = "/media/" + group_heatmap.split("media/")[-1]
             if len(group_list):

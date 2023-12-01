@@ -802,7 +802,7 @@ class ReadOverlapManager:
             if i not in clusters_assigment_dict.keys():
                 clusters.append([i])
 
-        clusters = [x for x in clusters if len(x) > 1]
+        # clusters = [x for x in clusters if len(x) > 1]
         clusters = [
             tuple([self.read_profile_matrix_filtered.index[y] for y in x])
             for x in clusters

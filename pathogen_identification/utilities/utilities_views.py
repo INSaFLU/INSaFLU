@@ -873,7 +873,7 @@ class ReportSorter:
                 group_list=
             )
             report_group= self.wrap_group_reports(report_group)
-            return report_group
+            return [report_group]
         
 
         return self.get_sorted_reports()

@@ -570,6 +570,9 @@ class SoftwareNames(object):
     SOFTWARE_televir_report_layout_threshold_name = "--r-overlap"
     SOFTWARE_REMAP_PARAMS_min_quality = "--qualityThreshold"  # "--min-quality"
     SOFTWARE_REMAP_PARAMS_max_mismatch = "--mismatchThreshold"  # "--max-mismatch"
+    SOFTWARE_REMAP_PARAMS_min_length = "-l"
+    SOFTWARE_REMAP_PARAMS_min_identity = "-p"
+    SOFTWARE_REMAP_PARAMS_min_cover = "-z"
 
     ### QC SOFTWARE
     SOFTWARE_PRINSEQ = os.path.join(
@@ -591,6 +594,14 @@ class SoftwareNames(object):
         "preprocess/bamUtil/bin/bam",
     )
     SOFTWARE_BAMUTIL_VERSION = "1.0.15"
+
+    SOFTWARE_MSAMTOOLS_name = "msamtools"
+    SOFTWARE_MSAMTOOLS_name_extended = "msamtools - Mapping Filtering"
+    SOFTWARE_MSAMTOOLS = os.path.join(
+        settings.DIR_SOFTWARE,
+        "preprocess/msamtools/bin/msamtools",
+    )
+    SOFTWARE_MSAMTOOLS_VERSION = "1.1.3"
 
     ###
 

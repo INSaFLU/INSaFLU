@@ -59,6 +59,10 @@ class ConstantsSettings:
         CS.PIPELINE_NAME_contig_classification,
     ]
 
+    ################################### Pipeline steps aggregate
+
+    PIPELINE_STEPS_AGGREGATE = [CS.PIPELINE_NAME_remap_filtering]
+
     #################################### Tree sort default Parameters
 
     clade_private_proportion = 0.5

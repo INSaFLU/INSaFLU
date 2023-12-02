@@ -8,10 +8,11 @@ from curses.ascii import SO
 from django.contrib.auth.models import User
 
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.utilities.utilities_pipeline import (
-    Utility_Pipeline_Manager, Utils_Manager)
+    Utility_Pipeline_Manager,
+    Utils_Manager,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.models import Parameter, Software
@@ -264,6 +265,26 @@ class DefaultSoftware(object):
         self.test_default_db(
             SoftwareNames.SOFTWARE_BAMUTIL_name,
             self.default_parameters.get_bamutil_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_MSAMTOOLS_name,
+            self.default_parameters.get_msamtools_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_MSAMTOOLS_name,
+            self.default_parameters.get_msamtools_defaults(
                 user,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_minion,
@@ -891,6 +912,18 @@ class DefaultSoftware(object):
         )
         return "" if result is None else result
 
+    def get_msamtools_parameters(self, user, technology_name):
+        result = self.default_parameters.get_parameters(
+            SoftwareNames.SOFTWARE_MSAMTOOLS_name,
+            user,
+            Software.TYPE_OF_USE_televir_global,
+            None,
+            None,
+            None,
+            technology_name,
+        )
+        return "" if result is None else result
+
     def get_televir_report_layout_parameters(self, user, technology_name):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_televir_report_layout_name,
@@ -1355,6 +1388,19 @@ class DefaultSoftware(object):
                 user,
             )
             return self.get_bamutil_parameters(user, technology_name)
+
+        if software_name == SoftwareNames.SOFTWARE_MSAMTOOLS_name:
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_MSAMTOOLS_name,
+                self.default_parameters.get_msamtools_defaults(
+                    user,
+                    Software.TYPE_OF_USE_televir_global,
+                    ConstantsSettings.TECHNOLOGY_illumina,
+                ),
+                user,
+            )
+
+            return self.get_msamtools_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_televir_report_layout_name:
             self.test_default_db(

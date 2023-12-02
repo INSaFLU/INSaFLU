@@ -10,6 +10,7 @@ import pandas as pd
 from Bio.SeqIO.FastaIO import SimpleFastaParser
 from scipy.stats import kstest
 
+from constants.software_names import SoftwareNames
 from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.modules.object_classes import (
     Bedgraph,
@@ -660,7 +661,7 @@ class Remapping:
         :param logging_level: logging level to use.
         """
         remap_method = methods.remap_software
-        self.remap_filter = methods.remap_filter
+        self.remap_filters = methods.remap_filters
         self.method = remap_method.name.split("_")[0]
         self.method_object = remap_method
         self.args = remap_method.args
@@ -1002,7 +1003,15 @@ class Remapping:
         self.index_sorted_bam()
 
     def filter_bamfile(self):
-        self.filter_mapping_bamutil()
+        self.read_map_filtered_bam = self.read_map_bam
+
+        for filter in self.remap_filters.software_list:
+            if filter.name == SoftwareNames.SOFTWARE_BAMUTIL_name:
+                self.filter_mapping_bamutil(filter)
+
+            if filter.name == SoftwareNames.SOFTWARE_MSAMTOOLS_name:
+                self.filter_mapping_msamtools(filter)
+
         self.filter_bam_unmapped()
 
     def filter_bam_unmapped(self):
@@ -1024,26 +1033,25 @@ class Remapping:
             os.remove(bam_path)
             shutil.move(filtered_bam_path, bam_path)
 
-    def filter_mapping_bamutil(self):
+    def filter_mapping_bamutil(self, software: Software_detail):
         """
         filter bam file by mapping quality.
         """
 
-        if self.remap_filter.name == "None":
-            self.logger.info("No bam filtering performed.")
-            self.read_map_filtered_bam = self.read_map_bam
-            return
+        temp_file = (
+            os.path.splitext(self.read_map_bam)[0] + f"{np.random.randint(1000000)}.bam"
+        )
 
         cmd = [
             "bam",
             "filter",
             "--in",
-            self.read_map_bam,
+            self.read_map_filtered_bam,
             "--refFile",
             self.reference_file,
-            self.remap_filter.args,
+            software.args,
             "--out",
-            self.read_map_filtered_bam,
+            temp_file,
             "--noPhoneHome",
         ]
 
@@ -1053,13 +1061,50 @@ class Remapping:
         except Exception as e:
             self.logger.error("Bam filtering failed.")
             self.logger.error(e)
-            self.read_map_filtered_bam = self.read_map_bam
+            if os.path.isfile(temp_file):
+                os.remove(temp_file)
             return
 
-        if not os.path.isfile(self.read_map_filtered_bam):
+        if os.path.isfile(temp_file) and os.path.getsize(temp_file) > 100:
+            os.remove(self.read_map_filtered_bam)
+            shutil.move(temp_file, self.read_map_filtered_bam)
+
+        else:
             self.logger.error("Bam filtering failed, file missing.")
-            self.read_map_filtered_bam = self.read_map_bam
+
+        return
+
+    def filter_mapping_msamtools(self, software: Software_detail):
+        """
+        filter bam file by mapping quality.
+        """
+
+        temp_file = (
+            os.path.splitext(self.read_map_bam)[0] + f"{np.random.randint(1000000)}.bam"
+        )
+
+        cmd = [
+            "msamtools",
+            "filter",
+            software.args,
+            self.read_map_filtered_bam,
+            ">",
+            temp_file,
+        ]
+
+        try:
+            self.cmd.run_script_software(cmd)
+
+        except Exception as e:
+            self.logger.error("Bam filtering failed.")
+            self.logger.error(e)
+            if os.path.isfile(temp_file):
+                os.remove(temp_file)
             return
+
+        if os.path.isfile(temp_file) and os.path.getsize(temp_file) > 100:
+            os.remove(self.read_map_filtered_bam)
+            shutil.move(temp_file, self.read_map_filtered_bam)
 
         return
 

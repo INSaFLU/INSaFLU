@@ -120,7 +120,7 @@ class ConstantsSettings(object):
     def pipeline_step_to_pipeline_name(self, pipeline_step: str) -> str:
         """
         Translate pipeline step names - use to combine steps."""
-        if pipeline_step == self.PIPELINE_NAME_remap_filtering:
-            return self.PIPELINE_NAME_remapping
+        # if pipeline_step == self.PIPELINE_NAME_remap_filtering:
+        #    return self.PIPELINE_NAME_remapping
 
         return pipeline_step

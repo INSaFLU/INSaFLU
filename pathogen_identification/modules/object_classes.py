@@ -1224,10 +1224,44 @@ class Software_detail(SoftwareUnit):
         return f"{self.module}:{self.name}:{self.args}:{self.db}:{self.bin}"
 
 
+class SoftwareDetailCompound:
+    def __init__(self, module, args_df: pd.DataFrame, config: dict, prefix: str):
+        """
+
+        Args:
+            module: name of module.
+            args_df: dataframe containing module arguments.
+            config: dictionary containing module configuration.
+            prefix: prefix of module.
+        """
+        self.module = module
+        self.args_df = args_df
+        self.config = config
+        self.prefix = prefix
+
+        self.software_list: List[Software_detail] = []
+        if module in args_df.module.unique():
+            self.fill_software_list()
+
+    def fill_software_list(self):
+        module_df = self.args_df[self.args_df.module == self.module]
+
+        for name, software_df in module_df.groupby("name"):
+            software = Software_detail(
+                self.module, software_df, self.config, self.prefix
+            )
+            self.software_list.append(software)
+
+    def check_exists(self):
+        return any([x.check_exists() for x in self.software_list])
+
+
 class SoftwareRemap:
-    def __init__(self, remap_software: Software_detail, remap_filter: Software_detail):
+    def __init__(
+        self, remap_software: Software_detail, remap_filter: SoftwareDetailCompound
+    ):
         self.remap_software = remap_software
-        self.remap_filter = remap_filter
+        self.remap_filters = remap_filter
 
     @property
     def output_dir(self):

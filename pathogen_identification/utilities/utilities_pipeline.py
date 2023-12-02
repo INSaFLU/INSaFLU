@@ -1210,7 +1210,7 @@ class Utility_Pipeline_Manager:
         }
         #
 
-    def fill_dict(self, ix, branch_left) -> nx.DiGraph:
+    def fill_dict(self, ix, branch_left) -> dict:
         """
         Generate a tree of pipeline
         """
@@ -1225,29 +1225,71 @@ class Utility_Pipeline_Manager:
         else:
             current = self.existing_pipeline_order[ix]
 
-        soft_dict = {}
-        suffix = ""
+        def fill_dict_chain_software_module(current) -> dict:
+            soft_dict = {}
+            suffix = ""
+            soft = None
 
-        for soft in self.pipeline_software[current]:
-            if soft in self.params_lookup[current].keys():
-                param_names = []
-                param_combs = []
-                params_dict = self.params_lookup[current][soft]
+            param_combs = []
+            if self.pipeline_software[current] == []:
+                return {}
 
-                for i, g in params_dict.items():
-                    if not g:
-                        continue
+            for soft in self.pipeline_software[current]:
+                if soft in self.params_lookup[current].keys():
+                    # param_names = []
 
-                    param_names.append(i + suffix)
-                    param_combs.append([(i + suffix, x, "param") for x in g])
+                    params_dict = self.params_lookup[current][soft]
 
-                param_combs = list(it.product(*param_combs))
+                    for i, g in params_dict.items():
+                        if not g:
+                            continue
 
-                param_tree = make_tree(param_combs)
+                        # param_names.append(i + suffix)
+                        param_combs.append([(i + suffix, x, "param") for x in g])
 
+                else:
+                    param_combs.append([(f"{soft.upper()}_ARGS", "None", "param")])
+                    # soft_dict[soft] = {(f"{soft.upper()}_ARGS", "None", "param"): {}}
+
+            param_combs = list(it.product(*param_combs))
+            param_tree = make_tree(param_combs)
+
+            if soft is not None:
                 soft_dict[soft] = param_tree
-            else:
-                soft_dict[soft] = {(f"{soft.upper()}_ARGS", "None", "param"): {}}
+
+            return soft_dict
+
+        def fill_dict_single_software_module(current) -> dict:
+            soft_dict = {}
+            suffix = ""
+
+            for soft in self.pipeline_software[current]:
+                if soft in self.params_lookup[current].keys():
+                    param_names = []
+                    param_combs = []
+                    params_dict = self.params_lookup[current][soft]
+
+                    for i, g in params_dict.items():
+                        if not g:
+                            continue
+
+                        param_names.append(i + suffix)
+                        param_combs.append([(i + suffix, x, "param") for x in g])
+
+                    param_combs = list(it.product(*param_combs))
+
+                    param_tree = make_tree(param_combs)
+
+                    soft_dict[soft] = param_tree
+                else:
+                    soft_dict[soft] = {(f"{soft.upper()}_ARGS", "None", "param"): {}}
+
+            return soft_dict
+
+        if current in ConstantsSettings.PIPELINE_STEPS_AGGREGATE:
+            soft_dict = fill_dict_chain_software_module(current)
+        else:
+            soft_dict = fill_dict_single_software_module(current)
 
         return {
             (current, soft, "module"): self.fill_dict(ix + 1, g)

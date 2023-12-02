@@ -58,6 +58,7 @@ class Televir_Metadata_Constants:
             "blastp": "hostDepletion/hostdep_env",
             "snippy": config("DIR_SOFTWARE") + "/snippy",
             "bamutil": "remap/remap",
+            "msamtools": "remap/remap",
             "bwa": "remap/remap",
             "bowtie2": "remap/remap",
             "bowtie2_remap": "remap/remap",

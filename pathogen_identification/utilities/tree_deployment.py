@@ -1342,11 +1342,10 @@ class TreeProgressGraph:
                 print(print(tree.node_index.loc[edge[0]].node))
                 parent_actual_node = [
                     x for x in tree.nodes_compress if x[0] == edge[0]
-                ][1][0]
+                ][0][1][0]
                 child_actual_node = [x for x in tree.nodes_compress if x[0] == edge[1]][
-                    1
-                ]
-
+                    0
+                ][1]
                 if len(child_actual_node) == 0:
                     continue
 

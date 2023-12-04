@@ -1324,9 +1324,12 @@ class TreeProgressGraph:
             print(tree.nodes_compress)
             print(tree.edge_compress)
             network_df = [["NA", "0", "root", "input", "input", "lightblue"]]
-
+            print("BUILDING NETWORK")
             for edge in tree.edge_compress:
+                print(edge)
+
                 child_metadata = tree.node_index.loc[edge[1]].node
+                print(child_metadata)
                 if child_metadata[-1] != "module":
                     continue
 

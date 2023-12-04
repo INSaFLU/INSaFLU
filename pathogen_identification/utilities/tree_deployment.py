@@ -1342,8 +1342,8 @@ class TreeProgressGraph:
 
                 child_metadata = tree.node_index.loc[edge[1]].node
                 print(child_metadata)
-                # if child_metadata[-1] != "module":
-                #    continue
+                if child_metadata[-1] != "module":
+                    continue
 
                 parent_metadata = tree.node_index.loc[edge[0]].node
 

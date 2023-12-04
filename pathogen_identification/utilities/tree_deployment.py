@@ -1156,7 +1156,7 @@ class Tree_Progress:
             self.update_tree_nodes()
             return
 
-        print("CURRENT MODULE", self.current_module)
+        self.logger.info("CURRENT MODULE", self.current_module)
         action = map_actions[self.current_module]
 
         action()
@@ -1317,46 +1317,33 @@ class TreeProgressGraph:
                 row["parent"] = "NA"
             else:
                 parent_software = row["software_parent"]
-                print(parent_software)
                 if parent_software is None:
                     parent_software = "input"
                 row["parent"] = f"{parent_software}_{parent}"
             row["child"] = f"{row['software_child']}_{child}"
             return row
 
-        print("How many trees?")
-        print(len(pipetrees_dict))
         network_df = [["NA", "0", "root", "input", "input", "lightblue"]]
         for tree_pk, tree in pipetrees_dict.items():
             #
             tree.compress_tree()
             tree.split_modules()
             tree.get_module_tree()
-            print("#### TREE ####")
-            print(tree.nodes_compress)
-            print(tree.edge_compress)
+
             network_df = [["NA", "0", "root", "input", "input", "lightblue"]]
-            print("BUILDING NETWORK")
             for edge in tree.edge_compress:
-                print(edge)
-                print(print(tree.node_index.loc[edge[0]].node))
                 parent_actual_node = [
                     x for x in tree.nodes_compress if x[0] == edge[0]
                 ][0][1][0]
                 child_actual_node = [x for x in tree.nodes_compress if x[0] == edge[1]][
                     0
                 ][1]
-                print("PARENT ACTUAL NODE")
-                print(parent_actual_node)
-                print("CHILD ACTUAL NODE")
-                print(child_actual_node)
+
                 if len(child_actual_node) == 0:
                     continue
                 child_actual_node = child_actual_node[0]
 
                 child_metadata = tree.node_index.loc[child_actual_node].node
-                print("CHILD METADATA")
-                print(child_metadata)
 
                 if child_metadata[-1] != "module":
                     continue
@@ -1399,10 +1386,7 @@ class TreeProgressGraph:
             node_dict = {node: i for i, node in enumerate(unique_nodes)}
             node_dict["NA"] = "NA"
 
-            print(network_df)
-
             network_df = network_df.apply(merge_names, axis=1)
-            print(network_df)
 
         return network_df
 

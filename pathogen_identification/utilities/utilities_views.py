@@ -409,6 +409,7 @@ class ReportSorter:
             self.tree_plot_path = None
             self.overlap_heatmap_exists = False
             self.overlap_heatmap_path = None
+            self.overlap_pca_exists = False
 
     def update_max_error_rate(self, report: FinalReport):
         """

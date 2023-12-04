@@ -14,33 +14,22 @@ from django.db.models import QuerySet
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from constants.constants import TypePath
 from fluwebvirus.settings import STATIC_ROOT
-from pathogen_identification.constants_settings import ConstantsSettings as PIConstants
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PIConstants
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RunMain, SoftwareTree,
+                                            SoftwareTreeNode)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunMainTree_class
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.update_DBs_tree import (
-    Update_Assembly,
-    Update_Classification,
-    Update_Remap,
-    Update_RunMain_Initial,
-    Update_RunMain_Secondary,
-    get_run_parents,
-)
+    Update_Assembly, Update_Classification, Update_Remap,
+    Update_RunMain_Initial, Update_RunMain_Secondary, get_run_parents)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Pipeline_Makeup,
-    PipelineTree,
-    Utils_Manager,
-)
+    Pipeline_Makeup, PipelineTree, Utils_Manager)
 from pathogen_identification.utilities.utilities_views import ReportSorter
 from settings.constants_settings import ConstantsSettings
 from utils.utils import Utils
@@ -1307,12 +1296,31 @@ class TreeProgressGraph:
             "leaves": "lightblue",
         }
 
-        network_df = [["NA", "0", "root", "input", "input", "lightblue"]]
+        def merge_names(row: pd.Series):
+            parent = row["parent"]
+            child = row["child"]
 
+            parent = node_dict[parent]
+            child = node_dict[child]
+            if parent == "NA":
+                row["parent"] = "NA"
+            else:
+                parent_software = row["software_parent"]
+                print(parent_software)
+                if parent_software is None:
+                    parent_software = "input"
+                row["parent"] = f"{parent_software}_{parent}"
+            row["child"] = f"{row['software_child']}_{child}"
+            return row
+
+        print("How many trees?")
+        print(len(pipetrees_dict))
+        network_df = [["NA", "0", "root", "input", "input", "lightblue"]]
         for tree_pk, tree in pipetrees_dict.items():
             #
             tree.compress_tree()
             tree.split_modules()
+            network_df = [["NA", "0", "root", "input", "input", "lightblue"]]
 
             for edge in tree.edge_compress:
                 child_metadata = tree.node_index.loc[edge[1]].node
@@ -1336,48 +1344,32 @@ class TreeProgressGraph:
                     [parent, child, module, software_parent, software_child, colour]
                 )
 
-        network_df = pd.DataFrame(
-            network_df,
-            columns=[
-                "parent",
-                "child",
-                "module",
-                "software_parent",
-                "software_child",
-                "colour",
-            ],
-        )
-        unique_nodes = list(network_df["child"].values) + list(
-            network_df["parent"].values
-        )
-        unique_nodes = list(set(unique_nodes))
+            network_df = pd.DataFrame(
+                network_df,
+                columns=[
+                    "parent",
+                    "child",
+                    "module",
+                    "software_parent",
+                    "software_child",
+                    "colour",
+                ],
+            )
+            unique_nodes = list(network_df["child"].values) + list(
+                network_df["parent"].values
+            )
+            unique_nodes = list(set(unique_nodes))
 
-        # replace node names with numbers paste to software
+            # replace node names with numbers paste to software
 
-        node_dict = {node: i for i, node in enumerate(unique_nodes)}
-        node_dict["NA"] = "NA"
+            node_dict = {node: i for i, node in enumerate(unique_nodes)}
+            node_dict["NA"] = "NA"
 
-        def merge_names(row: pd.Series):
-            parent = row["parent"]
-            child = row["child"]
+            print(network_df)
 
-            parent = node_dict[parent]
-            child = node_dict[child]
-            if parent == "NA":
-                row["parent"] = "NA"
-            else:
-                parent_software = row["software_parent"]
-                print(parent_software)
-                if parent_software is None:
-                    parent_software = "input"
-                row["parent"] = f"{parent_software}_{parent}"
-            row["child"] = f"{row['software_child']}_{child}"
-            return row
+            network_df = network_df.apply(merge_names, axis=1)
+            print(network_df)
 
-        print(network_df)
-
-        network_df = network_df.apply(merge_names, axis=1)
-        print(network_df)
         return network_df
 
     def get_node_params(

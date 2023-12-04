@@ -1339,13 +1339,25 @@ class TreeProgressGraph:
             print("BUILDING NETWORK")
             for edge in tree.edge_compress:
                 print(edge)
+                print(print(tree.node_index.loc[edge[0]].node))
+                parent_actual_node = [
+                    x for x in tree.nodes_compress if x[0] == edge[0]
+                ][1][0]
+                child_actual_node = [x for x in tree.nodes_compress if x[0] == edge[1]][
+                    1
+                ]
 
-                child_metadata = tree.node_index.loc[edge[1]].node
+                if len(child_actual_node) == 0:
+                    continue
+
+                child_metadata = tree.node_index.loc[child_actual_node].node
+                print("CHILD METADATA")
                 print(child_metadata)
+
                 if child_metadata[-1] != "module":
                     continue
 
-                parent_metadata = tree.node_index.loc[edge[0]].node
+                parent_metadata = tree.node_index.loc[parent_actual_node].node
 
                 parent = edge[0]
                 child = edge[1]

@@ -1331,6 +1331,7 @@ class TreeProgressGraph:
             #
             tree.compress_tree()
             tree.split_modules()
+            tree.get_module_tree()
             print("#### TREE ####")
             print(tree.nodes_compress)
             print(tree.edge_compress)

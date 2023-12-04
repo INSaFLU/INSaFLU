@@ -1346,8 +1346,13 @@ class TreeProgressGraph:
                 child_actual_node = [x for x in tree.nodes_compress if x[0] == edge[1]][
                     0
                 ][1]
+                print("PARENT ACTUAL NODE")
+                print(parent_actual_node)
+                print("CHILD ACTUAL NODE")
+                print(child_actual_node)
                 if len(child_actual_node) == 0:
                     continue
+                child_actual_node = child_actual_node[0]
 
                 child_metadata = tree.node_index.loc[child_actual_node].node
                 print("CHILD METADATA")

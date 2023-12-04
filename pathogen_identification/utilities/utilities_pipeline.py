@@ -673,7 +673,7 @@ class PipelineTree:
         print(self.node_index)
         print(self.nodes_compress)
         print(self.edge_compress)
-        
+        print("####")
 
         new_nodes = []
         for node in nodes_compress:
@@ -681,16 +681,17 @@ class PipelineTree:
             internal_edges = []
 
             internal_splits = [0]
-            module_name = self.node_index.loc[node[0]].node[0]
+            module_name = self.node_index.loc[node[0]].node
 
             for ix, internal_node in enumerate(node[1]):
                 internal_name = self.node_index.loc[internal_node].node
                 is_module = internal_name[2] == "module"
 
                 if is_module and ix != 0:
+                    print("Module found")
+                    print(module_name)
                     print(internal_name)
-                    if internal_name[0] != module_name:
-                        internal_splits.append(ix)
+                    internal_splits.append(ix)
 
             if len(internal_splits) > 1:
                 internal_splits.append(len(node[1]))

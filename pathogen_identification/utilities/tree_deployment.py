@@ -1320,6 +1320,9 @@ class TreeProgressGraph:
             #
             tree.compress_tree()
             tree.split_modules()
+            print("#### TREE ####")
+            print(tree.nodes_compress)
+            print(tree.edge_compress)
             network_df = [["NA", "0", "root", "input", "input", "lightblue"]]
 
             for edge in tree.edge_compress:

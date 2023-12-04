@@ -1247,7 +1247,7 @@ class SoftwareDetailCompound:
         print(self.args_df)
         module_df = self.args_df[self.args_df.module == self.module]
 
-        for name, software_df in module_df.groupby("software"):
+        for _, software_df in module_df.groupby("software"):
             software = Software_detail(
                 self.module, software_df, self.config, self.prefix
             )

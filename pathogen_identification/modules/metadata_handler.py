@@ -171,6 +171,7 @@ class Metadata_handler:
         skip_scrape: bool = True,
     ):
         references_table = self.filter_references_table(df)
+
         # references_table = references_table.drop_duplicates(subset=["taxid"])
         references_table.rename(columns={"accid": "acc"}, inplace=True)
 

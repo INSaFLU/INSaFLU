@@ -1433,10 +1433,6 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.generate_output_data_classes()
 
     def Prep_Metagenomics_Classification(self):
-        from typing import List, Union
-
-        from django.db.models import QuerySet
-
         reference_utils = RawReferenceUtils(self.sample_registered)
 
         # reference_table = collect_references_table_all()
@@ -1446,7 +1442,7 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.prep_REMAPPING()
         self.remap_manager.generate_remap_targets_fasta()
 
-    def Run_Metagenomcs_Classification(self):
+    def Run_Metagenomics_Classification(self):
         if self.metagenomics_classification:
             self.Prep_Metagenomics_Classification()
 
@@ -1597,6 +1593,7 @@ class RunMainTree_class(Run_Deployment_Methods):
 
     def generate_output_data_classes(self):
         # merge mapping results if exist.
+        #
         self.remap_manager.merge_mapping_reports()
         self.remap_manager.collect_final_report_summary_statistics()
         self.report = self.remap_manager.report

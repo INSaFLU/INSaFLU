@@ -8,24 +8,14 @@ from django.contrib.auth.models import User
 from django.core.files import File
 from django.db import IntegrityError, transaction
 
-from pathogen_identification.models import (
-    QC_REPORT,
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReadClassification,
-    ReferenceContigs,
-    ReferenceMap_Main,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    RunRemapMain,
-    SampleQC,
-    TelevirRunQC,
-)
+from pathogen_identification.models import (QC_REPORT, ContigClassification,
+                                            FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference, ReadClassification,
+                                            ReferenceContigs,
+                                            ReferenceMap_Main, RunAssembly,
+                                            RunDetail, RunMain, RunRemapMain,
+                                            SampleQC, TelevirRunQC)
 from pathogen_identification.modules.object_classes import Sample_runClass
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunEngine_class
@@ -345,6 +335,26 @@ def Update_Classification(
         print(f"failed to update sample {run_class.sample_name}")
         return False
 
+
+def UpdateRawReferences_safe(run_class: RunEngine_class, parameter_set: ParameterSet):
+    """get run data
+    Update TABLES:
+    - RawReference,
+
+    :param sample_class:
+    :return: run_data
+    """
+
+
+    try:
+        with transaction.atomic():
+            Update_RawReference(run_class, parameter_set)
+
+        return True
+
+    except IntegrityError as e:
+        print(f"failed to update sample {run_class.sample_name}")
+        return False
 
 @transaction.atomic
 def Update_Remap(run_class: RunEngine_class, parameter_set: ParameterSet):
@@ -928,6 +938,15 @@ def Update_Run_Classification(run_class: RunEngine_class, parameter_set: Paramet
             success=run_class.remap_main.success,
         )
         remap_main.save()
+
+    Update_RawReference(run_class, parameter_set)
+
+
+def Update_RawReference(run_class: RunEngine_class, parameter_set: ParameterSet):
+    """
+    Update RawReference table.
+    """
+    sample, runmain, _ = get_run_parents(run_class, parameter_set)
 
     for ref, row in run_class.raw_targets.iterrows():
         if row.status:

@@ -1319,7 +1319,7 @@ class TreeProgressGraph:
             tree.split_modules()
             tree.get_module_tree()
 
-            network_df = [["NA", "0", "root", "input", "input", "lightblue"]]
+            #network_df = [["NA", "0", "root", "input", "input", "lightblue"]]
             for edge in tree.edge_compress:
                 parent_actual_node = [
                     x for x in tree.nodes_compress if x[0] == edge[0]

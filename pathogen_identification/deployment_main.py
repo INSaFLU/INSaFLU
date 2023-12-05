@@ -10,35 +10,21 @@ from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from constants.constants import TypePath
 from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RunMain, SoftwareTree,
+                                            SoftwareTreeNode)
 from pathogen_identification.modules.run_main import RunMainTree_class
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.update_DBs import (
-    Update_Assembly,
-    Update_Classification,
-    Update_Remap,
-    Update_RunMain_Initial,
-    Update_RunMain_Secondary,
-    Update_Sample_Runs,
-    get_run_parents,
-)
+    Update_Assembly, Update_Classification, Update_Remap,
+    Update_RunMain_Initial, Update_RunMain_Secondary, Update_Sample_Runs,
+    UpdateRawReferences_safe, get_run_parents)
 from pathogen_identification.utilities.utilities_general import (
-    simplify_name,
-    simplify_name_lower,
-)
+    simplify_name, simplify_name_lower)
 from pathogen_identification.utilities.utilities_pipeline import (
-    RawReferenceUtils,
-    SoftwareTreeUtils,
-    Utils_Manager,
-)
+    RawReferenceUtils, SoftwareTreeUtils, Utils_Manager)
 from pathogen_identification.utilities.utilities_views import ReportSorter
 from utils.process_SGE import ProcessSGE
 
@@ -504,38 +490,24 @@ class Run_Main_from_Leaf:
             return False
 
         try:
-            self.container.run_engine.Run_Metagenomcs_Classification()
-            # self.container.run_engine.plan_remap_prep_safe()
+            self.container.run_engine.Run_Metagenomics_Classification()
+            self.container.run_engine.plan_remap_prep_safe()
+            ref_update = UpdateRawReferences_safe(
+                self.container.run_engine, self.parameter_set
+            )
+            #
             reference_utils = RawReferenceUtils(
                 self.container.run_engine.sample_registered
             )
-            reference_table = reference_utils.sample_reference_tables()
-            print("REFERENCE TABLE")
-            print(reference_table.head())
-            proxy_rclass = reference_table.rename(
-                columns={
-                    "read_counts": "counts",
-                }
-            )
-            proxy_rclass["taxid"] = proxy_rclass["taxid"].astype(int)
-            proxy_rclass["counts"] = proxy_rclass["counts"].astype(float).astype(int)
-            proxy_rclass = proxy_rclass[proxy_rclass["counts"] > 0]
-            proxy_rclass = proxy_rclass[proxy_rclass["taxid"] > 0]
-            proxy_rclass = proxy_rclass[proxy_rclass["description"] != "-"]
-            proxy_rclass = proxy_rclass[proxy_rclass["accid"] != "-"]
-            proxy_aclass = reference_table.rename(
-                columns={
-                    "contig_counts": "counts",
-                }
-            )
-            proxy_aclass["taxid"] = proxy_aclass["taxid"].astype(int)
-            proxy_aclass["counts"] = proxy_aclass["counts"].astype(float).astype(int)
-            proxy_aclass = proxy_aclass[proxy_aclass["counts"] > 0]
-            proxy_aclass = proxy_aclass[proxy_aclass["taxid"] > 0]
-            proxy_aclass = proxy_aclass[proxy_aclass["description"] != "-"]
-            proxy_aclass = proxy_aclass[proxy_aclass["accid"] != "-"]
+            reference_utils.sample_reference_tables()
+            reference_table = reference_utils.merge_ref_tables()
 
-            print(proxy_rclass.head())
+            proxy_rclass = reference_utils.reference_table_renamed(
+                reference_table, "read_counts"
+            )
+            proxy_aclass = reference_utils.reference_table_renamed(
+                reference_table, "contig_counts"
+            )
 
             self.container.run_engine.metadata_tool.rclass = proxy_rclass
             self.container.run_engine.metadata_tool.aclass = proxy_aclass

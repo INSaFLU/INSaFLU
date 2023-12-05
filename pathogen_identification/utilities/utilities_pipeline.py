@@ -10,16 +10,20 @@ import pandas as pd
 from django.contrib.auth.models import User
 from django.db.models import Q, QuerySet
 
-from constants.constants import \
-    Televir_Directory_Constants as Televir_Directories
+from constants.constants import Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.host_library import Host
-from pathogen_identification.models import (ParameterSet, PIProject_Sample,
-                                            Projects, RawReference, RunMain,
-                                            SoftwareTree, SoftwareTreeNode)
-from pathogen_identification.utilities.utilities_televir_dbs import \
-    Utility_Repository
+from pathogen_identification.models import (
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
+from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -2697,6 +2701,8 @@ class SoftwareTreeUtils:
         # pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
         utils = Utils_Manager()
         local_paths = local_tree.get_all_graph_paths_explicit()
+        print(local_paths)
+        print(len(local_paths))
         import time
 
         pipeline_tree = self.generate_software_tree_extend(local_tree=local_tree)
@@ -2824,6 +2830,8 @@ class RawReferenceUtils:
     def __init__(self, sample: PIProject_Sample):
         self.sample_registered = sample
         self.runs_found = 0
+        self.list_tables: List[pd.DataFrame] = []
+        self.merged_table: pd.DataFrame = pd.DataFrame()
 
     def references_table_from_query(
         self, references: Union[QuerySet, List[RawReference]]
@@ -2990,14 +2998,36 @@ class RawReferenceUtils:
 
         run_references_tables = [self.run_references_table(run) for run in sample_runs]
 
+        self.list_tables.extend(run_references_tables)
+
+        run_references_tables = self.merge_ref_tables()
+        self.merged_table = run_references_tables
+
+        return run_references_tables
+
+    def reference_table_renamed(self, rename_dict: dict):
+        proxy_ref = self.merged_table.copy()
+        proxy_ref = proxy_ref.rename(columns=rename_dict)
+
+        proxy_ref["taxid"] = proxy_ref["taxid"].astype(int)
+        proxy_ref["counts"] = proxy_ref["counts"].astype(float).astype(int)
+        proxy_ref = proxy_ref[proxy_ref["counts"] > 0]
+        proxy_ref = proxy_ref[proxy_ref["taxid"] > 0]
+        proxy_ref = proxy_ref[proxy_ref["description"] != "-"]
+        proxy_ref = proxy_ref[proxy_ref["accid"] != "-"]
+
+        return proxy_ref
+
+    def merge_ref_tables(self):
         run_references_tables = self.merge_ref_tables_use_standard_score(
-            run_references_tables
+            self.list_tables
         )
 
         run_references_tables = run_references_tables[run_references_tables.taxid != 0]
 
         return run_references_tables
 
+    @staticmethod
     def simplify_by_description(df: pd.DataFrame):
         if "description" not in df.columns:
             return df

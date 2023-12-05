@@ -135,6 +135,9 @@ def depth_color_windows(window_value: str, max_prop):
     else:
         ncol = 0
 
+    if str(ncol) == "nan":
+        ncol = 0
+
     ncol = f"background-color: rgba({cell_color}, {int(ncol)}%);"
     return ncol
 

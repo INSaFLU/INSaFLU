@@ -23,6 +23,7 @@ from pathogen_identification.modules.object_classes import (
     Read_class,
     Sample_runClass,
     Software_detail,
+    SoftwareDetailCompound,
     SoftwareRemap,
 )
 from pathogen_identification.modules.remap_class import (
@@ -193,7 +194,7 @@ class RunEngine:
             self.prefix,
         )
 
-        self.remap_filtering_method = Software_detail(
+        self.remap_filtering_method = SoftwareDetailCompound(
             CS.PIPELINE_NAME_remap_filtering,
             method_args,
             config,

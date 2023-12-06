@@ -53,13 +53,13 @@ from pathogen_identification.models import (
 )
 from pathogen_identification.modules.object_classes import RunQC_report
 from pathogen_identification.tables import (
+    CompoundReferenceTable,
     ContigTable,
     ProjectTable,
     ProjectTableMetagenomics,
     RawReferenceTable,
     RunMainTable,
     SampleTable,
-    SampleTableMetagenomics,
 )
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
@@ -69,7 +69,7 @@ from pathogen_identification.utilities.utilities_general import (
 )
 from pathogen_identification.utilities.utilities_views import (
     EmptyRemapMain,
-    FinalReportCompound,
+    RawReferenceCompound,
     ReportSorter,
     final_report_best_cov_by_accid,
     recover_assembly_contigs,
@@ -810,6 +810,117 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
             "sample_index": sample_pk,
             "query_set_count": runs.count(),
         }
+
+        return context
+
+
+class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
+    """
+    page with raw references table for single sample. used to add references and select for remap
+    """
+
+    template_name = "pathogen_identification/references_table.html"
+
+    def get_context_data(self, **kwargs):
+        context = super(ReferencesManagementSample, self).get_context_data(**kwargs)
+        context["nav_project"] = True
+
+        sample_pk = int(self.kwargs["pk1"])
+
+        try:
+            sample_main = PIProject_Sample.objects.get(pk=sample_pk)
+        except Exception:
+            messages.error(
+                self.request,
+                "Sample with ID '{}' does not exist".format(sample_pk),
+                fail_silently=True,
+            )
+            raise Http404
+
+        project_main = sample_main.project
+        project_name = project_main.name
+
+        if project_main.owner == self.request.user:
+            query_set = (
+                RawReference.objects.filter(run__sample__pk=sample_pk)
+                .exclude(accid="-")
+                .distinct("accid")
+            )
+            sample_name = sample_main.sample.name
+        else:
+            messages.error(
+                self.request,
+                "You do not have permission to access this project.",
+                fail_silently=True,
+            )
+            query_set = RawReference.objects.none()
+            project_name = "project"
+            sample_name = "sample"
+
+        # raw_references = raw_references
+        tag_search = "search_add_project_sample"
+        if self.request.GET.get(tag_search) != None and self.request.GET.get(
+            tag_search
+        ):
+            query_set = query_set.filter(
+                Q(description__icontains=self.request.GET.get(tag_search))
+                | Q(accid__icontains=self.request.GET.get(tag_search))
+                | Q(taxid_set__name__icontains=self.request.GET.get(tag_search))
+            )
+            # tag_search
+
+        raw_reference_compound = [
+            RawReferenceCompound(raw_reference) for raw_reference in query_set
+        ]
+
+        compound_reference_table = CompoundReferenceTable(raw_reference_compound)
+        context[Constants.CHECK_BOX_ALL] = self.request.session[Constants.CHECK_BOX_ALL]
+
+        if Constants.CHECK_BOX_ALL not in self.request.session:
+            self.request.session[Constants.CHECK_BOX_ALL] = False
+            is_all_check_box_in_session(
+                ["{}_{}".format(Constants.CHECK_BOX, key.id) for key in query_set],
+                self.request,
+            )
+
+        ## need to clean all the others if are reject in filter
+        dt_sample_id_add_temp = {}
+        if context[Constants.CHECK_BOX_ALL]:
+            for sample in query_set:
+                dt_sample_id_add_temp[
+                    sample.id
+                ] = 1  ## add the ids that are in the tables
+            for key in self.request.session.keys():
+                if (
+                    key.startswith(Constants.CHECK_BOX)
+                    and len(key.split("_")) == 3
+                    and self.utils.is_integer(key.split("_")[2])
+                ):
+                    ### this is necessary because of the search. Can occur some checked box that are out of filter.
+                    if int(key.split("_")[2]) not in dt_sample_id_add_temp:
+                        self.request.session[key] = False
+                    else:
+                        self.request.session[key] = True
+
+        RequestConfig(
+            self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
+        ).configure(table)
+        if self.request.GET.get(tag_search) != None:
+            context[tag_search] = self.request.GET.get(tag_search)
+
+        context["nav_sample"] = True
+        context["show_paginatior"] = query_set.count() > Constants.PAGINATE_NUMBER
+        context["query_set_count"] = query_set.count()
+        context["show_info_main_page"] = ShowInfoMainPage()
+        context["nav_modal"] = True  ## short the size of modal window
+
+        context["owner"] = True
+        context["references"] = raw_reference_compound
+        context["table"] = compound_reference_table
+        context["sample_name"] = sample_name
+        context["project_name"] = project_name
+        context["project_index"] = project_main.pk
+        context["sample_index"] = sample_pk
 
         return context
 

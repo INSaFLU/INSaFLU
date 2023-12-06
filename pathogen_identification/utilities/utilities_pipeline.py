@@ -10,20 +10,16 @@ import pandas as pd
 from django.contrib.auth.models import User
 from django.db.models import Q, QuerySet
 
-from constants.constants import Televir_Directory_Constants as Televir_Directories
+from constants.constants import \
+    Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.host_library import Host
-from pathogen_identification.models import (
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
-from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
+from pathogen_identification.models import (ParameterSet, PIProject_Sample,
+                                            Projects, RawReference, RunMain,
+                                            SoftwareTree, SoftwareTreeNode)
+from pathogen_identification.utilities.utilities_televir_dbs import \
+    Utility_Repository
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -3005,8 +3001,8 @@ class RawReferenceUtils:
 
         return run_references_tables
 
-    def reference_table_renamed(self, rename_dict: dict):
-        proxy_ref = self.merged_table.copy()
+    def reference_table_renamed(self, merged_table, rename_dict: dict):
+        proxy_ref = merged_table.copy()
         proxy_ref = proxy_ref.rename(columns=rename_dict)
 
         proxy_ref["taxid"] = proxy_ref["taxid"].astype(int)

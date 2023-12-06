@@ -6,12 +6,15 @@ from typing import Dict, List, Optional
 import pandas as pd
 from braces.views import FormValidMessageMixin, LoginRequiredMixin
 from django.db.models.query import QuerySet
+from django.urls import reverse
+from django.utils.safestring import mark_safe
 from django.views import generic
 
 from pathogen_identification.models import (
     FinalReport,
     PIProject_Sample,
     Projects,
+    RawReference,
     ReferenceMap_Main,
     RunAssembly,
     RunDetail,
@@ -944,3 +947,100 @@ def final_report_best_cov_by_accid(reports: QuerySet) -> QuerySet:
         pk_to_keep.append(best_report.pk)
 
     return reports.filter(pk__in=pk_to_keep)
+
+
+class ReferenceManager:
+    def __init__(self):
+        pass
+
+
+class RawReferenceCompound:
+    def __init__(self, raw_reference: RawReference):
+        self.pk = raw_reference.pk
+        self.id = raw_reference.id
+        self.taxid = raw_reference.taxid
+        self.accid = raw_reference.accid
+        self.description = raw_reference.description
+        self.family = []
+        self.runs = []
+        self.manual_insert = False
+        self.mapped: Optional[FinalReport] = None
+
+        if raw_reference.run.sample is not None:
+            self.find_across_sample(raw_reference.run.sample)
+            self.mapped = self.find_mapped(raw_reference.run.sample)
+
+        self.determine_runs()
+
+    def find_across_sample(self, sample: PIProject_Sample):
+        """
+        find across sample
+        """
+        across_sample = RawReference.objects.filter(
+            taxid=self.taxid,
+            accid=self.accid,
+            description=self.description,
+            run__sample=sample,
+        ).values_list("pk", flat=True)
+
+        for raw_reference in across_sample:
+            self.family.append(raw_reference)
+
+    def determine_runs(self):
+        """
+        determine runs
+        """
+        family_refs = (
+            RawReference.objects.filter(
+                pk__in=self.family, run__run_type=RunMain.RUN_TYPE_PIPELINE
+            )
+            .exclude(run=None)
+            .distinct("run")
+        )
+        self.runs = family_refs.values_list("run", flat=True)
+
+    def determine_manual_insert(self):
+        """
+        determine if manual insert
+        """
+        self.manual_insert = (
+            RawReference.objects.filter(pk__in=self.family)
+            .exclude(run__run_type=RunMain.RUN_TYPE_PIPELINE)
+            .exists()
+        )
+
+    def find_mapped(self, sample: PIProject_Sample):
+        """
+        find mapped, get the first, sorted by coverage
+        """
+
+        mapped = (
+            FinalReport.objects.filter(
+                taxid=self.taxid,
+                accid=self.accid,
+                sample=sample,
+            )
+            .order_by("-coverage")
+            .first()
+        )
+
+        if mapped is None:
+            return None
+
+        return mapped
+
+    @property
+    def mapped_html(self):
+        if self.mapped is None:
+            return "False"
+
+        run = self.mapped.run
+
+        return reverse(
+            "sample_detail",
+            args=[run.sample.project.pk, run.sample.pk, run.pk],
+        )
+
+    @property
+    def run_count(self):
+        return len(self.runs)

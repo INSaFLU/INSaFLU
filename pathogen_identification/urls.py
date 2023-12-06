@@ -101,6 +101,11 @@ urlpatterns = [
         "download_refmap_files", PIviews.download_file_ref, name="download_refmap_files"
     ),
     url(
+        r"References/sample_(?P<pk1>\d+)$",
+        PIviews.ReferencesManagementSample.as_view(),
+        name="sample_references_management",
+    ),
+    url(
         r"Scaffold/project_(?P<pk1>\d+)/sample_(?P<pk2>\d+)/run_(?P<pk3>\d+)/scaffold_(?P<reference>[a-zA-Z0-9_]+)",
         PIviews.Scaffold_Remap.as_view(),
         name="scaffold_remap",

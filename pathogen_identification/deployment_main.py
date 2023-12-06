@@ -10,21 +10,36 @@ from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from constants.constants import TypePath
 from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import (FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RunMain, SoftwareTree,
-                                            SoftwareTreeNode)
+from pathogen_identification.models import (
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
 from pathogen_identification.modules.run_main import RunMainTree_class
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.update_DBs import (
-    Update_Assembly, Update_Classification, Update_Remap,
-    Update_RunMain_Initial, Update_RunMain_Secondary, Update_Sample_Runs,
-    UpdateRawReferences_safe, get_run_parents)
+    Update_Assembly,
+    Update_Classification,
+    Update_Remap,
+    Update_RunMain_Initial,
+    Update_RunMain_Secondary,
+    Update_Sample_Runs,
+    UpdateRawReferences_safe,
+    get_run_parents,
+)
 from pathogen_identification.utilities.utilities_general import (
-    simplify_name, simplify_name_lower)
+    simplify_name,
+    simplify_name_lower,
+)
 from pathogen_identification.utilities.utilities_pipeline import (
-    RawReferenceUtils, SoftwareTreeUtils, Utils_Manager)
+    RawReferenceUtils,
+    SoftwareTreeUtils,
+    Utils_Manager,
+)
 from pathogen_identification.utilities.utilities_views import ReportSorter
 from utils.process_SGE import ProcessSGE
 
@@ -503,10 +518,10 @@ class Run_Main_from_Leaf:
             reference_table = reference_utils.merge_ref_tables()
 
             proxy_rclass = reference_utils.reference_table_renamed(
-                reference_table, "read_counts"
+                reference_table, {"read_counts": "counts"}
             )
             proxy_aclass = reference_utils.reference_table_renamed(
-                reference_table, "contig_counts"
+                reference_table, {"contig_counts": "counts"}
             )
 
             self.container.run_engine.metadata_tool.rclass = proxy_rclass

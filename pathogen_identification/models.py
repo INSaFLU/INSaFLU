@@ -462,6 +462,12 @@ class RunIndex(models.Model):
 
 
 class RunMain(models.Model):
+    RUN_TYPE_PIPELINE = 0
+    RUN_TYPE_STORAGE = 1
+    RUN_TYPE_MAP_REQUEST = 2
+
+    run_type = models.IntegerField(default=RUN_TYPE_PIPELINE)
+
     parameter_set = models.ForeignKey(
         ParameterSet, on_delete=models.CASCADE, related_name="run_main", default=None
     )

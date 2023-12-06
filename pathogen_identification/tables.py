@@ -11,31 +11,20 @@ from constants.constants import Constants
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReadClassification,
-    ReferenceContigs,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    SampleQC,
-    TelevirRunQC,
-)
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.models import (ContigClassification, FinalReport,
+                                            ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            ReadClassification,
+                                            ReferenceContigs, RunAssembly,
+                                            RunDetail, RunMain, SampleQC,
+                                            TelevirRunQC)
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.utilities_general import (
-    get_project_dir,
-    get_project_dir_no_media_root,
-)
+    get_project_dir, get_project_dir_no_media_root)
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter,
-    check_sample_software_exists,
-    duplicate_metagenomics_software,
-)
+    ReportSorter, check_sample_software_exists,
+    duplicate_metagenomics_software)
 from settings.models import Parameter, Software
 
 
@@ -551,19 +540,18 @@ class SampleTable(tables.Table):
             + '"><i class="fa fa-flask"></i></span> </a>'
         )
 
-        manual_add_reference_button = (
-            '<a href="#id_add_reference_modal" id="id_add_reference_modal" data-toggle="modal" data-toggle="tooltip" title="Add references"'
-            + ' ref_name="'
-            + record.name
-            + '" pk="'
-            + str(record.pk)
-            + ' "deploy-url="'
-            + reverse("add_reference_to_sample")
-            + '"'
-            + '><i class="fa fa-plus"></i></span> </a>'
+        ### references_management button, link to sample_references_management view
+        references_management_button = (
+            '<a href="'
+            + reverse(
+                "sample_references_management",
+                args=[record.pk],
+            )
+            + '">'
+            + '<i class="fa fa-database"></i></span> </a>'
         )
 
-        record_name = manual_add_reference_button + record_name
+        record_name = references_management_button + record_name
 
         if (
             ParameterSet.objects.filter(
@@ -724,6 +712,53 @@ class SampleTableMetagenomics(SampleTable):
             parameters = parameters + deploy_metagenomics
 
         return mark_safe(parameters)
+
+
+class CompoundReferenceTable(tables.Table):
+    select_ref = tables.CheckBoxColumn(
+        accessor="pk", attrs={"th__input": {"onclick": "toggle(this)"}}
+    )
+    description = tables.Column(verbose_name="Description")
+    accid = tables.Column(verbose_name="Accession id")
+    taxid = tables.Column(verbose_name="Taxid")
+    runs = tables.Column(verbose_name="Runs")
+    counts = tables.Column(verbose_name="Counts")
+    # mapped column is a link column to the report
+    mapped = tables.Column(verbose_name="Mapped", orderable=False, empty_values=())
+
+    class Meta:
+        attrs = {"class": "paleblue"}
+
+    def render_select_ref(self, value, record):
+        return mark_safe(
+            '<input name="select_ref" id="{}_{}" type="checkbox" value="{}"/>'.format(
+                Constants.CHECK_BOX, record.id, value
+            )
+        )
+
+    def render_description(self, record):
+        return record.description
+
+    def render_accid(self, record):
+        return record.accid
+
+    def render_taxid(self, record):
+        return record.taxid
+
+    def render_runs(self, record):
+        return record.run_count
+
+    def render_mapped(self, record):
+        if record.mapped_html is None:
+            return mark_safe('<i class="fa fa-times"></i>')
+
+        return mark_safe(
+            '<a href="'
+            + record.mapped_html
+            + '">'
+            + "<i class='fa fa-bar-chart'></i>"
+            + "</a>"
+        )
 
 
 class RawReferenceTable(tables.Table):

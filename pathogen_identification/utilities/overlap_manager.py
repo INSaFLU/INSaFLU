@@ -835,6 +835,9 @@ class ReadOverlapManager:
         from sklearn.decomposition import PCA
         from sklearn.preprocessing import StandardScaler
 
+        if self.read_profile_matrix_filtered.shape[1] < 3:
+            return
+
         pca = PCA(n_components=3)
         pca.fit(self.read_profile_matrix_filtered)
 

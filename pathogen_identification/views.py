@@ -885,7 +885,6 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
         ]
 
         compound_reference_table = CompoundReferenceTable(raw_reference_compound)
-        context[Constants.CHECK_BOX_ALL] = self.request.session[Constants.CHECK_BOX_ALL]
 
         if Constants.CHECK_BOX_ALL not in self.request.session:
             self.request.session[Constants.CHECK_BOX_ALL] = False
@@ -893,7 +892,7 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
                 ["{}_{}".format(Constants.CHECK_BOX, key.id) for key in query_set],
                 self.request,
             )
-
+        context[Constants.CHECK_BOX_ALL] = self.request.session[Constants.CHECK_BOX_ALL]
         ## need to clean all the others if are reject in filter
         dt_sample_id_add_temp = {}
         if context[Constants.CHECK_BOX_ALL]:

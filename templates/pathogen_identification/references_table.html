@@ -20,8 +20,9 @@
 {% if owner %}
 {% breadcrumb "Project Index" "project-index" %}
 {% breadcrumb "TELEVIR Projects" "PIprojects_main"  %}
-{% breadcrumb project "PIproject_samples"  pk=project_index  %}
-{% breadcrumb sample "sample_main" pk1=project_index pk2=sample_index  %}
+{% breadcrumb project_name "PIproject_samples" pk=project_index %}
+{% breadcrumb sample_name "sample_main" pk1=project_index pk2=sample_index  %}
+{% breadcrumb "References Management" "sample_references_management" pk1=sample_index %}
 {% else %}
 {% breadcrumb "Project Index" "project-index" %}
 
@@ -30,87 +31,232 @@
 
 {% block content %}
 
+<style>
+  .table-container {
+    display: flex;
+}
 
-<div class="sidebar">
-<div class="search-bar">
-    <input type="text" id="searchInput" placeholder="Search...">
-</div>
-<button id="selectAllBtn">Select All</button>
-<button id="deselectAllBtn">Deselect All</button>
-<!-- Add more buttons as needed -->
-</div>
+.sidebar {
+  width: 200px; /* Adjust the width as needed */
+  background-color: #f1f1f1; /* Set the background color as desired */
+}
+
+.sidebar-header {
+  padding: 10px;
+  background-color: #ccc; /* Set the background color for the header */
+}
+
+.sidebar-header h3 {
+  margin: 0;
+  color: #fff; /* Set the text color for the header */
+}
+
+.sidebar-actions {
+  padding: 10px;
+}
+
+.sidebar-actions button {
+  display: block;
+  margin-bottom: 5px;
+  width: 100%; /* Make the buttons span the entire width of the sidebar */
+}
+
+.table-content {
+    flex-grow: 1;
+    margin-left: 10px; /* Add margin to create space between the sidebar and table */
+}
+</style>
 
 <div class="table-container">
-{% block table %}
-<div class="table-responsive">
-    <table id="table_with_check_id" check_box_all="{{ check_box_all }}" class="table table-hover table-bordered table-striped" set-check-box-values-url="{% url 'set-check-box-values' %}" {% if table.attrs %} {{ table.attrs.as_html }}{% endif %}>
-        {% block table.thead %}
-        <thead>                 
-        <tr>
-                <th colspan="6">
-                    
-                    <form method="get" action="" class="form-inline form-search pull-right">
-                      {% csrf_token %}
-                        <div class="pull-right form-search">
-                          <input id="search_form_id" name="search_add_project_sample" type="text" class="form-control col-sm-9" placeholder="Name, Type, Week and Data set"{% if search_add_project_sample %} value="{{ search_add_project_sample }}"{% endif %}>
-                            <button type="submit" name="search_in_table" class="btn btn-small btn-dark"><i class="fa fa-search"></i> Search</button> 
-                        </div>              
-                    </form>
-                </th>                  
-            </tr>
-         
-          <tr>
-            {% for column in table.columns %}
-               {% if column.orderable %}
-                  <th {{ column.attrs.th.as_html }}><a href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header|title }}</a></th>
-                {% else %}
-                  <th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
-                {% endif %}
-            {% endfor %}
-          </tr>
-        </thead>
-        {% endblock table.thead %}
-        {% block table.tbody %}
-        <tbody>
-            {% for row in table.page.object_list|default:table.rows %} {# support pagination #}
-              {% block table.tbody.row %}
-              <tr class="{% cycle 'odd' 'even' %}">
-                  {% for column, cell in row.items %}
-                      <td {{ column.attrs.td.as_html }}>{{ cell }}</td>
-                  {% endfor %}
-              </tr>
-              {% endblock table.tbody.row %}
-            {% empty %}
-              {% if table.empty_text %}
-              {% block table.tbody.empty_text %}
-                <tr><td colspan="{{ table.columns|length }}">{{ table.empty_text }}</td></tr>
-              {% endblock table.tbody.empty_text %}
-              {% endif %}
-            {% endfor %}
-        </tbody>
-        {% endblock table.tbody %}
-        {% block table.tfoot %}
-          <tfoot></tfoot>
-        {% endblock table.tfoot %}
-    </table>
-</div>
-{% endblock table %}
 
-{% if table.page and show_paginatior %}
-{% block pagination %}
-  <label id="id-total-list" class="pull-right">Total samples: {{ query_set_count }}</label>
-    {% bootstrap_pagination table.page url=request.get_full_path %}
-{% endblock pagination %}
+  <div class="sidebar">
+      <div class="sidebar-header">
+          <h3>Sample</h3>
+      </div>
+      <div class="sidebar-actions">
+          <button class="btn btn-primary">
+            {{ deploy_metagenomics }} Deploy Combined
+          </button>
+          <button class="btn btn-primary">
+            {{ meta_parameters  }}  parameters
+          </button>
+          <button class="btn btn-primary">
+            Add reference
+          </button>
+      </div>
+  </div>
+  <div class="table-content">
+    {% block table %}
+    <div class="table-responsive">
+        <table id="table_with_check_id" check_box_all="{{ check_box_all }}" class="table table-hover table-bordered table-striped" set-check-box-values-url="{% url 'set-check-box-values' %}" {% if table.attrs %} {{ table.attrs.as_html }}{% endif %}>
+
+          
+          {% block table.thead %}
+            <thead>                 
+            <tr>
+                    <th colspan="6">
+                        
+                        <form method="get" action="" class="form-inline form-search pull-right">
+                          {% csrf_token %}
+                            <div class="pull-right form-search">
+                              <input id="search_form_id" name="search_add_project_sample" type="text" class="form-control col-sm-9" placeholder="Name, Type, Week and Data set"{% if search_add_project_sample %} value="{{ search_add_project_sample }}"{% endif %}>
+                                <button type="submit" name="search_in_table" class="btn btn-small btn-dark"><i class="fa fa-search"></i> Search</button> 
+                            </div>              
+                        </form>
+                    </th>                  
+                </tr>
+            
+              <tr>
+                {% for column in table.columns %}
+                  {% if column.orderable %}
+                      <th {{ column.attrs.th.as_html }}><a href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header|title }}</a></th>
+                    {% else %}
+                      <th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
+                    {% endif %}
+                {% endfor %}
+              </tr>
+            </thead>
+            {% endblock table.thead %}
+            {% block table.tbody %}
+            <tbody>
+                {% for row in table.page.object_list|default:table.rows %} {# support pagination #}
+                  {% block table.tbody.row %}
+                  <tr class="{% cycle 'odd' 'even' %}">
+                      {% for column, cell in row.items %}
+                          <td {{ column.attrs.td.as_html }}>{{ cell }}</td>
+                      {% endfor %}
+                  </tr>
+                  {% endblock table.tbody.row %}
+                {% empty %}
+                  {% if table.empty_text %}
+                  {% block table.tbody.empty_text %}
+                    <tr><td colspan="{{ table.columns|length }}">{{ table.empty_text }}</td></tr>
+                  {% endblock table.tbody.empty_text %}
+                  {% endif %}
+                {% endfor %}
+            </tbody>
+            {% endblock table.tbody %}
+            {% block table.tfoot %}
+              <tfoot></tfoot>
+            {% endblock table.tfoot %}
+        </table>
+    </div>
+    {% endblock table %}
+
+    {% if table.page and show_paginatior %}
+    <div class="paginator">
+    {% block pagination %}
+      <label id="id-total-list" class="pull-right">Total references: {{ query_set_count }}</label>
+        {% bootstrap_pagination table.page url=request.get_full_path %}
+    {% endblock pagination %}
+    </div>
+
+    {% else %}
+    <label id="id-total-list" class="pull-right">Total samples: {{ query_set_count }}</label>
+    {% endif %}
+
+    </div>
+
 </div>
-{% else %}
-<label id="id-total-list" class="pull-right">Total samples: {{ query_set_count }}</label>
-{% endif %}
 
 <a id="id_go_back_button" onClick="javascript:history.go(-1);" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
+
+
+<!-- Modal -->
+
+
+<!-- The sample metagenomics submit modal -->
+<div class="modal fade" id="id_deploy_metagenomics_modal">
+  <div class="modal-dialog">
+      <div class="modal-content">
+
+          <!-- Modal Header -->
+          <div class="modal-header alert alert-warning">
+              <h4 class="modal-title-submit">Submit sample deployment</h4>
+              <button type="button" class="close" data-dismiss="modal">&times;</button>
+          </div>
+
+          <!-- Modal body -->
+          <div class="modal-body mx-auto mw-100">
+              <div id="id-modal-body-deploy-metagenomics-sample" deploy-metagenomics-single-value-url="{% url 'deploy_metagenomics_televir_project_sample' %}">
+                  <label id="id-label-deploy-metagenomics" class="col-form-label">Folder Name</label>
+              </div>
+          </div>
+          <!-- Modal footer -->
+          <div class="modal-footer" id="id-modal-footer-remove">
+              <button id="id-deploy-metagenomics-button" type="button" class="btn btn-primary" data-dismiss="modal">Deploy</button>
+              <button id="id-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal"
+                  aria-hidden="true">Cancel</button>
+          </div>
+      </div>
+  </div>
+</div>
+
+
 
 {% endblock content %}
 
 {% block js %}
+
+<script>
+
+
+
+  $(document).on("click", "a", function (e) {
+
+    if ($(this).attr("id") === 'deploy_metagenomics_modal'){
+        var ref_name = $(this).attr('ref_name');
+        var sample_pk = $(this).attr('pk');
+  
+        $('#id-label-deploy-metagenomics').text('Deploy metagenomics combined analysis for sample \'' + ref_name + '\'?');
+        $('#id-modal-body-deploy-metagenomics-sample').attr('sample_id', sample_pk);
+        $('#id-modal-body-deploy-metagenomics-sample').attr('ref_name', ref_name);
+    }
+    
+  });
+  
+  $('#id-deploy-metagenomics-button').on('click', function(){
+    url= $('#id-modal-body-deploy-metagenomics-sample').attr("deploy-metagenomics-single-value-url");
+    sample_id = $('#id-modal-body-deploy-metagenomics-sample').attr('sample_id');
+  
+    $.ajax({
+        url: url, 
+        type: 'POST',
+        data: {
+            sample_id : sample_id,
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+        }, // data sent with the post request
+        success: function(data) {
+            if (data['is_ok'] === true && data['is_deployed'] === true){
+                /// add message with informaton
+                $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
+                'The sample \'' + $('#id-modal-body-deploy-metagenomics-sample').attr('ref_name') + '\' was successfully deployed.' +
+                '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                '</div>');
+                location.reload() 
+            }
+            else if (data['is_ok'] === true && data['is_deployed'] === false){
+                /// add message with informaton
+                $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+                'The sample \'' + $('#id-modal-body-deploy-metagenomics-sample').attr('ref_name') + '\' was not deployed. Check if metagenomics settings are correctly set.' +
+                '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                '</div>');
+            }
+            else{
+                /// add message with informaton
+                $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+                'The sample \'' + $('#id-modal-body-deploy-metagenomics-sample').attr('ref_name') + '\' was not deployed. Check if metagenomics settings are correctly set.' +
+                '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                '</div>');
+            }
+        }
+    })
+  }
+  )
+
+</script>
+
+
 
 {% load static from staticfiles %}
 <!-- Custom scripts for all pages-->
@@ -118,8 +264,3 @@
 {% endblock %}
 
 
-
-
-
-</body>
-</html>

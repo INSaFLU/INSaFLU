@@ -146,36 +146,36 @@
 
  {% block js %}
  		
-	<script>
-		$(document).ready(function (){
-			$('#modal_show_settings_allert').modal('show')
-		});
-		
+<script>
+	$(document).ready(function (){
+		$('#modal_show_settings_allert').modal('show')
+	});
+	
 /* 		$('#post-form').on('submit', function(event){
-		    event.preventDefault();
-		    console.log("form submitted!")  // sanity check
-		    create_post();
-		}); */
+		event.preventDefault();
+		console.log("form submitted!")  // sanity check
+		create_post();
+	}); */
+	
+	/// set wait screen
+	$('#id_submit_all').click(function() { 
+		wait_screen();
+	});
 		
-		/// set wait screen
-	    $('#id_submit_all').click(function() { 
-	    	wait_screen();
-	    });
-		    
-	    $('#id_submit_checked').click(function() { 
-	    	wait_screen();
-	    }); 
-		
-		$('#id_go_back_button').on('click', function(){
-			wait_screen();
-		});
-		
-	</script>
+	$('#id_submit_checked').click(function() { 
+		wait_screen();
+	}); 
+	
+	$('#id_go_back_button').on('click', function(){
+		wait_screen();
+	});
+	
+</script>
  		
- 	 {% load static from staticfiles %}
- 	 		<!-- Custom scripts for all pages-->
-	    	<script type="text/javascript" src="{% static 'js/check-box-general.js' %}"></script>
-			
+{% load static from staticfiles %}
+<!-- Custom scripts for all pages-->
+<script type="text/javascript" src="{% static 'js/check-box-general.js' %}"></script>
+	
      
  {% endblock %}
 

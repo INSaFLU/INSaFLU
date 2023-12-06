@@ -11,20 +11,31 @@ from constants.constants import Constants
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (ContigClassification, FinalReport,
-                                            ParameterSet, PIProject_Sample,
-                                            Projects, RawReference,
-                                            ReadClassification,
-                                            ReferenceContigs, RunAssembly,
-                                            RunDetail, RunMain, SampleQC,
-                                            TelevirRunQC)
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
+from pathogen_identification.models import (
+    ContigClassification,
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReadClassification,
+    ReferenceContigs,
+    RunAssembly,
+    RunDetail,
+    RunMain,
+    SampleQC,
+    TelevirRunQC,
+)
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.utilities_general import (
-    get_project_dir, get_project_dir_no_media_root)
+    get_project_dir,
+    get_project_dir_no_media_root,
+)
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter, check_sample_software_exists,
-    duplicate_metagenomics_software)
+    ReportSorter,
+    check_sample_software_exists,
+    duplicate_metagenomics_software,
+)
 from settings.models import Parameter, Software
 
 
@@ -547,7 +558,8 @@ class SampleTable(tables.Table):
                 "sample_references_management",
                 args=[record.pk],
             )
-            + '">'
+            + '"'
+            + 'title="Sample Reference Management">'
             + '<i class="fa fa-database"></i></span> </a>'
         )
 
@@ -570,26 +582,7 @@ class SampleTable(tables.Table):
             ## encase following butons in a tooltip
             metagen_buttons = " <span class='tooltip-wrap' data-toggle='tooltip' style='display: inline-block; visibility: visible;' >"
 
-            parameters = (
-                "<a href="
-                + reverse("pathogenID_sample_settings", kwargs={"sample": record.pk})
-                + ' data-toggle="tooltip" data-toggle="modal" title="Manage combine settings">'
-                + f'<span ><i class="padding-button-table fa fa-pencil-square padding-button-table" {color}></i></span></a>'
-            )
-
-            deploy_metagenomics = (
-                "<a "
-                + 'href="#id_deploy_metagenomics_modal" data-toggle="modal" data-toggle="tooltip" '
-                + 'id="deploy_metagenomics_modal" '
-                + 'title="Run combined metagenomics"'
-                + f"pk={record.pk} "
-                + f"ref_name={record.name} "
-                + f'><span><i class="padding-button-table fa fa-paw padding-button-table" {color}></i></span></a>'
-            )
-
-            metagen_buttons = (
-                metagen_buttons + parameters + deploy_metagenomics + "</span>"
-            )
+            metagen_buttons = metagen_buttons + "</span>"
 
             record_name += metagen_buttons
 
@@ -716,13 +709,13 @@ class SampleTableMetagenomics(SampleTable):
 
 class CompoundReferenceTable(tables.Table):
     select_ref = tables.CheckBoxColumn(
-        accessor="pk", attrs={"th__input": {"onclick": "toggle(this)"}}
+        accessor="pk", attrs={"th__input": {"id": "checkBoxAll"}}, orderable=False
     )
     description = tables.Column(verbose_name="Description")
     accid = tables.Column(verbose_name="Accession id")
     taxid = tables.Column(verbose_name="Taxid")
-    runs = tables.Column(verbose_name="Runs")
-    counts = tables.Column(verbose_name="Counts")
+    # runs is a integer column that is rendered and is orderable in reverse order
+    runs = tables.Column(verbose_name="Runs", order_by=("-run_count",))
     # mapped column is a link column to the report
     mapped = tables.Column(verbose_name="Mapped", orderable=False, empty_values=())
 
@@ -749,7 +742,7 @@ class CompoundReferenceTable(tables.Table):
         return record.run_count
 
     def render_mapped(self, record):
-        if record.mapped_html is None:
+        if record.mapped_html == "False":
             return mark_safe('<i class="fa fa-times"></i>')
 
         return mark_safe(

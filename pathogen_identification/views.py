@@ -18,7 +18,7 @@ from django.http import (
 from django.http.response import HttpResponse
 from django.shortcuts import render
 from django.template.defaultfilters import filesizeformat, pluralize
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.utils.safestring import mark_safe
 from django.views import generic
 from django.views.generic import ListView
@@ -820,6 +820,17 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
     """
 
     template_name = "pathogen_identification/references_table.html"
+    fields = "__all__"
+    utils = Utils()
+
+    def get_queryset(self, **kwargs):
+        sample_pk = int(self.kwargs["pk1"])
+
+        return (
+            RawReference.objects.filter(run__sample__pk=sample_pk)
+            .exclude(accid="-")
+            .distinct("accid")
+        )
 
     def get_context_data(self, **kwargs):
         context = super(ReferencesManagementSample, self).get_context_data(**kwargs)
@@ -865,7 +876,7 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
             query_set = query_set.filter(
                 Q(description__icontains=self.request.GET.get(tag_search))
                 | Q(accid__icontains=self.request.GET.get(tag_search))
-                | Q(taxid_set__name__icontains=self.request.GET.get(tag_search))
+                | Q(taxid__icontains=self.request.GET.get(tag_search))
             )
             # tag_search
 
@@ -902,12 +913,33 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
                     else:
                         self.request.session[key] = True
 
-        RequestConfig(
-            self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
-        ).configure(table)
+        RequestConfig(self.request, paginate={"per_page": 20}).configure(
+            compound_reference_table
+        )
         if self.request.GET.get(tag_search) != None:
             context[tag_search] = self.request.GET.get(tag_search)
 
+        ### modal buttons
+        # white color icons for the buttons
+        color = 'style="color:white;"'
+        deploy_metagenomics = (
+            "<a "
+            + 'href="#id_deploy_metagenomics_modal" data-toggle="modal" data-toggle="tooltip" '
+            + 'id="deploy_metagenomics_modal" '
+            + 'title="Run combined metagenomics"'
+            + f"pk={sample_pk} "
+            + f"ref_name={sample_name} "
+            + f'><span><i class="padding-button-table fa fa-paw padding-button-table" {color}></i></span></a>'
+        )
+        metagenomics_parameters = (
+            "<a href="
+            + reverse("pathogenID_sample_settings", kwargs={"sample": sample_pk})
+            + ' data-toggle="tooltip" data-toggle="modal" title="Manage combine settings">'
+            + f'<span ><i class="padding-button-table fa fa-pencil-square padding-button-table" {color}></i></span></a>'
+        )
+
+        context["meta_parameters"] = mark_safe(metagenomics_parameters)
+        context["deploy_metagenomics"] = mark_safe(deploy_metagenomics)
         context["nav_sample"] = True
         context["show_paginatior"] = query_set.count() > Constants.PAGINATE_NUMBER
         context["query_set_count"] = query_set.count()

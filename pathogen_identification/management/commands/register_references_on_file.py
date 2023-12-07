@@ -62,8 +62,11 @@ class Command(BaseCommand):
         accid_file_df = pd.read_csv(accid_file_path, sep="\t")
 
         entrez_descriptions = entrez_connection.run_entrez_query(
-            query_list=accid_file_df.acc.unique()[:1000].tolist(),
+            query_list=accid_file_df.acc.unique().tolist(),
         )
+        print("Retrieved entrez descriptions")
+        print(f"Number of entrez descriptions: {len(entrez_descriptions)}")
+        print("Registering entrez descriptions")
 
         for taxid_str, taxid_df in entrez_descriptions.groupby("taxid"):
             try:

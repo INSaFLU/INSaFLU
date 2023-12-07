@@ -919,6 +919,15 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
         if self.request.GET.get(tag_search) != None:
             context[tag_search] = self.request.GET.get(tag_search)
 
+        ### graph
+        #### graph
+        graph_progress = TreeProgressGraph(sample_main)
+        # graph_progress.generate_graph()
+        graph_json, graph_id = graph_progress.get_graph_data()
+        ####
+        # runs = set([run.pk for run in classification_runs])
+        # runs = classification_runs
+        runs_number = len(classification_runs) > 0
         ### modal buttons
         # white color icons for the buttons
         color = 'style="color:white;"'
@@ -938,6 +947,10 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
             + f'<span ><i class="padding-button-table fa fa-pencil-square padding-button-table" {color}></i></span></a>'
         )
 
+        context["runs"] = classification_runs
+        context["runs_number"] = runs_number
+        context["graph_json"] = graph_json
+        context["graph_id"] = graph_id
         context["meta_parameters"] = mark_safe(metagenomics_parameters)
         context["deploy_metagenomics"] = mark_safe(deploy_metagenomics)
         context["nav_sample"] = True

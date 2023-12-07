@@ -13,6 +13,7 @@
 {% block css %}
 	{% load static from staticfiles %}
 		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'css/televir_software_graph/collapsibleTree-0.1.6/collapsibleTree.css' %}" />
 {% endblock css %}
 
 {% block breadcrumbs %}
@@ -67,6 +68,58 @@
     margin-left: 10px; /* Add margin to create space between the sidebar and table */
 }
 </style>
+
+
+<div id="accordion1" role="tablist" aria-multiselectable="true">
+  <div class="card">
+      <div class="card">
+          <div class="card-header" role="tab" id="headingsample">
+              <div class="row">
+                  <div class="col-sm" >
+                      <h5 class="mb-0" >
+                          <a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapsehead" aria-expanded="false" aria-controls="headinghead">
+                              <strong>Workflows sample: {{sample_name}}</strong>
+                          </a>
+                      </h5>
+                  </div>
+                  <div class="col-sm">
+                      <div class="float-right">
+                          <a href={% url 'sample_main' pk1=project_index pk2=sample_index %} class="btn btn-primary dark"> 
+                              <span class="hidden-phone"></span>Workflow panel</a>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+      {% if runs_number %}
+      <div id="collapsehead" class="collapse" role="tabpanel" aria-labelledby="headingsample">
+          <div class="card-block">
+              <div style="padding: 20px">
+                  
+                  <div class="row">
+                      <div class="col-sm-2">
+                          {% for run in runs %}
+                          <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Workflow {{run.parameter_set.leaf.index}} report </a>
+                          <br>
+                          <br>
+                          {% endfor %}
+                      </div>
+                      {% if graph_json %}
+                      <div class="col-sm-10">
+                              <div id="{{graph_id}}" style="width:95%;height:250px;position:center;" class="collapsibleTree html-widget"></div>
+                              <script type="application/json" data-for="{{graph_id}}">{{graph_json|safe}}</script>
+                      </div>
+                      {% endif %}
+                  </div>
+                  
+              </div>
+          </div>
+      </div>
+      {% endif %}
+  </div>
+</div>
+
+
 
 <div class="table-container">
 
@@ -263,6 +316,10 @@
 {% load static from staticfiles %}
 <!-- Custom scripts for all pages-->
 <script type="text/javascript" src="{% static 'js/check-box-general.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/graph_televir/htmlwidgets-1.6.2/htmlwidgets.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/graph_televir/d3-4.10.2/d3.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/graph_televir/collapsibleTree-binding-0.1.7/collapsibleTree.js' %}"></script>
+
 {% endblock %}
 
 

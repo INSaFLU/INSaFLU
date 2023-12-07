@@ -1001,7 +1001,7 @@ class RawReferenceCompound:
             .exclude(run=None)
             .distinct("run")
         )
-        self.runs = family_refs.values_list("run", flat=True)
+        self.runs = [x.run for x in family_refs]
 
     def determine_manual_insert(self):
         """
@@ -1075,4 +1075,4 @@ class RawReferenceCompound:
 
     @property
     def runs_str(self):
-        return ", ".join([str(r) for r in self.runs])
+        return ", ".join([str(r.parameter_set.leaf.index) for r in self.runs])

@@ -1,7 +1,6 @@
 import http.client
 import logging
 import os
-import urllib.error
 from typing import List, Optional
 
 import pandas as pd
@@ -16,7 +15,7 @@ from pathogen_identification.utilities.utilities_general import (
 )
 
 
-class Metadata_handler:
+class RunMetadataHandler:
     remap_targets: List[Remap_Target] = []
 
     def __init__(

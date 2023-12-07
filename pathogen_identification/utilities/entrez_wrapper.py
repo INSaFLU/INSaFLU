@@ -9,8 +9,13 @@ from Bio import Entrez
 from django.contrib.auth.models import User
 
 
+def split_query(query: List[str], chunksize: int) -> List[List[str]]:
+    return [query[i : i + chunksize] for i in range(0, len(query), chunksize)]
+
+
 class EntrezQuery(ABC):
     name: str
+    output_columns: List[str]
 
     def __init__(self, bindir: str):
         self.bindir = bindir
@@ -47,6 +52,7 @@ class EntrezQuery(ABC):
 class EntrezFetchTaxidDescription(EntrezQuery):
     name: str = "fetch_taxid_description"
     db = "taxonomy"
+    output_columns = ["taxid", "scientific_name"]
 
     def query(self, query: List[str]) -> str:
         cmd = [
@@ -79,6 +85,44 @@ class EntrezFetchTaxidDescription(EntrezQuery):
         return df
 
 
+class EntrezFetchAccessionDescription(EntrezQuery):
+    name: str = "fetch_accession_description"
+    db = "nuccore"
+    output_columns = ["taxid", "accession", "description"]
+
+    def query(self, query: List[str]) -> str:
+        cmd = [
+            self.efetch,
+            "-db",
+            self.db,
+            "-id",
+            ",".join(query),
+            "-format",
+            "docsum",
+            "|",
+            self.xtract,
+            "-pattern",
+            "DocumentSummary",
+            "-element",
+            "TaxId,AccessionVersion,Title",
+        ]
+
+        return " ".join(cmd)
+
+    def read_output(self, output_path: str) -> pd.DataFrame:
+        """
+        Read output from Entrez query using pandas
+        """
+
+        df = pd.read_csv(
+            output_path,
+            sep="\t",
+            header=None,
+            names=self.output_columns,
+        )
+        return df
+
+
 class EntrezQueryFactory:
     def __init__(self, bindir: str):
         self.bindir = bindir
@@ -86,6 +130,97 @@ class EntrezQueryFactory:
     def get_query(self, name: str) -> EntrezQuery:
         if name == "fetch_taxid_description":
             return EntrezFetchTaxidDescription(self.bindir)
+        elif name == "fetch_accession_description":
+            return EntrezFetchAccessionDescription(self.bindir)
+        else:
+            raise ValueError("Invalid query name")
+
+
+###########################################################
+
+
+class BiopythonEntrezWrapper(ABC):
+    output_path: str
+    chuncksize: int
+    output_column_names: List[str]
+
+    def __init__(self, output_path: str, chuncksize: int = 400):
+        self.output_path = output_path
+        self.chuncksize = chuncksize
+
+    @abstractmethod
+    def run_query(self, query: List[str]) -> pd.DataFrame:
+        pass
+
+    def read_output(self) -> pd.DataFrame:
+        try:
+            return pd.read_csv(self.output_path, sep="\t")
+        except FileNotFoundError:
+            return pd.DataFrame()
+
+
+class BiopyFetchTaxidDescription(BiopythonEntrezWrapper):
+    def __init__(self, output_path: str, chuncksize: int = 400):
+        super().__init__(output_path, chuncksize=chuncksize)
+        self.output_column_names = ["taxid", "scientific_name"]
+
+    def run_query(self, query: List[str]) -> None:
+        chunks = split_query(query, self.chuncksize)
+
+        report = []
+
+        for chunk in chunks:
+            handle = Entrez.efetch(db="Taxonomy", id=",".join(chunk), retmode="xml")
+            record = Entrez.read(handle)
+            records = [[record["TaxId"], record["ScientificName"]] for record in record]
+            report.extend(records)
+
+        df = pd.DataFrame(report, columns=self.output_column_names)
+
+        df.to_csv(self.output_path, sep="\t", index=False)
+
+
+class BiopyFetchAccessionDescription(BiopythonEntrezWrapper):
+    def __init__(self, output_path: str, chuncksize: int = 400):
+        super().__init__(output_path, chuncksize=chuncksize)
+        self.output_column_names = ["accession", "description"]
+
+    def run_query(self, query: List[str]) -> None:
+        chunks = split_query(query, self.chuncksize)
+
+        report = []
+
+        for chunk in chunks:
+            chunk = [str(i).split(".")[0] for i in chunk]
+            print(chunk[0])
+            handle = Entrez.efetch(db="Taxonomy", id=",".join(chunk), retmode="xml")
+            record = Entrez.read(handle)
+
+            print(record[0])
+            records = [
+                [record["AccessionVersion"], record["Title"]] for record in record
+            ]
+            report.extend(records)
+
+        df = pd.DataFrame(report, columns=self.output_column_names)
+
+        df.to_csv(self.output_path, sep="\t", index=False)
+
+
+class BiopythonEntrezQueryFactory:
+    def __init__(self, output_path: str, chuncksize: int = 400):
+        self.output_path = output_path
+        self.chuncksize = chuncksize
+
+    def get_query(self, name: str) -> BiopythonEntrezWrapper:
+        if name == "fetch_taxid_description":
+            return BiopyFetchTaxidDescription(
+                self.output_path, chuncksize=self.chuncksize
+            )
+        elif name == "fetch_accession_description":
+            return BiopyFetchAccessionDescription(
+                self.output_path, chuncksize=self.chuncksize
+            )
         else:
             raise ValueError("Invalid query name")
 
@@ -113,24 +248,47 @@ class EntrezWrapper:
         Entrez.max_tries = 1
         Entrez.sleep_between_tries = 1
 
-        self.query_factory = EntrezQueryFactory(self.bindir)
-        self.query = self.query_factory.get_query(query_type)
+        self.bin_query_factory = EntrezQueryFactory(self.bindir)
+        self.bin_query = self.bin_query_factory.get_query(query_type)
+
+        self.biopy_query_factory = BiopythonEntrezQueryFactory(
+            self.output_path, chuncksize=self.chunksize
+        )
+        self.biopy_query = self.biopy_query_factory.get_query(query_type)
+
+    def run_entrez_query(self, query_list: List[str]) -> pd.DataFrame:
+        output = pd.DataFrame()
+        try:
+            # self.biopy_query.run_query(query_list)
+            self.run_queries_binaries(query_list)
+            output = self.read_output()
+
+        except (
+            urllib.error.URLError,
+            http.client.RemoteDisconnected,
+            http.client.IncompleteRead,
+        ):
+            self.run_queries_binaries(query_list)
+            output = self.read_output()
+
+        except http.client.RemoteDisconnected:
+            return pd.DataFrame()
+
+        return output
 
     @property
     def output_path(self) -> str:
         return os.path.join(self.outdir, self.outfile)
 
     def cmd_long(self, query: List[str]) -> str:
-        cmd = self.query.query(query)
+        cmd = self.bin_query.query(query)
 
         cmd_long = [cmd, ">>", os.path.join(self.outdir, self.outfile)]
 
         return " ".join(cmd_long)
 
     def split_query(self, query: List[str]) -> List[List[str]]:
-        return [
-            query[i : i + self.chunksize] for i in range(0, len(query), self.chunksize)
-        ]
+        return split_query(query, self.chunksize)
 
     def cmd_chunks(self, query: List[str]) -> List[str]:
         chunks = self.split_query(query)
@@ -139,7 +297,7 @@ class EntrezWrapper:
 
     def run_query_strategies(self, query: List[str]) -> None:
         try:
-            self.run_queries_biopy(query)
+            self.run_taxid_description_queries_biopy(query)
         except (
             urllib.error.URLError,
             http.client.RemoteDisconnected,
@@ -200,15 +358,17 @@ class EntrezWrapper:
         output_path = os.path.join(self.outdir, self.outfile)
         try:
             df = pd.read_csv(output_path, sep="\t", header=None)
-            df.columns = ["taxid", "scientific_name"]
+            df.columns = self.bin_query.output_columns
         except pd.errors.EmptyDataError:
-            df = pd.DataFrame(columns=["taxid", "scientific_name"])
+            df = pd.DataFrame(columns=self.bin_query.output_columns)
+
+        print(df.head())
 
         df.to_csv(self.output_path, sep="\t", index=False)
 
         return None
 
-    def run_queries_biopy(self, query: List[str]) -> None:
+    def run_taxid_description_queries_biopy(self, query: List[str]) -> None:
         """
         run queries using Biopython Entrez
         """
@@ -235,7 +395,7 @@ class EntrezWrapper:
             return pd.DataFrame()
 
     def run(self, query: List[str]) -> pd.DataFrame:
-        self.run_queries_biopy(query)
+        self.run_taxid_description_queries_biopy(query)
         df = self.read_output()
 
         return df

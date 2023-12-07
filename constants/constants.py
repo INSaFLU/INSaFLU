@@ -3,6 +3,7 @@ Created on Oct 13, 2017
 
 @author: mmp
 """
+import os
 from abc import ABC
 from enum import Enum
 from typing import Dict
@@ -79,6 +80,25 @@ class Televir_Metadata_Constants:
         CS.PIPELINE_NAME_extra_qc: {"default": "preprocess/preproc"},
         CS.PIPELINE_NAME_assembly: {"default": "assembly/assembly"},
     }
+
+    @property
+    def accession_to_taxid_path(self) -> str:
+        """
+        Get the path to the accession to taxid file
+        """
+        return os.path.join(
+            self.METADATA["ROOT"], self.METADATA["input_accession_to_taxid_path"]
+        )
+
+    def get_software_bin_directory(self, software: str):
+        """
+        Get the bin directory of a software"""
+        if software not in self.BINARIES["software"]:
+            raise ValueError(f"Software {software} not found in binaries")
+
+        return os.path.join(
+            self.BINARIES["ROOT"], self.BINARIES["software"][software], "bin"
+        )
 
 
 class Constants(object):

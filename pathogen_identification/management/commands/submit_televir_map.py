@@ -11,7 +11,7 @@ from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import MEDIA_ROOT, ConstantsSettings
 from pathogen_identification.install_registry import Params_Illumina, Params_Nanopore
 from pathogen_identification.models import FinalReport, RawReference, RunMain
-from pathogen_identification.modules.metadata_handler import Metadata_handler
+from pathogen_identification.modules.metadata_handler import RunMetadataHandler
 from pathogen_identification.modules.object_classes import (
     Read_class,
     Sample_runClass,
@@ -42,7 +42,7 @@ from utils.process_SGE import ProcessSGE
 class RunMain:
     remap_manager: Mapping_Manager
     mapping_instance: Mapping_Instance
-    metadata_tool: Metadata_handler
+    metadata_tool: RunMetadataHandler
     remap_params: TelevirParameters
     ##  metadata
     sift_query: str
@@ -167,7 +167,7 @@ class RunMain:
             self.username, self.project_name
         )
 
-        self.metadata_tool = Metadata_handler(
+        self.metadata_tool = RunMetadataHandler(
             self.username,
             self.config,
             sift_query=config["sift_query"],

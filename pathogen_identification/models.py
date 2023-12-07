@@ -915,6 +915,125 @@ class RawReference(models.Model):
         self.save()
 
 
+class ReferenceTaxid(models.Model):
+    taxid = models.CharField(max_length=100, blank=True, null=True)
+
+    def __str__(self):
+        return self.taxid
+
+
+class ReferenceSourceFile(models.Model):
+    file = models.CharField(max_length=100, blank=True, null=True)
+
+    def __str__(self):
+        return self.file
+
+
+class ReferenceSource(models.Model):
+    taxid = models.ForeignKey(
+        ReferenceTaxid, blank=True, null=True, on_delete=models.CASCADE
+    )
+    accid = models.CharField(max_length=100, blank=True, null=True)
+    description = models.CharField(max_length=300, blank=True, null=True)
+
+    def __str__(self):
+        return self.accid
+
+
+class ReferenceSourceFileMap(models.Model):
+    STATUS_GOOD = 0
+    STATUS_CORRUPT = 1
+
+    reference_source = models.ForeignKey(
+        ReferenceSource, blank=True, null=True, on_delete=models.CASCADE
+    )
+
+    reference_source_file = models.ForeignKey(
+        ReferenceSourceFile, blank=True, null=True, on_delete=models.CASCADE
+    )
+
+    status = models.IntegerField(default=STATUS_GOOD)
+
+    @property
+    def accid(self):
+        return self.reference_source.accid
+
+    @property
+    def description(self):
+        return self.reference_source.description
+
+    @property
+    def taxid(self):
+        return self.reference_source.taxid
+
+
+class ReferenceSourceMap(models.Model):
+    STATUS_MAPPED = 0
+    STATUS_UNMAPPED = 1
+    STATUS_MAPPING = 2
+    STATUS_FAIL = 3
+
+    STATUS_CHOICES = (
+        (STATUS_MAPPED, "Mapped"),
+        (STATUS_UNMAPPED, "Unmapped"),
+        (STATUS_MAPPING, "Mapping"),
+    )
+
+    reference_source = models.ForeignKey(
+        ReferenceSource, blank=True, null=True, on_delete=models.CASCADE
+    )
+
+    raw_reference = models.ForeignKey(
+        RawReference, blank=True, null=True, on_delete=models.CASCADE
+    )
+
+    status = models.IntegerField(choices=STATUS_CHOICES, default=STATUS_UNMAPPED)
+
+    @property
+    def taxid(self):
+        return self.reference_source.taxid
+
+    @property
+    def accid(self):
+        return self.reference_source.accid
+
+    @property
+    def description(self):
+        return self.reference_source.description
+
+    @property
+    def counts(self):
+        return self.raw_reference.counts
+
+    @property
+    def classification_source(self):
+        return self.raw_reference.classification_source
+
+    @property
+    def classification_source_str(self):
+        return self.raw_reference.classification_source_str
+
+    @property
+    def read_counts(self):
+        return self.raw_reference.read_counts
+
+    @property
+    def contig_counts(self):
+        return self.raw_reference.contig_counts
+
+    @property
+    def counts_int_array(self):
+        return self.raw_reference.counts_int_array
+
+    def update_reference_source_map_status_mapped(self):
+        self.status = self.STATUS_MAPPED
+        self.save()
+
+    def update_reference_source_map_status_fail(self):
+        self.status = self.STATUS_FAIL
+        self.save()
+
+
 class RunRemapMain(models.Model):
     run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)
     sample = models.ForeignKey(

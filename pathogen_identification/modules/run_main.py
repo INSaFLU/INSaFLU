@@ -13,7 +13,7 @@ from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.models import PIProject_Sample
 from pathogen_identification.modules.assembly_class import Assembly_class
 from pathogen_identification.modules.classification_class import Classifier
-from pathogen_identification.modules.metadata_handler import Metadata_handler
+from pathogen_identification.modules.metadata_handler import RunMetadataHandler
 from pathogen_identification.modules.object_classes import (
     Assembly_results,
     Contig_classification_results,
@@ -95,7 +95,7 @@ class RunDetail_main:
     sample: Sample_runClass
     sample_registered: PIProject_Sample
     ##  metadata
-    metadata_tool: Metadata_handler
+    metadata_tool: RunMetadataHandler
     sift_query: str
     max_remap: int
     taxid_limit: int
@@ -509,7 +509,7 @@ class RunDetail_main:
             self.username, self.project_name
         )
 
-        self.metadata_tool = Metadata_handler(
+        self.metadata_tool = RunMetadataHandler(
             self.username,
             self.config,
             sift_query=config["sift_query"],
@@ -1355,7 +1355,7 @@ class RunMainTree_class(Run_Deployment_Methods):
         if self.depletion:
             self.deploy_HD()
 
-            hd_metadata_tool = Metadata_handler(
+            hd_metadata_tool = RunMetadataHandler(
                 self.username,
                 self.config,
                 sift_query=self.config["sift_query"],

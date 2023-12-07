@@ -10,16 +10,21 @@ import pandas as pd
 from django.contrib.auth.models import User
 from django.db.models import Q, QuerySet
 
-from constants.constants import \
-    Televir_Directory_Constants as Televir_Directories
+from constants.constants import Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.host_library import Host
-from pathogen_identification.models import (ParameterSet, PIProject_Sample,
-                                            Projects, RawReference, RunMain,
-                                            SoftwareTree, SoftwareTreeNode)
-from pathogen_identification.utilities.utilities_televir_dbs import \
-    Utility_Repository
+from pathogen_identification.models import (
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
+from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
+from pathogen_identification.utilities.utilities_views import RawReferenceCompound
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -2987,9 +2992,11 @@ class RawReferenceUtils:
         return references_table
 
     def sample_reference_tables(
-        self,
+        self, run_pks: Optional[List[int]] = None
     ) -> pd.DataFrame:
         sample_runs = RunMain.objects.filter(sample=self.sample_registered)
+        if run_pks is not None:
+            sample_runs = sample_runs.filter(pk__in=run_pks)
         self.runs_found = sample_runs.count()
 
         run_references_tables = [self.run_references_table(run) for run in sample_runs]
@@ -2997,9 +3004,36 @@ class RawReferenceUtils:
         self.list_tables.extend(run_references_tables)
 
         run_references_tables = self.merge_ref_tables()
+        # replace nan with 0
+        run_references_tables = run_references_tables.fillna(0)
         self.merged_table = run_references_tables
 
         return run_references_tables
+
+    def sample_reference_tables_filter(self, runs_filter: Optional[List[int]]):
+        """
+        Filter the sample reference tables to only include runs in the list
+        """
+        _ = self.sample_reference_tables(runs_filter)
+
+    def compound_reference_update_standard_score(
+        self, compound_ref: RawReferenceCompound
+    ):
+        """
+        Update the standard score for a compound reference based on accid"""
+
+        score = self.merged_table[self.merged_table.accid == compound_ref.accid]
+
+        if score.shape[0] > 0:
+            compound_ref.standard_score = score.iloc[0]["standard_score"]
+
+    def update_scores_compound_references(
+        self, compount_refs: List[RawReferenceCompound]
+    ):
+        """
+        Update the standard score for a list of compound references based on accid"""
+        for compound_ref in compount_refs:
+            self.compound_reference_update_standard_score(compound_ref)
 
     def reference_table_renamed(self, merged_table, rename_dict: dict):
         proxy_ref = merged_table.copy()

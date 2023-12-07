@@ -965,12 +965,16 @@ class RawReferenceCompound:
         self.runs = []
         self.manual_insert = False
         self.mapped: Optional[FinalReport] = None
+        self.standard_score = 0
 
         if raw_reference.run.sample is not None:
             self.find_across_sample(raw_reference.run.sample)
             self.mapped = self.find_mapped(raw_reference.run.sample)
 
         self.determine_runs()
+
+    def update_score(self, score: int):
+        self.standard_score = score
 
     def find_across_sample(self, sample: PIProject_Sample):
         """
@@ -1025,22 +1029,50 @@ class RawReferenceCompound:
         )
 
         if mapped is None:
-            return None
+            mapped = RawReference.objects.filter(
+                taxid=self.taxid,
+                accid=self.accid,
+                run__sample=sample,
+                status=RawReference.STATUS_MAPPED,
+            ).first()
 
         return mapped
 
     @property
     def mapped_html(self):
         if self.mapped is None:
-            return "False"
+            return mark_safe('<i class="fa fa-times" title="unmapped"></i>')
 
         run = self.mapped.run
 
-        return reverse(
-            "sample_detail",
-            args=[run.sample.project.pk, run.sample.pk, run.pk],
-        )
+        if isinstance(self.mapped, FinalReport):
+            return mark_safe(
+                '<a href="'
+                + reverse(
+                    "sample_detail",
+                    args=[run.sample.project.pk, run.sample.pk, run.pk],
+                )
+                + '" title="Mapping Success">'
+                + '<i class="fa fa-check-circle"></i>'
+                + "</a>"
+            )
+
+        elif isinstance(self.mapped, RawReference):
+            return mark_safe(
+                '<a href="'
+                + reverse(
+                    "sample_detail",
+                    args=[run.sample.project.pk, run.sample.pk, run.pk],
+                )
+                + '" title="Mapping Fail">'
+                + "<i class='fa fa-circle-o'></i>"
+                + "</a>"
+            )
 
     @property
     def run_count(self):
         return len(self.runs)
+
+    @property
+    def runs_str(self):
+        return ", ".join([str(r) for r in self.runs])

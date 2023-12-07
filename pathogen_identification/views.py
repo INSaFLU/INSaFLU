@@ -9,12 +9,7 @@ from django.contrib import messages
 from django.db import transaction
 from django.db.models import Q
 from django.forms.models import model_to_dict
-from django.http import (
-    Http404,
-    HttpResponseNotFound,
-    HttpResponseRedirect,
-    JsonResponse,
-)
+from django.http import Http404, HttpResponseNotFound, HttpResponseRedirect
 from django.http.response import HttpResponse
 from django.shortcuts import render
 from django.template.defaultfilters import filesizeformat, pluralize
@@ -33,47 +28,33 @@ from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProcessControler
 from managing_files.tables import SampleToProjectsTable
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
-from pathogen_identification.models import (
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReadClassification,
-    ReferenceContigs,
-    ReferenceMap_Main,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    RunRemapMain,
-    Sample,
-    TelevirRunQC,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
+from pathogen_identification.models import (ContigClassification, FinalReport,
+                                            ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            ReadClassification,
+                                            ReferenceContigs,
+                                            ReferenceMap_Main, RunAssembly,
+                                            RunDetail, RunMain, RunRemapMain,
+                                            Sample, TelevirRunQC)
 from pathogen_identification.modules.object_classes import RunQC_report
-from pathogen_identification.tables import (
-    CompoundReferenceTable,
-    ContigTable,
-    ProjectTable,
-    ProjectTableMetagenomics,
-    RawReferenceTable,
-    RunMainTable,
-    SampleTable,
-)
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.tables import (CompoundReferenceScore,
+                                            CompoundReferenceTable,
+                                            ContigTable, ProjectTable,
+                                            ProjectTableMetagenomics,
+                                            RawReferenceTable, RunMainTable,
+                                            SampleTable)
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
 from pathogen_identification.utilities.utilities_general import (
-    get_services_dir,
-    infer_run_media_dir,
-)
+    get_services_dir, infer_run_media_dir)
+from pathogen_identification.utilities.utilities_pipeline import \
+    RawReferenceUtils
 from pathogen_identification.utilities.utilities_views import (
-    EmptyRemapMain,
-    RawReferenceCompound,
-    ReportSorter,
-    final_report_best_cov_by_accid,
-    recover_assembly_contigs,
-)
+    EmptyRemapMain, RawReferenceCompound, ReportSorter,
+    final_report_best_cov_by_accid, recover_assembly_contigs)
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
 from utils.support_django_template import get_link_for_dropdown_item
@@ -880,11 +861,30 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
             )
             # tag_search
 
+        reference_utils = RawReferenceUtils(sample_main)
+
         raw_reference_compound = [
             RawReferenceCompound(raw_reference) for raw_reference in query_set
         ]
 
-        compound_reference_table = CompoundReferenceTable(raw_reference_compound)
+        classification_runs = RunMain.objects.filter(
+            sample=sample_main, run_type=RunMain.RUN_TYPE_PIPELINE
+        )
+
+        # pks of classification runs as integer list
+        runs_pks = [run.pk for run in classification_runs]
+
+        reference_utils.sample_reference_tables_filter(runs_filter=runs_pks)
+        reference_utils.update_scores_compound_references(raw_reference_compound)
+
+        if classification_runs.exists():
+            compound_reference_table = CompoundReferenceScore(
+                raw_reference_compound, order_by=("-standard_score",)
+            )
+        else:
+            compound_reference_table = CompoundReferenceTable(
+                raw_reference_compound, order_by="runs"
+            )
 
         if Constants.CHECK_BOX_ALL not in self.request.session:
             self.request.session[Constants.CHECK_BOX_ALL] = False
@@ -892,6 +892,7 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
                 ["{}_{}".format(Constants.CHECK_BOX, key.id) for key in query_set],
                 self.request,
             )
+
         context[Constants.CHECK_BOX_ALL] = self.request.session[Constants.CHECK_BOX_ALL]
         ## need to clean all the others if are reject in filter
         dt_sample_id_add_temp = {}

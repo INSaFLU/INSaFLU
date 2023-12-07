@@ -32,6 +32,7 @@ from pathogen_identification.utilities.utilities_general import (
     get_project_dir_no_media_root,
 )
 from pathogen_identification.utilities.utilities_views import (
+    RawReferenceCompound,
     ReportSorter,
     check_sample_software_exists,
     duplicate_metagenomics_software,
@@ -717,41 +718,50 @@ class CompoundReferenceTable(tables.Table):
     # runs is a integer column that is rendered and is orderable in reverse order
     runs = tables.Column(verbose_name="Runs", order_by=("-run_count",))
     # mapped column is a link column to the report
-    mapped = tables.Column(verbose_name="Mapped", orderable=False, empty_values=())
+    mapped = tables.Column(
+        verbose_name="Best Mapping", orderable=False, empty_values=()
+    )
 
     class Meta:
         attrs = {"class": "paleblue"}
 
-    def render_select_ref(self, value, record):
+    def render_select_ref(self, value, record: RawReferenceCompound):
         return mark_safe(
             '<input name="select_ref" id="{}_{}" type="checkbox" value="{}"/>'.format(
                 Constants.CHECK_BOX, record.id, value
             )
         )
 
-    def render_description(self, record):
+    def render_description(self, record: RawReferenceCompound):
         return record.description
 
-    def render_accid(self, record):
+    def render_accid(self, record: RawReferenceCompound):
         return record.accid
 
-    def render_taxid(self, record):
+    def render_taxid(self, record: RawReferenceCompound):
         return record.taxid
 
-    def render_runs(self, record):
-        return record.run_count
+    def render_runs(self, record: RawReferenceCompound):
+        return record.runs_str
 
-    def render_mapped(self, record):
-        if record.mapped_html == "False":
-            return mark_safe('<i class="fa fa-times"></i>')
+    def render_mapped(self, record: RawReferenceCompound):
+        return record.mapped_html
 
-        return mark_safe(
-            '<a href="'
-            + record.mapped_html
-            + '">'
-            + "<i class='fa fa-bar-chart'></i>"
-            + "</a>"
-        )
+
+class CompoundReferenceScore(CompoundReferenceTable):
+    score = tables.Column(
+        verbose_name="Score",
+        orderable=True,
+        empty_values=(),
+        order_by=("-standard_score",),
+    )
+
+    class Meta:
+        attrs = {"class": "paleblue"}
+        order_by = ("-standard_score",)
+
+    def render_score(self, record: RawReferenceCompound):
+        return round(record.standard_score, 3)
 
 
 class RawReferenceTable(tables.Table):

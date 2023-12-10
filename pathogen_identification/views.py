@@ -992,10 +992,13 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
         # pks of classification runs as integer list
         runs_pks = [run.pk for run in classification_runs]
 
-        reference_utils.sample_reference_tables_filter(runs_filter=runs_pks)
-        reference_utils.update_scores_compound_references(raw_reference_compound)
-
         if classification_runs.exists():
+            if query_set.exists():
+                reference_utils.sample_reference_tables_filter(runs_filter=runs_pks)
+                reference_utils.update_scores_compound_references(
+                    raw_reference_compound
+                )
+
             compound_reference_table = CompoundReferenceScore(
                 raw_reference_compound, order_by=("score",)
             )

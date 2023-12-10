@@ -40,6 +40,7 @@ class ConstantsSettings(object):
     PIPELINE_NAME_remapping = "Remapping"
     PIPELINE_NAME_remap_filtering = "Remap filtering"
     PIPELINE_NAME_reporting = "Reporting"
+    PIPELINE_NAME_metagenomics_settings = "Metagenomics settings"
 
     ## values to upload to database
     vect_pipeline_names = [
@@ -56,13 +57,18 @@ class ConstantsSettings(object):
         PIPELINE_NAME_contig_classification,
         PIPELINE_NAME_read_classification,
         PIPELINE_NAME_metagenomics_combine,
+        PIPELINE_NAME_metagenomics_settings,
         PIPELINE_NAME_remapping,
         PIPELINE_NAME_remap_filtering,
         PIPELINE_NAME_reporting,
     ]
 
     vect_pipeline_televir_metagenomics = [
+        PIPELINE_NAME_extra_qc,
+        PIPELINE_NAME_viral_enrichment,
+        PIPELINE_NAME_host_depletion,
         PIPELINE_NAME_metagenomics_combine,
+        PIPELINE_NAME_metagenomics_settings,
         PIPELINE_NAME_remapping,
         PIPELINE_NAME_remap_filtering,
         PIPELINE_NAME_reporting,
@@ -120,7 +126,7 @@ class ConstantsSettings(object):
     def pipeline_step_to_pipeline_name(self, pipeline_step: str) -> str:
         """
         Translate pipeline step names - use to combine steps."""
-        # if pipeline_step == self.PIPELINE_NAME_remap_filtering:
-        #    return self.PIPELINE_NAME_remapping
+        if pipeline_step == self.PIPELINE_NAME_metagenomics_settings:
+            return self.PIPELINE_NAME_metagenomics_combine
 
         return pipeline_step

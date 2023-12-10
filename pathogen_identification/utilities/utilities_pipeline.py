@@ -83,11 +83,7 @@ def differences_tuple_list(lista, listb):
 # TREE UTILITIES
 
 
-class Pipeline_Graph:
-    """
-    Pipeline steps
-    """
-
+class PipelineTreeBase:
     ROOT = "root"
     ASSEMBLY_SPECIAL_STEP = "ASSEMBLY_SPECIAL"
     VIRAL_ENRICHMENT_SPECIAL_STEP = "VIRAL_ENRICHMENT"
@@ -95,102 +91,120 @@ class Pipeline_Graph:
     dependencies_graph_root = SINK
     dependencies_graph_sink = ROOT
 
-    dependencies_graph_edges = {
-        CS.PIPELINE_NAME_extra_qc: [ROOT],
-        CS.PIPELINE_NAME_viral_enrichment: [ROOT, CS.PIPELINE_NAME_extra_qc],
-        VIRAL_ENRICHMENT_SPECIAL_STEP: [ROOT, CS.PIPELINE_NAME_extra_qc],
-        CS.PIPELINE_NAME_host_depletion: [
-            ROOT,
-            CS.PIPELINE_NAME_extra_qc,
-            CS.PIPELINE_NAME_viral_enrichment,
-        ],
-        CS.PIPELINE_NAME_read_classification: [
-            ROOT,
-            CS.PIPELINE_NAME_extra_qc,
-            VIRAL_ENRICHMENT_SPECIAL_STEP,
-            CS.PIPELINE_NAME_host_depletion,
-        ],
-        CS.PIPELINE_NAME_assembly: [
-            ROOT,
-            CS.PIPELINE_NAME_extra_qc,
-            CS.PIPELINE_NAME_read_classification,
-            CS.PIPELINE_NAME_host_depletion,
-            VIRAL_ENRICHMENT_SPECIAL_STEP,
-        ],
-        ASSEMBLY_SPECIAL_STEP: [
-            CS.PIPELINE_NAME_read_classification,
-        ],
-        CS.PIPELINE_NAME_contig_classification: [CS.PIPELINE_NAME_assembly],
-        CS.PIPELINE_NAME_remap_filtering: [
-            CS.PIPELINE_NAME_contig_classification,
-            CS.PIPELINE_NAME_read_classification,
-            ASSEMBLY_SPECIAL_STEP,
-        ],
-        CS.PIPELINE_NAME_remapping: [
-            CS.PIPELINE_NAME_remap_filtering,
-            CS.PIPELINE_NAME_contig_classification,
-            CS.PIPELINE_NAME_read_classification,
-            ASSEMBLY_SPECIAL_STEP,
-        ],
-        SINK: [CS.PIPELINE_NAME_remapping],
-    }
 
-    dependencies_graph_edges_metagenomics = {
-        CS.PIPELINE_NAME_extra_qc: [ROOT],
-        CS.PIPELINE_NAME_viral_enrichment: [ROOT, CS.PIPELINE_NAME_extra_qc],
-        VIRAL_ENRICHMENT_SPECIAL_STEP: [ROOT, CS.PIPELINE_NAME_extra_qc],
-        CS.PIPELINE_NAME_host_depletion: [
-            ROOT,
-            CS.PIPELINE_NAME_extra_qc,
-            CS.PIPELINE_NAME_viral_enrichment,
-        ],
-        CS.PIPELINE_NAME_read_classification: [
-            ROOT,
-            CS.PIPELINE_NAME_extra_qc,
-            VIRAL_ENRICHMENT_SPECIAL_STEP,
-            CS.PIPELINE_NAME_host_depletion,
-        ],
-        CS.PIPELINE_NAME_assembly: [
-            ROOT,
-            CS.PIPELINE_NAME_extra_qc,
-            CS.PIPELINE_NAME_read_classification,
-            CS.PIPELINE_NAME_host_depletion,
-            VIRAL_ENRICHMENT_SPECIAL_STEP,
-        ],
-        ASSEMBLY_SPECIAL_STEP: [
-            CS.PIPELINE_NAME_read_classification,
-        ],
-        CS.PIPELINE_NAME_contig_classification: [CS.PIPELINE_NAME_assembly],
-        CS.PIPELINE_NAME_metagenomics_combine: [ROOT],
-        CS.PIPELINE_NAME_remap_filtering: [
-            CS.PIPELINE_NAME_contig_classification,
-            CS.PIPELINE_NAME_read_classification,
-            ASSEMBLY_SPECIAL_STEP,
-            CS.PIPELINE_NAME_metagenomics_combine,
-        ],
-        CS.PIPELINE_NAME_remapping: [
-            CS.PIPELINE_NAME_remap_filtering,
-            CS.PIPELINE_NAME_contig_classification,
-            CS.PIPELINE_NAME_read_classification,
-            ASSEMBLY_SPECIAL_STEP,
-            CS.PIPELINE_NAME_metagenomics_combine,
-        ],
-        SINK: [
-            CS.PIPELINE_NAME_remapping,
-            CS.PIPELINE_NAME_contig_classification,
-            CS.PIPELINE_NAME_assembly,
-            CS.PIPELINE_NAME_read_classification,
-        ],
-    }
+class Pipeline_Graph(PipelineTreeBase):
+    """
+    Pipeline steps
+    """
 
-    def __init__(self) -> None:
-        if ConstantsSettings.METAGENOMICS:
-            self.dependencies_graph_edges = self.dependencies_graph_edges_metagenomics
+    def __init__(self):
+        self.dependencies_graph_edges = {
+            CS.PIPELINE_NAME_extra_qc: [self.ROOT],
+            CS.PIPELINE_NAME_viral_enrichment: [self.ROOT, CS.PIPELINE_NAME_extra_qc],
+            self.VIRAL_ENRICHMENT_SPECIAL_STEP: [self.ROOT, CS.PIPELINE_NAME_extra_qc],
+            CS.PIPELINE_NAME_host_depletion: [
+                self.ROOT,
+                CS.PIPELINE_NAME_extra_qc,
+                CS.PIPELINE_NAME_viral_enrichment,
+            ],
+            CS.PIPELINE_NAME_read_classification: [
+                self.ROOT,
+                CS.PIPELINE_NAME_extra_qc,
+                self.VIRAL_ENRICHMENT_SPECIAL_STEP,
+                CS.PIPELINE_NAME_host_depletion,
+            ],
+            CS.PIPELINE_NAME_assembly: [
+                self.ROOT,
+                CS.PIPELINE_NAME_extra_qc,
+                CS.PIPELINE_NAME_read_classification,
+                CS.PIPELINE_NAME_host_depletion,
+                self.VIRAL_ENRICHMENT_SPECIAL_STEP,
+            ],
+            self.ASSEMBLY_SPECIAL_STEP: [
+                CS.PIPELINE_NAME_read_classification,
+            ],
+            CS.PIPELINE_NAME_contig_classification: [CS.PIPELINE_NAME_assembly],
+            CS.PIPELINE_NAME_remap_filtering: [
+                CS.PIPELINE_NAME_contig_classification,
+                CS.PIPELINE_NAME_read_classification,
+                self.ASSEMBLY_SPECIAL_STEP,
+            ],
+            CS.PIPELINE_NAME_remapping: [
+                CS.PIPELINE_NAME_remap_filtering,
+                CS.PIPELINE_NAME_contig_classification,
+                CS.PIPELINE_NAME_read_classification,
+                self.ASSEMBLY_SPECIAL_STEP,
+            ],
+            self.SINK: [CS.PIPELINE_NAME_remapping],
+        }
 
 
-class Pipeline_Makeup(Pipeline_Graph):
+class Pipeline_Graph_Metagenomics(PipelineTreeBase):
+    def __init__(self):
+        self.dependencies_graph_edges_metagenomics = {
+            CS.PIPELINE_NAME_extra_qc: [self.ROOT],
+            CS.PIPELINE_NAME_viral_enrichment: [self.ROOT, CS.PIPELINE_NAME_extra_qc],
+            self.VIRAL_ENRICHMENT_SPECIAL_STEP: [self.ROOT, CS.PIPELINE_NAME_extra_qc],
+            CS.PIPELINE_NAME_host_depletion: [
+                self.ROOT,
+                CS.PIPELINE_NAME_extra_qc,
+                CS.PIPELINE_NAME_viral_enrichment,
+            ],
+            CS.PIPELINE_NAME_read_classification: [
+                self.ROOT,
+                CS.PIPELINE_NAME_extra_qc,
+                self.VIRAL_ENRICHMENT_SPECIAL_STEP,
+                CS.PIPELINE_NAME_host_depletion,
+            ],
+            CS.PIPELINE_NAME_assembly: [
+                self.ROOT,
+                CS.PIPELINE_NAME_extra_qc,
+                CS.PIPELINE_NAME_read_classification,
+                CS.PIPELINE_NAME_host_depletion,
+                self.VIRAL_ENRICHMENT_SPECIAL_STEP,
+            ],
+            self.ASSEMBLY_SPECIAL_STEP: [
+                CS.PIPELINE_NAME_read_classification,
+            ],
+            CS.PIPELINE_NAME_contig_classification: [CS.PIPELINE_NAME_assembly],
+            CS.PIPELINE_NAME_metagenomics_combine: [
+                self.ROOT,
+                CS.PIPELINE_NAME_viral_enrichment,
+                CS.PIPELINE_NAME_host_depletion,
+            ],
+            CS.PIPELINE_NAME_remap_filtering: [
+                CS.PIPELINE_NAME_contig_classification,
+                CS.PIPELINE_NAME_read_classification,
+                self.ASSEMBLY_SPECIAL_STEP,
+                CS.PIPELINE_NAME_metagenomics_combine,
+            ],
+            CS.PIPELINE_NAME_remapping: [
+                CS.PIPELINE_NAME_remap_filtering,
+                CS.PIPELINE_NAME_contig_classification,
+                CS.PIPELINE_NAME_read_classification,
+                self.ASSEMBLY_SPECIAL_STEP,
+                CS.PIPELINE_NAME_metagenomics_combine,
+            ],
+            self.SINK: [
+                CS.PIPELINE_NAME_remapping,
+                CS.PIPELINE_NAME_contig_classification,
+                self.ASSEMBLY_SPECIAL_STEP,
+                CS.PIPELINE_NAME_read_classification,
+            ],
+        }
+
+
+class Pipeline_Makeup(PipelineTreeBase):
     def __init__(self):
         super().__init__()
+
+        if ConstantsSettings.METAGENOMICS:
+            self.dependencies_graph_edges = (
+                Pipeline_Graph_Metagenomics().dependencies_graph_edges_metagenomics
+            )
+
+        else:
+            self.dependencies_graph_edges = Pipeline_Graph().dependencies_graph_edges
 
         self.MAKEUP = self.get_dependencies_paths_dict()
 
@@ -251,12 +265,47 @@ class Pipeline_Makeup(Pipeline_Graph):
     ):
         return list(self.MAKEUP.values())
 
-    def match_makeup_name_from_list(self, makeup_list: list) -> Optional[int]:
-        makeup_safe = [x for x in makeup_list if x not in CS.PIPELINE_NAME_reporting]
+    @property
+    def get_pipeline_names(self):
+        return list(self.dependencies_graph_edges.keys())
+
+    def match_makeup_name_from_list(
+        self, makeup_list: list, ignore: List[str] = []
+    ) -> Optional[int]:
+        makeup_safe = [x for x in makeup_list if x in self.get_pipeline_names]
+        if ignore:
+            makeup_safe = [x for x in makeup_safe if x not in ignore]
+
+        print(set(makeup_safe))
+
         for makeup, mlist in self.MAKEUP.items():
+            if CS.PIPELINE_NAME_metagenomics_combine in mlist:
+                print(mlist)
             if set(makeup_safe) == set(mlist):
                 return makeup
         return None
+
+    def check_makeuplist_has_classification(self, makeup_list: list) -> bool:
+        classification_steps = [
+            CS.PIPELINE_NAME_contig_classification,
+            CS.PIPELINE_NAME_read_classification,
+        ]
+        return any([x in makeup_list for x in classification_steps])
+
+    def match_makeup_name_from_list_classification(
+        self, makeup_list: list
+    ) -> Optional[int]:
+        ignore = [CS.PIPELINE_NAME_metagenomics_combine]
+
+        makeup_return = self.match_makeup_name_from_list(makeup_list, ignore=ignore)
+
+        if makeup_return is None:
+            return None
+
+        if not self.check_makeuplist_has_classification(makeup_list):
+            return None
+
+        return makeup_return
 
     def makeup_available(self, makeup: int) -> bool:
         return makeup in self.MAKEUP

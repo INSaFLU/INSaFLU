@@ -106,6 +106,11 @@ urlpatterns = [
         name="sample_references_management",
     ),
     url(
+        r"filter_reference_table$",
+        PIviews.inject_references,
+        name="filter_reference_table",
+    ),
+    url(
         r"Scaffold/project_(?P<pk1>\d+)/sample_(?P<pk2>\d+)/run_(?P<pk3>\d+)/scaffold_(?P<reference>[a-zA-Z0-9_]+)",
         PIviews.Scaffold_Remap.as_view(),
         name="scaffold_remap",

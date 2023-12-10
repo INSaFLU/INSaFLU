@@ -10,6 +10,7 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.views import generic
 
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.models import (
     FinalReport,
     PIProject_Sample,
@@ -205,12 +206,7 @@ def duplicate_metagenomics_software(project: Projects, sample: PIProject_Sample)
         technology__name=project.technology,
         parameter__televir_project=project_call,
         parameter__televir_project_sample=None,
-        pipeline_step__name__in=[
-            ConstantsSettings.PIPELINE_NAME_metagenomics_combine,
-            ConstantsSettings.PIPELINE_NAME_remapping,
-            ConstantsSettings.PIPELINE_NAME_remap_filtering,
-            ConstantsSettings.PIPELINE_NAME_reporting,
-        ],
+        pipeline_step__name__in=ConstantsSettings.vect_pipeline_televir_metagenomics,
     )
     project = Projects.objects.get(pk=project.pk)
     for software in query_set:
@@ -1041,7 +1037,9 @@ class RawReferenceCompound:
     @property
     def mapped_html(self):
         if self.mapped is None:
-            return mark_safe('<i class="fa fa-times" title="unmapped"></i>')
+            return mark_safe(
+                '<a><i class="fa fa-times" title="unmapped"></i> Unmapped</a>'
+            )
 
         run = self.mapped.run
 
@@ -1052,8 +1050,9 @@ class RawReferenceCompound:
                     "sample_detail",
                     args=[run.sample.project.pk, run.sample.pk, run.pk],
                 )
-                + '" title="Mapping Success">'
+                + '" title="workflow link">'
                 + '<i class="fa fa-check-circle"></i>'
+                + " Mapped"
                 + "</a>"
             )
 
@@ -1064,8 +1063,9 @@ class RawReferenceCompound:
                     "sample_detail",
                     args=[run.sample.project.pk, run.sample.pk, run.pk],
                 )
-                + '" title="Mapping Fail">'
+                + '" title="workflow link">'
                 + "<i class='fa fa-circle-o'></i>"
+                + " Mapped, 0 reads"
                 + "</a>"
             )
 

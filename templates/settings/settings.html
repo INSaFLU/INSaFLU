@@ -90,8 +90,13 @@
 								<ul id="second_tab_{{forloop.counter0}}" number_pipelines="{{vect_pipeline|length}}"
 									class="nav nav-tabs p-0 justify-content-end justify-content-md-center" role="tablist">
 									{% for unique_pipeline_id, pipeline_name, table in vect_pipeline %}
+										{% if pipeline_name in metagenomics_pipeline_id %}
+										<li class="nav-item"><a class="nav-link fa fa-align-justify" style="border: 2px solid hsl(210, 60%, 80%); background-color: hsl(210, 60%, 90%);"
+											href="#{{unique_pipeline_id}}" role="tab" data-toggle="tab" > {{ pipeline_name }}</a></li>
+										{% else %}
 										<li class="nav-item"><a class="nav-link fa fa-align-justify" 
 											href="#{{unique_pipeline_id}}" role="tab" data-toggle="tab" > {{ pipeline_name }}</a></li>
+										{% endif %}
 					                {% endfor %}
 								</ul>
 								

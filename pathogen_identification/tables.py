@@ -708,6 +708,34 @@ class SampleTableMetagenomics(SampleTable):
         return mark_safe(parameters)
 
 
+class ReferenceSourceTable(tables.Table):
+    select_ref = tables.CheckBoxColumn(
+        accessor="pk", attrs={"th__input": {"id": "checkBoxAll"}}, orderable=False
+    )
+    description = tables.Column(verbose_name="Description")
+    accid = tables.Column(verbose_name="Accession id")
+    taxid = tables.Column(verbose_name="Taxid")
+
+    class Meta:
+        attrs = {"class": "paleblue"}
+
+    def render_select_ref(self, value, record: RawReferenceCompound):
+        return mark_safe(
+            '<input name="select_ref" id="{}_{}" type="checkbox" value="{}"/>'.format(
+                Constants.CHECK_BOX, record.id, value
+            )
+        )
+
+    def render_description(self, record: RawReferenceCompound):
+        return record.description
+
+    def render_accid(self, record: RawReferenceCompound):
+        return record.accid
+
+    def render_taxid(self, record: RawReferenceCompound):
+        return record.taxid
+
+
 class CompoundReferenceTable(tables.Table):
     select_ref = tables.CheckBoxColumn(
         accessor="pk", attrs={"th__input": {"id": "checkBoxAll"}}, orderable=False
@@ -758,7 +786,7 @@ class CompoundReferenceScore(CompoundReferenceTable):
 
     class Meta:
         attrs = {"class": "paleblue"}
-        order_by = ("-standard_score",)
+        # order_by = ("-standard_score",)
 
     def render_score(self, record: RawReferenceCompound):
         return round(record.standard_score, 3)

@@ -560,6 +560,10 @@ class SoftwareNames(object):
     SOFTWARE_REMAP_PARAMS_max_taxids = "--max-taxids"
     SOFTWARE_REMAP_PARAMS_max_accids = "--max-accids"
 
+    SOFTWARE_COMBINED_min_score = "--min-score"
+    SOFTWARE_COMBINED_include_screening = "--screening"
+    SOFTWARE_COMBINED_include_screening_options = ["OFF", "ON   "]
+
     ### REPORT LAYOUT
     SOFTWARE_televir_report_layout = "report_layout"
     SOFTWARE_televir_report_layout_name = "Final Report"
@@ -744,6 +748,8 @@ class SoftwareNames(object):
 
     SOFTWARE_MINIMAP2_REMAP_ONT_name = "Minimap2"
     SOFTWARE_MINIMAP2_REMAP_ONT_name_extended = "Minimap2 - Remapping"
+    SOFTWARE_MINIMAP2_REMAP_ONT_name_extended_screening = "Minimap2 - Screening"
+
     SOFTWARE_MINIMAP2_REMAP_ONT = os.path.join(
         settings.DIR_SOFTWARE,
         "preprocess/preproc/bin/minimap2",
@@ -753,6 +759,7 @@ class SoftwareNames(object):
 
     SOFTWARE_MINIMAP2_REMAP_ILLU_name = "Minimap2_remap"
     SOFTWARE_MINIMAP2_REMAP_ILLU_name_extended = "Minimap2 - Remapping"
+    SOFTWARE_MINIMAP2_REMAP_ILLU_name_extended_screening = "Minimap2 - Screening"
     SOFTWARE_MINIMAP2_REMAP_ILLU = os.path.join(
         settings.DIR_SOFTWARE,
         "preprocess/preproc/bin/minimap2",
@@ -762,6 +769,7 @@ class SoftwareNames(object):
 
     SOFTWARE_MINIMAP2_DEPLETE_ONT_name = "Minimap2_ONT"
     SOFTWARE_MINIMAP2_DEPLETE_ONT_name_extended = "Minimap2"
+
     SOFTWARE_MINIMAP2_DEPLETE_ONT = os.path.join(
         settings.DIR_SOFTWARE,
         "hostDepletion/hostdep_env/bin/minimap2",
@@ -805,6 +813,8 @@ class SoftwareNames(object):
 
     SOFTWARE_BOWTIE2_REMAP_name = "Bowtie2_remap"
     SOFTWARE_BOWTIE2_REMAP_name_extended = "Bowtie2"
+    SOFTWARE_BOWTIE2_REMAP_name_extended_screening = "Bowtie2 - Screening"
+
     SOFTWARE_BOWTIE2_REMAP = os.path.join(
         settings.DIR_SOFTWARE,
         "remap/remap/bin/bowtie2",
@@ -874,7 +884,11 @@ class SoftwareNames(object):
 
     SOFTWARE_REMAP_PARAMS_name = "Remapping - Management"
     SOFTWARE_REMAP_PARAMS_extended = "Remapping - Management"
-    SOFTWARE_REMAP_PARAMS_VERSION = "1"
+    SOFTWARE_REMAP_PARAMS_VERSION = "1.0.0"
+
+    SOFTWARE_METAGENOMICS_SETTINGS_name = "Metagenomics - Settings"
+    SOFTWARE_METAGENOMICS_SETTINGS_name_extended = "Metagenomics - Settings"
+    SOFTWARE_METAGENOMICS_SETTINGS_VERSION = "1.0.0"
 
     ###################################
     ###################################

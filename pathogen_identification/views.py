@@ -28,33 +28,52 @@ from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProcessControler
 from managing_files.tables import SampleToProjectsTable
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
-from pathogen_identification.models import (ContigClassification, FinalReport,
-                                            ParameterSet, PIProject_Sample,
-                                            Projects, RawReference,
-                                            ReadClassification,
-                                            ReferenceContigs,
-                                            ReferenceMap_Main, RunAssembly,
-                                            RunDetail, RunMain, RunRemapMain,
-                                            Sample, TelevirRunQC)
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.forms import ReferenceForm
+from pathogen_identification.models import (
+    ContigClassification,
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReadClassification,
+    ReferenceContigs,
+    ReferenceMap_Main,
+    ReferenceSourceFileMap,
+    RunAssembly,
+    RunDetail,
+    RunMain,
+    RunRemapMain,
+    Sample,
+    TelevirRunQC,
+)
 from pathogen_identification.modules.object_classes import RunQC_report
-from pathogen_identification.tables import (CompoundReferenceScore,
-                                            CompoundReferenceTable,
-                                            ContigTable, ProjectTable,
-                                            ProjectTableMetagenomics,
-                                            RawReferenceTable, RunMainTable,
-                                            SampleTable)
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
+from pathogen_identification.tables import (
+    CompoundReferenceScore,
+    CompoundReferenceTable,
+    ContigTable,
+    ProjectTable,
+    ProjectTableMetagenomics,
+    RawReferenceTable,
+    ReferenceSourceTable,
+    RunMainTable,
+    SampleTable,
+)
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
 from pathogen_identification.utilities.utilities_general import (
-    get_services_dir, infer_run_media_dir)
-from pathogen_identification.utilities.utilities_pipeline import \
-    RawReferenceUtils
+    get_services_dir,
+    infer_run_media_dir,
+)
+from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
 from pathogen_identification.utilities.utilities_views import (
-    EmptyRemapMain, RawReferenceCompound, ReportSorter,
-    final_report_best_cov_by_accid, recover_assembly_contigs)
+    EmptyRemapMain,
+    RawReferenceCompound,
+    ReportSorter,
+    final_report_best_cov_by_accid,
+    recover_assembly_contigs,
+)
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
 from utils.support_django_template import get_link_for_dropdown_item
@@ -435,7 +454,7 @@ class AddSamples_PIProjectsView(
                 | Q(week__icontains=self.request.GET.get(tag_search))
             )
             tag_search
-        table = SampleToProjectsTable(query_set)
+        classified_refs_table = SampleToProjectsTable(query_set)
 
         ### set the check_box
         if Constants.CHECK_BOX_ALL not in self.request.session:
@@ -475,11 +494,12 @@ class AddSamples_PIProjectsView(
 
         RequestConfig(
             self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
-        ).configure(table)
+        ).configure(classified_refs_table)
         if self.request.GET.get(tag_search) != None:
             context[tag_search] = self.request.GET.get(tag_search)
+
         context["televir_sample"] = True
-        context["table"] = table
+        context["table"] = classified_refs_table
         context["show_paginatior"] = query_set.count() > Constants.PAGINATE_NUMBER
         context["query_set_count"] = query_set.count()
         context["project_name"] = project.name
@@ -795,6 +815,61 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
         return context
 
 
+from django.http import JsonResponse
+from django.template.loader import render_to_string
+
+
+def inject_references(request):
+    print("here inject_references")
+    print(request.GET.get("search_add_project_sample"))
+    context = {}
+    data = {}
+
+    ###
+    tag_add_reference = "search_add_project_sample"
+    print(request.GET.get(tag_add_reference))
+    references = []
+    if request.GET.get(tag_add_reference) != None and request.GET.get(
+        tag_add_reference
+    ):
+        print(request.GET.get(tag_add_reference))
+        print("here", request.GET.get(tag_add_reference))
+        references = ReferenceSourceFileMap.objects.filter(
+            Q(
+                reference_source__description__icontains=request.GET.get(
+                    tag_add_reference
+                )
+            )
+            | Q(reference_source__accid__icontains=request.GET.get(tag_add_reference))
+            | Q(
+                reference_source__taxid__taxid__icontains=request.GET.get(
+                    tag_add_reference
+                )
+            )
+        ).distinct()
+
+    context["references_table"] = ReferenceSourceTable(references[:10])
+    context["references_count"] = len(references)
+    from fluwebvirus.settings import BASE_DIR
+
+    template_table_html = os.path.join(
+        BASE_DIR,
+        "templates",
+        "pathogen_identification/references_table_table_only.html",
+    )
+    template_table_html = "pathogen_identification/references_table_table_only.html"
+
+    print(os.path.exists(template_table_html))
+    # render tamplate using context
+    print(context)
+    # print(render_to_string(template_table_html, {}))
+    rendered_table = render_to_string(template_table_html, context, request=request)
+    data["my_content"] = rendered_table
+    print("render to string")
+
+    return JsonResponse(data)
+
+
 class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
     """
     page with raw references table for single sample. used to add references and select for remap
@@ -849,6 +924,49 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
             project_name = "project"
             sample_name = "sample"
 
+        # search add reference bar.
+        context["references_table"] = None
+        context["references_count"] = 0
+        tag_add_reference = "search_add_reference_source"
+        print(self.request.GET.get(tag_add_reference))
+        references = []
+        if self.request.GET.get(tag_add_reference) != None and self.request.GET.get(
+            tag_add_reference
+        ):
+            print(self.request.GET.get(tag_add_reference))
+            print("here", self.request.GET.get(tag_add_reference))
+            references = ReferenceSourceFileMap.objects.filter(
+                Q(
+                    reference_source__description__icontains=self.request.GET.get(
+                        tag_add_reference
+                    )
+                )
+                | Q(
+                    reference_source__accid__icontains=self.request.GET.get(
+                        tag_add_reference
+                    )
+                )
+                | Q(
+                    reference_source__taxid__taxid__icontains=self.request.GET.get(
+                        tag_add_reference
+                    )
+                )
+            ).distinct()
+            print("references", references)
+
+            # show max 10 references
+            context["references_table"] = ReferenceSourceTable(references[:10])
+
+            # context["references_table"] = ReferenceSourceTable(references)
+            context["references_count"] = references.count()
+
+        if self.request.method == "POST":
+            references_form = ReferenceForm(self.request.POST)
+        else:
+            references_form = ReferenceForm()
+
+        context["references_form"] = references_form
+
         # raw_references = raw_references
         tag_search = "search_add_project_sample"
         if self.request.GET.get(tag_search) != None and self.request.GET.get(
@@ -879,7 +997,7 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
 
         if classification_runs.exists():
             compound_reference_table = CompoundReferenceScore(
-                raw_reference_compound, order_by=("-standard_score",)
+                raw_reference_compound, order_by=("score",)
             )
         else:
             compound_reference_table = CompoundReferenceTable(

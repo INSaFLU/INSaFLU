@@ -387,7 +387,7 @@
                 data_type: 'json',
                 success: function(data){
                     if (data["is_ok"] == true && data["is_deployed"] == false) { 
-                        alert("No runs to deploy");
+                        alert("No runs to deploy, check project settings.");
                     }
                     else if (data["is_ok"] == true && data["is_deployed"] == true) {
                         alert("Runs deployed");
@@ -449,7 +449,7 @@
             data_type: 'json',
             success: function(data){
                 if (data["is_ok"] == true && data["is_deployed"] == false) { 
-                    alert("No runs to deploy");
+                    alert("No runs to deploy, check project settings.");
                 }
                 else if (data["is_ok"] == true && data["is_deployed"] == true) {
                     alert("Runs deployed");

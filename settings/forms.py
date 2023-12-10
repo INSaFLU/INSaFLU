@@ -186,6 +186,14 @@ class SoftwareForm(forms.ModelForm):
                         for data_ in SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_vect_available
                     ]
                 elif (
+                    parameter.name == SoftwareNames.SOFTWARE_COMBINED_include_screening
+                ):
+                    list_data = [
+                        [data_, data_]
+                        for data_ in SoftwareNames.SOFTWARE_COMBINED_include_screening_options
+                    ]
+
+                elif (
                     parameter.name == "--db"
                     and parameter.software.pipeline_step.name
                     in self.televir_utiltity.steps_db_dependant

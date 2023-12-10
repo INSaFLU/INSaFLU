@@ -1,7 +1,21 @@
+from django import forms
 from django.utils.html import format_html
 
 from pathogen_identification.models import Projects
 from settings.models import Technology
+
+
+class ReferenceForm(forms.Form):
+    search = forms.CharField(
+        label="Search",
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Search",
+                "name": "search_add_reference",
+            }
+        ),
+    )
 
 
 class ReferenceProjectForm(forms.ModelForm):

@@ -710,7 +710,15 @@ class SampleTableMetagenomics(SampleTable):
 
 class ReferenceSourceTable(tables.Table):
     select_ref = tables.CheckBoxColumn(
-        accessor="pk", attrs={"th__input": {"id": "checkBoxAll"}}, orderable=False
+        accessor="pk",
+        attrs={
+            "th__input": {
+                "id": "select-all-checkbox-modal",
+                "class": "select-all-checkbox",
+                "type": "checkbox",
+            }
+        },
+        orderable=False,
     )
     description = tables.Column(verbose_name="Description")
     accid = tables.Column(verbose_name="Accession id")
@@ -721,8 +729,8 @@ class ReferenceSourceTable(tables.Table):
 
     def render_select_ref(self, value, record: RawReferenceCompound):
         return mark_safe(
-            '<input name="select_ref" id="{}_{}" type="checkbox" value="{}"/>'.format(
-                Constants.CHECK_BOX, record.id, value
+            '<input class="reference-checkbox"  name="select_source_ref" id="{}_{}" ref_id={}  type="checkbox" value="{}"/>'.format(
+                Constants.CHECK_BOX, record.id, record.id, value
             )
         )
 

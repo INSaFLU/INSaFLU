@@ -8,8 +8,10 @@
 {% load static %}
 {% block content %}
 {% block references_table %}
+
+
 <div class="table-responsive">
-    <table id="table_with_check_id" check_box_all="{{ check_box_all }}" class="table table-hover table-bordered table-striped" set-check-box-values-url="{% url 'set-check-box-values' %}" {% if references_table.attrs %} {{ references_table.attrs.as_html }}{% endif %}>
+    <table id="table_with_check_id" class="table table-hover table-bordered table-striped" set-check-box-values-url="{% url 'set-check-box-values' %}" {% if references_table.attrs %} {{ references_table.attrs.as_html }}{% endif %}>
       {% block references_table.thead %}
         <thead>                 
           {% if references_count > 0 %}

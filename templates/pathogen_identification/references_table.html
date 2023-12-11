@@ -9,6 +9,13 @@
 
 {% load static %}
 
+{% block extra_messages %}
+	<!-- set the messages -->
+	<div class="container">
+		<div id="id_messages_remove"></div>
+	</div>
+{% endblock %}
+
 
 {% block css %}
 	{% load static from staticfiles %}
@@ -34,8 +41,22 @@
 
 <style>
   .table-container {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
     display: flex;
     margin-bottom: 10px; 
+}
+
+.table-references-added {
+  margin-bottom: 0px;
+}
+
+.table-responsive {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  display: flex;
 }
 
 .sidebar {
@@ -66,6 +87,11 @@
 .table-content {
     flex-grow: 1;
     margin-left: 10px; /* Add margin to create space between the sidebar and table */
+}
+
+.table {
+  width: 100%;
+  height: 100%;
 }
 </style>
 
@@ -122,6 +148,27 @@
   </div>
 </div>
 
+<div id="accordion2" role="tablist" aria-multiselectable="true">
+  <div class="card">
+      <div class="card">
+          <div class="card-header" role="tab" id="headingsample2">
+              <div class="row">
+                  <div class="col-sm" >
+                      <h5 class="mb-0" >
+                          <a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapsehead2" aria-expanded="false" aria-controls="headinghead">
+                              <strong> Added Samples {{sample_name}}</strong>
+                          </a>
+                      </h5>
+                  </div>
+              </div>
+          </div>
+      </div>
+      <div id="collapsehead2" class="collapse" role="tabpanel" aria-labelledby="headingsample2">
+        {{ added_references_table }}
+      </div>
+
+  </div>
+</div>
 
 
 <div class="table-container">
@@ -138,7 +185,7 @@
             {{ meta_parameters  }}  parameters
           </button>
           <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#myModal">
-            Add Samples
+            Add References
           </button>
       </div>
   </div>
@@ -254,7 +301,7 @@
   <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h4 class="modal-title" id="myModalLabel">Add Samples</h4>
+        <h4 class="modal-title" id="myModalLabel">Add References</h4>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -264,7 +311,7 @@
           <div class="col-sm-9">          <!-- Your search form code here -->
             <form id="reference-search-form">
               <div class="input-group">
-                <input id="search-input" type="text" class="form-control" placeholder="Name, Type, Week and Data set">
+                <input id="search-input" type="text" class="form-control" placeholder="Description, Accid, Taxid">
                 <div class="input-group-append">
                   <button type="submit" class="load-content btn btn-primary" href="{% url 'filter_reference_table' %}">Search</button>
                 </div>
@@ -273,17 +320,14 @@
           </div>
         </div>
         <div id="reference_table_div" class="table-container">
-
         </div>
       </div>
       <div class="modal-footer">
-        <!-- Additional modal footer content if needed -->
+        <button type="button" class="btn btn-primary" id="submit-button" href="{% url 'add_references_to_sample' %}" reload_ref= "{% url 'added_reference_table' %}">Submit</button>
       </div>
     </div>
   </div>
 </div>
-
-
 
 {% endblock content %}
 
@@ -291,12 +335,89 @@
 
 <script>
 
+
+  $(document).ready(function() {
+    $('#submit-button').click(function() {
+      var url = $('#submit-button').attr('href');
+      var reload_url = $('#submit-button').attr('reload_ref');
+      var checkedRows = [];
+      $('.reference-checkbox:checked').each(function() {
+        // collect ids of checked rows
+
+        var ref_id= $(this).attr('ref_id');
+
+        checkedRows.push(ref_id);
+      });
+  
+      // Process the checked rows
+      // Add your processing logic here
+      // send row ids to server using .ajax
+      $.ajax({
+        type: 'POST',
+        url: url,
+        data: {
+          'csrfmiddlewaretoken': '{{ csrf_token }}',
+          'sample_id': '{{ sample_index }}',
+          'reference_ids': checkedRows
+        },
+        success: function(data) {
+          if (data['is_ok']) {
+            $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
+              'References successfully added' +
+              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+              '</div>');
+              // reload table
+              $.ajax({
+                url: reload_url,
+                type: 'GET',
+                data: {
+                    sample_id: '{{ sample_index }}',
+                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                },
+                success: function (data) {
+
+                  $('#collapsehead2').html(data.my_content);
+                  $('#reference_table_div').html(data.empty_content);
+                  // empty #search-input
+                  $('#search-input').val('');
+                }
+              }
+              )
+              // clear selection 
+              $('.reference-checkbox').prop('checked', false);
+              
+              
+              // drop modal
+              $('#myModal').modal('hide');
+
+          } else if (data['is_error']) {
+            $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+              'The references were not added.' +
+              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+              '</div>');
+
+              // drop modal
+              $('#myModal').modal('hide');
+          } else if (data['is_empty']) {
+            $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+              'No references were selected.' +
+              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+              '</div>');
+
+              // drop modal
+              
+          }
+          
+        }
+      })
+
+    });
+  });
+
   var loadThisContent = function (event) {
     event.preventDefault();
     var btn = $(this);
-    console.log(btn.attr("href"));
     var url = btn.attr("href");
-    console.log($('#search-input').val());
     $.ajax({
         url: btn.attr("href"),
         type: 'GET',
@@ -305,10 +426,22 @@
             csrfmiddlewaretoken: '{{ csrf_token }}',
         },
         success: function (data) {
-          console.log("success");
-          console.log(data);
+
           $('#reference_table_div').html(data.my_content);
           
+          if (data["references_count"] > 0){
+
+          var selectAllCheckbox = document.getElementById('Select-All-Checkbox-Modal');
+
+          var referenceCheckboxes = document.getElementsByClassName('reference-checkbox');
+
+     
+          selectAllCheckbox.addEventListener('change', function() {
+            for (var i = 0; i < referenceCheckboxes.length; i++) {
+              referenceCheckboxes[i].checked = this.checked;
+            }
+          });
+          }
         }
     }
     )
@@ -340,28 +473,30 @@
             csrfmiddlewaretoken: '{{ csrf_token }}',
         }, // data sent with the post request
         success: function(data) {
-            if (data['is_ok'] === true && data['is_deployed'] === true){
-                /// add message with informaton
-                $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
-                'The sample \'' + $('#id-modal-body-deploy-metagenomics-sample').attr('ref_name') + '\' was successfully deployed.' +
-                '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-                '</div>');
-                location.reload() 
-            }
-            else if (data['is_ok'] === true && data['is_deployed'] === false){
-                /// add message with informaton
-                $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-                'The sample \'' + $('#id-modal-body-deploy-metagenomics-sample').attr('ref_name') + '\' was not deployed. Check if metagenomics settings are correctly set.' +
-                '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-                '</div>');
-            }
-            else{
-                /// add message with informaton
-                $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-                'The sample \'' + $('#id-modal-body-deploy-metagenomics-sample').attr('ref_name') + '\' was not deployed. Check if metagenomics settings are correctly set.' +
-                '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-                '</div>');
-            }
+
+          
+          if (data['is_ok'] === true && data['is_deployed'] === true){
+              /// add message with informaton
+              $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
+              'The sample \'' + $('#id-modal-body-deploy-metagenomics-sample').attr('ref_name') + '\' was successfully deployed.' +
+              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+              '</div>');
+              location.reload() 
+          }
+          else if (data['is_ok'] === true && data['is_deployed'] === false){
+              /// add message with informaton
+              $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+              'The sample \'' + $('#id-modal-body-deploy-metagenomics-sample').attr('ref_name') + '\' was not deployed. Check if metagenomics settings are correctly set.' +
+              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+              '</div>');
+          }
+          else{
+              /// add message with informaton
+              $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+              'The sample \'' + $('#id-modal-body-deploy-metagenomics-sample').attr('ref_name') + '\' was not deployed. Check if metagenomics settings are correctly set.' +
+              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+              '</div>');
+          }
         }
     })
   }

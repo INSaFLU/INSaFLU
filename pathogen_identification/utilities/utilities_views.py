@@ -13,6 +13,7 @@ from django.views import generic
 from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.models import (
     FinalReport,
+    ParameterSet,
     PIProject_Sample,
     Projects,
     RawReference,
@@ -34,6 +35,71 @@ from pathogen_identification.utilities.utilities_general import (
 )
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
+
+
+class SampleReferenceManager:
+    def __init__(self, sample: PIProject_Sample):
+        self.sample = sample
+
+        self.prep_storage()
+
+    def proxy_parameter_set_prepare(self):
+        try:
+            parameter_set_management = ParameterSet.objects.get(
+                sample__project=self.sample.project,
+                sample=self.sample,
+                leaf=None,
+                status=ParameterSet.STATUS_PROXIED,
+            )
+
+        except ParameterSet.DoesNotExist:
+            parameter_set_management = ParameterSet.objects.create(
+                sample=self.sample,
+                leaf=None,
+                status=ParameterSet.STATUS_PROXIED,
+                project=self.sample.project,
+            )
+            parameter_set_management.save()
+
+    @property
+    def parameter_set_proxy(self):
+        return ParameterSet.objects.get(
+            sample__project=self.sample.project,
+            sample=self.sample,
+            leaf=None,
+            status=ParameterSet.STATUS_PROXIED,
+        )
+
+    def prep_storage(self):
+        self.proxy_parameter_set_prepare()
+
+        try:
+            storage_run = RunMain.objects.get(
+                name="storage",
+                run_type=RunMain.RUN_TYPE_STORAGE,
+                project=self.sample.project,
+                sample=self.sample,
+            )
+        except RunMain.DoesNotExist:
+            storage_run = RunMain.objects.create(
+                name="storage",
+                sample=self.sample,
+                run_type=RunMain.RUN_TYPE_STORAGE,
+                project=self.sample.project,
+                parameter_set=self.parameter_set_proxy,
+                host_depletion_performed=False,
+                enrichment_performed=False,
+            )
+            storage_run.save()
+
+    @property
+    def storage_run(self):
+        return RunMain.objects.get(
+            name="storage",
+            run_type=RunMain.RUN_TYPE_STORAGE,
+            project=self.sample.project,
+            sample=self.sample,
+        )
 
 
 class EmptyRemapMain:

@@ -13,7 +13,8 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from managing_files.models import Sample
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from pathogen_identification.data_classes import IntermediateFiles
 
 # Create your models here.
@@ -287,6 +288,7 @@ class ParameterSet(models.Model):
     STATUS_ERROR = 3
     STATUS_QUEUED = 4
     STATUS_KILLED = 5
+    STATUS_PROXIED = 6
     STATUS_CHOICES = (
         (STATUS_NOT_STARTED, "Not started"),
         (STATUS_RUNNING, "Running"),
@@ -294,6 +296,7 @@ class ParameterSet(models.Model):
         (STATUS_ERROR, "Error"),
         (STATUS_QUEUED, "Queued"),
     )
+    
 
     sample = models.ForeignKey(PIProject_Sample, on_delete=models.PROTECT)
     project = models.ForeignKey(Projects, on_delete=models.CASCADE, null=True)

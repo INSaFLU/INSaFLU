@@ -107,8 +107,18 @@ urlpatterns = [
     ),
     url(
         r"filter_reference_table$",
-        PIviews.inject_references,
+        PIviews.inject_references_filter,
         name="filter_reference_table",
+    ),
+    url(
+        r"added_reference_table$",
+        PIviews.inject_references_added_html,
+        name="added_reference_table",
+    ),
+    url(
+        r"add_references_to_sample$",
+        PIajax_views.add_references_to_sample,
+        name="add_references_to_sample",
     ),
     url(
         r"Scaffold/project_(?P<pk1>\d+)/sample_(?P<pk2>\d+)/run_(?P<pk3>\d+)/scaffold_(?P<reference>[a-zA-Z0-9_]+)",

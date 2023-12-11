@@ -6,6 +6,7 @@ from typing import List, Optional
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
+from pathogen_identification.models import ReferenceSourceFileMap, ReferenceTaxid
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
 from pathogen_identification.utilities.utilities_general import (
@@ -589,6 +590,33 @@ class RunMetadataHandler:
         self.raw_targets = raw_targets
         self.merged_targets = targets
 
+    @staticmethod
+    def metadata_from_taxid(taxid: str) -> pd.DataFrame:
+        ref_db = pd.DataFrame(columns=["taxid", "acc", "description", "file"])
+        reference_source = ReferenceSourceFileMap.objects.filter(
+            reference_source__taxid__taxid=taxid
+        )
+
+        if len(reference_source) == 0:
+            return ref_db
+
+        ref_db = pd.DataFrame.from_records(
+            reference_source.values(
+                "reference_source__taxid__taxid",
+                "reference_source__accid",
+                "reference_source__description",
+                "reference_source_file__file",
+            ),
+            columns=[
+                "taxid",
+                "acc",
+                "description",
+                "file",
+            ],
+        )
+
+        return ref_db
+
     def generate_mapping_targets(
         self,
         targets,
@@ -611,18 +639,20 @@ class RunMetadataHandler:
         targets.taxid = targets.taxid.astype(int)
 
         for taxid in targets.taxid.unique():
-            if len(taxf[taxf.taxid == taxid]) == 0:
+            nset = self.metadata_from_taxid(taxid)
+
+            if nset.empty:
                 remap_absent.append(taxid)
 
                 nset = pd.DataFrame(columns=["taxid"])
                 remap_plan.append([taxid, "none", "none", "none"])
                 continue
 
-            nset = (
-                taxf[taxf.taxid == taxid]
-                .reset_index(drop=True)
-                .drop_duplicates(subset=["acc"], keep="first")
-            )
+            # nset = (
+            #    taxf[taxf.taxid == taxid]
+            #    .reset_index(drop=True)
+            #    .drop_duplicates(subset=["acc"], keep="first")
+            # )
             ###
             files_to_map = self.filter_files_to_map(nset)
 
@@ -637,7 +667,6 @@ class RunMetadataHandler:
                     nsu = nsu.drop_duplicates(
                         subset=["taxid"], keep="first"
                     ).reset_index()
-                    # nsu= nsu.iloc[:max_remap, :]
 
                 for pref in nsu.acc.unique():
                     nsnew = nsu[nsu.acc == pref].reset_index(drop=True)

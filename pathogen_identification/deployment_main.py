@@ -27,7 +27,6 @@ from pathogen_identification.utilities.update_DBs import (
     Update_Remap,
     Update_RunMain_Initial,
     Update_RunMain_Secondary,
-    Update_Sample_Runs,
     UpdateRawReferences_safe,
     get_run_parents,
 )
@@ -571,10 +570,10 @@ class Run_Main_from_Leaf:
 
         return True
 
-    def Update_dbs(self):
-        db_updated = Update_Sample_Runs(self.container.run_engine, self.parameter_set)
-
-        return db_updated
+    # def Update_dbs(self):
+    #    db_updated = Update_Sample_Runs(self.container.run_engine, self.parameter_set)
+    #
+    #    return db_updated
 
     def register_submission(self):
         self.set_run_process_running()

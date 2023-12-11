@@ -28,36 +28,52 @@ from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProcessControler
 from managing_files.tables import SampleToProjectsTable
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.forms import ReferenceForm
-from pathogen_identification.models import (ContigClassification, FinalReport,
-                                            ParameterSet, PIProject_Sample,
-                                            Projects, RawReference,
-                                            ReadClassification,
-                                            ReferenceContigs,
-                                            ReferenceMap_Main,
-                                            ReferenceSourceFileMap,
-                                            RunAssembly, RunDetail, RunMain,
-                                            RunRemapMain, Sample, TelevirRunQC)
+from pathogen_identification.models import (
+    ContigClassification,
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReadClassification,
+    ReferenceContigs,
+    ReferenceMap_Main,
+    ReferenceSourceFileMap,
+    RunAssembly,
+    RunDetail,
+    RunMain,
+    RunRemapMain,
+    Sample,
+    TelevirRunQC,
+)
 from pathogen_identification.modules.object_classes import RunQC_report
-from pathogen_identification.tables import (CompoundReferenceScore,
-                                            CompoundReferenceTable,
-                                            ContigTable, ProjectTable,
-                                            ProjectTableMetagenomics,
-                                            RawReferenceTable,
-                                            ReferenceSourceTable, RunMainTable,
-                                            SampleTable)
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
+from pathogen_identification.tables import (
+    CompoundReferenceScore,
+    CompoundReferenceTable,
+    ContigTable,
+    ProjectTable,
+    ProjectTableMetagenomics,
+    RawReferenceTable,
+    ReferenceSourceTable,
+    RunMainTable,
+    SampleTable,
+)
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
 from pathogen_identification.utilities.utilities_general import (
-    get_services_dir, infer_run_media_dir)
-from pathogen_identification.utilities.utilities_pipeline import \
-    RawReferenceUtils
+    get_services_dir,
+    infer_run_media_dir,
+)
+from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
 from pathogen_identification.utilities.utilities_views import (
-    EmptyRemapMain, RawReferenceCompound, ReportSorter,
-    final_report_best_cov_by_accid, recover_assembly_contigs)
+    EmptyRemapMain,
+    RawReferenceCompound,
+    ReportSorter,
+    final_report_best_cov_by_accid,
+    recover_assembly_contigs,
+)
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
 from utils.support_django_template import get_link_for_dropdown_item
@@ -84,7 +100,9 @@ def clean_check_box_in_session(request):
         del request.session[key]
 
 
-def is_all_check_box_in_session(vect_check_to_test, request):
+def is_all_check_box_in_session(
+    vect_check_to_test, request, prefix: str = Constants.CHECK_BOX
+):
     """
     test if all check boxes are in session
     If not remove the ones that are in and create the new ones all False
@@ -95,7 +113,7 @@ def is_all_check_box_in_session(vect_check_to_test, request):
     ## get the dictonary
     for key in request.session.keys():
         if (
-            key.startswith(Constants.CHECK_BOX)
+            key.startswith(prefix)
             and len(key.split("_")) == 3
             and utils.is_integer(key.split("_")[2])
         ):
@@ -802,22 +820,16 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
 from django.http import JsonResponse
 from django.template.loader import render_to_string
 
+from fluwebvirus.settings import BASE_DIR
 
-def inject_references(request):
-    print("here inject_references")
-    print(request.GET.get("search_add_project_sample"))
-    context = {}
-    data = {}
 
+def inject_references_filter(request, max_references: int = 10):
     ###
     tag_add_reference = "search_add_project_sample"
-    print(request.GET.get(tag_add_reference))
     references = []
     if request.GET.get(tag_add_reference) != None and request.GET.get(
         tag_add_reference
     ):
-        print(request.GET.get(tag_add_reference))
-        print("here", request.GET.get(tag_add_reference))
         references = ReferenceSourceFileMap.objects.filter(
             Q(
                 reference_source__description__icontains=request.GET.get(
@@ -832,9 +844,20 @@ def inject_references(request):
             )
         ).distinct()
 
-    context["references_table"] = ReferenceSourceTable(references[:10])
+        # show max 10 references
+        references = references[:max_references]
+
+        data = inject_references(references, request)
+
+        return JsonResponse(data)
+
+
+def inject_references(references: list, request):
+    context = {}
+    data = {}
+
+    context["references_table"] = ReferenceSourceTable(references)
     context["references_count"] = len(references)
-    from fluwebvirus.settings import BASE_DIR
 
     template_table_html = os.path.join(
         BASE_DIR,
@@ -843,15 +866,49 @@ def inject_references(request):
     )
     template_table_html = "pathogen_identification/references_table_table_only.html"
 
-    print(os.path.exists(template_table_html))
     # render tamplate using context
-    print(context)
-    # print(render_to_string(template_table_html, {}))
     rendered_table = render_to_string(template_table_html, context, request=request)
     data["my_content"] = rendered_table
-    print("render to string")
+    data["references_count"] = len(references)
 
-    return JsonResponse(data)
+    return data
+
+
+def inject_references_added_html(request):
+    sample_pk = int(request.GET.get("sample_id"))
+    query_set_added_manual = RawReference.objects.filter(
+        run__sample__pk=sample_pk, run__run_type=RunMain.RUN_TYPE_STORAGE
+    )
+
+    added_references_context = inject__added_references(query_set_added_manual, request)
+    empty_data_context = inject_references([], request)
+    added_references_context["empty_content"] = empty_data_context["my_content"]
+
+    return JsonResponse(added_references_context)
+
+
+def inject__added_references(references: list, request):
+    context = {}
+    data = {}
+
+    context["references_table"] = ReferenceSourceTable(references)
+    context["references_count"] = len(references)
+
+    template_table_html = os.path.join(
+        BASE_DIR,
+        "templates",
+        "pathogen_identification/references_table_table_only_padding.html",
+    )
+    template_table_html = (
+        "pathogen_identification/references_table_table_only_padding.html"
+    )
+
+    # render tamplate using context
+    rendered_table = render_to_string(template_table_html, context, request=request)
+    data["my_content"] = rendered_table
+    data["references_count"] = len(references)
+
+    return data
 
 
 class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
@@ -897,6 +954,12 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
                 .exclude(accid="-")
                 .distinct("accid")
             )
+
+            query_set_added_manual = query_set.filter(
+                run__run_type=RunMain.RUN_TYPE_STORAGE
+            )
+            query_set = query_set.exclude(run__run_type=RunMain.RUN_TYPE_STORAGE)
+
             sample_name = sample_main.sample.name
         else:
             messages.error(
@@ -905,41 +968,13 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
                 fail_silently=True,
             )
             query_set = RawReference.objects.none()
+            query_set_added_manual = RawReference.objects.none()
             project_name = "project"
             sample_name = "sample"
 
         # search add reference bar.
         context["references_table"] = None
         context["references_count"] = 0
-        tag_add_reference = "search_add_reference_source"
-        references = []
-        if self.request.GET.get(tag_add_reference) != None and self.request.GET.get(
-            tag_add_reference
-        ):
-
-            references = ReferenceSourceFileMap.objects.filter(
-                Q(
-                    reference_source__description__icontains=self.request.GET.get(
-                        tag_add_reference
-                    )
-                )
-                | Q(
-                    reference_source__accid__icontains=self.request.GET.get(
-                        tag_add_reference
-                    )
-                )
-                | Q(
-                    reference_source__taxid__taxid__icontains=self.request.GET.get(
-                        tag_add_reference
-                    )
-                )
-            ).distinct()
-
-            # show max 10 references
-            context["references_table"] = ReferenceSourceTable(references[:10])
-
-            # context["references_table"] = ReferenceSourceTable(references)
-            context["references_count"] = references.count()
 
         if self.request.method == "POST":
             references_form = ReferenceForm(self.request.POST)
@@ -947,6 +982,16 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
             references_form = ReferenceForm()
 
         context["references_form"] = references_form
+
+        #### added references table
+
+        # references_added_table = ReferenceSourceTable(query_set_added_manual)
+        print(query_set_added_manual)
+        added_references_context = inject__added_references(
+            query_set_added_manual, self.request
+        )
+        context["added_references_table"] = added_references_context["my_content"]
+        print(added_references_context["references_count"])
 
         # raw_references = raw_references
         tag_search = "search_add_project_sample"

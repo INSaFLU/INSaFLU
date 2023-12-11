@@ -32,6 +32,7 @@ from pathogen_identification.utilities.utilities_pipeline import (
 )
 from pathogen_identification.utilities.utilities_views import (
     ReportSorter,
+    SampleReferenceManager,
     set_control_reports,
 )
 from utils.process_SGE import ProcessSGE
@@ -568,32 +569,12 @@ def sort_report_sample(request):
         data = {"is_ok": False, "is_deployed": False}
         process_SGE = ProcessSGE()
         sample = PIProject_Sample.objects.get(pk=int(request.POST["sample_id"]))
+        references = request.POST.getlist("references[]")
 
-        project = sample.project
-        report_layout_params = TelevirParameters.get_report_layout_params(
-            project_pk=project.pk
-        )
-        try:
-            final_reports = FinalReport.objects.filter(sample=sample)
-            report_sorter = ReportSorter(final_reports, report_layout_params)
+        print(references)
 
-            if report_sorter.run is None:
-                pass
-            elif report_sorter.check_analyzed():
-                pass
-            else:
-                taskID = process_SGE.set_submit_televir_sort_pisample_reports(
-                    user=request.user,
-                    pisample_pk=sample.pk,
-                )
-                data["is_deployed"] = True
 
-        except Exception as e:
-            print(e)
-            return JsonResponse(data)
-
-        data["is_ok"] = True
-        return JsonResponse(data)
+from pathogen_identification.models import RawReference, ReferenceSourceFileMap
 
 
 @login_required
@@ -603,39 +584,56 @@ def add_references_to_sample(request):
     add references to sample
     """
     if request.is_ajax():
+        data = {"is_ok": False, "is_error": False, "is_empty": False}
         temp_directory = Utils().get_temp_dir()
         sample_id = int(request.POST["sample_id"])
-        references_file = request.FILES["references_file"]
+        sample = PIProject_Sample.objects.get(pk=sample_id)
 
-        references_filepath = os.path.join(
-            temp_directory,
-            references_file.name.replace(" ", "_").replace("(", "_").replace(")", "_"),
-        )
+        reference_id_list = request.POST.getlist("reference_ids[]")
 
-        with open(references_filepath, "wb") as f:
-            f.write(references_file.file.read())
+        if len(reference_id_list) == 0:
+            data["is_empty"] = True
+            return JsonResponse(data)
 
-        process_controler = ProcessControler()
+        reference_id_list = [int(x) for x in reference_id_list]
 
+        references_existing = []
+
+        sample_reference_manager = SampleReferenceManager(sample)
+        print("sample_reference_manager", reference_id_list)
+        print("#################")
         try:
-            ProcessControler.objects.get(
-                owner__id=request.user.pk,
-                name=process_controler.get_name_add_references_to_sample(
-                    sample_pk=sample_id,
-                ),
-                is_running=True,
+            ref_sources = ReferenceSourceFileMap.objects.filter(
+                pk__in=reference_id_list
             )
+            print(ref_sources)
 
-        except ProcessControler.DoesNotExist:
-            process_SGE = ProcessSGE()
-            taskID = process_SGE.set_submit_add_references_metagenomics(
-                user=request.user,
-                sample_pk=sample_id,
-                reference_filepath=references_filepath,
-                out_dir=temp_directory,
-            )
-            data["is_deployed"] = True
+            for reference in ref_sources:
+                if RawReference.objects.filter(
+                    accid=reference.accid,
+                    run__sample__pk=sample_id,
+                ).exists():
+                    references_existing.append(reference.accid)
+                    continue
 
+                new_reference = RawReference(
+                    run=sample_reference_manager.storage_run,
+                    accid=reference.accid,
+                    taxid=reference.taxid,
+                    description=reference.description,
+                    status=RawReference.STATUS_UNMAPPED,
+                    counts=0,
+                    classification_source="none",
+                )
+
+                new_reference.save()
+
+        except Exception as e:
+            print(e)
+            data["is_error"] = True
+            return JsonResponse(data)
+
+        print("references_existing", references_existing)
         data = {"is_ok": True}
         return JsonResponse(data)
 

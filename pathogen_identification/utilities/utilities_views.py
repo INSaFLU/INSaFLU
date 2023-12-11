@@ -1017,7 +1017,6 @@ class RawReferenceCompound:
         mapped = (
             FinalReport.objects.filter(
                 taxid=self.taxid,
-                accid=self.accid,
                 sample=sample,
             )
             .order_by("-coverage")

@@ -28,52 +28,36 @@ from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProcessControler
 from managing_files.tables import SampleToProjectsTable
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from pathogen_identification.forms import ReferenceForm
-from pathogen_identification.models import (
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReadClassification,
-    ReferenceContigs,
-    ReferenceMap_Main,
-    ReferenceSourceFileMap,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    RunRemapMain,
-    Sample,
-    TelevirRunQC,
-)
+from pathogen_identification.models import (ContigClassification, FinalReport,
+                                            ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            ReadClassification,
+                                            ReferenceContigs,
+                                            ReferenceMap_Main,
+                                            ReferenceSourceFileMap,
+                                            RunAssembly, RunDetail, RunMain,
+                                            RunRemapMain, Sample, TelevirRunQC)
 from pathogen_identification.modules.object_classes import RunQC_report
-from pathogen_identification.tables import (
-    CompoundReferenceScore,
-    CompoundReferenceTable,
-    ContigTable,
-    ProjectTable,
-    ProjectTableMetagenomics,
-    RawReferenceTable,
-    ReferenceSourceTable,
-    RunMainTable,
-    SampleTable,
-)
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.tables import (CompoundReferenceScore,
+                                            CompoundReferenceTable,
+                                            ContigTable, ProjectTable,
+                                            ProjectTableMetagenomics,
+                                            RawReferenceTable,
+                                            ReferenceSourceTable, RunMainTable,
+                                            SampleTable)
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
 from pathogen_identification.utilities.utilities_general import (
-    get_services_dir,
-    infer_run_media_dir,
-)
-from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
+    get_services_dir, infer_run_media_dir)
+from pathogen_identification.utilities.utilities_pipeline import \
+    RawReferenceUtils
 from pathogen_identification.utilities.utilities_views import (
-    EmptyRemapMain,
-    RawReferenceCompound,
-    ReportSorter,
-    final_report_best_cov_by_accid,
-    recover_assembly_contigs,
-)
+    EmptyRemapMain, RawReferenceCompound, ReportSorter,
+    final_report_best_cov_by_accid, recover_assembly_contigs)
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
 from utils.support_django_template import get_link_for_dropdown_item
@@ -928,13 +912,11 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
         context["references_table"] = None
         context["references_count"] = 0
         tag_add_reference = "search_add_reference_source"
-        print(self.request.GET.get(tag_add_reference))
         references = []
         if self.request.GET.get(tag_add_reference) != None and self.request.GET.get(
             tag_add_reference
         ):
-            print(self.request.GET.get(tag_add_reference))
-            print("here", self.request.GET.get(tag_add_reference))
+
             references = ReferenceSourceFileMap.objects.filter(
                 Q(
                     reference_source__description__icontains=self.request.GET.get(
@@ -952,7 +934,6 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
                     )
                 )
             ).distinct()
-            print("references", references)
 
             # show max 10 references
             context["references_table"] = ReferenceSourceTable(references[:10])

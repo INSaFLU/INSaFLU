@@ -600,13 +600,11 @@ def add_references_to_sample(request):
         references_existing = []
 
         sample_reference_manager = SampleReferenceManager(sample)
-        print("sample_reference_manager", reference_id_list)
-        print("#################")
+
         try:
             ref_sources = ReferenceSourceFileMap.objects.filter(
                 pk__in=reference_id_list
             )
-            print(ref_sources)
 
             for reference in ref_sources:
                 if RawReference.objects.filter(
@@ -638,12 +636,48 @@ def add_references_to_sample(request):
         return JsonResponse(data)
 
 
+from pathogen_identification.views import inject__added_references
+
+
+@login_required
+@require_POST
+def remove_added_reference(request):
+    """
+    remove added reference
+    """
+
+    if request.is_ajax():
+        data = {"is_ok": False, "is_error": False}
+
+        reference_id = int(request.POST["reference_id"])
+        sample_id = int(request.POST["sample_id"])
+
+        try:
+            reference = RawReference.objects.get(pk=reference_id)
+            reference.delete()
+        except Exception as e:
+            print(e)
+            data["is_error"] = True
+            return JsonResponse(data)
+
+        query_set_added_manual = RawReference.objects.filter(
+            run__sample__pk=sample_id, run__run_type=RunMain.RUN_TYPE_STORAGE
+        )
+
+        context = inject__added_references(query_set_added_manual, request)
+        data["added_references"] = context["my_content"]
+
+        data = {"is_ok": True}
+        return JsonResponse(data)
+
+
 @login_required
 @require_POST
 def deploy_televir_map(request):
     """
     prepare data for deployment of pathogen identification.
     """
+
     if request.is_ajax():
         data = {"is_ok": False, "is_deployed": False}
 

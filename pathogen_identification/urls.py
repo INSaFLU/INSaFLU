@@ -116,6 +116,11 @@ urlpatterns = [
         name="added_reference_table",
     ),
     url(
+        r"remove_reference$",
+        PIajax_views.remove_added_reference,
+        name="remove_added_reference",
+    ),
+    url(
         r"add_references_to_sample$",
         PIajax_views.add_references_to_sample,
         name="add_references_to_sample",

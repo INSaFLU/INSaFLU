@@ -40,22 +40,28 @@
 {% block content %}
 
 <style>
+
+  .sidebar-header {
+    padding: 10px;
+    background-color: #ccc; /* Set the background color for the header */
+    text-align: center;
+  }
   .table-container {
     width: 100%;
     height: 100%;
-    overflow: auto;
     display: flex;
     margin-bottom: 10px; 
 }
 
 .table-references-added {
   margin-bottom: 0px;
+  overflow: auto;
+  max-height: 500px;
 }
 
 .table-responsive {
   width: 100%;
   height: 100%;
-  overflow: auto;
   display: flex;
 }
 
@@ -94,10 +100,6 @@
   height: 100%;
 }
 </style>
-
-
-
-
 
 <div id="accordion1" role="tablist" aria-multiselectable="true">
   <div class="card">
@@ -160,6 +162,13 @@
                           </a>
                       </h5>
                   </div>
+                  <div class="col-sm">
+                    <div class="float-right">
+                      <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#myModal">
+                        Add References
+                      </button>
+                    </div>
+                </div>
               </div>
           </div>
       </div>
@@ -178,15 +187,19 @@
           <h3>Sample</h3>
       </div>
       <div class="sidebar-actions">
+        <button class="btn btn-primary">
+          {{ meta_parameters  }}  Parameters
+        </button>
           <button class="btn btn-primary">
             {{ deploy_metagenomics }} Deploy Combined
           </button>
           <button class="btn btn-primary">
-            {{ meta_parameters  }}  parameters
+            Deploy Screening
           </button>
-          <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#myModal">
-            Add References
+          <button class="btn btn-primary">
+            Map Selected
           </button>
+
       </div>
   </div>
   <div class="table-content">
@@ -327,6 +340,34 @@
       </div>
     </div>
   </div>
+</div>
+
+
+<!-- The remove modal -->
+<div class="modal fade" id="id_remove_modal">
+	<div class="modal-dialog">
+		<div class="modal-content">
+
+			<!-- Modal Header -->
+			<div class="modal-header alert alert-warning">
+				<h4 class="modal-title-remove">Remove a Reference</h4>
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+			</div>
+
+			<!-- Modal body -->
+			<div class="modal-body mx-auto mw-100">
+				<div id="id-modal-body-remove-sample" sample_id="{{ sample_index }}" remove-single-value-url="{% url 'remove_added_reference' %}" data-csrf= "{{ csrf_token }}">
+					<label id="id-label-remove" class="col-form-label">Folder Name</label>
+				</div>
+			</div>
+			<!-- Modal footer -->
+			<div class="modal-footer" id="id-modal-footer-remove">
+				<button id="id-remove-button" type="button" class="btn btn-primary" data-dismiss="modal">Remove</button>
+				<button id="id-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal"
+					aria-hidden="true">Cancel</button>
+			</div>
+		</div>
+	</div>
 </div>
 
 {% endblock content %}
@@ -512,7 +553,7 @@
 <script type="text/javascript" src="{% static 'js/graph_televir/htmlwidgets-1.6.2/htmlwidgets.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/graph_televir/d3-4.10.2/d3.min.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/graph_televir/collapsibleTree-binding-0.1.7/collapsibleTree.js' %}"></script>
-
+<script type="text/javascript" src="{% static 'js/televir_projects/remove_added_reference.js' %}"></script>
 {% endblock %}
 
 

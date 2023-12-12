@@ -11,32 +11,20 @@ from constants.constants import Constants
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReadClassification,
-    ReferenceContigs,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    SampleQC,
-    TelevirRunQC,
-)
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.models import (ContigClassification, FinalReport,
+                                            ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            ReadClassification,
+                                            ReferenceContigs, RunAssembly,
+                                            RunDetail, RunMain, SampleQC,
+                                            TelevirRunQC)
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.utilities_general import (
-    get_project_dir,
-    get_project_dir_no_media_root,
-)
+    get_project_dir, get_project_dir_no_media_root)
 from pathogen_identification.utilities.utilities_views import (
-    RawReferenceCompound,
-    ReportSorter,
-    check_sample_software_exists,
-    duplicate_metagenomics_software,
-)
+    RawReferenceCompound, ReportSorter, check_sample_software_exists,
+    duplicate_metagenomics_software)
 from settings.models import Parameter, Software
 
 
@@ -691,7 +679,7 @@ class SampleTableMetagenomics(SampleTable):
             + 'href="#id_deploy_metagenomics_modal" data-toggle="modal" data-toggle="tooltip" '
             + 'id="deploy_metagenomics_modal" '
             + 'title="Deploy Metagenomics"'
-            + f"pk={record.pk} "
+            + f" pk={record.pk} "
             + f"ref_name={record.name} "
             + '><i class="fa fa-flask"></i></span> </a>'
         )
@@ -706,6 +694,36 @@ class SampleTableMetagenomics(SampleTable):
             parameters = parameters + deploy_metagenomics
 
         return mark_safe(parameters)
+
+
+class AddedReferenceTable(tables.Table):
+    description = tables.Column(verbose_name="Description")
+    accid = tables.Column(verbose_name="Accession id")
+    taxid = tables.Column(verbose_name="Taxid")
+
+    class Meta:
+        attrs = {"class": "paleblue"}
+
+    def render_description(self, record: RawReferenceCompound):
+        description = record.description
+        if description is None:
+            description = "Not Available"
+
+        return mark_safe(
+            '<a href="#id_remove_modal" id="id_remove_reference_modal" data-toggle="modal" data-toggle="tooltip" title="Delete"'
+            + '" pk="'
+            + str(record.pk)
+            + '" ref_name="'
+            + record.accid
+            + '"><i class="fa fa-trash"></i></span> </a>'
+            + record.description
+        )
+
+    def render_accid(self, record: RawReferenceCompound):
+        return record.accid
+
+    def render_taxid(self, record: RawReferenceCompound):
+        return record.taxid
 
 
 class ReferenceSourceTable(tables.Table):

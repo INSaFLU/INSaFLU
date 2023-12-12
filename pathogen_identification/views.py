@@ -50,6 +50,7 @@ from pathogen_identification.models import (
 )
 from pathogen_identification.modules.object_classes import RunQC_report
 from pathogen_identification.tables import (
+    AddedReferenceTable,
     CompoundReferenceScore,
     CompoundReferenceTable,
     ContigTable,
@@ -891,7 +892,7 @@ def inject__added_references(references: list, request):
     context = {}
     data = {}
 
-    context["references_table"] = ReferenceSourceTable(references)
+    context["references_table"] = AddedReferenceTable(references)
     context["references_count"] = len(references)
 
     template_table_html = os.path.join(

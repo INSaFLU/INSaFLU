@@ -654,6 +654,8 @@ class RunMetadataHandler:
             #    .drop_duplicates(subset=["acc"], keep="first")
             # )
             ###
+            print("#####")
+            print(nset)
             files_to_map = self.filter_files_to_map(nset)
 
             ####

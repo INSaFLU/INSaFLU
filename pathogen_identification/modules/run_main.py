@@ -15,31 +15,17 @@ from pathogen_identification.modules.assembly_class import Assembly_class
 from pathogen_identification.modules.classification_class import Classifier
 from pathogen_identification.modules.metadata_handler import RunMetadataHandler
 from pathogen_identification.modules.object_classes import (
-    Assembly_results,
-    Contig_classification_results,
-    Read_class,
-    Read_classification_results,
-    Remap_main,
-    Remap_Target,
-    Run_detail_report,
-    RunCMD,
-    RunQC_report,
-    Sample_runClass,
-    Software_detail,
-    SoftwareDetailCompound,
-    SoftwareRemap,
-    SoftwareUnit,
-)
+    Assembly_results, Contig_classification_results, Read_class,
+    Read_classification_results, Remap_main, Remap_Target, Run_detail_report,
+    RunCMD, RunQC_report, Sample_runClass, Software_detail,
+    SoftwareDetailCompound, SoftwareRemap, SoftwareUnit)
 from pathogen_identification.modules.preprocess_class import Preprocess
-from pathogen_identification.modules.remap_class import (
-    Mapping_Instance,
-    Mapping_Manager,
-)
+from pathogen_identification.modules.remap_class import (Mapping_Instance,
+                                                         Mapping_Manager)
 from pathogen_identification.utilities.televir_parameters import (
-    RemapParams,
-    TelevirParameters,
-)
-from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
+    RemapParams, TelevirParameters)
+from pathogen_identification.utilities.utilities_pipeline import \
+    RawReferenceUtils
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -263,9 +249,8 @@ class RunDetail_main:
             self.prefix,
         )
 
-        self.metagenomics_classification = (
-            self.metagenomics_classification_method.check_exists()
-        )
+        self.check_metagenomics_classification_exists()
+
 
     def check_metagenomics_classification_exists(self):
         self.metagenomics_classification = (

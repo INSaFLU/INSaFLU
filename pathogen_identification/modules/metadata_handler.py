@@ -716,7 +716,7 @@ class RunMetadataHandler:
 
         remap_targets = []
         remap_absent = []
-        taxf = self.accession_to_taxid
+        # taxf = self.accession_to_taxid
         remap_plan = []
         targets.taxid = targets.taxid.astype(int)
 

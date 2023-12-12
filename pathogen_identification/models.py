@@ -468,6 +468,7 @@ class RunMain(models.Model):
     RUN_TYPE_PIPELINE = 0
     RUN_TYPE_STORAGE = 1
     RUN_TYPE_MAP_REQUEST = 2
+    RUN_TYPE_SCREENING = 3
 
     run_type = models.IntegerField(default=RUN_TYPE_PIPELINE)
 

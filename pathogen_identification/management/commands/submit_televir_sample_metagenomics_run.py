@@ -136,6 +136,7 @@ class Command(BaseCommand):
                     pipeline_tree=pipeline_tree_query,
                     odir=options["outdir"],
                     threads=ConstantsSettings.DEPLOYMENT_THREADS,
+                    metagenomics=True,
                 )
 
                 if run.is_available:

@@ -6,14 +6,20 @@ from typing import List, Optional
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (PIProject_Sample, RawReference,
-                                            ReferenceSourceFileMap, RunMain)
+from pathogen_identification.models import (
+    PIProject_Sample,
+    RawReference,
+    ReferenceSourceFileMap,
+    RunMain,
+)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
 from pathogen_identification.utilities.utilities_general import (
-    description_fails_filter, merge_classes, scrape_description)
-from pathogen_identification.utilities.utilities_pipeline import \
-    RawReferenceUtils
+    description_fails_filter,
+    merge_classes,
+    scrape_description,
+)
+from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
 
 
 class RunMetadataHandler:
@@ -668,16 +674,28 @@ class RunMetadataHandler:
 
         ref_db = []
         for ref in reference_source:
-                ref_db.append(
-                    [
-                        ref.reference_source.taxid.taxid,
-                        ref.reference_source.accid,
-                        ref.reference_source.description,
-                        ref.reference_source_file.file,
-                    ]
-                )
-                
+            ref_db.append(
+                [
+                    ref.reference_source.taxid.taxid,
+                    ref.reference_source.accid,
+                    ref.reference_source.description,
+                    ref.reference_source_file.file,
+                ]
+            )
+
         ref_db = pd.DataFrame(ref_db, columns=["taxid", "acc", "description", "file"])
+
+        def acc_on_file(row: pd.Series):
+            acc = row.acc
+            file = row.file
+            acc_on_file = acc
+            if file == "virosaurus90_vertebrate-20200330.fas.gz":
+                acc_on_file = acc.split(".")[0]
+                acc_on_file = f"{acc_on_file}:{acc_on_file};"
+
+            return acc_on_file
+
+        ref_db["acc_in_file"] = ref_db.apply(acc_on_file, axis=1)
 
         return ref_db
 

@@ -511,6 +511,7 @@ class Run_Main_from_Leaf:
                 self.container.run_engine, self.parameter_set
             )
             #
+            self.container.run_engine.plan_combined_remapping()
 
             db_updated = Update_Classification(
                 self.container.run_engine, self.parameter_set

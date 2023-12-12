@@ -56,6 +56,20 @@ class Command(BaseCommand):
         )
 
         parser.add_argument(
+            "--combined_analysis",
+            action="store_true",
+            help="run combined analysis",
+            default=False,
+        )
+
+        parser.add_argument(
+            "--manual_references",
+            action="store_true",
+            help="run mapping only",
+            default=False,
+        )
+
+        parser.add_argument(
             "-o",
             "--outdir",
             type=str,
@@ -70,6 +84,8 @@ class Command(BaseCommand):
         target_sample = PIProject_Sample.objects.get(pk=options["sample_id"])
         project = target_sample.project
         leaf_index = options["leaf_id"]
+        combined_analysis = options["combined_analysis"]
+        include_manual_references = options["manual_references"]
         matched_path_node = SoftwareTreeNode.objects.get(pk=leaf_index)
 
         ### PROCESS CONTROLER
@@ -136,7 +152,8 @@ class Command(BaseCommand):
                     pipeline_tree=pipeline_tree_query,
                     odir=options["outdir"],
                     threads=ConstantsSettings.DEPLOYMENT_THREADS,
-                    metagenomics=True,
+                    combined_analysis=combined_analysis,
+                    include_manual_references=include_manual_references,
                 )
 
                 if run.is_available:

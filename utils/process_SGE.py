@@ -1076,7 +1076,7 @@ class ProcessSGE(object):
         return sge_id
 
     def set_submit_televir_sample_metagenomics(
-        self, user, sample_pk: int, leaf_pk: int
+        self, user, sample_pk: int, leaf_pk: int, combined_analysis: bool= False, manual_references: bool = False
     ):
         """
         submit the job to televir
@@ -1086,11 +1086,13 @@ class ProcessSGE(object):
         out_dir = self.utils.get_temp_dir()
 
         vect_command = [
-            "python3 {} submit_televir_sample_metagenomics_run --user_id {} --sample_id {} --leaf_id {} -o {}".format(
+            "python3 {} submit_televir_sample_metagenomics_run --user_id {} --sample_id {} --leaf_id {} {} {} -o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user_pk,
                 sample_pk,
                 leaf_pk,
+                "--combined_analysis" if combined_analysis else "",
+                "--manual_references" if manual_references else "",
                 out_dir,
             )
         ]

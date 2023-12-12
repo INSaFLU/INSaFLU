@@ -92,26 +92,6 @@ class SampleReferenceManager:
             )
             storage_run.save()
 
-    def prep_map_request(self):
-        try:
-            map_request_run = RunMain.objects.get(
-                name="map_request",
-                run_type=RunMain.RUN_TYPE_MAP_REQUEST,
-                project=self.sample.project,
-                sample=self.sample,
-            )
-        except RunMain.DoesNotExist:
-            map_request_run = RunMain.objects.create(
-                name="map_request",
-                sample=self.sample,
-                run_type=RunMain.RUN_TYPE_MAP_REQUEST,
-                project=self.sample.project,
-                parameter_set=self.parameter_set_proxy,
-                host_depletion_performed=False,
-                enrichment_performed=False,
-            )
-            map_request_run.save()
-
     def prep_screening(self):
         try:
             screening_run = RunMain.objects.get(
@@ -143,12 +123,17 @@ class SampleReferenceManager:
 
     @property
     def map_request_run(self):
-        return RunMain.objects.get(
+        map_request_run = RunMain.objects.create(
             name="map_request",
+            sample=self.sample,
             run_type=RunMain.RUN_TYPE_MAP_REQUEST,
             project=self.sample.project,
-            sample=self.sample,
+            parameter_set=self.parameter_set_proxy,
+            host_depletion_performed=False,
+            enrichment_performed=False,
         )
+        map_request_run.save()
+        return map_request_run
 
     @property
     def screening_run(self):

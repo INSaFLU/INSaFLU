@@ -173,6 +173,7 @@ class Pipeline_Graph_Metagenomics(PipelineTreeBase):
                 CS.PIPELINE_NAME_contig_classification,
                 CS.PIPELINE_NAME_read_classification,
                 self.ASSEMBLY_SPECIAL_STEP,
+                CS.PIPELINE_NAME_host_depletion,
                 CS.PIPELINE_NAME_metagenomics_combine,
             ],
             CS.PIPELINE_NAME_remapping: [
@@ -1803,16 +1804,21 @@ class Parameter_DB_Utility:
         project: Optional[Projects] = None,
         sample: Optional[PIProject_Sample] = None,
         metagenomics: bool = False,
+        mapping_only: bool = False,
+        screening: bool = False,
     ):
         """
         Get software tables for a user
         """
 
-        steps = (
-            CS.vect_pipeline_televir_metagenomics
-            if metagenomics
-            else self.televir_constants.vect_pipeline_names_default
-        )
+        if metagenomics:
+            steps = CS.vect_pipeline_televir_metagenomics
+        elif mapping_only:
+            steps = CS.vect_pipeline_televir_mapping_only
+        elif screening:
+            steps = CS.vect_pipeline_televir_screening
+        else:
+            steps = self.televir_constants.vect_pipeline_names_default
 
         software_available = Software.objects.filter(
             technology__name=technology,
@@ -1960,6 +1966,8 @@ class Parameter_DB_Utility:
         project: Optional[Projects] = None,
         sample: Optional[PIProject_Sample] = None,
         metagenomics: bool = False,
+        mapping_only: bool = False,
+        screening: bool = False,
     ) -> pd.DataFrame:
         """
         Generate a software tree for a technology and a tree makeup"""
@@ -1970,6 +1978,8 @@ class Parameter_DB_Utility:
             project=project,
             sample=sample,
             metagenomics=metagenomics,
+            mapping_only=mapping_only,
+            screening=screening,
         )
 
         if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
@@ -1982,6 +1992,8 @@ class Parameter_DB_Utility:
                     project.owner,
                     project=project,
                     metagenomics=metagenomics,
+                    mapping_only=mapping_only,
+                    screening=screening,
                 )
 
         if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
@@ -1989,7 +2001,10 @@ class Parameter_DB_Utility:
                 software_table,
                 parameters_table,
             ) = self.get_software_tables(
-                project.technology, project.owner, metagenomics=metagenomics
+                project.technology, project.owner, 
+                metagenomics=metagenomics,
+                mapping_only=mapping_only,
+                screening=screening,
             )
 
         if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
@@ -2615,6 +2630,8 @@ class SoftwareTreeUtils:
         project: Projects,
         sample: Optional[PIProject_Sample] = None,
         metagenomics: bool = False,
+        mapping_only: bool = False,
+        screening: bool = False,
     ) -> PipelineTree:
         """
         Generate a software tree for a technology and a tree makeup
@@ -2626,6 +2643,8 @@ class SoftwareTreeUtils:
             project,
             sample=sample,
             metagenomics=metagenomics,
+            mapping_only=mapping_only,
+            screening=screening,
         )
 
         if merged_table.shape[0] == 0:
@@ -2726,7 +2745,10 @@ class SoftwareTreeUtils:
 
         return self.get_available_pathnodes(local_tree)
 
-    def get_sample_pathnodes(self) -> dict:
+    def get_sample_pathnodes(self,
+            metagenomics: bool = False,
+            mapping_only: bool = False,
+            screening: bool = False) -> dict:
         """
         Get all pathnodes for a project
         """
@@ -2734,7 +2756,11 @@ class SoftwareTreeUtils:
             return {}
 
         local_tree = self.generate_software_tree_safe(
-            self.project, self.sample, metagenomics=True
+            self.project, 
+            self.sample, 
+            metagenomics=metagenomics,
+            mapping_only=mapping_only,
+            screening=screening,
         )
 
         if local_tree.makeup == -1:
@@ -2795,7 +2821,52 @@ class SoftwareTreeUtils:
 
         submission_dict = {sample: []}
 
-        available_path_nodes = self.get_sample_pathnodes()
+        available_path_nodes = self.get_sample_pathnodes(
+            metagenomics=True,
+            screening=False, 
+            mapping_only=False,
+        )
+        clean_samples_leaf_dict = self.utils_manager.sample_nodes_check(
+            submission_dict, available_path_nodes, self.project
+        )
+
+        return clean_samples_leaf_dict
+    
+    def check_runs_to_submit_screening_sample(
+        self, sample: PIProject_Sample
+    ) -> dict:
+        """
+        Check if there are runs to run. sets to queue if there are.
+        """
+
+        submission_dict = {sample: []}
+
+        available_path_nodes = self.get_sample_pathnodes(
+            metagenomics=False,
+            screening=True,
+            mapping_only=False,
+        )
+        clean_samples_leaf_dict = self.utils_manager.sample_nodes_check(
+            submission_dict, available_path_nodes, self.project
+        )
+
+        return clean_samples_leaf_dict
+
+
+    def check_runs_to_submit_mapping_only(
+        self, sample: PIProject_Sample
+    ) -> dict:
+        """
+        Check if there are runs to run. sets to queue if there are.
+        """
+
+        submission_dict = {sample: []}
+
+        available_path_nodes = self.get_sample_pathnodes(
+            metagenomics=False,
+            screening=False,
+            mapping_only=True,
+        )
         clean_samples_leaf_dict = self.utils_manager.sample_nodes_check(
             submission_dict, available_path_nodes, self.project
         )

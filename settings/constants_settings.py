@@ -74,6 +74,23 @@ class ConstantsSettings(object):
         PIPELINE_NAME_reporting,
     ]
 
+    vect_pipeline_televir_screening = [
+        PIPELINE_NAME_extra_qc,
+        PIPELINE_NAME_viral_enrichment,
+        PIPELINE_NAME_host_depletion,
+        PIPELINE_NAME_metagenomics_combine,
+        PIPELINE_NAME_metagenomics_settings,
+    ]
+
+    vect_pipeline_televir_mapping_only = [
+        PIPELINE_NAME_extra_qc,
+        PIPELINE_NAME_viral_enrichment,
+        PIPELINE_NAME_host_depletion,
+        PIPELINE_NAME_remapping,
+        PIPELINE_NAME_remap_filtering,
+        PIPELINE_NAME_reporting,
+    ]
+
     ###############################
     ### technology available
     TECHNOLOGY_illumina_old = "Illumina"

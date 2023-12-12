@@ -8,14 +8,24 @@ from django.contrib.auth.models import User
 from django.core.files import File
 from django.db import IntegrityError, transaction
 
-from pathogen_identification.models import (QC_REPORT, ContigClassification,
-                                            FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RawReference, ReadClassification,
-                                            ReferenceContigs,
-                                            ReferenceMap_Main, RunAssembly,
-                                            RunDetail, RunMain, RunRemapMain,
-                                            SampleQC, TelevirRunQC)
+from pathogen_identification.models import (
+    QC_REPORT,
+    ContigClassification,
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReadClassification,
+    ReferenceContigs,
+    ReferenceMap_Main,
+    RunAssembly,
+    RunDetail,
+    RunMain,
+    RunRemapMain,
+    SampleQC,
+    TelevirRunQC,
+)
 from pathogen_identification.modules.object_classes import Sample_runClass
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunEngine_class
@@ -345,7 +355,6 @@ def UpdateRawReferences_safe(run_class: RunEngine_class, parameter_set: Paramete
     :return: run_data
     """
 
-
     try:
         with transaction.atomic():
             Update_RawReference(run_class, parameter_set)
@@ -355,6 +364,7 @@ def UpdateRawReferences_safe(run_class: RunEngine_class, parameter_set: Paramete
     except IntegrityError as e:
         print(f"failed to update sample {run_class.sample_name}")
         return False
+
 
 @transaction.atomic
 def Update_Remap(run_class: RunEngine_class, parameter_set: ParameterSet):
@@ -436,6 +446,13 @@ def Update_RunMain(run_class: RunEngine_class, parameter_set: ParameterSet):
 
     host_depletion_method = run_class.depletion_drone.classifier_method.name
     host_depletion = run_class.depletion_drone.deployed
+    run_type = RunMain.RUN_TYPE_PIPELINE
+
+    if run_class.run_type == run_class.RUN_TYPE_MAPPING:
+        run_type = RunMain.RUN_TYPE_MAP_REQUEST
+    if run_class.run_type == run_class.RUN_TYPE_SCREENING:
+        run_type = RunMain.RUN_TYPE_SCREENING
+
     try:
         runmain = RunMain.objects.get(
             project__name=run_class.sample.project_name,
@@ -443,10 +460,12 @@ def Update_RunMain(run_class: RunEngine_class, parameter_set: ParameterSet):
             sample=sample,
             name=run_class.prefix,
             parameter_set=parameter_set,
+            run_type=run_type,
         )
     except RunMain.DoesNotExist:
         runmain = RunMain(
             parameter_set=parameter_set,
+            run_type=run_type,
             suprun=run_class.suprun,
             project=project,
             sample=sample,

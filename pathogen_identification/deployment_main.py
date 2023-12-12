@@ -253,8 +253,8 @@ class Run_Main_from_Leaf:
     date_modified: str
     pk: int
     date_submitted = datetime.datetime
-    metagenomics: bool
-
+    combined_analysis: bool
+    include_manual_references: bool
     container: PathogenIdentification_deployment
 
     def __init__(
@@ -266,12 +266,14 @@ class Run_Main_from_Leaf:
         pipeline_tree: SoftwareTree,
         odir: str,
         threads: int = 3,
-        metagenomics: bool = False,
+        combined_analysis: bool = False,
+        include_manual_references: bool = False,
     ):
         self.user = user
         self.sample = input_data
         self.project = project
-        self.metagenomics = metagenomics
+        self.combined_analysis = combined_analysis
+        self.include_manual_references = include_manual_references
         self.pipeline_leaf = pipeline_leaf
         self.pipeline_tree = pipeline_tree
         # prefix = f"{simplify_name_lower(input_data.name)}_{user.pk}_{project.pk}_{pipeline_leaf.pk}"
@@ -441,6 +443,11 @@ class Run_Main_from_Leaf:
     def Deploy_Parts(self):
         try:
             self.container.run_main_prep()
+
+            if self.include_manual_references:
+                self.container.run_engine.run_type = RunMainTree_class.RUN_TYPE_MAPPING
+                self.container.run_engine.remap_params.manual_references_include = True
+
             self.container.run_engine.Prep_deploy()
             self.container.run_engine.Run_QC()
             db_updated = Update_RunMain_Initial(
@@ -492,27 +499,26 @@ class Run_Main_from_Leaf:
             print(e)
             return False
 
-        if self.metagenomics:
-            try:
-                self.container.run_engine.Run_Metagenomics_Classification()
+        if self.combined_analysis:
+            self.container.run_engine.plan_combined_remapping()
 
-                self.container.run_engine.plan_remap_prep_safe()
+        try:
+            self.container.run_engine.Run_Metagenomics_Classification()
 
-                ref_update = UpdateRawReferences_safe(
-                    self.container.run_engine, self.parameter_set
-                )
-                #
-                self.container.run_engine.plan_combined_remapping()
+            ref_update = UpdateRawReferences_safe(
+                self.container.run_engine, self.parameter_set
+            )
+            #
 
-                db_updated = Update_Classification(
-                    self.container.run_engine, self.parameter_set
-                )
-                if not db_updated:
-                    return False
-            except Exception as e:
-                print(traceback.format_exc())
-                print(e)
+            db_updated = Update_Classification(
+                self.container.run_engine, self.parameter_set
+            )
+            if not db_updated:
                 return False
+        except Exception as e:
+            print(traceback.format_exc())
+            print(e)
+            return False
 
         try:
             self.container.run_engine.remap_prepped = True

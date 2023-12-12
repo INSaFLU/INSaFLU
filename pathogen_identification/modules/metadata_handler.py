@@ -6,14 +6,14 @@ from typing import List, Optional
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import ReferenceSourceFileMap, ReferenceTaxid
+from pathogen_identification.models import (PIProject_Sample, RawReference,
+                                            ReferenceSourceFileMap, RunMain)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
 from pathogen_identification.utilities.utilities_general import (
-    description_fails_filter,
-    merge_classes,
-    scrape_description,
-)
+    description_fails_filter, merge_classes, scrape_description)
+from pathogen_identification.utilities.utilities_pipeline import \
+    RawReferenceUtils
 
 
 class RunMetadataHandler:
@@ -79,14 +79,80 @@ class RunMetadataHandler:
         self.rclass: pd.DataFrame
         self.aclass: pd.DataFrame
         self.merged_targets: pd.DataFrame = pd.DataFrame()
-        self.remap_targets: List[Remap_Target]
-        self.remap_absent_taxid_list: List[str]
+        self.remap_targets: List[Remap_Target] = []
+        self.remap_absent_taxid_list: List[str] = []
         self.remap_plan = pd.DataFrame
         self.sift_query = sift_query
         self.sift_report = pd.DataFrame(
             [[0, 0, 0]], columns=["input", "output", "removed"]
         )
         self.get_metadata()
+
+    def get_manual_references(self, sample: PIProject_Sample):
+        references = RawReference.objects.filter(
+            run__sample=sample,
+            run__run_type=RunMain.RUN_TYPE_STORAGE,
+        )
+        fasta_main_dir = self.config["source"]["REF_FASTA"]
+
+        for ref in references:
+            refmap = ReferenceSourceFileMap.objects.filter(
+                reference_source__taxid__taxid=ref.taxid,
+                reference_source__accid=ref.accid,
+            ).first()
+
+            if refmap is None:
+                continue
+
+            accid_simple = (
+                ref.accid.replace(".", "_")
+                .replace(";", "_")
+                .replace(":", "_")
+                .replace("|", "_")
+            )
+
+            self.remap_targets.append(
+                Remap_Target(
+                    ref.accid,
+                    accid_simple,
+                    ref.taxid,
+                    os.path.join(fasta_main_dir, refmap.reference_source_file.file),
+                    self.prefix,
+                    ref.description,
+                    [ref.accid],
+                    False,
+                    False,
+                )
+            )
+
+    def merge_sample_references(
+        self, sample_registered: PIProject_Sample, max_taxids: int
+    ):
+        """
+        Generate Remap Targets from all existing references for a given sample."""
+        reference_utils = RawReferenceUtils(sample_registered)
+        reference_utils.sample_reference_tables()
+        reference_table = reference_utils.merge_ref_tables()
+
+        proxy_rclass = reference_utils.reference_table_renamed(
+            reference_table, {"read_counts": "counts"}
+        )
+        proxy_aclass = reference_utils.reference_table_renamed(
+            reference_table, {"contig_counts": "counts"}
+        )
+
+        self.rclass = proxy_rclass
+        self.aclass = proxy_aclass
+
+        self.merge_reports_clean(
+            max_taxids,
+        )
+
+        self.generate_targets_from_report(
+            reference_table,
+            max_taxids=max_taxids,
+            skip_scrape=False,
+        )
 
     def match_and_select_targets(
         self,
@@ -600,20 +666,18 @@ class RunMetadataHandler:
         if len(reference_source) == 0:
             return ref_db
 
-        ref_db = pd.DataFrame.from_records(
-            reference_source.values(
-                "reference_source__taxid__taxid",
-                "reference_source__accid",
-                "reference_source__description",
-                "reference_source_file__file",
-            ),
-            columns=[
-                "taxid",
-                "acc",
-                "description",
-                "file",
-            ],
-        )
+        ref_db = []
+        for ref in reference_source:
+                ref_db.append(
+                    [
+                        ref.reference_source.taxid.taxid,
+                        ref.reference_source.accid,
+                        ref.reference_source.description,
+                        ref.reference_source_file.file,
+                    ]
+                )
+                
+        ref_db = pd.DataFrame(ref_db, columns=["taxid", "acc", "description", "file"])
 
         return ref_db
 
@@ -654,8 +718,7 @@ class RunMetadataHandler:
             #    .drop_duplicates(subset=["acc"], keep="first")
             # )
             ###
-            print("#####")
-            print(nset)
+
             files_to_map = self.filter_files_to_map(nset)
 
             ####
@@ -732,5 +795,5 @@ class RunMetadataHandler:
             remap_plan, columns=["taxid", "acc", "file", "description"]
         )
 
-        self.remap_targets = remap_targets
-        self.remap_absent = remap_absent
+        self.remap_targets.extend(remap_targets)
+        self.remap_absent_taxid_list.extend(remap_absent)

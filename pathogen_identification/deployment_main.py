@@ -35,7 +35,6 @@ from pathogen_identification.utilities.utilities_general import (
     simplify_name_lower,
 )
 from pathogen_identification.utilities.utilities_pipeline import (
-    RawReferenceUtils,
     SoftwareTreeUtils,
     Utils_Manager,
 )
@@ -505,41 +504,14 @@ class Run_Main_from_Leaf:
 
         try:
             self.container.run_engine.Run_Metagenomics_Classification()
+
             self.container.run_engine.plan_remap_prep_safe()
+
             ref_update = UpdateRawReferences_safe(
                 self.container.run_engine, self.parameter_set
             )
             #
-            reference_utils = RawReferenceUtils(
-                self.container.run_engine.sample_registered
-            )
-            reference_utils.sample_reference_tables()
-            reference_table = reference_utils.merge_ref_tables()
 
-            proxy_rclass = reference_utils.reference_table_renamed(
-                reference_table, {"read_counts": "counts"}
-            )
-            proxy_aclass = reference_utils.reference_table_renamed(
-                reference_table, {"contig_counts": "counts"}
-            )
-
-            self.container.run_engine.metadata_tool.rclass = proxy_rclass
-            self.container.run_engine.metadata_tool.aclass = proxy_aclass
-
-            self.container.run_engine.metadata_tool.merge_reports_clean(
-                self.container.run_engine.remap_params.max_taxids,
-            )
-
-            self.container.run_engine.import_from_remap_prep()
-
-            self.container.run_engine.metadata_tool.generate_targets_from_report(
-                reference_table,
-                max_taxids=self.container.run_engine.remap_params.max_taxids,
-                skip_scrape=False,
-            )
-            self.container.run_engine.generate_output_data_classes()
-            self.container.run_engine.prep_REMAPPING()
-            self.container.run_engine.remap_prepped = True
             db_updated = Update_Classification(
                 self.container.run_engine, self.parameter_set
             )

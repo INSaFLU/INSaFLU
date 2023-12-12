@@ -1847,6 +1847,19 @@ class DefaultParameters(object):
         parameter.description = "Number of accession IDs to map against."
         vect_parameters.append(parameter)
 
+        parameter = Parameter()
+        parameter.name = SoftwareNames.SOFTWARE_REMAP_PARAMS_include_manual
+        parameter.parameter = "OFF"
+        parameter.type_data = Parameter.PARAMETER_char_list
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True
+        parameter.sequence_out = 3
+        parameter.description = "Include manual curation in the pipeline. (Defaults to OFF)"
+        vect_parameters.append(parameter)
+
         return vect_parameters
 
     def get_prinseq_defaults(

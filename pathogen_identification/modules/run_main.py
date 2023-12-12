@@ -878,6 +878,9 @@ class Run_Deployment_Methods(RunDetail_main):
         self.read_classification_drone.run()
 
     def prep_REMAPPING(self):
+        if self.remap_params.manual_references_include:
+            self.metadata_tool.get_manual_references(self.sample_registered)
+
         self.remap_manager = Mapping_Manager(
             self.metadata_tool.remap_targets,
             self.sample.r1,
@@ -1450,8 +1453,6 @@ class RunMainTree_class(Run_Deployment_Methods):
                 self.remap_manager.combined_fasta_gz_path
             )
 
-            print("DEPLOYING METAGENOMICS CLASSIFICATION")
-
             self.deploy_METAGENOMICS_CLASSIFICATION_reads()
             self.read_classification_drone = self.metagenomics_classification_drone
             self.read_classification_performed = True
@@ -1506,6 +1507,16 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.merged_targets = self.metadata_tool.merged_targets
         self.raw_targets = self.metadata_tool.raw_targets
         self.remap_plan = self.metadata_tool.remap_plan
+
+    def plan_combined_remapping(self):
+        self.metadata_tool.merge_sample_references(
+            self.sample_registered, self.remap_params.max_taxids
+        )
+
+        self.import_from_remap_prep()
+        self.generate_output_data_classes()
+        self.prep_REMAPPING()
+        self.remap_prepped = True
 
     def Run_Remapping(self):
         if not self.remap_prepped:

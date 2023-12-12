@@ -84,8 +84,6 @@ class SoftwareForm(forms.ModelForm):
         super(SoftwareForm, self).__init__(*args, **kwargs)
 
         ### return the parameters that is possible to change
-        ps = Parameter.objects.filter(software=self.instance)
-
         paramers = Parameter.objects.filter(
             software=self.instance,
             project=project,
@@ -191,6 +189,14 @@ class SoftwareForm(forms.ModelForm):
                     list_data = [
                         [data_, data_]
                         for data_ in SoftwareNames.SOFTWARE_COMBINED_include_screening_options
+                    ]
+
+                elif (
+                    parameter.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_include_manual
+                ):
+                    list_data = [
+                        [data_, data_]
+                        for data_ in SoftwareNames.SOFTWARE_REMAP_PARAMS_include_manual_options
                     ]
 
                 elif (

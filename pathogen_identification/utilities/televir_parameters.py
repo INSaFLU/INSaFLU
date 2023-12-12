@@ -19,6 +19,7 @@ class RemapParams:
     max_taxids: int
     max_accids: int
     min_coverage: int
+    manual_references_include: bool = False
 
 
 @dataclass
@@ -66,6 +67,7 @@ class LayoutParams:
 
 
 class TelevirParameters:
+    @staticmethod
     def technology_mincov(project: Projects):
         if project.technology in [CS.TECHNOLOGY_illumina, CS.TECHNOLOGY_illumina_old]:
             return PI_CS.CONSTANTS_ILLUMINA["minimum_coverage_threshold"]
@@ -135,17 +137,21 @@ class TelevirParameters:
 
         max_taxids = 0
         max_accids = 0
+        manual_references_include = False
 
         for param in remap_params:
             if param.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_max_taxids:
                 max_taxids = int(param.parameter)
             elif param.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_max_accids:
                 max_accids = int(param.parameter)
+            elif param.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_include_manual:
+                manual_references_include = param.parameter == "ON"
 
         remap = RemapParams(
             max_taxids=max_taxids,
             max_accids=max_accids,
             min_coverage=TelevirParameters.technology_mincov(project),
+            manual_references_include=manual_references_include,
         )
 
         return remap

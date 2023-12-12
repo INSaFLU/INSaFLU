@@ -559,10 +559,12 @@ class SoftwareNames(object):
     ### REMAP PARAMETERS
     SOFTWARE_REMAP_PARAMS_max_taxids = "--max-taxids"
     SOFTWARE_REMAP_PARAMS_max_accids = "--max-accids"
+    SOFTWARE_REMAP_PARAMS_include_manual = "--include-manual"
+    SOFTWARE_REMAP_PARAMS_include_manual_options = ["OFF", "ON"]
 
     SOFTWARE_COMBINED_min_score = "--min-score"
     SOFTWARE_COMBINED_include_screening = "--screening"
-    SOFTWARE_COMBINED_include_screening_options = ["OFF", "ON   "]
+    SOFTWARE_COMBINED_include_screening_options = ["OFF", "ON"]
 
     ### REPORT LAYOUT
     SOFTWARE_televir_report_layout = "report_layout"

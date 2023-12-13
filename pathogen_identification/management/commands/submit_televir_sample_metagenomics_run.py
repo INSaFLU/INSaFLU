@@ -104,10 +104,8 @@ class Command(BaseCommand):
             mapping_only = True
             if mapping_run is None:
                 raise Exception("mapping_run_id is required for mapping request")
-
         elif combined_analysis:
             metagenomics = True
-
         else:
             screening = True
 
@@ -150,6 +148,7 @@ class Command(BaseCommand):
         )
 
         print("was_run_killed", was_run_killed)
+        print(f"leaf_index: {leaf_index}")
 
         ### draw graph
         graph_progress = TreeProgressGraph(target_sample)

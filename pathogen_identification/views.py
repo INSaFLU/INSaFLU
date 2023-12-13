@@ -817,6 +817,8 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
                 template_table_html, small_context, request=self.request
             )
 
+        print(rendered_table)
+
         RequestConfig(
             self.request, paginate={"per_page": ConstantsSettings.PAGINATE_NUMBER}
         ).configure(runs_table)

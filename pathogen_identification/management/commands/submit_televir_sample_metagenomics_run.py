@@ -90,14 +90,26 @@ class Command(BaseCommand):
         user = User.objects.get(pk=options["user_id"])
         target_sample = PIProject_Sample.objects.get(pk=options["sample_id"])
         project = target_sample.project
+
+        metagenomics = False
+        mapping_only = False
+        screening = False
+
         leaf_index = options["leaf_id"]
         combined_analysis = options["combined_analysis"]
         mapping_request = options["mapping_request"]
         mapping_run = options["mapping_run_id"]
 
         if mapping_request:
+            mapping_only = True
             if mapping_run is None:
                 raise Exception("mapping_run_id is required for mapping request")
+
+        elif combined_analysis:
+            metagenomics = True
+
+        else:
+            screening = True
 
         matched_path_node = SoftwareTreeNode.objects.get(pk=leaf_index)
 
@@ -119,7 +131,11 @@ class Command(BaseCommand):
         software_utils = SoftwareTreeUtils(user, project, sample=target_sample)
 
         local_tree = software_utils.generate_software_tree_safe(
-            project, sample=target_sample, metagenomics=True
+            project,
+            sample=target_sample,
+            metagenomics=metagenomics,
+            screening=screening,
+            mapping_only=mapping_only,
         )
         # tree_makeup = local_tree.makeup
         # pipeline_tree= utils.generate_software_tree_extend(local_tree, user)

@@ -1092,13 +1092,14 @@ class ProcessSGE(object):
         out_dir = self.utils.get_temp_dir()
 
         vect_command = [
-            "python3 {} submit_televir_sample_metagenomics_run --user_id {} --sample_id {} --leaf_id {} {} {} -o {}".format(
+            "python3 {} submit_televir_sample_metagenomics_run --user_id {} --sample_id {} --leaf_id {} {} {} {}-o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user_pk,
                 sample_pk,
                 leaf_pk,
                 "--combined_analysis" if combined_analysis else "",
                 "--mapping_request" if mapping_request else "",
+                "--map_run_pk {}".format(map_run_pk) if map_run_pk else "",
                 out_dir,
             )
         ]

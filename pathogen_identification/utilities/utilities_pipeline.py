@@ -2130,6 +2130,23 @@ class Parameter_DB_Utility:
             return False
 
         return True
+    
+    def check_ParameterSet_running(
+        self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
+    ):
+        if not self.check_ParameterSet_exists(sample, leaf, project):
+            return False
+
+        parameter_set = ParameterSet.objects.get(
+            sample=sample, leaf=leaf, project=project
+        )
+
+        if parameter_set.status in [
+            ParameterSet.STATUS_RUNNING,
+        ]:
+            return True
+
+        return False
 
     def create_parameter_set(
         self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects

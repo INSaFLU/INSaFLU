@@ -137,7 +137,7 @@ class Command(BaseCommand):
 
             else:
                 if (
-                    utils.parameter_util.check_ParameterSet_available_to_run(
+                    utils.parameter_util.check_ParameterSet_running(
                         sample=target_sample, leaf=matched_path_node, project=project
                     )
                     is False
@@ -156,9 +156,9 @@ class Command(BaseCommand):
                     include_manual_references=include_manual_references,
                 )
 
-                if run.is_available:
-                    run.get_in_line()
-                    submission_dict[target_sample].append(run)
+                # if run.is_available:
+                run.get_in_line()
+                submission_dict[target_sample].append(run)
 
                 for sample, runs in submission_dict.items():
                     for run in runs:

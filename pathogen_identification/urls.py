@@ -51,6 +51,11 @@ urlpatterns = [
         name="all_PIproject_reports",
     ),
     url(
+        r"deploy_mapping_request$",
+        PIajax_views.submit_sample_mapping_televir,
+        name="map_selected_references",
+    ),
+    url(
         r"Projects/explify_merge$",
         PIajax_views.Project_explify_merge,
         name="explify_merge",

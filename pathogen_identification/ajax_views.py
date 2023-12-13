@@ -22,14 +22,8 @@ from pathogen_identification.models import (
     RunMain,
 )
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
-from pathogen_identification.utilities.utilities_general import (
-    get_services_dir,
-    infer_run_media_dir,
-)
-from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils,
-    Utils_Manager,
-)
+from pathogen_identification.utilities.utilities_general import get_services_dir
+from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
 from pathogen_identification.utilities.utilities_views import (
     ReportSorter,
     SampleReferenceManager,
@@ -130,18 +124,38 @@ def submit_sample_screening_televir(request):
 @require_POST
 def submit_sample_mapping_televir(request):
     if request.is_ajax():
-        data = {"is_ok": False, "is_deployed": False}
+        data = {"is_ok": True, "is_deployed": False, "is_empty": False}
 
         process_SGE = ProcessSGE()
 
         sample_id = int(request.POST["sample_id"])
         sample = PIProject_Sample.objects.get(id=int(sample_id))
-
         user = sample.project.owner
         project = sample.project
+        reference_manager = SampleReferenceManager(sample)
+
+        reference_id_list = request.POST.getlist("reference_ids[]")
+
+        if len(reference_id_list) == 0:
+            data["is_empty"] = True
+            return JsonResponse(data)
 
         software_utils = SoftwareTreeUtils(user, project, sample=sample)
         runs_to_deploy = software_utils.check_runs_to_submit_mapping_only(sample)
+
+        print("hello2")
+        print(runs_to_deploy)
+
+        if len(runs_to_deploy) == 0:
+            return JsonResponse(data)
+
+        mapping_run = reference_manager.map_request_run
+
+        for reference_id in reference_id_list:
+            reference = RawReference.objects.get(pk=int(reference_id))
+            reference.pk = None
+            reference.run = mapping_run
+            reference.save()
 
         try:
             if len(runs_to_deploy) > 0:
@@ -151,16 +165,15 @@ def submit_sample_mapping_televir(request):
                             user=request.user,
                             sample_pk=sample.pk,
                             leaf_pk=leaf.pk,
-                            manual_references=True,
+                            mapping_request=True,
                         )
 
                 data["is_deployed"] = True
 
         except Exception as e:
             print(e)
-            data["is_deployed"] = False
+            data["is_ok"] = False
 
-        data["is_ok"] = True
         print(data)
         return JsonResponse(data)
 

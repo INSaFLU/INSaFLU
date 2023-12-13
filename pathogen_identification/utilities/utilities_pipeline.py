@@ -10,18 +10,21 @@ import pandas as pd
 from django.contrib.auth.models import User
 from django.db.models import Q, QuerySet
 
-from constants.constants import \
-    Televir_Directory_Constants as Televir_Directories
+from constants.constants import Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.host_library import Host
-from pathogen_identification.models import (ParameterSet, PIProject_Sample,
-                                            Projects, RawReference, RunMain,
-                                            SoftwareTree, SoftwareTreeNode)
-from pathogen_identification.utilities.utilities_televir_dbs import \
-    Utility_Repository
-from pathogen_identification.utilities.utilities_views import \
-    RawReferenceCompound
+from pathogen_identification.models import (
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
+from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
+from pathogen_identification.utilities.utilities_views import RawReferenceCompound
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -181,6 +184,8 @@ class Pipeline_Graph_Metagenomics(PipelineTreeBase):
                 CS.PIPELINE_NAME_contig_classification,
                 CS.PIPELINE_NAME_read_classification,
                 self.ASSEMBLY_SPECIAL_STEP,
+                CS.PIPELINE_NAME_host_depletion,
+                self.VIRAL_ENRICHMENT_SPECIAL_STEP,
                 CS.PIPELINE_NAME_metagenomics_combine,
             ],
             self.SINK: [
@@ -2001,7 +2006,8 @@ class Parameter_DB_Utility:
                 software_table,
                 parameters_table,
             ) = self.get_software_tables(
-                project.technology, project.owner, 
+                project.technology,
+                project.owner,
                 metagenomics=metagenomics,
                 mapping_only=mapping_only,
                 screening=screening,
@@ -2130,7 +2136,7 @@ class Parameter_DB_Utility:
             return False
 
         return True
-    
+
     def check_ParameterSet_running(
         self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
     ):
@@ -2664,6 +2670,8 @@ class SoftwareTreeUtils:
             screening=screening,
         )
 
+        print(merged_table)
+
         if merged_table.shape[0] == 0:
             return PipelineTree(
                 technology=project.technology,
@@ -2762,19 +2770,22 @@ class SoftwareTreeUtils:
 
         return self.get_available_pathnodes(local_tree)
 
-    def get_sample_pathnodes(self,
-            metagenomics: bool = False,
-            mapping_only: bool = False,
-            screening: bool = False) -> dict:
+    def get_sample_pathnodes(
+        self,
+        metagenomics: bool = False,
+        mapping_only: bool = False,
+        screening: bool = False,
+    ) -> dict:
         """
         Get all pathnodes for a project
         """
         if self.sample is None:
             return {}
 
+        print("here")
         local_tree = self.generate_software_tree_safe(
-            self.project, 
-            self.sample, 
+            self.project,
+            self.sample,
             metagenomics=metagenomics,
             mapping_only=mapping_only,
             screening=screening,
@@ -2840,7 +2851,7 @@ class SoftwareTreeUtils:
 
         available_path_nodes = self.get_sample_pathnodes(
             metagenomics=True,
-            screening=False, 
+            screening=False,
             mapping_only=False,
         )
         clean_samples_leaf_dict = self.utils_manager.sample_nodes_check(
@@ -2848,10 +2859,8 @@ class SoftwareTreeUtils:
         )
 
         return clean_samples_leaf_dict
-    
-    def check_runs_to_submit_screening_sample(
-        self, sample: PIProject_Sample
-    ) -> dict:
+
+    def check_runs_to_submit_screening_sample(self, sample: PIProject_Sample) -> dict:
         """
         Check if there are runs to run. sets to queue if there are.
         """
@@ -2869,10 +2878,7 @@ class SoftwareTreeUtils:
 
         return clean_samples_leaf_dict
 
-
-    def check_runs_to_submit_mapping_only(
-        self, sample: PIProject_Sample
-    ) -> dict:
+    def check_runs_to_submit_mapping_only(self, sample: PIProject_Sample) -> dict:
         """
         Check if there are runs to run. sets to queue if there are.
         """
@@ -2884,6 +2890,8 @@ class SoftwareTreeUtils:
             screening=False,
             mapping_only=True,
         )
+        print(available_path_nodes)
+
         clean_samples_leaf_dict = self.utils_manager.sample_nodes_check(
             submission_dict, available_path_nodes, self.project
         )

@@ -2,6 +2,7 @@ import datetime
 import os
 import shutil
 import traceback
+from typing import Optional
 
 import pandas as pd
 from django.contrib.auth.models import User
@@ -254,7 +255,7 @@ class Run_Main_from_Leaf:
     pk: int
     date_submitted = datetime.datetime
     combined_analysis: bool
-    include_manual_references: bool
+    mapping_request: bool
     container: PathogenIdentification_deployment
 
     def __init__(
@@ -267,13 +268,15 @@ class Run_Main_from_Leaf:
         odir: str,
         threads: int = 3,
         combined_analysis: bool = False,
-        include_manual_references: bool = False,
+        mapping_request: bool = False,
+        mapping_run_pk: Optional[int] = None,
     ):
         self.user = user
         self.sample = input_data
         self.project = project
         self.combined_analysis = combined_analysis
-        self.include_manual_references = include_manual_references
+        self.mapping_request = mapping_request
+        self.mapping_run_pk = mapping_run_pk
         self.pipeline_leaf = pipeline_leaf
         self.pipeline_tree = pipeline_tree
         # prefix = f"{simplify_name_lower(input_data.name)}_{user.pk}_{project.pk}_{pipeline_leaf.pk}"
@@ -444,9 +447,18 @@ class Run_Main_from_Leaf:
         try:
             self.container.run_main_prep()
 
-            if self.include_manual_references:
-                self.container.run_engine.run_type = RunMainTree_class.RUN_TYPE_MAPPING
+            if (
+                self.container.run_engine.run_type
+                == RunMainTree_class.RUN_TYPE_SCREENING
+            ):
                 self.container.run_engine.remap_params.manual_references_include = True
+
+            if self.mapping_request:
+                self.container.run_engine.run_type = RunMainTree_class.RUN_TYPE_MAPPING
+                # self.container.run_engine.remap_params.manual_references_include = True
+                self.container.run_engine.metadata_tool.get_mapping_references(
+                    self.mapping_run_pk
+                )
 
             self.container.run_engine.Prep_deploy()
             self.container.run_engine.Run_QC()

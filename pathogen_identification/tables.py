@@ -781,8 +781,8 @@ class CompoundReferenceTable(tables.Table):
 
     def render_select_ref(self, value, record: RawReferenceCompound):
         return mark_safe(
-            '<input name="select_ref" id="{}_{}" type="checkbox" value="{}"/>'.format(
-                Constants.CHECK_BOX, record.id, value
+            '<input class="class-ref-checkbox" ref_id={} name="select_ref" id="{}_{}" type="checkbox" value="{}"/>'.format(
+                record.id, Constants.CHECK_BOX, record.id, value
             )
         )
 

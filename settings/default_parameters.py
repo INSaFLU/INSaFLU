@@ -2648,7 +2648,7 @@ class DefaultParameters(object):
         technology_name,
         sample=None,
         pipeline_step="",
-        is_to_run=False,
+        is_to_run=True,
     ):
         """
         minimap remap ONT default

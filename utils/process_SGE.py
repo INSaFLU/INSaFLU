@@ -1076,7 +1076,13 @@ class ProcessSGE(object):
         return sge_id
 
     def set_submit_televir_sample_metagenomics(
-        self, user, sample_pk: int, leaf_pk: int, combined_analysis: bool= False, manual_references: bool = False
+        self,
+        user,
+        sample_pk: int,
+        leaf_pk: int,
+        combined_analysis: bool = False,
+        mapping_request: bool = False,
+        map_run_pk: int = None,
     ):
         """
         submit the job to televir
@@ -1092,7 +1098,7 @@ class ProcessSGE(object):
                 sample_pk,
                 leaf_pk,
                 "--combined_analysis" if combined_analysis else "",
-                "--manual_references" if manual_references else "",
+                "--mapping_request" if mapping_request else "",
                 out_dir,
             )
         ]

@@ -197,7 +197,9 @@
             <i class="fa fa-grav" aria-hidden="true"></i> Deploy Screening
           </button>
           <button class="btn btn-primary">
-            <i class="fa fa-map-marker" aria-hidden="true"></i> Map Selected
+            <a id="request_map_selected" href="#id_map_selected_modal" data-toggle="modal" data-target="#id_map_selected_modal" style="color: #fff;">
+              <i class="fa fa-map-marker" aria-hidden="true"></i> Map Selected
+            </a>
           </button>
 
       </div>
@@ -309,6 +311,9 @@
   </div>
 </div>
 
+
+
+
 <!-- The refrence search -->
 <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop="static">
   <div class="modal-dialog modal-lg" role="document">
@@ -370,12 +375,124 @@
 	</div>
 </div>
 
+
+<!-- The map selected modal -->
+<div class="modal fade" id="id_map_selected_modal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header alert alert-warning">
+        <h4 class="modal-title-map">Map selected references</h4>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body mx-auto mw-100">
+        <div id="id-modal-body-map-selected" sample_id="{{ sample_index }}" map-selected-single-value-url="{% url 'map_selected_references' %}" data-csrf= "{{ csrf_token }}">
+          <label id="id-label-map-selected" class="col-form-label">Folder Name</label>
+        </div>
+      </div>
+      <!-- Modal footer -->
+      <div class="modal-footer" id="id-modal-footer-map-selected">
+        <button id="id-map-selected-button" type="button" class="btn btn-primary" data-dismiss="modal">Map</button>
+        <button id="id-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal"
+          aria-hidden="true">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock content %}
 
 {% block js %}
 
-<script>
+{% load static from staticfiles %}
+<!-- Custom scripts for all pages-->
+<script type="text/javascript" src="{% static 'js/check-box-general.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/graph_televir/htmlwidgets-1.6.2/htmlwidgets.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/graph_televir/d3-4.10.2/d3.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/graph_televir/collapsibleTree-binding-0.1.7/collapsibleTree.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/televir_projects/remove_added_reference.js' %}"></script>
 
+<script>
+  $('#request_map_selected').on("click", function(e){
+    attr= $(this).attr('id');
+    
+    $('#id-label-map-selected').text('Map selected references?');
+    
+  });
+
+  $('#id-map-selected-button').on('click', function() {
+
+    var url= $('#id-modal-body-map-selected').attr("map-selected-single-value-url");
+    var csrf_token = $('#id-modal-body-map-selected').attr('data-csrf'); 
+    console.log(csrf_token);
+
+    var checkedRows = [];
+    $('.class-ref-checkbox:checked').each(function() {
+      // collect ids of checked rows
+
+      var ref_id= $(this).attr('ref_id');
+
+      checkedRows.push(ref_id);
+    });
+
+    console.log(checkedRows);
+
+    $.ajax({
+      type: 'POST',
+      url: url,
+      data: {
+        'csrfmiddlewaretoken': csrf_token,
+        'sample_id': '{{ sample_index }}',
+        'reference_ids': checkedRows
+      },
+      success: function(data) {
+        console.log(data);
+        if (data['is_ok'] == true && data['is_deployed'] == true) {
+          $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
+            'References mapping deployed' +
+            '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+            '</div>');
+
+        } else if (data['is_empty'] == true) {
+          $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+            'No references were selected.' +
+            '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+            '</div>');
+
+            // drop modal
+  
+        } else if (data['is_ok']) {
+          $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+            'The references were not mapped. Check settings.' +
+            '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+            '</div>');
+
+            // drop modal
+            $('#id_map_selected_modal').modal('hide');
+
+
+        } else if (data['is_ok'] == false) {
+          $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+            'The references were not mapped.' +
+            '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+            '</div>');
+
+            // drop modal
+            $('#id_map_selected_modal').modal('hide');
+        } 
+      }
+    })
+  });
+
+
+
+
+  
+</script>
+
+<script>
 
   $(document).ready(function() {
     $('#submit-button').click(function() {
@@ -545,15 +662,6 @@
 
 </script>
 
-
-
-{% load static from staticfiles %}
-<!-- Custom scripts for all pages-->
-<script type="text/javascript" src="{% static 'js/check-box-general.js' %}"></script>
-<script type="text/javascript" src="{% static 'js/graph_televir/htmlwidgets-1.6.2/htmlwidgets.js' %}"></script>
-<script type="text/javascript" src="{% static 'js/graph_televir/d3-4.10.2/d3.min.js' %}"></script>
-<script type="text/javascript" src="{% static 'js/graph_televir/collapsibleTree-binding-0.1.7/collapsibleTree.js' %}"></script>
-<script type="text/javascript" src="{% static 'js/televir_projects/remove_added_reference.js' %}"></script>
 {% endblock %}
 
 

@@ -95,10 +95,32 @@ class RunMetadataHandler:
         self.get_metadata()
 
     def get_manual_references(self, sample: PIProject_Sample):
+        """
+        Get manual references for a given sample. update map request with references.
+        """
+
         references = RawReference.objects.filter(
             run__sample=sample,
             run__run_type=RunMain.RUN_TYPE_STORAGE,
         )
+
+        self.update_map_request(references)
+
+    def get_mapping_references(self, run_pk: int):
+        """
+        Get mapping references for a given run. update map request with references.
+        """
+
+        references = RawReference.objects.filter(
+            run__pk=run_pk,
+        )
+
+        self.update_map_request(references)
+
+    def update_map_request(self, references: List[RawReference]):
+        """
+        Update the remap_targets list with references from list"""
+
         fasta_main_dir = self.config["source"]["REF_FASTA"]
 
         for ref in references:

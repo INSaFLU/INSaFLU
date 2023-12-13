@@ -63,10 +63,17 @@ class Command(BaseCommand):
         )
 
         parser.add_argument(
-            "--manual_references",
+            "--mapping_request",
             action="store_true",
             help="run mapping only",
             default=False,
+        )
+
+        parser.add_argument(
+            "--mapping_run_id",
+            type=int,
+            help="mapping run to be used (pk)",
+            required=False,
         )
 
         parser.add_argument(
@@ -85,7 +92,13 @@ class Command(BaseCommand):
         project = target_sample.project
         leaf_index = options["leaf_id"]
         combined_analysis = options["combined_analysis"]
-        include_manual_references = options["manual_references"]
+        mapping_request = options["mapping_request"]
+        mapping_run = options["mapping_run_id"]
+
+        if mapping_request:
+            if mapping_run is None:
+                raise Exception("mapping_run_id is required for mapping request")
+
         matched_path_node = SoftwareTreeNode.objects.get(pk=leaf_index)
 
         ### PROCESS CONTROLER
@@ -153,7 +166,8 @@ class Command(BaseCommand):
                     odir=options["outdir"],
                     threads=ConstantsSettings.DEPLOYMENT_THREADS,
                     combined_analysis=combined_analysis,
-                    include_manual_references=include_manual_references,
+                    mapping_request=mapping_request,
+                    mapping_run_pk=mapping_run,
                 )
 
                 # if run.is_available:

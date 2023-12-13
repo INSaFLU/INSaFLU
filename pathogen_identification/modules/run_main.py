@@ -65,8 +65,9 @@ class RunDetail_main:
     suprun: str = None
 
     RUN_TYPE_PIPELINE = 1
-    RUN_TYPE_MAPPING = 2
+    RUN_TYPE_MAPPING_REQUEST = 2
     RUN_TYPE_SCREENING = 3
+    RUN_TYPE_COMBINED_MAPPING = 4
 
     threads: int
     config: dict

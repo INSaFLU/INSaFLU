@@ -13,8 +13,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from managing_files.models import Sample
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.data_classes import IntermediateFiles
 
 # Create your models here.
@@ -296,7 +295,6 @@ class ParameterSet(models.Model):
         (STATUS_ERROR, "Error"),
         (STATUS_QUEUED, "Queued"),
     )
-    
 
     sample = models.ForeignKey(PIProject_Sample, on_delete=models.PROTECT)
     project = models.ForeignKey(Projects, on_delete=models.CASCADE, null=True)
@@ -469,6 +467,7 @@ class RunMain(models.Model):
     RUN_TYPE_STORAGE = 1
     RUN_TYPE_MAP_REQUEST = 2
     RUN_TYPE_SCREENING = 3
+    RUN_TYPE_COMBINED_MAPPING = 4
 
     run_type = models.IntegerField(default=RUN_TYPE_PIPELINE)
 

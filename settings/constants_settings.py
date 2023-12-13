@@ -67,12 +67,15 @@ class ConstantsSettings(object):
         PIPELINE_NAME_extra_qc,
         PIPELINE_NAME_viral_enrichment,
         PIPELINE_NAME_host_depletion,
-        PIPELINE_NAME_metagenomics_combine,
         PIPELINE_NAME_metagenomics_settings,
         PIPELINE_NAME_remapping,
         PIPELINE_NAME_remap_filtering,
         PIPELINE_NAME_reporting,
     ]
+
+    vect_pipeline_televir_metagenomics_for_parameters = (
+        vect_pipeline_televir_metagenomics + [PIPELINE_NAME_metagenomics_combine]
+    )
 
     vect_pipeline_televir_screening = [
         PIPELINE_NAME_extra_qc,
@@ -133,7 +136,7 @@ class ConstantsSettings(object):
     def vect_pipeline_televir_metagenomics_condensed(self) -> Dict[str, List[str]]:
         pipeline_steps_dict = {
             pipeline_step: self.pipeline_step_to_pipeline_name(pipeline_step)
-            for pipeline_step in self.vect_pipeline_televir_metagenomics
+            for pipeline_step in self.vect_pipeline_televir_metagenomics_for_parameters
         }
 
         pipeline_names_dict = self.reverse_set_dict(pipeline_steps_dict)

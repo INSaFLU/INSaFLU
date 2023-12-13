@@ -28,53 +28,37 @@ from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProcessControler
 from managing_files.tables import SampleToProjectsTable
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from pathogen_identification.forms import ReferenceForm
-from pathogen_identification.models import (
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReadClassification,
-    ReferenceContigs,
-    ReferenceMap_Main,
-    ReferenceSourceFileMap,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    RunRemapMain,
-    Sample,
-    TelevirRunQC,
-)
+from pathogen_identification.models import (ContigClassification, FinalReport,
+                                            ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            ReadClassification,
+                                            ReferenceContigs,
+                                            ReferenceMap_Main,
+                                            ReferenceSourceFileMap,
+                                            RunAssembly, RunDetail, RunMain,
+                                            RunRemapMain, Sample, TelevirRunQC)
 from pathogen_identification.modules.object_classes import RunQC_report
-from pathogen_identification.tables import (
-    AddedReferenceTable,
-    CompoundReferenceScore,
-    CompoundReferenceTable,
-    ContigTable,
-    ProjectTable,
-    ProjectTableMetagenomics,
-    RawReferenceTable,
-    ReferenceSourceTable,
-    RunMainTable,
-    SampleTable,
-)
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.tables import (AddedReferenceTable,
+                                            CompoundReferenceScore,
+                                            CompoundReferenceTable,
+                                            ContigTable, ProjectTable,
+                                            ProjectTableMetagenomics,
+                                            RawReferenceTable,
+                                            ReferenceSourceTable, RunMainTable,
+                                            RunMappingTable, SampleTable)
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
 from pathogen_identification.utilities.utilities_general import (
-    get_services_dir,
-    infer_run_media_dir,
-)
-from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
+    get_services_dir, infer_run_media_dir)
+from pathogen_identification.utilities.utilities_pipeline import \
+    RawReferenceUtils
 from pathogen_identification.utilities.utilities_views import (
-    EmptyRemapMain,
-    RawReferenceCompound,
-    ReportSorter,
-    final_report_best_cov_by_accid,
-    recover_assembly_contigs,
-)
+    EmptyRemapMain, RawReferenceCompound, ReportSorter,
+    final_report_best_cov_by_accid, recover_assembly_contigs)
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
 from utils.support_django_template import get_link_for_dropdown_item
@@ -782,6 +766,20 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
                     ParameterSet.STATUS_RUNNING,
                 ],
             ).order_by("-parameter_set__leaf__index")
+
+            run_mapping = RunMain.objects.filter(
+                sample__pk=sample_pk,
+                project__pk=project_pk,
+                project__owner=user,
+                parameter_set__status__in=[
+                    ParameterSet.STATUS_FINISHED,
+                    ParameterSet.STATUS_RUNNING,
+                ],
+                run_type__in=[
+                    RunMain.RUN_TYPE_MAP_REQUEST,
+                    RunMain.RUN_TYPE_COMBINED_MAPPING,
+                ],
+            )
             sample_name = sample.sample.name
             project_name = project.name
 
@@ -792,10 +790,28 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
                 fail_silently=True,
             )
             runs = RunMain.objects.none()
+            run_mapping = RunMain.objects.none()
             sample_name = "sample"
             project_name = "project"
 
         runs_table = RunMainTable(runs)
+        rendered_table= ""
+        
+        if run_mapping.exists():
+            run_mappings_table = RunMappingTable(run_mapping)
+            small_context = {
+                "nav_sample": True,
+                "total_items": run_mapping.count(),
+                "show_paginatior": run_mapping.count() > ConstantsSettings.PAGINATE_NUMBER,
+                "show_info_main_page": ShowInfoMainPage(),
+                "table": run_mappings_table,
+                "query_set_count": run_mapping.count(),
+            }
+
+            template_table_html = "pathogen_identification/mapping_runs.html"
+            rendered_table = render_to_string(
+                template_table_html, small_context, request=self.request
+            )
 
         RequestConfig(
             self.request, paginate={"per_page": ConstantsSettings.PAGINATE_NUMBER}
@@ -807,6 +823,8 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
             "show_paginatior": runs.count() > ConstantsSettings.PAGINATE_NUMBER,
             "show_info_main_page": ShowInfoMainPage(),
             "table": runs_table,
+            "table_mapping": rendered_table,
+            "mappings_exist": run_mapping.exists(),
             "sample_name": sample_name,
             "project_main": True,
             "project_name": project_name,
@@ -1233,7 +1251,8 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             raise Http404
 
         try:
-            run_main = RunMain.objects.get(pk=run_pk)
+            run_main_pipeline = RunMain.objects.get(pk=run_pk)
+
         except Exception as e:
             messages.error(self.request, "Run does not exist")
             raise Http404
@@ -1249,12 +1268,12 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
 
         project_name = project_main.name
         sample_name = sample.name
-        run_name = run_main.parameter_set.leaf.index
-        sample_main = run_main.sample
+        run_name = run_main_pipeline.parameter_set.leaf.index
+        sample_main = run_main_pipeline.sample
         #
 
         raw_references = (
-            RawReference.objects.filter(run=run_main)
+            RawReference.objects.filter(run=run_main_pipeline)
             .order_by("status")
             .exclude(accid="-")
         )
@@ -1267,10 +1286,10 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         raw_reference_table = RawReferenceTable(raw_references)
 
         #
-        run_detail = RunDetail.objects.get(sample=sample_main, run=run_main)
+        run_detail = RunDetail.objects.get(sample=sample_main, run=run_main_pipeline)
         #
         try:
-            run_qc = TelevirRunQC.objects.get(run=run_main)
+            run_qc = TelevirRunQC.objects.get(run=run_main_pipeline)
             qc_report = RunQC_report(
                 performed=run_qc.performed,
                 method=run_qc.method,
@@ -1292,8 +1311,10 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
 
         #
         try:
-            run_assembly = RunAssembly.objects.get(sample=sample_main, run=run_main)
-            recover_assembly_contigs(run_main, run_assembly)
+            run_assembly = RunAssembly.objects.get(
+                sample=sample_main, run=run_main_pipeline
+            )
+            recover_assembly_contigs(run_main_pipeline, run_assembly)
             assembly_available = run_assembly.performed
         except RunAssembly.DoesNotExist:
             run_assembly = None
@@ -1301,7 +1322,9 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
 
         #
         try:
-            run_remap = RunRemapMain.objects.get(sample=sample_main, run=run_main)
+            run_remap = RunRemapMain.objects.get(
+                sample=sample_main, run=run_main_pipeline
+            )
             remap_available = run_remap.method != "None"
 
         except RunRemapMain.DoesNotExist:
@@ -1310,11 +1333,11 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
 
         #
         read_classification = ReadClassification.objects.get(
-            sample=sample_main, run=run_main
+            sample=sample_main, run=run_main_pipeline
         )
         #
         final_report = FinalReport.objects.filter(
-            sample=sample_main, run=run_main
+            sample=sample_main, run=run_main_pipeline
         ).order_by("-coverage")
         #
         report_layout_params = TelevirParameters.get_report_layout_params(run_pk=run_pk)
@@ -1336,19 +1359,19 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
                 break
 
         contig_classification = ContigClassification.objects.get(
-            sample=sample_main, run=run_main
+            sample=sample_main, run=run_main_pipeline
         )
         #
 
         reference_remap_main = ReferenceMap_Main.objects.filter(
-            sample=sample_main, run=run_main
+            sample=sample_main, run=run_main_pipeline
         )
 
         context = {
             "project": project_name,
             "run_name": run_name,
             "sample": sample_name,
-            "run_main": run_main,
+            "run_main": run_main_pipeline,
             "run_detail": run_detail,
             "qc_report": qc_report,
             "assembly": run_assembly,
@@ -1365,7 +1388,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "owner": True,
             "in_control": True,  # has_controlled_flag,
             "report_list": sorted_reports,
-            "data_exists": True if not run_main.data_deleted else False,
+            "data_exists": True if not run_main_pipeline.data_deleted else False,
             "excluded_exist": excluded_reports_exist,
             "empty_reports": empty_reports,
             "error_rate_available": report_sorter.error_rate_available,
@@ -1385,21 +1408,21 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         ### downloadable files
         context["files"] = {}
         # 1. parameters
-        params_file_path = run_main.params_file_path
+        params_file_path = run_main_pipeline.params_file_path
         if os.path.exists(params_file_path):
             context["files"]["parameters"] = params_file_path
         # intermediate files zip
-        intermediate_reports = run_main.intermediate_reports_get()
-        run_main_dir = infer_run_media_dir(run_main)
-        zip_file_name = "{}_intermediate_reports.zip".format(run_main.name)
+        intermediate_reports = run_main_pipeline.intermediate_reports_get()
+        run_main_dir = infer_run_media_dir(run_main_pipeline)
+        zip_file_name = "{}_intermediate_reports.zip".format(run_main_pipeline.name)
         file_path = get_create_zip(
             intermediate_reports.files, run_main_dir, zip_file_name
         )
         context["files"]["intermediate_reports_zip"] = file_path
 
         # final report
-        reports_df = run_main.get_final_reports_df()
-        run_main_dir = infer_run_media_dir(run_main)
+        reports_df = run_main_pipeline.get_final_reports_df()
+        run_main_dir = infer_run_media_dir(run_main_pipeline)
         reports_df.to_csv(os.path.join(run_main_dir, "final_reports.csv"), index=False)
         file_path = os.path.join(run_main_dir, "final_reports.csv")
         context["files"]["final_reports_csv"] = file_path

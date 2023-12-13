@@ -921,7 +921,7 @@ class ContigTable(tables.Table):
         return round(float(record.coverage), 3)
 
 
-class RunMainTable(tables.Table):
+class RunMappingTable(tables.Table):
     name = tables.Column(verbose_name="Run")
     report = tables.Column(verbose_name="Report", orderable=False, empty_values=())
     success = tables.Column(verbose_name="Success", orderable=False, empty_values=())
@@ -936,20 +936,11 @@ class RunMainTable(tables.Table):
     host_depletion = tables.Column(
         verbose_name="Depletion", orderable=False, empty_values=()
     )
-    assembly_method = tables.Column(
-        verbose_name="Assembly", orderable=False, empty_values=()
-    )
-    read_classification = tables.Column(
-        verbose_name="Read Classification", orderable=False, empty_values=()
-    )
 
     remapping = tables.Column(
         verbose_name="Remapping", orderable=False, empty_values=()
     )
 
-    contig_classification = tables.Column(
-        verbose_name="Contig Classification", orderable=False, empty_values=()
-    )
 
     runtime = tables.Column(verbose_name="Runtime", orderable=False, empty_values=())
 
@@ -965,9 +956,6 @@ class RunMainTable(tables.Table):
             "extra_filtering",
             "enrichment",
             "host_depletion",
-            "assembly_method",
-            "read_classification",
-            "contig_classification",
         )
 
         sequence = (
@@ -976,9 +964,6 @@ class RunMainTable(tables.Table):
             "extra_filtering",
             "enrichment",
             "host_depletion",
-            "assembly_method",
-            "contig_classification",
-            "read_classification",
             "remapping",
             "success",
             "runtime",
@@ -1025,24 +1010,6 @@ class RunMainTable(tables.Table):
 
     def render_host_depletion(self, record: RunMain):
         method = record.host_depletion
-        method_name = self.get_software_extended_name(method)
-
-        return mark_safe(method_name)
-
-    def render_assembly_method(self, record: RunMain):
-        method = record.assembly_method
-        method_name = self.get_software_extended_name(method)
-
-        return mark_safe(method_name)
-
-    def render_contig_classification(self, record: RunMain):
-        method = record.contig_classification
-        method_name = self.get_software_extended_name(method)
-
-        return mark_safe(method_name)
-
-    def render_read_classification(self, record: RunMain):
-        method = record.read_classification
         method_name = self.get_software_extended_name(method)
 
         return mark_safe(method_name)
@@ -1151,3 +1118,84 @@ class RunMainTable(tables.Table):
                 runlog += " " + report_link
 
             return mark_safe(runlog)
+
+
+class RunMainTable(RunMappingTable):
+    name = tables.Column(verbose_name="Run")
+    report = tables.Column(verbose_name="Report", orderable=False, empty_values=())
+    success = tables.Column(verbose_name="Success", orderable=False, empty_values=())
+
+    extra_filtering = tables.Column(
+        verbose_name="Extra filtering", orderable=False, empty_values=()
+    )
+
+    enrichment = tables.Column(
+        verbose_name="Enrichment", orderable=False, empty_values=()
+    )
+    host_depletion = tables.Column(
+        verbose_name="Depletion", orderable=False, empty_values=()
+    )
+
+    remapping = tables.Column(
+        verbose_name="Remapping", orderable=False, empty_values=()
+    )
+
+    runtime = tables.Column(verbose_name="Runtime", orderable=False, empty_values=())
+
+    class Meta:
+        model = RunMain
+        attrs = {
+            "class": "paleblue",
+        }
+
+        fields = (
+            "name",
+            "report",
+            "extra_filtering",
+            "enrichment",
+            "host_depletion",
+            "assembly_method",
+            "read_classification",
+            "contig_classification",
+        )
+
+        sequence = (
+            "name",
+            "report",
+            "extra_filtering",
+            "enrichment",
+            "host_depletion",
+            "assembly_method",
+            "contig_classification",
+            "read_classification",
+            "remapping",
+            "success",
+            "runtime",
+        )
+
+    def render_assembly_method(self, record: RunMain):
+        method = record.assembly_method
+        method_name = self.get_software_extended_name(method)
+
+        return mark_safe(method_name)
+
+    def render_contig_classification(self, record: RunMain):
+        method = record.contig_classification
+        method_name = self.get_software_extended_name(method)
+
+        return mark_safe(method_name)
+
+    def render_extra_filtering(self, record):
+        try:
+            run_qc = TelevirRunQC.objects.get(run=record)
+            method = run_qc.method
+            method_name = self.get_software_extended_name(method)
+            return mark_safe(method_name)
+        except:
+            return mark_safe("None")
+
+    def render_remapping(self, record: RunMain):
+        method = record.remap
+        method_name = self.get_software_extended_name(method)
+
+        return mark_safe(method_name)

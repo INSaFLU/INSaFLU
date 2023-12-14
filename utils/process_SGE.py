@@ -1099,7 +1099,7 @@ class ProcessSGE(object):
                 leaf_pk,
                 "--combined_analysis" if combined_analysis else "",
                 "--mapping_request" if mapping_request else "",
-                "--mapping_run_id {}".format(map_run_pk) if map_run_pk else "",
+                "--mapping_run_id {} ".format(map_run_pk) if map_run_pk else "",
                 out_dir,
             )
         ]

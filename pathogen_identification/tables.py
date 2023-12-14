@@ -11,20 +11,32 @@ from constants.constants import Constants
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (ContigClassification, FinalReport,
-                                            ParameterSet, PIProject_Sample,
-                                            Projects, RawReference,
-                                            ReadClassification,
-                                            ReferenceContigs, RunAssembly,
-                                            RunDetail, RunMain, SampleQC,
-                                            TelevirRunQC)
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
+from pathogen_identification.models import (
+    ContigClassification,
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReadClassification,
+    ReferenceContigs,
+    RunAssembly,
+    RunDetail,
+    RunMain,
+    SampleQC,
+    TelevirRunQC,
+)
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.utilities_general import (
-    get_project_dir, get_project_dir_no_media_root)
+    get_project_dir,
+    get_project_dir_no_media_root,
+)
 from pathogen_identification.utilities.utilities_views import (
-    RawReferenceCompound, ReportSorter, check_sample_software_exists,
-    duplicate_metagenomics_software)
+    RawReferenceCompound,
+    ReportSorter,
+    check_sample_software_exists,
+    duplicate_metagenomics_software,
+)
 from settings.models import Parameter, Software
 
 
@@ -941,13 +953,14 @@ class RunMappingTable(tables.Table):
         verbose_name="Remapping", orderable=False, empty_values=()
     )
 
-
     runtime = tables.Column(verbose_name="Runtime", orderable=False, empty_values=())
 
     class Meta:
         model = RunMain
         attrs = {
             "class": "paleblue",
+            "title": "Run Mapping",
+            "description": "Run Mapping",
         }
 
         fields = (

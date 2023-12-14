@@ -25,6 +25,20 @@
     .btn-group {
         margin-bottom: 15px;
     }
+
+    .table-title {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+      
+      .table-description {
+        font-size: 16px;
+        margin-bottom: 10px;
+      }
+      .table-separator {
+        margin-bottom: 20px;
+      }
 </style>
 
 <div class="table-container">
@@ -41,7 +55,11 @@
 
     {% block table %}
     <div class="table-responsive">
-        <table class="table table-hover table-bordered table-striped" {% if table.attrs %}
+
+        <h3 class="table-title"> Workflow table </h3>
+        <p class="table-description"> Classification Workflows. </p>    
+
+        <table class="table table-hover table-bordered table-striped table-separator" {% if table.attrs %}
             {{ table.attrs.as_html }}{% endif %}>
             {% block table.thead %}
             <thead>
@@ -95,7 +113,7 @@
 
 {% if mappings_exist %}
 
-{{ mappings_table }}
+{{ table_mapping }}
 
 {% endif %}
 

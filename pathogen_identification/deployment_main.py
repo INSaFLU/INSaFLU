@@ -457,6 +457,7 @@ class Run_Main_from_Leaf:
                 self.container.run_engine.run_type = (
                     RunMainTree_class.RUN_TYPE_MAPPING_REQUEST
                 )
+                self.container.run_engine.run_pk = self.mapping_run_pk
                 # self.container.run_engine.remap_params.manual_references_include = True
                 self.container.run_engine.metadata_tool.get_mapping_references(
                     self.mapping_run_pk

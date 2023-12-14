@@ -4,7 +4,7 @@ import shutil
 import time
 from dataclasses import dataclass
 from random import randint
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -15,17 +15,31 @@ from pathogen_identification.modules.assembly_class import Assembly_class
 from pathogen_identification.modules.classification_class import Classifier
 from pathogen_identification.modules.metadata_handler import RunMetadataHandler
 from pathogen_identification.modules.object_classes import (
-    Assembly_results, Contig_classification_results, Read_class,
-    Read_classification_results, Remap_main, Remap_Target, Run_detail_report,
-    RunCMD, RunQC_report, Sample_runClass, Software_detail,
-    SoftwareDetailCompound, SoftwareRemap, SoftwareUnit)
+    Assembly_results,
+    Contig_classification_results,
+    Read_class,
+    Read_classification_results,
+    Remap_main,
+    Remap_Target,
+    Run_detail_report,
+    RunCMD,
+    RunQC_report,
+    Sample_runClass,
+    Software_detail,
+    SoftwareDetailCompound,
+    SoftwareRemap,
+    SoftwareUnit,
+)
 from pathogen_identification.modules.preprocess_class import Preprocess
-from pathogen_identification.modules.remap_class import (Mapping_Instance,
-                                                         Mapping_Manager)
+from pathogen_identification.modules.remap_class import (
+    Mapping_Instance,
+    Mapping_Manager,
+)
 from pathogen_identification.utilities.televir_parameters import (
-    RemapParams, TelevirParameters)
-from pathogen_identification.utilities.utilities_pipeline import \
-    RawReferenceUtils
+    RemapParams,
+    TelevirParameters,
+)
+from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -74,6 +88,8 @@ class RunDetail_main:
     prefix: str
     project_name: str
     username: str
+    run_type: int
+    run_pk: Optional[int]
     ## input
     sample_name: str
     type: str
@@ -339,6 +355,7 @@ class RunDetail_main:
         self.prefix = config["prefix"]
         self.suprun = self.prefix
         self.run_type = self.RUN_TYPE_PIPELINE
+        self.run_pk = None
 
         self.method_args = method_args
         self.modules = list(self.method_args["module"].unique())
@@ -871,7 +888,7 @@ class Run_Deployment_Methods(RunDetail_main):
     def prep_REMAPPING(self):
         if self.remap_params.manual_references_include:
             self.metadata_tool.get_manual_references(self.sample_registered)
-        
+
         self.remap_manager = Mapping_Manager(
             self.metadata_tool.remap_targets,
             self.sample.r1,

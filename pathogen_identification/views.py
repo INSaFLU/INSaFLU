@@ -247,10 +247,7 @@ class PathId_ProjectsView(LoginRequiredMixin, ListView):
                 | Q(project_samples__name__icontains=self.request.GET.get(tag_search))
             ).distinct()
 
-        if PICS.METAGENOMICS:
-            table = ProjectTableMetagenomics(query_set)
-        else:
-            table = ProjectTable(query_set)
+        table = ProjectTable(query_set)
 
         RequestConfig(
             self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}

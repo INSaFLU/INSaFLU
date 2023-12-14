@@ -557,6 +557,8 @@ def Update_RunMain_noCheck(
     :return: None
     """
     sample, runmain, project = get_run_parents(run_class, parameter_set)
+    print("############ Update_RunMain_noCheck ############")
+    print(sample, runmain, project)
 
     if sample is None or runmain is None:
         return
@@ -1237,26 +1239,10 @@ def Update_RefMap_DB(run_class: RunEngine_class, parameter_set: ParameterSet):
     """
     print(f"updating refmap_dbs run {run_class.prefix}")
 
-    user = User.objects.get(username=run_class.username)
-    project = Projects.objects.get(
-        name=run_class.project_name, owner=user, is_deleted=False
-    )
-
-    sample = PIProject_Sample.objects.get(
-        name=run_class.sample.sample_name,
-        project=project,
-    )
-
-    run = RunMain.objects.get(
-        project=project,
-        suprun=run_class.suprun,
-        name=run_class.prefix,
-        sample=sample,
-        parameter_set=parameter_set,
-    )
+    sample, runmain, _ = get_run_parents(run_class, parameter_set)
 
     for ref_map in run_class.remap_manager.mapped_instances:
-        Update_ReferenceMap(ref_map, run, sample)
+        Update_ReferenceMap(ref_map, runmain, sample)
 
 
 def Update_ReferenceMap(

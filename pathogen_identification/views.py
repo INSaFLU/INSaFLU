@@ -784,8 +784,6 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
                 ],
                 run_type__in=[
                     RunMain.RUN_TYPE_PIPELINE,
-                    RunMain.RUN_TYPE_MAP_REQUEST,
-                    RunMain.RUN_TYPE_COMBINED_MAPPING,
                 ],
             ).order_by("-parameter_set__leaf__index")
 

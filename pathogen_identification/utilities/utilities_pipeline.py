@@ -2763,7 +2763,6 @@ class SoftwareTreeUtils:
         if self.sample is None:
             return {}
 
-        print("here")
         local_tree = self.generate_software_tree_safe(
             self.project,
             self.sample,

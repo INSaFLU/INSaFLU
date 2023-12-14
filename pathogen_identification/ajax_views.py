@@ -144,9 +144,6 @@ def submit_sample_mapping_televir(request):
         software_utils = SoftwareTreeUtils(user, project, sample=sample)
         runs_to_deploy = software_utils.check_runs_to_submit_mapping_only(sample)
 
-        print("hello2")
-        print(runs_to_deploy)
-
         if len(runs_to_deploy) == 0:
             return JsonResponse(data)
 
@@ -167,6 +164,7 @@ def submit_sample_mapping_televir(request):
                             sample_pk=sample.pk,
                             leaf_pk=leaf.pk,
                             mapping_request=True,
+                            map_run_pk=mapping_run.pk,
                         )
 
                 data["is_deployed"] = True

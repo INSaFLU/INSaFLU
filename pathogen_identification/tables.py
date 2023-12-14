@@ -1000,7 +1000,14 @@ class RunMappingTable(tables.Table):
 
         return name_extended
 
-    def render_name(self, record):
+    def render_name(self, record: RunMain):
+        prefix = ""
+
+        if record.run_type == RunMain.RUN_TYPE_MAP_REQUEST:
+            prefix = "Map request: "
+        elif record.run_type == RunMain.RUN_TYPE_COMBINED_MAPPING:
+            prefix = "Combined mapping: "
+
         return record.parameter_set.leaf.index
 
     def render_success(self, record):

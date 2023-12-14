@@ -262,6 +262,8 @@ def Update_RunMain_Initial(run_class: RunEngine_class, parameter_set: ParameterS
     :param sample_class:
     :return: run_data
     """
+    print("Update_RunMain_Initial")
+    print(run_class.run_type)
 
     try:
         with transaction.atomic():

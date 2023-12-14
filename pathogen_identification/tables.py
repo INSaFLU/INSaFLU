@@ -1004,11 +1004,11 @@ class RunMappingTable(tables.Table):
         prefix = ""
 
         if record.run_type == RunMain.RUN_TYPE_MAP_REQUEST:
-            prefix = "Map request: "
+            prefix = "Request - "
         elif record.run_type == RunMain.RUN_TYPE_COMBINED_MAPPING:
-            prefix = "Combined mapping: "
+            prefix = "Combined - "
 
-        return record.parameter_set.leaf.index
+        return f"{prefix}{record.parameter_set.leaf.index}"
 
     def render_success(self, record):
         success = False

@@ -816,8 +816,6 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
 
         runs_table = RunMainTable(runs)
         rendered_table = ""
-        print("############# run_mapping.exists() #############")
-        print(run_mapping.exists())
 
         if run_mapping.exists():
             run_mappings_table = RunMappingTable(run_mapping)
@@ -835,8 +833,6 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
             rendered_table = render_to_string(
                 template_table_html, small_context, request=self.request
             )
-
-        print(rendered_table)
 
         RequestConfig(
             self.request, paginate={"per_page": ConstantsSettings.PAGINATE_NUMBER}
@@ -1030,12 +1026,10 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
         #### added references table
 
         # references_added_table = ReferenceSourceTable(query_set_added_manual)
-        print(query_set_added_manual)
         added_references_context = inject__added_references(
             query_set_added_manual, self.request
         )
         context["added_references_table"] = added_references_context["my_content"]
-        print(added_references_context["references_count"])
 
         # raw_references = raw_references
         tag_search = "search_add_project_sample"
@@ -1296,6 +1290,8 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         run_name = run_main_pipeline.parameter_set.leaf.index
         sample_main = run_main_pipeline.sample
         #
+        is_classification = run_main_pipeline.run_type == RunMain.RUN_TYPE_PIPELINE
+        #
 
         raw_references = (
             RawReference.objects.filter(run=run_main_pipeline)
@@ -1370,7 +1366,6 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
 
         sorted_reports = report_sorter.get_reports()
         excluded_reports_exist = report_sorter.check_excluded_exist()
-        print(excluded_reports_exist)
         empty_reports = report_sorter.get_reports_empty()
         if empty_reports:
             sorted_reports.append(empty_reports)
@@ -1395,6 +1390,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         context = {
             "project": project_name,
             "run_name": run_name,
+            "is_classification": is_classification,
             "sample": sample_name,
             "run_main": run_main_pipeline,
             "run_detail": run_detail,

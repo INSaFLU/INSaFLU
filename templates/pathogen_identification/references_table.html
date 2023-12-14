@@ -217,7 +217,7 @@
                         <form method="get" action="" class="form-inline form-search pull-right">
                           {% csrf_token %}
                             <div class="pull-right form-search">
-                              <input id="search_form_id" name="search_add_project_sample" type="text" class="form-control col-sm-9" placeholder="Name, Type, Week and Data set"{% if search_add_project_sample %} value="{{ search_add_project_sample }}"{% endif %}>
+                              <input id="search_form_id" name="search_add_project_sample" type="text" class="form-control col-sm-9" placeholder="Description, Accession, Taxid"{% if search_add_project_sample %} value="{{ search_add_project_sample }}"{% endif %}>
                                 <button type="submit" name="search_in_table" class="btn btn-small btn-dark"><i class="fa fa-search"></i> Search</button> 
                             </div>              
                         </form>

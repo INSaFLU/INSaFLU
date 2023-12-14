@@ -42,7 +42,7 @@
                         <form method="get" class="form-inline form-search pull-right">
                             {% csrf_token %}
                             <input id="search_form_id" name="search_projects" type="text" class="form-control col-md-8"
-                                placeholder="Name, Reference, Sample" {% if search_projects %}
+                                placeholder="Project Name, Sample Name" {% if search_projects %}
                                 value="{{ search_projects }}" {% endif %}>
                             <button type="submit" class="btn btn-small btn-dark"><i class="fa fa-search"></i>
                                 Search</button>

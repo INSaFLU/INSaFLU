@@ -10,29 +10,20 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.views import generic
 
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReferenceMap_Main,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference, ReferenceMap_Main,
+                                            RunAssembly, RunDetail, RunMain)
 from pathogen_identification.utilities.clade_objects import Clade
-from pathogen_identification.utilities.overlap_manager import ReadOverlapManager
+from pathogen_identification.utilities.overlap_manager import \
+    ReadOverlapManager
 from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
 from pathogen_identification.utilities.televir_parameters import (
-    LayoutParams,
-    TelevirParameters,
-)
+    LayoutParams, TelevirParameters)
 from pathogen_identification.utilities.utilities_general import (
-    infer_run_media_dir,
-    simplify_name,
-)
+    infer_run_media_dir, simplify_name)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
 
@@ -318,6 +309,7 @@ def duplicate_metagenomics_software(project: Projects, sample: PIProject_Sample)
             Software.TYPE_INSAFLU_PARAMETER,
         ],
         is_obsolete=False,
+        pipeline_step__name__in= ConstantsSettings.vect_pipeline_televir_metagenomics_for_parameters,
         technology__name=project.technology,
         parameter__televir_project=project_call,
         parameter__televir_project_sample=None,

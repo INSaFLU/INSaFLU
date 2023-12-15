@@ -34,9 +34,21 @@
                 {% if project_owner %}
                 <tr>
                     <th colspan="10">
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-primary dark dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fa fa-flask"></i>
+                                <a><span class="hidden-phone"> Run </span></a>
+                            </button>
+                            <div class="dropdown-menu pull-right">
+                                <a href="#" id="deploypi_btn" class="dropdown-item" style="text-align:center;" deploy-url="{% url deploy_url %}" ><span class="hidden-phone"> Classic </span></a>
+                                <a href="#" id="deploypi_sbtn" class="dropdown-item" style="text-align:center;" deploy-url="{% url deploy_url %}" ><span class="hidden-phone"> Mapping </span></a>
+
+                            </div>
+                        </div>
+
                         {% if not demo %}
                         <div class="btn-group">
-                            <button type="button" class="btn btn-primary dark" id="deploypi_btn" deploy-url="{% url deploy_url %}" aria-haspopup="true" aria-expanded="false">
+                            <button type="button" class="btn btn-primary dark" id="deploypsi_btn" deploy-url="{% url deploy_url %}" aria-haspopup="true" aria-expanded="false">
                                 <i class="fa fa-flask"></i>
                                 <a><span class="hidden-phone"> Run </span></a>
                             </button>
@@ -436,7 +448,8 @@
 
     })
 
-    $("#deploypi_btn").click(function(){
+    $("#deploypi_btn").click(function(e){
+        
         $.ajax({
             url: $('#deploypi_btn').attr("deploy-url"),
             type: "POST",
@@ -454,6 +467,7 @@
                 else if (data["is_ok"] == true && data["is_deployed"] == true) {
                     alert("Runs deployed");
                 }
+                $.unblockUI();
             }
 
         });
@@ -487,7 +501,11 @@
 
 
 <script>
+    
 	$(document).ready(function () {
+        $('#deploypi_btn').click(function () {
+			$.unblockUI();
+		});
 		$('#id-cancel-button').click(function () {
 			$.unblockUI();
 		});

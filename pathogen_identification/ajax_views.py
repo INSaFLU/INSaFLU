@@ -59,7 +59,6 @@ def submit_sample_metagenomics_televir(request):
 
         software_utils = SoftwareTreeUtils(user, project, sample=sample)
         runs_to_deploy = software_utils.check_runs_to_submit_metagenomics_sample(sample)
-        print("runs_to_deploy", runs_to_deploy)
 
         try:
             if len(runs_to_deploy) > 0:
@@ -101,10 +100,8 @@ def submit_sample_screening_televir(request):
 
         software_utils = SoftwareTreeUtils(user, project, sample=sample)
         runs_to_deploy = software_utils.check_runs_to_submit_screening_sample(sample)
-        print("runs_to_deploy", runs_to_deploy)
 
         screening_run = reference_manager.screening_run
-        print(screening_run)
 
         try:
             if len(runs_to_deploy) > 0:

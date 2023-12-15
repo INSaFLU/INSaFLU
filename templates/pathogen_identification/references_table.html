@@ -81,7 +81,7 @@
 }
 
 .sidebar-actions {
-  padding: 10px;
+  padding: 5px;
 }
 
 .sidebar-actions button {
@@ -99,6 +99,24 @@
   width: 100%;
   height: 100%;
 }
+
+.button-group-casing {
+  border: 1px solid #ccc;
+  background-color: #ccc;  
+  border-radius: 5px;
+  padding: 2px;
+  margin-bottom: 10px;
+  margin-top: 10px;
+}
+
+.parameters-button {
+  margin-top: 15px;
+}
+
+.first-button {
+  margin-top: 5px
+}
+
 </style>
 
 <div id="accordion1" role="tablist" aria-multiselectable="true">
@@ -183,14 +201,12 @@
 <div class="table-container">
 
   <div class="sidebar">
-      <div class="sidebar-header">
-          <h3>Sample</h3>
-      </div>
       <div class="sidebar-actions">
-        <button class="btn btn-primary">
-          {{ meta_parameters  }}  Parameters
-        </button>
-          <button class="btn btn-primary">
+        <div class="sidebar-header">
+          <h3> Actions </h3>
+        </div>
+        <div class="button-group-casing">
+          <button class="btn btn-primary first-button">
             {{ deploy_metagenomics }} Deploy Combined
           </button>
 
@@ -201,10 +217,14 @@
           </button>
           <button class="btn btn-primary">
             <a id="request_screening" href="#id_screening_modal" data-toggle="modal" data-target="#id_screening_modal" style="color: #fff;">
-              <i class="fa fa-map-marker" aria-hidden="true"></i> Deploy Screening
+              <i class="fa fa-rocket" aria-hidden="true"></i> Deploy Screening
             </a>
           </button>
-
+          <button class="btn btn-primary parameters-button">
+            {{ meta_parameters  }}  Parameters
+          </button>
+        </div>
+  
       </div>
   </div>
   <div class="table-content">

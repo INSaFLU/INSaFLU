@@ -164,14 +164,6 @@ class Command(BaseCommand):
                 )
 
             else:
-                if (
-                    utils.parameter_util.check_ParameterSet_available_to_run(
-                        sample=target_sample, leaf=matched_path_node, project=project
-                    )
-                    is False
-                ):
-                    raise Exception("ParameterSet not available")
-
                 run = Run_Main_from_Leaf(
                     user=user,
                     input_data=target_sample,

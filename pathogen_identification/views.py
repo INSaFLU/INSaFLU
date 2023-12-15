@@ -28,38 +28,55 @@ from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProcessControler
 from managing_files.tables import SampleToProjectsTable
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.forms import ReferenceForm
-from pathogen_identification.models import (ContigClassification, FinalReport,
-                                            ParameterSet, PIProject_Sample,
-                                            Projects, RawReference,
-                                            ReadClassification,
-                                            ReferenceContigs,
-                                            ReferenceMap_Main,
-                                            ReferenceSourceFileMap,
-                                            RunAssembly, RunDetail, RunMain,
-                                            RunRemapMain, Sample, TelevirRunQC)
+from pathogen_identification.models import (
+    ContigClassification,
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReadClassification,
+    ReferenceContigs,
+    ReferenceMap_Main,
+    ReferenceSourceFileMap,
+    RunAssembly,
+    RunDetail,
+    RunMain,
+    RunRemapMain,
+    Sample,
+    TelevirRunQC,
+)
 from pathogen_identification.modules.object_classes import RunQC_report
-from pathogen_identification.tables import (AddedReferenceTable,
-                                            CompoundRefereceScoreWithScreening,
-                                            CompoundReferenceScore,
-                                            CompoundReferenceTable,
-                                            ContigTable, ProjectTable,
-                                            ProjectTableMetagenomics,
-                                            RawReferenceTable,
-                                            ReferenceSourceTable, RunMainTable,
-                                            RunMappingTable, SampleTable)
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
+from pathogen_identification.tables import (
+    AddedReferenceTable,
+    CompoundRefereceScoreWithScreening,
+    CompoundReferenceScore,
+    CompoundReferenceTable,
+    ContigTable,
+    ProjectTable,
+    ProjectTableMetagenomics,
+    RawReferenceTable,
+    ReferenceSourceTable,
+    RunMainTable,
+    RunMappingTable,
+    SampleTable,
+)
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
 from pathogen_identification.utilities.utilities_general import (
-    get_services_dir, infer_run_media_dir)
-from pathogen_identification.utilities.utilities_pipeline import \
-    RawReferenceUtils
+    get_services_dir,
+    infer_run_media_dir,
+)
+from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
 from pathogen_identification.utilities.utilities_views import (
-    EmptyRemapMain, RawReferenceCompound, ReportSorter,
-    final_report_best_cov_by_accid, recover_assembly_contigs)
+    EmptyRemapMain,
+    RawReferenceCompound,
+    ReportSorter,
+    final_report_best_cov_by_accid,
+    recover_assembly_contigs,
+)
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
 from utils.support_django_template import get_link_for_dropdown_item
@@ -200,7 +217,6 @@ class Services(LoginRequiredMixin, generic.CreateView):
             ),
             is_running=True,
         ).exists()
-        print(merger_running)
 
         context["explify_file_exists"] = explify_file_exists
         context["explify_output_file"] = merge_explify_file_provide
@@ -712,7 +728,7 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
 
         if DEPLOY_TYPE == PICS.DEPLOYMENT_TYPE_PIPELINE:
             DEPLOY_URL = "deploy_runs_ProjectPI"
-        context["metagenomics"]= ConstantsSettings.METAGENOMICS
+        context["metagenomics"] = ConstantsSettings.METAGENOMICS
         context["table"] = samples
         context["deploy_url"] = DEPLOY_URL
         context["project_index"] = project.pk
@@ -1015,8 +1031,6 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
         if screening_performed:
             reference_table_class = CompoundRefereceScoreWithScreening
             ordered_by = ("score", "screening_score")
-
-        print(screening_performed)
 
         #### added references table
         added_references_context = inject__added_references(

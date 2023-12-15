@@ -60,8 +60,6 @@ def submit_sample_metagenomics_televir(request):
         software_utils = SoftwareTreeUtils(user, project, sample=sample)
         runs_to_deploy = software_utils.check_runs_to_submit_metagenomics_sample(sample)
 
-        print("runs_to_deploy", runs_to_deploy)
-
         try:
             if len(runs_to_deploy) > 0:
                 for sample, leaves_to_deploy in runs_to_deploy.items():
@@ -420,8 +418,6 @@ def submit_televir_project_sample(request):
         software_utils = SoftwareTreeUtils(user, project=project)
         runs_to_deploy = software_utils.check_runs_to_deploy_sample(sample)
 
-        print("runs_to_deploy", runs_to_deploy)
-
         try:
             if len(runs_to_deploy) > 0:
                 for sample, leafs_to_deploy in runs_to_deploy.items():
@@ -763,7 +759,6 @@ def sort_report_sample(request):
         sample = PIProject_Sample.objects.get(pk=int(request.POST["sample_id"]))
         references = request.POST.getlist("references[]")
 
-        print(references)
         project = sample.project
         report_layout_params = TelevirParameters.get_report_layout_params(
             project_pk=project.pk
@@ -848,7 +843,6 @@ def add_references_to_sample(request):
             data["is_error"] = True
             return JsonResponse(data)
 
-        print("references_existing", references_existing)
         data = {"is_ok": True}
         return JsonResponse(data)
 

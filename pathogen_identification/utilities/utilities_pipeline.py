@@ -2134,7 +2134,6 @@ class Parameter_DB_Utility:
 
         return True
 
-
     def create_parameter_set(
         self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
     ):
@@ -2303,7 +2302,6 @@ class Utils_Manager:
 
         return samples_leaf_dict
 
-
     def sample_nodes_check_repeat_allowed(
         self, submission_dict: dict, available_path_nodes: dict, project: Projects
     ):
@@ -2320,7 +2318,6 @@ class Utils_Manager:
                 )
 
                 if not exists:
-
                     self.parameter_util.create_parameter_set(
                         sample=sample, leaf=matched_path_node, project=project
                     )
@@ -2867,7 +2864,7 @@ class SoftwareTreeUtils:
             screening=False,
             mapping_only=False,
         )
-        clean_samples_leaf_dict = self.utils_manager.sample_nodes_check_no_repeats(
+        clean_samples_leaf_dict = self.utils_manager.sample_nodes_check_repeat_allowed(
             submission_dict, available_path_nodes, self.project
         )
 
@@ -2885,7 +2882,7 @@ class SoftwareTreeUtils:
             screening=True,
             mapping_only=False,
         )
-        clean_samples_leaf_dict = self.utils_manager.sample_nodes_check_no_repeats(
+        clean_samples_leaf_dict = self.utils_manager.sample_nodes_check_repeat_allowed(
             submission_dict, available_path_nodes, self.project
         )
 
@@ -2904,7 +2901,7 @@ class SoftwareTreeUtils:
             mapping_only=True,
         )
 
-        clean_samples_leaf_dict = self.utils_manager.sample_nodes_check_no_repeats(
+        clean_samples_leaf_dict = self.utils_manager.sample_nodes_check_repeat_allowed(
             submission_dict, available_path_nodes, self.project
         )
 

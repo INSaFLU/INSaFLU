@@ -193,12 +193,15 @@
           <button class="btn btn-primary">
             {{ deploy_metagenomics }} Deploy Combined
           </button>
-          <button class="btn btn-primary">
-            <i class="fa fa-grav" aria-hidden="true"></i> Deploy Screening
-          </button>
+
           <button class="btn btn-primary">
             <a id="request_map_selected" href="#id_map_selected_modal" data-toggle="modal" data-target="#id_map_selected_modal" style="color: #fff;">
               <i class="fa fa-map-marker" aria-hidden="true"></i> Map Selected
+            </a>
+          </button>
+          <button class="btn btn-primary">
+            <a id="request_screening" href="#id_screening_modal" data-toggle="modal" data-target="#id_screening_modal" style="color: #fff;">
+              <i class="fa fa-map-marker" aria-hidden="true"></i> Deploy Screening
             </a>
           </button>
 
@@ -402,6 +405,34 @@
     </div>
   </div>
 </div>
+
+<!-- The screening modal -->
+<div class="modal fade" id="id_screening_modal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header alert alert-warning">
+        <h4 class="modal-title-screening">Deploy screening</h4>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+      </div>
+
+      <!-- Modal body -->
+      <div id="id-modal-body-screening" class="modal-body mx-auto mw-100">
+        <div id="id-modal-body-screening" sample_id="{{ sample_index }}" screening-single-value-url="{% url 'deploy_screening_televir_project_sample' %}" data-csrf= "{{ csrf_token }}">
+          <label id="id-label-screening" class="col-form-label">Folder Name</label>
+        </div>
+      </div>
+      <!-- Modal footer -->
+      <div class="modal-footer" id="id-modal-footer-screening">
+        <button id="id-screening-button" type="button" class="btn btn-primary" data-dismiss="modal">Deploy</button>
+        <button id="id-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal"
+          aria-hidden="true">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+
 {% endblock content %}
 
 {% block js %}
@@ -421,6 +452,14 @@
     $('#id-label-map-selected').text('Map selected references?');
     
   });
+
+  $('#request_screening').on("click", function(e){
+    attr= $(this).attr('id');
+    
+    $('#id-label-screening').text('Deploy Screening?');
+    
+  });
+
 
   $('#id-map-selected-button').on('click', function() {
 

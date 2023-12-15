@@ -34,24 +34,24 @@
                 {% if project_owner %}
                 <tr>
                     <th colspan="10">
+                        {% if not demo %}
                         <div class="btn-group">
+                            {% if metagenomics %}
                             <button type="button" class="btn btn-primary dark dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i class="fa fa-flask"></i>
                                 <a><span class="hidden-phone"> Run </span></a>
                             </button>
                             <div class="dropdown-menu pull-right">
                                 <a href="#" id="deploypi_btn" class="dropdown-item" style="text-align:center;" deploy-url="{% url deploy_url %}" ><span class="hidden-phone"> Classic </span></a>
-                                <a href="#" id="deploypi_sbtn" class="dropdown-item" style="text-align:center;" deploy-url="{% url deploy_url %}" ><span class="hidden-phone"> Mapping </span></a>
+                                <a href="#" id="deploypi_mapping_btn" class="dropdown-item" style="text-align:center;" deploy-url="{% url 'deploy_Project_PIMapping' %}" ><span class="hidden-phone"> Mapping </span></a>
 
                             </div>
-                        </div>
-
-                        {% if not demo %}
-                        <div class="btn-group">
+                            {% else %}
                             <button type="button" class="btn btn-primary dark" id="deploypsi_btn" deploy-url="{% url deploy_url %}" aria-haspopup="true" aria-expanded="false">
                                 <i class="fa fa-flask"></i>
                                 <a><span class="hidden-phone"> Run </span></a>
                             </button>
+                            {% endif %}
                         </div>
                         {% endif %}
                         <div class="btn-group">
@@ -446,6 +446,32 @@
 			wait_screen();
 		}
 
+    })
+
+
+    $("#deploypi_mapping_btn").click(function(e){
+        
+        $.ajax({
+            url: $('#deploypi_mapping_btn').attr("deploy-url"),
+            type: "POST",
+            data: {
+                'csrfmiddlewaretoken': '{{ csrf_token }}',
+                'id': $(this).attr('id'),
+                'user_id': '{{ request.user.id }}',
+                'project_id': '{{ project_index }}',
+            },
+            data_type: 'json',
+            success: function(data){
+                if (data["is_ok"] == true && data["is_deployed"] == false) { 
+                    alert("No runs to deploy, check project settings.");
+                }
+                else if (data["is_ok"] == true && data["is_deployed"] == true) {
+                    alert("Runs deployed");
+                }
+                $.unblockUI();
+            }
+
+        });
     })
 
     $("#deploypi_btn").click(function(e){

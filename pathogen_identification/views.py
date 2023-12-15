@@ -712,7 +712,7 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
 
         if DEPLOY_TYPE == PICS.DEPLOYMENT_TYPE_PIPELINE:
             DEPLOY_URL = "deploy_runs_ProjectPI"
-
+        context["metagenomics"]= ConstantsSettings.METAGENOMICS
         context["table"] = samples
         context["deploy_url"] = DEPLOY_URL
         context["project_index"] = project.pk
@@ -1057,7 +1057,7 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
                 )
 
             compound_reference_table = reference_table_class(
-                raw_reference_compound, order_by= ordered_by
+                raw_reference_compound, order_by=ordered_by
             )
         else:
             compound_reference_table = reference_table_class(

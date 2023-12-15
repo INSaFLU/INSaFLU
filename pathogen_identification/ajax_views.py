@@ -60,6 +60,8 @@ def submit_sample_metagenomics_televir(request):
         software_utils = SoftwareTreeUtils(user, project, sample=sample)
         runs_to_deploy = software_utils.check_runs_to_submit_metagenomics_sample(sample)
 
+        print("runs_to_deploy", runs_to_deploy)
+
         try:
             if len(runs_to_deploy) > 0:
                 for sample, leaves_to_deploy in runs_to_deploy.items():
@@ -87,7 +89,6 @@ def submit_sample_metagenomics_televir(request):
 def submit_sample_screening_televir(request):
     if request.is_ajax():
         data = {"is_ok": False, "is_deployed": False}
-        print("HII")
 
         process_SGE = ProcessSGE()
 
@@ -292,6 +293,63 @@ def deploy_ProjectPI_runs(request):
                             sample_pk=sample.pk,
                             leaf_pk=leaf.pk,
                         )
+
+                data["is_deployed"] = True
+
+        except Exception as e:
+            print(e)
+            data["is_deployed"] = False
+
+        data["is_ok"] = True
+        return JsonResponse(data)
+
+
+@login_required
+@require_POST
+def deploy_ProjectPI_combined_runs(request):
+    """
+    prepare data for deployment of pathogen identification.
+    """
+
+    if request.is_ajax():
+        data = {"is_ok": False, "is_deployed": False}
+
+        process_SGE = ProcessSGE()
+
+        project_id = int(request.POST["project_id"])
+        project = Projects.objects.get(id=int(project_id))
+
+        user_id = int(request.POST["user_id"])
+        user = User.objects.get(id=int(user_id))
+
+        samples = PIProject_Sample.objects.filter(
+            project=project, is_deleted_in_file_system=False
+        )
+        first_sample = samples.first()
+        software_utils = SoftwareTreeUtils(user, project, sample=first_sample)
+        runs_to_deploy = software_utils.check_runs_to_submit_metagenomics_sample(
+            first_sample
+        )
+
+        if len(runs_to_deploy) == 0:
+            data["is_ok"] = True
+            return JsonResponse(data)
+
+        try:
+            if len(runs_to_deploy) > 0:
+                for sample in samples:
+                    software_utils = SoftwareTreeUtils(user, project, sample=sample)
+                    runs_to_deploy = (
+                        software_utils.check_runs_to_submit_metagenomics_sample(sample)
+                    )
+                    for sample, leaves_to_deploy in runs_to_deploy.items():
+                        for leaf in leaves_to_deploy:
+                            taskID = process_SGE.set_submit_televir_sample_metagenomics(
+                                user=request.user,
+                                sample_pk=sample.pk,
+                                leaf_pk=leaf.pk,
+                                combined_analysis=True,
+                            )
 
                 data["is_deployed"] = True
 

@@ -156,6 +156,11 @@ urlpatterns = [
         name="deploy_runs_ProjectPI",
     ),
     url(
+        r"ajax/deploy_Project_PIMapping$",
+        PIajax_views.deploy_ProjectPI_combined_runs,
+        name="deploy_Project_PIMapping",
+    ),
+    url(
         r"^ajax/submit_televir_sample$",
         PIajax_views.submit_televir_project_sample,
         name="submit_televir_project_sample",

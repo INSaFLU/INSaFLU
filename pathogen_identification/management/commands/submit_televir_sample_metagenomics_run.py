@@ -1,6 +1,6 @@
 import os
 from datetime import date
-from typing import List
+from typing import Dict, List
 
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
@@ -141,7 +141,9 @@ class Command(BaseCommand):
         pipeline_tree_query = SoftwareTree.objects.get(pk=pipeline_tree_index)
 
         ### MANAGEMENT
-        submission_dict = {target_sample: []}
+        submission_dict: Dict[PIProject_Sample, List[Run_Main_from_Leaf]] = {
+            target_sample: []
+        }
 
         was_run_killed = utils.parameter_util.check_ParameterSet_killed(
             sample=target_sample, leaf=matched_path_node, project=project
@@ -177,8 +179,9 @@ class Command(BaseCommand):
                     mapping_run_pk=mapping_run,
                 )
 
-                # if run.is_available:
+                run.is_available = True
                 run.get_in_line()
+
                 submission_dict[target_sample].append(run)
 
                 for sample, runs in submission_dict.items():

@@ -190,7 +190,7 @@ class ConstantsSettings:
             pipeline_step: constant_settings.pipeline_step_to_pipeline_name(
                 pipeline_step
             )
-            for pipeline_step in constant_settings.vect_pipeline_televir_metagenomics
+            for pipeline_step in constant_settings.vect_pipeline_televir_metagenomics_for_parameters
         }
 
         pipeline_names_dict = constant_settings.reverse_set_dict(pipeline_steps_dict)

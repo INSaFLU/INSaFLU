@@ -137,12 +137,18 @@ class SampleReferenceManager:
 
     @property
     def screening_run(self):
-        return RunMain.objects.get(
+        screening_run = RunMain.objects.create(
             name="screening",
             run_type=RunMain.RUN_TYPE_SCREENING,
             project=self.sample.project,
             sample=self.sample,
+            parameter_set=self.parameter_set_proxy,
+            host_depletion_performed=False,
+            enrichment_performed=False,
         )
+
+        screening_run.save()
+        return screening_run
 
 
 class EmptyRemapMain:

@@ -315,8 +315,6 @@
 </div>
 
 
-
-
 <!-- The refrence search -->
 <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop="static">
   <div class="modal-dialog modal-lg" role="document">
@@ -418,7 +416,7 @@
       </div>
 
       <!-- Modal body -->
-      <div id="id-modal-body-screening" class="modal-body mx-auto mw-100">
+      <div class="modal-body mx-auto mw-100">
         <div id="id-modal-body-screening" sample_id="{{ sample_index }}" screening-single-value-url="{% url 'deploy_screening_televir_project_sample' %}" data-csrf= "{{ csrf_token }}">
           <label id="id-label-screening" class="col-form-label">Folder Name</label>
         </div>
@@ -458,6 +456,51 @@
     
     $('#id-label-screening').text('Deploy Screening?');
     
+  });
+
+
+  // deploy screening
+  $('#id-screening-button').on('click', function() {
+
+    var url= $('#id-modal-body-screening').attr("screening-single-value-url");
+    var csrf_token = $('#id-modal-body-screening').attr('data-csrf'); 
+    console.log(csrf_token);
+
+    $.ajax({
+      type: 'POST',
+      url: url,
+      data: {
+        'csrfmiddlewaretoken': csrf_token,
+        'sample_id': '{{ sample_index }}',
+      },
+      success: function(data) {
+        console.log(data);
+        if (data['is_ok'] == true && data['is_deployed'] == true) {
+          $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
+            'Screening deployed' +
+            '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+            '</div>');
+
+        } else if (data['is_ok']) {
+          $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+            'Screening not deployed. Check settings.' +
+            '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+            '</div>');
+
+            // drop modal
+            $('#id_screening_modal').modal('hide');
+          
+        } else if (data['is_ok'] == false) {
+          $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+            'Screening not deployed.' +
+            '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+            '</div>');
+
+            // drop modal
+            $('#id_screening_modal').modal('hide');
+        }
+      }
+    })
   });
 
 

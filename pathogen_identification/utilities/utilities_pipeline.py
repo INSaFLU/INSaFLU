@@ -186,6 +186,7 @@ class Pipeline_Graph_Metagenomics(PipelineTreeBase):
                 CS.PIPELINE_NAME_metagenomics_combine,
             ],
             self.SINK: [
+                CS.PIPELINE_NAME_metagenomics_combine,
                 CS.PIPELINE_NAME_remapping,
                 CS.PIPELINE_NAME_contig_classification,
                 self.ASSEMBLY_SPECIAL_STEP,
@@ -1822,6 +1823,10 @@ class Parameter_DB_Utility:
         else:
             steps = self.televir_constants.vect_pipeline_names_default
 
+        print(metagenomics, mapping_only, screening)
+        print(steps)
+        print(project, sample)
+
         software_available = Software.objects.filter(
             technology__name=technology,
             pipeline_step__name__in=steps,
@@ -1829,18 +1834,20 @@ class Parameter_DB_Utility:
             owner=user,
         ).distinct()
 
-        if project:
-            software_available = software_available.filter(
-                parameter__televir_project=project,
-                type_of_use__in=Software.TELEVIR_PROJECT_TYPES,
-            )
+        print([x.name_extended for x in software_available])
 
         if sample:
             software_available = software_available.filter(
                 parameter__televir_project_sample=sample
             )
 
-        if not project and not sample:
+        elif project:
+            software_available = software_available.filter(
+                parameter__televir_project=project,
+                type_of_use__in=Software.TELEVIR_PROJECT_TYPES,
+            )
+
+        elif not project and not sample:
             software_available = software_available.filter(
                 type_of_use__in=Software.TELEVIR_GLOBAL_TYPES
             )

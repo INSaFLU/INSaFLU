@@ -13,17 +13,22 @@ from django.views.decorators.http import require_POST
 from constants.meta_key_and_values import MetaKeyAndValue
 from fluwebvirus.settings import STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
-from pathogen_identification.models import (FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            ReferenceMap_Main, RunMain)
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
-from pathogen_identification.utilities.utilities_general import \
-    get_services_dir
-from pathogen_identification.utilities.utilities_pipeline import \
-    SoftwareTreeUtils
+from pathogen_identification.models import (
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    ReferenceMap_Main,
+    RunMain,
+)
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.utilities_general import get_services_dir
+from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter, SampleReferenceManager, set_control_reports)
+    ReportSorter,
+    SampleReferenceManager,
+    set_control_reports,
+)
 from utils.process_SGE import ProcessSGE
 from utils.utils import Utils
 
@@ -83,6 +88,7 @@ def submit_sample_metagenomics_televir(request):
 def submit_sample_screening_televir(request):
     if request.is_ajax():
         data = {"is_ok": False, "is_deployed": False}
+        print("HII")
 
         process_SGE = ProcessSGE()
 
@@ -91,9 +97,14 @@ def submit_sample_screening_televir(request):
 
         user = sample.project.owner
         project = sample.project
+        reference_manager = SampleReferenceManager(sample)
 
         software_utils = SoftwareTreeUtils(user, project, sample=sample)
         runs_to_deploy = software_utils.check_runs_to_submit_screening_sample(sample)
+        print("runs_to_deploy", runs_to_deploy)
+
+        screening_run = reference_manager.screening_run
+        print(screening_run)
 
         try:
             if len(runs_to_deploy) > 0:
@@ -103,6 +114,7 @@ def submit_sample_screening_televir(request):
                             user=request.user,
                             sample_pk=sample.pk,
                             leaf_pk=leaf.pk,
+                            map_run_pk=screening_run.pk,
                         )
 
                 data["is_deployed"] = True
@@ -146,45 +158,49 @@ def submit_sample_mapping_televir(request):
             return JsonResponse(data)
 
         mapping_run = reference_manager.map_request_run
-        already_mapped= True
+        already_mapped = True
 
         for reference_id in reference_id_list:
-            
             reference = RawReference.objects.get(pk=int(reference_id))
-            
+
             reference.pk = None
             reference.run = mapping_run
             reference.save()
 
-            if RawReference.objects.filter(
-                accid= reference.accid, 
-                status__in= [
-                    RawReference.STATUS_MAPPED,
-                    RawReference.STATUS_MAPPING
-                ]
-            ).exists() is False:
+            if (
+                RawReference.objects.filter(
+                    accid=reference.accid,
+                    status__in=[
+                        RawReference.STATUS_MAPPED,
+                        RawReference.STATUS_MAPPING,
+                    ],
+                ).exists()
+                is False
+            ):
                 already_mapped = False
 
         added_references = RawReference.objects.filter(
             run__sample__pk=sample_id, run__run_type=RunMain.RUN_TYPE_STORAGE
         )
         for added_reference in added_references:
-            if RawReference.objects.filter(
-                accid= added_reference.accid, 
-                status__in= [
-                    RawReference.STATUS_MAPPED,
-                    RawReference.STATUS_MAPPING
-                ]
-            ).exists() is False:
+            if (
+                RawReference.objects.filter(
+                    accid=added_reference.accid,
+                    status__in=[
+                        RawReference.STATUS_MAPPED,
+                        RawReference.STATUS_MAPPING,
+                    ],
+                ).exists()
+                is False
+            ):
                 already_mapped = False
-        
+
         if already_mapped is True:
             data["is_ok"] = True
             data["is_deployed"] = False
             data["is_empty"] = False
             data["is_already_mapped"] = True
             return JsonResponse(data)
-
 
         try:
             if len(runs_to_deploy) > 0:

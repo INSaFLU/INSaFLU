@@ -42,6 +42,7 @@ from pathogen_identification.models import (ContigClassification, FinalReport,
                                             RunRemapMain, Sample, TelevirRunQC)
 from pathogen_identification.modules.object_classes import RunQC_report
 from pathogen_identification.tables import (AddedReferenceTable,
+                                            CompoundRefereceScoreWithScreening,
                                             CompoundReferenceScore,
                                             CompoundReferenceTable,
                                             ContigTable, ProjectTable,
@@ -992,7 +993,7 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
             project_name = "project"
             sample_name = "sample"
 
-        # search add reference bar.
+        #### search add reference bar.
         context["references_table"] = None
         context["references_count"] = 0
 
@@ -1003,9 +1004,21 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
 
         context["references_form"] = references_form
 
-        #### added references table
+        ##### check Screening performed
+        screening_performed = RunMain.objects.filter(
+            sample=sample_main, run_type=RunMain.RUN_TYPE_SCREENING
+        ).exists()
 
-        # references_added_table = ReferenceSourceTable(query_set_added_manual)
+        reference_table_class = CompoundReferenceScore
+        ordered_by = ("score",)
+
+        if screening_performed:
+            reference_table_class = CompoundRefereceScoreWithScreening
+            ordered_by = ("score", "screening_score")
+
+        print(screening_performed)
+
+        #### added references table
         added_references_context = inject__added_references(
             query_set_added_manual, self.request
         )
@@ -1043,11 +1056,11 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
                     raw_reference_compound
                 )
 
-            compound_reference_table = CompoundReferenceScore(
-                raw_reference_compound, order_by=("score",)
+            compound_reference_table = reference_table_class(
+                raw_reference_compound, order_by= ordered_by
             )
         else:
-            compound_reference_table = CompoundReferenceTable(
+            compound_reference_table = reference_table_class(
                 raw_reference_compound, order_by="runs"
             )
 

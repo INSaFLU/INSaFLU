@@ -8,14 +8,24 @@ from django.contrib.auth.models import User
 from django.core.files import File
 from django.db import IntegrityError, transaction
 
-from pathogen_identification.models import (QC_REPORT, ContigClassification,
-                                            FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RawReference, ReadClassification,
-                                            ReferenceContigs,
-                                            ReferenceMap_Main, RunAssembly,
-                                            RunDetail, RunMain, RunRemapMain,
-                                            SampleQC, TelevirRunQC)
+from pathogen_identification.models import (
+    QC_REPORT,
+    ContigClassification,
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReadClassification,
+    ReferenceContigs,
+    ReferenceMap_Main,
+    RunAssembly,
+    RunDetail,
+    RunMain,
+    RunRemapMain,
+    SampleQC,
+    TelevirRunQC,
+)
 from pathogen_identification.modules.object_classes import Sample_runClass
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunEngine_class
@@ -529,7 +539,6 @@ def get_run_parents(run_class: RunEngine_class, parameter_set: ParameterSet):
                 pk=run_class.run_pk,
             )
         else:
-
             runmain = RunMain.objects.get(
                 project=project,
                 suprun=run_class.suprun,
@@ -554,7 +563,7 @@ def Update_RunMain_noCheck(
     """
     sample, runmain, project = get_run_parents(run_class, parameter_set)
     print("############ Update_RunMain_noCheck ############")
-    print(sample, runmain, project)
+    print(sample, runmain, runmain.pk, project)
 
     if sample is None or runmain is None:
         return

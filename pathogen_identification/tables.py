@@ -830,6 +830,31 @@ class CompoundReferenceScore(CompoundReferenceTable):
         return round(record.standard_score, 3)
 
 
+class CompoundRefereceScoreWithScreening(CompoundReferenceScore):
+    screenig = tables.Column(
+        verbose_name="Screening",
+        orderable=True,
+        empty_values=(),
+        order_by=("-screening",),
+    )
+
+    def render_screenig(self, record: RawReferenceCompound):
+        screen_value = 0
+
+        reference = RawReference.objects.filter(pk=record.pk).first()
+
+        screens = RawReference.objects.filter(
+            run__sample=reference.run.sample,
+            run__run_type=RunMain.RUN_TYPE_SCREENING,
+            accid=record.accid,
+        )
+
+        if screens.exists():
+            screen_value = screens.first().counts
+
+        return screen_value
+
+
 class RawReferenceTable(tables.Table):
     taxid = tables.Column(verbose_name="Taxid")
     accid = tables.Column(verbose_name="Taxid representativde Accession id")

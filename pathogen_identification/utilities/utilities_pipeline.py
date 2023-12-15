@@ -10,18 +10,21 @@ import pandas as pd
 from django.contrib.auth.models import User
 from django.db.models import Q, QuerySet
 
-from constants.constants import \
-    Televir_Directory_Constants as Televir_Directories
+from constants.constants import Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.host_library import Host
-from pathogen_identification.models import (ParameterSet, PIProject_Sample,
-                                            Projects, RawReference, RunMain,
-                                            SoftwareTree, SoftwareTreeNode)
-from pathogen_identification.utilities.utilities_televir_dbs import \
-    Utility_Repository
-from pathogen_identification.utilities.utilities_views import \
-    RawReferenceCompound
+from pathogen_identification.models import (
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
+from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
+from pathogen_identification.utilities.utilities_views import RawReferenceCompound
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -1836,21 +1839,31 @@ class Parameter_DB_Utility:
 
         print([x.name_extended for x in software_available])
 
-        if sample:
+        # if project is not None:
+        #    software_available = software_available.filter(
+        #        parameter__televir_project=project,
+        #        type_of_use__in=Software.TELEVIR_PROJECT_TYPES,
+        #    )
+
+        print(software_available)
+
+        if sample is not None:
             software_available = software_available.filter(
                 parameter__televir_project_sample=sample
             )
 
-        elif project:
+        elif project is not None:
             software_available = software_available.filter(
                 parameter__televir_project=project,
                 type_of_use__in=Software.TELEVIR_PROJECT_TYPES,
             )
 
-        elif not project and not sample:
+        if not project and not sample:
             software_available = software_available.filter(
                 type_of_use__in=Software.TELEVIR_GLOBAL_TYPES
             )
+
+        print(software_available)
 
         parameters_available = Parameter.objects.filter(
             software__in=software_available,
@@ -1990,6 +2003,8 @@ class Parameter_DB_Utility:
             mapping_only=mapping_only,
             screening=screening,
         )
+        print("SOFTWARE_TABLES")
+        print(software_table.shape, parameters_table.shape)
 
         if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
             if project is not None:
@@ -2681,7 +2696,7 @@ class SoftwareTreeUtils:
         merged_table = self.parameter_util.generate_merged_table_safe(
             project.owner,
             project.technology,
-            project,
+            project=project,
             sample=sample,
             metagenomics=metagenomics,
             mapping_only=mapping_only,

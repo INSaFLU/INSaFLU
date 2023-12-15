@@ -11,12 +11,12 @@ from datasets.models import Dataset, DatasetConsensus
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project, ProjectSample, Sample
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.models import PIProject_Sample
 from pathogen_identification.models import Projects as Televir_Project
-from pathogen_identification.utilities.utilities_views import \
-    duplicate_metagenomics_software
+from pathogen_identification.utilities.utilities_views import (
+    duplicate_metagenomics_software,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.default_software import DefaultSoftware
 from settings.forms import SoftwareForm
@@ -124,6 +124,7 @@ class PIMetagenSampleView(LoginRequiredMixin, ListView):
                         vect_pipeline_step,
                     ]
                 )
+
         context["metagenomics_pipeline_id"] = [
             ConstantsSettings.PIPELINE_NAME_metagenomics_combine
         ]

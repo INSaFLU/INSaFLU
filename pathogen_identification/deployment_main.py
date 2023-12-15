@@ -544,7 +544,7 @@ class Run_Main_from_Leaf:
             return False
 
         try:
-            self.container.run_engine.remap_prepped = True
+            # self.container.run_engine.remap_prepped = True
             self.container.run_engine.Run_Remapping()
             self.container.run_engine.export_sequences()
             self.container.run_engine.export_intermediate_reports()

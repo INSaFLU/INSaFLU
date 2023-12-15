@@ -538,8 +538,8 @@ class RunDetail_main:
         self.subsample = False
         self.sift = config["actions"]["SIFT"]
 
-        self.classification = config["actions"]["CLASSIFY"]
-        self.remapping = config["actions"]["REMAP"]
+        self.classification = self.contig_classification or self.read_classification
+        # self.remapping = config["actions"]["REMAP"]
 
         self.house_cleaning = config["actions"]["CLEAN"]
 
@@ -1455,6 +1455,11 @@ class RunMainTree_class(Run_Deployment_Methods):
 
     def Run_Metagenomics_Classification(self):
         if self.metagenomics_classification:
+            if self.remapping_method.dir == "None":
+                self.software_remap.set_output_dir(
+                    self.metagenomics_classification_method.dir
+                )
+
             self.Prep_Metagenomics_Classification()
 
             self.metagenomics_classification_method.set_db(

@@ -1268,6 +1268,9 @@ class SoftwareRemap:
     def output_dir(self):
         return self.remap_software.dir
 
+    def set_output_dir(self, output_dir):
+        self.remap_software.dir = output_dir
+
 
 @dataclass
 class MappingStats:

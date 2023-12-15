@@ -13,22 +13,17 @@ from django.views.decorators.http import require_POST
 from constants.meta_key_and_values import MetaKeyAndValue
 from fluwebvirus.settings import STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    ReferenceMap_Main,
-    RunMain,
-)
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
-from pathogen_identification.utilities.utilities_general import get_services_dir
-from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            ReferenceMap_Main, RunMain)
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
+from pathogen_identification.utilities.utilities_general import \
+    get_services_dir
+from pathogen_identification.utilities.utilities_pipeline import \
+    SoftwareTreeUtils
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter,
-    SampleReferenceManager,
-    set_control_reports,
-)
+    ReportSorter, SampleReferenceManager, set_control_reports)
 from utils.process_SGE import ProcessSGE
 from utils.utils import Utils
 
@@ -121,6 +116,9 @@ def submit_sample_screening_televir(request):
         return JsonResponse(data)
 
 
+from pathogen_identification.models import RawReference
+
+
 @login_required
 @require_POST
 def submit_sample_mapping_televir(request):
@@ -141,6 +139,8 @@ def submit_sample_mapping_televir(request):
             data["is_empty"] = True
             return JsonResponse(data)
 
+        
+
         software_utils = SoftwareTreeUtils(user, project, sample=sample)
         runs_to_deploy = software_utils.check_runs_to_submit_mapping_only(sample)
 
@@ -148,12 +148,45 @@ def submit_sample_mapping_televir(request):
             return JsonResponse(data)
 
         mapping_run = reference_manager.map_request_run
+        already_mapped= False
 
         for reference_id in reference_id_list:
+            
             reference = RawReference.objects.get(pk=int(reference_id))
+            
             reference.pk = None
             reference.run = mapping_run
             reference.save()
+
+            if RawReference.objects.filter(
+                accid= reference.accid, 
+                status__in= [
+                    RawReference.STATUS_MAPPED,
+                    RawReference.STATUS_MAPPING
+                ]
+            ).exists():
+                already_mapped = True
+
+        added_references = RawReference.objects.filter(
+            run__sample__pk=sample_id, run__run_type=RunMain.RUN_TYPE_STORAGE
+        )
+        for added_reference in added_references:
+            if RawReference.objects.filter(
+                accid= added_reference.accid, 
+                status__in= [
+                    RawReference.STATUS_MAPPED,
+                    RawReference.STATUS_MAPPING
+                ]
+            ).exists():
+                already_mapped = True
+        
+        if already_mapped:
+            data["is_ok"] = True
+            data["is_deployed"] = False
+            data["is_empty"] = False
+            data["is_already_mapped"] = True
+            return JsonResponse(data)
+
 
         try:
             if len(runs_to_deploy) > 0:

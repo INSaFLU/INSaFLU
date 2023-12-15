@@ -462,6 +462,12 @@
             '</div>');
 
             // drop modal
+          
+        } else if (data["is_already_mapped"] == true) {
+          $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+            'Selected and added references already mapped.' +
+            '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+            '</div>');
   
         } else if (data['is_ok']) {
           $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +

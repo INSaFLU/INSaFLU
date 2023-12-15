@@ -1135,7 +1135,8 @@ class RunMappingTable(tables.Table):
             runlog += "</a>"
 
             if RawReference.objects.filter(run=record).count() > 0 and CS.METAGENOMICS:
-                runlog += " " + report_link
+                if RunDetail.objects.filter(run=record).exists():
+                    runlog += " " + report_link
 
             return mark_safe(runlog)
 

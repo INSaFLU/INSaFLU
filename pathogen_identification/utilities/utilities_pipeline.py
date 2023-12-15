@@ -2263,7 +2263,7 @@ class Utils_Manager:
         submission_dict = {sample: [] for sample in samples if not sample.is_deleted}
         return submission_dict
 
-    def sample_nodes_check(
+    def sample_nodes_check_no_repeats(
         self, submission_dict: dict, available_path_nodes: dict, project: Projects
     ):
         utils = Utils_Manager()
@@ -2288,6 +2288,39 @@ class Utils_Manager:
                         continue
 
                 else:
+                    self.parameter_util.create_parameter_set(
+                        sample=sample, leaf=matched_path_node, project=project
+                    )
+
+                utils.parameter_util.set_parameterset_to_queue(
+                    sample=sample, leaf=matched_path_node, project=project
+                )
+                runs_to_deploy += 1
+                samples_available.append(sample)
+                samples_leaf_dict[sample].append(matched_path_node)
+
+        samples_leaf_dict = {x: g for x, g in samples_leaf_dict.items() if g}
+
+        return samples_leaf_dict
+
+
+    def sample_nodes_check_repeat_allowed(
+        self, submission_dict: dict, available_path_nodes: dict, project: Projects
+    ):
+        utils = Utils_Manager()
+        ### SUBMISSION
+        runs_to_deploy = 0
+        samples_available = []
+        samples_leaf_dict = {sample: [] for sample in submission_dict.keys()}
+
+        for sample in submission_dict.keys():
+            for leaf, matched_path_node in available_path_nodes.items():
+                exists = self.parameter_util.check_ParameterSet_exists(
+                    sample=sample, leaf=matched_path_node, project=project
+                )
+
+                if not exists:
+
                     self.parameter_util.create_parameter_set(
                         sample=sample, leaf=matched_path_node, project=project
                     )
@@ -2814,7 +2847,7 @@ class SoftwareTreeUtils:
         submission_dict = self.utils_manager.collect_project_samples(self.project)
 
         available_path_nodes = self.get_project_pathnodes()
-        clean_samples_leaf_dict = self.utils_manager.sample_nodes_check(
+        clean_samples_leaf_dict = self.utils_manager.sample_nodes_check_no_repeats(
             submission_dict, available_path_nodes, self.project
         )
 
@@ -2834,7 +2867,7 @@ class SoftwareTreeUtils:
             screening=False,
             mapping_only=False,
         )
-        clean_samples_leaf_dict = self.utils_manager.sample_nodes_check(
+        clean_samples_leaf_dict = self.utils_manager.sample_nodes_check_no_repeats(
             submission_dict, available_path_nodes, self.project
         )
 
@@ -2852,7 +2885,7 @@ class SoftwareTreeUtils:
             screening=True,
             mapping_only=False,
         )
-        clean_samples_leaf_dict = self.utils_manager.sample_nodes_check(
+        clean_samples_leaf_dict = self.utils_manager.sample_nodes_check_no_repeats(
             submission_dict, available_path_nodes, self.project
         )
 
@@ -2871,7 +2904,7 @@ class SoftwareTreeUtils:
             mapping_only=True,
         )
 
-        clean_samples_leaf_dict = self.utils_manager.sample_nodes_check(
+        clean_samples_leaf_dict = self.utils_manager.sample_nodes_check_no_repeats(
             submission_dict, available_path_nodes, self.project
         )
 
@@ -2885,7 +2918,7 @@ class SoftwareTreeUtils:
         submission_dict = {sample: []}
 
         available_path_nodes = self.get_project_pathnodes()
-        clean_samples_leaf_dict = self.utils_manager.sample_nodes_check(
+        clean_samples_leaf_dict = self.utils_manager.sample_nodes_check_no_repeats(
             submission_dict, available_path_nodes, self.project
         )
 

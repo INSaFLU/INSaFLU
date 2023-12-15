@@ -254,12 +254,18 @@
         cursor: pointer;
         text-align: center;
       }
+      
       .plot-container {
         margin: none;
         display: flex;
         justify-content: center;
         align-items: center;
       }
+
+      .pull-right {
+        float: right;
+      }
+
 </style>
 
 {% if owner %}
@@ -304,7 +310,7 @@
                                 <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                     Summary Downloads
                                   </button>
-                                  <div class="dropdown-menu">
+                                  <div class="dropdown-menu pull-right">
                                     {% if files.parameters %} {{ files.parameters }} {% endif %}
                                     {% if files.intermediate_reports_zip %} {{ files.intermediate_reports_zip }} {% endif %}
                                     {% if files.final_reports_csv %} {{ files.final_reports_csv }} {% endif %}

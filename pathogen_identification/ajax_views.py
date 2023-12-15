@@ -139,8 +139,6 @@ def submit_sample_mapping_televir(request):
             data["is_empty"] = True
             return JsonResponse(data)
 
-        
-
         software_utils = SoftwareTreeUtils(user, project, sample=sample)
         runs_to_deploy = software_utils.check_runs_to_submit_mapping_only(sample)
 
@@ -148,7 +146,7 @@ def submit_sample_mapping_televir(request):
             return JsonResponse(data)
 
         mapping_run = reference_manager.map_request_run
-        already_mapped= False
+        already_mapped= True
 
         for reference_id in reference_id_list:
             
@@ -164,8 +162,8 @@ def submit_sample_mapping_televir(request):
                     RawReference.STATUS_MAPPED,
                     RawReference.STATUS_MAPPING
                 ]
-            ).exists():
-                already_mapped = True
+            ).exists() is False:
+                already_mapped = False
 
         added_references = RawReference.objects.filter(
             run__sample__pk=sample_id, run__run_type=RunMain.RUN_TYPE_STORAGE
@@ -177,10 +175,10 @@ def submit_sample_mapping_televir(request):
                     RawReference.STATUS_MAPPED,
                     RawReference.STATUS_MAPPING
                 ]
-            ).exists():
-                already_mapped = True
+            ).exists() is False:
+                already_mapped = False
         
-        if already_mapped:
+        if already_mapped is True:
             data["is_ok"] = True
             data["is_deployed"] = False
             data["is_empty"] = False

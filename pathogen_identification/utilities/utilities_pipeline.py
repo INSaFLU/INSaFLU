@@ -1812,6 +1812,7 @@ class Parameter_DB_Utility:
         metagenomics: bool = False,
         mapping_only: bool = False,
         screening: bool = False,
+        request_mapping: bool = False,
     ):
         """
         Get software tables for a user
@@ -1823,6 +1824,8 @@ class Parameter_DB_Utility:
             steps = CS.vect_pipeline_televir_mapping_only
         elif screening:
             steps = CS.vect_pipeline_televir_screening
+        elif request_mapping:
+            steps = CS.vect_pipeline_televir_request_mapping
         else:
             steps = self.televir_constants.vect_pipeline_names_default
 
@@ -1838,12 +1841,6 @@ class Parameter_DB_Utility:
         ).distinct()
 
         print([x.name_extended for x in software_available])
-
-        # if project is not None:
-        #    software_available = software_available.filter(
-        #        parameter__televir_project=project,
-        #        type_of_use__in=Software.TELEVIR_PROJECT_TYPES,
-        #    )
 
         print(software_available)
 
@@ -1990,6 +1987,7 @@ class Parameter_DB_Utility:
         metagenomics: bool = False,
         mapping_only: bool = False,
         screening: bool = False,
+        request_mapping: bool = False,
     ) -> pd.DataFrame:
         """
         Generate a software tree for a technology and a tree makeup"""
@@ -2002,6 +2000,7 @@ class Parameter_DB_Utility:
             metagenomics=metagenomics,
             mapping_only=mapping_only,
             screening=screening,
+            request_mapping=request_mapping,
         )
         print("SOFTWARE_TABLES")
         print(software_table.shape, parameters_table.shape)
@@ -2018,6 +2017,7 @@ class Parameter_DB_Utility:
                     metagenomics=metagenomics,
                     mapping_only=mapping_only,
                     screening=screening,
+                    request_mapping=request_mapping,
                 )
 
         if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
@@ -2030,6 +2030,7 @@ class Parameter_DB_Utility:
                 metagenomics=metagenomics,
                 mapping_only=mapping_only,
                 screening=screening,
+                request_mapping=request_mapping,
             )
 
         if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
@@ -2688,6 +2689,7 @@ class SoftwareTreeUtils:
         metagenomics: bool = False,
         mapping_only: bool = False,
         screening: bool = False,
+        request_mapping: bool = False,
     ) -> PipelineTree:
         """
         Generate a software tree for a technology and a tree makeup
@@ -2701,6 +2703,7 @@ class SoftwareTreeUtils:
             metagenomics=metagenomics,
             mapping_only=mapping_only,
             screening=screening,
+            request_mapping=request_mapping,
         )
 
         print(merged_table)

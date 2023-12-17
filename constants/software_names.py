@@ -751,6 +751,9 @@ class SoftwareNames(object):
     SOFTWARE_MINIMAP2_REMAP_ONT_name = "Minimap2"
     SOFTWARE_MINIMAP2_REMAP_ONT_name_extended = "Minimap2 - Remapping"
     SOFTWARE_MINIMAP2_REMAP_ONT_name_extended_screening = "Minimap2 - Screening"
+    SOFTWARE_MINIMAP2_REMAP_ONT_name_extended_request_mapping = (
+        "Minimap2 - Request Mapping"
+    )
 
     SOFTWARE_MINIMAP2_REMAP_ONT = os.path.join(
         settings.DIR_SOFTWARE,
@@ -762,6 +765,7 @@ class SoftwareNames(object):
     SOFTWARE_MINIMAP2_REMAP_ILLU_name = "Minimap2_remap"
     SOFTWARE_MINIMAP2_REMAP_ILLU_name_extended = "Minimap2 - Remapping"
     SOFTWARE_MINIMAP2_REMAP_ILLU_name_extended_screening = "Minimap2 - Screening"
+
     SOFTWARE_MINIMAP2_REMAP_ILLU = os.path.join(
         settings.DIR_SOFTWARE,
         "preprocess/preproc/bin/minimap2",
@@ -816,6 +820,7 @@ class SoftwareNames(object):
     SOFTWARE_BOWTIE2_REMAP_name = "Bowtie2_remap"
     SOFTWARE_BOWTIE2_REMAP_name_extended = "Bowtie2"
     SOFTWARE_BOWTIE2_REMAP_name_extended_screening = "Bowtie2 - Screening"
+    SOFTWARE_BOWTIE2_REMAP_name_extended_request_mapping = "Bowtie2 - Request Mapping"
 
     SOFTWARE_BOWTIE2_REMAP = os.path.join(
         settings.DIR_SOFTWARE,

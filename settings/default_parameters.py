@@ -11,10 +11,13 @@ from django.conf import settings
 
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PI_ConstantsSettings
+from pathogen_identification.constants_settings import (
+    ConstantsSettings as PI_ConstantsSettings,
+)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility, Utility_Pipeline_Manager)
+    Parameter_DB_Utility,
+    Utility_Pipeline_Manager,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -2561,19 +2564,31 @@ class DefaultParameters(object):
         return vect_parameters
 
     def get_bowtie2_remap_default(
-        self, user, type_of_use, technology_name, sample=None, pipeline_step=""
+        self,
+        user,
+        type_of_use,
+        technology_name,
+        sample=None,
+        pipeline_step="",
+        job="confirmatory",
     ):
         if not pipeline_step:
             pipeline_step = ConstantsSettings.PIPELINE_NAME_remapping
 
         software = Software()
         software.name = SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name
-        if pipeline_step == ConstantsSettings.PIPELINE_NAME_metagenomics_combine:
+
+        if job == "confirmatory":
+            software.name_extended = SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name_extended
+        if job == "screening":
             software.name_extended = (
                 SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name_extended_screening
             )
-        else:
-            software.name_extended = SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name_extended
+        elif job == "request_mapping":
+            software.name_extended = (
+                SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name_extended_request_mapping
+            )
+
         software.type_of_use = type_of_use
         software.type_of_software = Software.TYPE_SOFTWARE
         software.version = SoftwareNames.SOFTWARE_BOWTIE2_REMAP_VERSION
@@ -2581,12 +2596,16 @@ class DefaultParameters(object):
             software.name
         )
         software.technology = self.get_technology(technology_name)
+
         software.can_be_on_off_in_pipeline = (
             True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
         )
 
         software.is_to_run = False  ## set to True if it is going to run, for example Trimmomatic can run or not
 
+        if job == "request_mapping":
+            software.can_be_on_off_in_pipeline = False
+            software.is_to_run = True
         ###  small description of software
         software.help_text = ""
 
@@ -2646,6 +2665,7 @@ class DefaultParameters(object):
         sample=None,
         pipeline_step="",
         is_to_run=True,
+        job="confirmatory",
     ):
         """
         minimap remap ONT default
@@ -2655,14 +2675,21 @@ class DefaultParameters(object):
 
         software = Software()
         software.name = SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name
-        if pipeline_step == ConstantsSettings.PIPELINE_NAME_metagenomics_combine:
-            software.name_extended = (
-                SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name_extended_screening
-            )
-        else:
+
+        if job == "confirmatory":
             software.name_extended = (
                 SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name_extended
             )
+        elif job == "screening":
+            software.name_extended = (
+                SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name_extended_screening
+            )
+
+        elif job == "request_mapping":
+            software.name_extended = (
+                SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name_extended_request_mapping
+            )
+
         software.type_of_use = type_of_use
         software.type_of_software = Software.TYPE_SOFTWARE
         software.version = SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_VERSION
@@ -2673,7 +2700,12 @@ class DefaultParameters(object):
         software.can_be_on_off_in_pipeline = (
             True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
         )
+
         software.is_to_run = is_to_run
+
+        if job == "request_mapping":
+            software.can_be_on_off_in_pipeline = False
+            software.is_to_run = True
 
         ###  small description of software
         software.help_text = ""

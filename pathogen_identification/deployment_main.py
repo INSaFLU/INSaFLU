@@ -507,8 +507,7 @@ class Run_Main_from_Leaf:
             return False
 
         try:
-            self.container.run_engine.Run_Read_classification()
-            self.container.run_engine.Run_Contig_classification()
+            self.container.run_engine.Run_Classification()
             self.container.run_engine.plan_remap_prep_safe()
             self.container.run_engine.export_intermediate_reports()
             self.container.run_engine.generate_output_data_classes()

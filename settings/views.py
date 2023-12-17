@@ -369,6 +369,9 @@ class PISettingsView(LoginRequiredMixin, ListView):
                         is_obsolete=False,
                     ).distinct()
 
+                    print("pipeline_step_name", pipeline_step_name)
+                    print(query_set)
+
                 else:
                     query_set = Software.objects.filter(
                         owner=self.request.user,

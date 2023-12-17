@@ -1429,11 +1429,7 @@ class RunMainTree_class(Run_Deployment_Methods):
                 self.remap_params.max_accids,
                 self.remap_params.max_taxids,
             )
-            self.aclass_summary = self.metadata_tool.aclass
-            self.rclass_summary = self.metadata_tool.rclass
-            self.merged_targets = self.metadata_tool.merged_targets
-            self.raw_targets = self.metadata_tool.raw_targets
-            self.remap_plan = self.metadata_tool.remap_plan
+            self.import_from_remap_prep()
 
             self.read_classification_performed = True
             self.contig_classification_performed = True

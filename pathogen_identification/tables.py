@@ -920,6 +920,42 @@ class RawReferenceTable(tables.Table):
             return mark_safe("Unmapped" + button)
 
 
+class RawReferenceTableNoRemapping(RawReferenceTable):
+    class Meta:
+        model = RawReference
+        attrs = {"class": "paleblue"}
+        fields = (
+            "taxid",
+            "accid",
+            "description",
+            "counts",
+            "status",
+        )
+
+        sequence = (
+            "taxid",
+            "accid",
+            "description",
+            "counts",
+            "classification_source",
+            "status",
+        )
+
+    def render_status(self, record: RawReference):
+        references_management_button = (
+            '<a href="'
+            + reverse(
+                "sample_references_management",
+                args=[record.run.sample.pk],
+            )
+            + '"'
+            + 'title="Sample Reference Management">'
+            + '<i class="fa fa-database"></i></span> </a>'
+        )
+
+        return mark_safe(references_management_button)
+
+
 class SampleQCTable(tables.Table):
     class Meta:
         model = SampleQC

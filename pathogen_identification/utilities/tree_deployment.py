@@ -295,12 +295,14 @@ class Tree_Node:
         self.leaves = pipe_tree.leaves_from_node_using_graph(node_index)
 
     def run_reference_overlap_analysis(self):
-        run = RunMain.objects.get(parameter_set=self.parameter_set)
+        # run = RunMain.objects.filter(parameter_set=self.parameter_set).first()
         final_report = FinalReport.objects.filter(
             sample=self.parameter_set.sample,  # run=run
         ).order_by("-coverage")
         #
-        report_layout_params = TelevirParameters.get_report_layout_params(run_pk=run.pk)
+        report_layout_params = TelevirParameters.get_report_layout_params(
+            project_pk=self.parameter_set.project.pk
+        )
         report_sorter = ReportSorter(final_report, report_layout_params)
         report_sorter.sort_reports_save()
 

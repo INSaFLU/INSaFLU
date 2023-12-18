@@ -579,8 +579,8 @@ class Command(BaseCommand):
         )
 
         try:
-            # input_generator.generate_reference_method_args()
-            input_generator.generate_request_mapping_method_args()
+            input_generator.generate_reference_method_args()
+            # input_generator.generate_request_mapping_method_args()
             input_generator.generate_config()
 
             run_engine = RunEngine(

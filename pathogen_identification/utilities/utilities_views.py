@@ -10,20 +10,31 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.views import generic
 
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
-from pathogen_identification.models import (FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RawReference, ReferenceMap_Main,
-                                            RunAssembly, RunDetail, RunMain)
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.models import (
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReferenceMap_Main,
+    RunAssembly,
+    RunDetail,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
 from pathogen_identification.utilities.clade_objects import Clade
-from pathogen_identification.utilities.overlap_manager import \
-    ReadOverlapManager
+from pathogen_identification.utilities.overlap_manager import ReadOverlapManager
 from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
 from pathogen_identification.utilities.televir_parameters import (
-    LayoutParams, TelevirParameters)
+    LayoutParams,
+    TelevirParameters,
+)
 from pathogen_identification.utilities.utilities_general import (
-    infer_run_media_dir, simplify_name)
+    infer_run_media_dir,
+    simplify_name,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
 
@@ -32,33 +43,93 @@ class SampleReferenceManager:
     def __init__(self, sample: PIProject_Sample):
         self.sample = sample
 
+        self.software_tree: SoftwareTree = self.proxy_tree_prepare()
+        self.software_tree_node_storage: SoftwareTreeNode = self.proxy_leaf_prepare()
         self.prep_storage()
+
+    def proxy_tree_prepare(self):
+        try:
+            software_tree = SoftwareTree.objects.get(
+                model=-1,
+                version=0,
+                technology=self.sample.project.technology,
+                owner=self.sample.project.owner,
+                project=self.sample.project,
+            )
+        except SoftwareTree.DoesNotExist:
+            software_tree = SoftwareTree.objects.create(
+                model=-1,
+                version=0,
+                technology=self.sample.project.technology,
+                owner=self.sample.project.owner,
+                project=self.sample.project,
+            )
+            software_tree.save()
+
+        return software_tree
+
+    def proxy_leaf_prepare(self):
+        try:
+            software_tree_node = SoftwareTreeNode.objects.get(
+                software_tree=self.software_tree,
+                name="storage",
+            )
+        except SoftwareTreeNode.DoesNotExist:
+            software_tree_node = SoftwareTreeNode.objects.create(
+                index=-1,
+                software_tree=self.software_tree,
+                name="storage",
+                software=None,
+                parent=None,
+            )
+            software_tree_node.save()
+
+        return software_tree_node
+
+    @property
+    def mapping_proxy_leaf(self):
+        return SoftwareTreeNode.objects.create(
+            index=-1,
+            software_tree=self.software_tree,
+            name="mapping",
+            software=None,
+            parent=None,
+        )
 
     def proxy_parameter_set_prepare(self):
         try:
             parameter_set_management = ParameterSet.objects.get(
                 sample__project=self.sample.project,
                 sample=self.sample,
-                leaf=None,
+                leaf=self.software_tree_node_storage,
                 status=ParameterSet.STATUS_PROXIED,
             )
 
         except ParameterSet.DoesNotExist:
             parameter_set_management = ParameterSet.objects.create(
                 sample=self.sample,
-                leaf=None,
+                leaf=self.software_tree_node_storage,
                 status=ParameterSet.STATUS_PROXIED,
                 project=self.sample.project,
             )
             parameter_set_management.save()
 
     @property
-    def parameter_set_proxy(self):
+    def parameter_set_storage(self):
         return ParameterSet.objects.get(
             sample__project=self.sample.project,
             sample=self.sample,
-            leaf=None,
+            leaf=self.software_tree_node_storage,
             status=ParameterSet.STATUS_PROXIED,
+        )
+
+    @property
+    def parameter_set_mapping(self):
+        return ParameterSet.objects.create(
+            sample=self.sample,
+            leaf=self.mapping_proxy_leaf,
+            status=ParameterSet.STATUS_PROXIED,
+            project=self.sample.project,
         )
 
     def prep_storage(self):
@@ -77,7 +148,7 @@ class SampleReferenceManager:
                 sample=self.sample,
                 run_type=RunMain.RUN_TYPE_STORAGE,
                 project=self.sample.project,
-                parameter_set=self.parameter_set_proxy,
+                parameter_set=self.parameter_set_storage,
                 host_depletion_performed=False,
                 enrichment_performed=False,
             )
@@ -97,7 +168,7 @@ class SampleReferenceManager:
                 sample=self.sample,
                 run_type=RunMain.RUN_TYPE_SCREENING,
                 project=self.sample.project,
-                parameter_set=self.parameter_set_proxy,
+                parameter_set=self.parameter_set_storage,
                 host_depletion_performed=False,
                 enrichment_performed=False,
             )
@@ -119,7 +190,7 @@ class SampleReferenceManager:
             sample=self.sample,
             run_type=RunMain.RUN_TYPE_MAP_REQUEST,
             project=self.sample.project,
-            parameter_set=self.parameter_set_proxy,
+            parameter_set=self.parameter_set_mapping,
             host_depletion_performed=False,
             enrichment_performed=False,
         )
@@ -133,7 +204,7 @@ class SampleReferenceManager:
             run_type=RunMain.RUN_TYPE_SCREENING,
             project=self.sample.project,
             sample=self.sample,
-            parameter_set=self.parameter_set_proxy,
+            parameter_set=self.parameter_set_storage,
             host_depletion_performed=False,
             enrichment_performed=False,
         )
@@ -309,13 +380,12 @@ def duplicate_metagenomics_software(project: Projects, sample: PIProject_Sample)
             Software.TYPE_INSAFLU_PARAMETER,
         ],
         is_obsolete=False,
-        pipeline_step__name__in= ConstantsSettings.vect_pipeline_televir_metagenomics_for_parameters,
+        pipeline_step__name__in=ConstantsSettings.vect_pipeline_televir_metagenomics_for_parameters,
         technology__name=project.technology,
         parameter__televir_project=project_call,
         parameter__televir_project_sample=None,
     )
-    print(project_exists, project_call)
-    print(query_set.count())
+
     project = Projects.objects.get(pk=project.pk)
     for software in query_set:
         software_parameters = Parameter.objects.filter(

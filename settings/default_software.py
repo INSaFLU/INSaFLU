@@ -572,19 +572,6 @@ class DefaultSoftware(object):
         )
 
         self.test_default_db(
-            SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name,
-            self.default_parameters.get_minimap2_remap_ONT_default(
-                user,
-                Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_minion,
-                pipeline_step=ConstantsSettings.PIPELINE_NAME_request_mapping,
-                is_to_run=True,
-                job="request_mapping",
-            ),
-            user,
-        )
-
-        self.test_default_db(
             SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ILLU_name,
             self.default_parameters.get_minimap2_remap_illumina_default(
                 user,
@@ -604,18 +591,6 @@ class DefaultSoftware(object):
                 ConstantsSettings.TECHNOLOGY_illumina,
                 pipeline_step=ConstantsSettings.PIPELINE_NAME_metagenomics_combine,
                 job="screening",
-            ),
-            user,
-        )
-
-        self.test_default_db(
-            SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name,
-            self.default_parameters.get_bowtie2_remap_default(
-                user,
-                Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_illumina,
-                pipeline_step=ConstantsSettings.PIPELINE_NAME_request_mapping,
-                job="request_mapping",
             ),
             user,
         )

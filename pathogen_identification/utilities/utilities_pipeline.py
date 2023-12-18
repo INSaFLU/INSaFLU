@@ -2073,18 +2073,43 @@ class Parameter_DB_Utility:
             makeup=software_tree.global_index,
         )
 
+    def retrace_from_leaf(self, leaf: SoftwareTreeNode) -> pd.DataFrame:
+        """ """
+
+        software_tree = leaf.software_tree
+        parent = leaf.parent
+        path = [(leaf.index, leaf.name, leaf.value, leaf.node_type)]
+        while parent is not None:
+            path.append((parent.index, parent.name, parent.value, parent.node_type))
+            parent = parent.parent
+
+        path = path[::-1]
+
+        path_df = pd.DataFrame(path, columns=["index", "name", "value", "node_type"])
+
+        return path_df
+
+    def check_parameter_set_contains_module(
+        self, leaf: SoftwareTreeNode, module: str
+    ) -> bool:
+        """
+        retrace parameter set (leaf) settings,
+        check if module is present in the path
+        """
+
+        path_df = self.retrace_from_leaf(leaf)
+        if module in path_df.name.tolist():
+            return True
+        else:
+            return False
+
     def check_ParameterSet_exists(
         self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
     ):
         self.logger.info("Checking if ParameterSet exists")
-        try:
-            parameter_set = ParameterSet.objects.get(
-                sample=sample, leaf=leaf, project=project
-            )
-            return True
-
-        except ParameterSet.DoesNotExist:
-            return False
+        return ParameterSet.objects.filter(
+            sample=sample, leaf=leaf, project=project
+        ).exists()
 
     def check_ParameterSet_available(
         self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects

@@ -44,10 +44,10 @@ from pathogen_identification.modules.object_classes import RunQC_report
 from pathogen_identification.tables import (AddedReferenceTable,
                                             CompoundRefereceScoreWithScreening,
                                             CompoundReferenceScore,
-                                            CompoundReferenceTable,
                                             ContigTable, ProjectTable,
                                             ProjectTableMetagenomics,
                                             RawReferenceTable,
+                                            RawReferenceTableNoRemapping,
                                             ReferenceSourceTable, RunMainTable,
                                             RunMappingTable, SampleTable)
 from pathogen_identification.utilities.televir_parameters import \
@@ -55,8 +55,8 @@ from pathogen_identification.utilities.televir_parameters import \
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
 from pathogen_identification.utilities.utilities_general import (
     get_services_dir, infer_run_media_dir)
-from pathogen_identification.utilities.utilities_pipeline import \
-    RawReferenceUtils
+from pathogen_identification.utilities.utilities_pipeline import (
+    Parameter_DB_Utility, RawReferenceUtils)
 from pathogen_identification.utilities.utilities_views import (
     EmptyRemapMain, RawReferenceCompound, ReportSorter,
     final_report_best_cov_by_accid, recover_assembly_contigs)
@@ -1294,7 +1294,18 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             reverse=True,
         )
 
-        raw_reference_table = RawReferenceTable(raw_references)
+        ########
+        remapping_performed = True
+        if run_main_pipeline.run_type == RunMain.RUN_TYPE_PIPELINE:
+            parameter_utils = Parameter_DB_Utility()
+            remapping_performed = parameter_utils.check_parameter_set_contains_module(
+                run_main_pipeline.parameter_set.leaf, CS.PIPELINE_NAME_remapping
+            )
+
+        if remapping_performed is True:
+            raw_reference_table = RawReferenceTable(raw_references)
+        else:
+            raw_reference_table = RawReferenceTableNoRemapping(raw_references)
 
         #
         run_detail = RunDetail.objects.get(sample=sample_main, run=run_main_pipeline)
@@ -1346,7 +1357,8 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         read_classification = ReadClassification.objects.get(
             sample=sample_main, run=run_main_pipeline
         )
-        #
+
+        ########
         final_report = FinalReport.objects.filter(
             sample=sample_main, run=run_main_pipeline
         ).order_by("-coverage")
@@ -1381,6 +1393,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "project": project_name,
             "run_name": run_name,
             "is_classification": is_classification,
+            "remapping_performed": remapping_performed,
             "sample": sample_name,
             "run_main": run_main_pipeline,
             "run_detail": run_detail,

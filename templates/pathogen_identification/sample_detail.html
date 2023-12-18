@@ -489,12 +489,15 @@
                             </p>
                             {% endif %}
                             {% endif %}
+                            {% if remapping_performed %}
                             {% if contig_classification.classification_number > 0 and read_classification.classification_number > 0 %}
                             <p> After merging, a total of {{run_detail.merged_number}} taxids found in our databases were selected
                                 for remapping against.
                             </p>
                             <p style=padding-left:3em> References were collected from the databases:
                                 <em>{{run_detail.merged_files}}</em>. </p>
+                            {% endif %}
+                            
                             {% endif %}
                         </div>
                         {% if data_exists %}

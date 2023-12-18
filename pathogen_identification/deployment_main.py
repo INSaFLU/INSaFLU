@@ -592,16 +592,18 @@ class Run_Main_from_Leaf:
 
     def run_reference_overlap_analysis(self):
         run = RunMain.objects.get(parameter_set=self.parameter_set)
-        final_report = FinalReport.objects.filter(sample=self.sample, run=run).order_by(
+        final_reports = FinalReport.objects.filter(sample=self.sample).order_by(
             "-coverage"
         )
         #
-        report_layout_params = TelevirParameters.get_report_layout_params(run.pk)
+        report_layout_params = TelevirParameters.get_report_layout_params(
+            project_pk=self.parameter_set.project.pk
+        )
 
-        if final_report.exists() is False:
+        if final_reports.exists() is False:
             return
 
-        report_sorter = ReportSorter(final_report, report_layout_params)
+        report_sorter = ReportSorter(final_reports, report_layout_params)
 
         try:
             report_sorter.sort_reports_save()

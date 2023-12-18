@@ -858,6 +858,9 @@ class ReportSorter:
         """
         Return True if analysis exists
         """
+        if self.analysis_df_path is None:
+            return False
+
         if not os.path.exists(self.analysis_df_path):
             return False
 

@@ -795,6 +795,7 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
                     ParameterSet.STATUS_KILLED,
                     ParameterSet.STATUS_FINISHED,
                     ParameterSet.STATUS_RUNNING,
+                    ParameterSet.STATUS_ERROR,
                 ],
                 run_type__in=[
                     RunMain.RUN_TYPE_MAP_REQUEST,

@@ -494,7 +494,7 @@ class ReportSorter:
         force=False,
         level=0,
     ):
-        self.reports = reports
+        self.reports: List[FinalReport] = reports
         self.max_error_rate = 0
         self.max_quality_avg = 1
         self.max_mapped_prop = 0
@@ -712,6 +712,13 @@ class ReportSorter:
         if not self.reports:
             return None
 
+        run_with_media_dir = [
+            report.run for report in self.reports if infer_run_media_dir(report.run)
+        ]
+
+        if len(run_with_media_dir) == 0:
+            return None
+
         return self.reports[0].run
 
     def inferred_run_media_dir(self):
@@ -731,6 +738,10 @@ class ReportSorter:
             raise Exception("No model found")
 
         rundir = infer_run_media_dir(self.run)
+
+        if rundir is None:
+            return None
+
         sample_dir = os.path.dirname(rundir)
 
         return sample_dir

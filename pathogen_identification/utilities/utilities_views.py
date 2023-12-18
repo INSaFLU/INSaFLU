@@ -712,6 +712,13 @@ class ReportSorter:
         if not self.reports:
             return None
 
+        for report in self.reports:
+            if report.run is None:
+                print("report with missing run: ", report, report.pk)
+
+            elif infer_run_media_dir(report.run) is None:
+                print(f"run with missing media dir: {report.run} {report.run.pk}")
+
         run_with_media_dir = [
             report.run for report in self.reports if report.run is not None
         ]

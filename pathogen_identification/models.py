@@ -469,7 +469,12 @@ class RunMain(models.Model):
     RUN_TYPE_SCREENING = 3
     RUN_TYPE_COMBINED_MAPPING = 4
 
+    STATUS_DEFAULT = 0
+    STATUS_PREP = 1
+    STATUS_ERROR = 2
+
     run_type = models.IntegerField(default=RUN_TYPE_PIPELINE)
+    status = models.IntegerField(default=STATUS_DEFAULT)
 
     parameter_set = models.ForeignKey(
         ParameterSet, on_delete=models.CASCADE, related_name="run_main", default=None

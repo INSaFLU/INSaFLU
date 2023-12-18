@@ -13,17 +13,22 @@ from django.views.decorators.http import require_POST
 from constants.meta_key_and_values import MetaKeyAndValue
 from fluwebvirus.settings import STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
-from pathogen_identification.models import (FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            ReferenceMap_Main, RunMain)
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
-from pathogen_identification.utilities.utilities_general import \
-    get_services_dir
-from pathogen_identification.utilities.utilities_pipeline import \
-    SoftwareTreeUtils
+from pathogen_identification.models import (
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    ReferenceMap_Main,
+    RunMain,
+)
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.utilities_general import get_services_dir
+from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter, SampleReferenceManager, set_control_reports)
+    ReportSorter,
+    SampleReferenceManager,
+    set_control_reports,
+)
 from utils.process_SGE import ProcessSGE
 from utils.utils import Utils
 
@@ -151,10 +156,12 @@ def submit_sample_mapping_televir(request):
 
         if len(runs_to_deploy) == 0:
             return JsonResponse(data)
+        print(f"runs_to_deploy: {runs_to_deploy}")
 
         already_mapped = True
 
         for reference_id in reference_id_list:
+            reference = RawReference.objects.get(pk=int(reference_id))
             if (
                 RawReference.objects.filter(
                     accid=reference.accid,
@@ -182,6 +189,8 @@ def submit_sample_mapping_televir(request):
                 is False
             ):
                 already_mapped = False
+
+        print(f"already_mapped: {already_mapped}")
 
         if already_mapped is True:
             data["is_ok"] = True

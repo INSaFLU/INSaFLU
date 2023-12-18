@@ -2066,12 +2066,16 @@ class Mapping_Manager(Tandem_Remap):
 
     def run_mappings_move_clean(self, static_plots_dir, media_dir):
         for target in self.remap_targets:
+            print(f"################## MAPPING ACC {target.accid} ##################")
             mapped_instance = self.reciprocal_map(target)
 
             self.mapped_instances.append(mapped_instance)
 
             apres = mapped_instance.reference.number_of_contigs_mapped > 0
             rpres = mapped_instance.reference.number_of_reads_mapped > 0
+
+            print(f" Reads mapped: {rpres}")
+            print(f" Contigs mapped: {apres}")
 
             if rpres:
                 mapped_instance.reference.move_coverage_plot(static_plots_dir)

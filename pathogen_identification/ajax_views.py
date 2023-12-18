@@ -145,20 +145,19 @@ def submit_sample_mapping_televir(request):
         project = sample.project
         reference_manager = SampleReferenceManager(sample)
 
+        ### check if all references are already mapped
         reference_id_list = request.POST.getlist("reference_ids[]")
+        added_references = RawReference.objects.filter(
+            run__sample__pk=sample_id, run__run_type=RunMain.RUN_TYPE_STORAGE
+        )
 
-        if len(reference_id_list) == 0:
+        if len(reference_id_list) == 0 and len(added_references) == 0:
             data["is_empty"] = True
             return JsonResponse(data)
 
-        software_utils = SoftwareTreeUtils(user, project, sample=sample)
-        runs_to_deploy = software_utils.check_runs_to_submit_mapping_only(sample)
-
-        if len(runs_to_deploy) == 0:
-            return JsonResponse(data)
-        print(f"runs_to_deploy: {runs_to_deploy}")
-
         already_mapped = True
+
+        #### check among reference id list
 
         for reference_id in reference_id_list:
             reference = RawReference.objects.get(pk=int(reference_id))
@@ -174,9 +173,8 @@ def submit_sample_mapping_televir(request):
             ):
                 already_mapped = False
 
-        added_references = RawReference.objects.filter(
-            run__sample__pk=sample_id, run__run_type=RunMain.RUN_TYPE_STORAGE
-        )
+        ##### check among added references
+
         for added_reference in added_references:
             if (
                 RawReference.objects.filter(
@@ -190,14 +188,20 @@ def submit_sample_mapping_televir(request):
             ):
                 already_mapped = False
 
-        print(f"already_mapped: {already_mapped}")
-
         if already_mapped is True:
             data["is_ok"] = True
             data["is_deployed"] = False
             data["is_empty"] = False
             data["is_already_mapped"] = True
             return JsonResponse(data)
+
+        ### runs to deploy
+        software_utils = SoftwareTreeUtils(user, project, sample=sample)
+        runs_to_deploy = software_utils.check_runs_to_submit_mapping_only(sample)
+
+        if len(runs_to_deploy) == 0:
+            return JsonResponse(data)
+        print(f"runs_to_deploy: {runs_to_deploy}")
 
         try:
             if len(runs_to_deploy) > 0:

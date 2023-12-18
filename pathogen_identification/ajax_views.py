@@ -56,9 +56,10 @@ def submit_sample_metagenomics_televir(request):
 
         user = sample.project.owner
         project = sample.project
-
+        reference_manager = SampleReferenceManager(sample)
         software_utils = SoftwareTreeUtils(user, project, sample=sample)
         runs_to_deploy = software_utils.check_runs_to_submit_metagenomics_sample(sample)
+        metagenomics_run = reference_manager.map_combined_run
 
         try:
             if len(runs_to_deploy) > 0:
@@ -69,6 +70,7 @@ def submit_sample_metagenomics_televir(request):
                             sample_pk=sample.pk,
                             leaf_pk=leaf.pk,
                             combined_analysis=True,
+                            map_run_pk=metagenomics_run.pk,
                         )
 
                 data["is_deployed"] = True

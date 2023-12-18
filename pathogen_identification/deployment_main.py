@@ -583,7 +583,10 @@ class Run_Main_from_Leaf:
         new_run.register_error()
 
         try:
-            run = RunMain.objects.get(parameter_set=new_run)
+            if self.mapping_run_pk:
+                run = RunMain.objects.get(pk=self.mapping_run_pk)
+            else:
+                run = RunMain.objects.get(parameter_set=new_run)
             run.delete()
         except RunMain.DoesNotExist:
             pass
@@ -591,7 +594,6 @@ class Run_Main_from_Leaf:
         self.container.delete_run()
 
     def run_reference_overlap_analysis(self):
-        run = RunMain.objects.get(parameter_set=self.parameter_set)
         final_reports = FinalReport.objects.filter(sample=self.sample).order_by(
             "-coverage"
         )

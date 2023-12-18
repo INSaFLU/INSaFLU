@@ -87,11 +87,21 @@ class SampleReferenceManager:
         return software_tree_node
 
     @property
-    def mapping_proxy_leaf(self):
+    def mapping_request_proxy_leaf(self):
         return SoftwareTreeNode.objects.create(
             index=-1,
             software_tree=self.software_tree,
             name="mapping",
+            software=None,
+            parent=None,
+        )
+
+    @property
+    def mapping_combined_proxy_leaf(self):
+        return SoftwareTreeNode.objects.create(
+            index=-1,
+            software_tree=self.software_tree,
+            name="mapping_combined",
             software=None,
             parent=None,
         )
@@ -127,7 +137,16 @@ class SampleReferenceManager:
     def parameter_set_mapping(self):
         return ParameterSet.objects.create(
             sample=self.sample,
-            leaf=self.mapping_proxy_leaf,
+            leaf=self.mapping_request_proxy_leaf,
+            status=ParameterSet.STATUS_PROXIED,
+            project=self.sample.project,
+        )
+
+    @property
+    def parameter_set_mapping_combined(self):
+        return ParameterSet.objects.create(
+            sample=self.sample,
+            leaf=self.mapping_combined_proxy_leaf,
             status=ParameterSet.STATUS_PROXIED,
             project=self.sample.project,
         )
@@ -154,26 +173,6 @@ class SampleReferenceManager:
             )
             storage_run.save()
 
-    def prep_screening(self):
-        try:
-            screening_run = RunMain.objects.get(
-                name="screening",
-                run_type=RunMain.RUN_TYPE_SCREENING,
-                project=self.sample.project,
-                sample=self.sample,
-            )
-        except RunMain.DoesNotExist:
-            screening_run = RunMain.objects.create(
-                name="screening",
-                sample=self.sample,
-                run_type=RunMain.RUN_TYPE_SCREENING,
-                project=self.sample.project,
-                parameter_set=self.parameter_set_storage,
-                host_depletion_performed=False,
-                enrichment_performed=False,
-            )
-            screening_run.save()
-
     @property
     def storage_run(self):
         return RunMain.objects.get(
@@ -196,6 +195,20 @@ class SampleReferenceManager:
         )
         map_request_run.save()
         return map_request_run
+
+    @property
+    def map_combined_run(self):
+        map_combined_run = RunMain.objects.create(
+            name="map_combined",
+            sample=self.sample,
+            run_type=RunMain.RUN_TYPE_COMBINED_MAPPING,
+            project=self.sample.project,
+            parameter_set=self.parameter_set_mapping_combined,
+            host_depletion_performed=False,
+            enrichment_performed=False,
+        )
+        map_combined_run.save()
+        return map_combined_run
 
     @property
     def screening_run(self):

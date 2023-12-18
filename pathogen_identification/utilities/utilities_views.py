@@ -713,7 +713,10 @@ class ReportSorter:
             return None
 
         run_with_media_dir = [
-            report.run for report in self.reports if infer_run_media_dir(report.run)
+            report.run for report in self.reports if report.run is not None
+        ]
+        run_with_media_dir = [
+            run for run in run_with_media_dir if infer_run_media_dir(run)
         ]
 
         if len(run_with_media_dir) == 0:

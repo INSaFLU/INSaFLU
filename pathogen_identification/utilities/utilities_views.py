@@ -528,7 +528,7 @@ class ReportSorter:
         # set logger level
         self.logger.setLevel(logging.INFO)
 
-        if self.model is not None:
+        if self.model is not None and self.run is not None:
             self.media_dir = self.infer_media_dir()
 
             self.all_clades_df_path = os.path.join(

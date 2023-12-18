@@ -28,58 +28,38 @@ from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProcessControler
 from managing_files.tables import SampleToProjectsTable
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from pathogen_identification.forms import ReferenceForm
-from pathogen_identification.models import (
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReadClassification,
-    ReferenceContigs,
-    ReferenceMap_Main,
-    ReferenceSourceFileMap,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    RunRemapMain,
-    Sample,
-    TelevirRunQC,
-)
+from pathogen_identification.models import (ContigClassification, FinalReport,
+                                            ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            ReadClassification,
+                                            ReferenceContigs,
+                                            ReferenceMap_Main,
+                                            ReferenceSourceFileMap,
+                                            RunAssembly, RunDetail, RunMain,
+                                            RunRemapMain, Sample, TelevirRunQC)
 from pathogen_identification.modules.object_classes import RunQC_report
-from pathogen_identification.tables import (
-    AddedReferenceTable,
-    CompoundRefereceScoreWithScreening,
-    CompoundReferenceScore,
-    ContigTable,
-    ProjectTable,
-    ProjectTableMetagenomics,
-    RawReferenceTable,
-    RawReferenceTableNoRemapping,
-    ReferenceSourceTable,
-    RunMainTable,
-    RunMappingTable,
-    SampleTable,
-)
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.tables import (AddedReferenceTable,
+                                            CompoundRefereceScoreWithScreening,
+                                            CompoundReferenceScore,
+                                            ContigTable, ProjectTable,
+                                            ProjectTableMetagenomics,
+                                            RawReferenceTable,
+                                            RawReferenceTableNoRemapping,
+                                            ReferenceSourceTable, RunMainTable,
+                                            RunMappingTable, SampleTable)
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
 from pathogen_identification.utilities.utilities_general import (
-    get_services_dir,
-    infer_run_media_dir,
-)
+    get_services_dir, infer_run_media_dir)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility,
-    RawReferenceUtils,
-)
+    Parameter_DB_Utility, RawReferenceUtils)
 from pathogen_identification.utilities.utilities_views import (
-    EmptyRemapMain,
-    RawReferenceCompound,
-    ReportSorter,
-    final_report_best_cov_by_accid,
-    recover_assembly_contigs,
-)
+    EmptyRemapMain, RawReferenceCompound, ReportSorter,
+    final_report_best_cov_by_accid, recover_assembly_contigs)
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
 from utils.support_django_template import get_link_for_dropdown_item
@@ -1460,34 +1440,35 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         # intermediate files zip
         intermediate_reports = run_main_pipeline.intermediate_reports_get()
         run_main_dir = infer_run_media_dir(run_main_pipeline)
-        zip_file_name = "{}_intermediate_reports.zip".format(run_main_pipeline.name)
-        file_path = get_create_zip(
-            intermediate_reports.files, run_main_dir, zip_file_name
-        )
-        context["files"]["intermediate_reports_zip"] = file_path
-
-        # final report
-        reports_df = run_main_pipeline.get_final_reports_df()
-        run_main_dir = infer_run_media_dir(run_main_pipeline)
-        reports_df.to_csv(os.path.join(run_main_dir, "final_reports.csv"), index=False)
-        file_path = os.path.join(run_main_dir, "final_reports.csv")
-        context["files"]["final_reports_csv"] = file_path
-
-        def eliminate_path_before_media(path: str):
-            if PICS.televir_subdirectory in path:
-                path = path.split(PICS.televir_subdirectory)[1]
-                televir_sbdir = os.path.join("/media", PICS.televir_subdirectory)
-                return televir_sbdir + path
-
-            return path.replace(MEDIA_ROOT, "/media")
-
-        for fpath in context["files"]:
-            context["files"][fpath] = eliminate_path_before_media(
-                context["files"][fpath]
+        if run_main_dir is not None:
+            zip_file_name = "{}_intermediate_reports.zip".format(run_main_pipeline.name)
+            file_path = get_create_zip(
+                intermediate_reports.files, run_main_dir, zip_file_name
             )
-            context["files"][fpath] = get_link_for_dropdown_item(
-                context["files"][fpath]
-            )
+            context["files"]["intermediate_reports_zip"] = file_path
+
+            # final report
+            reports_df = run_main_pipeline.get_final_reports_df()
+            run_main_dir = infer_run_media_dir(run_main_pipeline)
+            reports_df.to_csv(os.path.join(run_main_dir, "final_reports.csv"), index=False)
+            file_path = os.path.join(run_main_dir, "final_reports.csv")
+            context["files"]["final_reports_csv"] = file_path
+
+            def eliminate_path_before_media(path: str):
+                if PICS.televir_subdirectory in path:
+                    path = path.split(PICS.televir_subdirectory)[1]
+                    televir_sbdir = os.path.join("/media", PICS.televir_subdirectory)
+                    return televir_sbdir + path
+
+                return path.replace(MEDIA_ROOT, "/media")
+
+            for fpath in context["files"]:
+                context["files"][fpath] = eliminate_path_before_media(
+                    context["files"][fpath]
+                )
+                context["files"][fpath] = get_link_for_dropdown_item(
+                    context["files"][fpath]
+                )
 
         return context
 

@@ -1052,6 +1052,9 @@ class RunMappingTable(tables.Table):
         except:
             name_extended = software_name
 
+        if name_extended is None:
+            return software_name
+
         # remove parenthesis
         if "(" in name_extended:
             name_extended = name_extended.split("(")[0]

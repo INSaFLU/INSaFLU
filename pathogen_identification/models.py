@@ -328,12 +328,15 @@ class ParameterSet(models.Model):
             self.status = self.STATUS_NOT_STARTED
             self.save()
 
-            try:
-                runs = RunMain.objects.filter(parameter_set=self)
-                for run in runs:
-                    run.delete_data()
-            except RunMain.DoesNotExist:
-                pass
+            runs = RunMain.objects.filter(parameter_set=self)
+
+            for run in runs:
+                if run.status == RunMain.STATUS_FINISHED:
+                    continue
+                if run.status == RunMain.STATUS_RUNNING:
+                    run.status = RunMain.STATUS_KILLED
+                    run.save()
+                run.delete_data()
 
     def __str__(self):
         return self.sample.name + " " + str(self.leaf.index)
@@ -472,6 +475,9 @@ class RunMain(models.Model):
     STATUS_DEFAULT = 0
     STATUS_PREP = 1
     STATUS_ERROR = 2
+    STATUS_RUNNING = 3
+    STATUS_FINISHED = 4
+    STATUS_KILLED = 5
 
     run_type = models.IntegerField(default=RUN_TYPE_PIPELINE)
     status = models.IntegerField(default=STATUS_DEFAULT)

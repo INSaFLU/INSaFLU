@@ -801,7 +801,11 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
                     RunMain.RUN_TYPE_MAP_REQUEST,
                     RunMain.RUN_TYPE_COMBINED_MAPPING,
                 ],
-                status=RunMain.STATUS_DEFAULT,
+                status__in=[
+                    RunMain.STATUS_DEFAULT,
+                    RunMain.STATUS_RUNNING,
+                    RunMain.STATUS_FINISHED,
+                ],
             )
             sample_name = sample.sample.name
             project_name = project.name

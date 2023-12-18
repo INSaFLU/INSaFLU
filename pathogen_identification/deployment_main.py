@@ -476,6 +476,7 @@ class Run_Main_from_Leaf:
             db_updated = Update_RunMain_Initial(
                 self.container.run_engine, self.parameter_set
             )
+            self.register_running()
             if not db_updated:
                 return False
         except Exception as e:
@@ -574,6 +575,17 @@ class Run_Main_from_Leaf:
         new_run.register_subprocess()
         print("registered_submission")
 
+        if self.mapping_run_pk:
+            run = RunMain.objects.get(pk=self.mapping_run_pk)
+            run.status = RunMain.STATUS_PREP
+            run.save()
+
+    def register_running(self):
+        if self.mapping_run_pk:
+            run = RunMain.objects.get(pk=self.mapping_run_pk)
+            run.status = RunMain.STATUS_RUNNING
+            run.save()
+
     def register_error(self):
         self.set_run_process_error()
         print("REGISTERING ERROR")
@@ -585,9 +597,11 @@ class Run_Main_from_Leaf:
         try:
             if self.mapping_run_pk:
                 run = RunMain.objects.get(pk=self.mapping_run_pk)
+                run.status = RunMain.STATUS_ERROR
+                run.save()
             else:
                 run = RunMain.objects.get(parameter_set=new_run)
-            run.delete()
+                run.delete()
         except RunMain.DoesNotExist:
             pass
 
@@ -621,6 +635,11 @@ class Run_Main_from_Leaf:
         new_run = ParameterSet.objects.get(pk=self.pk)
         new_run.register_finished()
 
+        if self.mapping_run_pk:
+            run = RunMain.objects.get(pk=self.mapping_run_pk)
+            run.status = RunMain.STATUS_FINISHED
+            run.save()
+
     def update_project_change_date(self):
         self.project.last_change_date = datetime.datetime.now()
         self.project.save()
@@ -644,8 +663,8 @@ class Run_Main_from_Leaf:
                 return
 
             if run_success:
-                self.run_reference_overlap_analysis()
                 self.register_completion()
+                self.run_reference_overlap_analysis()
                 self.update_project_change_date()
 
             else:

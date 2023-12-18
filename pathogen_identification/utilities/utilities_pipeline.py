@@ -280,11 +280,7 @@ class Pipeline_Makeup(PipelineTreeBase):
         if ignore:
             makeup_safe = [x for x in makeup_safe if x not in ignore]
 
-        print(set(makeup_safe))
-
         for makeup, mlist in self.MAKEUP.items():
-            if CS.PIPELINE_NAME_metagenomics_combine in mlist:
-                print(mlist)
             if set(makeup_safe) == set(mlist):
                 return makeup
         return None
@@ -727,11 +723,6 @@ class PipelineTree:
 
         nodes_compress = self.nodes_compress
         edge_compress = self.edge_compress
-        print("Splitting modules")
-        print(self.node_index)
-        print(self.nodes_compress)
-        print(self.edge_compress)
-        print("####")
 
         new_nodes = []
         for node in nodes_compress:
@@ -746,9 +737,6 @@ class PipelineTree:
                 is_module = internal_name[2] == "module"
 
                 if is_module and ix != 0:
-                    print("Module found")
-                    print(module_name)
-                    print(internal_name)
                     internal_splits.append(ix)
 
             if len(internal_splits) > 1:
@@ -1829,20 +1817,12 @@ class Parameter_DB_Utility:
         else:
             steps = self.televir_constants.vect_pipeline_names_default
 
-        print(metagenomics, mapping_only, screening)
-        print(steps)
-        print(project, sample)
-
         software_available = Software.objects.filter(
             technology__name=technology,
             pipeline_step__name__in=steps,
             is_to_run=True,
             owner=user,
         ).distinct()
-
-        print([x.name_extended for x in software_available])
-
-        print(software_available)
 
         if sample is not None:
             software_available = software_available.filter(
@@ -1859,8 +1839,6 @@ class Parameter_DB_Utility:
             software_available = software_available.filter(
                 type_of_use__in=Software.TELEVIR_GLOBAL_TYPES
             )
-
-        print(software_available)
 
         parameters_available = Parameter.objects.filter(
             software__in=software_available,
@@ -2002,8 +1980,6 @@ class Parameter_DB_Utility:
             screening=screening,
             request_mapping=request_mapping,
         )
-        print("SOFTWARE_TABLES")
-        print(software_table.shape, parameters_table.shape)
 
         if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
             if project is not None:
@@ -2222,6 +2198,8 @@ class Parameter_DB_Utility:
         """
         Set ParameterSet to queue if it exists and is not finished or running.
         """
+        print(leaf.pk)
+        print(ParameterSet.objects.filter(sample=sample, leaf=leaf, project=project))
 
         try:
             parameter_set = ParameterSet.objects.get(
@@ -2731,8 +2709,6 @@ class SoftwareTreeUtils:
             request_mapping=request_mapping,
         )
 
-        print(merged_table)
-
         if merged_table.shape[0] == 0:
             return PipelineTree(
                 technology=project.technology,
@@ -2917,6 +2893,10 @@ class SoftwareTreeUtils:
         clean_samples_leaf_dict = self.utils_manager.sample_nodes_check_repeat_allowed(
             submission_dict, available_path_nodes, self.project
         )
+
+        # samples_leaf_dict = {
+        #    sample: available_path_nodes.values() for sample in submission_dict.keys()
+        # }
 
         return clean_samples_leaf_dict
 

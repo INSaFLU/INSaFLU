@@ -42,7 +42,6 @@ from settings.models import Parameter, Software
 class SampleReferenceManager:
     def __init__(self, sample: PIProject_Sample):
         self.sample = sample
-
         self.software_tree: SoftwareTree = self.proxy_tree_prepare()
         self.software_tree_node_storage: SoftwareTreeNode = self.proxy_leaf_prepare()
         self.prep_storage()
@@ -74,37 +73,22 @@ class SampleReferenceManager:
                 software_tree=self.software_tree,
                 name="storage",
             )
+
         except SoftwareTreeNode.DoesNotExist:
             software_tree_node = SoftwareTreeNode.objects.create(
                 index=-1,
                 software_tree=self.software_tree,
                 name="storage",
-                software=None,
                 parent=None,
             )
             software_tree_node.save()
 
+        except Exception as e:
+            print(e)
+            print("multiple objects returned")
+            software_tree_node = None
+
         return software_tree_node
-
-    @property
-    def mapping_request_proxy_leaf(self):
-        return SoftwareTreeNode.objects.create(
-            index=-1,
-            software_tree=self.software_tree,
-            name="mapping",
-            software=None,
-            parent=None,
-        )
-
-    @property
-    def mapping_combined_proxy_leaf(self):
-        return SoftwareTreeNode.objects.create(
-            index=-1,
-            software_tree=self.software_tree,
-            name="mapping_combined",
-            software=None,
-            parent=None,
-        )
 
     def proxy_parameter_set_prepare(self):
         try:
@@ -131,24 +115,6 @@ class SampleReferenceManager:
             sample=self.sample,
             leaf=self.software_tree_node_storage,
             status=ParameterSet.STATUS_PROXIED,
-        )
-
-    @property
-    def parameter_set_mapping(self):
-        return ParameterSet.objects.create(
-            sample=self.sample,
-            leaf=self.mapping_request_proxy_leaf,
-            status=ParameterSet.STATUS_PROXIED,
-            project=self.sample.project,
-        )
-
-    @property
-    def parameter_set_mapping_combined(self):
-        return ParameterSet.objects.create(
-            sample=self.sample,
-            leaf=self.mapping_combined_proxy_leaf,
-            status=ParameterSet.STATUS_PROXIED,
-            project=self.sample.project,
         )
 
     def prep_storage(self):
@@ -182,48 +148,60 @@ class SampleReferenceManager:
             sample=self.sample,
         )
 
-    @property
-    def map_request_run(self):
-        map_request_run = RunMain.objects.create(
-            name="map_request",
+    #################################################
+
+    def anchor_parameter_set_leaf(self, leaf: SoftwareTreeNode):
+        """
+        mapping run from leaf
+        """
+
+        try:
+            parameter_set = ParameterSet.objects.get(
+                sample=self.sample,
+                leaf=leaf,
+                project=self.sample.project,
+            )
+            parameter_set.save()
+
+        except ParameterSet.DoesNotExist:
+            parameter_set = ParameterSet.objects.create(
+                sample=self.sample,
+                leaf=leaf,
+                status=ParameterSet.STATUS_PROXIED,
+                project=self.sample.project,
+            )
+            parameter_set.save()
+        except Exception as e:
+            print(e)
+
+        return parameter_set
+
+    def create_mapping_run(self, leaf: SoftwareTreeNode, run_type: int):
+        parameter_set = self.anchor_parameter_set_leaf(leaf)
+
+        mapping_run = RunMain.objects.create(
+            name=leaf.name,
             sample=self.sample,
-            run_type=RunMain.RUN_TYPE_MAP_REQUEST,
+            run_type=run_type,
             project=self.sample.project,
-            parameter_set=self.parameter_set_mapping,
+            parameter_set=parameter_set,
             host_depletion_performed=False,
             enrichment_performed=False,
         )
-        map_request_run.save()
-        return map_request_run
 
-    @property
-    def map_combined_run(self):
-        map_combined_run = RunMain.objects.create(
-            name="map_combined",
-            sample=self.sample,
-            run_type=RunMain.RUN_TYPE_COMBINED_MAPPING,
-            project=self.sample.project,
-            parameter_set=self.parameter_set_mapping_combined,
-            host_depletion_performed=False,
-            enrichment_performed=False,
-        )
-        map_combined_run.save()
-        return map_combined_run
+        return mapping_run
 
-    @property
-    def screening_run(self):
-        screening_run = RunMain.objects.create(
-            name="screening",
-            run_type=RunMain.RUN_TYPE_SCREENING,
-            project=self.sample.project,
-            sample=self.sample,
-            parameter_set=self.parameter_set_storage,
-            host_depletion_performed=False,
-            enrichment_performed=False,
-        )
+    def mapping_run_from_leaf(self, leaf: SoftwareTreeNode) -> RunMain:
+        """ """
+        return self.create_mapping_run(leaf, RunMain.RUN_TYPE_COMBINED_MAPPING)
 
-        screening_run.save()
-        return screening_run
+    def mapping_request_run_from_leaf(self, leaf: SoftwareTreeNode) -> RunMain:
+        """ """
+        return self.create_mapping_run(leaf, RunMain.RUN_TYPE_MAP_REQUEST)
+
+    def screening_run_from_leaf(self, leaf: SoftwareTreeNode) -> RunMain:
+        """ """
+        return self.create_mapping_run(leaf, RunMain.RUN_TYPE_SCREENING)
 
 
 class EmptyRemapMain:
@@ -952,21 +930,15 @@ class ReportSorter:
         Update reports with private reads
         """
         accid_df = pd.read_csv(self.overlap_manager.accid_statistics_path, sep="\t")
-        print(accid_df)
         if "private_reads" not in accid_df.columns:
             report_groups = self.wrap_group_list_reports(report_groups)
             return report_groups
-        print(accid_df)
-        print(accid_df.columns)
-        print(accid_df.accid.tolist())
 
         for report_group in report_groups:
             new_group_list = []
             for report_original in report_group.group_list:
                 report = self.wrap_report(report_original)
-                print(report.accid)
                 if report.accid not in accid_df.accid.tolist():
-                    print(f"accid {report.accid} not in accid_df")
                     new_group_list.append(report)
                     continue
 
@@ -1002,7 +974,6 @@ class ReportSorter:
         overlap_analysis = self.read_overlap_analysis()
 
         overlap_groups = list(overlap_analysis.groupby(["total_counts", "clade"]))[::-1]
-        print(overlap_groups)
 
         sorted_reports = []
 
@@ -1017,8 +988,6 @@ class ReportSorter:
             name = group_df.clade.iloc[0]
             group_heatmap = self.overlap_manager.get_media_path_heatmap_clade(name)
             group_heatmap_exists = os.path.exists(group_heatmap)
-            print("#######")
-            print(name)
 
             if group_heatmap_exists:
                 group_heatmap = "/media/" + group_heatmap.split("media/")[-1]

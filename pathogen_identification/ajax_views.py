@@ -13,22 +13,17 @@ from django.views.decorators.http import require_POST
 from constants.meta_key_and_values import MetaKeyAndValue
 from fluwebvirus.settings import STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    ReferenceMap_Main,
-    RunMain,
-)
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
-from pathogen_identification.utilities.utilities_general import get_services_dir
-from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            ReferenceMap_Main, RunMain)
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
+from pathogen_identification.utilities.utilities_general import \
+    get_services_dir
+from pathogen_identification.utilities.utilities_pipeline import \
+    SoftwareTreeUtils
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter,
-    SampleReferenceManager,
-    set_control_reports,
-)
+    ReportSorter, SampleReferenceManager, set_control_reports)
 from utils.process_SGE import ProcessSGE
 from utils.utils import Utils
 
@@ -56,15 +51,18 @@ def submit_sample_metagenomics_televir(request):
 
         user = sample.project.owner
         project = sample.project
-        reference_manager = SampleReferenceManager(sample)
+
         software_utils = SoftwareTreeUtils(user, project, sample=sample)
+        print("check")
         runs_to_deploy = software_utils.check_runs_to_submit_metagenomics_sample(sample)
-        metagenomics_run = reference_manager.map_combined_run
+        reference_manager = SampleReferenceManager(sample)
 
         try:
             if len(runs_to_deploy) > 0:
                 for sample, leaves_to_deploy in runs_to_deploy.items():
                     for leaf in leaves_to_deploy:
+                        metagenomics_run = reference_manager.mapping_run_from_leaf(leaf)
+
                         taskID = process_SGE.set_submit_televir_sample_metagenomics(
                             user=request.user,
                             sample_pk=sample.pk,
@@ -102,12 +100,11 @@ def submit_sample_screening_televir(request):
         software_utils = SoftwareTreeUtils(user, project, sample=sample)
         runs_to_deploy = software_utils.check_runs_to_submit_screening_sample(sample)
 
-        screening_run = reference_manager.screening_run
-
         try:
             if len(runs_to_deploy) > 0:
                 for sample, leaves_to_deploy in runs_to_deploy.items():
                     for leaf in leaves_to_deploy:
+                        screening_run = reference_manager.screening_run_from_leaf(leaf)
                         taskID = process_SGE.set_submit_televir_sample_metagenomics(
                             user=request.user,
                             sample_pk=sample.pk,
@@ -155,16 +152,9 @@ def submit_sample_mapping_televir(request):
         if len(runs_to_deploy) == 0:
             return JsonResponse(data)
 
-        mapping_run = reference_manager.map_request_run
         already_mapped = True
 
         for reference_id in reference_id_list:
-            reference = RawReference.objects.get(pk=int(reference_id))
-
-            reference.pk = None
-            reference.run = mapping_run
-            reference.save()
-
             if (
                 RawReference.objects.filter(
                     accid=reference.accid,
@@ -204,6 +194,16 @@ def submit_sample_mapping_televir(request):
             if len(runs_to_deploy) > 0:
                 for sample, leaves_to_deploy in runs_to_deploy.items():
                     for leaf in leaves_to_deploy:
+                        for reference_id in reference_id_list:
+                            mapping_run = (
+                                reference_manager.mapping_request_run_from_leaf(leaf)
+                            )
+                            reference = RawReference.objects.get(pk=int(reference_id))
+
+                            reference.pk = None
+                            reference.run = mapping_run
+                            reference.save()
+
                         taskID = process_SGE.set_submit_televir_sample_metagenomics(
                             user=request.user,
                             sample_pk=sample.pk,

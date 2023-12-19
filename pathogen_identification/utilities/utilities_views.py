@@ -1039,16 +1039,28 @@ class ReportSorter:
 
         return sorted_groups
 
+    def return_no_analysis(self) -> List[FinalReportGroup]:
+        report_group = FinalReportGroup(
+            name="Full report, no overlap analysis",
+            total_counts=0,
+            private_counts=0,
+            shared_proportion=0,
+            private_proportion=0,
+            group_list=[self.wrap_report(report) for report in self.reports],
+        )
+        report_group = self.wrap_group_reports(report_group)
+        return [report_group]
+
     def get_reports(self) -> List[FinalReportGroup]:
         """
         Return sorted reports
         """
 
         if self.model is None:
-            return []
+            return self.return_no_analysis()
 
         if self.metadata_df.empty:
-            return []
+            return self.return_no_analysis()
 
         if not self.check_analyzed():
             report_group = FinalReportGroup(

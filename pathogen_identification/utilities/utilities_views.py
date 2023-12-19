@@ -279,7 +279,7 @@ class FinalReportCompound(LoginRequiredMixin, generic.TemplateView):
             accid=report.accid,
         )
 
-        sets = [r.run.parameter_set.leaf.index for r in references_found_in]
+        sets = set([r.run.parameter_set.leaf.index for r in references_found_in])
         return ", ".join([str(s) for s in sets])
 
     def check_data_exists(self, report: FinalReport) -> bool:

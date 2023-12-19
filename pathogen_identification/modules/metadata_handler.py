@@ -295,7 +295,6 @@ class RunMetadataHandler:
         self.generate_mapping_targets(
             references_table,
             prefix=self.prefix,
-            max_remap=1,
             max_remap=max_remap,
             skip_scrape=skip_scrape,
         )

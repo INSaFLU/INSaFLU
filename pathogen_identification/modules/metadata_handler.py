@@ -111,9 +111,9 @@ class RunMetadataHandler:
         Get mapping references for a given run. update map request with references.
         """
 
-        references = RawReference.objects.filter(run__pk=run_pk, max_accids=max_accids)
+        references = RawReference.objects.filter(run__pk=run_pk)
 
-        self.update_map_request(references)
+        self.update_map_request(references, max_accids=max_accids)
 
     def update_map_request(self, references: List[RawReference], max_accids: int = 15):
         """

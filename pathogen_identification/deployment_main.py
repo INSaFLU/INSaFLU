@@ -463,7 +463,8 @@ class Run_Main_from_Leaf:
 
                 # self.container.run_engine.remap_params.manual_references_include = True
                 self.container.run_engine.metadata_tool.get_mapping_references(
-                    self.mapping_run_pk
+                    self.mapping_run_pk,
+                    max_accids=self.container.run_engine.remap_params.max_accids,
                 )
 
             if self.combined_analysis:

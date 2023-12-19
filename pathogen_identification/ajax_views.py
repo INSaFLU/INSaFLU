@@ -207,15 +207,20 @@ def submit_sample_mapping_televir(request):
             if len(runs_to_deploy) > 0:
                 for sample, leaves_to_deploy in runs_to_deploy.items():
                     for leaf in leaves_to_deploy:
+                        mapping_run = reference_manager.mapping_request_run_from_leaf(
+                            leaf
+                        )
                         for reference_id in reference_id_list:
-                            mapping_run = (
-                                reference_manager.mapping_request_run_from_leaf(leaf)
-                            )
                             reference = RawReference.objects.get(pk=int(reference_id))
 
                             reference.pk = None
                             reference.run = mapping_run
                             reference.save()
+
+                        for added_reference in added_references:
+                            added_reference.pk = None
+                            added_reference.run = mapping_run
+                            added_reference.save()
 
                         taskID = process_SGE.set_submit_televir_sample_metagenomics(
                             user=request.user,

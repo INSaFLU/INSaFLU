@@ -6,14 +6,20 @@ from typing import List, Optional
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (PIProject_Sample, RawReference,
-                                            ReferenceSourceFileMap, RunMain)
+from pathogen_identification.models import (
+    PIProject_Sample,
+    RawReference,
+    ReferenceSourceFileMap,
+    RunMain,
+)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
 from pathogen_identification.utilities.utilities_general import (
-    description_fails_filter, merge_classes, scrape_description)
-from pathogen_identification.utilities.utilities_pipeline import \
-    RawReferenceUtils
+    description_fails_filter,
+    merge_classes,
+    scrape_description,
+)
+from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
 
 
 class RunMetadataHandler:
@@ -100,55 +106,50 @@ class RunMetadataHandler:
 
         self.update_map_request(references)
 
-    def get_mapping_references(self, run_pk: int):
+    def get_mapping_references(self, run_pk: int, max_accids: int = 15):
         """
         Get mapping references for a given run. update map request with references.
         """
 
-        references = RawReference.objects.filter(
-            run__pk=run_pk,
-        )
+        references = RawReference.objects.filter(run__pk=run_pk, max_accids=max_accids)
 
         self.update_map_request(references)
 
-    def update_map_request(self, references: List[RawReference]):
+    def update_map_request(self, references: List[RawReference], max_accids: int = 15):
         """
         Update the remap_targets list with references from list"""
 
         fasta_main_dir = self.config["source"]["REF_FASTA"]
 
-        for ref in references:
-            refmap = ReferenceSourceFileMap.objects.filter(
+        for ref in references[:max_accids]:
+            refmaps = ReferenceSourceFileMap.objects.filter(
                 reference_source__taxid__taxid=ref.taxid,
                 reference_source__accid=ref.accid,
-            ).first()
-
-            if refmap is None:
-                continue
-
-            accid_simple = (
-                ref.accid.replace(".", "_")
-                .replace(";", "_")
-                .replace(":", "_")
-                .replace("|", "_")
             )
-
-            self.remap_targets.append(
-                Remap_Target(
-                    ref.accid,
-                    accid_simple,
-                    ref.taxid,
-                    os.path.join(fasta_main_dir, refmap.reference_source_file.file),
-                    self.prefix,
-                    ref.description,
-                    [ref.accid],
-                    False,
-                    False,
+            for refmap in refmaps:
+                accid_simple = (
+                    ref.accid.replace(".", "_")
+                    .replace(";", "_")
+                    .replace(":", "_")
+                    .replace("|", "_")
                 )
-            )
+
+                self.remap_targets.append(
+                    Remap_Target(
+                        ref.accid,
+                        accid_simple,
+                        ref.taxid,
+                        os.path.join(fasta_main_dir, refmap.reference_source_file.file),
+                        self.prefix,
+                        ref.description,
+                        [ref.accid],
+                        False,
+                        False,
+                    )
+                )
 
     def merge_sample_references(
-        self, sample_registered: PIProject_Sample, max_taxids: int
+        self, sample_registered: PIProject_Sample, max_taxids: int, max_remap: int = 15
     ):
         """
         Generate Remap Targets from all existing references for a given sample."""
@@ -173,6 +174,7 @@ class RunMetadataHandler:
         self.generate_targets_from_report(
             reference_table,
             max_taxids=max_taxids,
+            max_remap=max_remap,
             skip_scrape=False,
         )
 
@@ -256,6 +258,7 @@ class RunMetadataHandler:
         self,
         df: pd.DataFrame,
         max_taxids: Optional[int] = None,
+        max_remap: int = 15,
         skip_scrape: bool = True,
     ):
         references_table = self.filter_references_table(df)
@@ -293,6 +296,7 @@ class RunMetadataHandler:
             references_table,
             prefix=self.prefix,
             max_remap=1,
+            max_remap=max_remap,
             skip_scrape=skip_scrape,
         )
 

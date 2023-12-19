@@ -886,8 +886,8 @@ class Run_Deployment_Methods(RunDetail_main):
         self.read_classification_drone.run()
 
     def prep_REMAPPING(self):
-        if self.remap_params.manual_references_include:
-            self.metadata_tool.get_manual_references(self.sample_registered)
+        # if self.remap_params.manual_references_include:
+        #    self.metadata_tool.get_manual_references(self.sample_registered)
 
         self.remap_manager = Mapping_Manager(
             self.metadata_tool.remap_targets,
@@ -1444,7 +1444,7 @@ class RunMainTree_class(Run_Deployment_Methods):
 
         # reference_table = collect_references_table_all()
         reference_table = reference_utils.sample_reference_tables()
-        self.metadata_tool.generate_targets_from_report(reference_table)
+        self.metadata_tool.generate_targets_from_report(reference_table, max_remap=1)
 
         self.prep_REMAPPING()
         self.remap_manager.generate_remap_targets_fasta()
@@ -1521,7 +1521,9 @@ class RunMainTree_class(Run_Deployment_Methods):
 
     def plan_combined_remapping(self):
         self.metadata_tool.merge_sample_references(
-            self.sample_registered, self.remap_params.max_taxids
+            self.sample_registered,
+            max_taxids=self.remap_params.max_taxids,
+            max_remap=self.remap_params.max_accids,
         )
 
         self.import_from_remap_prep()

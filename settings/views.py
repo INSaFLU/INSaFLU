@@ -354,7 +354,6 @@ class PISettingsView(LoginRequiredMixin, ListView):
         ### IMPORTANT, must have technology__name, because old versions don't
         constant_settings = PICS()
         condensed_pipeline_names = constant_settings.vect_pipeline_names_condensed
-        print(condensed_pipeline_names)
 
         for technology in technologies:  ## run over all technology
             vect_pipeline_step = []

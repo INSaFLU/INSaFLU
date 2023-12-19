@@ -730,6 +730,7 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
 
         if DEPLOY_TYPE == PICS.DEPLOYMENT_TYPE_PIPELINE:
             DEPLOY_URL = "deploy_runs_ProjectPI"
+
         context["metagenomics"] = ConstantsSettings.METAGENOMICS
         context["table"] = samples
         context["deploy_url"] = DEPLOY_URL
@@ -1541,6 +1542,8 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         report_layout_params = TelevirParameters.get_report_layout_params(
             project_pk=project_main.pk
         )
+
+        print(final_report)
 
         report_sorter = ReportSorter(unique_reports, report_layout_params)
         sorted_reports = report_sorter.get_reports_compound()

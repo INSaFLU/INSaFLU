@@ -36,7 +36,7 @@ class ConstantsSettings:
 
     ################################### Pipeline steps
 
-    METAGENOMICS = True
+    METAGENOMICS = False
     METAGENOMICS_file_limit = 1000000
 
     ################################### pipeline_deployment_type
@@ -161,13 +161,19 @@ class ConstantsSettings:
         return [
             pipeline_name
             for pipeline_name in vect_pipeline_names
-            if pipeline_name != CS.PIPELINE_NAME_metagenomics_combine
+            if pipeline_name
+            not in [
+                CS.PIPELINE_NAME_metagenomics_combine,
+                CS.PIPELINE_NAME_request_mapping,
+                CS.PIPELINE_NAME_metagenomics_settings,
+            ]
         ]
 
     @property
     def vect_pipeline_names_condensed(self) -> Dict[str, List[str]]:
         constant_settings = CS()
         vect_pipeline_names = CS.vect_pipeline_names
+
         if self.METAGENOMICS is False:
             vect_pipeline_names = self.vect_pipeline_names_default
 

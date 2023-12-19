@@ -55,7 +55,6 @@ from pathogen_identification.tables import (
     CompoundReferenceScore,
     ContigTable,
     ProjectTable,
-    ProjectTableMetagenomics,
     RawReferenceTable,
     RawReferenceTableNoRemapping,
     ReferenceSourceTable,

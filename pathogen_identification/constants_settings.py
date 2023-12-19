@@ -193,6 +193,8 @@ class ConstantsSettings:
             for pipeline_step in constant_settings.vect_pipeline_televir_metagenomics_for_parameters
         }
 
+        print(pipeline_steps_dict)
+
         pipeline_names_dict = constant_settings.reverse_set_dict(pipeline_steps_dict)
 
         return pipeline_names_dict

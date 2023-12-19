@@ -77,7 +77,7 @@ class ConstantsSettings(object):
 
     vect_pipeline_televir_metagenomics_for_parameters = (
         vect_pipeline_televir_metagenomics
-        + [PIPELINE_NAME_metagenomics_combine + PIPELINE_NAME_request_mapping]
+        + [PIPELINE_NAME_metagenomics_combine, PIPELINE_NAME_request_mapping]
     )
 
     vect_pipeline_televir_screening = [

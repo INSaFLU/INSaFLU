@@ -127,7 +127,7 @@ class PathogenIdentification_deployment:
 
         self.delete_run_media()
         self.delete_run_static()
-        self.delete_run_record()
+        # self.delete_run_record()
 
     def configure(self, r1_path: str, r2_path: str = "") -> bool:
         """generate config dictionary for run_main, and copy input reads to project directory."""

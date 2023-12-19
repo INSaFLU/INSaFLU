@@ -210,6 +210,7 @@ def submit_sample_mapping_televir(request):
                         mapping_run = reference_manager.mapping_request_run_from_leaf(
                             leaf
                         )
+
                         for reference_id in reference_id_list:
                             reference = RawReference.objects.get(pk=int(reference_id))
 

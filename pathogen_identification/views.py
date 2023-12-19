@@ -61,7 +61,7 @@ from pathogen_identification.tables import (
     ReferenceSourceTable,
     RunMainTable,
     RunMappingTable,
-    SampleTable,
+    SampleTableMetagenomics,
 )
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
@@ -719,7 +719,7 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
                 Q(name__icontains=self.request.GET.get(tag_search))
             ).distinct()
 
-        samples = SampleTable(query_set)
+        samples = SampleTableMetagenomics(query_set)
 
         RequestConfig(
             self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}

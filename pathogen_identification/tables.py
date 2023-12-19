@@ -11,32 +11,20 @@ from constants.constants import Constants
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReadClassification,
-    ReferenceContigs,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    SampleQC,
-    TelevirRunQC,
-)
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.models import (ContigClassification, FinalReport,
+                                            ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            ReadClassification,
+                                            ReferenceContigs, RunAssembly,
+                                            RunDetail, RunMain, SampleQC,
+                                            TelevirRunQC)
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.utilities_general import (
-    get_project_dir,
-    get_project_dir_no_media_root,
-)
+    get_project_dir, get_project_dir_no_media_root)
 from pathogen_identification.utilities.utilities_views import (
-    RawReferenceCompound,
-    ReportSorter,
-    check_sample_software_exists,
-    duplicate_metagenomics_software,
-)
+    RawReferenceCompound, ReportSorter, check_sample_software_exists,
+    duplicate_metagenomics_software)
 from settings.models import Parameter, Software
 
 
@@ -439,6 +427,7 @@ class SampleTable(tables.Table):
             parameter_set__status__in=[
                 ParameterSet.STATUS_FINISHED,
             ],
+            run_type=RunMain.RUN_TYPE_PIPELINE,
         ).count()
 
     def render_sorting(self, record):
@@ -652,9 +641,7 @@ class SampleTable(tables.Table):
 
 
 class SampleTableMetagenomics(SampleTable):
-    combined_analysis = tables.Column(
-        "Combined Analysis", orderable=False, empty_values=()
-    )
+    mapping_runs = tables.Column("Mapping Runs", orderable=False, empty_values=())
 
     class Meta:
         model = PIProject_Sample
@@ -663,7 +650,7 @@ class SampleTableMetagenomics(SampleTable):
         fields = (
             "name",
             "report",
-            "combined_analysis",
+            "mapping_runs",
             "runs",
             "sorting",
             "deploy",
@@ -674,38 +661,23 @@ class SampleTableMetagenomics(SampleTable):
             "set_control",
         )
 
-    def render_combined_analysis(self, record):
+    def render_mapping_runs(self, record):
         """
         row with two buttons, one for settings, one for deploy
         """
-        color = ""
-        parameters = (
-            "<a href="
-            + reverse("pathogenID_sample_settings", kwargs={"sample": record.pk})
-            + ' data-toggle="tooltip" title="Manage settings">'
-            + f'<span ><i class="padding-button-table fa fa-pencil padding-button-table" {color}></i></span></a>'
-        )
 
-        deploy_metagenomics = (
-            "<a "
-            + 'href="#id_deploy_metagenomics_modal" data-toggle="modal" data-toggle="tooltip" '
-            + 'id="deploy_metagenomics_modal" '
-            + 'title="Deploy Metagenomics"'
-            + f" pk={record.pk} "
-            + f"ref_name={record.name} "
-            + '><i class="fa fa-flask"></i></span> </a>'
-        )
 
-        if (
-            ParameterSet.objects.filter(
-                sample=record,
-                status=ParameterSet.STATUS_FINISHED,
-            ).count()
-            > 1
-        ):
-            parameters = parameters + deploy_metagenomics
-
-        return mark_safe(parameters)
+        return RunMain.objects.filter(
+            sample__name=record.name,
+            project=record.project,
+            parameter_set__status__in=[
+                ParameterSet.STATUS_FINISHED,
+            ],
+            run_type__in= [
+                RunMain.RUN_TYPE_MAP_REQUEST,
+                RunMain.RUN_TYPE_COMBINED_MAPPING,
+            ]
+        ).count()
 
 
 class AddedReferenceTable(tables.Table):

@@ -238,6 +238,7 @@ def Update_RunMain_Initial(run_class: RunEngine_class, parameter_set: ParameterS
             if run_class.run_type in [
                 run_class.RUN_TYPE_MAPPING_REQUEST,
                 run_class.RUN_TYPE_SCREENING,
+                run_class.RUN_TYPE_COMBINED_MAPPING,
             ]:
                 Update_RunMain_noCheck(run_class, parameter_set)
             else:

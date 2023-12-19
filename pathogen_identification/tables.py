@@ -662,12 +662,12 @@ class SampleTableMetagenomics(SampleTable):
         fields = (
             "name",
             "report",
-            "mapping_runs",
             "runs",
             "sorting",
             "deploy",
             "input",
             "combinations",
+            "mapping_runs",
             "running_processes",
             "queued_processes",
             "set_control",

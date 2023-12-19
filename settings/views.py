@@ -11,12 +11,12 @@ from datasets.models import Dataset, DatasetConsensus
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project, ProjectSample, Sample
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.models import PIProject_Sample
 from pathogen_identification.models import Projects as Televir_Project
-from pathogen_identification.utilities.utilities_views import \
-    duplicate_metagenomics_software
+from pathogen_identification.utilities.utilities_views import (
+    duplicate_metagenomics_software,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.default_software import DefaultSoftware
 from settings.forms import SoftwareForm
@@ -138,6 +138,12 @@ class PIMetagenSampleView(LoginRequiredMixin, ListView):
             context["project_id"] = televir_project.pk
         else:
             context["settings_pathogenid"] = True
+
+        if sample is not None:
+            context["settings_pathid_sample"] = True
+            context["sample_name"] = sample.name
+            context["sample_id"] = sample.pk
+
         context[
             "show_info_main_page"
         ] = ShowInfoMainPage()  ## show main information about the institute

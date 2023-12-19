@@ -72,7 +72,7 @@ class ProjectIndex(TemplateView):
         context = super(ProjectIndex, self).get_context_data(**kwargs)
         default_software = DefaultSoftware()
         context["televir_available"] = default_software.test_televir_software_available()
-        context["services"] = PICS.METAGENOMICS
+        context["services"] = False
         context[
             "show_info_main_page"
         ] = ShowInfoMainPage()  ## show main information about the institute        

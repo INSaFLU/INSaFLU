@@ -84,7 +84,6 @@ class PIMetagenSampleView(LoginRequiredMixin, ListView):
         for technology in technologies:  ## run over all technology
             vect_pipeline_step = []
             for pipeline_step_name, pipeline_steps in condensed_pipeline_names.items():
-                print(pipeline_step_name, pipeline_steps)
                 query_set = Software.objects.filter(
                     owner=self.request.user,
                     type_of_use__in=Software.TELEVIR_PROJECT_TYPES,

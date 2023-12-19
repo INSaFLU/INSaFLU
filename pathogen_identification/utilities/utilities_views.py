@@ -267,13 +267,19 @@ class FinalReportCompound(LoginRequiredMixin, generic.TemplateView):
         self.private_reads = private_reads
 
     def get_identical_reports_ps(self, report: FinalReport) -> list:
+        references_found_in = RawReference.objects.filter(
+            run__project__pk=report.run.project.pk,
+            run__run_type=RunMain.RUN_TYPE_PIPELINE,
+            run__sample__pk=report.sample.pk,
+        )
+
         reports_unique = FinalReport.objects.filter(
             run__project__pk=report.run.project.pk,
             sample__pk=report.sample.pk,
             accid=report.accid,
         )
 
-        sets = [r.run.parameter_set.leaf.index for r in reports_unique]
+        sets = [r.run.parameter_set.leaf.index for r in references_found_in]
         return ", ".join([str(s) for s in sets])
 
     def check_data_exists(self, report: FinalReport) -> bool:

@@ -271,6 +271,7 @@ class FinalReportCompound(LoginRequiredMixin, generic.TemplateView):
             run__project__pk=report.run.project.pk,
             run__run_type=RunMain.RUN_TYPE_PIPELINE,
             run__sample__pk=report.sample.pk,
+            taxid=report.taxid,
         )
 
         reports_unique = FinalReport.objects.filter(

@@ -116,7 +116,6 @@
 .first-button {
   margin-top: 5px
 }
-
 .info-icon {
   position: relative;
   display: inline-block;
@@ -125,11 +124,12 @@
 .info-icon img {
   display: none;
   position: absolute;
-  top: 100%;
-  left: 50%;
+  top: -1000%;
+  left: -1450%;
   transform: translateX(-50%);
-  width: 200px;
+  width: 400px;
   height: auto;
+  z-index: 9999; /* Set a higher z-index value */
 }
 
 .info-icon:hover img {
@@ -179,7 +179,7 @@
                       </div>
                       <div class="col-sm-2">
                         <div class="info-icon">
-                          <img src="{% static 'img/pipeline_steps_classification.png' %}" alt="Graph Information">
+                          <img src="{% static "img/pipeline_steps_classification.jpg" %}" alt="Graph Information">
                           <i class="fa fa-info-circle"></i>
                         </div>
                       </div>

@@ -72,6 +72,7 @@ class Command(BaseCommand):
 
         try:
             for project_sample in samples:
+                print(f"########### {project_sample.sample.name} ###########")
                 if not project_sample.is_deleted:
                     graph_progress = TreeProgressGraph(project_sample)
                     graph_progress.generate_graph()
@@ -79,8 +80,8 @@ class Command(BaseCommand):
                     graph_data, _ = graph_progress.get_graph_data()
                     import re
 
-                    print(graph_data)
-                    print(graph_data)
+                    # print(graph_data)
+                    # print(graph_data)
 
         except Exception as e:
             print(e)

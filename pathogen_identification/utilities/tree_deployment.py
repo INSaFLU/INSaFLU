@@ -1299,7 +1299,7 @@ class TreeProgressGraph:
             ConstantsSettings.PIPELINE_NAME_read_quality_analysis: "cadetblue",
             ConstantsSettings.PIPELINE_NAME_extra_qc: "cadetblue",
             ConstantsSettings.PIPELINE_NAME_viral_enrichment: "darkgreen",
-            ConstantsSettings.PIPELINE_NAME_host_depletion: "#228B22",
+            ConstantsSettings.PIPELINE_NAME_host_depletion: "blueviolet",
             ConstantsSettings.PIPELINE_NAME_assembly: "brown",
             ConstantsSettings.PIPELINE_NAME_contig_classification: "darkorange",
             ConstantsSettings.PIPELINE_NAME_read_classification: "deeppink",
@@ -1332,18 +1332,18 @@ class TreeProgressGraph:
             tree.split_modules()
             tree.get_module_tree()
 
+            print(f"tree leaves: {tree.leaves}")
+
             # network_df = [["NA", "0", "root", "input", "input", "lightblue"]]
             for edge in tree.edge_compress:
                 parent_actual_node = [
                     x for x in tree.nodes_compress if x[0] == edge[0]
                 ][0][1][0]
-                child_actual_node = [x for x in tree.nodes_compress if x[0] == edge[1]][
-                    0
-                ][1]
+                child_group = [x for x in tree.nodes_compress if x[0] == edge[1]][0][1]
 
-                if len(child_actual_node) == 0:
+                if len(child_group) == 0:
                     continue
-                child_actual_node = child_actual_node[0]
+                child_actual_node = child_group[0]
 
                 child_metadata = tree.node_index.loc[child_actual_node].node
 
@@ -1367,6 +1367,29 @@ class TreeProgressGraph:
                     [parent, child, module, software_parent, software_child, colour]
                 )
 
+                def find_leaf_in_group(group):
+                    for node in group:
+                        if node in tree.leaves:
+                            return node
+                    return None
+
+                leaf_in_group = find_leaf_in_group(child_group)
+                print(f"leaf in group: {leaf_in_group}", child_group)
+
+                if leaf_in_group:
+                    print(f"child actual node: {leaf_in_group}")
+                    color = pipeline_steps_to_r_colours["leaves"]
+                    network_df.append(
+                        [
+                            child,
+                            f"{tree_pk}_{leaf_in_group}",
+                            "leaves",
+                            software_child,
+                            f"workflow {leaf_in_group}",
+                            color,
+                        ]
+                    )
+
             network_df = pd.DataFrame(
                 network_df,
                 columns=[
@@ -1378,6 +1401,8 @@ class TreeProgressGraph:
                     "colour",
                 ],
             )
+            print("network_df")
+            print(network_df)
             unique_nodes = list(network_df["child"].values) + list(
                 network_df["parent"].values
             )

@@ -63,8 +63,8 @@ write.table(input, file = stderr(), sep = "\t", row.names = FALSE)
 cat("\n", file = stderr())
 # print column names to stderr
 
-cat("column names: ", colnames(input), file = stderr())
-cat("\n", file = stderr())
+#cat("column names: ", colnames(input), file = stderr())
+#cat("\n", file = stderr())
 
 p <- collapsibleTreeNetwork(
   input, 

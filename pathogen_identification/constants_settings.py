@@ -36,7 +36,7 @@ class ConstantsSettings:
 
     ################################### Pipeline steps
 
-    METAGENOMICS = True
+    METAGENOMICS = False
     METAGENOMICS_file_limit = 1000000
 
     ################################### pipeline_deployment_type

@@ -690,6 +690,7 @@ class SampleTableMetagenomics(SampleTable):
             status__in=[
                 RunMain.STATUS_DEFAULT,
                 RunMain.STATUS_RUNNING,
+                RunMain.STATUS_FINISHED,
             ],
         ).count()
 

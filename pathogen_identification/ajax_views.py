@@ -58,7 +58,6 @@ def submit_sample_metagenomics_televir(request):
         project = sample.project
 
         software_utils = SoftwareTreeUtils(user, project, sample=sample)
-        print("check")
         runs_to_deploy = software_utils.check_runs_to_submit_metagenomics_sample(sample)
         reference_manager = SampleReferenceManager(sample)
 
@@ -67,7 +66,6 @@ def submit_sample_metagenomics_televir(request):
                 for sample, leaves_to_deploy in runs_to_deploy.items():
                     for leaf in leaves_to_deploy:
                         metagenomics_run = reference_manager.mapping_run_from_leaf(leaf)
-                        print("metagenomics_run", metagenomics_run, metagenomics_run.pk)
                         taskID = process_SGE.set_submit_televir_sample_metagenomics(
                             user=request.user,
                             sample_pk=sample.pk,

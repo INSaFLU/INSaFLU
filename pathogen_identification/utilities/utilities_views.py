@@ -187,6 +187,7 @@ class SampleReferenceManager:
             parameter_set=parameter_set,
             host_depletion_performed=False,
             enrichment_performed=False,
+            status=RunMain.STATUS_PREP,
         )
 
         return mapping_run

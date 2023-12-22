@@ -532,7 +532,7 @@ def Update_RunMain_noCheck(
     """
     sample, runmain, project = get_run_parents(run_class, parameter_set)
     print("############ Update_RunMain_noCheck ############")
-    print(sample, runmain, runmain.pk, project)
+    print(sample, runmain, runmain, project)
 
     if sample is None or runmain is None:
         return

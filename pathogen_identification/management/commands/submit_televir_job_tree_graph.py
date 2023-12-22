@@ -80,6 +80,8 @@ class Command(BaseCommand):
                     graph_data, _ = graph_progress.get_graph_data()
                     import re
 
+                    print(graph_data)
+
         except Exception as e:
             print(e)
             process_SGE.set_process_controler(

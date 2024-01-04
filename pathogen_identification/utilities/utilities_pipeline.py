@@ -1813,6 +1813,8 @@ class Parameter_DB_Utility:
             steps = CS.vect_pipeline_televir_request_mapping
         else:
             steps = self.televir_constants.vect_pipeline_names_default
+        
+        print("steps", steps)
 
         software_available = Software.objects.filter(
             technology__name=technology,
@@ -2706,6 +2708,8 @@ class SoftwareTreeUtils:
             request_mapping=request_mapping,
         )
 
+        print(merged_table.shape)
+
         if merged_table.shape[0] == 0:
             return PipelineTree(
                 technology=project.technology,
@@ -2823,6 +2827,7 @@ class SoftwareTreeUtils:
             mapping_only=mapping_only,
             screening=screening,
         )
+        print(local_tree.makeup)
 
         if local_tree.makeup == -1:
             return {}

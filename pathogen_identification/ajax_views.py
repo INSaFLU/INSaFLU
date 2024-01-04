@@ -13,22 +13,17 @@ from django.views.decorators.http import require_POST
 from constants.meta_key_and_values import MetaKeyAndValue
 from fluwebvirus.settings import STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    ReferenceMap_Main,
-    RunMain,
-)
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
-from pathogen_identification.utilities.utilities_general import get_services_dir
-from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            ReferenceMap_Main, RunMain)
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
+from pathogen_identification.utilities.utilities_general import \
+    get_services_dir
+from pathogen_identification.utilities.utilities_pipeline import \
+    SoftwareTreeUtils
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter,
-    SampleReferenceManager,
-    set_control_reports,
-)
+    ReportSorter, SampleReferenceManager, set_control_reports)
 from utils.process_SGE import ProcessSGE
 from utils.utils import Utils
 
@@ -202,10 +197,10 @@ def submit_sample_mapping_televir(request):
         ### runs to deploy
         software_utils = SoftwareTreeUtils(user, project, sample=sample)
         runs_to_deploy = software_utils.check_runs_to_submit_mapping_only(sample)
-
+        print(f"runs_to_deploy: {runs_to_deploy}")
+        
         if len(runs_to_deploy) == 0:
             return JsonResponse(data)
-        print(f"runs_to_deploy: {runs_to_deploy}")
 
         try:
             if len(runs_to_deploy) > 0:

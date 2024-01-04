@@ -2928,6 +2928,8 @@ class SoftwareTreeUtils:
             mapping_only=True,
         )
 
+        print(available_path_nodes)
+
         clean_samples_leaf_dict = self.utils_manager.sample_nodes_check_repeat_allowed(
             submission_dict, available_path_nodes, self.project
         )

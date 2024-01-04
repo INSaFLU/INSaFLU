@@ -28,38 +28,57 @@ from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProcessControler
 from managing_files.tables import SampleToProjectsTable
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.forms import ReferenceForm
-from pathogen_identification.models import (ContigClassification, FinalReport,
-                                            ParameterSet, PIProject_Sample,
-                                            Projects, RawReference,
-                                            ReadClassification,
-                                            ReferenceContigs,
-                                            ReferenceMap_Main,
-                                            ReferenceSourceFileMap,
-                                            RunAssembly, RunDetail, RunMain,
-                                            RunRemapMain, Sample, TelevirRunQC)
+from pathogen_identification.models import (
+    ContigClassification,
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReadClassification,
+    ReferenceContigs,
+    ReferenceMap_Main,
+    ReferenceSourceFileMap,
+    RunAssembly,
+    RunDetail,
+    RunMain,
+    RunRemapMain,
+    Sample,
+    TelevirRunQC,
+)
 from pathogen_identification.modules.object_classes import RunQC_report
-from pathogen_identification.tables import (AddedReferenceTable,
-                                            CompoundRefereceScoreWithScreening,
-                                            CompoundReferenceScore,
-                                            ContigTable, ProjectTable,
-                                            RawReferenceTable,
-                                            RawReferenceTableNoRemapping,
-                                            ReferenceSourceTable, RunMainTable,
-                                            RunMappingTable,
-                                            SampleTableMetagenomics)
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
+from pathogen_identification.tables import (
+    AddedReferenceTable,
+    CompoundRefereceScoreWithScreening,
+    CompoundReferenceScore,
+    ContigTable,
+    ProjectTable,
+    RawReferenceTable,
+    RawReferenceTableNoRemapping,
+    ReferenceSourceTable,
+    RunMainTable,
+    RunMappingTable,
+    SampleTableMetagenomics,
+)
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
 from pathogen_identification.utilities.utilities_general import (
-    get_services_dir, infer_run_media_dir)
+    get_services_dir,
+    infer_run_media_dir,
+)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility, RawReferenceUtils)
+    Parameter_DB_Utility,
+    RawReferenceUtils,
+)
 from pathogen_identification.utilities.utilities_views import (
-    EmptyRemapMain, RawReferenceCompound, ReportSorter,
-    final_report_best_cov_by_accid, recover_assembly_contigs)
+    EmptyRemapMain,
+    RawReferenceCompound,
+    ReportSorter,
+    final_report_best_cov_by_accid,
+    recover_assembly_contigs,
+)
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
 from utils.support_django_template import get_link_for_dropdown_item
@@ -1120,14 +1139,14 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
             + 'id="deploy_metagenomics_modal" '
             + 'title="Run combined metagenomics"'
             + f"pk={sample_pk} "
-            + f"ref_name={sample_name} "
-            + f'><span><i class="padding-button-table fa fa-paw padding-button-table" {color}></i></span></a>'
+            + f"ref_name={sample_name} style='color: #fff;'"
+            + f'><i class="padding-button-table fa fa-paw padding-button-table" {color}></i> Deploy Combined </a>'
         )
         metagenomics_parameters = (
             "<a href="
             + reverse("pathogenID_sample_settings", kwargs={"sample": sample_pk})
-            + ' data-toggle="tooltip" data-toggle="modal" title="Manage combine settings">'
-            + f'<span ><i class="padding-button-table fa fa-pencil-square padding-button-table" {color}></i></span></a>'
+            + ' data-toggle="tooltip" data-toggle="modal" title="Manage combine settings" style="color: #fff;">'
+            + f'<i class="padding-button-table fa fa-pencil-square padding-button-table" {color}></i> Parameters </a>'
         )
 
         context["runs"] = classification_runs
@@ -1523,7 +1542,7 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         report_layout_params = TelevirParameters.get_report_layout_params(
             project_pk=project_main.pk
         )
-        
+
         report_sorter = ReportSorter(unique_reports, report_layout_params)
         sorted_reports = report_sorter.get_reports_compound()
 

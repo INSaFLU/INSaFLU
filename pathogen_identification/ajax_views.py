@@ -156,6 +156,7 @@ def submit_sample_mapping_televir(request):
         already_mapped = True
 
         #### check among reference id list
+        print(reference_id_list)
 
         for reference_id in reference_id_list:
             reference = RawReference.objects.get(pk=int(reference_id))
@@ -166,12 +167,14 @@ def submit_sample_mapping_televir(request):
                         RawReference.STATUS_MAPPED,
                         RawReference.STATUS_MAPPING,
                     ],
+                    run__sample__pk=sample_id,
                 ).exists()
                 is False
             ):
                 already_mapped = False
 
         ##### check among added references
+        print(added_references)
 
         for added_reference in added_references:
             if (
@@ -181,10 +184,13 @@ def submit_sample_mapping_televir(request):
                         RawReference.STATUS_MAPPED,
                         RawReference.STATUS_MAPPING,
                     ],
+                    run__sample__pk=sample_id,
                 ).exists()
                 is False
             ):
                 already_mapped = False
+
+        print(f"already_mapped: {already_mapped}")
 
         if already_mapped is True:
             data["is_ok"] = True
@@ -841,6 +847,7 @@ def add_references_to_sample(request):
         references_existing = []
 
         sample_reference_manager = SampleReferenceManager(sample)
+        print(f"reference ids: {reference_id_list}")
 
         try:
             ref_sources = ReferenceSourceFileMap.objects.filter(
@@ -866,6 +873,7 @@ def add_references_to_sample(request):
                 )
 
                 new_reference.save()
+                print(f"new_reference: {new_reference}")
 
         except Exception as e:
             print(e)

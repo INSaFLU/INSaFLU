@@ -188,7 +188,7 @@ class Command(BaseCommand):
                     for run in runs:
                         run.Submit()
 
-                graph_progress.generate_graph()
+                # graph_progress.generate_graph()
                 set_control_reports(project.pk)
 
             process_SGE.set_process_controler(
@@ -202,7 +202,7 @@ class Command(BaseCommand):
 
         except Exception as e:
             print(e)
-            graph_progress.generate_graph()
+            # graph_progress.generate_graph()
 
             process_SGE.set_process_controler(
                 user,

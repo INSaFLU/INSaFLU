@@ -277,6 +277,7 @@ class Pipeline_Makeup(PipelineTreeBase):
         self, makeup_list: list, ignore: List[str] = []
     ) -> Optional[int]:
         makeup_safe = [x for x in makeup_list if x in self.get_pipeline_names]
+        print(f"makeup safe: {makeup_safe}")
         if ignore:
             makeup_safe = [x for x in makeup_safe if x not in ignore]
 
@@ -997,6 +998,8 @@ class Utility_Pipeline_Manager:
         self.pipeline_makeup = pipe_makeup_manager.match_makeup_name_from_list(
             pipelines_available
         )
+
+        print(f"Pipeline makeup: {self.pipeline_makeup}")
 
         if self.pipeline_makeup is None:
             self.logger.info("No pipeline makeup found")
@@ -3008,6 +3011,7 @@ class SoftwareTreeUtils:
         return pipeline_tree
 
     def prep_tree_for_extend(self, tree: PipelineTree):
+        print(f"Prepping tree for extend: {tree.makeup}")
         tree.software_tree_pk = self.get_software_tree_index(
             tree.makeup,
         )

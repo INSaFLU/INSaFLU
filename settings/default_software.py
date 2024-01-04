@@ -8,10 +8,11 @@ from curses.ascii import SO
 from django.contrib.auth.models import User
 
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.utilities.utilities_pipeline import (
-    Utility_Pipeline_Manager, Utils_Manager)
+    Utility_Pipeline_Manager,
+    Utils_Manager,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.models import Parameter, Software
@@ -29,6 +30,9 @@ class DefaultSoftware(object):
         """change values"""
         self.default_parameters = DefaultParameters()
         self.televir_utiltity = Utility_Pipeline_Manager()
+        self.televir_utiltity.get_software_db_dict()
+        print("software_names: ")
+        print(self.televir_utiltity.software_dbs_dict)
         self.change_values_software = {}  ### the key is the name of the software
 
     def test_televir_software_available(self):
@@ -700,11 +704,12 @@ class DefaultSoftware(object):
             if (
                 vect_parameters[0].software.pipeline_step.name
                 in self.televir_utiltity.steps_db_dependant
-            ):  
+            ):
                 print(f"check_software_db_available: {software_name}")
                 print(
                     f"check_software_db_available: {self.televir_utiltity.check_software_db_available(software_name=software_name)}"
                 )
+
                 if not self.televir_utiltity.check_software_db_available(
                     software_name=software_name,
                 ):

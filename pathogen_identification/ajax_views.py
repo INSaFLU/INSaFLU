@@ -13,17 +13,22 @@ from django.views.decorators.http import require_POST
 from constants.meta_key_and_values import MetaKeyAndValue
 from fluwebvirus.settings import STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
-from pathogen_identification.models import (FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            ReferenceMap_Main, RunMain)
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
-from pathogen_identification.utilities.utilities_general import \
-    get_services_dir
-from pathogen_identification.utilities.utilities_pipeline import \
-    SoftwareTreeUtils
+from pathogen_identification.models import (
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    ReferenceMap_Main,
+    RunMain,
+)
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.utilities_general import get_services_dir
+from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter, SampleReferenceManager, set_control_reports)
+    ReportSorter,
+    SampleReferenceManager,
+    set_control_reports,
+)
 from utils.process_SGE import ProcessSGE
 from utils.utils import Utils
 
@@ -198,7 +203,7 @@ def submit_sample_mapping_televir(request):
         software_utils = SoftwareTreeUtils(user, project, sample=sample)
         runs_to_deploy = software_utils.check_runs_to_submit_mapping_only(sample)
         print(f"runs_to_deploy: {runs_to_deploy}")
-        
+
         if len(runs_to_deploy) == 0:
             return JsonResponse(data)
 
@@ -857,18 +862,22 @@ def add_references_to_sample(request):
                     references_existing.append(reference.accid)
                     continue
 
+                # truncate reference description: max 150 characters
+                ref_description = reference.description
+                if len(ref_description) > 150:
+                    ref_description = ref_description[:150]
+
                 new_reference = RawReference(
                     run=sample_reference_manager.storage_run,
                     accid=reference.accid,
                     taxid=reference.taxid,
-                    description=reference.description,
+                    description=ref_description,
                     status=RawReference.STATUS_UNMAPPED,
                     counts=0,
                     classification_source="none",
                 )
 
                 new_reference.save()
-                print(f"new_reference: {new_reference}")
 
         except Exception as e:
             print(e)

@@ -870,7 +870,7 @@ from django.template.loader import render_to_string
 from fluwebvirus.settings import BASE_DIR
 
 
-def inject_references_filter(request, max_references: int = 10):
+def inject_references_filter(request, max_references: int = 30):
     ###
     tag_add_reference = "search_add_project_sample"
     references = []

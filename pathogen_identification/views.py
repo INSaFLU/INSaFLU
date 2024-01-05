@@ -889,7 +889,7 @@ def inject_references_filter(request, max_references: int = 30):
                     tag_add_reference
                 )
             )
-        ).distinct()
+        ).distinct("reference_source__accid")
 
         # show max 10 references
         references = references[:max_references]

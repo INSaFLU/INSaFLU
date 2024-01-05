@@ -403,6 +403,9 @@ class RunMetadataHandler:
             "fetch_protein_accession_taxon"
         )
         output = self.entrez_conn.run_entrez_query(query_list)
+        self.entrez_conn.bin_query = self.entrez_conn.bin_query_factory.get_query(
+            "fetch_taxid_description"
+        )
         # merge with df
         df = df.merge(output, left_on="prot_acc", right_on="accession", how="left")
         df = df.drop(columns=["prot_acc"])

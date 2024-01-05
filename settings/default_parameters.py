@@ -11,10 +11,13 @@ from django.conf import settings
 
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PI_ConstantsSettings
+from pathogen_identification.constants_settings import (
+    ConstantsSettings as PI_ConstantsSettings,
+)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility, Utility_Pipeline_Manager)
+    Parameter_DB_Utility,
+    Utility_Pipeline_Manager,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -320,6 +323,12 @@ class DefaultParameters(object):
                         ),
                         SoftwareNames.SOFTWARE_TRIMMOMATIC_addapter_trim_used_to_assemble,
                     )
+                elif (
+                    software_name == SoftwareNames.SOFTWARE_DIAMOND_name
+                    and par_name
+                    == SoftwareNames.SOFTWARE_DIAMOND_PARAMETER_SENSITIVITY_name
+                ):
+                    return_parameter += " {}".format(dict_out[par_name][1][0])
                 elif (
                     software_name == SoftwareNames.SOFTWARE_SNIPPY_name
                     and par_name == DefaultParameters.SNIPPY_PRIMER_NAME

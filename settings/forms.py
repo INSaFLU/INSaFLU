@@ -252,6 +252,15 @@ class SoftwareForm(forms.ModelForm):
                     and parameter.name == "[mode]"
                 ):
                     list_data = [[x, x] for x in Remap_Bowtie2.modes]
+                elif (
+                    parameter.software.name == SoftwareNames.SOFTWARE_DIAMOND_name
+                    and parameter.name
+                    == SoftwareNames.SOFTWARE_DIAMOND_PARAMETER_SENSITIVITY_name
+                ):
+                    list_data = [
+                        [x, x]
+                        for x in SoftwareNames.SOFTWARE_DIAMOND_PARAMETER_SENSITIVITY_options
+                    ]
 
                 elif (
                     parameter.software.name == SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name

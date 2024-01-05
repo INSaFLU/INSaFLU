@@ -695,6 +695,12 @@ class SoftwareNames(object):
     SOFTWARE_DIAMOND_parameters = (
         "-p 5 --top 5 -e 0.01 --id 65 --query-cover 50 --sensitive"
     )
+    SOFTWARE_DIAMOND_PARAMETER_SENSITIVITY_name = "sensitivity"
+    SOFTWARE_DIAMOND_PARAMETER_SENSITIVITY_options = [
+        "--fast",
+        "--sensitive",
+        "--very-sensitive",
+    ]
 
     ### BLASTN
     SOFTWARE_BLAST_name = "Blastn"

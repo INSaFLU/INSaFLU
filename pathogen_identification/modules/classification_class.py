@@ -9,7 +9,8 @@ from typing import Any, Type
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.modules.object_classes import RunCMD, Software_detail
+from pathogen_identification.modules.object_classes import (RunCMD,
+                                                            Software_detail)
 
 
 def check_report_empty(file, comment="@"):
@@ -778,6 +779,25 @@ class run_diamond(Classifier_init):
     method_name = "diamond"
     report_suffix = ".daa"
     full_report_suffix = ".daa"
+
+    def __init__(
+        self,
+        db_path: str,
+        query_path: str,
+        out_path: str,
+        args="",
+        r2: str = "",
+        prefix: str = "",
+        bin: str = "",
+        log_dir="",
+    ):
+        super().__init__(db_path, query_path, out_path, args, r2, prefix, bin, log_dir)
+        self.process_args()
+
+    def process_args(self):
+        """
+        Process arguments to remove preset and mode option flags"""
+        self.args = self.args.replace("sensitivity", "")
 
     def run_SE(self, threads: int = 3, *args, **kwargs):
         cmd = [

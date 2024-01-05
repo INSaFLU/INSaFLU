@@ -397,6 +397,17 @@ class RunMetadataHandler:
 
         self.logger.info("Finished retrieving metadata")
 
+    def get_protacc_taxid(self, df: pd.DataFrame) -> pd.DataFrame:
+        query_list = df.prot_acc.unique().tolist()
+        self.entrez_conn.bin_query = self.entrez_conn.bin_query_factory.get_query(
+            "fetch_protein_accession_taxon"
+        )
+        output = self.entrez_conn.run_entrez_query(query_list)
+        # merge with df
+        df = df.merge(output, left_on="prot_acc", right_on="accession", how="left")
+        df = df.drop(columns=["prot_acc"])
+        return df
+
     def merge_report_to_metadata_taxid(self, df: pd.DataFrame) -> pd.DataFrame:
         """
 
@@ -414,17 +425,15 @@ class RunMetadataHandler:
         if "taxid" not in df.columns:
             if "prot_acc" in df.columns and "acc" not in df.columns:
                 counts_df = df.groupby(["prot_acc"]).size().reset_index(name="counts")
-                return self.merge_check_column_types(
-                    counts_df, self.protein_accession_to_taxid, "prot_acc"
-                )
+                return self.get_protacc_taxid(counts_df)
 
-            if "protid" in df.columns and "acc" not in df.columns:
+            elif "protid" in df.columns and "acc" not in df.columns:
                 counts_df = df.groupby(["protid"]).size().reset_index(name="counts")
                 df = self.merge_check_column_types(
                     counts_df, self.protein_to_accession, "protid"
                 )
 
-            if "acc" in df.columns:
+            elif "acc" in df.columns:
                 if "counts" in df.columns:
                     counts_df = df.groupby(["acc"]).agg({"counts": "sum"}).reset_index()
 

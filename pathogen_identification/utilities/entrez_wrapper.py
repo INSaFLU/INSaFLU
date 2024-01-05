@@ -85,6 +85,42 @@ class EntrezFetchTaxidDescription(EntrezQuery):
         return df
 
 
+class EntrezFetchProteinAccession_Taxon(EntrezQuery):
+    name: str = "fetch_protein_accession_taxon"
+    db = "protein"
+    output_columns = ["accession", "taxid"]
+
+    def query(self, query: List[str]) -> str:
+        cmd = [
+            self.efetch,
+            "-db",
+            self.db,
+            "-id",
+            ",".join(query),
+            "-format",
+            "docsum",
+            "|",
+            self.xtract,
+            "-pattern",
+            "DocumentSummary",
+            "-element",
+            "AccessionVersion,TaxId",
+        ]
+
+        return " ".join(cmd)
+
+    def read_output(self, output_path: str) -> pd.DataFrame:
+        """
+        Read output from Entrez query using pandas
+        """
+
+        df = pd.read_csv(
+            output_path, sep="\t", header=None, names=["accession", "taxid"]
+        )
+
+        return df
+
+
 class EntrezFetchAccessionDescription(EntrezQuery):
     name: str = "fetch_accession_description"
     db = "nuccore"
@@ -132,6 +168,8 @@ class EntrezQueryFactory:
             return EntrezFetchTaxidDescription(self.bindir)
         elif name == "fetch_accession_description":
             return EntrezFetchAccessionDescription(self.bindir)
+        elif name == "fetch_protein_accession_taxon":
+            return EntrezFetchProteinAccession_Taxon(self.bindir)
         else:
             raise ValueError("Invalid query name")
 

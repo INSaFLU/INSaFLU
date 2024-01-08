@@ -10,18 +10,21 @@ import pandas as pd
 from django.contrib.auth.models import User
 from django.db.models import Q, QuerySet
 
-from constants.constants import \
-    Televir_Directory_Constants as Televir_Directories
+from constants.constants import Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.host_library import Host
-from pathogen_identification.models import (ParameterSet, PIProject_Sample,
-                                            Projects, RawReference, RunMain,
-                                            SoftwareTree, SoftwareTreeNode)
-from pathogen_identification.utilities.utilities_televir_dbs import \
-    Utility_Repository
-from pathogen_identification.utilities.utilities_views import \
-    RawReferenceCompound
+from pathogen_identification.models import (
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
+from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
+from pathogen_identification.utilities.utilities_views import RawReferenceCompound
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -2308,9 +2311,9 @@ class Utils_Manager:
                 print(f"parameter set {leaf} exists: {exists}")
 
                 if exists:
-                    available= utils.parameter_util.check_ParameterSet_available(
-                            sample=sample, leaf=matched_path_node, project=project
-                        )
+                    available = utils.parameter_util.check_ParameterSet_available(
+                        sample=sample, leaf=matched_path_node, project=project
+                    )
                     print(f"parameter set {leaf} is available: {available}")
                     if (
                         utils.parameter_util.check_ParameterSet_available(
@@ -2848,8 +2851,6 @@ class SoftwareTreeUtils:
         utils = Utils_Manager()
         local_paths = local_tree.get_all_graph_paths_explicit()
 
-        import time
-
         pipeline_tree = self.generate_software_tree_extend(local_tree=local_tree)
         ### MANAGEMENT
 
@@ -3016,6 +3017,7 @@ class SoftwareTreeUtils:
         tree.software_tree_pk = self.get_software_tree_index(
             tree.makeup,
         )
+        print(f"tree pk: {tree.software_tree_pk}")
         return tree
 
 

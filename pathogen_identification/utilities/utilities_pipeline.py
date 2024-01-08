@@ -2305,8 +2305,13 @@ class Utils_Manager:
                 exists = self.parameter_util.check_ParameterSet_exists(
                     sample=sample, leaf=matched_path_node, project=project
                 )
+                print(f"parameter set {leaf} exists: {exists}")
 
                 if exists:
+                    available= utils.parameter_util.check_ParameterSet_available(
+                            sample=sample, leaf=matched_path_node, project=project
+                        )
+                    print(f"parameter set {leaf} is available: {available}")
                     if (
                         utils.parameter_util.check_ParameterSet_available(
                             sample=sample, leaf=matched_path_node, project=project
@@ -2711,8 +2716,6 @@ class SoftwareTreeUtils:
             screening=screening,
             request_mapping=request_mapping,
         )
-
-        print(merged_table.shape)
 
         if merged_table.shape[0] == 0:
             return PipelineTree(

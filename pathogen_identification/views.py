@@ -874,9 +874,8 @@ def inject_references_filter(request, max_references: int = 30):
     ###
     tag_add_reference = "search_add_project_sample"
     references = []
-    if request.GET.get(tag_add_reference) != None and request.GET.get(
-        tag_add_reference
-    ):
+    print(request.GET.get(tag_add_reference) is "")
+    if request.GET.get(tag_add_reference) != "" and request.GET.get(tag_add_reference):
         references = ReferenceSourceFileMap.objects.filter(
             Q(
                 reference_source__description__icontains=request.GET.get(
@@ -896,6 +895,10 @@ def inject_references_filter(request, max_references: int = 30):
 
         data = inject_references(references, request)
 
+        return JsonResponse(data)
+
+    else:
+        data = inject_references([], request)
         return JsonResponse(data)
 
 

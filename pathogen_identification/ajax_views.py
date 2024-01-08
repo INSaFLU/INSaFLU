@@ -21,6 +21,7 @@ from pathogen_identification.models import (
     ReferenceMap_Main,
     RunMain,
 )
+from pathogen_identification.tables import ReferenceSourceTable
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.utilities_general import get_services_dir
 from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
@@ -156,7 +157,6 @@ def submit_sample_mapping_televir(request):
         already_mapped = True
 
         #### check among reference id list
-        print(reference_id_list)
 
         for reference_id in reference_id_list:
             reference = RawReference.objects.get(pk=int(reference_id))
@@ -843,7 +843,6 @@ def add_references_to_sample(request):
         references_existing = []
 
         sample_reference_manager = SampleReferenceManager(sample)
-        print(f"reference ids: {reference_id_list}")
 
         try:
             ref_sources = ReferenceSourceFileMap.objects.filter(
@@ -881,6 +880,99 @@ def add_references_to_sample(request):
             return JsonResponse(data)
 
         data = {"is_ok": True}
+        return JsonResponse(data)
+
+
+from django.template.loader import render_to_string
+
+from fluwebvirus.settings import BASE_DIR
+
+
+def inject_references(references: list, request):
+    context = {}
+    data = {}
+
+    context["references_table"] = ReferenceSourceTable(references)
+    context["references_count"] = len(references)
+
+    template_table_html = os.path.join(
+        BASE_DIR,
+        "templates",
+        "pathogen_identification/references_table_table_only.html",
+    )
+    template_table_html = "pathogen_identification/references_table_table_only.html"
+
+    # render tamplate using context
+    rendered_table = render_to_string(template_table_html, context, request=request)
+    data["my_content"] = rendered_table
+    data["references_count"] = len(references)
+
+    return data
+
+
+@login_required
+@require_POST
+def add_references_all_samples(request):
+    """
+    add references to sample
+    """
+    if request.is_ajax():
+        data = {"is_ok": False, "is_error": False, "is_empty": False}
+        temp_directory = Utils().get_temp_dir()
+        project_id = int(request.POST["ref_id"])
+        project = Projects.objects.get(pk=project_id)
+        samples = PIProject_Sample.objects.filter(project=project)
+
+        reference_id_list = request.POST.getlist("reference_ids[]")
+        data["empty_content"] = inject_references([], request)["my_content"]
+        if len(reference_id_list) == 0:
+            data["is_empty"] = True
+            return JsonResponse(data)
+
+        reference_id_list = [int(x) for x in reference_id_list]
+
+        references_existing = []
+
+        try:
+            ref_sources = ReferenceSourceFileMap.objects.filter(
+                pk__in=reference_id_list
+            )
+            for sample in samples:
+                sample_reference_manager = SampleReferenceManager(sample)
+                sample_id = sample.pk
+
+                for reference in ref_sources:
+                    if RawReference.objects.filter(
+                        accid=reference.accid,
+                        run__sample__pk=sample_id,
+                    ).exists():
+                        references_existing.append(reference.accid)
+                        continue
+
+                    # truncate reference description: max 150 characters
+                    ref_description = reference.description
+                    if len(ref_description) > 150:
+                        ref_description = ref_description[:150]
+
+                    new_reference = RawReference(
+                        run=sample_reference_manager.storage_run,
+                        accid=reference.accid,
+                        taxid=reference.taxid,
+                        description=ref_description,
+                        status=RawReference.STATUS_UNMAPPED,
+                        counts=0,
+                        classification_source="none",
+                    )
+
+                    new_reference.save()
+
+        except Exception as e:
+            print(e)
+            data["is_error"] = True
+            return JsonResponse(data)
+
+        data["is_ok"] = True
+
         return JsonResponse(data)
 
 

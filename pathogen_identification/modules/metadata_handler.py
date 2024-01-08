@@ -94,7 +94,7 @@ class RunMetadataHandler:
         )
         self.get_metadata()
 
-    def get_manual_references(self, sample: PIProject_Sample):
+    def get_manual_references(self, sample: PIProject_Sample, max_accids: int = 15):
         """
         Get manual references for a given sample. update map request with references.
         """

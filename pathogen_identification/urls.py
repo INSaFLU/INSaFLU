@@ -136,6 +136,11 @@ urlpatterns = [
         name="add_references_to_sample",
     ),
     url(
+        r"add_references_all_samples$",
+        PIajax_views.add_references_all_samples,
+        name="add_references_all_samples",
+    ),
+    url(
         r"Scaffold/project_(?P<pk1>\d+)/sample_(?P<pk2>\d+)/run_(?P<pk3>\d+)/scaffold_(?P<reference>[a-zA-Z0-9_]+)",
         PIviews.Scaffold_Remap.as_view(),
         name="scaffold_remap",

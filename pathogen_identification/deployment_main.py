@@ -31,10 +31,7 @@ from pathogen_identification.utilities.update_DBs import (
     UpdateRawReferences_safe,
     get_run_parents,
 )
-from pathogen_identification.utilities.utilities_general import (
-    simplify_name,
-    simplify_name_lower,
-)
+from pathogen_identification.utilities.utilities_general import simplify_name_lower
 from pathogen_identification.utilities.utilities_pipeline import (
     SoftwareTreeUtils,
     Utils_Manager,
@@ -471,6 +468,15 @@ class Run_Main_from_Leaf:
                 self.container.run_engine.run_type = (
                     RunMainTree_class.RUN_TYPE_COMBINED_MAPPING
                 )
+
+                if (
+                    self.container.run_engine.remap_params.manual_references_include
+                    is True
+                ):
+                    self.container.run_engine.metadata_tool.get_manual_references(
+                        self.sample,
+                        max_accids=self.container.run_engine.remap_params.max_accids,
+                    )
 
             self.container.run_engine.Prep_deploy()
             self.container.run_engine.Run_QC()

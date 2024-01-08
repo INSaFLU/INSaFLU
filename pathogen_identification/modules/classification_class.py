@@ -815,6 +815,23 @@ class run_diamond(Classifier_init):
         ]
 
         self.cmd.run(cmd)
+    
+    def run_PE(self, threads: int = 3, *args, **kwargs):
+        cmd = [
+            "diamond",
+            "blastx",
+            "-p",
+            f"{threads}",
+            "-d",
+            self.db_path,
+            "-q",
+            self.query_path,
+            "-o",
+            self.report_path,
+            self.args,
+        ]
+
+        self.cmd.run(cmd)
 
     @staticmethod
     def acc_name_simplify(acc: str):

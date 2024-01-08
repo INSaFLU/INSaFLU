@@ -2613,10 +2613,12 @@ class SoftwareTreeUtils:
             global_index=global_index,
         )
 
+        print("software_tree", software_tree)
+
         if not software_tree:
             self.logger.info("Creating new software tree")
             software_tree = SoftwareTree(
-                global_index=global_index,
+                # global_index=global_index,
                 technology=tree.technology,
                 version=0,
                 model=ConstantsSettings.PIPELINE_MODEL,

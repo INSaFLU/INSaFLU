@@ -1122,7 +1122,7 @@ class Tree_Progress:
                 leaf_node = self.spawn_node_child(node, leaf)
                 _ = leaf_node.register_running(self.project, self.sample, self.tree)
 
-                success_register = self.register_finished(leaf_node)
+                _ = self.register_finished(leaf_node)
 
     def calculate_report_overlaps_runs(self):
         for node in self.current_nodes:

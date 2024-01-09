@@ -10,21 +10,18 @@ import pandas as pd
 from django.contrib.auth.models import User
 from django.db.models import Q, QuerySet
 
-from constants.constants import Televir_Directory_Constants as Televir_Directories
+from constants.constants import \
+    Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.host_library import Host
-from pathogen_identification.models import (
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
-from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
-from pathogen_identification.utilities.utilities_views import RawReferenceCompound
+from pathogen_identification.models import (ParameterSet, PIProject_Sample,
+                                            Projects, RawReference, RunMain,
+                                            SoftwareTree, SoftwareTreeNode)
+from pathogen_identification.utilities.utilities_televir_dbs import \
+    Utility_Repository
+from pathogen_identification.utilities.utilities_views import \
+    RawReferenceCompound
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -2618,7 +2615,7 @@ class SoftwareTreeUtils:
         if not software_tree:
             self.logger.info("Creating new software tree")
             software_tree = SoftwareTree(
-                # global_index=global_index,
+                global_index=global_index,
                 technology=tree.technology,
                 version=0,
                 model=ConstantsSettings.PIPELINE_MODEL,

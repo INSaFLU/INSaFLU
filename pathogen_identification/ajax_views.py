@@ -243,6 +243,96 @@ def submit_sample_mapping_televir(request):
 
 @login_required
 @require_POST
+def submit_project_samples_mapping_televir(request):
+    if request.is_ajax():
+        data = {
+            "is_ok": True,
+            "is_deployed": False,
+            "is_empty": False,
+            "samples_deployed": 0,
+        }
+
+        process_SGE = ProcessSGE()
+
+        project_id = int(request.POST["project_id"])
+        project = Projects.objects.get(id=int(project_id))
+        user = project.owner
+
+        project_samples = PIProject_Sample.objects.filter(project=project)
+
+        try:
+            samples_map_launched = []
+            for sample in project_samples:
+                sample_id = sample.pk
+                reference_manager = SampleReferenceManager(sample)
+
+                ### check if all references are already mapped
+                added_references = RawReference.objects.filter(
+                    run__sample__pk=sample_id, run__run_type=RunMain.RUN_TYPE_STORAGE
+                )
+                already_mapped = True
+
+                for added_reference in added_references:
+                    if (
+                        RawReference.objects.filter(
+                            accid=added_reference.accid,
+                            status__in=[
+                                RawReference.STATUS_MAPPED,
+                                RawReference.STATUS_MAPPING,
+                            ],
+                            run__sample__pk=sample_id,
+                        ).exists()
+                        is False
+                    ):
+                        already_mapped = False
+
+                if already_mapped is True:
+                    continue
+                else:
+                    samples_map_launched.append(sample)
+
+                ### runs to deploy
+                software_utils = SoftwareTreeUtils(user, project, sample=sample)
+                runs_to_deploy = software_utils.check_runs_to_submit_mapping_only(
+                    sample
+                )
+
+                if len(runs_to_deploy) == 0:
+                    continue
+
+                for sample, leaves_to_deploy in runs_to_deploy.items():
+                    for leaf in leaves_to_deploy:
+                        mapping_run = reference_manager.mapping_request_run_from_leaf(
+                            leaf
+                        )
+
+                        for added_reference in added_references:
+                            added_reference.pk = None
+                            added_reference.run = mapping_run
+                            added_reference.save()
+
+                        taskID = process_SGE.set_submit_televir_sample_metagenomics(
+                            user=request.user,
+                            sample_pk=sample.pk,
+                            leaf_pk=leaf.pk,
+                            mapping_request=True,
+                            map_run_pk=mapping_run.pk,
+                        )
+
+            if len(samples_map_launched) > 0:
+                data["is_deployed"] = True
+                data["samples_deployed"] = len(samples_map_launched)
+
+        except Exception as e:
+            print(e)
+            data["is_ok"] = False
+
+        print(data)
+        return JsonResponse(data)
+
+
+@login_required
+@require_POST
 def deploy_ProjectPI(request):
     """
     prepare data for deployment of pathogen identification.
@@ -367,11 +457,7 @@ def deploy_ProjectPI_combined_runs(request):
                             metagenomics_run = reference_manager.mapping_run_from_leaf(
                                 leaf
                             )
-                            print(
-                                "metagenomics_run",
-                                metagenomics_run,
-                                metagenomics_run.pk,
-                            )
+
                             taskID = process_SGE.set_submit_televir_sample_metagenomics(
                                 user=request.user,
                                 sample_pk=sample.pk,

@@ -56,6 +56,11 @@ urlpatterns = [
         name="map_selected_references",
     ),
     url(
+        r"deploy_mapping_request_project_samples$",
+        PIajax_views.submit_project_samples_mapping_televir,
+        name="map_selected_references_project_samples",
+    ),
+    url(
         r"deploy_mapping_screeing$",
         PIajax_views.submit_sample_screening_televir,
         name="deploy_screening_televir_project_sample",

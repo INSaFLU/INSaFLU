@@ -474,7 +474,7 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 			lng = form.cleaned_data['lng']
 			like_dates = form.cleaned_data['like_dates']
 				
-			sample = form.save(commit=False)
+			sample: Sample = form.save(commit=False)
 			## set other data
 			sample.owner = self.request.user
 			sample.is_deleted = False

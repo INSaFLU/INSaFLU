@@ -135,7 +135,7 @@ class Command(BaseCommand):
         print("MATCHED PATHS")
         print(matched_paths)
 
-        module_tree = utils. (pipeline_tree, list(matched_paths.values()))
+        module_tree = utils.module_tree(pipeline_tree, list(matched_paths.values()))
 
         # reduced_tree = utils.tree_subset(pipeline_tree, )
         # reduced_tree= utils.prep_tree_for_extend(reduced_tree, user)

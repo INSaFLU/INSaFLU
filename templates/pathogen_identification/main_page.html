@@ -44,6 +44,7 @@
                             <div class="dropdown-menu pull-right">
                                 <a href="#" id="deploypi_btn" class="dropdown-item" style="text-align:center;" deploy-url="{% url deploy_url %}" ><span class="hidden-phone"> Classic </span></a>
                                 <a href="#" id="deploypi_mapping_btn" class="dropdown-item" style="text-align:center;" deploy-url="{% url 'deploy_Project_PIMapping' %}" ><span class="hidden-phone"> Mapping </span></a>
+                                <a href="#" id="deploypi_added_mapping_btn" class="dropdown-item" style="text-align:center;" deploy-url="{% url 'map_selected_references_project_samples' %}" ><span class="hidden-phone"> Map Added </span></a>
 
                             </div>
                             {% else %}
@@ -507,6 +508,32 @@
                 }
                 else if (data["is_ok"] == true && data["is_deployed"] == true) {
                     alert("Runs deployed");
+                }
+                $.unblockUI();
+            }
+
+        });
+    })
+
+    $("#deploypi_added_mapping_btn").click(function(e){
+        
+        $.ajax({
+            url: $('#deploypi_added_mapping_btn').attr("deploy-url"),
+            type: "POST",
+            data: {
+                'csrfmiddlewaretoken': '{{ csrf_token }}',
+                'id': $(this).attr('id'),
+                'user_id': '{{ request.user.id }}',
+                'project_id': '{{ project_index }}',
+            },
+            data_type: 'json',
+            success: function(data){
+                if (data["is_ok"] == true && data["is_deployed"] == false) { 
+                    alert("No runs to deploy, check project settings, added samples or mapping settings.");
+                }
+                else if (data["is_ok"] == true && data["is_deployed"] == true) {
+                    var how_many = data["samples_deployed"];
+                    alert(how_many + " runs deployed");
                 }
                 $.unblockUI();
             }

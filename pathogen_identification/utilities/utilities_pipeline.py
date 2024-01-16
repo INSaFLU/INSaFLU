@@ -2640,6 +2640,7 @@ class SoftwareTreeUtils:
         """
 
         parent_dict = tree.get_parents_dict()
+        print(tree.node_index)
 
         for index, row in tree.node_index.iterrows():
             index = int(index)

@@ -278,7 +278,6 @@ class Pipeline_Makeup(PipelineTreeBase):
         self, makeup_list: list, ignore: List[str] = []
     ) -> Optional[int]:
         makeup_safe = [x for x in makeup_list if x in self.get_pipeline_names]
-        print(f"makeup safe: {makeup_safe}")
         if ignore:
             makeup_safe = [x for x in makeup_safe if x not in ignore]
 
@@ -999,8 +998,6 @@ class Utility_Pipeline_Manager:
         self.pipeline_makeup = pipe_makeup_manager.match_makeup_name_from_list(
             pipelines_available
         )
-
-        print(f"Pipeline makeup: {self.pipeline_makeup}")
 
         if self.pipeline_makeup is None:
             self.logger.info("No pipeline makeup found")
@@ -1821,8 +1818,6 @@ class Parameter_DB_Utility:
         else:
             steps = self.televir_constants.vect_pipeline_names_default
 
-        print("steps", steps)
-
         software_available = Software.objects.filter(
             technology__name=technology,
             pipeline_step__name__in=steps,
@@ -2204,8 +2199,6 @@ class Parameter_DB_Utility:
         """
         Set ParameterSet to queue if it exists and is not finished or running.
         """
-        print(leaf.pk)
-        print(ParameterSet.objects.filter(sample=sample, leaf=leaf, project=project))
 
         try:
             parameter_set = ParameterSet.objects.get(
@@ -2308,13 +2301,11 @@ class Utils_Manager:
                 exists = self.parameter_util.check_ParameterSet_exists(
                     sample=sample, leaf=matched_path_node, project=project
                 )
-                print(f"parameter set {leaf} exists: {exists}")
 
                 if exists:
                     available = utils.parameter_util.check_ParameterSet_available(
                         sample=sample, leaf=matched_path_node, project=project
                     )
-                    print(f"parameter set {leaf} is available: {available}")
                     if (
                         utils.parameter_util.check_ParameterSet_available(
                             sample=sample, leaf=matched_path_node, project=project
@@ -2613,8 +2604,6 @@ class SoftwareTreeUtils:
             global_index=global_index,
         )
 
-        print("software_tree", software_tree)
-
         if not software_tree:
             self.logger.info("Creating new software tree")
             software_tree = SoftwareTree(
@@ -2640,7 +2629,6 @@ class SoftwareTreeUtils:
         """
 
         parent_dict = tree.get_parents_dict()
-        print(tree.node_index)
 
         for index, row in tree.node_index.iterrows():
             index = int(index)
@@ -2840,8 +2828,6 @@ class SoftwareTreeUtils:
             mapping_only=mapping_only,
             screening=screening,
         )
-        print(local_tree.makeup)
-
         if local_tree.makeup == -1:
             return {}
 
@@ -2865,7 +2851,6 @@ class SoftwareTreeUtils:
         available_paths = {
             leaf: path for leaf, path in matched_paths.items() if path is not None
         }
-        print(available_paths)
 
         available_path_nodes = {
             leaf: SoftwareTreeNode.objects.get(
@@ -2944,8 +2929,6 @@ class SoftwareTreeUtils:
             screening=False,
             mapping_only=True,
         )
-
-        print(available_path_nodes)
 
         clean_samples_leaf_dict = self.utils_manager.sample_nodes_check_repeat_allowed(
             submission_dict, available_path_nodes, self.project

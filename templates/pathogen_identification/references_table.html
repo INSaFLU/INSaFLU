@@ -200,8 +200,8 @@
               <div class="row">
                   <div class="col-sm" >
                       <h5 class="mb-0" >
-                          <a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapsehead2" aria-expanded="false" aria-controls="headinghead">
-                              <strong> Added Samples {{sample_name}}</strong>
+                          <a class="collapsed" id="add_references_title" data-toggle="collapse" data-parent="#accordion" href="#collapsehead2" aria-expanded="false" aria-controls="headinghead">
+                              <strong> {{ added_references_count }} Added References </strong>
                           </a>
                       </h5>
                   </div>
@@ -669,6 +669,9 @@
 
                   $('#collapsehead2').html(data.my_content);
                   $('#reference_table_div').html(data.empty_content);
+                  $('#add_references_title').html(
+                    "<strong>" + data.references_count + " Added References </strong>"
+                  );
                   // empty #search-input
                   $('#search-input').val('');
                 }

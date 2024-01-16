@@ -1050,6 +1050,7 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
             query_set_added_manual, self.request
         )
         context["added_references_table"] = added_references_context["my_content"]
+        context["added_references_count"] = added_references_context["references_count"]
 
         # raw_references = raw_references
         tag_search = "search_add_project_sample"

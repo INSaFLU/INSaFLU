@@ -705,11 +705,6 @@ class DefaultSoftware(object):
                 vect_parameters[0].software.pipeline_step.name
                 in self.televir_utiltity.steps_db_dependant
             ):
-                print(f"check_software_db_available: {software_name}")
-                print(
-                    f"check_software_db_available: {self.televir_utiltity.check_software_db_available(software_name=software_name)}"
-                )
-
                 if not self.televir_utiltity.check_software_db_available(
                     software_name=software_name,
                 ):

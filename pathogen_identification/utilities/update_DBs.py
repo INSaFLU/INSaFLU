@@ -1014,6 +1014,8 @@ def Update_FinalReport(run_class, runmain, sample):
                 depthR=row["HdepthR"],
                 ngaps=row["ngaps"],
                 mapped_reads=row["mapped"],
+                error_rate=row["error_rate"],
+                quality_avg=row["quality_avg"],
                 ref_proportion=row["ref_prop"],
                 mapped_proportion=row["mapped_prop"],
                 mapping_success=row["mapping_success"],

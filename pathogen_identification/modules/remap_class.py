@@ -80,6 +80,7 @@ class coverage_parse:
                 "nregions",
                 "Rsize",
                 "windows_covered",
+                "pval_uniform",
                 "ngaps",
                 "Gdist",
                 "Gsize",
@@ -203,10 +204,10 @@ class coverage_parse:
                 pvals = sum(pvals) / len(pvals)
                 savg = bedp.s.median()
 
-                results.extend([bedp.shape[0], savg, windows_covered])
+                results.extend([bedp.shape[0], savg, windows_covered, pvals])
 
             else:
-                results.extend([1, savg, "NA"])
+                results.extend([1, savg, "NA", 1])
 
         ### gap operations.
         bedg = bedm[bedm.x < self.Xm].reset_index(drop=True)
@@ -269,7 +270,7 @@ class coverage_parse:
                 tr[1] = 0
             else:
                 tr[1] = tr[1] / sum(reggie.l)
-            tr[2] = tr[2] * 100 / self.ctgl[ctg]
+            tr[2] = tr[2] * 100 / self.ctgl[ctg]  # % of genome covered
             report.append([ctg] + tr)
 
         report = pd.DataFrame(report)
@@ -282,6 +283,7 @@ class coverage_parse:
             "nregions",
             "Rsize",
             "windows_covered",
+            "pval_uniform",
             "ngaps",
             "Gdist",
             "Gsize",

@@ -121,8 +121,6 @@ class ReadOverlapManager:
             self.read_profile_matrix
         )
 
-        print(self.read_profile_matrix.index)
-
         self.overlap_matrix: pd.DataFrame = self.pairwise_shared_count(
             self.read_profile_matrix_filtered
         )
@@ -358,23 +356,18 @@ class ReadOverlapManager:
 
         if "private_reads" not in accid_df.columns:
             accid_df["private_reads"] = 0
-        print(similar_groups)
-        print("duplicate groups")
+
         for duplicate_group in similar_groups:
-            print("#")
-            print(duplicate_group)
             # group_private_counts = self.get_accession_private_counts(duplicate_group)
             (
                 group_private_counts,
                 total_reads,
                 proportion_private,
             ) = self.clade_private_proportions(list(duplicate_group))
-            print(group_private_counts)
-            print(accid_df.loc[accid_df.accid.isin(duplicate_group), "private_reads"])
+
             accid_df.loc[
                 accid_df.accid.isin(duplicate_group), "private_reads"
             ] = group_private_counts
-            print(accid_df.loc[accid_df.accid.isin(duplicate_group), "private_reads"])
 
         accid_df.to_csv(self.accid_statistics_path, sep="\t", index=False)
 
@@ -487,11 +480,21 @@ class ReadOverlapManager:
 
     def generate_tree(self):
         """
-        Generate tree
+        This method is used to generate a tree structure using a distance matrix.
+
+        The steps are as follows:
+        1. Generate a distance matrix using the method 'generate_distance_matrix()'. This matrix represents the distance
+           between different nodes.
+        2. Use this distance matrix to generate the tree structure using the method 'tree_from_distance_matrix()'.
+        Returns:
+            tree: a tree structure generated from the distance matrix
         """
+        # Generate the distance matrix
         distance_matrix = self.generate_distance_matrix()
 
+        # Generate the tree from the distance matrix
         tree = self.tree_from_distance_matrix(distance_matrix)
+
         return tree
 
     ####################
@@ -500,11 +503,9 @@ class ReadOverlapManager:
 
     def clade_shared_by_pair(self, leaves: list) -> Tuple[float, float, float]:
         group = self.read_profile_matrix_filtered.loc[leaves]
-
         group_pairwise_shared = self.pairwise_shared_count(group)
 
-        # divide shared rows by group row sums
-        group_pairwise_shared = group_pairwise_shared.div(group.sum(axis=1), axis=1)
+        group_pairwise_shared /= group.sum(axis=1)
 
         # get lower triangle of shared
         lower_triangle = self.matrix_lower_triangle(group_pairwise_shared)
@@ -513,19 +514,16 @@ class ReadOverlapManager:
             np.triu(np.ones(group_pairwise_shared.shape), k=1).astype(bool)
         )
 
-        # flatten both to list and append
-        group_pairwise_shared = lower_triangle.values.flatten().tolist()
-        group_pairwise_shared_copy = upper_triangle.values.flatten().tolist()
+        group_pairwise_shared = np.concatenate(
+            [lower_triangle.values.flatten(), upper_triangle.values.flatten()]
+        )
+        group_pairwise_shared = group_pairwise_shared[~np.isnan(group_pairwise_shared)]
 
-        group_pairwise_shared.extend(group_pairwise_shared_copy)
-        # remove nan values
-        group_pairwise_shared = [x for x in group_pairwise_shared if str(x) != "nan"]
-
-        min_shared = min(group_pairwise_shared)
-        max_shared = max(group_pairwise_shared)
-        std_shared = np.std(group_pairwise_shared)
-
-        return min_shared, max_shared, std_shared
+        return (
+            group_pairwise_shared.min(),
+            group_pairwise_shared.max(),
+            group_pairwise_shared.std(),
+        )
 
     def clade_shared_by_pair_old(self, leaves: list) -> pd.DataFrame:
         """
@@ -609,9 +607,6 @@ class ReadOverlapManager:
         private_reads = sum_group == sum_all
 
         private_reads = sum(private_reads)
-        print(private_reads)
-        print(len(group_sum_as_bool_list))
-        print(sum(group_sum_as_bool_list))
 
         if sum(group_sum_as_bool_list) == 0:
             private_reads = 0
@@ -736,11 +731,8 @@ class ReadOverlapManager:
             x for x in self.all_clade_leaves_filtered.keys() if x.name == clade
         ][0]
         leaves = self.all_clade_leaves_filtered[clade_node]
-        print("#########################")
-        print(clade_node)
-        print(leaves)
+
         clade_read_matrix = self.within_clade_reads_matrix(leaves)
-        print(clade_read_matrix.sum(axis=1))
         shared_clade_matrix = self.square_and_fill_diagonal(clade_read_matrix)
         return shared_clade_matrix
 
@@ -760,15 +752,11 @@ class ReadOverlapManager:
         """
         find very similar entries entries in pairwise shared clade
         """
-        print("finding very similar groups")
-        print(self.overlap_matrix.shape)
 
         shared_read_matrix = self.square_and_fill_diagonal(
             self.read_profile_matrix_filtered
         )
         threshold = 0.95
-        print(shared_read_matrix.shape)
-        print("threshold", threshold)
 
         clusters_assigment_dict = {}
         clusternum = 0
@@ -799,7 +787,6 @@ class ReadOverlapManager:
             clusters.setdefault(v, []).append(k)
 
         clusters = [v for k, v in clusters.items()]
-        print(clusters)
         for i in range(shared_read_matrix.shape[0]):
             if i not in clusters_assigment_dict.keys():
                 clusters.append([i])
@@ -1214,8 +1201,6 @@ class ReadOverlapManager:
         )
 
         leaf_clades_df.reset_index(drop=True, inplace=True)
-        print(accids_df)
-        print(leaf_clades_df)
         return leaf_clades_df
 
     def get_leaf_clades(self, force=False) -> pd.DataFrame:

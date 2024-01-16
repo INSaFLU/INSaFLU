@@ -760,11 +760,15 @@ class ReadOverlapManager:
         """
         find very similar entries entries in pairwise shared clade
         """
+        print("finding very similar groups")
+        print(self.overlap_matrix.shape)
 
         shared_read_matrix = self.square_and_fill_diagonal(
             self.read_profile_matrix_filtered
         )
         threshold = 0.95
+        print(shared_read_matrix.shape)
+        print("threshold", threshold)
 
         clusters_assigment_dict = {}
         clusternum = 0

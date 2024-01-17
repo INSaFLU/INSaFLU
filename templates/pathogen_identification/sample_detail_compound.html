@@ -455,7 +455,7 @@
                                 {% flag_false_positive value.depth value.depthR value.coverage value.mapped_reads value.windows_covered project_index %}</td>
                             {% if in_control %}
                             <td data-title="Control" style="{% flag_control_color value.control_flag %}">
-                                {% flag_control value.control_flag %}</td>
+                                {{ value.control_flag_str }}</td>
                             {% endif %}
 
                         </tr>

@@ -219,6 +219,8 @@ class EmptyRemapMain:
 
 class FinalReportWrapper:
     accid: str
+    sample: PIProject_Sample
+    mapped_proportion: float
 
     # can take either FinalReport or EmptyRemapMain
     def __init__(self, report: FinalReport):
@@ -236,6 +238,37 @@ class FinalReportWrapper:
                     raise e
 
         self.private_reads = 0
+        self.control_flag = report.control_flag
+        self.control_flag_str = self.infer_control_flag_str()
+
+    def infer_control_flag_str(self: FinalReport) -> str:
+        control_flag_options = {
+            FinalReport.CONTROL_FLAG_NONE: "",
+            FinalReport.CONTROL_FLAG_PRESENT: "Taxid found in control",
+            FinalReport.CONTROL_FLAG_SOURCE: "",
+        }
+
+        return control_flag_options[self.control_flag]
+
+    def inform_control_flag(self):
+        if self.control_flag == FinalReport.CONTROL_FLAG_PRESENT:
+            current_mapped_prop = self.mapped_proportion
+            control_reports = FinalReport.objects.filter(
+                sample__project=self.sample.project,
+                control_flag=FinalReport.CONTROL_FLAG_SOURCE,
+            )
+            mapped_props = [
+                report.mapped_proportion
+                for report in control_reports
+                if report.mapped_proportion is not None
+            ]
+            if len(mapped_props) == 1:
+                mapped_prop = mapped_props[0]
+            else:
+                mapped_prop = sum(mapped_props) / len(mapped_props)
+
+            ratio = current_mapped_prop / mapped_prop
+            self.control_flag_str = f"{self.control_flag} \n ({ratio:.2f})"
 
     def update_private_reads(self, private_reads: int):
         self.private_reads = private_reads

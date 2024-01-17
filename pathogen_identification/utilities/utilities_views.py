@@ -279,12 +279,12 @@ class FinalReportWrapper:
 
 
 class FinalReportCompound(LoginRequiredMixin, generic.TemplateView):
-    def __init__(self, report: FinalReport):
+    def __init__(self, report: FinalReportWrapper):
         """
         copy all attributes from report
         """
 
-        for attr in dir(FinalReport):
+        for attr in dir(FinalReportWrapper):
             if not attr.startswith("__"):
                 if attr == "objects":
                     continue
@@ -299,6 +299,7 @@ class FinalReportCompound(LoginRequiredMixin, generic.TemplateView):
         self.run_index = self.run_main.pk
         self.data_exists = self.check_data_exists(report)
         self.control_flag = report.control_flag
+        # self.control_flag_str = report.control_flag_str
         self.private_reads = 0
 
     def update_private_reads(self, private_reads: int):

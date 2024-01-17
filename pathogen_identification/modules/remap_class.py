@@ -165,7 +165,7 @@ class coverage_parse:
 
         if bedp.shape[0] == 0:
             windows_covered = f"0/{nwindows}"
-            results.extend([0, 0, windows_covered])
+            results.extend([0, 0, windows_covered, 1])
 
         else:
             savg = sum(bedp.s) / bedp.shape[0]

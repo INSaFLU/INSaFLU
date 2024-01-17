@@ -176,6 +176,7 @@ def flag_false_positive_color(
 @register.simple_tag
 def success_count_color(success):
     counts_dict = {
+        "": 0,
         "none": 0,
         "reads": 1,
         "contigs": 1,

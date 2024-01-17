@@ -240,6 +240,7 @@ class FinalReportWrapper:
         self.private_reads = 0
         self.control_flag = report.control_flag
         self.control_flag_str = self.infer_control_flag_str()
+        self.inform_control_flag()
 
     def infer_control_flag_str(self: FinalReport) -> str:
         control_flag_options = {
@@ -247,6 +248,7 @@ class FinalReportWrapper:
             FinalReport.CONTROL_FLAG_PRESENT: "Taxid found in control",
             FinalReport.CONTROL_FLAG_SOURCE: "",
         }
+        print(f"control flag: {self.control_flag}")
 
         return control_flag_options[self.control_flag]
 

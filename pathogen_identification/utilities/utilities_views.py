@@ -10,31 +10,21 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.views import generic
 
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReferenceMap_Main,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference, ReferenceMap_Main,
+                                            RunAssembly, RunDetail, RunMain,
+                                            SoftwareTree, SoftwareTreeNode)
 from pathogen_identification.utilities.clade_objects import Clade
-from pathogen_identification.utilities.overlap_manager import ReadOverlapManager
+from pathogen_identification.utilities.overlap_manager import \
+    ReadOverlapManager
 from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
 from pathogen_identification.utilities.televir_parameters import (
-    LayoutParams,
-    TelevirParameters,
-)
+    LayoutParams, TelevirParameters)
 from pathogen_identification.utilities.utilities_general import (
-    infer_run_media_dir,
-    simplify_name,
-)
+    infer_run_media_dir, simplify_name)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
 
@@ -217,6 +207,43 @@ class EmptyRemapMain:
     coverage_mean = ""
 
 
+def infer_control_flag_str(report: FinalReport) -> str:
+    control_flag_options = {
+        FinalReport.CONTROL_FLAG_NONE: "",
+        FinalReport.CONTROL_FLAG_PRESENT: "Taxid found in control",
+        FinalReport.CONTROL_FLAG_SOURCE: "",
+    }
+    print(f"control flag: {report.control_flag}")
+
+    return control_flag_options[report.control_flag]
+
+
+def inform_control_flag(report: FinalReport, control_flag_str: str):
+    if report.control_flag == FinalReport.CONTROL_FLAG_PRESENT:
+        current_mapped_prop = report.mapped_proportion
+        control_reports = FinalReport.objects.filter(
+            sample__project=report.sample.project,
+            control_flag=FinalReport.CONTROL_FLAG_SOURCE,
+        )
+        mapped_props = [
+            report.mapped_proportion
+            for report in control_reports
+            if report.mapped_proportion is not None
+        ]
+        if len(mapped_props) == 1:
+            mapped_prop = mapped_props[0]
+        else:
+            mapped_prop = sum(mapped_props) / len(mapped_props)
+
+        ratio = current_mapped_prop / mapped_prop
+
+        return (
+            f"{control_flag_str} \n ({ratio:.2f})"
+        )
+    else:
+        return control_flag_str
+
+
 class FinalReportWrapper:
     accid: str
     sample: PIProject_Sample
@@ -239,52 +266,20 @@ class FinalReportWrapper:
 
         self.private_reads = 0
         self.control_flag = report.control_flag
-        self.control_flag_str = self.infer_control_flag_str()
-        self.inform_control_flag()
-
-    def infer_control_flag_str(self: FinalReport) -> str:
-        control_flag_options = {
-            FinalReport.CONTROL_FLAG_NONE: "",
-            FinalReport.CONTROL_FLAG_PRESENT: "Taxid found in control",
-            FinalReport.CONTROL_FLAG_SOURCE: "",
-        }
-        print(f"control flag: {self.control_flag}")
-
-        return control_flag_options[self.control_flag]
-
-    def inform_control_flag(self):
-        if self.control_flag == FinalReport.CONTROL_FLAG_PRESENT:
-            current_mapped_prop = self.mapped_proportion
-            control_reports = FinalReport.objects.filter(
-                sample__project=self.sample.project,
-                control_flag=FinalReport.CONTROL_FLAG_SOURCE,
-            )
-            mapped_props = [
-                report.mapped_proportion
-                for report in control_reports
-                if report.mapped_proportion is not None
-            ]
-            if len(mapped_props) == 1:
-                mapped_prop = mapped_props[0]
-            else:
-                mapped_prop = sum(mapped_props) / len(mapped_props)
-
-            ratio = current_mapped_prop / mapped_prop
-            self.control_flag_str = f"{self.control_flag_str} \n ({ratio:.2f})"
-
-            print(f"control flag: {self.control_flag_str}")
+        self.control_flag_str = infer_control_flag_str(report)
+        self.control_flag_str = inform_control_flag(report, self.control_flag_str)
 
     def update_private_reads(self, private_reads: int):
         self.private_reads = private_reads
 
 
 class FinalReportCompound(LoginRequiredMixin, generic.TemplateView):
-    def __init__(self, report: FinalReportWrapper):
+    def __init__(self, report: FinalReport):
         """
         copy all attributes from report
         """
 
-        for attr in dir(FinalReportWrapper):
+        for attr in dir(FinalReport):
             if not attr.startswith("__"):
                 if attr == "objects":
                     continue
@@ -299,7 +294,8 @@ class FinalReportCompound(LoginRequiredMixin, generic.TemplateView):
         self.run_index = self.run_main.pk
         self.data_exists = self.check_data_exists(report)
         self.control_flag = report.control_flag
-        # self.control_flag_str = report.control_flag_str
+        self.control_flag_str = infer_control_flag_str(report)
+        self.control_flag_str = inform_control_flag(report, self.control_flag_str)
         self.private_reads = 0
 
     def update_private_reads(self, private_reads: int):
@@ -1130,8 +1126,7 @@ class ReportSorter:
 
         for report_groups in reports:
             report_groups.group_list = [
-                FinalReportCompound(self.wrap_report(report))
-                for report in report_groups.group_list
+                FinalReportCompound(report) for report in report_groups.group_list
             ]
 
         return reports

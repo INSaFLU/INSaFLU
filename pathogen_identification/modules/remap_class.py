@@ -71,7 +71,7 @@ class coverage_parse:
 
         self.ctgl = ctg_lens
         self.report = pd.DataFrame(
-            [[x, 0, 0, 0, 0, 0, 0, 0, 0, 0] for x in ctg_lens.keys()],
+            [[x, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0] for x in ctg_lens.keys()],
             columns=[
                 "ID",
                 "Hdepth",

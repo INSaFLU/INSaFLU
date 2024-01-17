@@ -270,7 +270,9 @@ class FinalReportWrapper:
                 mapped_prop = sum(mapped_props) / len(mapped_props)
 
             ratio = current_mapped_prop / mapped_prop
-            self.control_flag_str = f"{self.control_flag} \n ({ratio:.2f})"
+            self.control_flag_str = f"{self.control_flag_str} \n ({ratio:.2f})"
+
+            print(f"control flag: {self.control_flag_str}")
 
     def update_private_reads(self, private_reads: int):
         self.private_reads = private_reads
@@ -1127,7 +1129,8 @@ class ReportSorter:
 
         for report_groups in reports:
             report_groups.group_list = [
-                FinalReportCompound(report) for report in report_groups.group_list
+                FinalReportCompound(self.wrap_report(report))
+                for report in report_groups.group_list
             ]
 
         return reports

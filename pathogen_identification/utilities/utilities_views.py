@@ -234,7 +234,7 @@ def inform_control_flag(report: FinalReport, control_flag_str: str):
         control_reports = FinalReport.objects.filter(
             sample__project=report.sample.project,
             control_flag=FinalReport.CONTROL_FLAG_SOURCE,
-            parameter_set__run__leaf__index=report.run.parameter_set.leaf.index,
+            run__parameter_set__leaf__index=report.run.parameter_set.leaf.index,
         )
 
         if control_reports.exists() == False:

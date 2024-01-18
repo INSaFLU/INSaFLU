@@ -234,7 +234,11 @@ def inform_control_flag(report: FinalReport, control_flag_str: str):
         control_reports = FinalReport.objects.filter(
             sample__project=report.sample.project,
             control_flag=FinalReport.CONTROL_FLAG_SOURCE,
+            parameter_set__run__leaf__index=report.run.parameter_set.leaf.index,
         )
+
+        if control_reports.exists() == False:
+            return control_flag_str
         mapped_props = [
             report.mapped_proportion
             for report in control_reports

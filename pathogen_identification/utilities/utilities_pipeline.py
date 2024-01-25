@@ -10,18 +10,21 @@ import pandas as pd
 from django.contrib.auth.models import User
 from django.db.models import Q, QuerySet
 
-from constants.constants import \
-    Televir_Directory_Constants as Televir_Directories
+from constants.constants import Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.host_library import Host
-from pathogen_identification.models import (ParameterSet, PIProject_Sample,
-                                            Projects, RawReference, RunMain,
-                                            SoftwareTree, SoftwareTreeNode)
-from pathogen_identification.utilities.utilities_televir_dbs import \
-    Utility_Repository
-from pathogen_identification.utilities.utilities_views import \
-    RawReferenceCompound
+from pathogen_identification.models import (
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
+from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
+from pathogen_identification.utilities.utilities_views import RawReferenceCompound
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -42,7 +45,7 @@ def exclued_steps_decorator(function):
         exclude_steps = [CS.PIPELINE_NAME_reporting]
 
         if project_sample is None:
-            exclude_steps.append(CS.PIPELINE_NAME_metagenomics_combine)
+            exclude_steps.append(CS.PIPELINE_NAME_metagenomics_screening)
 
         return function(
             self,
@@ -184,7 +187,7 @@ class Pipeline_Graph_Metagenomics(PipelineTreeBase):
                 self.ASSEMBLY_SPECIAL_STEP,
                 CS.PIPELINE_NAME_host_depletion,
             ],
-            CS.PIPELINE_NAME_metagenomics_combine: [
+            CS.PIPELINE_NAME_metagenomics_screening: [
                 CS.PIPELINE_NAME_map_filtering,
                 CS.PIPELINE_NAME_contig_classification,
                 CS.PIPELINE_NAME_read_classification,
@@ -193,7 +196,7 @@ class Pipeline_Graph_Metagenomics(PipelineTreeBase):
                 self.VIRAL_ENRICHMENT_SPECIAL_STEP,
             ],
             self.SINK: [
-                CS.PIPELINE_NAME_metagenomics_combine,
+                CS.PIPELINE_NAME_metagenomics_screening,
                 CS.PIPELINE_NAME_remapping,
                 CS.PIPELINE_NAME_contig_classification,
                 self.ASSEMBLY_SPECIAL_STEP,
@@ -299,7 +302,7 @@ class Pipeline_Makeup(PipelineTreeBase):
     def match_makeup_name_from_list_classification(
         self, makeup_list: list
     ) -> Optional[int]:
-        ignore = [CS.PIPELINE_NAME_metagenomics_combine]
+        ignore = [CS.PIPELINE_NAME_metagenomics_screening]
 
         makeup_return = self.match_makeup_name_from_list(makeup_list, ignore=ignore)
 

@@ -11,10 +11,13 @@ from django.conf import settings
 
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PI_ConstantsSettings
+from pathogen_identification.constants_settings import (
+    ConstantsSettings as PI_ConstantsSettings,
+)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility, Utility_Pipeline_Manager)
+    Parameter_DB_Utility,
+    Utility_Pipeline_Manager,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -870,7 +873,7 @@ class DefaultParameters(object):
                 software.owner,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
-                pipeline_step=ConstantsSettings.PIPELINE_NAME_metagenomics_combine,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_metagenomics_screening,
             )
         elif software.name == SoftwareNames.SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name:
             return self.get_minimap2_map_assembly_default(
@@ -2771,7 +2774,7 @@ class DefaultParameters(object):
         software = Software()
         software.name = SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ILLU_name
 
-        if pipeline_step == ConstantsSettings.PIPELINE_NAME_metagenomics_combine:
+        if pipeline_step == ConstantsSettings.PIPELINE_NAME_metagenomics_screening:
             software.name_extended = (
                 SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ILLU_name_extended_screening
             )

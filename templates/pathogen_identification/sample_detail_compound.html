@@ -271,17 +271,19 @@
                 </div>
             </div>
         </div>
-        {% if runs_number %}
+        {% if runs_number %} 
         <div id="collapsehead" class="collapse show" role="tabpanel" aria-labelledby="headingsample">
             <div class="card-block">
                 <div style="padding: 20px">
                     
                     <div class="row">
                         <div class="col-sm-2">
-                            {% for run in runs %}
-                            <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Workflow {{run.parameter_set.leaf.index}} report </a>
+                            {% for run in runs_pipeline %}
+                            <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Workflow report {{run.parameter_set.leaf.index}} </a>
                             <br>
-                            <br>
+                            {% endfor %}
+                            {% for run in runs_mapping %}
+                            <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Mapping report {{run.parameter_set.leaf.index}}  </a>
                             {% endfor %}
                         </div>
                         {% if graph_json %}

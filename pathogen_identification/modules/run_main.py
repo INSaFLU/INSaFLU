@@ -15,17 +15,31 @@ from pathogen_identification.modules.assembly_class import Assembly_class
 from pathogen_identification.modules.classification_class import Classifier
 from pathogen_identification.modules.metadata_handler import RunMetadataHandler
 from pathogen_identification.modules.object_classes import (
-    Assembly_results, Contig_classification_results, Read_class,
-    Read_classification_results, Remap_main, Remap_Target, Run_detail_report,
-    RunCMD, RunQC_report, Sample_runClass, SoftwareDetail,
-    SoftwareDetailCompound, SoftwareRemap, SoftwareUnit)
+    Assembly_results,
+    Contig_classification_results,
+    Read_class,
+    Read_classification_results,
+    Remap_main,
+    Remap_Target,
+    Run_detail_report,
+    RunCMD,
+    RunQC_report,
+    Sample_runClass,
+    SoftwareDetail,
+    SoftwareDetailCompound,
+    SoftwareRemap,
+    SoftwareUnit,
+)
 from pathogen_identification.modules.preprocess_class import Preprocess
-from pathogen_identification.modules.remap_class import (Mapping_Instance,
-                                                         Mapping_Manager)
+from pathogen_identification.modules.remap_class import (
+    Mapping_Instance,
+    Mapping_Manager,
+)
 from pathogen_identification.utilities.televir_parameters import (
-    RemapParams, TelevirParameters)
-from pathogen_identification.utilities.utilities_pipeline import \
-    RawReferenceUtils
+    RemapParams,
+    TelevirParameters,
+)
+from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -250,7 +264,7 @@ class RunDetail_main:
         self, config: dict, method_args: pd.DataFrame
     ):
         self.metagenomics_classification_method = SoftwareDetail(
-            CS.PIPELINE_NAME_metagenomics_combine,
+            CS.PIPELINE_NAME_metagenomics_screening,
             method_args,
             config,
             self.prefix,
@@ -317,7 +331,7 @@ class RunDetail_main:
             CS.PIPELINE_NAME_assembly: self.set_assembly_check,
             CS.PIPELINE_NAME_contig_classification: self.set_contig_classification_check,
             CS.PIPELINE_NAME_read_classification: self.set_read_classification_check,
-            CS.PIPELINE_NAME_metagenomics_combine: self.set_metagenomics_classification_check,
+            CS.PIPELINE_NAME_metagenomics_screening: self.set_metagenomics_classification_check,
             CS.PIPELINE_NAME_remapping: self.set_remapping_check,
             CS.PIPELINE_NAME_remap_filtering: self.set_remapping_filtering_check,
         }
@@ -330,7 +344,7 @@ class RunDetail_main:
             CS.PIPELINE_NAME_assembly: self.assembly,
             CS.PIPELINE_NAME_contig_classification: self.contig_classification,
             CS.PIPELINE_NAME_read_classification: self.read_classification,
-            CS.PIPELINE_NAME_metagenomics_combine: self.metagenomics_classification,
+            CS.PIPELINE_NAME_metagenomics_screening: self.metagenomics_classification,
             CS.PIPELINE_NAME_remapping: self.remapping,
             CS.PIPELINE_NAME_remap_filtering: self.remapping_filtering,
         }

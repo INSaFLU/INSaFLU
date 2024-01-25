@@ -73,7 +73,7 @@ class ConstantsSettings:
     ]
 
     PIPELINE_STEPS_MAPPINGS = [
-        CS.PIPELINE_NAME_metagenomics_combine,
+        CS.PIPELINE_NAME_metagenomics_screening,
         CS.PIPELINE_NAME_reporting,
         CS.PIPELINE_NAME_request_mapping,
         CS.PIPELINE_NAME_map_filtering,
@@ -111,7 +111,7 @@ class ConstantsSettings:
         CS.PIPELINE_NAME_assembly: "assembly/",
         CS.PIPELINE_NAME_contig_classification: "classification/assembly/",
         CS.PIPELINE_NAME_read_classification: "classification/reads/",
-        CS.PIPELINE_NAME_metagenomics_combine: "metagenomics/",
+        CS.PIPELINE_NAME_metagenomics_screening: "metagenomics/",
         CS.PIPELINE_NAME_remapping: "remap/",
         "log_dir": "logs/",
         "OUTD": "output/",
@@ -186,7 +186,7 @@ class ConstantsSettings:
             for pipeline_name in vect_pipeline_names
             if pipeline_name
             not in [
-                CS.PIPELINE_NAME_metagenomics_combine,
+                CS.PIPELINE_NAME_metagenomics_screening,
                 CS.PIPELINE_NAME_request_mapping,
                 CS.PIPELINE_NAME_metagenomics_settings,
             ]

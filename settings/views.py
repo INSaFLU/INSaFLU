@@ -11,12 +11,12 @@ from datasets.models import Dataset, DatasetConsensus
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project, ProjectSample, Sample
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.models import PIProject_Sample
 from pathogen_identification.models import Projects as Televir_Project
-from pathogen_identification.utilities.utilities_views import \
-    duplicate_metagenomics_software
+from pathogen_identification.utilities.utilities_views import (
+    duplicate_metagenomics_software,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.default_software import DefaultSoftware
 from settings.forms import SoftwareForm
@@ -126,7 +126,7 @@ class PIMetagenSampleView(LoginRequiredMixin, ListView):
                 )
 
         context["metagenomics_pipeline_id"] = [
-            ConstantsSettings.PIPELINE_NAME_metagenomics_combine
+            ConstantsSettings.PIPELINE_NAME_metagenomics_screening
         ]
         context["all_softwares"] = all_tables
         context["nav_settings"] = True
@@ -425,7 +425,7 @@ class PISettingsView(LoginRequiredMixin, ListView):
 
         context["all_softwares"] = all_tables
         context["metagenomics_pipeline_id"] = [
-            ConstantsSettings.PIPELINE_NAME_metagenomics_combine
+            ConstantsSettings.PIPELINE_NAME_metagenomics_screening
         ]
         context["nav_settings"] = True
         ## True for global softwares
@@ -484,7 +484,6 @@ class PISettingsGroupsView(PISettingsView):
                 group_name,
                 condensed_pipeline_names,
             ) in condensed_pipeline_groups.items():
-                
                 vect_pipeline_step = []
                 for (
                     pipeline_step_name,
@@ -571,7 +570,7 @@ class PISettingsGroupsView(PISettingsView):
 
         context["all_softwares"] = all_tables
         context["metagenomics_pipeline_id"] = [
-            ConstantsSettings.PIPELINE_NAME_metagenomics_combine
+            ConstantsSettings.PIPELINE_NAME_metagenomics_screening
         ]
         context["nav_settings"] = True
         ## True for global softwares

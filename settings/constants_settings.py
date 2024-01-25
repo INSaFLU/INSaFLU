@@ -35,8 +35,8 @@ class ConstantsSettings(object):
     PIPELINE_NAME_host_depletion = "Host depletion"
     PIPELINE_NAME_contig_classification = "Contig classification"
     PIPELINE_NAME_read_classification = "Read classification"
-    PIPELINE_NAME_metagenomics_combine = "Mapping"
-    PIPELINE_NAME_request_mapping = "Request mapping"
+    PIPELINE_NAME_metagenomics_combine = "Screening"
+    PIPELINE_NAME_request_mapping = "Request Mapping"
     PIPELINE_NAME_assembly = "Assembly"
     PIPELINE_NAME_remapping = "Remapping"
     PIPELINE_NAME_remap_filtering = "Remap filtering"
@@ -63,6 +63,7 @@ class ConstantsSettings(object):
         PIPELINE_NAME_request_mapping,
         PIPELINE_NAME_remapping,
         PIPELINE_NAME_remap_filtering,
+        PIPELINE_NAME_map_filtering,
         PIPELINE_NAME_reporting,
     ]
 
@@ -93,8 +94,8 @@ class ConstantsSettings(object):
         PIPELINE_NAME_extra_qc,
         PIPELINE_NAME_viral_enrichment,
         PIPELINE_NAME_host_depletion,
-        PIPELINE_NAME_remapping,
-        PIPELINE_NAME_remap_filtering,
+        PIPELINE_NAME_request_mapping,
+        PIPELINE_NAME_map_filtering,
         PIPELINE_NAME_reporting,
     ]
 
@@ -103,7 +104,7 @@ class ConstantsSettings(object):
         PIPELINE_NAME_viral_enrichment,
         PIPELINE_NAME_host_depletion,
         PIPELINE_NAME_request_mapping,
-        PIPELINE_NAME_remap_filtering,
+        PIPELINE_NAME_map_filtering,
         PIPELINE_NAME_reporting,
     ]
 
@@ -161,8 +162,4 @@ class ConstantsSettings(object):
         Translate pipeline step names - use to combine steps."""
         if pipeline_step == self.PIPELINE_NAME_metagenomics_settings:
             return self.PIPELINE_NAME_metagenomics_combine
-
-        if pipeline_step == self.PIPELINE_NAME_request_mapping:
-            return self.PIPELINE_NAME_metagenomics_combine
-
         return pipeline_step

@@ -949,6 +949,7 @@ class SoftwareNames(object):
         SOFTWARE_BOWTIE2_REMAP_name,
         SOFTWARE_KRAKEN2_name,
         SOFTWARE_MINIMAP2_REMAP_ONT_name,
+        SOFTWARE_MSAMTOOLS_name,
     ]
     # pipeline_steps per software, for software with multiple pipeline_steps.
 
@@ -960,6 +961,7 @@ class SoftwareNames(object):
         SOFTWARE_BOWTIE2_REMAP_name: [
             ConstantsSettings.PIPELINE_NAME_remapping,
             ConstantsSettings.PIPELINE_NAME_metagenomics_combine,
+            ConstantsSettings.PIPELINE_NAME_request_mapping,
         ],
         SOFTWARE_CENTRIFUGE_name: [
             ConstantsSettings.PIPELINE_NAME_viral_enrichment,
@@ -973,10 +975,15 @@ class SoftwareNames(object):
             ConstantsSettings.PIPELINE_NAME_remapping,
             ConstantsSettings.PIPELINE_NAME_host_depletion,
             ConstantsSettings.PIPELINE_NAME_metagenomics_combine,
+            ConstantsSettings.PIPELINE_NAME_request_mapping,
         ],
         SOFTWARE_BWA_name: [
             ConstantsSettings.PIPELINE_NAME_host_depletion,
             ConstantsSettings.PIPELINE_NAME_read_classification,
+        ],
+        SOFTWARE_MSAMTOOLS_name: [
+            ConstantsSettings.PIPELINE_NAME_remap_filtering,
+            ConstantsSettings.PIPELINE_NAME_map_filtering,
         ],
     }
 

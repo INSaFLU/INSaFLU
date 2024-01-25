@@ -75,11 +75,16 @@ class ConstantsSettings:
     PIPELINE_STEPS_MAPPINGS = [
         CS.PIPELINE_NAME_metagenomics_combine,
         CS.PIPELINE_NAME_reporting,
+        CS.PIPELINE_NAME_request_mapping,
+        CS.PIPELINE_NAME_map_filtering,
     ]
 
     ################################### Pipeline steps aggregate
 
-    PIPELINE_STEPS_AGGREGATE = [CS.PIPELINE_NAME_remap_filtering]
+    PIPELINE_STEPS_AGGREGATE = [
+        CS.PIPELINE_NAME_remap_filtering,
+        CS.PIPELINE_NAME_map_filtering,
+    ]
 
     #################################### Tree sort default Parameters
 

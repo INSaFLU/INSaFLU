@@ -1148,6 +1148,8 @@ class Tree_Progress:
             ConstantsSettings.PIPELINE_NAME_assembly: self.run_nodes_sequential,
             ConstantsSettings.PIPELINE_NAME_remapping: self.run_nodes_remap,
             ConstantsSettings.PIPELINE_NAME_remap_filtering: self.run_nodes_sequential,
+            ConstantsSettings.PIPELINE_NAME_map_filtering: self.run_nodes_sequential,
+            ConstantsSettings.PIPELINE_NAME_metagenomics_combine: self.run_nodes_sequential,
         }
 
         if self.current_module in ["end"]:
@@ -1304,6 +1306,7 @@ class TreeProgressGraph:
             ConstantsSettings.PIPELINE_NAME_contig_classification: "darkorange",
             ConstantsSettings.PIPELINE_NAME_read_classification: "deeppink",
             ConstantsSettings.PIPELINE_NAME_metagenomics_combine: "dodgerblue",
+            ConstantsSettings.PIPELINE_NAME_map_filtering: "dodgerblue",
             ConstantsSettings.PIPELINE_NAME_remapping: "khaki",
             ConstantsSettings.PIPELINE_NAME_remap_filtering: "darkslategray",
             "leaves": "lightblue",

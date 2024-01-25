@@ -1856,7 +1856,7 @@ class DefaultParameters(object):
 
         parameter = Parameter()
         parameter.name = SoftwareNames.SOFTWARE_REMAP_PARAMS_include_manual
-        parameter.parameter = "OFF"
+        parameter.parameter = "ON"
         parameter.type_data = Parameter.PARAMETER_char_list
         parameter.software = software
         parameter.sample = sample
@@ -2707,7 +2707,7 @@ class DefaultParameters(object):
 
         software.is_to_run = is_to_run
 
-        if job == "request_mapping":
+        if job in ["request_mapping", "screening"]:
             software.can_be_on_off_in_pipeline = False
             software.is_to_run = True
 

@@ -23,7 +23,7 @@ from pathogen_identification.modules.metadata_handler import RunMetadataHandler
 from pathogen_identification.modules.object_classes import (
     Read_class,
     Sample_runClass,
-    Software_detail,
+    SoftwareDetail,
     SoftwareDetailCompound,
     SoftwareRemap,
 )
@@ -191,7 +191,7 @@ class RunEngine:
         self.remap_params = remap_params
 
         ### methods
-        self.remapping_method = Software_detail(
+        self.remapping_method = SoftwareDetail(
             CS.PIPELINE_NAME_remapping,
             method_args,
             config,
@@ -199,7 +199,7 @@ class RunEngine:
         )
 
         self.remap_filtering_method = SoftwareDetailCompound(
-            CS.PIPELINE_NAME_remap_filtering,
+            [CS.PIPELINE_NAME_remap_filtering],
             method_args,
             config,
             self.prefix,

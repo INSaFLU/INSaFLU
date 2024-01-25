@@ -9,8 +9,7 @@ from typing import Any, Type
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.modules.object_classes import (RunCMD,
-                                                            Software_detail)
+from pathogen_identification.modules.object_classes import RunCMD, SoftwareDetail
 
 
 def check_report_empty(file, comment="@"):
@@ -815,7 +814,7 @@ class run_diamond(Classifier_init):
         ]
 
         self.cmd.run(cmd)
-    
+
     def run_PE(self, threads: int = 3, *args, **kwargs):
         cmd = [
             "diamond",
@@ -1307,7 +1306,7 @@ class Classifier:
 
     def __init__(
         self,
-        classifier_method: Software_detail,
+        classifier_method: SoftwareDetail,
         query_path: str = "",
         type: str = ConstantsSettings.SINGLE_END,
         r2: str = "",

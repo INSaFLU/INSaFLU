@@ -15,31 +15,17 @@ from pathogen_identification.modules.assembly_class import Assembly_class
 from pathogen_identification.modules.classification_class import Classifier
 from pathogen_identification.modules.metadata_handler import RunMetadataHandler
 from pathogen_identification.modules.object_classes import (
-    Assembly_results,
-    Contig_classification_results,
-    Read_class,
-    Read_classification_results,
-    Remap_main,
-    Remap_Target,
-    Run_detail_report,
-    RunCMD,
-    RunQC_report,
-    Sample_runClass,
-    Software_detail,
-    SoftwareDetailCompound,
-    SoftwareRemap,
-    SoftwareUnit,
-)
+    Assembly_results, Contig_classification_results, Read_class,
+    Read_classification_results, Remap_main, Remap_Target, Run_detail_report,
+    RunCMD, RunQC_report, Sample_runClass, SoftwareDetail,
+    SoftwareDetailCompound, SoftwareRemap, SoftwareUnit)
 from pathogen_identification.modules.preprocess_class import Preprocess
-from pathogen_identification.modules.remap_class import (
-    Mapping_Instance,
-    Mapping_Manager,
-)
+from pathogen_identification.modules.remap_class import (Mapping_Instance,
+                                                         Mapping_Manager)
 from pathogen_identification.utilities.televir_parameters import (
-    RemapParams,
-    TelevirParameters,
-)
-from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
+    RemapParams, TelevirParameters)
+from pathogen_identification.utilities.utilities_pipeline import \
+    RawReferenceUtils
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -136,13 +122,13 @@ class RunDetail_main:
 
     ## methods
     preprocess_method: SoftwareUnit
-    depletion_method: Software_detail
-    enrichment_method: Software_detail
-    assembly_method: Software_detail
-    assembly_classification_method: Software_detail
-    read_classification_method: Software_detail
-    metagenomics_classification_method: Software_detail
-    remapping_method: Software_detail
+    depletion_method: SoftwareDetail
+    enrichment_method: SoftwareDetail
+    assembly_method: SoftwareDetail
+    assembly_classification_method: SoftwareDetail
+    read_classification_method: SoftwareDetail
+    metagenomics_classification_method: SoftwareDetail
+    remapping_method: SoftwareDetail
     remap_manager: Mapping_Manager
     remap_params: RemapParams
     software_remap: SoftwareRemap
@@ -183,7 +169,7 @@ class RunDetail_main:
         self.logger = None
 
     def set_preprocess_check(self, config: dict, method_args: pd.DataFrame):
-        self.preprocess_method = Software_detail(
+        self.preprocess_method = SoftwareDetail(
             CS.PIPELINE_NAME_extra_qc,
             method_args,
             config,
@@ -196,7 +182,7 @@ class RunDetail_main:
         self.quality_control = self.preprocess_method.check_exists()
 
     def set_depletion_check(self, config: dict, method_args: pd.DataFrame):
-        self.depletion_method = Software_detail(
+        self.depletion_method = SoftwareDetail(
             CS.PIPELINE_NAME_host_depletion,
             method_args,
             config,
@@ -209,7 +195,7 @@ class RunDetail_main:
         self.depletion = self.depletion_method.check_exists()
 
     def set_enrichment_check(self, config: dict, method_args: pd.DataFrame):
-        self.enrichment_method = Software_detail(
+        self.enrichment_method = SoftwareDetail(
             CS.PIPELINE_NAME_viral_enrichment,
             method_args,
             config,
@@ -222,7 +208,7 @@ class RunDetail_main:
         self.enrichment = self.enrichment_method.check_exists()
 
     def set_assembly_check(self, config: dict, method_args: pd.DataFrame):
-        self.assembly_method = Software_detail(
+        self.assembly_method = SoftwareDetail(
             CS.PIPELINE_NAME_assembly,
             method_args,
             config,
@@ -235,7 +221,7 @@ class RunDetail_main:
         self.assembly = self.assembly_method.check_exists()
 
     def set_contig_classification_check(self, config: dict, method_args: pd.DataFrame):
-        self.contig_classification_method = Software_detail(
+        self.contig_classification_method = SoftwareDetail(
             CS.PIPELINE_NAME_contig_classification,
             method_args,
             config,
@@ -248,7 +234,7 @@ class RunDetail_main:
         self.contig_classification = self.contig_classification_method.check_exists()
 
     def set_read_classification_check(self, config: dict, method_args: pd.DataFrame):
-        self.read_classification_method = Software_detail(
+        self.read_classification_method = SoftwareDetail(
             CS.PIPELINE_NAME_read_classification,
             method_args,
             config,
@@ -263,7 +249,7 @@ class RunDetail_main:
     def set_metagenomics_classification_check(
         self, config: dict, method_args: pd.DataFrame
     ):
-        self.metagenomics_classification_method = Software_detail(
+        self.metagenomics_classification_method = SoftwareDetail(
             CS.PIPELINE_NAME_metagenomics_combine,
             method_args,
             config,
@@ -278,14 +264,33 @@ class RunDetail_main:
             self.metagenomics_classification_method.check_exists()
         )
 
-    def set_remapping_check(self, config: dict, method_args: pd.DataFrame):
-        self.remapping_method = Software_detail(
-            CS.PIPELINE_NAME_remapping,
-            method_args,
-            config,
-            self.prefix,
-        )
+    def pick_remapping_method(
+        self, config: dict, method_args: pd.DataFrame
+    ) -> SoftwareDetail:
+        if CS.PIPELINE_NAME_remapping in method_args["module"].unique():
+            return SoftwareDetail(
+                CS.PIPELINE_NAME_remapping,
+                method_args,
+                config,
+                self.prefix,
+            )
+        elif CS.PIPELINE_NAME_request_mapping in method_args["module"].unique():
+            return SoftwareDetail(
+                CS.PIPELINE_NAME_request_mapping,
+                method_args,
+                config,
+                self.prefix,
+            )
+        else:
+            return SoftwareDetail(
+                CS.PIPELINE_NAME_remapping,
+                method_args,
+                config,
+                self.prefix,
+            )
 
+    def set_remapping_check(self, config: dict, method_args: pd.DataFrame):
+        self.remapping_method = self.pick_remapping_method(config, method_args)
         self.check_remapping_exists()
 
     def check_remapping_exists(self):
@@ -293,7 +298,7 @@ class RunDetail_main:
 
     def set_remapping_filtering_check(self, config: dict, method_args: pd.DataFrame):
         self.remap_filtering_method = SoftwareDetailCompound(
-            CS.PIPELINE_NAME_remap_filtering,
+            [CS.PIPELINE_NAME_remap_filtering, CS.PIPELINE_NAME_map_filtering],
             method_args,
             config,
             self.prefix,
@@ -545,13 +550,13 @@ class RunDetail_main:
 
         ### drones
         self.depletion_drone = Classifier(
-            Software_detail("NONE", method_args, config, self.prefix),
+            SoftwareDetail("NONE", method_args, config, self.prefix),
             logging_level=self.logger_level_detail,
             log_dir=self.log_dir,
             prefix="drone",
         )
         self.enrichment_drone = Classifier(
-            Software_detail("NONE", method_args, config, self.prefix),
+            SoftwareDetail("NONE", method_args, config, self.prefix),
             logging_level=self.logger_level_detail,
             log_dir=self.log_dir,
             prefix="drone",

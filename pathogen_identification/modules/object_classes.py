@@ -1105,7 +1105,7 @@ class SoftwareUnit:
         self.output_dir = output_dir
 
     def check_exists(self):
-        return bool(self.name != Software_detail.SOFTWARE_NOT_FOUND)
+        return bool(self.name != SoftwareDetail.SOFTWARE_NOT_FOUND)
 
     def get_bin(self, config: dict):
         try:
@@ -1121,7 +1121,7 @@ class SoftwareUnit:
                 self.bin = ""
 
 
-class Software_detail(SoftwareUnit):
+class SoftwareDetail(SoftwareUnit):
     def __init__(self, module, args_df: pd.DataFrame, config: dict, prefix: str):
         """
 
@@ -1225,7 +1225,7 @@ class Software_detail(SoftwareUnit):
 
 
 class SoftwareDetailCompound:
-    def __init__(self, module, args_df: pd.DataFrame, config: dict, prefix: str):
+    def __init__(self, modules: List[str], args_df: pd.DataFrame, config: dict, prefix: str):
         """
 
         Args:
@@ -1234,21 +1234,22 @@ class SoftwareDetailCompound:
             config: dictionary containing module configuration.
             prefix: prefix of module.
         """
-        self.module = module
+        
         self.args_df = args_df
         self.config = config
         self.prefix = prefix
 
-        self.software_list: List[Software_detail] = []
-        if module in args_df.module.unique():
-            self.fill_software_list()
+        self.software_list: List[SoftwareDetail] = []
+        for module in modules:
+            if module in args_df.module.unique():
+                self.module = module
+                self.fill_software_list()
 
     def fill_software_list(self):
-        print(self.args_df)
         module_df = self.args_df[self.args_df.module == self.module]
 
         for _, software_df in module_df.groupby("software"):
-            software = Software_detail(
+            software = SoftwareDetail(
                 self.module, software_df, self.config, self.prefix
             )
             self.software_list.append(software)
@@ -1259,7 +1260,7 @@ class SoftwareDetailCompound:
 
 class SoftwareRemap:
     def __init__(
-        self, remap_software: Software_detail, remap_filter: SoftwareDetailCompound
+        self, remap_software: SoftwareDetail, remap_filter: SoftwareDetailCompound
     ):
         self.remap_software = remap_software
         self.remap_filters = remap_filter

@@ -480,7 +480,6 @@ class Command(BaseCommand):
                 project_name=project_name,
             )
             run_engine.generate_targets()
-            print("running")
             run_engine.run()
 
             input_generator.update_raw_reference_status_mapped()

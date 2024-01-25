@@ -345,38 +345,101 @@ class ProjectTableMetagenomics(ProjectTable):
         return mark_safe(deploy_explify)
 
 
-class SampleTable(tables.Table):
+class SampleTableOne(tables.Table):
+    color_runs = "#f2f2f2"
+    set_control = tables.Column("Control", orderable=False, empty_values=())
+
     name = tables.Column(verbose_name="Sample Name")
     report = tables.Column(
         verbose_name="Sample Report", orderable=False, empty_values=()
     )
     runs = tables.Column(verbose_name="Workflows", orderable=False, empty_values=())
-    sorting = tables.Column("Sorting", orderable=False, empty_values=())
-    deploy = tables.Column(verbose_name="Run", orderable=False, empty_values=())
-
-    input = tables.Column(verbose_name="Input", orderable=False, empty_values=())
-    combinations = tables.Column(
-        verbose_name="Combinations", orderable=False, empty_values=()
+    deploy = tables.Column(
+        verbose_name="Run",
+        orderable=False,
+        empty_values=(),
+        attrs={
+            "th": {"style": "text-align: center;"},
+            "td": {"style": "text-align: center;"},
+        },
     )
-    running_processes = tables.Column("Running", orderable=False, empty_values=())
-    queued_processes = tables.Column("Queued", orderable=False, empty_values=())
-    set_control = tables.Column("Control", orderable=False, empty_values=())
+
+    sorting = tables.Column(
+        "Sorting",
+        orderable=False,
+        empty_values=(),
+        attrs={
+            "th": {
+                "style": "text-align: center;",
+            },
+            "td": {"style": "text-align: center;"},
+        },
+    )
+    ref_management = tables.Column(
+        "References",
+        orderable=False,
+        empty_values=(),
+        attrs={
+            "td": {"style": "border-left: 5px solid #ddd; text-align: center;"},
+            "th": {
+                "style": "border-left: 5px solid #ddd; background-color: #dce4f0; text-align: center;"
+            },
+        },
+    )
+
+    combinations = tables.Column(
+        verbose_name="Combinations",
+        orderable=False,
+        empty_values=(),
+        attrs={
+            "td": {"style": "border-left: 5px solid #ddd;"},
+            "th": {"style": "border-left: 5px solid #ddd; background-color: #eaf5ff;"},
+        },
+    )
+    mapping_runs = tables.Column(
+        "Mapping Runs",
+        orderable=False,
+        empty_values=(),
+        attrs={
+            "th": {"style": "background-color: #eaf5ff;"},
+        },
+    )
+
+    running_processes = tables.Column(
+        "Running",
+        orderable=False,
+        empty_values=(),
+        attrs={
+            "th": {"style": "background-color: #eaf5ff;"},
+        },
+    )
+    queued_processes = tables.Column(
+        "Queued",
+        orderable=False,
+        empty_values=(),
+        attrs={
+            "th": {"style": "background-color: #eaf5ff;"},
+        },
+    )
 
     class Meta:
         model = PIProject_Sample
 
-        attrs = {"class": "paleblue"}
+        attrs = {
+            "class": "paleblue",
+        }
         fields = (
+            "set_control",
             "name",
             "report",
             "runs",
-            "sorting",
             "deploy",
-            "input",
+            "sorting",
+            "ref_management",
             "combinations",
+            "mapping_runs",
             "running_processes",
             "queued_processes",
-            "set_control",
         )
 
     def render_set_control(self, record):
@@ -403,87 +466,6 @@ class SampleTable(tables.Table):
                 + str(record.pk)
                 + '"><i class="fa fa-circle-o"></i></span> </a>'
             )
-
-    def render_running_processes(self, record):
-        """
-        return number of running processes in this project"""
-
-        running = 0
-        parameter_sets = ParameterSet.objects.filter(
-            sample=record, project=record.project
-        )
-        for parameter_set in parameter_sets:
-            if parameter_set.status == ParameterSet.STATUS_RUNNING:
-                running += 1
-
-        return running
-
-    def render_queued_processes(self, record):
-        """
-        return number of running processes in this project"""
-
-        queued = 0
-        parameter_sets = ParameterSet.objects.filter(
-            sample=record, project=record.project
-        )
-        for parameter_set in parameter_sets:
-            if parameter_set.status == ParameterSet.STATUS_QUEUED:
-                queued += 1
-
-        return queued
-
-    def render_combinations(self, record):
-        return RunMain.objects.filter(
-            sample__name=record.name,
-            project=record.project,
-            parameter_set__status__in=[
-                ParameterSet.STATUS_FINISHED,
-            ],
-            run_type=RunMain.RUN_TYPE_PIPELINE,
-        ).count()
-
-    def render_sorting(self, record):
-        current_request = CrequestMiddleware.get_request()
-        user = current_request.user
-
-        if user.username == Constants.USER_ANONYMOUS:
-            return mark_safe("report")
-
-        final_report = FinalReport.objects.filter(sample=record).order_by("-coverage")
-
-        ## return empty square if no report
-        if final_report.count() == 0:
-            return mark_safe('<i class="fa fa-square-o" title="Empty"></i>')
-        ## check sorted
-
-        report_layout_params = TelevirParameters.get_report_layout_params(
-            project_pk=record.project.pk
-        )
-        report_sorter = ReportSorter(final_report, report_layout_params)
-        sorted = report_sorter.check_analysis_exists()
-
-        ## sorted icon, green if sorted, red if not
-        sorted_icon = ""
-        if sorted:
-            sorted_icon = (
-                ' <i class="fa fa-check" style="color: green;" title="Sorted"></i>'
-            )
-            return mark_safe(sorted_icon)
-        else:
-            sorted_icon = (
-                ' <i class="fa fa-times" style="color: red;" title="un-sorted"></i>'
-            )
-            request_sorting = (
-                ' <a href="#" id="sort_sample_btn" class="kill-button" data-toggle="modal" data-toggle="tooltip" title="Sort"'
-                + ' sample_id="'
-                + str(record.pk)
-                + '"'
-                + ' sort-url="'
-                + reverse("sort_sample_reports")
-                + '"'
-                + '><i class="fa fa-sort"></i></span> </a>'
-            )
-            return mark_safe(sorted_icon + request_sorting)
 
     def render_report(self, record):
         current_request = CrequestMiddleware.get_request()
@@ -553,22 +535,6 @@ class SampleTable(tables.Table):
             + '"><i class="fa fa-flask"></i></span> </a>'
         )
 
-        ### references_management button, link to sample_references_management view
-
-        if CS.METAGENOMICS:
-            references_management_button = (
-                '<a href="'
-                + reverse(
-                    "sample_references_management",
-                    args=[record.pk],
-                )
-                + '"'
-                + 'title="Sample Reference Management">'
-                + '<i class="fa fa-database"></i></span> </a>'
-            )
-
-            record_name = references_management_button + record_name
-
         if (
             ParameterSet.objects.filter(
                 sample=record,
@@ -624,19 +590,7 @@ class SampleTable(tables.Table):
 
         if user.username == Constants.USER_ANONYMOUS:
             return mark_safe(sample_name)
-        if (
-            user.username == record.project.owner.username
-        ):  ## it can't be in any active project
-            ## it can have project samples not deleted but in projects deleted
-            # for project_samples in record.project_samples.all().filter(
-            #    is_deleted=False, is_error=False
-            # ):
-            #    if (
-            #        not project_samples.is_deleted
-            #        and not project_samples.project.is_deleted
-            #    ):
-            #        return mark_safe(sample_name)
-
+        if user.username == record.project.owner.username:
             return mark_safe(
                 '<a href="#id_remove_modal" id="id_remove_reference_modal" data-toggle="modal"'
                 + ' ref_name="'
@@ -649,31 +603,104 @@ class SampleTable(tables.Table):
 
         return mark_safe(sample_name)
 
+    def render_sorting(self, record):
+        current_request = CrequestMiddleware.get_request()
+        user = current_request.user
+
+        if user.username == Constants.USER_ANONYMOUS:
+            return mark_safe("report")
+
+        final_report = FinalReport.objects.filter(sample=record).order_by("-coverage")
+
+        ## return empty square if no report
+        if final_report.count() == 0:
+            return mark_safe('<i class="fa fa-square-o" title="Empty"></i>')
+        ## check sorted
+
+        report_layout_params = TelevirParameters.get_report_layout_params(
+            project_pk=record.project.pk
+        )
+        report_sorter = ReportSorter(final_report, report_layout_params)
+        sorted = report_sorter.check_analysis_exists()
+
+        ## sorted icon, green if sorted, red if not
+        sorted_icon = ""
+        if sorted:
+            sorted_icon = (
+                ' <i class="fa fa-check" style="color: green;" title="Sorted"></i>'
+            )
+            return mark_safe(sorted_icon)
+        else:
+            sorted_icon = (
+                ' <i class="fa fa-times" style="color: red;" title="un-sorted"></i>'
+            )
+            request_sorting = (
+                ' <a href="#" id="sort_sample_btn" class="kill-button" data-toggle="modal" data-toggle="tooltip" title="Sort"'
+                + ' sample_id="'
+                + str(record.pk)
+                + '"'
+                + ' sort-url="'
+                + reverse("sort_sample_reports")
+                + '"'
+                + '><i class="fa fa-sort"></i></span> </a>'
+            )
+            return mark_safe(sorted_icon + request_sorting)
+
+    def render_ref_management(self, record: PIProject_Sample):
+        references_management_button = (
+            '<a href="'
+            + reverse(
+                "sample_references_management",
+                args=[record.pk],
+            )
+            + '"'
+            + 'title="Sample Reference Management">'
+            + '<i class="fa fa-database"></i></span> </a>'
+        )
+
+        return mark_safe(references_management_button)
+
     report = tables.LinkColumn(
         "sample_main", text="Report", args=[tables.A("project__pk"), tables.A("pk")]
     )
 
+    def render_combinations(self, record: PIProject_Sample):
+        return RunMain.objects.filter(
+            sample__name=record.name,
+            project=record.project,
+            parameter_set__status__in=[
+                ParameterSet.STATUS_FINISHED,
+            ],
+            run_type=RunMain.RUN_TYPE_PIPELINE,
+        ).count()
 
-class SampleTableMetagenomics(SampleTable):
-    mapping_runs = tables.Column("Mapping Runs", orderable=False, empty_values=())
+    def render_running_processes(self, record: PIProject_Sample):
+        """
+        return number of running processes in this project"""
 
-    class Meta:
-        model = PIProject_Sample
-
-        attrs = {"class": "paleblue"}
-        fields = (
-            "name",
-            "report",
-            "runs",
-            "sorting",
-            "deploy",
-            "input",
-            "combinations",
-            "mapping_runs",
-            "running_processes",
-            "queued_processes",
-            "set_control",
+        running = 0
+        parameter_sets = ParameterSet.objects.filter(
+            sample=record, project=record.project
         )
+        for parameter_set in parameter_sets:
+            if parameter_set.status == ParameterSet.STATUS_RUNNING:
+                running += 1
+
+        return running
+
+    def render_queued_processes(self, record: PIProject_Sample):
+        """
+        return number of running processes in this project"""
+
+        queued = 0
+        parameter_sets = ParameterSet.objects.filter(
+            sample=record, project=record.project
+        )
+        for parameter_set in parameter_sets:
+            if parameter_set.status == ParameterSet.STATUS_QUEUED:
+                queued += 1
+
+        return queued
 
     def render_mapping_runs(self, record):
         """
@@ -693,6 +720,33 @@ class SampleTableMetagenomics(SampleTable):
                 RunMain.STATUS_FINISHED,
             ],
         ).count()
+
+
+class SampleTableTwo(tables.Table):
+    sorting = tables.Column("Sorting", orderable=False, empty_values=())
+    ref_management = tables.Column("References", orderable=False, empty_values=())
+
+    class Meta:
+        model = PIProject_Sample
+
+        attrs = {"class": "paleblue"}
+        fields = (
+            "sorting",
+            "ref_management",
+        )
+
+
+class SampleTableThree(tables.Table):
+    class Meta:
+        model = PIProject_Sample
+
+        attrs = {"class": "paleblue"}
+        fields = (
+            "combinations",
+            "mapping_runs",
+            "running_processes",
+            "queued_processes",
+        )
 
 
 class AddedReferenceTable(tables.Table):
@@ -819,7 +873,7 @@ class CompoundReferenceScore(CompoundReferenceTable):
 
 class CompoundRefereceScoreWithScreening(CompoundReferenceScore):
     screenig = tables.Column(
-        verbose_name="Screening",
+        verbose_name="MM Ranking",
         orderable=True,
         empty_values=(),
         order_by=("-screening",),

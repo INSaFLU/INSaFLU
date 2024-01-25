@@ -11,13 +11,10 @@ from django.conf import settings
 
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import (
-    ConstantsSettings as PI_ConstantsSettings,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PI_ConstantsSettings
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility,
-    Utility_Pipeline_Manager,
-)
+    Parameter_DB_Utility, Utility_Pipeline_Manager)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -1623,6 +1620,7 @@ class DefaultParameters(object):
         technology_name,
         sample=None,
         is_to_run=False,
+        pipeline_step=None,
     ):
         """
         remapping parameters, namely:
@@ -1649,9 +1647,9 @@ class DefaultParameters(object):
         software.help_text = ""
 
         ###  which part of pipeline is going to run
-        software.pipeline_step = self._get_pipeline(
-            ConstantsSettings.PIPELINE_NAME_remap_filtering
-        )
+        if not pipeline_step:
+            pipeline_step = ConstantsSettings.PIPELINE_NAME_remap_filtering
+        software.pipeline_step = self._get_pipeline(pipeline_step)
 
         software.owner = user
         vect_parameters = []

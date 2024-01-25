@@ -24,16 +24,17 @@
 
 {% block content %}
 
+
 <div class="table-container">
     {% block table %}
     <div class="table-responsive">
-        <table class="table table-hover table-bordered table-striped" {% if table.attrs %}
+        <table class="table table-hover table-bordered table-striped" {% if table.attrs %}z
             {{ table.attrs.as_html }}{% endif %}>
             {% block table.thead %}
             <thead>
                 {% if project_owner %}
                 <tr>
-                    <th colspan="11">
+                    <th colspan="6">
                         {% if not demo %}
                         <div class="btn-group">
                             {% if metagenomics %}
@@ -42,8 +43,8 @@
                                 <a><span class="hidden-phone"> Run </span></a>
                             </button>
                             <div class="dropdown-menu pull-right">
-                                <a href="#" id="deploypi_btn" class="dropdown-item" style="text-align:center;" deploy-url="{% url deploy_url %}" ><span class="hidden-phone"> Classic </span></a>
-                                <a href="#" id="deploypi_mapping_btn" class="dropdown-item" style="text-align:center;" deploy-url="{% url 'deploy_Project_PIMapping' %}" ><span class="hidden-phone"> Mapping </span></a>
+                                <a href="#" id="deploypi_btn" class="dropdown-item" style="text-align:center;" deploy-url="{% url deploy_url %}" ><span class="hidden-phone"> Classic Workflows </span></a>
+                                <a href="#" id="deploypi_mapping_btn" class="dropdown-item" style="text-align:center;" deploy-url="{% url 'deploy_Project_PIMapping' %}" ><span class="hidden-phone"> Map Combined </span></a>
                                 <a href="#" id="deploypi_added_mapping_btn" class="dropdown-item" style="text-align:center;" deploy-url="{% url 'map_selected_references_project_samples' %}" ><span class="hidden-phone"> Map Added </span></a>
 
                             </div>
@@ -62,11 +63,6 @@
                             </button>
                         </div>
                         <div class="btn-group">
-                            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#myModal">
-                                Add References
-                              </button>
-                        </div>
-                        <div class="btn-group">
                             <button type="button" class="btn btn-primary dark" aria-haspopup="true" aria-expanded="false">
                                 <a href="{% url "all_PIproject_reports" pk1=project_index %}"><span class="hidden-phone" style="color:white"><i>View Project reports</i></span></a>
                                     </button>
@@ -77,6 +73,16 @@
                                 <a href="{% url "pathogenID_pipeline" level=project_index %}"><span class="hidden-phone" style="color:white"><i>Project Settings</i></span></a>
                                     </button>
                         </div>
+                    </th>
+                    <th colspan="1" style="border-left: 5px solid #f2f2f2;">
+
+                        <div class="btn-group d-flex justify-content-center">
+                            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#myModal">
+                                Add References
+                              </button>
+                        </div>
+                    </th>
+                    <th colspan="5" style="border-left: 5px solid #f2f2f2;">
 
                         <form method="get" class="form-inline form-search pull-right">
                             {% csrf_token %}

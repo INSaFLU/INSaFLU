@@ -31,8 +31,7 @@ class DefaultSoftware(object):
         self.default_parameters = DefaultParameters()
         self.televir_utiltity = Utility_Pipeline_Manager()
         self.televir_utiltity.get_software_db_dict()
-        print("software_names: ")
-        print(self.televir_utiltity.software_dbs_dict.keys())
+
         self.change_values_software = {}  ### the key is the name of the software
 
     def test_televir_software_available(self):

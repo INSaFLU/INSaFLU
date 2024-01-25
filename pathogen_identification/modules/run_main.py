@@ -1296,7 +1296,6 @@ class RunMainTree_class(Run_Deployment_Methods):
 
     def Run_QC(self):
         if self.quality_control and not self.qc_performed:
-            print("RUNNING QC")
             self.deploy_QC()
 
             self.sample.r1.is_clean()
@@ -1475,9 +1474,6 @@ class RunMainTree_class(Run_Deployment_Methods):
     def Run_Contig_classification(self):
         """
         This is a special case where we only want to run contig classification"""
-
-        print("RUNNING CONTIG CLASSIFICATION")
-        print(self.contig_classification, self.contig_classification_performed)
 
         if self.contig_classification and not self.contig_classification_performed:
             self.deploy_CONTIG_CLASSIFICATION()

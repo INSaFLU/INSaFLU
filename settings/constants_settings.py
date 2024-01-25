@@ -35,11 +35,12 @@ class ConstantsSettings(object):
     PIPELINE_NAME_host_depletion = "Host depletion"
     PIPELINE_NAME_contig_classification = "Contig classification"
     PIPELINE_NAME_read_classification = "Read classification"
-    PIPELINE_NAME_metagenomics_combine = "Combined analysis"
+    PIPELINE_NAME_metagenomics_combine = "Mapping"
     PIPELINE_NAME_request_mapping = "Request mapping"
     PIPELINE_NAME_assembly = "Assembly"
     PIPELINE_NAME_remapping = "Remapping"
     PIPELINE_NAME_remap_filtering = "Remap filtering"
+    PIPELINE_NAME_map_filtering = "Map filtering"
     PIPELINE_NAME_reporting = "Reporting"
     PIPELINE_NAME_metagenomics_settings = "Metagenomics settings"
 

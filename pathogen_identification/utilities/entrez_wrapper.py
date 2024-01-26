@@ -88,7 +88,7 @@ class EntrezFetchTaxidDescription(EntrezQuery):
 class EntrezFetchProteinAccession_Taxon(EntrezQuery):
     name: str = "fetch_protein_accession_taxon"
     db = "protein"
-    output_columns = ["accession", "taxid"]
+    output_columns = ["acc", "taxid"]
 
     def query(self, query: List[str]) -> str:
         cmd = [
@@ -114,9 +114,7 @@ class EntrezFetchProteinAccession_Taxon(EntrezQuery):
         Read output from Entrez query using pandas
         """
 
-        df = pd.read_csv(
-            output_path, sep="\t", header=None, names=["accession", "taxid"]
-        )
+        df = pd.read_csv(output_path, sep="\t", header=None, names=["acc", "taxid"])
 
         return df
 
@@ -221,7 +219,7 @@ class BiopyFetchTaxidDescription(BiopythonEntrezWrapper):
 class BiopyFetchAccessionDescription(BiopythonEntrezWrapper):
     def __init__(self, output_path: str, chuncksize: int = 400):
         super().__init__(output_path, chuncksize=chuncksize)
-        self.output_column_names = ["accession", "description"]
+        self.output_column_names = ["acc", "description"]
 
     def run_query(self, query: List[str]) -> None:
         chunks = split_query(query, self.chuncksize)
@@ -308,9 +306,6 @@ class EntrezWrapper:
         ):
             self.run_queries_binaries(query_list)
             output = self.read_output()
-
-        except http.client.RemoteDisconnected:
-            return pd.DataFrame()
 
         return output
 

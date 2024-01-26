@@ -6,14 +6,20 @@ from typing import List, Optional
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (PIProject_Sample, RawReference,
-                                            ReferenceSourceFileMap, RunMain)
+from pathogen_identification.models import (
+    PIProject_Sample,
+    RawReference,
+    ReferenceSourceFileMap,
+    RunMain,
+)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
 from pathogen_identification.utilities.utilities_general import (
-    description_fails_filter, merge_classes, scrape_description)
-from pathogen_identification.utilities.utilities_pipeline import \
-    RawReferenceUtils
+    description_fails_filter,
+    merge_classes,
+    scrape_description,
+)
+from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
 
 
 class RunMetadataHandler:
@@ -419,6 +425,9 @@ class RunMetadataHandler:
         if df.shape[0] == 0:
             return pd.DataFrame(columns=["taxid", "description", "file"])
 
+        print("########### merging report to metadata taxid ###########")
+        print(df.head(10))
+
         if "taxid" not in df.columns:
             if "prot_acc" in df.columns and "acc" not in df.columns:
                 counts_df = df.groupby(["prot_acc"]).size().reset_index(name="counts")
@@ -430,7 +439,7 @@ class RunMetadataHandler:
                     counts_df, self.protein_to_accession, "protid"
                 )
 
-            elif "acc" in df.columns:
+            if "acc" in df.columns and "taxid" not in df.columns:
                 if "counts" in df.columns:
                     counts_df = df.groupby(["acc"]).agg({"counts": "sum"}).reset_index()
 
@@ -444,13 +453,14 @@ class RunMetadataHandler:
                     column_two="acc_in_file",
                 )
 
-            else:
+            if "taxid" not in df.columns:
                 raise ValueError(
                     "No taxid, accid or protid in the dataframe, unable to retrieve description."
                 )
 
-        print("##########")
+        print("########### merged report to metadata taxid ###########")
         print(df.head(10))
+
         df = df[(df.taxid != "0") | (df.taxid != 0)]
 
         return df

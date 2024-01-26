@@ -6,20 +6,14 @@ from typing import List, Optional
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (
-    PIProject_Sample,
-    RawReference,
-    ReferenceSourceFileMap,
-    RunMain,
-)
+from pathogen_identification.models import (PIProject_Sample, RawReference,
+                                            ReferenceSourceFileMap, RunMain)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
 from pathogen_identification.utilities.utilities_general import (
-    description_fails_filter,
-    merge_classes,
-    scrape_description,
-)
-from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
+    description_fails_filter, merge_classes, scrape_description)
+from pathogen_identification.utilities.utilities_pipeline import \
+    RawReferenceUtils
 
 
 class RunMetadataHandler:
@@ -407,7 +401,7 @@ class RunMetadataHandler:
             "fetch_taxid_description"
         )
         # merge with df
-        df = df.merge(output, left_on="prot_acc", right_on="accession", how="left")
+        df = df.merge(output, left_on="prot_acc", right_on="acc", how="left")
         df = df.drop(columns=["prot_acc"])
         return df
 

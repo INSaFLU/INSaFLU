@@ -6,20 +6,14 @@ from typing import List, Optional
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (
-    PIProject_Sample,
-    RawReference,
-    ReferenceSourceFileMap,
-    RunMain,
-)
+from pathogen_identification.models import (PIProject_Sample, RawReference,
+                                            ReferenceSourceFileMap, RunMain)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
 from pathogen_identification.utilities.utilities_general import (
-    description_fails_filter,
-    merge_classes,
-    scrape_description,
-)
-from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
+    description_fails_filter, merge_classes, scrape_description)
+from pathogen_identification.utilities.utilities_pipeline import \
+    RawReferenceUtils
 
 
 class RunMetadataHandler:
@@ -455,6 +449,8 @@ class RunMetadataHandler:
                     "No taxid, accid or protid in the dataframe, unable to retrieve description."
                 )
 
+        print("##########")
+        print(df.head(10))
         df = df[(df.taxid != "0") | (df.taxid != 0)]
 
         return df

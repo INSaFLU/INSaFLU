@@ -795,6 +795,48 @@
     })
   }
   )
+  $(document).on("click", "a", function (e) {
+    if ($(this).attr("id") == "add_teleflu_reference") {
+      e.preventDefault();
+      var url = $(this).attr("url");
+      var ref_id = $(this).attr("ref_id");
+      console.log(ref_id);
+      $.ajax({
+        url: url,
+        type: 'POST',
+        data: {
+          ref_id: ref_id,
+          user_id: '{{ user.id }}',
+          csrfmiddlewaretoken: '{{ csrf_token }}',
+        },
+        success: function(data) {
+          console.log(data);
+          if (data['is_ok']) {
+            
+            if (data['exists']) {
+              $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+                'Teleflu Reference already exists.' +
+                '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                '</div>');
+            } else {
+              $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
+                'Teleflu Reference added.' +
+                '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                '</div>');
+            }
+
+          } else {
+            $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+              'Teleflu Reference not added.' +
+              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+              '</div>');
+          }
+
+        }
+      })
+    }
+  }
+  );
 
 </script>
 

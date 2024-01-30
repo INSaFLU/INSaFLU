@@ -51,6 +51,11 @@ urlpatterns = [
         name="all_PIproject_reports",
     ),
     url(
+        r"Refereces/teleflu_references$",
+        PIajax_views.create_insaflu_reference,
+        name="create_teleflu_reference",
+        ),
+    url(
         r"deploy_mapping_request$",
         PIajax_views.submit_sample_mapping_televir,
         name="map_selected_references",

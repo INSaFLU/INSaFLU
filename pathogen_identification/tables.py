@@ -820,6 +820,12 @@ class CompoundReferenceTable(tables.Table):
         accessor="pk", attrs={"th__input": {"id": "checkBoxAll"}}, orderable=False
     )
     description = tables.Column(verbose_name="Description")
+    create_teleflu_reference = tables.Column(
+        verbose_name="Create Reference",
+        orderable=False,
+        empty_values=(),
+    )
+    
     accid = tables.Column(verbose_name="Accession id")
     taxid = tables.Column(verbose_name="Taxid")
     # runs is a integer column that is rendered and is orderable in reverse order
@@ -841,6 +847,17 @@ class CompoundReferenceTable(tables.Table):
 
     def render_description(self, record: RawReferenceCompound):
         return record.description
+    
+    def render_create_teleflu_reference(self, record: RawReferenceCompound):
+        return mark_safe(
+            '<a href="#" '
+            + 'id="add_teleflu_reference" '
+            + 'ref_id=' + str(record.id) + ' '
+            + 'data-toggle="tooltip" '
+            + 'title="Create Reference" '
+            + 'url="' + reverse("create_teleflu_reference") + '" '
+            + '><i class="fa fa-plus"></i></span> </a>'
+        )
 
     def render_accid(self, record: RawReferenceCompound):
         return record.accid
@@ -863,12 +880,16 @@ class CompoundReferenceScore(CompoundReferenceTable):
         order_by=("-standard_score",),
     )
 
+
+
     class Meta:
         attrs = {"class": "paleblue"}
         # order_by = ("-standard_score",)
 
     def render_score(self, record: RawReferenceCompound):
         return round(record.standard_score, 3)
+    
+    
 
 
 class CompoundRefereceScoreWithScreening(CompoundReferenceScore):

@@ -904,6 +904,41 @@ def sort_report_sample(request):
         return JsonResponse(data)
 
 
+from pathogen_identification.utilities.reference_utils import reference_to_teleflu
+
+@login_required
+@require_POST
+def create_insaflu_reference(request):
+    if request.is_ajax():
+
+        data= {"is_ok": False, "exists": False}
+
+        ref_id= int(request.POST["ref_id"])
+        user_id= int(request.POST["user_id"])
+        print("ref_id: ", ref_id)
+        print("user_id: ", user_id)
+
+        try:
+            print("launch")
+            success, ref_id= reference_to_teleflu(ref_id, user_id)
+
+            if success is None:
+
+                return JsonResponse(data)
+            
+            if success is False:
+                data["exists"]= True
+                return JsonResponse(data)
+        
+        except Exception as e:
+            print(e)
+            return JsonResponse(data)
+        
+        data["is_ok"]= True
+        return JsonResponse(data)
+
+
+
 from pathogen_identification.models import RawReference, ReferenceSourceFileMap
 
 

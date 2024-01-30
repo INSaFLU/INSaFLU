@@ -60,6 +60,7 @@ class Televir_Metadata_Constants:
             "snippy": config("DIR_SOFTWARE") + "/snippy",
             "bamutil": "remap/remap",
             "msamtools": "remap/remap",
+            "samtools": "remap/remap",
             "bwa": "remap/remap",
             "bowtie2": "remap/remap",
             "bowtie2_remap": "remap/remap",
@@ -98,6 +99,15 @@ class Televir_Metadata_Constants:
 
         return os.path.join(
             self.BINARIES["ROOT"], self.BINARIES["software"][software], "bin"
+        )
+
+    def get_software_binary(self, software: str):
+
+        if software not in self.BINARIES["software"]:
+            raise ValueError(f"Software {software} not found in binaries")
+
+        return os.path.join(
+            self.BINARIES["ROOT"], self.BINARIES["software"][software], "bin", software
         )
 
 

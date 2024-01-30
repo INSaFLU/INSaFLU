@@ -17,21 +17,22 @@ from django.db.models import Q
 
 
 def description_to_name(description):
+    """
+    This function takes the description of the reference and returns a name"""
 
     utils= Utils()
-    print("HIII")
 
     description= description.split(" ")[:4]
     description= "_".join(description)
-    print(description)
 
     description= utils.clean_name(description)
-    print(description)
     description= description.replace(",", "")
     return description
 
 
 def fasta_from_reference(reference_id):
+    """
+    This function takes the raw reference id and returns the fasta name"""
     reference= RawReference.objects.get(id=reference_id)
 
     description_clean= description_to_name(reference.description)
@@ -41,6 +42,8 @@ def fasta_from_reference(reference_id):
 
 
 def extract_file(accid):
+    """"
+    This function takes the accid and returns the fasta file"""
 
     utils= Utils()
     televir_bioinf= TelevirBioinf()
@@ -50,7 +53,6 @@ def extract_file(accid):
     references=ReferenceSourceFileMap.objects.filter(reference_source__accid= accid)
 
     for reference in references:
-        print("extract_file: ", reference.reference_source_file.file)
 
         description= reference.reference_source.description
         description_simple= description_to_name(description)
@@ -61,11 +63,7 @@ def extract_file(accid):
             fasta_directory,
             reference.reference_source_file.file
         )
-        print(source_file)
-        print(tmp_fasta)
-
         extracted= televir_bioinf.extract_reference(source_file, accid, tmp_fasta)
-        print(extracted)
         if extracted:
             return tmp_fasta
         else:
@@ -73,13 +71,26 @@ def extract_file(accid):
                 os.remove(tmp_fasta)
     
 
+def temp_fasta_copy(fasta_filepath: str):
+    reference_fasta_temp_file_name = NamedTemporaryFile(
+        prefix="flu_fa_", delete=False
+    )
+    with open(fasta_filepath, "r") as reference_fasta:
+            reference_fasta_temp_file_name.write(reference_fasta.read().encode())
+
+    reference_fasta_temp_file_name.flush()
+    reference_fasta_temp_file_name.close()
+    
+
+    return reference_fasta_temp_file_name.name
+
 def create_genbank_for_fasta(fasta_filepath: str):
-        print("create_genbank_for_fasta")
         
         software= Software()
         utils= Utils()
 
-        reference_fasta_temp_file_name= open(fasta_filepath, "r")
+        reference_fasta_temp_file_name = temp_fasta_copy(fasta_filepath)
+        reference_fasta_temp_file_name = open(reference_fasta_temp_file_name, "r")
 
         software.dos_2_unix(reference_fasta_temp_file_name.name)
         software.fasta_2_upper(reference_fasta_temp_file_name.name)
@@ -137,22 +148,16 @@ def reference_to_teleflu(raw_reference_id: int, user_id: int):
     utils= Utils()
     software= Software()
 
-    print("Creating reference: ", raw_reference_id, " - ", user_id)
-
     user= User.objects.get(id=user_id)
     raw_reference= RawReference.objects.get(id=raw_reference_id)
     accid= raw_reference.accid
     
     
-    print("Creating reference: ", accid)
 
     if check_reference_exists(raw_reference_id, user_id):
         return False, None
     
-    print("does not exist")
-    print(raw_reference.description)
     reference_fasta= extract_file(accid)
-    print("description")
 
     name= description_to_name(raw_reference.description)
     final_fasta_name= fasta_from_reference(raw_reference_id)
@@ -165,11 +170,8 @@ def reference_to_teleflu(raw_reference_id: int, user_id: int):
 
     if reference_fasta is None:
         return None, None
-    
-    print("Creating reference: ", accid, " - ", name)
-    
+
     ### Create reference
-    print(reference_fasta, os.path.exists(reference_fasta))
 
     number_locus = utils.is_fasta(reference_fasta)
 
@@ -193,7 +195,6 @@ def reference_to_teleflu(raw_reference_id: int, user_id: int):
         final_data_path,
         reference.reference_fasta_name,
     )
-    print("sz_file_to: ", sz_file_to)
     
     software.dos_2_unix(
         reference_fasta
@@ -202,7 +203,6 @@ def reference_to_teleflu(raw_reference_id: int, user_id: int):
     software.fasta_2_upper(
         reference_fasta
     )
-    print(reference_fasta, os.path.exists(reference_fasta))
     utils.move_file(
         reference_fasta,
         sz_file_to,

@@ -927,6 +927,7 @@ def create_insaflu_reference(request):
                 return JsonResponse(data)
             
             if success is False:
+                data["is_ok"]= True
                 data["exists"]= True
                 return JsonResponse(data)
         

@@ -152,7 +152,6 @@ def reference_to_teleflu(raw_reference_id: int, user_id: int):
     print("does not exist")
     print(raw_reference.description)
     reference_fasta= extract_file(accid)
-    reference_genbank= None
     print("description")
 
     name= description_to_name(raw_reference.description)
@@ -170,6 +169,8 @@ def reference_to_teleflu(raw_reference_id: int, user_id: int):
     print("Creating reference: ", accid, " - ", name)
     
     ### Create reference
+    print(reference_fasta, os.path.exists(reference_fasta))
+
     number_locus = utils.is_fasta(reference_fasta)
 
     reference= Reference()
@@ -192,6 +193,7 @@ def reference_to_teleflu(raw_reference_id: int, user_id: int):
         final_data_path,
         reference.reference_fasta_name,
     )
+    print("sz_file_to: ", sz_file_to)
     
     software.dos_2_unix(
         reference_fasta
@@ -200,6 +202,7 @@ def reference_to_teleflu(raw_reference_id: int, user_id: int):
     software.fasta_2_upper(
         reference_fasta
     )
+    print(reference_fasta, os.path.exists(reference_fasta))
     utils.move_file(
         reference_fasta,
         sz_file_to,

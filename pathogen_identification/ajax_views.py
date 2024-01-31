@@ -199,8 +199,6 @@ def submit_sample_mapping_televir(request):
         ### runs to deploy
         software_utils = SoftwareTreeUtils(user, project, sample=sample)
         runs_to_deploy = software_utils.check_runs_to_submit_mapping_only(sample)
-        print("runs_to_deploy")
-        print(runs_to_deploy)
 
         if len(runs_to_deploy) == 0:
             return JsonResponse(data)
@@ -215,7 +213,6 @@ def submit_sample_mapping_televir(request):
 
                         for reference_id in reference_id_list:
                             reference = RawReference.objects.get(pk=int(reference_id))
-
                             reference.pk = None
                             reference.run = mapping_run
                             reference.save()

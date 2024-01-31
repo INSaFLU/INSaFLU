@@ -37,9 +37,14 @@
     {% block table %}
     <div class="table-responsive">
 
-        <h3 class="table-title"> Samples </h3>
-        <p class="table-description"> Metagenomics Management. </p>    
-
+        <h4 class="table-title"> Metagenomics Management. </h4>
+        <p class="table-description"> 
+            <i class="fa fa-flask"></i> 
+            Control deployment and validation of metagenomic workflows for samples in project.
+            <i class="fa fa-cog"></i>
+            Access settings, reports and recovered hits. 
+            <i class="fa fa-external-link-square">‌</i>
+            Deploy InsaFlu targeted reference analysis. </p>    
         <table class="table table-hover table-bordered table-striped" {% if table.attrs %}z
             {{ table.attrs.as_html }}{% endif %}>
             {% block table.thead %}

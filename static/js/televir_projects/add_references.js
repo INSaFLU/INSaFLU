@@ -75,7 +75,7 @@ var loadThisContent = function (event) {
         url: btn.attr("href"),
         type: 'GET',
         data: {
-            search_add_project_sample: $('#search-input').val(),
+            search_add_project_reference: $('#search-input').val(),
             csrfmiddlewaretoken: csrf,
         },
         success: function (data) {
@@ -87,7 +87,6 @@ var loadThisContent = function (event) {
           var selectAllCheckbox = document.getElementById('Select-All-Checkbox-Modal');
 
           var referenceCheckboxes = document.getElementsByClassName('reference-checkbox');
-
      
           selectAllCheckbox.addEventListener('change', function() {
             for (var i = 0; i < referenceCheckboxes.length; i++) {

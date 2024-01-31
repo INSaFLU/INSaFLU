@@ -375,15 +375,26 @@ class SampleTableOne(tables.Table):
             "td": {"style": "text-align: center;"},
         },
     )
+
+    select_ref = tables.CheckBoxColumn(
+        accessor="pk",
+        orderable=False,
+        attrs={
+            "th": {
+                "style": "background-color: #dce4f0; border-left: 5px solid #ddd; text-align: center;",
+            },
+            "td": {"style": "border-left: 5px solid #ddd; text-align: center;"},
+            "th__input": {"id": "checkBoxAll"},
+        },
+    )
+
     ref_management = tables.Column(
         "References",
         orderable=False,
         empty_values=(),
         attrs={
-            "td": {"style": "border-left: 5px solid #ddd; text-align: center;"},
-            "th": {
-                "style": "border-left: 5px solid #ddd; background-color: #dce4f0; text-align: center;"
-            },
+            "td": {"style": "text-align: center;"},
+            "th": {"style": "background-color: #dce4f0; text-align: center;"},
         },
     )
 
@@ -435,6 +446,7 @@ class SampleTableOne(tables.Table):
             "runs",
             "deploy",
             "sorting",
+            "select_ref",
             "ref_management",
             "combinations",
             "mapping_runs",
@@ -646,6 +658,13 @@ class SampleTableOne(tables.Table):
             )
             return mark_safe(sorted_icon + request_sorting)
 
+    def render_select_ref(self, value, record: PIProject_Sample):
+        return mark_safe(
+            '<input class="class-ref-checkbox" name="select_ref" id="{}_{}" type="checkbox" value="{}"/>'.format(
+                Constants.CHECK_BOX, record.id, value
+            )
+        )
+
     def render_ref_management(self, record: PIProject_Sample):
         references_management_button = (
             '<a href="'
@@ -815,6 +834,41 @@ class ReferenceSourceTable(tables.Table):
         return record.taxid
 
 
+class TeleFluReferenceTable(tables.Table):
+    select_ref = tables.CheckBoxColumn(
+        verbose_name=("Select One"),
+        accessor="pk",
+        orderable=False,
+        attrs={
+            "th__input": {
+                "name": "teleflu_select_ref",
+            }
+        },
+    )
+    description = tables.Column(verbose_name="Description")
+    accid = tables.Column(verbose_name="Accession id")
+    taxid = tables.Column(verbose_name="Taxid")
+
+    class Meta:
+        attrs = {"class": "paleblue"}
+
+    def render_select_ref(self, value, record: RawReferenceCompound):
+        return mark_safe(
+            '<input class="teleflu_reference-checkbox"  name="teleflu_select_ref" id="{}_{}" ref_id={}  type="checkbox" value="{}"/>'.format(
+                Constants.CHECK_BOX, record.id, record.id, value
+            )
+        )
+
+    def render_description(self, record: RawReferenceCompound):
+        return record.description
+
+    def render_accid(self, record: RawReferenceCompound):
+        return record.accid
+
+    def render_taxid(self, record: RawReferenceCompound):
+        return record.taxid
+
+
 class CompoundReferenceTable(tables.Table):
     select_ref = tables.CheckBoxColumn(
         accessor="pk", attrs={"th__input": {"id": "checkBoxAll"}}, orderable=False
@@ -824,10 +878,20 @@ class CompoundReferenceTable(tables.Table):
         verbose_name="Create Reference",
         orderable=False,
         empty_values=(),
+        attrs={
+            "th": {"style": "text-align: center;"},
+            "td": {"style": "text-align: center;"},
+        },
     )
-    
+
     accid = tables.Column(verbose_name="Accession id")
-    taxid = tables.Column(verbose_name="Taxid")
+    taxid = tables.Column(
+        verbose_name="Taxid",
+        attrs={
+            "td": {"style": "text-align: center;"},
+            "th": {"style": "text-align: center;"},
+        },
+    )
     # runs is a integer column that is rendered and is orderable in reverse order
     runs = tables.Column(verbose_name="Runs", order_by=("-run_count",))
     # mapped column is a link column to the report
@@ -847,15 +911,19 @@ class CompoundReferenceTable(tables.Table):
 
     def render_description(self, record: RawReferenceCompound):
         return record.description
-    
+
     def render_create_teleflu_reference(self, record: RawReferenceCompound):
         return mark_safe(
             '<a href="#" '
             + 'id="add_teleflu_reference" '
-            + 'ref_id=' + str(record.id) + ' '
+            + "ref_id="
+            + str(record.id)
+            + " "
             + 'data-toggle="tooltip" '
             + 'title="Create Reference" '
-            + 'url="' + reverse("create_teleflu_reference") + '" '
+            + 'url="'
+            + reverse("create_teleflu_reference")
+            + '" '
             + '><i class="fa fa-plus"></i></span> </a>'
         )
 
@@ -880,16 +948,12 @@ class CompoundReferenceScore(CompoundReferenceTable):
         order_by=("-standard_score",),
     )
 
-
-
     class Meta:
         attrs = {"class": "paleblue"}
         # order_by = ("-standard_score",)
 
     def render_score(self, record: RawReferenceCompound):
         return round(record.standard_score, 3)
-    
-    
 
 
 class CompoundRefereceScoreWithScreening(CompoundReferenceScore):

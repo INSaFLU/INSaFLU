@@ -28,10 +28,6 @@
 <div class="table-container">
     {% block table %}
     <div class="table-responsive">
-
-        <h3 class="table-title"> Samples </h3>
-        <p class="table-description"> Metagenomics Management. </p>    
-
         <table class="table table-hover table-bordered table-striped" {% if table.attrs %}z
             {{ table.attrs.as_html }}{% endif %}>
             {% block table.thead %}
@@ -81,20 +77,12 @@
                     <th colspan="1" style="border-left: 5px solid #f2f2f2;">
 
                         <div class="btn-group d-flex justify-content-center">
-                            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#teleflu_ref_modal">
-                                TeleFlu
-                              </button>
-                        </div>
-                    </th>
-                    <th colspan="1" style="border-left: 5px solid #f2f2f2;">
-
-                        <div class="btn-group d-flex justify-content-center">
                             <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#myModal">
                                 Add References
                               </button>
                         </div>
                     </th>
-                    <th colspan="4" style="border-left: 5px solid #f2f2f2;">
+                    <th colspan="5" style="border-left: 5px solid #f2f2f2;">
 
                         <form method="get" class="form-inline form-search pull-right">
                             {% csrf_token %}
@@ -161,12 +149,11 @@
             </span>
         </strong>
     </p>
-    <br>
-    <h3 class="table-title"> InsaFlu Connection </h3>
-    <p class="table-description"> In-Depth </p>    
 
+    
     <a href="javascript:history.go(0)" class="btn btn-small btn-primary dark"><i class="fa fa-refresh"></i> Refresh</a>
 
+</div>
 </div>
 
 
@@ -314,40 +301,7 @@
       </div>
     </div>
 </div>
-
-<!-- The teleflu refrence search -->
-<div class="modal fade" id="teleflu_ref_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel_teleflu" data-backdrop="static">
-    <div class="modal-dialog modal-lg" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h4 class="modal-title" id="myModalLabel_teleflu">Chose Reference</h4>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
-        <div class="modal-body">
-          <div class="row">
-            <div class="col-sm-9">          <!-- Your search form code here -->
-              <form id="teleflu-reference-search-form">
-                <div class="input-group">
-                  <input id="teleflu_search-input" type="text" class="form-control" placeholder="Description, Accid, Taxid">
-                  <div class="input-group-append">
-                    <button type="submit" class="load-teleflu-content btn btn-primary" csrf="{{ csrf_token }}" href="{% url 'filter_reference_table' %}">Search</button>
-                  </div>
-                </div>
-              </form>
-            </div>
-          </div>
-          <div id="teleflu_reference_table_div" class="table-container">
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-primary" id="teleflu_submit-button" csrf="{{ csrf_token }}" href="{% url 'add_references_all_samples' %}" ref_index= "{{project_index}}" reload_ref= "{% url 'added_reference_table' %}">Submit</button>
-        </div>
-      </div>
-    </div>
-</div>
-
+  
 {% endblock content %}
 
 {% block js %}
@@ -356,8 +310,7 @@
 <script type="text/javascript" src="{% static 'js/televir_projects/remove_project_sample.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/televir_projects/set_control_sample.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/televir_projects/add_references.js' %}"></script>
-<script type="text/javascript" src="{% static 'js/televir_projects/teleflu_prep.js' %}"></script>
-<script type="text/javascript" src="{% static 'js/check-box-general.js' %}"></script>
+
 {% load static from staticfiles %}
 
 <script>
@@ -370,6 +323,9 @@
             var attr = $(this).attr('id');
             var ref_name = $(this).attr('ref_name');
             var sample_pk = $(this).attr('pk');
+
+            
+
             
             // For some browsers, `attr` is undefined; for others `attr` is false.  Check for both.
 
@@ -451,28 +407,18 @@
     
 </script> 
 
-
 <script>
     window.onbeforeunload = function (e) {
         $.unblockUI();
     };
 	$(document).ready(function () {
-        $('#deploypi_btn').click(function () {
-			$.unblockUI();
-		});
 		$('#id-cancel-button').click(function () {
 			$.unblockUI();
 		});
-		$('#id-remove-button').click(function () {
-			$.unblockUI();
-		});
-        $('#id-deploy-metagenomics-button').click(function () {
+        $('#id-remove-button').click(function () {
             $.unblockUI();
         });
-		$('#id-kill-button').click(function () {
-			$.unblockUI();
-		});
-        $('#id-set-control-button').click(function () {
+        $('#id-deploy-metagenomics-button').click(function () {
             $.unblockUI();
         });
 		// unblock when click in button class close
@@ -480,8 +426,6 @@
 			$.unblockUI();
 		});
 	});
-
-	/// set wait screen
 
 </script>
 
@@ -656,6 +600,28 @@
 </script>
 
 
+<script>
+    
+	$(document).ready(function () {
+        $('#deploypi_btn').click(function () {
+			$.unblockUI();
+		});
+		$('#id-cancel-button').click(function () {
+			$.unblockUI();
+		});
+		$('#id-remove-button').click(function () {
+			$.unblockUI();
+		});
+		$('#id-kill-button').click(function () {
+			$.unblockUI();
+		});
+        $('#id-set-control-button').click(function () {
+            $.unblockUI();
+        });
+	});
 
+	/// set wait screen
+
+</script>
 
 {% endblock js %}

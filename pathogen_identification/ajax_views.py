@@ -13,18 +13,23 @@ from django.views.decorators.http import require_POST
 from constants.meta_key_and_values import MetaKeyAndValue
 from fluwebvirus.settings import STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
-from pathogen_identification.models import (FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            ReferenceMap_Main, RunMain)
+from pathogen_identification.models import (
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    ReferenceMap_Main,
+    RunMain,
+)
 from pathogen_identification.tables import ReferenceSourceTable
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
-from pathogen_identification.utilities.utilities_general import \
-    get_services_dir
-from pathogen_identification.utilities.utilities_pipeline import \
-    SoftwareTreeUtils
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.utilities_general import get_services_dir
+from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter, SampleReferenceManager, set_control_reports)
+    ReportSorter,
+    SampleReferenceManager,
+    set_control_reports,
+)
 from utils.process_SGE import ProcessSGE
 from utils.utils import Utils
 
@@ -904,40 +909,42 @@ def sort_report_sample(request):
         return JsonResponse(data)
 
 
-from pathogen_identification.utilities.reference_utils import reference_to_teleflu
+from pathogen_identification.utilities.reference_utils import (
+    check_reference_exists,
+    reference_to_teleflu,
+)
+
 
 @login_required
 @require_POST
 def create_insaflu_reference(request):
     if request.is_ajax():
+        data = {"is_ok": False, "exists": False}
 
-        data= {"is_ok": False, "exists": False}
-
-        ref_id= int(request.POST["ref_id"])
-        user_id= int(request.POST["user_id"])
-        print("ref_id: ", ref_id)
-        print("user_id: ", user_id)
+        ref_id = int(request.POST["ref_id"])
+        user_id = int(request.POST["user_id"])
+        user = User.objects.get(id=user_id)
+        process_SGE = ProcessSGE()
 
         try:
-            print("launch")
-            success, ref_id= reference_to_teleflu(ref_id, user_id)
+            if check_reference_exists(ref_id, user_id):
+                data["is_ok"] = True
+                data["exists"] = True
+                return JsonResponse(data)
+
+            # taskID= process_SGE.set_submit_televir_teleflu_create(user, ref_id)
+
+            success, ref_id = reference_to_teleflu(ref_id, user_id)
 
             if success is None:
+                return JsonResponse(data)
 
-                return JsonResponse(data)
-            
-            if success is False:
-                data["is_ok"]= True
-                data["exists"]= True
-                return JsonResponse(data)
-        
         except Exception as e:
             print(e)
             return JsonResponse(data)
-        
-        data["is_ok"]= True
-        return JsonResponse(data)
 
+        data["is_ok"] = True
+        return JsonResponse(data)
 
 
 from pathogen_identification.models import RawReference, ReferenceSourceFileMap
@@ -1031,6 +1038,56 @@ def inject_references(references: list, request):
     data["references_count"] = len(references)
 
     return data
+
+
+######################################
+###
+###        AJAX methods for check box in session
+###
+from constants.constants import Constants
+
+
+@csrf_protect
+def set_teleflu_check_box_values(request):
+    """
+    manage check boxes through ajax
+    """
+    if request.is_ajax():
+        data = {"is_ok": False}
+        utils = Utils()
+        print(request.GET)
+        if Constants.GET_CHECK_BOX_SINGLE in request.GET:
+            print("HI")
+            data["is_ok"] = True
+            for key in request.session.keys():
+                if (
+                    key.startswith(Constants.TELEFLU_CHECK_BOX)
+                    and len(key.split("_")) == 4
+                    and utils.is_integer(key.split("_")[3])
+                ):
+                    data[key] = request.session[key]
+        ## change single status of a check_box_single
+        elif Constants.GET_CHANGE_CHECK_BOX_SINGLE in request.GET:
+            data["is_ok"] = True
+            key_name = "{}_{}".format(
+                Constants.TELEFLU_CHECK_BOX, request.GET.get(Constants.CHECK_BOX_VALUE)
+            )
+            for key in request.session.keys():
+                if (
+                    key.startswith(Constants.TELEFLU_CHECK_BOX)
+                    and len(key.split("_")) == 4
+                    and utils.is_integer(key.split("_")[3])
+                ):
+                    if request.session[key]:
+                        data[key] = False
+                    if key == key_name:
+                        request.session[key] = utils.str2bool(
+                            request.GET.get(Constants.GET_CHANGE_CHECK_BOX_SINGLE)
+                        )
+                    else:
+                        request.session[key] = False
+
+        return JsonResponse(data)
 
 
 @login_required

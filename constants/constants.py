@@ -102,7 +102,6 @@ class Televir_Metadata_Constants:
         )
 
     def get_software_binary(self, software: str):
-
         if software not in self.BINARIES["software"]:
             raise ValueError(f"Software {software} not found in binaries")
 
@@ -281,6 +280,7 @@ class Constants(object):
     GET_CHANGE_CHECK_BOX_SINGLE = "get_change_check_box_single"
     COUNT_CHECK_BOX = "count_check_boxes"
     CHECK_BOX_VALUE = "value"
+    TELEFLU_CHECK_BOX = "teleflu_check_box"
     CHECK_BOX_not_show_processed_files = "check_box_not_show_processed_files"
 
     ### empty value used in tables

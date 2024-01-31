@@ -54,7 +54,7 @@ urlpatterns = [
         r"Refereces/teleflu_references$",
         PIajax_views.create_insaflu_reference,
         name="create_teleflu_reference",
-        ),
+    ),
     url(
         r"deploy_mapping_request$",
         PIajax_views.submit_sample_mapping_televir,
@@ -139,6 +139,11 @@ urlpatterns = [
         r"remove_reference$",
         PIajax_views.remove_added_reference,
         name="remove_added_reference",
+    ),
+    url(
+        r"set_teleflu_checkbox$",
+        PIajax_views.set_teleflu_check_box_values,
+        name="set_teleflu_checkbox",
     ),
     url(
         r"add_references_to_sample$",

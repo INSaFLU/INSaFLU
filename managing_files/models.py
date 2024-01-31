@@ -2219,6 +2219,11 @@ class ProcessControler(models.Model):
         return "{}_report_sort_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, sample_pk
         )
+    
+    def get_name_televir_teleflu_ref_create(self, ref_id):
+        return "{}_teleflu_ref_{}".format(
+            ProcessControler.PREFIX_TELEVIR_PROJECT, ref_id
+        )
 
     def get_name_televir_project_merge_explify(self, project_pk):
         return "{}_report_merge_explify_{}".format(

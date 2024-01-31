@@ -24,6 +24,14 @@
 
 {% block content %}
 
+<style>
+    .modal-title-description {
+        font-size: 18px;
+        color: #666;
+        display: block;
+    }
+
+</style>
 
 <div class="table-container">
     {% block table %}
@@ -81,7 +89,7 @@
                     <th colspan="1" style="border-left: 5px solid #f2f2f2;">
 
                         <div class="btn-group d-flex justify-content-center">
-                            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#teleflu_ref_modal">
+                            <button type="button" id="teleflu_open" class="btn btn-primary" data-toggle="modal" data-target="#teleflu_ref_modal">
                                 TeleFlu
                               </button>
                         </div>
@@ -320,19 +328,22 @@
     <div class="modal-dialog modal-lg" role="document">
       <div class="modal-content">
         <div class="modal-header">
-          <h4 class="modal-title" id="myModalLabel_teleflu">Chose Reference</h4>
+        <div>
+            <h4 class="modal-title" id="myModalLabel_teleflu">Chose Reference</h4>
+            <p class="modal-title-description">Use selected samples and to create an InsaFlu project. Select Televir hit below to use as reference</p>
+        </div>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
         </div>
         <div class="modal-body">
           <div class="row">
-            <div class="col-sm-9">          <!-- Your search form code here -->
+            <div class="col-sm-12">          <!-- Your search form code here -->
               <form id="teleflu-reference-search-form">
                 <div class="input-group">
                   <input id="teleflu_search-input" type="text" class="form-control" placeholder="Description, Accid, Taxid">
                   <div class="input-group-append">
-                    <button type="submit" class="load-teleflu-content btn btn-primary" csrf="{{ csrf_token }}" href="{% url 'filter_reference_table' %}">Search</button>
+                    <button type="submit" project_id={{ project_index }} class="load-teleflu-content btn btn-primary" csrf="{{ csrf_token }}" href="{% url 'filter_reference_table' %}">Search</button>
                   </div>
                 </div>
               </form>
@@ -342,7 +353,7 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-primary" id="teleflu_submit-button" csrf="{{ csrf_token }}" href="{% url 'add_references_all_samples' %}" ref_index= "{{project_index}}" reload_ref= "{% url 'added_reference_table' %}">Submit</button>
+          <button type="button" class="btn btn-primary" id="teleflu_submit-button" csrf="{{ csrf_token }}" href="{% url 'add_references_all_samples' %}" ref_index= "{{project_index}}" reload_ref= "{% url 'added_reference_table' %}">Create Project</button>
         </div>
       </div>
     </div>
@@ -488,6 +499,10 @@
 <script>
 
     $(document).on("click", "a", function (e) {
+
+        if ($(this).attr("class") === "asc") {
+            e.preventDefault();
+        }
 
         if ($(this).attr("id") == "deploypi_sample_btn") {
             e.preventDefault();

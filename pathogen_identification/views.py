@@ -912,26 +912,68 @@ def inject_references_filter(request, max_references: int = 30):
     tag_add_reference = "search_add_project_reference"
     tag_teleflu = "teleflu_reference"
     table_type = "add_reference"
+    project_id = None
+    project = None
+    print(request.GET)
 
     if request.GET.get(tag_teleflu) and request.GET.get(tag_teleflu) != "":
         table_type = "teleflu_reference"
+        max_references = 10
+        project_id = int(request.GET.get("project_id"))
+        project = Projects.objects.get(pk=project_id)
+
+    print(project_id)
 
     references = []
-    print(request.GET.get(tag_add_reference))
-    if request.GET.get(tag_add_reference) != "" and request.GET.get(tag_add_reference):
-        references = ReferenceSourceFileMap.objects.filter(
-            Q(
-                reference_source__description__icontains=request.GET.get(
-                    tag_add_reference
+    if request.GET.get(tag_add_reference) is not None:
+        if table_type == "teleflu_reference":
+            references = RawReference.objects.filter(
+                Q(accid__icontains=request.GET.get(tag_add_reference))
+                | Q(description__icontains=request.GET.get(tag_add_reference))
+                & ~Q(description__in=["root", "NA"])
+                & Q(run__project__pk=project_id)
+            ).distinct("accid")
+            print(references)
+
+            if references.count() == 0:
+                references = []
+            else:
+                reference_utils = RawReferenceUtils(project=project)
+                reference_pks = references.values_list("run__pk", flat=True).distinct()
+                references = [
+                    RawReferenceCompound(raw_reference) for raw_reference in references
+                ]
+                print("references")
+                print(len(references))
+                reference_utils.sample_reference_tables_filter(
+                    runs_filter=reference_pks
                 )
-            )
-            | Q(reference_source__accid__icontains=request.GET.get(tag_add_reference))
-            | Q(
-                reference_source__taxid__taxid__icontains=request.GET.get(
-                    tag_add_reference
+                print("here")
+                reference_utils.update_scores_compound_references(references)
+
+                references = sorted(
+                    references, key=lambda x: float(x.standard_score), reverse=True
                 )
-            )
-        ).distinct("reference_source__accid")
+                print([x.standard_score for x in references])
+
+        elif request.GET.get(tag_add_reference) != "":
+            references = ReferenceSourceFileMap.objects.filter(
+                Q(
+                    reference_source__description__icontains=request.GET.get(
+                        tag_add_reference
+                    )
+                )
+                | Q(
+                    reference_source__accid__icontains=request.GET.get(
+                        tag_add_reference
+                    )
+                )
+                | Q(
+                    reference_source__taxid__taxid__icontains=request.GET.get(
+                        tag_add_reference
+                    )
+                )
+            ).distinct("reference_source__accid")
 
         # show max 10 references
         references = references[:max_references]
@@ -948,20 +990,17 @@ def inject_references_filter(request, max_references: int = 30):
 def inject_references(references: list, request, type: str = "add_reference"):
     context = {}
     data = {}
+    print("inject_references")
 
     if type == "add_reference":
         table = ReferenceSourceTable(references)
     else:
-        table = TeleFluReferenceTable(references)
+        print("here")
+        table = TeleFluReferenceTable(references, order_by=("standard_score",))
 
     context["references_table"] = table
     context["references_count"] = len(references)
 
-    # template_table_html = os.path.join(
-    #    BASE_DIR,
-    #    "templates",
-    #    "pathogen_identification/references_table_table_only.html",
-    # )
     if type == "add_reference":
         template_table_html = "pathogen_identification/references_table_table_only.html"
     else:

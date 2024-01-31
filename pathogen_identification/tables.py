@@ -845,9 +845,15 @@ class TeleFluReferenceTable(tables.Table):
             }
         },
     )
-    description = tables.Column(verbose_name="Description")
-    accid = tables.Column(verbose_name="Accession id")
-    taxid = tables.Column(verbose_name="Taxid")
+    description = tables.Column(verbose_name="Description", orderable=False)
+    accid = tables.Column(verbose_name="Accession id", orderable=False)
+    taxid = tables.Column(verbose_name="Taxid", orderable=False)
+    standard_score = tables.Column(
+        verbose_name="Max Score",
+        orderable=False,
+        empty_values=(),
+        order_by=("-standard_score",),
+    )
 
     class Meta:
         attrs = {"class": "paleblue"}
@@ -867,6 +873,9 @@ class TeleFluReferenceTable(tables.Table):
 
     def render_taxid(self, record: RawReferenceCompound):
         return record.taxid
+
+    def render_standard_score(self, record: RawReferenceCompound):
+        return round(record.standard_score, 3)
 
 
 class CompoundReferenceTable(tables.Table):

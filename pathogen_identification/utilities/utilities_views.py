@@ -1203,6 +1203,7 @@ class ReferenceManager:
 class RawReferenceCompound:
     def __init__(self, raw_reference: RawReference):
         self.pk = raw_reference.pk
+        self.project_id = raw_reference.run.project.pk
         self.id = raw_reference.id
         self.taxid = raw_reference.taxid
         self.accid = raw_reference.accid

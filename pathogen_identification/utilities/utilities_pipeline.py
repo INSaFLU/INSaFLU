@@ -3030,8 +3030,13 @@ class SoftwareTreeUtils:
 
 
 class RawReferenceUtils:
-    def __init__(self, sample: PIProject_Sample):
+    def __init__(
+        self,
+        sample: Optional[PIProject_Sample] = None,
+        project: Optional[Projects] = None,
+    ):
         self.sample_registered = sample
+        self.project_registered = project
         self.runs_found = 0
         self.list_tables: List[pd.DataFrame] = []
         self.merged_table: pd.DataFrame = pd.DataFrame()
@@ -3169,6 +3174,7 @@ class RawReferenceUtils:
         # group tables: average read_counts_standard_score, sum counts, read_counts, contig_counts
         if joint_tables.shape[0] == 0:
             return pd.DataFrame(columns=list(joint_tables.columns))
+        print(joint_tables.columns)
         joint_tables = joint_tables.groupby(["taxid", "accid", "description"]).agg(
             {
                 "taxid": "first",
@@ -3180,6 +3186,7 @@ class RawReferenceUtils:
                 "contig_counts": "sum",
             }
         )
+        print(joint_tables.head())
 
         joint_tables = joint_tables.sort_values("standard_score", ascending=False)
         joint_tables = joint_tables.reset_index(drop=True)
@@ -3193,18 +3200,40 @@ class RawReferenceUtils:
 
         return references_table
 
+    def filter_runs(self):
+        if self.sample_registered is None and self.project_registered is None:
+            raise Exception("No sample or project registered")
+
+        if self.sample_registered is None:
+            sample_runs = RunMain.objects.filter(
+                sample__project=self.project_registered
+            )
+        else:
+            sample_runs = RunMain.objects.filter(sample=self.sample_registered)
+
+        return sample_runs
+
+    def collect_references_all(self) -> QuerySet:
+        sample_runs = self.filter_runs()
+
+        references = RawReference.objects.filter(run__in=sample_runs)
+
+        return references
+
     def sample_reference_tables(
         self, run_pks: Optional[List[int]] = None
     ) -> pd.DataFrame:
-        sample_runs = RunMain.objects.filter(sample=self.sample_registered)
+        sample_runs = self.filter_runs()
+        print("runs found", sample_runs.count())
         if run_pks is not None:
             sample_runs = sample_runs.filter(pk__in=run_pks)
         self.runs_found = sample_runs.count()
-
+        print("runs found", self.runs_found)
         run_references_tables = [self.run_references_table(run) for run in sample_runs]
 
         self.list_tables.extend(run_references_tables)
-
+        print("run_references_tables")
+        print(len(run_references_tables))
         run_references_tables = self.merge_ref_tables()
         # replace nan with 0
         run_references_tables = run_references_tables.fillna(0)
@@ -3212,10 +3241,12 @@ class RawReferenceUtils:
 
         return run_references_tables
 
-    def sample_reference_tables_filter(self, runs_filter: Optional[List[int]]):
+    def sample_reference_tables_filter(self, runs_filter: Optional[List[int]] = None):
         """
         Filter the sample reference tables to only include runs in the list
         """
+        if runs_filter == []:
+            runs_filter = None
         _ = self.sample_reference_tables(runs_filter)
 
     def compound_reference_update_standard_score(
@@ -3227,7 +3258,8 @@ class RawReferenceUtils:
         score = self.merged_table[self.merged_table.accid == compound_ref.accid]
 
         if score.shape[0] > 0:
-            compound_ref.standard_score = score.iloc[0]["standard_score"]
+            # compound_ref.standard_score = score.iloc[0]["standard_score"]
+            compound_ref.standard_score = max(score["standard_score"])
 
     def update_scores_compound_references(
         self, compount_refs: List[RawReferenceCompound]
@@ -3276,7 +3308,7 @@ class RawReferenceUtils:
     def collect_references_table_all(
         self,
     ) -> pd.DataFrame:
-        references = RawReference.objects.filter(run__sample=self.sample_registered)
+        references = self.collect_references_all()
 
         references_table = self.references_table_from_query(references)
         # references_table= sample_reference_tables()

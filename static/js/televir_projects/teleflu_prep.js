@@ -1,5 +1,6 @@
 
-$(document).ready(function() {
+$(document).ready(function () {
+  
     $('#teleflu_submit-button').click(function () {
       var url = $('#teleflu_submit-button').attr('href');
       var reload_url = $('#teleflu_submit-button').attr('reload_ref');
@@ -102,12 +103,14 @@ var loadTelefluContent = function (event) {
     event.preventDefault();
     var btn = $(this);
     var csrf = btn.attr("csrf");
+    var project_id = btn.attr("project_id");
     $.ajax({
         url: btn.attr("href"),
         type: 'GET',
         data: {
             search_add_project_reference: $('#teleflu_search-input').val(),
             teleflu_reference: "1",
+            project_id: project_id,
             csrfmiddlewaretoken: csrf,
         },
         success: function (data) {
@@ -117,14 +120,11 @@ var loadTelefluContent = function (event) {
           if (data["references_count"] > 0){
             
           var elements = document.getElementsByName("teleflu_select_ref");
-          console.log(elements);
           for(var i = 0, n = elements.length; i < n; i++){
-            elements[i].addEventListener('click', toggle_check_box, false);
+            elements[i].addEventListener('click', toggle_reference_js_check_box, false);
           }
-          console.log("elements");
 
           // get if there's any checked in the server
-          console.log($('#teleflu_table_with_check_id').attr("set-check-box-values-url"),);
           $.ajax({
             url: $('#teleflu_table_with_check_id').attr("set-check-box-values-url"),
             data : { 
@@ -146,15 +146,30 @@ var loadTelefluContent = function (event) {
     )
   };
 $('.load-teleflu-content').on('click', loadTelefluContent);
-  
+$('.teleflu_open').on('click', loadTelefluContent);
+
 /// toggle checkbox
-function toggle_check_box(source) {
-  console.log("toggle_check_box");
+function toggle_reference_js_check_box(source) {
+  var url = $('#teleflu_table_with_check_id').attr("set-check-box-values-url");
+  var id = source.target.id;
+  var elements = document.getElementsByName("teleflu_select_ref");
+  for (var i = 0, n = elements.length; i < n; i++) {
+    if (elements[i].id != id) {
+      elements[i].checked = false;
+    
+    }
+  }
+};
+
+/// toggle checkbox
+function toggle_reference_check_box(source) {
+  var url = $('#teleflu_table_with_check_id').attr("set-check-box-values-url");
+  var id = source.target.id;
 	$.ajax({
-		url: $('#teleflu_table_with_check_id').attr("set-check-box-values-url"),
+		url: url,
 		data : { get_change_check_box_single : source.target.checked,
-				 value : source.target.value }, // data sent with the post request
-		success: function (data) { 
+				 id : source.target.value }, // data sent with the post request
+    success: function (data) { 
 			for (key in data){
 				if (key === 'is_ok'){ continue; }
 				var remember = document.getElementById(key);

@@ -1056,7 +1056,6 @@ def set_teleflu_check_box_values(request):
         utils = Utils()
         print(request.GET)
         if Constants.GET_CHECK_BOX_SINGLE in request.GET:
-            print("HI")
             data["is_ok"] = True
             for key in request.session.keys():
                 if (
@@ -1071,6 +1070,7 @@ def set_teleflu_check_box_values(request):
             key_name = "{}_{}".format(
                 Constants.TELEFLU_CHECK_BOX, request.GET.get(Constants.CHECK_BOX_VALUE)
             )
+            print(request.session.keys())
             for key in request.session.keys():
                 if (
                     key.startswith(Constants.TELEFLU_CHECK_BOX)
@@ -1130,6 +1130,7 @@ def add_references_all_samples(request):
 
                     # truncate reference description: max 150 characters
                     ref_description = reference.description
+
                     if len(ref_description) > 150:
                         ref_description = ref_description[:150]
 

@@ -501,6 +501,9 @@ def generate_insaflu_reference(
     )
 
     reference.hash_reference_fasta = utils.md5sum(sz_file_to)
+    # fill reference_fasta ContentTypeRestrictedFileField
+    with open(sz_file_to, "rb") as f:
+        reference.reference_fasta.save(os.path.basename(sz_file_to), f, save=True)
     reference.reference_fasta.name = os.path.join(
         utils.get_path_to_reference_file(user.id, reference.id),
         reference.reference_fasta_name,
@@ -517,6 +520,9 @@ def generate_insaflu_reference(
 
     software.dos_2_unix(sz_file_to)
     reference.hash_reference_genbank = utils.md5sum(sz_file_to)
+    # fill reference_genbank ContentTypeRestrictedFileField
+    with open(sz_file_to, "rb") as f:
+        reference.reference_genbank.save(os.path.basename(sz_file_to), f, save=True)
 
     reference.reference_genbank.name = os.path.join(
         utils.get_path_to_reference_file(user.id, reference.id),

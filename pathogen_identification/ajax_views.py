@@ -1043,7 +1043,7 @@ from datetime import datetime
 ###        AJAX methods for check box in session
 ###
 from constants.constants import Constants
-from pathogen_identification.models import TeleFluProject, TeleFluSample
+from pathogen_identification.models import MetaReference, TeleFluProject, TeleFluSample
 from pathogen_identification.utilities.reference_utils import create_combined_reference
 
 

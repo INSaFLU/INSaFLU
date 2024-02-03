@@ -131,6 +131,7 @@ def extract_file(accid):
         source_file = os.path.join(
             fasta_directory, reference.reference_source_file.file
         )
+        print("SOURCE FILE", source_file)
         extracted = televir_bioinf.extract_reference(source_file, accid, tmp_fasta)
         if extracted:
             return tmp_fasta
@@ -171,20 +172,14 @@ def check_metaReference_exists(references: List[RawReference]):
     This function takes a list of references and checks if a meta reference exists
     """
 
-    print(references)
-    print(references[0].run.project.id)
     meta_references = MetaReference.objects.filter(
         project__id=references[0].run.project.id
     )
-
-    print(meta_references)
 
     metaref_ids = [metaref.metaid for metaref in meta_references]
     reference_ids = [reference.id for reference in references]
     reference_ids_sorted = sorted(reference_ids)
     refid_code = "_".join([str(refid) for refid in reference_ids_sorted])
-
-    print(refid_code, "HIIII", refid_code in metaref_ids)
 
     if refid_code in metaref_ids:
         return True
@@ -200,13 +195,10 @@ def retrieve_metaReference(references: List[RawReference]):
         project__id=references[0].run.project.id
     )
 
-    metaref_ids = [metaref.metaid for metaref in meta_references]
-
     reference_ids = [reference.id for reference in references]
     reference_ids_sorted = sorted(reference_ids)
     refid_code = "_".join([str(refid) for refid in reference_ids_sorted])
 
-    print(refid_code, "HIIII", refid_code in metaref_ids)
     for metaref in meta_references:
         if metaref.metaid == refid_code:
             return metaref
@@ -215,29 +207,22 @@ def retrieve_metaReference(references: List[RawReference]):
 
 
 def create_metaReference(references: List[RawReference]):
-    print(references)
     if len(references) == 0:
         return None
 
-    print("HOIIOIOIOIOIOIO")
-    print("hexists", check_metaReference_exists(references))
     if check_metaReference_exists(references):
-        print("hexists")
         return retrieve_metaReference(references)
-    print("hil")
+
     description = (
-        references[0].accid
+        f"{references[0].description} {references[0].accid}"
         if len(references) == 1
         else f"combined reference n{len(references)}"
     )
-    print(description)
     metaref = MetaReference(
         description=description,
         project=references[0].run.project,
     )
     metaref.save()
-
-    print(metaref)
 
     for reference in references:
         raw_ref_map = RawReferenceMap(
@@ -253,6 +238,13 @@ def create_metaReference(references: List[RawReference]):
 import os
 
 
+def check_metaReference_exists_from_ids(reference_ids: List[int]):
+    references = RawReference.objects.filter(id__in=reference_ids)
+    references = [reference for reference in references]
+
+    return check_metaReference_exists(references)
+
+
 def create_combined_reference(
     reference_ids: List[RawReference], output_prefix: str
 ) -> Optional[MetaReference]:
@@ -265,15 +257,16 @@ def create_combined_reference(
 
     if check_metaReference_exists(references):
         return retrieve_metaReference(references)
+
+    ### create combined fasta
+    combined_fasta_name = merge_multiple_refs(references, output_prefix)
+
     ### create meta reference
     metaref = create_metaReference(references)
-    print("hil")
 
     if metaref is None:
         return None
 
-    ### create combined fasta
-    combined_fasta_name = merge_multiple_refs(references, output_prefix)
     user_id = references[0].run.project.owner.id
 
     ### Create reference filename
@@ -295,9 +288,6 @@ def create_combined_reference(
         combined_fasta_name,
         sz_file_to,
     )
-
-    print("COMBINED FASTA", combined_fasta_name)
-    print(os.path.exists(sz_file_to))
 
     metaref.file_path = sz_file_to
     metaref.save()
@@ -436,7 +426,9 @@ def raw_reference_to_insaflu(raw_reference_id: int, user_id: int):
 
 def teleflu_to_insaflu_reference(project_id: int, user_id: int):
     user = User.objects.get(id=user_id)
+    print("UPDATING TELEFLU TO INSAFLU")
     teleflu_project = TeleFluProject.objects.get(id=project_id)
+    print("TELEFLU PROJECT", teleflu_project.name)
     metareference = teleflu_project.raw_reference
     reference_fasta = teleflu_project.raw_reference.file_path
     name = metareference.description
@@ -491,6 +483,8 @@ def generate_insaflu_reference(
         reference.reference_fasta_name,
     )
     print("$$$$$$$$$$$$$$$$", reference_fasta)
+    cwd = os.getcwd()
+    os.chdir(os.path.join(Constants.TEMP_DIRECTORY, Constants.COUNT_DNA_TEMP_DIRECTORY))
 
     software.dos_2_unix(reference_fasta)
     ## test if bases all lower
@@ -539,8 +533,7 @@ def generate_insaflu_reference(
     )
 
     ### create some gff3  essential to run other tools
-    cwd = os.getcwd()
-    os.chdir(os.path.join(Constants.TEMP_DIRECTORY, Constants.COUNT_DNA_TEMP_DIRECTORY))
+
     software.run_genbank2gff3(sz_file_to, reference.get_gff3(TypePath.MEDIA_ROOT))
     software.run_genbank2gff3(
         sz_file_to,

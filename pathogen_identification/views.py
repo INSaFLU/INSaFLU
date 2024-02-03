@@ -323,9 +323,9 @@ class PathID_ProjectCreateView(LoginRequiredMixin, generic.CreateView):
         context["project_name"] = project_name
         context["show_paginatior"] = False
         context["nav_project"] = True
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
     def form_valid(self, form):
@@ -357,9 +357,9 @@ class PathID_ProjectCreateView(LoginRequiredMixin, generic.CreateView):
                 is_deleted=False,
                 owner__username=self.request.user.username,
             )
-            self.request.session[
-                Constants.ERROR_PROJECT_NAME
-            ] = "Exists a project with this name."
+            self.request.session[Constants.ERROR_PROJECT_NAME] = (
+                "Exists a project with this name."
+            )
             self.request.session[Constants.PROJECT_NAME] = name
             b_error = True
         except Projects.DoesNotExist:
@@ -369,16 +369,16 @@ class PathID_ProjectCreateView(LoginRequiredMixin, generic.CreateView):
             b_error = True
 
         if not form.cleaned_data["name"]:
-            self.request.session[
-                Constants.ERROR_PROJECT_NAME
-            ] = "The project name can not be empty."
+            self.request.session[Constants.ERROR_PROJECT_NAME] = (
+                "The project name can not be empty."
+            )
             self.request.session[Constants.PROJECT_NAME] = name
             b_error = True
 
         if not form.cleaned_data["name"].replace("_", "").isalnum():
-            self.request.session[
-                Constants.ERROR_PROJECT_NAME
-            ] = "The project name can only contain letters and numbers."
+            self.request.session[Constants.ERROR_PROJECT_NAME] = (
+                "The project name can only contain letters and numbers."
+            )
             self.request.session[Constants.PROJECT_NAME] = name
             b_error = True
 
@@ -475,9 +475,9 @@ class AddSamples_PIProjectsView(
         dt_sample_id_add_temp = {}
         if context[Constants.CHECK_BOX_ALL]:
             for sample in query_set:
-                dt_sample_id_add_temp[
-                    sample.id
-                ] = 1  ## add the ids that are in the tables
+                dt_sample_id_add_temp[sample.id] = (
+                    1  ## add the ids that are in the tables
+                )
             for key in self.request.session.keys():
                 if (
                     key.startswith(Constants.CHECK_BOX)
@@ -510,9 +510,9 @@ class AddSamples_PIProjectsView(
         context["query_set_count"] = query_set.count()
         context["project_name"] = project.name
         context["nav_modal"] = True  ## short the size of modal window
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         context["show_message_change_settings"] = (
             count_active_projects == 0
             and self.request.session[key_session_name_project_settings]
@@ -737,9 +737,9 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
         dt_sample_id_add_temp = {}
         if context[Constants.CHECK_BOX_ALL]:
             for sample in query_set:
-                dt_sample_id_add_temp[
-                    sample.id
-                ] = 1  ## add the ids that are in the tables
+                dt_sample_id_add_temp[sample.id] = (
+                    1  ## add the ids that are in the tables
+                )
             for key in self.request.session.keys():
                 if (
                     key.startswith(Constants.CHECK_BOX)
@@ -757,11 +757,20 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
         teleflu_projects = TeleFluProject.objects.filter(
             televir_project=project, is_deleted=False
         ).order_by("-last_change_date")
+        context["teleflu_table"] = None
         print(teleflu_projects.exists())
+        for proj in teleflu_projects:
+            print(proj.name)
         context["teleflu_projects_exist"] = teleflu_projects.exists()
-        context["teleflu_table"] = TeleFluProjectTable(teleflu_projects)
+        if teleflu_projects.exists():
+            print("setting tableeee")
+            context["teleflu_table"] = TeleFluProjectTable(teleflu_projects)
+            RequestConfig(
+                self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
+            ).configure(context["teleflu_table"])
 
         ###
+
         RequestConfig(
             self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
         ).configure(samples)
@@ -1209,9 +1218,9 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
         dt_sample_id_add_temp = {}
         if context[Constants.CHECK_BOX_ALL]:
             for sample in query_set:
-                dt_sample_id_add_temp[
-                    sample.id
-                ] = 1  ## add the ids that are in the tables
+                dt_sample_id_add_temp[sample.id] = (
+                    1  ## add the ids that are in the tables
+                )
             for key in self.request.session.keys():
                 if (
                     key.startswith(Constants.CHECK_BOX)
@@ -1799,9 +1808,9 @@ def download_file_igv(requestdst):
             # Set the return value of the HttpResponse
             response = HttpResponse(path, content_type=mime_type)
             # Set the HTTP header for sending to browser
-            response[
-                "Content-Disposition"
-            ] = "attachment; filename=%s" % os.path.basename(filepath)
+            response["Content-Disposition"] = (
+                "attachment; filename=%s" % os.path.basename(filepath)
+            )
             # Return the response value
             return response
     else:
@@ -1831,9 +1840,9 @@ def download_file(requestdst):
             # Set the return value of the HttpResponse
             response = HttpResponse(path, content_type=mime_type)
             # Set the HTTP header for sending to browser
-            response[
-                "Content-Disposition"
-            ] = "attachment; filename=%s" % os.path.basename(filepath)
+            response["Content-Disposition"] = (
+                "attachment; filename=%s" % os.path.basename(filepath)
+            )
             # Return the response value
             return response
 
@@ -1895,9 +1904,9 @@ def download_file_ref(requestdst):
             # Set the return value of the HttpResponse
             response = HttpResponse(path, content_type=mime_type)
             # Set the HTTP header for sending to browser
-            response[
-                "Content-Disposition"
-            ] = "attachment; filename=%s" % os.path.basename(filepath)
+            response["Content-Disposition"] = (
+                "attachment; filename=%s" % os.path.basename(filepath)
+            )
             # Return the response value
             return response
 

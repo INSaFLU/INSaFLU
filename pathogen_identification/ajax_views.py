@@ -1044,7 +1044,10 @@ from datetime import datetime
 ###
 from constants.constants import Constants
 from pathogen_identification.models import MetaReference, TeleFluProject, TeleFluSample
-from pathogen_identification.utilities.reference_utils import create_combined_reference
+from pathogen_identification.utilities.reference_utils import (
+    check_metaReference_exists_from_ids,
+    create_combined_reference,
+)
 
 
 @login_required
@@ -1054,7 +1057,7 @@ def create_teleflu_project(request):
     create teleflu project
     """
     if request.is_ajax():
-        data = {"is_ok": False, "is_error": False}
+        data = {"is_ok": False, "is_error": False, "exists": False, "is_empty": False}
         ref_ids = request.POST.getlist("ref_ids[]")
         sample_ids = request.POST.getlist("sample_ids[]")
 
@@ -1066,6 +1069,8 @@ def create_teleflu_project(request):
 
             if len(refs) == 1:
                 return f"televir_project_{refs[0].accid}_{date_now_str}"
+
+            return f"televir_project_multiple_refs_{date_now_str}"
 
         def teleflu_project_description(ref_ids):
             if len(ref_ids) == 0:
@@ -1081,6 +1086,10 @@ def create_teleflu_project(request):
         process_SGE = ProcessSGE()
 
         try:
+            if check_metaReference_exists_from_ids(ref_ids):
+                data["exists"] = True
+                return JsonResponse(data)
+
             metareference = create_combined_reference(ref_ids, project_name)
 
             if not metareference:

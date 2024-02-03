@@ -98,6 +98,8 @@ class Command(BaseCommand):
                 project_id, user_id
             )
 
+            print("Success", success, insaflu_reference)
+
             if success is False:
                 process_SGE.set_process_controler(
                     user,
@@ -109,12 +111,16 @@ class Command(BaseCommand):
                 return
 
             teleflu_project = TeleFluProject.objects.get(pk=project_id)
+            print("Teleflu project", teleflu_project.name)
 
             project = InsafluProject.objects.create(
                 owner=user,
                 name=teleflu_project.name,
                 reference=insaflu_reference,
             )
+
+            teleflu_project.insaflu_project = project
+            teleflu_project.save()
 
             default_software = DefaultProjectSoftware()
             default_software.test_all_defaults(
@@ -173,6 +179,7 @@ class Command(BaseCommand):
                         taskID,
                     )
                 except Exception as e:
+                    print(e)
                     pass
 
         except Exception as e:

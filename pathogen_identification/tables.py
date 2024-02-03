@@ -6,6 +6,7 @@ from crequest.middleware import CrequestMiddleware
 from django.conf import settings
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+from django.utils.translation import ugettext_lazy as _
 
 from constants.constants import Constants
 from managing_files.manage_database import ManageDatabase
@@ -883,45 +884,179 @@ from pathogen_identification.models import TeleFluProject
 
 
 class TeleFluProjectTable(tables.Table):
-    project_name = tables.Column(verbose_name="Project Name")
-    description = tables.Column(verbose_name="Description")
-    reference = tables.Column(verbose_name="Reference")
-    samples = tables.Column(verbose_name="Samples")
-    last_change_date = tables.Column("Last Change date", empty_values=())
-    results = tables.Column("Results", orderable=False, empty_values=())
+    header_attrs = {
+        "th": {"style": "text-align: center; background-color: #dce4f0;"},
+        "td": {"style": "text-align: center;"},
+    }
+    name = tables.Column(
+        verbose_name="Insaflu Project Name", orderable=False, attrs=header_attrs
+    )
+    reference = tables.Column(
+        verbose_name="Reference", orderable=False, attrs=header_attrs
+    )
+    results = tables.Column(
+        verbose_name="Results", orderable=False, empty_values=(), attrs=header_attrs
+    )
+    samples = tables.Column(
+        verbose_name="Samples", orderable=False, empty_values=(), attrs=header_attrs
+    )
+    last_change_date = tables.Column(
+        "Last Change date", empty_values=(), attrs=header_attrs
+    )
+    parameters = tables.Column(
+        "Parameters", orderable=False, empty_values=(), attrs=header_attrs
+    )
 
     class Meta:
-        attrs = {"class": "paleblue"}
+        ## CHANGE TH STYLE IN HEADER ONLY
+        attrs = {
+            "class": "paleblue",
+        }
 
-    def render_project_name(self, record: TeleFluProject):
+        sequence = (
+            "samples",
+            "reference",
+            "results",
+            "parameters",
+            "last_change_date",
+            "name",
+        )
+
+    def render_name(self, record: TeleFluProject):
         return record.name
+
+    def render_results(self, record: TeleFluProject):
+        insaflu_project = record.insaflu_project
+        if insaflu_project is None:
+            return "no associated project"
+        from crequest.middleware import CrequestMiddleware
+
+        current_request = CrequestMiddleware.get_request()
+        user = current_request.user
+
+        ## there's nothing to show
+        count = InsafluProjectSample.objects.filter(
+            project__id=insaflu_project.id,
+            is_deleted=False,
+            is_error=False,
+            is_finished=True,
+        ).count()
+        project_name = '<i class="fa fa-eye-slash" aria-hidden="true"></i>'
+        if count > 0:
+            project_name = (
+                "<a href="
+                + reverse("show-sample-project-results", args=[insaflu_project.pk])
+                + ' data-toggle="tooltip" title="See Results">'
+                + "<i class='fa fa-eye'></i> Results</>"
+            )
+
+        project_name = mark_safe(project_name)
+        print(project_name)
+
+        return project_name
 
     def render_description(self, record: TeleFluProject):
         return record.description
 
     def render_reference(self, record: TeleFluProject):
+        print("referecne")
         return record.raw_reference.description
 
     def render_samples(self, record: TeleFluProject):
+        """
+        return a reference name
+        """
         insaflu_project = record.insaflu_project
+        if insaflu_project is None:
+            return "no associated project"
+        add_remove = ""
+        # if (ProjectSample.objects.filter(project__id=record.id, is_deleted=False).count() > 0):
+        #     TODO
+        #     add_remove = ' <a href=' + reverse('remove-sample-project', args=[record.pk]) + '><span ><i class="fa fa-trash"></i></span> Remove</a>'
+        #     add_remove = ' <a href="#"><span ><i class="fa fa-trash"></i></span> Remove</a>'
 
-        if insaflu_project is not None:
-            return InsafluProjectSample.objects.filter(project=insaflu_project).count()
-
-        return 0
+        n_processed = InsafluProjectSample.objects.filter(
+            project__id=insaflu_project.id,
+            is_deleted=False,
+            is_error=False,
+            is_finished=True,
+        ).count()
+        n_error = InsafluProjectSample.objects.filter(
+            project__id=insaflu_project.id,
+            is_deleted=False,
+            is_error=True,
+            is_finished=False,
+        ).count()
+        n_processing = InsafluProjectSample.objects.filter(
+            project__id=insaflu_project.id,
+            is_deleted=False,
+            is_error=False,
+            is_finished=False,
+        ).count()
+        tip_info = '<span ><i class="tip fa fa-info-circle" title="Processed: {}\nWaiting: {}\nError: {}"></i></span>'.format(
+            n_processed, n_processing, n_error
+        )
+        return mark_safe(
+            tip_info
+            + " ({}/{}/{}) ".format(n_processed, n_processing, n_error)
+            + "<a href="
+            + reverse("add-sample-project", args=[insaflu_project.pk])
+            + ' data-toggle="tooltip" title="Add samples" ><i class="fa fa-plus-square"></i> Add</a>'  #         return mark_safe(tip_info + " ({}/{}/{}) ".format(n_processed, n_processing, n_error) + '<a href=# id="id_add_sample_message"' +\
+            + add_remove
+        )
 
     def render_last_change_date(self, record: TeleFluProject):
         return record.last_change_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE)
 
-    def render_results(self, record: TeleFluProject):
-        if record.insaflu_project is not None:
-            return mark_safe(
-                '<a href="'
-                + reverse("insaflu_project_samples", args=[record.insaflu_project.pk])
-                + '">'
-                + "Samples</a>"
+    def render_parameters(self, record: TeleFluProject):
+        """
+        icon with link to extra info
+        """
+        insaflu_project = record.insaflu_project
+        if insaflu_project is None:
+            return ""
+        ## there's nothing to show
+        count = InsafluProjectSample.objects.filter(
+            project__id=insaflu_project.id,
+            is_deleted=False,
+            is_error=False,
+            is_finished=True,
+        ).count()
+        count_not_finished = InsafluProjectSample.objects.filter(
+            project__id=insaflu_project.id,
+            is_deleted=False,
+            is_error=False,
+            is_finished=False,
+        ).count()
+
+        sz_project_sample = ""
+        if count > 0:
+            sz_project_sample = (
+                "<a href="
+                + reverse("show-sample-project-results", args=[insaflu_project.pk])
+                + ' data-toggle="tooltip" title="See Results"> '
+                + '<span ><i class="padding-button-table fa fa-info-circle padding-button-table"></i></span></a> '
             )
-        return "No results"
+            ## only can change settings when has projects finished
+            # sz_project_sample += '<a href=' + reverse('project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
+            #     '<span ><i class="fa fa-magic padding-button-table"></i></span></a>'
+            sz_project_sample += (
+                "<a href="
+                + reverse("project-settings", args=[insaflu_project.pk])
+                + ' data-toggle="tooltip" title="Software settings">'
+                + '<span ><i class="padding-button-table fa fa-magic padding-button-table"></i></span></a>'
+            )
+        elif count_not_finished > 0:
+            sz_project_sample = _("{} processing ".format(count_not_finished))
+        else:  ## can change settings
+            sz_project_sample += (
+                "<a href="
+                + reverse("project-settings", args=[insaflu_project.pk])
+                + ' data-toggle="tooltip" title="Software settings">'
+                + '<span ><i class="padding-button-table fa fa-magic padding-button-table"></i></span></a>'
+            )
+
+        return mark_safe(sz_project_sample)
 
 
 class CompoundReferenceTable(tables.Table):

@@ -72,6 +72,14 @@ $(document).ready(function () {
 
               // drop modal
               
+          } else if (data['exists']) {
+            $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+              'A Project with these references already exists.' +
+              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+              '</div>');
+
+              // drop modal
+              $('#myModal').modal('hide');
           }
           
         }

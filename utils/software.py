@@ -3607,6 +3607,7 @@ class Software(object):
         if not os.path.exists(file_name):
             return
         cmd = "dos2unix {}".format(file_name)
+        print(cmd)
         exist_status = os.system(cmd)
         if exist_status != 0:
             self.logger_production.error("Fail to run: " + cmd)

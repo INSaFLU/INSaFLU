@@ -1079,12 +1079,9 @@ def create_teleflu_project(request):
         project = first_ref.run.project
         date = datetime.now()
         process_SGE = ProcessSGE()
-        print("HII")
 
         try:
-            print("howdy")
             metareference = create_combined_reference(ref_ids, project_name)
-            print(metareference)
 
             if not metareference:
                 data["is_error"] = True
@@ -1098,8 +1095,6 @@ def create_teleflu_project(request):
                 raw_reference=metareference,
             )
             teleflu_project.save()
-
-            print("saved")
 
             for sample_id in sample_ids:
                 sample = PIProject_Sample.objects.get(pk=int(sample_id))

@@ -441,8 +441,6 @@ def teleflu_to_insaflu_reference(project_id: int, user_id: int):
     reference_fasta = teleflu_project.raw_reference.file_path
     name = metareference.description
 
-    print(reference_fasta, os.path.exists(reference_fasta))
-
     success, reference_id = generate_insaflu_reference(
         reference_fasta, name, os.path.basename(reference_fasta), user
     )
@@ -490,8 +488,9 @@ def generate_insaflu_reference(
     ## fasta file
     sz_file_to = os.path.join(
         final_data_path,
-        os.path.basename(reference.reference_fasta_name),
+        reference.reference_fasta_name,
     )
+    print("$$$$$$$$$$$$$$$$", reference_fasta)
 
     software.dos_2_unix(reference_fasta)
     ## test if bases all lower

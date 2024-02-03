@@ -910,7 +910,7 @@ def sort_report_sample(request):
 
 from pathogen_identification.utilities.reference_utils import (
     check_reference_exists,
-    reference_to_teleflu,
+    check_reference_submitted,
 )
 
 
@@ -926,17 +926,14 @@ def create_insaflu_reference(request):
         process_SGE = ProcessSGE()
 
         try:
-            if check_reference_exists(ref_id, user_id):
+            if check_reference_exists(ref_id, user_id) or check_reference_submitted(
+                ref_id=ref_id, user_id=user_id
+            ):
                 data["is_ok"] = True
                 data["exists"] = True
                 return JsonResponse(data)
-
-            # taskID= process_SGE.set_submit_televir_teleflu_create(user, ref_id)
-
-            success, ref_id = reference_to_teleflu(ref_id, user_id)
-
-            if success is None:
-                return JsonResponse(data)
+            # success = create_reference(ref_id, user_id)
+            taskID = process_SGE.set_submit_televir_teleflu_create(user, ref_id)
 
         except Exception as e:
             print(e)
@@ -1039,11 +1036,93 @@ def inject_references(references: list, request):
     return data
 
 
+from datetime import datetime
+
 ######################################
 ###
 ###        AJAX methods for check box in session
 ###
 from constants.constants import Constants
+from pathogen_identification.models import TeleFluProject, TeleFluSample
+from pathogen_identification.utilities.reference_utils import create_combined_reference
+
+
+@login_required
+@csrf_protect
+def create_teleflu_project(request):
+    """
+    create teleflu project
+    """
+    if request.is_ajax():
+        data = {"is_ok": False, "is_error": False}
+        ref_ids = request.POST.getlist("ref_ids[]")
+        sample_ids = request.POST.getlist("sample_ids[]")
+
+        def teleflu_project_name_from_refs(ref_ids):
+            refs = [RawReference.objects.get(pk=int(x)) for x in ref_ids]
+            date_now_str = datetime.now().strftime("%Y%m%d")
+            if len(refs) == 0:
+                return "teleflu_project"
+
+            if len(refs) == 1:
+                return f"televir_project_{refs[0].accid}_{date_now_str}"
+
+        def teleflu_project_description(ref_ids):
+            if len(ref_ids) == 0:
+                return "teleflu_project"
+            if len(ref_ids) == 1:
+                return "single reference project"
+            return "multiple references project"
+
+        project_name = teleflu_project_name_from_refs(ref_ids)
+        first_ref = RawReference.objects.get(pk=int(ref_ids[0]))
+        project = first_ref.run.project
+        date = datetime.now()
+        process_SGE = ProcessSGE()
+        print("HII")
+
+        try:
+            print("howdy")
+            metareference = create_combined_reference(ref_ids, project_name)
+            print(metareference)
+
+            if not metareference:
+                data["is_error"] = True
+                return JsonResponse(data)
+
+            teleflu_project = TeleFluProject(
+                televir_project=project,
+                name=project_name,
+                last_change_date=date,
+                description=teleflu_project_description(ref_ids),
+                raw_reference=metareference,
+            )
+            teleflu_project.save()
+
+            print("saved")
+
+            for sample_id in sample_ids:
+                sample = PIProject_Sample.objects.get(pk=int(sample_id))
+                TeleFluSample.objects.create(
+                    teleflu_project=teleflu_project,
+                    televir_sample=sample,
+                )
+
+            process_SGE.set_submit_televir_teleflu_project_create(
+                user=request.user,
+                project_pk=teleflu_project.pk,
+            )
+
+            data["is_ok"] = True
+            data["project_id"] = teleflu_project.pk
+            data["project_name"] = teleflu_project.name
+
+        except Exception as e:
+            print(e)
+            data["is_error"] = True
+            return JsonResponse(data)
+
+        return JsonResponse(data)
 
 
 @csrf_protect

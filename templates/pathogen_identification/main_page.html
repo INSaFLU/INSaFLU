@@ -40,11 +40,13 @@
         <h4 class="table-title"> Metagenomics Management. </h4>
         <p class="table-description"> 
             <i class="fa fa-flask"></i> 
-            Control deployment and validation of metagenomic workflows for samples in project.
+            Run Metagenomics workflows, and validation by mapping.
             <i class="fa fa-cog"></i>
-            Access settings, reports and recovered hits. 
+            Change settings (workflows, validation and reporting). 
+            <i class="fa fa-database">‌</i>
+            Add and manage targets for validation.
             <i class="fa fa-external-link-square">‌</i>
-            Deploy InsaFlu targeted reference analysis. </p>    
+            Connect to Classic INSaFLU Projects. </p>    
         <table class="table table-hover table-bordered table-striped" {% if table.attrs %}z
             {{ table.attrs.as_html }}{% endif %}>
             {% block table.thead %}
@@ -63,7 +65,6 @@
                                 <a href="#" id="deploypi_btn" class="dropdown-item" style="text-align:center;" deploy-url="{% url deploy_url %}" ><span class="hidden-phone"> Classic Workflows </span></a>
                                 <a href="#" id="deploypi_mapping_btn" class="dropdown-item" style="text-align:center;" deploy-url="{% url 'deploy_Project_PIMapping' %}" ><span class="hidden-phone"> Map Combined </span></a>
                                 <a href="#" id="deploypi_added_mapping_btn" class="dropdown-item" style="text-align:center;" deploy-url="{% url 'map_selected_references_project_samples' %}" ><span class="hidden-phone"> Map Added </span></a>
-
                             </div>
                             {% else %}
                             <button type="button" class="btn btn-primary dark" id="deploypi_btn" deploy-url="{% url deploy_url %}" aria-haspopup="true" aria-expanded="false">
@@ -92,20 +93,19 @@
                         </div>
                     </th>
                     <th colspan="1" style="border-left: 5px solid #f2f2f2;">
-
-                        <div class="btn-group d-flex justify-content-center">
-                            <button type="button" id="teleflu_open" class="btn btn-primary" data-toggle="modal" data-target="#teleflu_ref_modal">
-                                TeleFlu
-                              </button>
-                        </div>
-                    </th>
-                    <th colspan="1" style="border-left: 5px solid #f2f2f2;">
-
                         <div class="btn-group d-flex justify-content-center">
                             <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#myModal">
                                 Add References
                               </button>
                         </div>
+                    </th>
+                    <th colspan="1" style="border-left: 5px solid #f2f2f2;">
+                        <div class="btn-group d-flex justify-content-center">
+                            <button type="button" id="teleflu_open" class="btn btn-primary" data-toggle="modal" data-target="#teleflu_ref_modal">
+                                <i class="fa fa-external-link-square">‌</i> INSaFLU
+                              </button>
+                        </div>
+
                     </th>
                     <th colspan="4" style="border-left: 5px solid #f2f2f2;">
 
@@ -175,8 +175,44 @@
         </strong>
     </p>
     <br>
+    {% if teleflu_projects_exist %}
     <h3 class="table-title"> InsaFlu Connection </h3>
-    <p class="table-description"> In-Depth </p>    
+    <p class="table-description"> In-Depth </p>
+    <div class="table-responsive">
+        <table class="table table-hover table-bordered table-striped" {% if teleflu_table.attrs %}z
+            {{ teleflu_table.attrs.as_html }}{% endif %}>
+            <thead>
+                <tr>
+                    {% for column in teleflu_table.columns %}
+                    {% if column.orderable %}
+                        <th {{ column.attrs.th.as_html }}><a href="{% querystring teleflu_table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header|title }}</a></th>
+                    {% else %}
+                        <th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
+                    {% endif %}
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in teleflu_table.page.object_list|default:teleflu_table.rows %} {# support pagination #}
+                  {% block teleflu_table.tbody.row %}
+                  <tr id="row_{{ row.record.id }}" class="{% cycle "odd" "even" %}">
+                    {% for column, cell in row.items %}
+                      <td {{ column.attrs.td.as_html }}>{{ cell }}</td>
+                    {% endfor %}
+                  </tr>
+                  {% endblock teleflu_table.tbody.row %}
+                {% empty %}
+                  {% if teleflu_table.empty_text %}
+                  {% block teleflu_table.tbody.empty_text %}
+                      <tr><td colspan="{{ teleflu_table.columns|length }}">{{ teleflu_table.empty_text }}</td></tr>
+                  {% endblock teleflu_table.tbody.empty_text %}
+                  {% endif %}
+                {% endfor %}
+            </tbody>
+            <tfoot></tfoot>
+        </table>
+    </div>
+    {% endif %}
 
     <a href="javascript:history.go(0)" class="btn btn-small btn-primary dark"><i class="fa fa-refresh"></i> Refresh</a>
 
@@ -358,7 +394,7 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-primary" id="teleflu_submit-button" csrf="{{ csrf_token }}" href="{% url 'add_references_all_samples' %}" ref_index= "{{project_index}}" reload_ref= "{% url 'added_reference_table' %}">Create Project</button>
+          <button type="button" class="btn btn-primary" id="teleflu_submit-button" csrf="{{ csrf_token }}" href="{% url 'create_teleflu_project' %}" ref_index= "{{project_index}}" reload_ref= "{% url 'added_reference_table' %}">Create Project</button>
         </div>
       </div>
     </div>

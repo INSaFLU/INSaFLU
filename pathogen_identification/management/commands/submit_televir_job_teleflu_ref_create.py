@@ -6,11 +6,14 @@ from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
 from managing_files.models import ProcessControler
-from pathogen_identification.models import PIProject_Sample, Projects
+from pathogen_identification.models import PIProject_Sample, Projects, RawReference
+from pathogen_identification.utilities.reference_utils import (
+    check_reference_exists,
+    raw_reference_to_insaflu,
+)
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
 from pathogen_identification.utilities.utilities_views import calculate_reports_overlaps
 from utils.process_SGE import ProcessSGE
-from pathogen_identification.utilities.reference_utils import reference_to_teleflu, check_reference_exists
 
 
 class Command(BaseCommand):
@@ -36,31 +39,31 @@ class Command(BaseCommand):
             help="output directory",
         )
 
-
     def handle(self, *args, **options):
         ###
         # SETUP
+        user_id = int(options["user_id"])
+        user = User.objects.get(pk=user_id)
+        ref_id = int(options["ref_id"])
 
-        user = User.objects.get(pk=options["user_id"])
-        project_sample = PIProject_Sample.objects.get(pk=options["pisample_id"])
-        force = options["force"]
         # PROCESS CONTROLER
         process_controler = ProcessControler()
         process_SGE = ProcessSGE()
 
         process_SGE.set_process_controler(
             user,
-            process_controler.get_name_televir_project_sample_sort(
-                sample_pk=project_sample.pk
+            process_controler.get_name_televir_teleflu_ref_create(
+                ref_id=ref_id,
             ),
             ProcessControler.FLAG_RUNNING,
         )
 
         process = ProcessControler.objects.filter(
             owner__id=user.pk,
-            name=process_controler.get_name_televir_project_sample_sort(
-                sample_pk=project_sample.pk
+            name=process_controler.get_name_televir_teleflu_ref_create(
+                ref_id=ref_id,
             ),
+            is_finished=False,
         )
 
         if process.exists():
@@ -72,16 +75,26 @@ class Command(BaseCommand):
             print("Process does not exist")
 
         # UTILITIES
+
         try:
-            if not project_sample.is_deleted:
-                calculate_reports_overlaps(project_sample, force=force)
+            success, ref_id = raw_reference_to_insaflu(ref_id, user_id)
+            print(success, ref_id)
+            if success is False:
+                process_SGE.set_process_controler(
+                    user,
+                    process_controler.get_name_televir_teleflu_ref_create(
+                        ref_id=ref_id,
+                    ),
+                    ProcessControler.FLAG_ERROR,
+                )
+                return
 
         except Exception as e:
             print(e)
             process_SGE.set_process_controler(
                 user,
-                process_controler.get_name_televir_project_sample_sort(
-                    sample_pk=project_sample.pk
+                process_controler.get_name_televir_teleflu_ref_create(
+                    ref_id=ref_id,
                 ),
                 ProcessControler.FLAG_ERROR,
             )
@@ -89,8 +102,8 @@ class Command(BaseCommand):
 
         process_SGE.set_process_controler(
             user,
-            process_controler.get_name_televir_project_sample_sort(
-                sample_pk=project_sample.pk
+            process_controler.get_name_televir_teleflu_ref_create(
+                ref_id=ref_id,
             ),
             ProcessControler.FLAG_FINISHED,
         )

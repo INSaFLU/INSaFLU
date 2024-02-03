@@ -46,6 +46,7 @@ from pathogen_identification.models import (
     RunMain,
     RunRemapMain,
     Sample,
+    TeleFluProject,
     TelevirRunQC,
 )
 from pathogen_identification.modules.object_classes import RunQC_report
@@ -61,6 +62,7 @@ from pathogen_identification.tables import (
     RunMainTable,
     RunMappingTable,
     SampleTableOne,
+    TeleFluProjectTable,
     TeleFluReferenceTable,
 )
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
@@ -751,6 +753,15 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
                         self.request.session[key] = True
         ## END need to clean all the others if are reject in filter
 
+        ## TeleFlu Projects
+        teleflu_projects = TeleFluProject.objects.filter(
+            televir_project=project, is_deleted=False
+        ).order_by("-last_change_date")
+        print(teleflu_projects.exists())
+        context["teleflu_projects_exist"] = teleflu_projects.exists()
+        context["teleflu_table"] = TeleFluProjectTable(teleflu_projects)
+
+        ###
         RequestConfig(
             self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
         ).configure(samples)

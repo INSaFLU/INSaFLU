@@ -1,19 +1,32 @@
 
 $(document).ready(function () {
   
-    $('#teleflu_submit-button').click(function () {
+  $('#teleflu_submit-button').click(function () {
+      console.log('clicked');
       var url = $('#teleflu_submit-button').attr('href');
       var reload_url = $('#teleflu_submit-button').attr('reload_ref');
-      var checkedRows = [];
       var csrf = $('#teleflu_submit-button').attr('csrf');
-      var ref_index = $('#teleflu_submit-button').attr('ref_index');
+      
+      // get checked reference rows
+      var checkedRows_refs = [];
       $('.teleflu_reference-checkbox:checked').each(function() {
         // collect ids of checked rows
 
         var ref_id= $(this).attr('ref_id');
 
-        checkedRows.push(ref_id);
+        checkedRows_refs.push(ref_id);
       });
+      // get checked samples rows
+      var checkedRows_samples = [];
+      $('.select_sample-checkbox:checked').each(function () {
+        // collect ids of checked rows
+        var sample_id = $(this).attr('sample_id');
+        checkedRows_samples.push(sample_id);
+      });
+
+      console.log(checkedRows_samples);
+
+      console.log(checkedRows_refs);
   
       // Process the checked rows
       // Add your processing logic here
@@ -23,8 +36,8 @@ $(document).ready(function () {
         url: url,
         data: {
           'csrfmiddlewaretoken': csrf,
-          'ref_id': ref_index,
-          'reference_ids': checkedRows,
+          'ref_ids': checkedRows_refs,
+          'sample_ids': checkedRows_samples,
         },
         success: function(data) {
           if (data['is_ok']) {

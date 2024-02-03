@@ -1,6 +1,7 @@
 import codecs
 import datetime
 import os
+from typing import Any
 
 import networkx as nx
 import numpy as np
@@ -927,6 +928,96 @@ class RawReference(models.Model):
     def update_raw_reference_status_fail(self):
         self.status = self.STATUS_FAIL
         self.save()
+
+
+from managing_files.models import Project as InsaFluProject
+from managing_files.models import Reference as InsaFluReference
+
+
+class MetaReference(models.Model):
+    description = models.CharField(max_length=100, blank=True, null=True)
+    created = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    project = models.ForeignKey(
+        Projects, on_delete=models.CASCADE, blank=True, null=True
+    )
+    file_path = models.CharField(max_length=300, blank=True, null=True)
+
+    def __str__(self):
+        return self.description
+
+    @property
+    def references_mapped(self):
+        ref_maps = RawReferenceMap.objects.filter(reference=self)
+        return [ref_map.raw_reference for ref_map in ref_maps]
+
+    @property
+    def metaid(self):
+        mapped_refs = self.references_mapped
+        mapped_refs_ids = [ref.id for ref in mapped_refs]
+        mapped_refids_sorted = sorted(mapped_refs_ids)
+        return "_".join([str(refid) for refid in mapped_refids_sorted])
+
+
+class RawReferenceMap(models.Model):
+    reference = models.ForeignKey(
+        MetaReference,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        related_name="reference_map",
+    )
+    raw_reference = models.ForeignKey(
+        RawReference,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        related_name="raw_reference",
+    )
+
+
+class TeleFluProject(models.Model):
+    televir_project = models.ForeignKey(Projects, on_delete=models.CASCADE)
+    insaflu_project = models.ForeignKey(
+        InsaFluProject,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        related_name="insaflu_project",
+    )
+    name = models.CharField(
+        max_length=200,
+        db_index=True,
+        blank=False,
+        verbose_name="Project name",
+        default="nameless_project",
+        validators=[no_space_validator],
+    )
+    description = models.TextField(default="", null=True, blank=True)
+    raw_reference = models.ForeignKey(
+        MetaReference,
+        on_delete=models.CASCADE,
+    )
+    reference = models.ForeignKey(
+        InsaFluReference, on_delete=models.CASCADE, blank=True, null=True
+    )
+
+    last_change_date = models.DateTimeField("Last change date", blank=True, null=True)
+    is_deleted = models.BooleanField(default=False)
+
+    @property
+    def owner(self):
+        return self.televir_project.owner
+
+    @property
+    def technology(self):
+        return self.televir_project.technology
+
+
+class TeleFluSample(models.Model):
+    televir_sample = models.ForeignKey(PIProject_Sample, on_delete=models.CASCADE)
+    teleflu_project = models.ForeignKey(
+        TeleFluProject, on_delete=models.CASCADE, blank=True, null=True
+    )
 
 
 class ReferenceTaxid(models.Model):

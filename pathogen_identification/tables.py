@@ -383,7 +383,7 @@ class SampleTableOne(tables.Table):
             "th": {
                 "style": "background-color: #dce4f0; border-left: 5px solid #ddd; text-align: center;",
             },
-            "td": {"style": "border-left: 5px solid #ddd; text-align: center;"},
+            "td": {"style": "text-align: center;"},
             "th__input": {"id": "checkBoxAll"},
         },
     )
@@ -393,7 +393,7 @@ class SampleTableOne(tables.Table):
         orderable=False,
         empty_values=(),
         attrs={
-            "td": {"style": "text-align: center;"},
+            "td": {"style": "border-left: 5px solid #ddd; text-align: center;"},
             "th": {"style": "background-color: #dce4f0; text-align: center;"},
         },
     )
@@ -446,8 +446,8 @@ class SampleTableOne(tables.Table):
             "runs",
             "deploy",
             "sorting",
-            "select_ref",
             "ref_management",
+            "select_ref",
             "combinations",
             "mapping_runs",
             "running_processes",
@@ -660,8 +660,8 @@ class SampleTableOne(tables.Table):
 
     def render_select_ref(self, value, record: PIProject_Sample):
         return mark_safe(
-            '<input class="class-ref-checkbox" name="select_ref" id="{}_{}" type="checkbox" value="{}"/>'.format(
-                Constants.CHECK_BOX, record.id, value
+            '<input class="select_sample-checkbox" name="select_ref" id="{}_{}" sample_id={} type="checkbox" value="{}"/>'.format(
+                Constants.CHECK_BOX, record.id, record.id, value
             )
         )
 
@@ -876,6 +876,52 @@ class TeleFluReferenceTable(tables.Table):
 
     def render_standard_score(self, record: RawReferenceCompound):
         return round(record.standard_score, 3)
+
+
+from managing_files.models import ProjectSample as InsafluProjectSample
+from pathogen_identification.models import TeleFluProject
+
+
+class TeleFluProjectTable(tables.Table):
+    project_name = tables.Column(verbose_name="Project Name")
+    description = tables.Column(verbose_name="Description")
+    reference = tables.Column(verbose_name="Reference")
+    samples = tables.Column(verbose_name="Samples")
+    last_change_date = tables.Column("Last Change date", empty_values=())
+    results = tables.Column("Results", orderable=False, empty_values=())
+
+    class Meta:
+        attrs = {"class": "paleblue"}
+
+    def render_project_name(self, record: TeleFluProject):
+        return record.name
+
+    def render_description(self, record: TeleFluProject):
+        return record.description
+
+    def render_reference(self, record: TeleFluProject):
+        return record.raw_reference.description
+
+    def render_samples(self, record: TeleFluProject):
+        insaflu_project = record.insaflu_project
+
+        if insaflu_project is not None:
+            return InsafluProjectSample.objects.filter(project=insaflu_project).count()
+
+        return 0
+
+    def render_last_change_date(self, record: TeleFluProject):
+        return record.last_change_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE)
+
+    def render_results(self, record: TeleFluProject):
+        if record.insaflu_project is not None:
+            return mark_safe(
+                '<a href="'
+                + reverse("insaflu_project_samples", args=[record.insaflu_project.pk])
+                + '">'
+                + "Samples</a>"
+            )
+        return "No results"
 
 
 class CompoundReferenceTable(tables.Table):

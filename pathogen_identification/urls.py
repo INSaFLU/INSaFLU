@@ -56,6 +56,11 @@ urlpatterns = [
         name="create_teleflu_reference",
     ),
     url(
+        "Projects/televir_project_create$",
+        PIajax_views.create_teleflu_project,
+        name="create_teleflu_project",
+    ),
+    url(
         r"deploy_mapping_request$",
         PIajax_views.submit_sample_mapping_televir,
         name="map_selected_references",

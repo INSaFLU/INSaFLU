@@ -1058,6 +1058,8 @@ def create_teleflu_project(request):
     """
     if request.is_ajax():
         data = {"is_ok": False, "is_error": False, "exists": False, "is_empty": False}
+
+        print(request.POST)
         ref_ids = request.POST.getlist("ref_ids[]")
         sample_ids = request.POST.getlist("sample_ids[]")
 

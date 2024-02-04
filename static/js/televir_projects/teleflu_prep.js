@@ -3,6 +3,7 @@ $(document).ready(function () {
   
   $('#teleflu_submit-button').click(function () {
       console.log('clicked');
+      console.log($('#teleflu_submit-button').attr('href'));
       var url = $('#teleflu_submit-button').attr('href');
       var reload_url = $('#teleflu_submit-button').attr('reload_ref');
       var csrf = $('#teleflu_submit-button').attr('csrf');

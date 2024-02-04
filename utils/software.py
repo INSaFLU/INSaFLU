@@ -1414,6 +1414,7 @@ class Software(object):
         [06:29:16] * /tmp/insafli/xpto/xpto.vcf.gz
         [06:29:16] * /tmp/insafli/xpto/xpto.vcf.gz.tbi
         """
+        print("snippy_parameters", snippy_parameters)
         temp_dir = os.path.join(self.utils.get_temp_dir(), sample_name)
         if file_name_2 is None or len(file_name_2) == 0:
             cmd = "%s --cpus %d --outdir %s --prefix %s --ref %s %s --se %s" % (

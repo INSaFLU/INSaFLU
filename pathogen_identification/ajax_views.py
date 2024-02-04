@@ -1088,11 +1088,13 @@ def create_teleflu_project(request):
         process_SGE = ProcessSGE()
 
         try:
+            print("reference exists")
             if check_metaReference_exists_from_ids(ref_ids):
                 data["exists"] = True
                 return JsonResponse(data)
 
             metareference = create_combined_reference(ref_ids, project_name)
+            print(metareference)
 
             if not metareference:
                 data["is_error"] = True
@@ -1106,6 +1108,7 @@ def create_teleflu_project(request):
                 raw_reference=metareference,
             )
             teleflu_project.save()
+            print(teleflu_project)
 
             for sample_id in sample_ids:
                 sample = PIProject_Sample.objects.get(pk=int(sample_id))

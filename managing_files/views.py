@@ -24,42 +24,29 @@ from django.views import generic
 from django.views.generic import DetailView, ListView, TemplateView
 from django_tables2 import RequestConfig
 
-from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
+from constants.constants import (Constants, FileExtensions, FileType, TypeFile,
+                                 TypePath)
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.nextclade_links import get_constext_nextclade
 from constants.software_names import SoftwareNames
 from extend_user.models import Profile
 from manage_virus.constants_virus import ConstantsVirus
-from managing_files.forms import (
-    AddSampleProjectForm,
-    ReferenceForm,
-    ReferenceProjectFormSet,
-    SampleForm,
-    SamplesUploadDescriptionForm,
-    SamplesUploadDescriptionMetadataForm,
-    SamplesUploadMultipleFastqForm,
-)
+from managing_files.forms import (AddSampleProjectForm, ReferenceForm,
+                                  ReferenceProjectFormSet, SampleForm,
+                                  SamplesUploadDescriptionForm,
+                                  SamplesUploadDescriptionMetadataForm,
+                                  SamplesUploadMultipleFastqForm)
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import (
-    MetaKey,
-    Project,
-    ProjectSample,
-    Reference,
-    Sample,
-    UploadFiles,
-)
-from managing_files.tables import (
-    AddSamplesFromCvsFileTable,
-    AddSamplesFromCvsFileTableMetadata,
-    AddSamplesFromFastqFileTable,
-    ProjectTable,
-    ReferenceProjectTable,
-    ReferenceTable,
-    SampleTable,
-    SampleToProjectsTable,
-    ShowProjectSamplesResults,
-)
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from managing_files.models import (MetaKey, Project, ProjectSample, Reference,
+                                   Sample, UploadFiles)
+from managing_files.tables import (AddSamplesFromCvsFileTable,
+                                   AddSamplesFromCvsFileTableMetadata,
+                                   AddSamplesFromFastqFileTable, ProjectTable,
+                                   ReferenceProjectTable, ReferenceTable,
+                                   SampleTable, SampleToProjectsTable,
+                                   ShowProjectSamplesResults)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from settings.constants_settings import ConstantsSettings
 from settings.default_software import DefaultSoftware
 from settings.default_software_project_sample import DefaultProjectSoftware
@@ -68,10 +55,8 @@ from settings.tables import SoftwaresTable
 from utils.collect_extra_data import CollectExtraData
 from utils.process_SGE import ProcessSGE
 from utils.result import DecodeObjects
-from utils.session_variables import (
-    clean_check_box_in_session,
-    is_all_check_box_in_session,
-)
+from utils.session_variables import (clean_check_box_in_session,
+                                     is_all_check_box_in_session)
 from utils.software import Software
 from utils.software_pangolin import SoftwarePangolin
 from utils.support_django_template import get_link_for_dropdown_item
@@ -86,13 +71,13 @@ class ProjectIndex(TemplateView):
     def get_context_data(self, **kwargs):
         context = super(ProjectIndex, self).get_context_data(**kwargs)
         default_software = DefaultSoftware()
-        context[
-            "televir_available"
-        ] = default_software.test_televir_software_available()
+        context["televir_available"] = (
+            default_software.test_televir_software_available()
+        )
         context["services"] = False
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
 
@@ -147,9 +132,9 @@ class ReferenceView(LoginRequiredMixin, ListView):
         context["table"] = table
         context["nav_reference"] = True
         context["show_paginatior"] = len(query_set_result) > Constants.PAGINATE_NUMBER
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
 
@@ -179,9 +164,9 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
         context["user_mmp"] = (
             self.request.user.username == "mmp"
         )  ## short the size of modal window
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
     @transaction.atomic
@@ -436,9 +421,9 @@ class SamplesView(LoginRequiredMixin, ListView):
         context["nav_sample"] = True
         context["total_itens"] = query_set.count()
         context["show_paginatior"] = query_set.count() > Constants.PAGINATE_NUMBER
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
 
@@ -468,9 +453,9 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
         context = super(SamplesAddView, self).get_context_data(**kwargs)
         context["nav_sample"] = True
         context["nav_modal"] = True  ## short the size of modal window
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
     def form_valid(self, form):
@@ -695,29 +680,29 @@ class SamplesAddDescriptionFileView(
             is_processed=False,
         ).count()
         if count_not_complete > 0:
-            context[
-                "can_add_other_file"
-            ] = "You cannot add a new file because you must first upload NGS data regarding another file."
-            context["disable_upload_files"] = True
-            context[
-                "message_unlock_file"
-            ] = "It will drop remain samples ({}) not processed in last file".format(
-                count_not_complete
+            context["can_add_other_file"] = (
+                "You cannot add a new file because you must first upload NGS data regarding another file."
             )
-            context[
-                "message_unlock_file_question"
-            ] = "Do you want drop remain samples ({}) not processed in last file?".format(
-                count_not_complete
+            context["disable_upload_files"] = True
+            context["message_unlock_file"] = (
+                "It will drop remain samples ({}) not processed in last file".format(
+                    count_not_complete
+                )
+            )
+            context["message_unlock_file_question"] = (
+                "Do you want drop remain samples ({}) not processed in last file?".format(
+                    count_not_complete
+                )
             )
         else:
             context["message_unlock_file"] = "No samples to drop for last sample file."
-            context[
-                "message_unlock_file_question"
-            ] = "No samples to drop for last sample file."
+            context["message_unlock_file_question"] = (
+                "No samples to drop for last sample file."
+            )
 
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
     def form_valid(self, form):
@@ -820,14 +805,14 @@ class SamplesUpdateMetadata(
             is_processed=False,
         ).count()
         if count_not_complete > 0:
-            context[
-                "can_add_other_file"
-            ] = "You cannot add other file because there is a file in pipeline."
+            context["can_add_other_file"] = (
+                "You cannot add other file because there is a file in pipeline."
+            )
             context["disable_upload_files"] = True
 
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
     def form_valid(self, form):
@@ -883,9 +868,9 @@ class SamplesUploadDescriptionFileView(
             )  ## pass a list
         context["nav_sample"] = True
         context["nav_modal"] = True  ## short the size of modal window
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
     def form_valid(self, form):
@@ -1018,9 +1003,9 @@ class SamplesUploadDescriptionFileViewMetadata(
             )  ## pass a list
         context["nav_sample"] = True
         context["nav_modal"] = True  ## short the size of modal window
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
     def form_valid(self, form):
@@ -1211,27 +1196,27 @@ class SamplesAddFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.For
             context["message_remove_files"] = "There's no files to remove"
             context["message_remove_files_2"] = "There's no files to remove..."
         elif number_files_can_be_removed == 1:
-            context[
-                "message_remove_files"
-            ] = "It is going to remove one file not processed"
-            context[
-                "message_remove_files_2"
-            ] = "Do you want to remove one file not processed?"
-        else:
-            context[
-                "message_remove_files"
-            ] = "It is going to remove {} files not processed".format(
-                number_files_can_be_removed
+            context["message_remove_files"] = (
+                "It is going to remove one file not processed"
             )
-            context[
-                "message_remove_files_2"
-            ] = "Do you want to remove {} files not processed?".format(
-                number_files_can_be_removed
+            context["message_remove_files_2"] = (
+                "Do you want to remove one file not processed?"
+            )
+        else:
+            context["message_remove_files"] = (
+                "It is going to remove {} files not processed".format(
+                    number_files_can_be_removed
+                )
+            )
+            context["message_remove_files_2"] = (
+                "Do you want to remove {} files not processed?".format(
+                    number_files_can_be_removed
+                )
             )
 
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
     def form_valid(self, form):
@@ -1272,18 +1257,18 @@ class SamplesUploadFastQView(
         context = super(SamplesUploadFastQView, self).get_context_data(**kwargs)
         context["nav_sample"] = True
         context["nav_modal"] = True  ## short the size of modal window
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         context["show_note_message_down_size"] = False
         if settings.DOWN_SIZE_FASTQ_FILES:
             context["show_note_message_down_size"] = True
-            context[
-                "message_note_2"
-            ] = "Files between {}-{} will be downsized randomly to ~{} before analysis.".format(
-                filesizeformat(int(settings.MAX_FASTQ_FILE_UPLOAD)),
-                filesizeformat(int(settings.MAX_FASTQ_FILE_WITH_DOWNSIZE)),
-                filesizeformat(int(settings.MAX_FASTQ_FILE_UPLOAD)),
+            context["message_note_2"] = (
+                "Files between {}-{} will be downsized randomly to ~{} before analysis.".format(
+                    filesizeformat(int(settings.MAX_FASTQ_FILE_UPLOAD)),
+                    filesizeformat(int(settings.MAX_FASTQ_FILE_WITH_DOWNSIZE)),
+                    filesizeformat(int(settings.MAX_FASTQ_FILE_UPLOAD)),
+                )
             )  ## show main information about the institute
 
             context["message_note_1"] = "Maximum size per fastq.gz file is {}.".format(
@@ -1445,9 +1430,11 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
         manageDatabase = ManageDatabase()
         list_meta = manageDatabase.get_sample_metakey(
             sample,
-            MetaKeyAndValue.META_KEY_Fastq_Trimmomatic
-            if sample.is_type_fastq_gz_sequencing()
-            else MetaKeyAndValue.META_KEY_NanoStat_NanoFilt,
+            (
+                MetaKeyAndValue.META_KEY_Fastq_Trimmomatic
+                if sample.is_type_fastq_gz_sequencing()
+                else MetaKeyAndValue.META_KEY_NanoStat_NanoFilt
+            ),
             None,
         )
         ## the info can be called from two distinct sources
@@ -1840,9 +1827,9 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
             ):
                 context["candidate_file_name_2"] = sample.candidate_file_name_2
 
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
 
@@ -1924,9 +1911,9 @@ class ProjectsView(LoginRequiredMixin, ListView):
                 + "</a>"
             )
 
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
 
@@ -2004,9 +1991,9 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
             # clean check boxes in search
             dt_sample_id_add_temp = {}
             for reference in query_set_result:
-                dt_sample_id_add_temp[
-                    reference.id
-                ] = 1  ## add the ids that are in the tables
+                dt_sample_id_add_temp[reference.id] = (
+                    1  ## add the ids that are in the tables
+                )
             for key in self.request.session.keys():
                 if (
                     key.startswith(Constants.CHECK_BOX)
@@ -2040,9 +2027,9 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
         context["table"] = table
         context["show_paginatior"] = len(query_set_result) > Constants.PAGINATE_NUMBER
         context["nav_project"] = True
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         if self.request.POST:
             context["project_references"] = ReferenceProjectFormSet(self.request.POST)
         else:
@@ -2078,9 +2065,9 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
                 is_deleted=False,
                 owner__username=self.request.user.username,
             )
-            self.request.session[
-                Constants.ERROR_PROJECT_NAME
-            ] = "Exists a project with this name."
+            self.request.session[Constants.ERROR_PROJECT_NAME] = (
+                "Exists a project with this name."
+            )
             self.request.session[Constants.PROJECT_NAME] = name
             b_error = True
         except Project.DoesNotExist:
@@ -2093,9 +2080,9 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
             ### test if it's in the session
             select_ref = get_unique_pk_from_session(self.request)
             if select_ref == None:
-                self.request.session[
-                    Constants.ERROR_REFERENCE
-                ] = "You need to select a reference."
+                self.request.session[Constants.ERROR_REFERENCE] = (
+                    "You need to select a reference."
+                )
                 b_error = True
 
         if name is None:
@@ -2105,22 +2092,22 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
             try:
                 reference = Reference.objects.get(pk=select_ref)
             except Reference.DoesNotExist:
-                self.request.session[
-                    Constants.ERROR_REFERENCE
-                ] = "You need to select a reference."
+                self.request.session[Constants.ERROR_REFERENCE] = (
+                    "You need to select a reference."
+                )
                 self.request.session[Constants.PROJECT_NAME] = name
                 return super(ProjectCreateView, self).form_invalid(form)
 
             if reference.is_deleted:
-                self.request.session[
-                    Constants.ERROR_REFERENCE
-                ] = "The reference '{}' was removed.".format(reference.name)
+                self.request.session[Constants.ERROR_REFERENCE] = (
+                    "The reference '{}' was removed.".format(reference.name)
+                )
                 self.request.session[Constants.PROJECT_NAME] = name
                 return super(ProjectCreateView, self).form_invalid(form)
         else:
-            self.request.session[
-                Constants.ERROR_REFERENCE
-            ] = "You need to select a reference."
+            self.request.session[Constants.ERROR_REFERENCE] = (
+                "You need to select a reference."
+            )
             self.request.session[Constants.PROJECT_NAME] = name
             return super(ProjectCreateView, self).form_invalid(form)
 
@@ -2152,6 +2139,8 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
 
     form_valid_message = ""  ## need to have this, even empty
 
+from pathogen_identification.models import TeleFluProject
+
 
 class AddSamplesProjectsView(
     LoginRequiredMixin, FormValidMessageMixin, generic.CreateView
@@ -2175,7 +2164,10 @@ class AddSamplesProjectsView(
         context = super(AddSamplesProjectsView, self).get_context_data(**kwargs)
 
         ### test if the user is the same of the page
+        print(self.kwargs)
         project = Project.objects.get(pk=self.kwargs["pk"])
+        is_teleflu_project= TeleFluProject.objects.filter(insaflu_project=project).exists()
+        print(is_teleflu_project)
         context["nav_project"] = True
         if project.owner.id != self.request.user.id:
             context["error_cant_see"] = "1"
@@ -2188,13 +2180,25 @@ class AddSamplesProjectsView(
         samples_out = ProjectSample.objects.filter(
             Q(project=project) & ~Q(is_deleted=True) & ~Q(is_error=True)
         ).values("sample__pk")
-        query_set = Sample.objects.filter(
-            owner__id=self.request.user.id,
-            is_obsolete=False,
-            is_deleted=False,
-            is_deleted_processed_fastq=False,
-            is_ready_for_projects=True,
-        ).exclude(pk__in=samples_out)
+        if is_teleflu_project:
+            televir_project= TeleFluProject.objects.get(insaflu_project=project).televir_project
+            samples_in_televir_project= televir_project.samples_source
+            query_set = Sample.objects.filter(
+                owner__id=self.request.user.id,
+                is_obsolete=False,
+                is_deleted=False,
+                is_deleted_processed_fastq=False,
+                is_ready_for_projects=True,
+                pk__in=samples_in_televir_project
+            ).exclude(pk__in=samples_out)
+        else:
+            query_set = Sample.objects.filter(
+                owner__id=self.request.user.id,
+                is_obsolete=False,
+                is_deleted=False,
+                is_deleted_processed_fastq=False,
+                is_ready_for_projects=True,
+            ).exclude(pk__in=samples_out)
 
         tag_search = "search_add_project_sample"
         if self.request.GET.get(tag_search) != None and self.request.GET.get(
@@ -2222,9 +2226,9 @@ class AddSamplesProjectsView(
         dt_sample_id_add_temp = {}
         if context[Constants.CHECK_BOX_ALL]:
             for sample in query_set:
-                dt_sample_id_add_temp[
-                    sample.id
-                ] = 1  ## add the ids that are in the tables
+                dt_sample_id_add_temp[sample.id] = (
+                    1  ## add the ids that are in the tables
+                )
             for key in self.request.session.keys():
                 if (
                     key.startswith(Constants.CHECK_BOX)
@@ -2255,9 +2259,9 @@ class AddSamplesProjectsView(
         context["query_set_count"] = query_set.count()
         context["project_name"] = project.name
         context["nav_modal"] = True  ## short the size of modal window
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         context["show_message_change_settings"] = (
             count_active_projects == 0
             and self.request.session[key_session_name_project_settings]
@@ -2506,9 +2510,9 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
             "/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.AJAX_LOADING_GIF
         )
         context["nav_project"] = True
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
 
         context["project_name"] = project.name
         context["reference_name"] = project.reference.get_reference_fasta_web()
@@ -2642,12 +2646,12 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
                 Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV,
             )
         ):
-            context[
-                "samples_file_settings_statistics_csv"
-            ] = get_link_for_dropdown_item(
-                project.get_global_file_by_project(
-                    TypePath.MEDIA_URL,
-                    Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV,
+            context["samples_file_settings_statistics_csv"] = (
+                get_link_for_dropdown_item(
+                    project.get_global_file_by_project(
+                        TypePath.MEDIA_URL,
+                        Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV,
+                    )
                 )
             )
         if os.path.exists(
@@ -2656,12 +2660,12 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
                 Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV,
             )
         ):
-            context[
-                "samples_file_settings_statistics_tsv"
-            ] = get_link_for_dropdown_item(
-                project.get_global_file_by_project(
-                    TypePath.MEDIA_URL,
-                    Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV,
+            context["samples_file_settings_statistics_tsv"] = (
+                get_link_for_dropdown_item(
+                    project.get_global_file_by_project(
+                        TypePath.MEDIA_URL,
+                        Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV,
+                    )
                 )
             )
 
@@ -2689,10 +2693,10 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
             collect_extra_data = CollectExtraData()
             collect_extra_data.calculate_count_variations(project)
         if os.path.exists(file_name):
-            context[
-                "variations_statistics_file"
-            ] = project.get_global_file_by_project_web(
-                Project.PROJECT_FILE_NAME_TOTAL_VARIATIONS
+            context["variations_statistics_file"] = (
+                project.get_global_file_by_project_web(
+                    Project.PROJECT_FILE_NAME_TOTAL_VARIATIONS
+                )
             )
 
         utils = Utils()
@@ -2703,9 +2707,9 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
             project.reference, self.request.user
         )
         if vect_elements_protein != None and len(vect_elements_protein) > 0:
-            context[
-                "elements_protein"
-            ] = vect_elements_protein  ## because some does not have CDS
+            context["elements_protein"] = (
+                vect_elements_protein  ## because some does not have CDS
+            )
             ### get a vect of genes name
             context["genes"] = utils.get_vect_cds_from_element_from_db(
                 vect_elements_protein[0], project.reference, self.request.user
@@ -2849,9 +2853,9 @@ class ProjectsSettingsView(LoginRequiredMixin, ListView):
                 )
 
         context["all_softwares"] = all_tables
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         context["project"] = project
         context["main_settings"] = False
         context["project_settings"] = True
@@ -2938,9 +2942,9 @@ class SampleProjectsSettingsView(LoginRequiredMixin, ListView):
         context["project_sample"] = project_sample
         context["project_sample_settings"] = True
         context["main_settings"] = False
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
 
@@ -3025,9 +3029,9 @@ class SampleSettingsView(LoginRequiredMixin, ListView):
         context["sample"] = sample
         context["sample_settings"] = True
         context["main_settings"] = False
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
 
@@ -3056,9 +3060,9 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
                 project_sample.alert_first_level + project_sample.alert_second_level
             )
             context["nav_project"] = True
-            context[
-                "show_info_main_page"
-            ] = ShowInfoMainPage()  ## show main information about the institute
+            context["show_info_main_page"] = (
+                ShowInfoMainPage()
+            )  ## show main information about the institute
 
             ## collect alerts
             alert_out = []
@@ -3114,12 +3118,12 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
                     FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name
                 )
                 b_second_choice = True
-                context[
-                    "freebayes_variants_file_snp_indel"
-                ] = project_sample.get_file_web(
-                    FileType.FILE_TAB,
-                    SoftwareNames.SOFTWARE_FREEBAYES_name,
-                    b_second_choice,
+                context["freebayes_variants_file_snp_indel"] = (
+                    project_sample.get_file_web(
+                        FileType.FILE_TAB,
+                        SoftwareNames.SOFTWARE_FREEBAYES_name,
+                        b_second_choice,
+                    )
                 )
                 context["depth_file"] = project_sample.get_file_web(
                     FileType.FILE_DEPTH_GZ, SoftwareNames.SOFTWARE_SNIPPY_name

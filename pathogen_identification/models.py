@@ -86,6 +86,14 @@ class Projects(models.Model):
             for parameterset in parametersets:
                 parameterset.delete_run_data()
 
+    @property
+    def samples_source(self):
+        """
+        return pk of INSaFLU samples that are part of this project"""
+        project_samples = PIProject_Sample.objects.filter(project=self)
+        samples = [project_sample.sample.pk for project_sample in project_samples]
+        return samples
+
 
 class SoftwareTree(models.Model):
     """"""

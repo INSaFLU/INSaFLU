@@ -86,9 +86,7 @@ class Command(BaseCommand):
         software = Software()
         count = 0
         for reference in Reference.objects.all():
-            print("######")
-            print(reference.name)
-            print(reference.reference_fasta_name)
+
             if reference.is_deleted:
                 continue
             count += 1
@@ -114,7 +112,10 @@ class Command(BaseCommand):
                 )
 
             test_file = reference.get_gff3(TypePath.MEDIA_ROOT)
-            # if not os.path.exists(test_file): software.run_genbank2gff3(reference.get_reference_gbk(TypePath.MEDIA_ROOT), test_file)
+            if not os.path.exists(test_file):
+                software.run_genbank2gff3(
+                    reference.get_reference_gbk(TypePath.MEDIA_ROOT), test_file
+                )
 
             test_file = reference.get_gff3_with_gene_annotation(TypePath.MEDIA_ROOT)
             if not os.path.exists(test_file):

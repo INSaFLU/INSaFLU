@@ -3,6 +3,7 @@ Created on 03/05/2020
 
 @author: mmp
 """
+
 import logging
 
 from constants.software_names import SoftwareNames
@@ -551,6 +552,12 @@ class DefaultProjectSoftware(object):
             None,
             ConstantsSettings.TECHNOLOGY_illumina,
         )
+
+    @staticmethod
+    def edit_primerNone_parameters(parameter_string: str):
+
+        if "--primer None" in parameter_string:
+            return parameter_string.replace("--primer None ", "")
 
     def get_snippy_parameters_all_possibilities(self, user, project_sample):
         """
@@ -2310,9 +2317,11 @@ class DefaultProjectSoftware(object):
         )
         key_value = "{}_{}_{}".format(
             software.name,
-            ConstantsSettings.TECHNOLOGY_illumina
-            if software.technology is None
-            else software.technology.name,
+            (
+                ConstantsSettings.TECHNOLOGY_illumina
+                if software.technology is None
+                else software.technology.name
+            ),
             user.username,
         )
         self.change_values_software[key_value] = False

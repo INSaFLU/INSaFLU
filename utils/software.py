@@ -2835,7 +2835,12 @@ class Software(object):
                         user, project_sample
                     )
                 )
-                print("RUNNING SNIPPY")
+                snippy_parameters = default_project_software.edit_primerNone_parameters(
+                    snippy_parameters
+                )
+                print("RUNNING SNIPPY")edit_primerNone_parameters(
+                    
+                )
                 out_put_path = self.run_snippy(
                     project_sample.sample.get_fastq_available(
                         TypePath.MEDIA_ROOT, True

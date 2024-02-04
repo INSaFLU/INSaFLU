@@ -26,8 +26,13 @@ from constants.software_names import SoftwareNames
 from manage_virus.models import UploadFile
 from manage_virus.uploadFiles import UploadFiles
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import (MixedInfectionsTag, ProcessControler,
-                                   ProjectSample, Reference, Sample)
+from managing_files.models import (
+    MixedInfectionsTag,
+    ProcessControler,
+    ProjectSample,
+    Reference,
+    Sample,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software_project_sample import DefaultProjectSoftware
@@ -36,8 +41,15 @@ from utils.mixed_infections_management import MixedInfectionsManagement
 from utils.parse_coverage_file import GetCoverage
 from utils.parse_out_files import ParseOutFiles
 from utils.process_SGE import ProcessSGE
-from utils.result import (CountHits, DecodeObjects, KeyValue, MaskingConsensus,
-                          Result, ResultAverageAndNumberReads, SoftwareDesc)
+from utils.result import (
+    CountHits,
+    DecodeObjects,
+    KeyValue,
+    MaskingConsensus,
+    Result,
+    ResultAverageAndNumberReads,
+    SoftwareDesc,
+)
 from utils.utils import Utils
 
 
@@ -1436,6 +1448,7 @@ class Software(object):
                 file_name_1,
                 file_name_2,
             )
+        print("SNIPPY: ", cmd)
         exist_status = os.system(cmd)
         if exist_status != 0:
             self.logger_production.error("Fail to run: " + cmd)
@@ -2822,6 +2835,7 @@ class Software(object):
                         user, project_sample
                     )
                 )
+                print("RUNNING SNIPPY")
                 out_put_path = self.run_snippy(
                     project_sample.sample.get_fastq_available(
                         TypePath.MEDIA_ROOT, True

@@ -556,10 +556,6 @@ class DefaultProjectSoftware(object):
     @staticmethod
     def edit_primerNone_parameters(parameter_string: str):
 
-        print("EDITING PRIMER NONE")
-        print(parameter_string)
-        print("--primer None" in parameter_string)
-
         if "--primer None" in parameter_string:
             return parameter_string.replace("--primer None", "")
 

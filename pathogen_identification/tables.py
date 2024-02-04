@@ -951,7 +951,6 @@ class TeleFluProjectTable(tables.Table):
             )
 
         project_name = mark_safe(project_name)
-        print(project_name)
 
         return project_name
 
@@ -959,7 +958,6 @@ class TeleFluProjectTable(tables.Table):
         return record.description
 
     def render_reference(self, record: TeleFluProject):
-        print("referecne")
         return record.raw_reference.description
 
     def render_samples(self, record: TeleFluProject):
@@ -1014,7 +1012,7 @@ class TeleFluProjectTable(tables.Table):
         """
         insaflu_project = record.insaflu_project
         if insaflu_project is None:
-            return ""
+            return "no associated project"
         ## there's nothing to show
         count = InsafluProjectSample.objects.filter(
             project__id=insaflu_project.id,
@@ -1030,23 +1028,8 @@ class TeleFluProjectTable(tables.Table):
         ).count()
 
         sz_project_sample = ""
-        if count > 0:
-            sz_project_sample = (
-                "<a href="
-                + reverse("show-sample-project-results", args=[insaflu_project.pk])
-                + ' data-toggle="tooltip" title="See Results"> '
-                + '<span ><i class="padding-button-table fa fa-info-circle padding-button-table"></i></span></a> '
-            )
-            ## only can change settings when has projects finished
-            # sz_project_sample += '<a href=' + reverse('project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
-            #     '<span ><i class="fa fa-magic padding-button-table"></i></span></a>'
-            sz_project_sample += (
-                "<a href="
-                + reverse("project-settings", args=[insaflu_project.pk])
-                + ' data-toggle="tooltip" title="Software settings">'
-                + '<span ><i class="padding-button-table fa fa-magic padding-button-table"></i></span></a>'
-            )
-        elif count_not_finished > 0:
+
+        if count_not_finished > 0:
             sz_project_sample = _("{} processing ".format(count_not_finished))
         else:  ## can change settings
             sz_project_sample += (

@@ -1118,7 +1118,6 @@ class Software(object):
             temp_dir,
             name_strain,
         )
-        print(cmd)
         exist_status = os.system(cmd)
         if exist_status != 0:
             self.logger_production.error("Fail to run: " + cmd)
@@ -1414,7 +1413,6 @@ class Software(object):
         [06:29:16] * /tmp/insafli/xpto/xpto.vcf.gz
         [06:29:16] * /tmp/insafli/xpto/xpto.vcf.gz.tbi
         """
-        print("snippy_parameters", snippy_parameters)
         temp_dir = os.path.join(self.utils.get_temp_dir(), sample_name)
         if file_name_2 is None or len(file_name_2) == 0:
             cmd = "%s --cpus %d --outdir %s --prefix %s --ref %s %s --se %s" % (
@@ -2827,7 +2825,6 @@ class Software(object):
                 snippy_parameters = default_project_software.edit_primerNone_parameters(
                     snippy_parameters
                 )
-                print("RUNNING SNIPPY")
                 out_put_path = self.run_snippy(
                     project_sample.sample.get_fastq_available(
                         TypePath.MEDIA_ROOT, True
@@ -2895,11 +2892,10 @@ class Software(object):
                 return False
 
             ## copy the files to the project sample directories
-            print("Copy files to project")
             self.copy_files_to_project(
                 project_sample, self.software_names.get_snippy_name(), out_put_path
             )
-            # self.utils.remove_dir(out_put_path)
+            self.utils.remove_dir(out_put_path)
 
             ### make the link for the new tab file name
             path_snippy_tab = project_sample.get_file_output(
@@ -3149,7 +3145,6 @@ class Software(object):
             count_hits = CountHits()
             if default_project_software.is_to_run_freebayes(user, project_sample):
                 try:
-                    print("RUNNING FREEBAYES")
                     out_put_path = self.run_freebayes_parallel(
                         project_sample.get_file_output(
                             TypePath.MEDIA_ROOT,
@@ -3164,7 +3159,6 @@ class Software(object):
                         ),
                         project_sample.sample.name,
                     )
-                    print("FREEBAYES FINISHED")
                     result_all.add_software(
                         SoftwareDesc(
                             self.software_names.get_freebayes_name(),
@@ -3319,7 +3313,6 @@ class Software(object):
                     )
 
                     ### mixed infection
-                    print("RUNNING MIXED INFECTION")
                 try:
                     ## get instances
                     mixed_infections_management = MixedInfectionsManagement()
@@ -3622,7 +3615,6 @@ class Software(object):
         if not os.path.exists(file_name):
             return
         cmd = "dos2unix {}".format(file_name)
-        print(cmd)
         exist_status = os.system(cmd)
         if exist_status != 0:
             self.logger_production.error("Fail to run: " + cmd)

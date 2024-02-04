@@ -421,13 +421,15 @@ class ProcessSGE(object):
         """
         process_controler = ProcessControler()
         vect_command = [
-            "/use/bin/python3 {} second_stage_snippy --project_sample_id {} --user_id {}".format(
+            "/usr/bin/python3 {} second_stage_snippy --project_sample_id {} --user_id {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 project_sample.pk,
                 user.pk,
-                "--settings fluwebvirus.settings_test"
-                if settings.RUN_TEST_IN_COMMAND_LINE
-                else "",
+                (
+                    "--settings fluwebvirus.settings_test"
+                    if settings.RUN_TEST_IN_COMMAND_LINE
+                    else ""
+                ),
             )
         ]
         self.logger_production.info("Processing: " + ";".join(vect_command))
@@ -463,9 +465,11 @@ class ProcessSGE(object):
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 project_sample.pk,
                 user.pk,
-                "--settings fluwebvirus.settings_test"
-                if settings.RUN_TEST_IN_COMMAND_LINE
-                else "",
+                (
+                    "--settings fluwebvirus.settings_test"
+                    if settings.RUN_TEST_IN_COMMAND_LINE
+                    else ""
+                ),
             )
         ]
         self.logger_production.info("Processing: " + ";".join(vect_command))
@@ -529,9 +533,11 @@ class ProcessSGE(object):
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 sample.pk,
                 user.pk,
-                "--settings fluwebvirus.settings_test"
-                if settings.RUN_TEST_IN_COMMAND_LINE
-                else "",
+                (
+                    "--settings fluwebvirus.settings_test"
+                    if settings.RUN_TEST_IN_COMMAND_LINE
+                    else ""
+                ),
             )
         ]
         self.logger_production.info("Processing: " + ";".join(vect_command))
@@ -568,9 +574,11 @@ class ProcessSGE(object):
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 sample.pk,
                 user.pk,
-                "--settings fluwebvirus.settings_test"
-                if settings.RUN_TEST_IN_COMMAND_LINE
-                else "",
+                (
+                    "--settings fluwebvirus.settings_test"
+                    if settings.RUN_TEST_IN_COMMAND_LINE
+                    else ""
+                ),
             )
         ]
         self.logger_production.info("Processing: " + ";".join(vect_command))
@@ -741,9 +749,11 @@ class ProcessSGE(object):
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 upload_files.pk,
                 user.pk,
-                "--settings fluwebvirus.settings_test"
-                if settings.RUN_TEST_IN_COMMAND_LINE or b_test
-                else "",
+                (
+                    "--settings fluwebvirus.settings_test"
+                    if settings.RUN_TEST_IN_COMMAND_LINE or b_test
+                    else ""
+                ),
             )
         ]
         self.logger_production.info("Processing: " + ";".join(vect_command))

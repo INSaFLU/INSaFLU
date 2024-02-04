@@ -3,6 +3,7 @@ Created on Oct 28, 2017
 
 @author: mmp
 """
+
 import cmd
 import datetime
 import gzip
@@ -1510,7 +1511,9 @@ class Software(object):
             sequences.replace(".fasta", ".insertions.csv"),
         )
 
-    def run_genbank2gff3(self, genbank, out_file, for_nextclade=False, genbank2gff3_stdout="stdout"):
+    def run_genbank2gff3(
+        self, genbank, out_file, for_nextclade=False, genbank2gff3_stdout="stdout"
+    ):
         """
         for_nextclade = True; need to add gene annotation and gene_name in INFO
         """
@@ -1522,7 +1525,9 @@ class Software(object):
 
         cmd = "perl {} ".format(
             SoftwareNames.SOFTWARE_genbank_to_perl
-        ) + "-f GenBank {} -out {} -x gene > {}".format(out_file_gb, genbank2gff3_stdout, temp_file)
+        ) + "-f GenBank {} -out {} -x gene > {}".format(
+            out_file_gb, genbank2gff3_stdout, temp_file
+        )
 
         exist_status = os.system(cmd)
 
@@ -2884,10 +2889,11 @@ class Software(object):
                 return False
 
             ## copy the files to the project sample directories
+            print("Copy files to project")
             self.copy_files_to_project(
                 project_sample, self.software_names.get_snippy_name(), out_put_path
             )
-            self.utils.remove_dir(out_put_path)
+            # self.utils.remove_dir(out_put_path)
 
             ### make the link for the new tab file name
             path_snippy_tab = project_sample.get_file_output(
@@ -3137,6 +3143,7 @@ class Software(object):
             count_hits = CountHits()
             if default_project_software.is_to_run_freebayes(user, project_sample):
                 try:
+                    print("RUNNING FREEBAYES")
                     out_put_path = self.run_freebayes_parallel(
                         project_sample.get_file_output(
                             TypePath.MEDIA_ROOT,
@@ -3151,6 +3158,7 @@ class Software(object):
                         ),
                         project_sample.sample.name,
                     )
+                    print("FREEBAYES FINISHED")
                     result_all.add_software(
                         SoftwareDesc(
                             self.software_names.get_freebayes_name(),
@@ -3304,7 +3312,8 @@ class Software(object):
                         count_hits.to_json(),
                     )
 
-                ### mixed infection
+                    ### mixed infection
+                    print("RUNNING MIXED INFECTION")
                 try:
                     ## get instances
                     mixed_infections_management = MixedInfectionsManagement()

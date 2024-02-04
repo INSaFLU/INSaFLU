@@ -439,7 +439,7 @@ class ProcessSGE(object):
         if queue_name == None:
             queue_name = Constants.QUEUE_SGE_NAME_GLOBAL
         path_file = self.set_script_run_sge(
-            out_dir, queue_name, vect_command, job_name, True, vect_job_name_wait
+            out_dir, queue_name, vect_command, job_name, False, vect_job_name_wait
         )
         try:
             sge_id = self.submitte_job(path_file)

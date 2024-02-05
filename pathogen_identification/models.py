@@ -14,7 +14,8 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from managing_files.models import Sample
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from pathogen_identification.data_classes import IntermediateFiles
 
 # Create your models here.
@@ -943,7 +944,7 @@ from managing_files.models import Reference as InsaFluReference
 
 
 class MetaReference(models.Model):
-    description = models.CharField(max_length=100, blank=True, null=True)
+    description = models.CharField(max_length=200, blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     project = models.ForeignKey(
         Projects, on_delete=models.CASCADE, blank=True, null=True

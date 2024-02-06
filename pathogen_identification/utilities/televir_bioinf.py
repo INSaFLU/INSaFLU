@@ -53,12 +53,15 @@ class TelevirBioinf:
     def merge_vcf_files(self, files: List[str], output_file):
 
         if len(files) == 1:
-
-            shutil.copy(files[0], output_file)
+            if files[0].endswith(".gz"):
+                command = f"zcat {files[0]} > {output_file}"
+                subprocess.call(command, shell=True)
+            else:
+                shutil.copy(files[0], output_file)
             return self.check_file_exists_not_empty(files[0])
 
         command = f"{self.bcf_tools_binary} merge {' '.join(files)} > {output_file}"
-        print(command)
+
         subprocess.call(command, shell=True)
 
         return self.check_file_exists_not_empty(output_file)

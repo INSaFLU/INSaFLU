@@ -89,6 +89,7 @@ class Command(BaseCommand):
 
         try:
             success = create_teleflu_igv_report(project_id)
+            print(success)
 
             if success is False:
                 process_SGE.set_process_controler(

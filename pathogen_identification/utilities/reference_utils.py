@@ -570,6 +570,7 @@ def create_teleflu_igv_report(teleflu_project_pk: int) -> bool:
     ### get reference
     reference = teleflu_project.reference
     if reference is None:
+        print("NO REFERENCE")
         return False
 
     reference_file = reference.get_reference_fasta(TypePath.MEDIA_ROOT)

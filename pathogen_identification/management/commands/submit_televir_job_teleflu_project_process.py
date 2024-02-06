@@ -101,6 +101,7 @@ class Command(BaseCommand):
                 return
 
             teleflu_project = TeleFluProject.objects.get(pk=project_id)
+            insaflu_reference = teleflu_project.reference
 
             project = InsafluProject.objects.create(
                 owner=user,
@@ -120,56 +121,7 @@ class Command(BaseCommand):
             process_SGE.set_create_project_list_by_user(user)
 
             ###### SAMPLES
-            samples = TeleFluSample.objects.filter(teleflu_project=teleflu_project)
-            for sample in samples:
-                original_sample = sample.televir_sample.sample
-
-                try:
-                    project_sample = ProjectSample.objects.get(
-                        project=project,
-                        sample=original_sample,
-                    )
-                except ProjectSample.DoesNotExist:
-                    project_sample = ProjectSample.objects.create(
-                        project=project,
-                        sample=original_sample,
-                    )
-
-                (job_name_wait, job_name) = ("", "")
-                ### create a task to perform the analysis of snippy and freebayes
-                ### Important, it is necessary to run again because can have some changes in the parameters.
-                manageDatabase = ManageDatabase()
-                metaKeyAndValue = MetaKeyAndValue()
-                try:
-                    if len(job_name_wait) == 0:
-                        (
-                            job_name_wait,
-                            job_name,
-                        ) = profile.get_name_sge_seq(
-                            Profile.SGE_PROCESS_projects, Profile.SGE_GLOBAL
-                        )
-                    if original_sample.is_type_fastq_gz_sequencing():
-                        taskID = process_SGE.set_second_stage_snippy(
-                            project_sample, user, job_name, [job_name_wait]
-                        )
-                    else:
-                        taskID = process_SGE.set_second_stage_medaka(
-                            project_sample, user, job_name, [job_name_wait]
-                        )
-
-                    ### set project sample queue ID
-                    manageDatabase.set_project_sample_metakey(
-                        project_sample,
-                        user,
-                        metaKeyAndValue.get_meta_key_queue_by_project_sample_id(
-                            project_sample.id
-                        ),
-                        MetaKeyAndValue.META_VALUE_Queue,
-                        taskID,
-                    )
-                except Exception as e:
-                    print(e)
-                    pass
+            create_teleflu_igv_report(teleflu_project.pk)
 
         except Exception as e:
             print(e)

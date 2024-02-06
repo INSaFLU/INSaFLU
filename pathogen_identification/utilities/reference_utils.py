@@ -477,15 +477,12 @@ def generate_insaflu_reference(
         settings.MEDIA_ROOT, utils.get_path_to_reference_file(user.id, reference.id)
     )
     os.makedirs(final_data_path, exist_ok=True)
-    print("FINAL DATA PATH", final_data_path)
-    print(reference.reference_fasta_name)
 
     ## fasta file
     sz_file_to = os.path.join(
         final_data_path,
         reference.reference_fasta_name,
     )
-    print("$$$$$$$$$$$$$$$$", reference_fasta)
     cwd = os.getcwd()
     os.chdir(os.path.join(Constants.TEMP_DIRECTORY, Constants.COUNT_DNA_TEMP_DIRECTORY))
 

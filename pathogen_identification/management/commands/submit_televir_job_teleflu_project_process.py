@@ -100,26 +100,6 @@ class Command(BaseCommand):
                 )
                 return
 
-            teleflu_project = TeleFluProject.objects.get(pk=project_id)
-            insaflu_reference = teleflu_project.reference
-
-            project = InsafluProject.objects.create(
-                owner=user,
-                name=teleflu_project.name,
-                reference=insaflu_reference,
-            )
-
-            teleflu_project.insaflu_project = project
-            teleflu_project.save()
-
-            default_software = DefaultProjectSoftware()
-            default_software.test_all_defaults(
-                user, project, None, None
-            )  ## the user can have defaults yet
-
-            ###### SAMPLES
-            create_teleflu_igv_report(teleflu_project.pk)
-
         except Exception as e:
             print(e)
             process_SGE.set_process_controler(

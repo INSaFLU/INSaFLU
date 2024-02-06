@@ -57,7 +57,7 @@ class Command(BaseCommand):
 
         process_SGE.set_process_controler(
             user,
-            process_controler.get_name_televir_teleflu_project_create(
+            process_controler.get_name_televir_teleflu_project_process(
                 project_id=project_id,
             ),
             ProcessControler.FLAG_RUNNING,
@@ -65,7 +65,7 @@ class Command(BaseCommand):
 
         process = ProcessControler.objects.filter(
             owner__id=user.pk,
-            name=process_controler.get_name_televir_teleflu_project_create(
+            name=process_controler.get_name_televir_teleflu_project_process(
                 project_id=project_id,
             ),
             is_finished=False,
@@ -88,16 +88,12 @@ class Command(BaseCommand):
             raise Exception("User without profile")
 
         try:
-            success, insaflu_reference = teleflu_to_insaflu_reference(
-                project_id, user_id
-            )
-
-            print("Success", success, insaflu_reference)
+            success = create_teleflu_igv_report(project_id)
 
             if success is False:
                 process_SGE.set_process_controler(
                     user,
-                    process_controler.get_name_televir_teleflu_project_create(
+                    process_controler.get_name_televir_teleflu_project_process(
                         project_id=project_id,
                     ),
                     ProcessControler.FLAG_ERROR,
@@ -179,7 +175,7 @@ class Command(BaseCommand):
             print(e)
             process_SGE.set_process_controler(
                 user,
-                process_controler.get_name_televir_teleflu_project_create(
+                process_controler.get_name_televir_teleflu_project_process(
                     project_id=project_id,
                 ),
                 ProcessControler.FLAG_ERROR,
@@ -188,7 +184,7 @@ class Command(BaseCommand):
 
         process_SGE.set_process_controler(
             user,
-            process_controler.get_name_televir_teleflu_project_create(
+            process_controler.get_name_televir_teleflu_project_process(
                 project_id=project_id,
             ),
             ProcessControler.FLAG_FINISHED,

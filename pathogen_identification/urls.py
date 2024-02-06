@@ -56,7 +56,12 @@ urlpatterns = [
         name="create_teleflu_reference",
     ),
     url(
-        "Projects/televir_project_create$",
+        r"Refereces/igv_teleflu_references$",
+        PIajax_views.teleflu_igv_create,
+        name="create_teleflu_igv_reference",
+    ),
+    url(
+        r"Projects/televir_project_create$",
         PIajax_views.create_teleflu_project,
         name="create_teleflu_project",
     ),

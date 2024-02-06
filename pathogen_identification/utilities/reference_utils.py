@@ -11,8 +11,11 @@ from django.core.files.temp import NamedTemporaryFile
 from django.db.models import Q
 
 from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
+from constants.software_names import SoftwareNames
 from constants.televir_directories import Televir_Directory_Constants
-from managing_files.models import ProcessControler, Reference
+from managing_files.models import ProcessControler
+from managing_files.models import ProjectSample as InsafluProjectSample
+from managing_files.models import Reference
 from pathogen_identification.models import RawReference, ReferenceSourceFileMap
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
 from utils.software import Software
@@ -560,3 +563,72 @@ def generate_insaflu_reference(
     software.get_species_tag(reference)
 
     return True, reference.id
+
+
+def create_teleflu_igv_report(teleflu_project_pk: int) -> bool:
+
+    teleflu_project = TeleFluProject.objects.get(pk=teleflu_project_pk)
+    insaflu_project = teleflu_project.insaflu_project
+
+    ### get reference
+    reference = teleflu_project.reference
+    if reference is None:
+        return False
+
+    reference_file = reference.get_reference_fasta(TypePath.MEDIA_ROOT)
+    reference_index = reference.get_reference_fasta_index(TypePath.MEDIA_ROOT)
+
+    samples = InsafluProjectSample.objects.filter(project=insaflu_project)
+    # samples= [sample.sample for sample in samples]
+
+    sample_dict = {}
+
+    ### get sample files
+    software_names = SoftwareNames()
+
+    for sample in samples:
+        bam_file = sample.get_file_output(
+            TypePath.MEDIA_ROOT, FileType.FILE_BAM, software_names.get_snippy_name()
+        )
+        bam_file_index = sample.get_file_output(
+            TypePath.MEDIA_ROOT,
+            FileType.FILE_BAM_BAI,
+            software_names.get_snippy_name(),
+        )
+        vcf_file = sample.get_file_output(
+            TypePath.MEDIA_ROOT, FileType.FILE_VCF, software_names.get_snippy_name()
+        )
+
+        if bam_file and bam_file_index and vcf_file:
+            sample_dict[sample.sample.pk] = {
+                "name": sample.sample.name,
+                "bam_file": bam_file,
+                "bam_file_index": bam_file_index,
+                "vcf_file": vcf_file,
+            }
+
+    ### merge vcf files
+    televir_bioinf = TelevirBioinf()
+    vcf_files = [files["vcf_file"] for sample_pk, files in sample_dict.items()]
+    group_vcf = teleflu_project.project_vcf
+    stacked_html = teleflu_project.project_igv_report_media
+
+    os.makedirs(teleflu_project.project_vcf_directory, exist_ok=True)
+
+    merged_success = televir_bioinf.merge_vcf_files(vcf_files, group_vcf)
+
+    try:
+
+        televir_bioinf.create_igv_report(
+            reference_file,
+            vcf_file=group_vcf,
+            tracks=sample_dict,
+            output_html=stacked_html,
+        )
+
+        # for sample_pk, files in sample_dict.items():
+        #    print(sample_pk, files)
+        return True
+    except Exception as e:
+        print(e)
+        return False

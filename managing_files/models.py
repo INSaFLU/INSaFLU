@@ -563,9 +563,11 @@ class Sample(models.Model):
             "application/gzip",
             "application/x-gzip",
         ],
-        max_upload_size=settings.MAX_FASTQ_FILE_WITH_DOWNSIZE
-        if settings.DOWN_SIZE_FASTQ_FILES
-        else settings.MAX_FASTQ_FILE_UPLOAD,
+        max_upload_size=(
+            settings.MAX_FASTQ_FILE_WITH_DOWNSIZE
+            if settings.DOWN_SIZE_FASTQ_FILES
+            else settings.MAX_FASTQ_FILE_UPLOAD
+        ),
         max_length=500,
     )
     is_valid_2 = models.BooleanField(default=False)
@@ -580,9 +582,11 @@ class Sample(models.Model):
             "application/gzip",
             "application/x-gzip",
         ],
-        max_upload_size=settings.MAX_FASTQ_FILE_WITH_DOWNSIZE
-        if settings.DOWN_SIZE_FASTQ_FILES
-        else settings.MAX_FASTQ_FILE_UPLOAD,
+        max_upload_size=(
+            settings.MAX_FASTQ_FILE_WITH_DOWNSIZE
+            if settings.DOWN_SIZE_FASTQ_FILES
+            else settings.MAX_FASTQ_FILE_UPLOAD
+        ),
         max_length=500,
     )
 
@@ -788,13 +792,15 @@ class Sample(models.Model):
             return None
         return os.path.join(
             self.__get_path__(type_path, b_first_file),
-            self.file_name_1.replace(
-                FileExtensions.FILE_FASTQ_GZ, "_fastqc.html"
-            ).replace(FileExtensions.FILE_FQ_GZ, "_fastqc.html")
-            if b_first_file
-            else self.file_name_2.replace(
-                FileExtensions.FILE_FASTQ_GZ, "_fastqc.html"
-            ).replace(FileExtensions.FILE_FQ_GZ, "_fastqc.html"),
+            (
+                self.file_name_1.replace(
+                    FileExtensions.FILE_FASTQ_GZ, "_fastqc.html"
+                ).replace(FileExtensions.FILE_FQ_GZ, "_fastqc.html")
+                if b_first_file
+                else self.file_name_2.replace(
+                    FileExtensions.FILE_FASTQ_GZ, "_fastqc.html"
+                ).replace(FileExtensions.FILE_FQ_GZ, "_fastqc.html")
+            ),
         )
 
     def get_rabbitQC_output(self, type_path):
@@ -2091,9 +2097,11 @@ class UploadFiles(models.Model):
             "text/tab-separated-values",
             "text/plain",
         ],
-        max_upload_size=settings.MAX_FASTQ_FILE_WITH_DOWNSIZE
-        if settings.DOWN_SIZE_FASTQ_FILES
-        else settings.MAX_FASTQ_FILE_UPLOAD,
+        max_upload_size=(
+            settings.MAX_FASTQ_FILE_WITH_DOWNSIZE
+            if settings.DOWN_SIZE_FASTQ_FILES
+            else settings.MAX_FASTQ_FILE_UPLOAD
+        ),
         max_length=500,
     )
 
@@ -2228,7 +2236,12 @@ class ProcessControler(models.Model):
         )
 
     def get_name_televir_teleflu_project_create(self, project_id):
-        return "{}_teleflu_project_{}".format(
+        return "{}_teleflu_project_create_{}".format(
+            ProcessControler.PREFIX_TELEVIR_PROJECT, project_id
+        )
+
+    def get_name_televir_teleflu_project_process(self, project_id):
+        return "{}_teleflu_project_process_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, project_id
         )
 

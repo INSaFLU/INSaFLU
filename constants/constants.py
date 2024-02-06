@@ -3,6 +3,7 @@ Created on Oct 13, 2017
 
 @author: mmp
 """
+
 import os
 from abc import ABC
 from enum import Enum
@@ -60,6 +61,7 @@ class Televir_Metadata_Constants:
             "snippy": config("DIR_SOFTWARE") + "/snippy",
             "bamutil": "remap/remap",
             "msamtools": "remap/remap",
+            "bcftools": "remap/remap",
             "samtools": "remap/remap",
             "bwa": "remap/remap",
             "bowtie2": "remap/remap",
@@ -73,6 +75,7 @@ class Televir_Metadata_Constants:
             "prinseq++": "preprocess/prinseq",
             "prinseq": "preprocess/prinseq",
             "collapsibleTree": "remap/Renv",
+            "create_report": "Pyenv/igv_reports",
             "entrez_direct": "entrez_direct",
         },
         CS.PIPELINE_NAME_remapping: {"default": "remap/remap"},

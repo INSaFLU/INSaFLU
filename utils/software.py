@@ -2780,7 +2780,7 @@ class Software(object):
     """
 
     #     @transaction.atomic
-    def __process_second_stage_snippy_coverage_freebayes(self, project_sample, user):
+    def __process_second_stage_snippy_coverage_freebayes(self, project_sample: ProjectSample, user):
         """
         Global processing, snippy, coverage,
         """
@@ -2791,6 +2791,7 @@ class Software(object):
         result_all = Result()
         ### metakey for this process
         metaKeyAndValue = MetaKeyAndValue()
+        os.chdir("/tmp/insaFlu/")
         try:
             meta_key_project_sample = (
                 metaKeyAndValue.get_meta_key_queue_by_project_sample_id(

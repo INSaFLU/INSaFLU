@@ -45,8 +45,7 @@ from managing_files.tables import (AddSamplesFromCvsFileTable,
                                    ReferenceProjectTable, ReferenceTable,
                                    SampleTable, SampleToProjectsTable,
                                    ShowProjectSamplesResults)
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.models import TeleFluProject
 from settings.constants_settings import ConstantsSettings
 from settings.default_software import DefaultSoftware
 from settings.default_software_project_sample import DefaultProjectSoftware
@@ -1421,7 +1420,7 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(SamplesDetailView, self).get_context_data(**kwargs)
-        sample = kwargs["object"]
+        sample: Sample = kwargs["object"]
         context["nav_sample"] = True
         if sample.owner.id != self.request.user.id:
             context["error_cant_see"] = "1"
@@ -2139,8 +2138,6 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
 
     form_valid_message = ""  ## need to have this, even empty
 
-from pathogen_identification.models import TeleFluProject
-
 
 class AddSamplesProjectsView(
     LoginRequiredMixin, FormValidMessageMixin, generic.CreateView
@@ -2166,7 +2163,9 @@ class AddSamplesProjectsView(
         ### test if the user is the same of the page
         print(self.kwargs)
         project = Project.objects.get(pk=self.kwargs["pk"])
-        is_teleflu_project= TeleFluProject.objects.filter(insaflu_project=project).exists()
+        is_teleflu_project = TeleFluProject.objects.filter(
+            insaflu_project=project
+        ).exists()
         print(is_teleflu_project)
         context["nav_project"] = True
         if project.owner.id != self.request.user.id:
@@ -2181,15 +2180,17 @@ class AddSamplesProjectsView(
             Q(project=project) & ~Q(is_deleted=True) & ~Q(is_error=True)
         ).values("sample__pk")
         if is_teleflu_project:
-            televir_project= TeleFluProject.objects.get(insaflu_project=project).televir_project
-            samples_in_televir_project= televir_project.samples_source
+            televir_project = TeleFluProject.objects.get(
+                insaflu_project=project
+            ).televir_project
+            samples_in_televir_project = televir_project.samples_source
             query_set = Sample.objects.filter(
                 owner__id=self.request.user.id,
                 is_obsolete=False,
                 is_deleted=False,
                 is_deleted_processed_fastq=False,
                 is_ready_for_projects=True,
-                pk__in=samples_in_televir_project
+                pk__in=samples_in_televir_project,
             ).exclude(pk__in=samples_out)
         else:
             query_set = Sample.objects.filter(

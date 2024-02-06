@@ -1,6 +1,7 @@
 import os
+import shutil
 import subprocess
-from typing import List
+from typing import Dict, List
 
 from constants.constants import Televir_Metadata_Constants
 from pathogen_identification.models import RawReference
@@ -10,6 +11,7 @@ class TelevirBioinf:
     def __init__(self):
         self.metadata_constants = Televir_Metadata_Constants()
         self.samtools_binary = self.metadata_constants.get_software_binary("samtools")
+        self.bcf_tools_binary = self.metadata_constants.get_software_binary("bcftools")
 
     @staticmethod
     def virosaurus_formatting(accid):
@@ -47,3 +49,32 @@ class TelevirBioinf:
         subprocess.call(command, shell=True)
 
         return self.check_file_exists_not_empty(output_file)
+
+    def merge_vcf_files(self, files: List[str], output_file):
+
+        if len(files) == 1:
+
+            shutil.copy(files[0], output_file)
+            return self.check_file_exists_not_empty(files[0])
+
+        command = f"{self.bcf_tools_binary} merge {' '.join(files)} > {output_file}"
+        subprocess.call(command, shell=True)
+
+        return self.check_file_exists_not_empty(output_file)
+
+    def create_igv_report(
+        self, reference: str, vcf_file: str, tracks: Dict[int, dict], output_html: str
+    ):
+
+        create_report_binary = self.metadata_constants.get_software_binary(
+            "create_report"
+        )
+        command = f"{create_report_binary} " + f"{vcf_file}" + f" --fasta {reference} "
+
+        names = [x.get("name", None) for x in tracks.values()]
+        command += f"--samples {' '.join(names)} "
+
+        bam_files = [x.get("bam_file", None) for x in tracks.values()]
+        command += f"--tracks {' '.join(bam_files)} "
+
+        command += f"--output {output_html}"

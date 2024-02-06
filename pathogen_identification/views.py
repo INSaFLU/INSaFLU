@@ -1,6 +1,7 @@
 import logging
 import mimetypes
 import os
+from typing import Any, Dict
 
 import pandas as pd
 from braces.views import FormValidMessageMixin, LoginRequiredMixin
@@ -758,12 +759,10 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
             televir_project=project, is_deleted=False
         ).order_by("-last_change_date")
         context["teleflu_table"] = None
-        print(teleflu_projects.exists())
-        for proj in teleflu_projects:
-            print(proj.name)
+
         context["teleflu_projects_exist"] = teleflu_projects.exists()
         if teleflu_projects.exists():
-            print("setting tableeee")
+
             context["teleflu_table"] = TeleFluProjectTable(teleflu_projects)
             RequestConfig(
                 self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
@@ -934,15 +933,12 @@ def inject_references_filter(request, max_references: int = 30):
     table_type = "add_reference"
     project_id = None
     project = None
-    print(request.GET)
 
     if request.GET.get(tag_teleflu) and request.GET.get(tag_teleflu) != "":
         table_type = "teleflu_reference"
         max_references = 10
         project_id = int(request.GET.get("project_id"))
         project = Projects.objects.get(pk=project_id)
-
-    print(project_id)
 
     references = []
     if request.GET.get(tag_add_reference) is not None:
@@ -953,7 +949,6 @@ def inject_references_filter(request, max_references: int = 30):
                 & ~Q(description__in=["root", "NA"])
                 & Q(run__project__pk=project_id)
             ).distinct("accid")
-            print(references)
 
             if references.count() == 0:
                 references = []
@@ -963,18 +958,15 @@ def inject_references_filter(request, max_references: int = 30):
                 references = [
                     RawReferenceCompound(raw_reference) for raw_reference in references
                 ]
-                print("references")
-                print(len(references))
+
                 reference_utils.sample_reference_tables_filter(
                     runs_filter=reference_pks
                 )
-                print("here")
                 reference_utils.update_scores_compound_references(references)
 
                 references = sorted(
                     references, key=lambda x: float(x.standard_score), reverse=True
                 )
-                print([x.standard_score for x in references])
 
         elif request.GET.get(tag_add_reference) != "":
             references = ReferenceSourceFileMap.objects.filter(

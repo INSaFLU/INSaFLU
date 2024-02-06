@@ -14,8 +14,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from managing_files.models import Sample
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.data_classes import IntermediateFiles
 
 # Create your models here.
@@ -1020,6 +1019,44 @@ class TeleFluProject(models.Model):
     @property
     def technology(self):
         return self.televir_project.technology
+
+    @property
+    def project_media_directory(self):
+        return os.path.join(
+            PICS.media_directory,
+            PICS.televir_subdirectory,
+            str(self.televir_project.owner.pk),
+            str(self.televir_project.pk),
+            "teleflu",
+            str(self.pk),
+        )
+
+    @property
+    def project_static_directory(self):
+        return os.path.join(
+            PICS.static_directory,
+            PICS.televir_subdirectory,
+            str(self.televir_project.owner.pk),
+            str(self.televir_project.pk),
+            "teleflu",
+            str(self.pk),
+        )
+
+    @property
+    def project_vcf_directory(self):
+        return os.path.join(self.project_media_directory, "vcf")
+
+    @property
+    def project_vcf(self):
+        return os.path.join(self.project_vcf_directory, "teleflu.vcf")
+
+    @property
+    def project_igv_report_media(self):
+        return os.path.join(self.project_media_directory, "igv_report.html")
+
+    @property
+    def project_igv_report(self):
+        return os.path.join(self.project_static_directory, "igv_report.html")
 
 
 class TeleFluSample(models.Model):

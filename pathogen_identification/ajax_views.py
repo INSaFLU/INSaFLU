@@ -1,5 +1,6 @@
 import mimetypes
 import os
+from datetime import datetime
 
 import pandas as pd
 from django.contrib.auth.decorators import login_required
@@ -10,18 +11,26 @@ from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_POST
 
+from constants.constants import Constants
 from constants.meta_key_and_values import MetaKeyAndValue
 from fluwebvirus.settings import STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
 from pathogen_identification.models import (
     FinalReport,
+    MetaReference,
     ParameterSet,
     PIProject_Sample,
     Projects,
     ReferenceMap_Main,
     RunMain,
+    TeleFluProject,
+    TeleFluSample,
 )
 from pathogen_identification.tables import ReferenceSourceTable
+from pathogen_identification.utilities.reference_utils import (
+    check_metaReference_exists_from_ids,
+    create_combined_reference,
+)
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.utilities_general import get_services_dir
 from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
@@ -908,10 +917,89 @@ def sort_report_sample(request):
         return JsonResponse(data)
 
 
+from constants.constants import Constants, FileExtensions, FileType, TypePath
+from constants.software_names import SoftwareNames
+from managing_files.models import ProjectSample as InsafluProjectSample
+from pathogen_identification.models import RawReference, ReferenceSourceFileMap
 from pathogen_identification.utilities.reference_utils import (
     check_reference_exists,
     check_reference_submitted,
 )
+from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
+
+
+@login_required
+@require_POST
+def teleflu_igv_create(request):
+    print("teleflu_igv_create")
+    if request.is_ajax():
+        data = {"is_ok": False, "is_deployed": False}
+
+        teleflu_project_pk = int(request.POST["pk"])
+        teleflu_project = TeleFluProject.objects.get(pk=teleflu_project_pk)
+        insaflu_project = teleflu_project.insaflu_project
+
+        ### get reference
+        reference = teleflu_project.reference
+        if reference is None:
+            return JsonResponse(data)
+
+        reference_file = reference.get_reference_fasta(TypePath.MEDIA_ROOT)
+
+        samples = InsafluProjectSample.objects.filter(project=insaflu_project)
+        # samples= [sample.sample for sample in samples]
+        sample_dict = {}
+
+        ### get sample files
+        software_names = SoftwareNames()
+
+        for sample in samples:
+            bam_file = sample.get_file_output(
+                TypePath.MEDIA_ROOT, FileType.FILE_BAM, software_names.get_snippy_name()
+            )
+            bam_file_index = sample.get_file_output(
+                TypePath.MEDIA_ROOT,
+                FileType.FILE_BAM_BAI,
+                software_names.get_snippy_name(),
+            )
+            vcf_file = sample.get_file_output(
+                TypePath.MEDIA_ROOT, FileType.FILE_VCF, software_names.get_snippy_name()
+            )
+
+            if bam_file and bam_file_index and vcf_file:
+                sample_dict[sample.sample.pk] = {
+                    "name": sample.sample.name,
+                    "bam_file": bam_file,
+                    "bam_file_index": bam_file_index,
+                    "vcf_file": vcf_file,
+                }
+
+        ### merge vcf files
+        televir_bioinf = TelevirBioinf()
+        vcf_files = [files["vcf_file"] for sample_pk, files in sample_dict.items()]
+        group_vcf = teleflu_project.project_vcf
+        stacked_html = teleflu_project.project_igv_report_media
+
+        os.makedirs(teleflu_project.project_vcf_directory, exist_ok=True)
+
+        merged_success = televir_bioinf.merge_vcf_files(vcf_files, group_vcf)
+
+        try:
+
+            televir_bioinf.create_igv_report(
+                reference_file,
+                vcf_file=group_vcf,
+                tracks=sample_dict,
+                output_html=stacked_html,
+            )
+
+            # for sample_pk, files in sample_dict.items():
+            #    print(sample_pk, files)
+        except Exception as e:
+            print(e)
+            return JsonResponse(data)
+
+        return JsonResponse(data)
 
 
 @login_required
@@ -941,9 +1029,6 @@ def create_insaflu_reference(request):
 
         data["is_ok"] = True
         return JsonResponse(data)
-
-
-from pathogen_identification.models import RawReference, ReferenceSourceFileMap
 
 
 @login_required
@@ -1034,20 +1119,6 @@ def inject_references(references: list, request):
     data["references_count"] = len(references)
 
     return data
-
-
-from datetime import datetime
-
-######################################
-###
-###        AJAX methods for check box in session
-###
-from constants.constants import Constants
-from pathogen_identification.models import MetaReference, TeleFluProject, TeleFluSample
-from pathogen_identification.utilities.reference_utils import (
-    check_metaReference_exists_from_ids,
-    create_combined_reference,
-)
 
 
 @login_required

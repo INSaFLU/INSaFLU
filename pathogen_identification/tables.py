@@ -12,32 +12,20 @@ from constants.constants import Constants
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReadClassification,
-    ReferenceContigs,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    SampleQC,
-    TelevirRunQC,
-)
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.models import (ContigClassification, FinalReport,
+                                            ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            ReadClassification,
+                                            ReferenceContigs, RunAssembly,
+                                            RunDetail, RunMain, SampleQC,
+                                            TelevirRunQC)
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.utilities_general import (
-    get_project_dir,
-    get_project_dir_no_media_root,
-)
+    get_project_dir, get_project_dir_no_media_root)
 from pathogen_identification.utilities.utilities_views import (
-    RawReferenceCompound,
-    ReportSorter,
-    check_sample_software_exists,
-    duplicate_metagenomics_software,
-)
+    RawReferenceCompound, ReportSorter, check_sample_software_exists,
+    duplicate_metagenomics_software)
 from settings.models import Parameter, Software
 
 
@@ -889,7 +877,7 @@ class TeleFluProjectTable(tables.Table):
         "td": {"style": "text-align: center;"},
     }
     name = tables.Column(
-        verbose_name="Insaflu Project Name", orderable=False, attrs=header_attrs
+        verbose_name="Insaflu Project", orderable=False, attrs=header_attrs
     )
     reference = tables.Column(
         verbose_name="Reference", orderable=False, attrs=header_attrs
@@ -923,16 +911,7 @@ class TeleFluProjectTable(tables.Table):
         )
 
     def render_name(self, record: TeleFluProject):
-        return record.name
-
-    def render_results(self, record: TeleFluProject):
         insaflu_project = record.insaflu_project
-        if insaflu_project is None:
-            return "no associated project"
-        from crequest.middleware import CrequestMiddleware
-
-        current_request = CrequestMiddleware.get_request()
-        user = current_request.user
 
         ## there's nothing to show
         count = InsafluProjectSample.objects.filter(
@@ -941,18 +920,53 @@ class TeleFluProjectTable(tables.Table):
             is_error=False,
             is_finished=True,
         ).count()
+
         project_name = '<i class="fa fa-eye-slash" aria-hidden="true"></i>'
         if count > 0:
             project_name = (
                 "<a href="
                 + reverse("show-sample-project-results", args=[insaflu_project.pk])
                 + ' data-toggle="tooltip" title="See Results">'
-                + "<i class='fa fa-eye'></i> Results</>"
+                + "</>"
             )
 
-        project_name = mark_safe(project_name)
+        project_name = mark_safe(project_name + " " + record.name)
 
         return project_name
+
+    def render_results(self, record: TeleFluProject):
+        insaflu_project = record.insaflu_project
+        if insaflu_project is None:
+            return "no associated project"
+
+        from crequest.middleware import CrequestMiddleware
+
+        current_request = CrequestMiddleware.get_request()
+
+        ## igv results button
+        igv_results_exist = False
+
+        if os.path.exists(record.project_igv_report_media):
+            igv_results_exist = True
+
+        igv_results = ""
+        if igv_results_exist:
+            ## open link to html in new tab
+            print(record.project_igv_report_media.replace("/insaflu_web/INSaFLU", ""))
+            igv_results = (
+                '<a rel="nofollow" target="_blank" href="'
+                + record.project_igv_report_media.replace("/insaflu_web/INSaFLU", "")
+                + '" title="IGV Results">'
+                + '<i class="fa fa-eye"></i></span> </a>'
+            )
+        else:
+            igv_results = '<i class="fa fa-eye-slash" aria-hidden="true"></i>'
+
+        final_display = igv_results
+
+        final_display = mark_safe(final_display)
+
+        return final_display
 
     def render_description(self, record: TeleFluProject):
         return record.description
@@ -968,10 +982,6 @@ class TeleFluProjectTable(tables.Table):
         if insaflu_project is None:
             return "no associated project"
         add_remove = ""
-        # if (ProjectSample.objects.filter(project__id=record.id, is_deleted=False).count() > 0):
-        #     TODO
-        #     add_remove = ' <a href=' + reverse('remove-sample-project', args=[record.pk]) + '><span ><i class="fa fa-trash"></i></span> Remove</a>'
-        #     add_remove = ' <a href="#"><span ><i class="fa fa-trash"></i></span> Remove</a>'
 
         n_processed = InsafluProjectSample.objects.filter(
             project__id=insaflu_project.id,

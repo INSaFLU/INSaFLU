@@ -117,9 +117,6 @@ class Command(BaseCommand):
                 user, project, None, None
             )  ## the user can have defaults yet
 
-            process_SGE = ProcessSGE()
-            process_SGE.set_create_project_list_by_user(user)
-
             ###### SAMPLES
             create_teleflu_igv_report(teleflu_project.pk)
 

@@ -78,3 +78,6 @@ class TelevirBioinf:
         command += f"--tracks {' '.join(bam_files)} "
 
         command += f"--output {output_html}"
+
+        print(command)
+        subprocess.call(command, shell=True)

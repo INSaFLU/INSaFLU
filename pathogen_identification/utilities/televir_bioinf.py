@@ -58,6 +58,7 @@ class TelevirBioinf:
             return self.check_file_exists_not_empty(files[0])
 
         command = f"{self.bcf_tools_binary} merge {' '.join(files)} > {output_file}"
+        print(command)
         subprocess.call(command, shell=True)
 
         return self.check_file_exists_not_empty(output_file)

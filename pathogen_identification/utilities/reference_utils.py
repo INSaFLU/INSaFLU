@@ -10,8 +10,7 @@ from django.contrib.auth.models import User
 from django.core.files.temp import NamedTemporaryFile
 from django.db.models import Q
 
-from constants.constants import (Constants, FileExtensions, FileType, TypeFile,
-                                 TypePath)
+from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
 from constants.software_names import SoftwareNames
 from constants.televir_directories import Televir_Directory_Constants
 from managing_files.models import ProcessControler
@@ -164,8 +163,11 @@ def merge_multiple_refs(references: List[RawReference], output_prefix: str):
     return merged_fasta.name
 
 
-from pathogen_identification.models import (MetaReference, RawReferenceMap,
-                                            TeleFluProject)
+from pathogen_identification.models import (
+    MetaReference,
+    RawReferenceMap,
+    TeleFluProject,
+)
 
 
 def check_metaReference_exists(references: List[RawReference]):
@@ -585,6 +587,7 @@ def create_teleflu_igv_report(teleflu_project_pk: int) -> bool:
     software_names = SoftwareNames()
 
     for sample in samples:
+
         bam_file = sample.get_file_output(
             TypePath.MEDIA_ROOT, FileType.FILE_BAM, software_names.get_snippy_name()
         )
@@ -596,6 +599,8 @@ def create_teleflu_igv_report(teleflu_project_pk: int) -> bool:
         vcf_file = sample.get_file_output(
             TypePath.MEDIA_ROOT, FileType.FILE_VCF, software_names.get_snippy_name()
         )
+
+        print(vcf_file)
 
         if bam_file and bam_file_index and os.path.exists(vcf_file):
             sample_dict[sample.sample.pk] = {

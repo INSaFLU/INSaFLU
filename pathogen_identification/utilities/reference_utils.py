@@ -594,7 +594,7 @@ def create_teleflu_igv_report(teleflu_project_pk: int) -> bool:
             software_names.get_snippy_name(),
         )
         vcf_file = sample.get_file_output(
-            TypePath.MEDIA_ROOT, FileType.FILE_VCF, software_names.get_snippy_name()
+            TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, software_names.get_snippy_name()
         )
 
         print(vcf_file)

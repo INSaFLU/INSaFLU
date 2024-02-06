@@ -585,16 +585,21 @@ def create_teleflu_igv_report(teleflu_project_pk: int) -> bool:
 
     for sample in samples:
 
+        if sample.sample.type_of_fastq == 0:
+            filename = software_names.get_snippy_name()
+        else:
+            filename = software_names.get_medaka_name()
+
         bam_file = sample.get_file_output(
-            TypePath.MEDIA_ROOT, FileType.FILE_BAM, software_names.get_snippy_name()
+            TypePath.MEDIA_ROOT, FileType.FILE_BAM, filename
         )
         bam_file_index = sample.get_file_output(
             TypePath.MEDIA_ROOT,
             FileType.FILE_BAM_BAI,
-            software_names.get_snippy_name(),
+            filename,
         )
         vcf_file = sample.get_file_output(
-            TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, software_names.get_snippy_name()
+            TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, filename
         )
 
         print(vcf_file)

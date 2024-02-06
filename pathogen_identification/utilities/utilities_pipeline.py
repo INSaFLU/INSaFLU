@@ -1835,7 +1835,7 @@ class Parameter_DB_Utility:
         elif request_mapping:
             steps = CS.vect_pipeline_televir_request_mapping
         else:
-            steps = self.televir_constants.vect_pipeline_televir_classic
+            steps = CS.vect_pipeline_televir_classic
 
         software_available = Software.objects.filter(
             technology__name=technology,

@@ -602,8 +602,6 @@ def create_teleflu_igv_report(teleflu_project_pk: int) -> bool:
             TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, filename
         )
 
-        print(vcf_file)
-
         if bam_file and bam_file_index and os.path.exists(vcf_file):
             sample_dict[sample.sample.pk] = {
                 "name": sample.sample.name,

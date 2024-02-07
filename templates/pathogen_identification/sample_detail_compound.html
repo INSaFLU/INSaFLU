@@ -246,6 +246,14 @@
         display: flex;
         justify-content: center;
       }
+      .link-container {
+        border: 8px solid #d3d3d3; /* Make the border thicker and blue */
+        padding: 20px 20px; /* Add more padding */
+        border-radius: 10px; /* Round the edges */
+        text-align: center; /* Center the text */
+        margin: 20px auto; /* Center the div */
+        width: 40%; /* Set the width */
+    }
 </style>
 
 {% if owner %}
@@ -277,7 +285,7 @@
                 <div style="padding: 20px">
                     
                     <div class="row">
-                        <div class="col-sm-2">
+                        <div class="col-sm-2 link-container">
                             {% for run in runs_pipeline %}
                             <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Workflow report {{run.parameter_set.leaf.index}} </a>
                             <br>
@@ -331,6 +339,22 @@
                 <div style="padding: 2px; overflow-x:auto;">    
                     <table class="table" width="100%" id="report_table">
                     <thead>
+                        {% if overlap_heatmap_available %} 
+                        <tr>
+                            <td colspan="100%">
+                              <div class="collapsible">
+                                <div class="collapsible-header">
+                                  <span class="expand-button">Read Overlap</span>
+                                </div>
+                                <div class="collapsible-body" style="display: none;">
+                                  <div id="plot" class="plot-container">
+                                  <img src={{overlap_heatmap_path}} alt="Plot">
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                        </tr>
+                        {% endif %}
                         <tr class="header">
                             <th>Description</th>
                             <th>Taxid</th>
@@ -359,22 +383,6 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% if overlap_heatmap_available %} 
-                        <tr>
-                            <td colspan="100%">
-                              <div class="collapsible">
-                                <div class="collapsible-header">
-                                  <span class="expand-button">Read Overlap</span>
-                                </div>
-                                <div class="collapsible-body" style="display: none;">
-                                  <div id="plot" class="plot-container">
-                                  <img src={{overlap_heatmap_path}} alt="Plot">
-                                  </div>
-                                </div>
-                              </div>
-                            </td>
-                        </tr>
-                        {% endif %}
                         {% for final_report in report_list %}
                         <tr>
                             <td colspan="100%">

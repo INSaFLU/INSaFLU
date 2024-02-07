@@ -10,21 +10,18 @@ import pandas as pd
 from django.contrib.auth.models import User
 from django.db.models import Q, QuerySet
 
-from constants.constants import Televir_Directory_Constants as Televir_Directories
+from constants.constants import \
+    Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.host_library import Host
-from pathogen_identification.models import (
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
-from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
-from pathogen_identification.utilities.utilities_views import RawReferenceCompound
+from pathogen_identification.models import (ParameterSet, PIProject_Sample,
+                                            Projects, RawReference, RunMain,
+                                            SoftwareTree, SoftwareTreeNode)
+from pathogen_identification.utilities.utilities_televir_dbs import \
+    Utility_Repository
+from pathogen_identification.utilities.utilities_views import \
+    RawReferenceCompound
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -1014,9 +1011,13 @@ class Utility_Pipeline_Manager:
 
         pipelines_available = combined_table.pipeline_step.unique().tolist()
 
+        print(pipelines_available)
+
         self.pipeline_makeup = pipe_makeup_manager.match_makeup_name_from_list(
             pipelines_available
         )
+
+        print(self.pipeline_makeup)
 
         if self.pipeline_makeup is None:
             self.logger.info("No pipeline makeup found")
@@ -1836,6 +1837,7 @@ class Parameter_DB_Utility:
             steps = CS.vect_pipeline_televir_request_mapping
         else:
             steps = CS.vect_pipeline_televir_classic
+
 
         software_available = Software.objects.filter(
             technology__name=technology,
@@ -2753,7 +2755,7 @@ class SoftwareTreeUtils:
     ) -> PipelineTree:
         utility_drone = Utility_Pipeline_Manager()
         input_success = utility_drone.input(combined_table, technology=self.technology)
-
+        print("input success is", input_success)
         if not input_success:
             return PipelineTree(
                 technology=self.technology,
@@ -2837,8 +2839,6 @@ class SoftwareTreeUtils:
         """
         Get all pathnodes for a project
         """
-        if self.sample is None:
-            return {}
 
         local_tree = self.generate_software_tree_safe(
             self.project,
@@ -2847,6 +2847,7 @@ class SoftwareTreeUtils:
             mapping_only=mapping_only,
             screening=screening,
         )
+
         if local_tree.makeup == -1:
             return {}
 
@@ -2962,7 +2963,11 @@ class SoftwareTreeUtils:
 
         submission_dict = {sample: []}
 
-        available_path_nodes = self.get_project_pathnodes()
+        available_path_nodes = self.get_sample_pathnodes(
+            metagenomics=False,
+            screening=False,
+            mapping_only=False,
+        )
         clean_samples_leaf_dict = self.utils_manager.sample_nodes_check_no_repeats(
             submission_dict, available_path_nodes, self.project
         )

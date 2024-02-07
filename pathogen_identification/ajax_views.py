@@ -15,30 +15,22 @@ from constants.constants import Constants
 from constants.meta_key_and_values import MetaKeyAndValue
 from fluwebvirus.settings import STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
-from pathogen_identification.models import (
-    FinalReport,
-    MetaReference,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    ReferenceMap_Main,
-    RunMain,
-    TeleFluProject,
-    TeleFluSample,
-)
+from pathogen_identification.models import (FinalReport, MetaReference,
+                                            ParameterSet, PIProject_Sample,
+                                            Projects, ReferenceMap_Main,
+                                            RunMain, TeleFluProject,
+                                            TeleFluSample)
 from pathogen_identification.tables import ReferenceSourceTable
 from pathogen_identification.utilities.reference_utils import (
-    check_metaReference_exists_from_ids,
-    create_combined_reference,
-)
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
-from pathogen_identification.utilities.utilities_general import get_services_dir
-from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
+    check_metaReference_exists_from_ids, create_combined_reference)
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
+from pathogen_identification.utilities.utilities_general import \
+    get_services_dir
+from pathogen_identification.utilities.utilities_pipeline import \
+    SoftwareTreeUtils
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter,
-    SampleReferenceManager,
-    set_control_reports,
-)
+    ReportSorter, SampleReferenceManager, set_control_reports)
 from utils.process_SGE import ProcessSGE
 from utils.utils import Utils
 
@@ -502,6 +494,7 @@ def submit_televir_project_sample_runs(request):
 
         process_SGE = ProcessSGE()
         user = request.user
+        print("hi")
 
         sample_id = int(request.POST["sample_id"])
         sample = PIProject_Sample.objects.get(id=int(sample_id))
@@ -922,9 +915,7 @@ from constants.software_names import SoftwareNames
 from managing_files.models import ProjectSample as InsafluProjectSample
 from pathogen_identification.models import RawReference, ReferenceSourceFileMap
 from pathogen_identification.utilities.reference_utils import (
-    check_reference_exists,
-    check_reference_submitted,
-)
+    check_reference_exists, check_reference_submitted)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
 
 

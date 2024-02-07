@@ -71,6 +71,7 @@ class ConstantsSettings(object):
         PIPELINE_NAME_extra_qc,
         PIPELINE_NAME_viral_enrichment,
         PIPELINE_NAME_host_depletion,
+        PIPELINE_NAME_assembly,
         PIPELINE_NAME_contig_classification,
         PIPELINE_NAME_read_classification,
         PIPELINE_NAME_remapping,

@@ -1243,9 +1243,11 @@ class RunEngine_class(Run_Deployment_Methods):
         )
 
         self.contig_classification_results = Contig_classification_results(
-            True
-            if self.contig_classification_drone.classifier_method.name != "None"
-            else False,
+            (
+                True
+                if self.contig_classification_drone.classifier_method.name != "None"
+                else False
+            ),
             self.contig_classification_drone.classifier_method.name,
             self.contig_classification_drone.classifier_method.args,
             self.contig_classification_drone.classifier_method.db_name,
@@ -1255,9 +1257,11 @@ class RunEngine_class(Run_Deployment_Methods):
         )
 
         self.read_classification_results = Read_classification_results(
-            True
-            if self.read_classification_drone.classifier_method.name != "None"
-            else False,
+            (
+                True
+                if self.read_classification_drone.classifier_method.name != "None"
+                else False
+            ),
             self.read_classification_drone.classifier_method.name,
             self.read_classification_drone.classifier_method.args,
             self.read_classification_drone.classifier_method.db_name,
@@ -1722,9 +1726,11 @@ class RunMainTree_class(Run_Deployment_Methods):
         )
 
         self.contig_classification_results = Contig_classification_results(
-            True
-            if self.contig_classification_drone.classifier_method.name != "None"
-            else False,
+            (
+                True
+                if self.contig_classification_drone.classifier_method.name != "None"
+                else False
+            ),
             self.contig_classification_drone.classifier_method.name,
             self.contig_classification_drone.classifier_method.args,
             self.contig_classification_drone.classifier_method.db_name,
@@ -1734,9 +1740,11 @@ class RunMainTree_class(Run_Deployment_Methods):
         )
 
         self.read_classification_results = Read_classification_results(
-            True
-            if self.read_classification_drone.classifier_method.name != "None"
-            else False,
+            (
+                True
+                if self.read_classification_drone.classifier_method.name != "None"
+                else False
+            ),
             self.read_classification_drone.classifier_method.name,
             self.read_classification_drone.classifier_method.args,
             self.read_classification_drone.classifier_method.db_name,

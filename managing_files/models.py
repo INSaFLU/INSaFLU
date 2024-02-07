@@ -530,7 +530,7 @@ class Sample(models.Model):
     ### Type/Subtype Virus
     identify_virus = models.ManyToManyField(IdentifyVirus)
     type_subtype = models.CharField(
-        max_length=150, blank=True, null=True
+        verbose_name="Classification", max_length=150, blank=True, null=True
     )  ## has the type/subtype collected
     number_alerts = models.IntegerField(
         verbose_name="Alerts", default=0, blank=True, null=True

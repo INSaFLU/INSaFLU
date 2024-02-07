@@ -676,14 +676,14 @@ class ShowProjectSamplesResults(tables.Table):
     sample_name = tables.Column("Sample name", empty_values=())
     coverage = tables.Column("Coverage", orderable=False, empty_values=())
     alerts = tables.Column("Alerts", empty_values=())
-    type_and_subtype = tables.LinkColumn("Classification", empty_values=())
-    putative_mixed_infection = tables.LinkColumn(
-        "Putative Mixed-infection", empty_values=()
+    type_and_subtype = tables.Column("Classification", empty_values=())
+    putative_mixed_infection = tables.Column(
+        "Putative Mixed Infection", empty_values=()
     )
     technology = tables.Column("Technology", empty_values=())
-    dataset = tables.LinkColumn("Dataset", empty_values=())
-    results = tables.LinkColumn("Options", orderable=False, empty_values=())
-    consensus_file = tables.LinkColumn(
+    dataset = tables.Column("Dataset", empty_values=())
+    results = tables.Column("Options", orderable=False, empty_values=())
+    consensus_file = tables.Column(
         "Consensus File", orderable=False, empty_values=()
     )
 

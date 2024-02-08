@@ -121,6 +121,7 @@ class RunDetail_main:
     metagenomics_classification: bool
     remapping: bool
     house_cleaning: bool
+    depletion_report = None
 
     # activity log
 
@@ -1317,23 +1318,24 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.Run_Classification()
         self.Run_Remapping()
 
+    def process_QC(self):
+        self.sample.input_fastqc_report = self.preprocess_drone.input_qc_report
+        self.sample.processed_fastqc_report = self.preprocess_drone.processed_qc_report
+
+        self.sample.r1.is_clean()
+        self.sample.r2.is_clean()
+        self.sample.reads_after_processing = self.sample.current_total_read_number()
+        self.sample.get_fake_qc_data()
+        self.sample.r1.clean_read_names()
+        self.sample.r2.clean_read_names()
+
     def Run_QC(self):
         if self.quality_control and not self.qc_performed:
             self.deploy_QC()
-
-            self.sample.r1.is_clean()
-            self.sample.r2.is_clean()
-
             self.sample.qc_soft = self.preprocess_drone.preprocess_method.name
-            self.sample.input_fastqc_report = self.preprocess_drone.input_qc_report
-            self.sample.processed_fastqc_report = (
-                self.preprocess_drone.processed_qc_report
-            )
 
-            self.sample.reads_after_processing = self.sample.current_total_read_number()
-            self.sample.get_fake_qc_data()
-            self.sample.r1.clean_read_names()
-            self.sample.r2.clean_read_names()
+            self.process_QC()
+
             self.qc_performed = True
 
         elif (
@@ -1348,18 +1350,8 @@ class RunMainTree_class(Run_Deployment_Methods):
                 shutil.copy(self.sample.r2.current, self.sample.r2.clean)
 
             self.sample.qc_soft = "none"
-            self.sample.input_fastqc_report = self.preprocess_drone.input_qc_report
-            self.sample.processed_fastqc_report = (
-                self.preprocess_drone.processed_qc_report
-            )
 
-            self.sample.r1.is_clean()
-            self.sample.r2.is_clean()
-            self.sample.reads_after_processing = self.sample.current_total_read_number()
-            self.sample.get_fake_qc_data()
-
-            self.sample.r1.clean_read_names()
-            self.sample.r2.clean_read_names()
+            self.process_QC()
 
             # self.qc_performed = True
 
@@ -1388,26 +1380,13 @@ class RunMainTree_class(Run_Deployment_Methods):
         if self.depletion:
             self.deploy_HD()
 
-            hd_metadata_tool = RunMetadataHandler(
-                self.username,
-                self.config,
-                sift_query=self.config["sift_query"],
-                prefix=self.prefix,
-            )
-            hd_clean = hd_metadata_tool.results_collect_metadata(
-                self.depletion_drone.classification_report,
-            )
+            from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
 
-            proxy_aclass = pd.DataFrame(
-                columns=["taxid", "description", "file", "counts"]
+            televir_bioinf = TelevirBioinf()
+            alignment_file = self.depletion_drone.classifier.report_path
+            self.depletion_report = televir_bioinf.alignment_agg_by_target(
+                alignment_file
             )
-            hd_metadata_tool.rclass = hd_clean
-            hd_metadata_tool.aclass = proxy_aclass
-            hd_metadata_tool.merge_reports_clean(self.remap_params.max_taxids)
-            print("################################# HD REPORT")
-            print(hd_metadata_tool.merged_targets)
-            print(hd_metadata_tool.raw_targets)
-            print("#################################")
 
             self.sample.r1.deplete(self.depletion_drone.classified_reads_list)
             self.sample.r2.deplete(self.depletion_drone.classified_reads_list)

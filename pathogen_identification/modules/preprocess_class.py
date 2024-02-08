@@ -2,11 +2,13 @@
 
 import logging
 import os
+import shutil
 import subprocess
 import sys
-from typing import Type
+from typing import Tuple, Type
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
+from pathogen_identification.models import ParameterSet, RunDetail, RunMain
 from pathogen_identification.modules.object_classes import (
     Read_class,
     RunCMD,
@@ -95,6 +97,20 @@ class Preprocess:
         self.logger.info("Preprocess method: {}".format(self.preprocess_method.name))
         self.logger.info("args: {}".format(self.args))
 
+    def check_processed_exist(self) -> bool:
+        """
+        Check if processed reads exist
+        """
+
+        return self.preprocess_method.check_processed_exist()
+
+    def retrieve_processed_reads(self) -> Tuple[str, str]:
+        """
+        Retrieve processed reads
+        """
+
+        return self.preprocess_method.retrieve_processed_reads()
+
     def check_gz_file_not_empty(self, file):
         """
         Check if gzipped file has lines starting with read or sequence indicators.
@@ -182,7 +198,16 @@ class Preprocess:
             self.subsample_reads()
 
         self.fastqc_input()
-        self.preprocess_QC()
+        if self.check_processed_exist():
+            self.logger.info("Processed reads found")
+            exo_r1, exo_r2 = self.retrieve_processed_reads()
+            shutil.copy(exo_r1, self.preprocess_name_fastq_gz)
+            if self.preprocess_type == CS.PAIR_END:
+                shutil.copy(exo_r2, self.preprocess_name_r2_fastq_gz)
+            self.logger.info(f"R1: {self.r1.current}")
+            self.logger.info(f"R2: {self.r2.current}")
+        else:
+            self.preprocess_QC()
         self.fastqc_processed()
 
     def fake_run(self):

@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import shutil
+from abc import ABC, abstractmethod
 from random import randint
 from typing import Any, Type
 
@@ -26,7 +27,7 @@ def check_report_empty(file, comment="@"):
         return False
 
 
-class Classifier_init:
+class Classifier_init(ABC):
     """
     list of clasifiers that overwrite Classifier_init:
     - run_kaiju
@@ -34,6 +35,10 @@ class Classifier_init:
     - run_FastViromeExplorer
 
     """
+
+    method_name = ""
+    report_suffix = ""
+    full_report_suffix = ""
 
     def __init__(
         self,
@@ -109,6 +114,22 @@ class Classifier_init:
                 )
         except:
             pass
+
+    @abstractmethod
+    def run_SE(self, threads: int = 3):
+        pass
+
+    @abstractmethod
+    def run_PE(self, threads: int = 3):
+        pass
+
+    @abstractmethod
+    def get_report(self) -> pd.DataFrame:
+        pass
+
+    @abstractmethod
+    def get_report_simple(self) -> pd.DataFrame:
+        pass
 
 
 class run_kaiju(Classifier_init):
@@ -447,6 +468,9 @@ class run_blast_p(Classifier_init):
 
         self.cmd.run(cmd)
 
+    def run_PE(self, threads: int = 3):
+        pass
+
     def run_SE(self, threads: int = 3):
         """
         run single read file classification.
@@ -630,6 +654,9 @@ class run_deSamba(Classifier_init):
 
         self.cmd.run(cmd)
 
+    def run_PE(self, threads: int = 3, **kwargs):
+        pass
+
     def get_report(self) -> pd.DataFrame:
         """
         read classifier output. return pandas dataframe with standard query sequence id and accession column names.
@@ -766,11 +793,6 @@ class run_kraken2(Classifier_init):
             ["qseqid", "taxid", "length"]
         ]  # remove unclassified
 
-        print("########## kraken2 run ##########")
-        print("query file: ", self.query_path)
-        print("report file: ", self.report_path)
-        print(report.head())
-        print("#################################")
         return report
 
 
@@ -1179,7 +1201,7 @@ class run_bowtie2_ONT(Classifier_init):
 
 class run_minimap2_ONT(Classifier_init):
     method_name = "minimap2_ONT"
-    report_suffix = ".sam"
+    report_suffix = ".paf"
     full_report_suffix = ".minimap2"
 
     def run_SE(self, threads: int = 3):
@@ -1234,6 +1256,9 @@ class run_minimap2_asm(Classifier_init):
     def run_SE(self, threads: int = 3):
         cmd = f"minimap2 -t {threads} -c {self.args} {self.db_path} {self.query_path} > {self.report_path}"
         self.cmd.run(cmd)
+
+    def run_PE(self, threads: int = 3):
+        pass
 
     def get_report(self) -> pd.DataFrame:
         if check_report_empty(self.report_path):
@@ -1365,15 +1390,10 @@ class Classifier:
         """
         deploy classifier method. read classifier output, return only query and reference sequence id columns.
         """
-        print(self.classifier.method_name)
 
         if self.classifier.method_name == "None":
             self.logger.info("No classifier method selected.")
             return
-
-        print(self.check_r1())
-        print(self.r1)
-        print(self.check_classifier_output())
 
         if not self.check_r1():
             self.collect_report()
@@ -1500,8 +1520,3 @@ class Classifier:
         self.classified_reads_list = list(
             set(self.classification_report.qseqid.to_list())
         )
-
-        print("###### classification report ######")
-        print(self.prefix)
-        print(self.classification_report)
-        print(len(self.classified_reads_list))

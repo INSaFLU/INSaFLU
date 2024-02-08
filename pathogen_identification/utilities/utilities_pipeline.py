@@ -10,18 +10,21 @@ import pandas as pd
 from django.contrib.auth.models import User
 from django.db.models import Q, QuerySet
 
-from constants.constants import \
-    Televir_Directory_Constants as Televir_Directories
+from constants.constants import Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.host_library import Host
-from pathogen_identification.models import (ParameterSet, PIProject_Sample,
-                                            Projects, RawReference, RunMain,
-                                            SoftwareTree, SoftwareTreeNode)
-from pathogen_identification.utilities.utilities_televir_dbs import \
-    Utility_Repository
-from pathogen_identification.utilities.utilities_views import \
-    RawReferenceCompound
+from pathogen_identification.models import (
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
+from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
+from pathogen_identification.utilities.utilities_views import RawReferenceCompound
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -311,10 +314,7 @@ class Pipeline_Makeup(PipelineTreeBase):
             CS.PIPELINE_NAME_map_filtering,
         ]
 
-        print(list(set(makeup_list)))
-
         makeup_return = self.match_makeup_name_from_list(makeup_list, ignore=ignore)
-        print(makeup_return)
 
         if makeup_return is None:
             return None
@@ -525,7 +525,7 @@ class PipelineTree:
 
         self.graph.add_nodes_from(self.node_index.index.tolist())
 
-    def get_all_graph_paths(self) -> dict:
+    def get_all_graph_paths(self, sample: Optional[PIProject_Sample] = None) -> dict:
         """
         Get all possible paths in the pipeline
         """
@@ -535,7 +535,7 @@ class PipelineTree:
         all_paths_explicit = [self.get_path_explicit(path) for path in all_paths]
 
         path_dict = {
-            all_paths_explicit[x][-1][0]: self.df_from_path(path)
+            all_paths_explicit[x][-1][0]: self.df_from_path(path, sample=sample)
             for x, path in enumerate(all_paths)
         }
 
@@ -565,17 +565,102 @@ class PipelineTree:
 
         return leaf_paths
 
-    def df_from_path(self, path: list) -> pd.DataFrame:
+    def check_if_leaf_ParameterSet_exists(self, node_index: int) -> bool:
+        """
+        Check if a leaf has a ParameterSet"""
+        leaves_descendants = self.leaves_from_node_using_graph(node_index)
+        software_tree = SoftwareTree.objects.get(pk=self.software_tree_pk)
+
+        nodes_exist = SoftwareTreeNode.objects.filter(
+            software_tree=software_tree, index__in=leaves_descendants
+        )
+
+        parameter_sets = ParameterSet.objects.filter(
+            leaf__in=nodes_exist, status=ParameterSet.STATUS_FINISHED
+        )
+
+    def check_if_leaf_step_exists(self, path: list, sample: PIProject_Sample) -> list:
+        """
+        get leafs for a given path, path does not need to be complete
+        """
+        if len(path) <= 1:
+            return []
+        parameter_set_utils = Parameter_DB_Utility()
+        utils_pipeline_manager = Utility_Pipeline_Manager()
+
+        ps = ParameterSet.objects.filter(sample=sample).exclude(leaf=None)
+
+        software_tree_pks = set([x.leaf.software_tree.pk for x in ps])
+        software_trees = SoftwareTree.objects.filter(
+            pk__in=software_tree_pks
+        ).distinct()
+
+        for software_tree in software_trees:
+            pipeline_tree = parameter_set_utils.convert_softwaretree_to_pipeline_tree(
+                software_tree
+            )
+            try:
+                node_match = utils_pipeline_manager.match_path_to_tree_find_cutoff(
+                    path, pipeline_tree
+                )
+
+                if node_match[0] == 0:
+                    continue
+
+                leaves_for_matched_node = pipeline_tree.leaves_from_node_using_graph(
+                    node_match[0]
+                )
+
+                index_nodes = []
+
+                for x in leaves_for_matched_node:
+
+                    try:
+                        index_nodes.append(
+                            SoftwareTreeNode.objects.get(
+                                software_tree=software_tree, index=x
+                            )
+                        )
+                    except SoftwareTreeNode.DoesNotExist:
+                        pass
+                    except SoftwareTreeNode.MultipleObjectsReturned:
+                        pass
+
+                parameter_sets = ParameterSet.objects.filter(
+                    leaf__in=index_nodes,
+                    status=ParameterSet.STATUS_FINISHED,
+                    sample=sample,
+                ).distinct()
+
+                return [x.pk for x in parameter_sets]
+
+            except Exception as e:
+                print("Exception", e)
+                raise e
+
+        return []
+
+    def df_from_path(
+        self, path_extensive: list, sample: Optional[PIProject_Sample] = None
+    ) -> pd.DataFrame:
         """
         Generate a dataframe from a path
         """
-        path = self.get_path_explicit(path)
-        path = [x[1] for x in path]
+        path_extensive = self.get_path_explicit(path_extensive)
+
+        path = [x[1] for x in path_extensive]
         df = []
         path = [x for x in path if x[0] != "root"]
         current_module = None
         for ix, node in enumerate(path):
             node_type = node[2]
+            node_leaves = []
+            if sample is not None:
+
+                node_leaves = self.check_if_leaf_step_exists(
+                    path_extensive[: ix + 1], sample=sample
+                )
+
             if ix == 0 and node_type != "module":
                 self.logger.info("First node must be a module")
                 return pd.DataFrame()
@@ -589,6 +674,7 @@ class PipelineTree:
                                 current_module.get("software"),
                                 param,
                                 value,
+                                list(set(current_module.get("leaves"))),
                             ]
                         )
 
@@ -598,10 +684,12 @@ class PipelineTree:
                     "params": {
                         f"{node[1].upper()}_ARGS": "",
                     },
+                    "leaves": node_leaves,
                 }
                 continue
 
             current_module["params"][node[0]] = node[1]
+            current_module["leaves"].extend(node_leaves)
 
         if current_module:
             for param, value in current_module["params"].items():
@@ -611,16 +699,17 @@ class PipelineTree:
                         current_module.get("software"),
                         param,
                         value,
+                        list(set(current_module.get("leaves"))),
                     ]
                 )
-        df = pd.DataFrame(df, columns=["module", "software", "parameter", "value"])
-
+        df = pd.DataFrame(
+            df, columns=["module", "software", "parameter", "value", "leaves"]
+        )
         return df
 
-    def leaves_from_node(self, node):
+    def leaves_from_node(self, node, leaves=[]):
         """ """
-        leaves = []
-
+        # print(self.dag_dict[node])
         try:
             if len(self.dag_dict[node]) == 0:
                 return [node]
@@ -1011,13 +1100,9 @@ class Utility_Pipeline_Manager:
 
         pipelines_available = combined_table.pipeline_step.unique().tolist()
 
-        print(pipelines_available)
-
         self.pipeline_makeup = pipe_makeup_manager.match_makeup_name_from_list(
             pipelines_available
         )
-
-        print(self.pipeline_makeup)
 
         if self.pipeline_makeup is None:
             self.logger.info("No pipeline makeup found")
@@ -1490,14 +1575,14 @@ class Utility_Pipeline_Manager:
 
             self.logger.info(f"Child main: {child_main}")
 
-            if nodes_index_dict[child_main] in pipe_tree.leaves:
-                return nodes_index_dict[child_main]
-
             try:
                 nodes_index_dict[child_main]
             except KeyError:
                 self.logger.info(f"{child_main} node not in tree nodes")
                 return None
+
+            if nodes_index_dict[child_main] in pipe_tree.leaves:
+                return nodes_index_dict[child_main]
 
             if child_main not in explicit_edge_dict[parent_main].index:
                 self.logger.info(f"Child {child} not in parent {parent}")
@@ -1505,6 +1590,71 @@ class Utility_Pipeline_Manager:
 
             parent = child
             parent_main = child_main
+
+    def match_path_to_tree_find_cutoff(
+        self, explicit_path: list, pipe_tree: PipelineTree
+    ) -> Tuple[int, tuple]:
+        """"""
+
+        self.logger.info("Matching path to tree")
+
+        self.logger.info("Generating node index dict")
+        nodes_index_dict = self.node_index_dict(pipe_tree)
+        self.logger.info("Generating explicit edge dict")
+        explicit_edge_dict = self.generate_explicit_edge_dict(pipe_tree)
+        parent = explicit_path[0]
+        parent_main = (0, ("root", None, None))
+        child_main = None
+
+        def match_nodes(node, node_list):
+            for nd in node_list:
+                if node[1] == nd[1]:
+                    return nd
+
+            return node
+
+        self.logger.info("Initialize matching nodes")
+        self.logger.info(f"Parent: {parent}")
+        self.logger.info(f"Parent main: {parent_main}")
+        self.logger.info(f"Child main: {child_main}")
+        self.logger.info("Matching nodes iterating through explicit path")
+        self.logger.info(f"leaves {pipe_tree.leaves}")
+
+        for child in explicit_path[1:]:
+
+            self.logger.info("--------------------")
+            self.logger.info(f"Parent: {parent}")
+            self.logger.info(f"Parent main: {parent_main}")
+            self.logger.info(f"Child: {child}")
+
+            try:
+                child_main = match_nodes(
+                    child, explicit_edge_dict[parent_main].index.tolist()
+                )
+
+            except KeyError:
+                self.logger.info(f"{parent_main} not in parent tree edge dictionary.")
+                return parent_main
+
+            self.logger.info(f"Child main: {child_main}")
+
+            try:
+                nodes_index_dict[child_main]
+            except KeyError:
+                self.logger.info(f"{child_main} node not in tree nodes")
+                return parent_main
+
+            if nodes_index_dict[child_main] in pipe_tree.leaves:
+                return nodes_index_dict[child_main]
+
+            if child_main not in explicit_edge_dict[parent_main].index:
+                self.logger.info(f"Child {child} not in parent {parent}")
+                return parent_main
+
+            parent = child
+            parent_main = child_main
+
+        return parent_main
 
     @staticmethod
     def pipe_tree_reconstruct(
@@ -1837,7 +1987,6 @@ class Parameter_DB_Utility:
             steps = CS.vect_pipeline_televir_request_mapping
         else:
             steps = CS.vect_pipeline_televir_classic
-
 
         software_available = Software.objects.filter(
             technology__name=technology,
@@ -2568,6 +2717,7 @@ class SoftwareTreeUtils:
         """
         Get software tree index db
         """
+
         if self.check_default_software_tree_exists(global_index):
             software_tree = self.query_software_tree(
                 global_index=global_index,
@@ -2755,7 +2905,7 @@ class SoftwareTreeUtils:
     ) -> PipelineTree:
         utility_drone = Utility_Pipeline_Manager()
         input_success = utility_drone.input(combined_table, technology=self.technology)
-        print("input success is", input_success)
+
         if not input_success:
             return PipelineTree(
                 technology=self.technology,
@@ -2768,6 +2918,8 @@ class SoftwareTreeUtils:
         self.logger.info("Generating project tree")
 
         pipeline_tree = utility_drone.generate_default_software_tree()
+        # print("pipeline_makeup", utility_drone.pipeline_makeup)
+        # pipeline_tree.makeup = utility_drone.pipeline_makeup
 
         pipeline_tree = self.prep_tree_for_extend(pipeline_tree)
 
@@ -2850,6 +3002,11 @@ class SoftwareTreeUtils:
 
         if local_tree.makeup == -1:
             return {}
+
+        #### just testing
+
+        all_paths = local_tree.get_all_graph_paths(sample=self.sample)
+        print(all_paths)
 
         return self.get_available_pathnodes(local_tree)
 
@@ -3024,11 +3181,9 @@ class SoftwareTreeUtils:
         return pipeline_tree
 
     def prep_tree_for_extend(self, tree: PipelineTree):
-        print(f"Prepping tree for extend: {tree.makeup}")
         tree.software_tree_pk = self.get_software_tree_index(
             tree.makeup,
         )
-        print(f"tree pk: {tree.software_tree_pk}")
         return tree
 
 
@@ -3177,7 +3332,6 @@ class RawReferenceUtils:
         # group tables: average read_counts_standard_score, sum counts, read_counts, contig_counts
         if joint_tables.shape[0] == 0:
             return pd.DataFrame(columns=list(joint_tables.columns))
-        print(joint_tables.columns)
         joint_tables = joint_tables.groupby(["taxid", "accid", "description"]).agg(
             {
                 "taxid": "first",
@@ -3189,7 +3343,6 @@ class RawReferenceUtils:
                 "contig_counts": "sum",
             }
         )
-        print(joint_tables.head())
 
         joint_tables = joint_tables.sort_values("standard_score", ascending=False)
         joint_tables = joint_tables.reset_index(drop=True)
@@ -3227,16 +3380,13 @@ class RawReferenceUtils:
         self, run_pks: Optional[List[int]] = None
     ) -> pd.DataFrame:
         sample_runs = self.filter_runs()
-        print("runs found", sample_runs.count())
         if run_pks is not None:
             sample_runs = sample_runs.filter(pk__in=run_pks)
         self.runs_found = sample_runs.count()
-        print("runs found", self.runs_found)
         run_references_tables = [self.run_references_table(run) for run in sample_runs]
 
         self.list_tables.extend(run_references_tables)
-        print("run_references_tables")
-        print(len(run_references_tables))
+
         run_references_tables = self.merge_ref_tables()
         # replace nan with 0
         run_references_tables = run_references_tables.fillna(0)

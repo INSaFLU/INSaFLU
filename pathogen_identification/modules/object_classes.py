@@ -6,7 +6,7 @@ import subprocess
 import time
 from dataclasses import dataclass, field
 from random import randint
-from typing import List, Type
+from typing import List, Tuple, Type
 
 import matplotlib
 import pandas as pd
@@ -1103,6 +1103,7 @@ class SoftwareUnit:
         self.bin = bin
         self.dir = dir
         self.output_dir = output_dir
+        self.leaves = []
 
     def check_exists(self):
         return bool(self.name != SoftwareDetail.SOFTWARE_NOT_FOUND)
@@ -1119,6 +1120,63 @@ class SoftwareUnit:
                 )
             except KeyError:
                 self.bin = ""
+
+    @staticmethod
+    def find_processed_reads(ps_pk: int) -> Tuple[str, str]:
+        """
+        Find reads
+        """
+
+        try:
+            parameter_set = ParameterSet.objects.get(pk=ps_pk)
+        except ParameterSet.DoesNotExist:
+            return ("", "")
+
+        try:
+            run_detail = RunMain.objects.get(parameter_set=parameter_set)
+
+            processed_reads_r1 = (
+                run_detail.processed_reads_r1 if run_detail.processed_reads_r1 else ""
+            )
+            processed_reads_r2 = (
+                run_detail.processed_reads_r2 if run_detail.processed_reads_r2 else ""
+            )
+
+            return (processed_reads_r1, processed_reads_r2)
+
+        except RunMain.DoesNotExist:
+            return ("", "")
+
+    @staticmethod
+    def check_return_reads(r1: str, r2: str) -> bool:
+        if r1 and r2:
+            return True
+        else:
+            return False
+
+    def check_processed_exist(self) -> bool:
+        """
+        Check if processed reads exist
+        """
+
+        for leaf_pk in self.leaves:
+            processed_r1, processed_r2 = self.find_processed_reads(leaf_pk)
+            if self.check_return_reads(processed_r1, processed_r2):
+                return True
+
+        return False
+
+    def retrieve_processed_reads(self) -> Tuple[str, str]:
+        """
+        Retrieve processed reads
+        """
+
+        for leaf_pk in self.leaves:
+            processed_r1, processed_r2 = self.find_processed_reads(leaf_pk)
+            if self.check_return_reads(processed_r1, processed_r2):
+                return (processed_r1, processed_r2)
+
+        return ("", "")
 
 
 class SoftwareDetail(SoftwareUnit):
@@ -1140,6 +1198,8 @@ class SoftwareDetail(SoftwareUnit):
 
             self.extract_args(method_details)
 
+            self.extract_leaves(method_details)
+
             self.extract_db(method_details, config)
 
             self.get_bin(config)
@@ -1151,6 +1211,18 @@ class SoftwareDetail(SoftwareUnit):
             )
 
             self.output_dir = os.path.join(self.dir, f"{self.name}.{prefix}")
+
+    def extract_leaves(self, method_details: pd.DataFrame) -> List[int]:
+        """
+        Extract leaves from method details. leaves column is a list of integers."""
+        if "leaves" not in method_details.columns:
+            return []
+
+        leaves = method_details["leaves"].values
+        # flatten leaves
+        leaves = [item for sublist in leaves for item in sublist]
+        leaves = list(set(leaves))
+        return leaves
 
     def get_dir_from_config(self, config: dict):
         try:
@@ -1225,7 +1297,9 @@ class SoftwareDetail(SoftwareUnit):
 
 
 class SoftwareDetailCompound:
-    def __init__(self, modules: List[str], args_df: pd.DataFrame, config: dict, prefix: str):
+    def __init__(
+        self, modules: List[str], args_df: pd.DataFrame, config: dict, prefix: str
+    ):
         """
 
         Args:
@@ -1234,7 +1308,7 @@ class SoftwareDetailCompound:
             config: dictionary containing module configuration.
             prefix: prefix of module.
         """
-        
+
         self.args_df = args_df
         self.config = config
         self.prefix = prefix

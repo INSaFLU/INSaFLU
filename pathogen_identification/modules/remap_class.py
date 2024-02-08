@@ -12,20 +12,16 @@ from scipy.stats import kstest
 
 from constants.software_names import SoftwareNames
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.modules.object_classes import (
-    Bedgraph,
-    MappingStats,
-    Read_class,
-    Remap_Target,
-    RunCMD,
-    SoftwareDetail,
-    SoftwareRemap,
-)
+from pathogen_identification.modules.object_classes import (Bedgraph,
+                                                            MappingStats,
+                                                            Read_class,
+                                                            Remap_Target,
+                                                            RunCMD,
+                                                            SoftwareDetail,
+                                                            SoftwareRemap)
 from pathogen_identification.utilities.televir_parameters import RemapParams
 from pathogen_identification.utilities.utilities_general import (
-    plot_dotplot,
-    read_paf_coordinates,
-)
+    plot_dotplot, read_paf_coordinates)
 
 pd.options.mode.chained_assignment = None
 np.warnings.filterwarnings("ignore")

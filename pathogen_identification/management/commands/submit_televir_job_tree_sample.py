@@ -137,10 +137,6 @@ class Command(BaseCommand):
 
         module_tree = utils.module_tree(pipeline_tree, list(matched_paths.values()))
 
-        # reduced_tree = utils.tree_subset(pipeline_tree, )
-        # reduced_tree= utils.prep_tree_for_extend(reduced_tree, user)
-        # module_tree = pipeline_utils.compress_software_tree(reduced_tree)
-
         try:
             for project_sample in samples:
                 if project_sample.is_deleted:

@@ -1297,7 +1297,7 @@ class TreeProgressGraph:
         }
 
         pipeline_steps_to_r_colours = {
-            "root": "lightblue",
+            "root2": "lightblue",
             ConstantsSettings.PIPELINE_NAME_read_quality_analysis: "cadetblue",
             ConstantsSettings.PIPELINE_NAME_extra_qc: "cadetblue",
             ConstantsSettings.PIPELINE_NAME_viral_enrichment: "darkgreen",
@@ -1309,7 +1309,7 @@ class TreeProgressGraph:
             ConstantsSettings.PIPELINE_NAME_map_filtering: "dodgerblue",
             ConstantsSettings.PIPELINE_NAME_remapping: "khaki",
             ConstantsSettings.PIPELINE_NAME_remap_filtering: "darkslategray",
-            "leaves": "lightblue",
+            "leaves2": "lightblue",
         }
 
         def merge_names(row: pd.Series):
@@ -1328,7 +1328,7 @@ class TreeProgressGraph:
             row["child"] = f"{row['software_child']}_{child}"
             return row
 
-        network_df = [["NA", "0", "root", "input", "input", "lightblue"]]
+        network_df = [["NA", "0", "root2", "input", "input", "lightblue"]]
         for tree_pk, tree in pipetrees_dict.items():
             #
             tree.compress_tree()
@@ -1380,13 +1380,12 @@ class TreeProgressGraph:
                 print(f"leaf in group: {leaf_in_group}", child_group)
 
                 if leaf_in_group:
-                    print(f"child actual node: {leaf_in_group}")
-                    color = pipeline_steps_to_r_colours["leaves"]
+                    color = pipeline_steps_to_r_colours["leaves2"]
                     network_df.append(
                         [
                             child,
                             f"{tree_pk}_{leaf_in_group}",
-                            "leaves",
+                            "leaves2",
                             software_child,
                             f"workflow {leaf_in_group}",
                             color,
@@ -1404,8 +1403,7 @@ class TreeProgressGraph:
                     "colour",
                 ],
             )
-            print("network_df")
-            print(network_df)
+
             unique_nodes = list(network_df["child"].values) + list(
                 network_df["parent"].values
             )

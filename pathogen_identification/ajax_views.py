@@ -502,7 +502,6 @@ def submit_televir_project_sample_runs(request):
 
         process_SGE = ProcessSGE()
         user = request.user
-        print("hi")
 
         sample_id = int(request.POST["sample_id"])
         sample = PIProject_Sample.objects.get(id=int(sample_id))

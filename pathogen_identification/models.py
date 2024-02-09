@@ -14,7 +14,8 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from managing_files.models import Sample
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from pathogen_identification.data_classes import IntermediateFiles
 
 # Create your models here.
@@ -348,7 +349,7 @@ class ParameterSet(models.Model):
                 run.delete_data()
 
     def __str__(self):
-        return self.sample.name + " " + str(self.leaf.index)
+        return self.sample.name
 
 
 class Submitted(models.Model):

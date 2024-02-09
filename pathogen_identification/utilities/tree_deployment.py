@@ -200,6 +200,8 @@ class PathogenIdentification_Deployment_Manager:
             shutil.rmtree(self.dir)
 
     def import_params(self, run_params_db: pd.DataFrame):
+        print("IMPORTING PARAMS")
+        print(run_params_db)
         self.run_params_db = run_params_db
 
     def run_main_prep_check_first(self):
@@ -279,7 +281,13 @@ class Tree_Node:
     updated_classification: bool
     updated_assembly: bool
 
-    def __init__(self, pipe_tree: PipelineTree, node_index: int, software_tree_pk: int):
+    def __init__(
+        self,
+        pipe_tree: PipelineTree,
+        node_index: int,
+        software_tree_pk: int,
+        sample: PIProject_Sample,
+    ):
         node_metadata = pipe_tree.node_index.loc[node_index].node
 
         self.module = node_metadata[0]
@@ -290,9 +298,13 @@ class Tree_Node:
             pipe_tree.edge_df.parent == node_index
         ].child.tolist()
 
-        self.parameters = self.determine_params(pipe_tree)
         self.software_tree_pk = software_tree_pk
+
+        self.parameters = self.determine_params(pipe_tree, sample)
         self.leaves = pipe_tree.leaves_from_node_using_graph(node_index)
+
+        print("NODE PARAMS")
+        print(self.parameters)
 
     def run_reference_overlap_analysis(self):
         # run = RunMain.objects.filter(parameter_set=self.parameter_set).first()
@@ -415,14 +427,31 @@ class Tree_Node:
 
         return True
 
-    def determine_params(self, pipe_tree):
+    def determine_params(self, pipe_tree: PipelineTree, sample: PIProject_Sample):
         arguments_list = []
+        ps_track = []
+
         for node in self.branch:
             node_metadata = pipe_tree.node_index.loc[node].node
+
+            path_to_node = pipe_tree.paths_to_node(node)
+            ps_visited = pipe_tree.check_if_leaf_steps_exist_list(
+                path_to_node, sample=sample
+            )
+            node_metadata = (
+                node_metadata[0],
+                node_metadata[1],
+                node_metadata[2],
+                ps_visited,
+            )
             arguments_list.append(node_metadata)
 
+            # ps_track.append(ps_visited)
+
+        ps_track = list(set(ps_track))
+
         arguments_df = pd.DataFrame(
-            arguments_list, columns=["parameter", "value", "flag"]
+            arguments_list, columns=["parameter", "value", "flag", "leaves"]
         )
 
         arguments_df = arguments_df[arguments_df.parameter != "root"]
@@ -681,7 +710,10 @@ class Tree_Progress:
 
     def initialize_nodes(self):
         origin_node = Tree_Node(
-            self.tree, 0, software_tree_pk=self.tree.software_tree_pk
+            self.tree,
+            0,
+            software_tree_pk=self.tree.software_tree_pk,
+            sample=self.sample,
         )
 
         run_manager = self.setup_deployment_manager()
@@ -710,7 +742,9 @@ class Tree_Progress:
         self.current_module = self.current_nodes[0].module
 
     def spawn_node_child(self, node: Tree_Node, child: int) -> Tree_Node:
-        new_node = Tree_Node(self.tree, child, node.software_tree_pk)
+        new_node = Tree_Node(
+            self.tree, child, node.software_tree_pk, sample=self.sample
+        )
         # node.run_manager.run_engine.logger = None
 
         run_manager_copy = copy.deepcopy(node.run_manager)
@@ -1309,6 +1343,8 @@ class TreeProgressGraph:
             ConstantsSettings.PIPELINE_NAME_map_filtering: "dodgerblue",
             ConstantsSettings.PIPELINE_NAME_remapping: "khaki",
             ConstantsSettings.PIPELINE_NAME_remap_filtering: "darkslategray",
+            ConstantsSettings.PIPELINE_NAME_metagenomics_screening: "dodgerblue",
+            "Combined analysis": "darkslategray",
             "leaves2": "lightblue",
         }
 

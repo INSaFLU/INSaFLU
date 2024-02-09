@@ -554,6 +554,16 @@ class PipelineTree:
 
         return path_dict
 
+    def paths_to_node(self, node: int):
+        """
+        Get path to node
+        """
+        self.generate_graph()
+        paths = nx.all_simple_paths(self.graph, 0, node)
+        paths = [self.get_path_explicit(path) for path in paths]
+
+        return paths
+
     def get_specific_leaf_paths_explicit(self, leaves: List[int]) -> dict:
         """
         Get all possible paths in the pipeline
@@ -565,19 +575,16 @@ class PipelineTree:
 
         return leaf_paths
 
-    def check_if_leaf_ParameterSet_exists(self, node_index: int) -> bool:
-        """
-        Check if a leaf has a ParameterSet"""
-        leaves_descendants = self.leaves_from_node_using_graph(node_index)
-        software_tree = SoftwareTree.objects.get(pk=self.software_tree_pk)
+    def check_if_leaf_steps_exist_list(
+        self, paths: List[list], sample: PIProject_Sample
+    ) -> list:
 
-        nodes_exist = SoftwareTreeNode.objects.filter(
-            software_tree=software_tree, index__in=leaves_descendants
-        )
+        leaves = []
+        for path in paths:
+            leaves.extend(self.check_if_leaf_step_exists(path, sample))
 
-        parameter_sets = ParameterSet.objects.filter(
-            leaf__in=nodes_exist, status=ParameterSet.STATUS_FINISHED
-        )
+        leaves = list(set(leaves))
+        return leaves
 
     def check_if_leaf_step_exists(self, path: list, sample: PIProject_Sample) -> list:
         """
@@ -1645,7 +1652,7 @@ class Utility_Pipeline_Manager:
                 return parent_main
 
             if nodes_index_dict[child_main] in pipe_tree.leaves:
-                return nodes_index_dict[child_main]
+                return child_main
 
             if child_main not in explicit_edge_dict[parent_main].index:
                 self.logger.info(f"Child {child} not in parent {parent}")

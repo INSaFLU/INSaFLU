@@ -15,31 +15,17 @@ from pathogen_identification.modules.assembly_class import Assembly_class
 from pathogen_identification.modules.classification_class import Classifier
 from pathogen_identification.modules.metadata_handler import RunMetadataHandler
 from pathogen_identification.modules.object_classes import (
-    Assembly_results,
-    Contig_classification_results,
-    Read_class,
-    Read_classification_results,
-    Remap_main,
-    Remap_Target,
-    Run_detail_report,
-    RunCMD,
-    RunQC_report,
-    Sample_runClass,
-    SoftwareDetail,
-    SoftwareDetailCompound,
-    SoftwareRemap,
-    SoftwareUnit,
-)
+    Assembly_results, Contig_classification_results, Read_class,
+    Read_classification_results, Remap_main, Remap_Target, Run_detail_report,
+    RunCMD, RunQC_report, Sample_runClass, SoftwareDetail,
+    SoftwareDetailCompound, SoftwareRemap, SoftwareUnit)
 from pathogen_identification.modules.preprocess_class import Preprocess
-from pathogen_identification.modules.remap_class import (
-    Mapping_Instance,
-    Mapping_Manager,
-)
+from pathogen_identification.modules.remap_class import (Mapping_Instance,
+                                                         Mapping_Manager)
 from pathogen_identification.utilities.televir_parameters import (
-    RemapParams,
-    TelevirParameters,
-)
-from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
+    RemapParams, TelevirParameters)
+from pathogen_identification.utilities.utilities_pipeline import \
+    RawReferenceUtils
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -1206,9 +1192,9 @@ class RunEngine_class(Run_Deployment_Methods):
         depleted_reads = (
             self.sample.r1.depleted_read_number + self.sample.r2.depleted_read_number
         )
-        if self.type == ConstantsSettings.PAIR_END:
-            enriched_reads = enriched_reads * 2
-            depleted_reads = depleted_reads * 2
+        # if self.type == ConstantsSettings.PAIR_END:
+        #    enriched_reads = enriched_reads * 2
+        #    depleted_reads = depleted_reads * 2
 
         self.run_detail_report = Run_detail_report(
             self.remap_manager.max_depth,
@@ -1365,10 +1351,26 @@ class RunMainTree_class(Run_Deployment_Methods):
         print("RUNNING PREPROCESS", self.enrichment)
 
         if self.enrichment:
-            self.deploy_EN()
+            if self.enrichment_method.check_processed_exist():
 
-            self.sample.r1.enrich(self.enrichment_drone.classified_reads_list)
-            self.sample.r2.enrich(self.enrichment_drone.classified_reads_list)
+                r1_proc, r2_proc = self.enrichment_method.retrieve_processed_reads()
+                enriched_read_number = self.enrichment_method.get_enriched_read_number()
+                if self.type == ConstantsSettings.PAIR_END:
+                    enriched_read_number = enriched_read_number / 2
+                    self.sample.r2.enriched_read_number = enriched_read_number
+                self.sample.r1.enriched_read_number = enriched_read_number
+
+                os.symlink(r1_proc, self.sample.r1.enriched)
+                os.symlink(r2_proc, self.sample.r2.enriched)
+
+                self.sample.r1.is_enriched()
+                self.sample.r2.is_enriched()
+
+            else:
+                self.deploy_EN()
+
+                self.sample.r1.enrich(self.enrichment_drone.classified_reads_list)
+                self.sample.r2.enrich(self.enrichment_drone.classified_reads_list)
 
             self.logger.info(
                 "r1 current reads after enrichment: "
@@ -1378,9 +1380,25 @@ class RunMainTree_class(Run_Deployment_Methods):
             self.enrichment_performed = True
 
         if self.depletion:
+
+            if self.depletion_method.check_processed_exist():
+                r1_proc, r2_proc = self.depletion_method.retrieve_processed_reads()
+                depleted_read_number = self.depletion_method.get_depleted_read_number()
+                if self.type == ConstantsSettings.PAIR_END:
+                    depleted_read_number = depleted_read_number / 2
+                    self.sample.r2.depleted_read_number = depleted_read_number
+                self.sample.r1.depleted_read_number = depleted_read_number
+
+                os.symlink(r1_proc, self.sample.r1.depleted)
+                os.symlink(r2_proc, self.sample.r2.depleted)
+
+                self.sample.r1.is_depleted()
+                self.sample.r2.is_depleted()
+
             self.deploy_HD()
 
-            from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
+            from pathogen_identification.utilities.televir_bioinf import \
+                TelevirBioinf
 
             televir_bioinf = TelevirBioinf()
             alignment_file = self.depletion_drone.classifier.report_path

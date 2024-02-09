@@ -407,6 +407,9 @@ class run_blast(Classifier_init):
 
         os.chdir(cwd)
 
+    def run_PE(self, threads: int = 3, *args, **kwargs):
+        self.run_PE(threads)
+
     def get_report(self) -> pd.DataFrame:
         """
         read classifier output. return pandas dataframe with standard query sequence id and accession column names.
@@ -1298,6 +1301,18 @@ class Empty_classifier(Classifier_init):
     method_name = "None"
     report_suffix = ".blast_results.tsv"
     full_report_suffix = ".blast_full_results.tsv"
+
+    def run_SE(self, threads: int = 3):
+        pass
+
+    def run_PE(self, threads: int = 3):
+        pass
+
+    def get_report(self) -> pd.DataFrame:
+        return pd.DataFrame(columns=["qseqid", "acc"])
+
+    def get_report_simple(self) -> pd.DataFrame:
+        return pd.DataFrame(columns=["qseqid", "acc"])
 
 
 class Classifier:

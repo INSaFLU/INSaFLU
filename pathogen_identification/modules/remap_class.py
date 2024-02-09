@@ -1570,6 +1570,8 @@ class Remapping:
             CS.static_directory, new_coverage_plot
         )
 
+        os.makedirs(static_dir_plots, exist_ok=True)
+
         if self.coverage_plot_exists:
             shutil.move(self.coverage_plot, self.full_path_coverage_plot)
             self.coverage_plot = new_coverage_plot

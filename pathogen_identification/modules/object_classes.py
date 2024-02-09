@@ -13,6 +13,7 @@ import pandas as pd
 from numpy import ERR_CALL
 
 from pathogen_identification.constants_settings import ConstantsSettings
+from pathogen_identification.models import ParameterSet, RunDetail, RunMain
 from pathogen_identification.utilities.utilities_general import fastqc_parse
 
 matplotlib.use("Agg")
@@ -1122,6 +1123,13 @@ class SoftwareUnit:
                 self.bin = ""
 
     @staticmethod
+    def check_return_reads(r1: str, r2: str) -> bool:
+        if r1 and os.path.exists(r1):
+            return True
+        else:
+            return False
+
+    @staticmethod
     def find_processed_reads(ps_pk: int) -> Tuple[str, str]:
         """
         Find reads
@@ -1148,19 +1156,71 @@ class SoftwareUnit:
             return ("", "")
 
     @staticmethod
-    def check_return_reads(r1: str, r2: str) -> bool:
-        if r1 and r2:
-            return True
-        else:
-            return False
+    def enriched_read_number(ps_pk: int) -> int:
+        """
+        Find reads
+        """
+
+        try:
+            run_detail = RunDetail.objects.get(run_main__parameter_set__pk=ps_pk)
+
+            enriched_reads = (
+                run_detail.enriched_reads if run_detail.enriched_reads else 0
+            )
+
+            return enriched_reads
+
+        except RunDetail.DoesNotExist:
+            return 0
+
+    def get_enriched_read_number(self):
+
+        for pk in self.leaves:
+            enriched_reads = self.enriched_read_number(pk)
+            if enriched_reads:
+                return enriched_reads
+
+        return 0
+
+    @staticmethod
+    def find_depleted_reads(ps_pk: int) -> int:
+        """
+        Find reads
+        """
+
+        try:
+            run_detail = RunDetail.objects.get(run_main__parameter_set__pk=ps_pk)
+
+            depleted_reads = (
+                run_detail.depleted_reads if run_detail.depleted_reads else 0
+            )
+
+            return depleted_reads
+
+        except RunDetail.DoesNotExist:
+            return 0
+    
+    def get_depleted_read_number(self):
+            
+            for pk in self.leaves:
+                depleted_reads = self.find_depleted_reads(pk)
+                if depleted_reads:
+                    return depleted_reads
+    
+            return 0
 
     def check_processed_exist(self) -> bool:
         """
         Check if processed reads exist
         """
+        print("CHECKING PROCESSED READS")
 
         for leaf_pk in self.leaves:
             processed_r1, processed_r2 = self.find_processed_reads(leaf_pk)
+            print("processed_r1", processed_r1)
+            print("processed_r2", processed_r2)
+            print("check_return_reads", self.check_return_reads(processed_r1, processed_r2))
+
             if self.check_return_reads(processed_r1, processed_r2):
                 return True
 
@@ -1192,13 +1252,15 @@ class SoftwareDetail(SoftwareUnit):
         super().__init__()
 
         if module in args_df.module.unique():
+            print(f"Module: {module}")
+            print("Args_df", args_df)
             method_details = args_df[(args_df.module == module)]
             self.module = module
             self.name = method_details.software.values[0]
 
             self.extract_args(method_details)
 
-            self.extract_leaves(method_details)
+            self.leaves = self.extract_leaves(method_details)
 
             self.extract_db(method_details, config)
 
@@ -1207,7 +1269,7 @@ class SoftwareDetail(SoftwareUnit):
             self.get_dir_from_config(config)
 
             print(
-                f"Module: {self.module}, Software: {self.name}, Args: {self.args}, DB: {self.db}, Bin: {self.bin}, Dir: {self.dir}"
+                f"Module: {self.module}, Software: {self.name}, Args: {self.args}, DB: {self.db}, Bin: {self.bin}, Dir: {self.dir}, leaves: {self.leaves}"
             )
 
             self.output_dir = os.path.join(self.dir, f"{self.name}.{prefix}")
@@ -1219,9 +1281,12 @@ class SoftwareDetail(SoftwareUnit):
             return []
 
         leaves = method_details["leaves"].values
+        print("leaves", leaves)
         # flatten leaves
         leaves = [item for sublist in leaves for item in sublist]
+        print("leaves", leaves)
         leaves = list(set(leaves))
+        print("leaves", leaves)
         return leaves
 
     def get_dir_from_config(self, config: dict):

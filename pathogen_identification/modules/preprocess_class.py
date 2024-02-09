@@ -200,14 +200,13 @@ class Preprocess:
         self.fastqc_input()
 
         if self.check_processed_exist():
-            self.logger.info("Processed reads found")
+            print("Processed reads found")
             exo_r1, exo_r2 = self.retrieve_processed_reads()
             os.symlink(exo_r1, self.preprocess_name_fastq_gz)
             if self.preprocess_type == CS.PAIR_END:
-                self.logger.info("Pair end reads found")
+                print("Pair end reads found")
                 os.symlink(exo_r2, self.preprocess_name_r2_fastq_gz)
-            self.logger.info(f"R1: {self.r1.current}")
-            self.logger.info(f"R2: {self.r2.current}")
+
         else:
             self.preprocess_QC()
         self.fastqc_processed()

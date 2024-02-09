@@ -504,7 +504,7 @@ class PipelineTree:
         return nested_layers
 
     def node_from_index(self, nix):
-        return self.nodes[nix]
+        return self.node_index.loc[nix].node
 
     def get_path_explicit(self, path: list) -> list:
         """return nodes names for nodes index list"""

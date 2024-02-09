@@ -1162,7 +1162,7 @@ class SoftwareUnit:
         """
 
         try:
-            run_detail = RunDetail.objects.get(run_main__parameter_set__pk=ps_pk)
+            run_detail = RunDetail.objects.get(run__parameter_set__pk=ps_pk)
 
             enriched_reads = (
                 run_detail.enriched_reads if run_detail.enriched_reads else 0
@@ -1189,7 +1189,7 @@ class SoftwareUnit:
         """
 
         try:
-            run_detail = RunDetail.objects.get(run_main__parameter_set__pk=ps_pk)
+            run_detail = RunDetail.objects.get(run__parameter_set__pk=ps_pk)
 
             depleted_reads = (
                 run_detail.depleted_reads if run_detail.depleted_reads else 0
@@ -1199,15 +1199,15 @@ class SoftwareUnit:
 
         except RunDetail.DoesNotExist:
             return 0
-    
+
     def get_depleted_read_number(self):
-            
-            for pk in self.leaves:
-                depleted_reads = self.find_depleted_reads(pk)
-                if depleted_reads:
-                    return depleted_reads
-    
-            return 0
+
+        for pk in self.leaves:
+            depleted_reads = self.find_depleted_reads(pk)
+            if depleted_reads:
+                return depleted_reads
+
+        return 0
 
     def check_processed_exist(self) -> bool:
         """
@@ -1219,7 +1219,10 @@ class SoftwareUnit:
             processed_r1, processed_r2 = self.find_processed_reads(leaf_pk)
             print("processed_r1", processed_r1)
             print("processed_r2", processed_r2)
-            print("check_return_reads", self.check_return_reads(processed_r1, processed_r2))
+            print(
+                "check_return_reads",
+                self.check_return_reads(processed_r1, processed_r2),
+            )
 
             if self.check_return_reads(processed_r1, processed_r2):
                 return True

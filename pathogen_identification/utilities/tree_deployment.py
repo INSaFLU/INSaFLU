@@ -262,8 +262,8 @@ class PathogenIdentification_Deployment_Manager:
     def delete_run(self, parameter_set: ParameterSet):
         """delete project record in database"""
 
-        self.delete_run_media()
-        self.delete_run_static()
+        # self.delete_run_media()
+        # self.delete_run_static()
         self.delete_run_record(parameter_set)
 
 
@@ -434,6 +434,9 @@ class Tree_Node:
         for node in self.branch:
             node_metadata = pipe_tree.node_index.loc[node].node
 
+            print("NODE METADATA")
+            print(pipe_tree.node_index)
+            print(pipe_tree.nodes)
             path_to_node = pipe_tree.paths_to_node(node)
             ps_visited = pipe_tree.check_if_leaf_steps_exist_list(
                 path_to_node, sample=sample

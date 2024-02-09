@@ -1395,19 +1395,20 @@ class RunMainTree_class(Run_Deployment_Methods):
                 self.sample.r1.is_depleted()
                 self.sample.r2.is_depleted()
 
-            self.deploy_HD()
+            else:
+                self.deploy_HD()
 
-            from pathogen_identification.utilities.televir_bioinf import \
-                TelevirBioinf
+                from pathogen_identification.utilities.televir_bioinf import \
+                    TelevirBioinf
 
-            televir_bioinf = TelevirBioinf()
-            alignment_file = self.depletion_drone.classifier.report_path
-            self.depletion_report = televir_bioinf.alignment_agg_by_target(
-                alignment_file
-            )
+                televir_bioinf = TelevirBioinf()
+                alignment_file = self.depletion_drone.classifier.report_path
+                self.depletion_report = televir_bioinf.alignment_agg_by_target(
+                    alignment_file
+                )
 
-            self.sample.r1.deplete(self.depletion_drone.classified_reads_list)
-            self.sample.r2.deplete(self.depletion_drone.classified_reads_list)
+                self.sample.r1.deplete(self.depletion_drone.classified_reads_list)
+                self.sample.r2.deplete(self.depletion_drone.classified_reads_list)
 
             self.depletion_performed = True
 

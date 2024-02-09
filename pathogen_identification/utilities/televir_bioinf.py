@@ -182,6 +182,14 @@ class TelevirBioinf:
 
         return MappingStats(error_rate, quality_avg)
 
+    def check_file_exists(self, file_path):
+
+        return os.path.exists(file_path)
+
+    def check_file_exists_not_empty(self, file_path):
+
+        return os.path.exists(file_path) and os.path.getsize(file_path) > 100
+
     def alignment_agg_by_target(self, alignment_file):
         """
         Aggregate the alignment file by target name
@@ -189,6 +197,9 @@ class TelevirBioinf:
         tlen: total length of the reads aligned to the target
 
         """
+        if not self.check_file_exists_not_empty(alignment_file):
+            return pd.DataFrame(columns=["target_name", "query_name"])
+
         alignment_df = self.read_alignment_file(alignment_file)
 
         agg_df = alignment_df.groupby("target_name").agg({"query_name": "count"})

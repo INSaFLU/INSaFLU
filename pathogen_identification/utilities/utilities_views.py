@@ -947,7 +947,7 @@ class ReportSorter:
         Return sorted reports
         """
         if self.model is None:
-            pass
+            return self.return_no_analysis()
 
         overlap_analysis = self.read_overlap_analysis(force=True)
         self.overlap_manager.plot_pca_full(overlap_analysis)
@@ -1111,6 +1111,11 @@ class ReportSorter:
         """
         Return sorted reports
         """
+
+        print("getting reports")
+        print(self.model)
+        print(self.metadata_df)
+        print(self.check_analyzed())
 
         if self.model is None:
             return self.return_no_analysis()

@@ -223,7 +223,6 @@ def infer_control_flag_str(report: FinalReport) -> str:
         FinalReport.CONTROL_FLAG_PRESENT: "Taxid found in control",
         FinalReport.CONTROL_FLAG_SOURCE: "",
     }
-    print(f"control flag: {report.control_flag}")
 
     return control_flag_options[report.control_flag]
 
@@ -868,8 +867,6 @@ class ReportSorter:
 
         clades = self.overlap_manager.get_leaf_clades(force=force)
 
-        print(clades)
-
         self.update_report_excluded_dicts(self.overlap_manager)
 
         return clades
@@ -933,6 +930,9 @@ class ReportSorter:
         """
         Return True if all accids have been analyzed
         """
+        print("checking analyzed")
+        print("analysis exists: ", self.check_analysis_exists())
+        print("parsed: ", self.check_parsed())
 
         if not self.check_analysis_exists():
             return False

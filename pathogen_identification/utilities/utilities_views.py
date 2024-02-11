@@ -909,6 +909,7 @@ class ReportSorter:
         if not os.path.exists(overlap_manager.clade_statistics_path):
             return False
 
+        print("all accs analyzed: ", overlap_manager.all_accs_analyzed())
         if not overlap_manager.all_accs_analyzed():
             return False
 

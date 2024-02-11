@@ -365,9 +365,9 @@ class ReadOverlapManager:
                 proportion_private,
             ) = self.clade_private_proportions(list(duplicate_group))
 
-            accid_df.loc[
-                accid_df.accid.isin(duplicate_group), "private_reads"
-            ] = group_private_counts
+            accid_df.loc[accid_df.accid.isin(duplicate_group), "private_reads"] = (
+                group_private_counts
+            )
 
         accid_df.to_csv(self.accid_statistics_path, sep="\t", index=False)
 
@@ -644,6 +644,8 @@ class ReadOverlapManager:
         clade_read_matrix = []
         belonging = []
         private_sort = {}
+        print(self.all_clade_leaves_filtered)
+        print("REMOVE LEAVES", remove_leaves)
         for clade, leaves in self.all_clade_leaves_filtered.items():
             if len(leaves) == 0:
                 continue
@@ -656,6 +658,7 @@ class ReadOverlapManager:
                 if clade.name not in filter_names:
                     continue
 
+            print(leaves)
             reads_in_clade = self.read_profile_matrix_filtered.loc[leaves]
             reads_in_clade_sum = reads_in_clade.sum(axis=0)
             reads_in_clade_sum_as_bool = reads_in_clade_sum > 0
@@ -721,6 +724,7 @@ class ReadOverlapManager:
         clade_read_matrix = self.between_clade_reads_matrix(
             filter_names=clades_filter, remove_leaves=False
         )
+        print(clade_read_matrix)
         shared_clade_matrix = self.square_and_fill_diagonal(clade_read_matrix)
 
         return shared_clade_matrix
@@ -929,6 +933,11 @@ class ReadOverlapManager:
                 continue
 
             combinations = self.clade_shared_by_pair_old(leaves)
+            cmin, cmax, cstd = self.clade_shared_by_pair(leaves)
+            print("##### compare")
+            print(cmin, min(combinations.proportion_max))
+            print(cmax, max(combinations.proportion_max))
+            print(cstd, np.std(combinations.proportion_max))
 
             node_stats_dict[node] = Clade(
                 name=node,
@@ -937,9 +946,9 @@ class ReadOverlapManager:
                 total_proportion=total_proportion,
                 group_counts=clade_counts,
                 private_counts=private_reads,
-                shared_proportion_min=min(combinations.proportion_max),
-                shared_proportion_max=max(combinations.proportion_max),
-                shared_proportion_std=np.std(combinations.proportion_max),
+                shared_proportion_min=cmin,  # min(combinations.proportion_max),
+                shared_proportion_max=cmax,  # max(combinations.proportion_max),
+                shared_proportion_std=cstd,  # np.std(combinations.proportion_max),
                 overlap_df=combinations,
             )
 
@@ -1030,6 +1039,9 @@ class ReadOverlapManager:
     @property
     def all_clade_leaves_filtered(self) -> Dict[Phylo.BaseTree.Clade, list]:
         all_node_leaves = self.tree_manager.all_clades_leaves()
+
+        print("ALL LEAVES")
+        print(all_node_leaves)
 
         all_node_leaves = {
             node: [leaf for leaf in leaves if leaf not in self.excluded_leaves]

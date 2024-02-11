@@ -43,10 +43,13 @@ class PhyloTreeManager:
 
         if node == self.tree.root:
             # return neighbours
+            print(
+                "ROOT " + str(node), [(x, len(x)) for x in self.nx_tree.neighbors(node)]
+            )
             return [
                 neighbour
                 for neighbour in self.nx_tree.neighbors(node)
-                if len(neighbour) == 1
+                if len(neighbour) <= 1
             ]
         else:
             return self.leaves_use(node, leaves=[])
@@ -131,6 +134,9 @@ class PhyloTreeManager:
             clade: self.get_node_leaves(clade) for clade in self.nx_tree.nodes()
         }
 
+        print("CLADE LEAVES")
+        print(clade_leaves)
+
         clade_leaves = {
             node: [leaf.name for leaf in leaves]
             for node, leaves in clade_leaves.items()
@@ -193,7 +199,6 @@ class PhyloTreeManager:
         Return dictionary of node clades
         """
         inner_node_clades = self.inner_node_clades_get_clean(private_clades)
-        print(inner_node_clades)
 
         # innder_node_clades_clean = {}
 
@@ -204,6 +209,9 @@ class PhyloTreeManager:
         for leafname, leaf in tree_leaf_names_dict.items():
             if leafname not in leaf_clades.keys():
                 leaf_clades[leafname] = leaf
+
+        print("INNER NODE CLADES")
+        print(leaf_clades)
 
         return leaf_clades
 

@@ -868,6 +868,8 @@ class ReportSorter:
 
         clades = self.overlap_manager.get_leaf_clades(force=force)
 
+        print(clades)
+
         self.update_report_excluded_dicts(self.overlap_manager)
 
         return clades
@@ -944,48 +946,49 @@ class ReportSorter:
         """
         Return sorted reports
         """
-        if self.model is not None:
-            overlap_analysis = self.read_overlap_analysis(force=True)
-            self.overlap_manager.plot_pca_full(overlap_analysis)
-            overlap_analysis.to_csv(self.analysis_df_path, sep="\t", index=False)
+        if self.model is None:
+            return self.return_no_analysis()
 
-            self.overlap_manager.get_private_reads_no_duplicates()
-            # self.overlap_manager.plot_pca_full()
+        overlap_analysis = self.read_overlap_analysis(force=True)
+        self.overlap_manager.plot_pca_full(overlap_analysis)
+        overlap_analysis.to_csv(self.analysis_df_path, sep="\t", index=False)
 
-            overlap_groups = list(overlap_analysis.groupby(["total_counts", "clade"]))[
-                ::-1
-            ]
+        self.overlap_manager.get_private_reads_no_duplicates()
+        # self.overlap_manager.plot_pca_full()
 
-            clades_to_keep = []
+        overlap_groups = list(overlap_analysis.groupby(["total_counts", "clade"]))[::-1]
+        print("overlap")
+        print(overlap_groups)
 
-            for group in overlap_groups:
-                group_df = group[1]
+        clades_to_keep = []
 
-                group_accids = group_df.leaf.tolist()
-                group_accids = [x for x in group_accids if x in self.report_dict]
-                group_list = [self.report_dict[accid] for accid in group_accids]
-                # sort by coverage
-                group_list.sort(key=lambda x: x.coverage, reverse=True)
-                name = group_df.clade.iloc[0]
-                if len(group_list):
-                    clades_to_keep.append(name)
-                    if len(group_list) > 1:
-                        pairwise_shared_within_clade = (
-                            self.overlap_manager.within_clade_shared_reads(clade=name)
-                        )
+        for group in overlap_groups:
+            group_df = group[1]
 
-                        self.overlap_manager.plot_pairwise_shared_clade_reads(
-                            pairwise_shared_within_clade, subplot=True, clade_str=name
-                        )
+            group_accids = group_df.leaf.tolist()
+            group_accids = [x for x in group_accids if x in self.report_dict]
+            group_list = [self.report_dict[accid] for accid in group_accids]
+            # sort by coverage
+            group_list.sort(key=lambda x: x.coverage, reverse=True)
+            name = group_df.clade.iloc[0]
+            if len(group_list):
+                clades_to_keep.append(name)
+                if len(group_list) > 1:
+                    pairwise_shared_within_clade = (
+                        self.overlap_manager.within_clade_shared_reads(clade=name)
+                    )
 
-            pairwise_shared_among_clade = (
-                self.overlap_manager.between_clade_shared_reads(
-                    clades_filter=clades_to_keep
-                )
-            )
-            self.overlap_manager.plot_pairwise_shared_clade_reads(
-                pairwise_shared_among_clade
-            )
+                    self.overlap_manager.plot_pairwise_shared_clade_reads(
+                        pairwise_shared_within_clade, subplot=True, clade_str=name
+                    )
+
+        print("clades to keep: ", clades_to_keep)
+        pairwise_shared_among_clade = self.overlap_manager.between_clade_shared_reads(
+            clades_filter=clades_to_keep
+        )
+        self.overlap_manager.plot_pairwise_shared_clade_reads(
+            pairwise_shared_among_clade
+        )
 
     def wrap_report(self, report: FinalReport) -> FinalReportWrapper:
         return FinalReportWrapper(report)
@@ -1057,6 +1060,7 @@ class ReportSorter:
 
         for group in overlap_groups:
             group_df = group[1]
+            print(group_df)
 
             group_accids = group_df.leaf.tolist()
             group_accids = [x for x in group_accids if x in self.report_dict]

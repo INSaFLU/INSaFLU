@@ -43,9 +43,6 @@ class PhyloTreeManager:
 
         if node == self.tree.root:
             # return neighbours
-            print(
-                "ROOT " + str(node), [(x, len(x)) for x in self.nx_tree.neighbors(node)]
-            )
             return [
                 neighbour
                 for neighbour in self.nx_tree.neighbors(node)
@@ -133,9 +130,6 @@ class PhyloTreeManager:
         clade_leaves = {
             clade: self.get_node_leaves(clade) for clade in self.nx_tree.nodes()
         }
-
-        print("CLADE LEAVES")
-        print(clade_leaves)
 
         clade_leaves = {
             node: [leaf.name for leaf in leaves]

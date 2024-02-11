@@ -501,29 +501,43 @@ class ReadOverlapManager:
     ## private clades ##
     ####################
 
-    def clade_shared_by_pair(self, leaves: list) -> Tuple[float, float, float]:
+    def clade_shared_by_pair(self, leaves: list) -> pd.DataFrame:
         group = self.read_profile_matrix_filtered.loc[leaves]
         group_pairwise_shared = self.pairwise_shared_count(group)
 
         group_pairwise_shared /= group.sum(axis=1)
 
-        # get lower triangle of shared
-        lower_triangle = self.matrix_lower_triangle(group_pairwise_shared)
-        # get upper triangle from matrix, without diagonal
-        upper_triangle = group_pairwise_shared.where(
-            np.triu(np.ones(group_pairwise_shared.shape), k=1).astype(bool)
+        combinations = []
+
+        for i in range(group_pairwise_shared.shape[0]):
+            group_pairwise_shared.iloc[i, i] = 0
+            for j in range(i + 1, group_pairwise_shared.shape[1]):
+                shared_ij = group_pairwise_shared.iloc[i, j]
+                shared_ji = group_pairwise_shared.iloc[j, i]
+                shared_pair = (shared_ij, shared_ji)
+
+                combinations.append(
+                    [
+                        group_pairwise_shared.index[i],
+                        group_pairwise_shared.columns[j],
+                        max(shared_pair),
+                        min(shared_pair),
+                        np.std(shared_pair),
+                    ]
+                )
+
+        combinations = pd.DataFrame(
+            combinations,
+            columns=[
+                "accid_A",
+                "accid_B",
+                "proportion_max",
+                "proportion_min",
+                "proportion_std",
+            ],
         )
 
-        group_pairwise_shared = np.concatenate(
-            [lower_triangle.values.flatten(), upper_triangle.values.flatten()]
-        )
-        group_pairwise_shared = group_pairwise_shared[~np.isnan(group_pairwise_shared)]
-
-        return (
-            group_pairwise_shared.min(),
-            group_pairwise_shared.max(),
-            group_pairwise_shared.std(),
-        )
+        return combinations
 
     def clade_shared_by_pair_old(self, leaves: list) -> pd.DataFrame:
         """
@@ -932,12 +946,8 @@ class ReadOverlapManager:
 
                 continue
 
-            combinations = self.clade_shared_by_pair_old(leaves)
-            cmin, cmax, cstd = self.clade_shared_by_pair(leaves)
-            print("##### compare")
-            print(cmin, min(combinations.proportion_max))
-            print(cmax, max(combinations.proportion_max))
-            print(cstd, np.std(combinations.proportion_max))
+            # combinations = self.clade_shared_by_pair_old(leaves)
+            combinations = self.clade_shared_by_pair(leaves)
 
             node_stats_dict[node] = Clade(
                 name=node,
@@ -946,9 +956,9 @@ class ReadOverlapManager:
                 total_proportion=total_proportion,
                 group_counts=clade_counts,
                 private_counts=private_reads,
-                shared_proportion_min=cmin,  # min(combinations.proportion_max),
-                shared_proportion_max=cmax,  # max(combinations.proportion_max),
-                shared_proportion_std=cstd,  # np.std(combinations.proportion_max),
+                shared_proportion_min=min(combinations.proportion_max),
+                shared_proportion_max=max(combinations.proportion_max),
+                shared_proportion_std=np.std(combinations.proportion_max),
                 overlap_df=combinations,
             )
 
@@ -1039,9 +1049,6 @@ class ReadOverlapManager:
     @property
     def all_clade_leaves_filtered(self) -> Dict[Phylo.BaseTree.Clade, list]:
         all_node_leaves = self.tree_manager.all_clades_leaves()
-
-        print("ALL LEAVES")
-        print(all_node_leaves)
 
         all_node_leaves = {
             node: [leaf for leaf in leaves if leaf not in self.excluded_leaves]

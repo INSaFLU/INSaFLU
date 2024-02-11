@@ -957,8 +957,6 @@ class ReportSorter:
         # self.overlap_manager.plot_pca_full()
 
         overlap_groups = list(overlap_analysis.groupby(["total_counts", "clade"]))[::-1]
-        print("overlap")
-        print(overlap_groups)
 
         clades_to_keep = []
 

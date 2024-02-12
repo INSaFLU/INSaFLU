@@ -15,9 +15,9 @@ from scipy.spatial.distance import pdist, squareform
 
 from pathogen_identification.utilities.clade_objects import Clade, CladeFilter
 from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
-
 ## pairwise matrix by individual reads
-from pathogen_identification.utilities.utilities_general import readname_from_fasta
+from pathogen_identification.utilities.utilities_general import \
+    readname_from_fasta
 
 
 def accid_from_metadata(metadata: pd.DataFrame, read_name: str) -> str:
@@ -277,7 +277,7 @@ class ReadOverlapManager:
         pairwise_props = pairwise_shared_count / pairwise_shared_count.sum(axis=0)
 
         for i in range(pairwise_props.shape[0]):
-            pairwise_props.iloc[i, i] = 0
+            pairwise_props.iloc[i, i] = 1
             for j in range(i + 1, pairwise_props.shape[1]):
                 shared_ij = pairwise_props.iloc[i, j]
                 shared_ji = pairwise_props.iloc[j, i]
@@ -288,7 +288,7 @@ class ReadOverlapManager:
         # print(pairwise_props)
         ## have all stats = 1 - STATS
 
-        # pairwise_props = 1 - pairwise_props
+        pairwise_props = 1 - pairwise_props
 
         return pairwise_props
 

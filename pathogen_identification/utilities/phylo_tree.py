@@ -57,8 +57,8 @@ class PhyloTreeManager:
 
         if node == self.tree.root:
             # return neighbours
-            return [neighbour for neighbour in self.nx_tree.neighbors(node)]
-        else:
+            #    return [neighbour for neighbour in self.nx_tree.neighbors(node)]
+            # else:
             return self.children_use(node, children=[])
 
     def inner_nodes_get(self):

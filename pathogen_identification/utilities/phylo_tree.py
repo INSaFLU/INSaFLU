@@ -79,6 +79,7 @@ class PhyloTreeManager:
         inner_node_children_dict = {
             node: self.get_node_children(node) for node in inner_nodes
         }
+        print(inner_node_children_dict)
 
         if private_clades:
             inner_node_children_dict = {

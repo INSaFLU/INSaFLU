@@ -210,9 +210,16 @@ class PhyloTreeManager:
         return leaf_clades
 
     def plot_tree(self, outpath: str, force=False):
-        plt.figure(figsize=(7, 3))
+        plt.figure(figsize=(9, 2))
         self.tree.root.color = "blue"
         Phylo.draw(self.tree, axes=plt.gca())
+        # text size
+        for item in (
+            [plt.gcf().get_axes()[0].xaxis.label, plt.gcf().get_axes()[0].yaxis.label]
+            + plt.gcf().get_axes()[0].get_xticklabels()
+            + plt.gcf().get_axes()[0].get_yticklabels()
+        ):
+            item.set_fontsize(6)
         plt.savefig(outpath, dpi=300)
 
     def plot_tree_newick(self, outpath: str, force=False):

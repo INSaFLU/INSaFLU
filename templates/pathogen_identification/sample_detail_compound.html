@@ -349,11 +349,12 @@
                                 <div class="collapsible-body" style="display: none;">
                                   <div id="plot" class="plot-container">
                                   <img src={{overlap_heatmap_path}} alt="Plot">
-                                  {% if tree_plot_exists %}
-                                    <img src={{tree_plot_path}} alt="Plot">
-                                {% endif %}
                                   </div>
-
+                                  {% if tree_plot_exists %}
+                                    <div id="plot" class="plot-container">
+                                    <img src={{tree_plot_path}} alt="Plot">
+                                    </div>
+                                {% endif %}
                                 </div>
                               </div>
                             </td>

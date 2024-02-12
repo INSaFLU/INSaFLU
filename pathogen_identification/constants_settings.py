@@ -153,7 +153,7 @@ class ConstantsSettings:
     ################################## TECHNOLOGY CONSTANTS
 
     CONSTANTS_ILLUMINA = {
-        "minimum_coverage_threshold": 2,
+        "minimum_coverage_threshold": 1,
         "max_output_number": 1,
         "taxid_limit": 15,
         "sift_query": "phage",

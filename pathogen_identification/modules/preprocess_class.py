@@ -109,7 +109,7 @@ class Preprocess:
         Retrieve processed reads
         """
 
-        return self.preprocess_method.retrieve_processed_reads()
+        return self.preprocess_method.retrieve_qc_reads()
 
     def check_gz_file_not_empty(self, file):
         """

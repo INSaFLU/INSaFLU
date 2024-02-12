@@ -23,6 +23,7 @@ from pathogen_identification.models import (
     RunDetail,
     RunIndex,
     RunMain,
+    RunReadsRegister,
     RunRemapMain,
     SampleQC,
     TelevirRunQC,
@@ -479,6 +480,29 @@ def Update_RunMain(run_class: RunEngine_class, parameter_set: ParameterSet):
 
         runmain.save()
 
+    try:
+        run_read_register = RunReadsRegister.objects.get(run=runmain)
+        run_read_register.qc_reads_r1 = run_class.sample.r1.clean
+        run_read_register.qc_reads_r2 = run_class.sample.r2.clean
+        run_read_register.enriched_reads_r1 = run_class.sample.r1.enriched
+        run_read_register.enriched_reads_r2 = run_class.sample.r2.enriched
+        run_read_register.depleted_reads_r1 = run_class.sample.r1.depleted
+        run_read_register.depleted_reads_r2 = run_class.sample.r2.depleted
+        run_read_register.save()
+
+    except RunReadsRegister.DoesNotExist:
+        run_read_register = RunReadsRegister(
+            run=runmain,
+            qc_reads_r1=run_class.sample.r1.clean,
+            qc_reads_r2=run_class.sample.r2.clean,
+            enriched_reads_r1=run_class.sample.r1.enriched,
+            enriched_reads_r2=run_class.sample.r2.enriched,
+            depleted_reads_r1=run_class.sample.r1.depleted,
+            depleted_reads_r2=run_class.sample.r2.depleted,
+        )
+
+        run_read_register.save()
+
 
 def Sample_update_combinations(run_class: Type[RunEngine_class]):
     user = User.objects.get(username=run_class.username)
@@ -521,6 +545,21 @@ def get_run_parents(run_class: RunEngine_class, parameter_set: ParameterSet):
     return sample, runmain, project
 
 
+def get_run_parents_and_reads(run_class: RunEngine_class, parameter_set: ParameterSet):
+
+    sample, RunMain, project = get_run_parents(run_class, parameter_set)
+
+    if sample is None or RunMain is None:
+        return None, None, None, None
+
+    try:
+        run_read_register = RunReadsRegister.objects.get(run=RunMain)
+    except RunReadsRegister.DoesNotExist:
+        return sample, RunMain, project, None
+
+    return sample, RunMain, project, run_read_register
+
+
 def Update_RunMain_noCheck(
     run_class: RunEngine_class, parameter_set: ParameterSet, tag="secondary"
 ):
@@ -529,7 +568,9 @@ def Update_RunMain_noCheck(
     :param run_class:
     :return: None
     """
-    sample, runmain, project = get_run_parents(run_class, parameter_set)
+    sample, runmain, project, run_read_register = get_run_parents_and_reads(
+        run_class, parameter_set
+    )
 
     print("RUNMAIN: ", runmain.pk)
     print("PARAMETER_SET: ", parameter_set.pk)
@@ -589,6 +630,15 @@ def Update_RunMain_noCheck(
     runmain.last_modified = str(datetime.datetime.now())
 
     runmain.save()
+
+    if run_read_register is not None:
+        run_read_register.qc_reads_r1 = run_class.sample.r1.clean
+        run_read_register.qc_reads_r2 = run_class.sample.r2.clean
+        run_read_register.enriched_reads_r1 = run_class.sample.r1.enriched
+        run_read_register.enriched_reads_r2 = run_class.sample.r2.enriched
+        run_read_register.depleted_reads_r1 = run_class.sample.r1.depleted
+        run_read_register.depleted_reads_r2 = run_class.sample.r2.depleted
+        run_read_register.save()
 
 
 def Update_Run_Detail(run_class: RunEngine_class, parameter_set: ParameterSet):

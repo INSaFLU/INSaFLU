@@ -13,7 +13,12 @@ import pandas as pd
 from numpy import ERR_CALL
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import ParameterSet, RunDetail, RunMain
+from pathogen_identification.models import (
+    ParameterSet,
+    RunDetail,
+    RunMain,
+    RunReadsRegister,
+)
 from pathogen_identification.utilities.utilities_general import fastqc_parse
 
 matplotlib.use("Agg")
@@ -827,15 +832,48 @@ class Read_class:
         if not os.path.isdir(directory):
             os.makedirs(directory)
 
-        final_file = os.path.join(directory, os.path.basename(self.current))
+        final_current_file = os.path.join(directory, os.path.basename(self.current))
 
         if os.path.exists(self.current):
-            if os.path.exists(final_file):
-                os.remove(final_file)
+            if os.path.exists(final_current_file):
+                os.remove(final_current_file)
 
             shutil.move(self.current, directory)
 
-        self.current = final_file
+        self.current = final_current_file
+
+        ### final clean reads
+        final_clean_file = os.path.join(directory, os.path.basename(self.clean))
+
+        if os.path.exists(self.clean):
+            if os.path.exists(final_clean_file):
+                os.remove(final_clean_file)
+
+            shutil.move(self.clean, directory)
+
+        self.clean = final_clean_file
+
+        ### final enriched reads
+        final_enriched_file = os.path.join(directory, os.path.basename(self.enriched))
+
+        if os.path.exists(self.enriched):
+            if os.path.exists(final_enriched_file):
+                os.remove(final_enriched_file)
+
+            shutil.move(self.enriched, directory)
+
+        self.enriched = final_enriched_file
+
+        ### final depleted reads
+        final_depleted_file = os.path.join(directory, os.path.basename(self.depleted))
+
+        if os.path.exists(self.depleted):
+            if os.path.exists(final_depleted_file):
+                os.remove(final_depleted_file)
+
+            shutil.move(self.depleted, directory)
+
+        self.depleted = final_depleted_file
 
     def __str__(self):
         return self.filepath
@@ -1130,7 +1168,7 @@ class SoftwareUnit:
             return False
 
     @staticmethod
-    def find_processed_reads(ps_pk: int) -> Tuple[str, str]:
+    def find_qc_reads(ps_pk: int) -> Tuple[str, str]:
         """
         Find reads
         """
@@ -1141,18 +1179,93 @@ class SoftwareUnit:
             return ("", "")
 
         try:
-            run_detail = RunMain.objects.get(parameter_set=parameter_set)
+            run_main = RunMain.objects.get(parameter_set=parameter_set)
+        except RunMain.DoesNotExist:
+            return ("", "")
+
+        try:
+            read_register = RunReadsRegister.objects.get(run_main=run_main)
 
             processed_reads_r1 = (
-                run_detail.processed_reads_r1 if run_detail.processed_reads_r1 else ""
+                read_register.qc_reads_r1 if read_register.qc_reads_r1 else ""
             )
             processed_reads_r2 = (
-                run_detail.processed_reads_r2 if run_detail.processed_reads_r2 else ""
+                read_register.qc_reads_r2 if read_register.qc_reads_r2 else ""
             )
 
             return (processed_reads_r1, processed_reads_r2)
 
+        except RunReadsRegister.DoesNotExist:
+            return ("", "")
+
+    @staticmethod
+    def find_enriched_reads(ps_pk: int) -> Tuple[str, str]:
+        """
+        Find reads
+        """
+
+        try:
+            parameter_set = ParameterSet.objects.get(pk=ps_pk)
+        except ParameterSet.DoesNotExist:
+            return ("", "")
+
+        try:
+            run_main = RunMain.objects.get(parameter_set=parameter_set)
         except RunMain.DoesNotExist:
+            return ("", "")
+
+        try:
+            read_register = RunReadsRegister.objects.get(run_main=run_main)
+
+            processed_reads_r1 = (
+                read_register.enriched_reads_r1
+                if read_register.enriched_reads_r1
+                else ""
+            )
+            processed_reads_r2 = (
+                read_register.enriched_reads_r2
+                if read_register.enriched_reads_r2
+                else ""
+            )
+
+            return (processed_reads_r1, processed_reads_r2)
+
+        except RunReadsRegister.DoesNotExist:
+            return ("", "")
+
+    @staticmethod
+    def find_depleted_reads(ps_pk: int) -> Tuple[str, str]:
+        """
+        Find reads
+        """
+
+        try:
+            parameter_set = ParameterSet.objects.get(pk=ps_pk)
+        except ParameterSet.DoesNotExist:
+            return ("", "")
+
+        try:
+            run_main = RunMain.objects.get(parameter_set=parameter_set)
+        except RunMain.DoesNotExist:
+            return ("", "")
+
+        try:
+            read_register = RunReadsRegister.objects.get(run_main=run_main)
+
+            processed_reads_r1 = (
+                read_register.depleted_reads_r1
+                if read_register.depleted_reads_r1
+                else ""
+            )
+            processed_reads_r2 = (
+                read_register.depleted_reads_r2
+                if read_register.depleted_reads_r2
+                else ""
+            )
+
+            return (processed_reads_r1, processed_reads_r2)
+
+        except RunReadsRegister.DoesNotExist:
             return ("", "")
 
     @staticmethod
@@ -1183,7 +1296,7 @@ class SoftwareUnit:
         return 0
 
     @staticmethod
-    def find_depleted_reads(ps_pk: int) -> int:
+    def find_depleted_reads_number(ps_pk: int) -> int:
         """
         Find reads
         """
@@ -1203,7 +1316,7 @@ class SoftwareUnit:
     def get_depleted_read_number(self):
 
         for pk in self.leaves:
-            depleted_reads = self.find_depleted_reads(pk)
+            depleted_reads = self.find_depleted_reads_number(pk)
             if depleted_reads:
                 return depleted_reads
 
@@ -1216,26 +1329,70 @@ class SoftwareUnit:
         print("CHECKING PROCESSED READS")
 
         for leaf_pk in self.leaves:
-            processed_r1, processed_r2 = self.find_processed_reads(leaf_pk)
-            print("processed_r1", processed_r1)
-            print("processed_r2", processed_r2)
-            print(
-                "check_return_reads",
-                self.check_return_reads(processed_r1, processed_r2),
-            )
+            processed_r1, processed_r2 = self.find_qc_reads(leaf_pk)
 
             if self.check_return_reads(processed_r1, processed_r2):
                 return True
 
         return False
 
-    def retrieve_processed_reads(self) -> Tuple[str, str]:
+    def check_enriched_exist(self) -> bool:
+        """
+        Check if enriched reads exist
+        """
+
+        for leaf_pk in self.leaves:
+            enriched_r1, enriched_r2 = self.find_enriched_reads(leaf_pk)
+
+            if self.check_return_reads(enriched_r1, enriched_r2):
+                return True
+
+        return False
+
+    def check_depleted_exist(self) -> bool:
+        """
+        Check if depleted reads exist
+        """
+
+        for leaf_pk in self.leaves:
+            depleted_r1, depleted_r2 = self.find_depleted_reads(leaf_pk)
+
+            if self.check_return_reads(depleted_r1, depleted_r2):
+                return True
+
+        return False
+
+    def retrieve_enriched_reads(self) -> Tuple[str, str]:
+        """
+        Retrieve enriched reads
+        """
+
+        for leaf_pk in self.leaves:
+            enriched_r1, enriched_r2 = self.find_enriched_reads(leaf_pk)
+            if self.check_return_reads(enriched_r1, enriched_r2):
+                return (enriched_r1, enriched_r2)
+
+        return ("", "")
+
+    def retrieve_depleted_reads(self) -> Tuple[str, str]:
+        """
+        Retrieve depleted reads
+        """
+
+        for leaf_pk in self.leaves:
+            depleted_r1, depleted_r2 = self.find_depleted_reads(leaf_pk)
+            if self.check_return_reads(depleted_r1, depleted_r2):
+                return (depleted_r1, depleted_r2)
+
+        return ("", "")
+
+    def retrieve_qc_reads(self) -> Tuple[str, str]:
         """
         Retrieve processed reads
         """
 
         for leaf_pk in self.leaves:
-            processed_r1, processed_r2 = self.find_processed_reads(leaf_pk)
+            processed_r1, processed_r2 = self.find_qc_reads(leaf_pk)
             if self.check_return_reads(processed_r1, processed_r2):
                 return (processed_r1, processed_r2)
 

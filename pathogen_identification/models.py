@@ -14,8 +14,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from managing_files.models import Sample
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.data_classes import IntermediateFiles
 
 # Create your models here.
@@ -677,6 +676,27 @@ class RunMain(models.Model):
 
         except Exception as e:
             print(e)
+
+
+class RunReadsRegister(models.Model):
+    run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)
+
+    qc_reads_r1 = models.CharField(max_length=1000, blank=True, null=True)  # qc reads
+    qc_reads_r2 = models.CharField(max_length=1000, blank=True, null=True)  # qc reads
+
+    enriched_reads_r1 = models.CharField(
+        max_length=1000, blank=True, null=True
+    )  # enriched reads
+    enriched_reads_r2 = models.CharField(
+        max_length=1000, blank=True, null=True
+    )  # enriched reads
+
+    depleted_reads_r1 = models.CharField(
+        max_length=1000, blank=True, null=True
+    )  # depleted reads
+    depleted_reads_r2 = models.CharField(
+        max_length=1000, blank=True, null=True
+    )  # depleted reads
 
 
 class TelevirRunQC(models.Model):

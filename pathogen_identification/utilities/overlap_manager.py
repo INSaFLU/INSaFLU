@@ -89,8 +89,8 @@ class ReadOverlapManager:
         self.metadata["filepath"] = self.metadata["file"]
 
         self.tree_manager = self.prep_tree_for_clade_analysis()
-        if not os.path.exists(self.tree_plot_path):
-            self.tree_manager.plot_tree(self.tree_plot_path)
+        # if not os.path.exists(self.tree_plot_path):
+        self.tree_manager.plot_tree(self.tree_plot_path)
 
         self.tree_plot_exists = os.path.exists(self.tree_plot_path)
         self.tree_plot_path_render = os.path.join(
@@ -276,10 +276,19 @@ class ReadOverlapManager:
         print(pairwise_shared_count)
         pairwise_props = pairwise_shared_count / pairwise_shared_count.sum(axis=0)
 
-        print(pairwise_props)
+        for i in range(pairwise_props.shape[0]):
+            pairwise_props.iloc[i, i] = 0
+            for j in range(i + 1, pairwise_props.shape[1]):
+                shared_ij = pairwise_props.iloc[i, j]
+                shared_ji = pairwise_props.iloc[j, i]
+                shared_pair = (shared_ij, shared_ji)
+
+                pairwise_props.iloc[i, j] = max(shared_pair)
+                pairwise_props.iloc[j, i] = max(shared_pair)
+        # print(pairwise_props)
         ## have all stats = 1 - STATS
 
-        pairwise_props = 1 - pairwise_props
+        # pairwise_props = 1 - pairwise_props
 
         return pairwise_props
 

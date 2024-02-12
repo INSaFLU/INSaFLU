@@ -1654,6 +1654,12 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         )
 
         report_sorter = ReportSorter(unique_reports, report_layout_params)
+        sort_tree_exists = False
+        sort_tree_plot_path = None
+        if report_sorter.overlap_manager is not None:
+            sort_tree_exists = report_sorter.overlap_manager.tree_plot_exists
+            sort_tree_plot_path = report_sorter.overlap_manager.tree_plot_path
+
         sorted_reports = report_sorter.get_reports_compound()
 
         private_reads_available = False
@@ -1681,6 +1687,8 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
             "graph_json": graph_json,
             "graph_id": graph_id,
             "sample": sample_name,
+            "tree_plot_exists": sort_tree_exists,
+            "tree_plot_path": sort_tree_plot_path,
             "project_index": project_pk,
             "sample_index": sample_pk,
             "report_list": sorted_reports,

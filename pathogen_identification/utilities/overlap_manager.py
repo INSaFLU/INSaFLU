@@ -271,7 +271,7 @@ class ReadOverlapManager:
         """
         pairwise_shared_count = self.pairwise_shared_count(read_profile_matrix)
         print(pairwise_shared_count)
-        pairwise_props = pairwise_shared_count / read_profile_matrix.sum(axis=0)
+        pairwise_props = pairwise_shared_count / pairwise_shared_count.sum(axis=0)
 
         print(pairwise_props)
 

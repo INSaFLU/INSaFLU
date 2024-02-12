@@ -908,6 +908,7 @@ class ReadOverlapManager:
         for node, leaves in self.all_clade_leaves_filtered.items():
             print("####")
             print(node, leaves)
+            print(self.tree_manager.get_node_neighbours(node))
             if len(leaves) == 0:
                 node_stats_dict[node] = Clade(
                     name=node,

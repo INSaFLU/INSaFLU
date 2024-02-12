@@ -139,6 +139,12 @@ class PhyloTreeManager:
 
         return clade_leaves
 
+    def get_node_neighbours(self, node):
+        """
+        Return list of neighbours for a node
+        """
+        return [neighbour for neighbour in self.nx_tree.neighbors(node)]
+
     def clades_get_leaves_clades(self, private_clades=[]):
         """
         Return dictionary of inner nodes and leaves

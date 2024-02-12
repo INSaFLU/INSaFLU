@@ -269,7 +269,10 @@ class ReadOverlapManager:
         """
         Return dataframe of pairwise shared reads
         """
-        return self.pairwise_shared_count(read_profile_matrix)
+        pairwise_shared_count = self.pairwise_shared_count(read_profile_matrix)
+        pairwise_props = pairwise_shared_count / read_profile_matrix.sum(axis=0)
+
+        return pairwise_props
 
     @staticmethod
     def matrix_lower_triangle(matrix: pd.DataFrame) -> pd.DataFrame:

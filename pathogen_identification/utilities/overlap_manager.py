@@ -906,6 +906,7 @@ class ReadOverlapManager:
 
         print("NODE STATS")
         for node, leaves in self.all_clade_leaves_filtered.items():
+            print("####")
             print(node, leaves)
             if len(leaves) == 0:
                 node_stats_dict[node] = Clade(
@@ -950,6 +951,9 @@ class ReadOverlapManager:
 
             # combinations = self.clade_shared_by_pair_old(leaves)
             combinations = self.clade_shared_by_pair(leaves)
+            print(min(combinations.proportion_max))
+            print(max(combinations.proportion_max))
+            print(np.std(combinations.proportion_max))
 
             node_stats_dict[node] = Clade(
                 name=node,

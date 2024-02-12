@@ -317,7 +317,7 @@ class ReadOverlapManager:
         distmat = self.matrix_to_phylotriangle(distance_matrix)
         constructor = DistanceTreeConstructor()
         tree = constructor.upgma(distmat)
-        tree.rooted = True
+        tree.rooted = False
         tree.ladderize()
         return tree
 

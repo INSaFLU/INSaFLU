@@ -41,15 +41,15 @@ class PhyloTreeManager:
         """
         Return list of leaves for a node"""
 
-        if node == self.tree.root:
-            # return neighbours
-            return [
-                neighbour
-                for neighbour in self.nx_tree.neighbors(node)
-                if len(neighbour) <= 1
-            ]
-        else:
-            return self.leaves_use(node, leaves=[])
+        # if node == self.tree.root:
+        #    # return neighbours
+        #    return [
+        #        neighbour
+        #        for neighbour in self.nx_tree.neighbors(node)
+        #        if len(neighbour) <= 1
+        #    ]
+        # else:
+        return self.leaves_use(node, leaves=[])
 
     def get_node_children(self, node):
         """

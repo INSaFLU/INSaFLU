@@ -176,6 +176,8 @@ class PhyloTreeManager:
                 for clade, nodes in inner_node_clades.items()
                 if clade in private_clades
             }
+        print("INNer NODE CLADES")
+        print(inner_node_clades)
 
         all_values = inner_node_clades.values()
         all_values = [item for sublist in all_values for item in sublist]
@@ -193,8 +195,8 @@ class PhyloTreeManager:
         Return dictionary of node clades
         """
         inner_node_clades = self.inner_node_clades_get_clean(private_clades)
-
-        # innder_node_clades_clean = {}
+        print("INNER NODE CLADES")
+        print(inner_node_clades)
 
         leaf_clades = reverse_dict_of_lists(inner_node_clades)
 

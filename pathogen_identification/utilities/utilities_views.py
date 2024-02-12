@@ -910,7 +910,6 @@ class ReportSorter:
         if not os.path.exists(overlap_manager.clade_statistics_path):
             return False
 
-        print("all accs analyzed: ", overlap_manager.all_accs_analyzed())
         if not overlap_manager.all_accs_analyzed():
             return False
 
@@ -932,10 +931,6 @@ class ReportSorter:
         """
         Return True if all accids have been analyzed
         """
-        print("checking analyzed")
-        print("analysis exists: ", self.check_analysis_exists())
-        print("parsed: ", self.check_parsed())
-
         if not self.check_analysis_exists():
             return False
 
@@ -982,7 +977,6 @@ class ReportSorter:
                         pairwise_shared_within_clade, subplot=True, clade_str=name
                     )
 
-        print("clades to keep: ", clades_to_keep)
         pairwise_shared_among_clade = self.overlap_manager.between_clade_shared_reads(
             clades_filter=clades_to_keep
         )

@@ -273,7 +273,6 @@ class ReadOverlapManager:
         Return dataframe of pairwise shared reads
         """
         pairwise_shared_count = self.pairwise_shared_count(read_profile_matrix)
-        print(pairwise_shared_count)
         pairwise_props = pairwise_shared_count / pairwise_shared_count.sum(axis=0)
 
         for i in range(pairwise_props.shape[0]):
@@ -285,8 +284,6 @@ class ReadOverlapManager:
 
                 pairwise_props.iloc[i, j] = max(shared_pair)
                 pairwise_props.iloc[j, i] = max(shared_pair)
-        # print(pairwise_props)
-        ## have all stats = 1 - STATS
 
         pairwise_props = 1 - pairwise_props
 
@@ -687,8 +684,7 @@ class ReadOverlapManager:
         clade_read_matrix = []
         belonging = []
         private_sort = {}
-        print(self.all_clade_leaves_filtered)
-        print("REMOVE LEAVES", remove_leaves)
+
         for clade, leaves in self.all_clade_leaves_filtered.items():
             if len(leaves) == 0:
                 continue
@@ -701,7 +697,6 @@ class ReadOverlapManager:
                 if clade.name not in filter_names:
                     continue
 
-            print(leaves)
             reads_in_clade = self.read_profile_matrix_filtered.loc[leaves]
             reads_in_clade_sum = reads_in_clade.sum(axis=0)
             reads_in_clade_sum_as_bool = reads_in_clade_sum > 0
@@ -767,7 +762,6 @@ class ReadOverlapManager:
         clade_read_matrix = self.between_clade_reads_matrix(
             filter_names=clades_filter, remove_leaves=False
         )
-        print(clade_read_matrix)
         shared_clade_matrix = self.square_and_fill_diagonal(clade_read_matrix)
 
         return shared_clade_matrix
@@ -933,11 +927,8 @@ class ReadOverlapManager:
             self.logger.info("No reads with frequency > min_freq")
             return node_stats_dict
 
-        print("NODE STATS")
         for node, leaves in self.all_clade_leaves_filtered.items():
-            print("####")
-            print(node, leaves)
-            print(self.tree_manager.get_node_neighbours(node))
+
             if len(leaves) == 0:
                 node_stats_dict[node] = Clade(
                     name=node,
@@ -981,9 +972,6 @@ class ReadOverlapManager:
 
             # combinations = self.clade_shared_by_pair_old(leaves)
             combinations = self.clade_shared_by_pair(leaves)
-            print(min(combinations.proportion_max))
-            print(max(combinations.proportion_max))
-            print(np.std(combinations.proportion_max))
 
             node_stats_dict[node] = Clade(
                 name=node,

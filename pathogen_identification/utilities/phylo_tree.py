@@ -79,7 +79,6 @@ class PhyloTreeManager:
         inner_node_children_dict = {
             node: self.get_node_children(node) for node in inner_nodes
         }
-        print(inner_node_children_dict)
 
         if private_clades:
             inner_node_children_dict = {
@@ -176,15 +175,12 @@ class PhyloTreeManager:
         """
         inner_node_clades = self.inner_node_children_dict_get()
 
-        # print(inner_node_clades)
         if private_clades:
             inner_node_clades = {
                 clade: nodes
                 for clade, nodes in inner_node_clades.items()
                 if clade in private_clades
             }
-        print("INNer NODE CLADES")
-        print(inner_node_clades)
 
         all_values = inner_node_clades.values()
         all_values = [item for sublist in all_values for item in sublist]
@@ -202,8 +198,6 @@ class PhyloTreeManager:
         Return dictionary of node clades
         """
         inner_node_clades = self.inner_node_clades_get_clean(private_clades)
-        print("INNER NODE CLADES")
-        print(inner_node_clades)
 
         leaf_clades = reverse_dict_of_lists(inner_node_clades)
 
@@ -212,9 +206,6 @@ class PhyloTreeManager:
         for leafname, leaf in tree_leaf_names_dict.items():
             if leafname not in leaf_clades.keys():
                 leaf_clades[leafname] = leaf
-
-        print("INNER NODE CLADES")
-        print(leaf_clades)
 
         return leaf_clades
 

@@ -219,7 +219,7 @@ class PhyloTreeManager:
         return leaf_clades
 
     def plot_tree(self, outpath: str, force=False):
-        plt.figure(figsize=(4, 8))
+        plt.figure(figsize=(7, 3))
         self.tree.root.color = "blue"
         Phylo.draw(self.tree, axes=plt.gca())
         plt.savefig(outpath, dpi=300)

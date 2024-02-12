@@ -1052,7 +1052,11 @@ class ReportSorter:
         ]
 
     def get_sorted_reports(self) -> List[FinalReportGroup]:
-        overlap_analysis = self.read_overlap_analysis()
+
+        if os.path.exists(self.analysis_df_path):
+            overlap_analysis = pd.read_csv(self.analysis_df_path, sep="\t")
+        else:
+            overlap_analysis = self.read_overlap_analysis()
 
         overlap_groups = list(overlap_analysis.groupby(["total_counts", "clade"]))[::-1]
 
@@ -1113,12 +1117,6 @@ class ReportSorter:
         """
         Return sorted reports
         """
-
-        print("getting reports")
-        print(self.model)
-        print(self.metadata_df)
-        print(self.check_analyzed())
-
         if self.model is None:
             return self.return_no_analysis()
 

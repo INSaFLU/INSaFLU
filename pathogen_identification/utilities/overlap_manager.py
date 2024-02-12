@@ -904,7 +904,9 @@ class ReadOverlapManager:
             self.logger.info("No reads with frequency > min_freq")
             return node_stats_dict
 
+        print("NODE STATS")
         for node, leaves in self.all_clade_leaves_filtered.items():
+            print(node, leaves)
             if len(leaves) == 0:
                 node_stats_dict[node] = Clade(
                     name=node,

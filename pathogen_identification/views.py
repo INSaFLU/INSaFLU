@@ -1687,7 +1687,7 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
             "graph_json": graph_json,
             "graph_id": graph_id,
             "sample": sample_name,
-            "tree_plot_exists": sort_tree_exists,
+            "tree_plot_exists": False,
             "tree_plot_path": sort_tree_plot_path,
             "project_index": project_pk,
             "sample_index": sample_pk,

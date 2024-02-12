@@ -78,7 +78,7 @@ class Command(BaseCommand):
         # UTILITIES
         try:
             if not project_sample.is_deleted:
-                calculate_reports_overlaps(project_sample, force=force)
+                calculate_reports_overlaps(project_sample, force=True)
 
         except Exception as e:
             print(e)

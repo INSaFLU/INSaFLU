@@ -1658,7 +1658,7 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         sort_tree_plot_path = None
         if report_sorter.overlap_manager is not None:
             sort_tree_exists = report_sorter.overlap_manager.tree_plot_exists
-            sort_tree_plot_path = report_sorter.overlap_manager.tree_plot_path
+            sort_tree_plot_path = report_sorter.overlap_manager.tree_plot_path_render
 
         sorted_reports = report_sorter.get_reports_compound()
 

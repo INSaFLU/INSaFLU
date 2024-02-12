@@ -15,9 +15,9 @@ from scipy.spatial.distance import pdist, squareform
 
 from pathogen_identification.utilities.clade_objects import Clade, CladeFilter
 from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
+
 ## pairwise matrix by individual reads
-from pathogen_identification.utilities.utilities_general import \
-    readname_from_fasta
+from pathogen_identification.utilities.utilities_general import readname_from_fasta
 
 
 def accid_from_metadata(metadata: pd.DataFrame, read_name: str) -> str:
@@ -93,6 +93,9 @@ class ReadOverlapManager:
             self.tree_manager.plot_tree(self.tree_plot_path)
 
         self.tree_plot_exists = os.path.exists(self.tree_plot_path)
+        self.tree_plot_path_render = os.path.join(
+            "/media/", self.tree_plot_path.split("/media/")[-1]
+        )
         self.overlap_matrix_plot_exists = os.path.exists(self.overlap_matrix_plot_path)
 
     def get_media_path_heatmap_clade(self, clade_str: str):
@@ -274,9 +277,9 @@ class ReadOverlapManager:
         pairwise_props = pairwise_shared_count / pairwise_shared_count.sum(axis=0)
 
         print(pairwise_props)
-        ## have all stats = 1 - STATS 
+        ## have all stats = 1 - STATS
 
-        pairwise_props= 1 - pairwise_props
+        pairwise_props = 1 - pairwise_props
 
         return pairwise_props
 

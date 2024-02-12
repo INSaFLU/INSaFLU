@@ -600,6 +600,7 @@ class ReportSorter:
                 self.reference_clade,
                 self.media_dir,
                 str(self.model.pk),
+                force_tree_rebuild=force,
             )
             self.tree_plot_path = self.overlap_manager.tree_plot_path
             # remove everything before media dir
@@ -1186,7 +1187,7 @@ def calculate_reports_overlaps(sample: PIProject_Sample, force=False):
     report_layout_params = TelevirParameters.get_report_layout_params(
         project_pk=sample.project.pk
     )
-    report_sorter = ReportSorter(final_reports, report_layout_params)
+    report_sorter = ReportSorter(final_reports, report_layout_params, force=force)
     report_sorter.sort_reports_save()
 
 

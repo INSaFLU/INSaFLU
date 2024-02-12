@@ -15,9 +15,9 @@ from scipy.spatial.distance import pdist, squareform
 
 from pathogen_identification.utilities.clade_objects import Clade, CladeFilter
 from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
+
 ## pairwise matrix by individual reads
-from pathogen_identification.utilities.utilities_general import \
-    readname_from_fasta
+from pathogen_identification.utilities.utilities_general import readname_from_fasta
 
 
 def accid_from_metadata(metadata: pd.DataFrame, read_name: str) -> str:
@@ -50,6 +50,7 @@ class ReadOverlapManager:
         reference_clade: Clade,
         media_dir: str,
         pid: str,
+        force_tree_rebuild: bool = False,
     ):
         self.metadata = metadata_df
         self.fasta_list = metadata_df["file"].tolist()
@@ -57,6 +58,7 @@ class ReadOverlapManager:
         self.excluded_leaves = []
         self.media_dir = media_dir
         self.pid = pid
+        self.force_tree_rebuild = force_tree_rebuild
 
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
@@ -262,7 +264,7 @@ class ReadOverlapManager:
             columns=read_profile_matrix.index,
             index=read_profile_matrix.index,
         )
-    
+
     def pairwise_shared_reads(self, read_profile_matrix: pd.DataFrame) -> pd.DataFrame:
         """
         Return dataframe of pairwise shared reads
@@ -459,11 +461,11 @@ class ReadOverlapManager:
 
         return True
 
-    def generate_distance_matrix(self):
+    def generate_distance_matrix(self, force=False):
         """
         Generate distance matrix
         """
-        if os.path.isfile(self.distance_matrix_path):
+        if os.path.isfile(self.distance_matrix_path) and not force:
             distance_matrix = pd.read_csv(self.distance_matrix_path, index_col=0)
         else:
             self.parse_for_data()
@@ -496,7 +498,7 @@ class ReadOverlapManager:
             tree: a tree structure generated from the distance matrix
         """
         # Generate the distance matrix
-        distance_matrix = self.generate_distance_matrix()
+        distance_matrix = self.generate_distance_matrix(force=self.force_tree_rebuild)
 
         # Generate the tree from the distance matrix
         tree = self.tree_from_distance_matrix(distance_matrix)

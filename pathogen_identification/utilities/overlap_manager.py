@@ -15,9 +15,9 @@ from scipy.spatial.distance import pdist, squareform
 
 from pathogen_identification.utilities.clade_objects import Clade, CladeFilter
 from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
-
 ## pairwise matrix by individual reads
-from pathogen_identification.utilities.utilities_general import readname_from_fasta
+from pathogen_identification.utilities.utilities_general import \
+    readname_from_fasta
 
 
 def accid_from_metadata(metadata: pd.DataFrame, read_name: str) -> str:
@@ -249,7 +249,7 @@ class ReadOverlapManager:
         return pd.DataFrame(read_profile_dict).T
 
     @staticmethod
-    def pairwise_shared_reads(read_profile_matrix: pd.DataFrame) -> pd.DataFrame:
+    def pairwise_shared_reads_old(read_profile_matrix: pd.DataFrame) -> pd.DataFrame:
         """
         Return dataframe of pairwise shared reads
         """
@@ -262,6 +262,12 @@ class ReadOverlapManager:
             columns=read_profile_matrix.index,
             index=read_profile_matrix.index,
         )
+    
+    def pairwise_shared_reads(self, read_profile_matrix: pd.DataFrame) -> pd.DataFrame:
+        """
+        Return dataframe of pairwise shared reads
+        """
+        return self.pairwise_shared_count(read_profile_matrix)
 
     @staticmethod
     def matrix_lower_triangle(matrix: pd.DataFrame) -> pd.DataFrame:

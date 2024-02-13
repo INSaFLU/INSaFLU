@@ -1059,7 +1059,6 @@ class ReportSorter:
 
         for group in overlap_groups:
             group_df = group[1]
-            print(group_df)
 
             group_accids = group_df.leaf.tolist()
             group_accids = [x for x in group_accids if x in self.report_dict]

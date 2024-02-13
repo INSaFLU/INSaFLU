@@ -15,17 +15,31 @@ from pathogen_identification.modules.assembly_class import Assembly_class
 from pathogen_identification.modules.classification_class import Classifier
 from pathogen_identification.modules.metadata_handler import RunMetadataHandler
 from pathogen_identification.modules.object_classes import (
-    Assembly_results, Contig_classification_results, Read_class,
-    Read_classification_results, Remap_main, Remap_Target, Run_detail_report,
-    RunCMD, RunQC_report, Sample_runClass, SoftwareDetail,
-    SoftwareDetailCompound, SoftwareRemap, SoftwareUnit)
+    Assembly_results,
+    Contig_classification_results,
+    Read_class,
+    Read_classification_results,
+    Remap_main,
+    Remap_Target,
+    Run_detail_report,
+    RunCMD,
+    RunQC_report,
+    Sample_runClass,
+    SoftwareDetail,
+    SoftwareDetailCompound,
+    SoftwareRemap,
+    SoftwareUnit,
+)
 from pathogen_identification.modules.preprocess_class import Preprocess
-from pathogen_identification.modules.remap_class import (Mapping_Instance,
-                                                         Mapping_Manager)
+from pathogen_identification.modules.remap_class import (
+    Mapping_Instance,
+    Mapping_Manager,
+)
 from pathogen_identification.utilities.televir_parameters import (
-    RemapParams, TelevirParameters)
-from pathogen_identification.utilities.utilities_pipeline import \
-    RawReferenceUtils
+    RemapParams,
+    TelevirParameters,
+)
+from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -362,6 +376,7 @@ class RunDetail_main:
         self.suprun = self.prefix
         self.run_type = self.RUN_TYPE_PIPELINE
         self.run_pk = None
+        self.ps_pk = None
 
         self.method_args = method_args
         self.modules = list(self.method_args["module"].unique())
@@ -474,6 +489,7 @@ class RunDetail_main:
                 config["bin"], CS.PIPELINE_NAME_read_quality_analysis
             ),
             prefix=self.prefix,
+            ps_pk=self.ps_pk,
         )
 
         self.r1.cmd = RunCMD(
@@ -489,6 +505,7 @@ class RunDetail_main:
                 config["bin"], CS.PIPELINE_NAME_read_quality_analysis
             ),
             prefix=self.prefix,
+            ps_pk=self.ps_pk,
         )
 
         self.r2.cmd = RunCMD(
@@ -791,10 +808,10 @@ class Run_Deployment_Methods(RunDetail_main):
         else:
             if self.preprocess_method.check_processed_exist():
                 r1_proc, r2_proc = self.preprocess_method.retrieve_qc_reads()
-                self.sample.r1.clean_exo= r1_proc
+                self.sample.r1.clean_exo = r1_proc
                 if self.type == "PE":
-                    self.sample.r2.clean_exo= r2_proc
-                    
+                    self.sample.r2.clean_exo = r2_proc
+
             self.preprocess_drone.run()
 
     def deploy_HD(self):
@@ -1419,8 +1436,9 @@ class RunMainTree_class(Run_Deployment_Methods):
                 ###########################
                 ###########################
 
-                from pathogen_identification.utilities.televir_bioinf import \
-                    TelevirBioinf
+                from pathogen_identification.utilities.televir_bioinf import (
+                    TelevirBioinf,
+                )
 
                 televir_bioinf = TelevirBioinf()
                 alignment_file = self.depletion_drone.classifier.report_path

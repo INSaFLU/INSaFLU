@@ -6,7 +6,7 @@ import subprocess
 import time
 from dataclasses import dataclass, field
 from random import randint
-from typing import List, Tuple, Type
+from typing import List, Optional, Tuple, Type
 
 import matplotlib
 import pandas as pd
@@ -467,6 +467,9 @@ class RunCMD:
 
 
 class Read_class:
+
+    STATUS_NONE = "none"
+
     def __init__(
         self,
         filepath,
@@ -475,6 +478,7 @@ class Read_class:
         depleted_dir: str,
         bin: str,
         prefix: str = "r0",
+        ps_pk: Optional[int] = None,
     ):
         """
         Initialize.
@@ -489,20 +493,30 @@ class Read_class:
         """
         print("Initializing Read_class")
         print("clean_dir", clean_dir)
+        self.logger = logging.getLogger("Read_class")
+        self.logger.setLevel(logging.ERROR)
+
         self.cmd = RunCMD(bin, prefix="read", task="housekeeping", logdir=clean_dir)
 
         self.exists = os.path.isfile(filepath)
 
         self.filepath = filepath
         self.current = filepath
-        self.suffix = prefix
-        self.prefix = self.determine_file_name(filepath)
+        self.prefix = prefix
+        self.prefix_original = prefix
+        self.ps_pk = ps_pk
+
+        self.base_filename = self.determine_file_name(filepath)
         self.clean_exo = None
-        self.clean = os.path.join(clean_dir, self.prefix + ".clean.fastq.gz")
+        self.clean = os.path.join(clean_dir, self.base_filename + ".clean.fastq.gz")
         self.enriched_exo = None
-        self.enriched = os.path.join(enriched_dir, self.prefix + ".enriched.fastq.gz")
+        self.enriched = os.path.join(
+            enriched_dir, self.base_filename + ".enriched.fastq.gz"
+        )
         self.depleted_exo = None
-        self.depleted = os.path.join(depleted_dir, self.prefix + ".depleted.fastq.gz")
+        self.depleted = os.path.join(
+            depleted_dir, self.base_filename + ".depleted.fastq.gz"
+        )
         self.current_status = "raw"
         self.read_number_raw = self.get_current_fastq_read_number()
         self.read_number_clean = 0
@@ -513,28 +527,37 @@ class Read_class:
         self.read_number_filtered = 0
         self.history = [self.current]
 
+        self.logger.info(f"Read_class initialized: {self.filepath}")
+        self.logger.info(f"Read_class initialized: {self.clean}")
+        self.logger.info(f"Read_class initialized: {self.enriched}")
+        self.logger.info(f"Read_class initialized: {self.depleted}")
+
     def create_link(self, file_path, new_path):
         if os.path.isfile(file_path):
             if os.path.isfile(new_path):
                 os.remove(new_path)
             os.symlink(file_path, new_path)
 
-    def update(self, new_suffix, clean_dir: str, enriched_dir: str, depleted_dir: str):
-        self.prefix = self.prefix.replace(self.suffix, new_suffix)
-        self.suffix = new_suffix
-        new_clean = os.path.join(clean_dir, self.prefix + ".clean.fastq.gz")
+    def update(self, new_prefix, clean_dir: str, enriched_dir: str, depleted_dir: str):
+        self.base_filename = self.base_filename.replace(self.prefix, new_prefix)
+        self.prefix = new_prefix
+        new_clean = os.path.join(clean_dir, self.base_filename + ".clean.fastq.gz")
         if os.path.isfile(self.clean):
             if new_clean != self.clean:
                 self.create_link(self.clean, new_clean)
         self.clean = new_clean
 
-        new_enriched = os.path.join(enriched_dir, self.prefix + ".enriched.fastq.gz")
+        new_enriched = os.path.join(
+            enriched_dir, self.base_filename + ".enriched.fastq.gz"
+        )
         if os.path.isfile(self.enriched):
             if new_enriched != self.enriched:
                 self.create_link(self.enriched, new_enriched)
         self.enriched = new_enriched
 
-        new_depleted = os.path.join(depleted_dir, self.prefix + ".depleted.fastq.gz")
+        new_depleted = os.path.join(
+            depleted_dir, self.base_filename + ".depleted.fastq.gz"
+        )
         if os.path.isfile(self.depleted):
             if new_depleted != self.depleted:
                 self.create_link(self.depleted, new_depleted)
@@ -571,12 +594,23 @@ class Read_class:
 
         return read_names
 
-    def determine_file_name(self, filepath):
-        if not self.exists:
-            return "none"
+    def determine_file_name(self, filepath: str):
+        """
+        Determine file name from filepath,remove suffixes."""
 
-        if "gz" not in filepath:
-            self.cmd.run("bgzip -f %s" % filepath)
+        filebase = self.filepath_no_suffix(filepath)
+
+        # if self.ps_pk is not None:
+        filebase = f"{filebase}_{self.prefix}"
+
+        return filebase
+
+    def filepath_no_suffix(self, filepath: str):
+        """
+        Get file path without suffix.
+        """
+        if not self.exists:
+            return self.STATUS_NONE
 
         filename = os.path.basename(filepath)
 
@@ -880,7 +914,6 @@ class Read_class:
                 final_depleted_file = self.depleted_exo
             else:
                 if os.path.exists(final_depleted_file) is False:
-                    # os.remove(final_depleted_file)
                     shutil.move(self.depleted, directory)
 
         self.depleted = final_depleted_file

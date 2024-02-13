@@ -42,7 +42,6 @@ class TelevirBioinf:
         command = (
             f'{self.samtools_binary} faidx {source_file} "{accid_code}" > {output_file}'
         )
-        print(command)
         subprocess.call(command, shell=True)
 
         return self.check_file_exists_not_empty(output_file)
@@ -86,7 +85,6 @@ class TelevirBioinf:
 
         command += f"--output {output_html}"
 
-        print(command)
         subprocess.call(command, shell=True)
 
     @staticmethod

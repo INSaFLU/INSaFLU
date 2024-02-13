@@ -98,6 +98,7 @@ class PathogenIdentification_Deployment_Manager:
         self.install_registry = Televir_Metadata
 
         self.threads = threads
+
         self.file_r1 = sample.sample.get_fastq_available(TypePath.MEDIA_ROOT, True)
         if sample.sample.exist_file_2():
             self.file_r2 = sample.sample.get_fastq_available(TypePath.MEDIA_ROOT, False)
@@ -465,20 +466,6 @@ class Tree_Node:
         return parameters_df
 
 
-class PathogenDeployment_Iterator:
-    def __init__(self):
-        self.deplyment_list = []
-
-    def add_deployment(self, deployment: PathogenIdentification_Deployment_Manager):
-        self.deplyment_list.append(deployment)
-
-    def __getitem__(self, index):
-        return self.deplyment_list[index]
-
-    def __len__(self):
-        return len(self.deplyment_list)
-
-
 class TreeNode_Iterator:
     def __init__(self):
         self.node_list = []
@@ -611,7 +598,10 @@ class Tree_Progress:
     updated_classification: bool
 
     def __init__(
-        self, pipe_tree: PipelineTree, sample: PIProject_Sample, project: Projects
+        self,
+        pipe_tree: PipelineTree,
+        sample: PIProject_Sample,
+        project: Projects,
     ):
         pipe_tree.nodes_df = pd.DataFrame(
             pipe_tree.nodes_compress, columns=["node", "branch"]
@@ -754,18 +744,6 @@ class Tree_Progress:
         new_node.run_manager.update_engine()
 
         return new_node
-
-    @staticmethod
-    def disable_logger(logger: logging.Logger):
-        logger.disabled = True
-
-    @staticmethod
-    def enable_logger(logger: logging.Logger):
-        logger.disabled = False
-
-    @staticmethod
-    def copy_class_instance(instance):
-        return copy.deepcopy(instance)
 
     def register_node(self, node: Tree_Node):
         if node.run_manager.sent:
@@ -1407,7 +1385,6 @@ class TreeProgressGraph:
                     return None
 
                 leaf_in_group = find_leaf_in_group(child_group)
-                print(f"leaf in group: {leaf_in_group}", child_group)
 
                 if leaf_in_group:
                     color = pipeline_steps_to_r_colours["leaves2"]

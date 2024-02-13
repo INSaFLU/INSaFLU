@@ -13,12 +13,8 @@ import pandas as pd
 from numpy import ERR_CALL
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import (
-    ParameterSet,
-    RunDetail,
-    RunMain,
-    RunReadsRegister,
-)
+from pathogen_identification.models import (ParameterSet, RunDetail, RunMain,
+                                            RunReadsRegister)
 from pathogen_identification.utilities.utilities_general import fastqc_parse
 
 matplotlib.use("Agg")
@@ -1184,7 +1180,7 @@ class SoftwareUnit:
             return ("", "")
 
         try:
-            read_register = RunReadsRegister.objects.get(run_main=run_main)
+            read_register = RunReadsRegister.objects.get(run=run_main)
 
             processed_reads_r1 = (
                 read_register.qc_reads_r1 if read_register.qc_reads_r1 else ""
@@ -1215,7 +1211,7 @@ class SoftwareUnit:
             return ("", "")
 
         try:
-            read_register = RunReadsRegister.objects.get(run_main=run_main)
+            read_register = RunReadsRegister.objects.get(run=run_main)
 
             processed_reads_r1 = (
                 read_register.enriched_reads_r1
@@ -1250,7 +1246,7 @@ class SoftwareUnit:
             return ("", "")
 
         try:
-            read_register = RunReadsRegister.objects.get(run_main=run_main)
+            read_register = RunReadsRegister.objects.get(run=run_main)
 
             processed_reads_r1 = (
                 read_register.depleted_reads_r1

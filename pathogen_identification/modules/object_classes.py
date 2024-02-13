@@ -13,8 +13,12 @@ import pandas as pd
 from numpy import ERR_CALL
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import (ParameterSet, RunDetail, RunMain,
-                                            RunReadsRegister)
+from pathogen_identification.models import (
+    ParameterSet,
+    RunDetail,
+    RunMain,
+    RunReadsRegister,
+)
 from pathogen_identification.utilities.utilities_general import fastqc_parse
 
 matplotlib.use("Agg")
@@ -834,10 +838,10 @@ class Read_class:
         final_current_file = os.path.join(directory, os.path.basename(self.current))
 
         if os.path.exists(self.current):
-            if os.path.exists(final_current_file):
-                os.remove(final_current_file)
+            if os.path.exists(final_current_file) is False:
+                # os.remove(final_current_file)
 
-            shutil.move(self.current, directory)
+                shutil.move(self.current, directory)
 
         self.current = final_current_file
 
@@ -848,10 +852,10 @@ class Read_class:
             if self.clean_exo is not None:
                 final_clean_file = self.clean_exo
             else:
-                if os.path.exists(final_clean_file):
-                    os.remove(final_clean_file)
+                if os.path.exists(final_clean_file) is False:
+                    # os.remove(final_clean_file)
 
-                shutil.move(self.clean, directory)
+                    shutil.move(self.clean, directory)
 
         self.clean = final_clean_file
         ### final enriched reads
@@ -861,10 +865,10 @@ class Read_class:
             if self.enriched_exo is not None:
                 final_enriched_file = self.enriched_exo
             else:
-                if os.path.exists(final_enriched_file):
-                    os.remove(final_enriched_file)
+                if os.path.exists(final_enriched_file) is False:
+                    # os.remove(final_enriched_file)
 
-                shutil.move(self.enriched, directory)
+                    shutil.move(self.enriched, directory)
 
         self.enriched = final_enriched_file
 
@@ -875,12 +879,17 @@ class Read_class:
             if self.depleted_exo is not None:
                 final_depleted_file = self.depleted_exo
             else:
-                if os.path.exists(final_depleted_file):
-                    os.remove(final_depleted_file)
-
-                shutil.move(self.depleted, directory)
+                if os.path.exists(final_depleted_file) is False:
+                    # os.remove(final_depleted_file)
+                    shutil.move(self.depleted, directory)
 
         self.depleted = final_depleted_file
+
+        print("exported reads to", directory)
+        print("current", self.current)
+        print("clean", self.clean)
+        print("enriched", self.enriched)
+        print("depleted", self.depleted)
 
     def __str__(self):
         return self.filepath

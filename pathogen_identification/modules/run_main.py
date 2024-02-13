@@ -1360,8 +1360,9 @@ class RunMainTree_class(Run_Deployment_Methods):
                     self.sample.r2.enriched_read_number = enriched_read_number
                 self.sample.r1.enriched_read_number = enriched_read_number
 
-                os.symlink(self.sample.r1.enriched, r1_proc)
-                os.symlink(self.sample.r2.enriched, r2_proc)
+                print("ENRICHED READS", self.sample.r1.enriched_read_number, r1_proc)
+                os.symlink(r1_proc, self.sample.r1.enriched)
+                os.symlink(r2_proc, self.sample.r2.enriched)
 
                 self.sample.r1.is_enriched()
                 self.sample.r2.is_enriched()
@@ -1390,8 +1391,8 @@ class RunMainTree_class(Run_Deployment_Methods):
                     self.sample.r2.depleted_read_number = depleted_read_number
                 self.sample.r1.depleted_read_number = depleted_read_number
 
-                os.symlink(self.sample.r1.depleted, r1_proc)
-                os.symlink(self.sample.r2.depleted, r2_proc)
+                os.symlink(r1_proc, self.sample.r1.depleted)
+                os.symlink(r2_proc, self.sample.r2.depleted)
 
                 self.sample.r1.is_depleted()
                 self.sample.r2.is_depleted()

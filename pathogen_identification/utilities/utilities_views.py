@@ -623,6 +623,7 @@ class ReportSorter:
             )
 
         else:
+            self.overlap_manager = None
             self.media_dir = None
             self.analysis_df_path = None
             self.all_clades_df_path = None

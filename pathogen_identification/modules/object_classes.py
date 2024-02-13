@@ -13,8 +13,12 @@ import pandas as pd
 from numpy import ERR_CALL
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import (ParameterSet, RunDetail, RunMain,
-                                            RunReadsRegister)
+from pathogen_identification.models import (
+    ParameterSet,
+    RunDetail,
+    RunMain,
+    RunReadsRegister,
+)
 from pathogen_identification.utilities.utilities_general import fastqc_parse
 
 matplotlib.use("Agg")
@@ -842,21 +846,26 @@ class Read_class:
         final_clean_file = os.path.join(directory, os.path.basename(self.clean))
 
         if os.path.exists(self.clean):
-            if os.path.exists(final_clean_file):
-                os.remove(final_clean_file)
+            if os.path.islink(self.clean):
+                final_clean_file = os.readlink(self.clean)
+            else:
+                if os.path.exists(final_clean_file):
+                    os.remove(final_clean_file)
 
-            shutil.move(self.clean, directory)
+                shutil.move(self.clean, directory)
 
         self.clean = final_clean_file
-
         ### final enriched reads
         final_enriched_file = os.path.join(directory, os.path.basename(self.enriched))
 
         if os.path.exists(self.enriched):
-            if os.path.exists(final_enriched_file):
-                os.remove(final_enriched_file)
+            if os.path.islink(self.enriched):
+                final_enriched_file = os.readlink(self.enriched)
+            else:
+                if os.path.exists(final_enriched_file):
+                    os.remove(final_enriched_file)
 
-            shutil.move(self.enriched, directory)
+                shutil.move(self.enriched, directory)
 
         self.enriched = final_enriched_file
 
@@ -864,10 +873,13 @@ class Read_class:
         final_depleted_file = os.path.join(directory, os.path.basename(self.depleted))
 
         if os.path.exists(self.depleted):
-            if os.path.exists(final_depleted_file):
-                os.remove(final_depleted_file)
+            if os.path.islink(self.depleted):
+                final_depleted_file = os.readlink(self.depleted)
+            else:
+                if os.path.exists(final_depleted_file):
+                    os.remove(final_depleted_file)
 
-            shutil.move(self.depleted, directory)
+                shutil.move(self.depleted, directory)
 
         self.depleted = final_depleted_file
 

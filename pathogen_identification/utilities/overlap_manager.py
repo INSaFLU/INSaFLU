@@ -316,9 +316,9 @@ class ReadOverlapManager:
         print("##### building trree ######")
         print(distance_matrix.shape)
         if distance_matrix.shape[0] <= 1:
-            tree = constructor.upgma(distmat)
-        else:
             tree = constructor.nj(distmat)
+        else:
+            tree = constructor.upgma(distmat)
 
         tree.rooted = False
         tree.ladderize()

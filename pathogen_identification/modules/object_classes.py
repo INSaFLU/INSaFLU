@@ -13,12 +13,8 @@ import pandas as pd
 from numpy import ERR_CALL
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import (
-    ParameterSet,
-    RunDetail,
-    RunMain,
-    RunReadsRegister,
-)
+from pathogen_identification.models import (ParameterSet, RunDetail, RunMain,
+                                            RunReadsRegister)
 from pathogen_identification.utilities.utilities_general import fastqc_parse
 
 matplotlib.use("Agg")
@@ -497,8 +493,11 @@ class Read_class:
         self.current = filepath
         self.suffix = prefix
         self.prefix = self.determine_file_name(filepath)
+        self.clean_exo = None
         self.clean = os.path.join(clean_dir, self.prefix + ".clean.fastq.gz")
+        self.enriched_exo = None
         self.enriched = os.path.join(enriched_dir, self.prefix + ".enriched.fastq.gz")
+        self.depleted_exo = None
         self.depleted = os.path.join(depleted_dir, self.prefix + ".depleted.fastq.gz")
         self.current_status = "raw"
         self.read_number_raw = self.get_current_fastq_read_number()
@@ -846,8 +845,8 @@ class Read_class:
         final_clean_file = os.path.join(directory, os.path.basename(self.clean))
 
         if os.path.exists(self.clean):
-            if os.path.islink(self.clean):
-                final_clean_file = os.readlink(self.clean)
+            if self.clean_exo is not None:
+                final_clean_file = self.clean_exo
             else:
                 if os.path.exists(final_clean_file):
                     os.remove(final_clean_file)
@@ -859,8 +858,8 @@ class Read_class:
         final_enriched_file = os.path.join(directory, os.path.basename(self.enriched))
 
         if os.path.exists(self.enriched):
-            if os.path.islink(self.enriched):
-                final_enriched_file = os.readlink(self.enriched)
+            if self.enriched_exo is not None:
+                final_enriched_file = self.enriched_exo
             else:
                 if os.path.exists(final_enriched_file):
                     os.remove(final_enriched_file)
@@ -873,8 +872,8 @@ class Read_class:
         final_depleted_file = os.path.join(directory, os.path.basename(self.depleted))
 
         if os.path.exists(self.depleted):
-            if os.path.islink(self.depleted):
-                final_depleted_file = os.readlink(self.depleted)
+            if self.depleted_exo is not None:
+                final_depleted_file = self.depleted_exo
             else:
                 if os.path.exists(final_depleted_file):
                     os.remove(final_depleted_file)

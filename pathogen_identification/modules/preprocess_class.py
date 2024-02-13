@@ -202,10 +202,12 @@ class Preprocess:
         if self.check_processed_exist():
             print("Processed reads found")
             exo_r1, exo_r2 = self.retrieve_processed_reads()
-            os.symlink(exo_r1, self.preprocess_name_fastq_gz)
+            # os.symlink(exo_r1, self.preprocess_name_fastq_gz)
+            shutil.copy(exo_r1, self.preprocess_name_fastq_gz)
             if self.preprocess_type == CS.PAIR_END:
                 print("Pair end reads found")
-                os.symlink(exo_r2, self.preprocess_name_r2_fastq_gz)
+                # os.symlink(exo_r2, self.preprocess_name_r2_fastq_gz)
+                shutil.copy(exo_r2, self.preprocess_name_r2_fastq_gz)
 
         else:
             self.preprocess_QC()

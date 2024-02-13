@@ -841,6 +841,7 @@ class Run_Deployment_Methods(RunDetail_main):
 
     def deploy_EN(self):
         self.update_reads()
+
         self.enrichment_drone = Classifier(
             self.enrichment_method,
             self.sample.r1.current,

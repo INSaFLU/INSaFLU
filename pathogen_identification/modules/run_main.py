@@ -1358,6 +1358,7 @@ class RunMainTree_class(Run_Deployment_Methods):
 
         if self.enrichment:
             if self.enrichment_method.check_enriched_exist():
+                print("ENRICHED EXISTS")
 
                 r1_proc, r2_proc = self.enrichment_method.retrieve_enriched_reads()
                 enriched_read_number = self.enrichment_method.get_enriched_read_number()

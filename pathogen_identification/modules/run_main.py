@@ -606,6 +606,25 @@ class RunDetail_main:
             f"{self.prefix}_mclass_summary.tsv",
         )
 
+    def update_reads(self):
+        self.sample.r1.update(
+            self.prefix,
+            clean_dir=self.config["directories"][
+                CS.PIPELINE_NAME_read_quality_analysis
+            ],
+            enriched_dir=self.config["directories"]["reads_enriched_dir"],
+            depleted_dir=self.config["directories"]["reads_depleted_dir"],
+        )
+
+        self.sample.r2.update(
+            self.prefix,
+            clean_dir=self.config["directories"][
+                CS.PIPELINE_NAME_read_quality_analysis
+            ],
+            enriched_dir=self.config["directories"]["reads_enriched_dir"],
+            depleted_dir=self.config["directories"]["reads_depleted_dir"],
+        )
+
     def Update(self, config: dict, method_args: pd.DataFrame):
         self.method_args = pd.concat((self.method_args, method_args))
         # with open(config_json) as json_file:
@@ -628,20 +647,6 @@ class RunDetail_main:
             CS.PIPELINE_NAME_read_quality_analysis
         ]
         self.log_dir = config["directories"]["log_dir"]
-
-        self.sample.r1.update(
-            self.prefix,
-            clean_dir=config["directories"][CS.PIPELINE_NAME_read_quality_analysis],
-            enriched_dir=config["directories"]["reads_enriched_dir"],
-            depleted_dir=config["directories"]["reads_depleted_dir"],
-        )
-
-        self.sample.r2.update(
-            self.prefix,
-            clean_dir=config["directories"][CS.PIPELINE_NAME_read_quality_analysis],
-            enriched_dir=config["directories"]["reads_enriched_dir"],
-            depleted_dir=config["directories"]["reads_depleted_dir"],
-        )
 
         ### set software methods and actions
 
@@ -806,6 +811,8 @@ class Run_Deployment_Methods(RunDetail_main):
         if fake_run:
             self.preprocess_drone.fake_run()
         else:
+            self.update_reads()
+
             if self.preprocess_method.check_processed_exist():
                 r1_proc, r2_proc = self.preprocess_method.retrieve_qc_reads()
                 self.sample.r1.clean_exo = r1_proc
@@ -815,6 +822,7 @@ class Run_Deployment_Methods(RunDetail_main):
             self.preprocess_drone.run()
 
     def deploy_HD(self):
+        self.update_reads()
         self.depletion_drone = Classifier(
             self.depletion_method,
             self.sample.r1.current,
@@ -832,6 +840,7 @@ class Run_Deployment_Methods(RunDetail_main):
         self.depletion_drone.run()
 
     def deploy_EN(self):
+        self.update_reads()
         self.enrichment_drone = Classifier(
             self.enrichment_method,
             self.sample.r1.current,

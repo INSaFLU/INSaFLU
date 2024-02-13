@@ -717,8 +717,11 @@ class Tree_Progress:
         self.current_module = self.current_nodes[0].module
 
     def transfer_sample(self, node: Tree_Node, child: Tree_Node) -> Tree_Node:
-        run_sample_copy = copy.deepcopy((node.run_manager.run_engine.sample))
-        child.run_manager.run_engine.sample = run_sample_copy
+
+        if "module" in node.run_manager.run_engine.config.keys():
+            if "module" in child.run_manager.run_engine.config.keys():
+                run_sample_copy = copy.deepcopy((node.run_manager.run_engine.sample))
+                child.run_manager.run_engine.sample = run_sample_copy
 
 
     def spawn_node_child(self, node: Tree_Node, child: int) -> Tree_Node:
@@ -730,14 +733,13 @@ class Tree_Progress:
         run_manager_copy = copy.deepcopy(node.run_manager)
         new_node.receive_run_manager(run_manager_copy)
 
-        self.transfer_sample(node, new_node)
-
         return new_node
 
     def spawn_node_child_prepped(self, node: Tree_Node, child: int) -> Tree_Node:
         new_node = self.spawn_node_child(node, child)
 
         new_node.run_manager.update_engine()
+        self.transfer_sample(node, new_node)
 
         return new_node
 

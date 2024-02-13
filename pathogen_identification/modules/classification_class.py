@@ -1470,6 +1470,10 @@ class Classifier:
         """
         check r1 is not empty
         """
+        print("CHECKING R1")
+        print(self.r1)
+        print(os.path.isfile(self.r1))
+        print(self.check_gz_file_not_empty(self.r1))
 
         if os.path.isfile(self.r1):
             if self.check_gz_file_not_empty(self.r1):

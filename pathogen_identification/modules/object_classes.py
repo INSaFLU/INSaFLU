@@ -13,8 +13,12 @@ import pandas as pd
 from numpy import ERR_CALL
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import (ParameterSet, RunDetail, RunMain,
-                                            RunReadsRegister)
+from pathogen_identification.models import (
+    ParameterSet,
+    RunDetail,
+    RunMain,
+    RunReadsRegister,
+)
 from pathogen_identification.utilities.utilities_general import fastqc_parse
 
 matplotlib.use("Agg")
@@ -531,15 +535,17 @@ class Read_class:
     def create_link(self, file_path, new_path):
         if os.path.isfile(file_path):
             if os.path.isfile(new_path) is False:
-                #os.remove(new_path)
-            # os.symlink(file_path, new_path)
+                # os.remove(new_path)
+                # os.symlink(file_path, new_path)
                 shutil.copy(file_path, new_path)
 
     def update(self, new_prefix, clean_dir: str, enriched_dir: str, depleted_dir: str):
+        print("UPDATING READ CLASS")
+        print(self.base_filename)
         self.base_filename = self.base_filename.replace(self.prefix, new_prefix)
+        print(self.base_filename)
         self.prefix = new_prefix
         new_clean = os.path.join(clean_dir, self.base_filename + ".clean.fastq.gz")
-        print("UPDATING READ CLASS")
         print("new_clean", new_clean)
 
         if os.path.isfile(self.clean):

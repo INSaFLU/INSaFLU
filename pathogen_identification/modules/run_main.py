@@ -796,7 +796,7 @@ class Run_Deployment_Methods(RunDetail_main):
                 log_dir=self.log_dir,
             )
 
-        if remap_prep is False:
+        if remap_prep:
             self.prep_REMAPPING()
 
     def deploy_QC(self, fake_run: bool = False):

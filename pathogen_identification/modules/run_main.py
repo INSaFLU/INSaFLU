@@ -1456,12 +1456,11 @@ class RunMainTree_class(Run_Deployment_Methods):
                     TelevirBioinf,
                 )
 
-                televir_bioinf = TelevirBioinf()
-                alignment_file = self.depletion_drone.classifier.report_path
-                self.depletion_report = televir_bioinf.alignment_agg_by_target(
-                    alignment_file
-                )
-
+                # televir_bioinf = TelevirBioinf()
+                # alignment_file = self.depletion_drone.classifier.report_path
+                # self.depletion_report = televir_bioinf.alignment_agg_by_target(
+                #    alignment_file
+                # )
                 ###########################
                 ###########################
 

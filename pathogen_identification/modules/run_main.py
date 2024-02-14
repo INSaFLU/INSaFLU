@@ -15,31 +15,17 @@ from pathogen_identification.modules.assembly_class import Assembly_class
 from pathogen_identification.modules.classification_class import Classifier
 from pathogen_identification.modules.metadata_handler import RunMetadataHandler
 from pathogen_identification.modules.object_classes import (
-    Assembly_results,
-    Contig_classification_results,
-    Read_class,
-    Read_classification_results,
-    Remap_main,
-    Remap_Target,
-    Run_detail_report,
-    RunCMD,
-    RunQC_report,
-    Sample_runClass,
-    SoftwareDetail,
-    SoftwareDetailCompound,
-    SoftwareRemap,
-    SoftwareUnit,
-)
+    Assembly_results, Contig_classification_results, Read_class,
+    Read_classification_results, Remap_main, Remap_Target, Run_detail_report,
+    RunCMD, RunQC_report, Sample_runClass, SoftwareDetail,
+    SoftwareDetailCompound, SoftwareRemap, SoftwareUnit)
 from pathogen_identification.modules.preprocess_class import Preprocess
-from pathogen_identification.modules.remap_class import (
-    Mapping_Instance,
-    Mapping_Manager,
-)
+from pathogen_identification.modules.remap_class import (Mapping_Instance,
+                                                         Mapping_Manager)
 from pathogen_identification.utilities.televir_parameters import (
-    RemapParams,
-    TelevirParameters,
-)
-from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
+    RemapParams, TelevirParameters)
+from pathogen_identification.utilities.utilities_pipeline import \
+    RawReferenceUtils
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -796,7 +782,7 @@ class Run_Deployment_Methods(RunDetail_main):
                 log_dir=self.log_dir,
             )
 
-        if remap_prepa and self.remap_prepped is False:
+        if remap_prep and self.remap_prepped is False:
             self.prep_REMAPPING()
 
     def deploy_QC(self, fake_run: bool = False):
@@ -1453,9 +1439,8 @@ class RunMainTree_class(Run_Deployment_Methods):
                 ###########################
                 ###########################
 
-                from pathogen_identification.utilities.televir_bioinf import (
-                    TelevirBioinf,
-                )
+                from pathogen_identification.utilities.televir_bioinf import \
+                    TelevirBioinf
 
                 # televir_bioinf = TelevirBioinf()
                 # alignment_file = self.depletion_drone.classifier.report_path

@@ -231,7 +231,7 @@ class PathogenIdentification_Deployment_Manager:
 
         if "module" in self.run_params_db.columns:
             self.run_engine.Update(self.config, self.run_params_db)
-            self.run_engine.Prep_deploy()
+            self.run_engine.Prep_deploy(remap_prep=False)
 
     def update_merged_targets(self, merged_targets: List[Remap_Target]):
         self.run_engine.update_merged_targets(merged_targets)

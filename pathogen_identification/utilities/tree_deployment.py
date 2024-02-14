@@ -426,15 +426,18 @@ class Tree_Node:
 
     def determine_params(self, pipe_tree: PipelineTree, sample: PIProject_Sample):
         arguments_list = []
-        ps_track = []
-
+        print("######## gettting node parameters ########")
+        print(self.branch)
         for node in self.branch:
+            print(node)
             node_metadata = pipe_tree.node_index.loc[node].node
 
             path_to_node = pipe_tree.paths_to_node(node)
             ps_visited = pipe_tree.check_if_leaf_steps_exist_list(
                 path_to_node, sample=sample
             )
+            print(path_to_node)
+            print(ps_visited)
             node_metadata = (
                 node_metadata[0],
                 node_metadata[1],
@@ -444,8 +447,6 @@ class Tree_Node:
             arguments_list.append(node_metadata)
 
             # ps_track.append(ps_visited)
-
-        ps_track = list(set(ps_track))
 
         arguments_df = pd.DataFrame(
             arguments_list, columns=["parameter", "value", "flag", "leaves"]

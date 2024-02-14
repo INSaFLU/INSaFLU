@@ -956,7 +956,7 @@ class Run_Deployment_Methods(RunDetail_main):
             logdir=self.log_dir,
         )
 
-        self.logger.info(
+        print(
             f"{self.prefix} remapping # targets: {len(self.metadata_tool.remap_targets)}"
         )
 

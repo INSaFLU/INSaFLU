@@ -228,7 +228,6 @@ class PathogenIdentification_Deployment_Manager:
         self.run_engine.Run_Remapping()
 
     def update_engine(self):
-        self.update_config()
 
         if "module" in self.run_params_db.columns:
             self.run_engine.Update(self.config, self.run_params_db)
@@ -462,6 +461,9 @@ class Tree_Node:
         parameters_df = arguments_df[arguments_df.flag == "param"]
         parameters_df["software"] = software
         parameters_df["module"] = module
+
+        print(f"#### NODE {self.node_index} PARAMERTERS ####")
+        print(parameters_df)
 
         return parameters_df
 
@@ -752,8 +754,9 @@ class Tree_Progress:
     def spawn_node_child_prepped(self, node: Tree_Node, child: int) -> Tree_Node:
         new_node = self.spawn_node_child(node, child)
 
-        new_node.run_manager.update_engine()
+        new_node.run_manager.update_config()
         new_node = self.transfer_sample(node, new_node)
+        new_node.run_manager.update_engine()
 
         return new_node
 

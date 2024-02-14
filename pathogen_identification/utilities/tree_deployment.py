@@ -460,11 +460,12 @@ class Tree_Node:
         module = module_df.parameter.values[0]
         software = module_df.value.values[0]
         parameters_df = arguments_df[arguments_df.flag == "param"]
-        parameters_df["software"] = software
-        parameters_df["module"] = module
 
         print(f"#### NODE {self.node_index} PARAMERTERS ####")
         print(parameters_df)
+
+        parameters_df["software"] = software
+        parameters_df["module"] = module
 
         return parameters_df
 

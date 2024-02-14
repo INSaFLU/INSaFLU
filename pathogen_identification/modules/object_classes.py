@@ -13,8 +13,12 @@ import pandas as pd
 from numpy import ERR_CALL
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import (ParameterSet, RunDetail, RunMain,
-                                            RunReadsRegister)
+from pathogen_identification.models import (
+    ParameterSet,
+    RunDetail,
+    RunMain,
+    RunReadsRegister,
+)
 from pathogen_identification.utilities.utilities_general import fastqc_parse
 
 matplotlib.use("Agg")
@@ -1241,8 +1245,13 @@ class SoftwareUnit:
         except RunMain.DoesNotExist:
             return ("", "")
 
+        print(
+            "REGISTER EXISTS: ", RunReadsRegister.objects.filter(run=run_main).exists()
+        )
+
         try:
             read_register = RunReadsRegister.objects.get(run=run_main)
+            print("REGISTER EXISTS: ", read_register.enriched_reads_r1)
 
             processed_reads_r1 = (
                 read_register.enriched_reads_r1
@@ -1367,6 +1376,8 @@ class SoftwareUnit:
         """
         Check if enriched reads exist
         """
+
+        print("CHECKING ENRICHED READS", leaf_pk)
 
         for leaf_pk in self.leaves:
             enriched_r1, enriched_r2 = self.find_enriched_reads(leaf_pk)

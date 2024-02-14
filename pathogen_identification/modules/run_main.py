@@ -999,6 +999,17 @@ class RunEngine_class(Run_Deployment_Methods):
         self.Run_Classification()
         self.Run_Remapping()
 
+    def process_QC(self):
+        self.sample.input_fastqc_report = self.preprocess_drone.input_qc_report
+        self.sample.processed_fastqc_report = self.preprocess_drone.processed_qc_report
+
+        self.sample.r1.is_clean()
+        self.sample.r2.is_clean()
+        self.sample.reads_after_processing = self.sample.current_total_read_number()
+        self.sample.get_fake_qc_data()
+        self.sample.r1.clean_read_names()
+        self.sample.r2.clean_read_names()
+
     def Run_QC(self):
         if self.quality_control:
             print("Deploying QC")

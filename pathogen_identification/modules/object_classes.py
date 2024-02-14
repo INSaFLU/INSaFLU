@@ -1377,7 +1377,7 @@ class SoftwareUnit:
         Check if enriched reads exist
         """
 
-        print("CHECKING ENRICHED READS", leaf_pk)
+        print("CHECKING ENRICHED READS", self.leaves)
 
         for leaf_pk in self.leaves:
             enriched_r1, enriched_r2 = self.find_enriched_reads(leaf_pk)

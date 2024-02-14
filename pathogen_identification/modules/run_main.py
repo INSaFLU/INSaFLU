@@ -796,6 +796,9 @@ class Run_Deployment_Methods(RunDetail_main):
                 log_dir=self.log_dir,
             )
 
+        # if self.remap_prepped is False:
+        #    self.prep_REMAPPING()
+
     def deploy_QC(self, fake_run: bool = False):
         self.logger.info(f"r1 reads: {self.sample.r1.get_current_fastq_read_number()}")
         self.logger.info(f"r2 reads: {self.sample.r2.get_current_fastq_read_number()}")

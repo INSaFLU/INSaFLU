@@ -703,7 +703,7 @@ class Run_Deployment_Methods(RunDetail_main):
         super().__init__(config_json, method_args, username)
         self.mapped_instances = []
 
-    def Prep_deploy(self, fake_run: bool = False):
+    def Prep_deploy(self):
         self.preprocess_drone = Preprocess(
             self.sample.r1.current,
             self.sample.r2.current,

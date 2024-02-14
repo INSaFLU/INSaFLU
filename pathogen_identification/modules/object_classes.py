@@ -469,6 +469,10 @@ class RunCMD:
 class Read_class:
 
     STATUS_NONE = "none"
+    STATUS_RAW = "raw"
+    STATUS_CLEAN = "clean"
+    STATUS_ENRICHED = "enriched"
+    STATUS_DEPLETED = "depleted"
 
     def __init__(
         self,
@@ -533,6 +537,7 @@ class Read_class:
         self.logger.info(f"Read_class initialized: {self.depleted}")
 
     def create_link(self, file_path, new_path):
+        print("moving file", file_path, new_path)
         if os.path.isfile(file_path):
             if os.path.isfile(new_path) is False:
                 # os.remove(new_path)
@@ -541,6 +546,7 @@ class Read_class:
 
     def update(self, new_prefix, clean_dir: str, enriched_dir: str, depleted_dir: str):
         print("UPDATING READ CLASS")
+        print(self.current_status)
         print(self.prefix, new_prefix)
         print(self.base_filename)
         self.base_filename = self.base_filename.replace(self.prefix, new_prefix)
@@ -570,13 +576,11 @@ class Read_class:
                 self.create_link(self.depleted, new_depleted)
         self.depleted = new_depleted
 
-        if self.current_status == "raw":
-            self.current = self.filepath
-        elif self.current_status == "clean":
+        if self.current_status == self.STATUS_CLEAN:
             self.current = self.clean
-        elif self.current_status == "enriched":
+        elif self.current_status == self.STATUS_ENRICHED:
             self.current = self.enriched
-        elif self.current_status == "depleted":
+        elif self.current_status == self.STATUS_DEPLETED:
             self.current = self.depleted
 
     def get_read_names_fastq(self):
@@ -714,7 +718,7 @@ class Read_class:
         """
         self.current = self.clean
         self.read_number_clean = self.get_current_fastq_read_number()
-        self.current_status = "clean"
+        self.current_status = self.STATUS_CLEAN
         self.filepath = os.path.dirname(self.current)
 
     def is_enriched(self):
@@ -723,7 +727,7 @@ class Read_class:
         """
         self.current = self.enriched
         self.read_number_enriched = self.get_current_fastq_read_number()
-        self.current_status = "enriched"
+        self.current_status = self.STATUS_ENRICHED
         self.filepath = os.path.dirname(self.current)
         self.read_number_filtered = self.read_number_enriched
 
@@ -733,7 +737,7 @@ class Read_class:
         """
         self.current = self.depleted
         self.read_number_depleted = self.get_current_fastq_read_number()
-        self.current_status = "depleted"
+        self.current_status = self.STATUS_DEPLETED
         self.filepath = os.path.dirname(self.current)
         self.read_number_filtered = self.read_number_depleted
 
@@ -883,56 +887,21 @@ class Read_class:
 
         if os.path.exists(self.current):
             if os.path.exists(final_current_file) is False:
-                # os.remove(final_current_file)
 
                 shutil.move(self.current, directory)
 
         self.current = final_current_file
 
-        ### final clean reads
-        final_clean_file = os.path.join(directory, os.path.basename(self.clean))
+        if self.current_status == self.STATUS_CLEAN:
+            self.clean = os.path.join(directory, os.path.basename(self.clean))
 
-        if os.path.exists(self.clean):
-            if self.clean_exo is not None:
-                final_clean_file = self.clean_exo
-            else:
-                if os.path.exists(final_clean_file) is False:
-                    # os.remove(final_clean_file)
+        if self.current_status == self.STATUS_ENRICHED:
+            self.enriched = os.path.join(directory, os.path.basename(self.enriched))
 
-                    shutil.move(self.clean, directory)
+        if self.current_status == self.STATUS_DEPLETED:
+            self.depleted = os.path.join(directory, os.path.basename(self.depleted))
 
-        self.clean = final_clean_file
-        ### final enriched reads
-        final_enriched_file = os.path.join(directory, os.path.basename(self.enriched))
-
-        if os.path.exists(self.enriched):
-            if self.enriched_exo is not None:
-                final_enriched_file = self.enriched_exo
-            else:
-                if os.path.exists(final_enriched_file) is False:
-                    # os.remove(final_enriched_file)
-
-                    shutil.move(self.enriched, directory)
-
-        self.enriched = final_enriched_file
-
-        ### final depleted reads
-        final_depleted_file = os.path.join(directory, os.path.basename(self.depleted))
-
-        if os.path.exists(self.depleted):
-            if self.depleted_exo is not None:
-                final_depleted_file = self.depleted_exo
-            else:
-                if os.path.exists(final_depleted_file) is False:
-                    shutil.move(self.depleted, directory)
-
-        self.depleted = final_depleted_file
-
-        print("exported reads to", directory)
-        print("current", self.current)
-        print("clean", self.clean)
-        print("enriched", self.enriched)
-        print("depleted", self.depleted)
+        self.filepath = self.current
 
     def __str__(self):
         return self.filepath

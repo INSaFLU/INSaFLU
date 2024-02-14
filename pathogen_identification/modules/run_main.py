@@ -1674,7 +1674,6 @@ class RunMainTree_class(Run_Deployment_Methods):
 
     def export_sequences(self):
         self.sample.export_reads(self.media_dir)
-        # self.assembly_drone.export_assembly(self.media_dir)
 
     def export_assembly(self):
         self.assembly_drone.export_assembly(self.media_dir)
@@ -1735,18 +1734,12 @@ class RunMainTree_class(Run_Deployment_Methods):
             )
         )
 
-        # enriched_reads = len(self.enrichment_drone.classified_reads_list)
-        # depleted_reads = len(self.depletion_drone.classified_reads_list)
         enriched_reads = (
             self.sample.r1.read_number_enriched + self.sample.r2.read_number_enriched
         )
         depleted_reads = (
             self.sample.r1.depleted_read_number + self.sample.r2.depleted_read_number
         )
-
-        # if self.type == ConstantsSettings.PAIR_END:
-        #    enriched_reads = enriched_reads * 2
-        #    depleted_reads = depleted_reads * 2
 
         self.run_detail_report = Run_detail_report(
             self.remap_manager.max_depth,

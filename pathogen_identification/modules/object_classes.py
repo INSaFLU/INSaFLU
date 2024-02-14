@@ -13,12 +13,8 @@ import pandas as pd
 from numpy import ERR_CALL
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import (
-    ParameterSet,
-    RunDetail,
-    RunMain,
-    RunReadsRegister,
-)
+from pathogen_identification.models import (ParameterSet, RunDetail, RunMain,
+                                            RunReadsRegister)
 from pathogen_identification.utilities.utilities_general import fastqc_parse
 
 matplotlib.use("Agg")
@@ -884,11 +880,12 @@ class Read_class:
         print("current", self.current)
 
         final_current_file = os.path.join(directory, os.path.basename(self.current))
+        print(final_current_file)
 
         if os.path.exists(self.current):
             if os.path.exists(final_current_file) is False:
 
-                shutil.move(self.current, directory)
+                shutil.copy(self.current, directory)
 
         self.current = final_current_file
 
@@ -902,6 +899,8 @@ class Read_class:
             self.depleted = os.path.join(directory, os.path.basename(self.depleted))
 
         self.filepath = self.current
+        print(self.current)
+        print("#### EXPORTING READS DONE")
 
     def __str__(self):
         return self.filepath

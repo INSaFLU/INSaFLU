@@ -780,6 +780,8 @@ class Run_Deployment_Methods(RunDetail_main):
             )
 
         if self.read_classification_performed is False:
+            print("preparing read classification")
+            print(self.sample.r1.current)
             self.read_classification_drone = Classifier(
                 self.read_classification_method,
                 self.sample.r1.current,

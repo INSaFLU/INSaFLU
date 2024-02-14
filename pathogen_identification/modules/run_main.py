@@ -704,105 +704,98 @@ class Run_Deployment_Methods(RunDetail_main):
         self.mapped_instances = []
 
     def Prep_deploy(self):
-        self.preprocess_drone = Preprocess(
-            self.sample.r1.current,
-            self.sample.r2.current,
-            self.filtered_reads_dir,
-            self.type,
-            self.preprocess_method,
-            self.sample.r1.clean,
-            self.sample.r2.clean,
-            self.threads,
-            self.subsample,
-            logging_level=self.logger_level_detail,
-            log_dir=self.log_dir,
-        )
+        if self.qc_performed is False:
+            self.preprocess_drone = Preprocess(
+                self.sample.r1.current,
+                self.sample.r2.current,
+                self.filtered_reads_dir,
+                self.type,
+                self.preprocess_method,
+                self.sample.r1.clean,
+                self.sample.r2.clean,
+                self.threads,
+                self.subsample,
+                logging_level=self.logger_level_detail,
+                log_dir=self.log_dir,
+            )
 
-        self.depletion_drone = Classifier(
-            self.depletion_method,
-            self.sample.r1.current,
-            type=self.type,
-            r2=self.sample.r2.current,
-            prefix=self.prefix,
-            threads=self.threads,
-            bin=get_bindir_from_binaries(
-                self.config["bin"], CS.PIPELINE_NAME_remapping
-            ),
-            logging_level=self.logger_level_detail,
-            log_dir=self.log_dir,
-        )
+        if self.depletion_performed is False:
+            self.depletion_drone = Classifier(
+                self.depletion_method,
+                self.sample.r1.current,
+                type=self.type,
+                r2=self.sample.r2.current,
+                prefix=self.prefix,
+                threads=self.threads,
+                bin=get_bindir_from_binaries(
+                    self.config["bin"], CS.PIPELINE_NAME_remapping
+                ),
+                logging_level=self.logger_level_detail,
+                log_dir=self.log_dir,
+            )
 
-        self.enrichment_drone = Classifier(
-            self.enrichment_method,
-            self.sample.r1.current,
-            type=self.type,
-            r2=self.sample.r2.current,
-            prefix=self.prefix,
-            threads=self.threads,
-            bin=get_bindir_from_binaries(
-                self.config["bin"], CS.PIPELINE_NAME_remapping
-            ),
-            logging_level=self.logger_level_detail,
-            log_dir=self.log_dir,
-        )
+        if self.enrichment_performed is False:
+            self.enrichment_drone = Classifier(
+                self.enrichment_method,
+                self.sample.r1.current,
+                type=self.type,
+                r2=self.sample.r2.current,
+                prefix=self.prefix,
+                threads=self.threads,
+                bin=get_bindir_from_binaries(
+                    self.config["bin"], CS.PIPELINE_NAME_remapping
+                ),
+                logging_level=self.logger_level_detail,
+                log_dir=self.log_dir,
+            )
 
-        self.assembly_drone = Assembly_class(
-            self.sample.r1.current,
-            self.assembly_method,
-            self.type,
-            min_scaffold_length=self.min_scaffold_length,
-            r2=self.sample.r2.current,
-            prefix=self.prefix,
-            threads=self.threads,
-            bin=get_bindir_from_binaries(
-                self.config["bin"], CS.PIPELINE_NAME_remapping
-            ),
-            logging_level=self.logger_level_detail,
-            log_dir=self.log_dir,
-        )
+        if self.assembly_performed is False:
+            self.assembly_drone = Assembly_class(
+                self.sample.r1.current,
+                self.assembly_method,
+                self.type,
+                min_scaffold_length=self.min_scaffold_length,
+                r2=self.sample.r2.current,
+                prefix=self.prefix,
+                threads=self.threads,
+                bin=get_bindir_from_binaries(
+                    self.config["bin"], CS.PIPELINE_NAME_remapping
+                ),
+                logging_level=self.logger_level_detail,
+                log_dir=self.log_dir,
+            )
 
-        self.contig_classification_drone = Classifier(
-            self.contig_classification_method,
-            self.assembly_drone.assembly_file_fasta_gz,
-            r2="",
-            prefix=self.prefix,
-            threads=self.threads,
-            bin=get_bindir_from_binaries(
-                self.config["bin"], CS.PIPELINE_NAME_remapping
-            ),
-            logging_level=self.logger_level_detail,
-            log_dir=self.log_dir,
-        )
+        if self.contig_classification_performed is False:
+            self.contig_classification_drone = Classifier(
+                self.contig_classification_method,
+                self.assembly_drone.assembly_file_fasta_gz,
+                r2="",
+                prefix=self.prefix,
+                threads=self.threads,
+                bin=get_bindir_from_binaries(
+                    self.config["bin"], CS.PIPELINE_NAME_remapping
+                ),
+                logging_level=self.logger_level_detail,
+                log_dir=self.log_dir,
+            )
 
-        self.read_classification_drone = Classifier(
-            self.read_classification_method,
-            self.sample.r1.current,
-            type=self.type,
-            r2=self.sample.r2.current,
-            prefix=self.prefix,
-            threads=self.threads,
-            bin=get_bindir_from_binaries(
-                self.config["bin"], CS.PIPELINE_NAME_remapping
-            ),
-            logging_level=self.logger_level_detail,  #
-            log_dir=self.log_dir,
-        )
+        if self.read_classification_performed is False:
+            self.read_classification_drone = Classifier(
+                self.read_classification_method,
+                self.sample.r1.current,
+                type=self.type,
+                r2=self.sample.r2.current,
+                prefix=self.prefix,
+                threads=self.threads,
+                bin=get_bindir_from_binaries(
+                    self.config["bin"], CS.PIPELINE_NAME_remapping
+                ),
+                logging_level=self.logger_level_detail,  #
+                log_dir=self.log_dir,
+            )
 
-        self.remap_manager = Mapping_Manager(
-            [],
-            self.sample.r1,
-            self.sample.r2,
-            self.software_remap,
-            self.assembly_drone.assembly_file_fasta_gz,
-            self.type,
-            self.prefix,
-            self.threads,
-            get_bindir_from_binaries(self.config["bin"], CS.PIPELINE_NAME_remapping),
-            self.logger_level_detail,
-            True,
-            remap_params=self.remap_params,
-            logdir=self.config["directories"]["log_dir"],
-        )
+        if self.remap_prepped is False:
+            self.prep_REMAPPING()
 
     def deploy_QC(self, fake_run: bool = False):
         self.logger.info(f"r1 reads: {self.sample.r1.get_current_fastq_read_number()}")
@@ -1395,6 +1388,8 @@ class RunMainTree_class(Run_Deployment_Methods):
         print("RUNNING PREPROCESS", self.enrichment)
 
         if self.enrichment:
+            print(self.enrichment_method.check_enriched_exist())
+
             if self.enrichment_method.check_enriched_exist():
                 print("ENRICHED EXISTS")
 
@@ -1415,13 +1410,13 @@ class RunMainTree_class(Run_Deployment_Methods):
 
                 self.sample.r1.is_enriched()
                 self.sample.r2.is_enriched()
-                self.enrichment_drone.deployed = True
 
             else:
                 self.deploy_EN()
 
                 self.sample.r1.enrich(self.enrichment_drone.classified_reads_list)
                 self.sample.r2.enrich(self.enrichment_drone.classified_reads_list)
+                self.enrichment_drone.deployed = True
 
             self.logger.info(
                 "r1 current reads after enrichment: "

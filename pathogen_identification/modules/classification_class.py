@@ -1407,6 +1407,7 @@ class Classifier:
         """
 
         if self.classifier.method_name == "None":
+            print("No classifier method selected.")
             self.logger.info("No classifier method selected.")
             return
 

@@ -541,6 +541,7 @@ class Read_class:
 
     def update(self, new_prefix, clean_dir: str, enriched_dir: str, depleted_dir: str):
         print("UPDATING READ CLASS")
+        print(self.prefix, new_prefix)
         print(self.base_filename)
         self.base_filename = self.base_filename.replace(self.prefix, new_prefix)
         print(self.base_filename)

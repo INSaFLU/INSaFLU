@@ -796,7 +796,7 @@ class Run_Deployment_Methods(RunDetail_main):
                 log_dir=self.log_dir,
             )
 
-        if remap_prep:
+        if remap_prepa and self.remap_prepped is False:
             self.prep_REMAPPING()
 
     def deploy_QC(self, fake_run: bool = False):
@@ -920,8 +920,6 @@ class Run_Deployment_Methods(RunDetail_main):
         self.read_classification_drone.run()
 
     def prep_REMAPPING(self):
-        # if self.remap_params.manual_references_include:
-        #    self.metadata_tool.get_manual_references(self.sample_registered)
 
         self.remap_manager = Mapping_Manager(
             self.metadata_tool.remap_targets,
@@ -1611,8 +1609,9 @@ class RunMainTree_class(Run_Deployment_Methods):
     def Run_Remapping(self):
         if not self.remap_prepped:
             return
-
-        if self.remapping and self.remapping_performed is False:
+        print("remapping: ", self.remapping)
+        print(self.remap_prepped)
+        if self.remapping is True and self.remapping_performed is False:
             if self.remap_prepped == False:
                 self.plan_remap_prep_safe()
 

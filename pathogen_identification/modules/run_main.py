@@ -1390,10 +1390,10 @@ class RunMainTree_class(Run_Deployment_Methods):
         print("RUNNING PREPROCESS", self.enrichment)
 
         if self.enrichment:
+            print("ENRICHMENT EXISTS")
             print(self.enrichment_method.check_enriched_exist())
 
             if self.enrichment_method.check_enriched_exist():
-                print("ENRICHED EXISTS")
 
                 r1_proc, r2_proc = self.enrichment_method.retrieve_enriched_reads()
                 enriched_read_number = self.enrichment_method.get_enriched_read_number()
@@ -1428,7 +1428,8 @@ class RunMainTree_class(Run_Deployment_Methods):
             self.enrichment_performed = True
 
         if self.depletion:
-
+            print(self.enrichment_method.check_enriched_exist())
+            print("DEPLETION EXISTS")
             if self.depletion_method.check_depleted_exist():
                 r1_proc, r2_proc = self.depletion_method.retrieve_depleted_reads()
                 depleted_read_number = self.depletion_method.get_depleted_read_number()

@@ -641,7 +641,7 @@ class PipelineTree:
                     sample=sample,
                 ).distinct()
 
-                leaves_collected.extend([x.leaf.index for x in parameter_sets])
+                leaves_collected.extend([x.pk for x in parameter_sets])
 
             except Exception as e:
                 print("Exception", e)

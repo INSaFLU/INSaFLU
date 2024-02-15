@@ -21,7 +21,10 @@ from pathogen_identification.utilities.utilities_pipeline import (
     Utility_Pipeline_Manager,
     Utils_Manager,
 )
-from pathogen_identification.utilities.utilities_views import set_control_reports
+from pathogen_identification.utilities.utilities_views import (
+    calculate_reports_overlaps,
+    set_control_reports,
+)
 from utils.process_SGE import ProcessSGE
 
 
@@ -154,6 +157,8 @@ class Command(BaseCommand):
 
                     graph_progress.generate_graph()
                     set_control_reports(project.pk)
+
+                    calculate_reports_overlaps(project_sample, force=True)
 
                     break
 

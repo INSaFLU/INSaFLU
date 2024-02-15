@@ -171,6 +171,20 @@ class Command(BaseCommand):
                         MetaKeyAndValue.META_VALUE_Queue,
                         taskID,
                     )
+
+                    ### need to collect global files again
+                    taskID = process_SGE.set_collect_global_files(project, user)
+                    manageDatabase.set_project_metakey(
+                        project,
+                        user,
+                        metaKeyAndValue.get_meta_key(
+                            MetaKeyAndValue.META_KEY_Queue_TaskID_Project,
+                            project.id,
+                        ),
+                        MetaKeyAndValue.META_VALUE_Queue,
+                        taskID,
+                    )
+
                 except Exception as e:
                     print(e)
                     pass

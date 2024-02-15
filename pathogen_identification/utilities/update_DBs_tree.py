@@ -1226,7 +1226,6 @@ def Update_FinalReport(run_class: RunEngine_class, runmain, sample):
         remap_targets = RawReference.objects.filter(
             run=runmain,
             taxid=row["taxid"],
-            accid=row["ID"],
         )
 
         if remap_targets.exists():

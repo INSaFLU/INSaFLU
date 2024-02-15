@@ -676,7 +676,7 @@ class ShowProjectSamplesResults(tables.Table):
     sample_name = tables.Column("Sample name", empty_values=())
     coverage = tables.Column("Coverage", orderable=False, empty_values=())
     alerts = tables.Column("Alerts", empty_values=())
-    type_and_subtype = tables.Column("Classification", empty_values=())
+    classification = tables.Column("Classification", empty_values=())
     putative_mixed_infection = tables.Column(
         "Putative Mixed Infection", empty_values=()
     )
@@ -691,7 +691,7 @@ class ShowProjectSamplesResults(tables.Table):
         model = ProjectSample
         fields = (
             "sample_name",
-            "type_and_subtype",
+            "classification",
             "putative_mixed_infection",
             "technology",
             "dataset",
@@ -783,11 +783,11 @@ class ShowProjectSamplesResults(tables.Table):
         """
         return "{}".format(record.alert_first_level + record.alert_second_level)
 
-    def render_type_and_subtype(self, record):
+    def render_classification(self, record):
         """
         return number
         """
-        return record.sample.type_subtype
+        return record.classification
 
     def render_putative_mixed_infection(self, record):
         """

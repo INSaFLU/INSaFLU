@@ -238,7 +238,21 @@ class Test(TestCase):
 		self.assertTrue(os.path.exists(result_file))
 		self.assertTrue(os.path.getsize(result_file) > 100)
 		self.utils.remove_dir(out_dir)
-	
+
+
+	def test_run_raven(self):
+		
+		fastq = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_nanopore)
+		self.assertTrue(os.path.isfile(fastq))
+		
+		out_dir = self.utils.get_temp_dir()
+		self.assertTrue(os.path.isdir(out_dir))
+		cmd = self.software.run_raven(fastq_1=fastq, out_dir=out_dir)
+		result_file = os.path.join(out_dir, "contigs.fasta")
+		self.assertTrue(os.path.exists(result_file))
+		self.assertTrue(os.path.getsize(result_file) > 100)
+		self.utils.remove_dir(out_dir)
+
 	##########################################################
 	##
 	##		Important, this only work from command line

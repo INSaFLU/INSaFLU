@@ -1223,6 +1223,17 @@ def Update_FinalReport(run_class: RunEngine_class, runmain, sample):
         if row["ID"] == "None":
             continue
 
+        remap_targets = RawReference.objects.filter(
+            run=runmain,
+            taxid=row["taxid"],
+            accid=row["ID"],
+        )
+
+        if remap_targets.exists():
+            for target in remap_targets:
+                target.status = RawReference.STATUS_MAPPED
+                target.save()
+
         try:
             report_row = FinalReport.objects.get(
                 run=runmain,

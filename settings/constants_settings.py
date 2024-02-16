@@ -84,7 +84,7 @@ class ConstantsSettings(object):
         PIPELINE_NAME_host_depletion,
         PIPELINE_NAME_metagenomics_settings,
         PIPELINE_NAME_request_mapping,
-        PIPELINE_NAME_remap_filtering,
+        PIPELINE_NAME_map_filtering,
         PIPELINE_NAME_reporting,
     ]
 

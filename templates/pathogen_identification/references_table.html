@@ -522,13 +522,13 @@
         console.log(data);
         if (data['is_ok'] == true && data['is_deployed'] == true) {
           $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
-            'Screening deployed' +
+            'Screening deployed. ' + data['message'] +
             '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
             '</div>');
 
         } else if (data['is_ok']) {
           $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-            'Screening not deployed. Check settings.' +
+            'Screening not deployed. Check settings.' + data['message'] +
             '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
             '</div>');
 
@@ -537,7 +537,7 @@
           
         } else if (data['is_ok'] == false) {
           $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-            'Screening not deployed.' +
+            'Screening not deployed. Check Parameters.' +
             '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
             '</div>');
 
@@ -578,13 +578,13 @@
         console.log(data);
         if (data['is_ok'] == true && data['is_deployed'] == true) {
           $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
-            'References mapping deployed' +
+            'References mapping deployed. ' + data['message'] +
             '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
             '</div>');
 
         } else if (data['is_empty'] == true) {
           $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-            'No references were selected.' +
+            'No references were selected. ' + data['message'] +
             '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
             '</div>');
 
@@ -598,13 +598,12 @@
   
         } else if (data['is_ok']) {
           $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-            'The references were not mapped. Check settings.' +
+            'References were not mapped. ' + data['message'] +
             '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
             '</div>');
 
             // drop modal
             $('#id_map_selected_modal').modal('hide');
-
 
         } else if (data['is_ok'] == false) {
           $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +

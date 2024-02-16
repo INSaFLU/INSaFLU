@@ -655,11 +655,11 @@
             data_type: 'json',
             success: function(data){
                 if (data["is_ok"] == true && data["is_deployed"] == false) { 
-                    alert("No runs to deploy, check project settings, added samples or mapping settings.");
+                    alert(data["message"]);
                 }
                 else if (data["is_ok"] == true && data["is_deployed"] == true) {
                     var how_many = data["samples_deployed"];
-                    alert(how_many + " runs deployed");
+                    alert(data["message"]);
                 }
                 $.unblockUI();
             }

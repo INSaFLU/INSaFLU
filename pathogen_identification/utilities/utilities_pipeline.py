@@ -10,21 +10,18 @@ import pandas as pd
 from django.contrib.auth.models import User
 from django.db.models import Q, QuerySet
 
-from constants.constants import Televir_Directory_Constants as Televir_Directories
+from constants.constants import \
+    Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.host_library import Host
-from pathogen_identification.models import (
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
-from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
-from pathogen_identification.utilities.utilities_views import RawReferenceCompound
+from pathogen_identification.models import (ParameterSet, PIProject_Sample,
+                                            Projects, RawReference, RunMain,
+                                            SoftwareTree, SoftwareTreeNode)
+from pathogen_identification.utilities.utilities_televir_dbs import \
+    Utility_Repository
+from pathogen_identification.utilities.utilities_views import \
+    RawReferenceCompound
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -2518,6 +2515,7 @@ class Utils_Manager:
         runs_to_deploy = 0
         samples_available = []
         samples_leaf_dict = {sample: [] for sample in submission_dict.keys()}
+        workflow_deployed_dict= {sample: {} for sample in submission_dict.keys()}
 
         for sample in submission_dict.keys():
             for leaf, matched_path_node in available_path_nodes.items():
@@ -2530,16 +2528,21 @@ class Utils_Manager:
                         sample=sample, leaf=matched_path_node, project=project
                     )
 
+                workflow_deployed= True if utils.parameter_util.check_ParameterSet_available(
+                            sample=sample, leaf=matched_path_node, project=project
+                        ) is False else False
+
                 utils.parameter_util.set_parameterset_to_queue(
                     sample=sample, leaf=matched_path_node, project=project
                 )
                 runs_to_deploy += 1
                 samples_available.append(sample)
                 samples_leaf_dict[sample].append(matched_path_node)
+                workflow_deployed_dict[sample][matched_path_node]=workflow_deployed
 
         samples_leaf_dict = {x: g for x, g in samples_leaf_dict.items() if g}
 
-        return samples_leaf_dict
+        return samples_leaf_dict, workflow_deployed_dict
 
     def tree_subset(self, tree: PipelineTree, leaves: list) -> PipelineTree:
         """
@@ -3069,7 +3072,7 @@ class SoftwareTreeUtils:
             screening=False,
             mapping_only=False,
         )
-        clean_samples_leaf_dict = self.utils_manager.sample_nodes_check_repeat_allowed(
+        clean_samples_leaf_dict, workflow_deployed_dict = self.utils_manager.sample_nodes_check_repeat_allowed(
             submission_dict, available_path_nodes, self.project
         )
 
@@ -3091,13 +3094,13 @@ class SoftwareTreeUtils:
             screening=True,
             mapping_only=False,
         )
-        clean_samples_leaf_dict = self.utils_manager.sample_nodes_check_repeat_allowed(
+        clean_samples_leaf_dict, workflow_deployed_dict = self.utils_manager.sample_nodes_check_repeat_allowed(
             submission_dict, available_path_nodes, self.project
         )
 
         return clean_samples_leaf_dict
 
-    def check_runs_to_submit_mapping_only(self, sample: PIProject_Sample) -> dict:
+    def check_runs_to_submit_mapping_only(self, sample: PIProject_Sample) -> Tuple[dict, dict]:
         """
         Check if there are runs to run. sets to queue if there are.
         """
@@ -3110,11 +3113,11 @@ class SoftwareTreeUtils:
             mapping_only=True,
         )
 
-        clean_samples_leaf_dict = self.utils_manager.sample_nodes_check_repeat_allowed(
+        clean_samples_leaf_dict, workflow_deployed_dict = self.utils_manager.sample_nodes_check_repeat_allowed(
             submission_dict, available_path_nodes, self.project
         )
 
-        return clean_samples_leaf_dict
+        return clean_samples_leaf_dict, workflow_deployed_dict
 
     def check_runs_to_deploy_sample(self, sample: PIProject_Sample) -> dict:
         """

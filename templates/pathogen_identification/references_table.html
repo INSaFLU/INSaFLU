@@ -712,11 +712,13 @@
     event.preventDefault();
     var btn = $(this);
     var url = btn.attr("href");
+    console.log($('#search-input').val());
+    console.log(url);
     $.ajax({
         url: btn.attr("href"),
         type: 'GET',
         data: {
-            search_add_project_sample: $('#search-input').val(),
+            search_add_project_reference: $('#search-input').val(),
             csrfmiddlewaretoken: '{{ csrf_token }}',
         },
         success: function (data) {

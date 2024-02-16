@@ -411,6 +411,7 @@ class Pipeline_Makeup(PipelineTreeBase):
 
 
 class PipelineTree:
+
     technology: str
     nodes: list
     edges: dict
@@ -440,7 +441,6 @@ class PipelineTree:
             self.nodes = self.node_index.node.tolist()
 
         #
-
         self.edges = edges
         self.leaves = leaves
         self.edge_dict = [(x[0], x[1]) for x in self.edges]

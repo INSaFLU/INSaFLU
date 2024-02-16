@@ -145,9 +145,9 @@ class CollectExtraData(object):
 					pangolin_data = self.utils.read_pangolin(file_pangolin_output)
 					# Update projectsample classification field with pangolin data
 					for project_sample in ProjectSample.objects.filter(project=project):
-						if(project_sample.sample.name in pangolin_data.index):
-							project_sample.classification = pangolin_data.loc[project_sample.sample.name]['lineage']
-							project_sample.save()
+						if(project_sample.sample.name in pangolin_data["Sequence"].values):
+							project_sample.classification = pangolin_data.loc[pangolin_data["Sequence"] == project_sample.sample.name, 'lineage'].values[0]
+						project_sample.save()
 
 				except SoftwareModel.DoesNotExist:	## need to create with last version
 					self.logger_production.error('ProjectID: {} Fail to detect software model'.format(project.id))
@@ -227,6 +227,7 @@ class CollectExtraData(object):
 							Project.PROJECT_FILE_NAME_Pangolin_lineage
 						)
 					)
+
 					tmp_aln2pheno = self.utils.get_temp_file("tmp_file", ".tab")
 
 					# add output as parameters of individual files, or output a zip with the folder...

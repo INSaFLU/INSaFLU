@@ -1752,7 +1752,6 @@ class Utils(object):
 		# replace  suffix added to the identifier for pangolin (TODO: why is this suffix there in the first place??)
 		pangolin_data['taxon'] = pangolin_data['taxon'].str.replace('__.*$','', regex=True)
 		pangolin_data.rename(columns = {'taxon':'Sequence'}, inplace = True)
-		pangolin_data.index = pangolin_data['Sequence']
 		return pangolin_data
 
 

@@ -1072,15 +1072,15 @@ class CompoundReferenceTable(tables.Table):
         accessor="pk", attrs={"th__input": {"id": "checkBoxAll"}}, orderable=False
     )
     description = tables.Column(verbose_name="Description")
-    create_teleflu_reference = tables.Column(
-        verbose_name="Create Reference",
-        orderable=False,
-        empty_values=(),
-        attrs={
-            "th": {"style": "text-align: center;"},
-            "td": {"style": "text-align: center;"},
-        },
-    )
+    # create_teleflu_reference = tables.Column(
+    #    verbose_name="Create Reference",
+    #    orderable=False,
+    #    empty_values=(),
+    #    attrs={
+    #        "th": {"style": "text-align: center;"},
+    #        "td": {"style": "text-align: center;"},
+    #    },
+    # )
 
     accid = tables.Column(verbose_name="Accession id")
     taxid = tables.Column(
@@ -1522,9 +1522,9 @@ class RunMappingTable(tables.Table):
                 runlog += 'title="Validation mapping" style="color: gray;"></i>'
             runlog += "</a>"
 
-            if RawReference.objects.filter(run=record).count() > 0 and CS.METAGENOMICS:
-                if RunDetail.objects.filter(run=record).exists():
-                    runlog += " " + report_link
+            # if RawReference.objects.filter(run=record).count() > 0 and CS.METAGENOMICS:
+            #    if RunDetail.objects.filter(run=record).exists():
+            #        runlog += " " + report_link
 
             return mark_safe(runlog)
 

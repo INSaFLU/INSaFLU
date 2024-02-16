@@ -1,6 +1,7 @@
 import mimetypes
 import os
 from datetime import datetime
+from typing import Dict, List
 
 import pandas as pd
 from django.contrib.auth.decorators import login_required
@@ -21,6 +22,7 @@ from pathogen_identification.models import (
     ParameterSet,
     PIProject_Sample,
     Projects,
+    RawReference,
     ReferenceMap_Main,
     RunMain,
     TeleFluProject,
@@ -43,7 +45,7 @@ from utils.process_SGE import ProcessSGE
 from utils.utils import Utils
 
 
-def simplify_name(name):
+def simplify_name(name: str):
     return (
         name.replace("_", "_")
         .replace("-", "_")
@@ -134,11 +136,6 @@ def submit_sample_screening_televir(request):
         data["is_ok"] = True
         print(data)
         return JsonResponse(data)
-
-
-from typing import Dict, List
-
-from pathogen_identification.models import RawReference
 
 
 def check_reference_mapped(sample_id, reference: RawReference):
@@ -302,7 +299,7 @@ def deploy_remap(
                     deployed_refs[sample][leaf]["deployed"] = references_added
 
             data["is_deployed"] = True
-            message = f"Sample {sample.name}, deployed {deployed} runs. "
+            message = f"Sample {sample.name}, deployed {deployed} run{['', 's'][int(deployed != 1)]}. "
             total_runs_deployed = 0
 
             for sample, leaves_to_deploy in runs_to_deploy.items():

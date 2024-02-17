@@ -1,0 +1,846 @@
+{% extends '_layouts/base.html' %}
+
+
+{% load bootstrap4 %}
+{% load querystring from django_tables2 %}
+{% load title from django_tables2 %}
+{% load trans blocktrans from i18n %}
+{% load django_bootstrap_breadcrumbs %}
+
+{% load static %}
+
+{% block extra_messages %}
+	<!-- set the messages -->
+	<div class="container">
+		<div id="id_messages_remove"></div>
+	</div>
+{% endblock %}
+
+
+{% block css %}
+	{% load static from staticfiles %}
+		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'css/televir_software_graph/collapsibleTree-0.1.6/collapsibleTree.css' %}" />
+{% endblock css %}
+
+{% block breadcrumbs %}
+{{block.super}}
+{% if owner %}
+{% breadcrumb "Project Index" "project-index" %}
+{% breadcrumb "TELEVIR Projects" "PIprojects_main"  %}
+{% breadcrumb project_name "PIproject_samples" pk=project_index %}
+{% breadcrumb sample_name "sample_main" pk1=project_index pk2=sample_index  %}
+{% breadcrumb "References Management" "sample_references_management" pk1=sample_index %}
+{% else %}
+{% breadcrumb "Project Index" "project-index" %}
+
+{% endif %}
+{% endblock %}
+
+{% block content %}
+
+<style>
+
+  .sidebar-header {
+    padding: 10px;
+    background-color: #ccc; /* Set the background color for the header */
+    text-align: center;
+  }
+  .table-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    margin-bottom: 10px; 
+}
+
+.table-references-added {
+  margin-bottom: 0px;
+  overflow: auto;
+  max-height: 500px;
+}
+
+.table-responsive {
+  width: 100%;
+  height: 100%;
+  display: flex;
+}
+
+.sidebar {
+  width: 200px; /* Adjust the width as needed */
+  background-color: #f1f1f1; /* Set the background color as desired */
+}
+
+.sidebar-header {
+  padding: 10px;
+  background-color: #ccc; /* Set the background color for the header */
+}
+
+.sidebar-header h3 {
+  margin: 0;
+  color: #fff; /* Set the text color for the header */
+}
+
+.sidebar-actions {
+  padding: 5px;
+}
+
+.sidebar-actions button {
+  display: block;
+  margin-bottom: 5px;
+  width: 100%; /* Make the buttons span the entire width of the sidebar */
+}
+
+.table-content {
+    flex-grow: 1;
+    margin-left: 10px; /* Add margin to create space between the sidebar and table */
+}
+
+.table {
+  width: 100%;
+  height: 100%;
+}
+
+.button-group-casing {
+  border: 1px solid #ccc;
+  background-color: #ccc;  
+  border-radius: 5px;
+  padding: 2px;
+  margin-bottom: 10px;
+  margin-top: 10px;
+}
+
+.parameters-button {
+  margin-top: 15px;
+}
+
+.first-button {
+  margin-top: 5px
+}
+.info-icon {
+  position: relative;
+  display: inline-block;
+}
+
+.info-icon img {
+  display: none;
+  position: absolute;
+  top: -1450%;
+  left: -1350%;
+  transform: translateX(-50%);
+  width: 300px;
+  height: auto;
+  z-index: 9999; /* Set a higher z-index value */
+}
+
+.info-icon:hover img {
+  display: block;
+}
+
+</style>
+
+<div id="accordion1" role="tablist" aria-multiselectable="true">
+  <div class="card">
+      <div class="card">
+          <div class="card-header" role="tab" id="headingsample">
+              <div class="row">
+                  <div class="col-sm" >
+                      <h5 class="mb-0" >
+                          <a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapsehead" aria-expanded="false" aria-controls="headinghead">
+                              <strong>Workflows sample: {{sample_name}}</strong>
+                          </a>
+                      </h5>
+                  </div>
+                  <div class="col-sm">
+                      <div class="float-right">
+                          <a href={% url 'televir_sample_compound_report' pk1=project_index pk2=sample_index %} class="btn btn-primary dark"> 
+                              <span class="hidden-phone"></span>Combined Report</a>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+      {% if runs_number %}
+      <div id="collapsehead" class="collapse" role="tabpanel" aria-labelledby="headingsample">
+          <div class="card-block">
+              <div style="padding: 20px">
+                  
+                  <div class="row">
+                      <div class="col-sm-2">
+                          {% for run in runs %}
+                          <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Workflow report {{run.parameter_set.leaf.index}} </a>
+                          <br>
+                          <br>
+                          {% endfor %}
+                      </div>
+                      {% if graph_json %}
+                      <div class="col-sm-10">
+                              <div id="{{graph_id}}" style="width:95%;height:250px;position:center;" class="collapsibleTree html-widget"></div>
+                              <script type="application/json" data-for="{{graph_id}}">{{graph_json|safe}}</script>
+                      </div>
+                      <div class="col-sm-2">
+                        <div class="info-icon">
+                          <img src="{% static "img/pipeline_steps_classification.jpg" %}" alt="Graph Information">
+                          <i class="fa fa-info-circle"></i>
+                        </div>
+                      </div>
+                      {% endif %}
+                  </div>
+                  
+              </div>
+          </div>
+      </div>
+      {% endif %}
+  </div>
+</div>
+
+<div id="accordion2" role="tablist" aria-multiselectable="true">
+  <div class="card">
+      <div class="card">
+          <div class="card-header" role="tab" id="headingsample2">
+              <div class="row">
+                  <div class="col-sm" >
+                      <h5 class="mb-0" >
+                          <a class="collapsed" id="add_references_title" data-toggle="collapse" data-parent="#accordion" href="#collapsehead2" aria-expanded="false" aria-controls="headinghead">
+                              <strong> {{ added_references_count }} Added References </strong>
+                          </a>
+                      </h5>
+                  </div>
+                  <div class="col-sm">
+                    <div class="float-right">
+                      <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#myModal">
+                        Add References
+                      </button>
+                    </div>
+                </div>
+              </div>
+          </div>
+      </div>
+      <div id="collapsehead2" class="collapse" role="tabpanel" aria-labelledby="headingsample2">
+        {{ added_references_table }}
+      </div>
+
+  </div>
+</div>
+
+
+<div class="table-container">
+
+  <div class="sidebar">
+      <div class="sidebar-actions">
+        <div class="sidebar-header">
+          <h3> Actions </h3>
+        </div>
+        <div class="button-group-casing">
+          <button class="btn btn-primary first-button">
+            {{ deploy_metagenomics }} 
+          </button>
+
+          <button class="btn btn-primary">
+            <a id="request_map_selected" href="#id_map_selected_modal" data-toggle="modal" data-target="#id_map_selected_modal" style="color: #fff;">
+              <i class="fa fa-map-marker" aria-hidden="true"></i> Map Selected
+            </a>
+          </button>
+          <button class="btn btn-primary">
+            <a id="request_screening" href="#id_screening_modal" data-toggle="modal" data-target="#id_screening_modal" style="color: #fff;">
+              <i class="fa fa-rocket" aria-hidden="true"></i> Deploy Screening
+            </a>
+          </button>
+          <button class="btn btn-primary parameters-button">
+            {{ meta_parameters  }}  
+          </button>
+        </div>
+  
+      </div>
+  </div>
+  <div class="table-content">
+    {% block table %}
+    <div class="table-responsive">
+        <table id="table_with_check_id" check_box_all="{{ check_box_all }}" class="table table-hover table-bordered table-striped" set-check-box-values-url="{% url 'set-check-box-values' %}" {% if table.attrs %} {{ table.attrs.as_html }}{% endif %}>
+          
+          {% block table.thead %}
+            <thead>                 
+            <tr>
+                <tr>
+                    <th colspan="7">
+                        <form method="get" action="" class="form-inline form-search pull-right">
+                          {% csrf_token %}
+                            <div class="pull-right form-search">
+                              <input id="search_form_id" name="search_add_project_sample" type="text" class="form-control col-sm-9" placeholder="Description, Accession, Taxid"{% if search_add_project_sample %} value="{{ search_add_project_sample }}"{% endif %}>
+                                <button type="submit" name="search_in_table" class="btn btn-small btn-dark"><i class="fa fa-search"></i> Search</button> 
+                            </div>              
+                        </form>
+                    </th>                  
+                </tr>
+            
+              <tr>
+                {% for column in table.columns %}
+                  {% if column.orderable %}
+                      <th {{ column.attrs.th.as_html }}><a href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header|title }}</a></th>
+                    {% else %}
+                      <th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
+                    {% endif %}
+                {% endfor %}
+              </tr>
+            </thead>
+            {% endblock table.thead %}
+            {% block table.tbody %}
+            <tbody>
+                {% for row in table.page.object_list|default:table.rows %} {# support pagination #}
+                  {% block table.tbody.row %}
+                  <tr class="{% cycle 'odd' 'even' %}">
+                      {% for column, cell in row.items %}
+                          <td {{ column.attrs.td.as_html }}>{{ cell }}</td>
+                      {% endfor %}
+                  </tr>
+                  {% endblock table.tbody.row %}
+                {% empty %}
+                  {% if table.empty_text %}
+                  {% block table.tbody.empty_text %}
+                    <tr><td colspan="{{ table.columns|length }}">{{ table.empty_text }}</td></tr>
+                  {% endblock table.tbody.empty_text %}
+                  {% endif %}
+                {% endfor %}
+            </tbody>
+            {% endblock table.tbody %}
+            {% block table.tfoot %}
+              <tfoot></tfoot>
+            {% endblock table.tfoot %}
+        </table>
+    </div>
+    {% endblock table %}
+
+    {% if table.page and show_paginatior %}
+    <div class="paginator">
+    {% block pagination %}
+      <label id="id-total-list" class="pull-right">Total references: {{ query_set_count }}</label>
+        {% bootstrap_pagination table.page url=request.get_full_path %}
+    {% endblock pagination %}
+    </div>
+
+    {% else %}
+    <label id="id-total-list" class="pull-right">Total samples: {{ query_set_count }}</label>
+    {% endif %}
+
+    </div>
+
+</div>
+
+<a id="id_go_back_button" onClick="javascript:history.go(-1);"
+  class="btn btn-small btn-primary dark" style="color: #fff;"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
+
+
+<!-- Modal -->
+
+
+<!-- The sample metagenomics submit modal -->
+<div class="modal fade" id="id_deploy_metagenomics_modal">
+  <div class="modal-dialog">
+      <div class="modal-content">
+
+          <!-- Modal Header -->
+          <div class="modal-header alert alert-warning">
+              <h4 class="modal-title-submit">Submit sample deployment</h4>
+              <button type="button" class="close" data-dismiss="modal">&times;</button>
+          </div>
+
+          <!-- Modal body -->
+          <div class="modal-body mx-auto mw-100">
+              <div id="id-modal-body-deploy-metagenomics-sample" deploy-metagenomics-single-value-url="{% url 'deploy_metagenomics_televir_project_sample' %}">
+                  <label id="id-label-deploy-metagenomics" class="col-form-label">Folder Name</label>
+              </div>
+          </div>
+          <!-- Modal footer -->
+          <div class="modal-footer" id="id-modal-footer-remove">
+              <button id="id-deploy-metagenomics-button" type="button" class="btn btn-primary" data-dismiss="modal">Deploy</button>
+              <button id="id-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal"
+                  aria-hidden="true">Cancel</button>
+          </div>
+      </div>
+  </div>
+</div>
+
+
+<!-- The refrence search -->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop="static">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title" id="myModalLabel">Add References</h4>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="col-sm-9">          <!-- Your search form code here -->
+            <form id="reference-search-form">
+              <div class="input-group">
+                <input id="search-input" type="text" class="form-control" placeholder="Description, Accid, Taxid">
+                <div class="input-group-append">
+                  <button type="submit" class="load-content btn btn-primary" href="{% url 'filter_reference_table' %}">Search</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+        <div id="reference_table_div" class="table-container">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="submit-button" href="{% url 'add_references_to_sample' %}" reload_ref= "{% url 'added_reference_table' %}">Submit</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- The remove modal -->
+<div class="modal fade" id="id_remove_modal">
+	<div class="modal-dialog">
+		<div class="modal-content">
+
+			<!-- Modal Header -->
+			<div class="modal-header alert alert-warning">
+				<h4 class="modal-title-remove">Remove a Reference</h4>
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+			</div>
+
+			<!-- Modal body -->
+			<div class="modal-body mx-auto mw-100">
+				<div id="id-modal-body-remove-sample" sample_id="{{ sample_index }}" remove-single-value-url="{% url 'remove_added_reference' %}" data-csrf= "{{ csrf_token }}">
+					<label id="id-label-remove" class="col-form-label">Folder Name</label>
+				</div>
+			</div>
+			<!-- Modal footer -->
+			<div class="modal-footer" id="id-modal-footer-remove">
+				<button id="id-remove-button" type="button" class="btn btn-primary" data-dismiss="modal">Remove</button>
+				<button id="id-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal"
+					aria-hidden="true">Cancel</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<!-- The map selected modal -->
+<div class="modal fade" id="id_map_selected_modal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header alert alert-warning">
+        <h4 class="modal-title-map">Map selected references</h4>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body mx-auto mw-100">
+        <div id="id-modal-body-map-selected" sample_id="{{ sample_index }}" map-selected-single-value-url="{% url 'map_selected_references' %}" data-csrf= "{{ csrf_token }}">
+          <label id="id-label-map-selected" class="col-form-label">Folder Name</label>
+        </div>
+      </div>
+      <!-- Modal footer -->
+      <div class="modal-footer" id="id-modal-footer-map-selected">
+        <button id="id-map-selected-button" type="button" class="btn btn-primary" data-dismiss="modal">Map</button>
+        <button id="id-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal"
+          aria-hidden="true">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- The screening modal -->
+<div class="modal fade" id="id_screening_modal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header alert alert-warning">
+        <h4 class="modal-title-screening">Deploy screening</h4>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body mx-auto mw-100">
+        <div id="id-modal-body-screening" sample_id="{{ sample_index }}" screening-single-value-url="{% url 'deploy_screening_televir_project_sample' %}" data-csrf= "{{ csrf_token }}">
+          <label id="id-label-screening" class="col-form-label">Folder Name</label>
+        </div>
+      </div>
+      <!-- Modal footer -->
+      <div class="modal-footer" id="id-modal-footer-screening">
+        <button id="id-screening-button" type="button" class="btn btn-primary" data-dismiss="modal">Deploy</button>
+        <button id="id-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal"
+          aria-hidden="true">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+
+{% endblock content %}
+
+{% block js %}
+
+{% load static from staticfiles %}
+<!-- Custom scripts for all pages-->
+<script type="text/javascript" src="{% static 'js/check-box-general.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/graph_televir/htmlwidgets-1.6.2/htmlwidgets.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/graph_televir/d3-4.10.2/d3.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/graph_televir/collapsibleTree-binding-0.1.7/collapsibleTree.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/televir_projects/remove_added_reference.js' %}"></script>
+
+<script>
+  $('#request_map_selected').on("click", function(e){
+    attr= $(this).attr('id');
+    
+    $('#id-label-map-selected').text('Map selected references?');
+    
+  });
+
+  $('#request_screening').on("click", function(e){
+    attr= $(this).attr('id');
+    
+    $('#id-label-screening').text('Deploy Screening?');
+    
+  });
+
+
+  // deploy screening
+  $('#id-screening-button').on('click', function() {
+
+    var url= $('#id-modal-body-screening').attr("screening-single-value-url");
+    var csrf_token = $('#id-modal-body-screening').attr('data-csrf'); 
+    console.log(csrf_token);
+
+    $.ajax({
+      type: 'POST',
+      url: url,
+      data: {
+        'csrfmiddlewaretoken': csrf_token,
+        'sample_id': '{{ sample_index }}',
+      },
+      success: function(data) {
+        console.log(data);
+        if (data['is_ok'] == true && data['is_deployed'] == true) {
+          $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
+            'Screening deployed. ' + data['message'] +
+            '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+            '</div>');
+
+        } else if (data['is_ok']) {
+          $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+            'Screening not deployed. Check settings.' + data['message'] +
+            '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+            '</div>');
+
+            // drop modal
+            $('#id_screening_modal').modal('hide');
+          
+        } else if (data['is_ok'] == false) {
+          $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+            'Screening not deployed. Check Parameters.' +
+            '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+            '</div>');
+
+            // drop modal
+            $('#id_screening_modal').modal('hide');
+        }
+      }
+    })
+  });
+
+
+  $('#id-map-selected-button').on('click', function() {
+
+    var url= $('#id-modal-body-map-selected').attr("map-selected-single-value-url");
+    var csrf_token = $('#id-modal-body-map-selected').attr('data-csrf'); 
+    console.log(csrf_token);
+
+    var checkedRows = [];
+    $('.class-ref-checkbox:checked').each(function() {
+      // collect ids of checked rows
+
+      var ref_id= $(this).attr('ref_id');
+
+      checkedRows.push(ref_id);
+    });
+
+    console.log(checkedRows);
+
+    $.ajax({
+      type: 'POST',
+      url: url,
+      data: {
+        'csrfmiddlewaretoken': csrf_token,
+        'sample_id': '{{ sample_index }}',
+        'reference_ids': checkedRows
+      },
+      success: function(data) {
+        console.log(data);
+        if (data['is_ok'] == true && data['is_deployed'] == true) {
+          $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
+            'References mapping deployed. ' + data['message'] +
+            '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+            '</div>');
+
+        } else if (data['is_empty'] == true) {
+          $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+            'No references were selected. ' + data['message'] +
+            '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+            '</div>');
+
+            // drop modal
+          
+        } else if (data["is_already_mapped"] == true) {
+          $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+            'Selected and added references already mapped.' +
+            '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+            '</div>');
+  
+        } else if (data['is_ok']) {
+          $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+            'References were not mapped. ' + data['message'] +
+            '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+            '</div>');
+
+            // drop modal
+            $('#id_map_selected_modal').modal('hide');
+
+        } else if (data['is_ok'] == false) {
+          $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+            'The references were not mapped.' +
+            '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+            '</div>');
+
+            // drop modal
+            $('#id_map_selected_modal').modal('hide');
+        } 
+      }
+    })
+  });
+
+
+
+
+  
+</script>
+
+<script>
+
+  $(document).ready(function() {
+    $('#submit-button').click(function() {
+      var url = $('#submit-button').attr('href');
+      var reload_url = $('#submit-button').attr('reload_ref');
+      var checkedRows = [];
+      $('.reference-checkbox:checked').each(function() {
+        // collect ids of checked rows
+
+        var ref_id= $(this).attr('ref_id');
+
+        checkedRows.push(ref_id);
+      });
+  
+      // Process the checked rows
+      // Add your processing logic here
+      // send row ids to server using .ajax
+      $.ajax({
+        type: 'POST',
+        url: url,
+        data: {
+          'csrfmiddlewaretoken': '{{ csrf_token }}',
+          'sample_id': '{{ sample_index }}',
+          'reference_ids': checkedRows
+        },
+        success: function(data) {
+          if (data['is_ok']) {
+            $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
+              'References successfully added' +
+              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+              '</div>');
+              // reload table
+              $.ajax({
+                url: reload_url,
+                type: 'GET',
+                data: {
+                    sample_id: '{{ sample_index }}',
+                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                },
+                success: function (data) {
+
+                  $('#collapsehead2').html(data.my_content);
+                  $('#reference_table_div').html(data.empty_content);
+                  $('#add_references_title').html(
+                    "<strong>" + data.references_count + " Added References </strong>"
+                  );
+                  // empty #search-input
+                  $('#search-input').val('');
+                }
+              }
+              )
+              // clear selection 
+              $('.reference-checkbox').prop('checked', false);
+              
+              
+              // drop modal
+              $('#myModal').modal('hide');
+
+          } else if (data['is_error']) {
+            $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+              'The references were not added.' +
+              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+              '</div>');
+
+              // drop modal
+              $('#myModal').modal('hide');
+          } else if (data['is_empty']) {
+            $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+              'No references were selected.' +
+              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+              '</div>');
+
+              // drop modal
+              
+          }
+          
+        }
+      })
+
+    });
+  });
+
+  var loadThisContent = function (event) {
+    event.preventDefault();
+    var btn = $(this);
+    var url = btn.attr("href");
+    console.log($('#search-input').val());
+    console.log(url);
+    $.ajax({
+        url: btn.attr("href"),
+        type: 'GET',
+        data: {
+            search_add_project_reference: $('#search-input').val(),
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+        },
+        success: function (data) {
+
+          $('#reference_table_div').html(data.my_content);
+          
+          if (data["references_count"] > 0){
+
+          var selectAllCheckbox = document.getElementById('Select-All-Checkbox-Modal');
+
+          var referenceCheckboxes = document.getElementsByClassName('reference-checkbox');
+
+     
+          selectAllCheckbox.addEventListener('change', function() {
+            for (var i = 0; i < referenceCheckboxes.length; i++) {
+              referenceCheckboxes[i].checked = this.checked;
+            }
+          });
+          }
+        }
+    }
+    )
+  };
+  $('.load-content').on('click', loadThisContent);
+
+  $(document).on("click", "a", function (e) {
+
+    if ($(this).attr("id") === 'deploy_metagenomics_modal'){
+        var ref_name = $(this).attr('ref_name');
+        var sample_pk = $(this).attr('pk');
+  
+        $('#id-label-deploy-metagenomics').text('Deploy metagenomics combined analysis for sample \'' + ref_name + '\'?');
+        $('#id-modal-body-deploy-metagenomics-sample').attr('sample_id', sample_pk);
+        $('#id-modal-body-deploy-metagenomics-sample').attr('ref_name', ref_name);
+    }
+    
+  });
+  
+  $('#id-deploy-metagenomics-button').on('click', function(){
+    url= $('#id-modal-body-deploy-metagenomics-sample').attr("deploy-metagenomics-single-value-url");
+    sample_id = $('#id-modal-body-deploy-metagenomics-sample').attr('sample_id');
+  
+    $.ajax({
+        url: url, 
+        type: 'POST',
+        data: {
+            sample_id : sample_id,
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+        }, // data sent with the post request
+        success: function(data) {
+
+          
+          if (data['is_ok'] === true && data['is_deployed'] === true){
+              /// add message with informaton
+              $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
+              'The sample \'' + $('#id-modal-body-deploy-metagenomics-sample').attr('ref_name') + '\' was successfully deployed.' +
+              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+              '</div>');
+              location.reload() 
+          }
+          else if (data['is_ok'] === true && data['is_deployed'] === false){
+              /// add message with informaton
+              $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+              'The sample \'' + $('#id-modal-body-deploy-metagenomics-sample').attr('ref_name') + '\' was not deployed. Check if metagenomics settings are correctly set.' +
+              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+              '</div>');
+          }
+          else{
+              /// add message with informaton
+              $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+              'The sample \'' + $('#id-modal-body-deploy-metagenomics-sample').attr('ref_name') + '\' was not deployed. Check if metagenomics settings are correctly set.' +
+              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+              '</div>');
+          }
+        }
+    })
+  }
+  )
+  $(document).on("click", "a", function (e) {
+    if ($(this).attr("id") == "add_teleflu_reference") {
+      e.preventDefault();
+      var url = $(this).attr("url");
+      var ref_id = $(this).attr("ref_id");
+      console.log(ref_id);
+      $.ajax({
+        url: url,
+        type: 'POST',
+        data: {
+          ref_id: ref_id,
+          user_id: '{{ user.id }}',
+          csrfmiddlewaretoken: '{{ csrf_token }}',
+        },
+        success: function(data) {
+          console.log(data);
+          if (data['is_ok']) {
+            
+            if (data['exists']) {
+              $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+                'Teleflu Reference already exists.' +
+                '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                '</div>');
+            } else {
+              $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
+                'Teleflu Reference added.' +
+                '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                '</div>');
+            }
+
+          } else {
+            $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+              'Teleflu Reference not added.' +
+              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+              '</div>');
+          }
+
+        }
+      })
+    }
+  }
+  );
+
+</script>
+
+{% endblock %}
+
+

@@ -12,17 +12,19 @@ from pathogen_identification.constants_settings import MEDIA_ROOT, ConstantsSett
 from pathogen_identification.install_registry import Params_Illumina, Params_Nanopore
 from pathogen_identification.models import (
     FinalReport,
+    ParameterSet,
     Projects,
     RawReference,
     RunAssembly,
     RunMain,
     SoftwareTreeNode,
 )
-from pathogen_identification.modules.metadata_handler import Metadata_handler
+from pathogen_identification.modules.metadata_handler import RunMetadataHandler
 from pathogen_identification.modules.object_classes import (
     Read_class,
     Sample_runClass,
-    Software_detail,
+    SoftwareDetail,
+    SoftwareDetailCompound,
     SoftwareRemap,
 )
 from pathogen_identification.modules.remap_class import (
@@ -35,7 +37,10 @@ from pathogen_identification.utilities.update_DBs import (
     Update_ReferenceMap_Update,
 )
 from pathogen_identification.utilities.utilities_general import simplify_name_lower
-from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
+from pathogen_identification.utilities.utilities_pipeline import (
+    SoftwareTreeUtils,
+    Utils_Manager,
+)
 from pathogen_identification.utilities.utilities_views import (
     ReportSorter,
     TelevirParameters,
@@ -45,10 +50,10 @@ from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
 
 
-class RunMain:
+class RunEngine:
     remap_manager: Mapping_Manager
     mapping_instance: Mapping_Instance
-    metadata_tool: Metadata_handler
+    metadata_tool: RunMetadataHandler
 
     ##  metadata
     sift_query: str
@@ -173,7 +178,7 @@ class RunMain:
         remap_params = TelevirParameters.get_remap_software(
             self.username, self.project_name
         )
-        self.metadata_tool = Metadata_handler(
+        self.metadata_tool = RunMetadataHandler(
             self.username,
             self.config,
             sift_query=config["sift_query"],
@@ -186,15 +191,15 @@ class RunMain:
         self.remap_params = remap_params
 
         ### methods
-        self.remapping_method = Software_detail(
+        self.remapping_method = SoftwareDetail(
             CS.PIPELINE_NAME_remapping,
             method_args,
             config,
             self.prefix,
         )
 
-        self.remap_filtering_method = Software_detail(
-            CS.PIPELINE_NAME_remap_filtering,
+        self.remap_filtering_method = SoftwareDetailCompound(
+            [CS.PIPELINE_NAME_remap_filtering],
             method_args,
             config,
             self.prefix,
@@ -392,7 +397,44 @@ class Input_Generator:
         shutil.copy(filepath, new_rpath)
         return new_rpath
 
-    def generate_method_args(self):
+    def generate_request_mapping_method_args(self):
+        sample = self.reference.run.sample
+        project = sample.project
+        user = project.owner
+
+        software_utils = SoftwareTreeUtils(user, project, sample=sample)
+
+        local_tree = software_utils.generate_software_tree_safe(
+            project,
+            sample=sample,
+            request_mapping=True,
+        )
+
+        pathnodes: dict = software_utils.get_available_pathnodes(local_tree)
+        # get first pathnode
+        leaf = pathnodes[list(pathnodes.keys())[0]]
+
+        try:
+            parameter_set = ParameterSet.objects.get(leaf=leaf)
+        except ParameterSet.DoesNotExist:
+            ParameterSet.objects.create(sample=sample, leaf=leaf, project=project)
+
+        ps_leaves = self.utils.get_parameterset_leaves(parameter_set, local_tree)
+        parameter_leaf_index = ps_leaves[0]
+        parameter_leaf = SoftwareTreeNode.objects.get(
+            index=parameter_leaf_index, software_tree=parameter_set.leaf.software_tree
+        )
+
+        run_df = self.utils.get_leaf_parameters(parameter_leaf)
+
+        self.method_args = run_df[run_df.module == CS.PIPELINE_NAME_remapping]
+
+        if self.method_args.empty:
+            raise ValueError(
+                f"no remapping parameters found for {self.reference.accid} in leaf {parameter_leaf}"
+            )
+
+    def generate_reference_method_args(self):
         parameter_set = self.reference.run.parameter_set
 
         pipeline_tree = self.utils.parameter_util.convert_softwaretree_to_pipeline_tree(
@@ -456,7 +498,7 @@ class Input_Generator:
     def update_raw_reference_status_fail(self):
         self.reference.update_raw_reference_status_fail()
 
-    def engine_report_modify_mapping_success(self, run_class: RunMain):
+    def engine_report_modify_mapping_success(self, run_class: RunEngine):
         def render_classification_source(record: RawReference):
             return record.classification_source_str
 
@@ -464,7 +506,7 @@ class Input_Generator:
             self.reference
         )
 
-    def update_final_report(self, run_class: RunMain):
+    def update_final_report(self, run_class: RunEngine):
         run = self.reference.run
         sample = run.sample
 
@@ -537,10 +579,11 @@ class Command(BaseCommand):
         )
 
         try:
-            input_generator.generate_method_args()
+            input_generator.generate_reference_method_args()
+            # input_generator.generate_request_mapping_method_args()
             input_generator.generate_config()
 
-            run_engine = RunMain(
+            run_engine = RunEngine(
                 input_generator.config,
                 input_generator.method_args,
                 project_name,

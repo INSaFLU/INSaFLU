@@ -29,6 +29,8 @@ class DefaultSoftware(object):
         """change values"""
         self.default_parameters = DefaultParameters()
         self.televir_utiltity = Utility_Pipeline_Manager()
+        self.televir_utiltity.get_software_db_dict()
+
         self.change_values_software = {}  ### the key is the name of the software
 
     def test_televir_software_available(self):
@@ -267,6 +269,48 @@ class DefaultSoftware(object):
                 user,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_minion,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_MSAMTOOLS_name,
+            self.default_parameters.get_msamtools_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_MSAMTOOLS_name,
+            self.default_parameters.get_msamtools_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_map_filtering,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_MSAMTOOLS_name,
+            self.default_parameters.get_msamtools_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_MSAMTOOLS_name,
+            self.default_parameters.get_msamtools_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_map_filtering,
             ),
             user,
         )
@@ -543,8 +587,22 @@ class DefaultSoftware(object):
                 user,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_minion,
-                pipeline_step=ConstantsSettings.PIPELINE_NAME_metagenomics_combine,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_metagenomics_screening,
                 is_to_run=True,
+                job="screening",
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name,
+            self.default_parameters.get_minimap2_remap_ONT_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_request_mapping,
+                is_to_run=True,
+                job="request_mapping",
             ),
             user,
         )
@@ -555,7 +613,7 @@ class DefaultSoftware(object):
                 user,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
-                pipeline_step=ConstantsSettings.PIPELINE_NAME_metagenomics_combine,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_metagenomics_screening,
                 is_to_run=True,
             ),
             user,
@@ -567,7 +625,28 @@ class DefaultSoftware(object):
                 user,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
-                pipeline_step=ConstantsSettings.PIPELINE_NAME_metagenomics_combine,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_request_mapping,
+                job="request_mapping",
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_METAGENOMICS_SETTINGS_name,
+            self.default_parameters.get_metagenomics_settings_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_settings,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_METAGENOMICS_SETTINGS_name,
+            self.default_parameters.get_metagenomics_settings_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_settings,
+                ConstantsSettings.TECHNOLOGY_minion,
             ),
             user,
         )
@@ -576,25 +655,25 @@ class DefaultSoftware(object):
         """
         test if exist, if not persist in database, for televir"""
 
-        self.test_default_db(
-            SoftwareNames.SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name,
-            self.default_parameters.get_minimap2_map_assembly_default(
-                user,
-                Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_minion,
-            ),
-            user,
-        )
-
-        self.test_default_db(
-            SoftwareNames.SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name,
-            self.default_parameters.get_minimap2_map_assembly_default(
-                user,
-                Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_illumina,
-            ),
-            user,
-        )
+#        self.test_default_db(
+#            SoftwareNames.SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name,
+#            self.default_parameters.get_minimap2_map_assembly_default(
+#                user,
+#                Software.TYPE_OF_USE_televir_global,
+#                ConstantsSettings.TECHNOLOGY_minion,
+#            ),
+#            user,
+#        )
+#
+#        self.test_default_db(
+#            SoftwareNames.SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name,
+#            self.default_parameters.get_minimap2_map_assembly_default(
+#                user,
+#                Software.TYPE_OF_USE_televir_global,
+#                ConstantsSettings.TECHNOLOGY_illumina,
+#            ),
+#            user,
+#        )
 
         self.test_default_db(
             SoftwareNames.SOFTWARE_KRAKEN2_name,
@@ -891,6 +970,31 @@ class DefaultSoftware(object):
         )
         return "" if result is None else result
 
+    def get_metagenomics_settings_parameters(self, user, technology_name):
+        result = self.default_parameters.get_parameters(
+            SoftwareNames.SOFTWARE_METAGENOMICS_SETTINGS_name,
+            user,
+            Software.TYPE_OF_USE_televir_settings,
+            None,
+            None,
+            None,
+            technology_name,
+        )
+        return "" if result is None else result
+
+    def get_msamtools_parameters(self, user, technology_name, pipeline_step=None):
+        result = self.default_parameters.get_parameters(
+            SoftwareNames.SOFTWARE_MSAMTOOLS_name,
+            user,
+            Software.TYPE_OF_USE_televir_global,
+            None,
+            None,
+            None,
+            technology_name,
+            pipeline_step=pipeline_step,
+        )
+        return "" if result is None else result
+
     def get_televir_report_layout_parameters(self, user, technology_name):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_televir_report_layout_name,
@@ -1074,7 +1178,7 @@ class DefaultSoftware(object):
         )
         return "" if result is None else result
 
-    def get_bowtie2_remap_parameters(self, user, technology_name):
+    def get_bowtie2_remap_parameters(self, user, technology_name, pipeline_step=None):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name,
             user,
@@ -1083,6 +1187,7 @@ class DefaultSoftware(object):
             None,
             None,
             technology_name,
+            pipeline_step=pipeline_step,
         )
         return "" if result is None else result
 
@@ -1356,6 +1461,32 @@ class DefaultSoftware(object):
             )
             return self.get_bamutil_parameters(user, technology_name)
 
+        if software_name == SoftwareNames.SOFTWARE_METAGENOMICS_SETTINGS_name:
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_METAGENOMICS_SETTINGS_name,
+                self.default_parameters.get_metagenomics_settings_defaults(
+                    user,
+                    Software.TYPE_OF_USE_televir_settings,
+                    technology_name=technology_name,
+                ),
+                user,
+            )
+            return self.get_metagenomics_settings_parameters(user, technology_name)
+
+        if software_name == SoftwareNames.SOFTWARE_MSAMTOOLS_name:
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_MSAMTOOLS_name,
+                self.default_parameters.get_msamtools_defaults(
+                    user,
+                    Software.TYPE_OF_USE_televir_global,
+                    ConstantsSettings.TECHNOLOGY_illumina,
+                    pipeline_step=pipeline_step,
+                ),
+                user,
+            )
+
+            return self.get_msamtools_parameters(user, technology_name)
+
         if software_name == SoftwareNames.SOFTWARE_televir_report_layout_name:
             self.test_default_db(
                 SoftwareNames.SOFTWARE_televir_report_layout_name,
@@ -1447,7 +1578,7 @@ class DefaultSoftware(object):
                     user,
                     Software.TYPE_OF_USE_televir_global,
                     ConstantsSettings.TECHNOLOGY_illumina,
-                    pipeline_step=ConstantsSettings.PIPELINE_NAME_remapping,
+                    pipeline_step=pipeline_step,
                 ),
                 user,
             )

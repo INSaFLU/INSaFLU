@@ -9,10 +9,6 @@ from itertools import chain
 from operator import attrgetter
 
 from braces.views import FormValidMessageMixin, LoginRequiredMixin
-from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
-from constants.meta_key_and_values import MetaKeyAndValue
-from constants.nextclade_links import get_constext_nextclade
-from constants.software_names import SoftwareNames
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.gis.geos import Point
@@ -27,56 +23,43 @@ from django.utils.safestring import mark_safe
 from django.views import generic
 from django.views.generic import DetailView, ListView, TemplateView
 from django_tables2 import RequestConfig
+
+from constants.constants import (Constants, FileExtensions, FileType, TypeFile,
+                                 TypePath)
+from constants.meta_key_and_values import MetaKeyAndValue
+from constants.nextclade_links import get_constext_nextclade
+from constants.software_names import SoftwareNames
 from extend_user.models import Profile
 from manage_virus.constants_virus import ConstantsVirus
+from managing_files.forms import (AddSampleProjectForm, ReferenceForm,
+                                  ReferenceProjectFormSet, SampleForm,
+                                  SamplesUploadDescriptionForm,
+                                  SamplesUploadDescriptionMetadataForm,
+                                  SamplesUploadMultipleFastqForm)
+from managing_files.manage_database import ManageDatabase
+from managing_files.models import (MetaKey, Project, ProjectSample, Reference,
+                                   Sample, UploadFiles)
+from managing_files.tables import (AddSamplesFromCvsFileTable,
+                                   AddSamplesFromCvsFileTableMetadata,
+                                   AddSamplesFromFastqFileTable, ProjectTable,
+                                   ReferenceProjectTable, ReferenceTable,
+                                   SampleTable, SampleToProjectsTable,
+                                   ShowProjectSamplesResults)
+from pathogen_identification.models import TeleFluProject
 from settings.constants_settings import ConstantsSettings
+from settings.default_software import DefaultSoftware
 from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.models import Software as SoftwareSettings
 from settings.tables import SoftwaresTable
 from utils.collect_extra_data import CollectExtraData
 from utils.process_SGE import ProcessSGE
 from utils.result import DecodeObjects
-from utils.session_variables import (
-    clean_check_box_in_session,
-    is_all_check_box_in_session,
-)
+from utils.session_variables import (clean_check_box_in_session,
+                                     is_all_check_box_in_session)
 from utils.software import Software
 from utils.software_pangolin import SoftwarePangolin
 from utils.support_django_template import get_link_for_dropdown_item
 from utils.utils import ShowInfoMainPage, Utils
-
-from managing_files.forms import (
-    AddSampleProjectForm,
-    ReferenceForm,
-    ReferenceProjectFormSet,
-    SampleForm,
-    SamplesUploadDescriptionForm,
-    SamplesUploadDescriptionMetadataForm,
-    SamplesUploadMultipleFastqForm,
-)
-from managing_files.manage_database import ManageDatabase
-from managing_files.models import (
-    MetaKey,
-    Project,
-    ProjectSample,
-    Reference,
-    Sample,
-    UploadFiles,
-)
-from managing_files.tables import (
-    AddSamplesFromCvsFileTable,
-    AddSamplesFromCvsFileTableMetadata,
-    AddSamplesFromFastqFileTable,
-    ProjectTable,
-    ReferenceProjectTable,
-    ReferenceTable,
-    SampleTable,
-    SampleToProjectsTable,
-    ShowProjectSamplesResults,
-)
-
-from settings.default_software import DefaultSoftware
-
 
 # http://www.craigderington.me/generic-list-view-with-django-tables/
 
@@ -87,10 +70,13 @@ class ProjectIndex(TemplateView):
     def get_context_data(self, **kwargs):
         context = super(ProjectIndex, self).get_context_data(**kwargs)
         default_software = DefaultSoftware()
-        context["televir_available"] = default_software.test_televir_software_available()
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute        
+        context["televir_available"] = (
+            default_software.test_televir_software_available()
+        )
+        context["services"] = False
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
 
@@ -145,9 +131,9 @@ class ReferenceView(LoginRequiredMixin, ListView):
         context["table"] = table
         context["nav_reference"] = True
         context["show_paginatior"] = len(query_set_result) > Constants.PAGINATE_NUMBER
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
 
@@ -177,9 +163,9 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
         context["user_mmp"] = (
             self.request.user.username == "mmp"
         )  ## short the size of modal window
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
     @transaction.atomic
@@ -434,679 +420,992 @@ class SamplesView(LoginRequiredMixin, ListView):
         context["nav_sample"] = True
         context["total_itens"] = query_set.count()
         context["show_paginatior"] = query_set.count() > Constants.PAGINATE_NUMBER
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
 
 class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView):
-	"""
-	Create a new reference
-	"""
-	form_class = SampleForm
-	success_url = reverse_lazy('samples')
-	template_name = 'samples/sample_add.html'
+    """
+    Create a new reference
+    """
 
-	if settings.DEBUG: logger = logging.getLogger("fluWebVirus.debug")
-	else: logger = logging.getLogger("fluWebVirus.production")
+    form_class = SampleForm
+    success_url = reverse_lazy("samples")
+    template_name = "samples/sample_add.html"
 
-	def get_form_kwargs(self):
-		"""
-		Set the request to pass in the form
-		"""
-		kw = super(SamplesAddView, self).get_form_kwargs()
-		kw['request'] = self.request 	# the trick!
-		return kw
+    if settings.DEBUG:
+        logger = logging.getLogger("fluWebVirus.debug")
+    else:
+        logger = logging.getLogger("fluWebVirus.production")
 
+    def get_form_kwargs(self):
+        """
+        Set the request to pass in the form
+        """
+        kw = super(SamplesAddView, self).get_form_kwargs()
+        kw["request"] = self.request  # the trick!
+        return kw
 
-	def get_context_data(self, **kwargs):
-		context = super(SamplesAddView, self).get_context_data(**kwargs)
-		context['nav_sample'] = True
-		context['nav_modal'] = True	## short the size of modal window
-		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
-		return context
+    def get_context_data(self, **kwargs):
+        context = super(SamplesAddView, self).get_context_data(**kwargs)
+        context["nav_sample"] = True
+        context["nav_modal"] = True  ## short the size of modal window
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
+        return context
 
+    def form_valid(self, form):
+        """
+        Validate the form
+        """
 
-	def form_valid(self, form):
-		"""
-		Validate the form
-		"""
+        with transaction.atomic():
+            ### test anonymous account
+            try:
+                profile = Profile.objects.get(user=self.request.user)
+                if profile.only_view_project:
+                    messages.warning(
+                        self.request,
+                        "'{}' account can not add samples.".format(
+                            self.request.user.username
+                        ),
+                        fail_silently=True,
+                    )
+                    return super(SamplesAddView, self).form_invalid(form)
+            except Profile.DoesNotExist:
+                pass
 
-		with transaction.atomic():
-			### test anonymous account
-			try:
-				profile = Profile.objects.get(user=self.request.user)
-				if (profile.only_view_project):
-					messages.warning(self.request, "'{}' account can not add samples.".format(self.request.user.username), fail_silently=True)
-					return super(SamplesAddView, self).form_invalid(form)
-			except Profile.DoesNotExist:
-				pass
-	
-			utils = Utils()
-			name = form.cleaned_data['name']
-			lat = form.cleaned_data['lat']
-			lng = form.cleaned_data['lng']
-			like_dates = form.cleaned_data['like_dates']
-				
-			sample = form.save(commit=False)
-			## set other data
-			sample.owner = self.request.user
-			sample.is_deleted = False
-			sample.is_obsolete = False
-			sample.file_name_1 = utils.clean_name(os.path.basename(sample.path_name_1.name))
-			sample.is_valid_1 = True
-			if (sample.exist_file_2()):
-				sample.file_name_2 = utils.clean_name(os.path.basename(sample.path_name_2.name))
-				sample.is_valid_2 = True 
-			else: sample.is_valid_2 = False
-			sample.has_files = True
-			
-			### set type of sequencing, illumina, minion...
-			## here, the file is already tested for gastq.gz and illumina and minion
-			sample.set_type_of_fastq_sequencing(form.cleaned_data['type_fastq'])
-			
-			if (like_dates == 'date_of_onset'):
-				sample.day = int(sample.date_of_onset.strftime("%d"))
-				sample.week = int(sample.date_of_onset.strftime("%W")) + 1
-				sample.year = int(sample.date_of_onset.strftime("%Y"))
-				sample.month = int(sample.date_of_onset.strftime("%m"))
-			elif (like_dates == 'date_of_collection'):
-				sample.day = int(sample.date_of_collection.strftime("%d"))
-				sample.week = int(sample.date_of_collection.strftime("%W")) + 1
-				sample.year = int(sample.date_of_collection.strftime("%Y"))
-				sample.month = int(sample.date_of_collection.strftime("%m"))
-			elif (like_dates == 'date_of_receipt_lab'):
-				sample.day = int(sample.date_of_receipt_lab.strftime("%d"))
-				sample.week = int(sample.date_of_receipt_lab.strftime("%W")) + 1
-				sample.year = int(sample.date_of_receipt_lab.strftime("%Y"))
-				sample.month = int(sample.date_of_receipt_lab.strftime("%m"))
-			
-			### test geo spacing
-			if (lat != None and lng != None): sample.geo_local = Point(lat, lng)
-			sample.save()
-	
-			## move the files to the right place
-			sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_to_fastq_file(self.request.user.id, sample.id), sample.file_name_1)
-			utils.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), sample.path_name_1.name), sz_file_to)
-			sample.path_name_1.name = os.path.join(utils.get_path_to_fastq_file(self.request.user.id, sample.id), sample.file_name_1)
-			
-			if (sample.exist_file_2()):
-				sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_to_fastq_file(self.request.user.id, sample.id), sample.file_name_2)
-				utils.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), sample.path_name_2.name), sz_file_to)
-				sample.path_name_2.name = os.path.join(utils.get_path_to_fastq_file(self.request.user.id, sample.id), sample.file_name_2)
-			sample.save()
+            utils = Utils()
+            name = form.cleaned_data["name"]
+            lat = form.cleaned_data["lat"]
+            lng = form.cleaned_data["lng"]
+            like_dates = form.cleaned_data["like_dates"]
 
-		### create a task to perform the analysis of fastq and trimmomatic
-		try:
-			process_SGE = ProcessSGE()
-			(job_name_wait, job_name) = self.request.user.profile.get_name_sge_seq(Profile.SGE_PROCESS_clean_sample, Profile.SGE_SAMPLE)
-			if sample.is_type_fastq_gz_sequencing():	### default is Illumina
-				taskID = process_SGE.set_run_trimmomatic_species(sample, self.request.user, job_name)
-			else:										### Minion, codify with other
-				taskID = process_SGE.set_run_clean_minion(sample, self.request.user, job_name)
-		except Exception as e:
-			self.logger.error('Fail to run: ProcessSGE - ' + str(e))
-			return super(SamplesAddView, self).form_invalid(form)
-		
-		## refresh sample list for this user
-		if not job_name is None:
-			process_SGE.set_create_sample_list_by_user(self.request.user, [job_name])
-		### 
-		manageDatabase = ManageDatabase()
-		manageDatabase.set_sample_metakey(sample, self.request.user, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue, taskID)
-		
-		messages.success(self.request, "Sample '" + name + "' was created successfully", fail_silently=True)
-		return super(SamplesAddView, self).form_valid(form)
+            sample: Sample = form.save(commit=False)
+            ## set other data
+            sample.owner = self.request.user
+            sample.is_deleted = False
+            sample.is_obsolete = False
+            sample.file_name_1 = utils.clean_name(
+                os.path.basename(sample.path_name_1.name)
+            )
+            sample.is_valid_1 = True
+            if sample.exist_file_2():
+                sample.file_name_2 = utils.clean_name(
+                    os.path.basename(sample.path_name_2.name)
+                )
+                sample.is_valid_2 = True
+            else:
+                sample.is_valid_2 = False
+            sample.has_files = True
 
-	form_valid_message = ""		## need to have this, even empty
+            ### set type of sequencing, illumina, minion...
+            ## here, the file is already tested for gastq.gz and illumina and minion
+            sample.set_type_of_fastq_sequencing(form.cleaned_data["type_fastq"])
 
+            if like_dates == "date_of_onset":
+                sample.day = int(sample.date_of_onset.strftime("%d"))
+                sample.week = int(sample.date_of_onset.strftime("%W")) + 1
+                sample.year = int(sample.date_of_onset.strftime("%Y"))
+                sample.month = int(sample.date_of_onset.strftime("%m"))
+            elif like_dates == "date_of_collection":
+                sample.day = int(sample.date_of_collection.strftime("%d"))
+                sample.week = int(sample.date_of_collection.strftime("%W")) + 1
+                sample.year = int(sample.date_of_collection.strftime("%Y"))
+                sample.month = int(sample.date_of_collection.strftime("%m"))
+            elif like_dates == "date_of_receipt_lab":
+                sample.day = int(sample.date_of_receipt_lab.strftime("%d"))
+                sample.week = int(sample.date_of_receipt_lab.strftime("%W")) + 1
+                sample.year = int(sample.date_of_receipt_lab.strftime("%Y"))
+                sample.month = int(sample.date_of_receipt_lab.strftime("%m"))
 
-class SamplesAddDescriptionFileView(LoginRequiredMixin, FormValidMessageMixin, generic.CreateView):
-	"""
-	Create a new reference
-	"""
-	utils = Utils()
-	success_url = reverse_lazy('samples')
-	template_name = 'samples/sample_description_file.html'
-	model = UploadFiles
-	fields = ['file_name']
-	
-	def get_form_kwargs(self):
-		"""
-		Set the request to pass in the form
-		"""
-		kw = super(SamplesAddDescriptionFileView, self).get_form_kwargs()
-		return kw
-	
-	def get_context_data(self, **kwargs):
-		context = super(SamplesAddDescriptionFileView, self).get_context_data(**kwargs)
-		
-		### test anonymous account
-		disable_upload_files = False
-		try:
-			profile = Profile.objects.get(user=self.request.user)
-			if (profile.only_view_project): disable_upload_files = True
-		except Profile.DoesNotExist:
-			disable_upload_files = True
-		
-		tag_search = 'search_samples'
-		query_set = UploadFiles.objects.filter(owner__id=self.request.user.id, is_deleted=False,\
-				type_file__name=TypeFile.TYPE_FILE_sample_file).order_by('-creation_date')
-		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)): 
-			query_set = query_set.filter(Q(file_name__icontains=self.request.GET.get(tag_search)) |\
-										Q(owner__username__icontains=self.request.GET.get(tag_search)))
-		table = AddSamplesFromCvsFileTable(query_set)
-		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
-		if (self.request.GET.get(tag_search) != None): context[tag_search] = self.request.GET.get(tag_search)
-		context['table'] = table
-		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
-		context['nav_sample'] = True
-		context['disable_upload_files'] = disable_upload_files
-		
-		### test if exists files to process to match with (csv/tsv) file
-		context['does_not_exists_fastq_files_to_process'] = UploadFiles.objects.filter(owner__id=self.request.user.id, is_deleted=False,\
-				type_file__name=TypeFile.TYPE_FILE_sample_file).order_by('-creation_date').count() == 0
-				
-		### test if can add other csv file
-		count_not_complete = UploadFiles.objects.filter(owner__id=self.request.user.id, is_deleted=False,\
-				type_file__name=TypeFile.TYPE_FILE_sample_file, is_processed=False).count()
-		if (count_not_complete > 0): 
-			context['can_add_other_file'] = "You cannot add a new file because you must first upload NGS data regarding another file."
-			context['disable_upload_files'] = True
-			context['message_unlock_file'] = "It will drop remain samples ({}) not processed in last file".format(count_not_complete)
-			context['message_unlock_file_question'] = "Do you want drop remain samples ({}) not processed in last file?".format(count_not_complete)
-		else:
-			context['message_unlock_file'] = "No samples to drop for last sample file."
-			context['message_unlock_file_question'] = "No samples to drop for last sample file."
-		
-		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute 
-		return context
+            ### test geo spacing
+            if lat != None and lng != None:
+                sample.geo_local = Point(lat, lng)
+            sample.save()
 
-	def form_valid(self, form):
-		"""
-		Validate the form
-		"""
-		### test anonymous account
-		try:
-			profile = Profile.objects.get(user=self.request.user)
-			if (profile.only_view_project):
-				messages.warning(self.request, "'{}' account can not add description files.".format(self.request.user.username), fail_silently=True)
-				return super(SamplesAddDescriptionFileView, self).form_invalid(form)
-		except Profile.DoesNotExist:
-			pass
-		
-		return super(SamplesAddDescriptionFileView, self).form_valid(form)
+            ## move the files to the right place
+            sz_file_to = os.path.join(
+                getattr(settings, "MEDIA_ROOT", None),
+                utils.get_path_to_fastq_file(self.request.user.id, sample.id),
+                sample.file_name_1,
+            )
+            utils.move_file(
+                os.path.join(
+                    getattr(settings, "MEDIA_ROOT", None), sample.path_name_1.name
+                ),
+                sz_file_to,
+            )
+            sample.path_name_1.name = os.path.join(
+                utils.get_path_to_fastq_file(self.request.user.id, sample.id),
+                sample.file_name_1,
+            )
 
-	form_valid_message = ""		## need to have this, even empty
+            if sample.exist_file_2():
+                sz_file_to = os.path.join(
+                    getattr(settings, "MEDIA_ROOT", None),
+                    utils.get_path_to_fastq_file(self.request.user.id, sample.id),
+                    sample.file_name_2,
+                )
+                utils.move_file(
+                    os.path.join(
+                        getattr(settings, "MEDIA_ROOT", None), sample.path_name_2.name
+                    ),
+                    sz_file_to,
+                )
+                sample.path_name_2.name = os.path.join(
+                    utils.get_path_to_fastq_file(self.request.user.id, sample.id),
+                    sample.file_name_2,
+                )
+            sample.save()
+
+        ### create a task to perform the analysis of fastq and trimmomatic
+        try:
+            process_SGE = ProcessSGE()
+            (job_name_wait, job_name) = self.request.user.profile.get_name_sge_seq(
+                Profile.SGE_PROCESS_clean_sample, Profile.SGE_SAMPLE
+            )
+            if sample.is_type_fastq_gz_sequencing():  ### default is Illumina
+                taskID = process_SGE.set_run_trimmomatic_species(
+                    sample, self.request.user, job_name
+                )
+            else:  ### Minion, codify with other
+                taskID = process_SGE.set_run_clean_minion(
+                    sample, self.request.user, job_name
+                )
+        except Exception as e:
+            self.logger.error("Fail to run: ProcessSGE - " + str(e))
+            return super(SamplesAddView, self).form_invalid(form)
+
+        ## refresh sample list for this user
+        if not job_name is None:
+            process_SGE.set_create_sample_list_by_user(self.request.user, [job_name])
+        ###
+        manageDatabase = ManageDatabase()
+        manageDatabase.set_sample_metakey(
+            sample,
+            self.request.user,
+            MetaKeyAndValue.META_KEY_Queue_TaskID,
+            MetaKeyAndValue.META_VALUE_Queue,
+            taskID,
+        )
+
+        messages.success(
+            self.request,
+            "Sample '" + name + "' was created successfully",
+            fail_silently=True,
+        )
+        return super(SamplesAddView, self).form_valid(form)
+
+    form_valid_message = ""  ## need to have this, even empty
 
 
+class SamplesAddDescriptionFileView(
+    LoginRequiredMixin, FormValidMessageMixin, generic.CreateView
+):
+    """
+    Create a new reference
+    """
 
-class SamplesUpdateMetadata(LoginRequiredMixin, FormValidMessageMixin, generic.CreateView):
-	"""
-	Update metadata
-	"""
-	utils = Utils()
-	success_url = reverse_lazy('samples')
-	template_name = 'samples/sample_update_metadata.html'
-	model = UploadFiles
-	fields = ['file_name']
-	
-	def get_form_kwargs(self):
-		"""
-		Set the request to pass in the form
-		"""
-		kw = super(SamplesUpdateMetadata, self).get_form_kwargs()
-		return kw
-	
-	def get_context_data(self, **kwargs):
-		context = super(SamplesUpdateMetadata, self).get_context_data(**kwargs)
-		
-		### test anonymous account
-		disable_upload_files = False
-		try:
-			profile = Profile.objects.get(user=self.request.user)
-			if (profile.only_view_project): disable_upload_files = True
-		except Profile.DoesNotExist:
-			pass
-		
-		tag_search = 'search_samples'
-		query_set = UploadFiles.objects.filter(owner__id=self.request.user.id, is_deleted=False,\
-				type_file__name=TypeFile.TYPE_FILE_sample_file_metadata).order_by('-creation_date')
-		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)): 
-			query_set = query_set.filter(Q(file_name__icontains=self.request.GET.get(tag_search)) |\
-										Q(owner__username__icontains=self.request.GET.get(tag_search)))
-		table = AddSamplesFromCvsFileTableMetadata(query_set)
-		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
-		if (self.request.GET.get(tag_search) != None): context[tag_search] = self.request.GET.get(tag_search)
-		context['table'] = table
-		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
-		context['nav_sample'] = True
-		context['disable_upload_files'] = disable_upload_files
-		
-		### test if exists files to process to match with (csv/tsv) file
-		context['does_not_exists_fastq_files_to_process'] = UploadFiles.objects.filter(owner__id=self.request.user.id, is_deleted=False,\
-				type_file__name=TypeFile.TYPE_FILE_sample_file_metadata).order_by('-creation_date').count() == 0
-				
-		### test if can add other csv file
-		count_not_complete = UploadFiles.objects.filter(owner__id=self.request.user.id, is_deleted=False,\
-				type_file__name=TypeFile.TYPE_FILE_sample_file_metadata, is_processed=False).count()
-		if (count_not_complete > 0): 
-			context['can_add_other_file'] = "You cannot add other file because there is a file in pipeline."
-			context['disable_upload_files'] = True
-			
-		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute 
-		return context
+    utils = Utils()
+    success_url = reverse_lazy("samples")
+    template_name = "samples/sample_description_file.html"
+    model = UploadFiles
+    fields = ["file_name"]
 
-	def form_valid(self, form):
-		"""
-		Validate the form
-		"""
-		### test anonymous account
-		try:
-			profile = Profile.objects.get(user=self.request.user)
-			if (profile.only_view_project):
-				messages.warning(self.request, "'{}' account can not add metadata.".format(self.request.user.username), fail_silently=True)
-				return super(SamplesUpdateMetadata, self).form_invalid(form)
-		except Profile.DoesNotExist:
-			pass
-		
-		return super(SamplesUpdateMetadata, self).form_valid(form)
+    def get_form_kwargs(self):
+        """
+        Set the request to pass in the form
+        """
+        kw = super(SamplesAddDescriptionFileView, self).get_form_kwargs()
+        return kw
 
-	form_valid_message = ""		## need to have this, even empty
+    def get_context_data(self, **kwargs):
+        context = super(SamplesAddDescriptionFileView, self).get_context_data(**kwargs)
 
+        ### test anonymous account
+        disable_upload_files = False
+        try:
+            profile = Profile.objects.get(user=self.request.user)
+            if profile.only_view_project:
+                disable_upload_files = True
+        except Profile.DoesNotExist:
+            disable_upload_files = True
 
-class SamplesUploadDescriptionFileView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView):
-	"""
-	Set new samples
-	"""
-	form_class = SamplesUploadDescriptionForm
-	success_url = reverse_lazy('sample-add-file')
-	template_name = 'samples/samples_upload_description_file.html'
+        tag_search = "search_samples"
+        query_set = UploadFiles.objects.filter(
+            owner__id=self.request.user.id,
+            is_deleted=False,
+            type_file__name=TypeFile.TYPE_FILE_sample_file,
+        ).order_by("-creation_date")
+        if self.request.GET.get(tag_search) != None and self.request.GET.get(
+            tag_search
+        ):
+            query_set = query_set.filter(
+                Q(file_name__icontains=self.request.GET.get(tag_search))
+                | Q(owner__username__icontains=self.request.GET.get(tag_search))
+            )
+        table = AddSamplesFromCvsFileTable(query_set)
+        RequestConfig(
+            self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
+        ).configure(table)
+        if self.request.GET.get(tag_search) != None:
+            context[tag_search] = self.request.GET.get(tag_search)
+        context["table"] = table
+        context["show_paginatior"] = query_set.count() > Constants.PAGINATE_NUMBER
+        context["nav_sample"] = True
+        context["disable_upload_files"] = disable_upload_files
 
-	def get_form_kwargs(self):
-		"""
-		Set the request to pass in the form
-		"""
-		kw = super(SamplesUploadDescriptionFileView, self).get_form_kwargs()
-		kw['request'] = self.request 	# get error
-		return kw
-	
-	def get_context_data(self, **kwargs):
-		context = super(SamplesUploadDescriptionFileView, self).get_context_data(**kwargs)
-		if ('form' in kwargs and hasattr(kwargs['form'], 'error_in_file')):
-			context['error_in_file'] = mark_safe(kwargs['form'].error_in_file.replace('\n', "<br>")) ## pass a list
-		context['nav_sample'] = True
-		context['nav_modal'] = True	## short the size of modal window
-		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
-		return context
+        ### test if exists files to process to match with (csv/tsv) file
+        context["does_not_exists_fastq_files_to_process"] = (
+            UploadFiles.objects.filter(
+                owner__id=self.request.user.id,
+                is_deleted=False,
+                type_file__name=TypeFile.TYPE_FILE_sample_file,
+            )
+            .order_by("-creation_date")
+            .count()
+            == 0
+        )
 
-	def form_valid(self, form):
-		
-		### test anonymous account
-		try:
-			profile = Profile.objects.get(user=self.request.user)
-			if (profile.only_view_project):
-				messages.warning(self.request, "'{}' account can not add file with samples.".format(self.request.user.username), fail_silently=True)
-				return super(SamplesUploadDescriptionFileView, self).form_invalid(form)
-		except Profile.DoesNotExist:
-			pass
+        ### test if can add other csv file
+        count_not_complete = UploadFiles.objects.filter(
+            owner__id=self.request.user.id,
+            is_deleted=False,
+            type_file__name=TypeFile.TYPE_FILE_sample_file,
+            is_processed=False,
+        ).count()
+        if count_not_complete > 0:
+            context["can_add_other_file"] = (
+                "You cannot add a new file because you must first upload NGS data regarding another file."
+            )
+            context["disable_upload_files"] = True
+            context["message_unlock_file"] = (
+                "It will drop remain samples ({}) not processed in last file".format(
+                    count_not_complete
+                )
+            )
+            context["message_unlock_file_question"] = (
+                "Do you want drop remain samples ({}) not processed in last file?".format(
+                    count_not_complete
+                )
+            )
+        else:
+            context["message_unlock_file"] = "No samples to drop for last sample file."
+            context["message_unlock_file_question"] = (
+                "No samples to drop for last sample file."
+            )
 
-		utils = Utils()
-		software = Software()
-		path_name = form.cleaned_data['path_name']
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
+        return context
 
-		## create a genbank file
-		if (not path_name is None):
-			upload_files = form.save(commit=False)
-			upload_files.is_valid = True
-			upload_files.is_processed = False
-			upload_files.is_deleted = False
-			upload_files.number_errors = 0
-			upload_files.number_files_processed = 0
-			upload_files.number_files_to_process = form.number_files_to_process
-			
-			try:
-				type_file = MetaKey.objects.get(name=TypeFile.TYPE_FILE_sample_file)
-			except MetaKey.DoesNotExist:
-				type_file = MetaKey()
-				type_file.name = TypeFile.TYPE_FILE_sample_file
-				type_file.save()
-			
-			upload_files.type_file = type_file
-			upload_files.file_name = utils.clean_name(ntpath.basename(path_name.name))
-			upload_files.owner = self.request.user
-			
-			upload_files.description = ""
-			upload_files.save()
-		
-			## move the files to the right place
-			sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_upload_file(self.request.user.id,\
-													TypeFile.TYPE_FILE_sample_file), upload_files.file_name)
-			sz_file_to, path_added = utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
-			utils.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), upload_files.path_name.name), sz_file_to)
-			software.dos_2_unix(sz_file_to)
-			if path_added is None:
-				upload_files.path_name.name = os.path.join(utils.get_path_upload_file(self.request.user.id,\
-									TypeFile.TYPE_FILE_sample_file), ntpath.basename(sz_file_to))
-			else:
-				upload_files.path_name.name = os.path.join(utils.get_path_upload_file(self.request.user.id,\
-									TypeFile.TYPE_FILE_sample_file), path_added, ntpath.basename(sz_file_to))
-			upload_files.save()
-			
-			try:
-				process_SGE = ProcessSGE()
-				taskID =  process_SGE.set_read_sample_file(upload_files, self.request.user)
-			except:
-				return super(SamplesUploadDescriptionFileView, self).form_invalid(form)
-			
-			messages.success(self.request, "File '" + upload_files.file_name + "' with samples was uploaded successfully", fail_silently=True)
-			return super(SamplesUploadDescriptionFileView, self).form_valid(form)
-		return super(SamplesUploadDescriptionFileView, self).form_invalid(form)
+    def form_valid(self, form):
+        """
+        Validate the form
+        """
+        ### test anonymous account
+        try:
+            profile = Profile.objects.get(user=self.request.user)
+            if profile.only_view_project:
+                messages.warning(
+                    self.request,
+                    "'{}' account can not add description files.".format(
+                        self.request.user.username
+                    ),
+                    fail_silently=True,
+                )
+                return super(SamplesAddDescriptionFileView, self).form_invalid(form)
+        except Profile.DoesNotExist:
+            pass
 
-	## static method, not need for now.
-	form_valid_message = ""		## need to have this
+        return super(SamplesAddDescriptionFileView, self).form_valid(form)
+
+    form_valid_message = ""  ## need to have this, even empty
 
 
-class SamplesUploadDescriptionFileViewMetadata(LoginRequiredMixin, FormValidMessageMixin, generic.FormView):
-	"""
-	Create a new reference
-	"""
-	form_class = SamplesUploadDescriptionMetadataForm
-	success_url = reverse_lazy('sample-update-metadata')
-	template_name = 'samples/samples_upload_description_file_metadata.html'
+class SamplesUpdateMetadata(
+    LoginRequiredMixin, FormValidMessageMixin, generic.CreateView
+):
+    """
+    Update metadata
+    """
 
-	def get_form_kwargs(self):
-		"""
-		Set the request to pass in the form
-		"""
-		kw = super(SamplesUploadDescriptionFileViewMetadata, self).get_form_kwargs()
-		kw['request'] = self.request 	# get error
-		return kw
-	
-	def get_context_data(self, **kwargs):
-		context = super(SamplesUploadDescriptionFileViewMetadata, self).get_context_data(**kwargs)
-		if ('form' in kwargs and hasattr(kwargs['form'], 'error_in_file')):
-			context['error_in_file'] = mark_safe(kwargs['form'].error_in_file.replace('\n', "<br>")) ## pass a list
-		context['nav_sample'] = True
-		context['nav_modal'] = True	## short the size of modal window
-		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
-		return context
+    utils = Utils()
+    success_url = reverse_lazy("samples")
+    template_name = "samples/sample_update_metadata.html"
+    model = UploadFiles
+    fields = ["file_name"]
 
-	def form_valid(self, form):
-		
-		### test anonymous account
-		try:
-			profile = Profile.objects.get(user=self.request.user)
-			if (profile.only_view_project):
-				messages.warning(self.request, "'{}' account can not add file with samples.".format(self.request.user.username), fail_silently=True)
-				return super(SamplesUploadDescriptionFileViewMetadata, self).form_invalid(form)
-		except Profile.DoesNotExist:
-			pass
+    def get_form_kwargs(self):
+        """
+        Set the request to pass in the form
+        """
+        kw = super(SamplesUpdateMetadata, self).get_form_kwargs()
+        return kw
 
-		utils = Utils()
-		software = Software()
-		path_name = form.cleaned_data['path_name']
+    def get_context_data(self, **kwargs):
+        context = super(SamplesUpdateMetadata, self).get_context_data(**kwargs)
 
-		## create a genbank file
-		if (not path_name is None):
-			upload_files = form.save(commit=False)
-			upload_files.is_valid = True
-			upload_files.is_processed = False
-			upload_files.is_deleted = False
-			upload_files.number_errors = 0
-			upload_files.number_files_processed = 0
-			upload_files.number_files_to_process = form.number_files_to_process
-			
-			try:
-				type_file = MetaKey.objects.get(name=TypeFile.TYPE_FILE_sample_file_metadata)
-			except MetaKey.DoesNotExist:
-				type_file = MetaKey()
-				type_file.name = TypeFile.TYPE_FILE_sample_file_metadata
-				type_file.save()
-			
-			upload_files.type_file = type_file
-			upload_files.file_name = utils.clean_name(ntpath.basename(path_name.name))
-			upload_files.owner = self.request.user
-			
-			upload_files.description = ""
-			upload_files.save()				## need this save because of 
-		
-			## move the files to the right place
-			sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_upload_file(self.request.user.id,\
-													TypeFile.TYPE_FILE_sample_file_metadata), upload_files.file_name)
-			sz_file_to, path_added = utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
-			utils.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), upload_files.path_name.name), sz_file_to)
-			software.dos_2_unix(sz_file_to)
-			if path_added is None:
-				upload_files.path_name.name = os.path.join(utils.get_path_upload_file(self.request.user.id,\
-									TypeFile.TYPE_FILE_sample_file_metadata), ntpath.basename(sz_file_to))
-			else:
-				upload_files.path_name.name = os.path.join(utils.get_path_upload_file(self.request.user.id,\
-									TypeFile.TYPE_FILE_sample_file_metadata), path_added, ntpath.basename(sz_file_to))
-			upload_files.save()
-			
-			try:
-				process_SGE = ProcessSGE()
-				taskID =  process_SGE.set_read_sample_file_with_metadata(upload_files, self.request.user)
-			except:
-				return super(SamplesUploadDescriptionFileViewMetadata, self).form_invalid(form)
-			
-			messages.success(self.request, "File '" + upload_files.file_name + "' with metadata was uploaded successfully", fail_silently=True)
-			return super(SamplesUploadDescriptionFileViewMetadata, self).form_valid(form)
-		return super(SamplesUploadDescriptionFileViewMetadata, self).form_invalid(form)
+        ### test anonymous account
+        disable_upload_files = False
+        try:
+            profile = Profile.objects.get(user=self.request.user)
+            if profile.only_view_project:
+                disable_upload_files = True
+        except Profile.DoesNotExist:
+            pass
 
-	## static method, not need for now.
-	form_valid_message = ""		## need to have this
+        tag_search = "search_samples"
+        query_set = UploadFiles.objects.filter(
+            owner__id=self.request.user.id,
+            is_deleted=False,
+            type_file__name=TypeFile.TYPE_FILE_sample_file_metadata,
+        ).order_by("-creation_date")
+        if self.request.GET.get(tag_search) != None and self.request.GET.get(
+            tag_search
+        ):
+            query_set = query_set.filter(
+                Q(file_name__icontains=self.request.GET.get(tag_search))
+                | Q(owner__username__icontains=self.request.GET.get(tag_search))
+            )
+        table = AddSamplesFromCvsFileTableMetadata(query_set)
+        RequestConfig(
+            self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
+        ).configure(table)
+        if self.request.GET.get(tag_search) != None:
+            context[tag_search] = self.request.GET.get(tag_search)
+        context["table"] = table
+        context["show_paginatior"] = query_set.count() > Constants.PAGINATE_NUMBER
+        context["nav_sample"] = True
+        context["disable_upload_files"] = disable_upload_files
+
+        ### test if exists files to process to match with (csv/tsv) file
+        context["does_not_exists_fastq_files_to_process"] = (
+            UploadFiles.objects.filter(
+                owner__id=self.request.user.id,
+                is_deleted=False,
+                type_file__name=TypeFile.TYPE_FILE_sample_file_metadata,
+            )
+            .order_by("-creation_date")
+            .count()
+            == 0
+        )
+
+        ### test if can add other csv file
+        count_not_complete = UploadFiles.objects.filter(
+            owner__id=self.request.user.id,
+            is_deleted=False,
+            type_file__name=TypeFile.TYPE_FILE_sample_file_metadata,
+            is_processed=False,
+        ).count()
+        if count_not_complete > 0:
+            context["can_add_other_file"] = (
+                "You cannot add other file because there is a file in pipeline."
+            )
+            context["disable_upload_files"] = True
+
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
+        return context
+
+    def form_valid(self, form):
+        """
+        Validate the form
+        """
+        ### test anonymous account
+        try:
+            profile = Profile.objects.get(user=self.request.user)
+            if profile.only_view_project:
+                messages.warning(
+                    self.request,
+                    "'{}' account can not add metadata.".format(
+                        self.request.user.username
+                    ),
+                    fail_silently=True,
+                )
+                return super(SamplesUpdateMetadata, self).form_invalid(form)
+        except Profile.DoesNotExist:
+            pass
+
+        return super(SamplesUpdateMetadata, self).form_valid(form)
+
+    form_valid_message = ""  ## need to have this, even empty
+
+
+class SamplesUploadDescriptionFileView(
+    LoginRequiredMixin, FormValidMessageMixin, generic.FormView
+):
+    """
+    Set new samples
+    """
+
+    form_class = SamplesUploadDescriptionForm
+    success_url = reverse_lazy("sample-add-file")
+    template_name = "samples/samples_upload_description_file.html"
+
+    def get_form_kwargs(self):
+        """
+        Set the request to pass in the form
+        """
+        kw = super(SamplesUploadDescriptionFileView, self).get_form_kwargs()
+        kw["request"] = self.request  # get error
+        return kw
+
+    def get_context_data(self, **kwargs):
+        context = super(SamplesUploadDescriptionFileView, self).get_context_data(
+            **kwargs
+        )
+        if "form" in kwargs and hasattr(kwargs["form"], "error_in_file"):
+            context["error_in_file"] = mark_safe(
+                kwargs["form"].error_in_file.replace("\n", "<br>")
+            )  ## pass a list
+        context["nav_sample"] = True
+        context["nav_modal"] = True  ## short the size of modal window
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
+        return context
+
+    def form_valid(self, form):
+        ### test anonymous account
+        try:
+            profile = Profile.objects.get(user=self.request.user)
+            if profile.only_view_project:
+                messages.warning(
+                    self.request,
+                    "'{}' account can not add file with samples.".format(
+                        self.request.user.username
+                    ),
+                    fail_silently=True,
+                )
+                return super(SamplesUploadDescriptionFileView, self).form_invalid(form)
+        except Profile.DoesNotExist:
+            pass
+
+        utils = Utils()
+        software = Software()
+        path_name = form.cleaned_data["path_name"]
+
+        ## create a genbank file
+        if not path_name is None:
+            upload_files = form.save(commit=False)
+            upload_files.is_valid = True
+            upload_files.is_processed = False
+            upload_files.is_deleted = False
+            upload_files.number_errors = 0
+            upload_files.number_files_processed = 0
+            upload_files.number_files_to_process = form.number_files_to_process
+
+            try:
+                type_file = MetaKey.objects.get(name=TypeFile.TYPE_FILE_sample_file)
+            except MetaKey.DoesNotExist:
+                type_file = MetaKey()
+                type_file.name = TypeFile.TYPE_FILE_sample_file
+                type_file.save()
+
+            upload_files.type_file = type_file
+            upload_files.file_name = utils.clean_name(ntpath.basename(path_name.name))
+            upload_files.owner = self.request.user
+
+            upload_files.description = ""
+            upload_files.save()
+
+            ## move the files to the right place
+            sz_file_to = os.path.join(
+                getattr(settings, "MEDIA_ROOT", None),
+                utils.get_path_upload_file(
+                    self.request.user.id, TypeFile.TYPE_FILE_sample_file
+                ),
+                upload_files.file_name,
+            )
+            sz_file_to, path_added = utils.get_unique_file(
+                sz_file_to
+            )  ## get unique file name, user can upload files with same name...
+            utils.move_file(
+                os.path.join(
+                    getattr(settings, "MEDIA_ROOT", None), upload_files.path_name.name
+                ),
+                sz_file_to,
+            )
+            software.dos_2_unix(sz_file_to)
+            if path_added is None:
+                upload_files.path_name.name = os.path.join(
+                    utils.get_path_upload_file(
+                        self.request.user.id, TypeFile.TYPE_FILE_sample_file
+                    ),
+                    ntpath.basename(sz_file_to),
+                )
+            else:
+                upload_files.path_name.name = os.path.join(
+                    utils.get_path_upload_file(
+                        self.request.user.id, TypeFile.TYPE_FILE_sample_file
+                    ),
+                    path_added,
+                    ntpath.basename(sz_file_to),
+                )
+            upload_files.save()
+
+            try:
+                process_SGE = ProcessSGE()
+                taskID = process_SGE.set_read_sample_file(
+                    upload_files, self.request.user
+                )
+            except:
+                return super(SamplesUploadDescriptionFileView, self).form_invalid(form)
+
+            messages.success(
+                self.request,
+                "File '"
+                + upload_files.file_name
+                + "' with samples was uploaded successfully",
+                fail_silently=True,
+            )
+            return super(SamplesUploadDescriptionFileView, self).form_valid(form)
+        return super(SamplesUploadDescriptionFileView, self).form_invalid(form)
+
+    ## static method, not need for now.
+    form_valid_message = ""  ## need to have this
+
+
+class SamplesUploadDescriptionFileViewMetadata(
+    LoginRequiredMixin, FormValidMessageMixin, generic.FormView
+):
+    """
+    Create a new reference
+    """
+
+    form_class = SamplesUploadDescriptionMetadataForm
+    success_url = reverse_lazy("sample-update-metadata")
+    template_name = "samples/samples_upload_description_file_metadata.html"
+
+    def get_form_kwargs(self):
+        """
+        Set the request to pass in the form
+        """
+        kw = super(SamplesUploadDescriptionFileViewMetadata, self).get_form_kwargs()
+        kw["request"] = self.request  # get error
+        return kw
+
+    def get_context_data(self, **kwargs):
+        context = super(
+            SamplesUploadDescriptionFileViewMetadata, self
+        ).get_context_data(**kwargs)
+        if "form" in kwargs and hasattr(kwargs["form"], "error_in_file"):
+            context["error_in_file"] = mark_safe(
+                kwargs["form"].error_in_file.replace("\n", "<br>")
+            )  ## pass a list
+        context["nav_sample"] = True
+        context["nav_modal"] = True  ## short the size of modal window
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
+        return context
+
+    def form_valid(self, form):
+        ### test anonymous account
+        try:
+            profile = Profile.objects.get(user=self.request.user)
+            if profile.only_view_project:
+                messages.warning(
+                    self.request,
+                    "'{}' account can not add file with samples.".format(
+                        self.request.user.username
+                    ),
+                    fail_silently=True,
+                )
+                return super(
+                    SamplesUploadDescriptionFileViewMetadata, self
+                ).form_invalid(form)
+        except Profile.DoesNotExist:
+            pass
+
+        utils = Utils()
+        software = Software()
+        path_name = form.cleaned_data["path_name"]
+
+        ## create a genbank file
+        if not path_name is None:
+            upload_files = form.save(commit=False)
+            upload_files.is_valid = True
+            upload_files.is_processed = False
+            upload_files.is_deleted = False
+            upload_files.number_errors = 0
+            upload_files.number_files_processed = 0
+            upload_files.number_files_to_process = form.number_files_to_process
+
+            try:
+                type_file = MetaKey.objects.get(
+                    name=TypeFile.TYPE_FILE_sample_file_metadata
+                )
+            except MetaKey.DoesNotExist:
+                type_file = MetaKey()
+                type_file.name = TypeFile.TYPE_FILE_sample_file_metadata
+                type_file.save()
+
+            upload_files.type_file = type_file
+            upload_files.file_name = utils.clean_name(ntpath.basename(path_name.name))
+            upload_files.owner = self.request.user
+
+            upload_files.description = ""
+            upload_files.save()  ## need this save because of
+
+            ## move the files to the right place
+            sz_file_to = os.path.join(
+                getattr(settings, "MEDIA_ROOT", None),
+                utils.get_path_upload_file(
+                    self.request.user.id, TypeFile.TYPE_FILE_sample_file_metadata
+                ),
+                upload_files.file_name,
+            )
+            sz_file_to, path_added = utils.get_unique_file(
+                sz_file_to
+            )  ## get unique file name, user can upload files with same name...
+            utils.move_file(
+                os.path.join(
+                    getattr(settings, "MEDIA_ROOT", None), upload_files.path_name.name
+                ),
+                sz_file_to,
+            )
+            software.dos_2_unix(sz_file_to)
+            if path_added is None:
+                upload_files.path_name.name = os.path.join(
+                    utils.get_path_upload_file(
+                        self.request.user.id, TypeFile.TYPE_FILE_sample_file_metadata
+                    ),
+                    ntpath.basename(sz_file_to),
+                )
+            else:
+                upload_files.path_name.name = os.path.join(
+                    utils.get_path_upload_file(
+                        self.request.user.id, TypeFile.TYPE_FILE_sample_file_metadata
+                    ),
+                    path_added,
+                    ntpath.basename(sz_file_to),
+                )
+            upload_files.save()
+
+            try:
+                process_SGE = ProcessSGE()
+                taskID = process_SGE.set_read_sample_file_with_metadata(
+                    upload_files, self.request.user
+                )
+            except:
+                return super(
+                    SamplesUploadDescriptionFileViewMetadata, self
+                ).form_invalid(form)
+
+            messages.success(
+                self.request,
+                "File '"
+                + upload_files.file_name
+                + "' with metadata was uploaded successfully",
+                fail_silently=True,
+            )
+            return super(SamplesUploadDescriptionFileViewMetadata, self).form_valid(
+                form
+            )
+        return super(SamplesUploadDescriptionFileViewMetadata, self).form_invalid(form)
+
+    ## static method, not need for now.
+    form_valid_message = ""  ## need to have this
 
 
 class SamplesAddFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView):
-	"""
-	Add fastq files to system
-	"""
-	form_class = SampleForm
-	success_url = reverse_lazy('samples')
-	template_name = 'samples/sample_fastq_file.html'
+    """
+    Add fastq files to system
+    """
+
+    form_class = SampleForm
+    success_url = reverse_lazy("samples")
+    template_name = "samples/sample_fastq_file.html"
+
+    def get_form_kwargs(self):
+        """
+        Set the request to pass in the form
+        """
+        kw = super(SamplesAddFastQView, self).get_form_kwargs()
+        kw["request"] = self.request  # the trick!
+        return kw
+
+    def get_context_data(self, **kwargs):
+        context = super(SamplesAddFastQView, self).get_context_data(**kwargs)
+
+        ### test anonymous account
+        disable_upload_files = False
+        try:
+            profile = Profile.objects.get(user=self.request.user)
+            if profile.only_view_project:
+                disable_upload_files = True
+        except Profile.DoesNotExist:
+            pass
+
+        ### test to show only the processed or all
+        if "show-not-only-checked" in self.request.GET:
+            b_show_all = self.request.GET.get("show-not-only-checked") != "on"
+        else:
+            b_show_all = True
+
+        ### get number of files that can be removed
+        number_files_can_be_removed = UploadFiles.objects.filter(
+            owner__id=self.request.user.id,
+            is_deleted=False,
+            is_processed=False,
+            type_file__name=TypeFile.TYPE_FILE_fastq_gz,
+        ).count()
+
+        ###
+        tag_search = "search_samples"
+        query_set = UploadFiles.objects.filter(
+            owner__id=self.request.user.id,
+            is_deleted=False,
+            type_file__name=TypeFile.TYPE_FILE_fastq_gz,
+        ).order_by("-creation_date")
+        if self.request.GET.get(tag_search) != None and self.request.GET.get(
+            tag_search
+        ):
+            query_set = query_set.filter(
+                Q(file_name__icontains=self.request.GET.get(tag_search))
+                | Q(owner__username__icontains=self.request.GET.get(tag_search))
+            )
+        if not b_show_all:
+            query_set = query_set.filter(Q(is_processed=b_show_all))
+
+        table = AddSamplesFromFastqFileTable(query_set)
+        RequestConfig(
+            self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
+        ).configure(table)
+        if self.request.GET.get(tag_search) != None:
+            context[tag_search] = self.request.GET.get(tag_search)
+        context["table"] = table
+        context["show_paginatior"] = query_set.count() > Constants.PAGINATE_NUMBER
+        context["total_itens"] = query_set.count()
+        context["nav_sample"] = True
+        context["disable_upload_files"] = disable_upload_files
+        context["check_box_not_show_processed_files"] = not b_show_all
+
+        ### number of files to remove
+        context["disable_remove_all_files"] = number_files_can_be_removed == 0
+        if number_files_can_be_removed == 0:
+            context["message_remove_files"] = "There's no files to remove"
+            context["message_remove_files_2"] = "There's no files to remove..."
+        elif number_files_can_be_removed == 1:
+            context["message_remove_files"] = (
+                "It is going to remove one file not processed"
+            )
+            context["message_remove_files_2"] = (
+                "Do you want to remove one file not processed?"
+            )
+        else:
+            context["message_remove_files"] = (
+                "It is going to remove {} files not processed".format(
+                    number_files_can_be_removed
+                )
+            )
+            context["message_remove_files_2"] = (
+                "Do you want to remove {} files not processed?".format(
+                    number_files_can_be_removed
+                )
+            )
+
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
+        return context
+
+    def form_valid(self, form):
+        """
+        Validate the form
+        """
+        return super(SamplesAddFastQView, self).form_valid(form)
+
+    form_valid_message = ""  ## need to have this, even empty
 
 
-	def get_form_kwargs(self):
-		"""
-		Set the request to pass in the form
-		"""
-		kw = super(SamplesAddFastQView, self).get_form_kwargs()
-		kw['request'] = self.request 	# the trick!
-		return kw
+class SamplesUploadFastQView(
+    LoginRequiredMixin, FormValidMessageMixin, generic.FormView
+):
+    """
+    Create a new reference
+    """
 
+    form_class = SamplesUploadMultipleFastqForm
+    success_url = reverse_lazy("sample-add-fastq")
+    template_name = "samples/samples_upload_fastq_files.html"
+    utils = Utils()
 
-	def get_context_data(self, **kwargs):
-		context = super(SamplesAddFastQView, self).get_context_data(**kwargs)
-		
-		### test anonymous account
-		disable_upload_files = False
-		try:
-			profile = Profile.objects.get(user=self.request.user)
-			if (profile.only_view_project): disable_upload_files = True
-		except Profile.DoesNotExist:
-			pass
-		
-		### test to show only the processed or all
-		if ('show-not-only-checked' in self.request.GET):
-			b_show_all = self.request.GET.get('show-not-only-checked') != 'on'
-		else: b_show_all = True
-		
-		### get number of files that can be removed
-		number_files_can_be_removed = UploadFiles.objects.filter(owner__id=self.request.user.id, is_deleted=False,\
-				is_processed=False, type_file__name=TypeFile.TYPE_FILE_fastq_gz).count()
+    if settings.DEBUG:
+        logger = logging.getLogger("fluWebVirus.debug")
+    else:
+        logger = logging.getLogger("fluWebVirus.production")
 
-		### 
-		tag_search = 'search_samples'
-		query_set = UploadFiles.objects.filter(owner__id=self.request.user.id, is_deleted=False,\
-				type_file__name=TypeFile.TYPE_FILE_fastq_gz).order_by('-creation_date')
-		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)):
-			query_set = query_set.filter(Q(file_name__icontains=self.request.GET.get(tag_search)) |\
-							Q(owner__username__icontains=self.request.GET.get(tag_search)))
-		if (not b_show_all):
-			query_set = query_set.filter(Q(is_processed=b_show_all))
-			
-		table = AddSamplesFromFastqFileTable(query_set)
-		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
-		if (self.request.GET.get(tag_search) != None): context[tag_search] = self.request.GET.get(tag_search)
-		context['table'] = table
-		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
-		context['total_itens'] = query_set.count() 
-		context['nav_sample'] = True
-		context['disable_upload_files'] = disable_upload_files
-		context['check_box_not_show_processed_files'] = not b_show_all
+    def get_form_kwargs(self):
+        """
+        Set the request to pass in the form
+        """
+        kw = super(SamplesUploadFastQView, self).get_form_kwargs()
+        kw["request"] = self.request  # get error
+        return kw
 
-		### number of files to remove
-		context['disable_remove_all_files'] = number_files_can_be_removed == 0		
-		if (number_files_can_be_removed == 0):
-			context['message_remove_files'] = "There's no files to remove"
-			context['message_remove_files_2'] = "There's no files to remove..."
-		elif (number_files_can_be_removed == 1):
-			context['message_remove_files'] = "It is going to remove one file not processed"
-			context['message_remove_files_2'] = "Do you want to remove one file not processed?"
-		else:
-			context['message_remove_files'] = "It is going to remove {} files not processed".format(number_files_can_be_removed)
-			context['message_remove_files_2'] = "Do you want to remove {} files not processed?".format(number_files_can_be_removed)
-			
-		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
-		return context
+    def get_context_data(self, **kwargs):
+        context = super(SamplesUploadFastQView, self).get_context_data(**kwargs)
+        context["nav_sample"] = True
+        context["nav_modal"] = True  ## short the size of modal window
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
+        context["show_note_message_down_size"] = False
+        if settings.DOWN_SIZE_FASTQ_FILES:
+            context["show_note_message_down_size"] = True
+            context["message_note_2"] = (
+                "Files between {}-{} will be downsized randomly to ~{} before analysis.".format(
+                    filesizeformat(int(settings.MAX_FASTQ_FILE_UPLOAD)),
+                    filesizeformat(int(settings.MAX_FASTQ_FILE_WITH_DOWNSIZE)),
+                    filesizeformat(int(settings.MAX_FASTQ_FILE_UPLOAD)),
+                )
+            )  ## show main information about the institute
 
+            context["message_note_1"] = "Maximum size per fastq.gz file is {}.".format(
+                filesizeformat(int(settings.MAX_FASTQ_FILE_WITH_DOWNSIZE))
+            )  ## show main information about the institute
+        else:
+            context["message_note_1"] = "Maximum size per fastq.gz file is {}.".format(
+                filesizeformat(int(settings.MAX_FASTQ_FILE_UPLOAD))
+            )  ## show main information about the institute
 
-	def form_valid(self, form):
-		"""
-		Validate the form
-		"""
-		return super(SamplesAddFastQView, self).form_valid(form)
+        ### message_note_3, type of files that can be uploaded
 
-	form_valid_message = ""		## need to have this, even empty
-	
-class SamplesUploadFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView):
-	"""
-	Create a new reference
-	"""
-	form_class = SamplesUploadMultipleFastqForm
-	success_url = reverse_lazy('sample-add-fastq')
-	template_name = 'samples/samples_upload_fastq_files.html'
-	utils = Utils()
+        return context
 
-	if settings.DEBUG: logger = logging.getLogger("fluWebVirus.debug")
-	else: logger = logging.getLogger("fluWebVirus.production")
-	
-	def get_form_kwargs(self):
-		"""
-		Set the request to pass in the form
-		"""
-		kw = super(SamplesUploadFastQView, self).get_form_kwargs()
-		kw['request'] = self.request 	# get error
-		return kw
-	
-	def get_context_data(self, **kwargs):
-		context = super(SamplesUploadFastQView, self).get_context_data(**kwargs)
-		context['nav_sample'] = True
-		context['nav_modal'] = True	## short the size of modal window
-		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
-		context['show_note_message_down_size'] = False
-		if (settings.DOWN_SIZE_FASTQ_FILES):
-			context['show_note_message_down_size'] = True
-			context['message_note_2'] = "Files between {}-{} will be downsized randomly to ~{} before analysis.".format(
-				filesizeformat(int(settings.MAX_FASTQ_FILE_UPLOAD)),
-				filesizeformat(int(settings.MAX_FASTQ_FILE_WITH_DOWNSIZE)),
-				filesizeformat(int(settings.MAX_FASTQ_FILE_UPLOAD))
-				)		## show main information about the institute
+    def post(self, request):
+        form = SamplesUploadMultipleFastqForm(
+            request.POST, request.FILES, request=request
+        )
 
-			context['message_note_1'] = "Maximum size per fastq.gz file is {}.".format(
-				filesizeformat(int(settings.MAX_FASTQ_FILE_WITH_DOWNSIZE)))		## show main information about the institute
-		else:
-			context['message_note_1'] = "Maximum size per fastq.gz file is {}.".format(
-				filesizeformat(int(settings.MAX_FASTQ_FILE_UPLOAD)))		## show main information about the institute
-			
-		### message_note_3, type of files that can be uploaded
-		
-		return context
+        data = {}  ## return data
+        try:
+            if form.is_valid():
+                utils = Utils()
+                ## doesn't work like that
+                # upload_files = form.save()
 
-	def post(self, request):
-		form = SamplesUploadMultipleFastqForm(request.POST, request.FILES, request=request)
-		
-		data = {}	## return data
-		try:
-			if form.is_valid():
-				
-				utils = Utils()
-				## doesn't work like that
-				#upload_files = form.save()
-				
-				### get the temporary variable
-				path_name = form.cleaned_data['path_name']
-				if (path_name is None):
-					data = {'is_valid': False, 'name': self.request.FILES['path_name'].name, 'message' : 'Internal server error, path not found.' }
-					return JsonResponse(data)
+                ### get the temporary variable
+                path_name = form.cleaned_data["path_name"]
+                if path_name is None:
+                    data = {
+                        "is_valid": False,
+                        "name": self.request.FILES["path_name"].name,
+                        "message": "Internal server error, path not found.",
+                    }
+                    return JsonResponse(data)
 
-				upload_files = UploadFiles()
-				upload_files.file_name = utils.clean_name(ntpath.basename(path_name.name))
-				## move the files to the right place
-				sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), self.utils.get_path_upload_file(self.request.user.id,\
-														TypeFile.TYPE_FILE_fastq_gz), upload_files.file_name)
-				sz_file_to, path_added = self.utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
-				
-				## because sometimes has 
-				if (str(type(path_name.file)) == "<class '_io.BytesIO'>"):
-					temp_file = self.utils.get_temp_file("upload_file", ".dat")
-					with open(temp_file, 'wb') as out: ## Open temporary file as bytes
-						path_name.file.seek(0)
-						out.write(path_name.file.read())                ## Read bytes into file
-					self.utils.move_file(temp_file, sz_file_to)
-				else: self.utils.copy_file(path_name.file.name, sz_file_to)
-				self.logger.info("Starting for file: " + str(upload_files.file_name))
-			
-				## test if file exist
-				if (not os.path.exists(sz_file_to) and os.path.getsize(sz_file_to) > 10):
-					data = {'is_valid': False, 'name': self.request.FILES['path_name'].name, 'message' : 'Internal server error, fail to copy file.' }
-					return JsonResponse(data)
-				
-				if path_added is None:
-					upload_files.path_name.name = os.path.join(self.utils.get_path_upload_file(self.request.user.id,\
-										TypeFile.TYPE_FILE_fastq_gz), ntpath.basename(sz_file_to))
-				else:
-					upload_files.path_name.name = os.path.join(self.utils.get_path_upload_file(self.request.user.id,\
-										TypeFile.TYPE_FILE_fastq_gz), path_added, ntpath.basename(sz_file_to))
-				try:
-					type_file = MetaKey.objects.get(name=TypeFile.TYPE_FILE_fastq_gz)
-				except MetaKey.DoesNotExist:
-					type_file = MetaKey()
-					type_file.name = TypeFile.TYPE_FILE_fastq_gz
-					type_file.save()
-	
-				upload_files.is_valid = True
-				upload_files.is_processed = False			## True when all samples are set
-				upload_files.owner = request.user
-				upload_files.type_file = type_file
-				upload_files.number_files_to_process = 1
-				upload_files.number_files_processed = 0
-				upload_files.description = ""
-				upload_files.save()
-	
-				data = {'is_valid': True, 'name': upload_files.file_name, 'url': mark_safe(upload_files.get_path_to_file(TypePath.MEDIA_URL)) }
-			else:
-				data = {'is_valid': False, 'name': self.request.FILES['path_name'].name, 'message' : str(form.errors['path_name'][0]) }
-		except:
-			self.logger.error(sys.exc_info())
-			data = {'is_valid': False, 'name': self.request.FILES['path_name'].name, 'message' : 'Internal server error, unknown error.' }
-			return JsonResponse(data)
-	
-		## if is last file send a message to link files with sample csv file
-		if ('is_valid' in data and data['is_valid']): 
-			try:
-				process_SGE = ProcessSGE()
-				taskID = process_SGE.set_link_files(self.request.user)
-			except:
-				data = {'is_valid': False, 'name': self.request.FILES['path_name'].name, 'message' : 'Fail to submit SGE job.' }
-				return JsonResponse(data)
-		return JsonResponse(data)
-	
-	form_valid_message = ""		## need to have this, even empty
+                upload_files = UploadFiles()
+                upload_files.file_name = utils.clean_name(
+                    ntpath.basename(path_name.name)
+                )
+                ## move the files to the right place
+                sz_file_to = os.path.join(
+                    getattr(settings, "MEDIA_ROOT", None),
+                    self.utils.get_path_upload_file(
+                        self.request.user.id, TypeFile.TYPE_FILE_fastq_gz
+                    ),
+                    upload_files.file_name,
+                )
+                sz_file_to, path_added = self.utils.get_unique_file(
+                    sz_file_to
+                )  ## get unique file name, user can upload files with same name...
 
+                ## because sometimes has
+                if str(type(path_name.file)) == "<class '_io.BytesIO'>":
+                    temp_file = self.utils.get_temp_file("upload_file", ".dat")
+                    with open(temp_file, "wb") as out:  ## Open temporary file as bytes
+                        path_name.file.seek(0)
+                        out.write(path_name.file.read())  ## Read bytes into file
+                    self.utils.move_file(temp_file, sz_file_to)
+                else:
+                    self.utils.copy_file(path_name.file.name, sz_file_to)
+                self.logger.info("Starting for file: " + str(upload_files.file_name))
+
+                ## test if file exist
+                if not os.path.exists(sz_file_to) and os.path.getsize(sz_file_to) > 10:
+                    data = {
+                        "is_valid": False,
+                        "name": self.request.FILES["path_name"].name,
+                        "message": "Internal server error, fail to copy file.",
+                    }
+                    return JsonResponse(data)
+
+                if path_added is None:
+                    upload_files.path_name.name = os.path.join(
+                        self.utils.get_path_upload_file(
+                            self.request.user.id, TypeFile.TYPE_FILE_fastq_gz
+                        ),
+                        ntpath.basename(sz_file_to),
+                    )
+                else:
+                    upload_files.path_name.name = os.path.join(
+                        self.utils.get_path_upload_file(
+                            self.request.user.id, TypeFile.TYPE_FILE_fastq_gz
+                        ),
+                        path_added,
+                        ntpath.basename(sz_file_to),
+                    )
+                try:
+                    type_file = MetaKey.objects.get(name=TypeFile.TYPE_FILE_fastq_gz)
+                except MetaKey.DoesNotExist:
+                    type_file = MetaKey()
+                    type_file.name = TypeFile.TYPE_FILE_fastq_gz
+                    type_file.save()
+
+                upload_files.is_valid = True
+                upload_files.is_processed = False  ## True when all samples are set
+                upload_files.owner = request.user
+                upload_files.type_file = type_file
+                upload_files.number_files_to_process = 1
+                upload_files.number_files_processed = 0
+                upload_files.description = ""
+                upload_files.save()
+
+                data = {
+                    "is_valid": True,
+                    "name": upload_files.file_name,
+                    "url": mark_safe(upload_files.get_path_to_file(TypePath.MEDIA_URL)),
+                }
+            else:
+                data = {
+                    "is_valid": False,
+                    "name": self.request.FILES["path_name"].name,
+                    "message": str(form.errors["path_name"][0]),
+                }
+        except:
+            self.logger.error(sys.exc_info())
+            data = {
+                "is_valid": False,
+                "name": self.request.FILES["path_name"].name,
+                "message": "Internal server error, unknown error.",
+            }
+            return JsonResponse(data)
+
+        ## if is last file send a message to link files with sample csv file
+        if "is_valid" in data and data["is_valid"]:
+            try:
+                process_SGE = ProcessSGE()
+                taskID = process_SGE.set_link_files(self.request.user)
+            except:
+                data = {
+                    "is_valid": False,
+                    "name": self.request.FILES["path_name"].name,
+                    "message": "Fail to submit SGE job.",
+                }
+                return JsonResponse(data)
+        return JsonResponse(data)
+
+    form_valid_message = ""  ## need to have this, even empty
 
 
 class SamplesDetailView(LoginRequiredMixin, DetailView):
@@ -1121,7 +1420,7 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(SamplesDetailView, self).get_context_data(**kwargs)
-        sample = kwargs["object"]
+        sample: Sample = kwargs["object"]
         context["nav_sample"] = True
         if sample.owner.id != self.request.user.id:
             context["error_cant_see"] = "1"
@@ -1130,9 +1429,11 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
         manageDatabase = ManageDatabase()
         list_meta = manageDatabase.get_sample_metakey(
             sample,
-            MetaKeyAndValue.META_KEY_Fastq_Trimmomatic
-            if sample.is_type_fastq_gz_sequencing()
-            else MetaKeyAndValue.META_KEY_NanoStat_NanoFilt,
+            (
+                MetaKeyAndValue.META_KEY_Fastq_Trimmomatic
+                if sample.is_type_fastq_gz_sequencing()
+                else MetaKeyAndValue.META_KEY_NanoStat_NanoFilt
+            ),
             None,
         )
         ## the info can be called from two distinct sources
@@ -1336,7 +1637,6 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 
             ### software
             if sample.is_type_fastq_gz_sequencing():  ### for illumina
-
                 meta_sample = manageDatabase.get_sample_metakey_last(
                     sample,
                     MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software,
@@ -1431,17 +1731,17 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
                     MetaKeyAndValue.META_KEY_Identify_Sample_Software,
                     MetaKeyAndValue.META_VALUE_Success,
                 )
-                if meta_sample is None:              
+                if meta_sample is None:
                     meta_sample = manageDatabase.get_sample_metakey_last(
                         sample,
                         MetaKeyAndValue.META_KEY_Identify_Sample,
                         MetaKeyAndValue.META_VALUE_Success,
                     )
-                    if meta_sample != None:                        
+                    if meta_sample != None:
                         lst_data = meta_sample.description.split(",")
                         context["spades_software"] = lst_data[1].strip()
                         context["abricate_software"] = lst_data[2].strip()
-                else:                      
+                else:
                     decodeResult = DecodeObjects()
                     result = decodeResult.decode_result(meta_sample.description)
                     context["spades_software"] = result.get_software(
@@ -1505,15 +1805,11 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
                     + sample.get_draft_contigs_abricate_output(TypePath.MEDIA_URL)
                     + '" download="'
                     + os.path.basename(
-                        sample.get_draft_contigs_abricate_output(
-                            TypePath.MEDIA_ROOT
-                        )
+                        sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)
                     )
                     + '">'
                     + os.path.basename(
-                        sample.get_draft_contigs_abricate_output(
-                            TypePath.MEDIA_ROOT
-                        )
+                        sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)
                     )
                     + "</a>"
                 )
@@ -1530,9 +1826,9 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
             ):
                 context["candidate_file_name_2"] = sample.candidate_file_name_2
 
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
 
@@ -1614,9 +1910,9 @@ class ProjectsView(LoginRequiredMixin, ListView):
                 + "</a>"
             )
 
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
 
@@ -1694,9 +1990,9 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
             # clean check boxes in search
             dt_sample_id_add_temp = {}
             for reference in query_set_result:
-                dt_sample_id_add_temp[
-                    reference.id
-                ] = 1  ## add the ids that are in the tables
+                dt_sample_id_add_temp[reference.id] = (
+                    1  ## add the ids that are in the tables
+                )
             for key in self.request.session.keys():
                 if (
                     key.startswith(Constants.CHECK_BOX)
@@ -1730,9 +2026,9 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
         context["table"] = table
         context["show_paginatior"] = len(query_set_result) > Constants.PAGINATE_NUMBER
         context["nav_project"] = True
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         if self.request.POST:
             context["project_references"] = ReferenceProjectFormSet(self.request.POST)
         else:
@@ -1768,9 +2064,9 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
                 is_deleted=False,
                 owner__username=self.request.user.username,
             )
-            self.request.session[
-                Constants.ERROR_PROJECT_NAME
-            ] = "Exists a project with this name."
+            self.request.session[Constants.ERROR_PROJECT_NAME] = (
+                "Exists a project with this name."
+            )
             self.request.session[Constants.PROJECT_NAME] = name
             b_error = True
         except Project.DoesNotExist:
@@ -1783,10 +2079,11 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
             ### test if it's in the session
             select_ref = get_unique_pk_from_session(self.request)
             if select_ref == None:
-                self.request.session[
-                    Constants.ERROR_REFERENCE
-                ] = "You need to select a reference."
+                self.request.session[Constants.ERROR_REFERENCE] = (
+                    "You need to select a reference."
+                )
                 b_error = True
+
         if name is None:
             name = ""
 
@@ -1794,22 +2091,22 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
             try:
                 reference = Reference.objects.get(pk=select_ref)
             except Reference.DoesNotExist:
-                self.request.session[
-                    Constants.ERROR_REFERENCE
-                ] = "You need to select a reference."
+                self.request.session[Constants.ERROR_REFERENCE] = (
+                    "You need to select a reference."
+                )
                 self.request.session[Constants.PROJECT_NAME] = name
                 return super(ProjectCreateView, self).form_invalid(form)
 
             if reference.is_deleted:
-                self.request.session[
-                    Constants.ERROR_REFERENCE
-                ] = "The reference '{}' was removed.".format(reference.name)
+                self.request.session[Constants.ERROR_REFERENCE] = (
+                    "The reference '{}' was removed.".format(reference.name)
+                )
                 self.request.session[Constants.PROJECT_NAME] = name
                 return super(ProjectCreateView, self).form_invalid(form)
         else:
-            self.request.session[
-                Constants.ERROR_REFERENCE
-            ] = "You need to select a reference."
+            self.request.session[Constants.ERROR_REFERENCE] = (
+                "You need to select a reference."
+            )
             self.request.session[Constants.PROJECT_NAME] = name
             return super(ProjectCreateView, self).form_invalid(form)
 
@@ -1864,7 +2161,12 @@ class AddSamplesProjectsView(
         context = super(AddSamplesProjectsView, self).get_context_data(**kwargs)
 
         ### test if the user is the same of the page
+        print(self.kwargs)
         project = Project.objects.get(pk=self.kwargs["pk"])
+        is_teleflu_project = TeleFluProject.objects.filter(
+            insaflu_project=project
+        ).exists()
+        print(is_teleflu_project)
         context["nav_project"] = True
         if project.owner.id != self.request.user.id:
             context["error_cant_see"] = "1"
@@ -1877,13 +2179,27 @@ class AddSamplesProjectsView(
         samples_out = ProjectSample.objects.filter(
             Q(project=project) & ~Q(is_deleted=True) & ~Q(is_error=True)
         ).values("sample__pk")
-        query_set = Sample.objects.filter(
-            owner__id=self.request.user.id,
-            is_obsolete=False,
-            is_deleted=False,
-            is_deleted_processed_fastq=False,
-            is_ready_for_projects=True,
-        ).exclude(pk__in=samples_out)
+        if is_teleflu_project:
+            televir_project = TeleFluProject.objects.get(
+                insaflu_project=project
+            ).televir_project
+            samples_in_televir_project = televir_project.samples_source
+            query_set = Sample.objects.filter(
+                owner__id=self.request.user.id,
+                is_obsolete=False,
+                is_deleted=False,
+                is_deleted_processed_fastq=False,
+                is_ready_for_projects=True,
+                pk__in=samples_in_televir_project,
+            ).exclude(pk__in=samples_out)
+        else:
+            query_set = Sample.objects.filter(
+                owner__id=self.request.user.id,
+                is_obsolete=False,
+                is_deleted=False,
+                is_deleted_processed_fastq=False,
+                is_ready_for_projects=True,
+            ).exclude(pk__in=samples_out)
 
         tag_search = "search_add_project_sample"
         if self.request.GET.get(tag_search) != None and self.request.GET.get(
@@ -1911,9 +2227,9 @@ class AddSamplesProjectsView(
         dt_sample_id_add_temp = {}
         if context[Constants.CHECK_BOX_ALL]:
             for sample in query_set:
-                dt_sample_id_add_temp[
-                    sample.id
-                ] = 1  ## add the ids that are in the tables
+                dt_sample_id_add_temp[sample.id] = (
+                    1  ## add the ids that are in the tables
+                )
             for key in self.request.session.keys():
                 if (
                     key.startswith(Constants.CHECK_BOX)
@@ -1944,9 +2260,9 @@ class AddSamplesProjectsView(
         context["query_set_count"] = query_set.count()
         context["project_name"] = project.name
         context["nav_modal"] = True  ## short the size of modal window
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         context["show_message_change_settings"] = (
             count_active_projects == 0
             and self.request.session[key_session_name_project_settings]
@@ -2195,9 +2511,9 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
             "/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.AJAX_LOADING_GIF
         )
         context["nav_project"] = True
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
 
         context["project_name"] = project.name
         context["reference_name"] = project.reference.get_reference_fasta_web()
@@ -2276,7 +2592,7 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
         # if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_pokay)):
         #    context['aln2pheno_report_pokay'] = get_link_for_dropdown_item(
         #        project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_Aln2pheno_report_pokay))
-        
+
         if os.path.exists(
             project.get_global_file_by_project(
                 TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_zip
@@ -2331,12 +2647,12 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
                 Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV,
             )
         ):
-            context[
-                "samples_file_settings_statistics_csv"
-            ] = get_link_for_dropdown_item(
-                project.get_global_file_by_project(
-                    TypePath.MEDIA_URL,
-                    Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV,
+            context["samples_file_settings_statistics_csv"] = (
+                get_link_for_dropdown_item(
+                    project.get_global_file_by_project(
+                        TypePath.MEDIA_URL,
+                        Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV,
+                    )
                 )
             )
         if os.path.exists(
@@ -2345,12 +2661,12 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
                 Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV,
             )
         ):
-            context[
-                "samples_file_settings_statistics_tsv"
-            ] = get_link_for_dropdown_item(
-                project.get_global_file_by_project(
-                    TypePath.MEDIA_URL,
-                    Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV,
+            context["samples_file_settings_statistics_tsv"] = (
+                get_link_for_dropdown_item(
+                    project.get_global_file_by_project(
+                        TypePath.MEDIA_URL,
+                        Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV,
+                    )
                 )
             )
 
@@ -2378,10 +2694,10 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
             collect_extra_data = CollectExtraData()
             collect_extra_data.calculate_count_variations(project)
         if os.path.exists(file_name):
-            context[
-                "variations_statistics_file"
-            ] = project.get_global_file_by_project_web(
-                Project.PROJECT_FILE_NAME_TOTAL_VARIATIONS
+            context["variations_statistics_file"] = (
+                project.get_global_file_by_project_web(
+                    Project.PROJECT_FILE_NAME_TOTAL_VARIATIONS
+                )
             )
 
         utils = Utils()
@@ -2392,9 +2708,9 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
             project.reference, self.request.user
         )
         if vect_elements_protein != None and len(vect_elements_protein) > 0:
-            context[
-                "elements_protein"
-            ] = vect_elements_protein  ## because some does not have CDS
+            context["elements_protein"] = (
+                vect_elements_protein  ## because some does not have CDS
+            )
             ### get a vect of genes name
             context["genes"] = utils.get_vect_cds_from_element_from_db(
                 vect_elements_protein[0], project.reference, self.request.user
@@ -2465,7 +2781,6 @@ class ProjectsSettingsView(LoginRequiredMixin, ListView):
     context_object_name = "project"
 
     def get_context_data(self, **kwargs):
-
         context = super(ProjectsSettingsView, self).get_context_data(**kwargs)
         project = Project.objects.get(pk=self.kwargs["pk"])
 
@@ -2539,9 +2854,9 @@ class ProjectsSettingsView(LoginRequiredMixin, ListView):
                 )
 
         context["all_softwares"] = all_tables
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         context["project"] = project
         context["main_settings"] = False
         context["project_settings"] = True
@@ -2558,7 +2873,6 @@ class SampleProjectsSettingsView(LoginRequiredMixin, ListView):
     context_object_name = "project_sample"
 
     def get_context_data(self, **kwargs):
-
         context = super(SampleProjectsSettingsView, self).get_context_data(**kwargs)
         project_sample = ProjectSample.objects.get(pk=self.kwargs["pk"])
 
@@ -2629,9 +2943,9 @@ class SampleProjectsSettingsView(LoginRequiredMixin, ListView):
         context["project_sample"] = project_sample
         context["project_sample_settings"] = True
         context["main_settings"] = False
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
 
@@ -2716,9 +3030,9 @@ class SampleSettingsView(LoginRequiredMixin, ListView):
         context["sample"] = sample
         context["sample_settings"] = True
         context["main_settings"] = False
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
 
@@ -2747,9 +3061,9 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
                 project_sample.alert_first_level + project_sample.alert_second_level
             )
             context["nav_project"] = True
-            context[
-                "show_info_main_page"
-            ] = ShowInfoMainPage()  ## show main information about the institute
+            context["show_info_main_page"] = (
+                ShowInfoMainPage()
+            )  ## show main information about the institute
 
             ## collect alerts
             alert_out = []
@@ -2805,12 +3119,12 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
                     FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name
                 )
                 b_second_choice = True
-                context[
-                    "freebayes_variants_file_snp_indel"
-                ] = project_sample.get_file_web(
-                    FileType.FILE_TAB,
-                    SoftwareNames.SOFTWARE_FREEBAYES_name,
-                    b_second_choice,
+                context["freebayes_variants_file_snp_indel"] = (
+                    project_sample.get_file_web(
+                        FileType.FILE_TAB,
+                        SoftwareNames.SOFTWARE_FREEBAYES_name,
+                        b_second_choice,
+                    )
                 )
                 context["depth_file"] = project_sample.get_file_web(
                     FileType.FILE_DEPTH_GZ, SoftwareNames.SOFTWARE_SNIPPY_name

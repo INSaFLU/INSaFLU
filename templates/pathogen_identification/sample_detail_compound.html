@@ -176,9 +176,6 @@
         vertical-align: middle;
         
     }
-      
-
-    
     .header {
     background: #3498db;
     color: #fff;
@@ -235,10 +232,31 @@
         display: none;
     }
 
+    .expand-button {
+        display: block;
+        width: 100%;
+        background-color: #e6f2ff;
+        color: #333;
+        padding: 10px 20px;
+        border-radius: 10px;
+        cursor: pointer;
+        text-align: center;
+      }
+      .plot-container {
+        display: flex;
+        justify-content: center;
+      }
+      .link-container {
+        border: 8px solid #d3d3d3; /* Make the border thicker and blue */
+        padding: 20px 20px; /* Add more padding */
+        border-radius: 10px; /* Round the edges */
+        text-align: center; /* Center the text */
+        margin: 20px auto; /* Center the div */
+        width: 40%; /* Set the width */
+    }
 </style>
 
 {% if owner %}
-
 
 <div id="accordion1" role="tablist" aria-multiselectable="true">
     <div class="card">
@@ -261,17 +279,19 @@
                 </div>
             </div>
         </div>
-        {% if runs_number %}
+        {% if runs_number %} 
         <div id="collapsehead" class="collapse show" role="tabpanel" aria-labelledby="headingsample">
             <div class="card-block">
                 <div style="padding: 20px">
                     
                     <div class="row">
-                        <div class="col-sm-2">
-                            {% for run in runs %}
-                            <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Workflow {{run.parameter_set.leaf.index}} report </a>
+                        <div class="col-sm-2 link-container">
+                            {% for run in runs_pipeline %}
+                            <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Workflow report {{run.parameter_set.leaf.index}} </a>
                             <br>
-                            <br>
+                            {% endfor %}
+                            {% for run in runs_mapping %}
+                            <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Mapping report {{run.parameter_set.leaf.index}}  </a>
                             {% endfor %}
                         </div>
                         {% if graph_json %}
@@ -319,6 +339,27 @@
                 <div style="padding: 2px; overflow-x:auto;">    
                     <table class="table" width="100%" id="report_table">
                     <thead>
+                        {% if overlap_heatmap_available %} 
+                        <tr>
+                            <td colspan="100%">
+                              <div class="collapsible">
+                                <div class="collapsible-header">
+                                  <span class="expand-button">Read Overlap</span>
+                                </div>
+                                <div class="collapsible-body" style="display: none;">
+                                  <div id="plot" class="plot-container">
+                                  <img src={{overlap_heatmap_path}} alt="Plot">
+                                  </div>
+                                  {% if tree_plot_exists %}
+                                    <div id="plot" class="plot-container">
+                                    <img src={{tree_plot_path}} alt="Plot">
+                                    </div>
+                                {% endif %}
+                                </div>
+                              </div>
+                            </td>
+                        </tr>
+                        {% endif %}
                         <tr class="header">
                             <th>Description</th>
                             <th>Taxid</th>
@@ -332,6 +373,12 @@
                             <th>mapped_prop (%)</th>
                             <th>Gaps</th>
                             <th>Windows Covered</th>
+                            {% if private_reads_available %}
+                            <th>Private reads</th>
+                            {% endif %}
+                            {% if error_rate_available %}
+                            <th>Mismatch rate</th>
+                            {% endif %}
                             <th>class. success</th>
                             <th>mapping success</th>                
                             <th>Warning</th>
@@ -342,7 +389,41 @@
                     </thead>
                     <tbody>
                         {% for final_report in report_list %}
-                        {% for value in final_report %}
+                        <tr>
+                            <td colspan="100%">
+                                <div style="display: flex; border-radius: 5px; overflow: hidden;">
+                                    <!-- First section -->
+                                    <div style="flex: 1; padding: 5px; padding: 5px;border-right: 1px solid #ccc; border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
+                                        {{final_report.name}}
+                                    </div>
+                                    
+                                    <!-- Second section -->
+                                    <div style="flex: 1; padding: 10px; padding: 5px;border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
+                                        {{final_report.private_proportion}}
+                                    </div>
+                                    <!-- Third section -->
+                                    <div style="flex: 1; padding: 10px; padding: 5px;border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
+                                        # hits: {{final_report.group_list|length}}
+                                    </div>
+                                    {% if final_report.heatmap_exists %}
+                                    <!-- Fourth section -->
+                                    <div style="flex: 1; padding: 10px; padding: 5px;border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
+                                        <a href="#" id="showButton">Read Overlap</a>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% if final_report.heatmap_exists %}
+                        <tr class="row-to-toggle" id="rowToToggle" style="display: none;">
+                            <td colspan="100%">
+                                <div id="plot" class="plot-container">
+                                    <img src={{final_report.heatmap_path}} alt="Image">
+                                </div>
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% for value in final_report.group_list %}
                         <tr class="parent">
                             <td data-title="Description"><a href="#" id="plot_show" >{{value.description}}</a></td>
                             <td data-title="Taxid">{{value.taxid}}</td>
@@ -350,7 +431,7 @@
                                 <a href={{value.accid|link_ncbi}}>{{value.accid}}</a>
                             </td>
                             <td data-title="Support">{{value.found_in}}</td>
-                            <td data-title="Cov" style="{{ value.coverage|color_code }}">
+                            <td data-title="Cov" style="{% depth_color value.coverage max_coverage %}">
                                 {{value.coverage|round}}</td>
                             <td data-title="Depth" style="{% depth_color value.depth value.run_detail.max_depth %}">
                                 {{value.depth|round}}</td>
@@ -364,8 +445,16 @@
                                 {{value.mapped_proportion|round_to_int}}</td>
                             <td data-title="Gaps" style="{% depth_color value.ngaps value.run_detail.max_gaps %}">
                                 {{value.ngaps}}</td>
-                            <td data-title="Windows Covered">
+                            <td data-title="Windows Covered" style="{% depth_color_windows value.windows_covered max_windows_covered %}">
                                 {% windows_safe value.windows_covered %}</td>
+                            {% if private_reads_available %}
+                            <td data-title="Private reads" style="{% depth_color value.private_reads final_report.max_private_reads %}">
+                                {{value.private_reads}}</td>
+                            {% endif %}
+                            {% if error_rate_available %}
+                            <td data-title="Error rate" style="{% depth_color_error value.error_rate max_error_rate %}">
+                                {{value.error_rate}}</td>
+                            {% endif %}
                             <td data-title="class. success" style="{% success_count_color value.classification_success %}">
                                 {{value.classification_success}}</td>
                             <td data-title="mapping success" style="{% success_count_color value.mapping_success %}">
@@ -374,7 +463,7 @@
                                 {% flag_false_positive value.depth value.depthR value.coverage value.mapped_reads value.windows_covered project_index %}</td>
                             {% if in_control %}
                             <td data-title="Control" style="{% flag_control_color value.control_flag %}">
-                                {% flag_control value.control_flag %}</td>
+                                {{ value.control_flag_str }}</td>
                             {% endif %}
 
                         </tr>
@@ -545,7 +634,7 @@
                         </tr>
                     {% endfor %}
                     <tr class="detail" style="background-color: #f2f2f2; padding: 0px; margin: 0px; border: 0px;">
-                        <td colspan="16" align="center" style="padding: 0px; margin: 0px">
+                        <td colspan="18" align="center" style="padding: 0px; margin: 0px">
                             <hr class="solid" style="height: 1px; background-color: #000000; margin: 0px;">
                         </td>
                     </tr>
@@ -566,6 +655,13 @@
 
 <script type="text/javascript">
 
+    $(document).ready(function() {
+        $('.collapsible-header').click(function() {
+          $(this).toggleClass('active');
+          $(this).siblings('.collapsible-body').slideToggle();
+        });
+      });
+
     $("tr.parent").find("A#plot_show").click(function(e) {
 
         if (e.target.tagName === "A" && e.target.id === "plot_show") {
@@ -577,6 +673,27 @@
         }   
 
       });
+
+
+      $("a").click(function(event) {
+
+        if (event.target.id == "showButton") {
+            event.preventDefault();
+            var clickedLink = $(this);
+            var rowElement = clickedLink.closest("tr");
+            
+            // Access the row element or perform further actions
+            // Get the next row element
+            var nextRowElement = rowElement.next();
+            var nextRowElementClass = nextRowElement.attr('class');
+            if (nextRowElementClass == "row-to-toggle") {
+                // toggle slow
+                nextRowElement.toggle('slow');
+            }
+        }
+
+      });
+
       
 </script>
 

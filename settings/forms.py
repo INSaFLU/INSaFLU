@@ -84,8 +84,6 @@ class SoftwareForm(forms.ModelForm):
         super(SoftwareForm, self).__init__(*args, **kwargs)
 
         ### return the parameters that is possible to change
-        ps = Parameter.objects.filter(software=self.instance)
-
         paramers = Parameter.objects.filter(
             software=self.instance,
             project=project,
@@ -186,6 +184,22 @@ class SoftwareForm(forms.ModelForm):
                         for data_ in SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_vect_available
                     ]
                 elif (
+                    parameter.name == SoftwareNames.SOFTWARE_COMBINED_include_screening
+                ):
+                    list_data = [
+                        [data_, data_]
+                        for data_ in SoftwareNames.SOFTWARE_COMBINED_include_screening_options
+                    ]
+
+                elif (
+                    parameter.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_include_manual
+                ):
+                    list_data = [
+                        [data_, data_]
+                        for data_ in SoftwareNames.SOFTWARE_REMAP_PARAMS_include_manual_options
+                    ]
+
+                elif (
                     parameter.name == "--db"
                     and parameter.software.pipeline_step.name
                     in self.televir_utiltity.steps_db_dependant
@@ -238,6 +252,15 @@ class SoftwareForm(forms.ModelForm):
                     and parameter.name == "[mode]"
                 ):
                     list_data = [[x, x] for x in Remap_Bowtie2.modes]
+                elif (
+                    parameter.software.name == SoftwareNames.SOFTWARE_DIAMOND_name
+                    and parameter.name
+                    == SoftwareNames.SOFTWARE_DIAMOND_PARAMETER_SENSITIVITY_name
+                ):
+                    list_data = [
+                        [x, x]
+                        for x in SoftwareNames.SOFTWARE_DIAMOND_PARAMETER_SENSITIVITY_options
+                    ]
 
                 elif (
                     parameter.software.name == SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name

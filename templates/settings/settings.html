@@ -43,7 +43,11 @@
     {% elif settings_pathid_project %}	<!-- Default settings QC -->
         {% breadcrumb "Project Index" "project-index" %}
         {% breadcrumb "TELEVIR Projects" "PIprojects_main" %}
-		{% breadcrumb project_name "PIproject_samples" project_id %}		
+		{% breadcrumb project_name "PIproject_samples" project_id %}	
+		{% if settings_pathid_sample %}
+			{% breadcrumb sample_name "PIproject_sample_settings" sample_id %}
+			{% breadcrumb "References Management" "sample_references_management" sample_id %}
+		{% endif %}
 		{% breadcrumb "Settings" "pathogenID_pipeline" project_id %}
     {% else %}	<!-- Default settings -->
 		{% breadcrumb "Settings Index" "settings-index" %}
@@ -90,8 +94,13 @@
 								<ul id="second_tab_{{forloop.counter0}}" number_pipelines="{{vect_pipeline|length}}"
 									class="nav nav-tabs p-0 justify-content-end justify-content-md-center" role="tablist">
 									{% for unique_pipeline_id, pipeline_name, table in vect_pipeline %}
+										{% if pipeline_name in metagenomics_pipeline_id %}
+										<li class="nav-item"><a class="nav-link fa fa-align-justify" style="border: 2px solid hsl(210, 60%, 80%); background-color: hsl(210, 60%, 90%);"
+											href="#{{unique_pipeline_id}}" role="tab" data-toggle="tab" > {{ pipeline_name }}</a></li>
+										{% else %}
 										<li class="nav-item"><a class="nav-link fa fa-align-justify" 
 											href="#{{unique_pipeline_id}}" role="tab" data-toggle="tab" > {{ pipeline_name }}</a></li>
+										{% endif %}
 					                {% endfor %}
 								</ul>
 								
@@ -181,8 +190,13 @@
             <br> 
             <a id="id_go_back_button" href="{% url 'settings-index' %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>
         {% elif settings_pathid_project %}
-        <br> 
-        <a id="id_go_back_button" href="{% url 'PIprojects_main' %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>
+				{% if settings_pathid_sample %}
+					<br> 
+					<a id="id_go_back_button" href="{% url 'sample_references_management' sample_id %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>
+				{% else %}
+					<br> 
+					<a id="id_go_back_button" href="{% url 'PIprojects_main' %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>
+				{% endif %}
         {% endif %}
 		
 		<!-- Set default Modal -->

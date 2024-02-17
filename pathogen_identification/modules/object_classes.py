@@ -6,13 +6,15 @@ import subprocess
 import time
 from dataclasses import dataclass, field
 from random import randint
-from typing import List, Type
+from typing import List, Optional, Tuple, Type
 
 import matplotlib
 import pandas as pd
 from numpy import ERR_CALL
 
 from pathogen_identification.constants_settings import ConstantsSettings
+from pathogen_identification.models import (ParameterSet, RunDetail, RunMain,
+                                            RunReadsRegister)
 from pathogen_identification.utilities.utilities_general import fastqc_parse
 
 matplotlib.use("Agg")
@@ -461,6 +463,13 @@ class RunCMD:
 
 
 class Read_class:
+
+    STATUS_NONE = "none"
+    STATUS_RAW = "raw"
+    STATUS_CLEAN = "clean"
+    STATUS_ENRICHED = "enriched"
+    STATUS_DEPLETED = "depleted"
+
     def __init__(
         self,
         filepath,
@@ -469,6 +478,7 @@ class Read_class:
         depleted_dir: str,
         bin: str,
         prefix: str = "r0",
+        ps_pk: Optional[int] = None,
     ):
         """
         Initialize.
@@ -483,17 +493,30 @@ class Read_class:
         """
         print("Initializing Read_class")
         print("clean_dir", clean_dir)
+        self.logger = logging.getLogger("Read_class")
+        self.logger.setLevel(logging.ERROR)
+
         self.cmd = RunCMD(bin, prefix="read", task="housekeeping", logdir=clean_dir)
 
         self.exists = os.path.isfile(filepath)
 
         self.filepath = filepath
         self.current = filepath
-        self.suffix = prefix
-        self.prefix = self.determine_file_name(filepath)
-        self.clean = os.path.join(clean_dir, self.prefix + ".clean.fastq.gz")
-        self.enriched = os.path.join(enriched_dir, self.prefix + ".enriched.fastq.gz")
-        self.depleted = os.path.join(depleted_dir, self.prefix + ".depleted.fastq.gz")
+        self.prefix = prefix
+        self.prefix_original = prefix
+        self.ps_pk = ps_pk
+
+        self.base_filename = self.determine_file_name(filepath)
+        self.clean_exo = None
+        self.clean = os.path.join(clean_dir, self.base_filename + ".clean.fastq.gz")
+        self.enriched_exo = None
+        self.enriched = os.path.join(
+            enriched_dir, self.base_filename + ".enriched.fastq.gz"
+        )
+        self.depleted_exo = None
+        self.depleted = os.path.join(
+            depleted_dir, self.base_filename + ".depleted.fastq.gz"
+        )
         self.current_status = "raw"
         self.read_number_raw = self.get_current_fastq_read_number()
         self.read_number_clean = 0
@@ -504,40 +527,56 @@ class Read_class:
         self.read_number_filtered = 0
         self.history = [self.current]
 
-    def create_link(self, file_path, new_path):
-        if os.path.isfile(file_path):
-            if os.path.isfile(new_path):
-                os.remove(new_path)
-            os.symlink(file_path, new_path)
+        self.logger.info(f"Read_class initialized: {self.filepath}")
+        self.logger.info(f"Read_class initialized: {self.clean}")
+        self.logger.info(f"Read_class initialized: {self.enriched}")
+        self.logger.info(f"Read_class initialized: {self.depleted}")
 
-    def update(self, new_suffix, clean_dir: str, enriched_dir: str, depleted_dir: str):
-        self.prefix = self.prefix.replace(self.suffix, new_suffix)
-        self.suffix = new_suffix
-        new_clean = os.path.join(clean_dir, self.prefix + ".clean.fastq.gz")
+    def create_link(self, file_path, new_path):
+        print("moving file", file_path, new_path)
+        if os.path.isfile(file_path):
+            if os.path.isfile(new_path) is False:
+                # os.remove(new_path)
+                # os.symlink(file_path, new_path)
+                shutil.copy(file_path, new_path)
+
+    def update(self, new_prefix, clean_dir: str, enriched_dir: str, depleted_dir: str):
+        print("UPDATING READ CLASS")
+        print(self.current_status)
+        print(self.prefix, new_prefix)
+        print(self.base_filename)
+        self.base_filename = self.base_filename.replace(self.prefix, new_prefix)
+        print(self.base_filename)
+        self.prefix = new_prefix
+        new_clean = os.path.join(clean_dir, self.base_filename + ".clean.fastq.gz")
+        print("new_clean", new_clean)
+
         if os.path.isfile(self.clean):
             if new_clean != self.clean:
                 self.create_link(self.clean, new_clean)
         self.clean = new_clean
 
-        new_enriched = os.path.join(enriched_dir, self.prefix + ".enriched.fastq.gz")
+        new_enriched = os.path.join(
+            enriched_dir, self.base_filename + ".enriched.fastq.gz"
+        )
         if os.path.isfile(self.enriched):
             if new_enriched != self.enriched:
                 self.create_link(self.enriched, new_enriched)
         self.enriched = new_enriched
 
-        new_depleted = os.path.join(depleted_dir, self.prefix + ".depleted.fastq.gz")
+        new_depleted = os.path.join(
+            depleted_dir, self.base_filename + ".depleted.fastq.gz"
+        )
         if os.path.isfile(self.depleted):
             if new_depleted != self.depleted:
                 self.create_link(self.depleted, new_depleted)
         self.depleted = new_depleted
 
-        if self.current_status == "raw":
-            self.current = self.filepath
-        elif self.current_status == "clean":
+        if self.current_status == self.STATUS_CLEAN:
             self.current = self.clean
-        elif self.current_status == "enriched":
+        elif self.current_status == self.STATUS_ENRICHED:
             self.current = self.enriched
-        elif self.current_status == "depleted":
+        elif self.current_status == self.STATUS_DEPLETED:
             self.current = self.depleted
 
     def get_read_names_fastq(self):
@@ -562,12 +601,23 @@ class Read_class:
 
         return read_names
 
-    def determine_file_name(self, filepath):
-        if not self.exists:
-            return "none"
+    def determine_file_name(self, filepath: str):
+        """
+        Determine file name from filepath,remove suffixes."""
 
-        if "gz" not in filepath:
-            self.cmd.run("bgzip -f %s" % filepath)
+        filebase = self.filepath_no_suffix(filepath)
+
+        # if self.ps_pk is not None:
+        filebase = f"{filebase}_{self.prefix}"
+
+        return filebase
+
+    def filepath_no_suffix(self, filepath: str):
+        """
+        Get file path without suffix.
+        """
+        if not self.exists:
+            return self.STATUS_NONE
 
         filename = os.path.basename(filepath)
 
@@ -664,7 +714,7 @@ class Read_class:
         """
         self.current = self.clean
         self.read_number_clean = self.get_current_fastq_read_number()
-        self.current_status = "clean"
+        self.current_status = self.STATUS_CLEAN
         self.filepath = os.path.dirname(self.current)
 
     def is_enriched(self):
@@ -673,7 +723,7 @@ class Read_class:
         """
         self.current = self.enriched
         self.read_number_enriched = self.get_current_fastq_read_number()
-        self.current_status = "enriched"
+        self.current_status = self.STATUS_ENRICHED
         self.filepath = os.path.dirname(self.current)
         self.read_number_filtered = self.read_number_enriched
 
@@ -683,7 +733,7 @@ class Read_class:
         """
         self.current = self.depleted
         self.read_number_depleted = self.get_current_fastq_read_number()
-        self.current_status = "depleted"
+        self.current_status = self.STATUS_DEPLETED
         self.filepath = os.path.dirname(self.current)
         self.read_number_filtered = self.read_number_depleted
 
@@ -826,15 +876,31 @@ class Read_class:
         if not os.path.isdir(directory):
             os.makedirs(directory)
 
-        final_file = os.path.join(directory, os.path.basename(self.current))
+        print("#### EXPORTING READS")
+        print("current", self.current)
+
+        final_current_file = os.path.join(directory, os.path.basename(self.current))
+        print(final_current_file)
 
         if os.path.exists(self.current):
-            if os.path.exists(final_file):
-                os.remove(final_file)
+            if os.path.exists(final_current_file) is False:
 
-            shutil.move(self.current, directory)
+                shutil.copy(self.current, directory)
 
-        self.current = final_file
+        self.current = final_current_file
+
+        if self.current_status == self.STATUS_CLEAN:
+            self.clean = os.path.join(directory, os.path.basename(self.clean))
+
+        if self.current_status == self.STATUS_ENRICHED:
+            self.enriched = os.path.join(directory, os.path.basename(self.enriched))
+
+        if self.current_status == self.STATUS_DEPLETED:
+            self.depleted = os.path.join(directory, os.path.basename(self.depleted))
+
+        self.filepath = self.current
+        print(self.current)
+        print("#### EXPORTING READS DONE")
 
     def __str__(self):
         return self.filepath
@@ -1103,9 +1169,10 @@ class SoftwareUnit:
         self.bin = bin
         self.dir = dir
         self.output_dir = output_dir
+        self.leaves = []
 
     def check_exists(self):
-        return bool(self.name != Software_detail.SOFTWARE_NOT_FOUND)
+        return bool(self.name != SoftwareDetail.SOFTWARE_NOT_FOUND)
 
     def get_bin(self, config: dict):
         try:
@@ -1120,8 +1187,257 @@ class SoftwareUnit:
             except KeyError:
                 self.bin = ""
 
+    @staticmethod
+    def check_return_reads(r1: str, r2: str) -> bool:
+        if r1 and os.path.exists(r1):
+            return True
+        else:
+            return False
 
-class Software_detail(SoftwareUnit):
+    @staticmethod
+    def find_qc_reads(ps_pk: int) -> Tuple[str, str]:
+        """
+        Find reads
+        """
+
+        try:
+            parameter_set = ParameterSet.objects.get(pk=ps_pk)
+        except ParameterSet.DoesNotExist:
+            return ("", "")
+
+        try:
+            run_main = RunMain.objects.get(parameter_set=parameter_set)
+        except RunMain.DoesNotExist:
+            return ("", "")
+
+        try:
+            read_register = RunReadsRegister.objects.get(run=run_main)
+
+            processed_reads_r1 = (
+                read_register.qc_reads_r1 if read_register.qc_reads_r1 else ""
+            )
+            processed_reads_r2 = (
+                read_register.qc_reads_r2 if read_register.qc_reads_r2 else ""
+            )
+
+            return (processed_reads_r1, processed_reads_r2)
+
+        except RunReadsRegister.DoesNotExist:
+            return ("", "")
+
+    @staticmethod
+    def find_enriched_reads(ps_pk: int) -> Tuple[str, str]:
+        """
+        Find reads
+        """
+
+        try:
+            parameter_set = ParameterSet.objects.get(pk=ps_pk)
+        except ParameterSet.DoesNotExist:
+            return ("", "")
+
+        try:
+            run_main = RunMain.objects.get(parameter_set=parameter_set)
+        except RunMain.DoesNotExist:
+            return ("", "")
+
+        print(
+            "REGISTER EXISTS: ", RunReadsRegister.objects.filter(run=run_main).exists()
+        )
+
+        try:
+            read_register = RunReadsRegister.objects.get(run=run_main)
+            print("REGISTER EXISTS: ", read_register.enriched_reads_r1)
+
+            processed_reads_r1 = (
+                read_register.enriched_reads_r1
+                if read_register.enriched_reads_r1
+                else ""
+            )
+            processed_reads_r2 = (
+                read_register.enriched_reads_r2
+                if read_register.enriched_reads_r2
+                else ""
+            )
+
+            return (processed_reads_r1, processed_reads_r2)
+
+        except RunReadsRegister.DoesNotExist:
+            return ("", "")
+
+    @staticmethod
+    def find_depleted_reads(ps_pk: int) -> Tuple[str, str]:
+        """
+        Find reads
+        """
+
+        try:
+            parameter_set = ParameterSet.objects.get(pk=ps_pk)
+        except ParameterSet.DoesNotExist:
+            return ("", "")
+
+        try:
+            run_main = RunMain.objects.get(parameter_set=parameter_set)
+        except RunMain.DoesNotExist:
+            return ("", "")
+
+        try:
+            read_register = RunReadsRegister.objects.get(run=run_main)
+
+            processed_reads_r1 = (
+                read_register.depleted_reads_r1
+                if read_register.depleted_reads_r1
+                else ""
+            )
+            processed_reads_r2 = (
+                read_register.depleted_reads_r2
+                if read_register.depleted_reads_r2
+                else ""
+            )
+
+            return (processed_reads_r1, processed_reads_r2)
+
+        except RunReadsRegister.DoesNotExist:
+            return ("", "")
+
+    @staticmethod
+    def enriched_read_number(ps_pk: int) -> int:
+        """
+        Find reads
+        """
+
+        try:
+            run_detail = RunDetail.objects.get(run__parameter_set__pk=ps_pk)
+
+            enriched_reads = (
+                run_detail.enriched_reads if run_detail.enriched_reads else 0
+            )
+
+            return enriched_reads
+
+        except RunDetail.DoesNotExist:
+            return 0
+
+    def get_enriched_read_number(self):
+
+        for pk in self.leaves:
+            enriched_reads = self.enriched_read_number(pk)
+            if enriched_reads:
+                return enriched_reads
+
+        return 0
+
+    @staticmethod
+    def find_depleted_reads_number(ps_pk: int) -> int:
+        """
+        Find reads
+        """
+
+        try:
+            run_detail = RunDetail.objects.get(run__parameter_set__pk=ps_pk)
+
+            depleted_reads = (
+                run_detail.depleted_reads if run_detail.depleted_reads else 0
+            )
+
+            return depleted_reads
+
+        except RunDetail.DoesNotExist:
+            return 0
+
+    def get_depleted_read_number(self):
+
+        for pk in self.leaves:
+            depleted_reads = self.find_depleted_reads_number(pk)
+            if depleted_reads:
+                return depleted_reads
+
+        return 0
+
+    def check_processed_exist(self) -> bool:
+        """
+        Check if processed reads exist
+        """
+        print("CHECKING PROCESSED READS")
+
+        for leaf_pk in self.leaves:
+            print("LEAF PK", leaf_pk)
+            
+            processed_r1, processed_r2 = self.find_qc_reads(leaf_pk)
+            print(processed_r1, processed_r2)
+            print(self.check_return_reads(processed_r1, processed_r2))
+
+            if self.check_return_reads(processed_r1, processed_r2):
+                return True
+
+        return False
+
+    def check_enriched_exist(self) -> bool:
+        """
+        Check if enriched reads exist
+        """
+
+        print("CHECKING ENRICHED READS", self.leaves)
+
+        for leaf_pk in self.leaves:
+            enriched_r1, enriched_r2 = self.find_enriched_reads(leaf_pk)
+
+            if self.check_return_reads(enriched_r1, enriched_r2):
+                return True
+
+        return False
+
+    def check_depleted_exist(self) -> bool:
+        """
+        Check if depleted reads exist
+        """
+
+        for leaf_pk in self.leaves:
+            depleted_r1, depleted_r2 = self.find_depleted_reads(leaf_pk)
+
+            if self.check_return_reads(depleted_r1, depleted_r2):
+                return True
+
+        return False
+
+    def retrieve_enriched_reads(self) -> Tuple[str, str]:
+        """
+        Retrieve enriched reads
+        """
+
+        for leaf_pk in self.leaves:
+            enriched_r1, enriched_r2 = self.find_enriched_reads(leaf_pk)
+            if self.check_return_reads(enriched_r1, enriched_r2):
+                return (enriched_r1, enriched_r2)
+
+        return ("", "")
+
+    def retrieve_depleted_reads(self) -> Tuple[str, str]:
+        """
+        Retrieve depleted reads
+        """
+
+        for leaf_pk in self.leaves:
+            depleted_r1, depleted_r2 = self.find_depleted_reads(leaf_pk)
+            if self.check_return_reads(depleted_r1, depleted_r2):
+                return (depleted_r1, depleted_r2)
+
+        return ("", "")
+
+    def retrieve_qc_reads(self) -> Tuple[str, str]:
+        """
+        Retrieve processed reads
+        """
+
+        for leaf_pk in self.leaves:
+            processed_r1, processed_r2 = self.find_qc_reads(leaf_pk)
+            if self.check_return_reads(processed_r1, processed_r2):
+                return (processed_r1, processed_r2)
+
+        return ("", "")
+
+
+class SoftwareDetail(SoftwareUnit):
     def __init__(self, module, args_df: pd.DataFrame, config: dict, prefix: str):
         """
 
@@ -1134,11 +1450,15 @@ class Software_detail(SoftwareUnit):
         super().__init__()
 
         if module in args_df.module.unique():
+            print(f"Module: {module}")
+            print("Args_df", args_df)
             method_details = args_df[(args_df.module == module)]
             self.module = module
             self.name = method_details.software.values[0]
 
             self.extract_args(method_details)
+
+            self.leaves = self.extract_leaves(method_details)
 
             self.extract_db(method_details, config)
 
@@ -1147,10 +1467,25 @@ class Software_detail(SoftwareUnit):
             self.get_dir_from_config(config)
 
             print(
-                f"Module: {self.module}, Software: {self.name}, Args: {self.args}, DB: {self.db}, Bin: {self.bin}, Dir: {self.dir}"
+                f"Module: {self.module}, Software: {self.name}, Args: {self.args}, DB: {self.db}, Bin: {self.bin}, Dir: {self.dir}, leaves: {self.leaves}"
             )
 
             self.output_dir = os.path.join(self.dir, f"{self.name}.{prefix}")
+
+    def extract_leaves(self, method_details: pd.DataFrame) -> List[int]:
+        """
+        Extract leaves from method details. leaves column is a list of integers."""
+        if "leaves" not in method_details.columns:
+            return []
+
+        leaves = method_details["leaves"].values
+        print("leaves", leaves)
+        # flatten leaves
+        leaves = [item for sublist in leaves for item in sublist]
+        print("leaves", leaves)
+        leaves = list(set(leaves))
+        print("leaves", leaves)
+        return leaves
 
     def get_dir_from_config(self, config: dict):
         try:
@@ -1224,14 +1559,66 @@ class Software_detail(SoftwareUnit):
         return f"{self.module}:{self.name}:{self.args}:{self.db}:{self.bin}"
 
 
+class SoftwareDetailCompound:
+    def __init__(
+        self, modules: List[str], args_df: pd.DataFrame, config: dict, prefix: str
+    ):
+        """
+
+        Args:
+            module: name of module.
+            args_df: dataframe containing module arguments.
+            config: dictionary containing module configuration.
+            prefix: prefix of module.
+        """
+
+        self.args_df = args_df
+        self.config = config
+        self.prefix = prefix
+
+        self.software_list: List[SoftwareDetail] = []
+        for module in modules:
+            if module in args_df.module.unique():
+                self.module = module
+                self.fill_software_list()
+
+    def fill_software_list(self):
+        module_df = self.args_df[self.args_df.module == self.module]
+
+        for _, software_df in module_df.groupby("software"):
+            software = SoftwareDetail(
+                self.module, software_df, self.config, self.prefix
+            )
+            self.software_list.append(software)
+
+    def check_exists(self):
+        return any([x.check_exists() for x in self.software_list])
+
+
 class SoftwareRemap:
-    def __init__(self, remap_software: Software_detail, remap_filter: Software_detail):
+    def __init__(
+        self, remap_software: SoftwareDetail, remap_filter: SoftwareDetailCompound
+    ):
         self.remap_software = remap_software
-        self.remap_filter = remap_filter
+        self.remap_filters = remap_filter
 
     @property
     def output_dir(self):
         return self.remap_software.dir
+
+    def set_output_dir(self, output_dir):
+        self.remap_software.dir = output_dir
+
+
+@dataclass
+class MappingStats:
+    def __init__(
+        self,
+        error_rate: float,
+        quality_avg: float,
+    ):
+        self.error_rate = error_rate
+        self.quality_avg = quality_avg
 
 
 class Bedgraph:

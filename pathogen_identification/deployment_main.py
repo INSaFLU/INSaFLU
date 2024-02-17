@@ -2,6 +2,7 @@ import datetime
 import os
 import shutil
 import traceback
+from typing import Optional
 
 import pandas as pd
 from django.contrib.auth.models import User
@@ -27,15 +28,11 @@ from pathogen_identification.utilities.update_DBs import (
     Update_Remap,
     Update_RunMain_Initial,
     Update_RunMain_Secondary,
-    Update_Sample_Runs,
+    UpdateRawReferences_safe,
     get_run_parents,
 )
-from pathogen_identification.utilities.utilities_general import (
-    simplify_name,
-    simplify_name_lower,
-)
+from pathogen_identification.utilities.utilities_general import simplify_name_lower
 from pathogen_identification.utilities.utilities_pipeline import (
-    RawReferenceUtils,
     SoftwareTreeUtils,
     Utils_Manager,
 )
@@ -113,19 +110,6 @@ class PathogenIdentification_deployment:
             if os.path.isdir(self.run_engine.static_dir):
                 shutil.rmtree(self.run_engine.static_dir, ignore_errors=True)
 
-    def retrieve_runmain(self):
-        """retrieve runmain object from database"""
-
-        self.run_engine = RunMainTree_class(
-            self.project,
-            self.prefix,
-            self.dir,
-            self.threads,
-            self.run_params_db,
-            self.parameter_set,
-            self.username,
-        )
-
     def delete_run_record(self):
         """delete project record in database"""
 
@@ -140,7 +124,7 @@ class PathogenIdentification_deployment:
 
         self.delete_run_media()
         self.delete_run_static()
-        self.delete_run_record()
+        # self.delete_run_record()
 
     def configure(self, r1_path: str, r2_path: str = "") -> bool:
         """generate config dictionary for run_main, and copy input reads to project directory."""
@@ -267,7 +251,8 @@ class Run_Main_from_Leaf:
     date_modified: str
     pk: int
     date_submitted = datetime.datetime
-
+    combined_analysis: bool
+    mapping_request: bool
     container: PathogenIdentification_deployment
 
     def __init__(
@@ -279,10 +264,16 @@ class Run_Main_from_Leaf:
         pipeline_tree: SoftwareTree,
         odir: str,
         threads: int = 3,
+        combined_analysis: bool = False,
+        mapping_request: bool = False,
+        mapping_run_pk: Optional[int] = None,
     ):
         self.user = user
         self.sample = input_data
         self.project = project
+        self.combined_analysis = combined_analysis
+        self.mapping_request = mapping_request
+        self.mapping_run_pk = mapping_run_pk
         self.pipeline_leaf = pipeline_leaf
         self.pipeline_tree = pipeline_tree
         # prefix = f"{simplify_name_lower(input_data.name)}_{user.pk}_{project.pk}_{pipeline_leaf.pk}"
@@ -452,11 +443,47 @@ class Run_Main_from_Leaf:
     def Deploy_Parts(self):
         try:
             self.container.run_main_prep()
+
+            if (
+                self.container.run_engine.run_type
+                == RunMainTree_class.RUN_TYPE_SCREENING
+            ):
+                self.container.run_engine.remap_params.manual_references_include = True
+
+            if self.mapping_run_pk is not None:
+                self.container.run_engine.run_pk = self.mapping_run_pk
+
+            if self.mapping_request:
+                self.container.run_engine.run_type = (
+                    RunMainTree_class.RUN_TYPE_MAPPING_REQUEST
+                )
+
+                # self.container.run_engine.remap_params.manual_references_include = True
+                self.container.run_engine.metadata_tool.get_mapping_references(
+                    self.mapping_run_pk,
+                    max_accids=self.container.run_engine.remap_params.max_accids,
+                )
+
+            if self.combined_analysis:
+                self.container.run_engine.run_type = (
+                    RunMainTree_class.RUN_TYPE_COMBINED_MAPPING
+                )
+
+                if (
+                    self.container.run_engine.remap_params.manual_references_include
+                    is True
+                ):
+                    self.container.run_engine.metadata_tool.get_manual_references(
+                        self.sample,
+                        max_accids=self.container.run_engine.remap_params.max_accids,
+                    )
+
             self.container.run_engine.Prep_deploy()
             self.container.run_engine.Run_QC()
             db_updated = Update_RunMain_Initial(
                 self.container.run_engine, self.parameter_set
             )
+            self.register_running()
             if not db_updated:
                 return False
         except Exception as e:
@@ -488,8 +515,7 @@ class Run_Main_from_Leaf:
             return False
 
         try:
-            self.container.run_engine.Run_Read_classification()
-            self.container.run_engine.Run_Contig_classification()
+            self.container.run_engine.Run_Classification()
             self.container.run_engine.plan_remap_prep_safe()
             self.container.run_engine.export_intermediate_reports()
             self.container.run_engine.generate_output_data_classes()
@@ -503,57 +529,17 @@ class Run_Main_from_Leaf:
             print(e)
             return False
 
+        if self.combined_analysis:
+            self.container.run_engine.plan_combined_remapping()
+
         try:
-            self.container.run_engine.Run_Metagenomcs_Classification()
-            # self.container.run_engine.plan_remap_prep_safe()
-            reference_utils = RawReferenceUtils(
-                self.container.run_engine.sample_registered
-            )
-            reference_table = reference_utils.sample_reference_tables()
-            print("REFERENCE TABLE")
-            print(reference_table.head())
-            proxy_rclass = reference_table.rename(
-                columns={
-                    "read_counts": "counts",
-                }
-            )
-            proxy_rclass["taxid"] = proxy_rclass["taxid"].astype(int)
-            proxy_rclass["counts"] = proxy_rclass["counts"].astype(float).astype(int)
-            proxy_rclass = proxy_rclass[proxy_rclass["counts"] > 0]
-            proxy_rclass = proxy_rclass[proxy_rclass["taxid"] > 0]
-            proxy_rclass = proxy_rclass[proxy_rclass["description"] != "-"]
-            proxy_rclass = proxy_rclass[proxy_rclass["accid"] != "-"]
-            proxy_aclass = reference_table.rename(
-                columns={
-                    "contig_counts": "counts",
-                }
-            )
-            proxy_aclass["taxid"] = proxy_aclass["taxid"].astype(int)
-            proxy_aclass["counts"] = proxy_aclass["counts"].astype(float).astype(int)
-            proxy_aclass = proxy_aclass[proxy_aclass["counts"] > 0]
-            proxy_aclass = proxy_aclass[proxy_aclass["taxid"] > 0]
-            proxy_aclass = proxy_aclass[proxy_aclass["description"] != "-"]
-            proxy_aclass = proxy_aclass[proxy_aclass["accid"] != "-"]
+            self.container.run_engine.Run_Metagenomics_Classification()
 
-            print(proxy_rclass.head())
-
-            self.container.run_engine.metadata_tool.rclass = proxy_rclass
-            self.container.run_engine.metadata_tool.aclass = proxy_aclass
-
-            self.container.run_engine.metadata_tool.merge_reports_clean(
-                self.container.run_engine.remap_params.max_taxids,
+            ref_update = UpdateRawReferences_safe(
+                self.container.run_engine, self.parameter_set
             )
+            #
 
-            self.container.run_engine.import_from_remap_prep()
-
-            self.container.run_engine.metadata_tool.generate_targets_from_report(
-                reference_table,
-                max_taxids=self.container.run_engine.remap_params.max_taxids,
-                skip_scrape=False,
-            )
-            self.container.run_engine.generate_output_data_classes()
-            self.container.run_engine.prep_REMAPPING()
-            self.container.run_engine.remap_prepped = True
             db_updated = Update_Classification(
                 self.container.run_engine, self.parameter_set
             )
@@ -565,7 +551,7 @@ class Run_Main_from_Leaf:
             return False
 
         try:
-            self.container.run_engine.remap_prepped = True
+            # self.container.run_engine.remap_prepped = True
             self.container.run_engine.Run_Remapping()
             self.container.run_engine.export_sequences()
             self.container.run_engine.export_intermediate_reports()
@@ -584,10 +570,10 @@ class Run_Main_from_Leaf:
 
         return True
 
-    def Update_dbs(self):
-        db_updated = Update_Sample_Runs(self.container.run_engine, self.parameter_set)
-
-        return db_updated
+    # def Update_dbs(self):
+    #    db_updated = Update_Sample_Runs(self.container.run_engine, self.parameter_set)
+    #
+    #    return db_updated
 
     def register_submission(self):
         self.set_run_process_running()
@@ -595,6 +581,17 @@ class Run_Main_from_Leaf:
         new_run = ParameterSet.objects.get(pk=self.pk)
         new_run.register_subprocess()
         print("registered_submission")
+
+        if self.mapping_run_pk:
+            run = RunMain.objects.get(pk=self.mapping_run_pk)
+            run.status = RunMain.STATUS_PREP
+            run.save()
+
+    def register_running(self):
+        if self.mapping_run_pk:
+            run = RunMain.objects.get(pk=self.mapping_run_pk)
+            run.status = RunMain.STATUS_RUNNING
+            run.save()
 
     def register_error(self):
         self.set_run_process_error()
@@ -605,25 +602,31 @@ class Run_Main_from_Leaf:
         new_run.register_error()
 
         try:
-            run = RunMain.objects.get(parameter_set=new_run)
-            run.delete()
+            if self.mapping_run_pk:
+                run = RunMain.objects.get(pk=self.mapping_run_pk)
+                run.status = RunMain.STATUS_ERROR
+                run.save()
+            else:
+                run = RunMain.objects.get(parameter_set=new_run)
+                run.delete()
         except RunMain.DoesNotExist:
             pass
 
         self.container.delete_run()
 
     def run_reference_overlap_analysis(self):
-        run = RunMain.objects.get(parameter_set=self.parameter_set)
-        final_report = FinalReport.objects.filter(sample=self.sample, run=run).order_by(
+        final_reports = FinalReport.objects.filter(sample=self.sample).order_by(
             "-coverage"
         )
         #
-        report_layout_params = TelevirParameters.get_report_layout_params(run.pk)
+        report_layout_params = TelevirParameters.get_report_layout_params(
+            project_pk=self.parameter_set.project.pk
+        )
 
-        if final_report.exists() is False:
+        if final_reports.exists() is False:
             return
 
-        report_sorter = ReportSorter(final_report, report_layout_params)
+        report_sorter = ReportSorter(final_reports, report_layout_params)
 
         try:
             report_sorter.sort_reports_save()
@@ -638,6 +641,11 @@ class Run_Main_from_Leaf:
         self.set_run_process_finished()
         new_run = ParameterSet.objects.get(pk=self.pk)
         new_run.register_finished()
+
+        if self.mapping_run_pk:
+            run = RunMain.objects.get(pk=self.mapping_run_pk)
+            run.status = RunMain.STATUS_FINISHED
+            run.save()
 
     def update_project_change_date(self):
         self.project.last_change_date = datetime.datetime.now()
@@ -662,8 +670,8 @@ class Run_Main_from_Leaf:
                 return
 
             if run_success:
-                self.run_reference_overlap_analysis()
                 self.register_completion()
+                self.run_reference_overlap_analysis()
                 self.update_project_change_date()
 
             else:

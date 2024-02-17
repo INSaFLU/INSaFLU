@@ -24,29 +24,56 @@
 
 {% block content %}
 
+<style>
+    .modal-title-description {
+        font-size: 18px;
+        color: #666;
+        display: block;
+    }
+
+</style>
+
 <div class="table-container">
     {% block table %}
     <div class="table-responsive">
-        <table class="table table-hover table-bordered table-striped" {% if table.attrs %}
+
+        <h4 class="table-title"> Metagenomics Management. </h4>
+        <p class="table-description"> 
+            <i class="fa fa-flask"></i> 
+            Run Metagenomics workflows, and validation by mapping.
+            <i class="fa fa-cog"></i>
+            Change settings (workflows, validation and reporting). 
+            <i class="fa fa-database">‌</i>
+            Add and manage targets for validation.
+            <i class="fa fa-external-link-square">‌</i>
+            Connect to Classic INSaFLU Projects. </p>    
+        <table class="table table-hover table-bordered table-striped" {% if table.attrs %}z
             {{ table.attrs.as_html }}{% endif %}>
             {% block table.thead %}
             <thead>
                 {% if project_owner %}
                 <tr>
-                    <th colspan="10">
+                    <th colspan="6">
                         {% if not demo %}
                         <div class="btn-group">
+                            {% if metagenomics %}
+                            <button type="button" class="btn btn-primary dark dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fa fa-flask"></i>
+                                <a><span class="hidden-phone"> Run </span></a>
+                            </button>
+                            <div class="dropdown-menu pull-right">
+                                <a href="#" id="deploypi_btn" class="dropdown-item" style="text-align:center;" deploy-url="{% url deploy_url %}" ><span class="hidden-phone"> Classic Workflows </span></a>
+                                <a href="#" id="deploypi_mapping_btn" class="dropdown-item" style="text-align:center;" deploy-url="{% url 'deploy_Project_PIMapping' %}" ><span class="hidden-phone"> Map Combined </span></a>
+                                <a href="#" id="deploypi_added_mapping_btn" class="dropdown-item" style="text-align:center;" deploy-url="{% url 'map_selected_references_project_samples' %}" ><span class="hidden-phone"> Map Added </span></a>
+                            </div>
+                            {% else %}
                             <button type="button" class="btn btn-primary dark" id="deploypi_btn" deploy-url="{% url deploy_url %}" aria-haspopup="true" aria-expanded="false">
                                 <i class="fa fa-flask"></i>
                                 <a><span class="hidden-phone"> Run </span></a>
                             </button>
+                            {% endif %}
                         </div>
                         {% endif %}
-                        <div class="btn-group">
-                            <button type="button" class="btn btn-primary dark" aria-haspopup="true" aria-expanded="false">
-                                <a href="{% url "all_PIproject_reports" pk1=project_index %}"><span class="hidden-phone" style="color:white"><i>View Project reports</i></span></a>
-                                    </button>
-                        </div>
                         <div class="btn-group">
                             <button type="button" class="btn btn-primary dark" id="sortpi_btn" deploy-url="{% url 'sort_project_reports' %}" aria-haspopup="true" aria-expanded="false">
                                 <i class="fa fa-align-left"></i>
@@ -55,15 +82,37 @@
                         </div>
                         <div class="btn-group">
                             <button type="button" class="btn btn-primary dark" aria-haspopup="true" aria-expanded="false">
+                                <a href="{% url "all_PIproject_reports" pk1=project_index %}"><span class="hidden-phone" style="color:white"><i>View Project reports</i></span></a>
+                                    </button>
+                        </div>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-primary dark" aria-haspopup="true" aria-expanded="false">
                                 <i class="fa fa-cog" aria-hidden="true" ></i>
                                 <a href="{% url "pathogenID_pipeline" level=project_index %}"><span class="hidden-phone" style="color:white"><i>Project Settings</i></span></a>
                                     </button>
                         </div>
+                    </th>
+                    <th colspan="1" style="border-left: 5px solid #f2f2f2;">
+                        <div class="btn-group d-flex justify-content-center">
+                            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#myModal">
+                                Add Targets
+                              </button>
+                        </div>
+                    </th>
+                    <th colspan="1" style="border-left: 5px solid #f2f2f2;">
+                        <div class="btn-group d-flex justify-content-center">
+                            <button type="button" id="teleflu_open" class="btn btn-primary" data-toggle="modal" data-target="#teleflu_ref_modal">
+                                <i class="fa fa-external-link-square">‌</i> INSaFLU
+                              </button>
+                        </div>
+
+                    </th>
+                    <th colspan="4" style="border-left: 5px solid #f2f2f2;">
 
                         <form method="get" class="form-inline form-search pull-right">
                             {% csrf_token %}
                             <input id="search_form_id" name="search_projects" type="text" class="form-control col-md-8"
-                                placeholder="Name, Reference, Sample" {% if search_projects %}
+                                placeholder="Sample Name" {% if search_projects %}
                                 value="{{ search_projects }}" {% endif %}>
                             <button type="submit" class="btn btn-small btn-dark"><i class="fa fa-search"></i>
                                 Search</button>
@@ -118,10 +167,56 @@
     {% else %}
     <label id="id-total-list" class="pull-right">Total samples: {{ query_set_count }}</label>
     {% endif %}
+    <p class="insa-description bg-insa-fixed-top" style=""><strong>
+        <i class="fa fa-info-circle"></i> 
+        <span class="hidden-phone">
+            Note: You can change parameters to run new workflows. Results will be integrated to the Combined Report cumulatively.
+            </span>
+        </strong>
+    </p>
+    <br>
+    {% if teleflu_projects_exist %}
+    <h4 class="table-title"> Reference Analysis </h4>
+    <p class="table-description"> In-Depth </p>
+    
+    <div class="table-responsive">
+        <table class="table table-hover table-bordered table-striped" {% if teleflu_table.attrs %}z
+            {{ teleflu_table.attrs.as_html }}{% endif %}>
+            <thead>
+                <tr>
+                    {% for column in teleflu_table.columns %}
+                    {% if column.orderable %}
+                        <th {{ column.attrs.th.as_html }}><a href="{% querystring teleflu_table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header|title }}</a></th>
+                    {% else %}
+                        <th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
+                    {% endif %}
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in teleflu_table.page.object_list|default:teleflu_table.rows %} {# support pagination #}
+                  {% block teleflu_table.tbody.row %}
+                  <tr id="row_{{ row.record.id }}" class="{% cycle "odd" "even" %}">
+                    {% for column, cell in row.items %}
+                      <td {{ column.attrs.td.as_html }}>{{ cell }}</td>
+                    {% endfor %}
+                  </tr>
+                  {% endblock teleflu_table.tbody.row %}
+                {% empty %}
+                  {% if teleflu_table.empty_text %}
+                  {% block teleflu_table.tbody.empty_text %}
+                      <tr><td colspan="{{ teleflu_table.columns|length }}">{{ teleflu_table.empty_text }}</td></tr>
+                  {% endblock teleflu_table.tbody.empty_text %}
+                  {% endif %}
+                {% endfor %}
+            </tbody>
+            <tfoot></tfoot>
+        </table>
+    </div>
+    {% endif %}
 
     <a href="javascript:history.go(0)" class="btn btn-small btn-primary dark"><i class="fa fa-refresh"></i> Refresh</a>
 
-</div>
 </div>
 
 
@@ -237,6 +332,75 @@
     </div>
 </div>
 
+<!-- The refrence search -->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop="static">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title" id="myModalLabel">Add References - All Samples</h4>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-sm-9">          <!-- Your search form code here -->
+              <form id="reference-search-form">
+                <div class="input-group">
+                  <input id="search-input" type="text" class="form-control" placeholder="Description, Accid, Taxid">
+                  <div class="input-group-append">
+                    <button type="submit" class="load-content btn btn-primary" csrf="{{ csrf_token }}" href="{% url 'filter_reference_table' %}">Search</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+          <div id="reference_table_div" class="table-container">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" id="submit-button" csrf="{{ csrf_token }}" href="{% url 'add_references_all_samples' %}" ref_index= "{{project_index}}" reload_ref= "{% url 'added_reference_table' %}">Submit</button>
+        </div>
+      </div>
+    </div>
+</div>
+
+<!-- The teleflu refrence search -->
+<div class="modal fade" id="teleflu_ref_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel_teleflu" data-backdrop="static">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+        <div>
+            <h4 class="modal-title" id="myModalLabel_teleflu">Create INSaFLU Project</h4>
+            <p class="modal-title-description">Use selected samples to create an INSaFLU project. Select Televir hit below to use as reference.</p>
+        </div>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-sm-12">          <!-- Your search form code here -->
+              <form id="teleflu-reference-search-form">
+                <div class="input-group">
+                  <input id="teleflu_search-input" type="text" class="form-control" placeholder="Description, Accid, Taxid">
+                  <div class="input-group-append">
+                    <button type="submit" project_id={{ project_index }} class="load-teleflu-content btn btn-primary" csrf="{{ csrf_token }}" href="{% url 'filter_reference_table' %}">Search</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+          <div id="teleflu_reference_table_div" class="table-container">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" id="teleflu_submit-button" csrf="{{ csrf_token }}" href="{% url 'create_teleflu_project' %}" ref_index= "{{project_index}}" reload_ref= "{% url 'added_reference_table' %}">Create Project</button>
+        </div>
+      </div>
+    </div>
+</div>
+
 {% endblock content %}
 
 {% block js %}
@@ -244,7 +408,9 @@
 <script type="text/javascript" src="{% static 'js/televir_projects/televir_kill_sample.js' %}"></script> 
 <script type="text/javascript" src="{% static 'js/televir_projects/remove_project_sample.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/televir_projects/set_control_sample.js' %}"></script>
-
+<script type="text/javascript" src="{% static 'js/televir_projects/add_references.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/televir_projects/teleflu_prep.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/check-box-general.js' %}"></script>
 {% load static from staticfiles %}
 
 <script>
@@ -257,9 +423,6 @@
             var attr = $(this).attr('id');
             var ref_name = $(this).attr('ref_name');
             var sample_pk = $(this).attr('pk');
-
-            
-
             
             // For some browsers, `attr` is undefined; for others `attr` is false.  Check for both.
 
@@ -341,31 +504,53 @@
     
 </script> 
 
+
 <script>
     window.onbeforeunload = function (e) {
         $.unblockUI();
     };
 	$(document).ready(function () {
+        $('#deploypi_btn').click(function () {
+			$.unblockUI();
+		});
 		$('#id-cancel-button').click(function () {
 			$.unblockUI();
 		});
-        $('#id-remove-button').click(function () {
+		$('#id-remove-button').click(function () {
+			$.unblockUI();
+		});
+        $('#id-deploy-metagenomics-button').click(function () {
             $.unblockUI();
         });
-        $('#id-deploy-metagenomics-button').click(function () {
+        $('#teleflu_submit-button').click(function () {
+            $.unblockUI();
+        });
+		$('#id-kill-button').click(function () {
+			$.unblockUI();
+		});
+        $('#id-set-control-button').click(function () {
             $.unblockUI();
         });
 		// unblock when click in button class close
 		$('.close').click(function () {
 			$.unblockUI();
 		});
+        $('#teleflu_igv_results').click(function () {
+            $.unblockUI();
+        });
 	});
+
+	/// set wait screen
 
 </script>
 
 <script>
 
     $(document).on("click", "a", function (e) {
+
+        if ($(this).attr("class") === "asc") {
+            e.preventDefault();
+        }
 
         if ($(this).attr("id") == "deploypi_sample_btn") {
             e.preventDefault();
@@ -381,7 +566,7 @@
                 data_type: 'json',
                 success: function(data){
                     if (data["is_ok"] == true && data["is_deployed"] == false) { 
-                        alert("No runs to deploy");
+                        alert("No runs to deploy, check project settings.");
                     }
                     else if (data["is_ok"] == true && data["is_deployed"] == true) {
                         alert("Runs deployed");
@@ -430,7 +615,60 @@
 
     })
 
-    $("#deploypi_btn").click(function(){
+
+    $("#deploypi_mapping_btn").click(function(e){
+        
+        $.ajax({
+            url: $('#deploypi_mapping_btn').attr("deploy-url"),
+            type: "POST",
+            data: {
+                'csrfmiddlewaretoken': '{{ csrf_token }}',
+                'id': $(this).attr('id'),
+                'user_id': '{{ request.user.id }}',
+                'project_id': '{{ project_index }}',
+            },
+            data_type: 'json',
+            success: function(data){
+                if (data["is_ok"] == true && data["is_deployed"] == false) { 
+                    alert("No runs to deploy, check project settings.");
+                }
+                else if (data["is_ok"] == true && data["is_deployed"] == true) {
+                    alert("Runs deployed");
+                }
+                $.unblockUI();
+            }
+
+        });
+    })
+
+    $("#deploypi_added_mapping_btn").click(function(e){
+        
+        $.ajax({
+            url: $('#deploypi_added_mapping_btn').attr("deploy-url"),
+            type: "POST",
+            data: {
+                'csrfmiddlewaretoken': '{{ csrf_token }}',
+                'id': $(this).attr('id'),
+                'user_id': '{{ request.user.id }}',
+                'project_id': '{{ project_index }}',
+            },
+            data_type: 'json',
+            success: function(data){
+                if (data["is_ok"] == true && data["is_deployed"] == false) { 
+                    alert(data["message"]);
+                }
+                else if (data["is_ok"] == true && data["is_deployed"] == true) {
+                    var how_many = data["samples_deployed"];
+                    alert(data["message"]);
+                }
+                $.unblockUI();
+            }
+
+        });
+    })
+
+    $("#deploypi_btn").click(function(e){
+        
         $.ajax({
             url: $('#deploypi_btn').attr("deploy-url"),
             type: "POST",
@@ -443,11 +681,12 @@
             data_type: 'json',
             success: function(data){
                 if (data["is_ok"] == true && data["is_deployed"] == false) { 
-                    alert("No runs to deploy");
+                    alert("No runs to deploy, check project settings.");
                 }
                 else if (data["is_ok"] == true && data["is_deployed"] == true) {
                     alert("Runs deployed");
                 }
+                $.unblockUI();
             }
 
         });
@@ -475,29 +714,37 @@
 
         });
     })
+
+    $('#teleflu_igv_results').click(function(){
+
+        var url = $(this).attr('url');
+        var pk = $(this).attr('teleflu_project_pk');
+        console.log(url);
+        $.ajax({
+            url: url,
+            type: "POST",
+            data: {
+                'csrfmiddlewaretoken': '{{ csrf_token }}',
+                'pk': $(this).attr('teleflu_project_pk'),
+            },
+            data_type: 'json',
+            success: function(data){
+                $.unblockUI();
+                if (data["is_ok"] == true && data["is_deployed"] == false) { 
+                    alert("No runs to deploy, check project settings.");
+                }
+                else if (data["is_ok"] == true && data["is_deployed"] == true) {
+                    alert("Runs deployed");
+                }
+            }
+
+        });
+    })
     
 
 </script>
 
 
-<script>
-	$(document).ready(function () {
-		$('#id-cancel-button').click(function () {
-			$.unblockUI();
-		});
-		$('#id-remove-button').click(function () {
-			$.unblockUI();
-		});
-		$('#id-kill-button').click(function () {
-			$.unblockUI();
-		});
-        $('#id-set-control-button').click(function () {
-            $.unblockUI();
-        });
-	});
 
-	/// set wait screen
-
-</script>
 
 {% endblock js %}

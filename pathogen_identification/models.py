@@ -1,6 +1,7 @@
 import codecs
 import datetime
 import os
+from typing import Any
 
 import networkx as nx
 import numpy as np
@@ -84,6 +85,14 @@ class Projects(models.Model):
             parametersets = ParameterSet.objects.filter(project=self)
             for parameterset in parametersets:
                 parameterset.delete_run_data()
+
+    @property
+    def samples_source(self):
+        """
+        return pk of INSaFLU samples that are part of this project"""
+        project_samples = PIProject_Sample.objects.filter(project=self)
+        samples = [project_sample.sample.pk for project_sample in project_samples]
+        return samples
 
 
 class SoftwareTree(models.Model):
@@ -287,6 +296,7 @@ class ParameterSet(models.Model):
     STATUS_ERROR = 3
     STATUS_QUEUED = 4
     STATUS_KILLED = 5
+    STATUS_PROXIED = 6
     STATUS_CHOICES = (
         (STATUS_NOT_STARTED, "Not started"),
         (STATUS_RUNNING, "Running"),
@@ -327,15 +337,18 @@ class ParameterSet(models.Model):
             self.status = self.STATUS_NOT_STARTED
             self.save()
 
-            try:
-                runs = RunMain.objects.filter(parameter_set=self)
-                for run in runs:
-                    run.delete_data()
-            except RunMain.DoesNotExist:
-                pass
+            runs = RunMain.objects.filter(parameter_set=self)
+
+            for run in runs:
+                if run.status == RunMain.STATUS_FINISHED:
+                    continue
+                if run.status == RunMain.STATUS_RUNNING:
+                    run.status = RunMain.STATUS_KILLED
+                    run.save()
+                run.delete_data()
 
     def __str__(self):
-        return self.sample.name + " " + str(self.leaf.index)
+        return self.sample.name
 
 
 class Submitted(models.Model):
@@ -462,6 +475,22 @@ class RunIndex(models.Model):
 
 
 class RunMain(models.Model):
+    RUN_TYPE_PIPELINE = 0
+    RUN_TYPE_STORAGE = 1
+    RUN_TYPE_MAP_REQUEST = 2
+    RUN_TYPE_SCREENING = 3
+    RUN_TYPE_COMBINED_MAPPING = 4
+
+    STATUS_DEFAULT = 0
+    STATUS_PREP = 1
+    STATUS_ERROR = 2
+    STATUS_RUNNING = 3
+    STATUS_FINISHED = 4
+    STATUS_KILLED = 5
+
+    run_type = models.IntegerField(default=RUN_TYPE_PIPELINE)
+    status = models.IntegerField(default=STATUS_DEFAULT)
+
     parameter_set = models.ForeignKey(
         ParameterSet, on_delete=models.CASCADE, related_name="run_main", default=None
     )
@@ -647,6 +676,27 @@ class RunMain(models.Model):
 
         except Exception as e:
             print(e)
+
+
+class RunReadsRegister(models.Model):
+    run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)
+
+    qc_reads_r1 = models.CharField(max_length=1000, blank=True, null=True)  # qc reads
+    qc_reads_r2 = models.CharField(max_length=1000, blank=True, null=True)  # qc reads
+
+    enriched_reads_r1 = models.CharField(
+        max_length=1000, blank=True, null=True
+    )  # enriched reads
+    enriched_reads_r2 = models.CharField(
+        max_length=1000, blank=True, null=True
+    )  # enriched reads
+
+    depleted_reads_r1 = models.CharField(
+        max_length=1000, blank=True, null=True
+    )  # depleted reads
+    depleted_reads_r2 = models.CharField(
+        max_length=1000, blank=True, null=True
+    )  # depleted reads
 
 
 class TelevirRunQC(models.Model):
@@ -847,7 +897,7 @@ class RawReference(models.Model):
 
     taxid = models.CharField(max_length=100, blank=True, null=True)
     accid = models.CharField(max_length=100, blank=True, null=True)
-    description = models.CharField(max_length=100, blank=True, null=True)
+    description = models.CharField(max_length=150, blank=True, null=True)
     counts = models.CharField(max_length=100, blank=True, null=True)
     classification_source = models.CharField(max_length=15, blank=True, null=True)
 
@@ -905,6 +955,253 @@ class RawReference(models.Model):
         self.save()
 
     def update_raw_reference_status_fail(self):
+        self.status = self.STATUS_FAIL
+        self.save()
+
+
+from managing_files.models import Project as InsaFluProject
+from managing_files.models import Reference as InsaFluReference
+
+
+class MetaReference(models.Model):
+    description = models.CharField(max_length=200, blank=True, null=True)
+    created = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    project = models.ForeignKey(
+        Projects, on_delete=models.CASCADE, blank=True, null=True
+    )
+    file_path = models.CharField(max_length=300, blank=True, null=True)
+
+    def __str__(self):
+        return self.description
+
+    @property
+    def references_mapped(self):
+        ref_maps = RawReferenceMap.objects.filter(reference=self)
+        return [ref_map.raw_reference for ref_map in ref_maps]
+
+    @property
+    def metaid(self):
+        mapped_refs = self.references_mapped
+        mapped_refs_ids = [ref.id for ref in mapped_refs]
+        mapped_refids_sorted = sorted(mapped_refs_ids)
+        return "_".join([str(refid) for refid in mapped_refids_sorted])
+
+
+class RawReferenceMap(models.Model):
+    reference = models.ForeignKey(
+        MetaReference,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        related_name="reference_map",
+    )
+    raw_reference = models.ForeignKey(
+        RawReference,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        related_name="raw_reference",
+    )
+
+
+class TeleFluProject(models.Model):
+    televir_project = models.ForeignKey(Projects, on_delete=models.CASCADE)
+    insaflu_project = models.ForeignKey(
+        InsaFluProject,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        related_name="insaflu_project",
+    )
+    name = models.CharField(
+        max_length=200,
+        db_index=True,
+        blank=False,
+        verbose_name="Project name",
+        default="nameless_project",
+        validators=[no_space_validator],
+    )
+    description = models.TextField(default="", null=True, blank=True)
+    raw_reference = models.ForeignKey(
+        MetaReference,
+        on_delete=models.CASCADE,
+    )
+    reference = models.ForeignKey(
+        InsaFluReference, on_delete=models.CASCADE, blank=True, null=True
+    )
+
+    last_change_date = models.DateTimeField("Last change date", blank=True, null=True)
+    is_deleted = models.BooleanField(default=False)
+
+    @property
+    def owner(self):
+        return self.televir_project.owner
+
+    @property
+    def technology(self):
+        return self.televir_project.technology
+
+    @property
+    def project_media_directory(self):
+        return os.path.join(
+            PICS.media_directory,
+            PICS.televir_subdirectory,
+            str(self.televir_project.owner.pk),
+            str(self.televir_project.pk),
+            "teleflu",
+            str(self.pk),
+        )
+
+    @property
+    def project_static_directory(self):
+        return os.path.join(
+            PICS.static_directory,
+            PICS.televir_subdirectory,
+            str(self.televir_project.owner.pk),
+            str(self.televir_project.pk),
+            "teleflu",
+            str(self.pk),
+        )
+
+    @property
+    def project_vcf_directory(self):
+        return os.path.join(self.project_media_directory, "vcf")
+
+    @property
+    def project_vcf(self):
+        return os.path.join(self.project_vcf_directory, "teleflu.vcf")
+
+    @property
+    def project_igv_report_media(self):
+        return os.path.join(self.project_media_directory, "igv_report.html")
+
+    @property
+    def project_igv_report(self):
+        return os.path.join(self.project_static_directory, "igv_report.html")
+
+
+class TeleFluSample(models.Model):
+    televir_sample = models.ForeignKey(PIProject_Sample, on_delete=models.CASCADE)
+    teleflu_project = models.ForeignKey(
+        TeleFluProject, on_delete=models.CASCADE, blank=True, null=True
+    )
+
+
+class ReferenceTaxid(models.Model):
+    taxid = models.CharField(max_length=100, blank=True, null=True)
+
+    def __str__(self):
+        return self.taxid
+
+
+class ReferenceSourceFile(models.Model):
+    file = models.CharField(max_length=100, blank=True, null=True)
+
+    def __str__(self):
+        return self.file
+
+
+class ReferenceSource(models.Model):
+    taxid = models.ForeignKey(
+        ReferenceTaxid, blank=True, null=True, on_delete=models.CASCADE
+    )
+    accid = models.CharField(max_length=100, blank=True, null=True)
+    description = models.CharField(max_length=300, blank=True, null=True)
+
+    def __str__(self):
+        return self.accid
+
+
+class ReferenceSourceFileMap(models.Model):
+    STATUS_GOOD = 0
+    STATUS_CORRUPT = 1
+
+    reference_source = models.ForeignKey(
+        ReferenceSource, blank=True, null=True, on_delete=models.CASCADE
+    )
+
+    reference_source_file = models.ForeignKey(
+        ReferenceSourceFile, blank=True, null=True, on_delete=models.CASCADE
+    )
+
+    status = models.IntegerField(default=STATUS_GOOD)
+
+    @property
+    def accid(self):
+        return self.reference_source.accid
+
+    @property
+    def description(self):
+        return self.reference_source.description
+
+    @property
+    def taxid(self):
+        return self.reference_source.taxid
+
+
+class ReferenceSourceMap(models.Model):
+    STATUS_MAPPED = 0
+    STATUS_UNMAPPED = 1
+    STATUS_MAPPING = 2
+    STATUS_FAIL = 3
+
+    STATUS_CHOICES = (
+        (STATUS_MAPPED, "Mapped"),
+        (STATUS_UNMAPPED, "Unmapped"),
+        (STATUS_MAPPING, "Mapping"),
+    )
+
+    reference_source = models.ForeignKey(
+        ReferenceSource, blank=True, null=True, on_delete=models.CASCADE
+    )
+
+    raw_reference = models.ForeignKey(
+        RawReference, blank=True, null=True, on_delete=models.CASCADE
+    )
+
+    status = models.IntegerField(choices=STATUS_CHOICES, default=STATUS_UNMAPPED)
+
+    @property
+    def taxid(self):
+        return self.reference_source.taxid
+
+    @property
+    def accid(self):
+        return self.reference_source.accid
+
+    @property
+    def description(self):
+        return self.reference_source.description
+
+    @property
+    def counts(self):
+        return self.raw_reference.counts
+
+    @property
+    def classification_source(self):
+        return self.raw_reference.classification_source
+
+    @property
+    def classification_source_str(self):
+        return self.raw_reference.classification_source_str
+
+    @property
+    def read_counts(self):
+        return self.raw_reference.read_counts
+
+    @property
+    def contig_counts(self):
+        return self.raw_reference.contig_counts
+
+    @property
+    def counts_int_array(self):
+        return self.raw_reference.counts_int_array
+
+    def update_reference_source_map_status_mapped(self):
+        self.status = self.STATUS_MAPPED
+        self.save()
+
+    def update_reference_source_map_status_fail(self):
         self.status = self.STATUS_FAIL
         self.save()
 
@@ -1055,6 +1352,8 @@ class FinalReport(models.Model):
     mapped_reads = models.IntegerField(blank=True, null=True)
     ref_proportion = models.FloatField(blank=True, null=True)
     mapped_proportion = models.FloatField(blank=True, null=True)
+    error_rate = models.FloatField(blank=True, null=True)
+    quality_avg = models.FloatField(blank=True, null=True)
     ngaps = models.IntegerField(blank=True, null=True)
     mapping_success = models.CharField(max_length=20, blank=True, null=True)
     classification_success = models.CharField(max_length=20, blank=True, null=True)

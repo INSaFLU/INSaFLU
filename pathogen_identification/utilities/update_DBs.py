@@ -28,7 +28,7 @@ from pathogen_identification.models import (
 )
 from pathogen_identification.modules.object_classes import Sample_runClass
 from pathogen_identification.modules.remap_class import Mapping_Instance
-from pathogen_identification.modules.run_main import RunMain_class
+from pathogen_identification.modules.run_main import RunEngine_class
 
 
 ####################################################################################################################
@@ -223,49 +223,26 @@ def Update_QC_report(sample_class: Sample_runClass, parameter_set: ParameterSet)
 
 
 @transaction.atomic
-def Update_Sample_Runs(run_class: RunMain_class, parameter_set: ParameterSet):
-    """get run data
-    Update ALL run TABLES:
-    - RunMain,
-    - RunDetail,
-    - RunAssembly,
-    - ReadClassification,
-    - ContigClassification,
-    - RunRemapMain,
-    - ReferenceMap_Main
-    - ReferenceContigs
-    - FinalReport,
-
-    :param sample_class:
-    :return: run_data
-    """
-
-    try:
-        with transaction.atomic():
-            Update_RunMain(run_class, parameter_set)
-            Update_Run_Detail(run_class, parameter_set)
-            Update_Sample_Runs_DB(run_class, parameter_set)
-            Update_RefMap_DB(run_class, parameter_set)
-
-        return True
-
-    except IntegrityError as e:
-        print(f"failed to update sample {run_class.sample_name} {e}")
-        return False
-
-
-@transaction.atomic
-def Update_RunMain_Initial(run_class: RunMain_class, parameter_set: ParameterSet):
+def Update_RunMain_Initial(run_class: RunEngine_class, parameter_set: ParameterSet):
     """get run data
     Update ALL run TABLES:
     - RunMain,
     :param sample_class:
     :return: run_data
     """
+    print("Update_RunMain_Initial")
+    print(run_class.run_type)
 
     try:
         with transaction.atomic():
-            Update_RunMain(run_class, parameter_set)
+            if run_class.run_type in [
+                run_class.RUN_TYPE_MAPPING_REQUEST,
+                run_class.RUN_TYPE_SCREENING,
+                run_class.RUN_TYPE_COMBINED_MAPPING,
+            ]:
+                Update_RunMain_noCheck(run_class, parameter_set)
+            else:
+                Update_RunMain(run_class, parameter_set)
 
         return True
 
@@ -275,7 +252,7 @@ def Update_RunMain_Initial(run_class: RunMain_class, parameter_set: ParameterSet
 
 
 @transaction.atomic
-def Update_RunMain_Secondary(run_class: RunMain_class, parameter_set: ParameterSet):
+def Update_RunMain_Secondary(run_class: RunEngine_class, parameter_set: ParameterSet):
     """get run data
     Update ALL run TABLES:
     - RunMain,
@@ -298,7 +275,7 @@ def Update_RunMain_Secondary(run_class: RunMain_class, parameter_set: ParameterS
 
 
 @transaction.atomic
-def Update_Assembly(run_class: RunMain_class, parameter_set: ParameterSet):
+def Update_Assembly(run_class: RunEngine_class, parameter_set: ParameterSet):
     """get run data
     Update TABLES:
     - RunMain,
@@ -322,7 +299,7 @@ def Update_Assembly(run_class: RunMain_class, parameter_set: ParameterSet):
 
 @transaction.atomic
 def Update_Classification(
-    run_class: RunMain_class, parameter_set: ParameterSet, tag="secondary"
+    run_class: RunEngine_class, parameter_set: ParameterSet, tag="secondary"
 ):
     """get run data
     Update TABLES:
@@ -346,8 +323,28 @@ def Update_Classification(
         return False
 
 
+def UpdateRawReferences_safe(run_class: RunEngine_class, parameter_set: ParameterSet):
+    """get run data
+    Update TABLES:
+    - RawReference,
+
+    :param sample_class:
+    :return: run_data
+    """
+
+    try:
+        with transaction.atomic():
+            Update_RawReference(run_class, parameter_set)
+
+        return True
+
+    except IntegrityError as e:
+        print(f"failed to update sample {run_class.sample_name}")
+        return False
+
+
 @transaction.atomic
-def Update_Remap(run_class: RunMain_class, parameter_set: ParameterSet):
+def Update_Remap(run_class: RunEngine_class, parameter_set: ParameterSet):
     """get run data
     Update TABLES:
     - RunMain,
@@ -395,7 +392,7 @@ def retrieve_number_of_runs(project_name, sample_name, username):
     return RunMain.objects.filter(project=project, sample=sample).count() + 1
 
 
-def Update_RunMain(run_class: RunMain_class, parameter_set: ParameterSet):
+def Update_RunMain(run_class: RunEngine_class, parameter_set: ParameterSet):
     """update run data for run_class. Update run_class.run_data.
 
     :param run_class:
@@ -426,6 +423,11 @@ def Update_RunMain(run_class: RunMain_class, parameter_set: ParameterSet):
 
     host_depletion_method = run_class.depletion_drone.classifier_method.name
     host_depletion = run_class.depletion_drone.deployed
+    run_type = RunMain.RUN_TYPE_PIPELINE
+
+    if run_class.run_type == run_class.RUN_TYPE_COMBINED_MAPPING:
+        run_type = RunMain.RUN_TYPE_COMBINED_MAPPING
+
     try:
         runmain = RunMain.objects.get(
             project__name=run_class.sample.project_name,
@@ -433,10 +435,12 @@ def Update_RunMain(run_class: RunMain_class, parameter_set: ParameterSet):
             sample=sample,
             name=run_class.prefix,
             parameter_set=parameter_set,
+            run_type=run_type,
         )
     except RunMain.DoesNotExist:
         runmain = RunMain(
             parameter_set=parameter_set,
+            run_type=run_type,
             suprun=run_class.suprun,
             project=project,
             sample=sample,
@@ -470,7 +474,7 @@ def Update_RunMain(run_class: RunMain_class, parameter_set: ParameterSet):
         runmain.save()
 
 
-def Sample_update_combinations(run_class: Type[RunMain_class]):
+def Sample_update_combinations(run_class: Type[RunEngine_class]):
     user = User.objects.get(username=run_class.username)
     project = Projects.objects.get(
         name=run_class.project_name, owner=user, is_deleted=False
@@ -486,7 +490,7 @@ def Sample_update_combinations(run_class: Type[RunMain_class]):
     sample.save()
 
 
-def get_run_parents(run_class: RunMain_class, parameter_set: ParameterSet):
+def get_run_parents(run_class: RunEngine_class, parameter_set: ParameterSet):
     """get run parents for run_class. Update run_class.run_data."""
     user = User.objects.get(username=run_class.username)
     project = Projects.objects.get(
@@ -499,13 +503,18 @@ def get_run_parents(run_class: RunMain_class, parameter_set: ParameterSet):
     )
 
     try:
-        runmain = RunMain.objects.get(
-            project=project,
-            suprun=run_class.suprun,
-            sample=sample,
-            name=run_class.prefix,
-            parameter_set=parameter_set,
-        )
+        if run_class.run_pk is not None:
+            runmain = RunMain.objects.get(
+                pk=run_class.run_pk,
+            )
+        else:
+            runmain = RunMain.objects.get(
+                project=project,
+                suprun=run_class.suprun,
+                sample=sample,
+                name=run_class.prefix,
+                parameter_set=parameter_set,
+            )
 
     except RunMain.DoesNotExist:
         return None, None, None
@@ -514,7 +523,7 @@ def get_run_parents(run_class: RunMain_class, parameter_set: ParameterSet):
 
 
 def Update_RunMain_noCheck(
-    run_class: RunMain_class, parameter_set: ParameterSet, tag="secondary"
+    run_class: RunEngine_class, parameter_set: ParameterSet, tag="secondary"
 ):
     """update run data for run_class. Update run_class.run_data.
 
@@ -522,6 +531,8 @@ def Update_RunMain_noCheck(
     :return: None
     """
     sample, runmain, project = get_run_parents(run_class, parameter_set)
+    print("############ Update_RunMain_noCheck ############")
+    print(sample, runmain, runmain, project)
 
     if sample is None or runmain is None:
         return
@@ -581,7 +592,7 @@ def Update_RunMain_noCheck(
     runmain.save()
 
 
-def Update_Run_Detail(run_class: RunMain_class, parameter_set: ParameterSet):
+def Update_Run_Detail(run_class: RunEngine_class, parameter_set: ParameterSet):
     """
     Update ALL run TABLES for one run_class.:
     - RunMain,
@@ -635,7 +646,7 @@ def Update_Run_Detail(run_class: RunMain_class, parameter_set: ParameterSet):
         run_detail.save()
 
 
-def Update_Run_Detail_noCheck(run_class: RunMain_class, parameter_set: ParameterSet):
+def Update_Run_Detail_noCheck(run_class: RunEngine_class, parameter_set: ParameterSet):
     """
     Update ALL run TABLES for one run_class.:
     - RunMain,
@@ -723,7 +734,7 @@ def Update_Run_Detail_noCheck(run_class: RunMain_class, parameter_set: Parameter
         run_detail.save()
 
 
-def Update_Run_QC(run_class: RunMain_class, parameter_set: ParameterSet):
+def Update_Run_QC(run_class: RunEngine_class, parameter_set: ParameterSet):
     sample, runmain, _ = get_run_parents(run_class, parameter_set)
 
     if sample is None or runmain is None:
@@ -759,7 +770,7 @@ def Update_Run_QC(run_class: RunMain_class, parameter_set: ParameterSet):
         run_qc.save()
 
 
-def Update_Run_Assembly(run_class: RunMain_class, parameter_set: ParameterSet):
+def Update_Run_Assembly(run_class: RunEngine_class, parameter_set: ParameterSet):
     """
     Update ALL run TABLES for one run_class.:
     - RunMain,
@@ -812,7 +823,7 @@ def Update_Run_Assembly(run_class: RunMain_class, parameter_set: ParameterSet):
         run_assembly.save()
 
 
-def Update_Run_Classification(run_class: RunMain_class, parameter_set: ParameterSet):
+def Update_Run_Classification(run_class: RunEngine_class, parameter_set: ParameterSet):
     """
     Update ALL run TABLES for one run_class.:
     - RunMain,
@@ -929,173 +940,14 @@ def Update_Run_Classification(run_class: RunMain_class, parameter_set: Parameter
         )
         remap_main.save()
 
-    for ref, row in run_class.raw_targets.iterrows():
-        if row.status:
-            status = RawReference.STATUS_MAPPED
-        else:
-            status = RawReference.STATUS_UNMAPPED
-        try:
-            remap_target = RawReference.objects.get(
-                run=runmain,
-                taxid=row.taxid,
-                accid=row.accid,
-            )
-        except RawReference.DoesNotExist:
-            remap_target = RawReference(
-                run=runmain,
-                taxid=row.taxid,
-                accid=row.accid,
-                status=status,
-                description=row.description,
-                counts=row.counts,
-                classification_source=row.source,
-            )
-
-            remap_target.save()
+    Update_RawReference(run_class, parameter_set)
 
 
-def Update_Sample_Runs_DB(run_class: RunMain_class, parameter_set: ParameterSet):
+def Update_RawReference(run_class: RunEngine_class, parameter_set: ParameterSet):
     """
-    Update ALL run TABLES for one run_class.:
-    - RunMain,
-    - RunDetail,
-    - RunAssembly,
-    - ReadClassification,
-    - ContigClassification,
-    - RunRemapMain,
-    - ReferenceMap_Main
-    - ReferenceContigs
-    - FinalReport,
-
-    :param run_class:
-    :return: run_data
+    Update RawReference table.
     """
-    # Sample_update_combinations(run_class)
-
-    user = User.objects.get(username=run_class.username)
-    project = Projects.objects.get(
-        name=run_class.project_name, owner=user, is_deleted=False
-    )
-
-    sample = PIProject_Sample.objects.get(
-        project=project,
-        name=run_class.sample.sample_name,
-    )
-
-    try:
-        runmain = RunMain.objects.get(
-            project=project,
-            suprun=run_class.suprun,
-            sample=sample,
-            name=run_class.prefix,
-            parameter_set=parameter_set,
-        )
-
-    except RunMain.DoesNotExist:
-        return
-
-    try:
-        run_detail = RunDetail.objects.get(run=runmain, sample=sample)
-    except RunDetail.DoesNotExist:
-        run_detail = RunDetail(
-            run=runmain,
-            sample=sample,
-            max_depth=run_class.run_detail_report.max_depth,  #
-            max_depthR=run_class.run_detail_report.max_depthR,  #
-            max_gaps=run_class.run_detail_report.max_gaps,  #
-            max_prop=run_class.run_detail_report.max_prop,  #
-            max_mapped=run_class.run_detail_report.max_mapped,  #
-            input=run_class.run_detail_report.input,  #
-            enriched_reads=run_class.run_detail_report.enriched_reads,  #
-            enriched_reads_percent=run_class.run_detail_report.enriched_reads_percent,  #
-            depleted_reads=run_class.run_detail_report.depleted_reads,  #
-            depleted_reads_percent=run_class.run_detail_report.depleted_reads_percent,  #
-            processed=run_class.run_detail_report.processed,  #
-            processed_percent=run_class.run_detail_report.processed_percent,  #
-            sift_preproc=run_class.run_detail_report.sift_preproc,  #
-            sift_remap=run_class.run_detail_report.sift_remap,  #
-            sift_removed_pprc=run_class.run_detail_report.sift_removed_pprc,
-            processing_final=run_class.run_detail_report.processing_final,  #
-            processing_final_percent=run_class.run_detail_report.processing_final_percent,  #
-            merged=run_class.run_detail_report.merged,  #
-            merged_number=run_class.run_detail_report.merged_number,  #
-            merged_files=run_class.run_detail_report.merged_files,  #
-        )
-
-        run_detail.save()
-
-    try:
-        run_assembly = RunAssembly.objects.get(run=runmain, sample=sample)
-    except RunAssembly.DoesNotExist:
-        run_assembly = RunAssembly(
-            run=runmain,
-            sample=sample,
-            performed=run_class.assembly_report.performed,
-            method=run_class.assembly_report.assembly_soft,
-            args=run_class.assembly_report.assembly_args,  #
-            contig_number=run_class.assembly_report.assembly_number,
-            contig_max=run_class.assembly_report.assembly_max,
-            contig_min=run_class.assembly_report.assembly_min,
-            contig_mean=run_class.assembly_report.assembly_mean,
-            contig_trim=run_class.assembly_report.assembly_trim,
-            assembly_contigs=run_class.assembly_drone.assembly_file_fasta_gz,
-        )
-        run_assembly.save()
-
-    try:
-        read_classification = ReadClassification.objects.get(run=runmain, sample=sample)
-    except ReadClassification.DoesNotExist:
-        read_classification = ReadClassification(
-            run=runmain,
-            sample=sample,
-            read_classification_report=run_class.read_classification_summary,
-            performed=run_class.read_classification_results.performed,
-            method=run_class.read_classification_results.method,
-            args=run_class.read_classification_results.args,
-            db=run_class.read_classification_results.db,
-            classification_number=run_class.read_classification_results.classification_number,
-            classification_minhit=run_class.read_classification_results.classification_minhit,
-            success=run_class.read_classification_results.success,
-        )
-        read_classification.save()
-
-    try:
-        contig_classification = ContigClassification.objects.get(
-            run=runmain, sample=sample
-        )
-
-    except ContigClassification.DoesNotExist:
-        contig_classification = ContigClassification(
-            run=runmain,
-            sample=sample,
-            contig_classification_report=run_class.assembly_classification_summary,
-            performed=run_class.contig_classification_results.performed,
-            method=run_class.contig_classification_results.method,
-            args=run_class.contig_classification_results.args,
-            db=run_class.contig_classification_results.db,
-            classification_number=run_class.contig_classification_results.classification_number,
-            classification_minhit=run_class.contig_classification_results.classification_minhit,
-            # success=run_class.contig_classification_results.success,
-        )
-        contig_classification.save()
-
-    try:
-        remap_main = RunRemapMain.objects.get(run=runmain, sample=sample)
-
-    except RunRemapMain.DoesNotExist:
-        remap_main = RunRemapMain(
-            run=runmain,
-            sample=sample,
-            merged_log=run_class.merged_classification_summary,
-            remap_plan=run_class.remap_plan_path,
-            performed=run_class.remap_main.performed,
-            method=run_class.remap_main.method,
-            found_total=run_class.remap_main.found_total,
-            coverage_maximum=run_class.remap_main.coverage_max,
-            coverage_minimum=run_class.remap_main.coverage_min,
-            success=run_class.remap_main.success,
-        )
-        remap_main.save()
+    sample, runmain, _ = get_run_parents(run_class, parameter_set)
 
     for ref, row in run_class.raw_targets.iterrows():
         if row.status:
@@ -1120,8 +972,6 @@ def Update_Sample_Runs_DB(run_class: RunMain_class, parameter_set: ParameterSet)
             )
 
             remap_target.save()
-
-    Update_FinalReport(run_class, runmain, sample)
 
 
 def Update_FinalReport(run_class, runmain, sample):
@@ -1164,6 +1014,8 @@ def Update_FinalReport(run_class, runmain, sample):
                 depthR=row["HdepthR"],
                 ngaps=row["ngaps"],
                 mapped_reads=row["mapped"],
+                error_rate=row["error_rate"],
+                quality_avg=row["quality_avg"],
                 ref_proportion=row["ref_prop"],
                 mapped_proportion=row["mapped_prop"],
                 mapping_success=row["mapping_success"],
@@ -1184,7 +1036,7 @@ def Update_FinalReport(run_class, runmain, sample):
             report_row.save()
 
 
-def Update_RefMap_DB(run_class: RunMain_class, parameter_set: ParameterSet):
+def Update_RefMap_DB(run_class: RunEngine_class, parameter_set: ParameterSet):
     """
     Update Remap TABLES with info on this run.
 
@@ -1193,26 +1045,10 @@ def Update_RefMap_DB(run_class: RunMain_class, parameter_set: ParameterSet):
     """
     print(f"updating refmap_dbs run {run_class.prefix}")
 
-    user = User.objects.get(username=run_class.username)
-    project = Projects.objects.get(
-        name=run_class.project_name, owner=user, is_deleted=False
-    )
-
-    sample = PIProject_Sample.objects.get(
-        name=run_class.sample.sample_name,
-        project=project,
-    )
-
-    run = RunMain.objects.get(
-        project=project,
-        suprun=run_class.suprun,
-        name=run_class.prefix,
-        sample=sample,
-        parameter_set=parameter_set,
-    )
+    sample, runmain, _ = get_run_parents(run_class, parameter_set)
 
     for ref_map in run_class.remap_manager.mapped_instances:
-        Update_ReferenceMap(ref_map, run, sample)
+        Update_ReferenceMap(ref_map, runmain, sample)
 
 
 def Update_ReferenceMap(

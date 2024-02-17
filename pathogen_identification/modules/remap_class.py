@@ -10,20 +10,18 @@ import pandas as pd
 from Bio.SeqIO.FastaIO import SimpleFastaParser
 from scipy.stats import kstest
 
+from constants.software_names import SoftwareNames
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.modules.object_classes import (
-    Bedgraph,
-    Read_class,
-    Remap_Target,
-    RunCMD,
-    Software_detail,
-    SoftwareRemap,
-)
+from pathogen_identification.modules.object_classes import (Bedgraph,
+                                                            MappingStats,
+                                                            Read_class,
+                                                            Remap_Target,
+                                                            RunCMD,
+                                                            SoftwareDetail,
+                                                            SoftwareRemap)
 from pathogen_identification.utilities.televir_parameters import RemapParams
 from pathogen_identification.utilities.utilities_general import (
-    plot_dotplot,
-    read_paf_coordinates,
-)
+    plot_dotplot, read_paf_coordinates)
 
 pd.options.mode.chained_assignment = None
 np.warnings.filterwarnings("ignore")
@@ -69,7 +67,7 @@ class coverage_parse:
 
         self.ctgl = ctg_lens
         self.report = pd.DataFrame(
-            [[x, 0, 0, 0, 0, 0, 0, 0, 0, 0] for x in ctg_lens.keys()],
+            [[x, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0] for x in ctg_lens.keys()],
             columns=[
                 "ID",
                 "Hdepth",
@@ -78,6 +76,7 @@ class coverage_parse:
                 "nregions",
                 "Rsize",
                 "windows_covered",
+                "pval_uniform",
                 "ngaps",
                 "Gdist",
                 "Gsize",
@@ -162,7 +161,7 @@ class coverage_parse:
 
         if bedp.shape[0] == 0:
             windows_covered = f"0/{nwindows}"
-            results.extend([0, 0, windows_covered])
+            results.extend([0, 0, windows_covered, 1])
 
         else:
             savg = sum(bedp.s) / bedp.shape[0]
@@ -201,10 +200,10 @@ class coverage_parse:
                 pvals = sum(pvals) / len(pvals)
                 savg = bedp.s.median()
 
-                results.extend([bedp.shape[0], savg, windows_covered])
+                results.extend([bedp.shape[0], savg, windows_covered, pvals])
 
             else:
-                results.extend([1, savg, "NA"])
+                results.extend([1, savg, "NA", 1])
 
         ### gap operations.
         bedg = bedm[bedm.x < self.Xm].reset_index(drop=True)
@@ -220,7 +219,6 @@ class coverage_parse:
                 for ctg in bedg.contig.unique():
                     bg = bedg[bedg.contig == ctg].copy()
                     distances.append(np.sum(np.array(bg.i[1:]) - np.array(bg.e[:-1])))
-                print(distances)
 
                 if len(distances) > 0:
                     distances = np.sum(np.array(distances) / len(distances))
@@ -267,7 +265,7 @@ class coverage_parse:
                 tr[1] = 0
             else:
                 tr[1] = tr[1] / sum(reggie.l)
-            tr[2] = tr[2] * 100 / self.ctgl[ctg]
+            tr[2] = tr[2] * 100 / self.ctgl[ctg]  # % of genome covered
             report.append([ctg] + tr)
 
         report = pd.DataFrame(report)
@@ -280,6 +278,7 @@ class coverage_parse:
             "nregions",
             "Rsize",
             "windows_covered",
+            "pval_uniform",
             "ngaps",
             "Gdist",
             "Gsize",
@@ -296,7 +295,7 @@ class coverage_parse:
 class RemapMethod_init:
     def __init__(
         self,
-        method: Software_detail,
+        method: SoftwareDetail,
         r1,
         r2,
         args,
@@ -329,7 +328,7 @@ class RemapMethod_init:
 class Remap_Snippy(RemapMethod_init):
     def __init__(
         self,
-        method: Software_detail,
+        method: SoftwareDetail,
         r1,
         r2,
         args,
@@ -659,7 +658,7 @@ class Remapping:
         :param logging_level: logging level to use.
         """
         remap_method = methods.remap_software
-        self.remap_filter = methods.remap_filter
+        self.remap_filters = methods.remap_filters
         self.method = remap_method.name.split("_")[0]
         self.method_object = remap_method
         self.args = remap_method.args
@@ -704,6 +703,9 @@ class Remapping:
         )
         self.read_map_sorted_bam_index = (
             f"{self.rdir}/{self.prefix}.{target.acc_simple}.sorted.bam.bai"
+        )
+        self.read_map_sorted_bam_stats = (
+            f"{self.rdir}/{self.prefix}.{target.acc_simple}.sorted.bam.stats"
         )
 
         self.genome_coverage = f"{self.rdir}/{self.prefix}.sorted.bedgraph"
@@ -998,7 +1000,15 @@ class Remapping:
         self.index_sorted_bam()
 
     def filter_bamfile(self):
-        self.filter_mapping_bamutil()
+        self.read_map_filtered_bam = self.read_map_bam
+
+        for filter in self.remap_filters.software_list:
+            if filter.name == SoftwareNames.SOFTWARE_BAMUTIL_name:
+                self.filter_mapping_bamutil(filter)
+
+            if filter.name == SoftwareNames.SOFTWARE_MSAMTOOLS_name:
+                self.filter_mapping_msamtools(filter)
+
         self.filter_bam_unmapped()
 
     def filter_bam_unmapped(self):
@@ -1020,26 +1030,25 @@ class Remapping:
             os.remove(bam_path)
             shutil.move(filtered_bam_path, bam_path)
 
-    def filter_mapping_bamutil(self):
+    def filter_mapping_bamutil(self, software: SoftwareDetail):
         """
         filter bam file by mapping quality.
         """
 
-        if self.remap_filter.name == "None":
-            self.logger.info("No bam filtering performed.")
-            self.read_map_filtered_bam = self.read_map_bam
-            return
+        temp_file = (
+            os.path.splitext(self.read_map_bam)[0] + f"{np.random.randint(1000000)}.bam"
+        )
 
         cmd = [
             "bam",
             "filter",
             "--in",
-            self.read_map_bam,
+            self.read_map_filtered_bam,
             "--refFile",
             self.reference_file,
-            self.remap_filter.args,
+            software.args,
             "--out",
-            self.read_map_filtered_bam,
+            temp_file,
             "--noPhoneHome",
         ]
 
@@ -1049,13 +1058,50 @@ class Remapping:
         except Exception as e:
             self.logger.error("Bam filtering failed.")
             self.logger.error(e)
-            self.read_map_filtered_bam = self.read_map_bam
+            if os.path.isfile(temp_file):
+                os.remove(temp_file)
             return
 
-        if not os.path.isfile(self.read_map_filtered_bam):
+        if os.path.isfile(temp_file) and os.path.getsize(temp_file) > 100:
+            os.remove(self.read_map_filtered_bam)
+            shutil.move(temp_file, self.read_map_filtered_bam)
+
+        else:
             self.logger.error("Bam filtering failed, file missing.")
-            self.read_map_filtered_bam = self.read_map_bam
+
+        return
+
+    def filter_mapping_msamtools(self, software: SoftwareDetail):
+        """
+        filter bam file by mapping quality.
+        """
+
+        temp_file = (
+            os.path.splitext(self.read_map_bam)[0] + f"{np.random.randint(1000000)}.bam"
+        )
+
+        cmd = [
+            "msamtools",
+            "filter",
+            software.args,
+            self.read_map_filtered_bam,
+            ">",
+            temp_file,
+        ]
+
+        try:
+            self.cmd.run_script_software(cmd)
+
+        except Exception as e:
+            self.logger.error("Bam filtering failed.")
+            self.logger.error(e)
+            if os.path.isfile(temp_file):
+                os.remove(temp_file)
             return
+
+        if os.path.isfile(temp_file) and os.path.getsize(temp_file) > 100:
+            os.remove(self.read_map_filtered_bam)
+            shutil.move(temp_file, self.read_map_filtered_bam)
 
         return
 
@@ -1460,7 +1506,43 @@ class Remapping:
         self.output_analyser.read_bedfile()
         self.output_analyser.draft_report()
 
-        return self.output_analyser.report
+        bedfile_report = self.output_analyser.report
+        self.generate_samtools_stats()
+        mapping_stats = self.extract_mapping_stats()
+        bedfile_report["error_rate"] = mapping_stats.error_rate
+        bedfile_report["quality_avg"] = mapping_stats.quality_avg
+
+        return bedfile_report
+
+    def generate_samtools_stats(self):
+        """
+        Generate samtools stats file.
+        """
+        cmd = [
+            "samtools",
+            "stats",
+            self.read_map_sorted_bam,
+            "|",
+            "grep ^SN",
+            "|",
+            "cut -f 2-",
+            ">",
+            self.read_map_sorted_bam_stats,
+        ]
+
+        self.cmd.run_script_software(cmd)
+
+    def extract_mapping_stats(self) -> MappingStats:
+        """
+        read stats as pd data frame, pass to class"""
+
+        stats_df = pd.read_csv(
+            self.read_map_sorted_bam_stats, sep="\t", header=None, index_col=0
+        ).rename(columns={0: "stat", 1: "value", 2: "comment"})
+        error_rate = stats_df.loc["error rate:", "value"]
+        quality_avg = stats_df.loc["average quality:", "value"]
+
+        return MappingStats(error_rate, quality_avg)
 
     def plot_coverage(self):
         if os.path.getsize(self.genome_coverage):
@@ -1487,6 +1569,8 @@ class Remapping:
         self.full_path_coverage_plot = os.path.join(
             CS.static_directory, new_coverage_plot
         )
+
+        os.makedirs(static_dir_plots, exist_ok=True)
 
         if self.coverage_plot_exists:
             shutil.move(self.coverage_plot, self.full_path_coverage_plot)
@@ -1905,6 +1989,8 @@ class Mapping_Manager(Tandem_Remap):
                 "ngaps",
                 "Gdist",
                 "Gsize",
+                "error_rate",
+                "quality_avg",
             ],
         )
         self.combined_fasta_path = os.path.join(
@@ -1979,12 +2065,16 @@ class Mapping_Manager(Tandem_Remap):
 
     def run_mappings_move_clean(self, static_plots_dir, media_dir):
         for target in self.remap_targets:
+            print(f"################## MAPPING ACC {target.accid} ##################")
             mapped_instance = self.reciprocal_map(target)
 
             self.mapped_instances.append(mapped_instance)
 
             apres = mapped_instance.reference.number_of_contigs_mapped > 0
             rpres = mapped_instance.reference.number_of_reads_mapped > 0
+
+            print(f" Reads mapped: {rpres}")
+            print(f" Contigs mapped: {apres}")
 
             if rpres:
                 mapped_instance.reference.move_coverage_plot(static_plots_dir)

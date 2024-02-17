@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import List
 
+import pandas as pd
+
 
 @dataclass
 class Clade:
@@ -14,11 +16,13 @@ class Clade:
     name: str
     leaves: list
     group_counts: int
+    private_counts: int
     private_proportion: float
-
+    total_proportion: float
     shared_proportion_std: float
     shared_proportion_min: float
     shared_proportion_max: float
+    overlap_df: pd.DataFrame
 
 
 class CladeFilterMethod(ABC):
@@ -75,7 +79,7 @@ class CladeFilter:
     def __init__(self, reference_clade: Clade):
         self.reference_clade = reference_clade
         self.filters: List[CladeFilterMethod] = [
-            CladeFilterByPrivateProportion(self.reference_clade),
+            # CladeFilterByPrivateProportion(self.reference_clade),
             CladeFilterBySharedProportion(self.reference_clade),
         ]
 
@@ -90,7 +94,7 @@ class CladeFilter:
         Return True if clade passes filter
         """
         assessments = [filter.filter_clade(clade) for filter in self.filters]
-        return all(assessments)
+        return any(assessments)
 
     def filter_clades(self, clades: List[Clade]) -> List[Clade]:
         """

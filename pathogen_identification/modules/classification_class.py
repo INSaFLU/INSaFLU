@@ -3,14 +3,14 @@ import logging
 import os
 import re
 import shutil
+from abc import ABC, abstractmethod
 from random import randint
 from typing import Any, Type
 
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.modules.object_classes import (RunCMD,
-                                                            Software_detail)
+from pathogen_identification.modules.object_classes import RunCMD, SoftwareDetail
 
 
 def check_report_empty(file, comment="@"):
@@ -27,7 +27,7 @@ def check_report_empty(file, comment="@"):
         return False
 
 
-class Classifier_init:
+class Classifier_init(ABC):
     """
     list of clasifiers that overwrite Classifier_init:
     - run_kaiju
@@ -35,6 +35,10 @@ class Classifier_init:
     - run_FastViromeExplorer
 
     """
+
+    method_name = ""
+    report_suffix = ""
+    full_report_suffix = ""
 
     def __init__(
         self,
@@ -110,6 +114,22 @@ class Classifier_init:
                 )
         except:
             pass
+
+    @abstractmethod
+    def run_SE(self, threads: int = 3):
+        pass
+
+    @abstractmethod
+    def run_PE(self, threads: int = 3):
+        pass
+
+    @abstractmethod
+    def get_report(self) -> pd.DataFrame:
+        pass
+
+    @abstractmethod
+    def get_report_simple(self) -> pd.DataFrame:
+        pass
 
 
 class run_kaiju(Classifier_init):
@@ -387,6 +407,9 @@ class run_blast(Classifier_init):
 
         os.chdir(cwd)
 
+    def run_PE(self, threads: int = 3, *args, **kwargs):
+        self.run_PE(threads)
+
     def get_report(self) -> pd.DataFrame:
         """
         read classifier output. return pandas dataframe with standard query sequence id and accession column names.
@@ -447,6 +470,9 @@ class run_blast_p(Classifier_init):
         ]
 
         self.cmd.run(cmd)
+
+    def run_PE(self, threads: int = 3):
+        pass
 
     def run_SE(self, threads: int = 3):
         """
@@ -631,6 +657,9 @@ class run_deSamba(Classifier_init):
 
         self.cmd.run(cmd)
 
+    def run_PE(self, threads: int = 3, **kwargs):
+        pass
+
     def get_report(self) -> pd.DataFrame:
         """
         read classifier output. return pandas dataframe with standard query sequence id and accession column names.
@@ -680,8 +709,8 @@ class run_kraken2(Classifier_init):
         log_dir="",
     ):
         super().__init__(db_path, query_path, out_path, args, r2, prefix, bin, log_dir)
-        self.args.replace("--quick OFF", "")
-        self.args.replace("--quick ON", "--quick")
+        self.args = self.args.replace("--quick OFF", "")
+        self.args = self.args.replace("--quick ON", "--quick")
 
     def run_SE(self, threads: int = 3, **kwargs):
         """
@@ -706,7 +735,7 @@ class run_kraken2(Classifier_init):
 
         cmd.append(self.query_path)
 
-        self.cmd.run(cmd)
+        self.cmd.run_script_software(cmd)
 
     def run_PE(self, threads: int = 3, **kwargs):
         """
@@ -761,9 +790,12 @@ class run_kraken2(Classifier_init):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
         report = pd.read_csv(
-            self.report_path, sep="\t", header=None, usecols=[1, 2], comment="@"
-        ).rename(columns={1: "qseqid", 2: "taxid"})
-        report = report[report.taxid != 0][["qseqid", "taxid"]]  # remove unclassified
+            self.report_path, sep="\t", header=None, usecols=[0, 1, 2, 3], comment="@"
+        ).rename(columns={0: "status", 1: "qseqid", 2: "taxid", 3: "length"})
+        report = report[report.status != "U"][
+            ["qseqid", "taxid", "length"]
+        ]  # remove unclassified
+
         return report
 
 
@@ -772,7 +804,43 @@ class run_diamond(Classifier_init):
     report_suffix = ".daa"
     full_report_suffix = ".daa"
 
+    def __init__(
+        self,
+        db_path: str,
+        query_path: str,
+        out_path: str,
+        args="",
+        r2: str = "",
+        prefix: str = "",
+        bin: str = "",
+        log_dir="",
+    ):
+        super().__init__(db_path, query_path, out_path, args, r2, prefix, bin, log_dir)
+        self.process_args()
+
+    def process_args(self):
+        """
+        Process arguments to remove preset and mode option flags"""
+        self.args = self.args.replace("sensitivity", "")
+
     def run_SE(self, threads: int = 3, *args, **kwargs):
+        cmd = [
+            "diamond",
+            "blastx",
+            "-p",
+            f"{threads}",
+            "-d",
+            self.db_path,
+            "-q",
+            self.query_path,
+            "-o",
+            self.report_path,
+            self.args,
+        ]
+
+        self.cmd.run(cmd)
+
+    def run_PE(self, threads: int = 3, *args, **kwargs):
         cmd = [
             "diamond",
             "blastx",
@@ -1136,7 +1204,7 @@ class run_bowtie2_ONT(Classifier_init):
 
 class run_minimap2_ONT(Classifier_init):
     method_name = "minimap2_ONT"
-    report_suffix = ".sam"
+    report_suffix = ".paf"
     full_report_suffix = ".minimap2"
 
     def run_SE(self, threads: int = 3):
@@ -1192,6 +1260,9 @@ class run_minimap2_asm(Classifier_init):
         cmd = f"minimap2 -t {threads} -c {self.args} {self.db_path} {self.query_path} > {self.report_path}"
         self.cmd.run(cmd)
 
+    def run_PE(self, threads: int = 3):
+        pass
+
     def get_report(self) -> pd.DataFrame:
         if check_report_empty(self.report_path):
             return pd.DataFrame(columns=["qseqid", "acc"])
@@ -1231,6 +1302,18 @@ class Empty_classifier(Classifier_init):
     report_suffix = ".blast_results.tsv"
     full_report_suffix = ".blast_full_results.tsv"
 
+    def run_SE(self, threads: int = 3):
+        pass
+
+    def run_PE(self, threads: int = 3):
+        pass
+
+    def get_report(self) -> pd.DataFrame:
+        return pd.DataFrame(columns=["qseqid", "acc"])
+
+    def get_report_simple(self) -> pd.DataFrame:
+        return pd.DataFrame(columns=["qseqid", "acc"])
+
 
 class Classifier:
     """
@@ -1263,7 +1346,7 @@ class Classifier:
 
     def __init__(
         self,
-        classifier_method: Software_detail,
+        classifier_method: SoftwareDetail,
         query_path: str = "",
         type: str = ConstantsSettings.SINGLE_END,
         r2: str = "",
@@ -1322,15 +1405,11 @@ class Classifier:
         """
         deploy classifier method. read classifier output, return only query and reference sequence id columns.
         """
-        print(self.classifier.method_name)
 
         if self.classifier.method_name == "None":
+            print("No classifier method selected.")
             self.logger.info("No classifier method selected.")
             return
-
-        print(self.check_r1())
-        print(self.r1)
-        print(self.check_classifier_output())
 
         if not self.check_r1():
             self.collect_report()
@@ -1392,6 +1471,10 @@ class Classifier:
         """
         check r1 is not empty
         """
+        print("CHECKING R1")
+        print(self.r1)
+        print(os.path.isfile(self.r1))
+        print(self.check_gz_file_not_empty(self.r1))
 
         if os.path.isfile(self.r1):
             if self.check_gz_file_not_empty(self.r1):
@@ -1457,8 +1540,3 @@ class Classifier:
         self.classified_reads_list = list(
             set(self.classification_report.qseqid.to_list())
         )
-
-        print("###### classification report ######")
-        print(self.prefix)
-        print(self.classification_report)
-        print(len(self.classified_reads_list))

@@ -115,6 +115,7 @@ class SoftwareNames(object):
         "SARS_CoV_2_MN908947_artic_4.1.fa",
         "MPXV_MT903345_Yale_PrimalSeq_v.1.fa",
         "MPXV_comb-ccc7sszn.fa",
+        "MPXV_xGEN_Mpox_Amplicon_panel_no_ITR.fa",
     ]
     ### collect stat data for ILLUMINA, in form of key value
     SOFTWARE_ILLUMINA_stat = "illumina_stat"
@@ -283,6 +284,7 @@ class SoftwareNames(object):
         "SARS_CoV_2_MN908947_artic_4.1.fa",
         "MPXV_MT903345_Yale_PrimalSeq_v.1.fa",
         "MPXV_comb-ccc7sszn.fa",
+        "MPXV_xGEN_Mpox_Amplicon_panel_no_ITR.fa",
     ]
 
     #### VERY important, change in snippy-vcf
@@ -559,6 +561,12 @@ class SoftwareNames(object):
     ### REMAP PARAMETERS
     SOFTWARE_REMAP_PARAMS_max_taxids = "--max-taxids"
     SOFTWARE_REMAP_PARAMS_max_accids = "--max-accids"
+    SOFTWARE_REMAP_PARAMS_include_manual = "--include-manual"
+    SOFTWARE_REMAP_PARAMS_include_manual_options = ["OFF", "ON"]
+
+    SOFTWARE_COMBINED_min_score = "--min-score"
+    SOFTWARE_COMBINED_include_screening = "--screening"
+    SOFTWARE_COMBINED_include_screening_options = ["OFF", "ON"]
 
     ### REPORT LAYOUT
     SOFTWARE_televir_report_layout = "report_layout"
@@ -570,6 +578,9 @@ class SoftwareNames(object):
     SOFTWARE_televir_report_layout_threshold_name = "--r-overlap"
     SOFTWARE_REMAP_PARAMS_min_quality = "--qualityThreshold"  # "--min-quality"
     SOFTWARE_REMAP_PARAMS_max_mismatch = "--mismatchThreshold"  # "--max-mismatch"
+    SOFTWARE_REMAP_PARAMS_min_length = "-l"
+    SOFTWARE_REMAP_PARAMS_min_identity = "-p"
+    SOFTWARE_REMAP_PARAMS_min_cover = "-z"
 
     ### QC SOFTWARE
     SOFTWARE_PRINSEQ = os.path.join(
@@ -591,6 +602,14 @@ class SoftwareNames(object):
         "preprocess/bamUtil/bin/bam",
     )
     SOFTWARE_BAMUTIL_VERSION = "1.0.15"
+
+    SOFTWARE_MSAMTOOLS_name = "msamtools"
+    SOFTWARE_MSAMTOOLS_name_extended = "msamtools - Mapping Filtering"
+    SOFTWARE_MSAMTOOLS = os.path.join(
+        settings.DIR_SOFTWARE,
+        "preprocess/msamtools/bin/msamtools",
+    )
+    SOFTWARE_MSAMTOOLS_VERSION = "1.1.3"
 
     ###
 
@@ -678,6 +697,12 @@ class SoftwareNames(object):
     SOFTWARE_DIAMOND_parameters = (
         "-p 5 --top 5 -e 0.01 --id 65 --query-cover 50 --sensitive"
     )
+    SOFTWARE_DIAMOND_PARAMETER_SENSITIVITY_name = "sensitivity"
+    SOFTWARE_DIAMOND_PARAMETER_SENSITIVITY_options = [
+        "--fast",
+        "--sensitive",
+        "--very-sensitive",
+    ]
 
     ### BLASTN
     SOFTWARE_BLAST_name = "Blastn"
@@ -733,6 +758,11 @@ class SoftwareNames(object):
 
     SOFTWARE_MINIMAP2_REMAP_ONT_name = "Minimap2"
     SOFTWARE_MINIMAP2_REMAP_ONT_name_extended = "Minimap2 - Remapping"
+    SOFTWARE_MINIMAP2_REMAP_ONT_name_extended_screening = "Minimap2 - Screening"
+    SOFTWARE_MINIMAP2_REMAP_ONT_name_extended_request_mapping = (
+        "Minimap2 - Request Mapping"
+    )
+
     SOFTWARE_MINIMAP2_REMAP_ONT = os.path.join(
         settings.DIR_SOFTWARE,
         "preprocess/preproc/bin/minimap2",
@@ -742,6 +772,8 @@ class SoftwareNames(object):
 
     SOFTWARE_MINIMAP2_REMAP_ILLU_name = "Minimap2_remap"
     SOFTWARE_MINIMAP2_REMAP_ILLU_name_extended = "Minimap2 - Remapping"
+    SOFTWARE_MINIMAP2_REMAP_ILLU_name_extended_screening = "Minimap2 - Screening"
+
     SOFTWARE_MINIMAP2_REMAP_ILLU = os.path.join(
         settings.DIR_SOFTWARE,
         "preprocess/preproc/bin/minimap2",
@@ -751,6 +783,7 @@ class SoftwareNames(object):
 
     SOFTWARE_MINIMAP2_DEPLETE_ONT_name = "Minimap2_ONT"
     SOFTWARE_MINIMAP2_DEPLETE_ONT_name_extended = "Minimap2"
+
     SOFTWARE_MINIMAP2_DEPLETE_ONT = os.path.join(
         settings.DIR_SOFTWARE,
         "hostDepletion/hostdep_env/bin/minimap2",
@@ -794,6 +827,9 @@ class SoftwareNames(object):
 
     SOFTWARE_BOWTIE2_REMAP_name = "Bowtie2_remap"
     SOFTWARE_BOWTIE2_REMAP_name_extended = "Bowtie2"
+    SOFTWARE_BOWTIE2_REMAP_name_extended_screening = "Bowtie2 - Screening"
+    SOFTWARE_BOWTIE2_REMAP_name_extended_request_mapping = "Bowtie2 - Request Mapping"
+
     SOFTWARE_BOWTIE2_REMAP = os.path.join(
         settings.DIR_SOFTWARE,
         "remap/remap/bin/bowtie2",
@@ -863,7 +899,11 @@ class SoftwareNames(object):
 
     SOFTWARE_REMAP_PARAMS_name = "Remapping - Management"
     SOFTWARE_REMAP_PARAMS_extended = "Remapping - Management"
-    SOFTWARE_REMAP_PARAMS_VERSION = "1"
+    SOFTWARE_REMAP_PARAMS_VERSION = "1.0.0"
+
+    SOFTWARE_METAGENOMICS_SETTINGS_name = "Metagenomics - Settings"
+    SOFTWARE_METAGENOMICS_SETTINGS_name_extended = "Metagenomics - Settings"
+    SOFTWARE_METAGENOMICS_SETTINGS_VERSION = "1.0.0"
 
     ###################################
     ###################################
@@ -911,6 +951,7 @@ class SoftwareNames(object):
         SOFTWARE_BOWTIE2_REMAP_name,
         SOFTWARE_KRAKEN2_name,
         SOFTWARE_MINIMAP2_REMAP_ONT_name,
+        SOFTWARE_MSAMTOOLS_name,
     ]
     # pipeline_steps per software, for software with multiple pipeline_steps.
 
@@ -921,7 +962,8 @@ class SoftwareNames(object):
         ],
         SOFTWARE_BOWTIE2_REMAP_name: [
             ConstantsSettings.PIPELINE_NAME_remapping,
-            ConstantsSettings.PIPELINE_NAME_metagenomics_combine,
+            ConstantsSettings.PIPELINE_NAME_metagenomics_screening,
+            ConstantsSettings.PIPELINE_NAME_request_mapping,
         ],
         SOFTWARE_CENTRIFUGE_name: [
             ConstantsSettings.PIPELINE_NAME_viral_enrichment,
@@ -934,11 +976,16 @@ class SoftwareNames(object):
         SOFTWARE_MINIMAP2_REMAP_ONT_name: [
             ConstantsSettings.PIPELINE_NAME_remapping,
             ConstantsSettings.PIPELINE_NAME_host_depletion,
-            ConstantsSettings.PIPELINE_NAME_metagenomics_combine,
+            ConstantsSettings.PIPELINE_NAME_metagenomics_screening,
+            ConstantsSettings.PIPELINE_NAME_request_mapping,
         ],
         SOFTWARE_BWA_name: [
             ConstantsSettings.PIPELINE_NAME_host_depletion,
             ConstantsSettings.PIPELINE_NAME_read_classification,
+        ],
+        SOFTWARE_MSAMTOOLS_name: [
+            ConstantsSettings.PIPELINE_NAME_remap_filtering,
+            ConstantsSettings.PIPELINE_NAME_map_filtering,
         ],
     }
 

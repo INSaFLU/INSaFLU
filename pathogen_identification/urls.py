@@ -6,6 +6,11 @@ from managing_files import ajax_views, views
 
 urlpatterns = [
     url(
+        r"services$",
+        PIviews.Services.as_view(),
+        name="PIservices_main",
+    ),
+    url(
         r"projects$",
         PIviews.PathId_ProjectsView.as_view(),
         name="PIprojects_main",
@@ -46,9 +51,49 @@ urlpatterns = [
         name="all_PIproject_reports",
     ),
     url(
+        r"Refereces/teleflu_references$",
+        PIajax_views.create_insaflu_reference,
+        name="create_teleflu_reference",
+    ),
+    url(
+        r"Refereces/igv_teleflu_references$",
+        PIajax_views.teleflu_igv_create,
+        name="create_teleflu_igv_reference",
+    ),
+    url(
+        r"Projects/televir_project_create$",
+        PIajax_views.create_teleflu_project,
+        name="create_teleflu_project",
+    ),
+    url(
+        r"deploy_mapping_request$",
+        PIajax_views.submit_sample_mapping_televir,
+        name="map_selected_references",
+    ),
+    url(
+        r"deploy_mapping_request_project_samples$",
+        PIajax_views.submit_project_samples_mapping_televir,
+        name="map_selected_references_project_samples",
+    ),
+    url(
+        r"deploy_mapping_screeing$",
+        PIajax_views.submit_sample_screening_televir,
+        name="deploy_screening_televir_project_sample",
+    ),
+    url(
         r"Projects/explify_merge$",
         PIajax_views.Project_explify_merge,
         name="explify_merge",
+    ),
+    url(
+        r"Projects/explify_merge_external$",
+        PIajax_views.Project_explify_merge_external,
+        name="explify_merge_external",
+    ),
+    url(
+        "Projects/explify_external_delete$",
+        PIajax_views.Project_explify_delete_external,
+        name="explify_delete_external",
     ),
     url(
         r"Projects/project_(?P<pk1>\d+)/sample_(?P<pk2>\d+)",
@@ -86,6 +131,41 @@ urlpatterns = [
         "download_refmap_files", PIviews.download_file_ref, name="download_refmap_files"
     ),
     url(
+        r"References/sample_(?P<pk1>\d+)$",
+        PIviews.ReferencesManagementSample.as_view(),
+        name="sample_references_management",
+    ),
+    url(
+        r"filter_reference_table$",
+        PIviews.inject_references_filter,
+        name="filter_reference_table",
+    ),
+    url(
+        r"added_reference_table$",
+        PIviews.inject_references_added_html,
+        name="added_reference_table",
+    ),
+    url(
+        r"remove_reference$",
+        PIajax_views.remove_added_reference,
+        name="remove_added_reference",
+    ),
+    url(
+        r"set_teleflu_checkbox$",
+        PIajax_views.set_teleflu_check_box_values,
+        name="set_teleflu_checkbox",
+    ),
+    url(
+        r"add_references_to_sample$",
+        PIajax_views.add_references_to_sample,
+        name="add_references_to_sample",
+    ),
+    url(
+        r"add_references_all_samples$",
+        PIajax_views.add_references_all_samples,
+        name="add_references_all_samples",
+    ),
+    url(
         r"Scaffold/project_(?P<pk1>\d+)/sample_(?P<pk2>\d+)/run_(?P<pk3>\d+)/scaffold_(?P<reference>[a-zA-Z0-9_]+)",
         PIviews.Scaffold_Remap.as_view(),
         name="scaffold_remap",
@@ -106,6 +186,11 @@ urlpatterns = [
         name="deploy_runs_ProjectPI",
     ),
     url(
+        r"ajax/deploy_Project_PIMapping$",
+        PIajax_views.deploy_ProjectPI_combined_runs,
+        name="deploy_Project_PIMapping",
+    ),
+    url(
         r"^ajax/submit_televir_sample$",
         PIajax_views.submit_televir_project_sample,
         name="submit_televir_project_sample",
@@ -119,6 +204,11 @@ urlpatterns = [
         r"ajax/sort_reports$",
         PIajax_views.sort_report_projects,
         name="sort_project_reports",
+    ),
+    url(
+        r"ajax/add_references_to_sample$",
+        PIajax_views.add_references_to_sample,
+        name="add_reference_to_sample",
     ),
     url(
         r"ajax/sort_sample$",

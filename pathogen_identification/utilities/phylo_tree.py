@@ -1,6 +1,7 @@
 from typing import Dict, List
 
 import Bio
+import matplotlib.pyplot as plt
 import networkx as nx
 from Bio import Phylo
 
@@ -40,25 +41,25 @@ class PhyloTreeManager:
         """
         Return list of leaves for a node"""
 
-        if node == self.tree.root:
-            # return neighbours
-            return [
-                neighbour
-                for neighbour in self.nx_tree.neighbors(node)
-                if len(neighbour) == 1
-            ]
-        else:
-            return self.leaves_use(node, leaves=[])
+        # if node == self.tree.root:
+        #    # return neighbours
+        #    return [
+        #        neighbour
+        #        for neighbour in self.nx_tree.neighbors(node)
+        #        if len(neighbour) <= 1
+        #    ]
+        # else:
+        return self.leaves_use(node, leaves=[])
 
     def get_node_children(self, node):
         """
         Return list of children for a node"""
 
-        if node == self.tree.root:
-            # return neighbours
-            return [neighbour for neighbour in self.nx_tree.neighbors(node)]
-        else:
-            return self.children_use(node, children=[])
+        # if node == self.tree.root:
+        # return neighbours
+        #    return [neighbour for neighbour in self.nx_tree.neighbors(node)]
+        # else:
+        return self.children_use(node, children=[])
 
     def inner_nodes_get(self):
         """
@@ -137,6 +138,12 @@ class PhyloTreeManager:
 
         return clade_leaves
 
+    def get_node_neighbours(self, node):
+        """
+        Return list of neighbours for a node
+        """
+        return [neighbour for neighbour in self.nx_tree.neighbors(node)]
+
     def clades_get_leaves_clades(self, private_clades=[]):
         """
         Return dictionary of inner nodes and leaves
@@ -167,7 +174,7 @@ class PhyloTreeManager:
         Return dictionary of inner node clades, filter hierarchy -> remove nodes that are children of other nodes
         """
         inner_node_clades = self.inner_node_children_dict_get()
-        # print(inner_node_clades)
+
         if private_clades:
             inner_node_clades = {
                 clade: nodes
@@ -192,8 +199,6 @@ class PhyloTreeManager:
         """
         inner_node_clades = self.inner_node_clades_get_clean(private_clades)
 
-        # innder_node_clades_clean = {}
-
         leaf_clades = reverse_dict_of_lists(inner_node_clades)
 
         tree_leaf_names_dict = {leaf.name: leaf for leaf in self.tree.get_terminals()}
@@ -203,3 +208,20 @@ class PhyloTreeManager:
                 leaf_clades[leafname] = leaf
 
         return leaf_clades
+
+    def plot_tree(self, outpath: str, force=False):
+        plt.figure(figsize=(9, 2))
+        self.tree.root.color = "blue"
+        Phylo.draw(self.tree, axes=plt.gca())
+        # text size
+        for item in (
+            [plt.gcf().get_axes()[0].xaxis.label, plt.gcf().get_axes()[0].yaxis.label]
+            + plt.gcf().get_axes()[0].get_xticklabels()
+            + plt.gcf().get_axes()[0].get_yticklabels()
+        ):
+            item.set_fontsize(6)
+        plt.savefig(outpath, dpi=300)
+
+    def plot_tree_newick(self, outpath: str, force=False):
+        Phylo.draw(self.tree, do_show=False, branch_labels=None)
+        Phylo.write(self.tree, outpath, "newick")

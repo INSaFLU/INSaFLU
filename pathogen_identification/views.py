@@ -1,6 +1,7 @@
 import logging
 import mimetypes
 import os
+from typing import Any, Dict
 
 import pandas as pd
 from braces.views import FormValidMessageMixin, LoginRequiredMixin
@@ -9,16 +10,11 @@ from django.contrib import messages
 from django.db import transaction
 from django.db.models import Q
 from django.forms.models import model_to_dict
-from django.http import (
-    Http404,
-    HttpResponseNotFound,
-    HttpResponseRedirect,
-    JsonResponse,
-)
+from django.http import Http404, HttpResponseNotFound, HttpResponseRedirect
 from django.http.response import HttpResponse
 from django.shortcuts import render
 from django.template.defaultfilters import filesizeformat, pluralize
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.utils.safestring import mark_safe
 from django.views import generic
 from django.views.generic import ListView
@@ -30,9 +26,11 @@ from extend_user.models import Profile
 from fluwebvirus.settings import MEDIA_ROOT, STATICFILES_DIRS
 from managing_files.forms import AddSampleProjectForm
 from managing_files.manage_database import ManageDatabase
+from managing_files.models import ProcessControler
 from managing_files.tables import SampleToProjectsTable
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.forms import ReferenceForm
 from pathogen_identification.models import (
     ContigClassification,
     FinalReport,
@@ -43,29 +41,44 @@ from pathogen_identification.models import (
     ReadClassification,
     ReferenceContigs,
     ReferenceMap_Main,
+    ReferenceSourceFileMap,
     RunAssembly,
     RunDetail,
     RunMain,
     RunRemapMain,
     Sample,
+    TeleFluProject,
     TelevirRunQC,
 )
 from pathogen_identification.modules.object_classes import RunQC_report
 from pathogen_identification.tables import (
+    AddedReferenceTable,
+    CompoundRefereceScoreWithScreening,
+    CompoundReferenceScore,
     ContigTable,
     ProjectTable,
-    ProjectTableMetagenomics,
     RawReferenceTable,
+    RawReferenceTableNoRemapping,
+    ReferenceSourceTable,
     RunMainTable,
-    SampleTable,
-    SampleTableMetagenomics,
+    RunMappingTable,
+    SampleTableOne,
+    TeleFluProjectTable,
+    TeleFluReferenceTable,
 )
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
-from pathogen_identification.utilities.utilities_general import infer_run_media_dir
+from pathogen_identification.utilities.utilities_general import (
+    get_services_dir,
+    infer_run_media_dir,
+)
+from pathogen_identification.utilities.utilities_pipeline import (
+    Parameter_DB_Utility,
+    RawReferenceUtils,
+)
 from pathogen_identification.utilities.utilities_views import (
     EmptyRemapMain,
-    FinalReportCompound,
+    RawReferenceCompound,
     ReportSorter,
     final_report_best_cov_by_accid,
     recover_assembly_contigs,
@@ -96,7 +109,9 @@ def clean_check_box_in_session(request):
         del request.session[key]
 
 
-def is_all_check_box_in_session(vect_check_to_test, request):
+def is_all_check_box_in_session(
+    vect_check_to_test, request, prefix: str = Constants.CHECK_BOX
+):
     """
     test if all check boxes are in session
     If not remove the ones that are in and create the new ones all False
@@ -107,7 +122,7 @@ def is_all_check_box_in_session(vect_check_to_test, request):
     ## get the dictonary
     for key in request.session.keys():
         if (
-            key.startswith(Constants.CHECK_BOX)
+            key.startswith(prefix)
             and len(key.split("_")) == 3
             and utils.is_integer(key.split("_")[2])
         ):
@@ -175,6 +190,48 @@ class download_ref_form(forms.Form):
 ################################################################
 
 
+class Services(LoginRequiredMixin, generic.CreateView):
+    """
+    Display a series of applications to run, independent of projects.
+    """
+
+    template_name = "pathogen_identification/services.html"
+
+    def get_context_data(self, **kwargs):
+        context = {}
+
+        context["nav_services"] = True
+
+        user = self.request.user
+        services_dir = get_services_dir(user)
+        context["services_dir"] = services_dir
+        explify_output_file = os.path.join(services_dir, "merged_televir_explify.tsv")
+        explify_file_exists = os.path.exists(explify_output_file)
+        merge_explify_file_provide = os.path.join(
+            "/media/",
+            "televir_projects",
+            str(user.pk),
+            "services",
+            "merged_televir_explify" + ".tsv",
+        )
+
+        ## check if merging is runnning
+        process_controler = ProcessControler()
+        merger_running = ProcessControler.objects.filter(
+            name=process_controler.get_name_televir_project_merge_explify_external(
+                user_pk=user.pk,
+            ),
+            is_running=True,
+        ).exists()
+
+        context["explify_file_exists"] = explify_file_exists
+        context["explify_output_file"] = merge_explify_file_provide
+        context["merger_running"] = merger_running
+        context["tools"] = []
+
+        return context
+
+
 class PathId_ProjectsView(LoginRequiredMixin, ListView):
     model = Projects
     template_name = "pathogen_identification/projects.html"
@@ -196,10 +253,7 @@ class PathId_ProjectsView(LoginRequiredMixin, ListView):
                 | Q(project_samples__name__icontains=self.request.GET.get(tag_search))
             ).distinct()
 
-        if PICS.METAGENOMICS:
-            table = ProjectTableMetagenomics(query_set)
-        else:
-            table = ProjectTable(query_set)
+        table = ProjectTable(query_set)
 
         RequestConfig(
             self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
@@ -270,9 +324,9 @@ class PathID_ProjectCreateView(LoginRequiredMixin, generic.CreateView):
         context["project_name"] = project_name
         context["show_paginatior"] = False
         context["nav_project"] = True
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
     def form_valid(self, form):
@@ -304,9 +358,9 @@ class PathID_ProjectCreateView(LoginRequiredMixin, generic.CreateView):
                 is_deleted=False,
                 owner__username=self.request.user.username,
             )
-            self.request.session[
-                Constants.ERROR_PROJECT_NAME
-            ] = "Exists a project with this name."
+            self.request.session[Constants.ERROR_PROJECT_NAME] = (
+                "Exists a project with this name."
+            )
             self.request.session[Constants.PROJECT_NAME] = name
             b_error = True
         except Projects.DoesNotExist:
@@ -316,16 +370,16 @@ class PathID_ProjectCreateView(LoginRequiredMixin, generic.CreateView):
             b_error = True
 
         if not form.cleaned_data["name"]:
-            self.request.session[
-                Constants.ERROR_PROJECT_NAME
-            ] = "The project name can not be empty."
+            self.request.session[Constants.ERROR_PROJECT_NAME] = (
+                "The project name can not be empty."
+            )
             self.request.session[Constants.PROJECT_NAME] = name
             b_error = True
 
         if not form.cleaned_data["name"].replace("_", "").isalnum():
-            self.request.session[
-                Constants.ERROR_PROJECT_NAME
-            ] = "The project name can only contain letters and numbers."
+            self.request.session[Constants.ERROR_PROJECT_NAME] = (
+                "The project name can only contain letters and numbers."
+            )
             self.request.session[Constants.PROJECT_NAME] = name
             b_error = True
 
@@ -407,7 +461,7 @@ class AddSamples_PIProjectsView(
                 | Q(week__icontains=self.request.GET.get(tag_search))
             )
             tag_search
-        table = SampleToProjectsTable(query_set)
+        classified_refs_table = SampleToProjectsTable(query_set)
 
         ### set the check_box
         if Constants.CHECK_BOX_ALL not in self.request.session:
@@ -422,9 +476,9 @@ class AddSamples_PIProjectsView(
         dt_sample_id_add_temp = {}
         if context[Constants.CHECK_BOX_ALL]:
             for sample in query_set:
-                dt_sample_id_add_temp[
-                    sample.id
-                ] = 1  ## add the ids that are in the tables
+                dt_sample_id_add_temp[sample.id] = (
+                    1  ## add the ids that are in the tables
+                )
             for key in self.request.session.keys():
                 if (
                     key.startswith(Constants.CHECK_BOX)
@@ -447,18 +501,19 @@ class AddSamples_PIProjectsView(
 
         RequestConfig(
             self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
-        ).configure(table)
+        ).configure(classified_refs_table)
         if self.request.GET.get(tag_search) != None:
             context[tag_search] = self.request.GET.get(tag_search)
+
         context["televir_sample"] = True
-        context["table"] = table
+        context["table"] = classified_refs_table
         context["show_paginatior"] = query_set.count() > Constants.PAGINATE_NUMBER
         context["query_set_count"] = query_set.count()
         context["project_name"] = project.name
         context["nav_modal"] = True  ## short the size of modal window
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         context["show_message_change_settings"] = (
             count_active_projects == 0
             and self.request.session[key_session_name_project_settings]
@@ -630,7 +685,6 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
 
     def get_context_data(self, **kwargs):
         context = super(MainPage, self).get_context_data(**kwargs)
-        tag_search = "search_projects"
 
         try:
             project = Projects.objects.get(pk=self.kwargs["pk"])
@@ -660,6 +714,8 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
             project_name = "project"
             context["project_owner"] = False
 
+        tag_search = "search_projects"
+
         if self.request.GET.get(tag_search) != None and self.request.GET.get(
             tag_search
         ):
@@ -667,7 +723,52 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
                 Q(name__icontains=self.request.GET.get(tag_search))
             ).distinct()
 
-        samples = SampleTable(query_set)
+        samples = SampleTableOne(query_set)
+
+        ### set the check_box
+        if Constants.CHECK_BOX_ALL not in self.request.session:
+            self.request.session[Constants.CHECK_BOX_ALL] = False
+            is_all_check_box_in_session(
+                ["{}_{}".format(Constants.CHECK_BOX, key.id) for key in query_set],
+                self.request,
+            )
+
+        context[Constants.CHECK_BOX_ALL] = self.request.session[Constants.CHECK_BOX_ALL]
+        ## need to clean all the others if are reject in filter
+        dt_sample_id_add_temp = {}
+        if context[Constants.CHECK_BOX_ALL]:
+            for sample in query_set:
+                dt_sample_id_add_temp[sample.id] = (
+                    1  ## add the ids that are in the tables
+                )
+            for key in self.request.session.keys():
+                if (
+                    key.startswith(Constants.CHECK_BOX)
+                    and len(key.split("_")) == 3
+                    and self.utils.is_integer(key.split("_")[2])
+                ):
+                    ### this is necessary because of the search. Can occur some checked box that are out of filter.
+                    if int(key.split("_")[2]) not in dt_sample_id_add_temp:
+                        self.request.session[key] = False
+                    else:
+                        self.request.session[key] = True
+        ## END need to clean all the others if are reject in filter
+
+        ## TeleFlu Projects
+        teleflu_projects = TeleFluProject.objects.filter(
+            televir_project=project, is_deleted=False
+        ).order_by("-last_change_date")
+        context["teleflu_table"] = None
+
+        context["teleflu_projects_exist"] = teleflu_projects.exists()
+        if teleflu_projects.exists():
+
+            context["teleflu_table"] = TeleFluProjectTable(teleflu_projects)
+            RequestConfig(
+                self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
+            ).configure(context["teleflu_table"])
+
+        ###
 
         RequestConfig(
             self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
@@ -680,6 +781,13 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
         if DEPLOY_TYPE == PICS.DEPLOYMENT_TYPE_PIPELINE:
             DEPLOY_URL = "deploy_runs_ProjectPI"
 
+        context["rows_color"] = [
+            "combinations",
+            "mapping_runs",
+            "running_processes",
+            "queued_processes",
+        ]
+        context["metagenomics"] = ConstantsSettings.METAGENOMICS
         context["table"] = samples
         context["deploy_url"] = DEPLOY_URL
         context["project_index"] = project.pk
@@ -730,7 +838,31 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
                     ParameterSet.STATUS_FINISHED,
                     ParameterSet.STATUS_RUNNING,
                 ],
+                run_type__in=[
+                    RunMain.RUN_TYPE_PIPELINE,
+                ],
             ).order_by("-parameter_set__leaf__index")
+
+            run_mapping = RunMain.objects.filter(
+                sample__pk=sample_pk,
+                project__pk=project_pk,
+                project__owner=user,
+                parameter_set__status__in=[
+                    ParameterSet.STATUS_KILLED,
+                    ParameterSet.STATUS_FINISHED,
+                    ParameterSet.STATUS_RUNNING,
+                    ParameterSet.STATUS_ERROR,
+                ],
+                run_type__in=[
+                    RunMain.RUN_TYPE_MAP_REQUEST,
+                    RunMain.RUN_TYPE_COMBINED_MAPPING,
+                ],
+                status__in=[
+                    RunMain.STATUS_DEFAULT,
+                    RunMain.STATUS_RUNNING,
+                    RunMain.STATUS_FINISHED,
+                ],
+            )
             sample_name = sample.sample.name
             project_name = project.name
 
@@ -741,10 +873,29 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
                 fail_silently=True,
             )
             runs = RunMain.objects.none()
+            run_mapping = RunMain.objects.none()
             sample_name = "sample"
             project_name = "project"
 
         runs_table = RunMainTable(runs)
+        rendered_table = ""
+
+        if run_mapping.exists():
+            run_mappings_table = RunMappingTable(run_mapping)
+            small_context = {
+                "nav_sample": True,
+                "total_items": run_mapping.count(),
+                "show_paginatior": run_mapping.count()
+                > ConstantsSettings.PAGINATE_NUMBER,
+                "show_info_main_page": ShowInfoMainPage(),
+                "table": run_mappings_table,
+                "query_set_count": run_mapping.count(),
+            }
+
+            template_table_html = "pathogen_identification/mapping_runs.html"
+            rendered_table = render_to_string(
+                template_table_html, small_context, request=self.request
+            )
 
         RequestConfig(
             self.request, paginate={"per_page": ConstantsSettings.PAGINATE_NUMBER}
@@ -756,6 +907,8 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
             "show_paginatior": runs.count() > ConstantsSettings.PAGINATE_NUMBER,
             "show_info_main_page": ShowInfoMainPage(),
             "table": runs_table,
+            "table_mapping": rendered_table,
+            "mappings_exist": run_mapping.exists(),
             "sample_name": sample_name,
             "project_main": True,
             "project_name": project_name,
@@ -763,6 +916,368 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
             "sample_index": sample_pk,
             "query_set_count": runs.count(),
         }
+
+        return context
+
+
+from django.http import JsonResponse
+from django.template.loader import render_to_string
+
+from fluwebvirus.settings import BASE_DIR
+
+
+def inject_references_filter(request, max_references: int = 30):
+    ###
+    tag_add_reference = "search_add_project_reference"
+    tag_teleflu = "teleflu_reference"
+    table_type = "add_reference"
+    project_id = None
+    project = None
+
+    if request.GET.get(tag_teleflu) and request.GET.get(tag_teleflu) != "":
+        table_type = "teleflu_reference"
+        max_references = 10
+        project_id = int(request.GET.get("project_id"))
+        project = Projects.objects.get(pk=project_id)
+
+    references = []
+    if request.GET.get(tag_add_reference) is not None:
+        if table_type == "teleflu_reference":
+            references = RawReference.objects.filter(
+                Q(accid__icontains=request.GET.get(tag_add_reference))
+                | Q(description__icontains=request.GET.get(tag_add_reference))
+                & ~Q(description__in=["root", "NA"])
+                & Q(run__project__pk=project_id)
+            ).distinct("accid")
+
+            if references.count() == 0:
+                references = []
+            else:
+                reference_utils = RawReferenceUtils(project=project)
+                reference_pks = references.values_list("run__pk", flat=True).distinct()
+                references = [
+                    RawReferenceCompound(raw_reference) for raw_reference in references
+                ]
+
+                reference_utils.sample_reference_tables_filter(
+                    runs_filter=reference_pks
+                )
+                reference_utils.update_scores_compound_references(references)
+
+                references = sorted(
+                    references, key=lambda x: float(x.standard_score), reverse=True
+                )
+
+        elif request.GET.get(tag_add_reference) != "":
+            references = ReferenceSourceFileMap.objects.filter(
+                Q(
+                    reference_source__description__icontains=request.GET.get(
+                        tag_add_reference
+                    )
+                )
+                | Q(
+                    reference_source__accid__icontains=request.GET.get(
+                        tag_add_reference
+                    )
+                )
+                | Q(
+                    reference_source__taxid__taxid__icontains=request.GET.get(
+                        tag_add_reference
+                    )
+                )
+            ).distinct("reference_source__accid")
+
+        # show max 10 references
+        references = references[:max_references]
+
+        data = inject_references(references, request, type=table_type)
+
+        return JsonResponse(data)
+
+    else:
+        data = inject_references([], request)
+        return JsonResponse(data)
+
+
+def inject_references(references: list, request, type: str = "add_reference"):
+    context = {}
+    data = {}
+    print("inject_references")
+
+    if type == "add_reference":
+        table = ReferenceSourceTable(references)
+    else:
+        print("here")
+        table = TeleFluReferenceTable(references, order_by=("standard_score",))
+
+    context["references_table"] = table
+    context["references_count"] = len(references)
+
+    if type == "add_reference":
+        template_table_html = "pathogen_identification/references_table_table_only.html"
+    else:
+        template_table_html = (
+            "pathogen_identification/teleflu_references_table_only.html"
+        )
+    # render tamplate using context
+    rendered_table = render_to_string(template_table_html, context, request=request)
+    data["my_content"] = rendered_table
+    data["references_count"] = len(references)
+
+    return data
+
+
+def inject_references_added_html(request):
+    sample_pk = int(request.GET.get("sample_id"))
+    query_set_added_manual = RawReference.objects.filter(
+        run__sample__pk=sample_pk, run__run_type=RunMain.RUN_TYPE_STORAGE
+    )
+
+    added_references_context = inject__added_references(query_set_added_manual, request)
+    empty_data_context = inject_references([], request)
+    added_references_context["empty_content"] = empty_data_context["my_content"]
+
+    return JsonResponse(added_references_context)
+
+
+def inject__added_references(references: list, request):
+    context = {}
+    data = {}
+
+    context["references_table"] = AddedReferenceTable(references)
+    context["references_count"] = len(references)
+
+    template_table_html = os.path.join(
+        BASE_DIR,
+        "templates",
+        "pathogen_identification/references_table_table_only_padding.html",
+    )
+    template_table_html = (
+        "pathogen_identification/references_table_table_only_padding.html"
+    )
+
+    # render tamplate using context
+    rendered_table = render_to_string(template_table_html, context, request=request)
+    data["my_content"] = rendered_table
+    data["references_count"] = len(references)
+
+    return data
+
+
+# class TeleFluProjectCreate(LoginRequiredMixin, generic.CreateView):
+
+
+class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
+    """
+    page with raw references table for single sample. used to add references and select for remap
+    """
+
+    template_name = "pathogen_identification/references_table.html"
+    fields = "__all__"
+    utils = Utils()
+
+    def get_queryset(self, **kwargs):
+        sample_pk = int(self.kwargs["pk1"])
+
+        return (
+            RawReference.objects.filter(run__sample__pk=sample_pk)
+            .exclude(accid="-")
+            .distinct("accid")
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super(ReferencesManagementSample, self).get_context_data(**kwargs)
+        context["nav_project"] = True
+
+        sample_pk = int(self.kwargs["pk1"])
+
+        try:
+            sample_main = PIProject_Sample.objects.get(pk=sample_pk)
+        except Exception:
+            messages.error(
+                self.request,
+                "Sample with ID '{}' does not exist".format(sample_pk),
+                fail_silently=True,
+            )
+            raise Http404
+
+        project_main = sample_main.project
+        project_name = project_main.name
+
+        if project_main.owner == self.request.user:
+            query_set = (
+                RawReference.objects.filter(run__sample__pk=sample_pk)
+                .exclude(accid="-")
+                .distinct("accid")
+            )
+
+            query_set_added_manual = query_set.filter(
+                run__run_type=RunMain.RUN_TYPE_STORAGE
+            )
+            query_set = query_set.exclude(run__run_type=RunMain.RUN_TYPE_STORAGE)
+
+            sample_name = sample_main.sample.name
+        else:
+            messages.error(
+                self.request,
+                "You do not have permission to access this project.",
+                fail_silently=True,
+            )
+            query_set = RawReference.objects.none()
+            query_set_added_manual = RawReference.objects.none()
+            project_name = "project"
+            sample_name = "sample"
+
+        #### search add reference bar.
+        context["references_table"] = None
+        context["references_count"] = 0
+
+        if self.request.method == "POST":
+            references_form = ReferenceForm(self.request.POST)
+        else:
+            references_form = ReferenceForm()
+
+        context["references_form"] = references_form
+
+        ##### check Screening performed
+        screening_performed = RunMain.objects.filter(
+            sample=sample_main, run_type=RunMain.RUN_TYPE_SCREENING
+        ).exists()
+
+        reference_table_class = CompoundReferenceScore
+        ordered_by = ("score",)
+
+        if screening_performed:
+            reference_table_class = CompoundRefereceScoreWithScreening
+            ordered_by = ("score", "screening_score")
+
+        #### added references table
+        added_references_context = inject__added_references(
+            query_set_added_manual, self.request
+        )
+        context["added_references_table"] = added_references_context["my_content"]
+        context["added_references_count"] = added_references_context["references_count"]
+
+        # raw_references = raw_references
+        tag_search = "search_add_project_sample"
+        if self.request.GET.get(tag_search) != None and self.request.GET.get(
+            tag_search
+        ):
+            query_set = query_set.filter(
+                Q(description__icontains=self.request.GET.get(tag_search))
+                | Q(accid__icontains=self.request.GET.get(tag_search))
+                | Q(taxid__icontains=self.request.GET.get(tag_search))
+            )
+            # tag_search
+
+        reference_utils = RawReferenceUtils(sample_main)
+
+        raw_reference_compound = [
+            RawReferenceCompound(raw_reference) for raw_reference in query_set
+        ]
+
+        classification_runs = RunMain.objects.filter(
+            sample=sample_main, run_type=RunMain.RUN_TYPE_PIPELINE
+        )
+
+        # pks of classification runs as integer list
+        runs_pks = [run.pk for run in classification_runs]
+
+        if classification_runs.exists():
+            if query_set.exists():
+                reference_utils.sample_reference_tables_filter(runs_filter=runs_pks)
+                reference_utils.update_scores_compound_references(
+                    raw_reference_compound
+                )
+
+            compound_reference_table = reference_table_class(
+                raw_reference_compound, order_by=ordered_by
+            )
+        else:
+            compound_reference_table = reference_table_class(
+                raw_reference_compound, order_by="runs"
+            )
+
+        if Constants.CHECK_BOX_ALL not in self.request.session:
+            self.request.session[Constants.CHECK_BOX_ALL] = False
+            is_all_check_box_in_session(
+                ["{}_{}".format(Constants.CHECK_BOX, key.id) for key in query_set],
+                self.request,
+            )
+
+        context[Constants.CHECK_BOX_ALL] = self.request.session[Constants.CHECK_BOX_ALL]
+        ## need to clean all the others if are reject in filter
+        dt_sample_id_add_temp = {}
+        if context[Constants.CHECK_BOX_ALL]:
+            for sample in query_set:
+                dt_sample_id_add_temp[sample.id] = (
+                    1  ## add the ids that are in the tables
+                )
+            for key in self.request.session.keys():
+                if (
+                    key.startswith(Constants.CHECK_BOX)
+                    and len(key.split("_")) == 3
+                    and self.utils.is_integer(key.split("_")[2])
+                ):
+                    ### this is necessary because of the search. Can occur some checked box that are out of filter.
+                    if int(key.split("_")[2]) not in dt_sample_id_add_temp:
+                        self.request.session[key] = False
+                    else:
+                        self.request.session[key] = True
+
+        RequestConfig(self.request, paginate={"per_page": 20}).configure(
+            compound_reference_table
+        )
+        if self.request.GET.get(tag_search) != None:
+            context[tag_search] = self.request.GET.get(tag_search)
+
+        ### graph
+        #### graph
+        graph_progress = TreeProgressGraph(sample_main)
+        # graph_progress.generate_graph()
+        graph_json, graph_id = graph_progress.get_graph_data()
+        ####
+        # runs = set([run.pk for run in classification_runs])
+        # runs = classification_runs
+        runs_number = len(classification_runs) > 0
+        ### modal buttons
+        # white color icons for the buttons
+        color = 'style="color:white;"'
+        deploy_metagenomics = (
+            "<a "
+            + 'href="#id_deploy_metagenomics_modal" data-toggle="modal" data-toggle="tooltip" '
+            + 'id="deploy_metagenomics_modal" '
+            + 'title="Run combined metagenomics"'
+            + f"pk={sample_pk} "
+            + f"ref_name={sample_name} style='color: #fff;'"
+            + f'><i class="padding-button-table fa fa-paw padding-button-table" {color}></i> Map Combined </a>'
+        )
+        metagenomics_parameters = (
+            "<a href="
+            + reverse("pathogenID_sample_settings", kwargs={"sample": sample_pk})
+            + ' data-toggle="tooltip" data-toggle="modal" title="Manage combine settings" style="color: #fff;">'
+            + f'<i class="padding-button-table fa fa-pencil-square padding-button-table" {color}></i> Parameters </a>'
+        )
+
+        context["runs"] = classification_runs
+        context["runs_number"] = runs_number
+        context["graph_json"] = graph_json
+        context["graph_id"] = graph_id
+        context["meta_parameters"] = mark_safe(metagenomics_parameters)
+        context["deploy_metagenomics"] = mark_safe(deploy_metagenomics)
+        context["nav_sample"] = True
+        context["show_paginatior"] = query_set.count() > Constants.PAGINATE_NUMBER
+        context["query_set_count"] = query_set.count()
+        context["show_info_main_page"] = ShowInfoMainPage()
+        context["nav_modal"] = True  ## short the size of modal window
+
+        context["owner"] = True
+        context["references"] = raw_reference_compound
+        context["table"] = compound_reference_table
+        context["sample_name"] = sample_name
+        context["project_name"] = project_name
+        context["project_index"] = project_main.pk
+        context["sample_index"] = sample_pk
 
         return context
 
@@ -882,7 +1397,8 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             raise Http404
 
         try:
-            run_main = RunMain.objects.get(pk=run_pk)
+            run_main_pipeline = RunMain.objects.get(pk=run_pk)
+
         except Exception as e:
             messages.error(self.request, "Run does not exist")
             raise Http404
@@ -898,12 +1414,14 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
 
         project_name = project_main.name
         sample_name = sample.name
-        run_name = run_main.parameter_set.leaf.index
-        sample_main = run_main.sample
+        run_name = run_main_pipeline.parameter_set.leaf.index
+        sample_main = run_main_pipeline.sample
+        #
+        is_classification = run_main_pipeline.run_type == RunMain.RUN_TYPE_PIPELINE
         #
 
         raw_references = (
-            RawReference.objects.filter(run=run_main)
+            RawReference.objects.filter(run=run_main_pipeline)
             .order_by("status")
             .exclude(accid="-")
         )
@@ -913,13 +1431,24 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             reverse=True,
         )
 
-        raw_reference_table = RawReferenceTable(raw_references)
+        ########
+        remapping_performed = True
+        if run_main_pipeline.run_type == RunMain.RUN_TYPE_PIPELINE:
+            parameter_utils = Parameter_DB_Utility()
+            remapping_performed = parameter_utils.check_parameter_set_contains_module(
+                run_main_pipeline.parameter_set.leaf, CS.PIPELINE_NAME_remapping
+            )
+
+        if remapping_performed is True:
+            raw_reference_table = RawReferenceTable(raw_references)
+        else:
+            raw_reference_table = RawReferenceTableNoRemapping(raw_references)
 
         #
-        run_detail = RunDetail.objects.get(sample=sample_main, run=run_main)
+        run_detail = RunDetail.objects.get(sample=sample_main, run=run_main_pipeline)
         #
         try:
-            run_qc = TelevirRunQC.objects.get(run=run_main)
+            run_qc = TelevirRunQC.objects.get(run=run_main_pipeline)
             qc_report = RunQC_report(
                 performed=run_qc.performed,
                 method=run_qc.method,
@@ -941,8 +1470,10 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
 
         #
         try:
-            run_assembly = RunAssembly.objects.get(sample=sample_main, run=run_main)
-            recover_assembly_contigs(run_main, run_assembly)
+            run_assembly = RunAssembly.objects.get(
+                sample=sample_main, run=run_main_pipeline
+            )
+            recover_assembly_contigs(run_main_pipeline, run_assembly)
             assembly_available = run_assembly.performed
         except RunAssembly.DoesNotExist:
             run_assembly = None
@@ -950,7 +1481,9 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
 
         #
         try:
-            run_remap = RunRemapMain.objects.get(sample=sample_main, run=run_main)
+            run_remap = RunRemapMain.objects.get(
+                sample=sample_main, run=run_main_pipeline
+            )
             remap_available = run_remap.method != "None"
 
         except RunRemapMain.DoesNotExist:
@@ -959,11 +1492,12 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
 
         #
         read_classification = ReadClassification.objects.get(
-            sample=sample_main, run=run_main
+            sample=sample_main, run=run_main_pipeline
         )
-        #
+
+        ########
         final_report = FinalReport.objects.filter(
-            sample=sample_main, run=run_main
+            sample=sample_main, run=run_main_pipeline
         ).order_by("-coverage")
         #
         report_layout_params = TelevirParameters.get_report_layout_params(run_pk=run_pk)
@@ -972,25 +1506,33 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         sorted_reports = report_sorter.get_reports()
         excluded_reports_exist = report_sorter.check_excluded_exist()
         empty_reports = report_sorter.get_reports_empty()
-        sorted_reports.append(empty_reports)
+        if empty_reports:
+            sorted_reports.append(empty_reports)
 
         # check has control_flag present
-        has_controlled_flag = False if sample_main.is_control else True
+        # has_controlled_flag = False if sample_main.is_control else True
+        private_reads_available = False
+        for report_group in sorted_reports:
+            if report_group.reports_have_private_reads():
+                private_reads_available = True
+                break
 
         contig_classification = ContigClassification.objects.get(
-            sample=sample_main, run=run_main
+            sample=sample_main, run=run_main_pipeline
         )
         #
 
         reference_remap_main = ReferenceMap_Main.objects.filter(
-            sample=sample_main, run=run_main
+            sample=sample_main, run=run_main_pipeline
         )
 
         context = {
             "project": project_name,
             "run_name": run_name,
+            "is_classification": is_classification,
+            "remapping_performed": remapping_performed,
             "sample": sample_name,
-            "run_main": run_main,
+            "run_main": run_main_pipeline,
             "run_detail": run_detail,
             "qc_report": qc_report,
             "assembly": run_assembly,
@@ -1007,48 +1549,63 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "owner": True,
             "in_control": True,  # has_controlled_flag,
             "report_list": sorted_reports,
-            "data_exists": True if not run_main.data_deleted else False,
+            "data_exists": True if not run_main_pipeline.data_deleted else False,
             "excluded_exist": excluded_reports_exist,
             "empty_reports": empty_reports,
+            "error_rate_available": report_sorter.error_rate_available,
+            "max_error_rate": report_sorter.max_error_rate,
+            "quality_avg_available": report_sorter.quality_avg_available,
+            "max_quality_avg": report_sorter.max_quality_avg,
+            "max_mapped_prop": report_sorter.max_mapped_prop,
+            "max_coverage": report_sorter.max_coverage,
+            "max_windows_covered": report_sorter.max_windows_covered,
+            "overlap_heatmap_available": report_sorter.overlap_heatmap_exists,
+            "overlap_heatmap_path": report_sorter.overlap_heatmap_path,
+            "overlap_pca_exists": report_sorter.overlap_pca_exists,
+            "overlap_pca_path": report_sorter.overlap_pca_path,
+            "private_reads_available": private_reads_available,
         }
 
         ### downloadable files
         context["files"] = {}
         # 1. parameters
-        params_file_path = run_main.params_file_path
+        params_file_path = run_main_pipeline.params_file_path
         if os.path.exists(params_file_path):
             context["files"]["parameters"] = params_file_path
         # intermediate files zip
-        intermediate_reports = run_main.intermediate_reports_get()
-        run_main_dir = infer_run_media_dir(run_main)
-        zip_file_name = "{}_intermediate_reports.zip".format(run_main.name)
-        file_path = get_create_zip(
-            intermediate_reports.files, run_main_dir, zip_file_name
-        )
-        context["files"]["intermediate_reports_zip"] = file_path
-
-        # final report
-        reports_df = run_main.get_final_reports_df()
-        run_main_dir = infer_run_media_dir(run_main)
-        reports_df.to_csv(os.path.join(run_main_dir, "final_reports.csv"), index=False)
-        file_path = os.path.join(run_main_dir, "final_reports.csv")
-        context["files"]["final_reports_csv"] = file_path
-
-        def eliminate_path_before_media(path: str):
-            if PICS.televir_subdirectory in path:
-                path = path.split(PICS.televir_subdirectory)[1]
-                televir_sbdir = os.path.join("/media", PICS.televir_subdirectory)
-                return televir_sbdir + path
-
-            return path.replace(MEDIA_ROOT, "/media")
-
-        for fpath in context["files"]:
-            context["files"][fpath] = eliminate_path_before_media(
-                context["files"][fpath]
+        intermediate_reports = run_main_pipeline.intermediate_reports_get()
+        run_main_dir = infer_run_media_dir(run_main_pipeline)
+        if run_main_dir is not None:
+            zip_file_name = "{}_intermediate_reports.zip".format(run_main_pipeline.name)
+            file_path = get_create_zip(
+                intermediate_reports.files, run_main_dir, zip_file_name
             )
-            context["files"][fpath] = get_link_for_dropdown_item(
-                context["files"][fpath]
+            context["files"]["intermediate_reports_zip"] = file_path
+
+            # final report
+            reports_df = run_main_pipeline.get_final_reports_df()
+            run_main_dir = infer_run_media_dir(run_main_pipeline)
+            reports_df.to_csv(
+                os.path.join(run_main_dir, "final_reports.csv"), index=False
             )
+            file_path = os.path.join(run_main_dir, "final_reports.csv")
+            context["files"]["final_reports_csv"] = file_path
+
+            def eliminate_path_before_media(path: str):
+                if PICS.televir_subdirectory in path:
+                    path = path.split(PICS.televir_subdirectory)[1]
+                    televir_sbdir = os.path.join("/media", PICS.televir_subdirectory)
+                    return televir_sbdir + path
+
+                return path.replace(MEDIA_ROOT, "/media")
+
+            for fpath in context["files"]:
+                context["files"][fpath] = eliminate_path_before_media(
+                    context["files"][fpath]
+                )
+                context["files"][fpath] = get_link_for_dropdown_item(
+                    context["files"][fpath]
+                )
 
         return context
 
@@ -1097,11 +1654,19 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         )
 
         report_sorter = ReportSorter(unique_reports, report_layout_params)
-        sorted_reports = report_sorter.get_reports()
-        sorted_reports_compound = [
-            [FinalReportCompound(report) for report in clade]
-            for clade in sorted_reports
-        ]
+        sort_tree_exists = False
+        sort_tree_plot_path = None
+        if report_sorter.overlap_manager is not None:
+            sort_tree_exists = report_sorter.overlap_manager.tree_plot_exists
+            sort_tree_plot_path = report_sorter.overlap_manager.tree_plot_path_render
+
+        sorted_reports = report_sorter.get_reports_compound()
+
+        private_reads_available = False
+        for report_group in sorted_reports:
+            if report_group.reports_have_private_reads():
+                private_reads_available = True
+                break
 
         #### graph
         graph_progress = TreeProgressGraph(sample)
@@ -1109,7 +1674,12 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         graph_json, graph_id = graph_progress.get_graph_data()
         ####
         runs = set([fr.run.pk for fr in final_report])
-        runs = RunMain.objects.filter(pk__in=runs)
+        runs_pipeline = RunMain.objects.filter(
+            pk__in=runs, run_type=RunMain.RUN_TYPE_PIPELINE
+        )
+        runs_mapping = RunMain.objects.filter(pk__in=runs).exclude(
+            run_type=RunMain.RUN_TYPE_PIPELINE
+        )
         runs_number = len(runs) > 0
 
         context = {
@@ -1117,13 +1687,26 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
             "graph_json": graph_json,
             "graph_id": graph_id,
             "sample": sample_name,
+            "tree_plot_exists": False,
+            "tree_plot_path": sort_tree_plot_path,
             "project_index": project_pk,
             "sample_index": sample_pk,
-            "report_list": sorted_reports_compound,
-            "runs": runs,
+            "report_list": sorted_reports,
+            "runs_pipeline": runs_pipeline,
+            "runs_mapping": runs_mapping,
             "runs_number": runs_number,
             "owner": True,
             "in_control": has_controlled_flag,
+            "error_rate_available": report_sorter.error_rate_available,
+            "max_error_rate": report_sorter.max_error_rate,
+            "quality_avg_available": report_sorter.quality_avg_available,
+            "max_quality_avg": report_sorter.max_quality_avg,
+            "max_mapped_prop": report_sorter.max_mapped_prop,
+            "max_coverage": report_sorter.max_coverage,
+            "max_windows_covered": report_sorter.max_windows_covered,
+            "overlap_heatmap_available": report_sorter.overlap_heatmap_exists,
+            "overlap_heatmap_path": report_sorter.overlap_heatmap_path,
+            "private_reads_available": private_reads_available,
         }
 
         return context
@@ -1225,9 +1808,9 @@ def download_file_igv(requestdst):
             # Set the return value of the HttpResponse
             response = HttpResponse(path, content_type=mime_type)
             # Set the HTTP header for sending to browser
-            response[
-                "Content-Disposition"
-            ] = "attachment; filename=%s" % os.path.basename(filepath)
+            response["Content-Disposition"] = (
+                "attachment; filename=%s" % os.path.basename(filepath)
+            )
             # Return the response value
             return response
     else:
@@ -1257,9 +1840,9 @@ def download_file(requestdst):
             # Set the return value of the HttpResponse
             response = HttpResponse(path, content_type=mime_type)
             # Set the HTTP header for sending to browser
-            response[
-                "Content-Disposition"
-            ] = "attachment; filename=%s" % os.path.basename(filepath)
+            response["Content-Disposition"] = (
+                "attachment; filename=%s" % os.path.basename(filepath)
+            )
             # Return the response value
             return response
 
@@ -1321,9 +1904,9 @@ def download_file_ref(requestdst):
             # Set the return value of the HttpResponse
             response = HttpResponse(path, content_type=mime_type)
             # Set the HTTP header for sending to browser
-            response[
-                "Content-Disposition"
-            ] = "attachment; filename=%s" % os.path.basename(filepath)
+            response["Content-Disposition"] = (
+                "attachment; filename=%s" % os.path.basename(filepath)
+            )
             # Return the response value
             return response
 

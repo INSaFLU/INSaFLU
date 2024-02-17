@@ -776,6 +776,7 @@ def turn_on_off_software(request):
                 )
                 software = Software.objects.get(pk=software_id)
                 current_is_to_run = software.is_to_run
+                print(televir_project_id, televir_project_sample_id)
                 if (
                     not televir_project_sample_id is None
                     and not televir_project_id is None
@@ -792,16 +793,20 @@ def turn_on_off_software(request):
                         )
                     )
 
+                    print(set(pipeline_steps_project_sample))
+
                     makeup = pipeline_makeup.match_makeup_name_from_list(
                         pipeline_steps_project_sample
                     )
+                    print("makeup", makeup)
                     if makeup is None:
                         data[
                             "message"
                         ] = f"You cannot perform this operation. Project '{televir_project_sample.project.name}' with sample '{televir_project_sample.sample.name}' would not meet minimum pipeline step requirements."
 
                         return JsonResponse(data)
-                if not televir_project_id is None:
+
+                elif not televir_project_id is None:
                     televir_project = PIProjects.objects.get(pk=televir_project_id)
 
                     pipeline_steps_televir_project = (
@@ -812,7 +817,7 @@ def turn_on_off_software(request):
                         )
                     )
 
-                    makeup = pipeline_makeup.match_makeup_name_from_list(
+                    makeup = pipeline_makeup.match_makeup_name_from_list_classification(
                         pipeline_steps_televir_project
                     )
                     if makeup is None:
@@ -830,8 +835,10 @@ def turn_on_off_software(request):
                             )
                         )
 
-                        makeup = pipeline_makeup.match_makeup_name_from_list(
-                            pipeline_steps_televir_global
+                        makeup = (
+                            pipeline_makeup.match_makeup_name_from_list_classification(
+                                pipeline_steps_televir_global
+                            )
                         )
                         if makeup is None:
                             data[

@@ -234,6 +234,38 @@
         display: none;
     }
 
+    .row-to-toggle {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.8s ease;
+      }
+    
+    .row-to-toggle.active {
+    max-height: 500px; /* Adjust the value to the desired height */
+    }
+
+    .expand-button {
+        display: block;
+        width: 100%;
+        background-color: #e6f2ff;
+        color: #333;
+        padding: 10px 20px;
+        border-radius: 10px;
+        cursor: pointer;
+        text-align: center;
+      }
+      
+      .plot-container {
+        margin: none;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .pull-right {
+        float: right;
+      }
+
 </style>
 
 {% if owner %}
@@ -277,8 +309,8 @@
                             <div class="btn-group">
                                 <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                     Summary Downloads
-                                  </button>
-                                  <div class="dropdown-menu">
+                                </button>
+                                <div class="dropdown-menu pull-right">
                                     {% if files.parameters %} {{ files.parameters }} {% endif %}
                                     {% if files.intermediate_reports_zip %} {{ files.intermediate_reports_zip }} {% endif %}
                                     {% if files.final_reports_csv %} {{ files.final_reports_csv }} {% endif %}
@@ -359,6 +391,7 @@
             </div>
         </div>
     </div>
+    {% if is_classification %}
     <div class="card">
         <div class="card-header" role="tab" id="headingAssembly">
             <h5 class="mb-0">
@@ -456,12 +489,15 @@
                             </p>
                             {% endif %}
                             {% endif %}
+                            {% if remapping_performed %}
                             {% if contig_classification.classification_number > 0 and read_classification.classification_number > 0 %}
                             <p> After merging, a total of {{run_detail.merged_number}} taxids found in our databases were selected
                                 for remapping against.
                             </p>
                             <p style=padding-left:3em> References were collected from the databases:
                                 <em>{{run_detail.merged_files}}</em>. </p>
+                            {% endif %}
+                            
                             {% endif %}
                         </div>
                         {% if data_exists %}
@@ -496,6 +532,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
     {% if remap_available %}
     <div class="card">
         <div class="card-header" role="tab" id="headingRemap">
@@ -567,6 +604,22 @@
                 <div style="padding: 2px; overflow-x:auto;">    
                     <table class="table" width="100%" id="report_table">
                     <thead>
+                        {% if overlap_heatmap_available %} 
+                        <tr>
+                            <td colspan="100%">
+                                <div class="collapsible">
+                                    <div class="collapsible-header">
+                                        <span class="expand-button">Read Overlap</span>
+                                    </div>
+                                    <div class="collapsible-body" style="display: none;">
+                                        <div id="plot" class="plot-container">
+                                            <img src={{overlap_heatmap_path}} alt="Image">
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endif %}
                         <tr class="header">
                             <th>Description</th>
                             <th>Taxid</th>
@@ -579,6 +632,12 @@
                             <th>mapped_prop (%)</th>
                             <th>Gaps</th>
                             <th>Windows Covered</th>
+                            {% if private_reads_available %}
+                            <th>Private reads</th>
+                            {% endif %}  
+                            {% if error_rate_available %}
+                            <th>Mismatch rate</th>
+                            {% endif %}
                             <th>class. success</th>
                             <th>mapping success</th>                
                             <th>Warning</th>
@@ -588,15 +647,51 @@
                         </tr>
                     </thead>
                     <tbody>
+
                         {% for final_report in report_list %}
-                        {% for value in final_report %}
+                        <tr>
+                            <td colspan="100%">
+                                <div style="display: flex; border-radius: 5px; overflow: hidden;">
+                                    <!-- First section -->
+                                    <div style="flex: 1; padding: 5px; padding: 5px;border-right: 1px solid #ccc; border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
+                                        {{final_report.name}}
+                                    </div>
+                                    <!-- Second section -->
+                                    <div style="flex: 1; padding: 10px; padding: 5px;border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
+                                        {{final_report.private_counts}}
+                                    </div>
+                                    <!-- Third section -->
+                                    <div style="flex: 1; padding: 10px; padding: 5px;border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
+                                        {{final_report.private_proportion}}
+                                    </div>
+                                    <!-- Forth section -->
+                                    <div style="flex: 1; padding: 10px; padding: 5px;border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
+                                        {{final_report.group_list|length}}
+                                    </div>
+                                    <div style="flex: 1; padding: 10px; padding: 5px;border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
+                                        <a href="#" id="showButton">Read Overlap</a>
+                                    </div>
+                                    
+                                </div>
+                            </td>
+                        </tr>
+                        {% if final_report.heatmap_exists %}
+                        <tr class="row-to-toggle" id="rowToToggle" style="display: none;">
+                            <td colspan="16">
+                                <div id="plot" class="plot-container">
+                                    <img src={{final_report.heatmap_path}} alt="Image">
+                                </div>
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% for value in final_report.group_list %}
                         <tr class="parent">
                             <td data-title="Description"><a href="#" id="plot_show" >{{value.description}}</a></td>
                             <td data-title="Taxid">{{value.taxid}}</td>
                             <td data-title="accID">
                                 <a href={{value.accid|link_ncbi}}>{{value.accid}}</a>
                             </td>
-                            <td data-title="Cov" style="{{ value.coverage|color_code }}">
+                            <td data-title="Cov" style="{% depth_color value.coverage max_coverage %}">
                                 {{value.coverage|round}}</td>
                             <td data-title="Depth" style="{% depth_color value.depth run_detail.max_depth %}">
                                 {{value.depth|round}}</td>
@@ -606,12 +701,20 @@
                                 {{value.mapped_reads|round}}</td>
                             <td data-title="start prop" style="{% depth_color value.ref_proportion run_detail.max_prop %}">
                                 {{value.ref_proportion|round_to_int}}</td>
-                            <td data-title="mapped_prop" style="{% depth_color value.mapped_proportion run_detail.max_prop %}">
+                            <td data-title="mapped_prop" style="{% depth_color value.mapped_proportion max_mapped_prop %}">
                                 {{value.mapped_proportion|round_to_int}}</td>
-                            <td data-title="Gaps" style="{% depth_color value.ngaps run_detail.max_gaps %}">
+                            <td data-title="Gaps" style="{% depth_color_gaps value.ngaps run_detail.max_gaps %}">
                                 {{value.ngaps}}</td>
-                            <td data-title="Windows Covered">
+                            <td data-title="Windows Covered" style="{% depth_color_windows value.windows_covered max_windows_covered %}">
                                 {% windows_safe value.windows_covered %}</td>
+                            {% if private_reads_available %}
+                            <td data-title="Private reads" style="{% depth_color value.private_reads final_report.max_private_reads %}">
+                                {{value.private_reads}}</td>
+                            {% endif %}
+                            {% if error_rate_available %}
+                            <td data-title="Error rate" style="{% depth_color_error value.error_rate max_error_rate %}">
+                                {{value.error_rate}}</td>
+                            {% endif %}
                             <td data-title="class. success" style="{% success_count_color value.classification_success %}">
                                 {{value.classification_success}}</td>
                             <td data-title="mapping success" style="{% success_count_color value.mapping_success %}">
@@ -620,12 +723,12 @@
                                 {% flag_false_positive value.depth value.depthR value.coverage value.mapped_reads value.windows_covered project_index %}</td>
                             {% if in_control %}
                             <td data-title="Control" style="{% flag_control_color value.control_flag %}">
-                                {% flag_control value.control_flag %}</td>
+                                {{ value.control_flag_str }}</td>
                             {% endif %}
 
                         </tr>
                         <tr class="collapse-report">
-                        <td colspan="14">
+                        <td colspan="16">
                             <div class="table__wrapper">
                             <table class="table table-inner">
                                 <tbody>
@@ -668,7 +771,7 @@
         
                                     {% if value.coverage > 0 %}
                                     <tr class="igv_tab" id="igv_display_{{value.accid}}">
-                                        <td colspan="14" align="center">
+                                        <td colspan="16" align="center">
                                             <div class="card-block">
                                                 <div class="container-fluid">
                                                     <div class="igv-loader" id="loader_igv_{{value.accid}}"><img src="{{ spinner_url }}"/></div>
@@ -790,7 +893,7 @@
                         </tr>
                     {% endfor %}
                     <tr class="detail" style="background-color: #f2f2f2; padding: 0px; margin: 0px; border: 0px;">
-                        <td colspan="15" align="center" style="padding: 0px; margin: 0px">
+                        <td colspan="16" align="center" style="padding: 0px; margin: 0px">
                             <hr class="solid" style="height: 1px; background-color: #000000; margin: 0px;">
                         </td>
                     </tr>
@@ -862,6 +965,14 @@
 
 <script type="text/javascript">
 
+    $(document).ready(function() {
+        $('.collapsible-header').click(function() {
+          $(this).toggleClass('active');
+          $(this).siblings('.collapsible-body').slideToggle('slow');
+        });
+      });
+
+
     $("tr.parent").find("A#plot_show").click(function(e) {
 
         if (e.target.tagName === "A" && e.target.id === "plot_show") {
@@ -870,9 +981,39 @@
             var child_tr = nextTr(parent_tr);
             $(child_tr).toggleClass("active");
             
-        }   
+        }
 
       });
+
+      $("A").click(function(event) {
+        var clickedButton = event.target;
+        var buttonId = clickedButton.id;
+        var buttonText = clickedButton.innerText;
+        var parent_tr = $(clickedButton).parent();
+
+        var parent_id = parent_tr.attr('id');
+
+      });
+
+      $("a").click(function(event) {
+
+        if (event.target.id == "showButton") {
+            event.preventDefault();
+            var clickedLink = $(this);
+            var rowElement = clickedLink.closest("tr");
+            
+            // Access the row element or perform further actions
+            // Get the next row element
+            var nextRowElement = rowElement.next();
+            var nextRowElementClass = nextRowElement.attr('class');
+            if (nextRowElementClass == "row-to-toggle") {
+                // toggle slow
+                nextRowElement.toggle('slow');
+            }
+        }
+
+      });
+
       
 </script>
 
@@ -1202,6 +1343,7 @@
 
 
 <script>
+
     document.getElementById("report_download").addEventListener("click", function(e){
         console.log("download");
         e.preventDefault();

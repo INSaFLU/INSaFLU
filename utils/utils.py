@@ -3,6 +3,7 @@ Created on Oct 31, 2017
 
 @author: mmp
 """
+
 import glob
 import gzip
 import hashlib
@@ -12,8 +13,8 @@ import os
 import random
 import re
 import stat
-import pandas
 
+import pandas
 from Bio import SeqIO
 from Bio.Data.IUPACData import protein_letters_3to1
 from Bio.Seq import MutableSeq, Seq
@@ -893,14 +894,14 @@ class Utils(object):
         """
         return v.lower() in ("yes", "true", "t", "1", "y")
 
-    # 	def is_all_tasks_finished(self, vect_tasks_id):
-    # 		"""
-    # 		return true if all tasks finished
-    # 		"""
-    # 		for task_id in vect_tasks_id:
-    # 			task = fetch(task_id)
-    # 			if (task == None): return False
-    # 		return True
+    #     def is_all_tasks_finished(self, vect_tasks_id):
+    #         """
+    #         return true if all tasks finished
+    #         """
+    #         for task_id in vect_tasks_id:
+    #             task = fetch(task_id)
+    #             if (task == None): return False
+    #         return True
 
     def is_all_tasks_finished_by_result(self, vect_tasks_id):
         """
@@ -910,26 +911,26 @@ class Utils(object):
             task_id.result(wait=-1)
         return True
 
-    # 	def count_tasks_finished_and_not(self, vect_tasks_id):
-    # 		"""
-    # 		return (count_finished, count_not_finished)
-    # 		"""
-    # 		(count_finished, count_not_finished) = (0, 0)
-    # 		for task_id in vect_tasks_id:
-    # 			task = fetch(task_id)
-    # 			if (task == None): count_not_finished += 1
-    # 			else: count_finished += 1
-    # 		return (count_finished, count_not_finished)
+    #     def count_tasks_finished_and_not(self, vect_tasks_id):
+    #         """
+    #         return (count_finished, count_not_finished)
+    #         """
+    #         (count_finished, count_not_finished) = (0, 0)
+    #         for task_id in vect_tasks_id:
+    #             task = fetch(task_id)
+    #             if (task == None): count_not_finished += 1
+    #             else: count_finished += 1
+    #         return (count_finished, count_not_finished)
 
-    # 	def is_all_tasks_finished_success(self, vect_tasks_id):
-    # 		"""
-    # 		return true if all tasks finished
-    # 		"""
-    # 		for task_id in vect_tasks_id:
-    # 			task = fetch(task_id)
-    # 			if (task == None): continue
-    # 			if (not task.success): return False
-    # 		return True
+    #     def is_all_tasks_finished_success(self, vect_tasks_id):
+    #         """
+    #         return true if all tasks finished
+    #         """
+    #         for task_id in vect_tasks_id:
+    #             task = fetch(task_id)
+    #             if (task == None): continue
+    #             if (not task.success): return False
+    #         return True
 
     def add_freq_to_vcf(self, vcf_file, vcf_file_out):
         """
@@ -1174,11 +1175,11 @@ class Utils(object):
     def _get_type_variation(self, ref, alt):
         """return type of variation based on change
         possible in variation type
-                        snp	Single Nucleotide Polymorphism	A => T
-                        mnp	Multiple Nuclotide Polymorphism	GC => AT
-                        ins	Insertion	ATT => AGTT
-                        del	Deletion	ACGG => ACG
-                        complex	Combination of snp/mnp
+                        snp    Single Nucleotide Polymorphism    A => T
+                        mnp    Multiple Nuclotide Polymorphism    GC => AT
+                        ins    Insertion    ATT => AGTT
+                        del    Deletion    ACGG => ACG
+                        complex    Combination of snp/mnp
         """
         if len(ref) == len(alt) and len(alt) == 1:
             return "snp"
@@ -1192,14 +1193,14 @@ class Utils(object):
 
     def count_hits_from_tab(self, tab_file, vect_count_type):
         """
-        NP	864	snp	G	T	99.6855	CDS	+	864/1497	288/498	synonymous_variant c.864G>T p.Gly288Gly	locus_00005		Nucleoprotein
+        NP    864    snp    G    T    99.6855    CDS    +    864/1497    288/498    synonymous_variant c.864G>T p.Gly288Gly    locus_00005        Nucleoprotein
         count the hits by <50; 50-90
         possible in variation type
-                        snp	Single Nucleotide Polymorphism	A => T
-                        mnp	Multiple Nuclotide Polymorphism	GC => AT
-                        ins	Insertion	ATT => AGTT
-                        del	Deletion	ACGG => ACG
-                        complex	Combination of snp/mnp
+                        snp    Single Nucleotide Polymorphism    A => T
+                        mnp    Multiple Nuclotide Polymorphism    GC => AT
+                        ins    Insertion    ATT => AGTT
+                        del    Deletion    ACGG => ACG
+                        complex    Combination of snp/mnp
         vect_count_type = ['snp', 'ins']
         """
         count_hits = CountHits()
@@ -1226,14 +1227,14 @@ class Utils(object):
 
     def get_variations_by_freq_from_tab(self, tab_file, vect_count_type):
         """
-        NP	864	snp	G	T	99.6855	CDS	+	864/1497	288/498	synonymous_variant c.864G>T p.Gly288Gly	locus_00005		Nucleoprotein
+        NP    864    snp    G    T    99.6855    CDS    +    864/1497    288/498    synonymous_variant c.864G>T p.Gly288Gly    locus_00005        Nucleoprotein
         count the hits by <50; 50-90
         possible in variation type
-                        snp	Single Nucleotide Polymorphism	A => T
-                        mnp	Multiple Nuclotide Polymorphism	GC => AT
-                        ins	Insertion	ATT => AGTT
-                        del	Deletion	ACGG => ACG
-                        complex	Combination of snp/mnp
+                        snp    Single Nucleotide Polymorphism    A => T
+                        mnp    Multiple Nuclotide Polymorphism    GC => AT
+                        ins    Insertion    ATT => AGTT
+                        del    Deletion    ACGG => ACG
+                        complex    Combination of snp/mnp
         vect_count_type = ['snp', 'ins']
         out (dict_less_50, dict_more_50, dict_more_90)
         out: dict_less_50{ 'NP': [pos1, pos2, pos3, ...], 'BP1': [pos1, pos2, pos3, ...] ...}
@@ -1409,7 +1410,7 @@ class Utils(object):
             return None
 
         file_name = os.path.join(out_dir, sample_name + FileExtensions.FILE_FASTA)
-        # 		file_name = os.path.join(out_dir, sample_name + "_" + sequence_name + FileExtensions.FILE_FASTA)
+        #         file_name = os.path.join(out_dir, sample_name + "_" + sequence_name + FileExtensions.FILE_FASTA)
         b_saved = False
         with open(consensus_fasta) as handle_consensus:
             record_dict = SeqIO.to_dict(SeqIO.parse(handle_consensus, "fasta"))
@@ -1676,7 +1677,7 @@ class Utils(object):
                 ACCESSION   KX162693
                 VERSION     KX162693
         THIS is important in snpEFF
-        param	in: file_name_in
+        param    in: file_name_in
                         out: file_name_out
         """
         ACCESSION = "ACCESSION"
@@ -2250,20 +2251,23 @@ class Utils(object):
             else:
                 os.unlink(temp_file)
 
+    def read_pangolin(self, pangolin_file):
+        """
+        Reads the content of a pangolin output file (SARS-CoV-2)
+        """
+        if not os.path.exists(pangolin_file):
+            return None
 
-	def read_pangolin(self, pangolin_file):
-		"""
-		Reads the content of a pangolin output file (SARS-CoV-2)
-		"""
-		if(not os.path.exists(pangolin_file)): 
-			return None
-					
-		pangolin_data = pandas.read_csv(pangolin_file, delimiter=Constants.SEPARATOR_COMMA)
-		pangolin_data = pangolin_data[['taxon','lineage']]
-		# replace  suffix added to the identifier for pangolin (TODO: why is this suffix there in the first place??)
-		pangolin_data['taxon'] = pangolin_data['taxon'].str.replace('__.*$','', regex=True)
-		pangolin_data.rename(columns = {'taxon':'Sequence'}, inplace = True)
-		return pangolin_data
+        pangolin_data = pandas.read_csv(
+            pangolin_file, delimiter=Constants.SEPARATOR_COMMA
+        )
+        pangolin_data = pangolin_data[["taxon", "lineage"]]
+        # replace  suffix added to the identifier for pangolin (TODO: why is this suffix there in the first place??)
+        pangolin_data["taxon"] = pangolin_data["taxon"].str.replace(
+            "__.*$", "", regex=True
+        )
+        pangolin_data.rename(columns={"taxon": "Sequence"}, inplace=True)
+        return pangolin_data
 
 
 class ShowInfoMainPage(object):

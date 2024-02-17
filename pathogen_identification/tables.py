@@ -12,32 +12,20 @@ from constants.constants import Constants
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReadClassification,
-    ReferenceContigs,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    SampleQC,
-    TelevirRunQC,
-)
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.models import (ContigClassification, FinalReport,
+                                            ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            ReadClassification,
+                                            ReferenceContigs, RunAssembly,
+                                            RunDetail, RunMain, SampleQC,
+                                            TelevirRunQC)
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.utilities_general import (
-    get_project_dir,
-    get_project_dir_no_media_root,
-)
+    get_project_dir, get_project_dir_no_media_root)
 from pathogen_identification.utilities.utilities_views import (
-    RawReferenceCompound,
-    ReportSorter,
-    check_sample_software_exists,
-    duplicate_metagenomics_software,
-)
+    RawReferenceCompound, ReportSorter, check_sample_software_exists,
+    duplicate_metagenomics_software)
 from settings.models import Parameter, Software
 
 
@@ -1521,10 +1509,6 @@ class RunMappingTable(tables.Table):
             else:
                 runlog += 'title="Validation mapping" style="color: gray;"></i>'
             runlog += "</a>"
-
-            # if RawReference.objects.filter(run=record).count() > 0 and CS.METAGENOMICS:
-            #    if RunDetail.objects.filter(run=record).exists():
-            #        runlog += " " + report_link
 
             return mark_safe(runlog)
 

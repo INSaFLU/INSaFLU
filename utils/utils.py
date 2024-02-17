@@ -12,6 +12,7 @@ import os
 import random
 import re
 import stat
+import pandas
 
 from Bio import SeqIO
 from Bio.Data.IUPACData import protein_letters_3to1
@@ -2248,6 +2249,21 @@ class Utils(object):
                 self.move_file(temp_file, consensus_to)
             else:
                 os.unlink(temp_file)
+
+
+	def read_pangolin(self, pangolin_file):
+		"""
+		Reads the content of a pangolin output file (SARS-CoV-2)
+		"""
+		if(not os.path.exists(pangolin_file)): 
+			return None
+					
+		pangolin_data = pandas.read_csv(pangolin_file, delimiter=Constants.SEPARATOR_COMMA)
+		pangolin_data = pangolin_data[['taxon','lineage']]
+		# replace  suffix added to the identifier for pangolin (TODO: why is this suffix there in the first place??)
+		pangolin_data['taxon'] = pangolin_data['taxon'].str.replace('__.*$','', regex=True)
+		pangolin_data.rename(columns = {'taxon':'Sequence'}, inplace = True)
+		return pangolin_data
 
 
 class ShowInfoMainPage(object):

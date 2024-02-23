@@ -679,6 +679,7 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
     Page with samples of a project
     """
 
+    utils = Utils()
     template_name = "pathogen_identification/main_page.html"
     model = PIProject_Sample
     fields = ["name"]

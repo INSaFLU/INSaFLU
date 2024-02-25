@@ -148,6 +148,11 @@ def check_reference_mapped(sample_id, reference: RawReference):
         ],
         run__run_type__in=[RunMain.RUN_TYPE_MAP_REQUEST],
         run__sample__pk=sample_id,
+        run__parameter_set__status__in=[
+            ParameterSet.STATUS_QUEUED,
+            ParameterSet.STATUS_RUNNING,
+            ParameterSet.STATUS_FINISHED,
+        ],
     ).exists()
 
 

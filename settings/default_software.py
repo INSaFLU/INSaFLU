@@ -3,15 +3,17 @@ Created on 03/05/2020
 
 @author: mmp
 """
+
 from curses.ascii import SO
 
 from django.contrib.auth.models import User
 
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.utilities.utilities_pipeline import (
-    Utility_Pipeline_Manager, Utils_Manager)
+    Utility_Pipeline_Manager,
+    Utils_Manager,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.models import Parameter, Software
@@ -655,25 +657,25 @@ class DefaultSoftware(object):
         """
         test if exist, if not persist in database, for televir"""
 
-#        self.test_default_db(
-#            SoftwareNames.SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name,
-#            self.default_parameters.get_minimap2_map_assembly_default(
-#                user,
-#                Software.TYPE_OF_USE_televir_global,
-#                ConstantsSettings.TECHNOLOGY_minion,
-#            ),
-#            user,
-#        )
-#
-#        self.test_default_db(
-#            SoftwareNames.SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name,
-#            self.default_parameters.get_minimap2_map_assembly_default(
-#                user,
-#                Software.TYPE_OF_USE_televir_global,
-#                ConstantsSettings.TECHNOLOGY_illumina,
-#            ),
-#            user,
-#        )
+        #        self.test_default_db(
+        #            SoftwareNames.SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name,
+        #            self.default_parameters.get_minimap2_map_assembly_default(
+        #                user,
+        #                Software.TYPE_OF_USE_televir_global,
+        #                ConstantsSettings.TECHNOLOGY_minion,
+        #            ),
+        #            user,
+        #        )
+        #
+        #        self.test_default_db(
+        #            SoftwareNames.SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name,
+        #            self.default_parameters.get_minimap2_map_assembly_default(
+        #                user,
+        #                Software.TYPE_OF_USE_televir_global,
+        #                ConstantsSettings.TECHNOLOGY_illumina,
+        #            ),
+        #            user,
+        #        )
 
         self.test_default_db(
             SoftwareNames.SOFTWARE_KRAKEN2_name,
@@ -797,6 +799,7 @@ class DefaultSoftware(object):
                     software.delete()
 
         except Software.DoesNotExist:  ### if not exist save it
+            print("save software", software_name)
             self.default_parameters.persist_parameters(vect_parameters, type_of_use)
 
     def get_trimmomatic_parameters(self, user):

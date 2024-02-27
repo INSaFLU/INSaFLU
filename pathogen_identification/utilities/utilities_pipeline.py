@@ -10,18 +10,21 @@ import pandas as pd
 from django.contrib.auth.models import User
 from django.db.models import Q, QuerySet
 
-from constants.constants import \
-    Televir_Directory_Constants as Televir_Directories
+from constants.constants import Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.host_library import Host
-from pathogen_identification.models import (ParameterSet, PIProject_Sample,
-                                            Projects, RawReference, RunMain,
-                                            SoftwareTree, SoftwareTreeNode)
-from pathogen_identification.utilities.utilities_televir_dbs import \
-    Utility_Repository
-from pathogen_identification.utilities.utilities_views import \
-    RawReferenceCompound
+from pathogen_identification.models import (
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
+from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
+from pathogen_identification.utilities.utilities_views import RawReferenceCompound
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -2002,6 +2005,8 @@ class Parameter_DB_Utility:
             owner=user,
         ).distinct()
 
+        print(software_available)
+
         if sample is not None:
             software_available = software_available.filter(
                 parameter__televir_project_sample=sample
@@ -2021,6 +2026,8 @@ class Parameter_DB_Utility:
         parameters_available = Parameter.objects.filter(
             software__in=software_available,
         ).distinct()
+
+        print(parameters_available)
 
         software_table = pd.DataFrame(software_available.values())
 
@@ -2159,33 +2166,26 @@ class Parameter_DB_Utility:
             request_mapping=request_mapping,
         )
 
-        if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
-            if project is not None:
-                (
-                    software_table,
-                    parameters_table,
-                ) = self.get_software_tables(
-                    project.technology,
-                    project.owner,
-                    project=project,
-                    metagenomics=metagenomics,
-                    mapping_only=mapping_only,
-                    screening=screening,
-                    request_mapping=request_mapping,
-                )
+        print(technology, project, sample, metagenomics, mapping_only, screening)
 
         if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
-            (
-                software_table,
-                parameters_table,
-            ) = self.get_software_tables(
-                project.technology,
-                project.owner,
+            if sample is not None:
+                technology = sample.project.technology
+            elif project is not None:
+                technology = project.technology
+
+            software_table, parameters_table = self.get_software_tables(
+                technology,
+                owner,
+                project=project,
+                sample=sample,
                 metagenomics=metagenomics,
                 mapping_only=mapping_only,
                 screening=screening,
                 request_mapping=request_mapping,
             )
+
+        print(parameters_table.shape, software_table.shape)
 
         if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
             return pd.DataFrame(
@@ -2515,7 +2515,7 @@ class Utils_Manager:
         runs_to_deploy = 0
         samples_available = []
         samples_leaf_dict = {sample: [] for sample in submission_dict.keys()}
-        workflow_deployed_dict= {sample: {} for sample in submission_dict.keys()}
+        workflow_deployed_dict = {sample: {} for sample in submission_dict.keys()}
 
         for sample in submission_dict.keys():
             for leaf, matched_path_node in available_path_nodes.items():
@@ -2528,9 +2528,14 @@ class Utils_Manager:
                         sample=sample, leaf=matched_path_node, project=project
                     )
 
-                workflow_deployed= True if utils.parameter_util.check_ParameterSet_available(
-                            sample=sample, leaf=matched_path_node, project=project
-                        ) is False else False
+                workflow_deployed = (
+                    True
+                    if utils.parameter_util.check_ParameterSet_available(
+                        sample=sample, leaf=matched_path_node, project=project
+                    )
+                    is False
+                    else False
+                )
 
                 utils.parameter_util.set_parameterset_to_queue(
                     sample=sample, leaf=matched_path_node, project=project
@@ -2538,7 +2543,7 @@ class Utils_Manager:
                 runs_to_deploy += 1
                 samples_available.append(sample)
                 samples_leaf_dict[sample].append(matched_path_node)
-                workflow_deployed_dict[sample][matched_path_node]=workflow_deployed
+                workflow_deployed_dict[sample][matched_path_node] = workflow_deployed
 
         samples_leaf_dict = {x: g for x, g in samples_leaf_dict.items() if g}
 
@@ -2620,6 +2625,8 @@ class Utils_Manager:
         Check if a pipeline is possible
         """
         pipeline_setup = Pipeline_Makeup()
+
+        print(user, technology)
 
         combined_table = self.parameter_util.generate_merged_table_safe(
             user, technology
@@ -3072,8 +3079,10 @@ class SoftwareTreeUtils:
             screening=False,
             mapping_only=False,
         )
-        clean_samples_leaf_dict, workflow_deployed_dict = self.utils_manager.sample_nodes_check_repeat_allowed(
-            submission_dict, available_path_nodes, self.project
+        clean_samples_leaf_dict, workflow_deployed_dict = (
+            self.utils_manager.sample_nodes_check_repeat_allowed(
+                submission_dict, available_path_nodes, self.project
+            )
         )
 
         # samples_leaf_dict = {
@@ -3094,13 +3103,17 @@ class SoftwareTreeUtils:
             screening=True,
             mapping_only=False,
         )
-        clean_samples_leaf_dict, workflow_deployed_dict = self.utils_manager.sample_nodes_check_repeat_allowed(
-            submission_dict, available_path_nodes, self.project
+        clean_samples_leaf_dict, workflow_deployed_dict = (
+            self.utils_manager.sample_nodes_check_repeat_allowed(
+                submission_dict, available_path_nodes, self.project
+            )
         )
 
         return clean_samples_leaf_dict
 
-    def check_runs_to_submit_mapping_only(self, sample: PIProject_Sample) -> Tuple[dict, dict]:
+    def check_runs_to_submit_mapping_only(
+        self, sample: PIProject_Sample
+    ) -> Tuple[dict, dict]:
         """
         Check if there are runs to run. sets to queue if there are.
         """
@@ -3113,8 +3126,10 @@ class SoftwareTreeUtils:
             mapping_only=True,
         )
 
-        clean_samples_leaf_dict, workflow_deployed_dict = self.utils_manager.sample_nodes_check_repeat_allowed(
-            submission_dict, available_path_nodes, self.project
+        clean_samples_leaf_dict, workflow_deployed_dict = (
+            self.utils_manager.sample_nodes_check_repeat_allowed(
+                submission_dict, available_path_nodes, self.project
+            )
         )
 
         return clean_samples_leaf_dict, workflow_deployed_dict

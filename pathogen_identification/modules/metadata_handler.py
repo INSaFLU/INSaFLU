@@ -121,12 +121,16 @@ class RunMetadataHandler:
 
         fasta_main_dir = self.config["source"]["REF_FASTA"]
 
-        for ref in references[:max_accids]:
+        for ref in references:
             refmaps = ReferenceSourceFileMap.objects.filter(
                 reference_source__taxid__taxid=ref.taxid,
                 reference_source__accid=ref.accid,
             )
+            accids_replete = 0
             for refmap in refmaps:
+                if accids_replete > max_accids:
+                    break
+
                 accid_simple = (
                     ref.accid.replace(".", "_")
                     .replace(";", "_")
@@ -147,6 +151,8 @@ class RunMetadataHandler:
                         False,
                     )
                 )
+
+                accids_replete += 1
 
     def merge_sample_references(
         self, sample_registered: PIProject_Sample, max_taxids: int, max_remap: int = 15

@@ -574,7 +574,6 @@ def create_teleflu_igv_report(teleflu_project_pk: int) -> bool:
         return False
 
     reference_file = reference.get_reference_fasta(TypePath.MEDIA_ROOT)
-    reference_index = reference.get_reference_fasta_index(TypePath.MEDIA_ROOT)
 
     samples = InsafluProjectSample.objects.filter(project=insaflu_project)
     # samples= [sample.sample for sample in samples]

@@ -3,6 +3,7 @@ Created on 29/11/2021
 
 @author: mmp
 """
+
 import logging
 
 from django.core.management import BaseCommand
@@ -75,7 +76,10 @@ class Command(BaseCommand):
                 software.is_to_run = vect_parameters[0].software.is_to_run
                 software.pipeline_step = vect_parameters[0].software.pipeline_step
                 software.help_text = vect_parameters[0].software.help_text
-                software.save()
+                try:
+                    software.save()
+                except Exception as e:
+                    pass
             else:  ### if PipelineStep not none, test if it is correct
                 if software.name in SoftwareNames.polyvalent_software:
                     if (
@@ -87,8 +91,10 @@ class Command(BaseCommand):
                         software.pipeline_step = vect_parameters[
                             0
                         ].software.pipeline_step
-                        software.save()
-
+                        try:
+                            software.save()
+                        except Exception as e:
+                            pass
                 elif (
                     software.pipeline_step.name
                     != vect_parameters[0].software.pipeline_step.name
@@ -99,7 +105,10 @@ class Command(BaseCommand):
                         vect_parameters[0].software.pipeline_step.name,
                     )
                     software.pipeline_step = vect_parameters[0].software.pipeline_step
-                    software.save()
+                    try:
+                        software.save()
+                    except Exception as e:
+                        pass
 
     def replace_old_technology_names(self):
         """replace old technology names"""

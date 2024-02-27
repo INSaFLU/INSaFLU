@@ -3,6 +3,7 @@ Created on 10/04/2021
 
 @author: mmp
 """
+
 import logging
 import os
 from typing import List
@@ -129,16 +130,26 @@ class DefaultParameters(object):
                     )
                 except Software.DoesNotExist:
                     software = parameter.software
-                    software.save()
+                    try:
+                        software.save()
+                    except Exception as e:
+                        logging.error("Error persisting software: {}".format(e))
+                        continue
 
                 except Software.MultipleObjectsReturned:
                     raise Exception("MultipleObjectsReturned")
 
             parameter.software = software
-            parameter.save()
+            try:
+
+                parameter.save()
+                dt_out_sequential[parameter.sequence_out] = 1
+
+            except Exception as e:
+                logging.error("Error persisting parameter: {}".format(e))
+                continue
 
             ## set sequential number
-            dt_out_sequential[parameter.sequence_out] = 1
 
     def get_software_global_with_step(
         self,
@@ -667,17 +678,21 @@ class DefaultParameters(object):
             return self.get_mask_consensus_threshold_default(
                 software.owner,
                 Software.TYPE_OF_USE_global,
-                ConstantsSettings.TECHNOLOGY_illumina
-                if software.technology is None
-                else software.technology.name,
+                (
+                    ConstantsSettings.TECHNOLOGY_illumina
+                    if software.technology is None
+                    else software.technology.name
+                ),
             )
         elif software.name == SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_name:
             return self.get_clean_human_reads_default(
                 software.owner,
                 Software.TYPE_OF_USE_global,
-                ConstantsSettings.TECHNOLOGY_illumina
-                if software.technology is None
-                else software.technology.name,
+                (
+                    ConstantsSettings.TECHNOLOGY_illumina
+                    if software.technology is None
+                    else software.technology.name
+                ),
             )
         elif software.name == SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name:
             return self.get_limit_coverage_ONT_threshold_default(
@@ -707,17 +722,21 @@ class DefaultParameters(object):
             return self.get_abricate_default(
                 software.owner,
                 Software.TYPE_OF_USE_qc,
-                ConstantsSettings.TECHNOLOGY_illumina
-                if software.technology is None
-                else software.technology.name,
+                (
+                    ConstantsSettings.TECHNOLOGY_illumina
+                    if software.technology is None
+                    else software.technology.name
+                ),
             )
         elif software.name == SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name:
             return self.get_mask_consensus_by_site_default(
                 software.owner,
                 Software.TYPE_OF_USE_global,
-                ConstantsSettings.TECHNOLOGY_illumina
-                if software.technology is None
-                else software.technology.name,
+                (
+                    ConstantsSettings.TECHNOLOGY_illumina
+                    if software.technology is None
+                    else software.technology.name
+                ),
             )
         elif software.name == SoftwareNames.SOFTWARE_GENERATE_CONSENSUS_name:
             return self.get_generate_consensus_default(software.owner)
@@ -725,9 +744,11 @@ class DefaultParameters(object):
             return self.get_freebayes_default(
                 software.owner,
                 Software.TYPE_OF_USE_global,
-                ConstantsSettings.TECHNOLOGY_illumina
-                if software.technology is None
-                else software.technology.name,
+                (
+                    ConstantsSettings.TECHNOLOGY_illumina
+                    if software.technology is None
+                    else software.technology.name
+                ),
             )
         elif software.name == SoftwareNames.SOFTWARE_NEXTSTRAIN_name:
             return self.get_nextstrain_default(software.owner)

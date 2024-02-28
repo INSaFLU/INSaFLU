@@ -12,16 +12,20 @@ from scipy.stats import kstest
 
 from constants.software_names import SoftwareNames
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.modules.object_classes import (Bedgraph,
-                                                            MappingStats,
-                                                            Read_class,
-                                                            Remap_Target,
-                                                            RunCMD,
-                                                            SoftwareDetail,
-                                                            SoftwareRemap)
+from pathogen_identification.modules.object_classes import (
+    Bedgraph,
+    MappingStats,
+    Read_class,
+    Remap_Target,
+    RunCMD,
+    SoftwareDetail,
+    SoftwareRemap,
+)
 from pathogen_identification.utilities.televir_parameters import RemapParams
 from pathogen_identification.utilities.utilities_general import (
-    plot_dotplot, read_paf_coordinates)
+    plot_dotplot,
+    read_paf_coordinates,
+)
 
 pd.options.mode.chained_assignment = None
 np.warnings.filterwarnings("ignore")
@@ -1377,6 +1381,10 @@ class Remapping:
 
         self.cmd.run(cmd)
 
+        if not os.path.isfile(self.read_map_sam):
+            self.logger.error("Conversion to SAM failed for file %s", self.read_map_bam)
+            open(self.read_map_sam, "w").close()
+
     def filter_bamfile_read_names(self):
         """
         convert bam file to samfile,
@@ -1414,6 +1422,7 @@ class Remapping:
             self.cmd.run(cmd)
         else:
             self.logger.error("SAM file not found")
+
             raise FileNotFoundError
 
     def sort_bam(self):
@@ -1769,9 +1778,9 @@ class Mapping_Instance:
 
         if self.reference.number_of_contigs_mapped > 0:
             ntax["mapped_scaffolds_path"] = self.reference.mapped_contigs_fasta
-            ntax[
-                "mapped_scaffolds_index_path"
-            ] = self.reference.mapped_contigs_fasta_index
+            ntax["mapped_scaffolds_index_path"] = (
+                self.reference.mapped_contigs_fasta_index
+            )
         else:
             ntax["mapped_scaffolds_path"] = ""
             ntax["mapped_scaffolds_index_path"] = ""

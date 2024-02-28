@@ -988,14 +988,16 @@ class Remapping:
         2) sort bam file.
         3) index bam file.
         4) get number of mapped reads."""
-
-        self.process_bam()
-        self.generate_vcf()
-        self.get_genomecoverage()
-        self.get_mapped_reads_no_header()
-        self.filter_sam_file_mapped()
-        self.subset_mapped_reads()
-        self.mapped_reads_to_fasta()
+        try:
+            self.process_bam()
+            self.generate_vcf()
+            self.get_genomecoverage()
+            self.get_mapped_reads_no_header()
+            self.filter_sam_file_mapped()
+            self.subset_mapped_reads()
+            self.mapped_reads_to_fasta()
+        except Exception as e:
+            self.logger.error(e)
 
     def process_bam(self):
         self.filter_bamfile_read_names()

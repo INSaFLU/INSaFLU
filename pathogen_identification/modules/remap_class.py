@@ -970,9 +970,14 @@ class Remapping:
             self.remap_deploy()
 
         if self.check_mapping_output_exists():
-            self.remap_reads_post_process()
-            self.assembly_to_reference_map()
-            self.summarize()
+            try:
+                self.remap_reads_post_process()
+                self.assembly_to_reference_map()
+                self.summarize()
+            except Exception as e:
+                self.logger.error(e)
+                self.logger.error("Remapping failed.")
+                return self
 
         else:
             # self.logger.error(

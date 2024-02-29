@@ -761,8 +761,10 @@ class Read_class:
             for line in open(fastq):
                 line = line.strip()
                 if line.startswith("@") and counter == 0:
-                    if line[-2:] == "/1" or line[-2:] == "/2":
-                        line = line[:-2]
+                    if line[-2:] == "/1":
+                        line = line[:-2] + "_1"
+                    elif line[-2:] == "/2":
+                        line = line[:-2] + "_2"
 
                 f.write(line + "\n")
 
@@ -1362,7 +1364,7 @@ class SoftwareUnit:
 
         for leaf_pk in self.leaves:
             print("LEAF PK", leaf_pk)
-            
+
             processed_r1, processed_r2 = self.find_qc_reads(leaf_pk)
             print(processed_r1, processed_r2)
             print(self.check_return_reads(processed_r1, processed_r2))

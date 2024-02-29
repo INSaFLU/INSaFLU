@@ -10,21 +10,18 @@ import pandas as pd
 from django.contrib.auth.models import User
 from django.db.models import Q, QuerySet
 
-from constants.constants import Televir_Directory_Constants as Televir_Directories
+from constants.constants import \
+    Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.host_library import Host
-from pathogen_identification.models import (
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
-from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
-from pathogen_identification.utilities.utilities_views import RawReferenceCompound
+from pathogen_identification.models import (ParameterSet, PIProject_Sample,
+                                            Projects, RawReference, RunMain,
+                                            SoftwareTree, SoftwareTreeNode)
+from pathogen_identification.utilities.utilities_televir_dbs import \
+    Utility_Repository
+from pathogen_identification.utilities.utilities_views import \
+    RawReferenceCompound
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -2005,8 +2002,6 @@ class Parameter_DB_Utility:
             owner=user,
         ).distinct()
 
-        print(software_available)
-
         if sample is not None:
             software_available = software_available.filter(
                 parameter__televir_project_sample=sample
@@ -2026,8 +2021,6 @@ class Parameter_DB_Utility:
         parameters_available = Parameter.objects.filter(
             software__in=software_available,
         ).distinct()
-
-        print(parameters_available)
 
         software_table = pd.DataFrame(software_available.values())
 
@@ -2166,8 +2159,6 @@ class Parameter_DB_Utility:
             request_mapping=request_mapping,
         )
 
-        print(technology, project, sample, metagenomics, mapping_only, screening)
-
         if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
             if sample is not None:
                 technology = sample.project.technology
@@ -2178,14 +2169,29 @@ class Parameter_DB_Utility:
                 technology,
                 owner,
                 project=project,
-                sample=sample,
+                sample=None,
                 metagenomics=metagenomics,
                 mapping_only=mapping_only,
                 screening=screening,
                 request_mapping=request_mapping,
             )
 
-        print(parameters_table.shape, software_table.shape)
+        if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
+            if sample is not None:
+                technology = sample.project.technology
+            elif project is not None:
+                technology = project.technology
+
+            software_table, parameters_table = self.get_software_tables(
+                technology,
+                owner,
+                project=None,
+                sample=None,
+                metagenomics=metagenomics,
+                mapping_only=mapping_only,
+                screening=screening,
+                request_mapping=request_mapping,
+            )
 
         if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
             return pd.DataFrame(
@@ -3079,6 +3085,7 @@ class SoftwareTreeUtils:
             screening=False,
             mapping_only=False,
         )
+
         clean_samples_leaf_dict, workflow_deployed_dict = (
             self.utils_manager.sample_nodes_check_repeat_allowed(
                 submission_dict, available_path_nodes, self.project

@@ -61,6 +61,8 @@ class Command(BaseCommand):
         accid_file_path = metadadata_constants.accession_to_taxid_path
         accid_file_df = pd.read_csv(accid_file_path, sep="\t")
 
+        print(f"Number of accids on file: {len(accid_file_df)}")
+
         entrez_descriptions = entrez_connection.run_entrez_query(
             query_list=accid_file_df.acc.unique().tolist(),
         )
@@ -76,7 +78,7 @@ class Command(BaseCommand):
 
             for ix, row in taxid_df.iterrows():
                 accid_str = row.accession
-                # taxid_str = row.taxid
+
                 description = row.description
 
                 if len(description) > 300:

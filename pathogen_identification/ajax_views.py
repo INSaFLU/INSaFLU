@@ -599,7 +599,7 @@ def submit_televir_project_sample(request):
         sample = PIProject_Sample.objects.get(id=int(sample_id))
         project = Projects.objects.get(id=int(sample.project.pk))
 
-        software_utils = SoftwareTreeUtils(user, project=project, sample=sample)
+        software_utils = SoftwareTreeUtils(user, project=project)
         runs_to_deploy = software_utils.check_runs_to_deploy_sample(sample)
 
         try:

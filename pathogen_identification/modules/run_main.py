@@ -924,21 +924,6 @@ class Run_Deployment_Methods(RunDetail_main):
         )
 
     def deploy_REMAPPING(self):
-        self.remap_manager = Mapping_Manager(
-            self.metadata_tool.remap_targets,
-            self.sample.r1,
-            self.sample.r2,
-            self.software_remap,
-            self.assembly_drone.assembly_file_fasta_gz,
-            self.type,
-            self.prefix,
-            self.threads,
-            get_bindir_from_binaries(self.config["bin"], CS.PIPELINE_NAME_remapping),
-            self.logger_level_detail,
-            True,
-            remap_params=self.remap_params,
-            logdir=self.log_dir,
-        )
 
         print(
             f"{self.prefix} remapping # targets: {len(self.metadata_tool.remap_targets)}"
@@ -1591,7 +1576,7 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.prep_REMAPPING()
         self.remap_prepped = True
 
-    def Run_Remapping(self):
+    def Run_Remapping(self, prep= True):
         if not self.remap_prepped:
             return
         print("remapping: ", self.remapping)
@@ -1602,7 +1587,9 @@ class RunMainTree_class(Run_Deployment_Methods):
 
             print("merged targets: ", self.merged_targets)
 
-            self.prep_REMAPPING()
+            if prep:
+                self.prep_REMAPPING()
+
             self.deploy_REMAPPING()
 
             self.remapping_performed = True

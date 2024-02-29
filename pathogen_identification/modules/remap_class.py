@@ -713,7 +713,7 @@ class Remapping:
         )
 
         self.genome_coverage = f"{self.rdir}/{self.prefix}.sorted.bedgraph"
-        self.mapped_reads = f"{self.rdir}/{self.prefix}_reads_map.tsv"
+        self.mapped_reads_file = f"{self.rdir}/{self.prefix}_reads_map.tsv"
         self.mapped_subset_r1_fasta = (
             f"{self.rdir}/{self.prefix}_{target.acc_simple}_reads_map_subset_r1.fasta"
         )
@@ -1458,12 +1458,12 @@ class Remapping:
         """
         Get number of mapped reads without header, use samtools."""
 
-        cmd2 = f"samtools view -F 0x4 {self.read_map_sorted_bam} | cut -f 1 | sort | uniq > {self.mapped_reads}"
+        cmd2 = f"samtools view -F 0x4 {self.read_map_sorted_bam} | cut -f 1 | sort | uniq > {self.mapped_reads_file}"
         self.cmd.run_script_software(cmd2)
 
     def get_mapped_reads_number(self):
         try:
-            with open(self.mapped_reads, "r") as f:
+            with open(self.mapped_reads_file, "r") as f:
                 self.number_of_reads_mapped = len(f.readlines())
         except FileNotFoundError:
             self.number_of_reads_mapped = 0
@@ -1486,7 +1486,7 @@ class Remapping:
         Subset mapped reads to R1 and R2, use seqtk."""
 
         tempfile = os.path.join(self.rdir, f"temp{randint(1,1999)}.rlst")
-        self.cmd.run_bash(f"cat {self.mapped_reads} | cut -f1 > {tempfile}")
+        self.cmd.run_bash(f"cat {self.mapped_reads_file} | cut -f1 > {tempfile}")
 
         if self.type == CS.SINGLE_END:
             self.subset_mapped_reads_r1(tempfile)
@@ -1646,7 +1646,7 @@ class Mapping_Instance:
     apres: bool = False
     rpres: bool = False
     success: str = "none"
-    mapped: int = 0
+    mapped_success: int = 0
     mapped_reads: int = 0
     original_reads: int = 0
 
@@ -1661,7 +1661,7 @@ class Mapping_Instance:
         self.prefix = prefix
         self.reference = reference
         self.assembly = assembly
-        self.mapped = self.reference.number_of_reads_mapped
+        self.mapped_success = self.reference.number_of_reads_mapped
         self.mapped_reads = mapped_reads
         self.original_reads = original_reads
         self.rpres = self.assert_reads_mapped()
@@ -1752,15 +1752,15 @@ class Mapping_Instance:
         if len(self.reference.report) == 0:
             return pd.DataFrame()
 
-        ntax["mapped"] = self.mapped
+        ntax["mapped"] = self.mapped_success
         if self.mapped_reads > 0:
-            ntax["mapped_prop"] = 100 * (self.mapped / self.mapped_reads)
+            ntax["mapped_prop"] = 100 * (self.mapped_success / self.mapped_reads)
         else:
-            self.mapped_reads = self.mapped
+            self.mapped_reads = self.mapped_success
             ntax["mapped_prop"] = 1
 
         if self.original_reads > 0:
-            ntax["ref_prop"] = 100 * (self.mapped / self.original_reads)
+            ntax["ref_prop"] = 100 * (self.mapped_success / self.original_reads)
 
         else:
             ntax["ref_prop"] = 0

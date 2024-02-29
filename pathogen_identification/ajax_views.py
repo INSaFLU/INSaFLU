@@ -1046,8 +1046,6 @@ def teleflu_igv_create(request):
                 output_html=stacked_html,
             )
 
-            # for sample_pk, files in sample_dict.items():
-            #    print(sample_pk, files)
         except Exception as e:
             print(e)
             return JsonResponse(data)

@@ -185,16 +185,6 @@ class SoftwareTreeNode(models.Model):
         return SoftwareTreeNode.objects.filter(id__in=descendants)
 
 
-# class SoftwareTree_Path(models.Model):
-#    software_tree = models.ForeignKey(SoftwareTree, on_delete=models.CASCADE)
-#    software_tree_node = models.ForeignKey(SoftwareTreeNode, on_delete=models.CASCADE)
-#    project = models.ForeignKey(Projects, on_delete=models.CASCADE)
-#
-#    class Meta:
-#        ordering = ["software_tree_node"]
-#
-
-
 class PIProject_Sample(models.Model):
     """
     Main sample information. Connects to the RunMain and QC models.

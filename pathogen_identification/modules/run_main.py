@@ -15,17 +15,31 @@ from pathogen_identification.modules.assembly_class import Assembly_class
 from pathogen_identification.modules.classification_class import Classifier
 from pathogen_identification.modules.metadata_handler import RunMetadataHandler
 from pathogen_identification.modules.object_classes import (
-    Assembly_results, Contig_classification_results, Read_class,
-    Read_classification_results, Remap_main, Remap_Target, Run_detail_report,
-    RunCMD, RunQC_report, Sample_runClass, SoftwareDetail,
-    SoftwareDetailCompound, SoftwareRemap, SoftwareUnit)
+    Assembly_results,
+    Contig_classification_results,
+    Read_class,
+    Read_classification_results,
+    Remap_main,
+    Remap_Target,
+    Run_detail_report,
+    RunCMD,
+    RunQC_report,
+    Sample_runClass,
+    SoftwareDetail,
+    SoftwareDetailCompound,
+    SoftwareRemap,
+    SoftwareUnit,
+)
 from pathogen_identification.modules.preprocess_class import Preprocess
-from pathogen_identification.modules.remap_class import (Mapping_Instance,
-                                                         Mapping_Manager)
+from pathogen_identification.modules.remap_class import (
+    Mapping_Instance,
+    Mapping_Manager,
+)
 from pathogen_identification.utilities.televir_parameters import (
-    RemapParams, TelevirParameters)
-from pathogen_identification.utilities.utilities_pipeline import \
-    RawReferenceUtils
+    RemapParams,
+    TelevirParameters,
+)
+from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -1371,7 +1385,6 @@ class RunMainTree_class(Run_Deployment_Methods):
                     self.sample.r2.enriched_read_number = enriched_read_number
                 self.sample.r1.enriched_read_number = enriched_read_number
 
-                print("ENRICHED READS", self.sample.r1.enriched, r1_proc)
                 self.sample.r1.enriched_exo = r1_proc
                 shutil.copy(r1_proc, self.sample.r1.enriched)
 
@@ -1397,7 +1410,7 @@ class RunMainTree_class(Run_Deployment_Methods):
             self.enrichment_performed = True
 
         if self.depletion:
-            print(self.enrichment_method.check_enriched_exist())
+            print(self.enrichment_method.check_depleted_exist())
             print("DEPLETION EXISTS")
             if self.depletion_method.check_depleted_exist():
                 r1_proc, r2_proc = self.depletion_method.retrieve_depleted_reads()
@@ -1424,8 +1437,9 @@ class RunMainTree_class(Run_Deployment_Methods):
                 ###########################
                 ###########################
 
-                from pathogen_identification.utilities.televir_bioinf import \
-                    TelevirBioinf
+                from pathogen_identification.utilities.televir_bioinf import (
+                    TelevirBioinf,
+                )
 
                 # televir_bioinf = TelevirBioinf()
                 # alignment_file = self.depletion_drone.classifier.report_path
@@ -1576,7 +1590,7 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.prep_REMAPPING()
         self.remap_prepped = True
 
-    def Run_Remapping(self, prep= True):
+    def Run_Remapping(self, prep=True):
         if not self.remap_prepped:
             return
         print("remapping: ", self.remapping)

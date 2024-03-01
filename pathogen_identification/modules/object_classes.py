@@ -13,8 +13,12 @@ import pandas as pd
 from numpy import ERR_CALL
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import (ParameterSet, RunDetail, RunMain,
-                                            RunReadsRegister)
+from pathogen_identification.models import (
+    ParameterSet,
+    RunDetail,
+    RunMain,
+    RunReadsRegister,
+)
 from pathogen_identification.utilities.utilities_general import fastqc_parse
 
 matplotlib.use("Agg")
@@ -790,7 +794,7 @@ class Read_class:
         temp_fq_gz = final_temp + ".gz"
 
         cmd_unzip = "gunzip -c %s > %s" % (self.current, temp_fq)
-        cmd_zip = "bgzip %s" % final_temp
+        cmd_zip = "gzip %s" % final_temp
 
         self.cmd.run_bash(cmd_unzip)
         self.clean_fastq_headers_python(temp_fq, final_temp)

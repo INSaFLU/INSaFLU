@@ -426,7 +426,7 @@ class RunDetail_main:
         )
 
         self.static_dir_plots = os.path.join(
-            self.substructure_dir,
+            self.static_dir,
             self.dir_plots,
         )
 
@@ -441,7 +441,7 @@ class RunDetail_main:
         )
 
         os.makedirs(
-            os.path.join(ConstantsSettings.static_directory, self.static_dir_plots),
+            os.path.join(self.static_dir_plots),
             exist_ok=True,
         )
 
@@ -1320,8 +1320,8 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.sample.r2.is_clean()
         self.sample.reads_after_processing = self.sample.current_total_read_number()
         self.sample.get_fake_qc_data()
-        #self.sample.r1.clean_read_names()
-        #self.sample.r2.clean_read_names()
+        # self.sample.r1.clean_read_names()
+        # self.sample.r2.clean_read_names()
 
     def Run_QC(self):
         if self.quality_control and not self.qc_performed:

@@ -1075,6 +1075,7 @@ class ReportSorter:
             if group_heatmap_exists:
                 group_heatmap = "/media/" + group_heatmap.split("media/")[-1]
             print("group_heatmap", group_heatmap, group_heatmap_exists)
+            print(group_list)
             if len(group_list):
                 report_group = FinalReportGroup(
                     name=name,
@@ -1089,6 +1090,10 @@ class ReportSorter:
                 sorted_reports.append(report_group)
 
         # sort groups by max coverage among group
+
+        if len(sorted_reports) == 0:
+            print("no analysis")
+            return self.return_no_analysis()
 
         def get_private_proportion(group: FinalReportGroup):
             return group.private_proportion

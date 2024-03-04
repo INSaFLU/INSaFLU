@@ -1057,7 +1057,7 @@ class ReportSorter:
             overlap_analysis = self.read_overlap_analysis()
 
         overlap_groups = list(overlap_analysis.groupby(["total_counts", "clade"]))[::-1]
-
+        print("overlap_groups", overlap_groups)
         sorted_reports = []
 
         for group in overlap_groups:
@@ -1074,6 +1074,7 @@ class ReportSorter:
 
             if group_heatmap_exists:
                 group_heatmap = "/media/" + group_heatmap.split("media/")[-1]
+            print("group_heatmap", group_heatmap, group_heatmap_exists)
             if len(group_list):
                 report_group = FinalReportGroup(
                     name=name,
@@ -1107,6 +1108,7 @@ class ReportSorter:
             private_proportion=0,
             group_list=[self.wrap_report(report) for report in self.reports],
         )
+
         report_group = self.wrap_group_reports(report_group)
         return [report_group]
 
@@ -1120,6 +1122,7 @@ class ReportSorter:
         if self.metadata_df.empty:
             return self.return_no_analysis()
 
+        print("check analyzed", self.check_analyzed())
         if not self.check_analyzed():
             report_group = FinalReportGroup(
                 name="Full report, no overlap analysis",
@@ -1129,6 +1132,7 @@ class ReportSorter:
                 private_proportion=0,
                 group_list=[self.wrap_report(report) for report in self.reports],
             )
+
             report_group = self.wrap_group_reports(report_group)
             return [report_group]
 

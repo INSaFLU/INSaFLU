@@ -656,10 +656,12 @@
                                     <div style="flex: 1; padding: 5px; padding: 5px;border-right: 1px solid #ccc; border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
                                         {{final_report.name}}
                                     </div>
+                                    {% if final_report.private_counts_exist %}
                                     <!-- Second section -->
                                     <div style="flex: 1; padding: 10px; padding: 5px;border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
                                         {{final_report.private_counts}}
                                     </div>
+                                    {% endif %}
                                     <!-- Third section -->
                                     <div style="flex: 1; padding: 10px; padding: 5px;border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
                                         {{final_report.private_proportion}}

@@ -357,6 +357,7 @@ class FinalReportGroup:
         group_list: List[FinalReportWrapper],
         heatmap_path: str = "",
         heatmap_exists: bool = False,
+        private_counts_exist: bool = True,
     ):
         self.name = name
         self.total_counts = f"total counts {total_counts}"
@@ -367,6 +368,7 @@ class FinalReportGroup:
         self.heatmap_path = heatmap_path
         self.heatmap_exists = heatmap_exists
         self.max_private_reads = 0
+        self.private_counts_exist = private_counts_exist
 
     def reports_have_private_reads(self) -> bool:
         for report in self.group_list:
@@ -1057,7 +1059,6 @@ class ReportSorter:
             overlap_analysis = self.read_overlap_analysis()
 
         overlap_groups = list(overlap_analysis.groupby(["total_counts", "clade"]))[::-1]
-        print("overlap_groups", overlap_groups)
         sorted_reports = []
 
         for group in overlap_groups:
@@ -1074,25 +1075,24 @@ class ReportSorter:
 
             if group_heatmap_exists:
                 group_heatmap = "/media/" + group_heatmap.split("media/")[-1]
-            print("group_heatmap", group_heatmap, group_heatmap_exists)
-            print(group_list)
-            if len(group_list):
-                print(group_df.columns)
 
-                print(group_df.total_counts.iloc[0])
-                print(group_df.private_counts.iloc[0])
-                print(group_df.shared_proportion.iloc[0])
-                print(group_df.private_proportion.iloc[0])
+            if len(group_list):
+
+                private_counts_present = "private_counts" in group_df.columns
+                private_counts = 0
+                if private_counts_present:
+                    private_counts = group_df.private_counts.iloc[0]
 
                 report_group = FinalReportGroup(
                     name=name,
                     total_counts=group_df.total_counts.iloc[0],
-                    private_counts=group_df.private_counts.iloc[0],
+                    private_counts=private_counts,
                     shared_proportion=group_df.shared_proportion.iloc[0],
                     private_proportion=group_df.private_proportion.iloc[0],
                     group_list=group_list,
                     heatmap_path=group_heatmap,
                     heatmap_exists=group_heatmap_exists,
+                    private_counts_exist=private_counts_present,
                 )
                 sorted_reports.append(report_group)
 

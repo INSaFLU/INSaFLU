@@ -1116,23 +1116,23 @@ class Software(object):
                 if(idv.seq_virus.kind_type.name.find("influenza") != -1): is_influenza = True
                 if(idv.rank == 0):
                     if(rank0 == ""): rank0 = nametoadd
-                    else: rank0 = "|" + nametoadd
+                    else: rank0 = rank0 + "|" + nametoadd
                 else: 
                     if(is_influenza):
                         #Apparently ranks do not come in the expected order
                         if(nametoadd.find("H") != -1):
                             if(rank1 == ""): rank1 = nametoadd
-                            else: rank1 = "|" + nametoadd
+                            else: rank1 = rank1 + "|" + nametoadd
                         if(nametoadd.find("N") != -1):
                             if(rank2 == ""): rank2 = nametoadd
-                            else: rank2 = "|" + nametoadd
+                            else: rank2 = rank2 + "|" + nametoadd
                     else:
                         if(idv.rank == 1):
                             if(rank1 == ""): rank1 = nametoadd
-                            else: rank1 = "|" + nametoadd
+                            else: rank1 = rank1 + "|" + nametoadd
                         if(idv.rank == 2):
                             if(rank2 == ""): rank2 = nametoadd
-                            else: rank2 = "|" + nametoadd
+                            else: rank2 = rank2 + "|" + nametoadd
 
             if((rank1 != "") and (rank0 != "")): rank1 = "-" + rank1
             if( (rank1.find('|') != -1) or (rank2.find('|') != -1)): rank2 = "|" + rank2

@@ -902,7 +902,6 @@ class ReportSorter:
             self.media_dir,
             str(self.model.pk),
         )
-        print("check parsed")
 
         if not os.path.exists(overlap_manager.distance_matrix_path):
             return False
@@ -915,6 +914,8 @@ class ReportSorter:
 
         if not overlap_manager.all_accs_analyzed():
             return False
+
+        print("check parsed")
 
         return True
 

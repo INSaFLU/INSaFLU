@@ -117,7 +117,7 @@ class ReadOverlapManager:
             return False
 
         accid_df = pd.read_csv(self.accid_statistics_path, sep="\t")
-
+        print(accid_df)
         for accid in self.metadata["accid"].unique():
             if accid not in accid_df["accid"].tolist():
                 return False

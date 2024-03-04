@@ -602,6 +602,7 @@ class ReportSorter:
                 str(self.model.pk),
                 force_tree_rebuild=force,
             )
+            print("overlap_manager fix")
             self.tree_plot_path = self.overlap_manager.tree_plot_path
             # remove everything before media dir
             self.tree_plot_exists = os.path.exists(self.tree_plot_path)

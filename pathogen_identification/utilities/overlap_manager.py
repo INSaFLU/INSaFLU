@@ -87,8 +87,11 @@ class ReadOverlapManager:
         )
 
         self.metadata["filepath"] = self.metadata["file"]
+        try:
+            self.tree_manager = self.prep_tree_for_clade_analysis()
+        except Exception as e:
+            print(e)
 
-        self.tree_manager = self.prep_tree_for_clade_analysis()
         if not os.path.exists(self.tree_plot_path):
             self.tree_manager.plot_tree(self.tree_plot_path)
 

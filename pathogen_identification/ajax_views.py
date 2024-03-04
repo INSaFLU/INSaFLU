@@ -16,31 +16,22 @@ from constants.constants import Constants
 from constants.meta_key_and_values import MetaKeyAndValue
 from fluwebvirus.settings import STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
-from pathogen_identification.models import (
-    FinalReport,
-    MetaReference,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReferenceMap_Main,
-    RunMain,
-    TeleFluProject,
-    TeleFluSample,
-)
+from pathogen_identification.models import (FinalReport, MetaReference,
+                                            ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            ReferenceMap_Main, RunMain,
+                                            TeleFluProject, TeleFluSample)
 from pathogen_identification.tables import ReferenceSourceTable
 from pathogen_identification.utilities.reference_utils import (
-    check_metaReference_exists_from_ids,
-    create_combined_reference,
-)
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
-from pathogen_identification.utilities.utilities_general import get_services_dir
-from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
+    check_metaReference_exists_from_ids, create_combined_reference)
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
+from pathogen_identification.utilities.utilities_general import \
+    get_services_dir
+from pathogen_identification.utilities.utilities_pipeline import \
+    SoftwareTreeUtils
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter,
-    SampleReferenceManager,
-    set_control_reports,
-)
+    ReportSorter, SampleReferenceManager, set_control_reports)
 from utils.process_SGE import ProcessSGE
 from utils.utils import Utils
 
@@ -93,7 +84,6 @@ def submit_sample_metagenomics_televir(request):
             data["is_deployed"] = False
 
         data["is_ok"] = True
-        print(data)
         return JsonResponse(data)
 
 
@@ -134,7 +124,6 @@ def submit_sample_screening_televir(request):
             data["is_deployed"] = False
 
         data["is_ok"] = True
-        print(data)
         return JsonResponse(data)
 
 
@@ -388,7 +377,6 @@ def submit_project_samples_mapping_televir(request):
             print(e)
             data["is_ok"] = False
 
-        print(data)
         return JsonResponse(data)
 
 
@@ -975,16 +963,13 @@ from constants.software_names import SoftwareNames
 from managing_files.models import ProjectSample as InsafluProjectSample
 from pathogen_identification.models import RawReference, ReferenceSourceFileMap
 from pathogen_identification.utilities.reference_utils import (
-    check_reference_exists,
-    check_reference_submitted,
-)
+    check_reference_exists, check_reference_submitted)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
 
 
 @login_required
 @require_POST
 def teleflu_igv_create(request):
-    print("teleflu_igv_create")
     if request.is_ajax():
         data = {"is_ok": False, "is_deployed": False}
 
@@ -1181,7 +1166,6 @@ def create_teleflu_project(request):
     if request.is_ajax():
         data = {"is_ok": False, "is_error": False, "exists": False, "is_empty": False}
 
-        print(request.POST)
         ref_ids = request.POST.getlist("ref_ids[]")
         sample_ids = request.POST.getlist("sample_ids[]")
 
@@ -1210,13 +1194,11 @@ def create_teleflu_project(request):
         process_SGE = ProcessSGE()
 
         try:
-            print("reference exists")
             if check_metaReference_exists_from_ids(ref_ids):
                 data["exists"] = True
                 return JsonResponse(data)
 
             metareference = create_combined_reference(ref_ids, project_name)
-            print(metareference)
 
             if not metareference:
                 data["is_error"] = True
@@ -1230,7 +1212,6 @@ def create_teleflu_project(request):
                 raw_reference=metareference,
             )
             teleflu_project.save()
-            print(teleflu_project)
 
             for sample_id in sample_ids:
                 sample = PIProject_Sample.objects.get(pk=int(sample_id))
@@ -1264,7 +1245,6 @@ def set_teleflu_check_box_values(request):
     if request.is_ajax():
         data = {"is_ok": False}
         utils = Utils()
-        print(request.GET)
         if Constants.GET_CHECK_BOX_SINGLE in request.GET:
             data["is_ok"] = True
             for key in request.session.keys():
@@ -1280,7 +1260,6 @@ def set_teleflu_check_box_values(request):
             key_name = "{}_{}".format(
                 Constants.TELEFLU_CHECK_BOX, request.GET.get(Constants.CHECK_BOX_VALUE)
             )
-            print(request.session.keys())
             for key in request.session.keys():
                 if (
                     key.startswith(Constants.TELEFLU_CHECK_BOX)

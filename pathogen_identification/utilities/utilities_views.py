@@ -10,31 +10,21 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.views import generic
 
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReferenceMap_Main,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference, ReferenceMap_Main,
+                                            RunAssembly, RunDetail, RunMain,
+                                            SoftwareTree, SoftwareTreeNode)
 from pathogen_identification.utilities.clade_objects import Clade
-from pathogen_identification.utilities.overlap_manager import ReadOverlapManager
+from pathogen_identification.utilities.overlap_manager import \
+    ReadOverlapManager
 from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
 from pathogen_identification.utilities.televir_parameters import (
-    LayoutParams,
-    TelevirParameters,
-)
+    LayoutParams, TelevirParameters)
 from pathogen_identification.utilities.utilities_general import (
-    infer_run_media_dir,
-    simplify_name,
-)
+    infer_run_media_dir, simplify_name)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
 
@@ -604,7 +594,6 @@ class ReportSorter:
                 str(self.model.pk),
                 force_tree_rebuild=force,
             )
-            print("overlap_manager fix")
             self.tree_plot_path = self.overlap_manager.tree_plot_path
             # remove everything before media dir
             self.tree_plot_exists = os.path.exists(self.tree_plot_path)
@@ -917,7 +906,6 @@ class ReportSorter:
         if not overlap_manager.all_accs_analyzed():
             return False
 
-        print("check parsed")
 
         return True
 
@@ -1099,13 +1087,11 @@ class ReportSorter:
         # sort groups by max coverage among group
 
         if len(sorted_reports) == 0:
-            print("no analysis")
             return self.return_no_analysis()
 
         def get_private_proportion(group: FinalReportGroup):
             return group.private_proportion
 
-        print("sorted_reports", sorted_reports)
 
         sorted_groups = sorted(sorted_reports, key=get_private_proportion, reverse=True)
         sorted_groups = self.get_reports_private_reads(sorted_groups)
@@ -1136,7 +1122,6 @@ class ReportSorter:
         if self.metadata_df.empty:
             return self.return_no_analysis()
 
-        print("check analyzed", self.check_analyzed())
         if not self.check_analyzed():
             report_group = FinalReportGroup(
                 name="Full report, no overlap analysis",

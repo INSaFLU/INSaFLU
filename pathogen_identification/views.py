@@ -1483,16 +1483,11 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         ).order_by("-coverage")
         #
         report_layout_params = TelevirParameters.get_report_layout_params(run_pk=run_pk)
-        print("sorting_reports")
         report_sorter = ReportSorter(final_report, report_layout_params)
-        print("Finished_sorting reports")
 
         sorted_reports = report_sorter.get_reports()
-        print("sorted_reports")
         excluded_reports_exist = report_sorter.check_excluded_exist()
-        print("excluded_reports_exist")
         empty_reports = report_sorter.get_reports_empty()
-        print("empty_reports")
         if len(empty_reports.group_list) > 0:
             sorted_reports.append(empty_reports)
 

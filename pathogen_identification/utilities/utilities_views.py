@@ -1093,6 +1093,8 @@ class ReportSorter:
         def get_private_proportion(group: FinalReportGroup):
             return group.private_proportion
 
+        print("sorted_reports", sorted_reports)
+
         sorted_groups = sorted(sorted_reports, key=get_private_proportion, reverse=True)
         sorted_groups = self.get_reports_private_reads(sorted_groups)
         sorted_groups = self.sort_group_list_reports(sorted_groups)

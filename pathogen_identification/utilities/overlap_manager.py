@@ -92,8 +92,13 @@ class ReadOverlapManager:
         except Exception as e:
             print(e)
 
+        print("Tree manager prepared")
         if not os.path.exists(self.tree_plot_path):
-            self.tree_manager.plot_tree(self.tree_plot_path)
+            print("Plotting tree")
+            try:
+                self.tree_manager.plot_tree(self.tree_plot_path)
+            except Exception as e:
+                print(e)
 
         self.tree_plot_exists = os.path.exists(self.tree_plot_path)
         self.tree_plot_path_render = os.path.join(

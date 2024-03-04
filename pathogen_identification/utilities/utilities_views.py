@@ -1077,7 +1077,8 @@ class ReportSorter:
             print("group_heatmap", group_heatmap, group_heatmap_exists)
             print(group_list)
             if len(group_list):
-                print(group_df)
+                print(group_df.columns)
+
                 print(group_df.total_counts.iloc[0])
                 print(group_df.private_counts.iloc[0])
                 print(group_df.shared_proportion.iloc[0])

@@ -149,7 +149,7 @@ class DefaultParameters(object):
             ## set sequential number
 
     def persist_parameters_update(
-        self, vect_parameters: List[Parameter], type_of_use: int, software: Software
+        self, vect_parameters: List[Parameter], software: Software
     ):
         """
         persist a specific software by default
@@ -181,6 +181,8 @@ class DefaultParameters(object):
                     continue
 
             ## set sequential number
+        
+        return len(dt_out_sequential) > 0
 
     def get_software_global_with_step(
         self,

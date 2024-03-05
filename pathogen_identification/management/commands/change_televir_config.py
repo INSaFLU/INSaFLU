@@ -29,6 +29,8 @@ def update_remap_params():
         name=SoftwareNames.SOFTWARE_REMAP_PARAMS_name
     )
 
+    updated_total = 0
+
     for software in software_remap:
         user = software.owner
         if user is None:
@@ -40,10 +42,14 @@ def update_remap_params():
             ConstantsSettings.TECHNOLOGY_illumina,
         )
 
-        default_software.default_parameters.persist_parameters_update(
+        updated = default_software.default_parameters.persist_parameters_update(
             vect_parameters=remap_params,
             software=software,
         )
+
+        updated_total += int(updated)
+
+    print(f"Updated {updated_total} remap parameters.")
 
 
 class Command(BaseCommand):
@@ -69,8 +75,18 @@ class Command(BaseCommand):
             help="Metagenomics",
         )
 
+        parser.add_argument(
+            "--remapping",
+            action="store_true",
+            required=False,
+            default=False,
+            help="Remapping",
+        )
+
     # A command must define handle()
     def handle(self, *args, **options):
         if options["metagenomics"]:
             remapping_can_be_off()
-            return
+
+        if options["remapping"]:
+            update_remap_params()

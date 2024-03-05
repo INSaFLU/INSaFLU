@@ -12,13 +12,10 @@ from django.conf import settings
 
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import (
-    ConstantsSettings as PI_ConstantsSettings,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PI_ConstantsSettings
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility,
-    Utility_Pipeline_Manager,
-)
+    Parameter_DB_Utility, Utility_Pipeline_Manager)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -148,6 +145,40 @@ class DefaultParameters(object):
             except Exception as e:
                 logging.error("Error persisting parameter: {}".format(e))
                 continue
+
+            ## set sequential number
+
+    def persist_parameters_update(
+        self, vect_parameters: List[Parameter], type_of_use: int, software: Software
+    ):
+        """
+        persist a specific software by default
+        param: type_of_use Can by Software.TYPE_OF_USE_project; Software.TYPE_OF_USE_project_sample
+        """
+        #software = None
+        dt_out_sequential = {}
+        for parameter in vect_parameters:
+            assert parameter.sequence_out not in dt_out_sequential
+
+
+            try:
+                Parameter.objects.get(
+                    software= software,
+                    name=parameter.name,
+                    sequence_out=parameter.sequence_out,
+                )
+
+            except Parameter.DoesNotExist:
+
+                parameter.software = software
+                try:
+
+                    parameter.save()
+                    dt_out_sequential[parameter.sequence_out] = 1
+
+                except Exception as e:
+                    logging.error("Error persisting parameter: {}".format(e))
+                    continue
 
             ## set sequential number
 

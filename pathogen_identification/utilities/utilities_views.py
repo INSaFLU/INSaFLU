@@ -10,21 +10,31 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.views import generic
 
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
-from pathogen_identification.models import (FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RawReference, ReferenceMap_Main,
-                                            RunAssembly, RunDetail, RunMain,
-                                            SoftwareTree, SoftwareTreeNode)
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.models import (
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReferenceMap_Main,
+    RunAssembly,
+    RunDetail,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
 from pathogen_identification.utilities.clade_objects import Clade
-from pathogen_identification.utilities.overlap_manager import \
-    ReadOverlapManager
+from pathogen_identification.utilities.overlap_manager import ReadOverlapManager
 from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
 from pathogen_identification.utilities.televir_parameters import (
-    LayoutParams, TelevirParameters)
+    LayoutParams,
+    TelevirParameters,
+)
 from pathogen_identification.utilities.utilities_general import (
-    infer_run_media_dir, simplify_name)
+    infer_run_media_dir,
+    simplify_name,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
 
@@ -245,10 +255,18 @@ def inform_control_flag(report: FinalReport, control_flag_str: str):
         return control_flag_str
 
 
+from fluwebvirus.settings import STATIC_ROOT
+
+
 class FinalReportWrapper:
     accid: str
     sample: PIProject_Sample
     mapped_proportion: float
+
+    media_fields = [
+        "covplot",
+        "refa_dotplot",
+    ]
 
     # can take either FinalReport or EmptyRemapMain
     def __init__(self, report: FinalReport):
@@ -262,6 +280,8 @@ class FinalReportWrapper:
                     continue
                 try:
                     setattr(self, attr, getattr(report, attr))
+                    if attr in self.media_fields:
+                        setattr(self, attr, self.prep_for_static(getattr(report, attr)))
                 except Exception as e:
                     raise e
 
@@ -269,6 +289,11 @@ class FinalReportWrapper:
         self.control_flag = report.control_flag
         self.control_flag_str = infer_control_flag_str(report)
         self.control_flag_str = inform_control_flag(report, self.control_flag_str)
+
+    @staticmethod
+    def prep_for_static(filepath: str) -> str:
+        if STATIC_ROOT in filepath:
+            return filepath.split(STATIC_ROOT)[-1]
 
     def update_private_reads(self, private_reads: int):
         self.private_reads = private_reads
@@ -906,7 +931,6 @@ class ReportSorter:
         if not overlap_manager.all_accs_analyzed():
             return False
 
-
         return True
 
     def check_analysis_exists(self):
@@ -1091,7 +1115,6 @@ class ReportSorter:
 
         def get_private_proportion(group: FinalReportGroup):
             return group.private_proportion
-
 
         sorted_groups = sorted(sorted_reports, key=get_private_proportion, reverse=True)
         sorted_groups = self.get_reports_private_reads(sorted_groups)

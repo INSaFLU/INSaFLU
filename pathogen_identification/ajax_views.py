@@ -1503,6 +1503,8 @@ def IGV_display(request):
 
                 return path
 
+            print(ref_map.fai_file_path)
+
             path_name_bam = remove_pre_static(
                 ref_map.bam_file_path, "/insaflu_web/INSaFLU/"
             )

@@ -134,7 +134,6 @@ def extract_file(accid):
         source_file = os.path.join(
             fasta_directory, reference.reference_source_file.file
         )
-        print("SOURCE FILE", source_file)
         extracted = televir_bioinf.extract_reference(source_file, accid, tmp_fasta)
         if extracted:
             return tmp_fasta
@@ -233,7 +232,6 @@ def create_metaReference(references: List[RawReference]):
             raw_reference=reference,
         )
         raw_ref_map.save()
-        print(raw_ref_map)
 
     return metaref
 
@@ -429,9 +427,7 @@ def raw_reference_to_insaflu(raw_reference_id: int, user_id: int):
 
 def teleflu_to_insaflu_reference(project_id: int, user_id: int):
     user = User.objects.get(id=user_id)
-    print("UPDATING TELEFLU TO INSAFLU")
     teleflu_project = TeleFluProject.objects.get(id=project_id)
-    print("TELEFLU PROJECT", teleflu_project.name)
     metareference = teleflu_project.raw_reference
     reference_fasta = teleflu_project.raw_reference.file_path
     name = metareference.description
@@ -570,7 +566,6 @@ def create_teleflu_igv_report(teleflu_project_pk: int) -> bool:
     ### get reference
     reference = teleflu_project.reference
     if reference is None:
-        print("NO REFERENCE")
         return False
 
     reference_file = reference.get_reference_fasta(TypePath.MEDIA_ROOT)
@@ -602,8 +597,6 @@ def create_teleflu_igv_report(teleflu_project_pk: int) -> bool:
             TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, filename
         )
 
-        print(bam_file, bam_file_index, vcf_file)
-
         if bam_file and bam_file_index and os.path.exists(vcf_file):
             sample_dict[sample.sample.pk] = {
                 "name": sample.sample.name,
@@ -631,8 +624,6 @@ def create_teleflu_igv_report(teleflu_project_pk: int) -> bool:
             output_html=stacked_html,
         )
 
-        # for sample_pk, files in sample_dict.items():
-        #    print(sample_pk, files)
         return True
     except Exception as e:
         print(e)

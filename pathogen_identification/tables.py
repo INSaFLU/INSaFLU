@@ -12,20 +12,32 @@ from constants.constants import Constants
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (ContigClassification, FinalReport,
-                                            ParameterSet, PIProject_Sample,
-                                            Projects, RawReference,
-                                            ReadClassification,
-                                            ReferenceContigs, RunAssembly,
-                                            RunDetail, RunMain, SampleQC,
-                                            TelevirRunQC)
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
+from pathogen_identification.models import (
+    ContigClassification,
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReadClassification,
+    ReferenceContigs,
+    RunAssembly,
+    RunDetail,
+    RunMain,
+    SampleQC,
+    TelevirRunQC,
+)
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.utilities_general import (
-    get_project_dir, get_project_dir_no_media_root)
+    get_project_dir,
+    get_project_dir_no_media_root,
+)
 from pathogen_identification.utilities.utilities_views import (
-    RawReferenceCompound, ReportSorter, check_sample_software_exists,
-    duplicate_metagenomics_software)
+    RawReferenceCompound,
+    ReportSorter,
+    check_sample_software_exists,
+    duplicate_metagenomics_software,
+)
 from settings.models import Parameter, Software
 
 
@@ -955,7 +967,6 @@ class TeleFluProjectTable(tables.Table):
         igv_results = ""
         if igv_results_exist:
             ## open link to html in new tab
-            print(record.project_igv_report_media.replace("/insaflu_web/INSaFLU", ""))
             igv_results = (
                 '<a rel="nofollow" target="_blank" href="'
                 + record.project_igv_report_media.replace("/insaflu_web/INSaFLU", "")

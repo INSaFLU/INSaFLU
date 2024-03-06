@@ -92,7 +92,6 @@ class ReadOverlapManager:
         except Exception as e:
             print(e)
 
-        print("Tree manager prepared")
         if not os.path.exists(self.tree_plot_path):
             print("Plotting tree")
             try:
@@ -117,7 +116,7 @@ class ReadOverlapManager:
             return False
 
         accid_df = pd.read_csv(self.accid_statistics_path, sep="\t")
-        print(accid_df)
+
         for accid in self.metadata["accid"].unique():
             if accid not in accid_df["accid"].tolist():
                 return False
@@ -321,8 +320,7 @@ class ReadOverlapManager:
         """
         distmat = self.matrix_to_phylotriangle(distance_matrix)
         constructor = DistanceTreeConstructor()
-        print("##### building trree ######")
-        print(distance_matrix.shape)
+
         if distance_matrix.shape[0] <= 1:
             tree = constructor.nj(distmat)
         else:

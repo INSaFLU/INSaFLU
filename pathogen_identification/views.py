@@ -1003,12 +1003,10 @@ def inject_references_filter(request, max_references: int = 30):
 def inject_references(references: list, request, type: str = "add_reference"):
     context = {}
     data = {}
-    print("inject_references")
 
     if type == "add_reference":
         table = ReferenceSourceTable(references)
     else:
-        print("here")
         table = TeleFluReferenceTable(references, order_by=("standard_score",))
 
     context["references_table"] = table
@@ -1804,9 +1802,6 @@ def download_file_igv(requestdst):
             if not os.path.exists(filepath):
                 return HttpResponseNotFound(f"file {filepath} not found")
 
-            print("# igv file")
-            print(filepath)
-
             path = open(filepath, "rb")
             # Set the mime type
             mime_type, _ = mimetypes.guess_type(filepath)
@@ -1902,8 +1897,6 @@ def download_file_ref(requestdst):
 
             if not os.path.isfile(filepath):
                 return HttpResponseNotFound(f"file {filepath} not found")
-
-            print(filepath)
 
             path = open(filepath, "rb")
             # Set the mime type

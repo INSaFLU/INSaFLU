@@ -2632,8 +2632,6 @@ class Utils_Manager:
         """
         pipeline_setup = Pipeline_Makeup()
 
-        print(user, technology)
-
         combined_table = self.parameter_util.generate_merged_table_safe(
             user, technology
         )

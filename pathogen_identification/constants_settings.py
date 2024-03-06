@@ -74,9 +74,12 @@ class ConstantsSettings:
 
     PIPELINE_STEPS_MAPPINGS = [
         CS.PIPELINE_NAME_metagenomics_screening,
-        CS.PIPELINE_NAME_reporting,
         CS.PIPELINE_NAME_request_mapping,
         CS.PIPELINE_NAME_map_filtering,
+    ]
+
+    PIPELINE_STEPS_GLOBAL = [
+        CS.PIPELINE_NAME_reporting,
     ]
 
     ################################### Pipeline steps aggregate
@@ -233,6 +236,11 @@ class ConstantsSettings:
                 p: n
                 for p, n in pipeline_steps_dict.items()
                 if p in self.PIPELINE_STEPS_MAPPINGS
+            },
+            "Global": {
+                p: n
+                for p, n in pipeline_steps_dict.items()
+                if p in self.PIPELINE_STEPS_GLOBAL
             },
         }
 

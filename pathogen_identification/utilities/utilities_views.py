@@ -299,6 +299,8 @@ class FinalReportWrapper:
         if STATIC_ROOT in filepath:
             return filepath.split(STATIC_ROOT)[-1]
 
+        return filepath
+
     def update_private_reads(self, private_reads: int):
         self.private_reads = private_reads
 

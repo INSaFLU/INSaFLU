@@ -2161,13 +2161,14 @@ class AddSamplesProjectsView(
         context = super(AddSamplesProjectsView, self).get_context_data(**kwargs)
 
         ### test if the user is the same of the page
-        print(self.kwargs)
         project = Project.objects.get(pk=self.kwargs["pk"])
+        origin_request= self.kwargs.get("tf", 0)
         is_teleflu_project = TeleFluProject.objects.filter(
             insaflu_project=project
         ).exists()
-        print(is_teleflu_project)
+
         context["nav_project"] = True
+
         if project.owner.id != self.request.user.id:
             context["error_cant_see"] = "1"
             return context
@@ -2179,7 +2180,7 @@ class AddSamplesProjectsView(
         samples_out = ProjectSample.objects.filter(
             Q(project=project) & ~Q(is_deleted=True) & ~Q(is_error=True)
         ).values("sample__pk")
-        if is_teleflu_project:
+        if is_teleflu_project and origin_request == 1:
             televir_project = TeleFluProject.objects.get(
                 insaflu_project=project
             ).televir_project

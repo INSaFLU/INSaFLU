@@ -292,9 +292,6 @@ class FinalReportWrapper:
 
     @staticmethod
     def prep_for_static(filepath: str) -> str:
-        print("prepping for static", filepath)
-        print(STATIC_ROOT in filepath)
-        print(STATIC_ROOT)
 
         if STATIC_ROOT in filepath:
             return filepath.split(STATIC_ROOT)[-1]

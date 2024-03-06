@@ -1011,7 +1011,7 @@ class TeleFluProjectTable(tables.Table):
             tip_info
             + " ({}/{}/{}) ".format(n_processed, n_processing, n_error)
             + "<a href="
-            + reverse("add-sample-project", args=[insaflu_project.pk])
+            + reverse("add-sample-project", args=[insaflu_project.pk, 1])
             + ' data-toggle="tooltip" title="Add samples" ><i class="fa fa-plus-square"></i> Add</a>'  #         return mark_safe(tip_info + " ({}/{}/{}) ".format(n_processed, n_processing, n_error) + '<a href=# id="id_add_sample_message"' +\
             + add_remove
         )

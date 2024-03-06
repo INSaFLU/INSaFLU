@@ -60,7 +60,7 @@ urlpatterns = [
         name="project-settings",
     ),
     url(
-        r"project_samples/(?P<pk>\d+)/add_sample_project$",
+        r"project_samples/(?P<pk>\d+)/(?P<tf>\d+)/add_sample_project$",
         views.AddSamplesProjectsView.as_view(),
         name="add-sample-project",
     ),

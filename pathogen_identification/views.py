@@ -1903,6 +1903,8 @@ def download_file_ref(requestdst):
             if not os.path.isfile(filepath):
                 return HttpResponseNotFound(f"file {filepath} not found")
 
+            print(filepath)
+
             path = open(filepath, "rb")
             # Set the mime type
             mime_type, _ = mimetypes.guess_type(filepath)

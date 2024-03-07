@@ -6,9 +6,6 @@
 {% load trans blocktrans from i18n %}
 {% load django_bootstrap_breadcrumbs %}
 
-{% block css %}
-{% endblock css %}
-
 {% block extra_messages %}
 <!-- set the messages -->
 <div class="container">
@@ -47,6 +44,8 @@
                             <button type="submit" class="btn btn-small btn-dark"><i class="fa fa-search"></i>
                                 Search</button>
                         </form>
+
+						<button class="btn btn-small btn-primary dark" onclick="location.href='{% url 'reference_panels' %}'">Reference Panels</button>
 
 					</th>
 

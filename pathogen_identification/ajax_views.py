@@ -12,18 +12,21 @@ from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_POST
 
-from constants.constants import Constants
+from constants.constants import Constants, FileExtensions, FileType, TypePath
 from constants.meta_key_and_values import MetaKeyAndValue
+from constants.software_names import SoftwareNames
 from fluwebvirus.settings import STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
+from managing_files.models import ProjectSample as InsafluProjectSample
 from pathogen_identification.models import (
     FinalReport,
-    MetaReference,
     ParameterSet,
     PIProject_Sample,
     Projects,
     RawReference,
     ReferenceMap_Main,
+    ReferencePanel,
+    ReferenceSourceFileMap,
     RunMain,
     TeleFluProject,
     TeleFluSample,
@@ -31,8 +34,11 @@ from pathogen_identification.models import (
 from pathogen_identification.tables import ReferenceSourceTable
 from pathogen_identification.utilities.reference_utils import (
     check_metaReference_exists_from_ids,
+    check_reference_exists,
+    check_reference_submitted,
     create_combined_reference,
 )
+from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.utilities_general import get_services_dir
 from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
@@ -967,17 +973,6 @@ def sort_report_sample(request):
         return JsonResponse(data)
 
 
-from constants.constants import Constants, FileExtensions, FileType, TypePath
-from constants.software_names import SoftwareNames
-from managing_files.models import ProjectSample as InsafluProjectSample
-from pathogen_identification.models import RawReference, ReferenceSourceFileMap
-from pathogen_identification.utilities.reference_utils import (
-    check_reference_exists,
-    check_reference_submitted,
-)
-from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
-
-
 @login_required
 @require_POST
 def teleflu_igv_create(request):
@@ -1449,6 +1444,114 @@ def set_sample_reports_control(request):
             print(e)
             data["is_ok"] = False
             return JsonResponse(data)
+
+
+@csrf_protect
+def create_reference_panel(request):
+    """
+    create a reference panel"""
+    print("create_reference_panel")
+    if request.is_ajax():
+        user = request.user
+        name = request.POST.get("name")
+
+        try:
+            ReferencePanel.objects.get(name=name, owner=user)
+        except ReferencePanel.DoesNotExist:
+            ReferencePanel.objects.create(
+                name=name,
+                owner=user,
+            )
+
+        return JsonResponse({"is_ok": True})
+
+    return JsonResponse({"is_ok": False})
+
+
+@csrf_protect
+def add_references_to_panel(request):
+    """
+    add references to panel"""
+    if request.is_ajax():
+        panel_id = int(request.POST.get("ref_id"))
+
+        panel = ReferencePanel.objects.get(pk=panel_id)
+
+        reference_ids = request.POST.getlist("reference_ids[]")
+        for reference_id in reference_ids:
+            try:
+                reference = ReferenceSourceFileMap.objects.get(pk=int(reference_id))
+                panel_reference = RawReference.objects.create(
+                    accid=reference.reference_source.accid,
+                    taxid=reference.reference_source.taxid,
+                    description=reference.reference_source.description,
+                    panel=panel,
+                )
+            except Exception as e:
+                print(e)
+                return JsonResponse({"is_ok": False})
+
+        return JsonResponse({"is_ok": True})
+
+    return JsonResponse({"is_ok": False})
+
+
+@csrf_protect
+def get_panels(request):
+    if request.is_ajax():
+        user = request.user
+        panels = ReferencePanel.objects.filter(owner=user, is_deleted=False).order_by(
+            "-creation_date"
+        )
+        data = {
+            "is_ok": True,
+            "panels": list(panels.values("id", "name")),
+        }
+
+        return JsonResponse(data)
+
+    return JsonResponse({"is_ok": False})
+
+
+@csrf_protect
+def delete_reference_panel(request):
+    """
+    delete a panel"""
+    if request.is_ajax():
+        print(request.POST)
+        panel_id = int(request.POST.get("panel_id"))
+        panel = ReferencePanel.objects.get(pk=panel_id)
+        panel.is_deleted = True
+        panel.save()
+
+        return JsonResponse({"is_ok": True})
+
+    return JsonResponse({"is_ok": False})
+
+
+@csrf_protect
+def get_panel_references(request):
+    """
+    get panel references"""
+    if request.is_ajax():
+        user = request.user
+        name = request.GET.get("name")
+        panel_id = request.GET.get("panel_id")
+
+        panel = ReferencePanel.objects.get(pk=panel_id)
+
+        references = RawReference.objects.filter(panel=panel)
+
+        data = {
+            "is_ok": True,
+            "references": list(
+                references.values("pk", "taxid", "accid", "description")
+            ),
+        }
+
+        return JsonResponse(data)
+
+    return JsonResponse({"is_ok": False})
 
 
 @csrf_protect

@@ -870,6 +870,23 @@ class ContigClassification(models.Model):
         return self.method
 
 
+class ReferencePanel(models.Model):
+
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    name = models.CharField(
+        max_length=200,
+        db_index=True,
+        blank=False,
+        verbose_name="Panel name",
+        default="nameless_panel",
+        validators=[no_space_validator],
+    )
+
+    description = models.TextField(default="", null=True, blank=True)
+    creation_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    is_deleted = models.BooleanField(default=False)
+
+
 class RawReference(models.Model):
     STATUS_MAPPED = 0
     STATUS_UNMAPPED = 1
@@ -890,6 +907,9 @@ class RawReference(models.Model):
     description = models.CharField(max_length=150, blank=True, null=True)
     counts = models.CharField(max_length=100, blank=True, null=True)
     classification_source = models.CharField(max_length=15, blank=True, null=True)
+    panel = models.ForeignKey(
+        ReferencePanel, on_delete=models.CASCADE, blank=True, null=True
+    )
 
     @property
     def classification_source_str(self):

@@ -41,6 +41,7 @@ from pathogen_identification.models import (
     ReadClassification,
     ReferenceContigs,
     ReferenceMap_Main,
+    ReferencePanel,
     ReferenceSourceFileMap,
     RunAssembly,
     RunDetail,
@@ -1064,6 +1065,39 @@ def inject__added_references(references: list, request):
 
 
 # class TeleFluProjectCreate(LoginRequiredMixin, generic.CreateView):
+class ReferencePanelManagement(LoginRequiredMixin, generic.CreateView):
+    """
+    page to manage and create insaflu references.
+
+    """
+
+    template_name = "pathogen_identification/reference_panel_management.html"
+    fields = "__all__"
+    utils = Utils()
+
+    def get_queryset(self, **kwargs):
+        user_pk = self.request.user.pk
+
+        return (
+            ReferencePanel.objects.filter(owner__id=user_pk)
+            .exclude(is_deleted=True)
+            .order_by("-creation_date")
+        )
+
+    def get_context_data(self, **kwargs) -> Dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["nav_project"] = True
+        user = self.request.user
+
+        panels = (
+            ReferencePanel.objects.filter(owner__id=user.pk)
+            .exclude(is_deleted=True)
+            .order_by("-creation_date")
+        )
+        context["panels"] = panels
+        context["user_id"] = user.pk
+
+        return context
 
 
 class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):

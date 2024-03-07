@@ -31,6 +31,31 @@ urlpatterns = [
         name="check_project_name",
     ),
     url(
+        r"create_reference_panel",
+        PIajax_views.create_reference_panel,
+        name="create_reference_panel",
+    ),
+    url(
+        r"panel_references_add",
+        PIajax_views.add_references_to_panel,
+        name="add_references_to_panel",
+    ),
+    url(
+        r"panel_references_delete",
+        PIajax_views.delete_reference_panel,
+        name="delete_reference_panel",
+    ),
+    url(
+        r"panel_references_get",
+        PIajax_views.get_panel_references,
+        name="panel_references_get",
+    ),
+    url(
+        r"panel_get_all",
+        PIajax_views.get_panels,
+        name="panel_list",
+    ),
+    url(
         r"Project_samples/(?P<pk>\d+)/add_sample_project$",
         PIviews.AddSamples_PIProjectsView.as_view(),
         name="add-sample-PIproject",
@@ -49,6 +74,11 @@ urlpatterns = [
         r"Projects/(?P<pk1>\d+)/all_reports$",
         PIviews.Project_reports,
         name="all_PIproject_reports",
+    ),
+    url(
+        r"Projects/reference_panels$",
+        PIviews.ReferencePanelManagement.as_view(),
+        name="reference_panels",
     ),
     url(
         r"Refereces/teleflu_references$",

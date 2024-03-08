@@ -885,6 +885,13 @@ class ReferencePanel(models.Model):
     description = models.TextField(default="", null=True, blank=True)
     creation_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     is_deleted = models.BooleanField(default=False)
+    project_sample = models.ForeignKey(
+        PIProject_Sample, on_delete=models.CASCADE, blank=True, null=True
+    )
+
+    @property
+    def references_count(self):
+        return RawReference.objects.filter(panel=self).count()
 
 
 class RawReference(models.Model):

@@ -27,140 +27,30 @@
 
 {% block extra_head %}
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{% static 'css/televir_reference_panels.css' %}">
 {% endblock %}
 
-
-
 <style>
-    .panels-container {
-        display: flex;
-        justify-content: space-between;
-        
-
+    #referenceSearch {
+        width: 100%; /* Full-width */
+        font-size: 16px; /* Increase font-size */
+        padding: 12px 20px; /* Add some padding */
+        margin: 8px 0; /* Add some margin */
+        box-sizing: border-box; /* Make sure that width includes padding */
+        border: none; /* Remove border */
+        border-radius: 4px; /* Slightly rounded corners */
+        background-color: #f1f1f1; /* Light-grey background */
     }
     
-    .panel-list, .reference-list {
-        border: 1px solid #ddd;
-        margin-bottom: 10px;
-        border-radius: 8px;
-        padding: 10px;
+    #referenceSearch:focus {
+        outline: none; /* Remove outline when focused */
+        background-color: #ddd; /* Light-grey background when focused */
     }
-
-    .panel-list {
-        width: 30%;
-    }
-    .reference-list {
-        width: 65%;
-    }
-
-    #new-panel-button {
-        margin-bottom: 20px;
-    }
-    
-    #panel-list {
-        list-style-type: none;
-        padding-left: 0;
-    }
-    
-    .panel-container {
-        border: 1px solid #ddd;
-        margin-bottom: 10px;
-        padding: 10px;
-        border-radius: 5px;
-        background-color: #f9f9f9;
-        align-items: center;
-    }
-
-    .clearfix::after {
-        content: "";
-        display: table;
-        clear: both;
-    }
-
-    #new-panel-modal {
-        display: none;
-        place-items: center;
-        height: 100vh; /* This makes the container take up the full viewport height */
-    }
-    
-    .add-reference-button {
-        background-color: #007bff; 
-        float: right;
-        border: none;
-        color: white;
-        text-align: center;
-        text-decoration: none;
-        margin: 0px 5px;
-        cursor: pointer;
-        border-radius: 5px;
-        font-size: 14px;
-        padding: 6px 8px; 
-        font-family: Arial, sasns-serif;
-    }
-
-    .remove-reference-button {
-        background-color: #007bff;
-        float: right;
-        border: none;
-        color: white;
-        text-align: center;
-        text-decoration: none;
-        display: inline-block;
-        margin: 0px 5px;
-        cursor: pointer;
-        border-radius: 5px;
-        font-size: 14px;
-        padding: 6px 8px; 
-        font-family: Arial, sasns-serif;
-    }
-
-    .panels-container {
-        width: 90%;
-        margin: 0 auto;
-    }
-    .container-panels {
-        width: 90%;
-        margin: 0 auto;
-    }
-
-    .reference-item {
-        list-style-type: none; /* remove bullet points */
-        border: 1px solid #ddd; /* add a border around each reference */
-        padding: 10px; /* add some padding */
-        margin-bottom: 10px; /* add some space between references */
-        border-radius: 5px;
-        background-color: #f9f9f9;
-
-    }
-    
-    .reference-id {
-        display: inline; /* display taxid and accid on the same line */
-        margin-right: 10px; /* add some space between taxid and accid */
-    }
-
-    .reference-description {
-        margin-top: 5px; /* add some space between taxid/accid and description */
-        margin-bottom: 2px; /* add some space between description and the next reference */
-    }
-
-
-    .reference-list-header {
-        font-size: 1.5em; /* adjust the font size */
-        color: #333; /* adjust the text color */
-        background-color: #f5f5f5; /* adjust the background color */
-        padding: 10px; /* add some padding */
-        margin-bottom: 20px; /* add some space below the header */
-        border-radius: 5px;
-        display: center;
-    }
-
 </style>
 
 <div class="container-panels">
-
     <div class="panels-container">
-
-        <div class="panel-list">
+        <div class="panel-list" data-url="{% url 'panel_references_get' %}">
             <!-- Button trigger modal -->
             <button type="button"  id="new-panel-button" class="btn btn-primary" data-toggle="modal" data-target="#newPanelModal">
                 Create New Panel
@@ -169,14 +59,19 @@
                 <ul id="panel-list">
                     {% for panel in panels %}
                     <li>
-                        <div class="panel-container clearfix">
-                            <a href="#" class="panel-link" data-panel-id="{{ panel.id }}">{{ panel.name }}</a>
+                        <div class="panel-container clearfix" data-panel-id="{{ panel.id }}">
+                            <a data-panel-id="{{ panel.id }}">{{ panel.name }}</a>
+
+                            <button class="remove-panel-button btn btn-danger" data-panel-id="{{ panel.id }}" title="Remove Panel" data-toggle="modal" data-target="#removePanelModal">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                            
                             <button class="add-reference-button btn btn-primary" data-panel-id="{{ panel.id }}" data-toggle="modal" data-target="#myModal" title="Add References">
                                 <i class="fa fa-plus"></i>
                             </button>
-                            <button class="remove-reference-button btn btn-danger" data-panel-id="{{ panel.id }}" title="Remove Panel" data-toggle="modal" data-target="#removePanelModal">
-                                <i class="fa fa-trash"></i>
-                            </button>
+
+                            <span class="reference-note " data-panel-id="{{ panel.id }}">{{ panel.references_count }} </span>
+
                         </div>
                     </li>
                     {% empty %}
@@ -188,7 +83,8 @@
 
         <div class="reference-list">
             <div class="reference-list-header">
-                <h3>References</h3>
+                <h3 class="reference-title">Panel References</h3>
+                <input type="search" id="referenceSearch" placeholder="Search references...">
             </div>
             <ul>
                 <p> no panel selected </p>
@@ -224,7 +120,7 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-primary" id="submit-button" csrf="{{ csrf_token }}" href="{% url 'add_references_to_panel' %}" ref_index= "{{project_index}}" reload_ref= "{% url 'added_reference_table' %}">Submit</button>
+          <button type="button" class="btn btn-primary" id="submit-button" csrf="{{ csrf_token }}" href="{% url 'add_references_to_panel' %}" reload_ref= "{% url 'added_reference_table' %}">Submit</button>
         </div>
       </div>
     </div>
@@ -275,11 +171,36 @@
         </div>
     </div>
 </div>
-  
+
+
+<!-- Modal -->
+<div id="removeReferenceModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="removeReferenceModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="removeReferenceModalLabel">Remove Reference</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          Are you sure you want to remove this reference from the panel?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-danger">Remove</button>
+        </div>
+      </div>
+    </div>
+</div>
+
+
+
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 <script type="text/javascript" src="{% static 'js/check-box-general.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/televir_projects/panel_functions.js' %}"></script>
 
 <script>
     // Get the modal
@@ -299,177 +220,56 @@
     // When the user clicks on <span> (x), close the modal
     span.onclick = function() {
         modal.style.display = "none";
-        
     }
 
-    $('.add-reference-button').on('click', function() {
-        var panelId = $(this).data('panel-id');
-        $('#submit-button').attr('ref_index', panelId);
+    document.querySelector('#new-panel-button').addEventListener('click', function() {
+        document.querySelector('#newPanelModal').style.display = 'grid';
     });
 
-    var reload_panels = function(userId) {
-        var url = '{% url "panel_list" %}';
+    document.querySelector('#new-panel-form').addEventListener('submit', function() {
+        document.querySelector('#newPanelModal').style.display = 'none';
+    });
+
+
+    // Stop event propagation when the buttons are clicked
+
+    $('#referenceSearch').on('input', function() {
+        var searchValue = $(this).val().toLowerCase();
+        $('.reference-item').each(function() {
+            var referenceText = $(this).text().toLowerCase();
+            if (referenceText.indexOf(searchValue) > -1) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+    });
+
+
+    $('#removeReferenceModal').on('click', '.btn-danger', function() {
+        var ref_id = $('#removeReferenceModal').attr('ref_id');
+        var panel_id = $('#removeReferenceModal').attr('panel_id');
+        var url = '{% url "remove_panel_reference" %}';
+        var reload_url = '{% url "added_reference_table" %}';
+        console.log("removing ref id: " + ref_id + " from panel id: " + panel_id)
         $.ajax({
             url: url,
-            method: 'GET',
+            method: 'POST',
             data: {
-                'user_id': userId
+                'reference_id': ref_id,
+                'panel_id': panel_id,
+                'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value
             },
             success: function(data) {
-                // Clear the panel list
-                var panelList = document.querySelector('.panel-list ul');
-                while (panelList.firstChild) {
-                    panelList.removeChild(panelList.firstChild);
-                }
-            
-                // Check if the panels array is empty
-                if (data.panels.length === 0) {
-                    var li = document.createElement('li');
-                    li.textContent = 'No panels available.';
-                    panelList.appendChild(li);
-                } else {
-                    // Add the new panels to the list
-                    data.panels.forEach(function(panel) {
-                        var li = document.createElement('li');
-                        // div 
+                $('#removeReferenceModal').modal('hide');
+                load_panel_refs(panel_id);
+                $('.modal-backdrop').remove();
 
-                        var div = document.createElement('div');
-                        div.className = 'panel-container clearfix';
-                        
-                        var a = document.createElement('a');
-                        a.className = 'panel-link';
-                        a.href = '#';
-                        a.setAttribute('data-panel-id', panel.id);
-                        a.textContent = panel.name;
-                        
-                        var addButton = document.createElement('button');
-                        addButton.className = 'add-reference-button btn btn-primary';
-                        addButton.setAttribute('data-panel-id', panel.id);
-                        addButton.setAttribute('data-toggle', 'modal');
-                        addButton.setAttribute('data-target', '#myModal');
-                        var icon = document.createElement('i');
-                        icon.className = 'fa fa-plus';
-                        addButton.appendChild(icon);
-                        
-                        var removeButton = document.createElement('button');
-                        removeButton.className = 'remove-reference-button btn btn-danger';
-                        removeButton.setAttribute('data-panel-id', panel.id);
-                        removeButton.setAttribute('data-toggle', 'modal');
-                        removeButton.setAttribute('data-target', '#removePanelModal');
-                        var icon = document.createElement('i');
-                        icon.className = 'fa fa-trash';
-                        removeButton.appendChild(icon);
-
-                        
-                        div.appendChild(a);
-                        div.appendChild(addButton);
-                        div.appendChild(removeButton);
-                        
-                        li.appendChild(div);
-                        panelList.appendChild(li);
-                        
-                    });
-                ready_document();    
-                }
             },
             error: function(error) {
                 console.error('Error:', error);
             }
         });
-    }
-
-    var loadThisContent = function (event) {
-        event.preventDefault();
-        var btn = $(this);
-        var csrf = btn.attr("csrf");
-        $.ajax({
-            url: btn.attr("href"),
-            type: 'GET',
-            data: {
-                search_add_project_reference: $('#search-input').val(),
-                csrfmiddlewaretoken: csrf,
-            },
-            success: function (data) {
-    
-              $('#reference_table_div').html(data.my_content);
-              
-              if (data["references_count"] > 0){
-    
-              var selectAllCheckbox = document.getElementById('Select-All-Checkbox-Modal');
-    
-              var referenceCheckboxes = document.getElementsByClassName('reference-checkbox');
-         
-              selectAllCheckbox.addEventListener('change', function() {
-                for (var i = 0; i < referenceCheckboxes.length; i++) {
-                  referenceCheckboxes[i].checked = this.checked;
-                }
-              });
-              }
-            }
-        }
-        )
-      };
-
-    var load_panel_refs = function (panelId) {
-        var url = '{% url "panel_references_get" %}';
-        $.ajax({
-            url: url,
-            method: 'GET',
-            data: {
-                'panel_id': panelId
-            },
-            success: function(data) {
-                // Clear the references list
-                var referenceList = document.querySelector('.reference-list ul');
-                while (referenceList.firstChild) {
-                    referenceList.removeChild(referenceList.firstChild);
-                }
-            
-                // Check if the references array is empty
-                if (data.references.length === 0) {
-                    var li = document.createElement('li');
-                    li.textContent = 'No references available.';
-                    referenceList.appendChild(li);
-                } else {
-                    // Add the new references to the list
-                    data.references.forEach(function(reference) {
-                        var li = document.createElement('li');
-                        li.className = 'reference-item';
-            
-                        var description = document.createElement('p');
-                        description.className = 'reference-description'; 
-                        description.textContent = reference.description;
-                        li.appendChild(description);
-
-                        var taxid = document.createElement('p');
-                        taxid.className = 'reference-id'; 
-                        taxid.textContent = 'Taxid: ' + reference.taxid;
-                        li.appendChild(taxid);
-            
-                        var accid = document.createElement('p');
-                        accid.className = 'reference-id'; 
-                        accid.textContent = 'Accid: ' + reference.accid;
-                        li.appendChild(accid);
-            
-                        referenceList.appendChild(li);
-                    });
-                }
-            },
-            error: function(error) {
-                console.error('Error:', error);
-            }
-        });
-    }
-
-    document.getElementById('panel-list').addEventListener('click', function(e) {
-        if (e.target.classList.contains('panel-link')) {
-            e.preventDefault();
-
-            var panelId = e.target.getAttribute('data-panel-id');
-            
-            load_panel_refs(panelId);
-            
-        }
     });
 
     // AJAX to submit the form
@@ -477,7 +277,7 @@
         e.preventDefault();
         var name = document.getElementById('panel-name').value;
         var url = document.getElementById('new-panel-form').getAttribute('url');
-
+        var reload_url = '{% url "panel_list" %}';
         $.ajax({
             url: url,  // Replace with the actual URL of your view
             method: 'POST',
@@ -491,7 +291,7 @@
                 // unblock the UI
                 $('.modal-backdrop').remove();
                 // Reload the panel list
-                reload_panels("{{ user.id }}");
+                reload_panels("{{ user.id }}", reload_url);
                 
             },
             error: function(error) {
@@ -501,9 +301,6 @@
         });
     });
 
-    window.onbeforeunload = function (e) {
-        $.unblockUI();
-    };
 
 	$(document).ready(function () {
         // Load the reference table
@@ -517,145 +314,16 @@
             $.unblockUI();
         });
 
+        reload_connects();
+
 	});
 
-    document.querySelector('#new-panel-button').addEventListener('click', function() {
-        document.querySelector('#newPanelModal').style.display = 'grid';
-    });
-
-    document.querySelector('#new-panel-form').addEventListener('submit', function() {
-        document.querySelector('#newPanelModal').style.display = 'none';
-    });
-
-    var ready_document = function() {
-
-        $('.remove-reference-button').click(function () {
-
-            var panel_id = $(this).attr('data-panel-id');
-            // set panel_id to the remove button
-            $('#remove-panel-button').attr('panel_id', panel_id);
-            
-        });
-
-        $('#remove-panel-button').click(function () {
-            var panel_id = $(this).attr('panel_id');
-            var url = $(this).attr('url');
-            var csrf = $(this).attr('csrf');
-            
-            $.ajax({
-                type: 'POST',
-                url: url,
-                data: {
-                    'csrfmiddlewaretoken': csrf,
-                    'panel_id': panel_id,
-                },
-                success: function(data) {
-                    if (data['is_ok']) {
-                        $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
-                            'Panel successfully removed' +
-                            '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-                            '</div>');
-                        // reload table
-                        $('#reference_table_div').html(data.empty_content);
-                        // empty #search-input
-                        $('#search-input').val('');
-                        // clear selection 
-                        $('.reference-checkbox').prop('checked', false);
-                        // drop modal
-                        load_panel_refs(panel_id);
-                        // close modal 
-                        $('#removePanelModal').modal('hide');
-                        $('body').removeClass('modal-open');
-                        $('.modal-backdrop').remove();
-                        // unblock the UI
-                        reload_panels("{{ user_id }}");
-                        $.unblockUI();
-                    } else if (data['is_error']) {
-                        $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-                            'The panel was not removed.' +
-                            '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-                            '</div>');
-                    }
-                }
-            })
-        })
+    window.onbeforeunload = function (e) {
+        $.unblockUI();
+    };
 
 
-        $('#submit-button').click(function () {
-          var url = $('#submit-button').attr('href');
-          var reload_url = $('#submit-button').attr('reload_ref');
-          var checkedRows = [];
-          var csrf = $('#submit-button').attr('csrf');
-          var panel_index = $('#submit-button').attr('ref_index');
-          $('.reference-checkbox:checked').each(function() {
-            // collect ids of checked rows
-    
-            var ref_id= $(this).attr('ref_id');
-    
-            checkedRows.push(ref_id);
-          });
-      
-          // Process the checked rows
-          // Add your processing logic here
-          // send row ids to server using .ajax
-          $.ajax({
-            type: 'POST',
-            url: url,
-            data: {
-              'csrfmiddlewaretoken': csrf,
-              'ref_id': panel_index,
-              'reference_ids': checkedRows,
-            },
-            success: function(data) {
-              if (data['is_ok']) {
-                $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
-                  'References successfully added' +
-                  '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-                  '</div>');
-                  // reload table
-                  $('#reference_table_div').html(data.empty_content);
-                  // empty #search-input
-                  $('#search-input').val('');
-                  // clear selection 
-                  $('.reference-checkbox').prop('checked', false);
-                  
-                  
-                  // drop modal
-                  load_panel_refs(panel_index);
-                  // close modal 
-                  $('#myModal').modal('hide');
-                  $('body').removeClass('modal-open');
-                  $('.modal-backdrop').remove();
-                  // unblock the UI
-                  $.unblockUI();
-
-    
-              } else if (data['is_error']) {
-                $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-                  'The references were not added.' +
-                  '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-                  '</div>');
-    
-                  // drop modal
-                  $('#myModal').modal('hide');
-                
-              } else if (data['is_empty']) {
-                $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-                  'No references were selected.' +
-                  '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-                  '</div>');
-    
-                  // drop modal
-                  
-              }
-              $.unblockUI();
-            }
-          })
-    
-        });
-    }
-
-    $(document).ready(ready_document);
+    $(document).ready(ready_document("{{ user_id }}", "{% url 'panel_list' %}"));
     
 
     $('.load-content').on('click', loadThisContent);

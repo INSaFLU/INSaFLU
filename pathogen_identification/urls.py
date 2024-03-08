@@ -56,6 +56,26 @@ urlpatterns = [
         name="panel_list",
     ),
     url(
+        r"add_panels_to_sample",
+        PIajax_views.add_panels_to_sample,
+        name="add_panels_to_sample",
+    ),
+    url(
+        r"remove_panels_from_sample",
+        PIajax_views.remove_sample_panel,
+        name="remove_added_panel",
+    ),
+    url(
+        r"get_sample_panels$",
+        PIajax_views.get_sample_panels,
+        name="get_sample_panels",
+    ),
+    url(
+        r"get_sample_panel_suggestions",
+        PIajax_views.get_sample_panel_suggestions,
+        name="get_sample_panel_suggestions",
+    ),
+    url(
         r"Project_samples/(?P<pk>\d+)/add_sample_project$",
         PIviews.AddSamples_PIProjectsView.as_view(),
         name="add-sample-PIproject",
@@ -174,6 +194,11 @@ urlpatterns = [
         r"added_reference_table$",
         PIviews.inject_references_added_html,
         name="added_reference_table",
+    ),
+    url(
+        r"remove_panel_reference$",
+        PIajax_views.remove_panel_reference,
+        name="remove_panel_reference",
     ),
     url(
         r"remove_reference$",

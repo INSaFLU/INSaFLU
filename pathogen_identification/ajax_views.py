@@ -18,35 +18,25 @@ from constants.software_names import SoftwareNames
 from fluwebvirus.settings import STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReferenceMap_Main,
-    ReferencePanel,
-    ReferenceSourceFileMap,
-    RunMain,
-    TeleFluProject,
-    TeleFluSample,
-)
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference, ReferenceMap_Main,
+                                            ReferencePanel,
+                                            ReferenceSourceFileMap, RunMain,
+                                            TeleFluProject, TeleFluSample)
 from pathogen_identification.tables import ReferenceSourceTable
 from pathogen_identification.utilities.reference_utils import (
-    check_metaReference_exists_from_ids,
-    check_reference_exists,
-    check_reference_submitted,
-    create_combined_reference,
-)
+    check_metaReference_exists_from_ids, check_reference_exists,
+    check_reference_submitted, create_combined_reference)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
-from pathogen_identification.utilities.utilities_general import get_services_dir
-from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
+from pathogen_identification.utilities.utilities_general import \
+    get_services_dir
+from pathogen_identification.utilities.utilities_pipeline import \
+    SoftwareTreeUtils
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter,
-    SampleReferenceManager,
-    set_control_reports,
-)
+    ReportSorter, SampleReferenceManager, set_control_reports)
 from utils.process_SGE import ProcessSGE
 from utils.utils import Utils
 
@@ -1450,13 +1440,12 @@ def set_sample_reports_control(request):
 def create_reference_panel(request):
     """
     create a reference panel"""
-    print("create_reference_panel")
     if request.is_ajax():
         user = request.user
         name = request.POST.get("name")
 
         try:
-            ReferencePanel.objects.get(name=name, owner=user)
+            ReferencePanel.objects.get(name=name, owner=user, is_deleted=False)
         except ReferencePanel.DoesNotExist:
             ReferencePanel.objects.create(
                 name=name,
@@ -1503,10 +1492,140 @@ def get_panels(request):
         panels = ReferencePanel.objects.filter(owner=user, is_deleted=False).order_by(
             "-creation_date"
         )
+        panel_data = [
+            {
+                "id": panel.id,
+                "name": panel.name,
+                "references_count": panel.references_count,
+            }
+            for panel in panels
+        ]
+
         data = {
             "is_ok": True,
-            "panels": list(panels.values("id", "name")),
+            "panels": panel_data,
         }
+        print(data)
+
+        return JsonResponse(data)
+
+    return JsonResponse({"is_ok": False})
+
+
+@csrf_protect
+def remove_panel_reference(request):
+    if request.is_ajax():
+        panel_id = int(request.POST.get("panel_id"))
+        reference_id = int(request.POST.get("reference_id"))
+
+        panel = ReferencePanel.objects.get(pk=panel_id)
+        reference = RawReference.objects.get(pk=reference_id)
+
+        reference.panel = None
+        reference.save()
+
+        return JsonResponse({"is_ok": True})
+
+    return JsonResponse({"is_ok": False})
+
+
+@csrf_protect
+def add_panels_to_sample(request):
+    """
+    add panels to sample"""
+    if request.is_ajax():
+        sample_id = int(request.POST.get("sample_id"))
+        panel_ids = request.POST.getlist("panel_ids[]")
+        print(panel_ids)
+        print(sample_id)
+
+        sample = PIProject_Sample.objects.get(pk=sample_id)
+
+        for panel_id in panel_ids:
+            panel = ReferencePanel.objects.get(pk=int(panel_id))
+            panel.pk = None
+            panel.project_sample = sample
+            panel.save()
+
+        return JsonResponse({"is_ok": True})
+
+    return JsonResponse({"is_ok": False})
+
+
+@csrf_protect
+def remove_sample_panel(request):
+    """
+    remove sample panel"""
+    print("remove")
+    print(request.POST)
+    if request.is_ajax():
+        print("HIIi")
+        panel_id = int(request.POST.get("panel_id"))
+        panel = ReferencePanel.objects.get(pk=panel_id)
+        panel.is_deleted = True
+        panel.save()
+
+        return JsonResponse({"is_ok": True})
+
+    return JsonResponse({"is_ok": False})
+
+
+@csrf_protect
+def get_sample_panels(request):
+    """
+    get sample panels"""
+    if request.is_ajax():
+        user = request.user
+        sample_id = request.GET.get("sample_id")
+
+        sample = PIProject_Sample.objects.get(pk=sample_id)
+
+        panels = ReferencePanel.objects.filter(project_sample=sample, is_deleted=False)
+
+        panel_data = [
+            {
+                "id": panel.id,
+                "name": panel.name,
+                "references_count": panel.references_count,
+            }
+            for panel in panels
+        ]
+        data = {"is_ok": True, "panels": panel_data}
+
+        return JsonResponse(data)
+
+    return JsonResponse({"is_ok": False})
+
+
+def get_sample_panel_suggestions(request):
+    """
+    get sample panel updates"""
+    if request.is_ajax():
+        user = request.user
+        sample_id = request.GET.get("sample_id")
+
+        sample = PIProject_Sample.objects.get(pk=sample_id)
+
+        panels_sample = ReferencePanel.objects.filter(
+            project_sample=sample, is_deleted=False
+        )
+        panels_global_names = panels_sample.values_list("pk", flat=True)
+        panels_suggest = ReferencePanel.objects.filter(
+            project_sample=None, is_deleted=False
+        ).exclude(pk__in=panels_global_names)
+
+        print("hi")
+        print(len(panels_suggest))
+
+        panel_data = [
+            {
+                "id": panel.id,
+                "name": panel.name,
+                "references_count": panel.references_count,
+            }
+            for panel in panels_suggest
+        ]
+        data = {"is_ok": True, "panels": panel_data}
 
         return JsonResponse(data)
 
@@ -1517,8 +1636,9 @@ def get_panels(request):
 def delete_reference_panel(request):
     """
     delete a panel"""
+
     if request.is_ajax():
-        print(request.POST)
+
         panel_id = int(request.POST.get("panel_id"))
         panel = ReferencePanel.objects.get(pk=panel_id)
         panel.is_deleted = True
@@ -1545,8 +1665,9 @@ def get_panel_references(request):
         data = {
             "is_ok": True,
             "references": list(
-                references.values("pk", "taxid", "accid", "description")
+                references.values("id", "taxid", "accid", "description")
             ),
+            "panel_name": panel.name,
         }
 
         return JsonResponse(data)

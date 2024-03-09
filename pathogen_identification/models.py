@@ -14,8 +14,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from managing_files.models import Sample
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.data_classes import IntermediateFiles
 
 # Create your models here.
@@ -270,9 +269,11 @@ class PIProject_Sample(models.Model):
         return [int(panel) for panel in panels]
 
     @property
-    def panels(self):
+    def panels_added(self):
         panels = self.panels_pks
-        return ReferencePanel.objects.filter(pk__in=panels)
+        return ReferencePanel.objects.filter(
+            pk__in=panels, panel_type=ReferencePanel.PANEL_TYPE_MAIN
+        )
 
     def remove_panel(self, panel_pk: int):
         panels = self.panels_pks
@@ -483,6 +484,12 @@ class QC_REPORT(models.Model):
 
 
 class ReferencePanel(models.Model):
+
+    PANEL_TYPE_MAIN = 0
+    PANEL_TYPE_COPIED = 1
+
+    panel_type = models.IntegerField(default=PANEL_TYPE_MAIN)
+    parent = models.ForeignKey("self", on_delete=models.CASCADE, blank=True, null=True)
 
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(

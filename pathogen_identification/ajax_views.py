@@ -357,12 +357,15 @@ def submit_sample_mapping_televir(request):
 def submit_sample_mapping_panels(request):
     if request.is_ajax():
         process_SGE = ProcessSGE()
-
+        print(request.POST)
+        user = request.user
         data = {"is_ok": True, "is_deployed": False, "is_empty": False, "message": ""}
 
         sample_id = int(request.POST["sample_id"])
         sample = PIProject_Sample.objects.get(id=int(sample_id))
         reference_manager = SampleReferenceManager(sample)
+
+        print(sample)
 
         project = sample.project
         software_utils = SoftwareTreeUtils(user, project, sample=sample)
@@ -370,10 +373,12 @@ def submit_sample_mapping_panels(request):
             software_utils.check_runs_to_submit_mapping_only(sample)
         )
 
+        print(runs_to_deploy)
+
         if len(runs_to_deploy) == 0:
             return data
 
-        sample_panels = sample.panels
+        sample_panels = sample.panels_added
 
         if len(sample_panels) == 0:
             data["is_empty"] = True
@@ -382,17 +387,26 @@ def submit_sample_mapping_panels(request):
         try:
             for sample, leaves_to_deploy in runs_to_deploy.items():
                 for leaf in leaves_to_deploy:
-                    references = RawReference.objects.filter(panel=panel)
+                    print("leaf", leaf.pk)
                     for panel in sample_panels:
+                        print("PANEL", panel)
+                        if panel.is_deleted:
+                            continue
+
+                        references = RawReference.objects.filter(panel=panel)
+                        run_panel_copy = reference_manager.copy_panel(panel)
+                        print(len(references))
 
                         panel_mapping_run = (
                             reference_manager.mapping_request_panel_run_from_leaf(
-                                leaf, panel_pk=panel.pk
+                                leaf, panel_pk=run_panel_copy.pk
                             )
                         )
+                        # print(references)
                         for reference in references:
                             reference.pk = None
                             reference.run = panel_mapping_run
+                            reference.panel = run_panel_copy
                             reference.save()
 
                         taskID = process_SGE.set_submit_televir_sample_metagenomics(
@@ -403,10 +417,15 @@ def submit_sample_mapping_panels(request):
                             map_run_pk=panel_mapping_run.pk,
                         )
                         data["is_deployed"] = True
+                        print("deployed")
 
         except Exception as e:
             print(e)
+            print("error")
+
             data["is_ok"] = False
+        print(data)
+        return JsonResponse(data)
 
 
 @login_required
@@ -1511,7 +1530,12 @@ def create_reference_panel(request):
         name = request.POST.get("name")
 
         try:
-            ReferencePanel.objects.get(name=name, owner=user, is_deleted=False)
+            ReferencePanel.objects.get(
+                name=name,
+                owner=user,
+                is_deleted=False,
+                panel_type=ReferencePanel.PANEL_TYPE_MAIN,
+            )
         except ReferencePanel.DoesNotExist:
             ReferencePanel.objects.create(
                 name=name,
@@ -1556,7 +1580,10 @@ def get_panels(request):
     if request.is_ajax():
         user = request.user
         panels = ReferencePanel.objects.filter(
-            owner=user, is_deleted=False, project_sample=None
+            owner=user,
+            is_deleted=False,
+            project_sample=None,
+            panel_type=ReferencePanel.PANEL_TYPE_MAIN,
         ).order_by("-creation_date")
         panel_data = [
             {
@@ -1676,14 +1703,13 @@ def remove_sample_panel(request):
 def get_sample_panels(request):
     """
     get sample panels"""
-    print("get_sample_panels")
     if request.is_ajax():
         print("get_sample_panels")
         sample_id = request.GET.get("sample_id")
 
         sample = PIProject_Sample.objects.get(pk=sample_id)
 
-        panels = sample.panels
+        panels = sample.panels_added
 
         panel_data = [
             {
@@ -1709,11 +1735,13 @@ def get_sample_panel_suggestions(request):
 
         sample = PIProject_Sample.objects.get(pk=sample_id)
 
-        panels_sample = sample.panels
+        panels_sample = sample.panels_added
 
         panels_global_names = panels_sample.values_list("pk", flat=True)
         panels_suggest = ReferencePanel.objects.filter(
-            project_sample=None, is_deleted=False
+            project_sample=None,
+            is_deleted=False,
+            panel_type=ReferencePanel.PANEL_TYPE_MAIN,
         ).exclude(pk__in=panels_global_names)
 
         panel_data = [

@@ -1072,7 +1072,11 @@ class ReferencePanelManagement(LoginRequiredMixin, generic.CreateView):
         user = self.request.user
 
         panels = (
-            ReferencePanel.objects.filter(owner__id=user.pk)
+            ReferencePanel.objects.filter(
+                owner__id=user.pk,
+                is_deleted=False,
+                panel_type=ReferencePanel.PANEL_TYPE_MAIN,
+            )
             .exclude(is_deleted=True)
             .order_by("-creation_date")
         )
@@ -1145,7 +1149,12 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
 
         #### get panels
         panels = (
-            ReferencePanel.objects.filter(owner__id=self.request.user.pk, is_deleted = False, project_sample = sample_main)
+            ReferencePanel.objects.filter(
+                owner__id=self.request.user.pk,
+                is_deleted=False,
+                project_sample=sample_main,
+                panel_type=ReferencePanel.PANEL_TYPE_MAIN,
+            )
             .exclude(is_deleted=True)
             .order_by("-creation_date")
         )

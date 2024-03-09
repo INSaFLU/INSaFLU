@@ -331,3 +331,46 @@ $('#request_map_selected').on("click", function(e){
     })
   }
   );
+
+
+  $('#request-map-panels').on('click', function() {
+    var sample_name = $(this).attr('sample-name');
+    var sample_id = $(this).attr('sample-id');
+    console.log("sample_id: " + sample_id);
+    $('#id-modal-body-map-panel').attr('sample_id', sample_id);
+    $('#id-label-map-panel').text('Map selected panels to sample \'' + sample_name + '\'?');
+  });
+
+  $('#id-map-panel-button').on('click', function() {
+    var sample_id = $('#id-modal-body-map-panel').attr('sample_id');
+    var url = $('#id-modal-body-map-panel').attr('map-panel-single-value-url');
+    var csrf = $('#id-modal-body-map-panel').attr('data-csrf');
+    console.log(url);
+    console.log(sample_id);
+    var data = {
+      'sample_id': sample_id,
+      'csrfmiddlewaretoken': csrf
+    };
+    $.ajax({
+      type: 'POST',
+      url: url,
+      data: data,
+      success: function(data) {
+        console.log(data);
+        if (data['is_ok'] === true && data['is_deployed'] === true) {
+          $('#id_messages_remove').append('<div class="alert alert-success alert-dismissible" role="alert"><button type="button" ' +
+            'class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>'+
+            'Panel mapping deployed successfully</div>');
+        } else if (data['is_empty'] === true) { 
+          $('#id_messages_remove').append('<div class="alert alert-warning alert-dismissible" role="alert"><button type="button" ' +
+            'class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>'+
+            'No panels to map</div>');
+        } else {
+          $('#id_messages_remove').append('<div class="alert alert-danger alert-dismissible" role="alert"><button type="button" ' +
+            'class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>'+
+            'Error deploying panel mapping</div>');
+        }
+      },
+    }
+    );
+  });

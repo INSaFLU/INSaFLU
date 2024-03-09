@@ -5,6 +5,7 @@ from typing import Dict, List, Optional
 
 import pandas as pd
 from braces.views import FormValidMessageMixin, LoginRequiredMixin
+from django.db import transaction
 from django.db.models.query import QuerySet
 from django.urls import reverse
 from django.utils.safestring import mark_safe
@@ -67,6 +68,24 @@ class SampleReferenceManager:
             software_tree.save()
 
         return software_tree
+
+    def copy_panel(self, panel: ReferencePanel) -> ReferencePanel:
+        """
+        copy panel
+        """
+        with transaction.atomic():
+            original_pk = panel.pk
+            panel.pk = None
+            panel.panel_type = ReferencePanel.PANEL_TYPE_COPIED
+            panel.save()
+            try:
+                panel.parent = ReferencePanel.objects.get(pk=original_pk)
+                panel.save()
+
+            except ReferencePanel.DoesNotExist:
+                pass
+
+        return panel
 
     def proxy_leaf_prepare(self):
         try:

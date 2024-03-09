@@ -1579,6 +1579,7 @@ def add_references_to_panel(request):
 def get_panels(request):
     if request.is_ajax():
         user = request.user
+        print("get panels user", user, user.pk)
         panels = ReferencePanel.objects.filter(
             owner=user,
             is_deleted=False,

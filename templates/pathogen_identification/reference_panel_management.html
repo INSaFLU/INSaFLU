@@ -120,7 +120,7 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-primary" id="submit-button" csrf="{{ csrf_token }}" href="{% url 'add_references_to_panel' %}" reload_ref= "{% url 'added_reference_table' %}">Submit</button>
+          <button type="button" class="btn btn-primary" id="submit-button" csrf="{{ csrf_token }}" href="{% url 'add_references_to_panel' %}" reload_ref= "{% url 'added_reference_table' %}" >Submit</button>
         </div>
       </div>
     </div>
@@ -145,7 +145,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-          <button type="button" class="btn btn-primary" id="create-panel-button">Create</button>
+          <button type="button" class="btn btn-primary" id="create-panel-button" reload-url= "{% url 'panel_list' %}">Create</button>
         </div>
       </div>
     </div>
@@ -249,9 +249,9 @@
     $('#removeReferenceModal').on('click', '.btn-danger', function() {
         var ref_id = $('#removeReferenceModal').attr('ref_id');
         var panel_id = $('#removeReferenceModal').attr('panel_id');
+        var user_id = '{{ user.id }}';
         var url = '{% url "remove_panel_reference" %}';
         var reload_url = '{% url "added_reference_table" %}';
-        console.log("removing ref id: " + ref_id + " from panel id: " + panel_id)
         $.ajax({
             url: url,
             method: 'POST',
@@ -264,6 +264,7 @@
                 $('#removeReferenceModal').modal('hide');
                 load_panel_refs(panel_id);
                 $('.modal-backdrop').remove();
+                reload_panels(user_id);
 
             },
             error: function(error) {
@@ -291,7 +292,7 @@
                 // unblock the UI
                 $('.modal-backdrop').remove();
                 // Reload the panel list
-                reload_panels("{{ user.id }}", reload_url);
+                reload_panels("{{ user.id }}");
                 
             },
             error: function(error) {

@@ -1,5 +1,7 @@
-var reload_panels = function(userId, reload_url) {
+var reload_panels = function(userId) {
     // var url = '{% url "panel_list" %}';
+    var reload_url = $("#create-panel-button").attr('reload-url');
+
     $.ajax({
         url: reload_url,
         method: 'GET',
@@ -242,7 +244,7 @@ var ready_document = function (user_id, reload_url) {
         var panel_id = $(this).attr('panel_id');
         var url = $(this).attr('url');
         var csrf = $(this).attr('csrf');
-        // var reload_url = '{% url "panel_list" %}';
+        var reload_url = $("create-panel-button").attr('reload-url');
         
         $.ajax({
             type: 'POST',
@@ -270,7 +272,7 @@ var ready_document = function (user_id, reload_url) {
                     $('body').removeClass('modal-open');
                     $('.modal-backdrop').remove();
                     // unblock the UI
-                    reload_panels(user_id, reload_url);
+                    reload_panels(user_id);
                     $.unblockUI();
                 } else if (data['is_error']) {
                     $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
@@ -285,7 +287,8 @@ var ready_document = function (user_id, reload_url) {
 
     $('#submit-button').click(function () {
       var url = $('#submit-button').attr('href');
-      var reload_url = $('#submit-button').attr('reload_ref');
+      //var reload_url = $('#submit-button').attr('reload_ref');
+      
       var checkedRows = [];
       var csrf = $('#submit-button').attr('csrf');
       var panel_index = $('#submit-button').attr('ref_index');
@@ -324,6 +327,7 @@ var ready_document = function (user_id, reload_url) {
               
               // drop modal
               load_panel_refs(panel_index);
+              reload_panels(user_id);
               // close modal 
               $('#myModal').modal('hide');
               $('body').removeClass('modal-open');

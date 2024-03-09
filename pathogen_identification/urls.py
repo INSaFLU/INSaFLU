@@ -121,6 +121,11 @@ urlpatterns = [
         name="map_selected_references",
     ),
     url(
+        r"deploy_sample_panel_map",
+        PIajax_views.submit_sample_mapping_panels,
+        name="map_selected_panels",
+    ),
+    url(
         r"deploy_mapping_request_project_samples$",
         PIajax_views.submit_project_samples_mapping_televir,
         name="map_selected_references_project_samples",

@@ -1,6 +1,5 @@
 var reload_panels = function(userId, reload_url) {
     // var url = '{% url "panel_list" %}';
-    console.log('url:', reload_url);
     $.ajax({
         url: reload_url,
         method: 'GET',
@@ -59,7 +58,6 @@ var reload_panels = function(userId, reload_url) {
                     icon.className = 'fa fa-trash';
                     removeButton.appendChild(icon);
                     
-                    console.log('references_count:', panel)
                     var refnumber_span = document.createElement('span');
                     refnumber_span.className = 'reference-note';
                     refnumber_span.textContent = panel.references_count;
@@ -93,7 +91,6 @@ var reload_panels = function(userId, reload_url) {
 
 var load_panel_refs = function (panelId) {
     var url = document.querySelector('.panel-list').getAttribute('data-url');
-    console.log('url:', url)
     $.ajax({
         url: url,
         method: 'GET',
@@ -101,7 +98,6 @@ var load_panel_refs = function (panelId) {
             'panel_id': panelId
         },
         success: function (data) {
-            console.log('data:', data);
             
             // change the reference-title
             var referenceTitle = document.querySelector('.reference-title');
@@ -207,11 +203,9 @@ var loadThisContent = function (event) {
 
 
 var reload_connects = function () {
-    console.log('reload connects');
 
 
     $('.panel-container').on('click', function () {
-        console.log('panel-container clicked');
         var panelId = $(this).data('panel-id');
         load_panel_refs(panelId);
         
@@ -220,7 +214,6 @@ var reload_connects = function () {
     $('.remove-panel-button').click(function (e) {
         // stop event propagation
         
-        console.log('remove panel');
         var panel_id = $(this).attr('data-panel-id');
         // set panel_id to the remove button
         $('#remove-panel-button').attr('panel_id', panel_id);
@@ -228,7 +221,6 @@ var reload_connects = function () {
     });
 
     $('.add-reference-button').click(function () {
-        console.log('add reference');
         var panel_id = $(this).attr('data-panel-id');
         $('#submit-button').attr('ref_index', panel_id);
     });

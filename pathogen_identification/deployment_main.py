@@ -444,14 +444,14 @@ class Run_Main_from_Leaf:
         try:
             self.container.run_main_prep()
 
+            if self.mapping_run_pk is not None:
+                self.container.run_engine.run_pk = self.mapping_run_pk
+
             if (
                 self.container.run_engine.run_type
                 == RunMainTree_class.RUN_TYPE_SCREENING
             ):
                 self.container.run_engine.remap_params.manual_references_include = True
-
-            if self.mapping_run_pk is not None:
-                self.container.run_engine.run_pk = self.mapping_run_pk
 
             if self.mapping_request:
                 self.container.run_engine.run_type = (

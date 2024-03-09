@@ -46,7 +46,7 @@
 <div id="accordion1" role="tablist" aria-multiselectable="true">
   <div class="card">
       <div class="card">
-          <div class="card-header" role="tab" id="headingsample">
+          <div class="card-header" role="tab" id="headingsample" sample-id= "{{sample_index}}" data-csrf= "{{ csrf_token }}">
               <div class="row">
                   <div class="col-sm" >
                       <h5 class="mb-0" >
@@ -150,7 +150,7 @@
           </div>
       </div>
       <div id="collapsePanel" class="collapse" role="tabpanel" aria-labelledby="headingPanel">
-        <div class="panel-list" data-url="{% url 'panel_references_get' %}">
+        <div class="panel-list" id="panel-list-section" data-url="{% url 'get_sample_panels' %}">
           <ul id="panel-list">
             {% for panel in panels %}
             <li>
@@ -196,6 +196,10 @@
             </a>
           </button>
           <button class="btn btn-primary">
+            <a id="request-map-panels" href="#MapPanelModal" data-toggle="modal" data-target="#MapPanelModal" style="color: #fff;">
+              <i class="fa fa-map-marker" aria-hidden="true"></i> Map Panels
+            </a>
+          <button class="btn btn-primary">
             <a id="request_screening" href="#id_screening_modal" data-toggle="modal" data-target="#id_screening_modal" style="color: #fff;">
               <i class="fa fa-rocket" aria-hidden="true"></i> Deploy Screening
             </a>
@@ -207,6 +211,7 @@
   
       </div>
   </div>
+
   <div class="table-content">
     {% block table %}
     <div class="table-responsive">
@@ -284,9 +289,7 @@
   class="btn btn-small btn-primary dark" style="color: #fff;"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
 
 
-<!-- Modal -->
-
-
+<!-- Modals -->
 <!-- The sample metagenomics submit modal -->
 <div class="modal fade" id="id_deploy_metagenomics_modal">
   <div class="modal-dialog">
@@ -314,6 +317,29 @@
   </div>
 </div>
 
+<!-- The map panel modal -->
+<div class="modal fade" id="MapPanelModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title-map-panel">Map Panel</h4>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="id-modal-body-map-panel" map-panel-single-value-url="{% url 'map_selected_panels' %}" data-csrf= "{{ csrf_token }}">
+          <label id="id-label-map-panel" class="col-form-label">Folder Name</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="id-map-panel-button" type="button" class="btn btn-primary" data-dismiss="modal">Map</button>
+        <button id="id-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal"
+          aria-hidden="true">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- The refrence search -->
 <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop="static">
@@ -387,7 +413,7 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-primary" id="remove-panel-final-button" href="{% url 'remove_added_panel' %}">Remove</button>
+        <button type="button" class="btn btn-primary" id="remove-panel-submit-button" href="{% url 'remove_added_panel' %}">Remove</button>
       </div>
     </div>
   </div>
@@ -486,493 +512,25 @@
 <script type="text/javascript" src="{% static 'js/graph_televir/d3-4.10.2/d3.min.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/graph_televir/collapsibleTree-binding-0.1.7/collapsibleTree.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/televir_projects/remove_added_reference.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/televir_projects/televir_reference_mapping.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/televir_projects/reference_panel_functions.js' %}"></script>
+
+
 
 <script>
-  $('#request_map_selected').on("click", function(e){
-    attr= $(this).attr('id');
-    
-    $('#id-label-map-selected').text('Map selected references?');
-    
-  });
-
-  $('#request_screening').on("click", function(e){
-    attr= $(this).attr('id');
-    
-    $('#id-label-screening').text('Deploy Screening?');
-    
-  });
-
-
-  // deploy screening
-  $('#id-screening-button').on('click', function() {
-
-    var url= $('#id-modal-body-screening').attr("screening-single-value-url");
-    var csrf_token = $('#id-modal-body-screening').attr('data-csrf'); 
-    console.log(csrf_token);
-
-    $.ajax({
-      type: 'POST',
-      url: url,
-      data: {
-        'csrfmiddlewaretoken': csrf_token,
-        'sample_id': '{{ sample_index }}',
-      },
-      success: function(data) {
-        console.log(data);
-        if (data['is_ok'] == true && data['is_deployed'] == true) {
-          $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
-            'Screening deployed. ' + data['message'] +
-            '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-            '</div>');
-
-        } else if (data['is_ok']) {
-          $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-            'Screening not deployed. Check settings.' + data['message'] +
-            '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-            '</div>');
-
-            // drop modal
-            $('#id_screening_modal').modal('hide');
-          
-        } else if (data['is_ok'] == false) {
-          $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-            'Screening not deployed. Check Parameters.' +
-            '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-            '</div>');
-
-            // drop modal
-            $('#id_screening_modal').modal('hide');
-        }
-      }
-    })
-  });
-
-
-  $('#id-map-selected-button').on('click', function() {
-
-    var url= $('#id-modal-body-map-selected').attr("map-selected-single-value-url");
-    var csrf_token = $('#id-modal-body-map-selected').attr('data-csrf'); 
-    console.log(csrf_token);
-
-    var checkedRows = [];
-    $('.class-ref-checkbox:checked').each(function() {
-      // collect ids of checked rows
-
-      var ref_id= $(this).attr('ref_id');
-
-      checkedRows.push(ref_id);
-    });
-
-    console.log(checkedRows);
-
-    $.ajax({
-      type: 'POST',
-      url: url,
-      data: {
-        'csrfmiddlewaretoken': csrf_token,
-        'sample_id': '{{ sample_index }}',
-        'reference_ids': checkedRows
-      },
-      success: function(data) {
-        console.log(data);
-        if (data['is_ok'] == true && data['is_deployed'] == true) {
-          $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
-            'References mapping deployed. ' + data['message'] +
-            '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-            '</div>');
-
-        } else if (data['is_empty'] == true) {
-          $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-            'No references were selected. ' + data['message'] +
-            '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-            '</div>');
-
-            // drop modal
-          
-        } else if (data["is_already_mapped"] == true) {
-          $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-            'Selected and added references already mapped.' +
-            '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-            '</div>');
-  
-        } else if (data['is_ok']) {
-          $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-            'References were not mapped. ' + data['message'] +
-            '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-            '</div>');
-
-            // drop modal
-            $('#id_map_selected_modal').modal('hide');
-
-        } else if (data['is_ok'] == false) {
-          $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-            'The references were not mapped.' +
-            '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-            '</div>');
-
-            // drop modal
-            $('#id_map_selected_modal').modal('hide');
-        } 
-      }
-    })
-  });
-
-</script>
-
-<script>
-
-
-  var load_panels = function(sample_id, load_url, target, load = false, suggest= true) {
-    // var url = '{% url "panel_list" %}';
-    console.log('url:', load_url);
-    $.ajax({
-        url: load_url,
-        method: 'GET',
-        data: {
-            'sample_id': sample_id
-        },
-        success: function(data) {
-            // Clear the panel list
-            console.log('data:', data);
-            var panelList = document.querySelector(target);
-            console.log('panelList:', panelList);
-            while (panelList.firstChild) {
-                panelList.removeChild(panelList.firstChild);
-            }
-
-            // Check if the panels array is empty
-            if (data.panels.length === 0) {
-                var li = document.createElement('li');
-                li.textContent = 'No panels available.';
-                panelList.appendChild(li);
-
-            } else {
-                // Add the new panels to the list
-                data.panels.forEach(function(panel) {
-                    var li = document.createElement('li');
-                    // div 
-
-                    var div = document.createElement('div');
-                    div.className = 'panel-container clearfix';
-                    div.setAttribute('data-panel-id', panel.id);
-
-                    var a = document.createElement('a');
-                    a.className = 'panel-link';
-                    a.href = '#';
-                    a.setAttribute('data-panel-id', panel.id);
-                    a.textContent = panel.name;
-                    
-                    var addButton = document.createElement('button');
-                    addButton.className = 'add-reference-button btn btn-primary';
-                    addButton.setAttribute('data-panel-id', panel.id);
-                    addButton.setAttribute('data-toggle', 'modal');
-                    addButton.setAttribute('data-target', '#myModal');
-                    var icon = document.createElement('i');
-                    icon.className = 'fa fa-plus';
-                    addButton.appendChild(icon);
-                    
-                    var removeButton = document.createElement('button');
-                    removeButton.className = 'remove-panel-button btn btn-danger';
-                    removeButton.setAttribute('data-panel-id', panel.id);
-                    removeButton.setAttribute('data-toggle', 'modal');
-                    removeButton.setAttribute('data-target', '#removePanelModal');
-                    var icon = document.createElement('i');
-                    icon.className = 'fa fa-trash';
-                    removeButton.appendChild(icon);
-                    
-                    var refnumber_span = document.createElement('span');
-                    refnumber_span.className = 'reference-note';
-                    refnumber_span.textContent = panel.references_count;
-                    refnumber_span.setAttribute('data-panel-id', panel.id);
-
-                    var panel_checkbox = document.createElement('input');
-                    panel_checkbox.type = 'checkbox';
-                    panel_checkbox.className = 'panel-checkbox';
-                    panel_checkbox.setAttribute('data-panel-id', panel.id);
-
-                    if (load){
-                      div.appendChild(removeButton);
-                    }
-                                        
-                    div.appendChild(a);
-
-                    if (suggest){
-                      div.appendChild(panel_checkbox);
-                    }
-                    div.appendChild(refnumber_span);
-
-                    li.appendChild(div);
-                    panelList.appendChild(li);
-                    
-                });
-
-            // reload the connects            
-            // clear messages 
-            prep_loads();
-            //$('#id_messages_remove').empty();
-            }
-        },
-        error: function(error) {
-            console.error('Error:', error);
-        }
-    });
-  }
-
-  var prep_loads= function() {
-    $('.remove-panel-button').click(function () {
-      var panel_id = $(this).attr('data-panel-id');
-      console.log('panel_id:', panel_id);
-      $('#id-modal-body-remove-panel').attr('data-panel-id', panel_id);
-      $('#id-label-remove-panel').text('Remove panel ' + panel_id + '?');
-    });
-
-    $('#remove-panel-final-button').click(function (){
-      console.log('remove-panel-final-button');
-      var url = $('#id-modal-body-remove-panel').attr('remove-panel-single-value-url');
-      var csrf_token = $('#id-modal-body-remove-panel').attr('data-csrf');
-      var panel_id = $('#id-modal-body-remove-panel').attr('data-panel-id');
-      console.log(url);
-      $.ajax({
-        type: 'POST',
-        url: url,
-        data: {
-          'csrfmiddlewaretoken': csrf_token,
-          'panel_id': panel_id,
-        },
-        success: function(data) {
-          console.log(data);
-          if (data['is_ok']) {
-            $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
-              'Panel successfully removed' +
-              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-              '</div>');
-              load_panels('{{ sample_index }}', '{% url "get_sample_panels" %}', '.panel-list ul', true, false);
-              // drop modal
-              $('#removePanelModal').modal('hide');
-          } else if (data['is_error']) {
-            $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-              'The panel was not removed.' +
-              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-              '</div>');
-              // drop modal
-              $('#removePanelModal').modal('hide');
-          }
-        }
-    });
-    });
-  }
 
   $(document).ready(function() {
 
     // load panels
     load_panels('{{ sample_index }}', '{% url "get_sample_panels" %}', '.panel-list ul', true, false);
     prep_loads();
+
     $('.add-panels').click(function() {
       var url= $(this).attr('href');
       var sample_id = $(this).attr('sample-id');
-      console.log('sample_id:', sample_id);
-      console.log('url:', url);
       load_panels(sample_id, url, '.panel-list-modal ul', false, true);
     });
-
-    $('#remove-panel-final-button').click(function (){
-      console.log('remove-panel-final-button');
-      var url = $('#id-modal-body-remove-panel').attr('remove-single-value-url');
-      var csrf_token = $('#id-modal-body-remove-panel').attr('data-csrf');
-      var panel_id = $('#id-modal-body-remove-panel').attr('data-panel-id');
-
-      $.ajax({
-        type: 'POST',
-        url: url,
-        data: {
-          'csrfmiddlewaretoken': csrf_token,
-          'panel_id': panel_id,
-        },
-        success: function(data) {
-          console.log(data);
-          if (data['is_ok']) {
-            $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
-              'Panel successfully removed' +
-              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-              '</div>');
-              load_panels('{{ sample_index }}', '{% url "get_sample_panels" %}', '.panel-list ul', true, false);
-              // drop modal
-              $('#removePanelModal').modal('hide');
-          } else if (data['is_error']) {
-            $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-              'The panel was not removed.' +
-              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-              '</div>');
-              // drop modal
-              $('#removePanelModal').modal('hide');
-          }
-        }
-    });
-    });
-
-    $('#panel-submit-button').click(function () {
-      var url = $(this).attr('href');
-      console.log('url:', url);
-      var checkedRows = [];
-      $('.panel-checkbox:checked').each(function() {
-        // collect ids of checked rows
-        var panel_id= $(this).attr('data-panel-id');
-        checkedRows.push(panel_id);
-      });
-      console.log('checkedRows:', checkedRows);
-      $.ajax({
-        type: 'POST',
-        url: url,
-        data: {
-          'csrfmiddlewaretoken': '{{ csrf_token }}',
-          'sample_id': '{{ sample_index }}',
-          'panel_ids': checkedRows
-        },
-        success: function(data) {
-          if (data['is_ok']) {
-            $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
-              'Panels successfully added' +
-              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-              '</div>');
-              load_panels('{{ sample_index }}', '{% url "get_sample_panels" %}', '.panel-list ul', true, false);
-              // clear selection 
-              $('.panel-checkbox').prop('checked', false);
-              // drop modal
-              $('#addPanelModal').modal('hide');
-          } else if (data['is_error']) {
-            $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-              'The panels were not added.' +
-              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-              '</div>');
-              // drop modal
-              $('#addPanelModal').modal('hide');
-          } else if (data['is_empty']) {
-            $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-              'No panels were selected.' +
-              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-              '</div>');
-              // drop modal
-              $('#addPanelModal').modal('hide');
-          }
-        }
-      });
-    });
-
-    $('#submit-button').click(function() {
-      var url = $('#submit-button').attr('href');
-      var reload_url = $('#submit-button').attr('reload_ref');
-      var checkedRows = [];
-      $('.reference-checkbox:checked').each(function() {
-        // collect ids of checked rows
-
-        var ref_id= $(this).attr('ref_id');
-
-        checkedRows.push(ref_id);
-      });
-  
-      // Process the checked rows
-      // Add your processing logic here
-      // send row ids to server using .ajax
-      $.ajax({
-        type: 'POST',
-        url: url,
-        data: {
-          'csrfmiddlewaretoken': '{{ csrf_token }}',
-          'sample_id': '{{ sample_index }}',
-          'reference_ids': checkedRows
-        },
-        success: function(data) {
-          if (data['is_ok']) {
-            $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
-              'References successfully added' +
-              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-              '</div>');
-              // reload table
-              $.ajax({
-                url: reload_url,
-                type: 'GET',
-                data: {
-                    sample_id: '{{ sample_index }}',
-                    csrfmiddlewaretoken: '{{ csrf_token }}',
-                },
-                success: function (data) {
-
-                  $('#collapsehead2').html(data.my_content);
-                  $('#reference_table_div').html(data.empty_content);
-                  $('#add_references_title').html(
-                    "<strong>" + data.references_count + " Added References </strong>"
-                  );
-                  // empty #search-input
-                  $('#search-input').val('');
-                }
-              }
-              )
-              // clear selection 
-              $('.reference-checkbox').prop('checked', false);
-              
-              
-              // drop modal
-              $('#myModal').modal('hide');
-
-          } else if (data['is_error']) {
-            $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-              'The references were not added.' +
-              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-              '</div>');
-
-              // drop modal
-              $('#myModal').modal('hide');
-          } else if (data['is_empty']) {
-            $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-              'No references were selected.' +
-              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-              '</div>');
-
-              // drop modal
-              
-          }
-          
-        }
-      })
-
-    });
   });
-
-  var loadThisContent = function (event) {
-    event.preventDefault();
-    var btn = $(this);
-    var url = btn.attr("href");
-    console.log($('#search-input').val());
-    console.log(url);
-    $.ajax({
-        url: btn.attr("href"),
-        type: 'GET',
-        data: {
-            search_add_project_reference: $('#search-input').val(),
-            csrfmiddlewaretoken: '{{ csrf_token }}',
-        },
-        success: function (data) {
-
-          $('#reference_table_div').html(data.my_content);
-          
-          if (data["references_count"] > 0){
-
-          var selectAllCheckbox = document.getElementById('Select-All-Checkbox-Modal');
-
-          var referenceCheckboxes = document.getElementsByClassName('reference-checkbox');
-
-     
-          selectAllCheckbox.addEventListener('change', function() {
-            for (var i = 0; i < referenceCheckboxes.length; i++) {
-              referenceCheckboxes[i].checked = this.checked;
-            }
-          });
-          }
-        }
-    }
-    )
-  };
-  $('.load-content').on('click', loadThisContent);
 
   $(document).on("click", "a", function (e) {
 
@@ -986,89 +544,6 @@
     }
     
   });
-  
-  $('#id-deploy-metagenomics-button').on('click', function(){
-    url= $('#id-modal-body-deploy-metagenomics-sample').attr("deploy-metagenomics-single-value-url");
-    sample_id = $('#id-modal-body-deploy-metagenomics-sample').attr('sample_id');
-  
-    $.ajax({
-        url: url, 
-        type: 'POST',
-        data: {
-            sample_id : sample_id,
-            csrfmiddlewaretoken: '{{ csrf_token }}',
-        }, // data sent with the post request
-        success: function(data) {
-
-          
-          if (data['is_ok'] === true && data['is_deployed'] === true){
-              /// add message with informaton
-              $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
-              'The sample \'' + $('#id-modal-body-deploy-metagenomics-sample').attr('ref_name') + '\' was successfully deployed.' +
-              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-              '</div>');
-              location.reload() 
-          }
-          else if (data['is_ok'] === true && data['is_deployed'] === false){
-              /// add message with informaton
-              $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-              'The sample \'' + $('#id-modal-body-deploy-metagenomics-sample').attr('ref_name') + '\' was not deployed. Check if metagenomics settings are correctly set.' +
-              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-              '</div>');
-          }
-          else{
-              /// add message with informaton
-              $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-              'The sample \'' + $('#id-modal-body-deploy-metagenomics-sample').attr('ref_name') + '\' was not deployed. Check if metagenomics settings are correctly set.' +
-              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-              '</div>');
-          }
-        }
-    })
-  }
-  )
-  $(document).on("click", "a", function (e) {
-    if ($(this).attr("id") == "add_teleflu_reference") {
-      e.preventDefault();
-      var url = $(this).attr("url");
-      var ref_id = $(this).attr("ref_id");
-      console.log(ref_id);
-      $.ajax({
-        url: url,
-        type: 'POST',
-        data: {
-          ref_id: ref_id,
-          user_id: '{{ user.id }}',
-          csrfmiddlewaretoken: '{{ csrf_token }}',
-        },
-        success: function(data) {
-          console.log(data);
-          if (data['is_ok']) {
-            
-            if (data['exists']) {
-              $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-                'Teleflu Reference already exists.' +
-                '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-                '</div>');
-            } else {
-              $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
-                'Teleflu Reference added.' +
-                '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-                '</div>');
-            }
-
-          } else {
-            $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-              'Teleflu Reference not added.' +
-              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-              '</div>');
-          }
-
-        }
-      })
-    }
-  }
-  );
 
 </script>
 

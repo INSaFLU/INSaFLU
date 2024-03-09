@@ -18,6 +18,7 @@ from pathogen_identification.models import (
     Projects,
     RawReference,
     ReferenceMap_Main,
+    ReferencePanel,
     RunAssembly,
     RunDetail,
     RunMain,
@@ -176,8 +177,13 @@ class SampleReferenceManager:
 
         return parameter_set
 
-    def create_mapping_run(self, leaf: SoftwareTreeNode, run_type: int):
+    def create_mapping_run(
+        self, leaf: SoftwareTreeNode, run_type: int, panel_pk: Optional[int] = None
+    ) -> RunMain:
         parameter_set = self.anchor_parameter_set_leaf(leaf)
+
+        if panel_pk is not None:
+            panel = ReferencePanel.objects.get(pk=panel_pk)
 
         mapping_run = RunMain.objects.create(
             name=leaf.name,
@@ -188,6 +194,7 @@ class SampleReferenceManager:
             host_depletion_performed=False,
             enrichment_performed=False,
             status=RunMain.STATUS_PREP,
+            panel=panel if panel_pk is not None else None,
         )
 
         return mapping_run
@@ -199,6 +206,14 @@ class SampleReferenceManager:
     def mapping_request_run_from_leaf(self, leaf: SoftwareTreeNode) -> RunMain:
         """ """
         return self.create_mapping_run(leaf, RunMain.RUN_TYPE_MAP_REQUEST)
+
+    def mapping_request_panel_run_from_leaf(
+        self, leaf: SoftwareTreeNode, panel_pk: int
+    ) -> RunMain:
+        """ """
+        return self.create_mapping_run(
+            leaf, RunMain.RUN_TYPE_PANEL_MAPPING, panel_pk=panel_pk
+        )
 
     def screening_run_from_leaf(self, leaf: SoftwareTreeNode) -> RunMain:
         """ """

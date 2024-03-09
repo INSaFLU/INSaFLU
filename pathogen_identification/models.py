@@ -1,7 +1,7 @@
 import codecs
 import datetime
 import os
-from typing import Any
+from typing import Any, List
 
 import networkx as nx
 import numpy as np
@@ -14,7 +14,8 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from managing_files.models import Sample
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from pathogen_identification.data_classes import IntermediateFiles
 
 # Create your models here.
@@ -254,8 +255,38 @@ class PIProject_Sample(models.Model):
         default=False
     )  ## if this sample is a control sample
 
+    panel_pk_string = models.CharField(
+        max_length=150, blank=True, null=True, default=""
+    )  ## panel pk string
+
     class Meta:
         ordering = ["project__id", "-creation_date"]
+
+    @property
+    def panels_pks(self) -> List[int]:
+        if not self.panel_pk_string:
+            return []
+        panels = self.panel_pk_string.split(",")
+        return [int(panel) for panel in panels]
+
+    @property
+    def panels(self):
+        panels = self.panels_pks
+        return ReferencePanel.objects.filter(pk__in=panels)
+
+    def remove_panel(self, panel_pk: int):
+        panels = self.panels_pks
+        panels.remove(panel_pk)
+        self.panel_pk_string = ",".join([str(panel) for panel in panels])
+        self.save()
+
+    def add_panel(self, panel_pk: int):
+        panels = self.panels_pks
+        if panel_pk in panels:
+            return
+        panels.append(panel_pk)
+        self.panel_pk_string = ",".join([str(panel) for panel in panels])
+        self.save()
 
     def __str__(self):
         return self.sample.name
@@ -451,6 +482,30 @@ class QC_REPORT(models.Model):
         return self.QC_report
 
 
+class ReferencePanel(models.Model):
+
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    name = models.CharField(
+        max_length=200,
+        db_index=True,
+        blank=False,
+        verbose_name="Panel name",
+        default="nameless_panel",
+        validators=[no_space_validator],
+    )
+
+    description = models.TextField(default="", null=True, blank=True)
+    creation_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    is_deleted = models.BooleanField(default=False)
+    project_sample = models.ForeignKey(
+        PIProject_Sample, on_delete=models.CASCADE, blank=True, null=True
+    )
+
+    @property
+    def references_count(self):
+        return RawReference.objects.filter(panel=self).count()
+
+
 class RunIndex(models.Model):
     project = models.ForeignKey(
         Projects,
@@ -470,6 +525,7 @@ class RunMain(models.Model):
     RUN_TYPE_MAP_REQUEST = 2
     RUN_TYPE_SCREENING = 3
     RUN_TYPE_COMBINED_MAPPING = 4
+    RUN_TYPE_PANEL_MAPPING = 5
 
     STATUS_DEFAULT = 0
     STATUS_PREP = 1
@@ -480,6 +536,9 @@ class RunMain(models.Model):
 
     run_type = models.IntegerField(default=RUN_TYPE_PIPELINE)
     status = models.IntegerField(default=STATUS_DEFAULT)
+    panel = models.ForeignKey(
+        ReferencePanel, on_delete=models.CASCADE, blank=True, null=True
+    )
 
     parameter_set = models.ForeignKey(
         ParameterSet, on_delete=models.CASCADE, related_name="run_main", default=None
@@ -868,30 +927,6 @@ class ContigClassification(models.Model):
 
     def __str__(self):
         return self.method
-
-
-class ReferencePanel(models.Model):
-
-    owner = models.ForeignKey(User, on_delete=models.CASCADE)
-    name = models.CharField(
-        max_length=200,
-        db_index=True,
-        blank=False,
-        verbose_name="Panel name",
-        default="nameless_panel",
-        validators=[no_space_validator],
-    )
-
-    description = models.TextField(default="", null=True, blank=True)
-    creation_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
-    is_deleted = models.BooleanField(default=False)
-    project_sample = models.ForeignKey(
-        PIProject_Sample, on_delete=models.CASCADE, blank=True, null=True
-    )
-
-    @property
-    def references_count(self):
-        return RawReference.objects.filter(panel=self).count()
 
 
 class RawReference(models.Model):

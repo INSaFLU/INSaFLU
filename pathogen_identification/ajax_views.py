@@ -18,25 +18,36 @@ from constants.software_names import SoftwareNames
 from fluwebvirus.settings import STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
-from pathogen_identification.models import (FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RawReference, ReferenceMap_Main,
-                                            ReferencePanel,
-                                            ReferenceSourceFileMap, RunMain,
-                                            TeleFluProject, TeleFluSample)
+from pathogen_identification.models import (
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReferenceMap_Main,
+    ReferencePanel,
+    ReferenceSourceFileMap,
+    RunMain,
+    TeleFluProject,
+    TeleFluSample,
+)
 from pathogen_identification.tables import ReferenceSourceTable
 from pathogen_identification.utilities.reference_utils import (
-    check_metaReference_exists_from_ids, check_reference_exists,
-    check_reference_submitted, create_combined_reference)
+    check_metaReference_exists_from_ids,
+    check_reference_exists,
+    check_reference_submitted,
+    create_combined_reference,
+)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
-from pathogen_identification.utilities.utilities_general import \
-    get_services_dir
-from pathogen_identification.utilities.utilities_pipeline import \
-    SoftwareTreeUtils
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.utilities_general import get_services_dir
+from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter, SampleReferenceManager, set_control_reports)
+    ReportSorter,
+    SampleReferenceManager,
+    set_control_reports,
+)
+from pathogen_identification.views import inject__added_references
 from utils.process_SGE import ProcessSGE
 from utils.utils import Utils
 
@@ -329,17 +340,73 @@ def submit_sample_mapping_televir(request):
     if request.is_ajax():
         data = {"is_ok": True, "is_deployed": False, "is_empty": False, "message": ""}
 
-        process_SGE = ProcessSGE()
-
         sample_id = int(request.POST["sample_id"])
         sample = PIProject_Sample.objects.get(id=int(sample_id))
-        user = sample.project.owner
         project = sample.project
         reference_id_list = request.POST.getlist("reference_ids[]")
 
         data = deploy_remap(sample, project, reference_id_list)
 
         return JsonResponse(data)
+
+    return JsonResponse({"is_ok": False})
+
+
+@login_required
+@require_POST
+def submit_sample_mapping_panels(request):
+    if request.is_ajax():
+        process_SGE = ProcessSGE()
+
+        data = {"is_ok": True, "is_deployed": False, "is_empty": False, "message": ""}
+
+        sample_id = int(request.POST["sample_id"])
+        sample = PIProject_Sample.objects.get(id=int(sample_id))
+        reference_manager = SampleReferenceManager(sample)
+
+        project = sample.project
+        software_utils = SoftwareTreeUtils(user, project, sample=sample)
+        runs_to_deploy, workflow_deployed_dict = (
+            software_utils.check_runs_to_submit_mapping_only(sample)
+        )
+
+        if len(runs_to_deploy) == 0:
+            return data
+
+        sample_panels = sample.panels
+
+        if len(sample_panels) == 0:
+            data["is_empty"] = True
+            return JsonResponse(data)
+
+        try:
+            for sample, leaves_to_deploy in runs_to_deploy.items():
+                for leaf in leaves_to_deploy:
+                    references = RawReference.objects.filter(panel=panel)
+                    for panel in sample_panels:
+
+                        panel_mapping_run = (
+                            reference_manager.mapping_request_panel_run_from_leaf(
+                                leaf, panel_pk=panel.pk
+                            )
+                        )
+                        for reference in references:
+                            reference.pk = None
+                            reference.run = panel_mapping_run
+                            reference.save()
+
+                        taskID = process_SGE.set_submit_televir_sample_metagenomics(
+                            user=request.user,
+                            sample_pk=sample.pk,
+                            leaf_pk=leaf.pk,
+                            mapping_request=True,
+                            map_run_pk=panel_mapping_run.pk,
+                        )
+                        data["is_deployed"] = True
+
+        except Exception as e:
+            print(e)
+            data["is_ok"] = False
 
 
 @login_required
@@ -1341,9 +1408,6 @@ def add_references_all_samples(request):
         return JsonResponse(data)
 
 
-from pathogen_identification.views import inject__added_references
-
-
 @login_required
 @require_POST
 def remove_added_reference(request):
@@ -1374,6 +1438,8 @@ def remove_added_reference(request):
 
         data = {"is_ok": True}
         return JsonResponse(data)
+
+    return JsonResponse({"is_ok": False})
 
 
 @login_required
@@ -1489,12 +1555,12 @@ def add_references_to_panel(request):
 def get_panels(request):
     if request.is_ajax():
         user = request.user
-        panels = ReferencePanel.objects.filter(owner=user, is_deleted=False).order_by(
-            "-creation_date"
-        )
+        panels = ReferencePanel.objects.filter(
+            owner=user, is_deleted=False, project_sample=None
+        ).order_by("-creation_date")
         panel_data = [
             {
-                "id": panel.id,
+                "id": panel.pk,
                 "name": panel.name,
                 "references_count": panel.references_count,
             }
@@ -1518,116 +1584,12 @@ def remove_panel_reference(request):
         panel_id = int(request.POST.get("panel_id"))
         reference_id = int(request.POST.get("reference_id"))
 
-        panel = ReferencePanel.objects.get(pk=panel_id)
         reference = RawReference.objects.get(pk=reference_id)
 
         reference.panel = None
         reference.save()
 
         return JsonResponse({"is_ok": True})
-
-    return JsonResponse({"is_ok": False})
-
-
-@csrf_protect
-def add_panels_to_sample(request):
-    """
-    add panels to sample"""
-    if request.is_ajax():
-        sample_id = int(request.POST.get("sample_id"))
-        panel_ids = request.POST.getlist("panel_ids[]")
-        print(panel_ids)
-        print(sample_id)
-
-        sample = PIProject_Sample.objects.get(pk=sample_id)
-
-        for panel_id in panel_ids:
-            panel = ReferencePanel.objects.get(pk=int(panel_id))
-            panel.pk = None
-            panel.project_sample = sample
-            panel.save()
-
-        return JsonResponse({"is_ok": True})
-
-    return JsonResponse({"is_ok": False})
-
-
-@csrf_protect
-def remove_sample_panel(request):
-    """
-    remove sample panel"""
-    print("remove")
-    print(request.POST)
-    if request.is_ajax():
-        print("HIIi")
-        panel_id = int(request.POST.get("panel_id"))
-        panel = ReferencePanel.objects.get(pk=panel_id)
-        panel.is_deleted = True
-        panel.save()
-
-        return JsonResponse({"is_ok": True})
-
-    return JsonResponse({"is_ok": False})
-
-
-@csrf_protect
-def get_sample_panels(request):
-    """
-    get sample panels"""
-    if request.is_ajax():
-        user = request.user
-        sample_id = request.GET.get("sample_id")
-
-        sample = PIProject_Sample.objects.get(pk=sample_id)
-
-        panels = ReferencePanel.objects.filter(project_sample=sample, is_deleted=False)
-
-        panel_data = [
-            {
-                "id": panel.id,
-                "name": panel.name,
-                "references_count": panel.references_count,
-            }
-            for panel in panels
-        ]
-        data = {"is_ok": True, "panels": panel_data}
-
-        return JsonResponse(data)
-
-    return JsonResponse({"is_ok": False})
-
-
-def get_sample_panel_suggestions(request):
-    """
-    get sample panel updates"""
-    if request.is_ajax():
-        user = request.user
-        sample_id = request.GET.get("sample_id")
-
-        sample = PIProject_Sample.objects.get(pk=sample_id)
-
-        panels_sample = ReferencePanel.objects.filter(
-            project_sample=sample, is_deleted=False
-        )
-        panels_global_names = panels_sample.values_list("pk", flat=True)
-        panels_suggest = ReferencePanel.objects.filter(
-            project_sample=None, is_deleted=False
-        ).exclude(pk__in=panels_global_names)
-
-        print("hi")
-        print(len(panels_suggest))
-
-        panel_data = [
-            {
-                "id": panel.id,
-                "name": panel.name,
-                "references_count": panel.references_count,
-            }
-            for panel in panels_suggest
-        ]
-        data = {"is_ok": True, "panels": panel_data}
-
-        return JsonResponse(data)
 
     return JsonResponse({"is_ok": False})
 
@@ -1669,6 +1631,100 @@ def get_panel_references(request):
             ),
             "panel_name": panel.name,
         }
+
+        return JsonResponse(data)
+
+    return JsonResponse({"is_ok": False})
+
+
+@csrf_protect
+def add_panels_to_sample(request):
+    """
+    add panels to sample"""
+    if request.is_ajax():
+        print("add_panels_to_sample")
+        sample_id = int(request.POST.get("sample_id"))
+        panel_ids = request.POST.getlist("panel_ids[]")
+
+        sample = PIProject_Sample.objects.get(pk=sample_id)
+
+        for panel_id in panel_ids:
+            sample.add_panel(int(panel_id))
+
+        return JsonResponse({"is_ok": True})
+
+    return JsonResponse({"is_ok": False})
+
+
+@csrf_protect
+def remove_sample_panel(request):
+    """
+    remove sample panel"""
+
+    if request.is_ajax():
+        panel_id = int(request.POST.get("panel_id"))
+        sample_id = int(request.POST.get("sample_id"))
+        sample = PIProject_Sample.objects.get(pk=sample_id)
+        sample.remove_panel(panel_id)
+
+        return JsonResponse({"is_ok": True})
+
+    return JsonResponse({"is_ok": False})
+
+
+@csrf_protect
+def get_sample_panels(request):
+    """
+    get sample panels"""
+    print("get_sample_panels")
+    if request.is_ajax():
+        print("get_sample_panels")
+        sample_id = request.GET.get("sample_id")
+
+        sample = PIProject_Sample.objects.get(pk=sample_id)
+
+        panels = sample.panels
+
+        panel_data = [
+            {
+                "id": panel.pk,
+                "name": panel.name,
+                "references_count": panel.references_count,
+            }
+            for panel in panels
+        ]
+        data = {"is_ok": True, "panels": panel_data}
+
+        return JsonResponse(data)
+
+    return JsonResponse({"is_ok": False})
+
+
+def get_sample_panel_suggestions(request):
+    """
+    get sample panel updates"""
+    if request.is_ajax():
+        user = request.user
+        sample_id = request.GET.get("sample_id")
+
+        sample = PIProject_Sample.objects.get(pk=sample_id)
+
+        panels_sample = sample.panels
+
+        panels_global_names = panels_sample.values_list("pk", flat=True)
+        panels_suggest = ReferencePanel.objects.filter(
+            project_sample=None, is_deleted=False
+        ).exclude(pk__in=panels_global_names)
+
+        panel_data = [
+            {
+                "id": panel.id,
+                "name": panel.name,
+                "references_count": panel.references_count,
+            }
+            for panel in panels_suggest
+        ]
+        data = {"is_ok": True, "panels": panel_data}
 
         return JsonResponse(data)
 

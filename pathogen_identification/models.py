@@ -14,7 +14,8 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from managing_files.models import Sample
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from pathogen_identification.data_classes import IntermediateFiles
 
 # Create your models here.
@@ -501,6 +502,14 @@ class ReferencePanel(models.Model):
         validators=[no_space_validator],
     )
 
+    icon = models.CharField(
+        max_length=50,
+        db_index=True,
+        blank=True,
+        null=True,
+        default= "",
+        verbose_name="Icon",
+    )
     description = models.TextField(default="", null=True, blank=True)
     creation_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     is_deleted = models.BooleanField(default=False)

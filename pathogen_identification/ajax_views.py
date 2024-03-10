@@ -18,35 +18,25 @@ from constants.software_names import SoftwareNames
 from fluwebvirus.settings import STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReferenceMap_Main,
-    ReferencePanel,
-    ReferenceSourceFileMap,
-    RunMain,
-    TeleFluProject,
-    TeleFluSample,
-)
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference, ReferenceMap_Main,
+                                            ReferencePanel,
+                                            ReferenceSourceFileMap, RunMain,
+                                            TeleFluProject, TeleFluSample)
 from pathogen_identification.tables import ReferenceSourceTable
 from pathogen_identification.utilities.reference_utils import (
-    check_metaReference_exists_from_ids,
-    check_reference_exists,
-    check_reference_submitted,
-    create_combined_reference,
-)
+    check_metaReference_exists_from_ids, check_reference_exists,
+    check_reference_submitted, create_combined_reference)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
-from pathogen_identification.utilities.utilities_general import get_services_dir
-from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
+from pathogen_identification.utilities.utilities_general import \
+    get_services_dir
+from pathogen_identification.utilities.utilities_pipeline import \
+    SoftwareTreeUtils
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter,
-    SampleReferenceManager,
-    set_control_reports,
-)
+    ReportSorter, SampleReferenceManager, set_control_reports)
 from pathogen_identification.views import inject__added_references
 from utils.process_SGE import ProcessSGE
 from utils.utils import Utils
@@ -1528,18 +1518,21 @@ def create_reference_panel(request):
     if request.is_ajax():
         user = request.user
         name = request.POST.get("name")
+        icon = request.POST.get("icon", "")
 
         try:
             ReferencePanel.objects.get(
                 name=name,
                 owner=user,
                 is_deleted=False,
+                icon=icon,
                 panel_type=ReferencePanel.PANEL_TYPE_MAIN,
             )
         except ReferencePanel.DoesNotExist:
             ReferencePanel.objects.create(
                 name=name,
                 owner=user,
+                icon=icon,
             )
 
         return JsonResponse({"is_ok": True})
@@ -1591,6 +1584,7 @@ def get_panels(request):
                 "id": panel.pk,
                 "name": panel.name,
                 "references_count": panel.references_count,
+                "icon": panel.icon,
             }
             for panel in panels
         ]
@@ -1717,6 +1711,7 @@ def get_sample_panels(request):
                 "id": panel.pk,
                 "name": panel.name,
                 "references_count": panel.references_count,
+                "icon": panel.icon,
             }
             for panel in panels
         ]
@@ -1750,6 +1745,7 @@ def get_sample_panel_suggestions(request):
                 "id": panel.id,
                 "name": panel.name,
                 "references_count": panel.references_count,
+                "icon": panel.icon,
             }
             for panel in panels_suggest
         ]

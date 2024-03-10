@@ -46,6 +46,55 @@
         outline: none; /* Remove outline when focused */
         background-color: #ddd; /* Light-grey background when focused */
     }
+    .icon-selection {
+        margin-top: 0;
+        display: flex;
+        justify-content: space-between;
+        padding: 10px;
+        margin-top: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+    
+    .icon-selection label {
+        display: inline-flex;
+        align-items: center;
+        cursor: pointer;
+    }
+    
+    .icon-selection input[type="radio"] {
+        margin-right: 5px;
+    }
+
+    #new-panel-form label {
+        display: block;
+        margin-top: 5px;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+    
+    #new-panel-form input[type="text"] {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+    
+    .icon-selection label {
+        display: inline-block;
+        margin-right: 10px;
+        cursor: pointer;
+    }
+    
+    .icon-selection input[type="radio"] {
+        display: none;
+    }
+    
+    .icon-selection input[type="radio"]:checked + i {
+        color: #007bff;
+    }
+
+    
 </style>
 
 <div class="container-panels">
@@ -60,7 +109,9 @@
                     {% for panel in panels %}
                     <li>
                         <div class="panel-container clearfix" data-panel-id="{{ panel.id }}">
-                            <a data-panel-id="{{ panel.id }}">{{ panel.name }}</a>
+                            <a data-panel-id="{{ panel.id }}" class="panel-link" href="#">{{ panel.name }}</a>
+                            <i class="fa {{ panel.icon }}"></i>
+
 
                             <button class="remove-panel-button btn btn-danger" data-panel-id="{{ panel.id }}" title="Remove Panel" data-toggle="modal" data-target="#removePanelModal">
                                 <i class="fa fa-trash"></i>
@@ -139,9 +190,41 @@
         <div class="modal-body">
           <form id="new-panel-form" url="{% url 'create_reference_panel' %}">
             {% csrf_token %}
+            <div class="form-label">
             <label for="panel-name">Panel Name:</label>
             <input type="text" id="panel-name" name="panel-name">
-          </form>
+            </div>
+            <div class="form-label">
+                <label>Panel Icon:</label>
+                <div class="icon-selection">
+                    <label>
+                        <input type="radio" name="panel-icon" value="">
+                        None
+                    </label>
+                    <label>
+                        <input type="radio" name="panel-icon" value="fa-tags">
+                        <i class="fa fa-tags"></i>
+                    </label>
+                    <label>
+                        <input type="radio" name="panel-icon" value="fa-star">
+                        <i class="fa fa-star"></i>
+                    </label>
+                    <label>
+                        <input type="radio" name="panel-icon" value="fa-heart">
+                        <i class="fa fa-heart"></i>
+                    </label>
+                    <label>
+                        <input type="radio" name="panel-icon" value="fa-bolt">
+                        <i class="fa fa-bolt"></i>
+                    </label>
+                    <label>
+                        <input type="radio" name="panel-icon" value="fa-bug">
+                        <i class="fa fa-bug"></i>
+                    </label>
+                    <!-- Add more icons as needed -->
+                </div>
+            </div>
+            </form>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -278,12 +361,15 @@
         e.preventDefault();
         var name = document.getElementById('panel-name').value;
         var url = document.getElementById('new-panel-form').getAttribute('url');
+        var icon = document.querySelector('input[name="panel-icon"]:checked').value;
         var reload_url = '{% url "panel_list" %}';
+        console.log('icon', icon);
         $.ajax({
             url: url,  // Replace with the actual URL of your view
             method: 'POST',
             data: {
                 'name': name,
+                'icon': icon,
                 'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value
             },
             success: function(data) {

@@ -36,6 +36,12 @@ var load_panels = function(sample_id, load_url, target, load = false, suggest= t
                     a.href = '#';
                     a.setAttribute('data-panel-id', panel.id);
                     a.textContent = panel.name;
+
+                    a.appendChild(document.createTextNode(' '));
+                    var panel_icon = document.createElement('i');
+                    panel_icon.className = 'fa ' + panel.icon;
+                    a.appendChild(panel_icon);
+
                     
                     var addButton = document.createElement('button');
                     addButton.className = 'add-reference-button btn btn-primary';

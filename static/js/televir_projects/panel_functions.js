@@ -41,12 +41,18 @@ var reload_panels = function(userId) {
                     a.href = '#';
                     a.setAttribute('data-panel-id', panel.id);
                     a.textContent = panel.name;
-                    
+
+                    a.appendChild(document.createTextNode(' '));
+                    var panel_icon = document.createElement('i');
+                    panel_icon.className = 'fa ' + panel.icon;
+                    a.appendChild(panel_icon);
+
                     var addButton = document.createElement('button');
                     addButton.className = 'add-reference-button btn btn-primary';
                     addButton.setAttribute('data-panel-id', panel.id);
                     addButton.setAttribute('data-toggle', 'modal');
                     addButton.setAttribute('data-target', '#myModal');
+                    
                     var icon = document.createElement('i');
                     icon.className = 'fa fa-plus';
                     addButton.appendChild(icon);
@@ -66,7 +72,9 @@ var reload_panels = function(userId) {
                     refnumber_span.setAttribute('data-panel-id', panel.id);
 
                     
+
                     div.appendChild(a);
+
                     div.appendChild(removeButton);
                     div.appendChild(addButton);
                     div.appendChild(refnumber_span);
@@ -244,7 +252,6 @@ var ready_document = function (user_id, reload_url) {
         var panel_id = $(this).attr('panel_id');
         var url = $(this).attr('url');
         var csrf = $(this).attr('csrf');
-        var reload_url = $("create-panel-button").attr('reload-url');
         
         $.ajax({
             type: 'POST',

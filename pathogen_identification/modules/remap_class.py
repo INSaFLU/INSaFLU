@@ -691,7 +691,7 @@ class Remapping:
         self.logdir = log_dir
 
         self.cmd = RunCMD(bin, logdir=log_dir, prefix=prefix, task="remapping_instance")
-
+        print("REMMAP DIR", self.rdir)
         os.makedirs(self.rdir, exist_ok=True)
 
         self.reference_file = f"{self.rdir}/{self.prefix}_{target.acc_simple}_ref.fa"

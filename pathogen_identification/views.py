@@ -884,7 +884,7 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
         rendered_table = ""
 
         if run_mapping.exists():
-            run_mappings_table = RunMappingTable(run_mapping)
+            run_mappings_table = RunMappingTable(run_mapping, order_by=("-created",))
             small_context = {
                 "nav_sample": True,
                 "total_items": run_mapping.count(),

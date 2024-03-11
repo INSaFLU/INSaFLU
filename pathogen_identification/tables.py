@@ -1321,6 +1321,8 @@ class ContigTable(tables.Table):
 class RunMappingTable(tables.Table):
     name = tables.Column(verbose_name="Run")
     report = tables.Column(verbose_name="Report", orderable=False, empty_values=())
+    nmapped = tables.Column(verbose_name="Mapped", orderable=False, empty_values=())
+    created = tables.Column(verbose_name="Created", orderable=False, empty_values=())
     success = tables.Column(verbose_name="Success", orderable=False, empty_values=())
 
     extra_filtering = tables.Column(
@@ -1359,6 +1361,8 @@ class RunMappingTable(tables.Table):
         sequence = (
             "name",
             "report",
+            "nmapped",
+            "created",
             "extra_filtering",
             "enrichment",
             "host_depletion",
@@ -1402,6 +1406,15 @@ class RunMappingTable(tables.Table):
                 prefix += record.panel.name + " - "
 
         return f"{prefix}{record.parameter_set.leaf.index}"
+
+    def render_nmapped(self, record: RunMain):
+        refs_mapped = RawReference.objects.filter(run=record).count()
+        return refs_mapped
+
+    def render_created(self, record: RunMain):
+        if record.created_in is None:
+            return "N/A"
+        return record.created_in.strftime(settings.DATETIME_FORMAT_FOR_TABLE)
 
     def render_success(self, record):
         success = False

@@ -116,6 +116,9 @@ class ConstantsSettings:
         CS.PIPELINE_NAME_read_classification: "classification/reads/",
         CS.PIPELINE_NAME_metagenomics_screening: "metagenomics/",
         CS.PIPELINE_NAME_remapping: "remap/",
+        CS.PIPELINE_NAME_request_mapping: "remap/",
+        CS.PIPELINE_NAME_map_filtering: "remap/",
+        CS.PIPELINE_NAME_metagenomics_screening: "metagenomics/",
         "log_dir": "logs/",
         "OUTD": "output/",
     }

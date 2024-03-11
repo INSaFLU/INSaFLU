@@ -865,7 +865,7 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
                     RunMain.STATUS_RUNNING,
                     RunMain.STATUS_FINISHED,
                 ],
-            )
+            ).order_by("-created_in")
             sample_name = sample.sample.name
             project_name = project.name
 
@@ -884,7 +884,7 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
         rendered_table = ""
 
         if run_mapping.exists():
-            run_mappings_table = RunMappingTable(run_mapping, order_by=("-created",))
+            run_mappings_table = RunMappingTable(run_mapping, order_by=("created",))
             small_context = {
                 "nav_sample": True,
                 "total_items": run_mapping.count(),

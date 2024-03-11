@@ -1371,6 +1371,8 @@ class RunMappingTable(tables.Table):
             "runtime",
         )
 
+        odering = ("created",)
+
     def get_software_extended_name(self, software_name):
         name_extended = software_name
 

@@ -10,7 +10,6 @@ import networkx as nx
 
 from fluwebvirus.settings import MEDIA_ROOT, STATIC_ROOT, STATICFILES_DIRS
 from pathogen_identification.utilities.mapping_flags import (
-    MapFlagBacteria,
     MapFlagProbes,
     MapFlagViruses,
 )

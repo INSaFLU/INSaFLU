@@ -30,6 +30,11 @@ pipeline_steps = c(
   "Read.classification",
   "Combined.analysis",
   "Remapping",
+  "Request.Mapping",
+  "Remap.filtering",
+  "Map.filtering",
+  "Screening",
+  "Reporting",
   "leaves"
 )
 
@@ -43,6 +48,11 @@ step_to_colour_map = c(
   "Contig.classification" = "#0000FF",
   "Read.classification" = "#4B0082",
   "Remapping" = "#EE82EE",
+  "Request.Mapping"= "#FFC0CB",
+  "Remap.filtering" = "#FFC0CB",
+  "Map.filtering" = "#FFC0CB",
+  "Screening" = "#FFC0CB",
+  "Reporting" = "#FFC0CB",
   "Combined.analysis" = "#FFC0CB",
   "leaves" = "#FFFFFF"
 )

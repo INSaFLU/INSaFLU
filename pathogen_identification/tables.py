@@ -1422,7 +1422,9 @@ class RunMappingTable(tables.Table):
         refs_mapped = RawReference.objects.filter(
             run=record, status=RawReference.STATUS_MAPPED
         ).count()
-        success_mapped = FinalReport.objects.filter(run=record).count()
+        success_mapped = (
+            FinalReport.objects.filter(run=record).distinct("taxid").count()
+        )
         string_mapped = f"{success_mapped} / {refs_mapped} / {refs_all}"
         return mark_safe(string_mapped)
 

@@ -1321,7 +1321,15 @@ class ContigTable(tables.Table):
 class RunMappingTable(tables.Table):
     name = tables.Column(verbose_name="Run")
     report = tables.Column(verbose_name="Report", orderable=False, empty_values=())
-    nmapped = tables.Column(verbose_name="Mapped", orderable=False, empty_values=())
+    nmapped = tables.Column(
+        verbose_name="Mapped",
+        orderable=False,
+        empty_values=(),
+        attrs={
+            "th": {"title": "Success / Mapped / Total References"},
+            "td": {"title": "Success / Mapped / Total References"},
+        },
+    )
     created = tables.Column(verbose_name="Created", orderable=False, empty_values=())
     success = tables.Column(verbose_name="Success", orderable=False, empty_values=())
 
@@ -1410,8 +1418,13 @@ class RunMappingTable(tables.Table):
         return f"{prefix}{record.parameter_set.leaf.index}"
 
     def render_nmapped(self, record: RunMain):
-        refs_mapped = RawReference.objects.filter(run=record).count()
-        return refs_mapped
+        refs_all = RawReference.objects.filter(run=record).count()
+        refs_mapped = RawReference.objects.filter(
+            run=record, status=RawReference.STATUS_MAPPED
+        ).count()
+        success_mapped = FinalReport.objects.filter(run=record).count()
+        string_mapped = f"{success_mapped} / {refs_mapped} / {refs_all}"
+        return mark_safe(string_mapped)
 
     def render_created(self, record: RunMain):
         if record.created_in is None:

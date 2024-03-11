@@ -880,7 +880,7 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
             sample_name = "sample"
             project_name = "project"
 
-        runs_table = RunMainTable(runs)
+        runs_table = RunMainTable(runs, exclude=("created", "nmapped"))
         rendered_table = ""
 
         if run_mapping.exists():

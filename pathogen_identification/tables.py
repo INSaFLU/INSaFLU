@@ -1395,6 +1395,11 @@ class RunMappingTable(tables.Table):
         elif record.run_type == RunMain.RUN_TYPE_COMBINED_MAPPING:
             prefix = "Combined - "
 
+        elif record.run_type == RunMain.RUN_TYPE_PANEL_MAPPING:
+            prefix = "Panel - "
+            if record.panel is not None:
+                prefix += record.panel.name + " - "
+
         return f"{prefix}{record.parameter_set.leaf.index}"
 
     def render_success(self, record):

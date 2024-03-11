@@ -338,7 +338,7 @@ $('#request_map_selected').on("click", function(e){
     var sample_id = $(this).attr('sample-id');
     console.log("sample_id: " + sample_id);
     $('#id-modal-body-map-panel').attr('sample_id', sample_id);
-    $('#id-label-map-panel').text('Map selected panels to sample \'' + sample_name + '\'?');
+    $('#id-label-map-panel').text('Map sample \'' + sample_name + '\' to Added Reference Panels?');
   });
 
   $('#id-map-panel-button').on('click', function() {

@@ -858,6 +858,7 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
                 run_type__in=[
                     RunMain.RUN_TYPE_MAP_REQUEST,
                     RunMain.RUN_TYPE_COMBINED_MAPPING,
+                    RunMain.RUN_TYPE_PANEL_MAPPING,
                 ],
                 status__in=[
                     RunMain.STATUS_DEFAULT,

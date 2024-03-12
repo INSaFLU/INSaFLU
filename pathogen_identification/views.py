@@ -29,61 +29,40 @@ from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProcessControler
 from managing_files.tables import SampleToProjectsTable
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from pathogen_identification.forms import ReferenceForm
-from pathogen_identification.models import (
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReadClassification,
-    ReferenceContigs,
-    ReferenceMap_Main,
-    ReferencePanel,
-    ReferenceSourceFileMap,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    RunRemapMain,
-    Sample,
-    TeleFluProject,
-    TelevirRunQC,
-)
+from pathogen_identification.models import (ContigClassification, FinalReport,
+                                            ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            ReadClassification,
+                                            ReferenceContigs,
+                                            ReferenceMap_Main, ReferencePanel,
+                                            ReferenceSourceFileMap,
+                                            RunAssembly, RunDetail, RunMain,
+                                            RunRemapMain, Sample,
+                                            TeleFluProject, TelevirRunQC)
 from pathogen_identification.modules.object_classes import RunQC_report
-from pathogen_identification.tables import (
-    AddedReferenceTable,
-    CompoundRefereceScoreWithScreening,
-    CompoundReferenceScore,
-    ContigTable,
-    ProjectTable,
-    RawReferenceTable,
-    RawReferenceTableNoRemapping,
-    ReferenceSourceTable,
-    RunMainTable,
-    RunMappingTable,
-    SampleTableOne,
-    TeleFluProjectTable,
-    TeleFluReferenceTable,
-)
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.tables import (AddedReferenceTable,
+                                            CompoundRefereceScoreWithScreening,
+                                            CompoundReferenceScore,
+                                            ContigTable, ProjectTable,
+                                            RawReferenceTable,
+                                            RawReferenceTableNoRemapping,
+                                            ReferenceSourceTable, RunMainTable,
+                                            RunMappingTable, SampleTableOne,
+                                            TeleFluProjectTable,
+                                            TeleFluReferenceTable)
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
 from pathogen_identification.utilities.utilities_general import (
-    get_services_dir,
-    infer_run_media_dir,
-)
+    get_services_dir, infer_run_media_dir)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility,
-    RawReferenceUtils,
-)
+    Parameter_DB_Utility, RawReferenceUtils)
 from pathogen_identification.utilities.utilities_views import (
-    EmptyRemapMain,
-    RawReferenceCompound,
-    ReportSorter,
-    final_report_best_cov_by_accid,
-    recover_assembly_contigs,
-)
+    EmptyRemapMain, RawReferenceCompound, ReportSorter,
+    final_report_best_cov_by_accid, recover_assembly_contigs)
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
 from utils.support_django_template import get_link_for_dropdown_item

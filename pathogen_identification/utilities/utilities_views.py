@@ -1203,10 +1203,14 @@ class ReportSorter:
         if len(reports) == 0:
             return []
 
-        for report_groups in reports:
-            report_groups.group_list = [
-                FinalReportCompound(report) for report in report_groups.group_list
-            ]
+        for report_group in reports:
+            new_list = []
+            for wapped_report in report_group.group_list:
+                report_compound = FinalReportCompound(wapped_report)
+                report_compound.update_private_reads(wapped_report.private_reads)
+                new_list.append(report_compound)
+
+            report_group.group_list = new_list
 
         return reports
 

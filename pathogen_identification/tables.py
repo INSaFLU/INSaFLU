@@ -22,7 +22,6 @@ from pathogen_identification.models import (
     ReadClassification,
     ReferenceContigs,
     RunAssembly,
-    RunDetail,
     RunMain,
     SampleQC,
     TelevirRunQC,
@@ -1334,18 +1333,46 @@ class RunMappingTable(tables.Table):
     success = tables.Column(verbose_name="Success", orderable=False, empty_values=())
 
     extra_filtering = tables.Column(
-        verbose_name="Extra filtering", orderable=False, empty_values=()
+        verbose_name="Extra filtering",
+        orderable=False,
+        empty_values=(),
+        attrs={
+            "td": {"style": "border-left: 1px solid #ddd; text-align: center;"},
+            "th": {
+                "style": "border-left: 1px solid #ddd; background-color: #dce4f0; text-align: center;"
+            },
+        },
     )
 
     enrichment = tables.Column(
-        verbose_name="Enrichment", orderable=False, empty_values=()
+        verbose_name="Enrichment",
+        orderable=False,
+        empty_values=(),
+        attrs={
+            "td": {"style": "text-align: center;"},
+            "th": {"style": "background-color: #dce4f0; text-align: center;"},
+        },
     )
     host_depletion = tables.Column(
-        verbose_name="Depletion", orderable=False, empty_values=()
+        verbose_name="Depletion",
+        orderable=False,
+        empty_values=(),
+        attrs={
+            "td": {"style": "text-align: center;"},
+            "th": {"style": "background-color: #dce4f0; text-align: center;"},
+        },
     )
 
     remapping = tables.Column(
-        verbose_name="Remapping", orderable=False, empty_values=()
+        verbose_name="Mapping",
+        orderable=False,
+        empty_values=(),
+        attrs={
+            "td": {"style": "border-right: 1px solid #ddd; text-align: center;"},
+            "th": {
+                "style": "border-right: 1px solid #ddd;background-color: #dce4f0; text-align: center;"
+            },
+        },
     )
 
     runtime = tables.Column(verbose_name="Runtime", orderable=False, empty_values=())
@@ -1566,18 +1593,76 @@ class RunMainTable(RunMappingTable):
     success = tables.Column(verbose_name="Success", orderable=False, empty_values=())
 
     extra_filtering = tables.Column(
-        verbose_name="Extra filtering", orderable=False, empty_values=()
+        verbose_name="Extra filtering",
+        orderable=False,
+        empty_values=(),
+        attrs={
+            "td": {"style": "border-left: 1px solid #ddd; text-align: center;"},
+            "th": {
+                "style": "border-left: 1px solid #ddd;background-color: #dce4f0; text-align: center;"
+            },
+        },
     )
 
     enrichment = tables.Column(
-        verbose_name="Enrichment", orderable=False, empty_values=()
+        verbose_name="Enrichment",
+        orderable=False,
+        empty_values=(),
+        attrs={
+            "td": {"style": "text-align: center;"},
+            "th": {"style": "background-color: #dce4f0; text-align: center;"},
+        },
     )
     host_depletion = tables.Column(
-        verbose_name="Depletion", orderable=False, empty_values=()
+        verbose_name="Depletion",
+        orderable=False,
+        empty_values=(),
+        attrs={
+            "td": {"style": "text-align: center;"},
+            "th": {"style": "background-color: #dce4f0; text-align: center;"},
+        },
+    )
+
+    assembly_method = tables.Column(
+        verbose_name="Assembly Method",
+        orderable=False,
+        empty_values=(),
+        attrs={
+            "td": {"style": "text-align: center;"},
+            "th": {"style": "background-color: #dce4f0; text-align: center;"},
+        },
+    )
+
+    read_classification = tables.Column(
+        verbose_name="Read Classification",
+        orderable=False,
+        empty_values=(),
+        attrs={
+            "td": {"style": "text-align: center;"},
+            "th": {"style": "background-color: #dce4f0; text-align: center;"},
+        },
+    )
+
+    contig_classification = tables.Column(
+        verbose_name="Contig Classification",
+        orderable=False,
+        empty_values=(),
+        attrs={
+            "td": {"style": "text-align: center;"},
+            "th": {"style": "background-color: #dce4f0; text-align: center;"},
+        },
     )
 
     remapping = tables.Column(
-        verbose_name="Remapping", orderable=False, empty_values=()
+        verbose_name="Remapping",
+        orderable=False,
+        empty_values=(),
+        attrs={
+            "td": {"style": "border-right: 1px solid #ddd; text-align: center;"},
+            "th": {
+                "style": "border-right: 1px solid #ddd; background-color: #dce4f0; text-align: center;"
+            },
+        },
     )
 
     runtime = tables.Column(verbose_name="Runtime", orderable=False, empty_values=())

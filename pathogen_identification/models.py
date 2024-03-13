@@ -14,7 +14,8 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from managing_files.models import Sample
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from pathogen_identification.data_classes import IntermediateFiles
 
 # Create your models here.
@@ -1043,9 +1044,33 @@ class MetaReference(models.Model):
         return self.description
 
     @property
-    def references_mapped(self):
+    def references_mapped(self) -> List[RawReference]:
         ref_maps = RawReferenceMap.objects.filter(reference=self)
         return [ref_map.raw_reference for ref_map in ref_maps]
+
+    @property
+    def taxids(self):
+        return [ref.taxid for ref in self.references_mapped]
+
+    @property
+    def taxids_str(self):
+        return "_".join(self.taxids)
+
+    @property
+    def accids(self):
+        return [ref.accid for ref in self.references_mapped]
+
+    @property
+    def accids_str(self):
+        return "_".join(self.accids)
+
+    @property
+    def descriptions(self):
+        return [ref.description for ref in self.references_mapped]
+
+    @property
+    def description_first(self):
+        return self.descriptions[0]
 
     @property
     def metaid(self):
@@ -1102,6 +1127,13 @@ class TeleFluProject(models.Model):
     is_deleted = models.BooleanField(default=False)
 
     @property
+    def televir_references(self):
+        if self.raw_reference is None:
+            return None
+
+        return self.raw_reference.references_mapped
+
+    @property
     def owner(self):
         return self.televir_project.owner
 
@@ -1146,6 +1178,11 @@ class TeleFluProject(models.Model):
     @property
     def project_igv_report(self):
         return os.path.join(self.project_static_directory, "igv_report.html")
+    
+    @property
+    def nsamples(self):
+
+        return TeleFluSample.objects.filter(teleflu_project=self).count()
 
 
 class TeleFluSample(models.Model):

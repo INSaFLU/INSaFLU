@@ -883,7 +883,7 @@ from managing_files.models import ProjectSample as InsafluProjectSample
 from pathogen_identification.models import TeleFluProject
 
 
-class TeleFluProjectTable(tables.Table):
+class TeleFluInsaFLuProjectTable(tables.Table):
     header_attrs = {
         "th": {"style": "text-align: center; background-color: #dce4f0;"},
         "td": {"style": "text-align: center;"},
@@ -1038,12 +1038,6 @@ class TeleFluProjectTable(tables.Table):
         if insaflu_project is None:
             return "no associated project"
         ## there's nothing to show
-        count = InsafluProjectSample.objects.filter(
-            project__id=insaflu_project.id,
-            is_deleted=False,
-            is_error=False,
-            is_finished=True,
-        ).count()
         count_not_finished = InsafluProjectSample.objects.filter(
             project__id=insaflu_project.id,
             is_deleted=False,
@@ -1396,12 +1390,12 @@ class RunMappingTable(tables.Table):
         sequence = (
             "name",
             "report",
-            "nmapped",
-            "created",
             "extra_filtering",
             "enrichment",
             "host_depletion",
             "remapping",
+            "nmapped",
+            "created",
             "success",
             "runtime",
         )
@@ -1599,7 +1593,7 @@ class RunMainTable(RunMappingTable):
         attrs={
             "td": {"style": "border-left: 1px solid #ddd; text-align: center;"},
             "th": {
-                "style": "border-left: 1px solid #ddd;background-color: #dce4f0; text-align: center;"
+                "style": "border-left: 1px solid #ddd; background-color: #dce4f0; text-align: center;"
             },
         },
     )

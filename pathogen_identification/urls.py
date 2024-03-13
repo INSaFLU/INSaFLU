@@ -21,6 +21,16 @@ urlpatterns = [
         name="PIproject_samples",
     ),
     url(
+        r"teleflu_project/(?P<pk>\d+)$",
+        PIviews.TelefluProject.as_view(),
+        name="teleflu_project",
+    ),
+    url(
+        r"add-teleflu-sample$",
+        PIajax_views.add_teleflu_sample,
+        name="add_teleflu_sample",
+    ),
+    url(
         r"project_add$",
         PIviews.PathID_ProjectCreateView.as_view(),
         name="PIproject-add",

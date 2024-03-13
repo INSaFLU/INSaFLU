@@ -3027,6 +3027,26 @@ class SoftwareTreeUtils:
 
         return self.get_available_pathnodes(local_tree)
 
+    def get_available_nodes_summary(
+        self,
+        metagenomics: bool = False,
+        mapping_only: bool = False,
+        screening: bool = False,
+    ) -> dict:
+        """ return path as df for each leaf"""
+
+        local_tree = self.generate_software_tree_safe(
+            self.project,
+            self.sample,
+            metagenomics=metagenomics,
+            mapping_only=mapping_only,
+            screening=screening,
+        )
+
+        all_paths = local_tree.get_all_graph_paths()
+        return all_paths
+
+
     def get_available_pathnodes(self, local_tree: PipelineTree) -> dict:
         """ """
 

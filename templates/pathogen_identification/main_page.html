@@ -15,6 +15,7 @@
 	</div>
 {% endblock %}
 
+
 {% block breadcrumbs %}
 {{block.super}}
 {% breadcrumb "Project Index" "project-index" %}
@@ -22,17 +23,13 @@
 {% breadcrumb project_name  "" %}
 {% endblock %}
 
-
 {% block content %}
 
-<style>
-    .modal-title-description {
-        font-size: 18px;
-        color: #666;
-        display: block;
-    }
 
-</style>
+{% block extra_head %}
+    <link rel="stylesheet" href="{% static 'css/televir_main_page.css' %}">
+{% endblock %}
+
 
 <div class="table-container">
     {% block table %}
@@ -60,10 +57,10 @@
                             {% if metagenomics %}
                             <button type="button" class="btn btn-primary dark dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i class="fa fa-flask"></i>
-                                <a><span class="hidden-phone"> Run </span></a>
+                                <a><span class="hidden-phone"> Run </span></a> 
                             </button>
                             <div class="dropdown-menu pull-right">
-                                <a href="#" id="deploypi_btn" class="dropdown-item" style="text-align:center;" deploy-url="{% url deploy_url %}" ><span class="hidden-phone"> Classic Workflows </span></a>
+                                <a href="#" id="deploypi_btn" class="dropdown-item" style="text-align:center;" deploy-url="{% url deploy_url %}" user-id="{{ user_id }}" project-id= "{{ project_index }}"><span class="hidden-phone" >  Classic Workflows </span></a>
                                 <a href="#" id="deploypi_mapping_btn" class="dropdown-item" style="text-align:center;" deploy-url="{% url 'deploy_Project_PIMapping' %}" ><span class="hidden-phone"> Map Combined </span></a>
                                 <a href="#" id="deploypi_added_mapping_btn" class="dropdown-item" style="text-align:center;" deploy-url="{% url 'map_selected_references_project_samples' %}" ><span class="hidden-phone"> Map Added </span></a>
                             </div>
@@ -103,7 +100,7 @@
                     <th colspan="1" style="border-left: 5px solid #f2f2f2;">
                         <div class="btn-group d-flex justify-content-center">
                             <button type="button" id="teleflu_open" class="btn btn-primary" data-toggle="modal" data-target="#teleflu_ref_modal">
-                                <i class="fa fa-external-link-square">‌</i> INSaFLU
+                                <i class="fa fa-crosshairs fa-lg" aria-hidden="true">‌</i>  Focus
                               </button>
                         </div>
 
@@ -177,8 +174,55 @@
     </p>
     <br>
     {% if teleflu_projects_exist %}
+
     <h4 class="table-title"> Reference Analysis </h4>
-    <p class="table-description"> In-Depth </p>
+
+    <div>
+    <ul id="teleflu-list">
+        {% for project in teleflu_projects %}
+        <li>
+            <div class="teleflu-panel-container clearfix">
+                <div class="reference-samples">
+
+                    <span class="reference-note " > 
+                        <a teleflu-id="{{project.id}}" class="request-add-teleflu-sample btn btn-primary btn-sm" data-toggle="modal" data-target="#add_teleflu_sample_modal">
+                            <i class="fa fa-plus" aria-hidden="true"></i>
+                        </a>    
+                        Samples: {{ project.samples }} 
+                    </span>
+               
+                </div>
+                
+
+                <div class="reference-item">
+                    <p class="reference-description">{{ project.ref_description }}</p>
+                    <p class="reference-id">Taxid: {{ project.ref_taxid }}</p>
+                    <p class="reference-id">Accid: {{ project.ref_accid }}</p>
+                </div>
+
+
+                <a href="{% url 'teleflu_project' project.id %}" class="btn btn-primary">View Details</a>
+
+                {% if teleflu_projects_exist %}
+                <span class="insaflu-exists">
+                    <a>
+                        <i class="fa fa-check" aria-hidden="true"></i>
+                        INSaFLU Project
+                    </a>
+                </span>
+                {% endif %}
+
+
+
+
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    </div>
+
+    {% endif %}
+    {% if show_insaflu_tables %}
     
     <div class="table-responsive">
         <table class="table table-hover table-bordered table-striped" {% if teleflu_table.attrs %}z
@@ -372,8 +416,8 @@
       <div class="modal-content">
         <div class="modal-header">
         <div>
-            <h4 class="modal-title" id="myModalLabel_teleflu">Create INSaFLU Project</h4>
-            <p class="modal-title-description">Use selected samples to create an INSaFLU project. Select Televir hit below to use as reference.</p>
+            <h4 class="modal-title" id="myModalLabel_teleflu">Reference Targeted Analysis</h4>
+            <p class="modal-title-description">Map selected samples and connect to an INSaFLU project. Select Televir hit below to use as reference.</p>
         </div>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
@@ -396,12 +440,39 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-primary" id="teleflu_submit-button" csrf="{{ csrf_token }}" href="{% url 'create_teleflu_project' %}" ref_index= "{{project_index}}" reload_ref= "{% url 'added_reference_table' %}">Create Project</button>
+          <button type="button" class="btn btn-primary" id="teleflu_create-button" csrf="{{ csrf_token }}" href="{% url 'create_teleflu_project' %}" ref_index= "{{project_index}}" reload_ref= "{% url 'added_reference_table' %}">Create Project</button>
         </div>
       </div>
     </div>
 </div>
 
+
+<!-- The teleflu add samples -->
+<div class="modal fade" id="add_teleflu_sample_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel_add_teleflu_sample" data-backdrop="static">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <!-- Modal Header -->
+            <div class="modal-header alert alert-warning">
+                <h4 class="modal-title-submit">Submit sample deployment</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+
+            <!-- Modal body -->
+            <div class="modal-body mx-auto mw-100">
+                <div id="id-modal-body-add-teleflu-sample" add-teleflu-single-value-url="{% url 'add_teleflu_sample' %}">
+                    <label id="id-label-add-teleflu-sample" class="col-form-label">Folder Name</label>
+                </div>
+            </div>
+            <!-- Modal footer -->
+            <div class="modal-footer" id="id-modal-footer-add-teleflu-sample">
+                <button id="id-add-teleflu-sample-button" type="button" class="btn btn-primary" data-dismiss="modal">Add</button>
+                <button id="id-cancel-add-teleflu-sample-button" type="button" class="btn btn-secondary" data-dismiss="modal"
+                    aria-hidden="true">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock content %}
 
 {% block js %}
@@ -411,99 +482,10 @@
 <script type="text/javascript" src="{% static 'js/televir_projects/set_control_sample.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/televir_projects/add_references.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/televir_projects/teleflu_prep.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/televir_projects/main_page_calls.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/check-box-general.js' %}"></script>
 {% load static from staticfiles %}
-
-<script>
-
-
-    $(document).on("click", "a", function (e) {
-
-        if ($(this).attr("id") === "id_set_control") {
-
-            var attr = $(this).attr('id');
-            var ref_name = $(this).attr('ref_name');
-            var sample_pk = $(this).attr('pk');
-            
-            // For some browsers, `attr` is undefined; for others `attr` is false.  Check for both.
-
-            // add show to class 
-            //check if class icon is filled circle or empty circle
-            var icon = $(this).find('i');
-            var icon_class = icon.attr('class');
-
-            console.log(icon_class);
-            
-            if (icon_class === 'fa fa-circle-o'){
-                $('#id-label-set-control').text('Set \'' + ref_name + '\' as control?');
-            }
-            else {
-                $('#id-label-set-control').text('Unset \'' + ref_name + '\' as control?');
-                $('#id-set-control-button').text('Unset');
-            }
-            
-            $('#id-modal-body-set-control').attr('pk', sample_pk);
-            $('#id-modal-body-set-control').attr('ref_name', ref_name);
-            $('#id-modal-body-set-control').attr('token', '{{ csrf_token }}');
-            
-        }
-        else if ($(this).attr("id") === 'id_add_set_control_message'){
-            $('#id_messages_set_control').append('<div class="alert alert-dismissible alert-warning">' +
-                    'No jobs to deploy.' +
-                    '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-                    '</div>');
-        }
-        else if ($(this).attr("id") === 'deploy_metagenomics_modal'){
-            var ref_name = $(this).attr('ref_name');
-            var sample_pk = $(this).attr('pk');
-
-            $('#id-label-deploy-metagenomics').text('Deploy metagenomics combined analysis for sample \'' + ref_name + '\'?');
-            $('#id-modal-body-deploy-metagenomics-sample').attr('sample_id', sample_pk);
-            $('#id-modal-body-deploy-metagenomics-sample').attr('ref_name', ref_name);
-        }
-        
-    });
-
-    $('#id-deploy-metagenomics-button').on('click', function(){
-        url= $('#id-modal-body-deploy-metagenomics-sample').attr("deploy-metagenomics-single-value-url");
-        sample_id = $('#id-modal-body-deploy-metagenomics-sample').attr('sample_id');
-
-        $.ajax({
-            url: url, 
-            type: 'POST',
-            data: {
-                sample_id : sample_id,
-                csrfmiddlewaretoken: '{{ csrf_token }}',
-            }, // data sent with the post request
-            success: function(data) {
-                if (data['is_ok'] === true && data['is_deployed'] === true){
-                    /// add message with informaton
-                    $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
-                    'The sample \'' + $('#id-modal-body-deploy-metagenomics-sample').attr('ref_name') + '\' was successfully deployed.' +
-                    '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-                    '</div>');
-                    location.reload() 
-                }
-                else if (data['is_ok'] === true && data['is_deployed'] === false){
-                    /// add message with informaton
-                    $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-                    'The sample \'' + $('#id-modal-body-deploy-metagenomics-sample').attr('ref_name') + '\' was not deployed. Check if metagenomics settings are correctly set.' +
-                    '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-                    '</div>');
-                }
-                else{
-                    /// add message with informaton
-                    $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-                    'The sample \'' + $('#id-modal-body-deploy-metagenomics-sample').attr('ref_name') + '\' was not deployed. Check if metagenomics settings are correctly set.' +
-                    '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-                    '</div>');
-                }
-            }
-        })
-    }
-    )
-    
-</script> 
+ 
 
 
 <script>
@@ -523,7 +505,7 @@
         $('#id-deploy-metagenomics-button').click(function () {
             $.unblockUI();
         });
-        $('#teleflu_submit-button').click(function () {
+        $('#teleflu_create-button').click(function () {
             $.unblockUI();
         });
 		$('#id-kill-button').click(function () {
@@ -532,216 +514,59 @@
         $('#id-set-control-button').click(function () {
             $.unblockUI();
         });
-		// unblock when click in button class close
 		$('.close').click(function () {
 			$.unblockUI();
 		});
-        $('#teleflu_igv_results').click(function () {
-            $.unblockUI();
-        });
+
 	});
 
 	/// set wait screen
+    $(".request-add-teleflu-sample").on("click", function () {
+        var teleflu_id = $(this).attr('teleflu-id');
+        $("#id-add-teleflu-sample-button").attr('teleflu-id', teleflu_id);
+        // change text
+        $("#id-label-add-teleflu-sample").text("Add selected samples ?");
+        console.log(teleflu_id);
+    });
 
-</script>
+    $("#id-add-teleflu-sample-button").on("click", function () {
 
-<script>
+        var teleflu_id = $(this).attr('teleflu-id');
+        var url = $('#id-modal-body-add-teleflu-sample').attr('add-teleflu-single-value-url');
+        var csrf = $('#teleflu_create-button').attr('csrf');
 
-    $(document).on("click", "a", function (e) {
-
-        if ($(this).attr("class") === "asc") {
-            e.preventDefault();
-        }
-
-        if ($(this).attr("id") == "deploypi_sample_btn") {
-            e.preventDefault();
-        
-            url= $(this).attr("deploy-url");
-            $.ajax({
-                url: $(this).attr("deploy-url"),
-                type: "POST",
-                data: {
-                    'csrfmiddlewaretoken': '{{ csrf_token }}',
-                    'sample_id': $(this).attr("sample_id"),
-                },
-                data_type: 'json',
-                success: function(data){
-                    if (data["is_ok"] == true && data["is_deployed"] == false) { 
-                        alert("No runs to deploy, check project settings.");
-                    }
-                    else if (data["is_ok"] == true && data["is_deployed"] == true) {
-                        alert("Runs deployed");
-                    }
-
-                }
-        
-            });
-
-        }
-
-        if ($(this).attr("id") == "sort_sample_btn") {
-            e.preventDefault();
-        
-            url= $(this).attr("sort-url");
-            $.ajax({
-                url: $(this).attr("sort-url"),
-                type: "POST",
-                data: {
-                    'csrfmiddlewaretoken': '{{ csrf_token }}',
-                    'sample_id': $(this).attr("sample_id"),
-                },
-                data_type: 'json',
-                success: function(data){
-                    if (data["is_ok"] == true && data["is_deployed"] == false) { 
-                        alert("No Results to Sort");
-                    }
-                    else if (data["is_ok"] == true && data["is_deployed"] == true) {
-                        alert("Sort deployed");
-                    }
-                }
-
-            });
-
-        }
-
-        /// set wait screen
-		var id_ = $(this).attr('id');
-		var href = $(this).attr('href');
-		var onclick = $(this).attr('onclick');
-
-		if (href !== '#id_set_default_modal' && id_ !== "deploypi_sample_btn" && id_ !== "sort_sample_btn" && onclick !== 'return false;' && id_ !== 'sidenavToggler' &&
-			!href.startsWith('/media') && !href.startsWith('http')) {
-			wait_screen();
-		}
-
-    })
-
-
-    $("#deploypi_mapping_btn").click(function(e){
-        
-        $.ajax({
-            url: $('#deploypi_mapping_btn').attr("deploy-url"),
-            type: "POST",
-            data: {
-                'csrfmiddlewaretoken': '{{ csrf_token }}',
-                'id': $(this).attr('id'),
-                'user_id': '{{ request.user.id }}',
-                'project_id': '{{ project_index }}',
-            },
-            data_type: 'json',
-            success: function(data){
-                if (data["is_ok"] == true && data["is_deployed"] == false) { 
-                    alert("No runs to deploy, check project settings.");
-                }
-                else if (data["is_ok"] == true && data["is_deployed"] == true) {
-                    alert("Runs deployed");
-                }
-                $.unblockUI();
-            }
-
+        // get checked samples rows
+        var checkedRows_samples = [];
+        $('.select_sample-checkbox:checked').each(function () {
+            // collect ids of checked rows
+            var sample_id = $(this).attr('sample_id');
+            checkedRows_samples.push(sample_id);
         });
-    })
 
-    $("#deploypi_added_mapping_btn").click(function(e){
-        
-        $.ajax({
-            url: $('#deploypi_added_mapping_btn').attr("deploy-url"),
-            type: "POST",
-            data: {
-                'csrfmiddlewaretoken': '{{ csrf_token }}',
-                'id': $(this).attr('id'),
-                'user_id': '{{ request.user.id }}',
-                'project_id': '{{ project_index }}',
-            },
-            data_type: 'json',
-            success: function(data){
-                if (data["is_ok"] == true && data["is_deployed"] == false) { 
-                    alert(data["message"]);
-                }
-                else if (data["is_ok"] == true && data["is_deployed"] == true) {
-                    var how_many = data["samples_deployed"];
-                    alert(data["message"]);
-                }
-                $.unblockUI();
-            }
+        console.log(checkedRows_samples);
+        console.log(teleflu_id);
 
-        });
-    })
-
-    $("#deploypi_btn").click(function(e){
-        
-        $.ajax({
-            url: $('#deploypi_btn').attr("deploy-url"),
-            type: "POST",
-            data: {
-                'csrfmiddlewaretoken': '{{ csrf_token }}',
-                'id': $(this).attr('id'),
-                'user_id': '{{ request.user.id }}',
-                'project_id': '{{ project_index }}',
-            },
-            data_type: 'json',
-            success: function(data){
-                if (data["is_ok"] == true && data["is_deployed"] == false) { 
-                    alert("No runs to deploy, check project settings.");
-                }
-                else if (data["is_ok"] == true && data["is_deployed"] == true) {
-                    alert("Runs deployed");
-                }
-                $.unblockUI();
-            }
-
-        });
-    })
-
-    $("#sortpi_btn").click(function(){
-        $.ajax({
-            url: $('#sortpi_btn').attr("deploy-url"),
-            type: "POST",
-            data: {
-                'csrfmiddlewaretoken': '{{ csrf_token }}',
-                'id': $(this).attr('id'),
-                'user_id': '{{ request.user.id }}',
-                'project_id': '{{ project_index }}',
-            },
-            data_type: 'json',
-            success: function(data){
-                if (data["is_ok"] == true && data["is_deployed"] == false) { 
-                    alert("No sort to deploy");
-                }
-                else if (data["is_ok"] == true && data["is_deployed"] == true) {
-                    alert("Sort deployed");
-                }
-            }
-
-        });
-    })
-
-    $('#teleflu_igv_results').click(function(){
-
-        var url = $(this).attr('url');
-        var pk = $(this).attr('teleflu_project_pk');
-        console.log(url);
         $.ajax({
             url: url,
-            type: "POST",
+            type: 'POST',
             data: {
-                'csrfmiddlewaretoken': '{{ csrf_token }}',
-                'pk': $(this).attr('teleflu_project_pk'),
+                'teleflu_id': teleflu_id,
+                'sample_ids': checkedRows_samples,
+                'csrfmiddlewaretoken': csrf
             },
-            data_type: 'json',
-            success: function(data){
-                $.unblockUI();
-                if (data["is_ok"] == true && data["is_deployed"] == false) { 
-                    alert("No runs to deploy, check project settings.");
-                }
-                else if (data["is_ok"] == true && data["is_deployed"] == true) {
-                    alert("Runs deployed");
+            success: function (data) {
+                if (data['not_added'] == true) {
+                    alert('No samples added. They may already be in the project.');
+                } else if (data['is_empty'] == true) {
+                    alert('No samples selected.');
+                } else {
+                    alert('Samples added.');
+                    location.reload();
                 }
             }
-
         });
-    })
-    
+
+    });
 
 </script>
 

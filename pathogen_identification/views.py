@@ -27,42 +27,64 @@ from fluwebvirus.settings import MEDIA_ROOT, STATICFILES_DIRS
 from managing_files.forms import AddSampleProjectForm
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProcessControler
+from managing_files.models import ProjectSample as InsafluProjectSample
 from managing_files.tables import SampleToProjectsTable
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.forms import ReferenceForm
-from pathogen_identification.models import (ContigClassification, FinalReport,
-                                            ParameterSet, PIProject_Sample,
-                                            Projects, RawReference,
-                                            ReadClassification,
-                                            ReferenceContigs,
-                                            ReferenceMap_Main, ReferencePanel,
-                                            ReferenceSourceFileMap,
-                                            RunAssembly, RunDetail, RunMain,
-                                            RunRemapMain, Sample,
-                                            TeleFluProject, TelevirRunQC)
+from pathogen_identification.models import (
+    ContigClassification,
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReadClassification,
+    ReferenceContigs,
+    ReferenceMap_Main,
+    ReferencePanel,
+    ReferenceSourceFileMap,
+    RunAssembly,
+    RunDetail,
+    RunMain,
+    RunRemapMain,
+    Sample,
+    TeleFluProject,
+    TelevirRunQC,
+)
 from pathogen_identification.modules.object_classes import RunQC_report
-from pathogen_identification.tables import (AddedReferenceTable,
-                                            CompoundRefereceScoreWithScreening,
-                                            CompoundReferenceScore,
-                                            ContigTable, ProjectTable,
-                                            RawReferenceTable,
-                                            RawReferenceTableNoRemapping,
-                                            ReferenceSourceTable, RunMainTable,
-                                            RunMappingTable, SampleTableOne,
-                                            TeleFluProjectTable,
-                                            TeleFluReferenceTable)
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
+from pathogen_identification.tables import (
+    AddedReferenceTable,
+    CompoundRefereceScoreWithScreening,
+    CompoundReferenceScore,
+    ContigTable,
+    ProjectTable,
+    RawReferenceTable,
+    RawReferenceTableNoRemapping,
+    ReferenceSourceTable,
+    RunMainTable,
+    RunMappingTable,
+    SampleTableOne,
+    TeleFluInsaFLuProjectTable,
+    TeleFluReferenceTable,
+)
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
 from pathogen_identification.utilities.utilities_general import (
-    get_services_dir, infer_run_media_dir)
+    get_services_dir,
+    infer_run_media_dir,
+)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility, RawReferenceUtils)
+    Parameter_DB_Utility,
+    RawReferenceUtils,
+)
 from pathogen_identification.utilities.utilities_views import (
-    EmptyRemapMain, RawReferenceCompound, ReportSorter,
-    final_report_best_cov_by_accid, recover_assembly_contigs)
+    EmptyRemapMain,
+    RawReferenceCompound,
+    ReportSorter,
+    final_report_best_cov_by_accid,
+    recover_assembly_contigs,
+)
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
 from utils.support_django_template import get_link_for_dropdown_item
@@ -739,12 +761,43 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
         teleflu_projects = TeleFluProject.objects.filter(
             televir_project=project, is_deleted=False
         ).order_by("-last_change_date")
-        context["teleflu_table"] = None
 
+        teleflu_data = []
+        for tproj in teleflu_projects:
+
+            tproject_data = {
+                "id": tproj.pk,
+                "samples": tproj.nsamples,
+                "ref_description": tproj.raw_reference.description_first,
+                "ref_accid": tproj.raw_reference.accids_str,
+                "ref_taxid": tproj.raw_reference.taxids_str,
+            }
+
+            insaflu_project = tproj.insaflu_project
+            if insaflu_project is None:
+                tproject_data["insaflu_project"] = "None"
+            else:
+                count_not_finished = InsafluProjectSample.objects.filter(
+                    project__id=insaflu_project.id,
+                    is_deleted=False,
+                    is_error=False,
+                    is_finished=False,
+                ).count()
+
+                if count_not_finished == 0:
+                    tproject_data["insaflu_project"] = "Finished"
+
+                else:
+                    tproject_data["insaflu_project"] = "Processing"
+
+            teleflu_data.append(tproject_data)
+
+        context["teleflu_projects"] = teleflu_data
+        context["teleflu_table"] = None
         context["teleflu_projects_exist"] = teleflu_projects.exists()
         if teleflu_projects.exists():
 
-            context["teleflu_table"] = TeleFluProjectTable(teleflu_projects)
+            context["teleflu_table"] = TeleFluInsaFLuProjectTable(teleflu_projects)
             RequestConfig(
                 self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
             ).configure(context["teleflu_table"])
@@ -771,6 +824,7 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
         context["metagenomics"] = ConstantsSettings.METAGENOMICS
         context["table"] = samples
         context["deploy_url"] = DEPLOY_URL
+        context["user_id"] = project.owner.pk
         context["project_index"] = project.pk
         context["project_name"] = project_name
         context["nav_sample"] = True
@@ -779,6 +833,81 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
         context["show_info_main_page"] = ShowInfoMainPage()
         context["query_set_count"] = query_set.count()
         context["demo"] = True if self.request.user.username == "demo" else False
+
+        return context
+
+
+from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
+
+
+class TelefluProject(LoginRequiredMixin, generic.CreateView):
+    """
+    Teleflu Project
+    """
+
+    template_name = "pathogen_identification/teleflu.html"
+    model = TeleFluProject
+    fields = ["name"]
+
+    def get_context_data(self, **kwargs):
+        context = super(TelefluProject, self).get_context_data(**kwargs)
+
+        teleflu_project_pk = int(self.kwargs["pk"])
+        ## TeleFlu Projects
+        teleflu_projects = TeleFluProject.objects.filter(
+            pk=teleflu_project_pk, is_deleted=False
+        ).order_by("-last_change_date")
+        televir_project = teleflu_projects[0].televir_project
+        user = televir_project.owner
+
+        context["insaflu_table"] = None
+        context["insaflu_projects_exist"] = teleflu_projects.exists()
+        print(teleflu_projects.exists())
+
+        if teleflu_projects.exists():
+
+            context["insaflu_table"] = TeleFluInsaFLuProjectTable(teleflu_projects)
+            RequestConfig(
+                self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
+            ).configure(context["insaflu_table"])
+
+        #### get combinations to deploy
+        software_utils = SoftwareTreeUtils(user, televir_project)
+        available_path_nodes = software_utils.get_available_nodes_summary(
+            metagenomics=False,
+            screening=False,
+            mapping_only=True,
+        )
+        print(available_path_nodes)
+
+        workflows = []
+        for node, params_df in available_path_nodes.items():
+            node_info = {
+                "node": node,
+                "modules": [],
+            }
+            for pipeline_step in CS.vect_pipeline_televir_mapping_only:
+
+                node_info["modules"].append(
+                    {
+                        "module": pipeline_step,
+                        "params": params_df[params_df.module == pipeline_step].to_dict(
+                            "records"
+                        ),
+                        "short_name": "".join([x[0] for x in pipeline_step.split("_")]),
+                        "available": (
+                            "software_on"
+                            if pipeline_step in params_df.module.values
+                            else "software_off"
+                        ),
+                    }
+                )
+
+            workflows.append(node_info)
+
+        context["workflows"] = workflows
+
+        ###
 
         return context
 

@@ -18,6 +18,7 @@ from managing_files.models import ProjectSample as InsafluProjectSample
 from managing_files.models import Reference
 from pathogen_identification.models import RawReference, ReferenceSourceFileMap
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
+from pathogen_identification.utilities.utilities_general import simplify_name
 from utils.software import Software
 from utils.utils import Utils
 
@@ -604,6 +605,114 @@ def create_teleflu_igv_report(teleflu_project_pk: int) -> bool:
                 "bam_file_index": bam_file_index,
                 "vcf_file": vcf_file,
             }
+
+    ### merge vcf files
+    televir_bioinf = TelevirBioinf()
+    vcf_files = [files["vcf_file"] for sample_pk, files in sample_dict.items()]
+    group_vcf = teleflu_project.project_vcf
+    stacked_html = teleflu_project.project_igv_report_media
+
+    os.makedirs(teleflu_project.project_vcf_directory, exist_ok=True)
+
+    merged_success = televir_bioinf.merge_vcf_files(vcf_files, group_vcf)
+
+    try:
+
+        televir_bioinf.create_igv_report(
+            reference_file,
+            vcf_file=group_vcf,
+            tracks=sample_dict,
+            output_html=stacked_html,
+        )
+
+        return True
+    except Exception as e:
+        print(e)
+        return False
+
+
+from pathogen_identification.models import (
+    PIProject_Sample,
+    ReferenceMap_Main,
+    TeleFluSample,
+)
+
+
+def filter_reference_maps_select(
+    sample: PIProject_Sample, leaf_index: int, reference: List[str]
+) -> Optional[ReferenceMap_Main]:
+    ref_maps = ReferenceMap_Main.objects.filter(
+        sample=sample,
+        run__parameter_set__leaf__index=leaf_index,
+        reference__in=reference,
+    )
+
+    for ref in ref_maps:
+
+        if not ref.bam_file_path:
+            continue
+        if not ref.bai_file_path:
+            continue
+        if not ref.vcf:
+            continue
+
+        if os.path.exists(ref.bam_file_path) == False:
+            continue
+
+        if os.path.exists(ref.vcf) == False:
+            continue
+
+        if os.path.exists(ref.bai_file_path) == False:
+            continue
+
+        return ref
+
+    return None
+
+
+def create_televir_igv_report(teleflu_project_pk: int, leaf_index: int) -> bool:
+
+    teleflu_project = TeleFluProject.objects.get(pk=teleflu_project_pk)
+    # reference_accid= teleflu_project.raw_reference.
+
+    ### get reference insaflu
+    insaflu_reference = teleflu_project.reference
+    if insaflu_reference is None:
+        return False
+
+    reference_file = insaflu_reference.get_reference_fasta(TypePath.MEDIA_ROOT)
+
+    # televir_reference
+    teleflu_refs = teleflu_project.televir_references
+    if teleflu_refs is None:
+        return False
+
+    accid_list = [ref.accid for ref in teleflu_refs if ref.accid]
+    accid_list_simple = [simplify_name(accid) for accid in accid_list]
+
+    # samples
+    televir_project_samples = TeleFluSample.objects.filter(
+        teleflu_project=teleflu_project
+    )
+    televir_project_samples = [
+        sample.televir_sample for sample in televir_project_samples
+    ]
+    sample_dict = {}
+
+    ### get sample files
+
+    for sample in televir_project_samples:
+
+        ref_select = filter_reference_maps_select(sample, leaf_index, accid_list_simple)
+        if ref_select is None:
+            continue
+
+        sample_dict[sample.sample.pk] = {
+            "name": sample.name,
+            "bam_file": ref_select.bam_file_path,
+            "bam_file_index": ref_select.bai_file_path,
+            "vcf_file": ref_select.vcf,
+        }
 
     ### merge vcf files
     televir_bioinf = TelevirBioinf()

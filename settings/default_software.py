@@ -799,6 +799,7 @@ class DefaultSoftware(object):
 
         except Software.DoesNotExist:  ### if not exist save it
             print("save software", software_name)
+            print(user)
             self.default_parameters.persist_parameters(vect_parameters, type_of_use)
 
     def get_trimmomatic_parameters(self, user):

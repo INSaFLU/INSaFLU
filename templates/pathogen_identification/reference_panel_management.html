@@ -24,78 +24,11 @@
 
 {% block content %}
 
-
 {% block extra_head %}
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
     <link rel="stylesheet" href="{% static 'css/televir_reference_panels.css' %}">
 {% endblock %}
 
-<style>
-    #referenceSearch {
-        width: 100%; /* Full-width */
-        font-size: 16px; /* Increase font-size */
-        padding: 12px 20px; /* Add some padding */
-        margin: 8px 0; /* Add some margin */
-        box-sizing: border-box; /* Make sure that width includes padding */
-        border: none; /* Remove border */
-        border-radius: 4px; /* Slightly rounded corners */
-        background-color: #f1f1f1; /* Light-grey background */
-    }
-    
-    #referenceSearch:focus {
-        outline: none; /* Remove outline when focused */
-        background-color: #ddd; /* Light-grey background when focused */
-    }
-    .icon-selection {
-        margin-top: 0;
-        display: flex;
-        justify-content: space-between;
-        padding: 10px;
-        margin-top: 10px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-    }
-    
-    .icon-selection label {
-        display: inline-flex;
-        align-items: center;
-        cursor: pointer;
-    }
-    
-    .icon-selection input[type="radio"] {
-        margin-right: 5px;
-    }
-
-    #new-panel-form label {
-        display: block;
-        margin-top: 5px;
-        margin-bottom: 5px;
-        font-weight: bold;
-    }
-    
-    #new-panel-form input[type="text"] {
-        width: 100%;
-        padding: 10px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-    }
-    
-    .icon-selection label {
-        display: inline-block;
-        margin-right: 10px;
-        cursor: pointer;
-    }
-    
-    .icon-selection input[type="radio"] {
-        display: none;
-    }
-    
-    .icon-selection input[type="radio"]:checked + i {
-        color: #007bff;
-    }
-
-    
-</style>
 
 <div class="container-panels">
     <div class="panels-container">

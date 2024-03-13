@@ -6,20 +6,14 @@ from typing import List, Optional
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (
-    PIProject_Sample,
-    RawReference,
-    ReferenceSourceFileMap,
-    RunMain,
-)
+from pathogen_identification.models import (PIProject_Sample, RawReference,
+                                            ReferenceSourceFileMap, RunMain)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
 from pathogen_identification.utilities.utilities_general import (
-    description_fails_filter,
-    merge_classes,
-    scrape_description,
-)
-from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
+    description_fails_filter, merge_classes, scrape_description, simplify_name)
+from pathogen_identification.utilities.utilities_pipeline import \
+    RawReferenceUtils
 
 
 class RunMetadataHandler:
@@ -131,12 +125,9 @@ class RunMetadataHandler:
                 if accids_replete > max_accids:
                     break
 
-                accid_simple = (
-                    ref.accid.replace(".", "_")
-                    .replace(";", "_")
-                    .replace(":", "_")
-                    .replace("|", "_")
-                )
+                if ref.accid is None:
+                    continue
+                accid_simple = simplify_name(ref.accid)
 
                 self.remap_targets.append(
                     Remap_Target(
@@ -790,12 +781,8 @@ class RunMetadataHandler:
 
                 for pref in nsu.acc.unique():
                     nsnew = nsu[nsu.acc == pref].reset_index(drop=True)
-                    pref_simple = (
-                        pref.replace(".", "_")
-                        .replace(";", "_")
-                        .replace(":", "_")
-                        .replace("|", "_")
-                    )
+
+                    pref_simple = simplify_name(pref)
 
                     self.taxonomy_to_description.taxid = (
                         self.taxonomy_to_description.taxid.astype(int)

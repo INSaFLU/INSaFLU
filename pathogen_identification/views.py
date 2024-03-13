@@ -878,7 +878,6 @@ class TelefluProject(LoginRequiredMixin, generic.CreateView):
             screening=False,
             mapping_only=True,
         )
-        print(available_path_nodes)
 
         workflows = []
         for node, params_df in available_path_nodes.items():
@@ -887,6 +886,12 @@ class TelefluProject(LoginRequiredMixin, generic.CreateView):
                 "modules": [],
             }
             for pipeline_step in CS.vect_pipeline_televir_mapping_only:
+                acronym = [x[0] for x in pipeline_step.split(" ")]
+                acronym = [
+                    acronym[x].upper() if x == 0 else acronym[x].lower()
+                    for x in range(len(acronym))
+                ]
+                acronym = "".join(acronym)
 
                 node_info["modules"].append(
                     {
@@ -894,7 +899,7 @@ class TelefluProject(LoginRequiredMixin, generic.CreateView):
                         "params": params_df[params_df.module == pipeline_step].to_dict(
                             "records"
                         ),
-                        "short_name": "".join([x[0] for x in pipeline_step.split("_")]),
+                        "short_name": acronym,
                         "available": (
                             "software_on"
                             if pipeline_step in params_df.module.values

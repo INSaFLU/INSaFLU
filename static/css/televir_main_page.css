@@ -141,3 +141,11 @@
     padding-left: 20px; 
     display: flex;
 }
+
+.table td {
+    text-align: center;
+}
+
+.table th {
+    text-align: center;
+}

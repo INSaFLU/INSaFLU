@@ -18,35 +18,25 @@ from constants.software_names import SoftwareNames
 from fluwebvirus.settings import STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReferenceMap_Main,
-    ReferencePanel,
-    ReferenceSourceFileMap,
-    RunMain,
-    TeleFluProject,
-    TeleFluSample,
-)
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference, ReferenceMap_Main,
+                                            ReferencePanel,
+                                            ReferenceSourceFileMap, RunMain,
+                                            TeleFluProject, TeleFluSample)
 from pathogen_identification.tables import ReferenceSourceTable
 from pathogen_identification.utilities.reference_utils import (
-    check_metaReference_exists_from_ids,
-    check_reference_exists,
-    check_reference_submitted,
-    create_combined_reference,
-)
+    check_metaReference_exists_from_ids, check_reference_exists,
+    check_reference_submitted, create_combined_reference)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
-from pathogen_identification.utilities.utilities_general import get_services_dir
-from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
+from pathogen_identification.utilities.utilities_general import \
+    get_services_dir
+from pathogen_identification.utilities.utilities_pipeline import \
+    SoftwareTreeUtils
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter,
-    SampleReferenceManager,
-    set_control_reports,
-)
+    ReportSorter, SampleReferenceManager, set_control_reports)
 from pathogen_identification.views import inject__added_references
 from utils.process_SGE import ProcessSGE
 from utils.utils import Utils
@@ -442,12 +432,16 @@ def submit_project_samples_mapping_televir(request):
             "message": "",
         }
 
-        print("HIII")
-
         project_id = int(request.POST["project_id"])
         project = Projects.objects.get(id=int(project_id))
 
         project_samples = PIProject_Sample.objects.filter(project=project)
+
+        sample_ids = request.POST.getlist("sample_ids[]")
+        sample_ids = [int(sample_id) for sample_id in sample_ids]
+        print(sample_ids)
+        if len(sample_ids) > 0:
+            project_samples = project_samples.filter(pk__in=sample_ids)
 
         try:
             samples_map_launched = []
@@ -494,10 +488,16 @@ def deploy_ProjectPI(request):
             project=project, is_deleted_in_file_system=False
         )
 
+        sample_ids = request.POST.getlist("sample_ids[]")
+        sample_ids = [int(sample_id) for sample_id in sample_ids]
+        if len(sample_ids) > 0:
+            samples = samples.filter(pk__in=sample_ids)
+
         software_utils = SoftwareTreeUtils(user, project)
 
         try:
             for sample in samples:
+
                 runs_to_deploy = software_utils.check_runs_to_deploy_sample(sample)
 
                 if len(runs_to_deploy) > 0:
@@ -539,9 +539,15 @@ def deploy_ProjectPI_runs(request):
         software_utils = SoftwareTreeUtils(user, project)
         runs_to_deploy = software_utils.check_runs_to_deploy_project()
 
+        sample_ids = request.POST.getlist("sample_ids[]")
+        sample_ids = [int(sample_id) for sample_id in sample_ids]
+
         try:
             if len(runs_to_deploy) > 0:
                 for sample, leaves_to_deploy in runs_to_deploy.items():
+                    if len(sample_ids) > 0:
+                        if sample.pk not in sample_ids:
+                            continue
                     for leaf in leaves_to_deploy:
                         taskID = process_SGE.set_submit_televir_run(
                             user=request.user,
@@ -581,6 +587,12 @@ def deploy_ProjectPI_combined_runs(request):
         samples = PIProject_Sample.objects.filter(
             project=project, is_deleted_in_file_system=False
         )
+
+        sample_ids = request.POST.getlist("sample_ids[]")
+        sample_ids = [int(sample_id) for sample_id in sample_ids]
+        if len(sample_ids) > 0:
+            samples = samples.filter(pk__in=sample_ids)
+
         first_sample = samples.first()
         software_utils = SoftwareTreeUtils(user, project, sample=first_sample)
         runs_to_deploy = software_utils.check_runs_to_submit_metagenomics_sample(

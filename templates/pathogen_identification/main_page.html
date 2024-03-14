@@ -546,10 +546,6 @@
             var sample_id = $(this).attr('sample_id');
             checkedRows_samples.push(sample_id);
         });
-
-        console.log(checkedRows_samples);
-        console.log(teleflu_id);
-
         $.ajax({
             url: url,
             type: 'POST',

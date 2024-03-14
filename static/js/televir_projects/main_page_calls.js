@@ -163,6 +163,14 @@ $(document).on("click", "a", function (e) {
 
 $("#deploypi_mapping_btn").click(function (e) {
 
+    // get checked samples rows
+    var checkedRows_samples = [];
+    $('.select_sample-checkbox:checked').each(function () {
+        // collect ids of checked rows
+        var sample_id = $(this).attr('sample_id');
+        checkedRows_samples.push(sample_id);
+    });
+
     $.ajax({
         url: $('#deploypi_mapping_btn').attr("deploy-url"),
         type: "POST",
@@ -171,6 +179,7 @@ $("#deploypi_mapping_btn").click(function (e) {
             'id': $(this).attr('id'),
             'user_id': $('#deploypi_btn').attr('user-id'),
             'project_id': $('#teleflu_create-button').attr("ref_index"),
+            'sample_ids': checkedRows_samples,
         },
         data_type: 'json',
         success: function (data) {
@@ -190,11 +199,15 @@ $("#deploypi_added_mapping_btn").click(function (e) {
     var user_id = $('#deploypi_btn').attr('user-id');
     var project_id = $('#deploypi_btn').attr('project-id');
     csrf_token = $('#teleflu_create-button').attr("csrf");
-    
-    console.log(user_id);
-    console.log("HIII");
-    console.log($('#deploypi_btn').attr('project-id'));
 
+    // get checked samples rows
+    var checkedRows_samples = [];
+    $('.select_sample-checkbox:checked').each(function () {
+        // collect ids of checked rows
+        var sample_id = $(this).attr('sample_id');
+        checkedRows_samples.push(sample_id);
+    });
+    
     $.ajax({
         url: $('#deploypi_added_mapping_btn').attr("deploy-url"),
         type: "POST",
@@ -203,6 +216,7 @@ $("#deploypi_added_mapping_btn").click(function (e) {
             'id': $(this).attr('id'),
             'user_id': user_id,
             'project_id': project_id,
+            'sample_ids': checkedRows_samples,
         },
         data_type: 'json',
         success: function (data) {
@@ -226,8 +240,13 @@ $("#deploypi_btn").click(function (e) {
     var project_id = $('#deploypi_btn').attr('project-id');
     csrf_token = $('#teleflu_create-button').attr("csrf");
 
-    console.log(user_id);
-    console.log("HIII");
+    // get checked samples rows
+    var checkedRows_samples = [];
+    $('.select_sample-checkbox:checked').each(function () {
+        // collect ids of checked rows
+        var sample_id = $(this).attr('sample_id');
+        checkedRows_samples.push(sample_id);
+    });
 
     $.ajax({
         url: $('#deploypi_btn').attr("deploy-url"),
@@ -237,6 +256,7 @@ $("#deploypi_btn").click(function (e) {
             'id': $(this).attr('id'),
             'user_id': user_id,
             'project_id': project_id,
+            'sample_ids': checkedRows_samples,
         },
         data_type: 'json',
         success: function (data) {

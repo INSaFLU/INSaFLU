@@ -21,11 +21,13 @@
 }
 
 .teleflu-panel-container {
-    display: flex;
     align-items: center;
     font-size: 0.8em; /* This will make the font size smaller */
     text-align: center;
-    padding-left: 20px; 
+    padding-left: 5px; 
+    display: flex;
+    align-items: flex-start; 
+    justify-content: space-between;
 }
 
 .teleflu-panel-container .card-title {
@@ -41,7 +43,7 @@
     align-self: center;
 }
 
-.teleflu-panel-container .btn {
+.teleflu-details {
     align-self: center;
 }
 
@@ -51,14 +53,14 @@
     border: none; /* add a border around each reference */
     padding: 5px; /* add some padding */
     margin-bottom: 0px; /* add some space between references */
-    border-radius: 5px;
     background-color: #f9f9f9;
-    margin-right: 100px; /* add some space between references */
-
+    padding-right: 80px; /* add some space between references */
+    margin-right: 20px; /* add some space between references */
+    border-right: 2px solid #ddd; /* add a border between references */
 }
 
 .reference-samples {
-    margin-right: 50px;
+    margin-right: 20px;
     float: left;
     list-style-type: none; /* remove bullet points */
     border: none; /* add a border around each reference */
@@ -73,13 +75,14 @@
 .reference-id {
     display: inline; /* display taxid and accid on the same line */
     margin-right: 10px; /* add some space between taxid and accid */
+    font-size: 1.2em; /* This will increase the font size */
+
 }
 
 .reference-description {
-    margin-top: 5px; /* add some space between taxid/accid and description */
     margin-bottom: 2px; /* add some space between description and the next reference */
     font-weight: bold; /* This will make the text bold */
-    font-size: 1.2em; /* This will increase the font size */
+    font-size: 1.5em; /* This will increase the font size */
 }
 
 .reference-note {
@@ -91,7 +94,7 @@
     text-decoration: none;
     margin: 0px 5px;
     margin-right: 10px;
-    padding: 10px 10px;
+    padding: 6px 5px;
     padding-right: 20px;
     border-radius: 5px;
     font-size: 14px;
@@ -104,11 +107,10 @@
     background-color: #b3b3b3;
     border: none;
     cursor: pointer;
-
 }
 
 .insaflu-exists {
-    display: inline-block;
+    display: inherit;
     background-color: #007bff;
     color: black;
     padding: 10px 15px;
@@ -118,4 +120,24 @@
     font-weight: bold;
     font-family: Arial, sans-serif;
     color: white;
+}
+
+.teleflu-results {
+    order: 2;
+    align-items: center;
+    font-size: 0.8em; /* This will make the font size smaller */
+    text-align: center;
+    padding-left: 20px; 
+    padding-right: 20px;
+    display: flex;
+    align-self: center;
+}
+
+.teleflu-manage {
+    order: 1;
+    align-items: center;
+    font-size: 0.8em; /* This will make the font size smaller */
+    text-align: center;
+    padding-left: 20px; 
+    display: flex;
 }

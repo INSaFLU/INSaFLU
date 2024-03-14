@@ -86,6 +86,8 @@
     .workflow-name {
         font-size: 1.2em;
         font-weight: bold;
+        width: 120px;
+
     }
     .step-container {
         display: flex;
@@ -94,8 +96,28 @@
         padding: 5px;
         background-color: #f5f5f5; /* Light gray background */
         border-radius: 5px;
+
     }
     
+    .parameters-container {
+
+        border-radius: 5px;
+        background-color: #e0e0e0; /* Light gray background */
+        transition: opacity 0.5s ease-in-out, width 0.5s ease-in-out;
+        opacity: 0;
+        max-width: 0;
+        overflow: hidden;
+        white-space: nowrap; /* Prevent the text from wrapping */
+    }
+
+    .parameters-container.visible {
+        padding: 5px;
+        padding-left: 10px;
+        padding-right: 10px;
+        margin-right: 10px; /* Adjust as needed */
+        margin-left: 10px; /* Adjust as needed */
+    }
+
 
 </style>
 
@@ -112,7 +134,8 @@
                 <div class="step-container">
 
                 {% for step in workflow.modules %}
-                    <span class="step-circle {{ step.available }}" title="{{ step.module }}">{{ step.short_name }}</span>
+                    <span class="step-circle {{ step.available }}" title="{{ step.module }}" data-parameters="{{ step.parameters }}" onclick="showParameters(this)">{{ step.short_name }}</span>
+                    <div class="parameters-container"></div>
                 {% endfor %}
                 </div>
 
@@ -173,5 +196,26 @@
 {% block js %}
 
 {% load static from staticfiles %}
+
+<script>
+    function showParameters(element) {
+        var parameters = element.getAttribute('data-parameters');
+        var parametersContainer = element.nextElementSibling;
+    
+        // If the parameters are already displayed, hide them
+        if (parametersContainer.style.opacity == 1) {
+            parametersContainer.style.opacity = 0;
+            parametersContainer.style.maxWidth = '0';
+            parametersContainer.classList.remove('visible');
+        }
+        // Otherwise, display the parameters
+        else {
+            parametersContainer.innerHTML = parameters;
+            parametersContainer.style.opacity = 1;
+            parametersContainer.style.maxWidth = '1000px'; // Adjust this value as needed
+            parametersContainer.classList.add('visible');
+        }
+    }
+</script>
 
 {% endblock js %}

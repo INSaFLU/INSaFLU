@@ -31,6 +31,7 @@
 {% endblock %}
 
 
+
 <div class="table-container">
     {% block table %}
     <div class="table-responsive">
@@ -181,39 +182,42 @@
     <ul id="teleflu-list">
         {% for project in teleflu_projects %}
         <li>
-            <div class="teleflu-panel-container clearfix">
-                <div class="reference-samples">
+            <div class="teleflu-panel-container">
 
-                    <span class="reference-note " > 
-                        <a teleflu-id="{{project.id}}" class="request-add-teleflu-sample btn btn-primary btn-sm" data-toggle="modal" data-target="#add_teleflu_sample_modal">
-                            <i class="fa fa-plus" aria-hidden="true"></i>
-                        </a>    
-                        Samples: {{ project.samples }} 
-                    </span>
-               
-                </div>
+                <div class="teleflu-manage clearfix">
+                    <div class="reference-samples">
+
+                        <span class="reference-note " > 
+                            <a teleflu-id="{{project.id}}" class="request-add-teleflu-sample btn btn-primary btn-sm" data-toggle="modal" data-target="#add_teleflu_sample_modal">
+                                <i class="fa fa-plus" aria-hidden="true"></i>
+                            </a>    
+                            Samples: {{ project.samples }} 
+                        </span>
                 
+                    </div>
+                    
 
-                <div class="reference-item">
-                    <p class="reference-description">{{ project.ref_description }}</p>
-                    <p class="reference-id">Taxid: {{ project.ref_taxid }}</p>
-                    <p class="reference-id">Accid: {{ project.ref_accid }}</p>
+                    <div class="reference-item">
+                        <p class="reference-description">{{ project.ref_description }}</p>
+                        <p class="reference-id">Taxid: {{ project.ref_taxid }}</p>
+                        <p class="reference-id">Accid: {{ project.ref_accid }}</p>
+                    </div>
+
+
+                    <a href="{% url 'teleflu_project' project.id %}" class="teleflu-details btn btn-primary">View Details</a>
+
                 </div>
 
-
-                <a href="{% url 'teleflu_project' project.id %}" class="btn btn-primary">View Details</a>
-
-                {% if teleflu_projects_exist %}
-                <span class="insaflu-exists">
-                    <a>
-                        <i class="fa fa-check" aria-hidden="true"></i>
-                        INSaFLU Project
-                    </a>
-                </span>
-                {% endif %}
-
-
-
+                <div class="teleflu-results ">
+                    {% if teleflu_projects_exist %}
+                    <span class="insaflu-exists">
+                        <a>
+                            <i class="fa fa-check" aria-hidden="true"></i>
+                            INSaFLU Project
+                        </a>
+                    </span>
+                    {% endif %}
+                </div>
 
             </div>
         </li>

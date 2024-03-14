@@ -892,13 +892,20 @@ class TelefluProject(LoginRequiredMixin, generic.CreateView):
                     for x in range(len(acronym))
                 ]
                 acronym = "".join(acronym)
+                params = params_df[params_df.module == pipeline_step].to_dict("records")
+                print(params)
+                if params:  # if there are parameters for this module
+                    software = params[0].get("software")
+                    software = software.split("_")[0]
 
+                    params = params[0].get("value")
+                    params = f"{software} {params}"
+                else:
+                    params = ""
                 node_info["modules"].append(
                     {
                         "module": pipeline_step,
-                        "params": params_df[params_df.module == pipeline_step].to_dict(
-                            "records"
-                        ),
+                        "parameters": params,
                         "short_name": acronym,
                         "available": (
                             "software_on"

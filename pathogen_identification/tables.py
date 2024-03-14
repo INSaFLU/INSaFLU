@@ -347,33 +347,29 @@ class ProjectTableMetagenomics(ProjectTable):
 
 class SampleTableOne(tables.Table):
     color_runs = "#f2f2f2"
-    set_control = tables.Column("Control", orderable=False, empty_values=())
-
-    name = tables.Column(verbose_name="Sample Name")
-    report = tables.Column(
-        verbose_name="Sample Report", orderable=False, empty_values=()
-    )
-    runs = tables.Column(verbose_name="Workflows", orderable=False, empty_values=())
-    deploy = tables.Column(
-        verbose_name="Run",
-        orderable=False,
-        empty_values=(),
-        attrs={
-            "th": {"style": "text-align: center;"},
-            "td": {"style": "text-align: center;"},
+    cell_attrs = {
+        "th": {
+            "style": "text-align: center;",
         },
+        "td": {"style": "text-align: center;"},
+    }
+    set_control = tables.Column(
+        "Control", orderable=False, empty_values=(), attrs=cell_attrs
+    )
+
+    name = tables.Column(verbose_name="Sample Name", attrs=cell_attrs)
+    report = tables.Column(
+        verbose_name="Sample Report", orderable=False, empty_values=(), attrs=cell_attrs
+    )
+    runs = tables.Column(
+        verbose_name="Workflows", orderable=False, empty_values=(), attrs=cell_attrs
+    )
+    deploy = tables.Column(
+        verbose_name="Run", orderable=False, empty_values=(), attrs=cell_attrs
     )
 
     sorting = tables.Column(
-        "Sorting",
-        orderable=False,
-        empty_values=(),
-        attrs={
-            "th": {
-                "style": "text-align: center;",
-            },
-            "td": {"style": "text-align: center;"},
-        },
+        "Sorting", orderable=False, empty_values=(), attrs=cell_attrs
     )
 
     select_ref = tables.CheckBoxColumn(
@@ -404,7 +400,9 @@ class SampleTableOne(tables.Table):
         empty_values=(),
         attrs={
             "td": {"style": "border-left: 5px solid #ddd;"},
-            "th": {"style": "border-left: 5px solid #ddd; background-color: #eaf5ff;"},
+            "th": {
+                "style": "border-left: 5px solid #ddd; background-color: #eaf5ff; text-align: center;"
+            },
         },
     )
     mapping_runs = tables.Column(
@@ -412,7 +410,7 @@ class SampleTableOne(tables.Table):
         orderable=False,
         empty_values=(),
         attrs={
-            "th": {"style": "background-color: #eaf5ff;"},
+            "th": {"style": "background-color: #eaf5ff; text-align: center;"},
         },
     )
 
@@ -421,7 +419,7 @@ class SampleTableOne(tables.Table):
         orderable=False,
         empty_values=(),
         attrs={
-            "th": {"style": "background-color: #eaf5ff;"},
+            "th": {"style": "background-color: #eaf5ff; text-align: center;"},
         },
     )
     queued_processes = tables.Column(
@@ -429,7 +427,7 @@ class SampleTableOne(tables.Table):
         orderable=False,
         empty_values=(),
         attrs={
-            "th": {"style": "background-color: #eaf5ff;"},
+            "th": {"style": "background-color: #eaf5ff; text-align: center;"},
         },
     )
 

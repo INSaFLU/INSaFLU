@@ -146,6 +146,8 @@
     text-align: center;
 }
 
-.table th {
+
+.report  {
     text-align: center;
+    border-bottom-width: 2px;
 }

@@ -18,25 +18,35 @@ from constants.software_names import SoftwareNames
 from fluwebvirus.settings import STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
-from pathogen_identification.models import (FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RawReference, ReferenceMap_Main,
-                                            ReferencePanel,
-                                            ReferenceSourceFileMap, RunMain,
-                                            TeleFluProject, TeleFluSample)
+from pathogen_identification.models import (
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReferenceMap_Main,
+    ReferencePanel,
+    ReferenceSourceFileMap,
+    RunMain,
+    TeleFluProject,
+    TeleFluSample,
+)
 from pathogen_identification.tables import ReferenceSourceTable
 from pathogen_identification.utilities.reference_utils import (
-    check_metaReference_exists_from_ids, check_reference_exists,
-    check_reference_submitted, create_combined_reference)
+    check_metaReference_exists_from_ids,
+    check_reference_exists,
+    check_reference_submitted,
+    create_combined_reference,
+)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
-from pathogen_identification.utilities.utilities_general import \
-    get_services_dir
-from pathogen_identification.utilities.utilities_pipeline import \
-    SoftwareTreeUtils
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.utilities_general import get_services_dir
+from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter, SampleReferenceManager, set_control_reports)
+    ReportSorter,
+    SampleReferenceManager,
+    set_control_reports,
+)
 from pathogen_identification.views import inject__added_references
 from utils.process_SGE import ProcessSGE
 from utils.utils import Utils
@@ -1426,6 +1436,51 @@ def add_teleflu_sample(request):
         return JsonResponse(data)
 
 
+from pathogen_identification.models import (
+    SoftwareTreeNode,
+    TelefluMappedSample,
+    TelefluMapping,
+)
+
+
+@login_required
+@require_POST
+def add_teleflu_mapping_workflow(request):
+    """
+    create mapping workflow for teleflu project
+    """
+
+    if request.is_ajax():
+
+        data = {"is_ok": False}
+        project_id = int(request.POST["project_id"])
+        leaf_id = int(request.POST["leaf_id"])
+
+        project = TeleFluProject.objects.get(pk=project_id)
+        leaf = SoftwareTreeNode.objects.get(pk=leaf_id)
+
+        try:
+            TelefluMapping.objects.get(
+                teleflu_project=project,
+                leaf=leaf,
+            )
+
+            data["exists"] = True
+
+        except TelefluMapping.DoesNotExist:
+            TelefluMapping.objects.create(
+                teleflu_project=project,
+                leaf=leaf,
+            )
+            data["is_ok"] = True
+
+        except Exception as e:
+            print(e)
+            data["is_ok"] = False
+
+        return JsonResponse(data)
+
+
 @login_required
 @require_POST
 def add_references_all_samples(request):
@@ -1434,7 +1489,6 @@ def add_references_all_samples(request):
     """
     if request.is_ajax():
         data = {"is_ok": False, "is_error": False, "is_empty": False}
-        temp_directory = Utils().get_temp_dir()
         project_id = int(request.POST["ref_id"])
         project = Projects.objects.get(pk=project_id)
         samples = PIProject_Sample.objects.filter(project=project)

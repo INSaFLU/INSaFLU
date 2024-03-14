@@ -50,8 +50,10 @@
     .outer-container {
         margin-bottom: 20px; /* Adjust as needed */
     }
+    
     .step-circle {
         display: center;
+        float: right;
         border-radius: 50%;
         width: 40px;
         height: 40px;
@@ -64,6 +66,7 @@
         font-weight: bold;
         align-items: center;
     }
+
     .software_off {
         background-color: #ccc;
     }
@@ -91,16 +94,15 @@
     }
     .step-container {
         display: flex;
-        justify-content: center;
+        justify-content: flex-start; /* Align items to the start of the container */
         align-items: center;
         padding: 5px;
         background-color: #f5f5f5; /* Light gray background */
         border-radius: 5px;
-
+        width: 60%;
     }
     
     .parameters-container {
-
         border-radius: 5px;
         background-color: #e0e0e0; /* Light gray background */
         transition: opacity 0.5s ease-in-out, width 0.5s ease-in-out;
@@ -117,16 +119,43 @@
         margin-right: 10px; /* Adjust as needed */
         margin-left: 10px; /* Adjust as needed */
     }
+    .modal-dialog {
+        max-width: 90%; /* Adjust as needed */
+    }
 
+    .modal-body {
+        margin-left: 10px;
+    }
+
+    .workflow-mapped {
+        float: right;
+        align-self: center;
+        background-color: #b3b3b3;
+        border: none;
+        color: #000;
+        text-align: center;
+        text-decoration: none;
+        margin: 0px 5px;
+        margin-right: 10px;
+        padding: 8px 8px;
+        border-radius: 5px;
+        font-size: 14px;
+        font-weight: bold;
+        font-family: Arial, sasns-serif;
+    }
 
 </style>
 
 
 <div class="outer-container">
-    <h3 class="title">Available Workflow List</h3>
-    <p class="description">This is a list of all available workflows.</p>
+    <button id="open-modal-button" type="button" class="btn btn-primary" data-toggle="modal" data-target="#id_workflow_modal">
+        Add Workflow
+    </button>
+    <br>
+    <br>
+    <h3 class="title">Workflow List</h3>
     <div id="workflow-list">
-        {% for workflow in workflows %}
+        {% for workflow in mapping_workflows %}
             <div class="workflow-container">
                 <div class="workflow-title">
                     <span class="workflow-name">Workflow {{ workflow.node }}</span>
@@ -135,13 +164,18 @@
 
                 {% for step in workflow.modules %}
                     <span class="step-circle {{ step.available }}" title="{{ step.module }}" data-parameters="{{ step.parameters }}" onclick="showParameters(this)">{{ step.short_name }}</span>
-                    <div class="parameters-container"></div>
+                    <div class="parameters-container" ></div>
                 {% endfor %}
+                </div>
+                
+                <div class="workflow-info clearfix">
+                    <span class="workflow-mapped" >{{ workflow.refs_mapped }} </span>
                 </div>
 
             </div>
         {% endfor %}
     </div>
+
 </div>
 <div class="table-container">
 
@@ -189,7 +223,43 @@
 </div>
 
 
+<!-- The sample submit Modal -->
+<div class="modal fade" id="id_workflow_modal">
+	<div class="modal-dialog">
+		<div class="modal-content">
 
+			<!-- Modal Header -->
+			<div class="modal-header alert alert-warning">
+                <h4 class="modal-title-submit">Available Workflow List</h4>
+			</div>
+            <div class="modal-body">
+
+            <div id="workflow-list">
+                {% for workflow in workflows %}
+                    <div class="workflow-container">
+                        <button class="add-to-project-button" onclick="addToProject('{{ workflow.pk }}', '{{project_index}}')" url="{% url 'add_workflow_to_project' %}" csrf = "{{ csrf_token }}" >Add to project</button>
+                        <div class="workflow-title">
+                            <span class="workflow-name">Workflow {{ workflow.node }}</span>
+                        </div>
+                        <div class="step-container">
+
+                        {% for step in workflow.modules %}
+                            <span class="step-circle {{ step.available }}" title="{{ step.module }}" data-parameters="{{ step.parameters }}" onclick="showParameters(this)">{{ step.short_name }}</span>
+                            <div class="parameters-container" ></div>
+                        {% endfor %}
+                        </div>
+
+                    </div>
+                {% endfor %}
+            </div>
+			<!-- Modal footer -->
+			<div class="modal-footer" id="id-modal-footer-remove">
+				<button id="id-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal"
+					aria-hidden="true">Cancel</button>
+			</div>
+		</div>
+	</div>
+</div>
 
 {% endblock content %}
 
@@ -198,6 +268,8 @@
 {% load static from staticfiles %}
 
 <script>
+
+
     function showParameters(element) {
         var parameters = element.getAttribute('data-parameters');
         var parametersContainer = element.nextElementSibling;
@@ -216,6 +288,34 @@
             parametersContainer.classList.add('visible');
         }
     }
+
+    var addToProject = function (workflow, project_id) {
+        var url = $('.add-to-project-button').attr('url');
+        var csrf= $('.add-to-project-button').attr('csrf');
+
+        var data = {
+            'leaf_id': workflow,
+            'project_id': project_id,
+            'csrfmiddlewaretoken': csrf,
+        };
+        console.log(url, csrf)
+        $.ajax({
+            type: "POST",
+            url: url,
+            data: data,
+            success: function (data) {
+                if (data["is_ok"] === true) {
+                    alert('Workflow added to project');
+                    location.reload();
+                } else if (data["exists"] === true) {
+                    alert('Workflow already exists in project');
+                } else {
+                    alert('Error adding workflow to project');
+                }
+            }
+        });
+    }
+
 </script>
 
 {% endblock js %}

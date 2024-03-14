@@ -49,7 +49,10 @@ from pathogen_identification.models import (
     RunMain,
     RunRemapMain,
     Sample,
+    TelefluMappedSample,
+    TelefluMapping,
     TeleFluProject,
+    TeleFluSample,
     TelevirRunQC,
 )
 from pathogen_identification.modules.object_classes import RunQC_report
@@ -837,10 +840,71 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
         return context
 
 
-from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
+from pathogen_identification.utilities.utilities_pipeline import (
+    SoftwareTreeUtils,
+    Utils_Manager,
+)
 
 
-class TelefluProject(LoginRequiredMixin, generic.CreateView):
+def excise_paths_leaf_last(string_with_paths):
+    """
+    if the string has paths, find / and return the last
+    """
+    split_space = string_with_paths.split(" ")
+    new_string = ""
+    if len(split_space) > 1:
+        for word in split_space:
+            new_word = word
+            if "/" in word:
+                new_word = word.split("/")[-1]
+            new_string += new_word + " "
+        return new_string
+    else:
+        return string_with_paths
+
+
+def teleflu_node_info(node, params_df, node_pk):
+    node_info = {
+        "pk": node_pk,
+        "node": node,
+        "modules": [],
+    }
+
+    for pipeline_step in CS.vect_pipeline_televir_mapping_only:
+        acronym = [x[0] for x in pipeline_step.split(" ")]
+        acronym = [
+            acronym[x].upper() if x == 0 else acronym[x].lower()
+            for x in range(len(acronym))
+        ]
+        acronym = "".join(acronym)
+        params = params_df[params_df.module == pipeline_step].to_dict("records")
+        if params:  # if there are parameters for this module
+            software = params[0].get("software")
+            software = software.split("_")[0]
+
+            params = params[0].get("value")
+            params = excise_paths_leaf_last(params)
+            params = f"{software} {params}"
+        else:
+            params = ""
+
+        node_info["modules"].append(
+            {
+                "module": pipeline_step,
+                "parameters": params,
+                "short_name": acronym,
+                "available": (
+                    "software_on"
+                    if pipeline_step in params_df.module.values
+                    else "software_off"
+                ),
+            }
+        )
+
+    return node_info
+
+
+class TelefluProjectView(LoginRequiredMixin, generic.CreateView):
     """
     Teleflu Project
     """
@@ -850,10 +914,14 @@ class TelefluProject(LoginRequiredMixin, generic.CreateView):
     fields = ["name"]
 
     def get_context_data(self, **kwargs):
-        context = super(TelefluProject, self).get_context_data(**kwargs)
+        context = super(TelefluProjectView, self).get_context_data(**kwargs)
 
         teleflu_project_pk = int(self.kwargs["pk"])
         ## TeleFlu Projects
+        this_project = TeleFluProject.objects.get(pk=teleflu_project_pk)
+        teleflu_samples = TeleFluSample.objects.filter(teleflu_project=this_project)
+        televir_samples = [x.televir_sample for x in teleflu_samples]
+
         teleflu_projects = TeleFluProject.objects.filter(
             pk=teleflu_project_pk, is_deleted=False
         ).order_by("-last_change_date")
@@ -871,54 +939,64 @@ class TelefluProject(LoginRequiredMixin, generic.CreateView):
                 self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
             ).configure(context["insaflu_table"])
 
-        #### get combinations to deploy
+        # Existring mappings
         software_utils = SoftwareTreeUtils(user, televir_project)
-        available_path_nodes = software_utils.get_available_nodes_summary(
+
+        utils_manager = Utils_Manager()
+
+        mappings = TelefluMapping.objects.filter(teleflu_project__pk=teleflu_project_pk)
+        mapping_workflows = []
+        existing_mapping_pks = []
+
+        print("REFS ACCIDS", this_project.raw_reference.accids)
+        for mapping in mappings:
+            if mapping.leaf is None:
+                continue
+
+            params_df = utils_manager.get_leaf_parameters(mapping.leaf)
+            node_info = node_info = teleflu_node_info(
+                mapping.leaf.index, params_df, mapping.leaf.pk
+            )
+
+            refs_mapped = ReferenceMap_Main.objects.filter(
+                reference__in=this_project.raw_reference.accids,
+                sample__in=televir_samples,
+            )
+
+            node_info["refs_mapped"] = refs_mapped.count()
+
+            existing_mapping_pks.append(mapping.leaf.pk)
+
+            mapping_workflows.append(node_info)
+
+        context["mapping_workflows"] = mapping_workflows
+        #### get combinations to deploy
+
+        local_tree = software_utils.generate_software_tree_safe(
+            software_utils.project,
+            software_utils.sample,
             metagenomics=False,
-            screening=False,
             mapping_only=True,
+            screening=False,
         )
 
+        all_paths = local_tree.get_all_graph_paths()
+        available_path_nodes = software_utils.get_available_pathnodes(local_tree)
+        #
         workflows = []
-        for node, params_df in available_path_nodes.items():
-            node_info = {
-                "node": node,
-                "modules": [],
-            }
-            for pipeline_step in CS.vect_pipeline_televir_mapping_only:
-                acronym = [x[0] for x in pipeline_step.split(" ")]
-                acronym = [
-                    acronym[x].upper() if x == 0 else acronym[x].lower()
-                    for x in range(len(acronym))
-                ]
-                acronym = "".join(acronym)
-                params = params_df[params_df.module == pipeline_step].to_dict("records")
-                print(params)
-                if params:  # if there are parameters for this module
-                    software = params[0].get("software")
-                    software = software.split("_")[0]
+        #
+        for node, params_df in all_paths.items():
+            if node not in available_path_nodes:
+                continue
+            if available_path_nodes[node].pk in existing_mapping_pks:
+                continue
 
-                    params = params[0].get("value")
-                    params = f"{software} {params}"
-                else:
-                    params = ""
-                node_info["modules"].append(
-                    {
-                        "module": pipeline_step,
-                        "parameters": params,
-                        "short_name": acronym,
-                        "available": (
-                            "software_on"
-                            if pipeline_step in params_df.module.values
-                            else "software_off"
-                        ),
-                    }
-                )
-
+            node_pk = available_path_nodes[node].pk
+            node_info = teleflu_node_info(node, params_df, node_pk)
             workflows.append(node_info)
 
         context["workflows"] = workflows
-
+        context["project_index"] = televir_project.pk
         ###
 
         return context

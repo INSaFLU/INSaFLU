@@ -1185,11 +1185,28 @@ class TeleFluProject(models.Model):
         return TeleFluSample.objects.filter(teleflu_project=self).count()
 
 
+
+
 class TeleFluSample(models.Model):
     televir_sample = models.ForeignKey(PIProject_Sample, on_delete=models.CASCADE)
     teleflu_project = models.ForeignKey(
         TeleFluProject, on_delete=models.CASCADE, blank=True, null=True
     )
+
+
+
+class TelefluMapping(models.Model):
+    leaf= models.ForeignKey(SoftwareTreeNode, on_delete=models.CASCADE, blank=True, null=True)
+    teleflu_project = models.ForeignKey(
+        TeleFluProject, on_delete=models.CASCADE, blank=True, null=True
+    )
+    
+
+
+class TelefluMappedSample(models.Model):
+
+    teleflu_sample = models.ForeignKey(TeleFluSample, on_delete=models.CASCADE, blank=True, null=True)
+    teleflu_mapping = models.ForeignKey(TelefluMapping, on_delete=models.CASCADE, blank=True, null=True)
 
 
 class ReferenceTaxid(models.Model):

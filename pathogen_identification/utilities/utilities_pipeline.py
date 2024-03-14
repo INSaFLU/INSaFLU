@@ -10,18 +10,21 @@ import pandas as pd
 from django.contrib.auth.models import User
 from django.db.models import Q, QuerySet
 
-from constants.constants import \
-    Televir_Directory_Constants as Televir_Directories
+from constants.constants import Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.host_library import Host
-from pathogen_identification.models import (ParameterSet, PIProject_Sample,
-                                            Projects, RawReference, RunMain,
-                                            SoftwareTree, SoftwareTreeNode)
-from pathogen_identification.utilities.utilities_televir_dbs import \
-    Utility_Repository
-from pathogen_identification.utilities.utilities_views import \
-    RawReferenceCompound
+from pathogen_identification.models import (
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
+from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
+from pathogen_identification.utilities.utilities_views import RawReferenceCompound
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -3033,7 +3036,7 @@ class SoftwareTreeUtils:
         mapping_only: bool = False,
         screening: bool = False,
     ) -> dict:
-        """ return path as df for each leaf"""
+        """return path as df for each leaf"""
 
         local_tree = self.generate_software_tree_safe(
             self.project,
@@ -3046,8 +3049,9 @@ class SoftwareTreeUtils:
         all_paths = local_tree.get_all_graph_paths()
         return all_paths
 
-
-    def get_available_pathnodes(self, local_tree: PipelineTree) -> dict:
+    def get_available_pathnodes(
+        self, local_tree: PipelineTree
+    ) -> Dict[int, SoftwareTreeNode]:
         """ """
 
         # pipeline_tree = utils.generate_software_tree(technology, tree_makeup)

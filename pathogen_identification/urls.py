@@ -22,13 +22,18 @@ urlpatterns = [
     ),
     url(
         r"teleflu_project/(?P<pk>\d+)$",
-        PIviews.TelefluProject.as_view(),
+        PIviews.TelefluProjectView.as_view(),
         name="teleflu_project",
     ),
     url(
         r"add-teleflu-sample$",
         PIajax_views.add_teleflu_sample,
         name="add_teleflu_sample",
+    ),
+    url(
+        r"add-teleflu-mapping$",
+        PIajax_views.add_teleflu_mapping_workflow,
+        name="add_workflow_to_project",
     ),
     url(
         r"project_add$",

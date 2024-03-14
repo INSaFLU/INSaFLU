@@ -149,7 +149,7 @@ $(document).on("click", "a", function (e) {
     var id_ = $(this).attr('id');
     // check if href is defined
 
-    if (typeof href !== 'undefined' && onlick !== 'undefined' && id_ !== 'undefined') {
+    if (typeof href !== 'undefined' && onclick !== 'undefined' && id_ !== 'undefined') {
         
         if (href !== '#id_set_default_modal' && id_ !== "deploypi_sample_btn" && id_ !== "sort_sample_btn" && onclick !== 'return false;' && id_ !== 'sidenavToggler' &&
             !href.startsWith('/media') && !href.startsWith('http')) {

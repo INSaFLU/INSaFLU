@@ -997,6 +997,10 @@ class TelefluProjectView(LoginRequiredMixin, generic.CreateView):
 
         context["workflows"] = workflows
         context["project_index"] = televir_project.pk
+        context["project_name"] = televir_project.name
+        context["focus_teleflu"] = (
+            f"Focus: {this_project.raw_reference.description_first}"
+        )
         ###
 
         return context

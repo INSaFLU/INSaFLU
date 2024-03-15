@@ -930,7 +930,6 @@ class TelefluProjectView(LoginRequiredMixin, generic.CreateView):
 
         context["insaflu_table"] = None
         context["insaflu_projects_exist"] = teleflu_projects.exists()
-        print(teleflu_projects.exists())
 
         if teleflu_projects.exists():
 
@@ -948,7 +947,6 @@ class TelefluProjectView(LoginRequiredMixin, generic.CreateView):
         mapping_workflows = []
         existing_mapping_pks = []
 
-        print("REFS ACCIDS", this_project.raw_reference.accids)
         for mapping in mappings:
             if mapping.leaf is None:
                 continue
@@ -958,12 +956,9 @@ class TelefluProjectView(LoginRequiredMixin, generic.CreateView):
                 mapping.leaf.index, params_df, mapping.leaf.pk
             )
 
-            refs_mapped = ReferenceMap_Main.objects.filter(
-                reference__in=this_project.raw_reference.accids,
-                sample__in=televir_samples,
-            )
+            samples_mapped = mapping.mapped_samples
 
-            node_info["refs_mapped"] = refs_mapped.count()
+            node_info["samples_mapped"] = samples_mapped.count()
 
             existing_mapping_pks.append(mapping.leaf.pk)
 
@@ -996,7 +991,10 @@ class TelefluProjectView(LoginRequiredMixin, generic.CreateView):
             workflows.append(node_info)
 
         context["workflows"] = workflows
+        context["project_nsamples"] = teleflu_samples.count()
+
         context["project_index"] = televir_project.pk
+        context["teleflu_project_pk"] = teleflu_project_pk
         context["project_name"] = televir_project.name
         context["focus_teleflu"] = (
             f"Focus: {this_project.raw_reference.description_first}"

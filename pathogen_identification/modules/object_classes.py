@@ -765,9 +765,9 @@ class Read_class:
             for line in open(fastq):
                 line = line.strip()
                 if line.startswith("@") and counter == 0:
-                    if line[-2:] == "/1":
+                    if line.strip()[-2:] == "/1":
                         line = line[:-2] + "_1"
-                    elif line[-2:] == "/2":
+                    elif line.strip()[-2:] == "/2":
                         line = line[:-2] + "_2"
 
                 f.write(line + "\n")

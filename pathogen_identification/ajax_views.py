@@ -18,35 +18,25 @@ from constants.software_names import SoftwareNames
 from fluwebvirus.settings import STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReferenceMap_Main,
-    ReferencePanel,
-    ReferenceSourceFileMap,
-    RunMain,
-    TeleFluProject,
-    TeleFluSample,
-)
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference, ReferenceMap_Main,
+                                            ReferencePanel,
+                                            ReferenceSourceFileMap, RunMain,
+                                            TeleFluProject, TeleFluSample)
 from pathogen_identification.tables import ReferenceSourceTable
 from pathogen_identification.utilities.reference_utils import (
-    check_metaReference_exists_from_ids,
-    check_reference_exists,
-    check_reference_submitted,
-    create_combined_reference,
-)
+    check_metaReference_exists_from_ids, check_reference_exists,
+    check_reference_submitted, create_combined_reference)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
-from pathogen_identification.utilities.utilities_general import get_services_dir
-from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
+from pathogen_identification.utilities.utilities_general import \
+    get_services_dir
+from pathogen_identification.utilities.utilities_pipeline import \
+    SoftwareTreeUtils
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter,
-    SampleReferenceManager,
-    set_control_reports,
-)
+    ReportSorter, SampleReferenceManager, set_control_reports)
 from pathogen_identification.views import inject__added_references
 from utils.process_SGE import ProcessSGE
 from utils.utils import Utils
@@ -366,15 +356,11 @@ def submit_sample_mapping_panels(request):
         sample = PIProject_Sample.objects.get(id=int(sample_id))
         reference_manager = SampleReferenceManager(sample)
 
-        print(sample)
-
         project = sample.project
         software_utils = SoftwareTreeUtils(user, project, sample=sample)
         runs_to_deploy, workflow_deployed_dict = (
             software_utils.check_runs_to_submit_mapping_only(sample)
         )
-
-        print(runs_to_deploy)
 
         if len(runs_to_deploy) == 0:
             return data
@@ -388,15 +374,12 @@ def submit_sample_mapping_panels(request):
         try:
             for sample, leaves_to_deploy in runs_to_deploy.items():
                 for leaf in leaves_to_deploy:
-                    print("leaf", leaf.pk)
                     for panel in sample_panels:
-                        print("PANEL", panel)
                         if panel.is_deleted:
                             continue
 
                         references = RawReference.objects.filter(panel=panel)
                         run_panel_copy = reference_manager.copy_panel(panel)
-                        print(len(references))
 
                         panel_mapping_run = (
                             reference_manager.mapping_request_panel_run_from_leaf(
@@ -432,7 +415,6 @@ def submit_sample_mapping_panels(request):
 @login_required
 @require_POST
 def submit_project_samples_mapping_televir(request):
-    print("HII")
     if request.is_ajax():
         data = {
             "is_ok": True,
@@ -1388,7 +1370,6 @@ def add_teleflu_sample(request):
     """add samples to teleflu_project"""
 
     if request.is_ajax():
-        print("HI")
         data = {
             "is_ok": False,
             "is_error": False,
@@ -1401,7 +1382,6 @@ def add_teleflu_sample(request):
 
         teleflu_project = TeleFluProject.objects.get(pk=ref_id)
 
-        print(sample_ids)
         if len(sample_ids) == 0:
             data["is_empty"] = True
             return JsonResponse(data)
@@ -1436,11 +1416,66 @@ def add_teleflu_sample(request):
         return JsonResponse(data)
 
 
-from pathogen_identification.models import (
-    SoftwareTreeNode,
-    TelefluMappedSample,
-    TelefluMapping,
-)
+from pathogen_identification.models import SoftwareTreeNode, TelefluMapping
+from pathogen_identification.utilities.utilities_pipeline import \
+    SoftwareTreeUtils
+
+
+@login_required
+@require_POST
+def map_teleflu_workflow_samples(request):
+
+    if request.is_ajax():
+
+        data = {"is_ok": False, "is_error": False, "is_empty": False}
+        project_id = int(request.POST["project_id"])
+        workflow_id = int(request.POST["workflow_id"])
+
+        teleflu_project = TeleFluProject.objects.get(pk=project_id)
+        teleflu_samples = TeleFluSample.objects.filter(teleflu_project=teleflu_project)
+        workflow_leaf = SoftwareTreeNode.objects.get(pk=workflow_id)
+        user = request.user
+
+        mapping = TelefluMapping.objects.get(
+            leaf=workflow_leaf, teleflu_project=teleflu_project
+        )
+
+        samples_to_map = teleflu_samples.exclude(
+            televir_sample__in=mapping.mapped_samples
+        )
+
+        references_to_map = teleflu_project.raw_reference.references
+        process_SGE = ProcessSGE()
+
+        if len(samples_to_map) == 0:
+            data["is_empty"] = True
+            return JsonResponse(data)
+
+        deployed = 0
+
+        for sample in samples_to_map:
+            reference_manager = SampleReferenceManager(sample.televir_sample)
+            mapping_run = reference_manager.mapping_request_run_from_leaf(workflow_leaf)
+            for reference in references_to_map:
+                reference.pk = None
+                reference.run = mapping_run
+                reference.save()
+
+            taskID = process_SGE.set_submit_televir_sample_metagenomics(
+                user=user,
+                sample_pk=sample.pk,
+                leaf_pk=workflow_leaf.pk,
+                mapping_request=True,
+                map_run_pk=mapping_run.pk,
+            )
+            deployed += 1
+
+        if deployed == 0:
+            data["is_error"] = True
+            return JsonResponse(data)
+
+        data["is_ok"] = True
+        return JsonResponse(data)
 
 
 @login_required
@@ -1702,7 +1737,6 @@ def add_references_to_panel(request):
 def get_panels(request):
     if request.is_ajax():
         user = request.user
-        print("get panels user", user, user.pk)
         panels = ReferencePanel.objects.filter(
             owner=user,
             is_deleted=False,
@@ -1723,7 +1757,6 @@ def get_panels(request):
             "is_ok": True,
             "panels": panel_data,
         }
-        print(data)
 
         return JsonResponse(data)
 
@@ -1794,7 +1827,6 @@ def add_panels_to_sample(request):
     """
     add panels to sample"""
     if request.is_ajax():
-        print("add_panels_to_sample")
         sample_id = int(request.POST.get("sample_id"))
         panel_ids = request.POST.getlist("panel_ids[]")
 
@@ -1829,7 +1861,6 @@ def get_sample_panels(request):
     """
     get sample panels"""
     if request.is_ajax():
-        print("get_sample_panels")
         sample_id = request.GET.get("sample_id")
 
         sample = PIProject_Sample.objects.get(pk=sample_id)

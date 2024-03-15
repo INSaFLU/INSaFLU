@@ -994,19 +994,13 @@ class RunEngine_class(Run_Deployment_Methods):
             print("Deploying QC")
             self.deploy_QC()
 
-            self.sample.r1.is_clean()
-            self.sample.r2.is_clean()
-
             self.sample.qc_soft = self.preprocess_drone.preprocess_method.name
             self.sample.input_fastqc_report = self.preprocess_drone.input_qc_report
             self.sample.processed_fastqc_report = (
                 self.preprocess_drone.processed_qc_report
             )
 
-            self.sample.reads_after_processing = self.sample.current_total_read_number()
-            self.sample.get_qc_data()
-            self.sample.r1.clean_read_names()
-            self.sample.r2.clean_read_names()
+            self.process_QC()
 
         else:
             self.deploy_QC(fake_run=True)
@@ -1022,13 +1016,7 @@ class RunEngine_class(Run_Deployment_Methods):
                 self.preprocess_drone.processed_qc_report
             )
 
-            self.sample.r1.is_clean()
-            self.sample.r2.is_clean()
-            self.sample.reads_after_processing = self.sample.current_total_read_number()
-            self.sample.get_fake_qc_data()
-
-            self.sample.r1.clean_read_names()
-            self.sample.r2.clean_read_names()
+            self.process_QC()
 
         self.Update_exec_time()
         self.generate_output_data_classes()

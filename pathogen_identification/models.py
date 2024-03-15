@@ -14,8 +14,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from managing_files.models import Sample
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.data_classes import IntermediateFiles
 
 # Create your models here.
@@ -1044,13 +1043,13 @@ class MetaReference(models.Model):
         return self.description
 
     @property
-    def references_mapped(self) -> List[RawReference]:
+    def references(self) -> List[RawReference]:
         ref_maps = RawReferenceMap.objects.filter(reference=self)
         return [ref_map.raw_reference for ref_map in ref_maps]
 
     @property
     def taxids(self):
-        return [ref.taxid for ref in self.references_mapped]
+        return [ref.taxid for ref in self.references]
 
     @property
     def taxids_str(self):
@@ -1058,7 +1057,7 @@ class MetaReference(models.Model):
 
     @property
     def accids(self):
-        return [ref.accid for ref in self.references_mapped]
+        return [ref.accid for ref in self.references]
 
     @property
     def accids_str(self):
@@ -1066,7 +1065,7 @@ class MetaReference(models.Model):
 
     @property
     def descriptions(self):
-        return [ref.description for ref in self.references_mapped]
+        return [ref.description for ref in self.references]
 
     @property
     def description_first(self):
@@ -1074,7 +1073,7 @@ class MetaReference(models.Model):
 
     @property
     def metaid(self):
-        mapped_refs = self.references_mapped
+        mapped_refs = self.references
         mapped_refs_ids = [ref.id for ref in mapped_refs]
         mapped_refids_sorted = sorted(mapped_refs_ids)
         return "_".join([str(refid) for refid in mapped_refids_sorted])
@@ -1131,7 +1130,7 @@ class TeleFluProject(models.Model):
         if self.raw_reference is None:
             return None
 
-        return self.raw_reference.references_mapped
+        return self.raw_reference.references
 
     @property
     def owner(self):
@@ -1178,13 +1177,11 @@ class TeleFluProject(models.Model):
     @property
     def project_igv_report(self):
         return os.path.join(self.project_static_directory, "igv_report.html")
-    
+
     @property
     def nsamples(self):
 
         return TeleFluSample.objects.filter(teleflu_project=self).count()
-
-
 
 
 class TeleFluSample(models.Model):
@@ -1194,19 +1191,42 @@ class TeleFluSample(models.Model):
     )
 
 
-
 class TelefluMapping(models.Model):
-    leaf= models.ForeignKey(SoftwareTreeNode, on_delete=models.CASCADE, blank=True, null=True)
+    leaf = models.ForeignKey(
+        SoftwareTreeNode, on_delete=models.CASCADE, blank=True, null=True
+    )
     teleflu_project = models.ForeignKey(
         TeleFluProject, on_delete=models.CASCADE, blank=True, null=True
     )
-    
+
+    @property
+    def mapped_samples(self):
+
+        accids = self.teleflu_project.raw_reference.accids
+        samples = TeleFluSample.objects.filter(
+            teleflu_project=self.teleflu_project
+        ).values_list("televir_sample", flat=True)
+
+        refs = RawReference.objects.filter(
+            run__parameter_set__sample__in=samples,
+            accid__in=accids,
+            run__parameter_set__leaf=self.leaf,
+            run__parameter_set__status=ParameterSet.STATUS_FINISHED,
+        )
+
+        sample_pks = list(set([ref.run.parameter_set.sample.pk for ref in refs]))
+
+        return PIProject_Sample.objects.filter(pk__in=sample_pks)
 
 
 class TelefluMappedSample(models.Model):
 
-    teleflu_sample = models.ForeignKey(TeleFluSample, on_delete=models.CASCADE, blank=True, null=True)
-    teleflu_mapping = models.ForeignKey(TelefluMapping, on_delete=models.CASCADE, blank=True, null=True)
+    teleflu_sample = models.ForeignKey(
+        TeleFluSample, on_delete=models.CASCADE, blank=True, null=True
+    )
+    teleflu_mapping = models.ForeignKey(
+        TelefluMapping, on_delete=models.CASCADE, blank=True, null=True
+    )
 
 
 class ReferenceTaxid(models.Model):

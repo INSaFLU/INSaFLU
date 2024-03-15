@@ -67,6 +67,24 @@
         align-items: center;
     }
 
+    .step-circle-display {
+        position: relative;
+        display: center;
+        float: right;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        line-height: 40px; /* Equal to the height */
+        text-align: center;
+        background-color: #ccc;
+        margin-right: 10px;
+        margin-left: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        align-items: center;
+    }
+
+
     .software_off {
         background-color: #ccc;
     }
@@ -97,10 +115,18 @@
         justify-content: flex-start; /* Align items to the start of the container */
         align-items: center;
         padding: 5px;
-        background-color: #f5f5f5; /* Light gray background */
-        border-radius: 5px;
-        width: 60%;
+        border-right: 2px solid #e0e0e0; /* Even lighter gray */
+        padding-right: 10px;
+        margin-right: 20px;
     }
+
+    .workflow-info {
+        border-right: 2px solid #e0e0e0; /* Even lighter gray */
+        padding: 5px;
+        padding-right: 25px;
+        margin-right: 20px;
+    }
+    
     
     .parameters-container {
         border-radius: 5px;
@@ -119,16 +145,41 @@
         margin-right: 10px; /* Adjust as needed */
         margin-left: 10px; /* Adjust as needed */
     }
-    .modal-dialog {
+
+    .parameters-container-hover {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        border-radius: 5px;
+        border: 2px solid #ccc;
+        background-color: #e0e0e0; /* Light gray background */
+        transition: opacity 0.5s ease-in-out, width 0.5s ease-in-out;
+        overflow: hidden;
+        white-space: nowrap; /* Prevent the text from wrapping */
+        padding: 5px;
+        padding-left: 10px;
+        padding-right: 10px;
+        margin-right: 10px; /* Adjust as needed */
+        margin-left: 10px; /* Adjust as needed */
+        top: 50%;
+        left: 50%;
+        transform: translate(0%, -0%);
+        /* other styles... */
+        z-index: 1; /* Ensure it appears above the step-circle-display */
+
+    }
+
+
+    .workflow-dialog {
         max-width: 90%; /* Adjust as needed */
     }
 
-    .modal-body {
+    .workflow-modal-body {
         margin-left: 10px;
     }
 
     .workflow-mapped {
-        float: right;
         align-self: center;
         background-color: #b3b3b3;
         border: none;
@@ -156,27 +207,32 @@
     <h3 class="title">Workflow List</h3>
     <div id="workflow-list">
         {% for workflow in mapping_workflows %}
-            <div class="workflow-container">
+            <div class="workflow-container workflow-main" project_id= "{{ teleflu_project_pk }}" csrf= "{{ csrf_token }}">
                 <div class="workflow-title">
                     <span class="workflow-name">Workflow {{ workflow.node }}</span>
                 </div>
                 <div class="step-container">
 
                 {% for step in workflow.modules %}
-                    <span class="step-circle {{ step.available }}" title="{{ step.module }}" data-parameters="{{ step.parameters }}" onclick="showParameters(this)">{{ step.short_name }}</span>
-                    <div class="parameters-container" ></div>
+                    <div class="step-circle-display {{ step.available }}" title="{{ step.module }}" data-parameters="{{ step.parameters }}" onclick="showParametersHover(this)">
+                        {{ step.short_name }}
+                        <div class="parameters-container-hover" ></div>
+                    </div>
+                    
                 {% endfor %}
                 </div>
                 
                 <div class="workflow-info clearfix">
-                    <span class="workflow-mapped" >{{ workflow.refs_mapped }} </span>
+                    <span class="workflow-mapped" > {{ workflow.samples_mapped }} / {{ project_nsamples }}</span>
+
+                    <button  workflow="{{ workflow.node }}" workflow-id="{{ workflow.pk }}" type="button" class="mapSamplesButton btn btn-primary" data-toggle="modal" data-target="#id_map_workflow_modal" > Map Samples </button>
                 </div>
 
             </div>
         {% endfor %}
     </div>
-
 </div>
+
 <div class="table-container">
 
     {% if insaflu_projects_exist %}
@@ -225,32 +281,31 @@
 
 <!-- The sample submit Modal -->
 <div class="modal fade" id="id_workflow_modal">
-	<div class="modal-dialog">
+	<div class="modal-dialog workflow-dialog">
 		<div class="modal-content">
-
 			<!-- Modal Header -->
 			<div class="modal-header alert alert-warning">
                 <h4 class="modal-title-submit">Available Workflow List</h4>
 			</div>
-            <div class="modal-body">
 
-            <div id="workflow-list">
-                {% for workflow in workflows %}
-                    <div class="workflow-container">
-                        <button class="add-to-project-button" onclick="addToProject('{{ workflow.pk }}', '{{project_index}}')" url="{% url 'add_workflow_to_project' %}" csrf = "{{ csrf_token }}" >Add to project</button>
-                        <div class="workflow-title">
-                            <span class="workflow-name">Workflow {{ workflow.node }}</span>
+            <div class="modal-body workflow-modal-body">
+                <div id="workflow-list">
+                    {% for workflow in workflows %}
+                        <div class="workflow-container">
+                            <button class="add-to-project-button" onclick="addToProject('{{ workflow.pk }}', '{{project_index}}')" url="{% url 'add_workflow_to_project' %}" csrf = "{{ csrf_token }}" >Add to project</button>
+                            <div class="workflow-title">
+                                <span class="workflow-name">Workflow {{ workflow.node }}</span>
+                            </div>
+                            <div class="step-container">
+
+                            {% for step in workflow.modules %}
+                                <span class="step-circle {{ step.available }}" title="{{ step.module }}" data-parameters="{{ step.parameters }}" onclick="showParameters(this)">{{ step.short_name }}</span>
+                                <div class="parameters-container" ></div>
+                            {% endfor %}
+                            </div>
                         </div>
-                        <div class="step-container">
-
-                        {% for step in workflow.modules %}
-                            <span class="step-circle {{ step.available }}" title="{{ step.module }}" data-parameters="{{ step.parameters }}" onclick="showParameters(this)">{{ step.short_name }}</span>
-                            <div class="parameters-container" ></div>
-                        {% endfor %}
-                        </div>
-
-                    </div>
-                {% endfor %}
+                    {% endfor %}
+                </div>
             </div>
 			<!-- Modal footer -->
 			<div class="modal-footer" id="id-modal-footer-remove">
@@ -261,6 +316,31 @@
 	</div>
 </div>
 
+<!-- the map workflows modal !-->
+<div class="modal fade" id="id_map_workflow_modal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <!-- Modal Header -->
+            <div class="modal-header alert alert-warning">
+                <h4 class="modal-title-submit">Map Workflows</h4>
+            </div>
+            <!-- Modal body -->
+            <div class="modal-body mx-auto mw-100">
+                <div id="id-modal-map-workflow-sample" remove-single-value-url="{% url 'remove_consensus_in_dataset' %}">
+                    <label id="id-label-map-workflow" class="col-form-label">Folder Name</label>
+                </div>
+            </div>
+            <!-- Modal footer -->
+            <div class="modal-footer" id="id-modal-footer-remove">
+                <button id="id-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal"
+                    aria-hidden="true">Cancel</button>
+                <button id="id-map-button" type="button" class="btn btn-primary" data-dismiss="modal" utl="{% url 'map_workflow_to_samples' %}"
+                    aria-hidden="true">Map</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock content %}
 
 {% block js %}
@@ -269,6 +349,59 @@
 
 <script>
 
+    $(document).ready(function() {
+            
+        $(".mapSamplesButton").click(function () {
+            var workflow= $(this).attr('workflow');
+            var workflow_id= $(this).attr('workflow-id');
+            $('#id-label-map-workflow').text('Map Samples to Workflow ' + workflow + '?');
+            $('#id-map-button').attr('workflow', workflow_id);
+
+            
+        });
+
+        $("#id-map-button").click(function () {
+
+            var workflow= $(this).attr('workflow');
+            var url = $(this).attr('utl');
+            var project_id = $('.workflow-main').attr('project_id');
+            var csrf = $('.workflow-main').attr('csrf');
+            var data = {
+                'workflow_id': workflow,
+                'project_id': project_id,
+                'csrfmiddlewaretoken': csrf,
+            };
+            $.ajax({
+                type: "POST",
+                url: url,
+                data: data,
+                success: function (data) {
+                    if (data["is_ok"] === true) {
+                        alert('Workflow mapped to project');
+                        location.reload();
+                    } else if (data["is_empty"] === true) {
+                        alert('All Samples Mapped.');
+                    } else {
+                        alert('Error mapping workflow to project');
+                    }
+                }
+            });
+        });
+    });
+
+    function showParametersHover(element) {
+        var parameters = element.getAttribute('data-parameters');
+        var parametersContainer = element.querySelector('.parameters-container-hover');
+    
+        parametersContainer.innerHTML = parameters;
+    
+        // Toggle visibility
+        if (parametersContainer.style.display === 'none' || parametersContainer.style.display === '') {
+            parametersContainer.style.display = 'block';
+        } else {
+            parametersContainer.style.display = 'none';
+        }
+    }
 
     function showParameters(element) {
         var parameters = element.getAttribute('data-parameters');

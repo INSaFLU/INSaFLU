@@ -1491,6 +1491,8 @@ def add_teleflu_mapping_workflow(request):
         project_id = int(request.POST["project_id"])
         leaf_id = int(request.POST["leaf_id"])
 
+        print(project_id)
+
         project = TeleFluProject.objects.get(pk=project_id)
         leaf = SoftwareTreeNode.objects.get(pk=leaf_id)
 

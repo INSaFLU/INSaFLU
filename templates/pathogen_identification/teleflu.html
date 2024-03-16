@@ -292,7 +292,7 @@
                 <div id="workflow-list">
                     {% for workflow in workflows %}
                         <div class="workflow-container">
-                            <button class="add-to-project-button" onclick="addToProject('{{ workflow.pk }}', '{{project_index}}')" url="{% url 'add_workflow_to_project' %}" csrf = "{{ csrf_token }}" >Add to project</button>
+                            <button class="add-to-project-button" onclick="addToProject('{{ workflow.pk }}', '{{teleflu_project_pk}}')" url="{% url 'add_workflow_to_project' %}" csrf = "{{ csrf_token }}" >Add to project</button>
                             <div class="workflow-title">
                                 <span class="workflow-name">Workflow {{ workflow.node }}</span>
                             </div>

@@ -812,7 +812,7 @@ class Run_Deployment_Methods(RunDetail_main):
             if self.preprocess_method.check_processed_exist():
                 r1_proc, r2_proc = self.preprocess_method.retrieve_qc_reads()
                 self.sample.r1.clean_exo = r1_proc
-                if self.type == "PE":
+                if self.type == ConstantsSettings.PAIR_END:
                     self.sample.r2.clean_exo = r2_proc
 
             self.preprocess_drone.run()

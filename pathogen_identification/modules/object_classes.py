@@ -13,12 +13,8 @@ import pandas as pd
 from numpy import ERR_CALL
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import (
-    ParameterSet,
-    RunDetail,
-    RunMain,
-    RunReadsRegister,
-)
+from pathogen_identification.models import (ParameterSet, RunDetail, RunMain,
+                                            RunReadsRegister)
 from pathogen_identification.utilities.utilities_general import fastqc_parse
 
 matplotlib.use("Agg")
@@ -766,9 +762,9 @@ class Read_class:
                 line = line.strip()
                 if line.startswith("@") and counter == 0:
                     if line.strip()[-2:] == "/1":
-                        line = line[:-2] + "_1"
+                        line = line.strip()[:-2] + ""
                     elif line.strip()[-2:] == "/2":
-                        line = line[:-2] + "_2"
+                        line = line.strip()[:-2] + ""
 
                 f.write(line + "\n")
 

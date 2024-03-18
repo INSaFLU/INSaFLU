@@ -11,6 +11,7 @@ from Bio.SeqIO.FastaIO import SimpleFastaParser
 from scipy.stats import kstest
 
 from constants.software_names import SoftwareNames
+from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.modules.object_classes import (
     Bedgraph,
@@ -997,7 +998,7 @@ class Remapping:
             self.process_bam()
             self.generate_vcf()
             self.get_genomecoverage()
-            self.get_mapped_reads_no_header()
+            self.get_mapped_reads_unique_no_header()
             self.filter_sam_file_mapped()
             self.subset_mapped_reads()
             self.mapped_reads_to_fasta()
@@ -1454,7 +1455,7 @@ class Remapping:
         cmd = f"bedtools genomecov -ibam {self.read_map_sorted_bam} -bga > {self.genome_coverage}"
         self.cmd.run(cmd)
 
-    def get_mapped_reads_no_header(self):
+    def get_mapped_reads_unique_no_header(self):
         """
         Get number of mapped reads without header, use samtools."""
 
@@ -1465,6 +1466,10 @@ class Remapping:
         try:
             with open(self.mapped_reads_file, "r") as f:
                 self.number_of_reads_mapped = len(f.readlines())
+
+                if self.type == ConstantsSettings.PAIR_END:
+                    self.number_of_reads_mapped = self.number_of_reads_mapped * 2
+
         except FileNotFoundError:
             self.number_of_reads_mapped = 0
 

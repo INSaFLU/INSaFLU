@@ -295,6 +295,7 @@ from fluwebvirus.settings import STATIC_ROOT
 class FinalReportWrapper:
     accid: str
     sample: PIProject_Sample
+    coverage: float
     mapped_proportion: float
 
     media_fields = [
@@ -420,13 +421,20 @@ class FinalReportGroup:
         self.heatmap_path = heatmap_path
         self.heatmap_exists = heatmap_exists
         self.max_private_reads = 0
+        self.max_coverage = 0
         self.private_counts_exist = private_counts_exist
+        self.update_max_coverage()
 
     def reports_have_private_reads(self) -> bool:
         for report in self.group_list:
             if report.private_reads > 0:
                 return True
         return False
+
+    def update_max_coverage(self):
+        for report in self.group_list:
+            if report.coverage > self.max_coverage:
+                self.max_coverage = report.coverage
 
     def update_max_private_reads(self):
         for report in self.group_list:
@@ -1153,7 +1161,13 @@ class ReportSorter:
         def get_private_proportion(group: FinalReportGroup):
             return group.private_proportion
 
-        sorted_groups = sorted(sorted_reports, key=get_private_proportion, reverse=True)
+        def get_group_max_coverage(group: FinalReportGroup):
+            return group.max_coverage
+
+        sorted_groups: List[FinalReportGroup] = sorted(
+            sorted_reports, key=get_group_max_coverage, reverse=True
+        )
+
         sorted_groups = self.get_reports_private_reads(sorted_groups)
         sorted_groups = self.sort_group_list_reports(sorted_groups)
 

@@ -76,8 +76,9 @@ class SampleCurator:
         return collection
 
     def set_collection(self, name_pattern: str):
-        print("Setting collection")
-        print("pattern", name_pattern)
+
+        print("##### Setting collection")
+        print("Pattern", name_pattern)
         self.collection = self.get_samples_by_project(name_pattern)
         print(f"Collection has {len(self.collection.samples)} samples")
         print(
@@ -233,16 +234,21 @@ def df_report_analysis(analysis_df_filename, project_id: int):
 
     for ix, row in bact_results.iterrows():
         sample_name = str(row["Sample_ID"])
+        hitname = str(row["Reporting Name"])
         curator = SampleCurator(project_id, sample_name)
         curator.set_collection(sample_name)
         hit_factory = HitFactory(project_id, curator.collection)
-        expected_hit = hit_factory.hit_by_name(sample_name)
 
-        row["name_similarity"] = expected_hit.name_similarity
-        row["reported_samples"] = expected_hit.reported_samples_classes
-        row["intermediate_samples"] = expected_hit.intermediate_samples_classes
+        expected_hit = hit_factory.hit_by_name(hitname)
 
-        new_table.append(row)
+        new_row = {
+            "sample": sample_name,
+            "hitname": hitname,
+            "name_similarity": expected_hit.name_similarity,
+            "reported_samples": expected_hit.reported_samples_classes,
+            "intermediate_samples": expected_hit.intermediate_samples_classes,
+        }
+        new_table.append(new_row)
 
     new_df = pd.DataFrame(new_table)
 
@@ -281,4 +287,4 @@ class Command(BaseCommand):
 
         df = df_report_analysis(report, project.pk)
 
-        df.to_csv(options["output"], index=False)
+        df.to_csv(options["output"], index=False, sep="\t")

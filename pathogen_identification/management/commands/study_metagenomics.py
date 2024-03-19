@@ -88,14 +88,17 @@ class SampleCurator:
 
 
 def match_name_score(name: str, reference) -> float:
-    name_list = name.split(" ")
+    name_list = name.lower().split(" ")
+    if reference.description is None:
+        return 0
+
+    description_lower = reference.description.lower()
 
     score = 0
     for ix, string in enumerate(name_list):
         string_until_now = " ".join(name_list[: ix + 1])
-        if reference.description is None:
-            continue
-        if string_until_now in reference.description:
+
+        if string_until_now in description_lower:
             score += 1
 
     score = score / len(name_list)
@@ -166,11 +169,9 @@ class HitFactory:
 
     def hit_by_name(self, name: str) -> Hit:
 
-        reference_hits = (
-            RawReference.objects.filter(run__sample__in=self.collection.samples_televir)
-            .distinct("run__id")
-            .exclude(run=None)
-        )
+        reference_hits = RawReference.objects.filter(
+            run__sample__in=self.collection.samples_televir
+        ).exclude(run=None)
         reference_hits_list = []
 
         if reference_hits.exists():
@@ -186,11 +187,9 @@ class HitFactory:
                     x.pk for x in reference_hits if match_name_score(name, x) > 0
                 ]
 
-        report_hits = (
-            FinalReport.objects.filter(run__sample__in=self.collection.samples_televir)
-            .distinct("run__id")
-            .exclude(run=None)
-        )
+        report_hits = FinalReport.objects.filter(
+            run__sample__in=self.collection.samples_televir
+        ).exclude(run=None)
 
         report_hits_list = []
         if report_hits.exists():
@@ -245,10 +244,12 @@ def df_report_analysis(analysis_df_filename, project_id: int):
             "sample": sample_name,
             "hitname": hitname,
             "name_similarity": expected_hit.name_similarity,
-            "reported_samples": expected_hit.reported_samples_classes,
-            "intermediate_samples": expected_hit.intermediate_samples_classes,
+            "reported_samples": " ".join(expected_hit.reported_samples_classes),
+            "intermediate_samples": "/".join(expected_hit.intermediate_samples_classes),
         }
         new_table.append(new_row)
+
+        new_table.append(row)
 
     new_df = pd.DataFrame(new_table)
 
@@ -287,4 +288,4 @@ class Command(BaseCommand):
 
         df = df_report_analysis(report, project.pk)
 
-        df.to_csv(options["output"], index=False, sep="\t")
+        df.to_csv(options["output"], index=False)

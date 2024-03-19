@@ -213,17 +213,14 @@ def df_report_analysis(analysis_df_filename, project_id: int):
     )
 
     bact_results = df[df["Class"] == "bacterial"]
-    print(df.head())
 
     new_table = []
 
     for ix, row in bact_results.iterrows():
-        print(f"############## {ix} ##############")
         sample_name = str(row["Sample_ID"])
         curator = SampleCurator(project_id, sample_name)
         curator.set_collection(sample_name)
         hit_factory = HitFactory(project_id, curator.collection)
-        print(sample_name)
         expected_hit = hit_factory.hit_by_name(sample_name)
 
         row["name_similarity"] = expected_hit.name_similarity
@@ -295,4 +292,4 @@ class Command(BaseCommand):
 
         df = df_report_analysis(report, project.pk)
 
-        df.to_excel(options["output"], index=False)
+        df.to_csv(options["output"], index=False)

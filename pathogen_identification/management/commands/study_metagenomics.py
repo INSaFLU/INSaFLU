@@ -73,7 +73,7 @@ class SampleCurator:
         if pattern:
             project_samples = project_samples.filter(
                 Q(sample__name__icontains=pattern)
-                | Q(sample__description__icontains=pattern.replace("-", "_"))
+                | Q(sample__name__icontains=pattern.replace("-", "_"))
             )
 
         for sample in project_samples:

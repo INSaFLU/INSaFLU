@@ -54,6 +54,9 @@ class SamplesBenchCollection:
         return [sample.sample for sample in self.samples]
 
 
+from django.db.models import Q
+
+
 class SampleCurator:
 
     collection: SamplesBenchCollection
@@ -68,7 +71,10 @@ class SampleCurator:
         collection = SamplesBenchCollection("project")
 
         if pattern:
-            project_samples = project_samples.filter(sample__name__icontains=pattern)
+            project_samples = project_samples.filter(
+                Q(sample__name__icontains=pattern)
+                | Q(sample__description__icontains=pattern.replace("-", "_"))
+            )
 
         for sample in project_samples:
             collection.sample_register(sample)

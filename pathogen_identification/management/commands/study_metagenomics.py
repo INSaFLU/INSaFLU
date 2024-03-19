@@ -219,7 +219,7 @@ def df_report_analysis(analysis_df_filename, project_id: int):
 
     for ix, row in bact_results.iterrows():
         print(f"############## {ix} ##############")
-        sample_name = row["Sample_ID"]
+        sample_name = str(row["Sample_ID"])
         curator = SampleCurator(project_id, sample_name)
         curator.set_collection(sample_name)
         hit_factory = HitFactory(project_id, curator.collection)

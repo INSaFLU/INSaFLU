@@ -1,7 +1,15 @@
 from abc import ABC, abstractmethod
 from typing import Any, List, Optional
 
-from pathogen_identification.models import FinalReport, PIProject_Sample, RawReference
+import pandas as pd
+from django.core.management.base import BaseCommand
+
+from pathogen_identification.models import (
+    FinalReport,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+)
 
 
 class SampleWrapper:
@@ -68,7 +76,14 @@ class SampleCurator:
         return collection
 
     def set_collection(self, name_pattern: str):
+        print("Setting collection")
+        print("pattern", name_pattern)
         self.collection = self.get_samples_by_project(name_pattern)
+        print(f"Collection has {len(self.collection.samples)} samples")
+        print(
+            "sample classes",
+            [sample.sample_class for sample in self.collection.samples],
+        )
 
 
 def match_name_score(name: str, reference) -> float:
@@ -234,28 +249,6 @@ def df_report_analysis(analysis_df_filename, project_id: int):
     return new_df
 
 
-############################################################################################################
-import os
-from typing import List
-
-import pandas as pd
-from django.contrib.auth.models import User
-from django.core.management.base import BaseCommand
-
-from managing_files.models import ProcessControler
-from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import FinalReport, PIProject_Sample, Projects
-from pathogen_identification.templatetags.report_colors import flag_false_positive
-from pathogen_identification.utilities.explify_merge import (
-    get_illumina_found,
-    merge_panels,
-    process_televir,
-    read_panel,
-)
-from pathogen_identification.utilities.utilities_general import get_project_dir
-from utils.process_SGE import ProcessSGE
-
-
 class Command(BaseCommand):
     help = "deploy run"
 
@@ -279,10 +272,6 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        ###
-        # SETUP
-        process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
 
         project = Projects.objects.filter(
             is_deleted=False, pk=options["project_id"]

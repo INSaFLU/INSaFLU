@@ -244,7 +244,7 @@ def df_report_analysis(analysis_df_filename, project_id: int):
             "sample": sample_name,
             "hitname": hitname,
             "name_similarity": expected_hit.name_similarity,
-            "reported_samples": " ".join(expected_hit.reported_samples_classes),
+            "reported_samples": "/".join(expected_hit.reported_samples_classes),
             "intermediate_samples": "/".join(expected_hit.intermediate_samples_classes),
         }
         new_table.append(new_row)

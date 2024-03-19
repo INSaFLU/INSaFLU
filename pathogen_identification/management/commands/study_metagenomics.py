@@ -286,4 +286,4 @@ class Command(BaseCommand):
 
         df = df_report_analysis(report, project.pk)
 
-        df.to_csv(options["output"], index=False)
+        df.to_csv(options["output"], index=False, sep="\t")

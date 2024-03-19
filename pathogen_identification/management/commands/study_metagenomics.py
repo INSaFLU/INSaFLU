@@ -63,6 +63,9 @@ class SampleCurator:
 
         return collection
 
+    def set_collection(self, name_pattern: str):
+        self.collection = self.get_samples_by_project(name_pattern)
+
 
 def match_name_score(name: str, reference) -> float:
     name_list = name.split(" ")
@@ -213,6 +216,7 @@ def df_report_analysis(analysis_df_filename, project_id: int):
         print(f"############## {ix} ##############")
         sample_name = row["Sample_ID"]
         curator = SampleCurator(project_id, sample_name)
+        curator.set_collection(sample_name)
         hit_factory = HitFactory(project_id, curator.collection)
 
         expected_hit = hit_factory.hit_by_name(sample_name)

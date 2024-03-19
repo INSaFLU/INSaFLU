@@ -64,16 +64,7 @@ class SampleCurator:
         return collection
 
 
-############################################################################################################
-from typing import Protocol
-
-
-class TelevirReportElement(Protocol):
-
-    description: str
-
-
-def match_name_score(name: str, reference: TelevirReportElement) -> float:
+def match_name_score(name: str, reference) -> float:
     name_list = name.split(" ")
 
     score = 0

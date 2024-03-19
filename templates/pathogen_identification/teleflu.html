@@ -195,6 +195,24 @@
         font-family: Arial, sasns-serif;
     }
 
+    .stackSamplesButton {
+        display: flex;
+        justify-content: center;
+        background-color: #e0e0e0; /* Green background */
+        border-radius: 50%; /* Make it circular */
+        color: #007bff; /* White icon */
+        padding: 10px; /* Space around the icon */
+        cursor: pointer; /* Change cursor to pointer when hovering over the icon */
+        transition: background-color 0.3s ease; /* Smooth transition */
+    }
+    
+    .stackSamplesButton:hover {
+        background-color: #b3b3b3; /* Darker green background when hovering */
+    }
+    .stackSamplesButton {
+        margin-top: 10px; /* Add a top margin */
+    }
+    
 </style>
 
 
@@ -202,6 +220,11 @@
     <button id="open-modal-button" type="button" class="btn btn-primary" data-toggle="modal" data-target="#id_workflow_modal">
         Add Workflow
     </button>
+    {% if insaflu_connection_exists == False %}
+    <button id="open-insaflu-modal" type="button" class="btn btn-primary" data-toggle="modal" data-target="#id_insaflu_project_modal">
+        <i class="fa fa-external-link-square" aria-hidden="true"></i> INSaFLU
+    </button>
+    {% endif %}
     <br>
     <br>
     <h3 class="title">Workflow List</h3>
@@ -226,6 +249,16 @@
                     <span class="workflow-mapped" > {{ workflow.samples_mapped }} / {{ project_nsamples }}</span>
 
                     <button  workflow="{{ workflow.node }}" workflow-id="{{ workflow.pk }}" type="button" class="mapSamplesButton btn btn-primary" data-toggle="modal" data-target="#id_map_workflow_modal" > Map Samples </button>
+                </div>
+
+                <div class="mapping-igv">
+                    {% if workflow.stacked_html_exists %}
+                        <a href="{{ workflow.stacked_html }}" class="stackSamplesButton" target="_blank" title="View Stacked Samples">
+                            <i class="fa fa-eye"></i>
+                        </a>
+                    {% else %}
+                        <i workflow="{{ workflow.node }}" workflow-id="{{ workflow.pk }}" class="stackSamplesButton fa fa-tasks" data-toggle="modal" data-target="#id_workflow_analysis" url="{% url 'stack_igv_teleflu_workflow' %}"></i>
+                    {% endif %}
                 </div>
 
             </div>
@@ -341,6 +374,33 @@
     </div>
 </div>
 
+<!-- the insaflu project modal -->
+<div class="modal fade" id="id_insaflu_project_modal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <!-- Modal Header -->
+            <div class="modal-header alert alert-warning">
+                <h4 class="modal-title-submit">Link to INSaFLU</h4>
+            </div>
+            <!-- Modal body -->
+            <div class="modal-body mx-auto mw-100">
+                <div id="id-modal-map-workflow-sample">
+                    <label id="id-label-map-workflow" class="col-form-label">Create INSaFLU Project?</label>
+                </div>
+            </div>
+            <!-- Modal footer -->
+            <div class="modal-footer" id="id-modal-footer-remove">
+                <button id="id-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal"
+                    aria-hidden="true">Cancel</button>
+                <button id="id-insaflu-button" type="button" class="btn btn-primary" data-dismiss="modal" utl="{% url 'teleflu_televir_connect' %}"
+                    aria-hidden="true">Create</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
 {% endblock content %}
 
 {% block js %}
@@ -349,16 +409,73 @@
 
 <script>
 
+
     $(document).ready(function() {
+        $('.stackSamplesButton').click(function() {
+            var project_id = $('.workflow-main').attr('project_id');
+            var workflow_id = $(this).attr('workflow-id');
+            var url = $(this).attr('url');
+
+            console.log( workflow_id, url);
+        
+    
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: {
+                    project_id: project_id,
+                    workflow_id: workflow_id,
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                success: function(data) {
+                    if (data['is_ok'] === true) {
+                        alert('Stacked Samples created');
+                        location.reload();
+                    } else {
+                        alert('Error creating stacked samples');
+                    }
+                }
+            });
+        });
+    });
+
+    $(document).ready(function() {
+
+
+        $("#id-insaflu-button").click(function () {
+            var url = $(this).attr('utl');
+            var project_id = $('.workflow-main').attr('project_id');
+            var csrf = $('.workflow-main').attr('csrf');
+            var data = {
+                'project_id': project_id,
+                'csrfmiddlewaretoken': csrf,
+            };
+            $.ajax({
+                type: "POST",
+                url: url,
+                data: data,
+                success: function (data) {
+                    if (data["is_ok"] === true) {
+                        alert('INSaFLU Project linked');
+                        location.reload();
+                    } else if (data["exists"] === true) {
+                        alert('INSaFLU Project already exists');
+                    } else {
+                        alert('Error linking INSaFLU Project');
+                    }
+                }
+            });
+        });
+
             
         $(".mapSamplesButton").click(function () {
             var workflow= $(this).attr('workflow');
             var workflow_id= $(this).attr('workflow-id');
             $('#id-label-map-workflow').text('Map Samples to Workflow ' + workflow + '?');
-            $('#id-map-button').attr('workflow', workflow_id);
-
-            
+            $('#id-map-button').attr('workflow', workflow_id);            
         });
+
+        
 
         $("#id-map-button").click(function () {
 

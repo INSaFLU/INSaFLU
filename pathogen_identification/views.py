@@ -30,64 +30,42 @@ from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
 from managing_files.tables import SampleToProjectsTable
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from pathogen_identification.forms import ReferenceForm
-from pathogen_identification.models import (
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReadClassification,
-    ReferenceContigs,
-    ReferenceMap_Main,
-    ReferencePanel,
-    ReferenceSourceFileMap,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    RunRemapMain,
-    Sample,
-    TelefluMappedSample,
-    TelefluMapping,
-    TeleFluProject,
-    TeleFluSample,
-    TelevirRunQC,
-)
+from pathogen_identification.models import (ContigClassification, FinalReport,
+                                            ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            ReadClassification,
+                                            ReferenceContigs,
+                                            ReferenceMap_Main, ReferencePanel,
+                                            ReferenceSourceFileMap,
+                                            RunAssembly, RunDetail, RunMain,
+                                            RunRemapMain, Sample,
+                                            TelefluMappedSample,
+                                            TelefluMapping, TeleFluProject,
+                                            TeleFluSample, TelevirRunQC)
 from pathogen_identification.modules.object_classes import RunQC_report
-from pathogen_identification.tables import (
-    AddedReferenceTable,
-    CompoundRefereceScoreWithScreening,
-    CompoundReferenceScore,
-    ContigTable,
-    ProjectTable,
-    RawReferenceTable,
-    RawReferenceTableNoRemapping,
-    ReferenceSourceTable,
-    RunMainTable,
-    RunMappingTable,
-    SampleTableOne,
-    TeleFluInsaFLuProjectTable,
-    TeleFluReferenceTable,
-)
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.tables import (AddedReferenceTable,
+                                            CompoundRefereceScoreWithScreening,
+                                            CompoundReferenceScore,
+                                            ContigTable, ProjectTable,
+                                            RawReferenceTable,
+                                            RawReferenceTableNoRemapping,
+                                            ReferenceSourceTable, RunMainTable,
+                                            RunMappingTable, SampleTableOne,
+                                            TeleFluInsaFLuProjectTable,
+                                            TeleFluReferenceTable)
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
 from pathogen_identification.utilities.utilities_general import (
-    get_services_dir,
-    infer_run_media_dir,
-)
+    get_services_dir, infer_run_media_dir)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility,
-    RawReferenceUtils,
-)
+    Parameter_DB_Utility, RawReferenceUtils)
 from pathogen_identification.utilities.utilities_views import (
-    EmptyRemapMain,
-    RawReferenceCompound,
-    ReportSorter,
-    final_report_best_cov_by_accid,
-    recover_assembly_contigs,
-)
+    EmptyRemapMain, RawReferenceCompound, ReportSorter,
+    final_report_best_cov_by_accid, recover_assembly_contigs)
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
 from utils.support_django_template import get_link_for_dropdown_item
@@ -841,9 +819,7 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
 
 
 from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils,
-    Utils_Manager,
-)
+    SoftwareTreeUtils, Utils_Manager)
 
 
 def excise_paths_leaf_last(string_with_paths):
@@ -938,7 +914,7 @@ class TelefluProjectView(LoginRequiredMixin, generic.CreateView):
                 self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
             ).configure(context["insaflu_table"])
 
-        # Existring mappings
+        ##################################### Existring mappings
         software_utils = SoftwareTreeUtils(user, televir_project)
 
         utils_manager = Utils_Manager()
@@ -957,15 +933,17 @@ class TelefluProjectView(LoginRequiredMixin, generic.CreateView):
             )
 
             samples_mapped = mapping.mapped_samples
-
             node_info["samples_mapped"] = samples_mapped.count()
-
             existing_mapping_pks.append(mapping.leaf.pk)
+            node_info["stacked_html_exists"] = os.path.exists(
+                mapping.mapping_igv_report
+            )
+            node_info["stacked_html"]= mapping.mapping_igv_report.replace("/insaflu_web/INSaFLU", "")
 
             mapping_workflows.append(node_info)
 
         context["mapping_workflows"] = mapping_workflows
-        #### get combinations to deploy
+        ####################################### get combinations to deploy
 
         local_tree = software_utils.generate_software_tree_safe(
             software_utils.project,
@@ -979,7 +957,7 @@ class TelefluProjectView(LoginRequiredMixin, generic.CreateView):
         available_path_nodes = software_utils.get_available_pathnodes(local_tree)
         #
         workflows = []
-        #
+        ##########################################
         for node, params_df in all_paths.items():
             if node not in available_path_nodes:
                 continue
@@ -990,9 +968,12 @@ class TelefluProjectView(LoginRequiredMixin, generic.CreateView):
             node_info = teleflu_node_info(node, params_df, node_pk)
             workflows.append(node_info)
 
+        context["insaflu_connection_exists"] = (
+            False if this_project.insaflu_project is None else True
+        )
+
         context["workflows"] = workflows
         context["project_nsamples"] = teleflu_samples.count()
-
         context["project_index"] = televir_project.pk
         context["teleflu_project_pk"] = teleflu_project_pk
         context["project_name"] = televir_project.name

@@ -730,6 +730,7 @@ class SampleTableOne(tables.Table):
             run_type__in=[
                 RunMain.RUN_TYPE_MAP_REQUEST,
                 RunMain.RUN_TYPE_COMBINED_MAPPING,
+                RunMain.RUN_TYPE_MAP_REQUEST,
                 RunMain.RUN_TYPE_PANEL_MAPPING,
             ],
             status__in=[

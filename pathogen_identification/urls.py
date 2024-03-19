@@ -41,6 +41,16 @@ urlpatterns = [
         name="map_workflow_to_samples",
     ),
     url(
+        r"teleflu-televir-connect",
+        PIajax_views.create_insaflu_project,
+        name="teleflu_televir_connect",
+    ),
+    url(
+        r"teleflu-mapping-stack-igv",
+        PIajax_views.stack_igv_teleflu_workflow,
+        name="stack_igv_teleflu_workflow",
+    ),
+    url(
         r"project_add$",
         PIviews.PathID_ProjectCreateView.as_view(),
         name="PIproject-add",

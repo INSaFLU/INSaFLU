@@ -66,9 +66,7 @@ for (i in 1:length(columns)) {
   colours[i] = step_to_colour_map[columns[i]]
 }
 
-cat("######################################## colors\n", file = stderr())
-cat(colours, file = stderr())
-cat("\n", file = stderr())
+
 ### read the data frame
 
 input = read.table(df_path, header = TRUE, sep = "\t")

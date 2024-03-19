@@ -1163,6 +1163,10 @@ class TeleFluProject(models.Model):
         )
 
     @property
+    def project_teleflu_directory(self):
+        return os.path.join(self.project_media_directory, "teleflu")
+
+    @property
     def project_vcf_directory(self):
         return os.path.join(self.project_media_directory, "vcf")
 
@@ -1198,6 +1202,20 @@ class TelefluMapping(models.Model):
     teleflu_project = models.ForeignKey(
         TeleFluProject, on_delete=models.CASCADE, blank=True, null=True
     )
+
+    @property
+    def mapping_directory(self):
+        return os.path.join(
+            self.teleflu_project.project_teleflu_directory, str(self.leaf.index)
+        )
+
+    @property
+    def mapping_vcf(self):
+        return os.path.join(self.mapping_directory, "teleflu_stacked.vcf")
+
+    @property
+    def mapping_igv_report(self):
+        return os.path.join(self.mapping_directory, "igv_report.html")
 
     @property
     def mapped_samples(self):

@@ -11,6 +11,7 @@ from pathogen_identification.modules.object_classes import MappingStats
 
 
 class TelevirBioinf:
+
     def __init__(self):
         self.metadata_constants = Televir_Metadata_Constants()
         self.samtools_binary = self.metadata_constants.get_software_binary("samtools")
@@ -52,6 +53,11 @@ class TelevirBioinf:
 
         return self.check_file_exists_not_empty(output_file)
 
+    def vcf_from_bam(self, bam_list: List[str], reference: str, output_vcf: str):
+        command = f"{self.metadata_constants.get_software_binary('bcftools')} mpileup -f {reference} {' '.join(bam_list)} | {self.metadata_constants.get_software_binary('bcftools')} call -mv -Ov -o {output_vcf}"
+        subprocess.call(command, shell=True)
+        return self.check_file_exists_not_empty(output_vcf)
+
     def merge_vcf_files(self, files: List[str], output_file):
 
         if len(files) == 1:
@@ -85,6 +91,7 @@ class TelevirBioinf:
 
         command += f"--output {output_html}"
 
+        print(command)
         subprocess.call(command, shell=True)
 
     @staticmethod

@@ -1306,11 +1306,6 @@ def create_teleflu_project(request):
                     televir_sample=sample,
                 )
 
-            process_SGE.set_submit_televir_teleflu_project_create(
-                user=request.user,
-                project_pk=teleflu_project.pk,
-            )
-
             data["is_ok"] = True
             data["project_id"] = teleflu_project.pk
             data["project_name"] = teleflu_project.name
@@ -1319,6 +1314,71 @@ def create_teleflu_project(request):
             print(e)
             data["is_error"] = True
             return JsonResponse(data)
+
+        return JsonResponse(data)
+
+
+@login_required
+@csrf_protect
+def create_insaflu_project(request):
+    """
+    create insaflu project associated with teleflu map project"""
+    if request.is_ajax():
+        data = {"is_ok": False, "is_error": False, "exists": False}
+        teleflu_project_id = int(request.POST["project_id"])
+        teleflu_project = TeleFluProject.objects.get(pk=teleflu_project_id)
+        process_SGE = ProcessSGE()
+
+        if teleflu_project.insaflu_project is not None:
+            data["exists"] = True
+            return JsonResponse(data)
+
+        try:
+            taskID = process_SGE.set_submit_televir_teleflu_project_create(
+                user=request.user,
+                project_pk=teleflu_project.pk,
+            )
+            data["is_ok"] = True
+            return JsonResponse(data)
+        except Exception as e:
+            print(e)
+            data["is_error"] = True
+            return JsonResponse(data)
+
+
+@login_required
+@csrf_protect
+def stack_igv_teleflu_workflow(request):
+    """
+    create insaflu project associated with teleflu map project"""
+    if request.is_ajax():
+        data = {"is_ok": False, "is_error": False, "exists": False}
+        print(request.POST)
+        teleflu_project_id = int(request.POST["project_id"])
+        mapping_id = int(request.POST["workflow_id"])
+
+        print(teleflu_project_id)
+        print(mapping_id)
+        try:
+            teleflu_mapping = TelefluMapping.objects.get(leaf__pk=mapping_id)
+        
+        except TelefluMapping.DoesNotExist:
+            data["is_error"] = True
+            return JsonResponse(data)
+
+        process_SGE = ProcessSGE()
+
+        try:
+            process_SGE.set_submit_teleflu_map(
+                user=request.user,
+                leaf_pk=teleflu_mapping.leaf.pk,
+                project_pk=teleflu_project_id,
+            )
+            data["is_ok"] = True
+
+        except Exception as e:
+            print(e)
+            data["is_error"] = True
 
         return JsonResponse(data)
 

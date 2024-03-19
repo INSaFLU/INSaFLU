@@ -181,7 +181,6 @@ class SampleReferenceManager:
                 leaf=leaf,
                 project=self.sample.project,
             )
-            parameter_set.save()
 
         except ParameterSet.DoesNotExist:
             parameter_set = ParameterSet.objects.create(

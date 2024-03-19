@@ -171,7 +171,7 @@ class HitFactory:
                 ]
 
         report_hits = (
-            FinalReport.objects.filter(run__sample__in=self.collection.samples)
+            FinalReport.objects.filter(run__sample__in=self.collection.samples_televir)
             .distinct("run__id")
             .exclude(run=None)
         )

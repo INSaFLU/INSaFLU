@@ -249,8 +249,6 @@ def df_report_analysis(analysis_df_filename, project_id: int):
         }
         new_table.append(new_row)
 
-        new_table.append(row)
-
     new_df = pd.DataFrame(new_table)
 
     return new_df

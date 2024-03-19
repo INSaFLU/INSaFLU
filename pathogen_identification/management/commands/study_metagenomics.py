@@ -41,6 +41,10 @@ class SamplesBenchCollection:
 
         self.sample_add(sample)
 
+    @property
+    def samples_televir(self):
+        return [sample.sample for sample in self.samples]
+
 
 class SampleCurator:
 
@@ -147,7 +151,7 @@ class HitFactory:
     def hit_by_name(self, name: str) -> Hit:
 
         reference_hits = (
-            RawReference.objects.filter(run__sample__in=self.collection.samples)
+            RawReference.objects.filter(run__sample__in=self.collection.samples_televir)
             .distinct("run__id")
             .exclude(run=None)
         )

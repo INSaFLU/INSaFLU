@@ -152,6 +152,13 @@ class Command(BaseCommand):
         ### draw graph
         graph_progress = TreeProgressGraph(target_sample)
 
+        print(was_run_killed)
+        print(
+            utils.parameter_util.check_ParameterSet_available_to_run(
+                sample=target_sample, leaf=matched_path_node, project=project
+            )
+        )
+
         ### SUBMISSION
         try:
             if was_run_killed:

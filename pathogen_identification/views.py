@@ -894,7 +894,6 @@ class TelefluProjectView(LoginRequiredMixin, generic.CreateView):
         ## TeleFlu Projects
         this_project = TeleFluProject.objects.get(pk=teleflu_project_pk)
         teleflu_samples = TeleFluSample.objects.filter(teleflu_project=this_project)
-        televir_samples = [x.televir_sample for x in teleflu_samples]
 
         teleflu_projects = TeleFluProject.objects.filter(
             pk=teleflu_project_pk, is_deleted=False

@@ -166,6 +166,8 @@ class PathogenIdentification_deployment:
             self.parameter_set.project.owner, self.parameter_set.project
         )
 
+        print("configuring params")
+        print(self.tree_makup)
         all_paths = software_tree_utils.get_all_technology_pipelines(self.tree_makup)
 
         self.run_params_db = all_paths.get(self.pipeline_index, None)

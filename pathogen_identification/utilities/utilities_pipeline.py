@@ -2702,6 +2702,11 @@ class SoftwareTreeUtils:
         """
         Query software tree
         """
+        print("Querying software tree")
+        print(global_index)
+        print(self.technology)
+        print(self.project)
+        print(self.user)
         try:
             software_tree = (
                 SoftwareTree.objects.filter(

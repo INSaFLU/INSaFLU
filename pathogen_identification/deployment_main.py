@@ -551,7 +551,7 @@ class Run_Main_from_Leaf:
             return False
 
         try:
-            # self.container.run_engine.remap_prepped = True
+            #
             self.container.run_engine.Run_Remapping()
             self.container.run_engine.export_sequences()
             self.container.run_engine.export_intermediate_reports()
@@ -560,6 +560,7 @@ class Run_Main_from_Leaf:
             self.container.run_engine.export_logdir()
 
             db_updated = Update_Remap(self.container.run_engine, self.parameter_set)
+
             if not db_updated:
                 return False
 

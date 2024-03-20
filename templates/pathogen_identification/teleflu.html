@@ -196,8 +196,9 @@
     }
 
     .stackSamplesButton {
-        display: flex;
+        
         justify-content: center;
+        margin-right: 5px;
         background-color: #e0e0e0; /* Green background */
         border-radius: 50%; /* Make it circular */
         color: #007bff; /* White icon */
@@ -209,9 +210,23 @@
     .stackSamplesButton:hover {
         background-color: #b3b3b3; /* Darker green background when hovering */
     }
-    .stackSamplesButton {
-        margin-top: 10px; /* Add a top margin */
+
+    .stackSamplesIGV {
+        
+        justify-content: center;
+        margin-right: 5px;
+        background-color: #e0e0e0; /* Green background */
+        border-radius: 50%; /* Make it circular */
+        color: #007bff; /* White icon */
+        padding: 10px; /* Space around the icon */
+        cursor: pointer; /* Change cursor to pointer when hovering over the icon */
+        transition: background-color 0.3s ease; /* Smooth transition */
     }
+    
+    .stackSamplesIGV:hover {
+        background-color: #b3b3b3; /* Darker green background when hovering */
+    }
+
     
 </style>
 
@@ -229,40 +244,7 @@
     <br>
     <h3 class="title">Workflow List</h3>
     <div id="workflow-list">
-        {% for workflow in mapping_workflows %}
-            <div class="workflow-container workflow-main" project_id= "{{ teleflu_project_pk }}" csrf= "{{ csrf_token }}">
-                <div class="workflow-title">
-                    <span class="workflow-name">Workflow {{ workflow.node }}</span>
-                </div>
-                <div class="step-container">
 
-                {% for step in workflow.modules %}
-                    <div class="step-circle-display {{ step.available }}" title="{{ step.module }}" data-parameters="{{ step.parameters }}" onclick="showParametersHover(this)">
-                        {{ step.short_name }}
-                        <div class="parameters-container-hover" ></div>
-                    </div>
-                    
-                {% endfor %}
-                </div>
-                
-                <div class="workflow-info clearfix">
-                    <span class="workflow-mapped" > {{ workflow.samples_mapped }} / {{ project_nsamples }}</span>
-
-                    <button  workflow="{{ workflow.node }}" workflow-id="{{ workflow.pk }}" type="button" class="mapSamplesButton btn btn-primary" data-toggle="modal" data-target="#id_map_workflow_modal" > Map Samples </button>
-                </div>
-
-                <div class="mapping-igv">
-                    {% if workflow.stacked_html_exists %}
-                        <a href="{{ workflow.stacked_html }}" class="stackSamplesButton" target="_blank" title="View Stacked Samples">
-                            <i class="fa fa-eye"></i>
-                        </a>
-                    {% else %}
-                        <i workflow="{{ workflow.node }}" workflow-id="{{ workflow.pk }}" class="stackSamplesButton fa fa-tasks" data-toggle="modal" data-target="#id_workflow_analysis" url="{% url 'stack_igv_teleflu_workflow' %}"></i>
-                    {% endif %}
-                </div>
-
-            </div>
-        {% endfor %}
     </div>
 </div>
 
@@ -409,16 +391,79 @@
 
 <script>
 
+    var load_teleflu_workflows = function() {
+        var csrf = '{{ csrf_token }}';
+        $.ajax({
+            url: '{% url "load_teleflu_workflows" %}',
+            type: 'GET',
+            data : {
+                project_id: '{{ teleflu_project_pk }}',
+                csrfmiddlewaretoken: csrf
+            },
+            success: function(data) {
+                data.mapping_workflows.forEach(function(workflow) {
+                    var workflowContainer = $('<div>').addClass('workflow-container workflow-main').attr('project_id', data.teleflu_project_pk).attr('csrf', csrf);
+    
+                    var workflowTitle = $('<div>').addClass('workflow-title');
+                    var workflowName = $('<span>').addClass('workflow-name').text('Workflow ' + workflow.node);
+                    workflowTitle.append(workflowName);
+        
+                    var stepContainer = $('<div>').addClass('step-container');
+                    workflow.modules.forEach(function(step) {
+                        var stepCircleDisplay = $('<div>').addClass('step-circle-display ' + step.available).attr('title', step.module).attr('data-parameters', step.parameters).text(step.short_name);
+                        var parametersContainerHover = $('<div>').addClass('parameters-container-hover');
+                        stepCircleDisplay.append(parametersContainerHover);
+                        stepContainer.append(stepCircleDisplay);
+                    });
+        
+                    var workflowInfo = $('<div>').addClass('workflow-info clearfix');
+                    var workflowMapped = $('<span>').addClass('workflow-mapped').text(workflow.samples_mapped + ' / ' + data.project_nsamples);
+                    var mapSamplesButton = $('<button>').attr('workflow', workflow.node).attr('workflow-id', workflow.pk).attr('type', 'button').addClass('mapSamplesButton btn btn-primary').attr('data-toggle', 'modal').attr('data-target', '#id_map_workflow_modal').text('Map Samples');
+                    workflowInfo.append(workflowMapped, mapSamplesButton);
+        
+                    var mappingIgv = $('<div>').addClass('mapping-igv');
 
+                    if (workflow.samples_to_stack) {
+                        var stackSamplesButton = $('<i>').attr('workflow', workflow.node).attr('workflow-id', workflow.pk).addClass('stackSamplesButton stack-deploy fa fa-flask').attr('data-toggle', 'modal').attr('data-target', '#id_workflow_analysis').attr('url', "{% url 'stack_igv_teleflu_workflow' %}");
+                        mappingIgv.append(stackSamplesButton);
+                    } else {
+                        var stackSamplesButton = $('<i>').addClass('stackSamplesButton fa fa-flask').css('color', '#b3b3b3');
+                        mappingIgv.append(stackSamplesButton);
+                    }
+        
+                    if (workflow.stacked_html_exists) {
+                        var stackSamplesIgv = $('<a>').attr('href', workflow.stacked_html).addClass('stackSamplesIGV fa fa-eye').attr('target', '_blank').attr('title', 'Stacked IGV');
+                        mappingIgv.append(stackSamplesIgv);
+                    }
+        
+        
+                    workflowContainer.append(workflowTitle, stepContainer, workflowInfo, mappingIgv);
+        
+                    $('#workflow-list').append(workflowContainer); // Append the new div to the body
+                });
+
+                $(".mapSamplesButton").click(function () {
+                    var workflow= $(this).attr('workflow');
+                    var workflow_id= $(this).attr('workflow-id');
+                    $('#id-label-map-workflow').text('Map Samples to Workflow ' + workflow + '?');
+                    $('#id-map-button').attr('workflow', workflow_id);            
+                });
+        
+            }
+        });
+    };
+
+
+    
     $(document).ready(function() {
-        $('.stackSamplesButton').click(function() {
+
+        load_teleflu_workflows();
+
+        $('.stack-deploy').click(function() {
             var project_id = $('.workflow-main').attr('project_id');
             var workflow_id = $(this).attr('workflow-id');
             var url = $(this).attr('url');
 
-            console.log( workflow_id, url);
-        
-    
             $.ajax({
                 url: url,
                 type: 'POST',
@@ -429,8 +474,11 @@
                 },
                 success: function(data) {
                     if (data['is_ok'] === true) {
-                        alert('Stacked Samples created');
                         location.reload();
+                    } else if (data['running'] === true) {
+                        alert('Stacked Samples creation is running');
+                    } else if (data['exists'] === true) {
+                        alert('Stacked Samples already exists');
                     } else {
                         alert('Error creating stacked samples');
                     }

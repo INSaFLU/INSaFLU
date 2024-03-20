@@ -55,13 +55,10 @@ class Command(BaseCommand):
             ProcessControler.FLAG_RUNNING,
         )
 
-        print(f"Processing {ref_id} {project_id}")
-
         teleflu_project = TeleFluProject.objects.get(pk=project_id)
         teleflu_mapping = TelefluMapping.objects.get(
             leaf__pk=ref_id, teleflu_project__pk=project_id
         )
-        print(teleflu_mapping)
 
         process = ProcessControler.objects.filter(
             owner__id=user.pk,
@@ -80,7 +77,6 @@ class Command(BaseCommand):
             print("Process does not exist")
 
         # UTILITIES
-
         try:
 
             create_televir_igv_report(

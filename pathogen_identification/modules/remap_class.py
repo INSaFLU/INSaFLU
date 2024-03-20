@@ -13,20 +13,16 @@ from scipy.stats import kstest
 from constants.software_names import SoftwareNames
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.modules.object_classes import (
-    Bedgraph,
-    MappingStats,
-    Read_class,
-    Remap_Target,
-    RunCMD,
-    SoftwareDetail,
-    SoftwareRemap,
-)
+from pathogen_identification.modules.object_classes import (Bedgraph,
+                                                            MappingStats,
+                                                            Read_class,
+                                                            Remap_Target,
+                                                            RunCMD,
+                                                            SoftwareDetail,
+                                                            SoftwareRemap)
 from pathogen_identification.utilities.televir_parameters import RemapParams
 from pathogen_identification.utilities.utilities_general import (
-    plot_dotplot,
-    read_paf_coordinates,
-)
+    plot_dotplot, read_paf_coordinates)
 
 pd.options.mode.chained_assignment = None
 np.warnings.filterwarnings("ignore")
@@ -1610,39 +1606,6 @@ class Remapping:
             shutil.move(self.dotplot, self.full_path_dotplot)
             self.dotplot = new_dotplot
 
-    def move_igv_files(self, static_dir):
-        """
-        Move igv files to static directory."""
-
-        new_bam = os.path.join(
-            static_dir,
-            os.path.basename(self.read_map_sorted_bam),
-        )
-        shutil.move(self.read_map_sorted_bam, new_bam)
-        self.read_map_sorted_bam = new_bam
-
-        new_bai = os.path.join(
-            static_dir,
-            os.path.basename(self.read_map_sorted_bam + ".bai"),
-        )
-        shutil.move(self.read_map_sorted_bam_index, new_bai)
-        self.read_map_sorted_bam_index = new_bai
-
-        new_reference_file = os.path.join(
-            static_dir,
-            os.path.basename(self.reference_file),
-        )
-        shutil.move(self.reference_file, new_reference_file)
-        self.reference_file = new_reference_file
-
-        new_reference_fasta_index = os.path.join(
-            static_dir,
-            os.path.basename(self.reference_fasta_index),
-        )
-
-        shutil.move(self.reference_fasta_index, new_reference_fasta_index)
-        self.reference_fasta_index = new_reference_fasta_index
-
 
 class Mapping_Instance:
     prefix: str
@@ -2111,17 +2074,16 @@ class Mapping_Manager(Tandem_Remap):
                 if mapped_instance.assembly:
                     mapped_instance.assembly.cleanup_files()
 
-    def move_igv_to_static(self, static_dir):
-        print("Moving IGV files to static")
-        for instance in self.mapped_instances:
-            if instance.reference.number_of_reads_mapped > 0:
-                instance.reference.move_igv_files(static_dir)
-
     def export_mapping_files(self, output_dir):
         for instance in self.mapped_instances:
             instance.export_mapping_files(output_dir)
+    
+    ####################################################################################
+    ################################### REPORT FUNCTIONS ###############################
 
     def merge_mapping_reports(self):
+        """
+        generate final report for Run across references."""
         full_report = []
 
         for instance in self.mapped_instances:

@@ -36,6 +36,11 @@ urlpatterns = [
         name="add_workflow_to_project",
     ),
     url(
+        "load-teleflu-workflows$",
+        PIajax_views.load_teleflu_workflows,
+        name="load_teleflu_workflows",
+    ),
+    url(
         r"map-teleflu-workflow-samples$",
         PIajax_views.map_teleflu_workflow_samples,
         name="map_workflow_to_samples",

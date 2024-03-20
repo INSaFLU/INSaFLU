@@ -10,16 +10,17 @@ from django.contrib.auth.models import User
 from django.core.files.temp import NamedTemporaryFile
 from django.db.models import Q
 
-from constants.constants import (Constants, FileExtensions, FileType, TypeFile,
-                                 TypePath)
+from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
 from constants.software_names import SoftwareNames
 from constants.televir_directories import Televir_Directory_Constants
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
 from managing_files.models import Reference
-from pathogen_identification.models import (RawReference,
-                                            ReferenceSourceFileMap,
-                                            TelefluMapping)
+from pathogen_identification.models import (
+    RawReference,
+    ReferenceSourceFileMap,
+    TelefluMapping,
+)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
 from pathogen_identification.utilities.utilities_general import simplify_name
 from utils.software import Software
@@ -166,8 +167,11 @@ def merge_multiple_refs(references: List[RawReference], output_prefix: str):
     return merged_fasta.name
 
 
-from pathogen_identification.models import (MetaReference, RawReferenceMap,
-                                            TeleFluProject)
+from pathogen_identification.models import (
+    MetaReference,
+    RawReferenceMap,
+    TeleFluProject,
+)
 
 
 def check_metaReference_exists(references: List[RawReference]):
@@ -615,7 +619,6 @@ def create_teleflu_igv_report(teleflu_project_pk: int) -> bool:
     os.makedirs(teleflu_project.project_vcf_directory, exist_ok=True)
 
     merged_success = televir_bioinf.merge_vcf_files(vcf_files, group_vcf)
-    
 
     try:
 
@@ -632,8 +635,11 @@ def create_teleflu_igv_report(teleflu_project_pk: int) -> bool:
         return False
 
 
-from pathogen_identification.models import (ParameterSet, PIProject_Sample,
-                                            ReferenceMap_Main)
+from pathogen_identification.models import (
+    ParameterSet,
+    PIProject_Sample,
+    ReferenceMap_Main,
+)
 
 
 def filter_reference_maps_select(
@@ -646,16 +652,12 @@ def filter_reference_maps_select(
         reference__in=reference,
     )
 
-    print(leaf_id)
-
     refs = RawReference.objects.filter(
         run__parameter_set__sample=sample,
         accid__in=reference,
         run__parameter_set__leaf__pk=leaf_id,
         run__parameter_set__status=ParameterSet.STATUS_FINISHED,
     )
-    print(refs)
-    print(ref_maps)
 
     for ref in ref_maps:
 
@@ -706,7 +708,6 @@ def create_televir_igv_report(teleflu_project_pk: int, leaf_index: int) -> bool:
     # samples
     televir_project_samples = teleflu_mapping.mapped_samples
     sample_dict = {}
-    print(televir_project_samples)
 
     ### get sample files
 
@@ -714,18 +715,17 @@ def create_televir_igv_report(teleflu_project_pk: int, leaf_index: int) -> bool:
 
         ref_select = filter_reference_maps_select(sample, leaf_index, accid_list_simple)
 
-        print(ref_select)
         if ref_select is None:
             continue
 
-        sample_dict[sample.sample.pk] = {
+        sample_dict[sample.pk] = {
             "name": sample.name,
             "bam_file": ref_select.bam_file_path,
             "bam_file_index": ref_select.bai_file_path,
             "vcf_file": ref_select.vcf,
+            "sample": sample,
         }
 
-    print("sample_dict", sample_dict)
     ### merge vcf files
     if len(sample_dict) == 0:
         return False
@@ -733,21 +733,29 @@ def create_televir_igv_report(teleflu_project_pk: int, leaf_index: int) -> bool:
         os.makedirs(teleflu_mapping.mapping_directory, exist_ok=True)
 
     televir_bioinf = TelevirBioinf()
-    vcf_files = [files["vcf_file"] for sample_pk, files in sample_dict.items()]
+    # vcf_files = [files["vcf_file"] for sample_pk, files in sample_dict.items()]
     group_vcf = teleflu_mapping.mapping_vcf
     stacked_html = teleflu_mapping.mapping_igv_report
 
     os.makedirs(teleflu_project.project_vcf_directory, exist_ok=True)
 
-    #merged_success = televir_bioinf.merge_vcf_files(vcf_files, group_vcf)
-    merged_success= televir_bioinf.vcf_from_bam(
-        [files["bam_file"] for sample_pk, files in sample_dict.items()],
-        reference_file,
-        group_vcf,
-    )
+    # merged_success = televir_bioinf.merge_vcf_files(vcf_files, group_vcf)
 
-    print("merged_success", merged_success)
-    print(group_vcf)
+    try:
+        merged_success = televir_bioinf.vcf_from_bam(
+            [files["bam_file"] for sample_pk, files in sample_dict.items()],
+            reference_file,
+            group_vcf,
+        )
+
+        for sample_pk, sample_info in sample_dict.items():
+            sample = PIProject_Sample.objects.get(pk=sample_pk)
+            teleflu_mapping.stacked_samples.add(sample)
+            teleflu_mapping.save()
+
+    except Exception as e:
+        print(e)
+        return False
 
     try:
 

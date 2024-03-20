@@ -439,7 +439,7 @@ class ProcessSGE(object):
         if queue_name == None:
             queue_name = Constants.QUEUE_SGE_NAME_GLOBAL
         path_file = self.set_script_run_sge(
-            out_dir, queue_name, vect_command, job_name, False, vect_job_name_wait
+            out_dir, queue_name, vect_command, job_name, True, vect_job_name_wait
         )
         try:
             sge_id = self.submitte_job(path_file)
@@ -841,7 +841,7 @@ class ProcessSGE(object):
             queue_name,
             vect_command,
             job_name,
-            False,
+            True,
             [job_name_wait],
             alternative_temp_dir=out_dir,
         )
@@ -902,7 +902,7 @@ class ProcessSGE(object):
             queue_name,
             vect_command,
             job_name,
-            False,
+            True,
             [job_name_wait],
             alternative_temp_dir=out_dir,
         )
@@ -959,7 +959,7 @@ class ProcessSGE(object):
             queue_name,
             vect_command,
             job_name,
-            False,
+            True,
             [job_name_wait],
             alternative_temp_dir=out_dir,
         )
@@ -1066,7 +1066,7 @@ class ProcessSGE(object):
             queue_name,
             vect_command,
             job_name,
-            False,
+            True,
             [job_name_wait],
             alternative_temp_dir=out_dir,
         )
@@ -1126,7 +1126,7 @@ class ProcessSGE(object):
             queue_name,
             vect_command,
             job_name,
-            False,
+            True,
             [job_name_wait],
             alternative_temp_dir=out_dir,
         )
@@ -1311,7 +1311,7 @@ class ProcessSGE(object):
             queue_name,
             vect_command,
             job_name,
-            False,
+            True,
             [job_name_wait],
             alternative_temp_dir=out_dir,
         )
@@ -1412,7 +1412,9 @@ class ProcessSGE(object):
             print("project submitted, sge_id: " + str(sge_id))
             if sge_id != None:
                 self.set_process_controlers(
-                    user, process_controler.get_name_televir_map(reference_pk), sge_id
+                    user,
+                    process_controler.get_name_televir_teleflu_igv_stack(leaf_pk),
+                    sge_id,
                 )
         except:
             raise Exception("Fail to submit the job.")
@@ -1436,7 +1438,7 @@ class ProcessSGE(object):
         ]
         out_dir = self.utils.get_temp_dir()
         path_file = self.set_script_run_sge(
-            out_dir, Constants.QUEUE_SGE_NAME_FAST, vect_command, job_name, False
+            out_dir, Constants.QUEUE_SGE_NAME_FAST, vect_command, job_name, True
         )
         os.system("/bin/sh {}".format(path_file))
         try:

@@ -48,6 +48,7 @@ from pathogen_identification.utilities.utilities_views import (
     set_control_reports,
 )
 from pathogen_identification.views import inject__added_references
+from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
 from utils.utils import Utils
 
@@ -1356,40 +1357,6 @@ def create_insaflu_project(request):
             return JsonResponse(data)
 
 
-@login_required
-@csrf_protect
-def stack_igv_teleflu_workflow(request):
-    """
-    create insaflu project associated with teleflu map project"""
-    if request.is_ajax():
-        data = {"is_ok": False, "is_error": False, "exists": False}
-        teleflu_project_id = int(request.POST["project_id"])
-        mapping_id = int(request.POST["workflow_id"])
-
-        try:
-            teleflu_mapping = TelefluMapping.objects.get(leaf__pk=mapping_id)
-
-        except TelefluMapping.DoesNotExist:
-            data["is_error"] = True
-            return JsonResponse(data)
-
-        process_SGE = ProcessSGE()
-
-        try:
-            process_SGE.set_submit_teleflu_map(
-                user=request.user,
-                leaf_pk=teleflu_mapping.leaf.pk,
-                project_pk=teleflu_project_id,
-            )
-            data["is_ok"] = True
-
-        except Exception as e:
-            print(e)
-            data["is_error"] = True
-
-        return JsonResponse(data)
-
-
 @csrf_protect
 def set_teleflu_check_box_values(request):
     """
@@ -1489,6 +1456,167 @@ from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUti
 
 @login_required
 @require_POST
+def add_teleflu_mapping_workflow(request):
+    """
+    create mapping workflow for teleflu project
+    """
+
+    if request.is_ajax():
+
+        data = {"is_ok": False}
+        project_id = int(request.POST["project_id"])
+        leaf_id = int(request.POST["leaf_id"])
+
+        project = TeleFluProject.objects.get(pk=project_id)
+        leaf = SoftwareTreeNode.objects.get(pk=leaf_id)
+
+        try:
+            TelefluMapping.objects.get(
+                teleflu_project=project,
+                leaf=leaf,
+            )
+
+            data["exists"] = True
+
+        except TelefluMapping.DoesNotExist:
+            TelefluMapping.objects.create(
+                teleflu_project=project,
+                leaf=leaf,
+            )
+            data["is_ok"] = True
+
+        except Exception as e:
+            print(e)
+            data["is_ok"] = False
+
+        return JsonResponse(data)
+
+
+from pathogen_identification.utilities.utilities_pipeline import (
+    SoftwareTreeUtils,
+    Utils_Manager,
+)
+
+
+def excise_paths_leaf_last(string_with_paths: str):
+    """
+    if the string has paths, find / and return the last
+    """
+    split_space = string_with_paths.split(" ")
+    new_string = ""
+    if len(split_space) > 1:
+        for word in split_space:
+            new_word = word
+            if "/" in word:
+                new_word = word.split("/")[-1]
+            new_string += new_word + " "
+        return new_string
+    else:
+        return string_with_paths
+
+
+def teleflu_node_info(node, params_df, node_pk):
+    node_info = {
+        "pk": node_pk,
+        "node": node,
+        "modules": [],
+    }
+
+    for pipeline_step in CS.vect_pipeline_televir_mapping_only:
+        acronym = [x[0] for x in pipeline_step.split(" ")]
+        acronym = [
+            acronym[x].upper() if x == 0 else acronym[x].lower()
+            for x in range(len(acronym))
+        ]
+        acronym = "".join(acronym)
+        params = params_df[params_df.module == pipeline_step].to_dict("records")
+        if params:  # if there are parameters for this module
+            software = params[0].get("software")
+            software = software.split("_")[0]
+
+            params = params[0].get("value")
+            params = excise_paths_leaf_last(params)
+            params = f"{software} {params}"
+        else:
+            params = ""
+
+        node_info["modules"].append(
+            {
+                "module": pipeline_step,
+                "parameters": params,
+                "short_name": acronym,
+                "available": (
+                    "software_on"
+                    if pipeline_step in params_df.module.values
+                    else "software_off"
+                ),
+            }
+        )
+
+    return node_info
+
+
+@login_required
+def load_teleflu_workflows(request):
+    """
+    load teleflu workflows
+    """
+    data = {"is_ok": False, "mapping_workflows": []}
+
+    if request.is_ajax():
+        print(request.GET)
+
+        teleflu_project_pk = int(request.GET["project_id"])
+
+        utils_manager = Utils_Manager()
+
+        mappings = TelefluMapping.objects.filter(teleflu_project__pk=teleflu_project_pk)
+        teleflu_project = TeleFluProject.objects.get(pk=teleflu_project_pk)
+        print(mappings)
+        mapping_workflows = []
+        existing_mapping_pks = []
+
+        for mapping in mappings:
+            if mapping.leaf is None:
+                continue
+
+            params_df = utils_manager.get_leaf_parameters(mapping.leaf)
+            node_info = node_info = teleflu_node_info(
+                mapping.leaf.index, params_df, mapping.leaf.pk
+            )
+
+            samples_mapped = mapping.mapped_samples
+            samples_stacked = mapping.stacked_samples_televir
+
+            node_info["samples_stacked"] = samples_stacked.count()
+
+            node_info["samples_to_stack"] = samples_mapped.exclude(
+                pk__in=samples_stacked.values_list("pk", flat=True)
+            ).exists()
+
+            node_info["samples_mapped"] = samples_mapped.count()
+            existing_mapping_pks.append(mapping.leaf.pk)
+            node_info["stacked_html_exists"] = os.path.exists(
+                mapping.mapping_igv_report
+            )
+            node_info["stacked_html"] = mapping.mapping_igv_report.replace(
+                "/insaflu_web/INSaFLU", ""
+            )
+
+            mapping_workflows.append(node_info)
+
+        data["mapping_workflows"] = mapping_workflows
+        data["is_ok"] = True
+        data["teleflu_project_pk"] = teleflu_project_pk
+        data["project_nsamples"] = teleflu_project.nsamples
+
+        return JsonResponse(data)
+
+    return JsonResponse(data)
+
+
+@login_required
+@require_POST
 def map_teleflu_workflow_samples(request):
 
     if request.is_ajax():
@@ -1545,39 +1673,46 @@ def map_teleflu_workflow_samples(request):
 
 
 @login_required
-@require_POST
-def add_teleflu_mapping_workflow(request):
+@csrf_protect
+def stack_igv_teleflu_workflow(request):
     """
-    create mapping workflow for teleflu project
-    """
-
+    create insaflu project associated with teleflu map project"""
     if request.is_ajax():
-
-        data = {"is_ok": False}
-        project_id = int(request.POST["project_id"])
-        leaf_id = int(request.POST["leaf_id"])
-
-        project = TeleFluProject.objects.get(pk=project_id)
-        leaf = SoftwareTreeNode.objects.get(pk=leaf_id)
+        data = {"is_ok": False, "is_error": False, "exists": False}
+        teleflu_project_id = int(request.POST["project_id"])
+        mapping_id = int(request.POST["workflow_id"])
 
         try:
-            TelefluMapping.objects.get(
-                teleflu_project=project,
-                leaf=leaf,
-            )
-
-            data["exists"] = True
+            teleflu_mapping = TelefluMapping.objects.get(leaf__pk=mapping_id)
 
         except TelefluMapping.DoesNotExist:
-            TelefluMapping.objects.create(
-                teleflu_project=project,
-                leaf=leaf,
+            data["is_error"] = True
+            return JsonResponse(data)
+
+        process_SGE = ProcessSGE()
+        process_controler = ProcessControler()
+
+        if ProcessControler.objects.filter(
+            owner=request.user,
+            name=process_controler.get_name_televir_teleflu_igv_stack(
+                teleflu_mapping_id=mapping_id,
+            ),
+            is_running=True,
+        ).exists():
+            data["running"] = True
+            return JsonResponse(data)
+
+        try:
+            process_SGE.set_submit_teleflu_map(
+                user=request.user,
+                leaf_pk=teleflu_mapping.leaf.pk,
+                project_pk=teleflu_project_id,
             )
             data["is_ok"] = True
 
         except Exception as e:
             print(e)
-            data["is_ok"] = False
+            data["is_error"] = True
 
         return JsonResponse(data)
 
@@ -2037,7 +2172,7 @@ def IGV_display(request):
                 reference=unique_id, sample=sample, run=run
             )
 
-            def remove_pre_static(path: str, pattern: str) -> str:
+            def remove_pre_static(path: str) -> str:
                 cwd = os.getcwd()
                 if path.startswith(cwd):
                     path = path[len(cwd) :]
@@ -2046,19 +2181,21 @@ def IGV_display(request):
 
                 return path
 
+            #################################################
+            ### bam file
             path_name_bam = remove_pre_static(
-                ref_map.bam_file_path, "/insaflu_web/INSaFLU/"
+                ref_map.bam_file_path,
             )
             path_name_bai = remove_pre_static(
-                ref_map.bai_file_path, "/insaflu_web/INSaFLU/"
+                ref_map.bai_file_path,
             )
             path_name_reference = remove_pre_static(
-                ref_map.fasta_file_path, "/insaflu_web/INSaFLU/"
+                ref_map.fasta_file_path,
             )
             path_name_reference_index = remove_pre_static(
-                ref_map.fai_file_path, "/insaflu_web/INSaFLU/"
+                ref_map.fai_file_path,
             )
-            path_name_vcf = remove_pre_static(ref_map.vcf, "/insaflu_web/INSaFLU/")
+            path_name_vcf = remove_pre_static(ref_map.vcf)
 
             data["is_ok"] = True
             data["path_bam"] = mark_safe(request.build_absolute_uri(path_name_bam))

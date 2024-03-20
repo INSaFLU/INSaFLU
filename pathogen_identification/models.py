@@ -1203,11 +1203,17 @@ class TelefluMapping(models.Model):
         TeleFluProject, on_delete=models.CASCADE, blank=True, null=True
     )
 
+    stacked_samples = models.ManyToManyField(TeleFluSample)
+
     @property
     def mapping_directory(self):
         return os.path.join(
             self.teleflu_project.project_teleflu_directory, str(self.leaf.index)
         )
+
+    @property
+    def stacked_samples_televir(self):
+        return self.stacked_samples.values_list("televir_sample", flat=True)
 
     @property
     def mapping_vcf(self):

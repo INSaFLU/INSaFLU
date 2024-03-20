@@ -688,6 +688,8 @@ def create_televir_igv_report(teleflu_project_pk: int, leaf_index: int) -> bool:
     teleflu_mapping = TelefluMapping.objects.get(
         teleflu_project=teleflu_project, leaf__pk=leaf_index
     )
+
+    print("teleflu_mapping", teleflu_mapping)
     # reference_accid= teleflu_project.raw_reference.
 
     ### get reference insaflu
@@ -711,6 +713,8 @@ def create_televir_igv_report(teleflu_project_pk: int, leaf_index: int) -> bool:
 
     ### get sample files
 
+    print("televir_project_samples", televir_project_samples)
+
     for sample in televir_project_samples:
 
         ref_select = filter_reference_maps_select(sample, leaf_index, accid_list_simple)
@@ -727,6 +731,7 @@ def create_televir_igv_report(teleflu_project_pk: int, leaf_index: int) -> bool:
         }
 
     ### merge vcf files
+    print("sample_dict", sample_dict)
     if len(sample_dict) == 0:
         return False
     else:
@@ -747,6 +752,8 @@ def create_televir_igv_report(teleflu_project_pk: int, leaf_index: int) -> bool:
             reference_file,
             group_vcf,
         )
+
+        print("merged_success", merged_success)
 
         for sample_pk, sample_info in sample_dict.items():
             sample = PIProject_Sample.objects.get(pk=sample_pk)

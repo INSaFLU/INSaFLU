@@ -1640,7 +1640,7 @@ def map_teleflu_workflow_samples(request):
 
             taskID = process_SGE.set_submit_televir_sample_metagenomics(
                 user=user,
-                sample_pk=sample.pk,
+                sample_pk=sample.televir_sample.pk,
                 leaf_pk=workflow_leaf.pk,
                 mapping_request=True,
                 map_run_pk=mapping_run.pk,

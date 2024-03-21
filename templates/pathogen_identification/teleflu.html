@@ -466,6 +466,8 @@
                             csrfmiddlewaretoken: '{{ csrf_token }}'
                         },
                         success: function(data) {
+                            console.log(data);
+                            
                             if (data['is_ok'] === true) {
                                 location.reload();
                             } else if (data['running'] === true) {
@@ -489,8 +491,6 @@
     $(document).ready(function() {
 
         load_teleflu_workflows();
-
-
 
         $("#id-insaflu-button").click(function () {
             var url = $(this).attr('utl');

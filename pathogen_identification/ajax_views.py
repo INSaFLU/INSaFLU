@@ -18,35 +18,25 @@ from constants.software_names import SoftwareNames
 from fluwebvirus.settings import STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReferenceMap_Main,
-    ReferencePanel,
-    ReferenceSourceFileMap,
-    RunMain,
-    TeleFluProject,
-    TeleFluSample,
-)
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference, ReferenceMap_Main,
+                                            ReferencePanel,
+                                            ReferenceSourceFileMap, RunMain,
+                                            TeleFluProject, TeleFluSample)
 from pathogen_identification.tables import ReferenceSourceTable
 from pathogen_identification.utilities.reference_utils import (
-    check_metaReference_exists_from_ids,
-    check_reference_exists,
-    check_reference_submitted,
-    create_combined_reference,
-)
+    check_metaReference_exists_from_ids, check_reference_exists,
+    check_reference_submitted, create_combined_reference)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
-from pathogen_identification.utilities.utilities_general import get_services_dir
-from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
+from pathogen_identification.utilities.utilities_general import \
+    get_services_dir
+from pathogen_identification.utilities.utilities_pipeline import \
+    SoftwareTreeUtils
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter,
-    SampleReferenceManager,
-    set_control_reports,
-)
+    ReportSorter, SampleReferenceManager, set_control_reports)
 from pathogen_identification.views import inject__added_references
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
@@ -1317,6 +1307,11 @@ def create_teleflu_project(request):
                     televir_sample=sample,
                 )
 
+            taskID = process_SGE.set_submit_televir_teleflu_project_create(
+                user=request.user,
+                project_pk=teleflu_project.pk,
+            )
+
             data["is_ok"] = True
             data["project_id"] = teleflu_project.pk
             data["project_name"] = teleflu_project.name
@@ -1452,9 +1447,7 @@ def add_teleflu_sample(request):
 
 from pathogen_identification.models import SoftwareTreeNode, TelefluMapping
 from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils,
-    Utils_Manager,
-)
+    SoftwareTreeUtils, Utils_Manager)
 
 
 @login_required

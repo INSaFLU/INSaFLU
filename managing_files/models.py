@@ -1859,6 +1859,11 @@ class ProcessControler(models.Model):
             ProcessControler.PREFIX_TELEVIR_PROJECT, project_id
         )
 
+    def get_name_televir_teleflu_reference_create(self, project_id):
+        return "{}_teleflu_project_reference_create_{}".format(
+            ProcessControler.PREFIX_TELEVIR_PROJECT, project_id
+        )
+    
     def get_name_televir_teleflu_project_process(self, project_id):
         return "{}_teleflu_project_process_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, project_id

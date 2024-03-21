@@ -2090,6 +2090,9 @@ class Mapping_Manager(Tandem_Remap):
                 if mapped_instance.assembly:
                     mapped_instance.assembly.cleanup_files()
 
+            print("################### just checking ###################")
+            print(mapped_instance.reference.read_map_sorted_bam)
+            print(mapped_instance.reference.read_map_sorted_bam_index)
             self.mapped_instances.append(mapped_instance)
 
     def export_mapping_files(self, output_dir):

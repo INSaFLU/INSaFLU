@@ -8,24 +8,14 @@ from django.contrib.auth.models import User
 from django.core.files import File
 from django.db import IntegrityError, transaction
 
-from pathogen_identification.models import (
-    QC_REPORT,
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReadClassification,
-    ReferenceContigs,
-    ReferenceMap_Main,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    RunRemapMain,
-    SampleQC,
-    TelevirRunQC,
-)
+from pathogen_identification.models import (QC_REPORT, ContigClassification,
+                                            FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference, ReadClassification,
+                                            ReferenceContigs,
+                                            ReferenceMap_Main, RunAssembly,
+                                            RunDetail, RunMain, RunRemapMain,
+                                            SampleQC, TelevirRunQC)
 from pathogen_identification.modules.object_classes import Sample_runClass
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunEngine_class
@@ -1095,22 +1085,24 @@ def Update_ReferenceMap(
             ref_map.reference.mapped_subset_r1_fasta,
         )
 
-        map_db = ReferenceMap_Main(
-            reference=ref_map.reference.target.acc_simple,
-            sample=sample,
-            run=run,
-            taxid=ref_map.reference.target.taxid,
-            bam_file_path=ref_map.reference.read_map_sorted_bam,
-            bai_file_path=ref_map.reference.read_map_sorted_bam_index,
-            fasta_file_path=ref_map.reference.reference_file,
-            fai_file_path=ref_map.reference.reference_fasta_index,
-            mapped_subset_r1=ref_map.reference.mapped_subset_r1,
-            mapped_subset_r2=ref_map.reference.mapped_subset_r2,
-            mapped_subset_r1_fasta=ref_map.reference.mapped_subset_r1_fasta,
-            mapped_subset_r2_fasta=ref_map.reference.mapped_subset_r2_fasta,
-            vcf=ref_map.reference.vcf,
-        )
-        map_db.save()
+        if ref_map.mapping_success is not "none":
+
+            map_db = ReferenceMap_Main(
+                reference=ref_map.reference.target.acc_simple,
+                sample=sample,
+                run=run,
+                taxid=ref_map.reference.target.taxid,
+                bam_file_path=ref_map.reference.read_map_sorted_bam,
+                bai_file_path=ref_map.reference.read_map_sorted_bam_index,
+                fasta_file_path=ref_map.reference.reference_file,
+                fai_file_path=ref_map.reference.reference_fasta_index,
+                mapped_subset_r1=ref_map.reference.mapped_subset_r1,
+                mapped_subset_r2=ref_map.reference.mapped_subset_r2,
+                mapped_subset_r1_fasta=ref_map.reference.mapped_subset_r1_fasta,
+                mapped_subset_r2_fasta=ref_map.reference.mapped_subset_r2_fasta,
+                vcf=ref_map.reference.vcf,
+            )
+            map_db.save()
 
     if ref_map.assembly is not None:
         remap_stats = ref_map.assembly.report.set_index("ID")

@@ -78,7 +78,6 @@ class Command(BaseCommand):
 
         # UTILITIES
         try:
-
             create_televir_igv_report(
                 teleflu_project_pk=teleflu_project.pk,
                 leaf_index=teleflu_mapping.leaf.pk,

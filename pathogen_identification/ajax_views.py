@@ -1716,6 +1716,7 @@ def add_references_all_samples(request):
     """
     if request.is_ajax():
         data = {"is_ok": False, "is_error": False, "is_empty": False}
+        print(request.POST)
         project_id = int(request.POST["ref_id"])
         project = Projects.objects.get(pk=project_id)
         samples = PIProject_Sample.objects.filter(project=project)

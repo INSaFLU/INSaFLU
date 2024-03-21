@@ -1712,6 +1712,15 @@ class RunMainTable(RunMappingTable):
         except:
             return mark_safe("None")
 
+    def render_read_classification(self, record: RunMain):
+        method = record.read_classification
+
+        if method is None:
+            return "None"
+        method = method[0].upper() + method[1:]
+
+        return mark_safe(method)
+
     def render_remapping(self, record: RunMain):
         method = record.remap
         method_name = self.get_software_extended_name(method)

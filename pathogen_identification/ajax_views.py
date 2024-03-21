@@ -1673,7 +1673,7 @@ def stack_igv_teleflu_workflow(request):
         mapping_id = int(request.POST["workflow_id"])
 
         try:
-            teleflu_mapping = TelefluMapping.objects.get(leaf__pk=mapping_id)
+            teleflu_mapping = TelefluMapping.objects.get(leaf__pk=mapping_id, teleflu_project__pk=teleflu_project_id)
 
         except TelefluMapping.DoesNotExist:
             data["is_error"] = True

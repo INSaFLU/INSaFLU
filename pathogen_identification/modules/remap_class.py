@@ -1705,7 +1705,7 @@ class Mapping_Instance:
         print("exporting mapping files", self.classification_success)
         print("destination", destination)
 
-        if self.classification_success is not "none":
+        if self.mapped_success is not "none":
             # self.reference.move_igv_files(destination)
             self.reference.relocate_mapping_files(destination)
 

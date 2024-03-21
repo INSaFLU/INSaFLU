@@ -1618,7 +1618,7 @@ class Mapping_Instance:
     apres: bool = False
     rpres: bool = False
     success: str = "none"
-    mapped_success: int = 0
+    reads_mapped_success: int = 0
     mapped_reads: int = 0
     original_reads: int = 0
 
@@ -1633,7 +1633,7 @@ class Mapping_Instance:
         self.prefix = prefix
         self.reference = reference
         self.assembly = assembly
-        self.mapped_success = self.reference.number_of_reads_mapped
+        self.reads_mapped_success = self.reference.number_of_reads_mapped
         self.mapped_reads = mapped_reads
         self.original_reads = original_reads
         self.rpres = self.assert_reads_mapped()
@@ -1702,10 +1702,12 @@ class Mapping_Instance:
 
     def export_mapping_files(self, destination):
         """move files to media directory"""
-        print("exporting mapping files", self.classification_success)
+        print("exporting mapping files")
+        print("class. success_", self.classification_success)
+        print("mapping success", self.mapping_success)
         print("destination", destination)
 
-        if self.mapped_success is not "none":
+        if self.mapping_success is not "none":
             # self.reference.move_igv_files(destination)
             self.reference.relocate_mapping_files(destination)
 
@@ -1726,15 +1728,15 @@ class Mapping_Instance:
         if len(self.reference.report) == 0:
             return pd.DataFrame()
 
-        ntax["mapped"] = self.mapped_success
+        ntax["mapped"] = self.reads_mapped_success
         if self.mapped_reads > 0:
-            ntax["mapped_prop"] = 100 * (self.mapped_success / self.mapped_reads)
+            ntax["mapped_prop"] = 100 * (self.reads_mapped_success / self.mapped_reads)
         else:
-            self.mapped_reads = self.mapped_success
+            self.mapped_reads = self.reads_mapped_success
             ntax["mapped_prop"] = 1
 
         if self.original_reads > 0:
-            ntax["ref_prop"] = 100 * (self.mapped_success / self.original_reads)
+            ntax["ref_prop"] = 100 * (self.reads_mapped_success / self.original_reads)
 
         else:
             ntax["ref_prop"] = 0

@@ -638,8 +638,10 @@
                             {% if error_rate_available %}
                             <th>Mismatch rate</th>
                             {% endif %}
+                            {% if is_classification %}
                             <th>class. success</th>
-                            <th>mapping success</th>                
+                            <th>mapping success</th>
+                            {% endif %}      
                             <th>Warning</th>
                             {% if in_control %}
                             <th>Control</th>
@@ -717,10 +719,12 @@
                             <td data-title="Error rate" style="{% depth_color_error value.error_rate max_error_rate %}">
                                 {{value.error_rate}}</td>
                             {% endif %}
+                            {% if is_classification %}
                             <td data-title="class. success" style="{% success_count_color value.classification_success %}">
                                 {{value.classification_success}}</td>
                             <td data-title="mapping success" style="{% success_count_color value.mapping_success %}">
                                 {{value.mapping_success}}</td>
+                            {% endif %}
                             <td data-title="Warning" style="{% flag_false_positive_color value.depth value.depthR value.coverage value.mapped_reads value.windows_covered project_index %}">
                                 {% flag_false_positive value.depth value.depthR value.coverage value.mapped_reads value.windows_covered project_index %}</td>
                             {% if in_control %}

@@ -692,6 +692,9 @@ def filter_reference_maps_select(
     return None
 
 
+from pathogen_identification.models import TeleFluSample
+
+
 def create_televir_igv_report(teleflu_project_pk: int, leaf_index: int) -> bool:
 
     teleflu_project = TeleFluProject.objects.get(pk=teleflu_project_pk)
@@ -769,8 +772,12 @@ def create_televir_igv_report(teleflu_project_pk: int, leaf_index: int) -> bool:
         print("merged_success", merged_success)
 
         for sample_pk, sample_info in sample_dict.items():
-            sample = PIProject_Sample.objects.get(pk=sample_pk)
-            teleflu_mapping.stacked_samples.add(sample)
+            teleflu_sample = TeleFluSample.objects.get(
+                teleflu_project=teleflu_project,
+                televir_sample=sample_info["sample"],
+            )
+
+            teleflu_mapping.stacked_samples.add(teleflu_sample)
             teleflu_mapping.save()
 
     except Exception as e:

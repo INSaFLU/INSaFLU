@@ -13,20 +13,16 @@ from scipy.stats import kstest
 from constants.software_names import SoftwareNames
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.modules.object_classes import (
-    Bedgraph,
-    MappingStats,
-    Read_class,
-    Remap_Target,
-    RunCMD,
-    SoftwareDetail,
-    SoftwareRemap,
-)
+from pathogen_identification.modules.object_classes import (Bedgraph,
+                                                            MappingStats,
+                                                            Read_class,
+                                                            Remap_Target,
+                                                            RunCMD,
+                                                            SoftwareDetail,
+                                                            SoftwareRemap)
 from pathogen_identification.utilities.televir_parameters import RemapParams
 from pathogen_identification.utilities.utilities_general import (
-    plot_dotplot,
-    read_paf_coordinates,
-)
+    plot_dotplot, read_paf_coordinates)
 
 pd.options.mode.chained_assignment = None
 np.warnings.filterwarnings("ignore")
@@ -849,6 +845,8 @@ class Remapping:
         )
         self.vcf = self.relocate_file(self.vcf, destination)
 
+        return self
+
     def cleanup_files(self):
         for file in [
             self.read_map_bam,
@@ -1603,6 +1601,8 @@ class Remapping:
             shutil.move(self.coverage_plot, self.full_path_coverage_plot)
             self.coverage_plot = new_coverage_plot
 
+        return self
+
     def move_dotplot(self, static_dir_plots):
         """Move dotplot to static directory."""
 
@@ -1615,6 +1615,8 @@ class Remapping:
         if os.path.exists(self.dotplot):
             shutil.move(self.dotplot, self.full_path_dotplot)
             self.dotplot = new_dotplot
+        
+        return self
 
 
 class Mapping_Instance:
@@ -1715,10 +1717,10 @@ class Mapping_Instance:
 
         if self.mapping_success is not "none":
             # self.reference.move_igv_files(destination)
-            self.reference.relocate_mapping_files(destination)
+            self.reference = self.reference.relocate_mapping_files(destination)
 
             if self.assembly:
-                self.assembly.relocate_mapping_files(destination)
+                self.assembly = self.assembly.relocate_mapping_files(destination)
 
     def generate_full_mapping_report_entry(self):
         ntax = pd.concat((self.mapping_main_info, self.reference.report), axis=1)
@@ -2066,8 +2068,6 @@ class Mapping_Manager(Tandem_Remap):
             print(f"################## MAPPING ACC {target.accid} ##################")
             mapped_instance = self.reciprocal_map(target)
 
-            self.mapped_instances.append(mapped_instance)
-
             apres = mapped_instance.reference.number_of_contigs_mapped > 0
             rpres = mapped_instance.reference.number_of_reads_mapped > 0
 
@@ -2075,18 +2075,22 @@ class Mapping_Manager(Tandem_Remap):
             print(f" Contigs mapped: {apres}")
 
             if rpres:
-                mapped_instance.reference.move_coverage_plot(static_plots_dir)
+                mapped_instance.reference = (
+                    mapped_instance.reference.move_coverage_plot(static_plots_dir)
+                )
                 mapped_instance.export_mapping_files(media_dir)
             else:
                 print("No reads mapped, skipping coverage plot")
                 mapped_instance.reference.cleanup_files()
 
             if apres:
-                mapped_instance.reference.move_dotplot(static_plots_dir)
+                mapped_instance.reference = mapped_instance.reference.move_dotplot(static_plots_dir)
             else:
                 print("No contigs mapped, skipping dotplot")
                 if mapped_instance.assembly:
                     mapped_instance.assembly.cleanup_files()
+
+            self.mapped_instances.append(mapped_instance)
 
     def export_mapping_files(self, output_dir):
         for instance in self.mapped_instances:

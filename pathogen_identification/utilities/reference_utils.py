@@ -661,11 +661,14 @@ def filter_reference_maps_select(
 
     for ref in ref_maps:
 
+        print("############### ref")
+        print(ref)
+        print(ref.bam_file_path)
+        print(ref.bai_file_path)
+
         if not ref.bam_file_path:
             continue
         if not ref.bai_file_path:
-            continue
-        if not ref.vcf:
             continue
 
         if os.path.exists(ref.bam_file_path) == False:

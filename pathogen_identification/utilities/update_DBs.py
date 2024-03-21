@@ -503,6 +503,9 @@ def get_run_parents(run_class: RunEngine_class, parameter_set: ParameterSet):
         name=run_class.sample.sample_name,
     )
 
+    print("############ get_run_parents ############")
+    print(run_class.run_pk)
+
     try:
         if run_class.run_pk is not None:
             runmain = RunMain.objects.get(
@@ -1067,6 +1070,9 @@ def Update_ReferenceMap(
         run=run,
         taxid=ref_map.reference.target.taxid,
     )
+
+    print("remap_targets")
+    print(run.parameter_set.leaf.index)
 
     if remap_targets.exists():
         for target in remap_targets:

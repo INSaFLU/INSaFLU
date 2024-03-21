@@ -1281,6 +1281,8 @@ def create_teleflu_project(request):
         process_SGE = ProcessSGE()
 
         try:
+
+            print(ref_ids)
             if check_metaReference_exists_from_ids(ref_ids):
                 data["exists"] = True
                 return JsonResponse(data)

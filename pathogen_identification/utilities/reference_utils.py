@@ -10,16 +10,17 @@ from django.contrib.auth.models import User
 from django.core.files.temp import NamedTemporaryFile
 from django.db.models import Q
 
-from constants.constants import (Constants, FileExtensions, FileType, TypeFile,
-                                 TypePath)
+from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
 from constants.software_names import SoftwareNames
 from constants.televir_directories import Televir_Directory_Constants
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
 from managing_files.models import Reference
-from pathogen_identification.models import (RawReference,
-                                            ReferenceSourceFileMap,
-                                            TelefluMapping)
+from pathogen_identification.models import (
+    RawReference,
+    ReferenceSourceFileMap,
+    TelefluMapping,
+)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
 from pathogen_identification.utilities.utilities_general import simplify_name
 from utils.software import Software
@@ -166,8 +167,11 @@ def merge_multiple_refs(references: List[RawReference], output_prefix: str):
     return merged_fasta.name
 
 
-from pathogen_identification.models import (MetaReference, RawReferenceMap,
-                                            TeleFluProject)
+from pathogen_identification.models import (
+    MetaReference,
+    RawReferenceMap,
+    TeleFluProject,
+)
 
 
 def check_metaReference_exists(references: List[RawReference]):
@@ -178,6 +182,10 @@ def check_metaReference_exists(references: List[RawReference]):
     meta_references = MetaReference.objects.filter(
         project__id=references[0].run.project.id
     )
+
+    print([x.run.project.id for x in references])
+
+    print("meta_references", meta_references)
 
     metaref_ids = [metaref.metaid for metaref in meta_references]
     reference_ids = [reference.id for reference in references]
@@ -431,7 +439,7 @@ def teleflu_to_insaflu_reference(project_id: int, user_id: int):
     teleflu_project = TeleFluProject.objects.get(id=project_id)
     if teleflu_project.reference is not None:
         return True, teleflu_project.reference
-    
+
     metareference = teleflu_project.raw_reference
     reference_fasta = teleflu_project.raw_reference.file_path
     name = metareference.description
@@ -634,8 +642,11 @@ def create_teleflu_igv_report(teleflu_project_pk: int) -> bool:
         return False
 
 
-from pathogen_identification.models import (ParameterSet, PIProject_Sample,
-                                            ReferenceMap_Main)
+from pathogen_identification.models import (
+    ParameterSet,
+    PIProject_Sample,
+    ReferenceMap_Main,
+)
 
 
 def filter_reference_maps_select(

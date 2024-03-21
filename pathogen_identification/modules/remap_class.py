@@ -791,7 +791,13 @@ class Remapping:
         os.makedirs(subdirectory, exist_ok=True)
         final_file = os.path.join(subdirectory, os.path.basename(filepath))
 
+        print("########## moving file")
+        print(filepath)
+        print(final_file)
+
         if os.path.exists(filepath) and final_file != filepath:
+            print("########## moving file")
+            print("final_path exists", os.path.exists(final_file))
             if os.path.exists(final_file):
                 os.remove(final_file)
 

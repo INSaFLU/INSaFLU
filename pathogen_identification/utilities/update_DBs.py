@@ -1079,7 +1079,16 @@ def Update_ReferenceMap(
             sample=sample,
             run=run,
         )
+
+        print("ReferenceMap_Main exists")
     except ReferenceMap_Main.DoesNotExist:
+
+        print("Creating REFMAP_MAIN")
+        print(ref_map.reference.read_map_sorted_bam)
+        print(
+            ref_map.reference.mapped_subset_r1_fasta,
+        )
+
         map_db = ReferenceMap_Main(
             reference=ref_map.reference.target.acc_simple,
             sample=sample,

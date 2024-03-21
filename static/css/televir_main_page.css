@@ -48,6 +48,7 @@
 }
 
 .reference-item {
+    width: 500px;
     float: left; /* make the reference item float to the left */
     list-style-type: none; /* remove bullet points */
     border: none; /* add a border around each reference */

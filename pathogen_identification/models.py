@@ -1220,6 +1220,10 @@ class TelefluMapping(models.Model):
         return os.path.join(self.mapping_directory, "teleflu_stacked.vcf")
 
     @property
+    def vcf_media_path(self):
+        return self.mapping_vcf.replace(PICS.media_directory, "/media")
+
+    @property
     def mapping_igv_report(self):
         return os.path.join(self.mapping_directory, "igv_report.html")
 

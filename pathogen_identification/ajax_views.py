@@ -1593,6 +1593,8 @@ def load_teleflu_workflows(request):
                 "/insaflu_web/INSaFLU", ""
             )
 
+            node_info["stacked_vcf"] = mapping.vcf_media_path
+
             mapping_workflows.append(node_info)
 
         data["mapping_workflows"] = mapping_workflows

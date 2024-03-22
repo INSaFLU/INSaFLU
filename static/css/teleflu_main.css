@@ -1,0 +1,225 @@
+.modal-title-description {
+    font-size: 18px;
+    color: #666;
+    display: block;
+}
+
+.workflow-container {
+    border: 1px solid #eee; /* Even lighter gray */
+    padding: 10px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    border-radius: 5px;
+    background-color: #f9f9f9; /* Subtle background color */
+}
+.workflow-name {
+    margin-left: 10px;
+    margin-right: 20px;
+    align-self: center;
+}
+.outer-container {
+    margin-bottom: 20px; /* Adjust as needed */
+}
+
+.step-circle {
+    display: center;
+    float: right;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    line-height: 40px; /* Equal to the height */
+    text-align: center;
+    background-color: #ccc;
+    margin-right: 10px;
+    margin-left: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    align-items: center;
+}
+
+.step-circle-display {
+    position: relative;
+    display: center;
+    float: right;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    line-height: 40px; /* Equal to the height */
+    text-align: center;
+    background-color: #ccc;
+    margin-right: 10px;
+    margin-left: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    align-items: center;
+}
+
+.software_off {
+    background-color: #ccc;
+}
+
+.software_on {
+    background-color: #007bff;
+    color: white;
+}
+
+.workflow-title {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+    background-color: #f5f5f5; /* Light gray background */
+    border-radius: 5px;
+    margin-bottom: 0px;
+    margin-right: 20px;
+}
+
+.workflow-name {
+    font-size: 1.2em;
+    font-weight: bold;
+    width: 120px;
+
+}
+.step-container {
+    display: flex;
+    justify-content: flex-start; /* Align items to the start of the container */
+    align-items: center;
+    padding: 5px;
+    border-right: 2px solid #e0e0e0; /* Even lighter gray */
+    padding-right: 10px;
+    margin-right: 20px;
+}
+
+.workflow-info {
+    border-right: 2px solid #e0e0e0; /* Even lighter gray */
+    padding: 5px;
+    padding-right: 25px;
+    margin-right: 20px;
+}
+
+
+.parameters-container {
+    border-radius: 5px;
+    background-color: #e0e0e0; /* Light gray background */
+    transition: opacity 0.5s ease-in-out, width 0.5s ease-in-out;
+    opacity: 0;
+    max-width: 0;
+    overflow: hidden;
+    white-space: nowrap; /* Prevent the text from wrapping */
+}
+
+.parameters-container.visible {
+    padding: 5px;
+    padding-left: 10px;
+    padding-right: 10px;
+    margin-right: 10px; /* Adjust as needed */
+    margin-left: 10px; /* Adjust as needed */
+}
+
+.parameters-container-hover {
+    color: #000;
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    border-radius: 5px;
+    border: 2px solid #ccc;
+    background-color: #e0e0e0; /* Light gray background */
+    transition: opacity 0.5s ease-in-out, width 0.5s ease-in-out;
+    overflow: hidden;
+    white-space: nowrap; /* Prevent the text from wrapping */
+    padding: 5px;
+    padding-left: 10px;
+    padding-right: 10px;
+    margin-right: 10px; /* Adjust as needed */
+    margin-left: 10px; /* Adjust as needed */
+    top: 50%;
+    left: 50%;
+    transform: translate(0%, -0%);
+    /* other styles... */
+    z-index: 1; /* Ensure it appears above the step-circle-display */
+
+}
+
+
+.workflow-dialog {
+    max-width: 90%; /* Adjust as needed */
+}
+
+.workflow-modal-body {
+    margin-left: 10px;
+}
+
+.mapSamplesButton {
+    cursor: pointer;
+}
+
+.btn {
+    cursor: pointer;
+}
+
+.workflow-mapped {
+    align-self: center;
+    background-color: #b3b3b3;
+    border: none;
+    color: #000;
+    text-align: center;
+    text-decoration: none;
+    margin: 0px 5px;
+    margin-right: 10px;
+    padding: 8px 8px;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: bold;
+    font-family: Arial, sasns-serif;
+}
+
+.stackSamplesButton {
+    
+    justify-content: center;
+    margin-right: 20px;
+    background-color: #e0e0e0; /* Green background */
+    border-radius: 50%; /* Make it circular */
+    color: #007bff; /* White icon */
+    padding: 10px; /* Space around the icon */
+    cursor: pointer; /* Change cursor to pointer when hovering over the icon */
+    transition: background-color 0.3s ease; /* Smooth transition */
+}
+
+.stackSamplesButton:hover {
+    background-color: #b3b3b3; /* Darker green background when hovering */
+}
+
+.stackSamplesIGV {
+    
+    justify-content: center;
+    margin-right: 10px;
+    background-color: #e0e0e0; /* Green background */
+    border-radius: 50%; /* Make it circular */
+    color: #007bff; /* White icon */
+    padding: 10px; /* Space around the icon */
+    cursor: pointer; /* Change cursor to pointer when hovering over the icon */
+    transition: background-color 0.3s ease; /* Smooth transition */
+}
+
+.stackSamplesIGV:hover {
+    background-color: #b3b3b3; /* Darker green background when hovering */
+}
+
+
+
+.stackSamplesVCF {
+    justify-content: center;
+    margin-right: 10px;
+    background-color: #e0e0e0; /* Green background */
+    border-radius: 50%; /* Make it circular */
+    color: #007bff; /* White icon */
+    padding: 10px; /* Space around the icon */
+    cursor: pointer; /* Change cursor to pointer when hovering over the icon */
+    transition: background-color 0.3s ease; /* Smooth transition */
+}
+
+.stackSamplesVCF:hover {
+    background-color: #b3b3b3; /* Darker green background when hovering */
+}

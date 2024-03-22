@@ -207,10 +207,17 @@
                 </div>
 
                 <div class="teleflu-results ">
-                    {% if project.insaflu_project == True %}
+                    {% if project.insaflu_project == "Finished" %}
                     <span class="insaflu-exists">
                         <a>
                             <i class="fa fa-check" aria-hidden="true"></i>
+                            INSaFLU Project
+                        </a>
+                    </span>
+                    {% elif project.insaflu_project == "Processing" %}
+                    <span class="insaflu-processing">
+                        <a>
+                            <i class="fa fa-spinner fa-spin" aria-hidden="true"></i>
                             INSaFLU Project
                         </a>
                     </span>

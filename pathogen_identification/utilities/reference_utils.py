@@ -1,6 +1,6 @@
 import ntpath
 import os
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from Bio import SeqIO
 from Bio.Seq import Seq
@@ -17,7 +17,10 @@ from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
 from managing_files.models import Reference
 from pathogen_identification.models import (
+    ParameterSet,
+    PIProject_Sample,
     RawReference,
+    ReferenceMap_Main,
     ReferenceSourceFileMap,
     TelefluMapping,
 )
@@ -457,7 +460,7 @@ def teleflu_to_insaflu_reference(project_id: int, user_id: int):
 
 def generate_insaflu_reference(
     reference_fasta: str, name: str, final_fasta_name: str, user: User
-):
+) -> Tuple[bool, int]:
     utils = Utils()
     software = Software()
     final_gb_name = final_fasta_name.replace(".fasta", ".gbk")
@@ -465,7 +468,7 @@ def generate_insaflu_reference(
     temp_genbank_file = create_genbank_for_fasta(reference_fasta)
 
     if reference_fasta is None:
-        return None, None
+        return False, None
 
     ### Create reference
 
@@ -640,13 +643,6 @@ def create_teleflu_igv_report(teleflu_project_pk: int) -> bool:
     except Exception as e:
         print(e)
         return False
-
-
-from pathogen_identification.models import (
-    ParameterSet,
-    PIProject_Sample,
-    ReferenceMap_Main,
-)
 
 
 def filter_reference_maps_select(

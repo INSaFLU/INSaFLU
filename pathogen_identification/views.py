@@ -1,12 +1,16 @@
 import logging
 import mimetypes
+import ntpath
 import os
 from typing import Any, Dict
 
 import pandas as pd
+from Bio import SeqIO
 from braces.views import FormValidMessageMixin, LoginRequiredMixin
 from django import forms
+from django.conf import settings
 from django.contrib import messages
+from django.core.files.temp import NamedTemporaryFile
 from django.db import transaction
 from django.db.models import Q
 from django.forms.models import model_to_dict
@@ -20,7 +24,7 @@ from django.views import generic
 from django.views.generic import ListView
 from django_tables2 import RequestConfig
 
-from constants.constants import Constants
+from constants.constants import Constants, FileExtensions, TypeFile, TypePath
 from constants.meta_key_and_values import MetaKeyAndValue
 from extend_user.models import Profile
 from fluwebvirus.settings import MEDIA_ROOT, STATICFILES_DIRS
@@ -28,10 +32,11 @@ from managing_files.forms import AddSampleProjectForm
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
+from managing_files.models import Reference
 from managing_files.tables import SampleToProjectsTable
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.constants_settings import ConstantsSettings as PICS
-from pathogen_identification.forms import ReferenceForm
+from pathogen_identification.forms import PanelReferencesUploadForm, ReferenceForm
 from pathogen_identification.models import (
     ContigClassification,
     FinalReport,
@@ -71,6 +76,10 @@ from pathogen_identification.tables import (
     TeleFluInsaFLuProjectTable,
     TeleFluReferenceTable,
 )
+from pathogen_identification.utilities.reference_utils import (
+    generate_insaflu_reference,
+    temp_fasta_copy,
+)
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
 from pathogen_identification.utilities.utilities_general import (
@@ -89,9 +98,163 @@ from pathogen_identification.utilities.utilities_views import (
     recover_assembly_contigs,
 )
 from settings.constants_settings import ConstantsSettings as CS
-from utils.process_SGE import ProcessSGE
+from utils.software import Software
 from utils.support_django_template import get_link_for_dropdown_item
 from utils.utils import ShowInfoMainPage, Utils
+
+
+class UploadPanelReferencesView:
+    pass
+
+
+class UploadNewReferencesView(
+    LoginRequiredMixin, FormValidMessageMixin, generic.FormView
+):
+
+    form_class = PanelReferencesUploadForm
+    template_name = "datasets/datasets_new_consensus.html"
+
+    ## Other solution to get the Consensus
+    ## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1
+    def get_form_kwargs(self):
+        """
+        Set the request to pass in the form
+        """
+        kw = super(UploadNewReferencesView, self).get_form_kwargs()
+        kw["request"] = self.request  # the trick!
+        kw["pk"] = self.kwargs["pk"]
+        return kw
+
+    def get_success_url(self):
+        """
+        get source_pk from consensus dataset, need to pass it in context
+        """
+        return reverse_lazy(
+            "add-consensus-dataset", kwargs={"pk": self.kwargs.get("pk")}
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super(UploadNewReferencesView, self).get_context_data(**kwargs)
+        context["nav_dataset"] = True
+        context["nav_modal"] = True  ## short the size of modal window
+        context["pk"] = self.kwargs["pk"]  ## pk of dataset, need to return
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
+        return context
+
+    @transaction.atomic
+    def form_valid(self, form):
+        software = Software()
+        utils = Utils()
+        panel_pk = int(self.kwargs["pk"])
+
+        ### test anonymous account
+        try:
+            profile = Profile.objects.get(user=self.request.user)
+            if profile.only_view_project:
+                messages.warning(
+                    self.request,
+                    "'{}' account can not add references.".format(
+                        self.request.user.username
+                    ),
+                    fail_silently=True,
+                )
+                return super(UploadNewReferencesView, self).form_invalid(form)
+        except Profile.DoesNotExist:
+            pass
+
+        if form.is_valid():
+            name = form.cleaned_data["name"]
+            reference_fasta = form.cleaned_data["reference_fasta"]
+
+            reference = form.save(commit=False)
+            ## set other data
+            reference.display_name = reference.name
+            reference.owner = self.request.user
+            reference.is_obsolete = False
+            reference.number_of_locus = self.request.session[
+                Constants.NUMBER_LOCUS_FASTA_FILE
+            ]
+            reference.reference_fasta_name = utils.clean_name(
+                ntpath.basename(reference_fasta.name)
+            )
+            reference.save()
+
+            ## has the names thar need to pass, if empty pass all
+            vect_names_to_upload = (
+                self.request.session[Constants.SEQUENCES_TO_PASS].split(",")
+                if len(self.request.session[Constants.SEQUENCES_TO_PASS]) > 0
+                else []
+            )
+
+            ## get panel
+            panel = ReferencePanel.objects.get(pk=panel_pk)
+
+            ## clean file
+            original_file_name = os.path.join(
+                settings.MEDIA_ROOT, reference.reference_fasta.name
+            )
+            software.dos_2_unix(original_file_name)
+            ## test if bases all upper
+            software.fasta_2_upper(original_file_name)
+
+            ### check if there all seq names are present in the database yet, and create new files
+            ### At least has one sequence
+            vect_fail, vect_pass = [], []
+            with open(
+                os.path.join(settings.MEDIA_ROOT, reference.reference_fasta.name)
+            ) as handle_in:
+                for record in SeqIO.parse(handle_in, "fasta"):
+
+                    ## name
+                    seq_name = (
+                        "{}_{}".format(name, record.id) if len(name) > 0 else record.id
+                    )
+
+                    ## check the select ones
+                    if (
+                        len(vect_names_to_upload)
+                    ) > 0 and not record.id in vect_names_to_upload:
+                        vect_fail.append(seq_name)
+                        continue
+
+                    ## try to upload
+                    reference_fasta_temp_file_name = NamedTemporaryFile(
+                        prefix="flu_fa_", suffix=".fasta", delete=False
+                    )
+
+                    with open(reference_fasta_temp_file_name.name, "w") as handle_out:
+                        SeqIO.write(record, handle_out, "fasta")
+
+                    ## create the reference
+                    final_fasta_filename = f"{seq_name}.fasta"
+                    success_create, ref_pk = generate_insaflu_reference(
+                        reference_fasta_temp_file_name.name,
+                        seq_name,
+                        final_fasta_filename,
+                        self.request.user,
+                    )
+
+                    if success_create == False or ref_pk == None:
+                        vect_fail.append(seq_name)
+                        continue
+
+                    vect_pass.append(seq_name)
+                    insaflu_reference = Reference.objects.get(pk=ref_pk)
+
+            utils.remove_file(original_file_name)
+            message = (
+                "Consensus '" + "', '".join(vect_pass) + "' were created successfully."
+            )
+            if len(vect_fail) > 0:
+                message += " Not uploaded consensus '" + "', '".join(vect_fail) + "'."
+            messages.success(self.request, message, fail_silently=True)
+            return super(UploadNewReferencesView, self).form_valid(form)
+        else:
+            return super(UploadNewReferencesView, self).form_invalid(form)
+
+    form_valid_message = ""  ## need to have this
 
 
 def clean_check_box_in_session(request):

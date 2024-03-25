@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Dict, List
 
 import pandas as pd
+from Bio import SeqIO
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.http import HttpResponse, JsonResponse
@@ -18,25 +19,35 @@ from constants.software_names import SoftwareNames
 from fluwebvirus.settings import STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
-from pathogen_identification.models import (FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RawReference, ReferenceMap_Main,
-                                            ReferencePanel,
-                                            ReferenceSourceFileMap, RunMain,
-                                            TeleFluProject, TeleFluSample)
+from pathogen_identification.models import (
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReferenceMap_Main,
+    ReferencePanel,
+    ReferenceSourceFileMap,
+    RunMain,
+    TeleFluProject,
+    TeleFluSample,
+)
 from pathogen_identification.tables import ReferenceSourceTable
 from pathogen_identification.utilities.reference_utils import (
-    check_metaReference_exists_from_ids, check_reference_exists,
-    check_reference_submitted, create_combined_reference)
+    check_metaReference_exists_from_ids,
+    check_reference_exists,
+    check_reference_submitted,
+    create_combined_reference,
+)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
-from pathogen_identification.utilities.utilities_general import \
-    get_services_dir
-from pathogen_identification.utilities.utilities_pipeline import \
-    SoftwareTreeUtils
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.utilities_general import get_services_dir
+from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter, SampleReferenceManager, set_control_reports)
+    ReportSorter,
+    SampleReferenceManager,
+    set_control_reports,
+)
 from pathogen_identification.views import inject__added_references
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
@@ -1449,7 +1460,9 @@ def add_teleflu_sample(request):
 
 from pathogen_identification.models import SoftwareTreeNode, TelefluMapping
 from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils, Utils_Manager)
+    SoftwareTreeUtils,
+    Utils_Manager,
+)
 
 
 @login_required
@@ -1675,7 +1688,9 @@ def stack_igv_teleflu_workflow(request):
         mapping_id = int(request.POST["workflow_id"])
 
         try:
-            teleflu_mapping = TelefluMapping.objects.get(leaf__pk=mapping_id, teleflu_project__pk=teleflu_project_id)
+            teleflu_mapping = TelefluMapping.objects.get(
+                leaf__pk=mapping_id, teleflu_project__pk=teleflu_project_id
+            )
 
         except TelefluMapping.DoesNotExist:
             data["is_error"] = True
@@ -1832,6 +1847,212 @@ def deploy_televir_map(request):
 
         data["is_ok"] = True
 
+        return JsonResponse(data)
+
+
+from django.conf import settings
+from django.core.files.temp import NamedTemporaryFile
+
+from managing_files.models import Reference
+from utils.software import Software
+
+
+def check_metadata_table_clean(metadata_table_file):
+    """
+    check metadata table
+    """
+    metadata_table = metadata_table_file.read().decode("utf-8")
+    metadata_table = metadata_table.split("\n")
+    metadata_table = [x.split("\t") for x in metadata_table]
+    metadata_table = [x for x in metadata_table if len(x) > 1]
+    # pandas read_csv
+    try:
+        metadata_table = pd.DataFrame(metadata_table, columns=metadata_table[0]).drop(0)
+
+    except Exception as e:
+        return False
+
+    if len(metadata_table) == 0:
+        return False
+
+    if len(metadata_table[0]) < 2:
+        return False
+
+    if "accid" not in metadata_table.columns:
+        return False
+
+    if "taxid" not in metadata_table.columns:
+        return False
+
+    return True
+
+
+@login_required
+@require_POST
+def check_panel_upload_clean(request):
+    """
+    check if fasta and metadata coherent.
+    """
+    if request.is_ajax():
+        # name = self.cleaned_data.get("name", "").strip()
+        # vect_names_to_upload = (
+        #    self.cleaned_data.get("display_name", "").strip().split(",")
+        #    if len(self.cleaned_data.get("display_name", "").strip()) > 0
+        #    else []
+        # )
+        # dict_names = dict(zip(vect_names_to_upload, [0] * len(vect_names_to_upload)))
+
+        data = {"is_ok": False, "is_error": False, "error_message": ""}
+        data[Constants.SEQUENCES_TO_PASS] = []
+        software = Software()
+        utils = Utils()
+
+        name = request.POST.get("name", "").strip()
+        reference_metadata_table_file = request.FILES.get("metadata_table", None)
+        reference_fasta = request.FILES.get("reference_fasta", None)
+        reference_metadata_table = pd.DataFrame(columns=["accid", "taxid"])
+
+        ### testing metadata table
+        if not check_metadata_table_clean(reference_metadata_table_file):
+            data["is_error"] = True
+            return JsonResponse(data)
+
+        reference_metadata_table = pd.read_csv(
+            reference_metadata_table_file.file, sep="\t"
+        )
+
+        ### testing file names
+        ## testing fasta
+        some_error_in_files = False
+        reference_fasta_temp_file_name = NamedTemporaryFile(
+            prefix="flu_fa_", delete=False
+        )
+        reference_fasta_temp_file_name.write(reference_fasta.read())
+        reference_fasta_temp_file_name.flush()
+        reference_fasta_temp_file_name.close()
+        software.dos_2_unix(reference_fasta_temp_file_name.name)
+        error_message = ""
+        try:
+            number_locus = utils.is_fasta(reference_fasta_temp_file_name.name)
+
+            ## test the max numbers
+            if number_locus > Constants.MAX_SEQUENCES_FROM_CONTIGS_FASTA:
+                error_message = "Max allow number of contigs in Multi-Fasta: {}".format(
+                    Constants.MAX_SEQUENCES_FROM_CONTIGS_FASTA
+                )
+                some_error_in_files = True
+
+            total_length_fasta = utils.get_total_length_fasta(
+                reference_fasta_temp_file_name.name
+            )
+            if (
+                not some_error_in_files
+                and total_length_fasta > settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA
+            ):
+                some_error_in_files = True
+                error_message = (
+                    "The max sum length of the sequences in fasta: {}".format(
+                        settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA
+                    )
+                )
+
+            n_seq_name_bigger_than = utils.get_number_seqs_names_bigger_than(
+                reference_fasta_temp_file_name.name,
+                Constants.MAX_LENGTH_CONTIGS_SEQ_NAME,
+                len(name),
+            )
+            if not some_error_in_files and n_seq_name_bigger_than > 0:
+                some_error_in_files = True
+                if n_seq_name_bigger_than == 1:
+                    error_message = "There is one sequence name length bigger than {0}. The max. length name is {0}.".format(
+                        Constants.MAX_LENGTH_CONTIGS_SEQ_NAME
+                    )
+                else:
+                    error_message = "There are {0} sequences with name length bigger than {1}. The max. length name is {1}.".format(
+                        n_seq_name_bigger_than,
+                        Constants.MAX_LENGTH_CONTIGS_SEQ_NAME,
+                    )
+
+            ## if some errors in the files, fasta or genBank, return
+            if some_error_in_files:
+                data["is_error"] = True
+                data["error_message"] = error_message
+                return data
+
+            ### check if there all seq names are present in the database yet
+            b_pass = False
+            vect_error, vect_fail_seqs, vect_pass_seqs = [], [], []
+            dict_names = {}
+            with open(reference_fasta_temp_file_name.name) as handle_in:
+                for record in SeqIO.parse(handle_in, "fasta"):
+                    ## only these ones can get in
+                    if record.id in reference_metadata_table.accid:
+                        dict_names[record.id] = 1
+                    if (
+                        len(reference_metadata_table)
+                    ) > 0 and not record.id in reference_metadata_table.accid:
+                        vect_fail_seqs.append(record.id)
+                        continue
+
+                    ## try to upload
+                    try:
+                        seq_name = (
+                            "{}_{}".format(name, record.id)
+                            if len(name) > 0
+                            else record.id
+                        )
+                        Reference.objects.get(
+                            name__iexact=seq_name,
+                            owner=request.user,
+                            is_obsolete=False,
+                            is_deleted=False,
+                        )
+                        vect_error.append(
+                            "Seq. name: '" + seq_name + "' already exist in database."
+                        )
+                    except Reference.DoesNotExist:
+                        vect_pass_seqs.append(record.id)
+                        b_pass = True
+
+            ## if none of them pass throw an error
+            error_message = ""
+            if not b_pass:
+                some_error_in_files = True
+                if len(reference_metadata_table) > 0 and len(vect_pass_seqs) == 0:
+                    error_message = (
+                        "None of these names '{}' match to the sequences names".format(
+                            "', '".join(reference_metadata_table.accid)
+                        )
+                    )
+                for message in vect_error:
+                    error_message += message + " "
+            else:
+                ## if empty load all
+                data[Constants.SEQUENCES_TO_PASS] = vect_pass_seqs
+            ### some sequences names suggested are not present in the file
+            vect_fail_seqs = [key for key in dict_names if dict_names[key] == 0]
+            if len(vect_fail_seqs) > 0:
+                error_message += (
+                    "Sequences names '{}' does not have match in the file".format(
+                        ", '".join(vect_fail_seqs)
+                    )
+                )
+
+        except IOError as e:  ## (e.errno, e.strerror)
+            os.unlink(reference_fasta_temp_file_name.name)
+            some_error_in_files = True
+            error_message = e.args[0]
+        except ValueError as e:  ## (e.errno, e.strerror)
+            os.unlink(reference_fasta_temp_file_name.name)
+            some_error_in_files = True
+            error_message = e.args[0]
+        except:
+            os.unlink(reference_fasta_temp_file_name.name)
+            some_error_in_files = True
+            error_message = "Error in the fasta file"
+
+        ## remove temp files
+        os.unlink(reference_fasta_temp_file_name.name)
         return JsonResponse(data)
 
 

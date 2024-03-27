@@ -26,6 +26,7 @@ class ConstantsSettings:
     televir_subdirectory = "televir_projects"
     run_files_zipped = "run.zip"
     PAGINATE_NUMBER = 10
+    TELEVIR_REFERENCE_PAGINATE_NUMBER = 20
 
     USER_TREE_INDEX = 0
 

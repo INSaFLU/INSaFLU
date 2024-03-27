@@ -741,37 +741,76 @@ class SampleTableOne(tables.Table):
         ).count()
 
 
-class SampleTableTwo(tables.Table):
-    sorting = tables.Column("Sorting", orderable=False, empty_values=())
-    ref_management = tables.Column("References", orderable=False, empty_values=())
+from pathogen_identification.models import ReferenceSourceFile, ReferenceSourceFileMap
+
+
+class ReferenceSourceFileTable(tables.Table):
+
+    filename = tables.Column(verbose_name="Name", empty_values=())
+    owner = tables.Column(verbose_name="Owner", empty_values=())
+    references = tables.Column(verbose_name="References", empty_values=())
+    creation_date = tables.Column(verbose_name="Creation Date")
 
     class Meta:
-        model = PIProject_Sample
-
         attrs = {"class": "paleblue"}
-        fields = (
-            "sorting",
-            "ref_management",
-        )
+
+    def render_filename(self, record: ReferenceSourceFile):
+        print(record.file)
+        return record.file
+
+    def render_owner(self, record: ReferenceSourceFile):
+        if record.owner is None:
+            return "system"
+
+        return record.owner.username
+
+    def render_references(self, record: ReferenceSourceFile):
+
+        return ReferenceSourceFileMap.objects.filter(
+            reference_source_file=record
+        ).count()
+
+    def render_creation_date(self, record: ReferenceSourceFile):
+        if record.creation_date is None:
+            return "Not set"
+
+        return record.creation_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE)
 
 
-class SampleTableThree(tables.Table):
+class TelevirReferencesTable(tables.Table):
+
+    description = tables.Column(verbose_name="Description")
+    accid = tables.Column(verbose_name="Accession ID")
+    taxid = tables.Column(verbose_name="TaxID")
+    source = tables.Column(verbose_name="Source", empty_values=())
+
     class Meta:
-        model = PIProject_Sample
-
         attrs = {"class": "paleblue"}
+
         fields = (
-            "combinations",
-            "mapping_runs",
-            "running_processes",
-            "queued_processes",
+            "description",
+            "accid",
+            "taxid",
+            "source",
         )
+
+    def render_description(self, record: ReferenceSourceFileMap):
+        return record.reference_source.description
+
+    def render_accid(self, record: ReferenceSourceFileMap):
+        return record.reference_source.accid
+
+    def render_taxid(self, record: ReferenceSourceFileMap):
+        return record.reference_source.taxid
+
+    def render_source(self, record: ReferenceSourceFileMap):
+        return record.reference_source_file.file
 
 
 class AddedReferenceTable(tables.Table):
     description = tables.Column(verbose_name="Description")
-    accid = tables.Column(verbose_name="Accession id")
-    taxid = tables.Column(verbose_name="Taxid")
+    accid = tables.Column(verbose_name="Accession ID")
+    taxid = tables.Column(verbose_name="TaxID")
 
     class Meta:
         attrs = {"class": "paleblue"}

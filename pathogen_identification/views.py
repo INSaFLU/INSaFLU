@@ -48,13 +48,13 @@ from pathogen_identification.models import (
     ReferenceContigs,
     ReferenceMap_Main,
     ReferencePanel,
+    ReferenceSourceFile,
     ReferenceSourceFileMap,
     RunAssembly,
     RunDetail,
     RunMain,
     RunRemapMain,
     Sample,
-    TelefluMappedSample,
     TelefluMapping,
     TeleFluProject,
     TeleFluSample,
@@ -953,7 +953,6 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
                 else:
                     tproject_data["insaflu_project"] = "Processing"
 
-            print(tproject_data)
             teleflu_data.append(tproject_data)
 
         context["teleflu_projects"] = teleflu_data
@@ -1137,8 +1136,6 @@ class TelefluProjectView(LoginRequiredMixin, generic.CreateView):
             node_info["stacked_html"] = mapping.mapping_igv_report.replace(
                 "/insaflu_web/INSaFLU", ""
             )
-
-            print(node_info["stacked_vcf"])
 
             mapping_workflows.append(node_info)
 
@@ -1487,6 +1484,175 @@ class ReferencePanelManagement(LoginRequiredMixin, generic.CreateView):
         context["user_id"] = user.pk
 
         return context
+
+
+from django.views.generic import ListView, TemplateView, UpdateView
+
+from pathogen_identification.tables import (
+    ReferenceSourceFileTable,
+    TelevirReferencesTable,
+)
+
+
+class ReferenceManagementBase(TemplateView):
+    """
+    page to manage and create insaflu references files, generate panels.
+    """
+
+    template_name = "pathogen_identification/televir_references_base.html"
+
+    def get_context_data(self, **kwargs) -> Dict[str, Any]:
+
+        context = super().get_context_data(**kwargs)
+        context["nav_project"] = True
+        return context
+
+
+class ReferenceFileManagement(LoginRequiredMixin, generic.CreateView):
+    """
+    page to manage and create insaflu references files.
+
+    """
+
+    template_name = "pathogen_identification/televir_files_management.html"
+    fields = "__all__"
+    utils = Utils()
+
+    def get_queryset(self, **kwargs):
+        user_pk = self.request.user.pk
+
+        return (
+            ReferenceSourceFile.objects.filter(Q(owner=None) | Q(owner__id=user_pk))
+            .exclude(is_deleted=True)
+            .order_by("-creation_date")
+        )
+
+    def get_context_data(self, **kwargs) -> Dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["nav_project"] = True
+        user = self.request.user
+
+        files = (
+            ReferenceSourceFile.objects.filter(Q(owner=None) | Q(owner__id=user.pk))
+            .exclude(is_deleted=True)
+            .order_by("-creation_date")
+        )
+
+        files_table = ReferenceSourceFileTable(files)
+        RequestConfig(
+            self.request, paginate={"per_page": ConstantsSettings.PAGINATE_NUMBER}
+        ).configure(files_table)
+
+        context["files_table"] = files_table
+        context["nav_sample"] = True
+        context["show_paginatior"] = files.count() > Constants.PAGINATE_NUMBER
+        context["query_set_count"] = files.count()
+        context["user_id"] = user.pk
+
+        return context
+
+
+class ReferenceManagement(LoginRequiredMixin, generic.CreateView):
+    """
+    page to manage and create insaflu references files.
+
+    """
+
+    template_name = "pathogen_identification/televir_references_view.html"
+    fields = "__all__"
+    utils = Utils()
+
+    def get_queryset(self, **kwargs):
+        user_pk = self.request.user.pk
+
+        return ReferenceSourceFileMap.objects.filter(
+            Q(reference_source_file__owner=None)
+            | Q(reference_source_file__owner__id=user_pk)
+        )
+
+    def get_context_data(self, **kwargs) -> Dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["nav_project"] = True
+        user = self.request.user
+
+        tag_search = "search_references"
+
+        references = ReferenceSourceFileMap.objects.filter(
+            Q(reference_source_file__owner=None)
+            | Q(reference_source_file__owner__id=user.pk)
+        ).order_by("reference_source__description")
+
+        if self.request.GET.get(tag_search) != None and self.request.GET.get(
+            tag_search
+        ):
+            references = references.filter(
+                Q(
+                    reference_source__description__icontains=self.request.GET.get(
+                        tag_search
+                    )
+                )
+                | Q(reference_source__accid__icontains=self.request.GET.get(tag_search))
+                | Q(
+                    reference_source__taxid__taxid__icontains=self.request.GET.get(
+                        tag_search
+                    )
+                )
+                | Q(
+                    reference_source_file__file__icontains=self.request.GET.get(
+                        tag_search
+                    )
+                )
+            )
+
+        summary = {
+            "total": references.count(),
+            "Accession ID": references.values_list("reference_source__accid", flat=True)
+            .distinct()
+            .count(),
+            "TaxID": references.values_list("reference_source__taxid__taxid", flat=True)
+            .distinct()
+            .count(),
+            "Description": references.values_list(
+                "reference_source__description", flat=True
+            )
+            .distinct()
+            .count(),
+            "Source": references.values_list("reference_source_file__file", flat=True)
+            .distinct()
+            .count(),
+        }
+
+        files_table = TelevirReferencesTable(references)
+        RequestConfig(
+            self.request,
+            paginate={"per_page": ConstantsSettings.TELEVIR_REFERENCE_PAGINATE_NUMBER},
+        ).configure(files_table)
+
+        context["table_summary"] = summary
+        context["files_table"] = files_table
+        context["nav_sample"] = True
+        context["show_paginatior"] = references.count() > Constants.PAGINATE_NUMBER
+        context["query_set_count"] = references.count()
+        context["user_id"] = user.pk
+
+        return context
+
+
+from .forms import UploadFileForm
+
+
+def upload_reference_panel_view(request):
+    if request.method == "POST":
+        form = UploadFileForm(request.POST, request.FILES)
+        if form.is_valid():
+            # Handle the uploaded files here
+            pass
+    else:
+        form = UploadFileForm()
+
+    return render(
+        request, "pathogen_identification/televir_upload_panels.html", {"form": form}
+    )
 
 
 class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):

@@ -29,6 +29,13 @@ class ReferenceForm(forms.Form):
     )
 
 
+class UploadFileForm(forms.Form):
+    name = forms.CharField(max_length=200)
+    description = forms.CharField(widget=forms.Textarea)
+    fasta_file = forms.FileField()
+    metadata = forms.FileField()
+
+
 ## https://kuanyui.github.io/2015/04/13/django-crispy-inline-form-layout-with-bootstrap/
 class PanelReferencesUploadForm(forms.ModelForm):
     """

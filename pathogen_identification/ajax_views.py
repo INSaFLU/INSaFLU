@@ -1850,38 +1850,52 @@ def deploy_televir_map(request):
         return JsonResponse(data)
 
 
+from typing import Optional
+
 from django.conf import settings
 from django.core.files.temp import NamedTemporaryFile
 
 from managing_files.models import Reference
+from pathogen_identification.models import ReferenceSourceFileMetadata
 from utils.software import Software
 
 
-def check_metadata_table_clean(metadata_table_file):
+def check_metadata_table_clean(metadata_table_file) -> Optional[pd.DataFrame]:
     """
     check metadata table
     """
+    print("reading table")
+    print(metadata_table_file)
     metadata_table = metadata_table_file.read().decode("utf-8")
+    print(metadata_table)
     metadata_table = metadata_table.split("\n")
-    metadata_table = [x.split("\t") for x in metadata_table]
+    sep = os.path.splitext(metadata_table_file.name)[1]
+    sep = "\t" if sep == ".tsv" else ","
+    metadata_table = [x.split(sep) for x in metadata_table]
     metadata_table = [x for x in metadata_table if len(x) > 1]
+    print(metadata_table)
+    print("HI")
     # pandas read_csv
     try:
-        metadata_table = pd.DataFrame(metadata_table, columns=metadata_table[0]).drop(0)
+        metadata_table = pd.DataFrame(metadata_table[1:], columns=metadata_table[0])
 
     except Exception as e:
-        return False
+        print(e)
+        return None
+    print(metadata_table, len(metadata_table))
 
     if len(metadata_table) == 0:
+        return None
+    print("ER")
+    return metadata_table
+
+
+def check_table_columns(metadata_table):
+
+    if "Accession ID" not in metadata_table.columns:
         return False
 
-    if len(metadata_table[0]) < 2:
-        return False
-
-    if "accid" not in metadata_table.columns:
-        return False
-
-    if "taxid" not in metadata_table.columns:
+    if "TaxID" not in metadata_table.columns:
         return False
 
     return True
@@ -1893,6 +1907,7 @@ def check_panel_upload_clean(request):
     """
     check if fasta and metadata coherent.
     """
+
     if request.is_ajax():
         # name = self.cleaned_data.get("name", "").strip()
         # vect_names_to_upload = (
@@ -1902,24 +1917,72 @@ def check_panel_upload_clean(request):
         # )
         # dict_names = dict(zip(vect_names_to_upload, [0] * len(vect_names_to_upload)))
 
-        data = {"is_ok": False, "is_error": False, "error_message": ""}
+        data = {
+            "is_ok": False,
+            "is_error": False,
+            "error_message": "",
+            "summary": "",
+            "success": "",
+            "log": [],
+            "pass": False,
+        }
+
+        print(request.POST)
+        print(request.FILES)
+
+        description = request.POST.get("description", "").strip()
+
+        if request.POST.get("name", "").strip() == "":
+            data["is_error"] = True
+            data["error_message"] = "Name is empty."
+            return JsonResponse(data)
+
+        if request.FILES.get("metadata", None) is None:
+            data["is_error"] = True
+            data["error_message"] = "Metadata file is empty."
+            return JsonResponse(data)
+
+        if request.FILES.get("fasta_file", None) is None:
+            data["is_error"] = True
+            data["error_message"] = "Fasta file is empty."
+            return JsonResponse(data)
+
         data[Constants.SEQUENCES_TO_PASS] = []
         software = Software()
         utils = Utils()
 
         name = request.POST.get("name", "").strip()
-        reference_metadata_table_file = request.FILES.get("metadata_table", None)
-        reference_fasta = request.FILES.get("reference_fasta", None)
-        reference_metadata_table = pd.DataFrame(columns=["accid", "taxid"])
+        reference_metadata_table_file = request.FILES.get("metadata", None)
+        reference_fasta_file = request.FILES.get("fasta_file", None)
+        reference_metadata_table = pd.DataFrame(
+            columns=["accid", "taxid", "description"]
+        )
 
         ### testing metadata table
-        if not check_metadata_table_clean(reference_metadata_table_file):
+        reference_metadata_table = check_metadata_table_clean(
+            reference_metadata_table_file
+        )
+
+        if reference_metadata_table is None:
             data["is_error"] = True
+            data["error_message"] = "Metadata table is empty."
             return JsonResponse(data)
 
-        reference_metadata_table = pd.read_csv(
-            reference_metadata_table_file.file, sep="\t"
-        )
+        if check_table_columns(reference_metadata_table) is False:
+            data["is_error"] = True
+            data["error_message"] = "Metadata table has not the right columns."
+            return JsonResponse(data)
+
+        error_message = ""
+        data["error_message"] = ""
+
+        if "Description" not in reference_metadata_table.columns:
+            print("HI")
+            description_ref = f"Panel {name} reference"
+            if description != "":
+                description_ref = description_ref + f" - {description}"
+            reference_metadata_table["Description"] = description_ref
+            error_message = "Description column not found. Added default description."
 
         ### testing file names
         ## testing fasta
@@ -1927,13 +1990,25 @@ def check_panel_upload_clean(request):
         reference_fasta_temp_file_name = NamedTemporaryFile(
             prefix="flu_fa_", delete=False
         )
-        reference_fasta_temp_file_name.write(reference_fasta.read())
-        reference_fasta_temp_file_name.flush()
-        reference_fasta_temp_file_name.close()
-        software.dos_2_unix(reference_fasta_temp_file_name.name)
-        error_message = ""
+        try:
+            file_data = reference_fasta_file.read()
+            print(file_data)
+            reference_fasta_temp_file_name.write(file_data)
+            reference_fasta_temp_file_name.flush()
+            reference_fasta_temp_file_name.close()
+            software.dos_2_unix(reference_fasta_temp_file_name.name)
+        except Exception as e:
+            print(e)
+            some_error_in_files = True
+            error_message = "Error in the fasta file"
+            data["is_error"] = True
+            return JsonResponse(data)
+
+        print("HI")
         try:
             number_locus = utils.is_fasta(reference_fasta_temp_file_name.name)
+            print(number_locus)
+            data["log"].append("Number of sequences in fasta: {}".format(number_locus))
 
             ## test the max numbers
             if number_locus > Constants.MAX_SEQUENCES_FROM_CONTIGS_FASTA:
@@ -1945,6 +2020,14 @@ def check_panel_upload_clean(request):
             total_length_fasta = utils.get_total_length_fasta(
                 reference_fasta_temp_file_name.name
             )
+
+            data["log"].append(
+                "\nTotal length of the sequences in fasta: {}".format(
+                    total_length_fasta
+                )
+            )
+            print(total_length_fasta)
+
             if (
                 not some_error_in_files
                 and total_length_fasta > settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA
@@ -1955,12 +2038,16 @@ def check_panel_upload_clean(request):
                         settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA
                     )
                 )
+                data["is_error"] = True
+                data["error_message"] = error_message
+                return JsonResponse(data)
 
             n_seq_name_bigger_than = utils.get_number_seqs_names_bigger_than(
                 reference_fasta_temp_file_name.name,
                 Constants.MAX_LENGTH_CONTIGS_SEQ_NAME,
                 len(name),
             )
+            print(some_error_in_files, n_seq_name_bigger_than)
             if not some_error_in_files and n_seq_name_bigger_than > 0:
                 some_error_in_files = True
                 if n_seq_name_bigger_than == 1:
@@ -1983,52 +2070,85 @@ def check_panel_upload_clean(request):
             b_pass = False
             vect_error, vect_fail_seqs, vect_pass_seqs = [], [], []
             dict_names = {}
+            retained_rows = []
+            already_existing_ids = []
+            print(reference_metadata_table)
             with open(reference_fasta_temp_file_name.name) as handle_in:
                 for record in SeqIO.parse(handle_in, "fasta"):
+                    print(record.id)
                     ## only these ones can get in
-                    if record.id in reference_metadata_table.accid:
+                    if record.id in reference_metadata_table["Accession ID"].values:
                         dict_names[record.id] = 1
                     if (
                         len(reference_metadata_table)
-                    ) > 0 and not record.id in reference_metadata_table.accid:
+                    ) > 0 and not record.id in reference_metadata_table[
+                        "Accession ID"
+                    ].values:
+                        print("Fail")
                         vect_fail_seqs.append(record.id)
+                        vect_error.append(
+                            f"Sequence name '{record.id}' does not have match in the metadata table."
+                        )
                         continue
 
                     ## try to upload
-                    try:
-                        seq_name = (
-                            "{}_{}".format(name, record.id)
-                            if len(name) > 0
-                            else record.id
-                        )
-                        Reference.objects.get(
-                            name__iexact=seq_name,
-                            owner=request.user,
-                            is_obsolete=False,
-                            is_deleted=False,
-                        )
-                        vect_error.append(
-                            "Seq. name: '" + seq_name + "' already exist in database."
-                        )
-                    except Reference.DoesNotExist:
-                        vect_pass_seqs.append(record.id)
-                        b_pass = True
+                    referrence_exists = ReferenceSourceFileMap.objects.filter(
+                        reference_source__accid__iexact=record.id,
+                        reference_source_file__owner=request.user,
+                    ).exists()
+                    if referrence_exists:
+                        already_existing_ids.append(record.id)
+
+                    record_metadata = reference_metadata_table[
+                        reference_metadata_table["Accession ID"] == record.id
+                    ]
+
+                    retained_rows = retained_rows + [record_metadata]
+                    vect_pass_seqs.append(record.id)
+                    b_pass = True
 
             ## if none of them pass throw an error
             error_message = ""
+            data["log"].append(
+                (
+                    f"\n {len(vect_pass_seqs)} sequence(s) name(s) found in metadata table."
+                )
+            )
+            if len(vect_pass_seqs) > 0:
+                data["pass"] = True
+                retained_rows = pd.concat(retained_rows)
+                taxid_count = retained_rows["TaxID"].value_counts()
+                accid_count = retained_rows["Accession ID"].value_counts()
+
+                data["log"].append(f"\n {len(taxid_count)} taxid(s).")
+                data["log"].append(f"\n {len(accid_count)} accid(s).")
+
             if not b_pass:
                 some_error_in_files = True
                 if len(reference_metadata_table) > 0 and len(vect_pass_seqs) == 0:
                     error_message = (
-                        "None of these names '{}' match to the sequences names".format(
-                            "', '".join(reference_metadata_table.accid)
+                        "None of these names: '{}' match to the sequences names".format(
+                            "', '".join(reference_metadata_table["Accession ID"].values)
                         )
                     )
+                    data["error_message"] = error_message
+                    data["is_error"] = True
+                    return JsonResponse(data)
+
                 for message in vect_error:
                     error_message += message + " "
+
+                    data["log"].append(f"\n{error_message}")
+                    data["is_error"] = True
             else:
                 ## if empty load all
                 data[Constants.SEQUENCES_TO_PASS] = vect_pass_seqs
+
+            if len(already_existing_ids) > 0:
+                data["log"].append(
+                    f"\n{len(already_existing_ids)} sequences already exist in the database."
+                )
+                data["log"].append(f"\n{', '.join(already_existing_ids)}")
             ### some sequences names suggested are not present in the file
             vect_fail_seqs = [key for key in dict_names if dict_names[key] == 0]
             if len(vect_fail_seqs) > 0:
@@ -2037,20 +2157,14 @@ def check_panel_upload_clean(request):
                         ", '".join(vect_fail_seqs)
                     )
                 )
-
-        except IOError as e:  ## (e.errno, e.strerror)
-            os.unlink(reference_fasta_temp_file_name.name)
+        except Exception as e:
+            print(e)
             some_error_in_files = True
-            error_message = e.args[0]
-        except ValueError as e:  ## (e.errno, e.strerror)
-            os.unlink(reference_fasta_temp_file_name.name)
-            some_error_in_files = True
-            error_message = e.args[0]
-        except:
-            os.unlink(reference_fasta_temp_file_name.name)
-            some_error_in_files = True
-            error_message = "Error in the fasta file"
-
+            error_message = "Error in parsing fasta file"
+            data["error_message"] = error_message
+            data["is_error"] = True
+            return JsonResponse(data)
+        data["is_ok"] = True
         ## remove temp files
         os.unlink(reference_fasta_temp_file_name.name)
         return JsonResponse(data)

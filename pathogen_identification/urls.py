@@ -71,6 +71,11 @@ urlpatterns = [
         name="create_reference_panel",
     ),
     url(
+        r"check_panel_upload",
+        PIajax_views.check_panel_upload_clean,
+        name="check_televir_panel_upload",
+    ),
+    url(
         r"panel_references_add",
         PIajax_views.add_references_to_panel,
         name="add_references_to_panel",
@@ -84,6 +89,11 @@ urlpatterns = [
         r"panel_references_get",
         PIajax_views.get_panel_references,
         name="panel_references_get",
+    ),
+    url(
+        r"televir_panel_upload",
+        PIviews.upload_reference_panel_view,
+        name="upload_reference_panel_view",
     ),
     url(
         r"panel_get_all",
@@ -131,9 +141,24 @@ urlpatterns = [
         name="all_PIproject_reports",
     ),
     url(
-        r"Projects/reference_panels$",
+        r"Projects/televir_reference_management$",
         PIviews.ReferencePanelManagement.as_view(),
         name="reference_panels",
+    ),
+    url(
+        r"Projects/reference_panels$",
+        PIviews.ReferenceManagementBase.as_view(),
+        name="reference_dashboard",
+    ),
+    url(
+        r"Projects/reference_files$",
+        PIviews.ReferenceFileManagement.as_view(),
+        name="televir_reference_files",
+    ),
+    url(
+        r"Projects/references_televir$",
+        PIviews.ReferenceManagement.as_view(),
+        name="televir_references",
     ),
     url(
         r"Refereces/teleflu_references$",

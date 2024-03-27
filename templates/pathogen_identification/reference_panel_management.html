@@ -1,4 +1,4 @@
-{% extends '_layouts/base.html' %}
+{% extends 'pathogen_identification/televir_references_base.html' %}
 
 {% load bootstrap4 %}
 {% load querystring from django_tables2 %}
@@ -6,21 +6,6 @@
 {% load trans blocktrans from i18n %}
 {% load django_bootstrap_breadcrumbs %}
 {% load static %}
-
-{% block extra_messages %}
-<!-- set the messages -->
-<div class="container">
-	<div id="id_messages_remove"></div>
-</div>
-{% endblock %}
-
-{% block breadcrumbs %}
-{{ block.super }}
-{% breadcrumb "Project Index" "project-index" %}
-{% breadcrumb "TELEVIR Projects" "PIprojects_main" %}
-{% breadcrumb "Manage Reference Panels" "manage-panels" %}
-{% endblock %}
-
 
 {% block content %}
 

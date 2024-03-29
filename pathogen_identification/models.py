@@ -14,8 +14,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from managing_files.models import Sample
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.data_classes import IntermediateFiles
 
 # Create your models here.
@@ -1265,20 +1264,51 @@ class ReferenceTaxid(models.Model):
         return self.taxid
 
 
+from constants.constants import Televir_Directory_Constants as Televir_Directories
+
+
 class ReferenceSourceFile(models.Model):
 
     file = models.CharField(max_length=100, blank=True, null=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
+    description = models.CharField(max_length=300, blank=True, null=True)
     is_deleted = models.BooleanField(default=False)
     creation_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
 
     def __str__(self):
-        return self.file
+        return f"{self.file}"
+
+    @property
+    def filepath(self):
+
+        if self.owner is None:
+            filepath = os.path.join(Televir_Directories.ref_fasta_directory, self.file)
+
+        else:
+            filepath = os.path.join(
+                PICS.media_directory,
+                PICS.televir_subdirectory,
+                str(self.owner.pk),
+                "reference",
+                self.file,
+            )
+
+        return filepath
+
+    @property
+    def references(self):
+        return ReferenceSourceFileMap.objects.filter(reference_source_file=self)
+
+    @property
+    def references_count(self):
+        return ReferenceSourceFileMap.objects.filter(reference_source_file=self).count()
 
 
 class ReferenceSourceFileMetadata(models.Model):
 
-    source_file= models.ForeignKey(ReferenceSourceFile, on_delete=models.CASCADE, blank=True, null=True)
+    source_file = models.ForeignKey(
+        ReferenceSourceFile, on_delete=models.CASCADE, blank=True, null=True
+    )
     name = models.CharField(max_length=100, blank=True, null=True)
     description = models.CharField(max_length=300, blank=True, null=True)
 

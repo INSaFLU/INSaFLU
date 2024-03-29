@@ -10,24 +10,43 @@ from django.contrib.auth.models import User
 from django.core.files.temp import NamedTemporaryFile
 from django.db.models import Q
 
-from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
+from constants.constants import (Constants, FileExtensions, FileType, TypeFile,
+                                 TypePath)
 from constants.software_names import SoftwareNames
 from constants.televir_directories import Televir_Directory_Constants
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
 from managing_files.models import Reference
-from pathogen_identification.models import (
-    ParameterSet,
-    PIProject_Sample,
-    RawReference,
-    ReferenceMap_Main,
-    ReferenceSourceFileMap,
-    TelefluMapping,
-)
+from pathogen_identification.models import (ParameterSet, PIProject_Sample,
+                                            RawReference, ReferenceMap_Main,
+                                            ReferenceSourceFileMap,
+                                            TelefluMapping)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
 from pathogen_identification.utilities.utilities_general import simplify_name
 from utils.software import Software
 from utils.utils import Utils
+
+
+class ReferenceMapWrapper:
+
+    def __init__(self, source_map: ReferenceSourceFileMap, user: User):
+        self.source_map = source_map
+        self.description = source_map.reference_source.description
+        self.taxid = source_map.reference_source.taxid
+        self.accid = source_map.reference_source.accid
+        self.file = source_map.reference_source_file.file
+        self.id = source_map.pk
+        self.user = user
+
+
+def remove_unwanted_chars(description: str):
+    unwanted_chars = [",", "}", "{", "[", "]", "(", ")", ":", ";", " ", "'"]
+    for char in unwanted_chars:
+        if char == " ":
+            description = description.replace(char, "_")
+        else:
+            description = description.replace(char, "")
+    return description
 
 
 def description_to_name(description, keep: int = 4):
@@ -40,17 +59,16 @@ def description_to_name(description, keep: int = 4):
     description = "_".join(description)
 
     description = utils.clean_name(description)
-    description = description.replace(",", "")
+    description = remove_unwanted_chars(description)
     return description
 
 
-def fasta_from_reference(reference_id):
+def fasta_from_raw_reference(accid, description):
     """
     This function takes the raw reference id and returns the fasta name"""
-    reference = RawReference.objects.get(id=reference_id)
 
-    description_clean = description_to_name(reference.description)
-    fasta_name = f"{reference.accid}_{description_clean}.fasta"
+    description_clean = description_to_name(description)
+    fasta_name = f"{accid}_{description_clean}.fasta"
 
     return fasta_name
 
@@ -139,9 +157,12 @@ def extract_file(accid):
         description_simple = description_to_name(description)
         tmp_fasta = utils.get_temp_file(description_simple, ".fasta")
 
-        source_file = os.path.join(
-            fasta_directory, reference.reference_source_file.file
-        )
+        print(f"Extracting {accid} to {tmp_fasta}")
+
+        source_file = reference.reference_source_file.filepath
+
+        print(f"source_file: {source_file}")
+
         extracted = televir_bioinf.extract_reference(source_file, accid, tmp_fasta)
         if extracted:
             return tmp_fasta
@@ -170,11 +191,8 @@ def merge_multiple_refs(references: List[RawReference], output_prefix: str):
     return merged_fasta.name
 
 
-from pathogen_identification.models import (
-    MetaReference,
-    RawReferenceMap,
-    TeleFluProject,
-)
+from pathogen_identification.models import (MetaReference, RawReferenceMap,
+                                            TeleFluProject)
 
 
 def check_metaReference_exists(references: List[RawReference]):
@@ -357,15 +375,31 @@ def create_genbank_for_fasta(fasta_filepath: str):
     return temp_genbank_file
 
 
-def check_reference_exists(raw_reference_id, user_id):
-    raw_ref = RawReference.objects.get(id=raw_reference_id)
+def check_user_reference_exists(description, accid, user_id):
 
-    description = raw_ref.description
     description_clean = description_to_name(description)
-    accid = raw_ref.accid
+    print(description_clean)
 
     query_set = Reference.objects.filter(
         owner__id=user_id, is_obsolete=False, is_deleted=False
+    ).order_by("-name")
+
+    if query_set.filter(
+        Q(name__icontains=description_clean)
+        | Q(reference_genbank_name__icontains=accid)
+        | Q(reference_fasta_name__icontains=accid)
+    ).exists():
+        return True
+
+    return False
+
+def check_reference_exists(description, accid):
+
+    description_clean = description_to_name(description)
+    print(description_clean)
+
+    query_set = Reference.objects.filter(
+        is_obsolete=False, is_deleted=False
     ).order_by("-name")
 
     if query_set.filter(
@@ -399,13 +433,28 @@ def delete_reference(raw_reference_id, user_id):
         existing.delete()
 
 
-def check_reference_submitted(ref_id, user_id):
+def check_raw_reference_submitted(ref_id, user_id):
     user = User.objects.get(pk=user_id)
     process_controler = ProcessControler()
 
     process = ProcessControler.objects.filter(
         owner__id=user.pk,
-        name=process_controler.get_name_televir_teleflu_ref_create(
+        name=process_controler.get_name_raw_televir_teleflu_ref_create(
+            ref_id=ref_id,
+        ),
+        is_finished=False,
+        is_error=False,
+    )
+    return process.exists()
+
+
+def check_file_reference_submitted(ref_id, user_id):
+    user = User.objects.get(pk=user_id)
+    process_controler = ProcessControler()
+
+    process = ProcessControler.objects.filter(
+        owner__id=user.pk,
+        name=process_controler.get_name_file_televir_teleflu_ref_create(
             ref_id=ref_id,
         ),
         is_finished=False,
@@ -419,13 +468,42 @@ def raw_reference_to_insaflu(raw_reference_id: int, user_id: int):
     raw_reference = RawReference.objects.get(id=raw_reference_id)
     accid = raw_reference.accid
 
-    if check_reference_exists(raw_reference_id, user_id):
+    description = raw_reference.description
+
+    if check_user_reference_exists(description, accid, user_id):
         return False, None
 
     reference_fasta = extract_file(accid)
 
     name = description_to_name(raw_reference.description)
-    final_fasta_name = fasta_from_reference(raw_reference_id)
+    final_fasta_name = fasta_from_raw_reference(accid=accid, description=description)
+
+    if reference_fasta is None:
+        return None, None
+
+    success, reference_id = generate_insaflu_reference(
+        reference_fasta, name, final_fasta_name, user
+    )
+
+    return success, reference_id
+
+
+def file_reference_to_insaflu(source_reference_id: int, user_id: int):
+    user = User.objects.get(id=user_id)
+    raw_reference = ReferenceSourceFileMap.objects.get(id=source_reference_id)
+    accid = raw_reference.reference_source.accid
+    description = raw_reference.reference_source.description
+
+    print(accid, description)
+
+    if check_user_reference_exists(description, accid, user_id):
+        return False, None
+
+    reference_fasta = extract_file(accid)
+    print(reference_fasta)
+
+    name = description_to_name(description)
+    final_fasta_name = fasta_from_raw_reference(accid=accid, description=description)
 
     if reference_fasta is None:
         return None, None

@@ -1,4 +1,4 @@
-{% extends 'pathogen_identification/televir_references_base.html' %}
+{% extends '_layouts/base.html' %}
 
 {% load bootstrap4 %}
 {% load querystring from django_tables2 %}
@@ -6,8 +6,75 @@
 {% load trans blocktrans from i18n %}
 {% load django_bootstrap_breadcrumbs %}
 {% load static %}
+{% load custom_tags %}
+
+
+{% block extra_messages %}
+<!-- set the messages -->
+<div class="container">
+	<div id="id_messages_remove"></div>
+</div>
+{% endblock %}
+
+{% block breadcrumbs %}
+{{ block.super }}
+{% breadcrumb "Project Index" "project-index" %}
+{% breadcrumb "TELEVIR Projects" "PIprojects_main" %}
+{% breadcrumb "Manage References" "" %}
+{% endblock %}
+
+
+
+{% block extra_nav %}
+<nav class="nav-style">
+    <ul style="list-style-type: none; margin: 0; padding: 0; overflow: hidden;">
+        <li style="float: left; margin-right: 10px;" class="tab" ><a href="{% url 'televir_reference_files' %}">Files</a></li>
+        <li style="float: left; margin-right: 10px;" class="tab " ><a href="{% url 'televir_references' %}">References</a></li>
+        <li style="float: left; margin-right: 10px;" class="tab active" ><a href="{% url 'reference_panels' %}">Panels</a></li>
+    </ul>
+</nav>
+{% endblock %}
+
 
 {% block content %}
+
+
+<style>
+
+    .nav-style {
+        border-radius: 5px;
+        background-color: #f8f9fa;
+        padding: 10px;
+        margin-left: 10px;
+        margin-bottom: 10px;
+        margin-right: 10px;
+    }
+
+    .tab {
+        border-radius: 5px;
+        background-color: #f8f9fa;
+
+    }
+ 
+    ul li.active {
+        background-color: #007bff; /* Light, desaturated blue */
+        color: white; /* Font color */
+       
+        padding: 2px; /* Padding */
+    }
+
+    ul li.active a {
+        background-color: #007bff; /* Light, desaturated blue */
+        color: white; /* Font color */
+       
+        padding: 2px; /* Padding */
+    }
+
+    #id_remove_modal .modal-dialog {
+        max-width: 800px; /* Or any other value */
+    }
+</style>
+
 
 {% block extra_head %}
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">

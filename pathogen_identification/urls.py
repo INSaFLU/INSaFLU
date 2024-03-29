@@ -76,6 +76,11 @@ urlpatterns = [
         name="check_televir_panel_upload",
     ),
     url(
+        r"delete_reference_file",
+        PIajax_views.delete_reference_file,
+        name="delete_reference_file",
+    ),
+    url(
         r"panel_references_add",
         PIajax_views.add_references_to_panel,
         name="add_references_to_panel",
@@ -162,7 +167,7 @@ urlpatterns = [
     ),
     url(
         r"Refereces/teleflu_references$",
-        PIajax_views.create_insaflu_reference,
+        PIajax_views.create_insaflu_reference_from_filemap,
         name="create_teleflu_reference",
     ),
     url(

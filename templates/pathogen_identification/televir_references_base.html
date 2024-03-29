@@ -27,11 +27,12 @@
 {% block extra_nav %}
 <nav style="border-radius: 5px; background-color: #f8f9fa; padding: 10px; margin-left: 20px; margin-bottom: 30px; margin-right: 20px;">
     <ul style="list-style-type: none; margin: 0; padding: 0; overflow: hidden;">
-        <li style="float: left; margin-right: 10px; {% is_active request 'televir_reference_files' %}"><a href="{% url 'televir_reference_files' %}">Files</a></li>
-        <li style="float: left; margin-right: 10px; {% is_active request 'televir_references' %}"><a href="{% url 'televir_references' %}">References</a></li>
-        <li style="float: left; margin-right: 10px; {% is_active request 'reference_panels' %}"><a href="{% url 'reference_panels' %}">Panels</a></li>
+        <li style="float: left; margin-right: 10px; {% column_name_check request 'televir_reference_files' %}"><a href="{% url 'televir_reference_files' %}">Files</a></li>
+        <li style="float: left; margin- : 10px; {% column_name_check request 'televir_references' %}"><a href="{% url 'televir_references' %}">References</a></li>
+        <li style="float: left; margin-right: 10px; {% column_name_check request 'reference_panels' %}"><a href="{% url 'reference_panels' %}">Panels</a></li>
     </ul>
 </nav>
+
 {% endblock %}
 
 {% block content %}

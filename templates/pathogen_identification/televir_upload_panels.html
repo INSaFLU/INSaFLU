@@ -1,4 +1,4 @@
-{% extends 'pathogen_identification/televir_references_base.html' %}
+{% extends '_layouts/base.html' %}
 
 {% load bootstrap4 %}
 {% load querystring from django_tables2 %}
@@ -6,13 +6,62 @@
 {% load trans blocktrans from i18n %}
 {% load django_bootstrap_breadcrumbs %}
 {% load static %}
+{% load custom_tags %}
+
+
+{% block extra_messages %}
+<!-- set the messages -->
+<div class="container">
+	<div id="id_messages_remove"></div>
+</div>
+{% endblock %}
+
+{% block breadcrumbs %}
+{{ block.super }}
+{% breadcrumb "Project Index" "project-index" %}
+{% breadcrumb "TELEVIR Projects" "PIprojects_main" %}
+{% breadcrumb "Manage References" "" %}
+{% endblock %}
+
 
 {% block content %}
 
+
 <style>
+
+    .nav-style {
+        border-radius: 5px;
+        background-color: #f8f9fa;
+        padding: 10px;
+        margin-left: 10px;
+        margin-bottom: 10px;
+        margin-right: 10px;
+    }
+
+    .tab {
+        border-radius: 5px;
+        background-color: #f8f9fa;
+
+    }
+
+    ul li.active {
+        background-color: #007bff; /* Light, desaturated blue */
+        color: white; /* Font color */
+       
+        padding: 2px; /* Padding */
+    }
+
+    ul li.active a {
+        background-color: #007bff; /* Light, desaturated blue */
+        color: white; /* Font color */
+       
+        padding: 2px; /* Padding */
+    }
+
     .alert {
         margin-top: 10px;
     }
+
     body {
         display: flex;
         justify-content: center;
@@ -47,7 +96,7 @@
 
     #id_description {
         width: 100%;
-        height: 100px;
+        height: 50px;
     }
 
     #id_name {
@@ -58,7 +107,58 @@
         border: 1px solid;
         padding: 10px;
         margin-bottom: 10px;
-        display: none;
+    }
+    .helptext {
+        color: gray;
+        display: block;
+        margin-top: 5px;
+        margin-bottom: 0px;
+        margin-left: 20px;
+
+    }
+    .tab {
+        margin-left: 20px;
+        color: gray;
+        display: block;
+        margin-top: 0px;
+    }
+
+    textarea {
+        border: 1px solid #ced4da;
+        border-radius: .25rem;
+    }
+
+    #summary {
+        border: 1px solid #ced4da;
+        border-radius: .25rem;
+        padding: 10px;
+        margin-bottom: 10px;
+        background-color: #F0F8FF; /* Adjust as needed */
+        color: gray; /* Adjust as needed */
+        font-size: 12px; /* Adjust as needed */
+        height: 100px;
+        font-family: Arial, sans-serif;
+        font-style: italic;
+        font-size: 16px;
+    }
+
+    #summary active {
+        font-style: normal;
+        color: black;
+    }
+     
+    .button-container {
+        width: 100%;
+        display: flex;
+        justify-content: flex-end;
+    }
+    
+    .button-container button {
+        margin: 5px;
+    }
+
+    #check-button {
+        margin: 5px;
     }
 
 </style>
@@ -66,21 +166,28 @@
 <form id="upload-form" method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form.as_p }}
-    <div id="summary" style="border: 1px solid; padding: 10px; margin-bottom: 10px;"></div>
+    <div id="summary" style="border: 1px solid; padding: 10px; margin-bottom: 10px;">
+        <p>Upload Summary.</p>
+    </div>
     <button type="button" id="check-button" url="{% url 'check_televir_panel_upload' %}">Check</button>
-    <button type="submit">Upload</button>
+    
+    <div class="button-container">
+        <button onclick="location.href='{% url 'televir_reference_files' %}'" class="cancel-button">Cancel</button>
+        <button type="submit" class="upload-button">Upload</button>
+    </div>
 </form>
+
 {% endblock %}
 
 {% block js %}
 <script>
     $(document).ready(function() {
         $('button[type="submit"]').prop('disabled', true);
+
         let url = $('#check-button').attr('url');
         console.log(url);
         
         $('#check-button').click(function() {
-            console.log('check');
             var formData = new FormData($('#upload-form')[0]);
             $.ajax({
                 url: url,
@@ -89,13 +196,13 @@
                 processData: false,
                 contentType: false,
                 success: function(data) {
-                    console.log(data);
                     $('#summary').html(data);
                     if (data["is_ok"] == true) {
                         if (data["pass"] == true) {
                             $('button[type="submit"]').prop('disabled', false);
                         }
                         $('#summary').html(data["log"].join('<br>'));
+                        $('#summary').addClass('active');
                         $('#summary').html(data["log"].join('<br>')).show();                  
                     } else if (data["is_error"]) {
                         $('#id_messages_remove').append('<div class="alert alert-danger" role="alert">' + data["error_message"] + '</div>');

@@ -30,10 +30,31 @@ class ReferenceForm(forms.Form):
 
 
 class UploadFileForm(forms.Form):
-    name = forms.CharField(max_length=200)
-    description = forms.CharField(widget=forms.Textarea)
-    fasta_file = forms.FileField()
-    metadata = forms.FileField()
+    description_help = (
+        "Enter a short description for the upload file. "
+        "This description will be used to identify the file in the future."
+    )
+    description_fasta = (
+        "Upload a FASTA file. The file must contain the sequences of the reference. "
+        + "The sequences must be in FASTA format. "
+        + "<br>Sequence IDs must be unique. Text after space will be ignored."
+        + "<br>Max total sequence length: {} bp.<br>".format(
+            settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA
+        )
+        + "Max FASTA file size: {} kb".format(settings.MAX_REF_FASTA_FILE)
+    )
+    description_metadata = (
+        "Upload a metadata file. The metadata file must be in CSV or TSV format with appropriate extentions."
+        + "<br>File must contain the following columns:"
+        + "<br>      <bold>Accession ID</bold>: The accession identifier the sequence in the FASTA file."
+        + "<br><bold>TaxID</bold>: The NCBI Taxonomy ID of the sequence. "
+        + "<br><bold>Description (optional)</bold>: A description of the sequence."
+        + "<br>Only record IDs that are present in both the FASTA and metadata files will be uploaded."
+    )
+
+    description = forms.CharField(widget=forms.Textarea, help_text=description_help)
+    fasta_file = forms.FileField(help_text=description_fasta)
+    metadata = forms.FileField(help_text=description_metadata)
 
 
 ## https://kuanyui.github.io/2015/04/13/django-crispy-inline-form-layout-with-bootstrap/

@@ -34,9 +34,10 @@ from pathogen_identification.models import (
 )
 from pathogen_identification.tables import ReferenceSourceTable
 from pathogen_identification.utilities.reference_utils import (
+    check_file_reference_submitted,
     check_metaReference_exists_from_ids,
-    check_reference_exists,
-    check_reference_submitted,
+    check_raw_reference_submitted,
+    check_user_reference_exists,
     create_combined_reference,
 )
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
@@ -420,7 +421,6 @@ def submit_sample_mapping_panels(request):
             print("error")
 
             data["is_ok"] = False
-        print(data)
         return JsonResponse(data)
 
 
@@ -1139,7 +1139,7 @@ def teleflu_igv_create(request):
 
 @login_required
 @require_POST
-def create_insaflu_reference(request):
+def create_insaflu_reference_from_raw(request):
     if request.is_ajax():
         data = {"is_ok": False, "exists": False}
 
@@ -1149,14 +1149,52 @@ def create_insaflu_reference(request):
         process_SGE = ProcessSGE()
 
         try:
-            if check_reference_exists(ref_id, user_id) or check_reference_submitted(
-                ref_id=ref_id, user_id=user_id
-            ):
+            raw_ref = RawReference.objects.get(id=ref_id)
+
+            description = raw_ref.description
+            accid = raw_ref.accid
+
+            if check_user_reference_exists(
+                description, accid, user_id
+            ) or check_raw_reference_submitted(ref_id=ref_id, user_id=user_id):
                 data["is_ok"] = True
                 data["exists"] = True
                 return JsonResponse(data)
             # success = create_reference(ref_id, user_id)
-            taskID = process_SGE.set_submit_televir_teleflu_create(user, ref_id)
+            taskID = process_SGE.set_submit_raw_televir_teleflu_create(user, ref_id)
+
+        except Exception as e:
+            print(e)
+            return JsonResponse(data)
+
+        data["is_ok"] = True
+        return JsonResponse(data)
+
+
+@login_required
+@require_POST
+def create_insaflu_reference_from_filemap(request):
+    if request.is_ajax():
+        data = {"is_ok": False, "exists": False}
+
+        ref_id = int(request.POST["ref_id"])
+        user_id = int(request.POST["user_id"])
+        user = User.objects.get(id=user_id)
+        process_SGE = ProcessSGE()
+
+        try:
+            reference = ReferenceSourceFileMap.objects.get(id=ref_id)
+            accid = reference.reference_source.accid
+            description = reference.description
+
+            if check_user_reference_exists(
+                description, accid, user_id
+            ) or check_file_reference_submitted(ref_id=ref_id, user_id=user_id):
+                data["is_ok"] = True
+                data["exists"] = True
+                return JsonResponse(data)
+            # success = create_reference(ref_id, user_id)
+            taskID = process_SGE.set_submit_file_televir_teleflu_create(user, ref_id)
 
         except Exception as e:
             print(e)
@@ -1864,29 +1902,23 @@ def check_metadata_table_clean(metadata_table_file) -> Optional[pd.DataFrame]:
     """
     check metadata table
     """
-    print("reading table")
-    print(metadata_table_file)
+
     metadata_table = metadata_table_file.read().decode("utf-8")
-    print(metadata_table)
     metadata_table = metadata_table.split("\n")
     sep = os.path.splitext(metadata_table_file.name)[1]
     sep = "\t" if sep == ".tsv" else ","
     metadata_table = [x.split(sep) for x in metadata_table]
     metadata_table = [x for x in metadata_table if len(x) > 1]
-    print(metadata_table)
-    print("HI")
-    # pandas read_csv
+
     try:
         metadata_table = pd.DataFrame(metadata_table[1:], columns=metadata_table[0])
 
     except Exception as e:
         print(e)
         return None
-    print(metadata_table, len(metadata_table))
 
     if len(metadata_table) == 0:
         return None
-    print("ER")
     return metadata_table
 
 
@@ -1927,15 +1959,13 @@ def check_panel_upload_clean(request):
             "pass": False,
         }
 
-        print(request.POST)
+        description = request.POST.get("description", "").strip()
         print(request.FILES)
 
-        description = request.POST.get("description", "").strip()
-
-        if request.POST.get("name", "").strip() == "":
-            data["is_error"] = True
-            data["error_message"] = "Name is empty."
-            return JsonResponse(data)
+        # if request.POST.get("name", "").strip() == "":
+        #    data["is_error"] = True
+        #    data["error_message"] = "Name is empty."
+        #    return JsonResponse(data)
 
         if request.FILES.get("metadata", None) is None:
             data["is_error"] = True
@@ -1951,22 +1981,22 @@ def check_panel_upload_clean(request):
         software = Software()
         utils = Utils()
 
-        name = request.POST.get("name", "").strip()
+        # name = request.POST.get("name", "").strip()
         reference_metadata_table_file = request.FILES.get("metadata", None)
         reference_fasta_file = request.FILES.get("fasta_file", None)
+        print(str(reference_fasta_file))
         reference_metadata_table = pd.DataFrame(
             columns=["accid", "taxid", "description"]
-        )
-
-        ### testing metadata table
-        reference_metadata_table = check_metadata_table_clean(
-            reference_metadata_table_file
         )
 
         if reference_metadata_table is None:
             data["is_error"] = True
             data["error_message"] = "Metadata table is empty."
             return JsonResponse(data)
+
+        reference_metadata_table = check_metadata_table_clean(
+            reference_metadata_table_file
+        )
 
         if check_table_columns(reference_metadata_table) is False:
             data["is_error"] = True
@@ -1977,8 +2007,7 @@ def check_panel_upload_clean(request):
         data["error_message"] = ""
 
         if "Description" not in reference_metadata_table.columns:
-            print("HI")
-            description_ref = f"Panel {name} reference"
+            description_ref = f"Panel reference"
             if description != "":
                 description_ref = description_ref + f" - {description}"
             reference_metadata_table["Description"] = description_ref
@@ -1992,7 +2021,6 @@ def check_panel_upload_clean(request):
         )
         try:
             file_data = reference_fasta_file.read()
-            print(file_data)
             reference_fasta_temp_file_name.write(file_data)
             reference_fasta_temp_file_name.flush()
             reference_fasta_temp_file_name.close()
@@ -2004,10 +2032,8 @@ def check_panel_upload_clean(request):
             data["is_error"] = True
             return JsonResponse(data)
 
-        print("HI")
         try:
             number_locus = utils.is_fasta(reference_fasta_temp_file_name.name)
-            print(number_locus)
             data["log"].append("Number of sequences in fasta: {}".format(number_locus))
 
             ## test the max numbers
@@ -2026,7 +2052,6 @@ def check_panel_upload_clean(request):
                     total_length_fasta
                 )
             )
-            print(total_length_fasta)
 
             if (
                 not some_error_in_files
@@ -2045,9 +2070,9 @@ def check_panel_upload_clean(request):
             n_seq_name_bigger_than = utils.get_number_seqs_names_bigger_than(
                 reference_fasta_temp_file_name.name,
                 Constants.MAX_LENGTH_CONTIGS_SEQ_NAME,
-                len(name),
+                0,
             )
-            print(some_error_in_files, n_seq_name_bigger_than)
+
             if not some_error_in_files and n_seq_name_bigger_than > 0:
                 some_error_in_files = True
                 if n_seq_name_bigger_than == 1:
@@ -2072,11 +2097,9 @@ def check_panel_upload_clean(request):
             dict_names = {}
             retained_rows = []
             already_existing_ids = []
-            print(reference_metadata_table)
             with open(reference_fasta_temp_file_name.name) as handle_in:
                 for record in SeqIO.parse(handle_in, "fasta"):
-                    print(record.id)
-                    ## only these ones can get in
+
                     if record.id in reference_metadata_table["Accession ID"].values:
                         dict_names[record.id] = 1
                     if (
@@ -2084,7 +2107,6 @@ def check_panel_upload_clean(request):
                     ) > 0 and not record.id in reference_metadata_table[
                         "Accession ID"
                     ].values:
-                        print("Fail")
                         vect_fail_seqs.append(record.id)
                         vect_error.append(
                             f"Sequence name '{record.id}' does not have match in the metadata table."
@@ -2164,10 +2186,37 @@ def check_panel_upload_clean(request):
             data["error_message"] = error_message
             data["is_error"] = True
             return JsonResponse(data)
+
         data["is_ok"] = True
         ## remove temp files
         os.unlink(reference_fasta_temp_file_name.name)
         return JsonResponse(data)
+
+
+from pathogen_identification.models import ReferenceSourceFile
+
+
+@login_required
+@require_POST
+def delete_reference_file(request):
+    """
+    delete reference panel
+    """
+    if request.is_ajax():
+        data = {"is_ok": False, "is_error": False, "message": ""}
+        panel_id = int(request.POST["file_id"])
+        print(panel_id)
+        try:
+            panel = ReferenceSourceFile.objects.get(pk=panel_id)
+            panel.is_deleted = True
+            panel.save()
+            data["is_ok"] = True
+            return JsonResponse(data)
+        except Exception as e:
+            print(e)
+            data["is_ok"] = False
+            data["message"] = "Error deleting the file"
+            return JsonResponse(data)
 
 
 @login_required

@@ -1,19 +1,85 @@
-{% extends 'pathogen_identification/televir_references_base.html' %}
+{% extends '_layouts/base.html' %}
 
 {% load bootstrap4 %}
 {% load querystring from django_tables2 %}
 {% load title from django_tables2 %}
 {% load trans blocktrans from i18n %}
 {% load django_bootstrap_breadcrumbs %}
+{% load static %}
 {% load custom_tags %}
 
-{% load static %}
+
+{% block extra_messages %}
+<!-- set the messages -->
+<div class="container">
+	<div id="id_messages_remove"></div>
+</div>
+{% endblock %}
+
+{% block breadcrumbs %}
+{{ block.super }}
+{% breadcrumb "Project Index" "project-index" %}
+{% breadcrumb "TELEVIR Projects" "PIprojects_main" %}
+{% breadcrumb "Manage References" "" %}
+{% endblock %}
+
+
+
+{% block extra_nav %}
+<nav class="nav-style">
+    <ul style="list-style-type: none; margin: 0; padding: 0; overflow: hidden;">
+        <li style="float: left; margin-right: 10px;" class="tab" ><a href="{% url 'televir_reference_files' %}">Files</a></li>
+        <li style="float: left; margin-right: 10px;" class="tab active" ><a href="{% url 'televir_references' %}">References</a></li>
+        <li style="float: left; margin-right: 10px;" class="tab" ><a href="{% url 'reference_panels' %}">Panels</a></li>
+    </ul>
+</nav>
+{% endblock %}
 
 
 {% block content %}
+
+
+<style>
+
+    .nav-style {
+        border-radius: 5px;
+        background-color: #f8f9fa;
+        padding: 10px;
+        margin-left: 10px;
+        margin-bottom: 10px;
+        margin-right: 10px;
+    }
+
+    .tab {
+        border-radius: 5px;
+        background-color: #f8f9fa;
+
+    }
+
+    ul li.active {
+        background-color: #007bff; /* Light, desaturated blue */
+        color: white; /* Font color */
+       
+        padding: 2px; /* Padding */
+    }
+
+    ul li.active a {
+        background-color: #007bff; /* Light, desaturated blue */
+        color: white; /* Font color */
+       
+        padding: 2px; /* Padding */
+    }
+
+
+
+</style>
+
+
 <div class="table-responsive">
-    <table class="table table-striped table-bordered table-hover">
-        <thead>
+    <table class="table table-hover table-bordered table-striped" {% if files_table.attrs %}z
+            {{ files_table.attrs.as_html }}{% endif %}>
+            {% block table.thead %}
+            <thead>
             <tr>
                 <th colspan="11">
 
@@ -31,20 +97,35 @@
 
 
             <tr>
-                {% for column_name in files_table.columns %}
-                    <th>{% column_name_check column_name table_summary %}</th>
+                {% for column in files_table.columns %}
+                {% if column.orderable %}
+                    <th {{ column.attrs.th.as_html }}><a href="{% querystring files_table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header|title }}</a></th>
+                {% else %}
+                    <th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
+                {% endif %}                    
                 {% endfor %}
             </tr>
         </thead>
+        {% endblock table.thead %}
+        {% block table.tbody %}
         <tbody>
-            {% for file in files_table.page.object_list %}
-                <tr>
-                    {% for column, value in file.items %}
-                        <td>{{ value }}</td>
-                    {% endfor %}
-                </tr>
+            {% for row in files_table.page.object_list|default:files_table.rows %} {# support pagination #}
+              {% block table.tbody.row %}
+              <tr id="row_{{ row.record.id }}" class="{% cycle "odd" "even" %}">
+                {% for column, cell in row.items %}
+                  <td {{ column.attrs.td.as_html }}>{{ cell }}</td>
+                {% endfor %}
+              </tr>
+              {% endblock table.tbody.row %}
+            {% empty %}
+              {% if files_table.empty_text %}
+              {% block table.tbody.empty_text %}
+                  <tr><td colspan="{{ files_table.columns|length }}">{{ files_table.empty_text }}</td></tr>
+              {% endblock table.tbody.empty_text %}
+              {% endif %}
             {% endfor %}
         </tbody>
+        {% endblock table.tbody %}
     </table>
 </div>
     
@@ -58,4 +139,83 @@
     <label id="id-total-list" class="pull-right">Total references: {{ query_set_count }}</label>
 {% endif %}
 
+
+<!-- The create insaflu reference -->
+<div class="modal fade" id="create_teleflu_reference">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <!-- Modal Header -->
+            <div class="modal-header">
+                <h4 class="modal-title">Create INSaFLU Reference</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+			<!-- Modal body -->
+			<div class="modal-body mx-auto mw-100">
+				<div id="id-modal-body-insaflu-ref" ref-single-value-url="{% url 'create_teleflu_reference' %}">
+					<label id="id-label-ref" class="col-form-label">Folder Name</label>
+				</div>
+			</div>
+			<!-- Modal footer -->
+			<div class="modal-footer" id="id-modal-footer-insaflu-ref">
+				<button id="id-create-button" type="button" class="btn btn-primary" data-dismiss="modal" user-id= "{{ user_id }}">Create</button>
+				<button id="id-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal"
+					aria-hidden="true">Cancel</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+{% endblock content %}
+
+
+{% block js %}
+
+<script> 
+    $(document).ready(function() {
+        $('.add_teleflu_reference').click(function() {
+            var ref_id = $(this).attr('ref_id');
+            var ref_acc = $(this).attr('ref_accid');
+            console.log(ref_id);
+            console.log(ref_acc);
+
+            $('#id-label-ref').text('Create INSaFLU Reference Accession ID: ' + ref_acc + ' ?');
+            $('#id-modal-body-insaflu-ref').attr('ref_id', ref_id);
+            $('#create_teleflu_reference').modal('show');
+        });
+
+        $('#id-create-button').click(function() {
+            var ref_id = $('#id-modal-body-insaflu-ref').attr('ref_id');
+            var url = $('#id-modal-body-insaflu-ref').attr('ref-single-value-url');
+            var user_id = $("#id-create-button").attr('user-id');
+            console.log(user_id);
+            console.log(ref_id);
+            console.log(user_id);
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: {
+                    'user_id': user_id,
+                    'ref_id': ref_id,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(data) {
+                    console.log(data);
+                    if (data['status'] == 'success') {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data['message']);
+                    }
+                },
+                error: function(data) {
+                    console.log(data);
+                    alert('Error: ' + data['message']);
+                }
+            });
+        });
+
+    });
+
+
+
+</script>
 {% endblock %}

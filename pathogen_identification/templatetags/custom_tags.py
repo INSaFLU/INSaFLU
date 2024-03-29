@@ -13,6 +13,8 @@ def is_active(request, url):
 @register.simple_tag
 def column_name_check(column_name, numbers_dict):
 
+    print("##########################3sdvedfv")
+
     if str(column_name) in numbers_dict.keys():
 
         return f"{column_name}   #{numbers_dict[str(column_name)]}"

@@ -36,29 +36,14 @@
         text-align: center;
     }
 
-    .containter-fluid {
+    .page-container {
         margin-top: 100px;
     }
 
 </style>
 
-<div class="containter-fluid">
+<div class="page-container">
     <div class="row justify-content-center">
-        <div class="col-md">
-            <div class="card mb-2">
-                <img class="img-index" src="{% static "img/Logo_QC_INSaFlu.png" %}">
-                <div class="card-body">
-                    <h5 class="card-title">{{ 'Reads QC, improvement and classification' }}</h5>
-                    <p class="card-text">{{ 'From reads to quality-processed reads and rapid classification' }}</p>
-                </div>
-                <div class="card-footer">
-                    <a href="{% url 'settings_qc' %}"
-                        class="btn btn-primary">
-                        Settings
-                    </a>
-                </div>
-            </div>
-        </div>
         {% if televir_available %}
         <div class="col-md">
             <div class="card mb-2">
@@ -68,9 +53,9 @@
                     <p class="card-text">{{ "From Reads to viral detection" }}</p>
                 </div>
                 <div class="card-footer">
-                    <a href="{% url 'pathogenID_pipeline' level=0 %}"
+                    <a href="{% url 'televir_reference_files' %}"
                     class="btn btn-primary">
-                        Settings
+                        References
                     </a>
                 </div>
             </div>
@@ -84,30 +69,13 @@
                     <p class="card-text">{{ 'From reads to consensus sequence, mutations list, alignments, Pango lineage classification, etc' }}</p>
                 </div>
                 <div class="card-footer">
-                    <a href="{% url 'settings' %}"
+                    <a href="{% url 'references' %}"
                     class="btn btn-primary">
-                        Settings
+                    References
                     </a>
                 </div>
             </div>
         </div>
-    <!--        
-        <div class="col-md">
-            <div class="card mb-2">
-                <img class="img-index" src="{% static "img/Logo_NEXTSTRAIN_INSaFlu.png" %}">
-                <div class="card-body">
-                    <h5 class="card-title">{{ "Nextstrain" }}</h5>
-                    <p class="card-text">{{ "From consensus sequences to phylogeographic and temporal analysis and metadatada navigation" }}</p>
-                </div>
-                <div class="card-footer">
-                    <a href="{% url 'under_construction' %}"
-                    class="btn btn-primary">
-                        Settings
-                    </a>
-                </div>
-            </div>
-        </div>
-    -->
     </div>
 </div>
 {% endblock %}

@@ -16,7 +16,7 @@ from django.db.models import Q
 from django.forms.models import model_to_dict
 from django.http import Http404, HttpResponseNotFound, HttpResponseRedirect
 from django.http.response import HttpResponse
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.template.defaultfilters import filesizeformat, pluralize
 from django.urls import reverse, reverse_lazy
 from django.utils.safestring import mark_safe
@@ -1486,7 +1486,7 @@ class ReferencePanelManagement(LoginRequiredMixin, generic.CreateView):
         return context
 
 
-from django.views.generic import ListView, TemplateView, UpdateView
+from django.views.generic import ListView, TemplateView
 
 from pathogen_identification.tables import (
     ReferenceSourceFileTable,
@@ -1535,17 +1535,15 @@ class ReferenceFileManagement(LoginRequiredMixin, generic.CreateView):
         files = (
             ReferenceSourceFile.objects.filter(Q(owner=None) | Q(owner__id=user.pk))
             .exclude(is_deleted=True)
-            .order_by("-creation_date")
+            .order_by("-owner", "-creation_date")
         )
 
         files_table = ReferenceSourceFileTable(files)
-        RequestConfig(
-            self.request, paginate={"per_page": ConstantsSettings.PAGINATE_NUMBER}
-        ).configure(files_table)
+        RequestConfig(self.request, paginate={"per_page": 15}).configure(files_table)
 
         context["files_table"] = files_table
         context["nav_sample"] = True
-        context["show_paginatior"] = files.count() > Constants.PAGINATE_NUMBER
+        context["show_paginatior"] = files.count() > 15
         context["query_set_count"] = files.count()
         context["user_id"] = user.pk
 
@@ -1638,15 +1636,115 @@ class ReferenceManagement(LoginRequiredMixin, generic.CreateView):
         return context
 
 
+from typing import Optional
+
+from utils.process_SGE import ProcessSGE
+
 from .forms import UploadFileForm
+
+
+def check_metadata_table_clean(metadata_table_file) -> Optional[pd.DataFrame]:
+    """
+    check metadata table
+    """
+
+    metadata_table = metadata_table_file.read().decode("utf-8")
+    metadata_table = metadata_table.split("\n")
+    sep = os.path.splitext(metadata_table_file.name)[1]
+    sep = "\t" if sep == ".tsv" else ","
+    metadata_table = [x.split(sep) for x in metadata_table]
+    metadata_table = [x for x in metadata_table if len(x) > 1]
+
+    try:
+        metadata_table = pd.DataFrame(metadata_table[1:], columns=metadata_table[0])
+
+    except Exception as e:
+        print(e)
+        return None
+
+    if len(metadata_table) == 0:
+        return None
+    return metadata_table
 
 
 def upload_reference_panel_view(request):
     if request.method == "POST":
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
+            data = {"is_error": False, "is_ok": False, "error_message": ""}
             # Handle the uploaded files here
-            pass
+
+            # name = form.cleaned_data["name"]
+            description = form.cleaned_data["description"]
+            reference_fasta_file = form.cleaned_data["fasta_file"]
+            metadata_file = form.cleaned_data["metadata"]
+
+            ###
+            software = Software()
+            utils = Utils()
+
+            reference_metadata_table = check_metadata_table_clean(metadata_file)
+            reference_fasta_temp_file_name = NamedTemporaryFile(
+                prefix="flu_fa_", delete=False
+            )
+            reference_metadata_temp_file_name = NamedTemporaryFile(
+                prefix="flu_fa_", delete=False, suffix=".tsv"
+            )
+
+            try:
+                file_data = reference_fasta_file.read()
+                reference_fasta_temp_file_name.write(file_data)
+                reference_fasta_temp_file_name.flush()
+                reference_fasta_temp_file_name.close()
+                software.dos_2_unix(reference_fasta_temp_file_name.name)
+            except Exception as e:
+                print(e)
+                some_error_in_files = True
+                error_message = "Error in the fasta file"
+                data["is_error"] = True
+                return JsonResponse(data)
+
+            try:
+                reference_metadata_table.to_csv(
+                    reference_metadata_temp_file_name.name, sep="\t", index=False
+                )
+            except Exception as e:
+                print(e)
+                some_error_in_files = True
+                error_message = "Error in the metadata file"
+                data["is_error"] = True
+                return JsonResponse(data)
+
+            process_SGE = ProcessSGE()
+
+            try:
+                # create reference source file
+                reference_source_file = ReferenceSourceFile()
+                reference_source_file.owner = request.user
+                reference_source_file.file = reference_fasta_file
+                reference_source_file.description = description
+                reference_source_file.save()
+
+                taskID = process_SGE.set_submit_upload_reference_televir(
+                    user=request.user,
+                    file_id=reference_source_file.pk,
+                    fasta=reference_fasta_temp_file_name.name,
+                    metadata=reference_metadata_temp_file_name.name,
+                )
+
+            except Exception as e:
+                print(e)
+                some_error_in_files = True
+                error_message = "Error in the metadata file"
+                data["is_error"] = True
+                render(
+                    request,
+                    "pathogen_identification/televir_upload_panels.html",
+                    {"form": form},
+                )
+
+            return redirect("televir_reference_files")
+
     else:
         form = UploadFileForm()
 

@@ -12,31 +12,19 @@ from constants.constants import Constants
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReadClassification,
-    ReferenceContigs,
-    RunAssembly,
-    RunMain,
-    SampleQC,
-    TelevirRunQC,
-)
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.models import (ContigClassification, FinalReport,
+                                            ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            ReadClassification,
+                                            ReferenceContigs, RunAssembly,
+                                            RunMain, SampleQC, TelevirRunQC)
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.utilities_general import (
-    get_project_dir,
-    get_project_dir_no_media_root,
-)
+    get_project_dir, get_project_dir_no_media_root)
 from pathogen_identification.utilities.utilities_views import (
-    RawReferenceCompound,
-    ReportSorter,
-    check_sample_software_exists,
-    duplicate_metagenomics_software,
-)
+    RawReferenceCompound, ReportSorter, check_sample_software_exists,
+    duplicate_metagenomics_software)
 from settings.models import Parameter, Software
 
 
@@ -741,12 +729,14 @@ class SampleTableOne(tables.Table):
         ).count()
 
 
-from pathogen_identification.models import ReferenceSourceFile, ReferenceSourceFileMap
+from pathogen_identification.models import (ReferenceSourceFile,
+                                            ReferenceSourceFileMap)
 
 
 class ReferenceSourceFileTable(tables.Table):
 
     filename = tables.Column(verbose_name="Name", empty_values=())
+    description = tables.Column(verbose_name="Description", empty_values=())
     owner = tables.Column(verbose_name="Owner", empty_values=())
     references = tables.Column(verbose_name="References", empty_values=())
     creation_date = tables.Column(verbose_name="Creation Date")
@@ -755,8 +745,26 @@ class ReferenceSourceFileTable(tables.Table):
         attrs = {"class": "paleblue"}
 
     def render_filename(self, record: ReferenceSourceFile):
-        print(record.file)
-        return record.file
+
+        if record.owner is None:
+            return record.file
+
+        trash_button = (
+            '<a href="#id_remove_modal" class="remove_file" id="id_remove_file_modal" data-toggle="modal" data-toggle="tooltip" title="Delete"'
+            + '" pk="'
+            + str(record.pk)
+            + '" file-name="'
+            + str(record.file)
+            + '" remove-single-value-url="'
+            + reverse("delete_reference_file")
+            + '"><i class="fa fa-trash"></i></span> </a>  '
+            + record.file
+        )
+
+        return mark_safe(f"{trash_button}")
+
+    def render_description(self, record: ReferenceSourceFile):
+        return record.description
 
     def render_owner(self, record: ReferenceSourceFile):
         if record.owner is None:
@@ -777,15 +785,28 @@ class ReferenceSourceFileTable(tables.Table):
         return record.creation_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE)
 
 
+from pathogen_identification.utilities.reference_utils import \
+    check_reference_exists
+
+
 class TelevirReferencesTable(tables.Table):
 
     description = tables.Column(verbose_name="Description")
     accid = tables.Column(verbose_name="Accession ID")
     taxid = tables.Column(verbose_name="TaxID")
     source = tables.Column(verbose_name="Source", empty_values=())
+    create_teleflu_reference = tables.Column(
+        verbose_name="Create Reference",
+        orderable=False,
+        empty_values=(),
+        attrs={
+            "th": {"style": "text-align: center; background-color: #dce4f0;"},
+            "td": {"style": "text-align: center;"},
+        },
+    )
 
     class Meta:
-        attrs = {"class": "paleblue"}
+        # attrs = {"class": "paleblue"}
 
         fields = (
             "description",
@@ -805,6 +826,31 @@ class TelevirReferencesTable(tables.Table):
 
     def render_source(self, record: ReferenceSourceFileMap):
         return record.reference_source_file.file
+
+    def render_create_teleflu_reference(self, record: ReferenceSourceFileMap):
+
+        if check_reference_exists(
+            record.reference_source.description, record.reference_source.accid
+        ):
+            return ""
+
+        return mark_safe(
+            '<a href="#create_teleflu_reference" '
+            + 'id="add_teleflu_reference" '
+            + 'class="add_teleflu_reference" '
+            + "ref_id="
+            + str(record.id)
+            + " "
+            + 'ref_accid="'
+            + record.reference_source.accid
+            + '" '
+            + 'data-toggle="modal" '
+            + 'title="Create Reference" '
+            + 'ref-single-value-url="'
+            + reverse("create_teleflu_reference")
+            + '" '
+            + '><i class="fa fa-plus"></i></span> </a>'
+        )
 
 
 class AddedReferenceTable(tables.Table):

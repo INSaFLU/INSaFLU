@@ -52,6 +52,7 @@ urlpatterns = [
         name="sample-upload-fastq",
     ),  ## upload several fastq.gz
     url(r"project-index", views.ProjectIndex.as_view(), name="project-index"),
+    url(r"references-index", views.ReferencesIndex.as_view(), name="references-index"),
     url(r"project/projects$", views.ProjectsView.as_view(), name="projects"),
     url(r"project/project_add$", views.ProjectCreateView.as_view(), name="project-add"),
     url(

@@ -137,6 +137,16 @@
 	margin-top: 7px;
 	margin-bottom: 0;
 }
+.card-footer {
+	text-align: center;
+}
+.card-title {
+	text-align: center;
+}
+.card-text {
+	text-align: center;
+}
+
 .card-link{
 	margin-top: 7px;
 	margin-bottom: 0;

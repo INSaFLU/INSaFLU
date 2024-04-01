@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 from typing import Any, List, Optional
 
 import pandas as pd
@@ -140,6 +139,10 @@ class Hit:
             )
 
     @property
+    def raw_references(self) -> List[RawReference]:
+        return RawReference.objects.filter(id__in=self.raw_reference_id_list)
+
+    @property
     def raw_reference_samples(self) -> List[SampleWrapper]:
         refs = (
             RawReference.objects.filter(id__in=self.raw_reference_id_list)
@@ -221,6 +224,29 @@ class HitFactory:
 import pandas as pd
 
 
+def get_hit_best_reference(hit: Hit) -> Optional[RawReference]:
+    if len(hit.raw_reference_id_list) == 0:
+        return None
+
+    hit_references = RawReference.objects.filter(id__in=hit.raw_reference_id_list)
+    hit_references = [(x, determine_raw_ref_index(x)) for x in hit_references]
+    hit_references.sort(key=lambda x: x[1])
+
+    return hit_references[0][0]
+
+
+def determine_raw_ref_index(ref: RawReference):
+    run = ref.run
+
+    other_references = RawReference.objects.filter(run=run).order_by("id")
+    other_references = list(other_references)
+    for ix, other_ref in enumerate(other_references):
+        if other_ref.pk == ref.pk:
+            return ix
+
+    return -1
+
+
 def df_report_analysis(analysis_df_filename, project_id: int):
 
     # Python
@@ -245,6 +271,13 @@ def df_report_analysis(analysis_df_filename, project_id: int):
         hit_factory = HitFactory(project_id, curator.collection)
 
         expected_hit = hit_factory.hit_by_name(hitname)
+        best_mapping = get_hit_best_reference(expected_hit)
+        mapped = 0
+
+        best_mapping_rank = -1
+        if best_mapping is not None:
+            best_mapping_rank = determine_raw_ref_index(best_mapping)
+            mapped = best_mapping.status
 
         new_row = {
             "sample": sample_name,
@@ -252,6 +285,8 @@ def df_report_analysis(analysis_df_filename, project_id: int):
             "name_similarity": expected_hit.name_similarity,
             "reported_samples": "/".join(expected_hit.reported_samples_classes),
             "intermediate_samples": "/".join(expected_hit.intermediate_samples_classes),
+            "position": best_mapping_rank,
+            "mapped": best_mapping,
         }
         new_table.append(new_row)
 

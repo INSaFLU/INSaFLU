@@ -448,7 +448,7 @@
 
     $(document).ready(function() {
         $('.collapsible-header').click(function() {
-          console.log("HI")
+          event.preventDefault();
           $('.collapsible-body').slideToggle('slow');
         });
       });

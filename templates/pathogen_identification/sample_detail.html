@@ -747,7 +747,8 @@
 
     $(document).ready(function() {
         $('.collapsible-header').click(function() {
-          console.log("HI")
+          // precent default
+          event.preventDefault();
           $('.collapsible-body').slideToggle('slow');
         });
       });
@@ -778,7 +779,7 @@
       $("a").click(function(event) {
 
         if (event.target.id == "showButton") {
-            event.preventDefault();
+            event.preventDefault(); 
             var clickedLink = $(this);
             var rowElement = clickedLink.closest("tr");
             

@@ -1631,6 +1631,10 @@ class RunMainTree_class(Run_Deployment_Methods):
 
     def save_df_check_exists(self, df: pd.DataFrame, path: str):
         dirname = os.path.dirname(path)
+        print("############### SAVING ", path)
+        print("path exists: ", os.path.exists(path))
+        print("dirname exists: ", os.path.exists(dirname))
+        print(df.shape)
         if not os.path.exists(dirname):
             os.makedirs(dirname, exist_ok=True)
 

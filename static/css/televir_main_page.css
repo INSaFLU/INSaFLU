@@ -37,6 +37,10 @@
     margin-bottom: 0;
 }
 
+.btn {
+    cursor: pointer;
+}
+
 .teleflu-panel-container .card-text {
     font-size: 1.2em;
     color: #333;

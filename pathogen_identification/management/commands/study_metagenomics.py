@@ -251,19 +251,21 @@ def df_report_analysis(analysis_df_filename, project_id: int):
 
     # Python
     sheet_name = "Results"
-    df = pd.read_excel(
-        analysis_df_filename,
-        sheet_name=sheet_name,
-        header=1,
-        index_col=0,
-        engine="openpyxl",
-    )
+    # df = pd.read_excel(
+    ##    analysis_df_filename,
+    ##    sheet_name=sheet_name,
+    ##    header=2,
+    ##    index_col=0,
+    ##    engine="openpyxl",
+    ##)
+
+    df = pd.read_csv(analysis_df_filename, sep="\t")
 
     bact_results = df[df["Class"] == "bacterial"]
 
     new_table = []
 
-    for ix, row in bact_results.iterrows():
+    for ix, row in df.iterrows():
         sample_name = str(row["Sample_ID"])
         hitname = str(row["Reporting Name"])
         curator = SampleCurator(project_id, sample_name)
@@ -273,11 +275,15 @@ def df_report_analysis(analysis_df_filename, project_id: int):
         expected_hit = hit_factory.hit_by_name(hitname)
         best_mapping = get_hit_best_reference(expected_hit)
         mapped = 0
+        run_pk = -1
+        sample = None
 
         best_mapping_rank = -1
         if best_mapping is not None:
             best_mapping_rank = determine_raw_ref_index(best_mapping)
             mapped = best_mapping.status
+            run_pk = best_mapping.run.pk
+            sample = best_mapping.run.sample
 
         new_row = {
             "sample": sample_name,
@@ -286,11 +292,16 @@ def df_report_analysis(analysis_df_filename, project_id: int):
             "reported_samples": "/".join(expected_hit.reported_samples_classes),
             "intermediate_samples": "/".join(expected_hit.intermediate_samples_classes),
             "position": best_mapping_rank,
-            "mapped": best_mapping,
+            "mapped": mapped,
+            "run_pk": run_pk,
+            "sample_pk": sample.pk if sample is not None else -1,
         }
         new_table.append(new_row)
 
     new_df = pd.DataFrame(new_table)
+
+    new_df["sample_pk"] = new_df.sample_pk.astype(int)
+    new_df["run_pk"] = new_df.run_pk.astype(int)
 
     return new_df
 

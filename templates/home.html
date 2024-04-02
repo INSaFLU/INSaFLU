@@ -60,8 +60,8 @@
 						<div class="card mb-2">
 							<img class="img-index" src="{% static "img/Logo_insaflu.png" %}">
 							<div class="card-body">
-								<h5 class="card-title">{{ 'Reference-based genome assembly' }}</h5>
-								<p class="card-text">{{ 'From reads to consensus sequence, mutations list, alignments, Pango lineage classification, etc.' }}</p>
+								<h5 class="card-title portal">{{ 'Reference-based genome assembly' }}</h5>
+								<p class="card-text portal">{{ 'From reads to consensus sequence, mutations list, alignments, Pango lineage classification, etc.' }}</p>
 							</div>
 						</div>
 					</div>
@@ -69,8 +69,8 @@
 						<div class="card mb-2">
 							<img class="img-index" src="{% static "img/Logo_NEXTSTRAIN_INSaFlu.png" %}">
 							<div class="card-body">
-								<h5 class="card-title">{{ 'Nextstrain' }}</h5>
-									<p class="card-text">{{ 'From consensus sequences to phylogeographic and temporal analysis and metadatada navigation' }}</p>
+								<h5 class="card-title portal">{{ 'Nextstrain' }}</h5>
+									<p class="card-text portal">{{ 'From consensus sequences to phylogeographic and temporal analysis and metadatada navigation' }}</p>
 							</div>
 						</div>
 					</div>
@@ -79,7 +79,7 @@
 					{% if televir_available %}
 					<div class="col-md">
 						<div class="card mb-2">
-							<div class="card-footer">
+							<div class="card-footer portal">
 								<a href="{% url 'PIprojects_main' %}" class="btn btn-primary">
 									Projects
 								</a>
@@ -89,7 +89,7 @@
 					{% endif %}
 					<div class="col-md">
 						<div class="card mb-2">
-							<div class="card-footer">
+							<div class="card-footer portal">
 								<a href="{% url 'projects' %}" class="btn btn-primary">
 									Projects
 								</a>
@@ -98,7 +98,7 @@
 					</div>
 					<div class="col-md">
 						<div class="card mb-2">
-							<div class="card-footer">
+							<div class="card-footer portal>
 								<a href="{% url 'datasets' %}" class="btn btn-primary">
 									Datasets
 								</a>

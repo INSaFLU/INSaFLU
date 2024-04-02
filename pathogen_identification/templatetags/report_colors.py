@@ -157,23 +157,6 @@ def flag_false_positive(depth, depthc, coverage, mapped, windows_covered, projec
 
 
 @register.simple_tag
-def flag_false_positive_color(
-    depth, depthc, coverage, mapped, windows_covered, project_pk
-):
-    flag_build = TelevirParameters.get_flag_build(project_pk=project_pk)
-
-    flag_build = flag_build(depth, depthc, coverage, mapped, windows_covered)
-
-    if flag_build.assert_false_positive():
-        return "background-color: rgba(255, 0, 0, 0.5);"
-
-    elif flag_build.assert_vestigial():
-        return "background-color: rgba(255, 0, 0, 0.5);"
-
-    return ""
-
-
-@register.simple_tag
 def success_count_color(success):
     counts_dict = {
         "": 0,
@@ -188,9 +171,25 @@ def success_count_color(success):
 
 
 @register.simple_tag
+def flag_false_positive_color(
+    depth, depthc, coverage, mapped, windows_covered, project_pk
+):
+    flag_build = TelevirParameters.get_flag_build(project_pk=project_pk)
+
+    flag_build = flag_build(depth, depthc, coverage, mapped, windows_covered)
+
+    if flag_build.assert_false_positive():
+        return "background-color: rgba(255, 0, 0, 0.5);"
+
+    elif flag_build.assert_vestigial():
+        return "background-color: rgba(255, 0, 0, 0.5);"
+
+    return "background-color: rgba(169, 169, 169, 1);"  # Dark gray
+
+
+@register.simple_tag
 def flag_control_color(flag):
-    """
-    set background color to red if flag is True"""
+    """Set background color to red if flag is True, otherwise set it to dark gray."""
     if flag in [FinalReport.CONTROL_FLAG_PRESENT]:
         return "background-color: rgba(255, 0, 0, 0.5);"
-    return ""
+    return "background-color: rgba(169, 169, 169, 1);"  # Dark gray

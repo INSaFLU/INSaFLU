@@ -18,6 +18,7 @@
         <link rel="stylesheet" href="{% static 'css/result_table.css' %}" />
         <link rel="stylesheet" href="{% static 'css/result_detail.css' %}" />
         <link rel="stylesheet" href="{% static 'css/result_detail_buttons.css' %}" />
+        <link rel="stylesheet" href="{% static 'css/televir_sample_compound.css' %}" />
         <link rel="stylesheet" href="{% static 'css/televir_software_graph/collapsibleTree-0.1.6/collapsibleTree.css' %}" />
 {% endblock css %}
 
@@ -40,220 +41,6 @@
 
 <style>
 
-    .table tr.igv_tab.open .card-block {
-        max-height: 2001px;
-        transition: max-height .5s;
-        transition-timing-function: ease-in;
-    }
-
-    .table tr.igv_tab .card-block {
-        max-height: 0px;
-        transition: max-height .7s;
-        transition-timing-function: ease-out;
-    }
-
-    .table tr.igv_tab.open .igv-root-div {
-        max-height: 2001px;
-        transition: max-height .8s;
-        transition-timing-function: ease-in;
-    }
-
-    .table tr.igv_tab .igv-root-div {
-        max-height: 0px;
-        transition: max-height .5s;
-        transition-timing-function: ease-out;
-    }
-
-    .table tr.igv_tab.open .igv-navbar {
-        max-height: 2001px;
-        transition: max-height .3s;
-        transition-timing-function: ease-in;
-    }
-
-    .table tr.igv_tab .igv-navbar {
-        max-height: 0px;
-        transition: max-height .3s;
-        transition-timing-function: ease-out;
-    }
-
-    .table tr.igv_tab.open .igv-loader {
-        max-height: 2001px;
-        transition: max-height .3s;
-        transition-timing-function: ease-in;
-    }
-
-    .table tr.igv_tab .igv-loader {
-        max-height: 0px;
-        transition: max-height .3s;
-        transition-timing-function: ease-out;
-    }
-
-    .parent {
-        border: 1px solid #ddd;
-        padding: 8px;
-        text-align: center;
-        height: 80px;
-    }
-
-    .parent:hover {
-        background-color: #ddd;
-    }
-    
-
-    a:link {
-        color: #2b2bcf;
-        background-color: transparent;
-        text-decoration: none;
-    }
-    
-    a:visited {
-        color: blueviolet;
-        background-color: transparent;
-        text-decoration: none;
-    }
-    
-    a:hover {
-        color: blue;
-        background-color: transparent;
-        text-decoration: underline;
-    }
-    
-    a:active {
-        color: cornflowerblue;
-        background-color: transparent;
-        text-decoration: underline;
-    }
-    
-    .column {
-        float: left;
-        padding: 10px;
-    }
-
-
-    .left {
-        width: 70%;
-    }
-
-    .right {
-        width: 30%;
-        postion: absolute;
-
-    }
-
-    .left_small {
-
-        width: 30%;
-    }
-
-    .center {
-        width: 40%;
-    }
-
-    form {
-        padding: 12px;
-        position: relative;
-    }
-
-    .modebar {
-        display: none !important;
-    }
-    
-    .row {
-        border: none;
-        border-radius: 8px;
-        padding: 1px;
-        border-color: #b0b0b07d;
-    }
-    
-    #cov_div {
-        width: 100%;
-        height: 100%;
-        top: 0;
-        left: 0;
-    }
-
-    .table td, .table th {
-        vertical-align: middle;
-        
-    }
-    .header {
-    background: #3498db;
-    color: #fff;
-    }
-    
-    .collapse-report span {
-    cursor: pointer;
-    background: #2cc16a;
-    transition: background .5s;
-    }
-    
-    .active span {
-    background: #fff;
-    }
-    
-    .table tr.collapse-report .table__wrapper {
-    max-height: 0px;
-    overflow: hidden;
-    transition: max-height .8s;
-    }
-    
-    .table tr.active .table__wrapper {
-    max-height: 2000px;
-    transition: max-height .8s;
-    }
-    
-
-    .table-inner td p {
-    margin: 0;
-    }
-    
-    .table tr.igv_tab.open {
-    max-height: 2001px;
-    transition: max-height 1s;
-    }
-
-    .table tr.igv_tab {
-    max-height: 0px;
-    transition: max-height 1s;
-    }
-
-    .table td {
-    padding-top: 0rem;
-    padding-bottom: 0rem;
-    border-top: 0px;
-    }
-
-    .table tr.head {
-    height: 1rem;
-    border-top: 1px;
-    }
-
-    .select option.hidden_option{
-        display: none;
-    }
-
-    .expand-button {
-        display: block;
-        width: 100%;
-        background-color: #e6f2ff;
-        color: #333;
-        padding: 10px 20px;
-        border-radius: 10px;
-        cursor: pointer;
-        text-align: center;
-      }
-      .plot-container {
-        display: flex;
-        justify-content: center;
-      }
-      .link-container {
-        border: 8px solid #d3d3d3; /* Make the border thicker and blue */
-        padding: 20px 20px; /* Add more padding */
-        border-radius: 10px; /* Round the edges */
-        text-align: center; /* Center the text */
-        margin: 20px auto; /* Center the div */
-        width: 40%; /* Set the width */
-    }
 </style>
 
 {% if owner %}
@@ -330,6 +117,11 @@
                     <a href="#" id="report_download" class="btn btn-primary dark"> 
                         <span class="hidden-phone"></span>Download as TSV </a>
                     </div>
+
+                    <div class="float-right overlap-button">
+                    <a href="#" class="collapsible-header btn btn-primary dark"> 
+                        <span>Read Overlap</span>
+                    </a>
                 </div>
             </div>
         </div>
@@ -343,9 +135,6 @@
                         <tr>
                             <td colspan="100%">
                               <div class="collapsible">
-                                <div class="collapsible-header">
-                                  <span class="expand-button">Read Overlap</span>
-                                </div>
                                 <div class="collapsible-body" style="display: none;">
                                   <div id="plot" class="plot-container">
                                   <img src={{overlap_heatmap_path}} alt="Plot">
@@ -391,26 +180,28 @@
                         {% for final_report in report_list %}
                         <tr>
                             <td colspan="100%">
-                                <div style="display: flex; border-radius: 5px; overflow: hidden;">
+                                <div class="custom-section-container">
                                     <!-- First section -->
-                                    <div style="flex: 1; padding: 5px; padding: 5px;border-right: 1px solid #ccc; border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
+                                    <div class="custom-section">
                                         {{final_report.name}}
                                     </div>
-                                    
+                                    {% if final_report.private_counts_exist %}
                                     <!-- Second section -->
-                                    <div style="flex: 1; padding: 10px; padding: 5px;border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
-                                        {{final_report.private_proportion}}
-                                    </div>
-                                    <!-- Third section -->
-                                    <div style="flex: 1; padding: 10px; padding: 5px;border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
-                                        # hits: {{final_report.group_list|length}}
-                                    </div>
-                                    {% if final_report.heatmap_exists %}
-                                    <!-- Fourth section -->
-                                    <div style="flex: 1; padding: 10px; padding: 5px;border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
-                                        <a href="#" id="showButton">Read Overlap</a>
+                                    <div class="custom-section">
+                                        {{final_report.private_counts}}
                                     </div>
                                     {% endif %}
+                                    <!-- Third section -->
+                                    <div class="custom-section">
+                                        {{final_report.private_proportion}}
+                                    </div>
+                                    <!-- Forth section -->
+                                    <div class="custom-section">
+                                        # {{final_report.group_list|length}}
+                                    </div>
+                                    <div class="custom-section">
+                                        <a href="#" id="showButton" class="custom-link">Read Overlap</a>
+                                    </div>
                                 </div>
                             </td>
                         </tr>
@@ -657,10 +448,11 @@
 
     $(document).ready(function() {
         $('.collapsible-header').click(function() {
-          $(this).toggleClass('active');
-          $(this).siblings('.collapsible-body').slideToggle();
+          console.log("HI")
+          $('.collapsible-body').slideToggle('slow');
         });
       });
+
 
     $("tr.parent").find("A#plot_show").click(function(e) {
 

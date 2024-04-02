@@ -12,31 +12,19 @@ from constants.constants import Constants
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReadClassification,
-    ReferenceContigs,
-    RunAssembly,
-    RunMain,
-    SampleQC,
-    TelevirRunQC,
-)
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.models import (ContigClassification, FinalReport,
+                                            ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            ReadClassification,
+                                            ReferenceContigs, RunAssembly,
+                                            RunMain, SampleQC, TelevirRunQC)
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.utilities_general import (
-    get_project_dir,
-    get_project_dir_no_media_root,
-)
+    get_project_dir, get_project_dir_no_media_root)
 from pathogen_identification.utilities.utilities_views import (
-    RawReferenceCompound,
-    ReportSorter,
-    check_sample_software_exists,
-    duplicate_metagenomics_software,
-)
+    RawReferenceCompound, ReportSorter, check_sample_software_exists,
+    duplicate_metagenomics_software)
 from settings.models import Parameter, Software
 
 
@@ -743,7 +731,8 @@ class SampleTableOne(tables.Table):
         ).count()
 
 
-from pathogen_identification.models import ReferenceSourceFile, ReferenceSourceFileMap
+from pathogen_identification.models import (ReferenceSourceFile,
+                                            ReferenceSourceFileMap)
 
 
 class ReferenceSourceFileTable(tables.Table):
@@ -798,7 +787,8 @@ class ReferenceSourceFileTable(tables.Table):
         return record.creation_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE)
 
 
-from pathogen_identification.utilities.reference_utils import check_reference_exists
+from pathogen_identification.utilities.reference_utils import \
+    check_reference_exists
 
 
 class TelevirReferencesTable(tables.Table):
@@ -1420,7 +1410,9 @@ class RunMappingTable(tables.Table):
         },
     )
     created = tables.Column(verbose_name="Created", orderable=False, empty_values=())
-    success = tables.Column(verbose_name="Success", orderable=False, empty_values=())
+    success = tables.Column(
+        verbose_name="Confirmed", orderable=False, empty_values=()
+    )
 
     extra_filtering = tables.Column(
         verbose_name="Extra filtering",
@@ -1680,7 +1672,7 @@ class RunMappingTable(tables.Table):
 class RunMainTable(RunMappingTable):
     name = tables.Column(verbose_name="Run")
     report = tables.Column(verbose_name="Report", orderable=False, empty_values=())
-    success = tables.Column(verbose_name="Success", orderable=False, empty_values=())
+    success = tables.Column(verbose_name="Confirmed", orderable=False, empty_values=())
 
     extra_filtering = tables.Column(
         verbose_name="Extra filtering",

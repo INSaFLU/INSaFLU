@@ -137,24 +137,15 @@
 	margin-top: 7px;
 	margin-bottom: 0;
 }
-.card-footer {
+.portal {
 	text-align: center;
 }
-.card-title {
-	text-align: center;
-}
-.card-text {
-	text-align: center;
-}
-.no-bullets {
-    list-style-type: none;
-    padding-left: 0;
-}
+
+
 .card-link{
 	margin-top: 7px;
 	margin-bottom: 0;
-	display: block;
-    text-align: center;
+
 }
 
 .card_paragraph{

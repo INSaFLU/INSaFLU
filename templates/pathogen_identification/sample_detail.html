@@ -59,7 +59,7 @@
                             <p style="margin: 0;"> <strong>Sample name: </strong> {{sample}}</p>
                             <p style="margin: 0;"> <strong>Run: </strong> {{run_name}}</p>
                         </div>
-                        <div class="col-sm">
+                        <div class="col-sm" style="align-items: center;  justify-content: center; border: 1px solid #e9ecef; padding: 10px; margin: 0;">
                             {% if run_main.enrichment_performed %}
                             <p style="margin: 0;"> <strong>Viral enrichment:</strong> {{run_main.enrichment}} </p>
                             {% endif %}
@@ -78,7 +78,7 @@
                             <p style="margin: 0;"> <strong>Remapping:</strong> {{run_main.remap}} </p>                        
                         </div>
                         <div class= "col-sm">
-                            <div class="btn-group">
+                            <div class="btn-group" style="float: right;" >
                                 <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                     Summary Downloads
                                 </button>
@@ -145,7 +145,7 @@
                         {% if run_main.enrichment_performed or run_main.host_depletion_performed %}
                         <form id="download_processed_reads_r1" action="{% url 'download_file' %}" method="POST">
                             {% csrf_token %}
-                            <input type=submit value="processed R1 (.gz)" name="btn1">
+                            <input type=submit value="processed R1 (.gz)" name="btn1" style= "font-size: 14px;">
                             <input type="hidden" name="file_path" value="{{run_main.processed_reads_r1}}">
                         </form>
                         {% if run_main.sample.sample.is_valid_2 %}
@@ -193,9 +193,9 @@
                     {% if data_exists %}
                     <div class="col-sm">
                         {% if assembly.contig_number > 0 %}
-                        <form id="download_assembly" action="{% url 'download_file' %}" method="POST">
+                        <form id="download_assembly" action="{% url 'download_file' %}" method="POST" style="padding-right: 0px; width: 50%; float: right;">
                             {% csrf_token %}
-                            <input type=submit value="assembly (.gz)" name="btn1">
+                            <input type=submit value="assembly (.gz)" name="btn1" style= "font-size: 14px;">
                             <input type="hidden" name="file_path" value="{{assembly.assembly_contigs}}">
                         </form>
                         {% endif %}
@@ -275,24 +275,24 @@
                         {% if data_exists %}
                         <div class="col-sm">
                             {% if contig_classification.classification_number > 0 %}
-                            <form id="download_contig_class_report" action="{% url 'download_file' %}" method="POST">
+                            <form id="download_contig_class_report" action="{% url 'download_file' %}" method="POST" style="padding-right: 0px; width: 50%; float: right; "> 
                                 {% csrf_token %}
-                                <input type=submit value="contig classification report" name="btn1">
+                                <input type=submit value="contig classification report" name="btn1" style= "font-size: 14px;">
                                 <input type="hidden" name="file_path" value="{{contig_classification.contig_classification_report}}">
                             </form>
                             {% endif %}
                             {% if read_classification.classification_number > 0 %}
-                            <form id="download_read_class_report" action="{% url 'download_file' %}" method="POST">
+                            <form id="download_read_class_report" action="{% url 'download_file' %}" method="POST" style="padding-right: 0px; width: 50%; float: right;">
                                 {% csrf_token %}
-                                <input type=submit value="read classification report" name="btn2">
+                                <input type=submit value="read classification report" name="btn2" style= "font-size: 14px;">
                                 <input type="hidden" name="file_path" value="{{read_classification.read_classification_report}}">
                             </form>
                             {% endif %}
                             {% if read_classification.classification_number > 0 and contig_classification.classification_number > 0 %}
                             {% if run_remap.merged_log %}
-                            <form id="merged_report_download" action="{% url 'download_file' %}" method="POST">
+                            <form id="merged_report_download" action="{% url 'download_file' %}" method="POST" style="padding-right: 0px; width: 50%; float: right;">
                                 {% csrf_token %}
-                                <input type=submit value="merged classification report" name="btn3">
+                                <input type=submit value="merged classification report" name="btn3" style= "font-size: 14px;">
                                 <input type="hidden" name="file_path" value="{{run_remap.merged_log}}">
                             </form>
                             {% endif %}
@@ -673,7 +673,7 @@
                         </tr>
                     {% endfor %}
                     <tr class="detail" style="background-color: #f2f2f2; padding: 0px; margin: 0px; border: 0px;">
-                        <td colspan="16" align="center" style="padding: 0px; margin: 0px">
+                        <td colspan="17" align="center" style="padding: 0px; margin: 0px">
                             <hr class="solid" style="height: 1px; background-color: #000000; margin: 0px;">
                         </td>
                     </tr>

@@ -92,7 +92,45 @@ class SampleCurator:
         )
 
 
-def match_name_score(name: str, reference) -> float:
+def name_translator(name: str) -> str:
+
+    if "EBV" in name:
+        return "human herpesvirus 4"
+
+    if "polyomavirus" in name:
+        return "polyomavirus"
+
+    if "Metapneumovírus" in name:
+        return "human metapneumovirus"
+
+    if "SARS-CoV-2" in name:
+        return "coronavirus"
+
+    if "Varicella" in name:
+        return "human herpesvirus 3"
+
+    if "Cytomegalovirus" in name:
+        return "human herpesvirus 5"
+
+    if "Rinovírus" in name or "Rinovíru" in name:
+        return "rhinovirus"
+
+    if "Epstein-Barr virus (EBV)" in name:
+        return "human herpesvirus 4"
+
+    if "Herpes simplex virus 1" in name:
+        return "human herpesvirus 1"
+
+    if "RSV" in name:
+        return "respiratory syncytial virus"
+
+    return name
+
+
+def match_name_score(name: str, reference: RawReference) -> float:
+
+    name = name_translator(name)
+
     name_list = name.lower().split(" ")
     if reference.description is None:
         return 0
@@ -235,7 +273,25 @@ def get_hit_best_reference(hit: Hit) -> Optional[RawReference]:
     return hit_references[0][0]
 
 
-def determine_raw_ref_index(ref: RawReference):
+def get_hit_best_classifier_reference(
+    hit: Hit, classifier: str
+) -> Optional[RawReference]:
+    if len(hit.raw_reference_id_list) == 0:
+        return None
+
+    hit_references = RawReference.objects.filter(
+        id__in=hit.raw_reference_id_list, run__read_classification=classifier
+    )
+    if hit_references.exists():
+        hit_references = [(x, determine_raw_ref_index(x)) for x in hit_references]
+        hit_references.sort(key=lambda x: x[1])
+
+        return hit_references[0][0]
+    else:
+        return None
+
+
+def ref_index_by_pk(ref: RawReference):
     run = ref.run
 
     other_references = RawReference.objects.filter(run=run).order_by("id")
@@ -245,6 +301,29 @@ def determine_raw_ref_index(ref: RawReference):
             return ix
 
     return -1
+
+
+def ref_index_by_counts(ref: RawReference):
+    run = ref.run
+
+    other_references = RawReference.objects.filter(run=run)
+    reference_counts = {
+        ref.pk: ref.read_counts for ix, ref in enumerate(other_references)
+    }
+
+    sorted_pks = sorted(reference_counts, key=reference_counts.get, reverse=True)
+
+    for ix, pk in enumerate(sorted_pks):
+        if pk == ref.pk:
+            return ix
+
+    return -1
+
+
+def determine_raw_ref_index(ref: RawReference):
+
+    # return ref_index_by_pk(ref)
+    return ref_index_by_counts(ref)
 
 
 def df_report_analysis(analysis_df_filename, project_id: int):
@@ -291,11 +370,20 @@ def df_report_analysis(analysis_df_filename, project_id: int):
             "name_similarity": expected_hit.name_similarity,
             "reported_samples": "/".join(expected_hit.reported_samples_classes),
             "intermediate_samples": "/".join(expected_hit.intermediate_samples_classes),
-            "position": best_mapping_rank,
+            "position": best_mapping_rank + 1,
             "mapped": mapped,
             "run_pk": run_pk,
             "sample_pk": sample.pk if sample is not None else -1,
         }
+
+        for classifier in ["kraken2", "centrifuge", "blastn"]:
+            classifier_rank = -1
+            best_mapping = get_hit_best_classifier_reference(expected_hit, classifier)
+            if best_mapping is not None:
+                classifier_rank = determine_raw_ref_index(best_mapping)
+
+            new_row[f"{classifier}_position"] = classifier_rank + 1
+
         new_table.append(new_row)
 
     new_df = pd.DataFrame(new_table)

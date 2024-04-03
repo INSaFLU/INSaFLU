@@ -423,6 +423,8 @@ class FinalReportGroup:
         self.max_coverage = 0
         self.private_counts_exist = private_counts_exist
         self.update_max_coverage()
+        self.js_heatmap_ready = False
+        self.js_heatmap_data = None
 
     def reports_have_private_reads(self) -> bool:
         for report in self.group_list:
@@ -695,6 +697,19 @@ class ReportSorter:
             self.overlap_heatmap_path = None
             self.overlap_pca_exists = False
             self.overlap_pca_path = None
+
+    def read_distance_matrix(self):
+        """
+        read distance matrix
+        """
+        try:
+            distance_matrix = pd.read_csv(
+                self.overlap_manager.distance_matrix_path, index_col=0
+            )
+            return distance_matrix
+        except Exception as e:
+            print(e)
+            return None
 
     def update_max_error_rate(self, report: FinalReport):
         """
@@ -1170,7 +1185,55 @@ class ReportSorter:
         sorted_groups = self.get_reports_private_reads(sorted_groups)
         sorted_groups = self.sort_group_list_reports(sorted_groups)
 
+        sorted_groups = self.prep_heatmap_data_several(sorted_groups)
+
         return sorted_groups
+
+    def prep_heatmap_data(
+        self, report_group: FinalReportGroup, distance_matrix: pd.DataFrame
+    ):
+        """
+        prepare heatmap data to be used to create javascript heatmap"""
+
+        group_members = report_group.group_list
+        group_members_accids = [member.accid for member in group_members]
+
+        distance_matrix = distance_matrix[
+            distance_matrix.index.isin(group_members_accids)
+        ]
+        distance_matrix = distance_matrix[group_members_accids]
+
+        distance_matrix = distance_matrix.fillna(0)
+
+        # Convert the DataFrame to JSON
+        # print(distance_matrix)
+        json_data = []
+        import json
+
+        for ix, row in distance_matrix.iterrows():
+            for col, value in row.items():
+                json_data.append({"x": ix, "y": col, "value": value})
+
+        json_data = json.dumps(json_data)
+        print(json_data)
+        return json_data
+
+    def prep_heatmap_data_several(self, report_groups: List[FinalReportGroup]):
+        """
+        prepare heatmap data to be used to create javascript heatmap
+        """
+        distance_matrix = self.read_distance_matrix()
+
+        if distance_matrix is None:
+            return report_groups
+
+        for report_group in report_groups:
+            json_data = self.prep_heatmap_data(report_group, distance_matrix)
+            print(json_data)
+            report_group.js_heatmap_data = json_data
+            report_group.js_heatmap_ready = True
+
+        return report_groups
 
     def return_no_analysis(self) -> List[FinalReportGroup]:
         report_group = FinalReportGroup(

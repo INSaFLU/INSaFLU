@@ -36,9 +36,58 @@
 {% endblock %}
 
 
+
+
+
+
 {% block content %}
 
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
+<script>
+    function createHeatmap(data, divId) {
+        console.log((!Array.isArray(data)));
+        data = JSON.parse(data);
+        console.log(data);
+        var xValues = data.map(row => row["x"]);
+        var yValues = data.map(row => row["y"]);
+        var zValues = data.map(row => row["value"]);
+        console.log("Creating heatmap");
+        console.log(xValues);
+    
+        var trace = {
+            x: xValues,
+            y: yValues,
+            z: zValues,
+            type: 'heatmap'
+        };
+    
+        var layout = {
+            title: 'Heatmap',
+            xaxis: {
+                title: 'X Axis',
+                titlefont: {
+                    family: 'Arial, sans-serif',
+                    size: 18,
+                    color: 'lightgrey'
+                },
+            },
+            yaxis: {
+                title: 'Y Axis',
+                titlefont: {
+                    family: 'Arial, sans-serif',
+                    size: 18,
+                    color: 'lightgrey'
+                },
+            }
+        };
+        console.log("Creating heatmap");
+    
+        var data = [trace];
+        
+        Plotly.newPlot(divId, data, layout);
+    }
+</script>
 
 {% if owner %}
 
@@ -453,9 +502,16 @@
                                 </div>
                             </td>
                         </tr>
-                        {% if final_report.heatmap_exists %}
+                        {% if final_report.js_heatmap_ready %}
                         <tr class="row-to-toggle" id="rowToToggle" style="display: none;">
                             <td colspan="16">
+                                <div id="plot-{{final_report.name}}" class="plot-container">
+                                   
+                                </div>
+                                <script>
+                                    createHeatmap('{{ final_report.js_heatmap_data|safe }}', "plot-{{final_report.name}}");
+                                </script>
+
                                 <div id="plot" class="plot-container">
                                     <img src={{final_report.heatmap_path}} alt="Image">
                                 </div>
@@ -743,19 +799,24 @@
 
 {% block js %}
 
-<script type="text/javascript">
-
-
-      
-</script>
-
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.min.js"></script>
 <script type="text/javascript" src="https://igv.org/web/release/2.3.3/dist/igv.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/es5-shim/4.5.7/es5-shim.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/es6-shim/0.35.3/es6-shim.js"></script>
 <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 <script type="text/javascript" src="{% static 'js/televir_projects/sample_detail.js' %}"></script>
+<script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-core.min.js"></script>
+<script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-heatmap.min.js"></script> 
 
+
+<script type="text/javascript">
+    $(document).ready(function(){
+        $(".collapsible-header").click(function(){
+            $(".collapsible-body").toggle();
+        });
+    });
+
+</script>
 
 <script type="text/javascript">
     // Load google charts
@@ -796,52 +857,6 @@
 </script>
 
 
-
-<script type="text/javascript">
-
-    $(document).on("click", "a", function (e) {
-        
-
-        if (id === "remap_reference") {
-            e.preventDefault();
-            var id= $(this).attr("id");
-            var ref_id= $(this).attr("ref_id");
-            var project_id= $(this).attr("project_id");
-            var csrf_token= $("#headingMapExtra").attr("csrf_token");
-            var url_remap= $("#headingMapExtra").attr("url-remap");
-
-            $.ajax({
-                url: url_remap,
-                type: "POST",
-                data: {
-                    'csrfmiddlewaretoken': csrf_token,
-                    'reference_id': ref_id,
-                    'project_id': project_id
-                },
-                success: function (data) {
-                    if (data["is_ok"] === true) {
-                        alert("Reference remap deployed");
-                    } else {
-                        alert("Reference remapping failed");
-                    }
-                },
-                error: function (data) {
-                    alert("Reference remapping failed");
-                }
-            });
-        }
-    });
-
-
-    function nextTr(row) {
-        while ((row = row.nextSibling) && row.nodeType != 1);
-        return row;
-    }
-
-  $('#id_go_back_button').on('click', function(){
-      wait_screen();
-  });
-</script>	
 {% endblock %}
 
 

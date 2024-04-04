@@ -38,10 +38,9 @@
 
 
 {% block content %}
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script type="text/javascript" src="{% static 'js/televir_projects/heatmap_clades.js' %}"></script>
 
-<style>
-
-</style>
 
 {% if owner %}
 
@@ -205,7 +204,19 @@
                                 </div>
                             </td>
                         </tr>
-                        {% if final_report.heatmap_exists %}
+                        {% if final_report.js_heatmap_ready %}
+                        <tr class="row-to-toggle" id="rowToToggle" style="display: none;">
+                            <td colspan="16">
+                                <div id="plot-{{final_report.name}}" class="plot-container">
+                                   
+                                </div>
+                                <script>
+                                    createHeatmap('{{ final_report.js_heatmap_data|safe }}', "plot-{{final_report.name}}");
+                                </script>
+
+                            </td>
+                        </tr>
+                        {% elif final_report.heatmap_exists %}
                         <tr class="row-to-toggle" id="rowToToggle" style="display: none;">
                             <td colspan="100%">
                                 <div id="plot" class="plot-container">
@@ -215,7 +226,7 @@
                         </tr>
                         {% endif %}
                         {% for value in final_report.group_list %}
-                        <tr class="parent">
+                        <tr class="parent"  id="row_{{value.accid}}">
                             <td data-title="Description"><a href="#" id="plot_show" >{{value.description}}</a></td>
                             <td data-title="Taxid">{{value.taxid}}</td>
                             <td data-title="accID">

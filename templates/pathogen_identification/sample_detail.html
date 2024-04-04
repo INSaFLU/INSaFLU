@@ -35,59 +35,10 @@
 {% endif %}
 {% endblock %}
 
-
-
-
-
-
 {% block content %}
 
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-
-<script>
-    function createHeatmap(data, divId) {
-        console.log((!Array.isArray(data)));
-        data = JSON.parse(data);
-        console.log(data);
-        var xValues = data.map(row => row["x"]);
-        var yValues = data.map(row => row["y"]);
-        var zValues = data.map(row => row["value"]);
-        console.log("Creating heatmap");
-        console.log(xValues);
-    
-        var trace = {
-            x: xValues,
-            y: yValues,
-            z: zValues,
-            type: 'heatmap'
-        };
-    
-        var layout = {
-            title: 'Heatmap',
-            xaxis: {
-                title: 'X Axis',
-                titlefont: {
-                    family: 'Arial, sans-serif',
-                    size: 18,
-                    color: 'lightgrey'
-                },
-            },
-            yaxis: {
-                title: 'Y Axis',
-                titlefont: {
-                    family: 'Arial, sans-serif',
-                    size: 18,
-                    color: 'lightgrey'
-                },
-            }
-        };
-        console.log("Creating heatmap");
-    
-        var data = [trace];
-        
-        Plotly.newPlot(divId, data, layout);
-    }
-</script>
+<script type="text/javascript" src="{% static 'js/televir_projects/heatmap_clades.js' %}"></script>
 
 {% if owner %}
 
@@ -413,13 +364,13 @@
 
                 <div class="col-sm">
                     <div class="float-right">
-                    <a href="#" id="report_download" class="btn btn-primary dark"> 
+                    <a href="#" id="report_download" class="btn btn-primary dark">
                         <span class="hidden-phone"></span>Download as TSV </a>
                     </div>
 
                     <div class="float-right overlap-button">
                     <a href="#" class="collapsible-header btn btn-primary dark"> 
-                        <span>Read Overlap</span>
+                        <span>Group Read Overlap</span>
                     </a>
                 </div>
 
@@ -512,6 +463,11 @@
                                     createHeatmap('{{ final_report.js_heatmap_data|safe }}', "plot-{{final_report.name}}");
                                 </script>
 
+                            </td>
+                        </tr>
+                        {% elif final_report.heatmap_exists %}
+                        <tr class="row-to-toggle" id="rowToToggle" style="display: none;">
+                            <td colspan="100%">
                                 <div id="plot" class="plot-container">
                                     <img src={{final_report.heatmap_path}} alt="Image">
                                 </div>
@@ -519,7 +475,7 @@
                         </tr>
                         {% endif %}
                         {% for value in final_report.group_list %}
-                        <tr class="parent">
+                        <tr class="parent" id="row_{{value.accid}}">
                             <td data-title="Description"><a href="#" id="plot_show" >{{value.description}}</a></td>
                             <td data-title="Taxid">{{value.taxid}}</td>
                             <td data-title="accID">
@@ -809,16 +765,13 @@
 <script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-heatmap.min.js"></script> 
 
 
-<script type="text/javascript">
-    $(document).ready(function(){
-        $(".collapsible-header").click(function(){
-            $(".collapsible-body").toggle();
-        });
-    });
 
-</script>
 
 <script type="text/javascript">
+
+
+
+
     // Load google charts
     google.charts.load('current', {'packages':['corechart']});
     google.charts.setOnLoadCallback(drawChart);

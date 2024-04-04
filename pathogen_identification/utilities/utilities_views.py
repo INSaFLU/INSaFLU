@@ -1,4 +1,4 @@
-import datetime
+import json
 import logging
 import os
 from typing import Dict, List, Optional
@@ -11,32 +11,19 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.views import generic
 
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReferenceMap_Main,
-    ReferencePanel,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference, ReferenceMap_Main,
+                                            ReferencePanel, RunAssembly,
+                                            RunDetail, RunMain, SoftwareTree,
+                                            SoftwareTreeNode)
 from pathogen_identification.utilities.clade_objects import Clade
-from pathogen_identification.utilities.overlap_manager import ReadOverlapManager
-from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
+from pathogen_identification.utilities.overlap_manager import \
+    ReadOverlapManager
 from pathogen_identification.utilities.televir_parameters import (
-    LayoutParams,
-    TelevirParameters,
-)
+    LayoutParams, TelevirParameters)
 from pathogen_identification.utilities.utilities_general import (
-    infer_run_media_dir,
-    simplify_name,
-)
+    infer_run_media_dir, simplify_name)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
 
@@ -698,13 +685,13 @@ class ReportSorter:
             self.overlap_pca_exists = False
             self.overlap_pca_path = None
 
-    def read_distance_matrix(self):
+    def read_shared_matrix(self):
         """
         read distance matrix
         """
         try:
             distance_matrix = pd.read_csv(
-                self.overlap_manager.distance_matrix_path, index_col=0
+                self.overlap_manager.shared_prop_matrix_path, index_col=0
             )
             return distance_matrix
         except Exception as e:
@@ -1028,12 +1015,12 @@ class ReportSorter:
         overlap_analysis.to_csv(self.analysis_df_path, sep="\t", index=False)
 
         self.overlap_manager.get_private_reads_no_duplicates()
-        # self.overlap_manager.plot_pca_full()
 
         overlap_groups = list(overlap_analysis.groupby(["total_counts", "clade"]))[::-1]
 
         clades_to_keep = []
 
+        ## plot pairwise shared reads
         for group in overlap_groups:
             group_df = group[1]
 
@@ -1046,6 +1033,7 @@ class ReportSorter:
             if len(group_list):
                 clades_to_keep.append(name)
                 if len(group_list) > 1:
+
                     pairwise_shared_within_clade = (
                         self.overlap_manager.within_clade_shared_reads(clade=name)
                     )
@@ -1206,30 +1194,37 @@ class ReportSorter:
         distance_matrix = distance_matrix.fillna(0)
 
         # Convert the DataFrame to JSON
-        # print(distance_matrix)
         json_data = []
-        import json
+        print(distance_matrix)
+
+        ## sort columns same as rows
+        distance_matrix = distance_matrix.reindex(
+            sorted(distance_matrix.columns), axis=1
+        )
+
+        ## sort rows
+        distance_matrix = distance_matrix.reindex(sorted(distance_matrix.index))
+        print(distance_matrix)
 
         for ix, row in distance_matrix.iterrows():
             for col, value in row.items():
                 json_data.append({"x": ix, "y": col, "value": value})
 
         json_data = json.dumps(json_data)
-        print(json_data)
+
         return json_data
 
     def prep_heatmap_data_several(self, report_groups: List[FinalReportGroup]):
         """
         prepare heatmap data to be used to create javascript heatmap
         """
-        distance_matrix = self.read_distance_matrix()
+        distance_matrix = self.read_shared_matrix()
 
         if distance_matrix is None:
             return report_groups
 
         for report_group in report_groups:
             json_data = self.prep_heatmap_data(report_group, distance_matrix)
-            print(json_data)
             report_group.js_heatmap_data = json_data
             report_group.js_heatmap_ready = True
 

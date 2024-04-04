@@ -1,6 +1,18 @@
-$('#id_go_back_button').on('click', function(){
-    wait_screen();
+$(document).ready(function() {
+
+    $('#id_go_back_button').on('click', function () {
+        wait_screen();
+    });
+    
+    $('.collapsible-header').click(function() {
+      // precent default
+      $('.collapsible-body').slideToggle('slow');
+    });        
+
 });
+
+
+
 
 /// Map Reference on click
 
@@ -44,14 +56,6 @@ function nextTr(row) {
     return row;
 }
 
-$(document).ready(function() {
-
-    $('.collapsible-header').click(function() {
-      // precent default
-      $('.collapsible-body').slideToggle('slow');
-    });        
-
-});
 
 
 $("tr.parent").find("A#plot_show").click(function(e) {
@@ -89,23 +93,27 @@ $("tr.parent").find("A#plot_show").click(function(e) {
 
 /// IGV Display functions and actions
 
-$(document).on('click', '.btn', function (e) {
-    if (e.target.id == "igv_browse") 
-        var accid=$(this).attr('accid');
+$("#igv_browse").on('click',  function (e) {
+    console.log("click");
+    console.log(e.target.id);
+    if (e.target.id === "igv_browse") {
+        var accid = $(this).attr('accid');
         var igv_display = document.getElementById('igv_display_' + accid);
-        var igv_display_className= igv_display.className;
+        var igv_display_className = igv_display.className;
         
-        if (/\bopen\b/.test(igv_display_className)){
-            igv_display.className= igv_display.className.replace(" open",'');
-            setTimeout(function() {
+        if (/\bopen\b/.test(igv_display_className)) {
+            igv_display.className = igv_display.className.replace(" open", '');
+            setTimeout(function () {
                 var show_igv_div = document.getElementById('show_igv_' + accid);
                 show_igv_div.innerHTML = "";
             }, 300);
 
-        }else{
+        } else {
             igv_display.className += " open";
             show_igv($(this));
         }
+        
+    }
 });
 
 function replace_igv_div(accid) {

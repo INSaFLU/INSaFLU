@@ -1206,7 +1206,6 @@ class ReportSorter:
 
         # Convert the DataFrame to JSON
         json_data = []
-        print(distance_matrix)
 
         # Calculate row sums
         row_sums = distance_matrix.sum(axis=1)

@@ -11,19 +11,30 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.views import generic
 
-from pathogen_identification.models import (FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RawReference, ReferenceMap_Main,
-                                            ReferencePanel, RunAssembly,
-                                            RunDetail, RunMain, SoftwareTree,
-                                            SoftwareTreeNode)
+from pathogen_identification.models import (
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReferenceMap_Main,
+    ReferencePanel,
+    RunAssembly,
+    RunDetail,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
 from pathogen_identification.utilities.clade_objects import Clade
-from pathogen_identification.utilities.overlap_manager import \
-    ReadOverlapManager
+from pathogen_identification.utilities.overlap_manager import ReadOverlapManager
 from pathogen_identification.utilities.televir_parameters import (
-    LayoutParams, TelevirParameters)
+    LayoutParams,
+    TelevirParameters,
+)
 from pathogen_identification.utilities.utilities_general import (
-    infer_run_media_dir, simplify_name)
+    infer_run_media_dir,
+    simplify_name,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
 
@@ -1197,14 +1208,17 @@ class ReportSorter:
         json_data = []
         print(distance_matrix)
 
-        ## sort columns same as rows
-        distance_matrix = distance_matrix.reindex(
-            sorted(distance_matrix.columns), axis=1
-        )
+        # Calculate row sums
+        row_sums = distance_matrix.sum(axis=1)
 
-        ## sort rows
-        distance_matrix = distance_matrix.reindex(sorted(distance_matrix.index))
-        print(distance_matrix)
+        # Sort rows by row sums in descending order
+        sorted_row_index = row_sums.sort_values(ascending=False).index
+
+        # Sort rows
+        distance_matrix = distance_matrix.reindex(sorted_row_index)
+
+        # Sort columns using the same order as rows
+        distance_matrix = distance_matrix.reindex(sorted_row_index, axis=1)
 
         for ix, row in distance_matrix.iterrows():
             for col, value in row.items():

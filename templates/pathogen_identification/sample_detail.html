@@ -466,7 +466,13 @@
                                         # {{final_report.group_list|length}}
                                     </div>
                                     <div class="custom-section">
+                                        {% if final_report.js_heatmap_ready %}
                                         <a href="#" id="showButton" class="custom-link">Read Overlap</a>
+                                        {% elif final_report.heatmap_exists %}
+                                        <a href="#" id="showButton" class="custom-link">Read Overlap</a>
+                                        {% else %}
+                                        <a href="#" id="showButton" class="custom-link">Read Overlap</a>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </td>

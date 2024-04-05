@@ -37,6 +37,7 @@ import logging
 class ReadOverlapManager:
     distance_matrix_filename: str = "distance_matrix_{}.tsv"
     shared_prop_matrix_filename: str = "shared_prop_matrix_{}.tsv"
+    clade_shared_prop_matrix_filename: str = "clade_shared_prop_matrix_{}.tsv"
     clade_statistics_filename: str = "clade_statistics_{}.tsv"
     accid_statistics_filename: str = "accid_statistics_{}.tsv"
     tree_plot_filename: str = "tree_{}.png"
@@ -72,6 +73,10 @@ class ReadOverlapManager:
             self.media_dir, self.shared_prop_matrix_filename.format(pid)
         )
 
+        self.clade_shared_prop_matrix_path = os.path.join(
+            self.media_dir, self.clade_shared_prop_matrix_filename.format(pid)
+        )
+
         self.clade_statistics_path = os.path.join(
             self.media_dir, self.clade_statistics_filename.format(pid)
         )
@@ -94,14 +99,15 @@ class ReadOverlapManager:
 
         self.metadata["filepath"] = self.metadata["file"]
 
-        if self.force_tree_rebuild:
-            self.parse_for_data()
-            self.generate_shared_proportion_matrix()
-
         try:
             self.tree_manager = self.prep_tree_for_clade_analysis()
         except Exception as e:
             print(e)
+
+        if self.force_tree_rebuild:
+            self.parse_for_data()
+            self.generate_shared_proportion_matrix()
+            self.generate_clade_shared_proportion_matrix()
 
         if not os.path.exists(self.tree_plot_path):
             print("Plotting tree")
@@ -555,6 +561,15 @@ class ReadOverlapManager:
         )
 
         proportion_matrix.to_csv(self.shared_prop_matrix_path)
+
+    def generate_clade_shared_proportion_matrix(self):
+        """
+        Generate shared proportion matrix
+        """
+        self.parse_for_data()
+        clade_shared_proportion_matrix = self.between_clade_shared_reads()
+
+        clade_shared_proportion_matrix.to_csv(self.clade_shared_prop_matrix_path)
 
     def generate_tree(self):
         """

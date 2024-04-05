@@ -698,13 +698,28 @@ class ReportSorter:
 
     def read_shared_matrix(self):
         """
-        read distance matrix
+        read accession shared reads matrix
         """
         try:
             distance_matrix = pd.read_csv(
                 self.overlap_manager.shared_prop_matrix_path, index_col=0
             )
             return distance_matrix
+        except Exception as e:
+            print(e)
+            return None
+
+    def read_clade_shared_matrix(self):
+        """
+        read clade shared matrix
+        """
+        print(self.overlap_manager.clade_shared_prop_matrix_path)
+        try:
+            clade_shared_matrix = pd.read_csv(
+                self.overlap_manager.clade_shared_prop_matrix_path, index_col=0
+            )
+            return clade_shared_matrix
+
         except Exception as e:
             print(e)
             return None
@@ -1021,6 +1036,12 @@ class ReportSorter:
         if self.model is None:
             return self.return_no_analysis()
 
+        try:
+            assert self.overlap_manager.tree_manager is not None
+        except AttributeError as e:
+            print(e)
+            return self.return_no_analysis()
+
         overlap_analysis = self.read_overlap_analysis(force=True)
         self.overlap_manager.plot_pca_full(overlap_analysis)
         overlap_analysis.to_csv(self.analysis_df_path, sep="\t", index=False)
@@ -1056,6 +1077,7 @@ class ReportSorter:
         pairwise_shared_among_clade = self.overlap_manager.between_clade_shared_reads(
             clades_filter=clades_to_keep
         )
+
         self.overlap_manager.plot_pairwise_shared_clade_reads(
             pairwise_shared_among_clade
         )
@@ -1188,7 +1210,7 @@ class ReportSorter:
 
         return sorted_groups
 
-    def prep_heatmap_data(
+    def prep_heatmap_data_within_clade(
         self, report_group: FinalReportGroup, distance_matrix: pd.DataFrame
     ):
         """
@@ -1201,6 +1223,12 @@ class ReportSorter:
             distance_matrix.index.isin(group_members_accids)
         ]
         distance_matrix = distance_matrix[group_members_accids]
+
+        json_data = self.prep_heatmap_data(distance_matrix)
+
+        return json_data
+
+    def prep_heatmap_data(self, distance_matrix: pd.DataFrame):
 
         distance_matrix = distance_matrix.fillna(0)
 
@@ -1237,11 +1265,22 @@ class ReportSorter:
             return report_groups
 
         for report_group in report_groups:
-            json_data = self.prep_heatmap_data(report_group, distance_matrix)
+            json_data = self.prep_heatmap_data_within_clade(
+                report_group, distance_matrix
+            )
             report_group.js_heatmap_data = json_data
             report_group.js_heatmap_ready = True
 
         return report_groups
+
+    def clade_heatmap_json(self):
+
+        distance_matrix = self.read_clade_shared_matrix()
+
+        if distance_matrix is None:
+            return None
+
+        return self.prep_heatmap_data(distance_matrix)
 
     def return_no_analysis(self) -> List[FinalReportGroup]:
         report_group = FinalReportGroup(

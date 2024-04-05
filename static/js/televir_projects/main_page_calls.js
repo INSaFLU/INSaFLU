@@ -6,6 +6,8 @@ $(document).on("click", "a", function (e) {
         var attr = $(this).attr('id');
         var ref_name = $(this).attr('ref_name');
         var sample_pk = $(this).attr('pk');
+        var csrf_token = $("#submit-button").attr('csrf');
+        console.log(csrf_token);
         
         // For some browsers, `attr` is undefined; for others `attr` is false.  Check for both.
 
@@ -26,7 +28,7 @@ $(document).on("click", "a", function (e) {
         
         $('#id-modal-body-set-control').attr('pk', sample_pk);
         $('#id-modal-body-set-control').attr('ref_name', ref_name);
-        $('#id-modal-body-set-control').attr('token', '{{ csrf_token }}');
+        $('#id-modal-body-set-control').attr('token', csrf_token);
         
     }
     else if ($(this).attr("id") === 'id_add_set_control_message'){

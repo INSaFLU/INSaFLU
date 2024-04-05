@@ -5,27 +5,28 @@ $(document).ready(function() {
     });
     
     $('.collapsible-header').click(function() {
-      // precent default
-      $('.collapsible-body').slideToggle('slow');
+        // precent default
+        event.preventDefault();
+        $('.collapsible-body').slideToggle('slow');
     });        
 
 });
 
 
-
-
 /// Map Reference on click
 
 $(document).on("click", "a", function (e) {
-        
 
     if (id === "remap_reference") {
         e.preventDefault();
         var id= $(this).attr("id");
         var ref_id= $(this).attr("ref_id");
         var project_id= $(this).attr("project_id");
-        var csrf_token= $("#headingMapExtra").attr("csrf_token");
-        var url_remap= $("#headingMapExtra").attr("url-remap");
+        var csrf_token= $("#headingMapExtra").attr("csrf-token");
+        var url_remap = $("#headingMapExtra").attr("url-remap");
+        
+        console.log("remap_reference")
+        console.log(ref_id)
 
         $.ajax({
             url: url_remap,

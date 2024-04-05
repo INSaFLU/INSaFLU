@@ -382,6 +382,18 @@
                 <div style="padding: 2px; overflow-x:auto;">    
                     <table class="table" width="100%" id="report_table">
                     <thead>
+                        {% if clade_heatmap_json_exists %}
+                        <tr>
+                            <td colspan="100%">
+                                <div id="clade-heatmap" class="plot-container">
+                                   
+                                </div>
+                                <script>
+                                    createHeatmapClades('{{ clade_heatmap_json|safe }}', "clade-heatmap");
+                                </script>
+                            </td>
+                        </tr>
+                        {% endif %}
                         {% if overlap_heatmap_available %} 
                         <tr>
                             <td colspan="100%">
@@ -697,7 +709,7 @@
         </div>
     </div>
     <div class="card">
-        <div class="card-header" role="tab" id="headingMapExtra" url-remap="{% url 'deploy_televir_map' %}" csrf_token="{% csrf_token %}">
+        <div class="card-header" role="tab" id="headingMapExtra" url-remap="{% url 'deploy_televir_map' %}" csrf-token="{% csrf_token %}">
             <h5 class="mb-0">
                 <a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseMapExtra" aria-expanded="false" aria-controls="collapseMapExtra">
                     <strong>Raw Classification and Mapping Summary</strong>

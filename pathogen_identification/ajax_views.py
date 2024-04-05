@@ -2225,7 +2225,9 @@ def set_sample_reports_control(request):
     """
     set sample reports control
     """
+    print("HO")
     if request.is_ajax():
+        print(request.POST)
         data = {"is_ok": False}
         data["set_control"] = False
         sample_id = int(request.POST["sample_id"])

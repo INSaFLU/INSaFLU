@@ -2210,6 +2210,11 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
 
         # check has control_flag present
         # has_controlled_flag = False if sample_main.is_control else True
+        #########
+        clade_heatmap_json = report_sorter.clade_heatmap_json()
+        print(clade_heatmap_json)
+
+        #########
         private_reads_available = False
         for report_group in sorted_reports:
             if report_group.reports_have_private_reads():
@@ -2228,6 +2233,8 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         context = {
             "project": project_name,
             "run_name": run_name,
+            "clade_heatmap_json_exists": False if clade_heatmap_json is None else True,
+            "clade_heatmap_json": clade_heatmap_json,
             "is_classification": is_classification,
             "remapping_performed": remapping_performed,
             "sample": sample_name,

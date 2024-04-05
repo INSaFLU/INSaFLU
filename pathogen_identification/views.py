@@ -2205,14 +2205,20 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         sorted_reports = report_sorter.get_reports()
         excluded_reports_exist = report_sorter.check_excluded_exist()
         empty_reports = report_sorter.get_reports_empty()
-        if len(empty_reports.group_list) > 0:
-            sorted_reports.append(empty_reports)
+
+        sort_performed = True if report_sorter.analysis_empty is False else False
+
+        if excluded_reports_exist and report_sorter.analysis_empty is False:
+
+            if len(empty_reports.group_list) > 0:
+                sorted_reports.append(empty_reports)
 
         # check has control_flag present
         # has_controlled_flag = False if sample_main.is_control else True
         #########
-        clade_heatmap_json = report_sorter.clade_heatmap_json()
-        print(clade_heatmap_json)
+        clade_heatmap_json = report_sorter.clade_heatmap_json(
+            to_keep=[report_group.name for report_group in sorted_reports]
+        )
 
         #########
         private_reads_available = False
@@ -2233,6 +2239,9 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         context = {
             "project": project_name,
             "run_name": run_name,
+            "sort_performed": sort_performed,
+            "groups_count": len(sorted_reports),
+            "min_shared_reads": report_layout_params.shared_proportion_threshold * 100,
             "clade_heatmap_json_exists": False if clade_heatmap_json is None else True,
             "clade_heatmap_json": clade_heatmap_json,
             "is_classification": is_classification,
@@ -2265,7 +2274,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "max_mapped_prop": report_sorter.max_mapped_prop,
             "max_coverage": report_sorter.max_coverage,
             "max_windows_covered": report_sorter.max_windows_covered,
-            "overlap_heatmap_available": report_sorter.overlap_heatmap_exists,
+            "overlap_heatmap_available": False,
             "overlap_heatmap_path": report_sorter.overlap_heatmap_path,
             "overlap_pca_exists": report_sorter.overlap_pca_exists,
             "overlap_pca_path": report_sorter.overlap_pca_path,
@@ -2373,6 +2382,10 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
             if report_group.reports_have_private_reads():
                 private_reads_available = True
                 break
+        #########
+        clade_heatmap_json = report_sorter.clade_heatmap_json(
+            to_keep=[report_group.name for report_group in sorted_reports]
+        )
 
         #### graph
         graph_progress = TreeProgressGraph(sample)
@@ -2391,6 +2404,8 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         context = {
             "project": project_name,
             "graph_json": graph_json,
+            "clade_heatmap_json_exists": False if clade_heatmap_json is None else True,
+            "clade_heatmap_json": clade_heatmap_json,
             "graph_id": graph_id,
             "sample": sample_name,
             "tree_plot_exists": False,
@@ -2410,7 +2425,7 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
             "max_mapped_prop": report_sorter.max_mapped_prop,
             "max_coverage": report_sorter.max_coverage,
             "max_windows_covered": report_sorter.max_windows_covered,
-            "overlap_heatmap_available": report_sorter.overlap_heatmap_exists,
+            "overlap_heatmap_available": False,  # report_sorter.overlap_heatmap_exists,
             "overlap_heatmap_path": report_sorter.overlap_heatmap_path,
             "private_reads_available": private_reads_available,
         }

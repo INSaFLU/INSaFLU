@@ -323,7 +323,7 @@
                             <p> Of the references identified, {{run_detail.merged_number}} corresponding accession id(s) were found in
                                 our
                                 databases. References tagged as phages in local databases were excluded. </p>
-                            <p style=padding-left:4em> from these, {{number_validated}} successful alignments were produced.
+                            <p style=padding-left:4em> Of these, {{number_validated}} successful alignments were produced.
                             </p>
                             <p> The following <strong>Pathogen identification</strong> table shows the results of the remapping onto identified references. Below, in the <strong>Raw Classification and Mapping Summary</strong> table, you can select extra hits for remapping. </p>
                             <p> Results are shown for a minimum coverage of {{run_remap.coverage_minimum}}X and a maximum coverage
@@ -355,7 +355,7 @@
                 <div class="col-sm" >
                     <h5 class="mb-0" >
                         <a class="collapsed"   data-toggle="collapse" data-parent="#accordion" href="#collapseReport" aria-expanded="false" aria-controls="collapseReport">
-                            <strong>Pathogen Identification</strong>
+                            <strong>Validation Mapping Results</strong>
                         </a>
                         <a href="https://insaflu.readthedocs.io/en/latest/metagenomics_virus_detection.html#televir-output-visualization-and-download" target="_blank">
                             <i class="fa fa-info-circle" aria-hidden="true"></i>
@@ -365,48 +365,54 @@
                 <div class="col-sm">
                     <div class="float-right">
                     <a href="#" id="report_download" class="btn btn-primary dark">
-                        <span class="hidden-phone"></span>Download as TSV </a>
+                        <span class="hidden-phone"></span> Download as TSV </a>
                     </div>
 
+                    {% if sort_performed %}
                     <div class="float-right overlap-button">
-                    <a href="#" class="collapsible-header btn btn-primary dark"> 
-                        <span>Group Read Overlap</span>
-                    </a>
+                        <a href="#" class="summary-header btn btn-primary dark"> 
+                            <span>Read Overlap Summary</span>
+                        </a>
+                    </div>  
+                    {% endif %}
                 </div>
-
             </div>
         </div>
-        
+        {% if sort_performed %}
+        <div id="summary" class="collapsible">
+            <div class="card-block collapsible-summary" style="display: none;">
+                <div style="padding: 20px">
+                    <div class="row">
+                        <div class="col-sm">
+                            <p> 
+                            <p> 
+                                Shared read analysis recovered <strong>{{ groups_count }} groups of references</strong>.
+                                Groups are constructed according to a minimum shared read threshold of <strong>{{ min_shared_reads }} % </strong>.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% if clade_heatmap_json_exists %}
+                <div id="clade-heatmap" class="plot-container">
+                
+                </div>
+                <script>
+                    createHeatmapClades('{{ clade_heatmap_json|safe }}', "clade-heatmap");
+                </script>
+                {% if overlap_heatmap_available %} 
+                <div id="plot" class="plot-container">
+                    <img src={{overlap_heatmap_path}} alt="Image">
+                </div>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
         <div id="collapseReport" class="collapse show" role="tabpanel" aria-labelledby="headingReport">
             <div class="card-block">
                 <div style="padding: 2px; overflow-x:auto;">    
                     <table class="table" width="100%" id="report_table">
                     <thead>
-                        {% if clade_heatmap_json_exists %}
-                        <tr>
-                            <td colspan="100%">
-                                <div id="clade-heatmap" class="plot-container">
-                                   
-                                </div>
-                                <script>
-                                    createHeatmapClades('{{ clade_heatmap_json|safe }}', "clade-heatmap");
-                                </script>
-                            </td>
-                        </tr>
-                        {% endif %}
-                        {% if overlap_heatmap_available %} 
-                        <tr>
-                            <td colspan="100%">
-                                <div class="collapsible">
-                                    <div class="collapsible-body" style="display: none;">
-                                        <div id="plot" class="plot-container">
-                                            <img src={{overlap_heatmap_path}} alt="Image">
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endif %}
                         <tr class="header">
                             <th>Description</th>
                             <th>Taxid</th>
@@ -440,20 +446,20 @@
                         {% for final_report in report_list %}
                         <tr>
                             <td colspan="100%">
-                                <div class="custom-section-container">
+                                <div class="custom-section-container" >
                                     <!-- First section -->
-                                    <div class="custom-section">
+                                    <div class="custom-section" id="info_{{ final_report.name }}">
                                         {{final_report.name}}
                                     </div>
                                     {% if final_report.private_counts_exist %}
                                     <!-- Second section -->
                                     <div class="custom-section">
-                                        {{final_report.private_counts}}
+                                        private reads: {{final_report.private_counts}}
                                     </div>
                                     {% endif %}
                                     <!-- Third section -->
                                     <div class="custom-section">
-                                        {{final_report.private_proportion}}
+                                        private reads proportion: {{final_report.private_proportion}}
                                     </div>
                                     <!-- Forth section -->
                                     <div class="custom-section">

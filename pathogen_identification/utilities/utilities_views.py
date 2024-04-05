@@ -390,11 +390,13 @@ class FinalReportCompound(LoginRequiredMixin, generic.TemplateView):
 
 
 class FinalReportGroup:
+    analysis_empty = False
+
     name: str
     total_counts: str
-    private_counts: str
+    private_counts: int
     shared_proportion: str
-    private_proportion: str
+    private_proportion: float
     group_list: List[FinalReportWrapper]
 
     def __init__(
@@ -408,12 +410,13 @@ class FinalReportGroup:
         heatmap_path: str = "",
         heatmap_exists: bool = False,
         private_counts_exist: bool = True,
+        analysis_empty=False,
     ):
         self.name = name
         self.total_counts = f"total counts {total_counts}"
-        self.private_counts = f"private counts {private_counts}"
+        self.private_counts = private_counts
         self.shared_proportion = f"shared proportion {shared_proportion:.2f}"
-        self.private_proportion = f"private proportion {private_proportion:.2f}"
+        self.private_proportion = round(private_proportion, 2)
         self.group_list = group_list
         self.heatmap_path = heatmap_path
         self.heatmap_exists = heatmap_exists
@@ -423,6 +426,7 @@ class FinalReportGroup:
         self.update_max_coverage()
         self.js_heatmap_ready = False
         self.js_heatmap_data = None
+        self.analysis_empty = analysis_empty
 
     def reports_have_private_reads(self) -> bool:
         for report in self.group_list:
@@ -609,6 +613,7 @@ class ReportSorter:
         level=0,
     ):
         self.reports: List[FinalReport] = reports
+        self.analysis_empty = False
         self.max_error_rate = 0
         self.max_quality_avg = 1
         self.max_mapped_prop = 0
@@ -713,11 +718,15 @@ class ReportSorter:
         """
         read clade shared matrix
         """
-        print(self.overlap_manager.clade_shared_prop_matrix_path)
         try:
             clade_shared_matrix = pd.read_csv(
                 self.overlap_manager.clade_shared_prop_matrix_path, index_col=0
             )
+
+            # fill diagonal with 0
+            for i in range(clade_shared_matrix.shape[0]):
+                clade_shared_matrix.iloc[i, i] = 1
+
             return clade_shared_matrix
 
         except Exception as e:
@@ -1273,11 +1282,17 @@ class ReportSorter:
 
         return report_groups
 
-    def clade_heatmap_json(self):
+    def clade_heatmap_json(self, to_keep=Optional[List[str]]):
 
         distance_matrix = self.read_clade_shared_matrix()
 
         if distance_matrix is None:
+            return None
+
+        try:
+            distance_matrix = distance_matrix.loc[to_keep, to_keep]
+        except KeyError as e:
+            print(e)
             return None
 
         return self.prep_heatmap_data(distance_matrix)
@@ -1290,8 +1305,9 @@ class ReportSorter:
             shared_proportion=0,
             private_proportion=0,
             group_list=[self.wrap_report(report) for report in self.reports],
+            analysis_empty=True,
         )
-
+        self.analysis_empty = True
         report_group = self.wrap_group_reports(report_group)
         return [report_group]
 
@@ -1313,8 +1329,10 @@ class ReportSorter:
                 shared_proportion=0,
                 private_proportion=0,
                 group_list=[self.wrap_report(report) for report in self.reports],
+                analysis_empty=True,
             )
 
+            self.analysis_empty = True
             report_group = self.wrap_group_reports(report_group)
             return [report_group]
 

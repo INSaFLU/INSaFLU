@@ -118,9 +118,10 @@
                     </div>
 
                     <div class="float-right overlap-button">
-                    <a href="#" class="collapsible-header btn btn-primary dark"> 
-                        <span>Read Overlap</span>
-                    </a>
+                        <a href="#" class="collapsible-header btn btn-primary dark"> 
+                            <span>Group Read Overlap</span>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -130,21 +131,24 @@
                 <div style="padding: 2px; overflow-x:auto;">    
                     <table class="table" width="100%" id="report_table">
                     <thead>
-                        {% if overlap_heatmap_available %} 
+                        {% if clade_heatmap_json_exists %}
                         <tr>
                             <td colspan="100%">
-                              <div class="collapsible">
-                                <div class="collapsible-body" style="display: none;">
-                                  <div id="plot" class="plot-container">
-                                  <img src={{overlap_heatmap_path}} alt="Plot">
-                                  </div>
-                                  {% if tree_plot_exists %}
-                                    <div id="plot" class="plot-container">
-                                    <img src={{tree_plot_path}} alt="Plot">
+                                <div class="collapsible">
+                                    <div class="collapsible-body" style="display: none;">
+                                        <div id="clade-heatmap" class="plot-container">
+                                        
+                                        </div>
+                                        <script>
+                                            createHeatmapClades('{{ clade_heatmap_json|safe }}', "clade-heatmap");
+                                        </script>
+                                        {% if overlap_heatmap_available %} 
+                                        <div id="plot" class="plot-container">
+                                            <img src={{overlap_heatmap_path}} alt="Image">
+                                        </div>
+                                        {% endif %}
                                     </div>
-                                {% endif %}
                                 </div>
-                              </div>
                             </td>
                         </tr>
                         {% endif %}

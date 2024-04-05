@@ -8,7 +8,13 @@ $(document).ready(function() {
         // precent default
         event.preventDefault();
         $('.collapsible-body').slideToggle('slow');
-    });        
+    });       
+    
+    $('.summary-header').click(function() {
+        // precent default
+        event.preventDefault();
+        $('.collapsible-summary').slideToggle('slow');
+    });      
 
 });
 

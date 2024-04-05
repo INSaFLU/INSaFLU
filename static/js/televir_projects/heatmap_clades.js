@@ -70,12 +70,8 @@ function createHeatmap(data, divId) {
     Plotly.newPlot(divId, data, layout);
 
     var myPlot = document.getElementById(divId);
-    console.log(myPlot);
-    var hoverInfo = document.getElementById('hoverinfo');
     myPlot.on('plotly_hover', function (data) {
-        var infotext = data.points.map(function (d) {
-            return ('x=' + d.x + ', y=' + d.y + ', value=' + d.z);
-        });
+
         
         var x_label = data.points[0].x;
         var y_label = data.points[0].y;
@@ -183,4 +179,44 @@ function createHeatmapClades(data, divId) {
     var data = [trace];
     
     Plotly.newPlot(divId, data, layout);
+
+
+    var myPlot = document.getElementById(divId);
+    myPlot.on('plotly_hover', function (data) {
+
+        var x_label = data.points[0].x;
+        var y_label = data.points[0].y;
+        var rowIdX = "info_" + x_label;
+        console.log(rowIdX);
+
+        var rowElement = document.getElementById(rowIdX);
+        if (rowElement) {
+            rowElement.style.backgroundColor = "lightgray";  // Change to your preferred highlight color
+        }
+
+        var rowIdY = "info_" + y_label;
+        var rowElement = document.getElementById(rowIdY);
+        if (rowElement) {
+            rowElement.style.backgroundColor = "lightgray";  // Change to your preferred highlight color
+        }
+
+    })
+        .on('plotly_unhover', function (data) {
+        
+            var x_label = data.points[0].x;
+            var y_label = data.points[0].y;
+            var rowIdX = "info_" + x_label;
+            var rowElement = document.getElementById(rowIdX);
+            if (rowElement) {
+                rowElement.style.backgroundColor = "";  // Change to your preferred highlight color
+            }
+            
+            var rowIdY = "info_" + y_label;
+            var rowElement = document.getElementById(rowIdY);
+            if (rowElement) {
+                rowElement.style.backgroundColor = "";  // Change to your preferred highlight color
+            }
+        }
+    );
+
 };

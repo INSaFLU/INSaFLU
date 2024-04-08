@@ -52,7 +52,7 @@
 }
 
 .reference-item {
-    width: 500px;
+    width: 800px;
     float: left; /* make the reference item float to the left */
     list-style-type: none; /* remove bullet points */
     border: none; /* add a border around each reference */
@@ -115,6 +115,7 @@
 }
 
 .insaflu-exists {
+    font-size: 1.3em;
     display: inherit;
     background-color: #007bff;
     color: black;

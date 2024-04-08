@@ -1233,29 +1233,8 @@ def add_references_to_sample(request):
             )
 
             for reference in ref_sources:
-                if RawReference.objects.filter(
-                    accid=reference.accid,
-                    run__sample__pk=sample_id,
-                ).exists():
-                    references_existing.append(reference.accid)
-                    continue
 
-                # truncate reference description: max 150 characters
-                ref_description = reference.description
-                if len(ref_description) > 150:
-                    ref_description = ref_description[:150]
-
-                new_reference = RawReference(
-                    run=sample_reference_manager.storage_run,
-                    accid=reference.accid,
-                    taxid=reference.taxid,
-                    description=ref_description,
-                    status=RawReference.STATUS_UNMAPPED,
-                    counts=0,
-                    classification_source="none",
-                )
-
-                new_reference.save()
+                sample_reference_manager.add_reference(reference)
 
         except Exception as e:
             print(e)
@@ -1357,11 +1336,6 @@ def create_teleflu_project(request):
                     teleflu_project=teleflu_project,
                     televir_sample=sample,
                 )
-
-            taskID = process_SGE.set_submit_televir_teleflu_project_create(
-                user=request.user,
-                project_pk=teleflu_project.pk,
-            )
 
             data["is_ok"] = True
             data["project_id"] = teleflu_project.pk
@@ -1771,7 +1745,6 @@ def add_references_all_samples(request):
     """
     if request.is_ajax():
         data = {"is_ok": False, "is_error": False, "is_empty": False}
-        print(request.POST)
         project_id = int(request.POST["ref_id"])
         project = Projects.objects.get(pk=project_id)
         samples = PIProject_Sample.objects.filter(project=project)
@@ -1798,27 +1771,13 @@ def add_references_all_samples(request):
                     if RawReference.objects.filter(
                         accid=reference.accid,
                         run__sample__pk=sample_id,
+                        run__run_type=RunMain.RUN_TYPE_STORAGE,
                     ).exists():
                         references_existing.append(reference.accid)
                         continue
 
                     # truncate reference description: max 150 characters
-                    ref_description = reference.description
-
-                    if len(ref_description) > 150:
-                        ref_description = ref_description[:150]
-
-                    new_reference = RawReference(
-                        run=sample_reference_manager.storage_run,
-                        accid=reference.accid,
-                        taxid=reference.taxid,
-                        description=ref_description,
-                        status=RawReference.STATUS_UNMAPPED,
-                        counts=0,
-                        classification_source="none",
-                    )
-
-                    new_reference.save()
+                    sample_reference_manager.add_reference(reference)
 
         except Exception as e:
             print(e)

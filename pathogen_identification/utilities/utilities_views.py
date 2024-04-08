@@ -19,6 +19,7 @@ from pathogen_identification.models import (
     RawReference,
     ReferenceMap_Main,
     ReferencePanel,
+    ReferenceSourceFileMap,
     RunAssembly,
     RunDetail,
     RunMain,
@@ -45,6 +46,27 @@ class SampleReferenceManager:
         self.software_tree: SoftwareTree = self.proxy_tree_prepare()
         self.software_tree_node_storage: SoftwareTreeNode = self.proxy_leaf_prepare()
         self.prep_storage()
+
+    def add_reference(self, reference: ReferenceSourceFileMap):
+        ref_description = reference.description
+
+        if ref_description is None:
+            ref_description = reference.accid
+
+        if len(ref_description) > 150:
+            ref_description = ref_description[:150]
+
+        new_reference = RawReference(
+            run=self.storage_run,
+            accid=reference.accid,
+            taxid=reference.taxid,
+            description=ref_description,
+            status=RawReference.STATUS_UNMAPPED,
+            counts=0,
+            classification_source="none",
+        )
+
+        new_reference.save()
 
     def proxy_tree_prepare(self):
         try:

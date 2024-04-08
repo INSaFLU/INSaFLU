@@ -34,8 +34,6 @@ from pathogen_identification.utilities.utilities_general import (
 from pathogen_identification.utilities.utilities_views import (
     RawReferenceCompound,
     ReportSorter,
-    check_sample_software_exists,
-    duplicate_metagenomics_software,
 )
 from settings.models import Parameter, Software
 

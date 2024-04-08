@@ -20,7 +20,6 @@ from pathogen_identification.models import (
     ParameterSet,
     PIProject_Sample,
     Projects,
-    RunMain,
     SoftwareTree,
     SoftwareTreeNode,
 )

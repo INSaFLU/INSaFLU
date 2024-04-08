@@ -728,6 +728,10 @@ class SampleTableOne(tables.Table):
             if parameter_set.status == ParameterSet.STATUS_QUEUED:
                 queued += 1
 
+        mapping_runs = RunMain.objects.filter(
+            sample=record, status__in=[RunMain.STATUS_PREP]
+        )
+
         return queued
 
     def render_mapping_runs(self, record):

@@ -11,6 +11,7 @@ from pathogen_identification.deployment_main import Run_Main_from_Leaf
 from pathogen_identification.models import (
     ParameterSet,
     PIProject_Sample,
+    RunMain,
     SoftwareTree,
     SoftwareTreeNode,
 )
@@ -98,11 +99,11 @@ class Command(BaseCommand):
         leaf_index = options["leaf_id"]
         combined_analysis = options["combined_analysis"]
         mapping_request = options["mapping_request"]
-        mapping_run = options["mapping_run_id"]
+        mapping_run_pk = options["mapping_run_id"]
 
         if mapping_request:
             mapping_only = True
-            if mapping_run is None:
+            if mapping_run_pk is None:
                 raise Exception("mapping_run_id is required for mapping request")
         elif combined_analysis:
             metagenomics = True
@@ -163,6 +164,10 @@ class Command(BaseCommand):
             )
         )
 
+        #### Deployment RUn
+
+        mapping_run = RunMain.objects.get(pk=mapping_run_pk)
+
         ### SUBMISSION
         try:
             if was_run_killed:
@@ -174,9 +179,10 @@ class Command(BaseCommand):
                 )
 
             ### to remove condition for production
-            elif utils.parameter_util.check_ParameterSet_available_to_run(
-                sample=target_sample, leaf=matched_path_node, project=project
-            ):
+            elif mapping_run.status not in [
+                RunMain.STATUS_FINISHED,
+                RunMain.STATUS_ERROR,
+            ]:
                 run = Run_Main_from_Leaf(
                     user=user,
                     input_data=target_sample,

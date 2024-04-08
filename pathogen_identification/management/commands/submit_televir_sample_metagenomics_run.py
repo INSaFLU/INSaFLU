@@ -152,6 +152,10 @@ class Command(BaseCommand):
         ### draw graph
         graph_progress = TreeProgressGraph(target_sample)
 
+        print("##################")
+        print(matched_path_node)
+        print(matched_path_node.pk)
+
         print(was_run_killed)
         print(
             utils.parameter_util.check_ParameterSet_available_to_run(

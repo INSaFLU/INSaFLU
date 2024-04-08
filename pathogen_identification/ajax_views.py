@@ -1311,7 +1311,6 @@ def create_teleflu_project(request):
 
         try:
 
-            print(ref_ids)
             if check_metaReference_exists_from_ids(ref_ids):
                 data["exists"] = True
                 return JsonResponse(data)
@@ -1610,7 +1609,16 @@ def load_teleflu_workflows(request):
                 pk__in=samples_stacked.values_list("pk", flat=True)
             ).exists()
 
+            mapped_success = mapping.mapping_success
+            mapped_fail = samples_mapped.count() - mapped_success
             node_info["samples_mapped"] = samples_mapped.count()
+            node_info["mapped_success"] = mapped_success
+            node_info["mapped_fail"] = mapped_fail
+            node_info["left_to_map"] = (
+                teleflu_project.nsamples - mapped_success - mapped_fail
+            ) > 0
+            print(mapping.leaf.index, node_info["left_to_map"])
+            node_info["mapping_summary"] = mapping.mapping_success
             existing_mapping_pks.append(mapping.leaf.pk)
             node_info["stacked_html_exists"] = os.path.exists(
                 mapping.mapping_igv_report

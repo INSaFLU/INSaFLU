@@ -1120,7 +1120,7 @@ class TelefluProjectView(LoginRequiredMixin, generic.CreateView):
             samples_stacked = mapping.stacked_samples_televir
 
             node_info["samples_stacked"] = samples_stacked.count()
-
+            node_info["mapping_summary"] = mapping.mapping_success
             node_info["samples_to_stack"] = samples_mapped.exclude(
                 pk__in=samples_stacked.values_list("pk", flat=True)
             ).exists()

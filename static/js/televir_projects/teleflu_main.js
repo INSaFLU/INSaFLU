@@ -79,8 +79,15 @@ var load_teleflu_workflows = function () {
                 });
     
                 var workflowInfo = $('<div>').addClass('workflow-info clearfix');
-                var workflowMapped = $('<span>').addClass('workflow-mapped').text(workflow.samples_mapped + ' / ' + data.project_nsamples);
+                // mapping summary: mapping fail / mapping success / total samples
+                var workflowMapped = $('<span>').addClass('workflow-mapped').text(workflow.mapped_fail + ' / '  + workflow.mapped_success + ' / ' + data.project_nsamples).attr('title', 'Mapping Fail / Mapping Success / Total Samples');
                 var mapSamplesButton = $('<button>').attr('workflow', workflow.node).attr('workflow-id', workflow.pk).attr('type', 'button').addClass('mapSamplesButton btn btn-primary').attr('data-toggle', 'modal').attr('data-target', '#id_map_workflow_modal').text('Map Samples');
+
+                if (workflow.left_to_map) {
+                    mapSamplesButton.prop('disabled', false);
+                } else {
+                    mapSamplesButton.prop('disabled', true);
+                }
                 workflowInfo.append(workflowMapped, mapSamplesButton);
     
                 var mappingIgv = $('<div>').addClass('mapping-igv');

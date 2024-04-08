@@ -1241,12 +1241,50 @@ class TelefluMapping(models.Model):
             accid__in=accids,
             run__parameter_set__leaf=self.leaf,
             run__parameter_set__status=ParameterSet.STATUS_FINISHED,
-            status= RawReference.STATUS_MAPPED,
+            status=RawReference.STATUS_MAPPED,
         )
 
         sample_pks = list(set([ref.run.parameter_set.sample.pk for ref in refs]))
 
         return PIProject_Sample.objects.filter(pk__in=sample_pks)
+
+    @property
+    def mapping_success(self):
+
+        accids = self.teleflu_project.raw_reference.accids
+
+        new_list= []
+        for accid in accids:
+
+            new_list.append(accid.replace(".", "_"))
+            new_list.append(accid)
+        accids= new_list
+        samples = TeleFluSample.objects.filter(
+            teleflu_project=self.teleflu_project
+        ).values_list("televir_sample", flat=True)
+
+        refs = ReferenceMap_Main.objects.filter(
+            reference__in=accids,
+            run__parameter_set__sample__in=samples,
+            run__parameter_set__leaf=self.leaf,
+            run__parameter_set__status=ParameterSet.STATUS_FINISHED,
+        ).distinct()
+
+        sample_pks = list(set([ref.run.parameter_set.sample.pk for ref in refs]))
+
+        mapped_success= 0
+
+        for sample_pk in sample_pks:
+            sample_refs = refs.filter(run__parameter_set__sample__pk=sample_pk)
+            for ref in sample_refs:
+                if ref.mapped_subset_r1 is None:
+                    continue
+                if os.path.exists(ref.mapped_subset_r1):
+                    if os.path.getsize(ref.mapped_subset_r1) > 0:
+                        mapped_success += 1
+                        break
+
+        return mapped_success
 
 
 class TelefluMappedSample(models.Model):

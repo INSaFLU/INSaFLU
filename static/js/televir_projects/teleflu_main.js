@@ -49,6 +49,7 @@ function showParameters(element) {
 var load_teleflu_workflows = function () {
     var csrf = $('#open-modal-button').attr('csrf'); 
     var project_id = $('#open-modal-button').attr('project-id');
+    var url_stack = $('#open-modal-button').attr('url-stack');
     $.ajax({
         url: $('#open-modal-button').attr('url-workflows'),
         type: 'GET',
@@ -85,7 +86,7 @@ var load_teleflu_workflows = function () {
                 var mappingIgv = $('<div>').addClass('mapping-igv');
 
                 if (workflow.samples_to_stack) {
-                    var stackSamplesButton = $('<i>').attr('workflow', workflow.node).attr('workflow-id', workflow.pk).addClass('stackSamplesButton stack-deploy fa fa-flask').attr('data-toggle', 'modal').attr('data-target', '#id_workflow_analysis').attr('url', "{% url 'stack_igv_teleflu_workflow' %}");
+                    var stackSamplesButton = $('<i>').attr('workflow', workflow.node).attr('workflow-id', workflow.pk).addClass('stackSamplesButton stack-deploy fa fa-flask').attr('data-toggle', 'modal').attr('data-target', '#id_workflow_analysis').attr('url', url_stack).attr('title', 'Stack Samples');
                     mappingIgv.append(stackSamplesButton);
                 } else {
                     var stackSamplesButton = $('<i>').addClass('stackSamplesButton fa fa-flask').css('color', '#b3b3b3');
@@ -107,7 +108,8 @@ var load_teleflu_workflows = function () {
 
             $(".mapSamplesButton").click(function () {
                 var workflow= $(this).attr('workflow');
-                var workflow_id= $(this).attr('workflow-id');
+                var workflow_id = $(this).attr('workflow-id');
+                console.log(workflow_id);
                 $('#id-label-map-workflow').text('Map Samples to Workflow ' + workflow + '?');
                 $('#id-map-button').attr('workflow', workflow_id);            
             });
@@ -204,16 +206,6 @@ var buttons_background = function () {
             }
         });
     });
-
-        
-    $(".mapSamplesButton").click(function () {
-        var workflow= $(this).attr('workflow');
-        var workflow_id= $(this).attr('workflow-id');
-        $('#id-label-map-workflow').text('Map Samples to Workflow ' + workflow + '?');
-        $('#id-map-button').attr('workflow', workflow_id);            
-    });
-
-    
 
     $("#id-map-button").click(function () {
 

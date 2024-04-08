@@ -32,7 +32,7 @@
 
 
 <div class="outer-container">
-    <button id="open-modal-button" type="button" class="btn btn-primary" data-toggle="modal" csrf="{{ csrf_token }}"  url-workflows='{% url "load_teleflu_workflows" %}' project-id='{{ teleflu_project_pk }}' data-target="#id_workflow_modal">
+    <button id="open-modal-button" type="button" class="btn btn-primary" data-toggle="modal" csrf="{{ csrf_token }}"  url-workflows='{% url "load_teleflu_workflows" %}' project-id='{{ teleflu_project_pk }}' data-target="#id_workflow_modal" url-stack="{% url 'stack_igv_teleflu_workflow' %}">
         Add Workflow
     </button>
     {% if insaflu_connection_exists == False %}
@@ -40,18 +40,21 @@
         <i class="fa fa-external-link-square" aria-hidden="true"></i> INSaFLU
     </button>
     {% endif %}
+    <button type="button" class="btn btn-primary dark" aria-haspopup="true" aria-expanded="false">
+        <i class="fa fa-cog" aria-hidden="true" ></i>
+        <a href="{% url "pathogenID_pipeline" level=project_index %}"><span class="hidden-phone" style="color:white"><i>Project Settings</i></span></a>
+    </button>
     <br>
     <br>
     <h3 class="title">Workflow List</h3>
     <div id="workflow-list">
-
     </div>
 </div>
 
 <div class="table-container">
 
     {% if insaflu_connection_exists %}
-    <h3 class="table-title"> Insaflu  </h3>
+    <h3 class="table-title"> INSaFLU  </h3>
     
     <div class="table-responsive">
         <table class="table table-hover table-bordered table-striped" {% if insaflu_table.attrs %}z

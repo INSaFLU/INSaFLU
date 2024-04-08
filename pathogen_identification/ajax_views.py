@@ -1078,6 +1078,7 @@ def teleflu_igv_create(request):
 
         ### get reference
         reference = teleflu_project.reference
+        print(reference)
         if reference is None:
             return JsonResponse(data)
 
@@ -1695,6 +1696,7 @@ def stack_igv_teleflu_workflow(request):
     """
     create insaflu project associated with teleflu map project"""
     if request.is_ajax():
+        print("JO")
         data = {"is_ok": False, "is_error": False, "exists": False, "running": False}
         teleflu_project_id = int(request.POST["project_id"])
         mapping_id = int(request.POST["workflow_id"])

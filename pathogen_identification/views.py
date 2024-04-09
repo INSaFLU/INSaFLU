@@ -1085,6 +1085,7 @@ class TelefluProjectView(LoginRequiredMixin, generic.CreateView):
         teleflu_projects = TeleFluProject.objects.filter(
             pk=teleflu_project_pk, is_deleted=False
         ).order_by("-last_change_date")
+        teleflu_project = teleflu_projects[0]
         televir_project = teleflu_projects[0].televir_project
         user = televir_project.owner
 
@@ -1106,38 +1107,10 @@ class TelefluProjectView(LoginRequiredMixin, generic.CreateView):
         mappings = TelefluMapping.objects.filter(teleflu_project__pk=teleflu_project_pk)
         mapping_workflows = []
         existing_mapping_pks = []
-
         for mapping in mappings:
             if mapping.leaf is None:
                 continue
-
-            params_df = utils_manager.get_leaf_parameters(mapping.leaf)
-            node_info = node_info = teleflu_node_info(
-                mapping.leaf.index, params_df, mapping.leaf.pk
-            )
-
-            samples_mapped = mapping.mapped_samples
-            samples_stacked = mapping.stacked_samples_televir
-
-            node_info["samples_stacked"] = samples_stacked.count()
-            node_info["mapping_summary"] = mapping.mapping_success
-            node_info["samples_to_stack"] = samples_mapped.exclude(
-                pk__in=samples_stacked.values_list("pk", flat=True)
-            ).exists()
-
-            node_info["samples_mapped"] = samples_mapped.count()
             existing_mapping_pks.append(mapping.leaf.pk)
-            node_info["stacked_html_exists"] = os.path.exists(
-                mapping.mapping_igv_report
-            )
-
-            node_info["stacked_vcf"] = mapping.vcf_media_path
-
-            node_info["stacked_html"] = mapping.mapping_igv_report.replace(
-                "/insaflu_web/INSaFLU", ""
-            )
-
-            mapping_workflows.append(node_info)
 
         context["mapping_workflows"] = mapping_workflows
         ####################################### get combinations to deploy
@@ -2166,7 +2139,6 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
                 output_reads=run_detail.input,
                 output_reads_percent="1",
             )
-
         #
         try:
             run_assembly = RunAssembly.objects.get(

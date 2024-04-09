@@ -402,11 +402,13 @@ class SampleQC(models.Model):
     sample = models.ForeignKey(
         PIProject_Sample, blank=True, null=True, on_delete=models.CASCADE
     )  ## sample
+
     software = models.CharField(max_length=100, blank=True, null=True)  # software used
 
     qc_type = models.CharField(
         max_length=100, name="qc_type", blank=True, null=True
     )  # qc type
+
     encoding = models.CharField(
         max_length=100, name="encoding", blank=True, null=True
     )  # encoding
@@ -1196,6 +1198,9 @@ class TeleFluSample(models.Model):
     )
 
 
+from django.db.models import Q
+
+
 class TelefluMapping(models.Model):
     leaf = models.ForeignKey(
         SoftwareTreeNode, on_delete=models.CASCADE, blank=True, null=True
@@ -1249,42 +1254,60 @@ class TelefluMapping(models.Model):
         return PIProject_Sample.objects.filter(pk__in=sample_pks)
 
     @property
-    def mapping_success(self):
+    def sample_summary(self):
 
         accids = self.teleflu_project.raw_reference.accids
 
-        new_list= []
+        new_list = []
         for accid in accids:
 
             new_list.append(accid.replace(".", "_"))
             new_list.append(accid)
-        accids= new_list
+
+        accids = new_list
+
         samples = TeleFluSample.objects.filter(
             teleflu_project=self.teleflu_project
         ).values_list("televir_sample", flat=True)
 
-        refs = ReferenceMap_Main.objects.filter(
-            reference__in=accids,
-            run__parameter_set__sample__in=samples,
-            run__parameter_set__leaf=self.leaf,
-            run__parameter_set__status=ParameterSet.STATUS_FINISHED,
-        ).distinct()
+        sample_summary = {}
+        mapped_samples=0
+        success_samples=0
 
-        sample_pks = list(set([ref.run.parameter_set.sample.pk for ref in refs]))
+        for sample in samples:
+            mapped= False
+            success = False
 
-        mapped_success= 0
+            refs = RawReference.objects.filter(
+                Q(accid__in=accids)
+                & Q(run__parameter_set__sample=sample)
+                & Q(run__parameter_set__leaf__index=self.leaf.index)
+                & Q(run__parameter_set__status=ParameterSet.STATUS_FINISHED)
+                | Q(run__parameter_set__status=ParameterSet.STATUS_ERROR),
+            ).distinct()
+            print(refs)
 
-        for sample_pk in sample_pks:
-            sample_refs = refs.filter(run__parameter_set__sample__pk=sample_pk)
-            for ref in sample_refs:
-                if ref.mapped_subset_r1 is None:
-                    continue
-                if os.path.exists(ref.mapped_subset_r1):
-                    if os.path.getsize(ref.mapped_subset_r1) > 0:
-                        mapped_success += 1
-                        break
+            reports = FinalReport.objects.filter(
+                run__parameter_set__sample=sample,
+                run__parameter_set__leaf__index=self.leaf.index,
+                unique_id__in=accids,
+            )
 
-        return mapped_success
+            print(reports)
+
+            if refs.exists():
+                mapped_samples+=1
+                mapped = True
+                if reports.exists():
+                    success = True
+                    success_samples+=1
+            
+            sample_summary[sample] = {
+                "mapped": mapped,
+                "success": success,
+            }
+        
+        return sample_summary, mapped_samples, success_samples
 
 
 class TelefluMappedSample(models.Model):

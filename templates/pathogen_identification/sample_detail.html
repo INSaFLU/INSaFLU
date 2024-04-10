@@ -525,15 +525,13 @@
                         </tr>
                         {% endif %}
                         {% for value in final_report.group_list %}
-                        <tr class="parent {{value.row_class_name}}" id="row_{{value.accid}}" group-name="{{final_report.name}}">
+                        <tr class="parent {{value.row_class_name}}" style="display: {{value.display}}" id="row_{{value.accid}}" group-name="{{final_report.name}}">
 
                             <td data-title="Description" style="text-align: left;">
                                 {% if value.first_in_group %}
                                 {% if final_report.has_multiple %}                                        
                                         <i class="fa fa-first-order sort-icon"  title="Best Coverage"></i>
-
                                 {% endif %}
-                                
                                 {% endif %}
                                 <a href="#" id="plot_show" >{{value.description}}</a>
                             </td>
@@ -579,7 +577,7 @@
                             {% endif %}
 
                         </tr>
-                        <tr class="collapse-report {{value.row_class_name}}" group-name="{{final_report.name}}">
+                        <tr class="collapse-report" group-name="{{final_report.name}}">
                         <td colspan="16">
                             <div class="table__wrapper">
                             <table class="table table-inner">
@@ -622,7 +620,7 @@
                                     </tr>
         
                                     {% if value.coverage > 0 %}
-                                    <tr class="igv_tab {{value.row_class_name}}" id="igv_display_{{value.accid}}">
+                                    <tr class="igv_tab" id="igv_display_{{value.accid}}">
                                         <td colspan="16" align="center">
                                             <div class="card-block">
                                                 <div class="container-fluid">
@@ -632,7 +630,7 @@
                                             </div>
                                         </td>
                                     </tr>
-                                    <tr class="detail {{value.row_class_name}}">
+                                    <tr class="detail">
                                         <td colspan="1" align="center">
                                             <p>Mapping Coverage</p>
                                         </td>
@@ -642,7 +640,7 @@
                                         <td colspan="1" align="center">
                         
                                             <div style="position:relative height=100%" >
-                                                <button class="btn btn-primary" id="igv_browse" type="button" project_pk="{{project_index}}" sample_pk="{{sample_index}}" 
+                                                <button class="igv_browse btn btn-primary" id="igv_browse" type="button" project_pk="{{project_index}}" sample_pk="{{sample_index}}" 
                                                 run_pk="{{run_index}}" accid="{{value.accid}}" reference_id="{{value.unique_id}}" show-igv-url="{% url 'igv_browser' %}">IGV</button>
                                             </div>
                                             {% if data_exists %}
@@ -833,12 +831,12 @@
     var buttons = document.querySelectorAll('.showSecondaryRows, .showSecondaryRows i');
     for (var b = 0; b < buttons.length; b++) {
         buttons[b].addEventListener('click', function(event) {
-            console.log(event.target);
             event.stopPropagation();
             var button = event.target.closest('.showSecondaryRows');
             var groupName = button.getAttribute('group-name');
             var allRows = document.querySelectorAll('.secondary-row[group-name="' + groupName + '"]');
             var icon = button.querySelector('.toggle-icon');
+            
             for (var i = 0; i < allRows.length; i++) {
                 if (allRows[i].classList.contains('parent')) {
                     if (allRows[i].style.display === 'none') {
@@ -846,9 +844,16 @@
                         icon.classList.remove('fa-toggle-off');
                         icon.classList.add('fa-toggle-on');
                     } else {
+
+                        inner_row= nextTr(allRows[i]);
+                        if ($(inner_row).hasClass("active")) {
+                            $(inner_row).toggleClass("active");
+                        }       
+
                         allRows[i].style.display = 'none';
                         icon.classList.remove('fa-toggle-on');
                         icon.classList.add('fa-toggle-off');
+             
                     }
                 }
             }

@@ -69,8 +69,8 @@ $("tr.parent").find("A#plot_show").click(function(e) {
         e.preventDefault();
         var parent_tr = e.target.parentNode.parentNode;
         var child_tr = nextTr(parent_tr);
+        console.log(child_tr);
         $(child_tr).toggleClass("active");
-        
     }
   });
 
@@ -98,8 +98,7 @@ $("tr.parent").find("A#plot_show").click(function(e) {
 
 /// IGV Display functions and actions
 
-$("#igv_browse").on('click', function (e) {
-
+$(".igv_browse").on('click', function (e) {
     var accid = $(this).attr('accid');
     var igv_display = document.getElementById('igv_display_' + accid);
     var igv_display_className = igv_display.className;

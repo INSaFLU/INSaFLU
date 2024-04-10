@@ -11,31 +11,20 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.views import generic
 
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReferenceMap_Main,
-    ReferencePanel,
-    ReferenceSourceFileMap,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference, ReferenceMap_Main,
+                                            ReferencePanel,
+                                            ReferenceSourceFileMap,
+                                            RunAssembly, RunDetail, RunMain,
+                                            SoftwareTree, SoftwareTreeNode)
 from pathogen_identification.utilities.clade_objects import Clade
-from pathogen_identification.utilities.overlap_manager import ReadOverlapManager
+from pathogen_identification.utilities.overlap_manager import \
+    ReadOverlapManager
 from pathogen_identification.utilities.televir_parameters import (
-    LayoutParams,
-    TelevirParameters,
-)
+    LayoutParams, TelevirParameters)
 from pathogen_identification.utilities.utilities_general import (
-    infer_run_media_dir,
-    simplify_name,
-)
+    infer_run_media_dir, simplify_name)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
 
@@ -345,6 +334,7 @@ class FinalReportWrapper:
         self.control_flag_str = inform_control_flag(report, self.control_flag_str)
         self.first_in_group = False
         self.row_class_name = "secondary-row"
+        self.display = "none"
 
     @staticmethod
     def prep_for_static(filepath: str) -> str:
@@ -385,6 +375,7 @@ class FinalReportCompound(LoginRequiredMixin, generic.TemplateView):
 
         self.row_class_name = report.row_class_name
         self.first_in_group = report.first_in_group
+        self.display = report.display
 
     def update_private_reads(self, private_reads: int):
         self.private_reads = private_reads
@@ -1170,6 +1161,7 @@ class ReportSorter:
         if len(group.group_list) > 0:
             group.group_list[0].first_in_group = True
             group.group_list[0].row_class_name = "primary-row"
+            group.group_list[0].display = "table-row"
 
         return group
 

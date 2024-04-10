@@ -138,7 +138,8 @@
                                 Shared read analysis recovered <strong>{{ groups_count }} groups of references</strong>.
                             </p> 
                             <p> 
-                                Groups are sorted by coverage. 
+                                The shared heatmap displays the proportion of reads of one group (column) that are shared with another group (row).
+                                Groups are sorted by maximum coverage. 
                             </p>
                         </div>
                     </div>
@@ -160,11 +161,13 @@
                     <div class="row">
                         <div class="col-sm">
                             <p> 
-                                <i class="fa fa-exclamation-circle"></i> 
+                                <i class="fa fa-exclamation-circle"></i> <strong>
+                                    We recommend manual inspection of the results
+                                    using the <strong>Read Overlap</strong> heatmaps. </strong>
+                                    Group sorting aims at identifying cross-hits and false positives. While robust, group sorting is not perfect and may mask similar true positive hits. 
+                            </p>
+                            <p>
                                 Groups are constructed according to a minimum shared read threshold of <strong>{{ min_shared_reads }} % </strong>.
-                                Group sorting aims at identifying cross-hits and false positives. 
-                                
-                                While robust, group sorting is not perfect and may mask similar true positive hits. We recommend manual inspection of the results.
                             </p>
                         </div>
                     </div>
@@ -180,7 +183,7 @@
                     <table class="table" width="100%" id="report_table">
                     <thead>
                         <tr class="header">
-                            <th>Description</th>
+                            <th class="description-column">Description</th>
                             <th>Taxid</th>
                             <th>accID</th>
                             <th>Workflows</th>
@@ -211,6 +214,13 @@
                         <tr>
                             <td colspan="100%">
                                 <div class="custom-section-container">
+                                    {% if final_report.has_multiple %}
+                                    <div class="primary-row">
+                                        <button class="showSecondaryRows" type="button" group-name="{{final_report.name}}" title="Toggle Secondary Rows">
+                                            <i class="fa fa-toggle-off toggle-icon"></i>
+                                        </button>                                        
+                                    </div>
+                                    {% endif %}
                                     <!-- First section -->
                                     <div class="custom-section" id="info_{{ final_report.name }}">
                                         {{final_report.name}}
@@ -258,13 +268,19 @@
                         {% endif %}
                         {% for value in final_report.group_list %}
                         <tr class="parent {{value.row_class_name}}"  id="row_{{value.accid}}" group-name="{{final_report.name}}">
-                            <td data-title="Description">
+                            <td data-title="Description" style="text-align: left;">
                                 {% if value.first_in_group %}
-                                <i class="fa fa-first-order sort-icon"  title="Best Coverage"></i>
+                                {% if final_report.has_multiple %}
+
+                                        
+                                        <i class="fa fa-first-order sort-icon"  title="Best Coverage"></i>
+
+                                {% endif %}
                                 
                                 {% endif %}
                                 <a href="#" id="plot_show" >{{value.description}}</a>
-                            </td>                            <td data-title="Taxid">{{value.taxid}}</td>
+                            </td>                         
+                            <td data-title="Taxid">{{value.taxid}}</td>
                             <td data-title="accID">
                                 <a href={{value.accid|link_ncbi}}>{{value.accid}}</a>
                             </td>
@@ -471,15 +487,7 @@
                         </td>
                         </tr>
                     {% endfor %}
-                    {% if final_report.has_multiple %}
-                    <tr>
-                        <td colspan="16" align="center">
-                            <div class="primary-row">
-                                <button class="showSecondaryRows" type="button" group-name="{{final_report.name}}">Show Secondary Rows</button>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endif %}
+
                     <tr class="detail" style="background-color: #f2f2f2; padding: 0px; margin: 0px; border: 0px;">
                         <td colspan="18" align="center" style="padding: 0px; margin: 0px">
                             <hr class="solid" style="height: 1px; background-color: #000000; margin: 0px;">
@@ -514,18 +522,25 @@
 
 <script type="text/javascript">
 
-    var buttons = document.getElementsByClassName('showSecondaryRows');
+    var buttons = document.querySelectorAll('.showSecondaryRows, .showSecondaryRows i');
     for (var b = 0; b < buttons.length; b++) {
         buttons[b].addEventListener('click', function(event) {
-            console.log(" iubre");
-            var groupName = event.target.getAttribute('group-name');
+            console.log(event.target);
+            event.stopPropagation();
+            var button = event.target.closest('.showSecondaryRows');
+            var groupName = button.getAttribute('group-name');
             var allRows = document.querySelectorAll('.secondary-row[group-name="' + groupName + '"]');
+            var icon = button.querySelector('.toggle-icon');
             for (var i = 0; i < allRows.length; i++) {
                 if (allRows[i].classList.contains('parent')) {
                     if (allRows[i].style.display === 'none') {
                         allRows[i].style.display = 'table-row';
+                        icon.classList.remove('fa-toggle-off');
+                        icon.classList.add('fa-toggle-on');
                     } else {
                         allRows[i].style.display = 'none';
+                        icon.classList.remove('fa-toggle-on');
+                        icon.classList.add('fa-toggle-off');
                     }
                 }
             }

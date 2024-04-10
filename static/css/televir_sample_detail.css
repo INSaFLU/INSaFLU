@@ -285,6 +285,10 @@ max-height: 500px; /* Adjust the value to the desired height */
     text-align: left;
 }
 
+.showSecondaryRows {
+    float: left;
+}
+
 .description-column {
     max-width: 130px; /* Adjust this value to set the maximum width of the column */
     overflow: hidden;

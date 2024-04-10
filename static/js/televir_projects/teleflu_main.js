@@ -128,12 +128,18 @@ var load_teleflu_workflows = function () {
                 
                 for (var sample in sampleSummary) {
                     var listItem = document.createElement('li');
+                    var sampleName = document.createElement('div');
+                    sampleName.classList.add('summary-sample-name');
+                    sampleName.innerHTML = '<strong>Sample: ' + sample + '</strong>';
                     var mappedIndicator = sampleSummary[sample].mapped ? '<span style="color: green;">&#x2714;</span>' : '<span style="color: red;">&#x2718;</span>';
                     var successIndicator = sampleSummary[sample].success ? '<span style="color: green;">&#x2714;</span>' : '<span style="color: red;">&#x2718;</span>';
-                    listItem.innerHTML = '<strong>Sample: ' + sample + '</strong>, Mapped: ' + mappedIndicator + ', Success: ' + successIndicator;
+                    var indicators = document.createElement('div');
+                    indicators.classList.add('indicators');
+                    indicators.innerHTML = 'Mapped: ' + mappedIndicator + '&nbsp;&nbsp;&nbsp;Success: ' + successIndicator;                    listItem.appendChild(sampleName);
+                    listItem.appendChild(indicators);
                     list.appendChild(listItem);
                 }
-                
+
                 summaryList.appendChild(list);
                 workflowContainerMain.append(workflowContainerAction);
     
@@ -147,7 +153,7 @@ var load_teleflu_workflows = function () {
                 var summaryList = $(".summary-list").get(0);
                 // Toggle list visibility on click
                 if (summaryList.style.display === 'none') {
-                    summaryList.style.display = 'block';
+                    summaryList.style.display = 'flex';
                 } else {
                     summaryList.style.display = 'none';
                 }

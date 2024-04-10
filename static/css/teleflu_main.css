@@ -35,6 +35,26 @@
 
 .summary-list li {
     list-style-type: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.summary-list li div {
+    margin-right: 50px;
+}
+
+.summary-sample-name {
+    font-weight: bold;
+    width: 300px;
+}
+
+.indicators {
+    display: flex;
+    justify-content: space-between;
+}
+.indicators span {
+    margin-right: 30px;
 }
 
 .workflow-name {

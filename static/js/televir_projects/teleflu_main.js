@@ -58,9 +58,12 @@ var load_teleflu_workflows = function () {
             csrfmiddlewaretoken: csrf,
         },
         success: function (data) {
-            data.mapping_workflows.forEach(function(workflow) {
-                var workflowContainer = $('<div>').addClass('workflow-container workflow-main').attr('project_id', data.teleflu_project_pk).attr('csrf', csrf);
+            data.mapping_workflows.forEach(function (workflow) {
 
+                var workflowContainerMain = $('<div>').addClass('workflow-container-main');
+                
+                var workflowContainerAction = $('<div>').addClass('workflow-container workflow-main').attr('project_id', data.teleflu_project_pk).attr('csrf', csrf);
+                
                 var workflowTitle = $('<div>').addClass('workflow-title');
                 var workflowName = $('<span>').addClass('workflow-name').text('Workflow ' + workflow.node);
                 workflowTitle.append(workflowName);
@@ -81,6 +84,11 @@ var load_teleflu_workflows = function () {
                 var workflowInfo = $('<div>').addClass('workflow-info clearfix');
                 // mapping summary: mapping fail / mapping success / total samples
                 var workflowMapped = $('<span>').addClass('workflow-mapped').text(workflow.mapped_fail + ' / '  + workflow.mapped_success + ' / ' + data.project_nsamples).attr('title', 'Mapping Fail / Mapping Success / Total Samples');
+                var workflowButton = $('<button>').attr('type', 'button').addClass('workflow-summary btn btn-primary');
+                workflowButton.append('<i class="fa fa-eye"></i>'); // Add an icon to the button
+                
+
+
                 var mapSamplesButton = $('<button>').attr('workflow', workflow.node).attr('workflow-id', workflow.pk).attr('type', 'button').addClass('mapSamplesButton btn btn-primary').attr('data-toggle', 'modal').attr('data-target', '#id_map_workflow_modal').text('Map Samples');
 
                 if (workflow.left_to_map) {
@@ -88,7 +96,7 @@ var load_teleflu_workflows = function () {
                 } else {
                     mapSamplesButton.prop('disabled', true);
                 }
-                workflowInfo.append(workflowMapped, mapSamplesButton);
+                workflowInfo.append(workflowMapped, workflowButton, mapSamplesButton);
     
                 var mappingIgv = $('<div>').addClass('mapping-igv');
 
@@ -108,10 +116,43 @@ var load_teleflu_workflows = function () {
                 }
     
     
-                workflowContainer.append(workflowTitle, stepContainer, workflowInfo, mappingIgv);
+                workflowContainerAction.append(workflowTitle, stepContainer, workflowInfo, mappingIgv);
+
+                /// Summary List
+
+                var sampleSummary = workflow.sample_summary;
+                var summaryList = document.createElement('div');
+                summaryList.className = 'summary-list'; // Add a class to the list
+                summaryList.style.display = 'none'; // Hide the list initially
+                var list = document.createElement('ul'); // Create a list
+                
+                for (var sample in sampleSummary) {
+                    var listItem = document.createElement('li');
+                    var mappedIndicator = sampleSummary[sample].mapped ? '<span style="color: green;">&#x2714;</span>' : '<span style="color: red;">&#x2718;</span>';
+                    var successIndicator = sampleSummary[sample].success ? '<span style="color: green;">&#x2714;</span>' : '<span style="color: red;">&#x2718;</span>';
+                    listItem.innerHTML = '<strong>Sample: ' + sample + '</strong>, Mapped: ' + mappedIndicator + ', Success: ' + successIndicator;
+                    list.appendChild(listItem);
+                }
+                
+                summaryList.appendChild(list);
+                workflowContainerMain.append(workflowContainerAction);
     
-                $('#workflow-list').append(workflowContainer); // Append the new div to the body
+                workflowContainerMain.append(summaryList);
+
+                $('#workflow-list').append(workflowContainerMain); // Append the new div to the body
             });
+
+
+            $(".workflow-summary").click(function () {
+                var summaryList = $(".summary-list").get(0);
+                // Toggle list visibility on click
+                if (summaryList.style.display === 'none') {
+                    summaryList.style.display = 'block';
+                } else {
+                    summaryList.style.display = 'none';
+                }
+            });
+
 
             $(".mapSamplesButton").click(function () {
                 var workflow= $(this).attr('workflow');

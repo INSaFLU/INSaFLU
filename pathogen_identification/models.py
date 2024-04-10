@@ -1271,11 +1271,12 @@ class TelefluMapping(models.Model):
         ).values_list("televir_sample", flat=True)
 
         sample_summary = {}
-        mapped_samples=0
-        success_samples=0
+        mapped_samples = 0
+        success_samples = 0
 
         for sample in samples:
-            mapped= False
+            sample= PIProject_Sample.objects.get(pk=sample)
+            mapped = False
             success = False
 
             refs = RawReference.objects.filter(
@@ -1296,17 +1297,20 @@ class TelefluMapping(models.Model):
             print(reports)
 
             if refs.exists():
-                mapped_samples+=1
+                mapped_samples += 1
                 mapped = True
                 if reports.exists():
                     success = True
-                    success_samples+=1
-            
-            sample_summary[sample] = {
-                "mapped": mapped,
-                "success": success,
-            }
-        
+                    success_samples += 1
+
+            try:
+                sample_summary[sample.name] = {
+                    "mapped": mapped,
+                    "success": success,
+                }
+            except Exception as e:
+                print(e)
+
         return sample_summary, mapped_samples, success_samples
 
 

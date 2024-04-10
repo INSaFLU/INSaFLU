@@ -1608,8 +1608,7 @@ def load_teleflu_workflows(request):
                 pk__in=samples_stacked.values_list("pk", flat=True)
             ).exists()
 
-            sample_summary, mapped_samples, success_samples = mapping.sample_summary
-            mapped_success = success_samples
+            sample_summary, mapped_samples, mapped_success = mapping.sample_summary
 
             mapped_fail = mapped_samples - mapped_success
             node_info["samples_mapped"] = samples_mapped.count()

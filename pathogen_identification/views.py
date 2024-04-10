@@ -2213,7 +2213,9 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "run_name": run_name,
             "sort_performed": sort_performed,
             "groups_count": len(sorted_reports),
-            "min_shared_reads": report_layout_params.shared_proportion_threshold * 100,
+            "min_shared_reads": round(
+                report_layout_params.shared_proportion_threshold * 100, 2
+            ),
             "clade_heatmap_json_exists": False if clade_heatmap_json is None else True,
             "clade_heatmap_json": clade_heatmap_json,
             "is_classification": is_classification,
@@ -2348,12 +2350,14 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
             sort_tree_plot_path = report_sorter.overlap_manager.tree_plot_path_render
 
         sorted_reports = report_sorter.get_reports_compound()
-
+        sort_performed = True if report_sorter.analysis_empty is False else False
+        print("sort_performed", sort_performed)
         private_reads_available = False
         for report_group in sorted_reports:
             if report_group.reports_have_private_reads():
                 private_reads_available = True
                 break
+
         #########
         clade_heatmap_json = report_sorter.clade_heatmap_json(
             to_keep=[report_group.name for report_group in sorted_reports]
@@ -2376,6 +2380,11 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         context = {
             "project": project_name,
             "graph_json": graph_json,
+            "sort_performed": sort_performed,
+            "groups_count": len(sorted_reports),
+            "min_shared_reads": round(
+                report_layout_params.shared_proportion_threshold * 100, 2
+            ),
             "clade_heatmap_json_exists": False if clade_heatmap_json is None else True,
             "clade_heatmap_json": clade_heatmap_json,
             "graph_id": graph_id,

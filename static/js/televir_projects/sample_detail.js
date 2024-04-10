@@ -13,6 +13,7 @@ $(document).ready(function() {
     $('.summary-header').click(function() {
         // precent default
         event.preventDefault();
+        console.log("summary-header");
         $('.collapsible-summary').slideToggle('slow');
     });      
 

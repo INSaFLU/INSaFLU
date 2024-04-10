@@ -117,41 +117,52 @@
                         <span class="hidden-phone"></span>Download as TSV </a>
                     </div>
 
+                    {% if sort_performed %}
                     <div class="float-right overlap-button">
-                        <a href="#" class="collapsible-header btn btn-primary dark"> 
-                            <span>Group Read Overlap</span>
+                        <a href="#" class="summary-header btn btn-primary dark"> 
+                            <span>Read Overlap Summary</span>
                         </a>
-                    </div>
+                    </div>  
+                    {% endif %}
                 </div>
             </div>
         </div>
-        
+        {% if sort_performed %}
+        <div id="summary" class="collapsible">
+            <div class="card-block collapsible-summary" style="display: none;">
+                <div style="padding: 20px">
+                    <div class="row">
+                        <div class="col-sm">
+                            <p> 
+                            <p> 
+                                Shared read analysis recovered <strong>{{ groups_count }} groups of references</strong>.
+                                Groups are constructed according to a minimum shared read threshold of <strong>{{ min_shared_reads }} % </strong>.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% if clade_heatmap_json_exists %}
+                <div id="clade-heatmap" class="plot-container">
+                
+                </div>
+                <script>
+                    createHeatmapClades('{{ clade_heatmap_json|safe }}', "clade-heatmap");
+                </script>
+                {% if overlap_heatmap_available %} 
+                <div id="plot" class="plot-container">
+                    <img src={{overlap_heatmap_path}} alt="Image">
+                </div>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
         <div id="collapseReport" class="collapse show" role="tabpanel" aria-labelledby="headingReport">
             <div class="card-block">
                 <div style="padding: 2px; overflow-x:auto;">    
                     <table class="table" width="100%" id="report_table">
                     <thead>
-                        {% if clade_heatmap_json_exists %}
-                        <tr>
-                            <td colspan="100%">
-                                <div class="collapsible">
-                                    <div class="collapsible-body" style="display: none;">
-                                        <div id="clade-heatmap" class="plot-container">
-                                        
-                                        </div>
-                                        <script>
-                                            createHeatmapClades('{{ clade_heatmap_json|safe }}', "clade-heatmap");
-                                        </script>
-                                        {% if overlap_heatmap_available %} 
-                                        <div id="plot" class="plot-container">
-                                            <img src={{overlap_heatmap_path}} alt="Image">
-                                        </div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endif %}
                         <tr class="header">
                             <th>Description</th>
                             <th>Taxid</th>
@@ -185,7 +196,7 @@
                             <td colspan="100%">
                                 <div class="custom-section-container">
                                     <!-- First section -->
-                                    <div class="custom-section">
+                                    <div class="custom-section" id="info_{{ final_report.name }}">
                                         {{final_report.name}}
                                     </div>
                                     {% if final_report.private_counts_exist %}

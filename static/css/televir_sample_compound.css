@@ -260,8 +260,6 @@ border-top: 1px;
     display: none; 
 }
 
-
-
 .sort-icon {
     float: left;
     margin-right: 15px; /* Adjust this value to create space between the icon and the description */
@@ -278,7 +276,7 @@ border-top: 1px;
 }
 
 .description-column {
-    max-width: 130px; /* Adjust this value to set the maximum width of the column */
+    max-width: 230px; /* Adjust this value to set the maximum width of the column */
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

@@ -98,31 +98,27 @@ $("tr.parent").find("A#plot_show").click(function(e) {
 
 /// IGV Display functions and actions
 
-$("#igv_browse").on('click',  function (e) {
+$("#igv_browse").on('click', function (e) {
 
-    if (e.target.id === "igv_browse") {
-        var accid = $(this).attr('accid');
-        var igv_display = document.getElementById('igv_display_' + accid);
-        var igv_display_className = igv_display.className;
-        
-        if (/\bopen\b/.test(igv_display_className)) {
-            igv_display.className = igv_display.className.replace(" open", '');
-            setTimeout(function () {
-                var show_igv_div = document.getElementById('show_igv_' + accid);
-                show_igv_div.innerHTML = "";
-            }, 300);
+    var accid = $(this).attr('accid');
+    var igv_display = document.getElementById('igv_display_' + accid);
+    var igv_display_className = igv_display.className;
+    
+    if (/\bopen\b/.test(igv_display_className)) {
+        igv_display.className = igv_display.className.replace(" open", '');
+        setTimeout(function () {
+            var show_igv_div = document.getElementById('show_igv_' + accid);
+            show_igv_div.innerHTML = "";
+        }, 300);
 
-        } else {
-            igv_display.className += " open";
-            show_igv($(this));
-        }
-        
+    } else {
+        igv_display.className += " open";
+        show_igv($(this));
     }
 });
 
 function replace_igv_div(accid) {
     var show_igv_div = document.getElementById('show_igv_' + accid);
-    var igv_display = document.getElementById('igv_display_' + accid);
     
     show_igv_div.innerHTML = "";
 }

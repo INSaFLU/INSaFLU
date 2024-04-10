@@ -383,6 +383,9 @@ class FinalReportCompound(LoginRequiredMixin, generic.TemplateView):
         self.control_flag_str = inform_control_flag(report, self.control_flag_str)
         self.private_reads = 0
 
+        self.row_class_name = report.row_class_name
+        self.first_in_group = report.first_in_group
+
     def update_private_reads(self, private_reads: int):
         self.private_reads = private_reads
 

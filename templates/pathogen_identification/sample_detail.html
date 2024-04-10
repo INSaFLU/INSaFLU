@@ -387,7 +387,9 @@
                             <p> 
                             <p> 
                                 Shared read analysis recovered <strong>{{ groups_count }} groups of references</strong>.
-                                Groups are constructed according to a minimum shared read threshold of <strong>{{ min_shared_reads }} % </strong>.
+                            </p> 
+                            <p> 
+                                Groups are sorted by coverage. 
                             </p>
                         </div>
                     </div>
@@ -405,6 +407,20 @@
                 </div>
                 {% endif %}
                 {% endif %}
+                <div style="padding: 20px">
+                    <div class="row">
+                        <div class="col-sm">
+                            <p> 
+                                <i class="fa fa-exclamation-circle"></i> 
+                                Groups are constructed according to a minimum shared read threshold of <strong>{{ min_shared_reads }} % </strong>.
+                                Group sorting aims at identifying cross-hits and false positives. 
+                                
+                                While robust, group sorting is not perfect and may mask similar true positive hits. We recommend manual inspection of the results.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
         {% endif %}
@@ -500,7 +516,14 @@
                         {% endif %}
                         {% for value in final_report.group_list %}
                         <tr class="parent {{value.row_class_name}}" id="row_{{value.accid}}" group-name="{{final_report.name}}">
-                            <td data-title="Description"><a href="#" id="plot_show" >{{value.description}}</a></td>
+
+                            <td data-title="Description">
+                                {% if value.first_in_group %}
+                                <i class="fa fa-first-order sort-icon"  title="Best Coverage"></i>
+                                
+                                {% endif %}
+                                <a href="#" id="plot_show" >{{value.description}}</a>
+                            </td>
                             <td data-title="Taxid">{{value.taxid}}</td>
                             <td data-title="accID">
                                 <a href={{value.accid|link_ncbi}}>{{value.accid}}</a>
@@ -828,8 +851,7 @@
     function drawChart() {
         var raw_data= [['Input', "Number"]];
         raw_data.push(["Kept", parseFloat("{{run_detail.processing_final|reconvert_string_to_int}}")]);
-        console.log("{{qc_report.performed}}");
-        console.log("{{qc_report.input_reads}}");
+
         if ("{{qc_report.performed}}" == "True" ) {
             if ("{{qc_report.input_reads}}" != "0" ) {
                 raw_data.push(['Extra filtering', parseFloat("{% difference_str_to_str qc_report.input_reads qc_report.output_reads %}")]);

@@ -13,7 +13,6 @@ $(document).ready(function() {
     $('.summary-header').click(function() {
         // precent default
         event.preventDefault();
-        console.log("summary-header");
         $('.collapsible-summary').slideToggle('slow');
     });      
 
@@ -32,8 +31,6 @@ $(document).on("click", "a", function (e) {
         var csrf_token= $("#headingMapExtra").attr("csrf-token");
         var url_remap = $("#headingMapExtra").attr("url-remap");
         
-        console.log("remap_reference")
-        console.log(ref_id)
 
         $.ajax({
             url: url_remap,
@@ -102,8 +99,7 @@ $("tr.parent").find("A#plot_show").click(function(e) {
 /// IGV Display functions and actions
 
 $("#igv_browse").on('click',  function (e) {
-    console.log("click");
-    console.log(e.target.id);
+
     if (e.target.id === "igv_browse") {
         var accid = $(this).attr('accid');
         var igv_display = document.getElementById('igv_display_' + accid);

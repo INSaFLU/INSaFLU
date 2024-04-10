@@ -255,3 +255,17 @@ border-top: 1px;
 .table thead th {
     text-align: center; /* Align text to the center */
 }
+
+.secondary-row {
+    display: none;
+}
+
+
+.sort-icon {
+    float: left;
+    margin-right: 3px; /* Adjust this value to create space between the icon and the description */
+    margin-left: 10px; /* Adjust this value to create space between the icon and the description */
+}
+.description-content {
+    display: inline-block;
+}

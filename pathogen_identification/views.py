@@ -2351,7 +2351,6 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
 
         sorted_reports = report_sorter.get_reports_compound()
         sort_performed = True if report_sorter.analysis_empty is False else False
-        print("sort_performed", sort_performed)
         private_reads_available = False
         for report_group in sorted_reports:
             if report_group.reports_have_private_reads():

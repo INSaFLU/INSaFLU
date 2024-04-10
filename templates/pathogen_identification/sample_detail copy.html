@@ -499,7 +499,7 @@
                         </tr>
                         {% endif %}
                         {% for value in final_report.group_list %}
-                        <tr class="parent {{value.row_class_name}}" id="row_{{value.accid}}" group-name="{{final_report.name}}">
+                        <tr class="parent" id="row_{{value.accid}}">
                             <td data-title="Description"><a href="#" id="plot_show" >{{value.description}}</a></td>
                             <td data-title="Taxid">{{value.taxid}}</td>
                             <td data-title="accID">
@@ -543,7 +543,7 @@
                             {% endif %}
 
                         </tr>
-                        <tr class="collapse-report {{value.row_class_name}}" group-name="{{final_report.name}}">
+                        <tr class="collapse-report">
                         <td colspan="16">
                             <div class="table__wrapper">
                             <table class="table table-inner">
@@ -586,7 +586,7 @@
                                     </tr>
         
                                     {% if value.coverage > 0 %}
-                                    <tr class="igv_tab {{value.row_class_name}}" id="igv_display_{{value.accid}}">
+                                    <tr class="igv_tab" id="igv_display_{{value.accid}}">
                                         <td colspan="16" align="center">
                                             <div class="card-block">
                                                 <div class="container-fluid">
@@ -596,7 +596,7 @@
                                             </div>
                                         </td>
                                     </tr>
-                                    <tr class="detail {{value.row_class_name}}">
+                                    <tr class="detail">
                                         <td colspan="1" align="center">
                                             <p>Mapping Coverage</p>
                                         </td>
@@ -708,15 +708,6 @@
                         </td>
                         </tr>
                     {% endfor %}
-                    {% if final_report.has_multiple %}
-                    <tr>
-                        <td colspan="16" align="center">
-                            <div class="primary-row">
-                                <button class="showSecondaryRows" type="button" group-name="{{final_report.name}}">Show Secondary Rows</button>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endif %}
                     <tr class="detail" style="background-color: #f2f2f2; padding: 0px; margin: 0px; border: 0px;">
                         <td colspan="17" align="center" style="padding: 0px; margin: 0px">
                             <hr class="solid" style="height: 1px; background-color: #000000; margin: 0px;">
@@ -802,22 +793,7 @@
 
 <script type="text/javascript">
 
-    var buttons = document.getElementsByClassName('showSecondaryRows');
-    for (var b = 0; b < buttons.length; b++) {
-        buttons[b].addEventListener('click', function(event) {
-            var groupName = event.target.getAttribute('group-name');
-            var allRows = document.querySelectorAll('.secondary-row[group-name="' + groupName + '"]');
-            for (var i = 0; i < allRows.length; i++) {
-                if (allRows[i].classList.contains('parent')) {
-                    if (allRows[i].style.display === 'none') {
-                        allRows[i].style.display = 'table-row';
-                    } else {
-                        allRows[i].style.display = 'none';
-                    }
-                }
-            }
-        });
-    }
+
 
 
     // Load google charts

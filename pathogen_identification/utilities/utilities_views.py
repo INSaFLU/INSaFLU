@@ -343,6 +343,8 @@ class FinalReportWrapper:
         self.control_flag = report.control_flag
         self.control_flag_str = infer_control_flag_str(report)
         self.control_flag_str = inform_control_flag(report, self.control_flag_str)
+        self.first_in_group = False
+        self.row_class_name = "secondary-row"
 
     @staticmethod
     def prep_for_static(filepath: str) -> str:
@@ -449,6 +451,7 @@ class FinalReportGroup:
         self.js_heatmap_ready = False
         self.js_heatmap_data = None
         self.analysis_empty = analysis_empty
+        self.has_multiple = True if len(group_list) > 1 else False
 
     def reports_have_private_reads(self) -> bool:
         for report in self.group_list:
@@ -1160,6 +1163,10 @@ class ReportSorter:
         sort group by private reads
         """
         group.group_list.sort(key=lambda x: x.private_reads, reverse=True)
+
+        if len(group.group_list) > 0:
+            group.group_list[0].first_in_group = True
+            group.group_list[0].row_class_name = "primary-row"
 
         return group
 

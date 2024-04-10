@@ -266,3 +266,7 @@ max-height: 500px; /* Adjust the value to the desired height */
 .table thead th {
     text-align: center; /* Align text to the center */
 }
+
+.secondary-row {
+    display: none;
+}

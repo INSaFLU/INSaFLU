@@ -14,8 +14,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from managing_files.models import Sample
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.data_classes import IntermediateFiles
 
 # Create your models here.
@@ -1266,16 +1265,18 @@ class TelefluMapping(models.Model):
 
         accids = new_list
 
-        samples = TeleFluSample.objects.filter(
-            teleflu_project=self.teleflu_project
-        ).values_list("televir_sample", flat=True)
+        samples = (
+            TeleFluSample.objects.filter(teleflu_project=self.teleflu_project)
+            .order_by("televir_sample__name")
+            .values_list("televir_sample", flat=True)
+        )
 
         sample_summary = {}
         mapped_samples = 0
         success_samples = 0
 
         for sample in samples:
-            sample= PIProject_Sample.objects.get(pk=sample)
+            sample = PIProject_Sample.objects.get(pk=sample)
             mapped = False
             success = False
 
@@ -1331,8 +1332,7 @@ class ReferenceTaxid(models.Model):
         return self.taxid
 
 
-from constants.constants import \
-    Televir_Directory_Constants as Televir_Directories
+from constants.constants import Televir_Directory_Constants as Televir_Directories
 
 
 class ReferenceSourceFile(models.Model):

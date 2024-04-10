@@ -430,7 +430,7 @@
                     <table class="table" width="100%" id="report_table">
                     <thead>
                         <tr class="header">
-                            <th>Description</th>
+                            <th class="description-column">Description</th>
                             <th>Taxid</th>
                             <th>accID</th>
                             <th>Cov (%)</th>
@@ -517,7 +517,7 @@
                         {% for value in final_report.group_list %}
                         <tr class="parent {{value.row_class_name}}" id="row_{{value.accid}}" group-name="{{final_report.name}}">
 
-                            <td data-title="Description">
+                            <td data-title="Description" style="text-align: left;">
                                 {% if value.first_in_group %}
                                 <i class="fa fa-first-order sort-icon"  title="Best Coverage"></i>
                                 

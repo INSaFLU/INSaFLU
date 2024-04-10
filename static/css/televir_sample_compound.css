@@ -257,7 +257,7 @@ border-top: 1px;
 }
 
 .secondary-row {
-    display: none;
+    display: none; 
 }
 
 
@@ -268,4 +268,8 @@ border-top: 1px;
 }
 .description-content {
     display: inline-block;
+}
+
+.text-left {
+    text-align: left;
 }

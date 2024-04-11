@@ -199,7 +199,6 @@ def deploy_remap(
                 RawReference.objects.filter(
                     accid=reference.accid,
                     run__status__in=[
-                        RunMain.STATUS_PREP,
                         RunMain.STATUS_RUNNING,
                         RunMain.STATUS_FINISHED,
                     ],
@@ -221,7 +220,6 @@ def deploy_remap(
                 RawReference.objects.filter(
                     accid=added_reference.accid,
                     run__status__in=[
-                        RunMain.STATUS_PREP,
                         RunMain.STATUS_RUNNING,
                         RunMain.STATUS_FINISHED,
                     ],

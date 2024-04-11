@@ -282,6 +282,11 @@ max-height: 500px; /* Adjust the value to the desired height */
     margin-left: 10px; /* Adjust this value to create space between the icon and the description */
 }
 
+.inactive-button {
+    border: 3px solid red; /* Thicker border */
+    cursor: not-allowed; /* Forbidding cursor */
+}
+
 .empty-icon {
     float: left;
     margin-right: 30px; /* Adjust this value to create space between the icon and the description */
@@ -305,4 +310,17 @@ max-height: 500px; /* Adjust the value to the desired height */
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+td.status {
+    text-align: center;
+}
+
+td.classification_source {
+    text-align: center;
+}
+
+
+td.counts {
+    text-align: center;
 }

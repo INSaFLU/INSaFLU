@@ -1,7 +1,6 @@
 var load_panels = function(sample_id, load_url, target, load = false, suggest= true) {
     // var url = '{% url "panel_list" %}';
     var panelList = document.querySelector(target);
-    console.log('Loading panels for sample:', sample_id, 'from:', load_url, 'to:', panelList, 'load:', load, 'suggest:', suggest);
     $.ajax({
         url: load_url,
         method: 'GET',

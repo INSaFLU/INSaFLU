@@ -36,6 +36,7 @@ from pathogen_identification.utilities.utilities_views import (
     ReportSorter,
 )
 from settings.models import Parameter, Software
+from utils.process_SGE import ProcessSGE
 
 
 class ProjectTable(tables.Table):
@@ -644,17 +645,22 @@ class SampleTableOne(tables.Table):
         report_sorter = ReportSorter(final_report, report_layout_params)
         sorted = report_sorter.check_analysis_exists()
 
-        ## sorted icon, green if sorted, red if not
-        sorted_icon = ""
-        if sorted:
-            sorted_icon = (
-                ' <i class="fa fa-check" style="color: green;" title="Sorted"></i>'
-            )
-            return mark_safe(sorted_icon)
+        ### check if sorting
+        process_controler = ProcessControler()
+        process_SGE = ProcessSGE()
+
+        process = ProcessControler.objects.filter(
+            owner__id=user.pk,
+            name=process_controler.get_name_televir_project_sample_sort(
+                sample_pk=record.pk
+            ),
+            is_running=True,
+        )
+
+        if process.exists():
+            request_sorting = "<i class='fa fa-spinner fa-spin' title='Sorting'></i>"
+
         else:
-            sorted_icon = (
-                ' <i class="fa fa-times" style="color: red;" title="un-sorted"></i>'
-            )
             request_sorting = (
                 ' <a href="#" id="sort_sample_btn" class="kill-button" data-toggle="modal" data-toggle="tooltip" title="Sort"'
                 + ' sample_id="'
@@ -665,7 +671,19 @@ class SampleTableOne(tables.Table):
                 + '"'
                 + '><i class="fa fa-sort"></i></span> </a>'
             )
-            return mark_safe(sorted_icon + request_sorting)
+
+        ## sorted icon, green if sorted, red if not
+        if sorted:
+            sorted_icon_assess = (
+                ' <i class="fa fa-check" style="color: green;" title="Sorted"></i>'
+            )
+
+        else:
+            sorted_icon_assess = (
+                ' <i class="fa fa-times" style="color: red;" title="un-sorted"></i>'
+            )
+
+        return mark_safe(sorted_icon_assess + request_sorting)
 
     def render_select_ref(self, value, record: PIProject_Sample):
         return mark_safe(

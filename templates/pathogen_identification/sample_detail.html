@@ -373,7 +373,8 @@
                         <a href="#" class="summary-header btn btn-primary dark"> 
                             <span>Read Overlap Summary</span>
                         </a>
-                    </div>  
+                    </div> 
+
                     {% endif %}
                 </div>
             </div>
@@ -463,6 +464,7 @@
                     <tbody>
 
                         {% for final_report in report_list %}
+                        {% if sort_performed %}
                         <tr>
                             <td colspan="100%">
                                 <div class="custom-section-container" >
@@ -503,6 +505,7 @@
                                 </div>
                             </td>
                         </tr>
+                        {% endif %}
                         {% if final_report.js_heatmap_ready %}
                         <tr class="row-to-toggle" id="rowToToggle" style="display: none;">
                             <td colspan="16">

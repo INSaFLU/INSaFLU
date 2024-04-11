@@ -1222,7 +1222,10 @@ class TelefluMapping(models.Model):
 
     @property
     def mapping_vcf(self):
-        return os.path.join(self.mapping_directory, "teleflu_stacked.vcf")
+        filename = (
+            f"teleflu_{self.leaf.index}_project_{self.teleflu_project.pk}_stacked.vcf"
+        )
+        return os.path.join(self.mapping_directory, filename)
 
     @property
     def vcf_media_path(self):

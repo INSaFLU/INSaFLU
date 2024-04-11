@@ -2,7 +2,7 @@ import logging
 import mimetypes
 import ntpath
 import os
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import pandas as pd
 from Bio import SeqIO
@@ -98,13 +98,25 @@ from pathogen_identification.utilities.utilities_views import (
     recover_assembly_contigs,
 )
 from settings.constants_settings import ConstantsSettings as CS
+from utils.process_SGE import ProcessSGE
 from utils.software import Software
 from utils.support_django_template import get_link_for_dropdown_item
 from utils.utils import ShowInfoMainPage, Utils
 
+from .forms import UploadFileForm
+
 
 class UploadPanelReferencesView:
     pass
+
+
+def process_query_string(query_string: Optional[str]):
+    if query_string is None:
+        return ""
+
+    query_string = query_string.strip()
+
+    return query_string
 
 
 class UploadNewReferencesView(
@@ -416,9 +428,10 @@ class PathId_ProjectsView(LoginRequiredMixin, ListView):
         if self.request.GET.get(tag_search) != None and self.request.GET.get(
             tag_search
         ):
+            query_string = process_query_string(self.request.GET.get(tag_search))
             query_set = query_set.filter(
                 Q(name__icontains=self.request.GET.get(tag_search))
-                | Q(project_samples__name__icontains=self.request.GET.get(tag_search))
+                | Q(project_samples__name__icontains=query_string)
             ).distinct()
 
         table = ProjectTable(query_set)
@@ -622,11 +635,12 @@ class AddSamples_PIProjectsView(
         if self.request.GET.get(tag_search) != None and self.request.GET.get(
             tag_search
         ):
+            query_string = process_query_string(self.request.GET.get(tag_search))
             query_set = query_set.filter(
-                Q(name__icontains=self.request.GET.get(tag_search))
-                | Q(type_subtype__icontains=self.request.GET.get(tag_search))
-                | Q(data_set__name__icontains=self.request.GET.get(tag_search))
-                | Q(week__icontains=self.request.GET.get(tag_search))
+                Q(name__icontains=query_string)
+                | Q(type_subtype__icontains=query_string)
+                | Q(data_set__name__icontains=query_string)
+                | Q(week__icontains=query_string)
             )
             tag_search
         classified_refs_table = SampleToProjectsTable(query_set)
@@ -884,9 +898,8 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
         if self.request.GET.get(tag_search) != None and self.request.GET.get(
             tag_search
         ):
-            query_set = query_set.filter(
-                Q(name__icontains=self.request.GET.get(tag_search))
-            ).distinct()
+            query_string = process_query_string(self.request.GET.get(tag_search))
+            query_set = query_set.filter(Q(name__icontains=query_string)).distinct()
 
         samples = SampleTableOne(query_set)
 
@@ -1556,13 +1569,16 @@ class ReferenceManagement(LoginRequiredMixin, generic.CreateView):
         if self.request.GET.get(tag_search) != None and self.request.GET.get(
             tag_search
         ):
+            query_string = self.request.GET.get(tag_search)
+            query_string = process_query_string(query_string)
+
             references = references.filter(
                 Q(
                     reference_source__description__icontains=self.request.GET.get(
                         tag_search
                     )
                 )
-                | Q(reference_source__accid__icontains=self.request.GET.get(tag_search))
+                | Q(reference_source__accid__icontains=query_string)
                 | Q(
                     reference_source__taxid__taxid__icontains=self.request.GET.get(
                         tag_search
@@ -1607,13 +1623,6 @@ class ReferenceManagement(LoginRequiredMixin, generic.CreateView):
         context["user_id"] = user.pk
 
         return context
-
-
-from typing import Optional
-
-from utils.process_SGE import ProcessSGE
-
-from .forms import UploadFileForm
 
 
 def check_metadata_table_clean(metadata_table_file) -> Optional[pd.DataFrame]:
@@ -1834,10 +1843,12 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
         if self.request.GET.get(tag_search) != None and self.request.GET.get(
             tag_search
         ):
+            query_string = self.request.GET.get(tag_search)
+            query_string = process_query_string(query_string)
             query_set = query_set.filter(
-                Q(description__icontains=self.request.GET.get(tag_search))
-                | Q(accid__icontains=self.request.GET.get(tag_search))
-                | Q(taxid__icontains=self.request.GET.get(tag_search))
+                Q(description__icontains=query_string)
+                | Q(accid__icontains=query_string)
+                | Q(taxid__icontains=query_string)
             )
             # tag_search
 

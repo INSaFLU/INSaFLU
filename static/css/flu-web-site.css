@@ -206,3 +206,6 @@ a.disabled {
    cursor: default;
 }
 
+#mainNav .navbar-collapse .navbar-sidenav {
+    margin-top: 60px;
+}

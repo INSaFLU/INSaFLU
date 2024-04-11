@@ -44,8 +44,8 @@
             Add and manage targets for validation.
             <i class="fa fa-crosshairs fa-lg" aria-hidden="true">‌</i> 
             Focus on selected targets for validation (multi-sample and INSaFLU connection). 
-            </p>    
-        <table id="table_with_check_id" class="table table-hover table-bordered table-striped" set-check-box-values-url="{% url 'set-check-box-values' %}"  check_box_all="True" {% if table.attrs %} 
+            </p>
+        <table id="table_with_check_id" class="table table-hover table-bordered table-striped" set-check-box-values-url="{% url 'set-check-box-values' %}"  check_box_all="{{ check_box_all }}" {% if table.attrs %} 
             {{ table.attrs.as_html }}{% endif %} >
             {% block table.thead %}
             <thead>

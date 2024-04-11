@@ -2,13 +2,10 @@
 ///
 ///		Only the check box table
 ///
-
 /// toggle all check box
 function toggle_check_box_all(source) {
 	var remember = document.getElementById('checkBoxAll');
 	checkboxes = document.getElementsByName('select_ref');
-
-	console.log("HIO");
 	
     for(var i=0, n=checkboxes.length;i<n;i++) {
 		checkboxes[i].checked = remember.checked;
@@ -21,8 +18,6 @@ function toggle_check_box_all(source) {
 	else{
 		$("#id_submit_checked").attr("disabled", "disabled");
 	}
-
-	console.log($('#table_with_check_id').attr("set-check-box-values-url"));
     
 	$.ajax({
 		url: $('#table_with_check_id').attr("set-check-box-values-url"),

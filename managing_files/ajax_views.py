@@ -63,8 +63,7 @@ def set_check_box_values(request):
     if request.is_ajax():
         data = {"is_ok": False}
         utils = Utils()
-        print("set_check_box_values")
-        print(request.GET)
+
         if Constants.CHECK_BOX_ALL in request.GET:
             request.session[Constants.CHECK_BOX_ALL] = utils.str2bool(
                 request.GET.get(Constants.CHECK_BOX_ALL)

@@ -11,20 +11,31 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.views import generic
 
-from pathogen_identification.models import (FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RawReference, ReferenceMap_Main,
-                                            ReferencePanel,
-                                            ReferenceSourceFileMap,
-                                            RunAssembly, RunDetail, RunMain,
-                                            SoftwareTree, SoftwareTreeNode)
+from pathogen_identification.models import (
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReferenceMap_Main,
+    ReferencePanel,
+    ReferenceSourceFileMap,
+    RunAssembly,
+    RunDetail,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
 from pathogen_identification.utilities.clade_objects import Clade
-from pathogen_identification.utilities.overlap_manager import \
-    ReadOverlapManager
+from pathogen_identification.utilities.overlap_manager import ReadOverlapManager
 from pathogen_identification.utilities.televir_parameters import (
-    LayoutParams, TelevirParameters)
+    LayoutParams,
+    TelevirParameters,
+)
 from pathogen_identification.utilities.utilities_general import (
-    infer_run_media_dir, simplify_name)
+    infer_run_media_dir,
+    simplify_name,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
 
@@ -462,6 +473,13 @@ class FinalReportGroup:
         for report in self.group_list:
             if report.private_reads > self.max_private_reads:
                 self.max_private_reads = report.private_reads
+
+    def set_unsorted(self):
+
+        for report in self.group_list:
+            report.row_class_name = "unsorted-row"
+            report.first_in_group = False
+            report.display = "table-row"
 
 
 def check_sample_software_exists(sample: PIProject_Sample) -> bool:
@@ -1333,6 +1351,7 @@ class ReportSorter:
         )
         self.analysis_empty = True
         report_group = self.wrap_group_reports(report_group)
+        report_group.set_unsorted()
         return [report_group]
 
     def get_reports(self) -> List[FinalReportGroup]:
@@ -1358,6 +1377,7 @@ class ReportSorter:
 
             self.analysis_empty = True
             report_group = self.wrap_group_reports(report_group)
+            report_group.set_unsorted()
             return [report_group]
 
         return self.get_sorted_reports()
@@ -1402,6 +1422,7 @@ class ReportSorter:
         )
 
         report_group = self.wrap_group_reports(report_group)
+        report_group.set_unsorted()
 
         return report_group
 

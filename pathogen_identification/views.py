@@ -2219,6 +2219,8 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             sample=sample_main, run=run_main_pipeline
         )
 
+        print("sorted: ", sort_performed)
+
         context = {
             "project": project_name,
             "run_name": run_name,

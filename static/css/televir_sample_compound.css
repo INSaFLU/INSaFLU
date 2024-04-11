@@ -260,6 +260,10 @@ border-top: 1px;
     display: none; 
 }
 
+.unsorted-row {
+    display: table-row;
+}
+
 .sort-icon {
     float: left;
     margin-right: 15px; /* Adjust this value to create space between the icon and the description */

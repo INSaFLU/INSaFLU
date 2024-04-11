@@ -18,6 +18,7 @@ var load_panels = function(sample_id, load_url, target, load = false, suggest= t
             // Check if the panels array is empty
             if (data.panels.length === 0) {
                 var li = document.createElement('li');
+                li.className = 'no-panels';
                 li.textContent = 'No panels available.';
                 panelList.appendChild(li);
 

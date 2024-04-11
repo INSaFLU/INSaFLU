@@ -45,8 +45,8 @@
             <i class="fa fa-crosshairs fa-lg" aria-hidden="true">‌</i> 
             Focus on selected targets for validation (multi-sample and INSaFLU connection). 
             </p>    
-        <table class="table table-hover table-bordered table-striped" {% if table.attrs %}z
-            {{ table.attrs.as_html }}{% endif %}>
+        <table id="table_with_check_id" class="table table-hover table-bordered table-striped" set-check-box-values-url="{% url 'set-check-box-values' %}"  check_box_all="True" {% if table.attrs %} 
+            {{ table.attrs.as_html }}{% endif %} >
             {% block table.thead %}
             <thead>
                 {% if project_owner %}

@@ -69,7 +69,6 @@ $("tr.parent").find("A#plot_show").click(function(e) {
         e.preventDefault();
         var parent_tr = e.target.parentNode.parentNode;
         var child_tr = nextTr(parent_tr);
-        console.log(child_tr);
         $(child_tr).toggleClass("active");
     }
   });

@@ -138,8 +138,8 @@
                                 Shared read analysis recovered <strong>{{ groups_count }} groups of references</strong>.
                             </p> 
                             <p> 
-                                The shared heatmap displays the proportion of reads of one group (column) that are shared with another group (row).
-                                Groups are sorted by maximum coverage. 
+                                The shared heatmap displays below the proportion of reads of one group (column) that are shared with another group (row).
+                                Groups are sorted by maximum coverage. If the heatmap is not visible, please re-run sorting for this sample. 
                             </p>
                         </div>
                     </div>
@@ -237,7 +237,7 @@
                                     </div>
                                     <!-- Forth section -->
                                     <div class="custom-section">
-                                        # {{final_report.group_list|length}}
+                                        Group size {{final_report.group_list|length}}
                                     </div>
                                     <div class="custom-section">
                                         <a href="#" id="showButton" class="custom-link">Read Overlap</a>
@@ -272,6 +272,9 @@
                                 {% if value.first_in_group %}
                                 {% if final_report.has_multiple %}
                                         <i class="fa fa-first-order sort-icon"  title="Best Coverage"></i>
+                                {% else %}
+                                        <i class="fa fa-empty sort-icon"  title="Best Coverage"></i>
+                                
                                 {% endif %}
                                 
                                 {% endif %}
@@ -316,7 +319,6 @@
                             <td data-title="Control" style="{% flag_control_color value.control_flag %}">
                                 {{ value.control_flag_str }}</td>
                             {% endif %}
-
                         </tr>
                         <tr class="collapse-report" group-name="{{final_report.name}}">
                         <td colspan="14">

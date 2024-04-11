@@ -277,6 +277,13 @@ max-height: 500px; /* Adjust the value to the desired height */
     margin-right: 15px; /* Adjust this value to create space between the icon and the description */
     margin-left: 10px; /* Adjust this value to create space between the icon and the description */
 }
+
+.empty-icon {
+    float: left;
+    margin-right: 30px; /* Adjust this value to create space between the icon and the description */
+    margin-left: 10px; /* Adjust this value to create space between the icon and the description */
+}
+
 .description-content {
     display: inline-block;
 }

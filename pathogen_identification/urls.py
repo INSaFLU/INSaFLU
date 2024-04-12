@@ -166,6 +166,16 @@ urlpatterns = [
         name="televir_references",
     ),
     url(
+        r"References/teleflu_reference_files$",
+        PIajax_views.available_televir_files,
+        name="available_televir_files",
+    ),
+    url(
+        r"References/teleflu_register_reference_files_panel$",
+        PIajax_views.add_file_to_panel,
+        name="register_file_panel",
+    ),
+    url(
         r"Refereces/teleflu_references$",
         PIajax_views.create_insaflu_reference_from_filemap,
         name="create_teleflu_reference",

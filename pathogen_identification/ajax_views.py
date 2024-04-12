@@ -356,10 +356,32 @@ def submit_sample_mapping_televir(request):
 
 @login_required
 @require_POST
+def available_televir_files(request):
+
+    if request.is_ajax():
+        data = {"is_ok": False, "is_deployed": False, "files": []}
+
+        print("available_televir_files")
+        print(request.POST)
+        user_id = int(request.POST["user_id"])
+        user = User.objects.get(id=user_id)
+        files = ReferenceSourceFile.objects.filter(
+            owner=user, is_deleted=False
+        ).distinct("file")
+        print(files)
+
+        data["is_ok"] = True
+        data["files"] = {file.pk: file.file for file in files}
+        print(data)
+
+        return JsonResponse(data)
+
+
+@login_required
+@require_POST
 def submit_sample_mapping_panels(request):
     if request.is_ajax():
         process_SGE = ProcessSGE()
-        print(request.POST)
         user = request.user
         data = {"is_ok": True, "is_deployed": False, "is_empty": False, "message": ""}
 
@@ -2275,6 +2297,37 @@ def add_references_to_panel(request):
             except Exception as e:
                 print(e)
                 return JsonResponse({"is_ok": False})
+
+        return JsonResponse({"is_ok": True})
+
+    return JsonResponse({"is_ok": False})
+
+
+@csrf_protect
+def add_file_to_panel(request):
+    """
+    add references to panel"""
+    if request.is_ajax():
+        panel_id = int(request.POST.get("panel_id"))
+        file_id = int(request.POST.get("file_id"))
+
+        panel = ReferencePanel.objects.get(pk=panel_id)
+        file = ReferenceSourceFile.objects.get(pk=file_id)
+        refs = ReferenceSourceFileMap.objects.filter(reference_source_file=file)
+
+        print(panel, file)
+        print(refs)
+        try:
+            for reference in refs:
+                panel_reference = RawReference.objects.create(
+                    accid=reference.reference_source.accid,
+                    taxid=reference.reference_source.taxid,
+                    description=reference.reference_source.description,
+                    panel=panel,
+                )
+        except Exception as e:
+            print(e)
+            return JsonResponse({"is_ok": False})
 
         return JsonResponse({"is_ok": True})
 

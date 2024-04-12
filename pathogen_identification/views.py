@@ -1297,6 +1297,8 @@ def inject_references_filter(request, max_references: int = 30):
     tag_add_reference = "search_add_project_reference"
     tag_teleflu = "teleflu_reference"
     table_type = "add_reference"
+    tag_panel_id = "panel_id"
+    panel_id = None
     project_id = None
     project = None
 
@@ -1308,6 +1310,11 @@ def inject_references_filter(request, max_references: int = 30):
         max_references = 10
         project_id = int(request.GET.get("project_id"))
         project = Projects.objects.get(pk=project_id)
+
+    print("project_id", project_id)
+    if request.GET.get(tag_panel_id) and request.GET.get(tag_panel_id) != "":
+        panel_id = int(request.GET.get(tag_panel_id))
+        panel = ReferencePanel.objects.get(pk=panel_id)
 
     references = []
     if request.GET.get(tag_add_reference) is not None:
@@ -1338,23 +1345,50 @@ def inject_references_filter(request, max_references: int = 30):
                 )
 
         elif request.GET.get(tag_add_reference) != "":
-            references = ReferenceSourceFileMap.objects.filter(
-                Q(
-                    reference_source__description__icontains=request.GET.get(
+
+            existing_reference_taxids = []
+            if panel is not None:
+                existing_reference_taxids = RawReference.objects.filter(
+                    panel=panel
+                ).values_list("taxid", flat=True)
+
+            references = (
+                ReferenceSourceFileMap.objects.filter(
+                    Q(
+                        reference_source__description__icontains=request.GET.get(
+                            tag_add_reference
+                        )
+                    )
+                    | Q(
+                        reference_source__accid__icontains=request.GET.get(
+                            tag_add_reference
+                        )
+                    )
+                    | Q(
+                        reference_source__taxid__taxid__icontains=request.GET.get(
+                            tag_add_reference
+                        )
+                    )
+                    | Q(
+                        reference_source_file__file__icontains=request.GET.get(
+                            tag_add_reference
+                        )
+                    )
+                )
+                .exclude(reference_source__taxid__taxid__in=existing_reference_taxids)
+                .distinct("reference_source__accid")
+            )
+            if references.filter(
+                reference_source_file__file__icontains=request.GET.get(
+                    tag_add_reference
+                )
+            ).exists():
+                references = references.filter(
+                    reference_source_file__file__icontains=request.GET.get(
                         tag_add_reference
                     )
                 )
-                | Q(
-                    reference_source__accid__icontains=request.GET.get(
-                        tag_add_reference
-                    )
-                )
-                | Q(
-                    reference_source__taxid__taxid__icontains=request.GET.get(
-                        tag_add_reference
-                    )
-                )
-            ).distinct("reference_source__accid")
+                max_references = 50
 
         # show max 10 references
         references = references[:max_references]

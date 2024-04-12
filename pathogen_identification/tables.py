@@ -517,7 +517,7 @@ class SampleTableOne(tables.Table):
             + reverse("sample_main", args=[record.project.pk, record.pk])
             + '">'
             + " <fa class='fa fa-reorder'></fa>"
-            + " workflow panel"
+            + " Workflow Panel"
             + "</a>"
         )
         if user.username == Constants.USER_ANONYMOUS:

@@ -78,6 +78,21 @@
     font-family: Arial, sasns-serif;
 }
 
+.select-file-button {
+    background-color: #007bff; 
+    float: right;
+    border: none;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    margin: 0px 5px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 14px;
+    padding: 6px 8px; 
+    font-family: Arial, sasns-serif;
+}
+
 .remove-panel-button {
     background-color: #007bff;
     float: right;
@@ -212,4 +227,40 @@
 
 .icon-selection input[type="radio"]:checked + i {
     color: #007bff;
+}
+
+.icon-white {
+    fill: white;
+    height: 100%; /* Make the SVG fill the height of its container */
+    width: auto;  
+}
+
+#file-select {
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+#file-select input[type="radio"] {
+    margin: 10px 5px;
+    vertical-align: middle;
+}
+
+#file-select label {
+    display: inline-block;
+    margin: 5px 0;
+    padding: 5px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+#file-select label:hover {
+    background-color: #e0e0e0;
+}
+
+#panelSelectModal .modal-dialog {
+    max-width: 800px;
+    width: 100%;
 }

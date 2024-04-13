@@ -163,11 +163,12 @@
                             <p> 
                                 <i class="fa fa-exclamation-circle"></i> <strong>
                                     We recommend manual inspection of the results
-                                    using the <strong>Read Overlap</strong> heatmaps. </strong>
-                                    Group sorting aims at identifying cross-hits and false positives. While robust, group sorting is not perfect and may mask similar true positive hits. 
+                                    using the within-group <strong>Read Overlap</strong> heatmaps. 
+                                    Group sorting aims at identifying cross-hits and false positives. While robust, this method may mask similar true positive hits. </strong>
                             </p>
                             <p>
-                                Groups are constructed according to a minimum shared read threshold of <strong>{{ min_shared_reads }} % </strong>.
+                                <i class="fa fa-exclamation-circle"></i> <strong>
+                                This sorting algorith is taxonomy-blind. Groups are constructed according to a minimum shared mapped read threshold of <strong>{{ min_shared_reads }} % </strong> between between remapped hits. </strong>
                             </p>
                         </div>
                     </div>

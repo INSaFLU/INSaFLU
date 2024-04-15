@@ -179,6 +179,10 @@ class ConstantsSettings:
     PAIR_END = "PE"
     SINGLE_END = "SE"
 
+    ################################## PATHOGEN IDENTIFICATION REPORTS
+
+    SORT_GROUP_DISPLAY_DEFAULT_THRESHOLD_SHARED = 0.95
+
     ################################## ACTIONS DETAILS
 
     EXPLIFY_MERGE_SUFFIX = "merged_explify_project"

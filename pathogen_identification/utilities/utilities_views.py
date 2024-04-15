@@ -11,6 +11,8 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.views import generic
 
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PIConstantsSettings
 from pathogen_identification.models import (FinalReport, ParameterSet,
                                             PIProject_Sample, Projects,
                                             RawReference, ReferenceMap_Main,
@@ -446,7 +448,12 @@ class FinalReportGroup:
         self.js_heatmap_data = None
         self.analysis_empty = analysis_empty
         self.has_multiple = True if len(group_list) > 1 else False
-        self.toggle = "off" if shared_proportion > 0.95 else "on"
+        self.toggle = (
+            "off"
+            if shared_proportion
+            > PIConstantsSettings.SORT_GROUP_DISPLAY_DEFAULT_THRESHOLD_SHARED
+            else "on"
+        )
 
     def reports_have_private_reads(self) -> bool:
         for report in self.group_list:
@@ -1169,7 +1176,7 @@ class ReportSorter:
         if len(group.group_list) == 0:
             return group
 
-        if group.shared_proportion > 0.95:
+        if group.shared_proportion > PIConstantsSettings.SORT_GROUP_DISPLAY_DEFAULT_THRESHOLD_SHARED:
 
             group.group_list[0].first_in_group = True
             group.group_list[0].row_class_name = "primary-row"

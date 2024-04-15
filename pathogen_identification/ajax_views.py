@@ -1327,7 +1327,6 @@ def create_teleflu_project(request):
         first_ref = RawReference.objects.get(pk=int(ref_ids[0]))
         project = first_ref.run.project
         date = datetime.now()
-        process_SGE = ProcessSGE()
 
         try:
 

@@ -214,7 +214,6 @@ function show_igv(item) {
 
 document.getElementById("report_download").addEventListener("click", function (e) {
     e.preventDefault();
-    console.log("HOIUH")
     download_table_as_csv("report_table")
 })
 
@@ -246,9 +245,7 @@ function download_table_as_csv(table_id, separator = '\t') {
         if (rows[i].classList.contains('parent')) {
 
             var groupName = rows[i].getAttribute('group-name');
-            console.log(groupName);
             var first = rows[i].getAttribute('first');
-            console.log(first);
         
             for (var j = 0; j < cols.length; j++) {
                 // Clean innertext to remove multiple spaces and jumpline (break csv)

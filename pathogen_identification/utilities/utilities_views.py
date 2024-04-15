@@ -11,31 +11,20 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.views import generic
 
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReferenceMap_Main,
-    ReferencePanel,
-    ReferenceSourceFileMap,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference, ReferenceMap_Main,
+                                            ReferencePanel,
+                                            ReferenceSourceFileMap,
+                                            RunAssembly, RunDetail, RunMain,
+                                            SoftwareTree, SoftwareTreeNode)
 from pathogen_identification.utilities.clade_objects import Clade
-from pathogen_identification.utilities.overlap_manager import ReadOverlapManager
+from pathogen_identification.utilities.overlap_manager import \
+    ReadOverlapManager
 from pathogen_identification.utilities.televir_parameters import (
-    LayoutParams,
-    TelevirParameters,
-)
+    LayoutParams, TelevirParameters)
 from pathogen_identification.utilities.utilities_general import (
-    infer_run_media_dir,
-    simplify_name,
-)
+    infer_run_media_dir, simplify_name)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
 
@@ -424,7 +413,7 @@ class FinalReportGroup:
     name: str
     total_counts: str
     private_counts: int
-    shared_proportion: str
+    shared_proportion: float
     private_proportion: float
     group_list: List[FinalReportWrapper]
 
@@ -444,7 +433,7 @@ class FinalReportGroup:
         self.name = name
         self.total_counts = f"total counts {total_counts}"
         self.private_counts = private_counts
-        self.shared_proportion = f"shared proportion {shared_proportion:.2f}"
+        self.shared_proportion = shared_proportion
         self.private_proportion = round(private_proportion, 2)
         self.group_list = group_list
         self.heatmap_path = heatmap_path
@@ -457,6 +446,7 @@ class FinalReportGroup:
         self.js_heatmap_data = None
         self.analysis_empty = analysis_empty
         self.has_multiple = True if len(group_list) > 1 else False
+        self.toggle = "off" if shared_proportion > 0.95 else "on"
 
     def reports_have_private_reads(self) -> bool:
         for report in self.group_list:
@@ -1176,10 +1166,19 @@ class ReportSorter:
         """
         group.group_list.sort(key=lambda x: x.private_reads, reverse=True)
 
-        if len(group.group_list) > 0:
+        if len(group.group_list) == 0:
+            return group
+
+        if group.shared_proportion > 0.95:
+
             group.group_list[0].first_in_group = True
             group.group_list[0].row_class_name = "primary-row"
             group.group_list[0].display = "table-row"
+
+        else:
+            for report in group.group_list:
+                report.row_class_name = "primary-row"
+                report.display = "table-row"
 
         return group
 
@@ -1256,7 +1255,6 @@ class ReportSorter:
 
         sorted_groups = self.get_reports_private_reads(sorted_groups)
         sorted_groups = self.sort_group_list_reports(sorted_groups)
-
         sorted_groups = self.prep_heatmap_data_several(sorted_groups)
 
         return sorted_groups

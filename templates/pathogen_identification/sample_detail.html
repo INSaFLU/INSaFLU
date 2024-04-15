@@ -475,6 +475,12 @@
                                             <i class="fa fa-toggle-off toggle-icon"></i>
                                         </button>                                        
                                     </div>
+                                    {% else %}
+                                    <div class="primary-row" style="visibility: hidden; ">
+                                       <button class="showSecondaryRows" type="button" style="visibility: hidden;">
+                                           <i class="fa fa-toggle-off toggle-icon"></i>
+                                       </button>                                        
+                                   </div>
                                     {% endif %}
                                     <!-- First section -->
                                     <div class="custom-section" id="info_{{ final_report.name }}">
@@ -492,7 +498,7 @@
                                     </div>
                                     <!-- Forth section -->
                                     <div class="custom-section">
-                                        # {{final_report.group_list|length}}
+                                        Group size {{final_report.group_list|length}}
                                     </div>
                                     <div class="custom-section">
                                         {% if final_report.js_heatmap_ready %}

@@ -210,6 +210,8 @@ border-top: 1px;
     text-align: center; /* Center the text */
     margin: 20px auto; /* Center the div */
     width: 40%; /* Set the width */
+    display: flex;
+    flex-direction: column;
 }
 
 .overlap-button {
@@ -219,7 +221,7 @@ border-top: 1px;
 .custom-section-container {
     display: flex;
     overflow: hidden;
-    background-color: #f5f5f5; /* Light grey background */
+
 }
 
 .custom-section {

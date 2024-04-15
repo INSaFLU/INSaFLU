@@ -218,7 +218,13 @@
                                     {% if final_report.has_multiple %}
                                     <div class="primary-row">
                                         <button class="showSecondaryRows" type="button" group-name="{{final_report.name}}" title="Toggle Secondary Rows">
-                                            <i class="fa fa-toggle-off toggle-icon"></i>
+                                            <i class="fa fa-toggle-{{final_report.toggle}} toggle-icon"></i>
+                                        </button>                                        
+                                    </div>
+                                     {% else %}
+                                     <div class="primary-row" style="visibility: hidden; ">
+                                        <button class="showSecondaryRows" type="button" style="visibility: hidden;">
+                                            <i class="fa fa-toggle-{{final_report.toggle}} toggle-icon"></i>
                                         </button>                                        
                                     </div>
                                     {% endif %}
@@ -229,12 +235,12 @@
                                     {% if final_report.private_counts_exist %}
                                     <!-- Second section -->
                                     <div class="custom-section">
-                                        {{final_report.private_counts}}
+                                        private reads: {{final_report.private_counts}}
                                     </div>
                                     {% endif %}
                                     <!-- Third section -->
                                     <div class="custom-section">
-                                        {{final_report.private_proportion}}
+                                        private reads proportion: {{final_report.private_proportion}}
                                     </div>
                                     <!-- Forth section -->
                                     <div class="custom-section">

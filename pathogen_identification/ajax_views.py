@@ -1223,6 +1223,8 @@ def add_references_to_sample(request):
     """
     if request.is_ajax():
         data = {"is_ok": False, "is_error": False, "is_empty": False}
+        print(request.POST)
+
         sample_id = int(request.POST["sample_id"])
         sample = PIProject_Sample.objects.get(pk=sample_id)
 
@@ -1231,8 +1233,11 @@ def add_references_to_sample(request):
         if len(reference_id_list) == 0:
             data["is_empty"] = True
             return JsonResponse(data)
+        
+        print("##################### add_references_to_sample #####################")
 
         reference_id_list = [int(x) for x in reference_id_list]
+        print(reference_id_list)
 
         references_existing = []
 

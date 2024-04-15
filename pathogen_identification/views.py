@@ -1302,6 +1302,8 @@ def inject_references_filter(request, max_references: int = 30):
     project_id = None
     project = None
 
+    print(request.GET)
+
     if request.GET.get("max_references") and request.GET.get("max_references") != "":
         max_references = int(request.GET.get("max_references"))
 
@@ -1318,13 +1320,18 @@ def inject_references_filter(request, max_references: int = 30):
 
     references = []
     if request.GET.get(tag_add_reference) is not None:
-        if table_type == "teleflu_reference":
-            references = RawReference.objects.filter(
-                Q(accid__icontains=request.GET.get(tag_add_reference))
-                | Q(description__icontains=request.GET.get(tag_add_reference))
-                & ~Q(description__in=["root", "NA"])
-                & Q(run__project__pk=project_id)
-            ).distinct("accid")
+        print(table_type)
+        if table_type == "add_reference":
+            try:
+                references = RawReference.objects.filter(
+                    Q(accid__icontains=request.GET.get(tag_add_reference))
+                    | Q(description__icontains=request.GET.get(tag_add_reference))
+                    & ~Q(description__in=["root", "NA"])
+                    & Q(run__project__pk=project_id)
+                ).distinct("accid")
+
+            except Exception as e:
+                print(e)
 
             if references.count() == 0:
                 references = []
@@ -1345,6 +1352,7 @@ def inject_references_filter(request, max_references: int = 30):
                 )
 
         elif request.GET.get(tag_add_reference) != "":
+            print("add_reference")
 
             existing_reference_taxids = []
             if panel is not None:

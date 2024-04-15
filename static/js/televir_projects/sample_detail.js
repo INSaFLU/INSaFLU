@@ -101,6 +101,9 @@ $(".igv_browse").on('click', function (e) {
     var accid = $(this).attr('accid');
     var igv_display = document.getElementById('igv_display_' + accid);
     var igv_display_className = igv_display.className;
+
+    console.log("browse");
+    console.log(igv_display_className);
     
     if (/\bopen\b/.test(igv_display_className)) {
         igv_display.className = igv_display.className.replace(" open", '');
@@ -130,6 +133,14 @@ function show_igv(item) {
     var unique_id = item.attr('reference_id');
     var url = item.attr('show-igv-url');
 
+    console.log("show_igv");
+    console.log(accid);
+    console.log(project_pk);
+    console.log(sample_pk);
+    console.log(run_pk);
+    console.log(unique_id);
+    console.log(url);
+    
     $.ajax({
         /// spin 
         beforeSend: function() {

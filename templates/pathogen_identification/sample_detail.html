@@ -644,8 +644,8 @@
                                         <td colspan="1" align="center">
                         
                                             <div style="position:relative height=100%" >
-                                                <button class="igv_browse btn btn-primary" id="igv_browse" type="button" project_pk="{{project_index}}" sample_pk="{{sample_index}}" 
-                                                run_pk="{{run_index}}" accid="{{value.accid}}" reference_id="{{value.unique_id}}" show-igv-url="{% url 'igv_browser' %}">IGV</button>
+                                                <button class="igv_browse btn btn-primary" id="igv_browse" type="button" show-igv-url="{% url 'igv_browser' %}" project_pk="{{project_index}}" sample_pk="{{sample_index}}" 
+                                                run_pk="{{run_index}}" accid="{{value.accid}}" reference_id="{{value.unique_id}}">IGV</button>
                                             </div>
                                             {% if data_exists %}
                                             <div id="cov_div" >
@@ -770,7 +770,7 @@
         <div id="collapseMapExtra" class="collapse show" role="tabpanel" aria-labelledby="headingMapExtra">
             <div class="table-responsive">
                 <table class="table table-hover table-bordered table-striped" id="map_summary" {% if reference_table.attrs %}
-                    {{ reference_table.attrs.as_html }}{% endif %}>
+                    {{ reference_table.attrs.as_html }}{% endif %}> 
                     {% block table.thead %}
                     <thead>
                         <tr>

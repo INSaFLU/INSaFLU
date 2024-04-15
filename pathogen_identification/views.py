@@ -1298,6 +1298,7 @@ def inject_references_filter(request, max_references: int = 30):
     tag_teleflu = "teleflu_reference"
     table_type = "add_reference"
     tag_panel_id = "panel_id"
+    panel = None
     panel_id = None
     project_id = None
     project = None
@@ -1321,7 +1322,7 @@ def inject_references_filter(request, max_references: int = 30):
     references = []
     if request.GET.get(tag_add_reference) is not None:
         print(table_type)
-        if table_type == "add_reference":
+        if table_type == "teleflu_reference":
             try:
                 references = RawReference.objects.filter(
                     Q(accid__icontains=request.GET.get(tag_add_reference))
@@ -1333,6 +1334,7 @@ def inject_references_filter(request, max_references: int = 30):
             except Exception as e:
                 print(e)
 
+            print(references.count())
             if references.count() == 0:
                 references = []
             else:
@@ -1353,7 +1355,7 @@ def inject_references_filter(request, max_references: int = 30):
 
         elif request.GET.get(tag_add_reference) != "":
             print("add_reference")
-
+            print(panel)
             existing_reference_taxids = []
             if panel is not None:
                 existing_reference_taxids = RawReference.objects.filter(
@@ -1386,17 +1388,6 @@ def inject_references_filter(request, max_references: int = 30):
                 .exclude(reference_source__taxid__taxid__in=existing_reference_taxids)
                 .distinct("reference_source__accid")
             )
-            if references.filter(
-                reference_source_file__file__icontains=request.GET.get(
-                    tag_add_reference
-                )
-            ).exists():
-                references = references.filter(
-                    reference_source_file__file__icontains=request.GET.get(
-                        tag_add_reference
-                    )
-                )
-                max_references = 50
 
         # show max 10 references
         references = references[:max_references]

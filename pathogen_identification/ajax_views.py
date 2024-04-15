@@ -1331,24 +1331,29 @@ def create_teleflu_project(request):
 
         try:
 
-            if check_metaReference_exists_from_ids(ref_ids):
-                data["exists"] = True
-                return JsonResponse(data)
-
             metareference = create_combined_reference(ref_ids, project_name)
 
             if not metareference:
                 data["is_error"] = True
                 return JsonResponse(data)
 
-            teleflu_project = TeleFluProject(
-                televir_project=project,
-                name=project_name,
-                last_change_date=date,
-                description=teleflu_project_description(ref_ids),
-                raw_reference=metareference,
-            )
-            teleflu_project.save()
+            try:
+                teleflu_project = TeleFluProject.objects.get(
+                    televir_project=project,
+                    name=project_name,
+                    raw_reference=metareference,
+                )
+
+            except TeleFluProject.DoesNotExist:
+
+                teleflu_project = TeleFluProject(
+                    televir_project=project,
+                    name=project_name,
+                    last_change_date=date,
+                    description=teleflu_project_description(ref_ids),
+                    raw_reference=metareference,
+                )
+                teleflu_project.save()
 
             for sample_id in sample_ids:
                 sample = PIProject_Sample.objects.get(pk=int(sample_id))

@@ -101,9 +101,6 @@ $(".igv_browse").on('click', function (e) {
     var accid = $(this).attr('accid');
     var igv_display = document.getElementById('igv_display_' + accid);
     var igv_display_className = igv_display.className;
-
-    console.log("browse");
-    console.log(igv_display_className);
     
     if (/\bopen\b/.test(igv_display_className)) {
         igv_display.className = igv_display.className.replace(" open", '');
@@ -133,14 +130,6 @@ function show_igv(item) {
     var unique_id = item.attr('reference_id');
     var url = item.attr('show-igv-url');
 
-    console.log("show_igv");
-    console.log(accid);
-    console.log(project_pk);
-    console.log(sample_pk);
-    console.log(run_pk);
-    console.log(unique_id);
-    console.log(url);
-    
     $.ajax({
         /// spin 
         beforeSend: function() {
@@ -225,6 +214,7 @@ function show_igv(item) {
 
 document.getElementById("report_download").addEventListener("click", function (e) {
     e.preventDefault();
+    console.log("HOIUH")
     download_table_as_csv("report_table")
 })
 
@@ -241,16 +231,24 @@ function download_table_as_csv(table_id, separator = '\t') {
         
             for (var j = 0; j < cols.length; j++) {
                 // Clean innertext to remove multiple spaces and jumpline (break csv)
-                var data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, '').replace(/(\s\s)/gm, ' ')
+                var data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, '').replace(/(\s\s)/gm, ' ');
+
                 // Escape double-quote with double-double-quote (see https://stackoverflow.com/questions/17808511/properly-escape-a-double-quote-in-csv)
                 data = data.replace(/"/g, '""');
                 // Push escaped string
                 row.push(data);
             }
+            row.push("Group");
+            row.push("Best_Cov");
             csv.push(row.join(separator));
         }
 
-        if ( rows[i].className == "parent" ) {
+        if (rows[i].classList.contains('parent')) {
+
+            var groupName = rows[i].getAttribute('group-name');
+            console.log(groupName);
+            var first = rows[i].getAttribute('first');
+            console.log(first);
         
             for (var j = 0; j < cols.length; j++) {
                 // Clean innertext to remove multiple spaces and jumpline (break csv)
@@ -260,6 +258,8 @@ function download_table_as_csv(table_id, separator = '\t') {
                 // Push escaped string
                 row.push(data);
             }
+            row.push(groupName);
+            row.push(first);
             csv.push(row.join(separator));
         }
     }

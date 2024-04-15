@@ -535,7 +535,7 @@
                         </tr>
                         {% endif %}
                         {% for value in final_report.group_list %}
-                        <tr class="parent {{value.row_class_name}}" style="display: {{value.display}}" id="row_{{value.accid}}" group-name="{{final_report.name}}">
+                        <tr class="parent {{value.row_class_name}}" style="display: {{value.display}}" id="row_{{value.accid}}" group-name="{{final_report.name}}" first="{{value.first_in_group}}">
 
                             <td data-title="Description" style="text-align: left;">
                                 {% if value.first_in_group %}

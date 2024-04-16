@@ -9,13 +9,14 @@ from curses.ascii import SO
 from django.contrib.auth.models import User
 
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.utilities.utilities_pipeline import (
-    Utility_Pipeline_Manager, Utils_Manager)
+    Utility_Pipeline_Manager,
+    Utils_Manager,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
-from settings.models import Parameter, Software
+from settings.models import Parameter, Software, SoftwareDefaultTest
 from utils.lock_atomic_transaction import LockedAtomicTransaction
 
 
@@ -34,21 +35,42 @@ class DefaultSoftware(object):
 
         self.change_values_software = {}  ### the key is the name of the software
 
+    def test_televir_pipelines_available_once(self, user) -> bool:
+        """
+        test if exist, if not persist in database
+        """
+        try:
+            software_test = SoftwareDefaultTest.objects.get(
+                user=user, televir_pipelines_available=True
+            )
+            print("televir_pipelines_available")
+            print(software_test)
+            return True
+
+        except SoftwareDefaultTest.DoesNotExist:
+            utils = Utils_Manager()
+            pipelines_available = utils.test_televir_pipelines_available(user)
+
+            if pipelines_available:
+                if not SoftwareDefaultTest.objects.filter(user=user).exists():
+                    SoftwareDefaultTest.objects.create(
+                        user=user, televir_pipelines_available=True
+                    )
+                else:
+                    SoftwareDefaultTest.objects.filter(user=user).update(
+                        televir_pipelines_available=True
+                    )
+
+            return pipelines_available
+
     def test_televir_software_available(self):
         """test if televir software is available"""
         user_system = User.objects.get(username="system")
 
-        self.test_all_defaults_pathogen_identification(user_system)
+        self.test_all_defaults_pathogen_identification_once(user_system)
 
-        software = Software.objects.filter(
-            type_of_use=Software.TYPE_OF_USE_televir_global, owner=user_system
-        )
-        if software.count() == 0:
-            return False
+        televir_available = self.test_televir_pipelines_available_once(user_system)
 
-        utils = Utils_Manager()
-
-        televir_available = utils.test_televir_pipelines_available(user_system)
         # self.remove_all_parameters(user_system)
 
         return televir_available
@@ -131,6 +153,39 @@ class DefaultSoftware(object):
             if global_software.exists():
                 self.remove_all_televir_software(user)
                 self.test_all_defaults_pathogen_identification(user)
+
+    def test_all_defaults_once(self, user: User):
+
+        try:
+            SoftwareDefaultTest.objects.get(user=user, is_tested_all_defaults=True)
+            print("is_tested_all_defaults")
+
+        except SoftwareDefaultTest.DoesNotExist:
+            self.test_all_defaults(user)
+            if not SoftwareDefaultTest.objects.filter(user=user).exists():
+                SoftwareDefaultTest.objects.create(
+                    user=user, is_tested_all_defaults=True
+                )
+            else:
+                SoftwareDefaultTest.objects.filter(user=user).update(
+                    is_tested_all_defaults=True
+                )
+
+    def test_all_defaults_pathogen_identification_once(self, user: User):
+
+        try:
+            SoftwareDefaultTest.objects.get(user=user, is_tested_televir_defaults=True)
+
+        except SoftwareDefaultTest.DoesNotExist:
+            self.test_all_defaults_pathogen_identification(user)
+            if not SoftwareDefaultTest.objects.filter(user=user).exists():
+                SoftwareDefaultTest.objects.create(
+                    user=user, is_tested_televir_defaults=True
+                )
+            else:
+                SoftwareDefaultTest.objects.filter(user=user).update(
+                    is_tested_televir_defaults=True
+                )
 
     def test_all_defaults(self, user: User):
         ### test all defaults
@@ -798,8 +853,7 @@ class DefaultSoftware(object):
                     software.delete()
 
         except Software.DoesNotExist:  ### if not exist save it
-            print("save software", software_name)
-            print(user)
+
             self.default_parameters.persist_parameters(vect_parameters, type_of_use)
 
     def get_trimmomatic_parameters(self, user):

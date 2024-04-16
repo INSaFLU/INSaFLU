@@ -8,6 +8,7 @@ from Bio import SeqIO
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.http import HttpResponse, JsonResponse
+from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_protect
@@ -16,7 +17,7 @@ from django.views.decorators.http import require_POST
 from constants.constants import Constants, FileExtensions, FileType, TypePath
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
-from fluwebvirus.settings import STATIC_ROOT, STATIC_URL
+from fluwebvirus.settings import BASE_DIR, STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
 from pathogen_identification.models import (FinalReport, ParameterSet,
@@ -1223,8 +1224,6 @@ def add_references_to_sample(request):
     """
     if request.is_ajax():
         data = {"is_ok": False, "is_error": False, "is_empty": False}
-        print(request.POST)
-
         sample_id = int(request.POST["sample_id"])
         sample = PIProject_Sample.objects.get(pk=sample_id)
 
@@ -1233,13 +1232,8 @@ def add_references_to_sample(request):
         if len(reference_id_list) == 0:
             data["is_empty"] = True
             return JsonResponse(data)
-        
-        print("##################### add_references_to_sample #####################")
 
         reference_id_list = [int(x) for x in reference_id_list]
-        print(reference_id_list)
-
-        references_existing = []
 
         sample_reference_manager = SampleReferenceManager(sample)
 
@@ -1261,9 +1255,6 @@ def add_references_to_sample(request):
         return JsonResponse(data)
 
 
-from django.template.loader import render_to_string
-
-from fluwebvirus.settings import BASE_DIR
 
 
 def inject_references(references: list, request):

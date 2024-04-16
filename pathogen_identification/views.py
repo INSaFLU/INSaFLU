@@ -35,68 +35,45 @@ from managing_files.models import ProjectSample as InsafluProjectSample
 from managing_files.models import Reference
 from managing_files.tables import SampleToProjectsTable
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
-from pathogen_identification.forms import PanelReferencesUploadForm, ReferenceForm
-from pathogen_identification.models import (
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReadClassification,
-    ReferenceContigs,
-    ReferenceMap_Main,
-    ReferencePanel,
-    ReferenceSourceFile,
-    ReferenceSourceFileMap,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    RunRemapMain,
-    Sample,
-    TelefluMapping,
-    TeleFluProject,
-    TeleFluSample,
-    TelevirRunQC,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
+from pathogen_identification.forms import (PanelReferencesUploadForm,
+                                           ReferenceForm)
+from pathogen_identification.models import (ContigClassification, FinalReport,
+                                            ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            ReadClassification,
+                                            ReferenceContigs,
+                                            ReferenceMap_Main, ReferencePanel,
+                                            ReferenceSourceFile,
+                                            ReferenceSourceFileMap,
+                                            RunAssembly, RunDetail, RunMain,
+                                            RunRemapMain, Sample,
+                                            TelefluMapping, TeleFluProject,
+                                            TeleFluSample, TelevirRunQC)
 from pathogen_identification.modules.object_classes import RunQC_report
-from pathogen_identification.tables import (
-    AddedReferenceTable,
-    CompoundRefereceScoreWithScreening,
-    CompoundReferenceScore,
-    ContigTable,
-    ProjectTable,
-    RawReferenceTable,
-    RawReferenceTableNoRemapping,
-    ReferenceSourceTable,
-    RunMainTable,
-    RunMappingTable,
-    SampleTableOne,
-    TeleFluInsaFLuProjectTable,
-    TeleFluReferenceTable,
-)
+from pathogen_identification.tables import (AddedReferenceTable,
+                                            CompoundRefereceScoreWithScreening,
+                                            CompoundReferenceScore,
+                                            ContigTable, ProjectTable,
+                                            RawReferenceTable,
+                                            RawReferenceTableNoRemapping,
+                                            ReferenceSourceTable, RunMainTable,
+                                            RunMappingTable, SampleTableOne,
+                                            TeleFluInsaFLuProjectTable,
+                                            TeleFluReferenceTable)
 from pathogen_identification.utilities.reference_utils import (
-    generate_insaflu_reference,
-    temp_fasta_copy,
-)
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+    generate_insaflu_reference, temp_fasta_copy)
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
 from pathogen_identification.utilities.utilities_general import (
-    get_services_dir,
-    infer_run_media_dir,
-)
+    get_services_dir, infer_run_media_dir)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility,
-    RawReferenceUtils,
-)
+    Parameter_DB_Utility, RawReferenceUtils)
 from pathogen_identification.utilities.utilities_views import (
-    EmptyRemapMain,
-    RawReferenceCompound,
-    ReportSorter,
-    final_report_best_cov_by_accid,
-    recover_assembly_contigs,
-)
+    EmptyRemapMain, RawReferenceCompound, ReportSorter,
+    final_report_best_cov_by_accid, recover_assembly_contigs)
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
 from utils.software import Software
@@ -1015,9 +992,7 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
 
 
 from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils,
-    Utils_Manager,
-)
+    SoftwareTreeUtils, Utils_Manager)
 
 
 def excise_paths_leaf_last(string_with_paths):
@@ -1314,14 +1289,14 @@ def inject_references_filter(request, max_references: int = 30):
         project_id = int(request.GET.get("project_id"))
         project = Projects.objects.get(pk=project_id)
 
-    print("project_id", project_id)
     if request.GET.get(tag_panel_id) and request.GET.get(tag_panel_id) != "":
         panel_id = int(request.GET.get(tag_panel_id))
         panel = ReferencePanel.objects.get(pk=panel_id)
 
+    print(table_type)
+
     references = []
     if request.GET.get(tag_add_reference) is not None:
-        print(table_type)
         if table_type == "teleflu_reference":
             try:
                 references = RawReference.objects.filter(
@@ -1334,7 +1309,6 @@ def inject_references_filter(request, max_references: int = 30):
             except Exception as e:
                 print(e)
 
-            print(references.count())
             if references.count() == 0:
                 references = []
             else:
@@ -1354,45 +1328,53 @@ def inject_references_filter(request, max_references: int = 30):
                 )
 
         elif request.GET.get(tag_add_reference) != "":
-            print("add_reference")
-            print(panel)
+
             existing_reference_taxids = []
+
             if panel is not None:
                 existing_reference_taxids = RawReference.objects.filter(
                     panel=panel
                 ).values_list("taxid", flat=True)
 
-            references = (
-                ReferenceSourceFileMap.objects.filter(
-                    Q(
-                        reference_source__description__icontains=request.GET.get(
-                            tag_add_reference
+            print(existing_reference_taxids)
+
+            try:
+                references = (
+                    ReferenceSourceFileMap.objects.filter(
+                        Q(
+                            reference_source__description__icontains=request.GET.get(
+                                tag_add_reference
+                            )
+                        )
+                        | Q(
+                            reference_source__accid__icontains=request.GET.get(
+                                tag_add_reference
+                            )
+                        )
+                        | Q(
+                            reference_source__taxid__taxid__icontains=request.GET.get(
+                                tag_add_reference
+                            )
+                        )
+                        | Q(
+                            reference_source_file__file__icontains=request.GET.get(
+                                tag_add_reference
+                            )
                         )
                     )
-                    | Q(
-                        reference_source__accid__icontains=request.GET.get(
-                            tag_add_reference
-                        )
+                    .exclude(
+                        reference_source__taxid__taxid__in=existing_reference_taxids
                     )
-                    | Q(
-                        reference_source__taxid__taxid__icontains=request.GET.get(
-                            tag_add_reference
-                        )
-                    )
-                    | Q(
-                        reference_source_file__file__icontains=request.GET.get(
-                            tag_add_reference
-                        )
-                    )
+                    .distinct("reference_source__accid")
                 )
-                .exclude(reference_source__taxid__taxid__in=existing_reference_taxids)
-                .distinct("reference_source__accid")
-            )
+            except Exception as e:
+                print(e)
 
         # show max 10 references
         references = references[:max_references]
+        print("#########")
 
-        data = inject_references(references, request, type=table_type)
+        data = inject_references(references, request, table_type=table_type)
 
         return JsonResponse(data)
 
@@ -1401,26 +1383,32 @@ def inject_references_filter(request, max_references: int = 30):
         return JsonResponse(data)
 
 
-def inject_references(references: list, request, type: str = "add_reference"):
+def inject_references(references: list, request, table_type: str = "add_reference"):
     context = {}
     data = {}
 
-    if type == "add_reference":
+    if table_type == "add_reference":
         table = ReferenceSourceTable(references)
     else:
         table = TeleFluReferenceTable(references, order_by=("standard_score",))
 
+    print("made table")
+
     context["references_table"] = table
     context["references_count"] = len(references)
 
-    if type == "add_reference":
+    if table_type == "add_reference":
         template_table_html = "pathogen_identification/references_table_table_only.html"
     else:
         template_table_html = (
             "pathogen_identification/teleflu_references_table_only.html"
         )
     # render tamplate using context
-    rendered_table = render_to_string(template_table_html, context, request=request)
+    try:
+        rendered_table = render_to_string(template_table_html, context, request=request)
+    except Exception as e:
+        print(e)
+        rendered_table = ""
     data["my_content"] = rendered_table
     data["references_count"] = len(references)
 
@@ -1440,6 +1428,8 @@ def inject_references_added_html(request):
     return JsonResponse(added_references_context)
 
 
+
+
 def inject__added_references(references: list, request):
     context = {}
     data = {}
@@ -1447,11 +1437,6 @@ def inject__added_references(references: list, request):
     context["references_table"] = AddedReferenceTable(references)
     context["references_count"] = len(references)
 
-    template_table_html = os.path.join(
-        BASE_DIR,
-        "templates",
-        "pathogen_identification/references_table_table_only_padding.html",
-    )
     template_table_html = (
         "pathogen_identification/references_table_table_only_padding.html"
     )
@@ -1507,10 +1492,8 @@ class ReferencePanelManagement(LoginRequiredMixin, generic.CreateView):
 
 from django.views.generic import ListView, TemplateView
 
-from pathogen_identification.tables import (
-    ReferenceSourceFileTable,
-    TelevirReferencesTable,
-)
+from pathogen_identification.tables import (ReferenceSourceFileTable,
+                                            TelevirReferencesTable)
 
 
 class ReferenceManagementBase(TemplateView):

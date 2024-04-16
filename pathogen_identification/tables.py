@@ -11,6 +11,7 @@ from django.utils.translation import ugettext_lazy as _
 from constants.constants import Constants
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProcessControler
+from managing_files.models import ProjectSample as InsafluProjectSample
 from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.models import (
     ContigClassification,
@@ -24,6 +25,7 @@ from pathogen_identification.models import (
     RunAssembly,
     RunMain,
     SampleQC,
+    TeleFluProject,
     TelevirRunQC,
 )
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
@@ -904,7 +906,7 @@ class AddedReferenceTable(tables.Table):
     class Meta:
         attrs = {"class": "paleblue"}
 
-    def render_description(self, record: RawReferenceCompound):
+    def render_description(self, record: RawReference):
         description = record.description
         if description is None:
             description = "Not Available"
@@ -919,10 +921,10 @@ class AddedReferenceTable(tables.Table):
             + record.description
         )
 
-    def render_accid(self, record: RawReferenceCompound):
+    def render_accid(self, record: RawReference):
         return record.accid
 
-    def render_taxid(self, record: RawReferenceCompound):
+    def render_taxid(self, record: RawReference):
         return record.taxid
 
 
@@ -945,20 +947,23 @@ class ReferenceSourceTable(tables.Table):
     class Meta:
         attrs = {"class": "paleblue"}
 
-    def render_select_ref(self, value, record: RawReferenceCompound):
+    def render_select_ref(self, value, record: ReferenceSourceFileMap):
         return mark_safe(
             '<input class="reference-checkbox"  name="select_source_ref" id="{}_{}" ref_id={}  type="checkbox" value="{}"/>'.format(
-                Constants.CHECK_BOX, record.id, record.id, value
+                Constants.CHECK_BOX,
+                record.pk,
+                record.pk,
+                value,
             )
         )
 
-    def render_description(self, record: RawReferenceCompound):
+    def render_description(self, record: ReferenceSourceFileMap):
         return record.description
 
-    def render_accid(self, record: RawReferenceCompound):
+    def render_accid(self, record: ReferenceSourceFileMap):
         return record.accid
 
-    def render_taxid(self, record: RawReferenceCompound):
+    def render_taxid(self, record: ReferenceSourceFileMap):
         return record.taxid
 
 
@@ -989,7 +994,10 @@ class TeleFluReferenceTable(tables.Table):
     def render_select_ref(self, value, record: RawReferenceCompound):
         return mark_safe(
             '<input class="teleflu_reference-checkbox"  name="teleflu_select_ref" id="{}_{}" ref_id={}  type="checkbox" value="{}"/>'.format(
-                Constants.CHECK_BOX, record.id, record.id, value
+                Constants.CHECK_BOX,
+                record.selected_mapped_pk,
+                record.selected_mapped_pk,
+                value,
             )
         )
 
@@ -1004,10 +1012,6 @@ class TeleFluReferenceTable(tables.Table):
 
     def render_standard_score(self, record: RawReferenceCompound):
         return round(record.standard_score, 3)
-
-
-from managing_files.models import ProjectSample as InsafluProjectSample
-from pathogen_identification.models import TeleFluProject
 
 
 class TeleFluInsaFLuProjectTable(tables.Table):
@@ -1223,7 +1227,10 @@ class CompoundReferenceTable(tables.Table):
     def render_select_ref(self, value, record: RawReferenceCompound):
         return mark_safe(
             '<input class="class-ref-checkbox" ref_id={} name="select_ref" id="{}_{}" type="checkbox" value="{}"/>'.format(
-                record.id, Constants.CHECK_BOX, record.id, value
+                record.selected_mapped_pk,
+                Constants.CHECK_BOX,
+                record.selected_mapped_pk,
+                value,
             )
         )
 
@@ -1235,7 +1242,7 @@ class CompoundReferenceTable(tables.Table):
             '<a href="#" '
             + 'id="add_teleflu_reference" '
             + "ref_id="
-            + str(record.id)
+            + str(record.selected_mapped_pk)
             + " "
             + 'data-toggle="tooltip" '
             + 'title="Create Reference" '

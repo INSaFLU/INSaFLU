@@ -327,7 +327,7 @@ class PISettingsView(LoginRequiredMixin, ListView):
 
         if level > 0:
             televir_project = Televir_Project.objects.get(pk=int(self.kwargs["level"]))
-        print("OIUHOIHJ")
+
         ### test all defaults first, if exist in database
         default_software = DefaultSoftware()
         default_software.test_all_defaults_once(
@@ -347,6 +347,7 @@ class PISettingsView(LoginRequiredMixin, ListView):
             technologies = ConstantsSettings.vect_technology
 
         all_tables = []  ## order by Technology, PipelineStep, table
+
         ## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],
         ##    [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...], etc
         ## Technology goes to NAV-container, PipelineStep goes to NAV-container, then table
@@ -374,9 +375,6 @@ class PISettingsView(LoginRequiredMixin, ListView):
                         parameter__televir_project_sample=None,
                         is_obsolete=False,
                     ).distinct()
-
-                    print("pipeline_step_name", pipeline_step_name)
-                    print(query_set)
 
                 else:
                     query_set = Software.objects.filter(
@@ -469,8 +467,6 @@ class PISettingsGroupsView(PISettingsView):
 
         else:
             technologies = ConstantsSettings.vect_technology
-
-        print(televir_project)
 
         all_tables = []  ## order by Technology, Group, PipelineStep, table
         ## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],

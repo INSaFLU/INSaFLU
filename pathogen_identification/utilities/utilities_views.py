@@ -11,22 +11,34 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.views import generic
 
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PIConstantsSettings
-from pathogen_identification.models import (FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RawReference, ReferenceMap_Main,
-                                            ReferencePanel,
-                                            ReferenceSourceFileMap,
-                                            RunAssembly, RunDetail, RunMain,
-                                            SoftwareTree, SoftwareTreeNode)
+from pathogen_identification.constants_settings import (
+    ConstantsSettings as PIConstantsSettings,
+)
+from pathogen_identification.models import (
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReferenceMap_Main,
+    ReferencePanel,
+    ReferenceSourceFileMap,
+    RunAssembly,
+    RunDetail,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
 from pathogen_identification.utilities.clade_objects import Clade
-from pathogen_identification.utilities.overlap_manager import \
-    ReadOverlapManager
+from pathogen_identification.utilities.overlap_manager import ReadOverlapManager
 from pathogen_identification.utilities.televir_parameters import (
-    LayoutParams, TelevirParameters)
+    LayoutParams,
+    TelevirParameters,
+)
 from pathogen_identification.utilities.utilities_general import (
-    infer_run_media_dir, simplify_name)
+    infer_run_media_dir,
+    simplify_name,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
 
@@ -1176,7 +1188,10 @@ class ReportSorter:
         if len(group.group_list) == 0:
             return group
 
-        if group.shared_proportion > PIConstantsSettings.SORT_GROUP_DISPLAY_DEFAULT_THRESHOLD_SHARED:
+        if (
+            group.shared_proportion
+            > PIConstantsSettings.SORT_GROUP_DISPLAY_DEFAULT_THRESHOLD_SHARED
+        ):
 
             group.group_list[0].first_in_group = True
             group.group_list[0].row_class_name = "primary-row"
@@ -1466,7 +1481,7 @@ class RawReferenceCompound:
     def __init__(self, raw_reference: RawReference):
         self.pk = raw_reference.pk
         self.project_id = raw_reference.run.project.pk
-        self.id = raw_reference.id
+        self.selected_mapped_pk = raw_reference.id
         self.taxid = raw_reference.taxid
         self.accid = raw_reference.accid
         self.description = raw_reference.description
@@ -1474,16 +1489,15 @@ class RawReferenceCompound:
         self.runs = []
         self.manual_insert = False
         self.mapped: Optional[FinalReport] = None
+        self.mapped_final_report: Optional[FinalReport] = None
+        self.mapped_raw_reference: Optional[RawReference] = None
         self.standard_score = 0
 
         if raw_reference.run.sample is not None:
             self.find_across_sample(raw_reference.run.sample)
-            self.mapped = self.find_mapped(raw_reference.run.sample)
+            self.find_mapped(raw_reference.run.sample)
 
         self.determine_runs()
-
-    def update_score(self, score: int):
-        self.standard_score = score
 
     def find_across_sample(self, sample: PIProject_Sample):
         """
@@ -1527,7 +1541,7 @@ class RawReferenceCompound:
         find mapped, get the first, sorted by coverage
         """
 
-        mapped = (
+        self.mapped_final_report = (
             FinalReport.objects.filter(
                 taxid=self.taxid,
                 sample=sample,
@@ -1536,26 +1550,23 @@ class RawReferenceCompound:
             .first()
         )
 
-        if mapped is None:
-            mapped = RawReference.objects.filter(
-                taxid=self.taxid,
-                accid=self.accid,
-                run__sample=sample,
-                status=RawReference.STATUS_MAPPED,
-            ).first()
-
-        return mapped
+        self.mapped_raw_reference = RawReference.objects.filter(
+            taxid=self.taxid,
+            accid=self.accid,
+            run__sample=sample,
+            status=RawReference.STATUS_MAPPED,
+        ).first()
 
     @property
     def mapped_html(self):
-        if self.mapped is None:
+        if self.mapped_final_report is None and self.mapped_raw_reference is None:
             return mark_safe(
                 '<a><i class="fa fa-times" title="unmapped"></i> Unmapped</a>'
             )
 
-        run = self.mapped.run
+        if self.mapped_final_report is not None:
+            run = self.mapped_final_report.run
 
-        if isinstance(self.mapped, FinalReport):
             return mark_safe(
                 '<a href="'
                 + reverse(
@@ -1568,7 +1579,8 @@ class RawReferenceCompound:
                 + "</a>"
             )
 
-        elif isinstance(self.mapped, RawReference):
+        elif self.mapped_raw_reference is not None:
+            run = self.mapped_raw_reference.run
             return mark_safe(
                 '<a href="'
                 + reverse(

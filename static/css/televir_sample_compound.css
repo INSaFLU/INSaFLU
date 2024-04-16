@@ -287,3 +287,24 @@ border-top: 1px;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+.info-icon {
+    position: relative;
+    display: inline-block;
+    float: right;
+}
+  
+.info-icon img {
+display: none;
+position: absolute;
+top: -1450%;
+right: 50%;
+transform: translateX(-50%);
+width: 300px;
+height: auto;
+z-index: 9999; /* Set a higher z-index value */
+}
+
+.info-icon:hover img {
+display: block;
+}

@@ -82,8 +82,14 @@
                         </div>
                         {% if graph_json %}
                         <div class="col-sm-10">
-                                <div id="{{graph_id}}" style="width:95%;height:250px;position:center;" class="collapsibleTree html-widget"></div>
+                                <div id="{{graph_id}}" style="width:95%;height:250px;position:center;margin-left: 8%;" class="collapsibleTree html-widget"></div>
                                 <script type="application/json" data-for="{{graph_id}}">{{graph_json|safe}}</script>
+                        </div>
+                        <div class="col-sm-12">
+                            <div class="info-icon">
+                              <img src="{% static "img/pipeline_steps_classification.jpg" %}" alt="Graph Information">
+                              <i class="fa fa-info-circle"></i>
+                            </div>
                         </div>
                         {% endif %}
                     </div>

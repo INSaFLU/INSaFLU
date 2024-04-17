@@ -1314,19 +1314,25 @@ def inject_references_filter(request, max_references: int = 30):
                 references = []
             else:
                 reference_utils = RawReferenceUtils(project=project)
-                reference_pks = references.values_list("run__pk", flat=True).distinct()
-                references = [
-                    RawReferenceCompound(raw_reference) for raw_reference in references
-                ]
+                query_string= request.GET.get(tag_add_reference)
 
-                reference_utils.sample_reference_tables_filter(
-                    runs_filter=reference_pks
+                references = reference_utils.retrieve_compound_references(
+                    query_string
                 )
-                reference_utils.update_scores_compound_references(references)
 
-                references = sorted(
-                    references, key=lambda x: float(x.standard_score), reverse=True
-                )
+                #reference_pks = references.values_list("run__pk", flat=True).distinct()
+                #references = [
+                #    RawReferenceCompound(raw_reference) for raw_reference in references
+                #]
+#
+                #reference_utils.sample_reference_tables_filter(
+                #    runs_filter=reference_pks
+                #)
+                #reference_utils.update_scores_compound_references(references)
+#
+                #references = sorted(
+                #    references, key=lambda x: float(x.standard_score), reverse=True
+                #)
 
         elif request.GET.get(tag_add_reference) != "":
 

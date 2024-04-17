@@ -1207,7 +1207,7 @@ class SoftwareUnit:
         except ParameterSet.DoesNotExist:
             return ("", "")
 
-        runs = RunMain.objects.get(parameter_set=parameter_set)
+        runs = RunMain.objects.filter(parameter_set=parameter_set)
 
         for run_main in runs:
             try:

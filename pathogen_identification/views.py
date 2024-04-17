@@ -916,6 +916,7 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
 
         teleflu_data = []
         for tproj in teleflu_projects:
+            print(tproj)
 
             tproject_data = {
                 "id": tproj.pk,
@@ -1428,8 +1429,6 @@ def inject_references_added_html(request):
     return JsonResponse(added_references_context)
 
 
-
-
 def inject__added_references(references: list, request):
     context = {}
     data = {}
@@ -1854,8 +1853,12 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
         context["added_references_table"] = added_references_context["my_content"]
         context["added_references_count"] = added_references_context["references_count"]
 
+        ##### search add reference bar
+
         # raw_references = raw_references
         tag_search = "search_add_project_sample"
+        query_string = None
+
         if self.request.GET.get(tag_search) != None and self.request.GET.get(
             tag_search
         ):
@@ -1868,26 +1871,19 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
             )
             # tag_search
 
+        #####
         reference_utils = RawReferenceUtils(sample_main)
 
-        raw_reference_compound = [
-            RawReferenceCompound(raw_reference) for raw_reference in query_set
-        ]
-
-        classification_runs = RunMain.objects.filter(
-            sample=sample_main, run_type=RunMain.RUN_TYPE_PIPELINE
+        raw_reference_compound = reference_utils.retrieve_compound_references(
+            query_string
         )
 
         # pks of classification runs as integer list
-        runs_pks = [run.pk for run in classification_runs]
-
+        #runs_pks = [run.pk for run in classification_runs]
+        classification_runs = RunMain.objects.filter(
+            sample=sample_main, run_type=RunMain.RUN_TYPE_PIPELINE
+        )
         if classification_runs.exists():
-            if query_set.exists():
-                reference_utils.sample_reference_tables_filter(runs_filter=runs_pks)
-                reference_utils.update_scores_compound_references(
-                    raw_reference_compound
-                )
-
             compound_reference_table = reference_table_class(
                 raw_reference_compound, order_by=ordered_by
             )

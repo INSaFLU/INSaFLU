@@ -10,18 +10,22 @@ import pandas as pd
 from django.contrib.auth.models import User
 from django.db.models import Q, QuerySet
 
-from constants.constants import \
-    Televir_Directory_Constants as Televir_Directories
+from constants.constants import Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.host_library import Host
-from pathogen_identification.models import (ParameterSet, PIProject_Sample,
-                                            Projects, RawReference, RunMain,
-                                            SoftwareTree, SoftwareTreeNode)
-from pathogen_identification.utilities.utilities_televir_dbs import \
-    Utility_Repository
-from pathogen_identification.utilities.utilities_views import \
-    RawReferenceCompound
+from pathogen_identification.models import (
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    RawReferenceCompoundModel,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
+from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
+from pathogen_identification.utilities.utilities_views import RawReferenceCompound
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -3475,6 +3479,143 @@ class RawReferenceUtils:
         Update the standard score for a list of compound references based on accid"""
         for compound_ref in compount_refs:
             self.compound_reference_update_standard_score(compound_ref)
+
+    def filter_reference_query_set(
+        self, references: QuerySet, query_string: Optional[str] = ""
+    ):
+        """
+        Filter a query set of references by a query string
+        """
+        if not query_string:
+            return references
+
+        return references.filter(
+            Q(description__icontains=query_string)
+            | Q(accid__icontains=query_string)
+            | Q(taxid__icontains=query_string)
+        )
+
+    def query_sample_compound_references(
+        self, query_string: Optional[str] = None
+    ) -> QuerySet:
+
+        query_set = RawReferenceCompoundModel.objects.filter(
+            sample=self.sample_registered
+        )
+
+        return self.filter_reference_query_set(query_set, query_string)
+
+    def query_sample_references(self, query_string: Optional[str] = "") -> QuerySet:
+
+        query_set = (
+            RawReference.objects.filter(
+                run__sample__pk=self.sample_registered.pk,
+            )
+            .exclude(run__run_type=RunMain.RUN_TYPE_STORAGE, accid="-")
+            .distinct("accid")
+        )
+
+        return self.filter_reference_query_set(query_set, query_string)
+
+    def register_compound_references(self, compound_refs: List[RawReferenceCompound]):
+        """
+        Register a list of compound references in the database
+        """
+
+        for compound_ref in compound_refs:
+            self.register_compound_reference(compound_ref)
+
+    def register_compound_reference(self, compound_ref: RawReferenceCompound):
+        """
+        Register a compound reference in the database
+        """
+
+        try:
+            compound_ref_model = RawReferenceCompoundModel.objects.get(
+                accid=compound_ref.accid, sample__id=compound_ref.sample_id
+            )
+
+            compound_ref_model.standard_score = compound_ref.standard_score
+            compound_ref_model.manual_insert = compound_ref.manual_insert
+            compound_ref_model.mapped_final_report = compound_ref.mapped_final_report
+            compound_ref_model.mapped_raw_reference = compound_ref.mapped_raw_reference
+            compound_ref_model.selected_mapped_pk = compound_ref.selected_mapped_pk
+            compound_ref_model.save()
+
+        except RawReferenceCompoundModel.DoesNotExist:
+            sample = PIProject_Sample.objects.get(pk=compound_ref.sample_id)
+            compound_ref_model = RawReferenceCompoundModel(
+                taxid=compound_ref.taxid,
+                description=compound_ref.description,
+                accid=compound_ref.accid,
+                sample=sample,
+                standard_score=compound_ref.standard_score,
+                manual_insert=compound_ref.manual_insert,
+                mapped_final_report=compound_ref.mapped_final_report,
+                mapped_raw_reference=compound_ref.mapped_raw_reference,
+            )
+            compound_ref_model.save()
+
+            for run in compound_ref.runs:
+                compound_ref_model.runs.add(run)
+
+            for ref_pk in compound_ref.family:
+                ref = RawReference.objects.get(pk=ref_pk)
+                compound_ref_model.family.add(ref)
+
+    def create_compound(self, raw_references: List[RawReference]):
+
+        raw_reference_compound = [
+            RawReferenceCompound(raw_reference) for raw_reference in raw_references
+        ]
+
+        classification_runs = RunMain.objects.filter(
+            sample=self.sample_registered, run_type=RunMain.RUN_TYPE_PIPELINE
+        )
+
+        # pks of classification runs as integer list
+        runs_pks = [run.pk for run in classification_runs]
+
+        if classification_runs.exists():
+            self.sample_reference_tables_filter(runs_filter=runs_pks)
+            self.update_scores_compound_references(raw_reference_compound)
+            self.register_compound_references(raw_reference_compound)
+
+    def retrieve_compound_references(
+        self, query_string: Optional[str] = None
+    ) -> QuerySet:
+        """
+        Retrieve compound references for a sample
+        """
+        compound_refs = self.query_sample_compound_references(query_string)
+
+        if compound_refs.exists():
+            return compound_refs
+
+        compound_refs = self.create_compound_references(query_string=query_string)
+
+        return compound_refs
+
+    def create_compound_references(self, query_string: Optional[str] = None):
+        """
+        Create compound references for a sample_name, query_string):
+
+        Returns a list of references that match the query string.
+        :param query_string:
+        :return:
+
+        """
+
+        references = self.query_sample_references(query_string)
+
+        if references.exists():
+            self.create_compound(references)
+            compound_refs = self.query_sample_compound_references(query_string)
+
+        else:
+            compound_refs = RawReferenceCompoundModel.objects.none()
+
+        return compound_refs
 
     def reference_table_renamed(self, merged_table, rename_dict: dict):
         proxy_ref = merged_table.copy()

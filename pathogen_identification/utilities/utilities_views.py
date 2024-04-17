@@ -11,34 +11,22 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.views import generic
 
-from pathogen_identification.constants_settings import (
-    ConstantsSettings as PIConstantsSettings,
-)
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReferenceMap_Main,
-    ReferencePanel,
-    ReferenceSourceFileMap,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PIConstantsSettings
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference, ReferenceMap_Main,
+                                            ReferencePanel,
+                                            ReferenceSourceFileMap,
+                                            RunAssembly, RunDetail, RunMain,
+                                            SoftwareTree, SoftwareTreeNode)
 from pathogen_identification.utilities.clade_objects import Clade
-from pathogen_identification.utilities.overlap_manager import ReadOverlapManager
+from pathogen_identification.utilities.overlap_manager import \
+    ReadOverlapManager
 from pathogen_identification.utilities.televir_parameters import (
-    LayoutParams,
-    TelevirParameters,
-)
+    LayoutParams, TelevirParameters)
 from pathogen_identification.utilities.utilities_general import (
-    infer_run_media_dir,
-    simplify_name,
-)
+    infer_run_media_dir, simplify_name)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
 
@@ -1479,8 +1467,9 @@ class ReferenceManager:
 
 class RawReferenceCompound:
     def __init__(self, raw_reference: RawReference):
-        self.pk = raw_reference.pk
-        self.project_id = raw_reference.run.project.pk
+        # self.pk = raw_reference.pk
+        # self.project_id = raw_reference.run.project.pk
+        self.sample_id= raw_reference.run.sample.pk
         self.selected_mapped_pk = raw_reference.id
         self.taxid = raw_reference.taxid
         self.accid = raw_reference.accid
@@ -1488,7 +1477,7 @@ class RawReferenceCompound:
         self.family = []
         self.runs = []
         self.manual_insert = False
-        self.mapped: Optional[FinalReport] = None
+        #self.mapped: Optional[FinalReport] = None
         self.mapped_final_report: Optional[FinalReport] = None
         self.mapped_raw_reference: Optional[RawReference] = None
         self.standard_score = 0

@@ -17,6 +17,7 @@ from pathogen_identification.models import (
 )
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
 from pathogen_identification.utilities.utilities_pipeline import (
+    RawReferenceUtils,
     SoftwareTreeUtils,
     Utils_Manager,
 )
@@ -152,18 +153,6 @@ class Command(BaseCommand):
 
         ### draw graph
         graph_progress = TreeProgressGraph(target_sample)
-
-        print("##################")
-        print(matched_path_node)
-        print(matched_path_node.pk)
-
-        print(was_run_killed)
-        print(
-            utils.parameter_util.check_ParameterSet_available_to_run(
-                sample=target_sample, leaf=matched_path_node, project=project
-            )
-        )
-
         #### Deployment RUn
 
         mapping_run = RunMain.objects.get(pk=mapping_run_pk)
@@ -208,6 +197,9 @@ class Command(BaseCommand):
                 # graph_progress.generate_graph()
                 set_control_reports(project.pk)
 
+            reference_utils = RawReferenceUtils(target_sample)
+            _ = reference_utils.create_compound_references()
+
             process_SGE.set_process_controler(
                 user,
                 process_controler.get_name_televir_project_sample_metagenomics_run(
@@ -229,4 +221,8 @@ class Command(BaseCommand):
                 ),
                 ProcessControler.FLAG_ERROR,
             )
+
+            reference_utils = RawReferenceUtils(target_sample)
+            _ = reference_utils.create_compound_references()
+
             raise e

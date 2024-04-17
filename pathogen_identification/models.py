@@ -10,6 +10,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from django.db import models
+from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
@@ -967,7 +968,7 @@ class RawReference(models.Model):
 
     taxid = models.CharField(max_length=100, blank=True, null=True)
     accid = models.CharField(max_length=100, blank=True, null=True)
-    description = models.CharField(max_length=150, blank=True, null=True)
+    description = models.CharField(max_length=200, blank=True, null=True)
     counts = models.CharField(max_length=100, blank=True, null=True)
     classification_source = models.CharField(max_length=15, blank=True, null=True)
     panel = models.ForeignKey(
@@ -1032,7 +1033,6 @@ class RawReference(models.Model):
         self.save()
 
 
-
 class MetaReference(models.Model):
     description = models.CharField(max_length=200, blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True, blank=True, null=True)
@@ -1071,6 +1071,9 @@ class MetaReference(models.Model):
 
     @property
     def description_first(self):
+        print(self.descriptions)
+        if len(self.descriptions) == 0:
+            return None
         return self.descriptions[0]
 
     @property
@@ -1664,6 +1667,76 @@ class FinalReport(models.Model):
     @property
     def in_control(self):
         return self.control_flag in [self.CONTROL_FLAG_PRESENT]
+
+
+class RawReferenceCompoundModel(models.Model):
+
+    sample = models.ForeignKey(
+        PIProject_Sample, blank=True, null=True, on_delete=models.CASCADE
+    )
+    taxid = models.CharField(max_length=100, blank=True, null=True)
+    accid = models.CharField(max_length=100, blank=True, null=True)
+    description = models.CharField(max_length=150, blank=True, null=True)
+    family = models.ManyToManyField(RawReference, blank=True, related_name="family")
+    runs = models.ManyToManyField(RunMain, blank=True, related_name="runs")
+    manual_insert = models.BooleanField(default=False)
+    mapped_final_report = models.ForeignKey(
+        FinalReport, blank=True, null=True, on_delete=models.CASCADE
+    )
+    mapped_raw_reference = models.ForeignKey(
+        RawReference, blank=True, null=True, on_delete=models.CASCADE
+    )
+    selected_mapped_pk = models.IntegerField(blank=True, null=True)
+    standard_score = models.FloatField(blank=True, null=True)
+
+    @property
+    def mapped_html(self):
+        if self.mapped_final_report is None and self.mapped_raw_reference is None:
+            return mark_safe(
+                '<a><i class="fa fa-times" title="unmapped"></i> Unmapped</a>'
+            )
+
+        if self.mapped_final_report is not None:
+            run = self.mapped_final_report.run
+
+            return mark_safe(
+                '<a href="'
+                + reverse(
+                    "sample_detail",
+                    args=[run.sample.project.pk, run.sample.pk, run.pk],
+                )
+                + '" title="workflow link">'
+                + '<i class="fa fa-check-circle"></i>'
+                + " Mapped"
+                + "</a>"
+            )
+
+        elif self.mapped_raw_reference is not None:
+            run = self.mapped_raw_reference.run
+            return mark_safe(
+                '<a href="'
+                + reverse(
+                    "sample_detail",
+                    args=[run.sample.project.pk, run.sample.pk, run.pk],
+                )
+                + '" title="workflow link">'
+                + "<i class='fa fa-circle-o'></i>"
+                + " Mapped, 0 reads"
+                + "</a>"
+            )
+
+    @property
+    def run_count(self):
+        return self.runs.count()
+
+    @property
+    def runs_str(self):
+        if self.runs.count() == 0:
+            return ""
+        else:
+            return ", ".join(
+                [str(run.parameter_set.leaf.index) for run in self.runs.all()]
+            )
 
 
 class ReferenceContigs(models.Model):

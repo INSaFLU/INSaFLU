@@ -2276,6 +2276,11 @@ def add_references_to_panel(request):
         for reference_id in reference_ids:
             try:
                 reference = ReferenceSourceFileMap.objects.get(pk=int(reference_id))
+                description= reference.description
+                if description is None:
+                    description = ""
+                if len(description) > 200:
+                    description = description[:200]
                 panel_reference = RawReference.objects.create(
                     accid=reference.reference_source.accid,
                     taxid=reference.reference_source.taxid,

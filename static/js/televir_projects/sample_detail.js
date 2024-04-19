@@ -222,6 +222,7 @@ function download_table_as_csv(table_id, separator = '\t') {
     var rows = document.querySelectorAll('table#' + table_id + ' tr');
     var sample_id = $("#igv_browse").attr("sample_name");
     // Construct csv
+    console.log(sample_id);
     var csv = [];
     for (var i = 0; i < rows.length; i++) {
         var row = [],
@@ -263,7 +264,7 @@ function download_table_as_csv(table_id, separator = '\t') {
     }
     var csv_string = csv.join('\n');
     // Download it
-    var filename =  sample_id + 'report_date_' + new Date().toLocaleDateString() + '.tsv';
+    var filename =  sample_id + '_cr_date_' + new Date().toLocaleDateString() + '.tsv';
     var link = document.createElement('a');
     //link.style.display = 'none';
     link.setAttribute('target', '_blank');

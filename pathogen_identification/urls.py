@@ -354,6 +354,11 @@ urlpatterns = [
         r"^ajax/kill_televir_sample$",
         PIajax_views.kill_televir_project_tree_sample,
         name="kill_televir_project_sample",
+    ),  ## remove a televir sample deployment
+    url(
+        r"^ajax/kill_televir_project_sample$",
+        PIajax_views.kill_televir_project_all_sample,
+        name="kill_all_televir_project_sample",
     ),  ## remove a televir project
     url(
         r"ajax/deploy_televir_map$",

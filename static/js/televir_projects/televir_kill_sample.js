@@ -27,7 +27,6 @@ $(document).on("click", "a", function (e) {
 
 $('#id-kill-button').on('click', function(){
 
-    console.log('kill button clicked');
     url= $('#id-modal-body-kill-sample').attr("kill-single-value-url");
     sample_id = $('#id-modal-body-kill-sample').attr('pk');
     token = $('#id-modal-body-kill-sample').attr('csrfmiddlewaretoken');
@@ -42,16 +41,22 @@ $('#id-kill-button').on('click', function(){
         		
         success: function (data) {
           if (data['is_ok']) {
-        	  
-        	  /// add message with informaton
-        	  $('#id_messages_terminate').append('<div class="alert alert-dismissible alert-success">' +
-        		'The sample \'' + $('#id-modal-body-kill-sample').attr('ref_name') + '\' was successfully terminated.' +
-				'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-				'</div>');
+            if (data['is_empty']) {
+              $('#id_messages_kill').append('<div class="alert alert-dismissible alert-warning">' +
+                'No jobs to kill.' +
+                '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                '</div>');
+            } else {
+              /// add message with informaton
+              $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
+                'The sample \'' + $('#id-modal-body-kill-sample').attr('ref_name') + '\' was successfully terminated.' +
+                '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                '</div>');
+            }
           }
           else{
         	/// add message with informaton
-        	  $('#id_messages_terminate').append('<div class="alert alert-dismissible alert-warning">' +
+        	  $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
         		'The sample \'' + $('#id-modal-body-kill-sample').attr('ref_name') + '\' was not terminated.' +
 				'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
 				'</div>');
@@ -64,4 +69,54 @@ $('#id-kill-button').on('click', function(){
             console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
         }
 	});
+});
+
+
+$('#id-kill-all-button').on('click', function(){
+
+  url= $('#id-modal-body-kill-all-sample').attr("remove-all-value-url");
+  project_id = $('#id-kill-all-button').attr('project_id');
+  token = $('#id-modal-body-kill-sample').attr('csrfmiddlewaretoken');
+  console.log(project_id);
+  console.log(url);
+  $.ajax({
+        url: url,
+        type: 'POST',
+        data : {
+          project_id : project_id,
+        csrfmiddlewaretoken: token,
+        }, // data sent with the post request
+            
+    success: function (data) {
+          console.log(data);
+          if (data['is_ok']) {
+            if (data['is_empty']) {
+              $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+                'No jobs to kill.' +
+                '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                '</div>');
+            } else {
+              /// add message with informaton
+              $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
+                'Project + \'' + $('#id-kill-all-button').attr('project_name') + '\' Rybs were successfully terminated.' +
+                '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                '</div>');
+              location.reload();
+            }
+          }
+          else{
+          /// add message with informaton
+            $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+            'The sample \'' + $('#id-modal-body-kill-sample').attr('ref_name') + '\' was not terminated.' +
+        '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+        '</div>');
+          }
+        },
+        
+        // handle a non-successful response
+        error : function(xhr,errmsg,err) {
+            alert(errmsg);
+            console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
+        }
+  });
 });

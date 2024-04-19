@@ -1007,6 +1007,59 @@ def kill_televir_project_tree_sample(request):
 
 @login_required
 @require_POST
+def kill_televir_project_all_sample(request):
+    """
+    kill all processes a sample, set queued to false
+    """
+
+    if request.is_ajax():
+        data = {"is_ok": False, "is_deployed": False, "is_empty": True}
+
+        process_SGE = ProcessSGE()
+        user = request.user
+
+        project_id = int(request.POST["project_id"])
+        project = Projects.objects.get(id=int(project_id))
+
+        samples = PIProject_Sample.objects.filter(project__id=int(project_id))
+
+        for sample in samples:
+            try:  #
+                process_SGE.kill_televir_process_controler_samples(
+                    user.pk,
+                    project.pk,
+                    sample.pk,
+                )
+
+            except ProcessControler.DoesNotExist as e:
+                print(e)
+                print("ProcessControler.DoesNotExist")
+                pass
+
+            runs = ParameterSet.objects.filter(
+                sample=sample,
+                status__in=[
+                    ParameterSet.STATUS_RUNNING,
+                    ParameterSet.STATUS_QUEUED,
+                ],
+            )
+
+            if runs.exists():
+                data["is_empty"] = False
+
+            for run in runs:
+                if run.status == ParameterSet.STATUS_RUNNING:
+                    run.delete_run_data()
+
+                run.status = ParameterSet.STATUS_KILLED
+                run.save()
+
+        data["is_ok"] = True
+        return JsonResponse(data)
+
+
+@login_required
+@require_POST
 def sort_report_projects(request):
     """
     sort report projects

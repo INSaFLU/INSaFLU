@@ -21,7 +21,10 @@ from pathogen_identification.utilities.utilities_pipeline import (
     SoftwareTreeUtils,
     Utils_Manager,
 )
-from pathogen_identification.utilities.utilities_views import set_control_reports
+from pathogen_identification.utilities.utilities_views import (
+    calculate_reports_overlaps,
+    set_control_reports,
+)
 from utils.process_SGE import ProcessSGE
 
 
@@ -199,6 +202,7 @@ class Command(BaseCommand):
 
             reference_utils = RawReferenceUtils(target_sample)
             _ = reference_utils.create_compound_references()
+            calculate_reports_overlaps(target_sample, force=True)
 
             process_SGE.set_process_controler(
                 user,

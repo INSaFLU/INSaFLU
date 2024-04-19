@@ -674,7 +674,13 @@ class SampleTableOne(tables.Table):
                 ' <i class="fa fa-times" style="color: red;" title="un-sorted"></i>'
             )
 
-        return mark_safe(sorted_icon_assess + request_sorting)
+        if sorted is False:
+            if process.exists():
+                return mark_safe(request_sorting)
+            
+            return mark_safe(sorted_icon_assess + request_sorting)
+        
+        return mark_safe(sorted_icon_assess)
 
     def render_select_ref(self, value, record: PIProject_Sample):
         return mark_safe(

@@ -396,7 +396,7 @@
                                         <td colspan="1" align="center">
                         
                                             <div style="position:relative height=100%" >
-                                                <button class="igv_browse btn btn-primary" id="igv_browse" type="button" project_pk="{{project_index}}" sample_pk="{{sample_index}}" 
+                                                <button class="igv_browse btn btn-primary" id="igv_browse" type="button" project_pk="{{project_index}}" sample_pk="{{sample_index}}" sample_name "{{ sample }}"
                                                 run_pk="{{value.run_index}}" accid="{{value.accid}}" show-igv-url="{% url 'igv_browser' %}" reference_id="{{value.unique_id}}" >IGV</button>
                                             </div>
                                             {% if value.data_exists %}

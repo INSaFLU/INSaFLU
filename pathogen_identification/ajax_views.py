@@ -20,36 +20,26 @@ from constants.software_names import SoftwareNames
 from fluwebvirus.settings import BASE_DIR, STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReferenceMap_Main,
-    ReferencePanel,
-    ReferenceSourceFileMap,
-    RunMain,
-    TeleFluProject,
-    TeleFluSample,
-)
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference, ReferenceMap_Main,
+                                            ReferencePanel,
+                                            ReferenceSourceFileMap, RunMain,
+                                            TeleFluProject, TeleFluSample)
 from pathogen_identification.tables import ReferenceSourceTable
 from pathogen_identification.utilities.reference_utils import (
-    check_file_reference_submitted,
-    check_metaReference_exists_from_ids,
-    check_raw_reference_submitted,
-    check_user_reference_exists,
-    create_combined_reference,
-)
+    check_file_reference_submitted, check_metaReference_exists_from_ids,
+    check_raw_reference_submitted, check_user_reference_exists,
+    create_combined_reference)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
-from pathogen_identification.utilities.utilities_general import get_services_dir
-from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
+from pathogen_identification.utilities.utilities_general import \
+    get_services_dir
+from pathogen_identification.utilities.utilities_pipeline import \
+    SoftwareTreeUtils
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter,
-    SampleReferenceManager,
-    set_control_reports,
-)
+    ReportSorter, SampleReferenceManager, set_control_reports)
 from pathogen_identification.views import inject__added_references
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
@@ -1543,9 +1533,7 @@ def add_teleflu_sample(request):
 
 from pathogen_identification.models import SoftwareTreeNode, TelefluMapping
 from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils,
-    Utils_Manager,
-)
+    SoftwareTreeUtils, Utils_Manager)
 
 
 @login_required
@@ -1981,13 +1969,6 @@ def check_panel_upload_clean(request):
     """
 
     if request.is_ajax():
-        # name = self.cleaned_data.get("name", "").strip()
-        # vect_names_to_upload = (
-        #    self.cleaned_data.get("display_name", "").strip().split(",")
-        #    if len(self.cleaned_data.get("display_name", "").strip()) > 0
-        #    else []
-        # )
-        # dict_names = dict(zip(vect_names_to_upload, [0] * len(vect_names_to_upload)))
 
         data = {
             "is_ok": False,
@@ -2000,12 +1981,6 @@ def check_panel_upload_clean(request):
         }
 
         description = request.POST.get("description", "").strip()
-        print(request.FILES)
-
-        # if request.POST.get("name", "").strip() == "":
-        #    data["is_error"] = True
-        #    data["error_message"] = "Name is empty."
-        #    return JsonResponse(data)
 
         if request.FILES.get("metadata", None) is None:
             data["is_error"] = True
@@ -2024,7 +1999,7 @@ def check_panel_upload_clean(request):
         # name = request.POST.get("name", "").strip()
         reference_metadata_table_file = request.FILES.get("metadata", None)
         reference_fasta_file = request.FILES.get("fasta_file", None)
-        print(str(reference_fasta_file))
+
         reference_metadata_table = pd.DataFrame(
             columns=["accid", "taxid", "description"]
         )

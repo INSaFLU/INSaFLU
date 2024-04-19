@@ -1314,25 +1314,23 @@ def inject_references_filter(request, max_references: int = 30):
                 references = []
             else:
                 reference_utils = RawReferenceUtils(project=project)
-                query_string= request.GET.get(tag_add_reference)
+                query_string = request.GET.get(tag_add_reference)
 
-                references = reference_utils.retrieve_compound_references(
-                    query_string
-                )
+                references = reference_utils.retrieve_compound_references(query_string)
 
-                #reference_pks = references.values_list("run__pk", flat=True).distinct()
-                #references = [
+                # reference_pks = references.values_list("run__pk", flat=True).distinct()
+                # references = [
                 #    RawReferenceCompound(raw_reference) for raw_reference in references
-                #]
-#
-                #reference_utils.sample_reference_tables_filter(
-                #    runs_filter=reference_pks
-                #)
-                #reference_utils.update_scores_compound_references(references)
-#
-                #references = sorted(
-                #    references, key=lambda x: float(x.standard_score), reverse=True
-                #)
+                # ]
+        #
+        # reference_utils.sample_reference_tables_filter(
+        #    runs_filter=reference_pks
+        # )
+        # reference_utils.update_scores_compound_references(references)
+        #
+        # references = sorted(
+        #    references, key=lambda x: float(x.standard_score), reverse=True
+        # )
 
         elif request.GET.get(tag_add_reference) != "":
 
@@ -1675,6 +1673,7 @@ def upload_reference_panel_view(request):
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
             data = {"is_error": False, "is_ok": False, "error_message": ""}
+            print("is valid")
             # Handle the uploaded files here
 
             # name = form.cleaned_data["name"]
@@ -1885,7 +1884,7 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
         )
 
         # pks of classification runs as integer list
-        #runs_pks = [run.pk for run in classification_runs]
+        # runs_pks = [run.pk for run in classification_runs]
         classification_runs = RunMain.objects.filter(
             sample=sample_main, run_type=RunMain.RUN_TYPE_PIPELINE
         )

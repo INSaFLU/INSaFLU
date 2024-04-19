@@ -13,19 +13,30 @@ from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (ContigClassification, FinalReport,
-                                            ParameterSet, PIProject_Sample,
-                                            Projects, RawReference,
-                                            ReadClassification,
-                                            ReferenceContigs, RunAssembly,
-                                            RunMain, SampleQC, TeleFluProject,
-                                            TelevirRunQC)
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
+from pathogen_identification.models import (
+    ContigClassification,
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReadClassification,
+    ReferenceContigs,
+    RunAssembly,
+    RunMain,
+    SampleQC,
+    TeleFluProject,
+    TelevirRunQC,
+)
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.utilities_general import (
-    get_project_dir, get_project_dir_no_media_root)
+    get_project_dir,
+    get_project_dir_no_media_root,
+)
 from pathogen_identification.utilities.utilities_views import (
-    RawReferenceCompound, ReportSorter)
+    RawReferenceCompound,
+    ReportSorter,
+)
 from settings.models import Parameter, Software
 from utils.process_SGE import ProcessSGE
 
@@ -677,9 +688,9 @@ class SampleTableOne(tables.Table):
         if sorted is False:
             if process.exists():
                 return mark_safe(request_sorting)
-            
+
             return mark_safe(sorted_icon_assess + request_sorting)
-        
+
         return mark_safe(sorted_icon_assess)
 
     def render_select_ref(self, value, record: PIProject_Sample):
@@ -771,8 +782,7 @@ class SampleTableOne(tables.Table):
         ).count()
 
 
-from pathogen_identification.models import (ReferenceSourceFile,
-                                            ReferenceSourceFileMap)
+from pathogen_identification.models import ReferenceSourceFile, ReferenceSourceFileMap
 
 
 class ReferenceSourceFileTable(tables.Table):
@@ -816,9 +826,22 @@ class ReferenceSourceFileTable(tables.Table):
 
     def render_references(self, record: ReferenceSourceFile):
 
-        return ReferenceSourceFileMap.objects.filter(
+        current_refs = ReferenceSourceFileMap.objects.filter(
             reference_source_file=record
         ).count()
+
+        process_controler = ProcessControler()
+
+        upload_processes = ProcessControler.objects.filter(
+            owner=record.owner,
+            name__icontains=process_controler.get_name_televir_file_upload(record.pk),
+            is_finished=False,
+        )
+
+        if upload_processes.exists():
+            return mark_safe(f"{current_refs} <i class='fa fa-spinner fa-spin'></i>")
+
+        return current_refs
 
     def render_creation_date(self, record: ReferenceSourceFile):
         if record.creation_date is None:
@@ -827,8 +850,7 @@ class ReferenceSourceFileTable(tables.Table):
         return record.creation_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE)
 
 
-from pathogen_identification.utilities.reference_utils import \
-    check_reference_exists
+from pathogen_identification.utilities.reference_utils import check_reference_exists
 
 
 class TelevirReferencesTable(tables.Table):

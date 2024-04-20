@@ -656,7 +656,8 @@ class SampleTableOne(tables.Table):
             name=process_controler.get_name_televir_project_sample_sort(
                 sample_pk=record.pk
             ),
-            is_running=True,
+            is_finished=False,
+            is_error=False,
         )
 
         if process.exists():

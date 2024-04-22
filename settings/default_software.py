@@ -505,6 +505,18 @@ class DefaultSoftware(object):
             user,
         )
 
+        print("DIAMOND")
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_DIAMOND_name,
+            self.default_parameters.get_diamond_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
+            ),
+            user,
+        )
+
         self.test_default_db(
             SoftwareNames.SOFTWARE_KRAKENUNIQ_name,
             self.default_parameters.get_krakenuniq_default(

@@ -84,7 +84,7 @@ var load_teleflu_workflows = function () {
                 var workflowInfo = $('<div>').addClass('workflow-info clearfix');
                 // mapping summary: mapping fail / mapping success / total samples
                 var workflowMapped = $('<span>').addClass('workflow-mapped').text(workflow.mapped_fail + ' / '  + workflow.mapped_success + ' / ' + data.project_nsamples).attr('title', 'Mapping Fail / Mapping Success / Total Samples');
-                var workflowButton = $('<button>').attr('type', 'button').addClass('workflow-summary btn btn-primary');
+                var workflowButton = $('<button>').attr('type', 'button').addClass('workflow-summary btn btn-primary').attr('node', workflow.node);
                 workflowButton.append('<i class="fa fa-eye"></i>'); // Add an icon to the button
                 
 
@@ -122,7 +122,7 @@ var load_teleflu_workflows = function () {
 
                 var sampleSummary = workflow.sample_summary;
                 var summaryList = document.createElement('div');
-                summaryList.className = 'summary-list'; // Add a class to the list
+                summaryList.className = 'summary-list workfow-' + workflow.node;
                 summaryList.style.display = 'none'; // Hide the list initially
                 var list = document.createElement('ul'); // Create a list
                 
@@ -139,7 +139,16 @@ var load_teleflu_workflows = function () {
                     var depthIndicator = sampleSummary[sample].depth 
                     var mappedReadsIndicator = sampleSummary[sample].mapped_reads 
                     
-                    indicators.innerHTML = 'Mapped: ' + mappedIndicator + '&nbsp;&nbsp;&nbsp;Success: ' + successIndicator + '&nbsp;&nbsp;&nbsp;Coverage: ' + coverageIndicator + '&nbsp;&nbsp;&nbsp;Depth: ' + depthIndicator + '&nbsp;&nbsp;&nbsp;Mapped Reads: ' + mappedReadsIndicator;
+                    var space = "&nbsp;&nbsp;&nbsp;&nbsp;";
+
+                    indicators.innerHTML = `
+                        <strong>Mapped:&nbsp;</strong> ${mappedIndicator} ${space}
+                        <strong>Success:&nbsp;</strong> ${successIndicator} ${space}
+                        <strong>Coverage:&nbsp;</strong> ${coverageIndicator}% ${space}
+                        <strong>Depth:&nbsp;</strong> ${depthIndicator} ${space}
+                        <strong>Mapped Reads:&nbsp;</strong> ${mappedReadsIndicator}
+                    `;
+
                     listItem.appendChild(sampleName);
                     listItem.appendChild(indicators);
                     list.appendChild(listItem);
@@ -155,7 +164,8 @@ var load_teleflu_workflows = function () {
 
 
             $(".workflow-summary").click(function () {
-                var summaryList = $(".summary-list").get(0);
+                var node= $(this).attr('node');
+                var summaryList = $('.summary-list.workfow-' + node)[0];
                 // Toggle list visibility on click
                 if (summaryList.style.display === 'none') {
                     summaryList.style.display = 'flex';

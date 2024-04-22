@@ -326,17 +326,29 @@ def determine_raw_ref_index(ref: RawReference):
     return ref_index_by_counts(ref)
 
 
+def determine_reads_stats(ref: RawReference):
+
+    run = ref.run
+    sample = run.sample
+
+    reports = FinalReport.objects.filter(sample=sample, unique_id=ref.accid).order_by(
+        "-coverage"
+    )
+    mapped_reads = 0
+
+    if reports.exists():
+        mapped_reads = reports.first().mapped_reads
+        if mapped_reads is None:
+            mapped_reads = 0
+    else:
+        mapped_reads = 0
+
+    return mapped_reads
+
+
 def df_report_analysis(analysis_df_filename, project_id: int):
 
     # Python
-    sheet_name = "Results"
-    # df = pd.read_excel(
-    ##    analysis_df_filename,
-    ##    sheet_name=sheet_name,
-    ##    header=2,
-    ##    index_col=0,
-    ##    engine="openpyxl",
-    ##)
 
     df = pd.read_csv(analysis_df_filename, sep="\t")
 
@@ -356,10 +368,12 @@ def df_report_analysis(analysis_df_filename, project_id: int):
         mapped = 0
         run_pk = -1
         sample = None
+        mapped_reads = 0
 
         best_mapping_rank = -1
         if best_mapping is not None:
             best_mapping_rank = determine_raw_ref_index(best_mapping)
+            mapped_reads = determine_reads_stats(best_mapping)
             mapped = best_mapping.status
             run_pk = best_mapping.run.pk
             sample = best_mapping.run.sample
@@ -372,6 +386,7 @@ def df_report_analysis(analysis_df_filename, project_id: int):
             "intermediate_samples": "/".join(expected_hit.intermediate_samples_classes),
             "position": best_mapping_rank + 1,
             "mapped": mapped,
+            "mapped_reads": mapped_reads,
             "run_pk": run_pk,
             "sample_pk": sample.pk if sample is not None else -1,
         }

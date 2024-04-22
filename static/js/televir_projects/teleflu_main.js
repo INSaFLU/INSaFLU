@@ -135,7 +135,12 @@ var load_teleflu_workflows = function () {
                     var successIndicator = sampleSummary[sample].success ? '<span style="color: green;">&#x2714;</span>' : '<span style="color: red;">&#x2718;</span>';
                     var indicators = document.createElement('div');
                     indicators.classList.add('indicators');
-                    indicators.innerHTML = 'Mapped: ' + mappedIndicator + '&nbsp;&nbsp;&nbsp;Success: ' + successIndicator;                    listItem.appendChild(sampleName);
+                    var coverageIndicator = sampleSummary[sample].coverage 
+                    var depthIndicator = sampleSummary[sample].depth 
+                    var mappedReadsIndicator = sampleSummary[sample].mapped_reads 
+                    
+                    indicators.innerHTML = 'Mapped: ' + mappedIndicator + '&nbsp;&nbsp;&nbsp;Success: ' + successIndicator + '&nbsp;&nbsp;&nbsp;Coverage: ' + coverageIndicator + '&nbsp;&nbsp;&nbsp;Depth: ' + depthIndicator + '&nbsp;&nbsp;&nbsp;Mapped Reads: ' + mappedReadsIndicator;
+                    listItem.appendChild(sampleName);
                     listItem.appendChild(indicators);
                     list.appendChild(listItem);
                 }

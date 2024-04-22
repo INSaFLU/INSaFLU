@@ -31,10 +31,14 @@
         background-color: #FFC000; 
         color: white; /*
     }
+    .dropdown-item {
+        cursor: pointer;
+    }
 </style>
 
 {% block extra_head %}
     <link rel="stylesheet" href="{% static 'css/televir_main_page.css' %}">
+    <link rel="stylesheet" href="{% static 'css/televir_reference_management_panels.css' %}">
 {% endblock %}
 
 <div class="table-container">
@@ -106,9 +110,13 @@
                     </th>
                     <th colspan="1" style="border-left: 5px solid #f2f2f2;">
                         <div class="btn-group d-flex justify-content-center">
-                            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#myModal">
-                                Add Targets
-                              </button>
+                            <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                Actions
+                            </button>
+                            <div class="dropdown-menu">
+                                <button class="dropdown-item" data-toggle="modal" data-target="#myModal">Add Targets</button>
+                                <button class="dropdown-item add-panels" data-toggle="modal" data-target="#addPanelModal" href="{% url 'get_project_panel_suggestions' %}">Add Panels</button>
+                            </div>
                         </div>
                     </th>
                     <th colspan="1" style="border-left: 5px solid #f2f2f2;">
@@ -464,6 +472,29 @@
     </div>
 </div>
 
+<!-- The add panel modal -->
+<div class="modal fade" id="addPanelModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop="static">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title" id="myModalLabel">Add Panels - All Samples</h4>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="panel-list-modal" data-url="{% url 'panel_references_get' %}">
+            <ul id="panel-list-modal">
+            </ul> 
+          </div>    
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" id="panel-submit-button" data-csrf="{{ csrf_token }}" project-id="{{ project_index }}" href="{% url 'add_panels_to_project' %}">Submit</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 <!-- The teleflu refrence search -->
 <div class="modal fade" id="teleflu_ref_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel_teleflu" data-backdrop="static">
     <div class="modal-dialog modal-lg" role="document">
@@ -538,6 +569,8 @@
 <script type="text/javascript" src="{% static 'js/televir_projects/teleflu_prep.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/televir_projects/main_page_calls.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/check-box-general.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/televir_projects/main_page_panels.js' %}"></script>
+
 {% load static from staticfiles %}
  
 
@@ -572,7 +605,12 @@
 			$.unblockUI();
 		});
 
-	});
+
+        $('.add-panels').click(function() {
+        var url= $(this).attr('href');
+        load_panels_main(url, '.panel-list-modal ul', false, true);
+        });
+    });
 
 	/// set wait screen
     $(".request-add-teleflu-sample").on("click", function () {

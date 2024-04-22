@@ -1597,13 +1597,9 @@ def teleflu_node_info(node, params_df, node_pk):
         "modules": [],
     }
 
-    for pipeline_step in CS.vect_pipeline_televir_mapping_only:
+    for pipeline_step in CS.vect_pipeline_televir_workflows_display:
         acronym = [x[0] for x in pipeline_step.split(" ")]
-        acronym = [
-            acronym[x].upper() if x == 0 else acronym[x].lower()
-            for x in range(len(acronym))
-        ]
-        acronym = "".join(acronym)
+        acronym = "".join(acronym).upper()
         params = params_df[params_df.module == pipeline_step].to_dict("records")
         if params:  # if there are parameters for this module
             software = params[0].get("software")
@@ -1662,7 +1658,6 @@ def load_teleflu_workflows(request):
             samples_stacked = mapping.stacked_samples_televir
 
             node_info["samples_stacked"] = samples_stacked.count()
-
             node_info["samples_to_stack"] = samples_mapped.exclude(
                 pk__in=samples_stacked.values_list("pk", flat=True)
             ).exists()
@@ -1670,6 +1665,7 @@ def load_teleflu_workflows(request):
             sample_summary, mapped_samples, mapped_success = mapping.sample_summary
 
             mapped_fail = mapped_samples - mapped_success
+            
             node_info["samples_mapped"] = samples_mapped.count()
             node_info["mapped_success"] = mapped_success
             node_info["mapped_fail"] = mapped_fail
@@ -2473,6 +2469,24 @@ def add_panels_to_sample(request):
 
 
 @csrf_protect
+def add_panels_to_project(request):
+    """
+    add panels to sample"""
+    if request.is_ajax():
+        project_id = int(request.POST.get("project_id"))
+        panel_ids = request.POST.getlist("panel_ids[]")
+
+        sample = PIProject_Sample.objects.get(project__pk=project_id)
+
+        for panel_id in panel_ids:
+            sample.add_panel(int(panel_id))
+
+        return JsonResponse({"is_ok": True})
+
+    return JsonResponse({"is_ok": False})
+
+
+@csrf_protect
 def remove_sample_panel(request):
     """
     remove sample panel"""
@@ -2532,6 +2546,33 @@ def get_sample_panel_suggestions(request):
             is_deleted=False,
             panel_type=ReferencePanel.PANEL_TYPE_MAIN,
         ).exclude(pk__in=panels_global_names)
+
+        panel_data = [
+            {
+                "id": panel.id,
+                "name": panel.name,
+                "references_count": panel.references_count,
+                "icon": panel.icon,
+            }
+            for panel in panels_suggest
+        ]
+        data = {"is_ok": True, "panels": panel_data}
+
+        return JsonResponse(data)
+
+    return JsonResponse({"is_ok": False})
+
+
+def get_project_panel_suggestions(request):
+    """
+    get sample panel updates"""
+    if request.is_ajax():
+
+        panels_suggest = ReferencePanel.objects.filter(
+            project_sample=None,
+            is_deleted=False,
+            panel_type=ReferencePanel.PANEL_TYPE_MAIN,
+        )
 
         panel_data = [
             {

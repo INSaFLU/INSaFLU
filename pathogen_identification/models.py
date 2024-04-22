@@ -1282,7 +1282,18 @@ class TelefluMapping(models.Model):
         success_samples = 0
 
         for sample in samples:
+            print("HOIJ")
+
             sample = PIProject_Sample.objects.get(pk=sample)
+
+            sample_summary[sample.name] = {
+                "mapped": False,
+                "success": False,
+                "coverage": "N/A",
+                "depth": "N/A",
+                "mapped_reads": "N/A",
+            }
+
             mapped = False
             success = False
 
@@ -1310,13 +1321,14 @@ class TelefluMapping(models.Model):
                     success = True
                     success_samples += 1
 
-            try:
-                sample_summary[sample.name] = {
-                    "mapped": mapped,
-                    "success": success,
-                }
-            except Exception as e:
-                print(e)
+            sample_summary[sample.name]["mapped"] = mapped
+            sample_summary[sample.name]["success"] = success
+            print(reports)
+
+            if reports.exists():
+                sample_summary[sample.name]["coverage"] = round(reports[0].coverage, 2)
+                sample_summary[sample.name]["depth"] = round(reports[0].depth, 2)
+                sample_summary[sample.name]["mapped_reads"] = reports[0].mapped_reads
 
         return sample_summary, mapped_samples, success_samples
 

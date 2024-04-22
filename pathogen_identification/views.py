@@ -1020,13 +1020,9 @@ def teleflu_node_info(node, params_df, node_pk):
         "modules": [],
     }
 
-    for pipeline_step in CS.vect_pipeline_televir_mapping_only:
+    for pipeline_step in CS.vect_pipeline_televir_workflows_display:
         acronym = [x[0] for x in pipeline_step.split(" ")]
-        acronym = [
-            acronym[x].upper() if x == 0 else acronym[x].lower()
-            for x in range(len(acronym))
-        ]
-        acronym = "".join(acronym)
+        acronym = "".join(acronym).upper()
         params = params_df[params_df.module == pipeline_step].to_dict("records")
         if params:  # if there are parameters for this module
             software = params[0].get("software")
@@ -1090,8 +1086,6 @@ class TelefluProjectView(LoginRequiredMixin, generic.CreateView):
 
         ##################################### Existring mappings
         software_utils = SoftwareTreeUtils(user, televir_project)
-
-        utils_manager = Utils_Manager()
 
         mappings = TelefluMapping.objects.filter(teleflu_project__pk=teleflu_project_pk)
         mapping_workflows = []

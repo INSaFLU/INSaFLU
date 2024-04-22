@@ -111,6 +111,11 @@ urlpatterns = [
         name="add_panels_to_sample",
     ),
     url(
+        r"add_panels_to_project",
+        PIajax_views.add_panels_to_project,
+        name="add_panels_to_project",
+    ),
+    url(
         r"remove_panels_from_sample",
         PIajax_views.remove_sample_panel,
         name="remove_added_panel",
@@ -124,6 +129,11 @@ urlpatterns = [
         r"get_sample_panel_suggestions",
         PIajax_views.get_sample_panel_suggestions,
         name="get_sample_panel_suggestions",
+    ),
+    url(
+        r"get_project_panel_suggestions",
+        PIajax_views.get_project_panel_suggestions,
+        name="get_project_panel_suggestions",
     ),
     url(
         r"Project_samples/(?P<pk>\d+)/add_sample_project$",

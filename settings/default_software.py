@@ -9,11 +9,10 @@ from curses.ascii import SO
 from django.contrib.auth.models import User
 
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from pathogen_identification.utilities.utilities_pipeline import (
-    Utility_Pipeline_Manager,
-    Utils_Manager,
-)
+    Utility_Pipeline_Manager, Utils_Manager)
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.models import Parameter, Software, SoftwareDefaultTest
@@ -505,8 +504,6 @@ class DefaultSoftware(object):
             user,
         )
 
-        print("DIAMOND")
-
         self.test_default_db(
             SoftwareNames.SOFTWARE_DIAMOND_name,
             self.default_parameters.get_diamond_default(
@@ -822,7 +819,7 @@ class DefaultSoftware(object):
             return
 
         ## lock because more than one process can duplicate software names
-
+        
         try:
             type_of_use = vect_parameters[0].software.type_of_use
         except:

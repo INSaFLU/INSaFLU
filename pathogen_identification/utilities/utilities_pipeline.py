@@ -1209,7 +1209,13 @@ class Utility_Pipeline_Manager:
         """
         Check if a software is installed
         """
-
+        print("test")
+        print(software_name)
+        print(
+            self.utility_repository.check_exists(
+                "software", "name", software_name.lower()
+            )
+        )
         return self.utility_repository.check_exists(
             "software", "name", software_name.lower()
         )
@@ -3498,7 +3504,7 @@ class RawReferenceUtils:
 
         query_set = RawReferenceCompoundModel.objects.filter(
             sample=self.sample_registered
-        ).order_by('-standard_score')
+        ).order_by("-standard_score")
 
         return self.filter_reference_query_set(query_set, query_string)
 

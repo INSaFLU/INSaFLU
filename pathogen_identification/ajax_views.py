@@ -1142,7 +1142,6 @@ def teleflu_igv_create(request):
 
         ### get reference
         reference = teleflu_project.reference
-        print(reference)
         if reference is None:
             return JsonResponse(data)
 

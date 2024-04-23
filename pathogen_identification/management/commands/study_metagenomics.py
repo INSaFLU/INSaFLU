@@ -2,6 +2,7 @@ from typing import Any, List, Optional
 
 import pandas as pd
 from django.core.management.base import BaseCommand
+from django.db.models import Q
 
 from pathogen_identification.models import (
     FinalReport,
@@ -311,6 +312,12 @@ def ref_index_by_counts(ref: RawReference):
         ref.pk: ref.read_counts for ix, ref in enumerate(other_references)
     }
 
+    reference_counts = {
+        pk: read_counts
+        for pk, read_counts in reference_counts.items()
+        if read_counts is not None
+    }
+
     sorted_pks = sorted(reference_counts, key=reference_counts.get, reverse=True)
 
     for ix, pk in enumerate(sorted_pks):
@@ -326,15 +333,22 @@ def determine_raw_ref_index(ref: RawReference):
     return ref_index_by_counts(ref)
 
 
-def determine_reads_stats(ref: RawReference):
+def determine_reads_stats(ref: RawReference, samples_list: List[SampleWrapper] = []):
 
     run = ref.run
     sample = run.sample
 
-    reports = FinalReport.objects.filter(sample=sample, unique_id=ref.accid).order_by(
-        "-coverage"
-    )
+    accid_use = ref.accid
+    accid_use = accid_use.split(".")[0]
+
+    reports = FinalReport.objects.filter(
+        taxid__icontains=ref.taxid,
+        sample__in=[sample.sample for sample in samples_list],
+    ).order_by("-coverage")
     mapped_reads = 0
+
+    print(f"Found {reports.count()} reports for {ref.accid} in {sample.name}")
+    print([f.mapped_reads for f in reports])
 
     if reports.exists():
         mapped_reads = reports.first().mapped_reads
@@ -344,6 +358,30 @@ def determine_reads_stats(ref: RawReference):
         mapped_reads = 0
 
     return mapped_reads
+
+
+def determine_reads_map_qual(ref: RawReference, samples_list: List[SampleWrapper] = []):
+
+    run = ref.run
+    sample = run.sample
+
+    accid_use = ref.accid
+    accid_use = accid_use.split(".")[0]
+
+    reports = FinalReport.objects.filter(
+        taxid__icontains=ref.taxid,
+        sample__in=[sample.sample for sample in samples_list],
+    ).order_by("-coverage")
+    error_rate = 0
+
+    if reports.exists():
+        error_rate = reports.first().error_rate
+        if error_rate is None:
+            error_rate = "-"
+    else:
+        error_rate = "-"
+
+    return error_rate
 
 
 def df_report_analysis(analysis_df_filename, project_id: int):
@@ -372,8 +410,9 @@ def df_report_analysis(analysis_df_filename, project_id: int):
 
         best_mapping_rank = -1
         if best_mapping is not None:
+            print("Best mapping", best_mapping.pk)
+
             best_mapping_rank = determine_raw_ref_index(best_mapping)
-            mapped_reads = determine_reads_stats(best_mapping)
             mapped = best_mapping.status
             run_pk = best_mapping.run.pk
             sample = best_mapping.run.sample
@@ -386,17 +425,47 @@ def df_report_analysis(analysis_df_filename, project_id: int):
             "intermediate_samples": "/".join(expected_hit.intermediate_samples_classes),
             "position": best_mapping_rank + 1,
             "mapped": mapped,
-            "mapped_reads": mapped_reads,
             "run_pk": run_pk,
             "sample_pk": sample.pk if sample is not None else -1,
         }
+
+        new_row["mapped_reads UPIP / RPIP"] = "0 / 0"
+        new_row["map quality UPIP / RPIP"] = "- / -"
+
+        if best_mapping is not None:
+            class_mapped_reads = {
+                "UPIP": 0,
+                "RPIP": 0,
+            }
+
+            class_map_quality = {
+                "UPIP": "-",
+                "RPIP": "-",
+            }
+
+            for sample in expected_hit.raw_reference_samples:
+                sample_class = sample.sample_class
+                class_mapped_reads[sample_class] += determine_reads_stats(
+                    best_mapping, [sample]
+                )
+
+                class_map_quality[sample_class] = determine_reads_map_qual(
+                    best_mapping, [sample]
+                )
+
+            new_row["mapped_reads UPIP / RPIP"] = (
+                f"{class_mapped_reads['UPIP']} / {class_mapped_reads['RPIP']}"
+            )
+
+            new_row["map quality UPIP / RPIP"] = (
+                f"{class_map_quality['UPIP']} / {class_map_quality['RPIP']}"
+            )
 
         for classifier in ["kraken2", "centrifuge", "blastn"]:
             classifier_rank = -1
             best_mapping = get_hit_best_classifier_reference(expected_hit, classifier)
             if best_mapping is not None:
                 classifier_rank = determine_raw_ref_index(best_mapping)
-
             new_row[f"{classifier}_position"] = classifier_rank + 1
 
         new_table.append(new_row)

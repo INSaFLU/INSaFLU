@@ -10,19 +10,22 @@ import pandas as pd
 from django.contrib.auth.models import User
 from django.db.models import Q, QuerySet
 
-from constants.constants import \
-    Televir_Directory_Constants as Televir_Directories
+from constants.constants import Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.host_library import Host
-from pathogen_identification.models import (ParameterSet, PIProject_Sample,
-                                            Projects, RawReference,
-                                            RawReferenceCompoundModel, RunMain,
-                                            SoftwareTree, SoftwareTreeNode)
-from pathogen_identification.utilities.utilities_televir_dbs import \
-    Utility_Repository
-from pathogen_identification.utilities.utilities_views import \
-    RawReferenceCompound
+from pathogen_identification.models import (
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    RawReferenceCompoundModel,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
+from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
+from pathogen_identification.utilities.utilities_views import RawReferenceCompound
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -1209,13 +1212,7 @@ class Utility_Pipeline_Manager:
         """
         Check if a software is installed
         """
-        print("test")
-        print(software_name)
-        print(
-            self.utility_repository.check_exists(
-                "software", "name", software_name.lower()
-            )
-        )
+
         return self.utility_repository.check_exists(
             "software", "name", software_name.lower()
         )
@@ -3444,6 +3441,7 @@ class RawReferenceUtils:
         if run_pks is not None:
             sample_runs = sample_runs.filter(pk__in=run_pks)
         self.runs_found = sample_runs.count()
+
         run_references_tables = [self.run_references_table(run) for run in sample_runs]
 
         self.list_tables.extend(run_references_tables)
@@ -3461,6 +3459,7 @@ class RawReferenceUtils:
         """
         if runs_filter == []:
             runs_filter = None
+
         _ = self.sample_reference_tables(runs_filter)
 
     def compound_reference_update_standard_score(
@@ -3502,21 +3501,40 @@ class RawReferenceUtils:
         self, query_string: Optional[str] = None
     ) -> QuerySet:
 
-        query_set = RawReferenceCompoundModel.objects.filter(
-            sample=self.sample_registered
-        ).order_by("-standard_score")
+        if self.sample_registered is not None:
+            query_set = RawReferenceCompoundModel.objects.filter(
+                sample=self.sample_registered
+            ).order_by("-standard_score")
+        elif self.project_registered is not None:
+            query_set = RawReferenceCompoundModel.objects.filter(
+                sample__project=self.project_registered
+            ).order_by("-standard_score")
+        else:
+            query_set = RawReferenceCompoundModel.objects.none()
 
         return self.filter_reference_query_set(query_set, query_string)
 
     def query_sample_references(self, query_string: Optional[str] = "") -> QuerySet:
 
-        query_set = (
-            RawReference.objects.filter(
-                run__sample__pk=self.sample_registered.pk,
+        if self.sample_registered is not None:
+
+            query_set = (
+                RawReference.objects.filter(
+                    run__sample__pk=self.sample_registered.pk,
+                )
+                .exclude(run__run_type=RunMain.RUN_TYPE_STORAGE, accid="-")
+                .distinct("accid")
             )
-            .exclude(run__run_type=RunMain.RUN_TYPE_STORAGE, accid="-")
-            .distinct("accid")
-        )
+        elif self.project_registered is not None:
+            query_set = (
+                RawReference.objects.filter(
+                    run__sample__project__pk=self.project_registered.pk,
+                )
+                .exclude(run__run_type=RunMain.RUN_TYPE_STORAGE, accid="-")
+                .distinct("accid")
+            )
+        else:
+            query_set = RawReference.objects.none()
 
         return self.filter_reference_query_set(query_set, query_string)
 
@@ -3566,21 +3584,39 @@ class RawReferenceUtils:
                 ref = RawReference.objects.get(pk=ref_pk)
                 compound_ref_model.family.add(ref)
 
+    def get_classification_runs(self):
+
+        if self.sample_registered is not None:
+            classification_runs = RunMain.objects.filter(
+                sample=self.sample_registered, run_type=RunMain.RUN_TYPE_PIPELINE
+            )
+
+        elif self.project_registered is not None:
+
+            classification_runs = RunMain.objects.filter(
+                sample__project=self.project_registered,
+                run_type=RunMain.RUN_TYPE_PIPELINE,
+            )
+
+        else:
+            classification_runs = RunMain.objects.none()
+
+        return classification_runs
+
     def create_compound(self, raw_references: List[RawReference]):
 
         raw_reference_compound = [
             RawReferenceCompound(raw_reference) for raw_reference in raw_references
         ]
 
-        classification_runs = RunMain.objects.filter(
-            sample=self.sample_registered, run_type=RunMain.RUN_TYPE_PIPELINE
-        )
+        classification_runs = self.get_classification_runs()
 
         # pks of classification runs as integer list
         runs_pks = [run.pk for run in classification_runs]
 
         if classification_runs.exists():
             self.sample_reference_tables_filter(runs_filter=runs_pks)
+
             self.update_scores_compound_references(raw_reference_compound)
             self.register_compound_references(raw_reference_compound)
 
@@ -3608,11 +3644,14 @@ class RawReferenceUtils:
         :return:
 
         """
-
-        references = self.query_sample_references(query_string)
+        try:
+            references = self.query_sample_references(query_string)
+        except Exception as e:
+            print(e)
 
         if references.exists():
             self.create_compound(references)
+
             compound_refs = self.query_sample_compound_references(query_string)
 
         else:

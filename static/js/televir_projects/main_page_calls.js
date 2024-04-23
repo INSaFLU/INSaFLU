@@ -87,7 +87,7 @@ $('#id-deploy-metagenomics-button').on('click', function () {
     })
 });
 
-$('#deploypi_sample_btn').on('click', function () {
+$('.kill-button').on('click', function () {
     event.preventDefault();
 
     csrf_token = $('#teleflu_create-button').attr("csrf");

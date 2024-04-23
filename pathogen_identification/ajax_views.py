@@ -20,26 +20,36 @@ from constants.software_names import SoftwareNames
 from fluwebvirus.settings import BASE_DIR, STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
-from pathogen_identification.models import (FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RawReference, ReferenceMap_Main,
-                                            ReferencePanel,
-                                            ReferenceSourceFileMap, RunMain,
-                                            TeleFluProject, TeleFluSample)
+from pathogen_identification.models import (
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReferenceMap_Main,
+    ReferencePanel,
+    ReferenceSourceFileMap,
+    RunMain,
+    TeleFluProject,
+    TeleFluSample,
+)
 from pathogen_identification.tables import ReferenceSourceTable
 from pathogen_identification.utilities.reference_utils import (
-    check_file_reference_submitted, check_metaReference_exists_from_ids,
-    check_raw_reference_submitted, check_user_reference_exists,
-    create_combined_reference)
+    check_file_reference_submitted,
+    check_metaReference_exists_from_ids,
+    check_raw_reference_submitted,
+    check_user_reference_exists,
+    create_combined_reference,
+)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
-from pathogen_identification.utilities.utilities_general import \
-    get_services_dir
-from pathogen_identification.utilities.utilities_pipeline import \
-    SoftwareTreeUtils
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.utilities_general import get_services_dir
+from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter, SampleReferenceManager, set_control_reports)
+    ReportSorter,
+    SampleReferenceManager,
+    set_control_reports,
+)
 from pathogen_identification.views import inject__added_references
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
@@ -352,18 +362,14 @@ def available_televir_files(request):
     if request.is_ajax():
         data = {"is_ok": False, "is_deployed": False, "files": []}
 
-        print("available_televir_files")
-        print(request.POST)
         user_id = int(request.POST["user_id"])
         user = User.objects.get(id=user_id)
         files = ReferenceSourceFile.objects.filter(
             owner=user, is_deleted=False
         ).distinct("file")
-        print(files)
 
         data["is_ok"] = True
         data["files"] = {file.pk: file.file for file in files}
-        print(data)
 
         return JsonResponse(data)
 
@@ -410,7 +416,6 @@ def submit_sample_mapping_panels(request):
                                 leaf, panel_pk=run_panel_copy.pk
                             )
                         )
-                        # print(references)
                         for reference in references:
                             reference.pk = None
                             reference.run = panel_mapping_run
@@ -425,7 +430,6 @@ def submit_sample_mapping_panels(request):
                             map_run_pk=panel_mapping_run.pk,
                         )
                         data["is_deployed"] = True
-                        print("deployed")
 
         except Exception as e:
             print(e)
@@ -454,7 +458,7 @@ def submit_project_samples_mapping_televir(request):
 
         sample_ids = request.POST.getlist("sample_ids[]")
         sample_ids = [int(sample_id) for sample_id in sample_ids]
-        print(sample_ids)
+
         if len(sample_ids) > 0:
             project_samples = project_samples.filter(pk__in=sample_ids)
 
@@ -1532,7 +1536,9 @@ def add_teleflu_sample(request):
 
 from pathogen_identification.models import SoftwareTreeNode, TelefluMapping
 from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils, Utils_Manager)
+    SoftwareTreeUtils,
+    Utils_Manager,
+)
 
 
 @login_required
@@ -1664,7 +1670,7 @@ def load_teleflu_workflows(request):
             sample_summary, mapped_samples, mapped_success = mapping.sample_summary
 
             mapped_fail = mapped_samples - mapped_success
-            
+
             node_info["samples_mapped"] = samples_mapped.count()
             node_info["mapped_success"] = mapped_success
             node_info["mapped_fail"] = mapped_fail
@@ -1758,7 +1764,6 @@ def stack_igv_teleflu_workflow(request):
     """
     create insaflu project associated with teleflu map project"""
     if request.is_ajax():
-        print("JO")
         data = {"is_ok": False, "is_error": False, "exists": False, "running": False}
         teleflu_project_id = int(request.POST["project_id"])
         mapping_id = int(request.POST["workflow_id"])
@@ -2215,7 +2220,6 @@ def delete_reference_file(request):
     if request.is_ajax():
         data = {"is_ok": False, "is_error": False, "message": ""}
         panel_id = int(request.POST["file_id"])
-        print(panel_id)
         try:
             panel = ReferenceSourceFile.objects.get(pk=panel_id)
             panel.is_deleted = True
@@ -2235,9 +2239,7 @@ def set_sample_reports_control(request):
     """
     set sample reports control
     """
-    print("HO")
     if request.is_ajax():
-        print(request.POST)
         data = {"is_ok": False}
         data["set_control"] = False
         sample_id = int(request.POST["sample_id"])
@@ -2341,8 +2343,6 @@ def add_file_to_panel(request):
         file = ReferenceSourceFile.objects.get(pk=file_id)
         refs = ReferenceSourceFileMap.objects.filter(reference_source_file=file)
 
-        print(panel, file)
-        print(refs)
         try:
             for reference in refs:
                 panel_reference = RawReference.objects.create(

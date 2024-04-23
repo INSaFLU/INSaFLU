@@ -205,6 +205,10 @@ class SampleReferenceManager:
                 project=self.sample.project,
             )
 
+            if parameter_set.status == ParameterSet.STATUS_FINISHED:
+                parameter_set.status = ParameterSet.STATUS_QUEUED
+                parameter_set.save()
+
         except ParameterSet.DoesNotExist:
             parameter_set = ParameterSet.objects.create(
                 sample=self.sample,

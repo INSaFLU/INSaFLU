@@ -13,30 +13,19 @@ from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReadClassification,
-    ReferenceContigs,
-    RunAssembly,
-    RunMain,
-    SampleQC,
-    TeleFluProject,
-    TelevirRunQC,
-)
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.models import (ContigClassification, FinalReport,
+                                            ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            ReadClassification,
+                                            ReferenceContigs, RunAssembly,
+                                            RunMain, SampleQC, TeleFluProject,
+                                            TelevirRunQC)
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.utilities_general import (
-    get_project_dir,
-    get_project_dir_no_media_root,
-)
+    get_project_dir, get_project_dir_no_media_root)
 from pathogen_identification.utilities.utilities_views import (
-    RawReferenceCompound,
-    ReportSorter,
-)
+    RawReferenceCompound, ReportSorter)
 from settings.models import Parameter, Software
 from utils.process_SGE import ProcessSGE
 
@@ -783,7 +772,8 @@ class SampleTableOne(tables.Table):
         ).count()
 
 
-from pathogen_identification.models import ReferenceSourceFile, ReferenceSourceFileMap
+from pathogen_identification.models import (ReferenceSourceFile,
+                                            ReferenceSourceFileMap)
 
 
 class ReferenceSourceFileTable(tables.Table):
@@ -851,7 +841,8 @@ class ReferenceSourceFileTable(tables.Table):
         return record.creation_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE)
 
 
-from pathogen_identification.utilities.reference_utils import check_reference_exists
+from pathogen_identification.utilities.reference_utils import \
+    check_reference_exists
 
 
 class TelevirReferencesTable(tables.Table):
@@ -1235,7 +1226,7 @@ class CompoundReferenceTable(tables.Table):
         },
     )
     # runs is a integer column that is rendered and is orderable in reverse order
-    runs = tables.Column(verbose_name="Runs", order_by=("-run_count",))
+    runs = tables.Column(verbose_name="Runs")
     # mapped column is a link column to the report
     mapped = tables.Column(
         verbose_name="Best Mapping", orderable=False, empty_values=()

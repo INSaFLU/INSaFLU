@@ -1700,6 +1700,7 @@ class RawReferenceCompoundModel(models.Model):
     )
     selected_mapped_pk = models.IntegerField(blank=True, null=True)
     standard_score = models.FloatField(blank=True, null=True)
+    run_count= models.IntegerField(default=0)
 
     @property
     def mapped_html(self):
@@ -1737,9 +1738,6 @@ class RawReferenceCompoundModel(models.Model):
                 + "</a>"
             )
 
-    @property
-    def run_count(self):
-        return self.runs.count()
 
     @property
     def runs_str(self):

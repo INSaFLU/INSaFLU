@@ -939,7 +939,6 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
 
         teleflu_data = []
         for tproj in teleflu_projects:
-            print(tproj)
 
             tproject_data = {
                 "id": tproj.pk,
@@ -1298,8 +1297,6 @@ def inject_references_filter(request, max_references: int = 30):
     project_id = None
     project = None
 
-    print(request.GET)
-
     if request.GET.get("max_references") and request.GET.get("max_references") != "":
         max_references = int(request.GET.get("max_references"))
 
@@ -1313,12 +1310,9 @@ def inject_references_filter(request, max_references: int = 30):
         panel_id = int(request.GET.get(tag_panel_id))
         panel = ReferencePanel.objects.get(pk=panel_id)
 
-    print(table_type)
-
     references = []
     if request.GET.get(tag_add_reference) is not None:
         if table_type == "teleflu_reference":
-            print(request.GET.get(tag_add_reference))
             request_tag = request.GET.get(tag_add_reference)
             possible_accid = request_tag.split(".")[0]
             try:
@@ -1333,8 +1327,6 @@ def inject_references_filter(request, max_references: int = 30):
             except Exception as e:
                 print(e)
 
-            print(references.count())
-
             if references.count() == 0:
                 references = []
             else:
@@ -1342,21 +1334,6 @@ def inject_references_filter(request, max_references: int = 30):
                 query_string = request.GET.get(tag_add_reference)
 
                 references = reference_utils.retrieve_compound_references(query_string)
-                print("retrieved", references)
-
-                # reference_pks = references.values_list("run__pk", flat=True).distinct()
-                # references = [
-                #    RawReferenceCompound(raw_reference) for raw_reference in references
-                # ]
-        #
-        # reference_utils.sample_reference_tables_filter(
-        #    runs_filter=reference_pks
-        # )
-        # reference_utils.update_scores_compound_references(references)
-        #
-        # references = sorted(
-        #    references, key=lambda x: float(x.standard_score), reverse=True
-        # )
 
         elif request.GET.get(tag_add_reference) != "":
 
@@ -1366,8 +1343,6 @@ def inject_references_filter(request, max_references: int = 30):
                 existing_reference_taxids = RawReference.objects.filter(
                     panel=panel
                 ).values_list("taxid", flat=True)
-
-            print(existing_reference_taxids)
 
             try:
                 references = (
@@ -1403,7 +1378,6 @@ def inject_references_filter(request, max_references: int = 30):
 
         # show max 10 references
         references = references[:max_references]
-        print("#########")
 
         data = inject_references(references, request, table_type=table_type)
 
@@ -1422,8 +1396,6 @@ def inject_references(references: list, request, table_type: str = "add_referenc
         table = ReferenceSourceTable(references)
     else:
         table = TeleFluReferenceTable(references, order_by=("standard_score",))
-
-    print("made table")
 
     context["references_table"] = table
     context["references_count"] = len(references)
@@ -1701,7 +1673,6 @@ def upload_reference_panel_view(request):
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
             data = {"is_error": False, "is_ok": False, "error_message": ""}
-            print("is valid")
             # Handle the uploaded files here
 
             # name = form.cleaned_data["name"]
@@ -1873,11 +1844,11 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
         ).exists()
 
         reference_table_class = CompoundReferenceScore
-        ordered_by = ("score",)
+        ordered_by = ("-standard_score",)
 
         if screening_performed:
             reference_table_class = CompoundRefereceScoreWithScreening
-            ordered_by = ("score", "screening_score")
+            ordered_by = ("-standard_score", "screening_score")
 
         #### added references table
         added_references_context = inject__added_references(
@@ -1922,7 +1893,7 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
             )
         else:
             compound_reference_table = reference_table_class(
-                raw_reference_compound, order_by="runs"
+                raw_reference_compound, order_by=ordered_by
             )
 
         if Constants.CHECK_BOX_ALL not in self.request.session:

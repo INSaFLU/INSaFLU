@@ -3489,13 +3489,13 @@ class RawReferenceUtils:
         Filter a query set of references by a query string
         """
         if not query_string:
-            return references
+            return references.exclude(accid="-")
 
         return references.filter(
             Q(description__icontains=query_string)
             | Q(accid__icontains=query_string)
             | Q(taxid__icontains=query_string)
-        )
+        ).exclude(accid="-")
 
     def query_sample_compound_references(
         self, query_string: Optional[str] = None
@@ -3561,6 +3561,7 @@ class RawReferenceUtils:
             compound_ref_model.mapped_final_report = compound_ref.mapped_final_report
             compound_ref_model.mapped_raw_reference = compound_ref.mapped_raw_reference
             compound_ref_model.selected_mapped_pk = compound_ref.selected_mapped_pk
+            compound_ref_model.run_count = compound_ref.run_count
             compound_ref_model.save()
 
         except RawReferenceCompoundModel.DoesNotExist:
@@ -3574,6 +3575,7 @@ class RawReferenceUtils:
                 manual_insert=compound_ref.manual_insert,
                 mapped_final_report=compound_ref.mapped_final_report,
                 mapped_raw_reference=compound_ref.mapped_raw_reference,
+                run_count=compound_ref.run_count,
             )
             compound_ref_model.save()
 

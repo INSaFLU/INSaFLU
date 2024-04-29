@@ -275,14 +275,17 @@ def get_hit_best_reference(hit: Hit) -> Optional[RawReference]:
 
 
 def get_hit_best_classifier_reference(
-    hit: Hit, classifier: str
+    hit: Hit, classifier: str, panel: str
 ) -> Optional[RawReference]:
     if len(hit.raw_reference_id_list) == 0:
         return None
 
     hit_references = RawReference.objects.filter(
-        id__in=hit.raw_reference_id_list, run__read_classification=classifier
+        id__in=hit.raw_reference_id_list,
+        run__read_classification=classifier,
+        run__sample__name__icontains=panel,
     )
+
     if hit_references.exists():
         hit_references = [(x, determine_raw_ref_index(x)) for x in hit_references]
         hit_references.sort(key=lambda x: x[1])
@@ -375,7 +378,11 @@ def determine_reads_map_qual(ref: RawReference, samples_list: List[SampleWrapper
     error_rate = 0
 
     if reports.exists():
-        error_rate = reports.first().error_rate
+        try:
+            error_rate = reports.first().error_rate
+        except:
+            error_rate = None
+
         if error_rate is None:
             error_rate = "-"
     else:
@@ -397,6 +404,7 @@ def df_report_analysis(analysis_df_filename, project_id: int):
     for ix, row in df.iterrows():
         sample_name = str(row["Sample_ID"])
         hitname = str(row["Reporting Name"])
+        org_class = str(row["Class"])
         curator = SampleCurator(project_id, sample_name)
         curator.set_collection(sample_name)
         hit_factory = HitFactory(project_id, curator.collection)
@@ -406,11 +414,10 @@ def df_report_analysis(analysis_df_filename, project_id: int):
         mapped = 0
         run_pk = -1
         sample = None
-        mapped_reads = 0
 
         best_mapping_rank = -1
+
         if best_mapping is not None:
-            print("Best mapping", best_mapping.pk)
 
             best_mapping_rank = determine_raw_ref_index(best_mapping)
             mapped = best_mapping.status
@@ -419,6 +426,7 @@ def df_report_analysis(analysis_df_filename, project_id: int):
 
         new_row = {
             "sample": sample_name,
+            "Class": org_class,
             "hitname": hitname,
             "name_similarity": expected_hit.name_similarity,
             "reported_samples": "/".join(expected_hit.reported_samples_classes),
@@ -462,11 +470,18 @@ def df_report_analysis(analysis_df_filename, project_id: int):
             )
 
         for classifier in ["kraken2", "centrifuge", "blastn"]:
-            classifier_rank = -1
-            best_mapping = get_hit_best_classifier_reference(expected_hit, classifier)
-            if best_mapping is not None:
-                classifier_rank = determine_raw_ref_index(best_mapping)
-            new_row[f"{classifier}_position"] = classifier_rank + 1
+
+            for panel in ["UPIP", "RPIP"]:
+
+                best_mapping = get_hit_best_classifier_reference(
+                    expected_hit, classifier, panel
+                )
+
+                if best_mapping is not None:
+                    best_mapping_rank = determine_raw_ref_index(best_mapping)
+                    new_row[f"{classifier}_{panel}_position"] = best_mapping_rank + 1
+                else:
+                    new_row[f"{classifier}_{panel}_position"] = -1
 
         new_table.append(new_row)
 

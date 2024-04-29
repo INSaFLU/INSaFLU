@@ -3575,6 +3575,7 @@ class RawReferenceUtils:
                 manual_insert=compound_ref.manual_insert,
                 mapped_final_report=compound_ref.mapped_final_report,
                 mapped_raw_reference=compound_ref.mapped_raw_reference,
+                selected_mapped_pk=compound_ref.selected_mapped_pk,
                 run_count=compound_ref.run_count,
             )
             compound_ref_model.save()
@@ -3629,8 +3630,9 @@ class RawReferenceUtils:
         Retrieve compound references for a sample
         """
         compound_refs = self.query_sample_compound_references(query_string)
-
+        print("refs exist", compound_refs.exists())
         if compound_refs.exists():
+
             return compound_refs
 
         compound_refs = self.create_compound_references(query_string=query_string)

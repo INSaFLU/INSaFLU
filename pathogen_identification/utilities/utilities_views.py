@@ -11,34 +11,22 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.views import generic
 
-from pathogen_identification.constants_settings import (
-    ConstantsSettings as PIConstantsSettings,
-)
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReferenceMap_Main,
-    ReferencePanel,
-    ReferenceSourceFileMap,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PIConstantsSettings
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference, ReferenceMap_Main,
+                                            ReferencePanel,
+                                            ReferenceSourceFileMap,
+                                            RunAssembly, RunDetail, RunMain,
+                                            SoftwareTree, SoftwareTreeNode)
 from pathogen_identification.utilities.clade_objects import Clade
-from pathogen_identification.utilities.overlap_manager import ReadOverlapManager
+from pathogen_identification.utilities.overlap_manager import \
+    ReadOverlapManager
 from pathogen_identification.utilities.televir_parameters import (
-    LayoutParams,
-    TelevirParameters,
-)
+    LayoutParams, TelevirParameters)
 from pathogen_identification.utilities.utilities_general import (
-    infer_run_media_dir,
-    simplify_name,
-)
+    infer_run_media_dir, simplify_name)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
 

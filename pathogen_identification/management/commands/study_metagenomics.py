@@ -12,6 +12,158 @@ from pathogen_identification.models import (
 )
 
 
+def process_class(r2, maxt=6):
+    """
+    Process classification results.
+    """
+    r2 = r2.drop_duplicates(subset=["taxid"], keep="first")
+    r2 = r2.reset_index(drop=True)
+    # r2 = r2.sort_values("counts", ascending=False)
+    taxids_tokeep = []
+    nr2 = []
+    if "length" in r2.columns:
+        r2["length"] = r2["length"].astype(int)
+        r2c = r2.copy().sort_values("length", ascending=False)
+        for i in range(r2.shape[0]):
+            if i < maxt:
+                taxids_tokeep.append(r2c.taxid[i])
+                nr2.append(r2c.loc[i])
+                if r2.taxid.tolist()[i] not in taxids_tokeep:
+                    taxids_tokeep.remove(r2.taxid[i])
+                    nr2.append(r2.loc[i])
+            else:
+                break
+    else:
+        r2 = r2.head(maxt)
+    if len(nr2):
+        r2 = pd.concat(nr2, axis=1).T
+    return r2
+
+
+def get_source(row):
+    if row.counts_x > 0 and row.counts_y > 0:
+        return 3
+    elif row.counts_x > 0:
+        return 1
+    elif row.counts_y > 0:
+        return 2
+
+
+def descriptor_sources(fd, r1_raw, r2_raw):
+    if len(r1_raw) == 0:
+        fd["source"] = 2
+    elif len(r2_raw) == 0:
+        fd["source"] = 1
+    else:
+        fd["source"] = fd.apply(get_source, axis=1)
+    return fd
+
+
+def descriptor_counts(fd, r1_raw, r2_raw):
+    if len(r1_raw) == 0 or len(r2_raw) == 0:
+        if "counts" not in fd.columns:
+            fd["counts"] = fd["counts_x"]
+        if "counts_y" in fd.columns:
+            fd["counts"] = fd["counts_y"] + fd["counts_x"]
+        return fd
+    else:
+        fd["counts"] = fd.apply(get_counts, axis=1)
+    return fd
+
+
+def get_counts(row):
+    if row.counts_x > 0 and row.counts_y > 0:
+        return f"{int(row.counts_x)} / {int(row.counts_y)}"
+    elif row.counts_x > 0:
+        return str(row.counts_x)
+    elif row.counts_y > 0:
+        return str(row.counts_y)
+
+
+def descriptor_description_remove(df: pd.DataFrame):
+    if "description_x" in df.columns:
+        df.drop("description_x", axis=1, inplace=True)
+    if "description_y" in df.columns:
+        df.drop("description_y", axis=1, inplace=True)
+    if "description" in df.columns:
+        df.drop("description", axis=1, inplace=True)
+    return df
+
+
+def merge_classes(r1: pd.DataFrame, r2: pd.DataFrame, maxt=6, exclude="phage"):
+    """
+    merge tables of taxids to columns.
+    """
+    ###
+    if "description" in r1.columns:
+        r1 = r1[~r1.description.str.contains(exclude)]
+    if "description" in r2.columns:
+        r2 = r2[~r2.description.str.contains(exclude)]
+    ###
+    r1 = r1[["taxid", "counts"]]
+    r1 = r1.sort_values("counts", ascending=False)
+    r2 = r2.sort_values("counts", ascending=False)
+    r1_raw = r1.copy()
+    r2_raw = r2.copy()
+    ###
+    if len(r2) > 0 and len(r1) > 0:
+        full_descriptor = pd.merge(r1, r2, on="taxid", how="outer")
+    elif len(r2) > 0:
+        full_descriptor = r2.copy()
+    else:
+        full_descriptor = r1.copy()
+    full_descriptor = full_descriptor.fillna(0)
+    ###
+    if len(r2) and len(r1):
+        r1.taxid = r1.taxid.astype(str)
+        r2.taxid = r2.taxid.astype(str)
+        shared = pd.merge(r1, r2, on=["taxid"], how="inner").sort_values(
+            "counts_x", ascending=False
+        )
+        maxt = maxt - shared.shape[0]
+        if maxt <= 0:
+            r1 = shared
+        else:
+            r2 = (
+                pd.merge(r2, shared, indicator=True, how="outer")
+                .query('_merge=="left_only"')
+                .drop("_merge", axis=1)
+            )
+            r2 = process_class(r2, maxt=maxt)
+            r1p = r1[~r1.taxid.isin(shared.taxid)]
+            r1 = (
+                pd.concat([shared, r2, r1p.head(maxt - r2.shape[0])], axis=0)
+                .drop_duplicates(subset=["taxid"], keep="first")
+                .reset_index(drop=True)
+            )
+
+    elif len(r2) == 0:
+        r1 = r1.head(maxt)
+    elif len(r1) == 0:
+        r1 = r2.head(maxt)
+    ###
+
+    full_descriptor["taxid"] = full_descriptor["taxid"].astype(int)
+    full_descriptor = descriptor_description_remove(full_descriptor)
+    full_descriptor = descriptor_sources(full_descriptor, r1_raw, r2_raw)
+    full_descriptor = descriptor_counts(full_descriptor, r1_raw, r2_raw)
+
+    r1["taxid"] = r1.taxid.astype(int)
+    merged_final = full_descriptor[full_descriptor.taxid.isin(r1.taxid.to_list())]
+    # get taxid index in r1
+    merged_final["taxid_index"] = merged_final.apply(
+        lambda x: r1[r1.taxid == x.taxid].index[0], axis=1
+    )
+    merged_final = merged_final.sort_values("taxid_index")
+
+    merged_final["source"] = merged_final.source.apply(
+        lambda x: ["none", "reads", "contigs", "reads/contigs"][x]
+    )
+    merged_final = merged_final[["taxid", "counts", "source"]]
+
+    return merged_final, full_descriptor
+
+
 class SampleWrapper:
 
     sample: PIProject_Sample
@@ -105,7 +257,7 @@ def name_translator(name: str) -> str:
         return "human metapneumovirus"
 
     if "SARS-CoV-2" in name:
-        return "coronavirus"
+        return "Severe acute respiratory syndrome coronavirus"
 
     if "Varicella" in name:
         return "human herpesvirus 3"
@@ -129,14 +281,14 @@ def name_translator(name: str) -> str:
 
 
 def match_name_score(name: str, reference: RawReference) -> float:
-
     name = name_translator(name)
-
     name_list = name.lower().split(" ")
     if reference.description is None:
         return 0
 
     description_lower = reference.description.lower()
+
+    scores = []
 
     score = 0
     for ix, string in enumerate(name_list):
@@ -146,7 +298,25 @@ def match_name_score(name: str, reference: RawReference) -> float:
             score += 1
 
     score = score / len(name_list)
-    return score
+    scores.append(score)
+
+    if "betaherpes" in name:
+        name = name.replace("betaherpes", "herpes")
+
+    if "BK polyomavirus" in name:
+        name = "Betapolyomavirus hominis"
+
+    score = 0
+    for ix, string in enumerate(name_list):
+        string_until_now = " ".join(name_list[: ix + 1])
+
+        if string_until_now in description_lower:
+            score += 1
+
+    score = score / len(name_list)
+    scores.append(score)
+
+    return max(scores)
 
 
 class Hit:
@@ -217,9 +387,11 @@ class HitFactory:
 
     def hit_by_name(self, name: str) -> Hit:
 
-        reference_hits = RawReference.objects.filter(
-            run__sample__in=self.collection.samples_televir
-        ).exclude(run=None)
+        reference_hits = (
+            RawReference.objects.filter(run__sample__in=self.collection.samples_televir)
+            .exclude(run=None)
+            .exclude(accid="-")
+        )
         reference_hits_list = []
 
         if reference_hits.exists():
@@ -267,7 +439,9 @@ def get_hit_best_reference(hit: Hit) -> Optional[RawReference]:
     if len(hit.raw_reference_id_list) == 0:
         return None
 
-    hit_references = RawReference.objects.filter(id__in=hit.raw_reference_id_list)
+    hit_references = RawReference.objects.filter(
+        id__in=hit.raw_reference_id_list
+    ).exclude(accid="-")
     hit_references = [(x, determine_raw_ref_index(x)) for x in hit_references]
     hit_references.sort(key=lambda x: x[1])
 
@@ -284,7 +458,7 @@ def get_hit_best_classifier_reference(
         id__in=hit.raw_reference_id_list,
         run__read_classification=classifier,
         run__sample__name__icontains=panel,
-    )
+    ).exclude(accid="-")
 
     if hit_references.exists():
         hit_references = [(x, determine_raw_ref_index(x)) for x in hit_references]
@@ -309,24 +483,21 @@ def ref_index_by_pk(ref: RawReference):
 
 def ref_index_by_counts(ref: RawReference):
     run = ref.run
-
-    other_references = RawReference.objects.filter(run=run)
+    other_references = RawReference.objects.filter(run=run).exclude(accid="-")
     reference_counts = {
         ref.pk: ref.read_counts for ix, ref in enumerate(other_references)
     }
-
     reference_counts = {
         pk: read_counts
         for pk, read_counts in reference_counts.items()
         if read_counts is not None
     }
-
+    reference_counts = {x: float(y) for x, y in reference_counts.items()}
     sorted_pks = sorted(reference_counts, key=reference_counts.get, reverse=True)
 
     for ix, pk in enumerate(sorted_pks):
         if pk == ref.pk:
             return ix
-
     return -1
 
 
@@ -334,6 +505,40 @@ def determine_raw_ref_index(ref: RawReference):
 
     # return ref_index_by_pk(ref)
     return ref_index_by_counts(ref)
+
+
+def get_frames(ref: RawReference):
+    contigs_df = []
+    reads_df = []
+    other_references = RawReference.objects.filter(run=ref.run).exclude(accid="-")
+    for ref in other_references:
+        if ref.contig_counts != "0":
+            contigs_df.append([int(ref.taxid), int(float(ref.contig_counts))])
+
+        if ref.read_counts != "0":
+            reads_df.append([int(ref.taxid), int(float(ref.read_counts))])
+    contigs_df = pd.DataFrame(contigs_df, columns=["taxid", "counts"])
+    reads_df = pd.DataFrame(reads_df, columns=["taxid", "counts"])
+    return contigs_df, reads_df
+
+
+def determine_ref_televir_sort_index(ref: RawReference):
+    """
+    Determine the index of the reference in the televir sort."""
+    contigs_df, reads_df = get_frames(ref)
+    merged_final, full_descriptor = merge_classes(reads_df, contigs_df, maxt=3000)
+    print(ref.accid)
+    print(merged_final.head())
+    print(ref.taxid in contigs_df.taxid)
+    print(ref.taxid in reads_df.taxid)
+    print(int(ref.taxid), merged_final.taxid)
+    print(ref.taxid)
+    ref_accid_index = merged_final[merged_final["taxid"] == int(ref.taxid)].index[0]
+    return ref_accid_index
+
+
+def determine_raw_ref_counts(ref: RawReference):
+    return ref.read_counts
 
 
 def determine_reads_stats(ref: RawReference, samples_list: List[SampleWrapper] = []):
@@ -469,7 +674,7 @@ def df_report_analysis(analysis_df_filename, project_id: int):
                 f"{class_map_quality['UPIP']} / {class_map_quality['RPIP']}"
             )
 
-        for classifier in ["kraken2", "centrifuge", "blastn"]:
+        for classifier in ["kraken2", "centrifuge"]:
 
             for panel in ["UPIP", "RPIP"]:
 
@@ -479,9 +684,16 @@ def df_report_analysis(analysis_df_filename, project_id: int):
 
                 if best_mapping is not None:
                     best_mapping_rank = determine_raw_ref_index(best_mapping)
+                    best_televir_sort_rank = determine_ref_televir_sort_index(
+                        best_mapping
+                    )
                     new_row[f"{classifier}_{panel}_position"] = best_mapping_rank + 1
+                    new_row[f"{classifier}_{panel}_televir_sort_position"] = (
+                        best_televir_sort_rank + 1
+                    )
                 else:
                     new_row[f"{classifier}_{panel}_position"] = -1
+                    new_row[f"{classifier}_{panel}_televir_sort_position"] = -1
 
         new_table.append(new_row)
 

@@ -21,7 +21,7 @@ from constants.software_names import SoftwareNames
 from django.conf import settings
 from django.template.defaultfilters import filesizeformat
 from ete3 import Tree
-from manage_virus.models import UploadFile
+from manage_virus.models import UploadFile, IdentifyVirus
 from manage_virus.uploadFiles import UploadFiles
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import (MixedInfectionsTag, ProcessControler,
@@ -422,12 +422,13 @@ class Software(object):
             self.logger_debug.error("Fastq 1 not found: " + fastq_1)
             raise Exception("Fastq 1 not found: " + fastq_1)
         
-        cmd = "%s -t %d %s %s --graphical-fragment-assembly %s" % (
+        cmd = "%s -t %d %s %s --graphical-fragment-assembly %s > %s" % (
             self.software_names.SOFTWARE_RAVEN,
             settings.THREADS_TO_RUN_FAST,
             self.software_names.SOFTWARE_RAVEN_PARAMETERS,
             fastq_1,
-            os.path.join(out_dir, "contigs.gfa")
+            os.path.join(out_dir, "contigs.gfa"),
+            os.path.join(out_dir, "contigs.fasta")
         )
         exit_status = os.system(cmd)
         if exit_status != 0:
@@ -436,7 +437,7 @@ class Software(object):
             raise Exception("Fail to run raven")
         
         if os.path.exists(os.path.join(out_dir, "contigs.gfa")):
-            cmd = "cut -f 2,3 %s | sed 's/^/>/' | sed 's/\\s/\\n/' > %s" % (
+            cmd = "cat %s | grep '^S' | awk 'BEGIN {OFS=\"\\n\"} { print \">\"$2\" \"$4\" \"$5, $3}' > %s" % (
                 os.path.join(out_dir, "contigs.gfa"),                         
                 os.path.join(out_dir, "contigs.fasta")
             )
@@ -523,20 +524,25 @@ class Software(object):
 
     def run_abricate(self, database, file_name, parameters, out_file):
         """
-        Run abricator
+        Run abricate
         """
+        temp_file = self.utils.get_temp_file("abricate_fasta", FileExtensions.FILE_FASTA)
+        self.utils.clean_fasta_file(file_name, temp_file)
+        
         cmd = "%s --db %s %s --quiet %s > %s" % (
             self.software_names.get_abricate(),
             database,
             parameters,
-            file_name,
-            out_file,
+            #file_name,
+            temp_file,
+            out_file
         )
         exist_status = os.system(cmd)
+        self.utils.remove_temp_file(temp_file)
         if exist_status != 0:
             self.logger_production.error("Fail to run: " + cmd)
             self.logger_debug.error("Fail to run: " + cmd)
-            raise Exception("Fail to run abricate")
+            raise Exception("Fail to run abricate")        
         return cmd
 
     """
@@ -601,6 +607,7 @@ class Software(object):
         else:  ### for minion
             try:
                 cmd = self.run_raven(fastq_1=fastq1_1, out_dir=out_dir_result)
+
                 #cmd = self.convert_fastq_to_fasta(
                 #    fastq1_1, os.path.join(out_dir_result, "contigs.fasta")
                 #)
@@ -635,7 +642,7 @@ class Software(object):
                 )
                 self.utils.remove_dir(out_dir_result)
                 return False
-
+            
         file_out_contigs = os.path.join(out_dir_result, "contigs.fasta")
         if (
             not os.path.exists(file_out_contigs)
@@ -839,7 +846,8 @@ class Software(object):
             clean_abricate_file, sample.get_abricate_output(TypePath.MEDIA_ROOT)
         )
 
-        ## Only identify Contigs for Illuminua, because Spades runs. In ONT doesn't run because it is identify in reads.
+        ## Only identify Contigs for Illuminua, because Spades runs. 
+        ## In ONT doesn't run because it is identify in reads.
         try:
             ## copy the contigs from spades/raven
             contigs_2_sequences = Contigs2Sequences(b_run_tests)
@@ -934,6 +942,247 @@ class Software(object):
         self.utils.remove_file(out_file_abricate)
         self.utils.remove_file(clean_abricate_file)
         return True
+
+
+    #     @transaction.atomic
+    def run_classification(
+        self, projectsample, owner, b_run_tests=False
+    ):
+        """
+        Identify classification 
+        (type and sub_type for project sample consensus)
+        """
+
+        manageDatabase = ManageDatabase()
+
+        ### temp dir out spades
+        out_dir_result = self.utils.get_temp_dir()
+        result_all = Result() 
+        
+        file_out_contigs = projectsample.get_consensus_file(TypePath.MEDIA_ROOT)
+        if (
+            not os.path.exists(file_out_contigs)
+            or os.path.getsize(file_out_contigs) < 50
+        ):
+            ## save error in MetaKeySample
+            result = Result()               
+            manageDatabase.set_project_sample_metakey(
+                projectsample,
+                owner,
+                MetaKeyAndValue.META_KEY_Identify_Sample,
+                MetaKeyAndValue.META_VALUE_Error,
+                result.to_json(),
+            )
+            self.utils.remove_dir(out_dir_result)
+            return False
+
+        if not self.is_exist_database_abricate(Constants.TYPE_IDENTIFICATION_PROJECTS_DBNAME):
+            try:
+                path_to_find = os.path.join( 
+                    getattr(settings, "STATIC_ROOT", None), 
+                    Constants.DIR_TYPE_IDENTIFICATION_PROJECTS,
+                    Constants.TYPE_IDENTIFICATION_PROJECTS_DBNAME + ".fasta"
+                )
+                self.create_database_abricate(Constants.TYPE_IDENTIFICATION_PROJECTS_DBNAME, 
+                                              path_to_find)
+            except Exception:
+                result = Result()
+                result.set_error(
+                    "Abricate (%s) fail to run --setupdb"
+                    % (self.software_names.get_abricate_version())
+                )
+                result.add_software(
+                    SoftwareDesc(
+                        self.software_names.get_abricate_name(),
+                        self.software_names.get_abricate_version(),
+                        self.software_names.get_abricate_parameters(),
+                    )
+                )
+                manageDatabase.set_project_sample_metakey(
+                    projectsample,
+                    owner,
+                    MetaKeyAndValue.META_KEY_Identify_Sample,
+                    MetaKeyAndValue.META_VALUE_Error,
+                    result.to_json(),
+                )
+                self.utils.remove_dir(out_dir_result)
+                return False
+
+        ## run abricate
+        out_file_abricate = self.utils.get_temp_file("temp_abricate", ".txt")
+        try:
+            cmd = self.run_abricate(
+                Constants.TYPE_IDENTIFICATION_PROJECTS_DBNAME,
+                file_out_contigs,
+                SoftwareNames.SOFTWARE_ABRICATE_PARAMETERS,
+                out_file_abricate,
+            )
+            result_all.add_software(
+                SoftwareDesc(
+                    self.software_names.get_abricate_name(),
+                    self.software_names.get_abricate_version(),
+                    self.software_names.get_abricate_parameters()
+                    + " for type/subtype identification in project consensus",
+                )
+            )
+        except Exception:
+            result = Result()
+            result.set_error(
+                "Abricate (%s) fail to run"
+                % (self.software_names.get_abricate_version())
+            )
+            result.add_software(
+                SoftwareDesc(
+                    self.software_names.get_abricate_name(),
+                    self.software_names.get_abricate_version(),
+                    self.software_names.get_abricate_parameters()
+                    + " for type/subtype identification in project consensus",
+                )
+            )
+            manageDatabase.set_project_sample_metakey(
+                projectsample,
+                owner,
+                MetaKeyAndValue.META_KEY_Identify_Sample,
+                MetaKeyAndValue.META_VALUE_Error,
+                result.to_json(),
+            )
+            self.utils.remove_dir(out_dir_result)
+            return False
+
+        if not os.path.exists(out_file_abricate):
+            ## save error in MetaKeySample
+            result = Result()
+            result.set_error(
+                "Abricate (%s)identify_contigs fail to run"
+                % (self.software_names.get_abricate_version())
+            )
+            result.add_software(
+                SoftwareDesc(
+                    self.software_names.get_abricate(),
+                    self.software_names.get_abricate_version(),
+                    self.software_names.get_abricate_parameters(),
+                )
+            )
+            manageDatabase.set_project_sample_metakey(
+                projectsample,
+                owner,
+                MetaKeyAndValue.META_KEY_Identify_Sample,
+                MetaKeyAndValue.META_VALUE_Error,
+                result.to_json(),
+            )
+            self.utils.remove_dir(out_dir_result)
+            return False
+        
+        parseOutFiles = ParseOutFiles()
+        (dict_data_out, clean_abricate_file) = parseOutFiles.parse_abricate_file(
+            out_file_abricate,
+            os.path.basename(projectsample.get_abricate_output(TypePath.MEDIA_ROOT)),
+            SoftwareNames.SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE,
+        )
+
+        ### set the identification in database
+        uploadFiles = UploadFiles()
+        vect_data = uploadFiles.uploadIdentifyVirus(
+            dict_data_out, self.software_names.get_abricate_name(),
+            save=False
+        )
+
+        if len(vect_data) == 0:
+
+            ## save error in MetaKeySample
+            result = Result()
+            result.set_error("Fail to identify type and sub type")
+            result.add_software(
+                SoftwareDesc(
+                    self.software_names.get_abricate(),
+                    self.software_names.get_abricate_version(),
+                    self.software_names.get_abricate_parameters(),
+                )
+            )
+            manageDatabase.set_project_sample_metakey(
+                projectsample,
+                owner,
+                MetaKeyAndValue.META_KEY_Identify_Sample,
+                MetaKeyAndValue.META_VALUE_Error,
+                result.to_json(),
+            )
+        else:
+            # Assume there's only these ranks....
+            rank0 = rank1 = rank2 = ""
+            for idv in vect_data:
+                nametoadd = idv.seq_virus.name
+                #print(idv.seq_virus.kind_type.name)
+                is_influenza = False
+                if(idv.seq_virus.kind_type.name.find("influenza") != -1): is_influenza = True
+                if(idv.rank == 0):
+                    if(rank0 == ""): rank0 = nametoadd
+                    else: rank0 = rank0 + "|" + nametoadd
+                else: 
+                    if(is_influenza):
+                        #Apparently ranks do not come in the expected order
+                        if(nametoadd.find("H") != -1):
+                            if(rank1 == ""): rank1 = nametoadd
+                            else: rank1 = rank1 + "|" + nametoadd
+                        if(nametoadd.find("N") != -1):
+                            if(rank2 == ""): rank2 = nametoadd
+                            else: rank2 = rank2 + "|" + nametoadd
+                    else:
+                        if(idv.rank == 1):
+                            if(rank1 == ""): rank1 = nametoadd
+                            else: rank1 = rank1 + "|" + nametoadd
+                        if(idv.rank == 2):
+                            if(rank2 == ""): rank2 = nametoadd
+                            else: rank2 = rank2 + "|" + nametoadd
+
+            if((rank1 != "") and (rank0 != "")): rank1 = "-" + rank1
+            if( (rank1.find('|') != -1) or (rank2.find('|') != -1)): rank2 = "|" + rank2
+            projectsample.classification = rank0 + rank1 + rank2
+            projectsample.save()
+
+        ## Save results to file...
+        try:
+            if os.path.exists(clean_abricate_file):             
+                self.utils.copy_file(
+                    clean_abricate_file,
+                    projectsample.get_abricate_output(TypePath.MEDIA_ROOT),
+                )
+            result_all.add_software(
+                SoftwareDesc(
+                    self.software_names.get_abricate_name(),
+                    self.software_names.get_abricate_version(),
+                    self.software_names.SOFTWARE_ABRICATE_PARAMETERS_mincov_30
+                    + " for segments/references assignment",
+                )
+            )
+        except Exception as e:
+            result = Result()
+            result.set_error(
+                "Abricate (%s) fail to run"
+                % (self.software_names.get_abricate_version())
+            )
+            result.add_software(
+                SoftwareDesc(
+                    self.software_names.get_abricate_name(),
+                    self.software_names.get_abricate_version(),
+                    self.software_names.SOFTWARE_ABRICATE_PARAMETERS_mincov_30
+                    + " for consensus sequence classification",
+                )
+            )
+            manageDatabase.set_project_sample_metakey(
+                projectsample,
+                owner,
+                MetaKeyAndValue.META_KEY_Identify_Sample,
+                MetaKeyAndValue.META_VALUE_Error,
+                result.to_json(),
+            )
+            return False
+
+        ## everything OK, now clean up
+        self.utils.remove_dir(out_dir_result)
+        self.utils.remove_file(out_file_abricate)
+        self.utils.remove_file(clean_abricate_file)
+        return True
+
 
     def get_species_tag(self, reference):
         """

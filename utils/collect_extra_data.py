@@ -114,7 +114,7 @@ class CollectExtraData(object):
 		process_controler = ProcessControler()
 		process_SGE = ProcessSGE()
 		try:
-			## collect sample table with plus type and subtype, mixed infection, equal to upload table
+			## run pangolin and collect output
 			file_pangolin_output = project.get_global_file_by_project(TypePath.MEDIA_ROOT,
 										Project.PROJECT_FILE_NAME_Pangolin_lineage)
 			file_consensus = project.get_global_file_by_project(TypePath.MEDIA_ROOT,
@@ -141,6 +141,14 @@ class CollectExtraData(object):
 							MetaKeyAndValue.META_KEY_Identify_pangolin,\
 							MetaKeyAndValue.META_VALUE_Success,\
 							result_all.to_json() )
+					
+					pangolin_data = self.utils.read_pangolin(file_pangolin_output)
+					# Update projectsample classification field with pangolin data
+					for project_sample in ProjectSample.objects.filter(project=project):
+						if(project_sample.sample.name in pangolin_data["Sequence"].values):
+							project_sample.classification = pangolin_data.loc[pangolin_data["Sequence"] == project_sample.sample.name, 'lineage'].values[0]
+						project_sample.save()
+
 				except SoftwareModel.DoesNotExist:	## need to create with last version
 					self.logger_production.error('ProjectID: {} Fail to detect software model'.format(project.id))
 					self.logger_debug.error('ProjectID: {} Fail to detect software model'.format(project.id))
@@ -151,6 +159,32 @@ class CollectExtraData(object):
 			## finished with error
 			process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_ERROR)
 			return
+		
+		if (b_mark_sge_success):
+			process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_FINISHED)
+
+	def __collect_classification(self, project, user, b_mark_sge_success = True):
+		"""
+		Runs Abricate classification for consensus sequences of the project
+		"""
+		### get the taskID and seal it
+		process_controler = ProcessControler()
+		process_SGE = ProcessSGE()
+		try:
+			# Just go through all process samples for this project, 
+			# if there is consensus for that sample, classify with abricate
+
+			#for projectsample in ProjectSample.objects.filter(project=project, user=user):
+			for projectsample in ProjectSample.objects.filter(project=project):
+				self.software.run_classification(
+					projectsample=projectsample, 
+					owner=user
+				)
+
+		except:
+			## finished with error
+			process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_ERROR)
+			return False
 		
 		if (b_mark_sge_success):
 			process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_FINISHED)
@@ -172,6 +206,7 @@ class CollectExtraData(object):
 				
 				### create for single sequences
 				GENE_NAME = 'S'
+				file_alignments = ""
 				for sequence_name in geneticElement.get_sorted_elements():
 					file_alignments = project.get_global_file_by_element_and_cds(TypePath.MEDIA_ROOT, sequence_name, 
 						GENE_NAME, Project.PROJECT_FILE_NAME_MAFFT)
@@ -186,17 +221,12 @@ class CollectExtraData(object):
 
 					# For SARS-CoV-2 add the lineage to the columns: TODO Add this functionality to DataColumns or some other class, or some function(s) in utils...
 					# start by reading the lineage (which needs to exist beforehand)
-					pangolin_file = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Pangolin_lineage)
-					if(not os.path.exists(file_alignments)): 
-						self.logger_debug.info("Collect aln2pheno: error getting pangolin lineage: file does not exist {}".format(file_alignments))
-						process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_ERROR)
-						return
-					
-					pangolin_data = pandas.read_csv(pangolin_file, delimiter=Constants.SEPARATOR_COMMA)
-					pangolin_data = pangolin_data[['taxon','lineage']]
-					# replace  suffix added to the identifier for pangolin (TODO: why is this suffix there in the first place??)
-					pangolin_data['taxon'] = pangolin_data['taxon'].str.replace('__'+sequence_name,'')
-					pangolin_data.rename(columns = {'taxon':'Sequence'}, inplace = True)
+					pangolin_data = self.utils.read_pangolin(
+						pangolin_file= project.get_global_file_by_project(
+							TypePath.MEDIA_ROOT, 
+							Project.PROJECT_FILE_NAME_Pangolin_lineage
+						)
+					)
 
 					tmp_aln2pheno = self.utils.get_temp_file("tmp_file", ".tab")
 
@@ -383,7 +413,16 @@ class CollectExtraData(object):
 			self.logger_debug.info("COLLECT_EXTRA_FILES: collect all consensus Step {}  diff_time:{}".format(count, time.time() - start))
 			count += 1
 			start = time.time()
-			
+
+			## calculate abricate classification of project consensus sequences
+			## This need to be before pangolin, because pangolin will overwrite this
+			self.__collect_classification(project, user, False)
+			self.logger_production.info("COLLECT_EXTRA_FILES: calculate the classification Step {}  diff_time:{}".format(count, time.time() - start))
+			self.logger_debug.info("COLLECT_EXTRA_FILES: calculate the classification Step {}  diff_time:{}".format(count, time.time() - start))
+			count += 1
+			start = time.time()
+
+
 			## calculate the lineage, if necessary
 			## This need to be after the PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus
 			self.__collect_update_pangolin_lineage(project, user, False)
@@ -417,6 +456,7 @@ class CollectExtraData(object):
 			self.logger_debug.info("COLLECT_EXTRA_FILES: freebayes variants 2 Step {}  diff_time:{}".format(count, time.time() - start))
 			count += 1
 			start = time.time()
+
 			## collect sample table with plus type and subtype, mixed infection, equal to upload table
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV, project, user)
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV, project, user)
@@ -529,8 +569,12 @@ class CollectExtraData(object):
 		(temp_file_html, temp_file_png) = self.create_graph_plotly(vect_data_sample)
 		
 		## set the meta_Key
-		meta_data = manageDatabase.set_project_metakey(project, user, MetaKeyAndValue.META_KEY_Count_Samples_Var_Graph, MetaKeyAndValue.META_VALUE_Success,	
-									'{}'.format(len(vect_data_sample)))
+		meta_data = manageDatabase.set_project_metakey(project, 
+												 user, 
+												 MetaKeyAndValue.META_KEY_Count_Samples_Var_Graph, 
+												 MetaKeyAndValue.META_VALUE_Success,	
+												 '{}'.format(len(vect_data_sample))
+		)
 		return (temp_file_html, temp_file_png)
 	
 	
@@ -839,6 +883,11 @@ class CollectExtraData(object):
 			if (not project_sample.get_is_ready_to_proccess()): continue
 			if not os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)): continue
 
+			infile = project_sample.get_consensus_file(TypePath.MEDIA_ROOT)
+			tmpfile = self.utils.get_temp_file('tmpfasta', FileExtensions.FILE_FASTA)
+			self.utils.clean_fasta_file(infile,tmpfile)
+			self.utils.move_file(tmpfile,infile)
+
 			## test if it has to join in all consensus files
 			if not default_software.include_consensus(project_sample): continue
 
@@ -1086,7 +1135,10 @@ class CollectExtraData(object):
 					### longitude
 					vect_out.append(str(project_sample.sample.geo_local.coords[1]) if project_sample.sample.geo_local != None else '')
 					### type_subtype
-					vect_out.append(project_sample.sample.type_subtype if project_sample.sample.type_subtype != None else '')
+					if parse_pangolin.has_data():
+						vect_out.append(project_sample.sample.type_subtype if project_sample.sample.type_subtype != None else '')
+					else:
+						vect_out.append(project_sample.classification if project_sample.classification != None else '')
 					### mixedinfection
 					vect_out.append(project_sample.mixed_infections.tag.name if project_sample.mixed_infections != None else '')
 	

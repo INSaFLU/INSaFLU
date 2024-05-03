@@ -186,6 +186,8 @@ class Constants(object):
     DIR_NEXTSTRAIN_tables = "db/nextstrain"
     DIR_TEST_TYPE_REFERENCES = "tests/db/references/"
     DIR_TYPE_ALN2PHENO = "db/Alignment2phenotype/"
+    DIR_TYPE_IDENTIFICATION_PROJECTS = "db/type_identification_projects/"
+    TYPE_IDENTIFICATION_PROJECTS_DBNAME = "db_projects_v1"
 
     INSAFLU_NAME = "insaflu"
 

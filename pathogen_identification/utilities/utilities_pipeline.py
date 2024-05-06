@@ -10,19 +10,22 @@ import pandas as pd
 from django.contrib.auth.models import User
 from django.db.models import Q, QuerySet
 
-from constants.constants import \
-    Televir_Directory_Constants as Televir_Directories
+from constants.constants import Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.host_library import Host
-from pathogen_identification.models import (ParameterSet, PIProject_Sample,
-                                            Projects, RawReference,
-                                            RawReferenceCompoundModel, RunMain,
-                                            SoftwareTree, SoftwareTreeNode)
-from pathogen_identification.utilities.utilities_televir_dbs import \
-    Utility_Repository
-from pathogen_identification.utilities.utilities_views import \
-    RawReferenceCompound
+from pathogen_identification.models import (
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    RawReferenceCompoundModel,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
+from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
+from pathogen_identification.utilities.utilities_views import RawReferenceCompound
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -310,6 +313,7 @@ class Pipeline_Makeup(PipelineTreeBase):
             CS.PIPELINE_NAME_metagenomics_screening,
             CS.PIPELINE_NAME_request_mapping,
             CS.PIPELINE_NAME_map_filtering,
+            CS.PIPELINE_NAME_remap_filtering,
         ]
 
         makeup_return = self.match_makeup_name_from_list(makeup_list, ignore=ignore)
@@ -3572,7 +3576,7 @@ class RawReferenceUtils:
                 manual_insert=compound_ref.manual_insert,
                 mapped_final_report=compound_ref.mapped_final_report,
                 mapped_raw_reference=compound_ref.mapped_raw_reference,
-                selected_mapped_pk= compound_ref.selected_mapped_pk,
+                selected_mapped_pk=compound_ref.selected_mapped_pk,
                 run_count=compound_ref.run_count,
             )
             compound_ref_model.save()
@@ -3627,7 +3631,6 @@ class RawReferenceUtils:
         Retrieve compound references for a sample
         """
         compound_refs = self.query_sample_compound_references(query_string)
-        print("refs exist", compound_refs.exists())
         if compound_refs.exists():
 
             return compound_refs

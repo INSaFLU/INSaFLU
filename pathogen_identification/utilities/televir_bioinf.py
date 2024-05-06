@@ -1,13 +1,78 @@
 import os
+import re
 import shutil
 import subprocess
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import pandas as pd
+from Bio import SeqIO
+from Bio.Seq import Seq
 
 from constants.constants import Televir_Metadata_Constants
 from pathogen_identification.models import RawReference
 from pathogen_identification.modules.object_classes import MappingStats
+
+
+class DustMasker:
+
+    def __init__(self, dustmasker_binary_dir, temp_dir=None, id: Optional[str] = 0):
+        self.dustmasker_binary = "dustmasker"
+        self.temp_dir = temp_dir
+        if self.temp_dir is None:
+            self.temp_dir = os.path.join(
+                os.path.dirname(self.dustmasker_binary), "temp"
+            )
+        if not os.path.exists(self.temp_dir):
+            os.mkdir(self.temp_dir)
+
+        self.bedout = os.path.join(self.temp_dir, f"dust.{id}.bed")
+        self.fasta_soft_mask = os.path.join(self.temp_dir, f"dust.{id}.fasta")
+        self.fasta_hard_mask = os.path.join(self.temp_dir, f"dust.{id}.hard.fasta")
+
+    def hardmask_fasta_output(self):
+        """
+        replace lower case bases with N
+        """
+        if not os.path.exists(self.fasta_soft_mask):
+            return False
+
+        with open(self.fasta_soft_mask, "r") as f:
+            with open(self.fasta_hard_mask, "w") as g:
+                for record in SeqIO.parse(f, "fasta"):
+                    ## replace lower case with N
+                    record.seq = Seq(re.sub("[a-z]", "N", str(record.seq)))
+
+                    g.write(record.format("fasta"))
+
+    def mask_sequence(self, fasta_file):
+        """
+        Run dustmasker on a fasta file
+        """
+
+        command = f"{self.dustmasker_binary} -in {fasta_file} -outfmt fasta -out {self.fasta_soft_mask}"
+        print("RUNNING DUSTMASKER", command)
+        subprocess.call(command, shell=True)
+
+        return self.fasta_soft_mask
+
+    def mask_sequence_hard(self, fasta_file):
+        """
+        Run dustmasker on a fasta file
+        """
+
+        self.mask_sequence(fasta_file)
+        self.hardmask_fasta_output()
+
+        return self.fasta_hard_mask
+
+    def run_mask_hard(self, fasta_file):
+        """
+        Run dustmasker on a fasta file
+        """
+        self.mask_sequence_hard(fasta_file)
+        os.remove(self.fasta_soft_mask)
+
+        return self.fasta_hard_mask
 
 
 class TelevirBioinf:

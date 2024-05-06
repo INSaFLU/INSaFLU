@@ -9,10 +9,11 @@ from curses.ascii import SO
 from django.contrib.auth.models import User
 
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.utilities.utilities_pipeline import (
-    Utility_Pipeline_Manager, Utils_Manager)
+    Utility_Pipeline_Manager,
+    Utils_Manager,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.models import Parameter, Software, SoftwareDefaultTest
@@ -42,8 +43,7 @@ class DefaultSoftware(object):
             software_test = SoftwareDefaultTest.objects.get(
                 user=user, televir_pipelines_available=True
             )
-            print("televir_pipelines_available")
-            print(software_test)
+
             return True
 
         except SoftwareDefaultTest.DoesNotExist:
@@ -365,6 +365,48 @@ class DefaultSoftware(object):
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_minion,
                 pipeline_step=ConstantsSettings.PIPELINE_NAME_map_filtering,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_DUSTMASKER_name,
+            self.default_parameters.get_dustmasker_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_DUSTMASKER_name,
+            self.default_parameters.get_dustmasker_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_remap_filtering,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_DUSTMASKER_name,
+            self.default_parameters.get_dustmasker_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_DUSTMASKER_name,
+            self.default_parameters.get_dustmasker_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_remap_filtering,
             ),
             user,
         )
@@ -819,7 +861,7 @@ class DefaultSoftware(object):
             return
 
         ## lock because more than one process can duplicate software names
-        
+
         try:
             type_of_use = vect_parameters[0].software.type_of_use
         except:
@@ -1032,6 +1074,19 @@ class DefaultSoftware(object):
             None,
             None,
             technology_name,
+        )
+        return "" if result is None else result
+
+    def get_dustmasker_parameters(self, user, technology_name, pipeline_step=None):
+        result = self.default_parameters.get_parameters(
+            SoftwareNames.SOFTWARE_DUSTMASKER_name,
+            user,
+            Software.TYPE_OF_USE_televir_global,
+            None,
+            None,
+            None,
+            technology_name,
+            pipeline_step=pipeline_step,
         )
         return "" if result is None else result
 
@@ -1491,15 +1546,7 @@ class DefaultSoftware(object):
         ############### TELEVIR SOFTWARE #########
 
         if software_name == SoftwareNames.SOFTWARE_REMAP_PARAMS_name:
-            self.test_default_db(
-                SoftwareNames.SOFTWARE_REMAP_PARAMS_name,
-                self.default_parameters.get_remap_defaults(
-                    user,
-                    Software.TYPE_OF_USE_televir_settings,
-                    ConstantsSettings.TECHNOLOGY_illumina,
-                ),
-                user,
-            )
+
             return self.get_remap_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_PRINSEQ_name:
@@ -1515,314 +1562,107 @@ class DefaultSoftware(object):
             return self.get_prinseq_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_BAMUTIL_name:
-            self.test_default_db(
-                SoftwareNames.SOFTWARE_BAMUTIL_name,
-                self.default_parameters.get_bamutil_defaults(
-                    user,
-                    Software.TYPE_OF_USE_televir_global,
-                    ConstantsSettings.TECHNOLOGY_illumina,
-                ),
-                user,
-            )
+
             return self.get_bamutil_parameters(user, technology_name)
 
-        if software_name == SoftwareNames.SOFTWARE_METAGENOMICS_SETTINGS_name:
-            self.test_default_db(
-                SoftwareNames.SOFTWARE_METAGENOMICS_SETTINGS_name,
-                self.default_parameters.get_metagenomics_settings_defaults(
-                    user,
-                    Software.TYPE_OF_USE_televir_settings,
-                    technology_name=technology_name,
-                ),
-                user,
+        if software_name == SoftwareNames.SOFTWARE_DUSTMASKER_name:
+
+            return self.get_dustmasker_parameters(
+                user, technology_name, pipeline_step=pipeline_step
             )
+
+        if software_name == SoftwareNames.SOFTWARE_METAGENOMICS_SETTINGS_name:
+
             return self.get_metagenomics_settings_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_MSAMTOOLS_name:
-            self.test_default_db(
-                SoftwareNames.SOFTWARE_MSAMTOOLS_name,
-                self.default_parameters.get_msamtools_defaults(
-                    user,
-                    Software.TYPE_OF_USE_televir_global,
-                    ConstantsSettings.TECHNOLOGY_illumina,
-                    pipeline_step=pipeline_step,
-                ),
-                user,
-            )
 
             return self.get_msamtools_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_televir_report_layout_name:
-            self.test_default_db(
-                SoftwareNames.SOFTWARE_televir_report_layout_name,
-                self.default_parameters.get_televir_report_defaults(
-                    user,
-                    Software.TYPE_OF_USE_televir_settings,
-                    ConstantsSettings.TECHNOLOGY_illumina,
-                ),
-                user,
-            )
+
             return self.get_televir_report_layout_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_CENTRIFUGE_name:
-            self.test_default_db(
-                SoftwareNames.SOFTWARE_CENTRIFUGE_name,
-                self.default_parameters.get_centrifuge_default(
-                    user,
-                    Software.TYPE_OF_USE_televir_global,
-                    ConstantsSettings.TECHNOLOGY_illumina,
-                ),
-                user,
-            )
 
-            self.test_default_db(
-                SoftwareNames.SOFTWARE_CENTRIFUGE_name,
-                self.default_parameters.get_centrifuge_default(
-                    user,
-                    Software.TYPE_OF_USE_televir_global,
-                    ConstantsSettings.TECHNOLOGY_minion,
-                    pipeline_step=ConstantsSettings.PIPELINE_NAME_read_classification,
-                ),
-                user,
-            )
-
-            self.test_default_db(
-                SoftwareNames.SOFTWARE_CENTRIFUGE_name,
-                self.default_parameters.get_centrifuge_default(
-                    user,
-                    Software.TYPE_OF_USE_televir_global,
-                    ConstantsSettings.TECHNOLOGY_illumina,
-                    pipeline_step=ConstantsSettings.PIPELINE_NAME_read_classification,
-                ),
-                user,
-            )
-
-            self.test_default_db(
-                SoftwareNames.SOFTWARE_CENTRIFUGE_name,
-                self.default_parameters.get_centrifuge_default(
-                    user,
-                    Software.TYPE_OF_USE_televir_global,
-                    ConstantsSettings.TECHNOLOGY_minion,
-                ),
-                user,
-            )
             return self.get_centrifuge_parameters(
                 user, technology_name, pipeline_step=pipeline_step
             )
 
         if software_name == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name:
-            self.test_default_db(
-                SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name,
-                self.default_parameters.get_minimap2_remap_ONT_default(
-                    user,
-                    Software.TYPE_OF_USE_televir_global,
-                    ConstantsSettings.TECHNOLOGY_minion,
-                    pipeline_step=ConstantsSettings.PIPELINE_NAME_remapping,
-                ),
-                user,
-            )
 
             return self.get_minimap2_remap_ont_parameters(user)
 
         if software_name == SoftwareNames.SOFTWARE_BOWTIE2_DEPLETE_name:
-            self.test_default_db(
-                SoftwareNames.SOFTWARE_BOWTIE2_DEPLETE_name,
-                self.default_parameters.get_bowtie2_deplete_default(
-                    user,
-                    Software.TYPE_OF_USE_televir_global,
-                    ConstantsSettings.TECHNOLOGY_illumina,
-                ),
-                user,
-            )
+
             return self.get_bowtie2_deplete_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name:
-            self.test_default_db(
-                SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name,
-                self.default_parameters.get_bowtie2_remap_default(
-                    user,
-                    Software.TYPE_OF_USE_televir_global,
-                    ConstantsSettings.TECHNOLOGY_illumina,
-                    pipeline_step=pipeline_step,
-                ),
-                user,
-            )
 
             return self.get_bowtie2_remap_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ONT_name:
-            self.test_default_db(
-                SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ONT_name,
-                self.default_parameters.get_minimap2_depletion_ONT_default(
-                    user,
-                    Software.TYPE_OF_USE_televir_global,
-                    ConstantsSettings.TECHNOLOGY_minion,
-                    pipeline_step=ConstantsSettings.PIPELINE_NAME_host_depletion,
-                ),
-                user,
-            )
 
             return self.get_minimap2_deplete_ont_parameters(user)
 
         if software_name == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ILLU_name:
-            self.test_default_db(
-                SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ILLU_name,
-                self.default_parameters.get_minimap2_remap_illumina_default(
-                    user,
-                    Software.TYPE_OF_USE_televir_global,
-                    ConstantsSettings.TECHNOLOGY_illumina,
-                    pipeline_step=ConstantsSettings.PIPELINE_NAME_remapping,
-                ),
-                user,
-            )
 
             return self.get_minimap2_remap_illumina_parameters(user)
 
         if software_name == SoftwareNames.SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name:
-            self.test_default_db(
-                SoftwareNames.SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name,
-                self.default_parameters.get_minimap2_map_assembly_default(
-                    user,
-                    Software.TYPE_OF_USE_televir_global,
-                    ConstantsSettings.TECHNOLOGY_minion,
-                ),
-                user,
-            )
 
             return self.get_minimap2_map_assembly_parameters(user)
 
         if software_name == SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ILLU_name:
-            self.test_default_db(
-                SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ILLU_name,
-                self.default_parameters.get_minimap2_depletion_illumina_default(
-                    user,
-                    Software.TYPE_OF_USE_televir_global,
-                    ConstantsSettings.TECHNOLOGY_illumina,
-                    pipeline_step=ConstantsSettings.PIPELINE_NAME_host_depletion,
-                ),
-                user,
-            )
 
             return self.get_minimap2_deplete_illumina(user)
 
         if software_name == SoftwareNames.SOFTWARE_KRAKEN2_name:
-            self.test_default_db(
-                SoftwareNames.SOFTWARE_KRAKEN2_name,
-                self.default_parameters.get_kraken2_default(
-                    user, Software.TYPE_OF_USE_televir_global, technology_name
-                ),
-                user,
-            )
+
             return self.get_kraken2_parameters(
                 user, technology_name, pipeline_step=pipeline_step
             )
 
         if software_name == SoftwareNames.SOFTWARE_BWA_name:
-            self.test_default_db(
-                SoftwareNames.SOFTWARE_BWA_name,
-                self.default_parameters.get_bwa_default(
-                    user,
-                    Software.TYPE_OF_USE_televir_global,
-                    ConstantsSettings.TECHNOLOGY_illumina,
-                ),
-                user,
-            )
+
             return self.get_bwa_parameters(
                 user, technology_name, pipeline_step=pipeline_step
             )
 
         if software_name == SoftwareNames.SOFTWARE_DIAMOND_name:
-            self.test_default_db(
-                SoftwareNames.SOFTWARE_DIAMOND_name,
-                self.default_parameters.get_diamond_default(
-                    user, Software.TYPE_OF_USE_televir_global, technology_name
-                ),
-                user,
-            )
+
             return self.get_diamond_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_KRAKENUNIQ_name:
-            self.test_default_db(
-                SoftwareNames.SOFTWARE_KRAKENUNIQ_name,
-                self.default_parameters.get_krakenuniq_default(
-                    user, Software.TYPE_OF_USE_televir_global, technology_name
-                ),
-                user,
-            )
 
             return self.get_krakenuniq_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_KAIJU_name:
-            self.test_default_db(
-                SoftwareNames.SOFTWARE_KAIJU_name,
-                self.default_parameters.get_kaiju_default(
-                    user,
-                    Software.TYPE_OF_USE_televir_global,
-                    technology_name,
-                    pipeline_step=ConstantsSettings.PIPELINE_NAME_read_classification,
-                ),
-                user,
-            )
+
             return self.get_kaiju_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_BLAST_name:
-            self.test_default_db(
-                SoftwareNames.SOFTWARE_BLAST_name,
-                self.default_parameters.get_blast_default(
-                    user, Software.TYPE_OF_USE_televir_global, technology_name
-                ),
-                user,
-            )
+
             return self.get_blast_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_DESAMBA_name:
-            self.test_default_db(
-                SoftwareNames.SOFTWARE_DESAMBA_name,
-                self.default_parameters.get_desamba_default(
-                    user, Software.TYPE_OF_USE_televir_global, technology_name
-                ),
-                user,
-            )
+
             return self.get_desamba_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_RAVEN_name:
-            self.test_default_db(
-                SoftwareNames.SOFTWARE_RAVEN_name,
-                self.default_parameters.get_raven_default(
-                    user, Software.TYPE_OF_USE_televir_global, technology_name
-                ),
-                user,
-            )
+
             return self.get_raven_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_FASTVIROMEEXPLORER_name:
-            self.test_default_db(
-                SoftwareNames.SOFTWARE_FASTVIROMEEXPLORER_name,
-                self.default_parameters.get_fastviromeexplorer_default(
-                    user, Software.TYPE_OF_USE_televir_global, technology_name
-                ),
-                user,
-            )
+
             return self.get_fastviromeexplorer_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_SPAdes_name:
-            self.test_default_db(
-                SoftwareNames.SOFTWARE_SPAdes_name,
-                self.default_parameters.get_spades_default(
-                    user, Software.TYPE_OF_USE_televir_global, technology_name
-                ),
-                user,
-            )
+
             return self.get_spades_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_SNIPPY_PI_name:
-            self.test_default_db(
-                SoftwareNames.SOFTWARE_SNIPPY_PI_name,
-                self.default_parameters.get_snippy_pi_default(
-                    user, Software.TYPE_OF_USE_televir_global, technology_name
-                ),
-                user,
-            )
+
             return self.get_snippy_pi_parameters(user, technology_name)
 
         return ""

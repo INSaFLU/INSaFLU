@@ -3,7 +3,7 @@ import os
 import re
 import shutil
 from random import randint
-from typing import List, Type
+from typing import List, Optional, Type
 
 import numpy as np
 import pandas as pd
@@ -13,16 +13,21 @@ from scipy.stats import kstest
 from constants.software_names import SoftwareNames
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.modules.object_classes import (Bedgraph,
-                                                            MappingStats,
-                                                            Read_class,
-                                                            Remap_Target,
-                                                            RunCMD,
-                                                            SoftwareDetail,
-                                                            SoftwareRemap)
+from pathogen_identification.modules.object_classes import (
+    Bedgraph,
+    MappingStats,
+    Read_class,
+    Remap_Target,
+    RunCMD,
+    SoftwareDetail,
+    SoftwareRemap,
+)
+from pathogen_identification.utilities.televir_bioinf import DustMasker
 from pathogen_identification.utilities.televir_parameters import RemapParams
 from pathogen_identification.utilities.utilities_general import (
-    plot_dotplot, read_paf_coordinates)
+    plot_dotplot,
+    read_paf_coordinates,
+)
 
 pd.options.mode.chained_assignment = None
 np.warnings.filterwarnings("ignore")
@@ -787,13 +792,8 @@ class Remapping:
         os.makedirs(subdirectory, exist_ok=True)
         final_file = os.path.join(subdirectory, os.path.basename(filepath))
 
-        print("########## moving file")
-        print(filepath)
-        print(final_file)
-
         if os.path.exists(filepath) and final_file != filepath:
-            print("########## moving file")
-            print("final_path exists", os.path.exists(final_file))
+
             if os.path.exists(final_file):
                 os.remove(final_file)
 
@@ -931,8 +931,22 @@ class Remapping:
                     line = line.replace(";", "_").replace(":", "_")
                 f.write(line)
 
+    def process_reference_fasta(self):
+        """
+        Process reference fasta file to remove spaces in contig names.
+        """
+
+        for filter in self.remap_filters.software_list:
+            if filter.name == SoftwareNames.SOFTWARE_DUSTMASKER_name:
+                dustmasker = DustMasker(filter.bin, self.rdir, self.target.acc_simple)
+                dustmasker.run_mask_hard(self.reference_file)
+
+                os.remove(self.reference_file)
+                shutil.move(dustmasker.fasta_hard_mask, self.reference_file)
+
     def retrieve_reference(self):
         self.extract_reference_sequences()
+        self.process_reference_fasta()
         self.get_reference_fasta_length()
         self.reference_fasta_string = self.get_reference_contig_name()
         self.sanitize_reference_fasta_contig_name()
@@ -1615,7 +1629,7 @@ class Remapping:
         if os.path.exists(self.dotplot):
             shutil.move(self.dotplot, self.full_path_dotplot)
             self.dotplot = new_dotplot
-        
+
         return self
 
 
@@ -2003,6 +2017,25 @@ class Mapping_Manager(Tandem_Remap):
     def check_targets_combined_fasta_exists(self):
         return os.path.exists(self.combined_fasta_gz_path)
 
+    def dustmasker_process_fasta(
+        self, fasta_file: str, dustmasker_software: SoftwareDetail, id: Optional[str]
+    ):
+        dustmasker = DustMasker(
+            dustmasker_binary_dir=dustmasker_software.bin,
+            temp_dir=self.remapping_methods.output_dir,
+            id=id,
+        )
+
+        dustmasker.run_mask_hard(fasta_file)
+
+        os.remove(fasta_file)
+        shutil.move(dustmasker.fasta_hard_mask, fasta_file)
+
+    def process_fasta(self, fasta_file: str, id: Optional[str]):
+        for software in self.remapping_methods.remap_filters.software_list:
+            if software.name == SoftwareNames.SOFTWARE_DUSTMASKER_name:
+                self.dustmasker_process_fasta(fasta_file, software, id)
+
     def generate_remap_targets_fasta(self):
         if self.check_targets_combined_fasta_exists():
             return
@@ -2027,6 +2060,7 @@ class Mapping_Manager(Tandem_Remap):
                 self.cmd.run(cmd)
 
                 if self.check_fasta_empty(tmp_fasta) is False:
+                    self.process_fasta(tmp_fasta, accid_clean)
                     self.append_fasta(tmp_fasta)
 
                 os.remove(tmp_fasta)
@@ -2071,9 +2105,6 @@ class Mapping_Manager(Tandem_Remap):
             apres = mapped_instance.reference.number_of_contigs_mapped > 0
             rpres = mapped_instance.reference.number_of_reads_mapped > 0
 
-            print(f" Reads mapped: {rpres}")
-            print(f" Contigs mapped: {apres}")
-
             if rpres:
                 mapped_instance.reference = (
                     mapped_instance.reference.move_coverage_plot(static_plots_dir)
@@ -2084,15 +2115,14 @@ class Mapping_Manager(Tandem_Remap):
                 mapped_instance.reference.cleanup_files()
 
             if apres:
-                mapped_instance.reference = mapped_instance.reference.move_dotplot(static_plots_dir)
+                mapped_instance.reference = mapped_instance.reference.move_dotplot(
+                    static_plots_dir
+                )
             else:
                 print("No contigs mapped, skipping dotplot")
                 if mapped_instance.assembly:
                     mapped_instance.assembly.cleanup_files()
 
-            print("################### just checking ###################")
-            print(mapped_instance.reference.read_map_sorted_bam)
-            print(mapped_instance.reference.read_map_sorted_bam_index)
             self.mapped_instances.append(mapped_instance)
 
     def export_mapping_files(self, output_dir):
@@ -2165,8 +2195,6 @@ class Mapping_Manager(Tandem_Remap):
             self.mapped_instances.append(mapped_instance)
 
     def update_mapped_instances(self, mapped_instances: List[Mapping_Instance]):
-        print(self.r1)
-        print(self.target_taxids)
 
         self.mapped_instances = []
         for instance in mapped_instances:

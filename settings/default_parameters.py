@@ -155,15 +155,14 @@ class DefaultParameters(object):
         persist a specific software by default
         param: type_of_use Can by Software.TYPE_OF_USE_project; Software.TYPE_OF_USE_project_sample
         """
-        #software = None
+        # software = None
         dt_out_sequential = {}
         for parameter in vect_parameters:
             assert parameter.sequence_out not in dt_out_sequential
 
-
             try:
                 Parameter.objects.get(
-                    software= software,
+                    software=software,
                     name=parameter.name,
                     sequence_out=parameter.sequence_out,
                 )
@@ -181,7 +180,7 @@ class DefaultParameters(object):
                     continue
 
             ## set sequential number
-        
+
         return len(dt_out_sequential) > 0
 
     def get_software_global_with_step(
@@ -273,6 +272,8 @@ class DefaultParameters(object):
         """
         # logger = logging.getLogger("fluWebVirus.debug")
         # logger.debug("Get parameters: software-{} user-{} typeofuse-{} project-{} psample-{} sample-{} tec-{} dataset-{}",software_name, user, type_of_use, project, project_sample, sample, technology_name, dataset)
+        
+        
         if self.check_software_is_polyvalent(software_name):
             if pipeline_step is None:
                 prefered_pipeline = self.get_polyvalent_software_pipeline(software_name)
@@ -320,6 +321,7 @@ class DefaultParameters(object):
             DefaultParameters.MASK_DONT_care,
         ]:
             return DefaultParameters.MASK_not_applicable
+
 
         ### parse them
         dict_out = {}
@@ -409,6 +411,7 @@ class DefaultParameters(object):
                             dict_out[par_name][1][0],
                         )
                     )
+
                 elif par_name == "--db":
                     return_parameter += "{}{}".format(
                         dict_out[par_name][0][0],
@@ -798,6 +801,13 @@ class DefaultParameters(object):
 
         elif software.name == SoftwareNames.SOFTWARE_BAMUTIL_name:
             return self.get_bamutil_defaults(
+                software.owner,
+                Software.TYPE_OF_USE_televir_global,
+                software.technology.name,
+            )
+
+        elif software.name == SoftwareNames.SOFTWARE_DUSTMASKER_name:
+            return self.get_dustmasker_defaults(
                 software.owner,
                 Software.TYPE_OF_USE_televir_global,
                 software.technology.name,
@@ -1759,6 +1769,64 @@ class DefaultParameters(object):
         parameter.range_max = "1.0"
         parameter.range_min = "0.5"
         parameter.description = "filter: minimum percent coverage of the read to be kept. (Defaults to 0.95)"
+        vect_parameters.append(parameter)
+
+        return vect_parameters
+
+    def get_dustmasker_defaults(
+        self,
+        user,
+        type_of_use,
+        technology_name,
+        sample=None,
+        is_to_run=False,
+        pipeline_step=None,
+    ):
+
+        software = Software()
+        software.name = SoftwareNames.SOFTWARE_DUSTMASKER_name
+        software.name_extended = SoftwareNames.SOFTWARE_DUSTMASKER_name_extended
+        software.type_of_use = type_of_use
+        software.type_of_software = Software.TYPE_INSAFLU_PARAMETER
+        software.version = SoftwareNames.SOFTWARE_DUSTMASKER_VERSION
+        software.version_parameters = self.get_software_parameters_version(
+            software.name
+        )
+        software.technology = self.get_technology(technology_name)
+        software.can_be_on_off_in_pipeline = True
+        software.is_to_run = is_to_run
+
+        #### small description of software
+        software.help_text = "identify and mask low complexity regions in the sequence"
+
+        ### which part of pipeline is going to run
+        if pipeline_step == None:
+            software.pipeline_step = self._get_pipeline(
+                ConstantsSettings.PIPELINE_NAME_map_filtering
+            )
+
+        else:
+            software.pipeline_step = self._get_pipeline(pipeline_step)
+
+        software.owner = user
+        vect_parameters = []
+
+        parameter = Parameter()
+        parameter.name = SoftwareNames.SOFTWARE_DUSTMASKER_PARAM_MASK_name
+        parameter.parameter = SoftwareNames.SOFTWARE_DUSTMASKER_PARAM_MASK_HARD
+        parameter.type_data = Parameter.PARAMETER_char_list
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = False
+        parameter.is_to_run = True
+        parameter.sequence_out = 1
+        parameter.description = (
+            "mask: mask low complexity regions with hard masking"
+            "soft: mask low complexity regions with soft masking"
+            "both: mask low complexity regions with both hard and soft masking"
+        )
+
         vect_parameters.append(parameter)
 
         return vect_parameters

@@ -15,31 +15,17 @@ from pathogen_identification.modules.assembly_class import Assembly_class
 from pathogen_identification.modules.classification_class import Classifier
 from pathogen_identification.modules.metadata_handler import RunMetadataHandler
 from pathogen_identification.modules.object_classes import (
-    Assembly_results,
-    Contig_classification_results,
-    Read_class,
-    Read_classification_results,
-    Remap_main,
-    Remap_Target,
-    Run_detail_report,
-    RunCMD,
-    RunQC_report,
-    Sample_runClass,
-    SoftwareDetail,
-    SoftwareDetailCompound,
-    SoftwareRemap,
-    SoftwareUnit,
-)
+    Assembly_results, Contig_classification_results, Read_class,
+    Read_classification_results, Remap_main, Remap_Target, Run_detail_report,
+    RunCMD, RunQC_report, Sample_runClass, SoftwareDetail,
+    SoftwareDetailCompound, SoftwareRemap, SoftwareUnit)
 from pathogen_identification.modules.preprocess_class import Preprocess
-from pathogen_identification.modules.remap_class import (
-    Mapping_Instance,
-    Mapping_Manager,
-)
+from pathogen_identification.modules.remap_class import (Mapping_Instance,
+                                                         Mapping_Manager)
 from pathogen_identification.utilities.televir_parameters import (
-    RemapParams,
-    TelevirParameters,
-)
-from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
+    RemapParams, TelevirParameters)
+from pathogen_identification.utilities.utilities_pipeline import \
+    RawReferenceUtils
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -363,11 +349,24 @@ class RunDetail_main:
         for _, software_get_function in self.settings_dict.items():
             software_get_function(config, method_args)
 
-        ###
-
         self.software_remap = SoftwareRemap(
             self.remapping_method,
             self.remap_filtering_method,
+        )
+
+    def update_methods(self, config: dict, method_args: pd.DataFrame):
+        self.set_settings_dict()
+
+        for _, software_get_function in self.settings_dict.items():
+            software_get_function(config, method_args)
+
+        ###
+        self.software_remap.remap_software = self.remapping_method
+        self.software_remap.remap_filters.args_df = self.remap_filtering_method.args_df
+        self.software_remap.remap_filters.config = self.remap_filtering_method.config
+        self.software_remap.remap_filters.prefix = self.remap_filtering_method.prefix
+        self.software_remap.remap_filters.software_list.extend(
+            self.remap_filtering_method.software_list
         )
 
     def __init__(self, config: dict, method_args: pd.DataFrame, username: str):
@@ -651,7 +650,7 @@ class RunDetail_main:
 
         ### set software methods and actions
 
-        self.set_methods(config, method_args)
+        self.update_methods(config, method_args)
 
         ### set default actions
         self.sift = config["actions"]["SIFT"]
@@ -1426,9 +1425,8 @@ class RunMainTree_class(Run_Deployment_Methods):
                 ###########################
                 ###########################
 
-                from pathogen_identification.utilities.televir_bioinf import (
-                    TelevirBioinf,
-                )
+                from pathogen_identification.utilities.televir_bioinf import \
+                    TelevirBioinf
 
                 # televir_bioinf = TelevirBioinf()
                 # alignment_file = self.depletion_drone.classifier.report_path

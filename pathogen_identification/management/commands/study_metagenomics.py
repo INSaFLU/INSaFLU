@@ -694,7 +694,7 @@ def df_report_analysis(analysis_df_filename, project_id: int):
                 else:
                     new_row[f"{classifier}_{panel}_position"] = -1
                     new_row[f"{classifier}_{panel}_televir_sort_position"] = -1
-
+it
         new_table.append(new_row)
 
     new_df = pd.DataFrame(new_table)

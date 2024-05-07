@@ -8,26 +8,15 @@ from django.contrib.auth.models import User
 from django.core.files import File
 from django.db import IntegrityError, transaction
 
-from pathogen_identification.models import (
-    QC_REPORT,
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReadClassification,
-    ReferenceContigs,
-    ReferenceMap_Main,
-    RunAssembly,
-    RunDetail,
-    RunIndex,
-    RunMain,
-    RunReadsRegister,
-    RunRemapMain,
-    SampleQC,
-    TelevirRunQC,
-)
+from pathogen_identification.models import (QC_REPORT, ContigClassification,
+                                            FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference, ReadClassification,
+                                            ReferenceContigs,
+                                            ReferenceMap_Main, RunAssembly,
+                                            RunDetail, RunIndex, RunMain,
+                                            RunReadsRegister, RunRemapMain,
+                                            SampleQC, TelevirRunQC)
 from pathogen_identification.modules.object_classes import Sample_runClass
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunEngine_class
@@ -1026,6 +1015,7 @@ def Update_Run_Classification(run_class: RunEngine_class, parameter_set: Paramet
             status = RawReference.STATUS_MAPPED
         else:
             status = RawReference.STATUS_UNMAPPED
+            
         try:
             remap_target = RawReference.objects.get(
                 run=runmain,
@@ -1304,6 +1294,20 @@ def Update_ReferenceMap(
     - ReferenceMap_Main,
     - ReferenceContigs
     """
+
+
+    remap_targets = RawReference.objects.filter(
+        run=run,
+        taxid=ref_map.reference.target.taxid,
+    )
+
+    print("remap_targets")
+    print(run.parameter_set.leaf.index)
+
+    if remap_targets.exists():
+        for target in remap_targets:
+            target.status = RawReference.STATUS_MAPPED
+            target.save()
 
     try:
         map_db = ReferenceMap_Main.objects.get(

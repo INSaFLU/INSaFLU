@@ -938,7 +938,7 @@ class Remapping:
 
         for filter in self.remap_filters.software_list:
             if filter.name == SoftwareNames.SOFTWARE_DUSTMASKER_name:
-                dustmasker = DustMasker(filter.bin, self.rdir, self.target.acc_simple)
+                dustmasker = DustMasker(self.rdir, self.target.acc_simple)
                 dustmasker.run_mask_hard(self.reference_file)
 
                 os.remove(self.reference_file)
@@ -2021,7 +2021,6 @@ class Mapping_Manager(Tandem_Remap):
         self, fasta_file: str, dustmasker_software: SoftwareDetail, id: Optional[str]
     ):
         dustmasker = DustMasker(
-            dustmasker_binary_dir=dustmasker_software.bin,
             temp_dir=self.remapping_methods.output_dir,
             id=id,
         )

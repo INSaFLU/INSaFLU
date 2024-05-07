@@ -15,7 +15,7 @@ from pathogen_identification.modules.object_classes import MappingStats
 
 class DustMasker:
 
-    def __init__(self, dustmasker_binary_dir, temp_dir=None, id: Optional[str] = 0):
+    def __init__(self, temp_dir=None, id: Optional[str] = "0"):
         self.dustmasker_binary = "dustmasker"
         self.temp_dir = temp_dir
         if self.temp_dir is None:
@@ -50,10 +50,9 @@ class DustMasker:
         """
 
         command = f"{self.dustmasker_binary} -in {fasta_file} -outfmt fasta -out {self.fasta_soft_mask}"
-        print("RUNNING DUSTMASKER", command)
         subprocess.call(command, shell=True)
 
-        return self.fasta_soft_mask
+        return
 
     def mask_sequence_hard(self, fasta_file):
         """

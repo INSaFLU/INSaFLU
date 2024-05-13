@@ -22,6 +22,8 @@ $(document).ready(function() {
 /// Map Reference on click
 
 $(document).on("click", "a", function (e) {
+    
+    id= $(this).attr("id");
 
     if (id === "remap_reference") {
         e.preventDefault();
@@ -31,7 +33,6 @@ $(document).on("click", "a", function (e) {
         var csrf_token= $("#headingMapExtra").attr("csrf-token");
         var url_remap = $("#headingMapExtra").attr("url-remap");
         
-
         $.ajax({
             url: url_remap,
             type: "POST",

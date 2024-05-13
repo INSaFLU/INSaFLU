@@ -130,7 +130,7 @@ var load_teleflu_workflows = function () {
 
                 // Create header row
                 var headerRow = document.createElement('tr');
-                var headers = ['Sample', 'Mapped', 'Success', 'Coverage', 'Depth', 'Mapped Reads'];
+                var headers = ['Sample', 'Mapped', 'Success', 'Coverage', 'Depth', 'Mapped Reads', 'Start ::', 'Mapped ::', 'Error Rate'];
 
                 headers.forEach(function(header) {
                     var th = document.createElement('th');
@@ -153,8 +153,12 @@ var load_teleflu_workflows = function () {
                     var coverageIndicator = sampleSummary[sample].coverage;
                     var depthIndicator = sampleSummary[sample].depth;
                     var mappedReadsIndicator = sampleSummary[sample].mapped_reads;
+                    var start_proportion = sampleSummary[sample].start_prop;
+                    var mapped_proportion = sampleSummary[sample].mapped_prop;
+                    var error_rate = sampleSummary[sample].error_rate;
 
-                    var indicatorValues = [mappedIndicator, successIndicator, coverageIndicator, depthIndicator, mappedReadsIndicator];
+
+                    var indicatorValues = [mappedIndicator, successIndicator, coverageIndicator, depthIndicator, mappedReadsIndicator, start_proportion, mapped_proportion, error_rate];
 
                     indicatorValues.forEach(function(value) {
                         var cell = document.createElement('td');

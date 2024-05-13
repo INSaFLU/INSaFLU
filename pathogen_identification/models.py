@@ -1071,7 +1071,6 @@ class MetaReference(models.Model):
 
     @property
     def description_first(self):
-        print(self.descriptions)
         if len(self.descriptions) == 0:
             return None
         return self.descriptions[0]
@@ -1290,6 +1289,9 @@ class TelefluMapping(models.Model):
                 "coverage": "N/A",
                 "depth": "N/A",
                 "mapped_reads": "N/A",
+                "start_prop": "N/A",
+                "mapped_proportion": "N/A",
+                "error_rate": "N/A",
             }
 
             mapped = False
@@ -1312,8 +1314,6 @@ class TelefluMapping(models.Model):
                 unique_id__in=accids,
             )
 
-            print(reports)
-
             if refs.exists():
                 mapped_samples += 1
                 mapped = True
@@ -1323,12 +1323,13 @@ class TelefluMapping(models.Model):
 
             sample_summary[sample.name]["mapped"] = mapped
             sample_summary[sample.name]["success"] = success
-            print(reports)
 
             if reports.exists():
                 sample_summary[sample.name]["coverage"] = round(reports[0].coverage, 2)
                 sample_summary[sample.name]["depth"] = round(reports[0].depth, 2)
                 sample_summary[sample.name]["mapped_reads"] = reports[0].mapped_reads
+                sample_summary[sample.name]["start_prop"] = reports[0].ref_proportion
+                sample_summary[sample.name]["mapped_prop"] = reports[0].error_rate
 
         return sample_summary, mapped_samples, success_samples
 

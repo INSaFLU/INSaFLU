@@ -86,6 +86,10 @@ class TelevirBioinf:
         accid_simple = accid.split(".")[0]
         return f"{accid_simple}:{accid_simple};"
 
+    def index_fasta(self, reference_file):
+        command = f"{self.samtools_binary} faidx {reference_file}"
+        subprocess.call(command, shell=True)
+
     @staticmethod
     def check_sourcefile_is_virosaurus(file_path):
         if "virosaurus" in file_path:

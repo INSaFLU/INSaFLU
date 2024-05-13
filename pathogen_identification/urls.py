@@ -26,6 +26,11 @@ urlpatterns = [
         name="teleflu_project",
     ),
     url(
+        r"teleflu_workflow_igv/(?P<pk>\d+)$",
+        PIviews.TelefluMappingIGV.as_view(),
+        name="teleflu_workflow_igv",
+    ),
+    url(
         r"add-teleflu-sample$",
         PIajax_views.add_teleflu_sample,
         name="add_teleflu_sample",

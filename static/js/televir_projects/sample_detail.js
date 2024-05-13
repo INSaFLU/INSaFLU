@@ -146,7 +146,7 @@ function show_igv(item) {
             'run_pk': run_pk,
             'unique_id': unique_id,
             'accid': accid,
-        }, // data sent with the get request
+        }, 
         
         url: url,
 

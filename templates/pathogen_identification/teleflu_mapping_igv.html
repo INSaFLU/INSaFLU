@@ -1,0 +1,62 @@
+{% extends '_layouts/base.html' %}
+{% load querystring from django_tables2 %}
+{% load django_bootstrap_breadcrumbs %}
+{% load bootstrap4 %}
+
+{%load html_tags%}
+
+{% load static %}
+
+{% block extra_messages %}
+<!-- set the messages -->
+<div class="container">
+	<div id="id_messages_remove"></div>
+</div>
+{% endblock %}
+
+
+
+{% block breadcrumbs %}
+{{block.super}}
+{% breadcrumb "Project Index" "project-index" %}
+{% breadcrumb "TELEVIR Projects" "PIprojects_main"  %}
+{% breadcrumb project "PIproject_samples"  pk=project_index  %}
+{% endblock %}
+
+
+{% block content %}
+
+<script src="https://cdn.jsdelivr.net/npm/igv@2.15.5/dist/igv.min.js"></script>
+
+<div id="igvDiv" style="padding-top: 10px; border:1px solid lightgray"></div>
+
+<script type="text/javascript">
+    var options = {
+        genome: "{{ igv_genome.reference_name }}",
+        locus: "chr1:1-100",
+        reference: {
+            id: "{{ igv_genome.reference_name }}",
+            fastaURL: "{{ igv_genome.reference }}",
+            indexURL: "{{ igv_genome.reference_index }}"
+        },
+        tracks: [
+            {% for sample_pk, sample_data in samples.items %}
+            console.log("{{ sample_data.name }}");
+            {
+                name: "{{ sample_data.name }}",
+                url: "{{ sample_data.bam_file }}",
+                indexURL: "{{ sample_data.bam_file_index }}",
+                format: "bam",
+                type: "alignment"
+            },
+            {% endfor %}
+        ]
+    };
+
+    console.log(options);
+
+    var igvDiv = document.getElementById("igvDiv");
+    igv.createBrowser(igvDiv, options);
+</script>
+    
+{% endblock %}

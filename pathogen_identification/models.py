@@ -1223,15 +1223,15 @@ class TelefluMapping(models.Model):
         return self.stacked_samples.values_list("televir_sample", flat=True)
 
     @property
-    def mapping_vcf(self):
+    def variants_mapping_vcf(self):
         filename = (
             f"teleflu_{self.leaf.index}_project_{self.teleflu_project.pk}_stacked.vcf"
         )
         return os.path.join(self.mapping_directory, filename)
 
     @property
-    def vcf_media_path(self):
-        return self.mapping_vcf.replace(PICS.media_directory, "/media")
+    def variants_vcf_media_path(self):
+        return self.variants_mapping_vcf.replace(PICS.media_directory, "/media")
 
     @property
     def mapping_igv_report(self):

@@ -736,20 +736,23 @@ def filter_reference_maps_select(
 
     ref_maps = ReferenceMap_Main.objects.filter(
         sample=sample,
-        run__parameter_set__leaf__pk=leaf_id,
+        run__parameter_set__leaf__index=leaf_id,
         reference__in=reference,
     )
 
     refs = RawReference.objects.filter(
         run__parameter_set__sample=sample,
         accid__in=reference,
-        run__parameter_set__leaf__pk=leaf_id,
+        run__parameter_set__leaf__index=leaf_id,
         run__parameter_set__status=ParameterSet.STATUS_FINISHED,
     )
 
     print(ref_maps)
 
     for ref in ref_maps:
+        print(ref.bam_file_path)
+        print(ref.vcf)
+        print(ref.bai_file_path)
 
         if not ref.bam_file_path:
             continue
@@ -777,7 +780,7 @@ def create_televir_igv_report(teleflu_project_pk: int, leaf_index: int) -> bool:
 
     teleflu_project = TeleFluProject.objects.get(pk=teleflu_project_pk)
     teleflu_mapping = TelefluMapping.objects.get(
-        teleflu_project=teleflu_project, leaf__pk=leaf_index
+        teleflu_project=teleflu_project, leaf__index=leaf_index
     )
 
     print("teleflu_mapping", teleflu_mapping)
@@ -838,7 +841,7 @@ def create_televir_igv_report(teleflu_project_pk: int, leaf_index: int) -> bool:
 
     televir_bioinf = TelevirBioinf()
     # vcf_files = [files["vcf_file"] for sample_pk, files in sample_dict.items()]
-    group_vcf = teleflu_mapping.mapping_vcf
+    group_vcf = teleflu_mapping.variants_mapping_vcf
     stacked_html = teleflu_mapping.mapping_igv_report
 
     os.makedirs(teleflu_project.project_vcf_directory, exist_ok=True)

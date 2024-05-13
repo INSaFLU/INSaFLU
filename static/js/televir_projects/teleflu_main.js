@@ -85,7 +85,7 @@ var load_teleflu_workflows = function () {
                 // mapping summary: mapping fail / mapping success / total samples
                 var workflowMapped = $('<span>').addClass('workflow-mapped').text(workflow.mapped_fail + ' / '  + workflow.mapped_success + ' / ' + data.project_nsamples).attr('title', 'Mapping Fail / Mapping Success / Total Samples');
                 var workflowButton = $('<button>').attr('type', 'button').addClass('workflow-summary btn btn-primary').attr('node', workflow.node);
-                workflowButton.append('<i class="fa fa-eye"></i>'); // Add an icon to the button
+                workflowButton.append('<i class="fa fa-list-alt" aria-hidden="true"></i>'); // Add an icon to the button
                 
 
 
@@ -109,9 +109,17 @@ var load_teleflu_workflows = function () {
                 }
     
                 if (workflow.stacked_html_exists) {
-                    var stackSamplesIgv = $('<a>').attr('href', workflow.stacked_html).addClass('stackSamplesIGV fa fa-eye').attr('target', '_blank').attr('title', 'Stacked IGV');
-                    var stackSamplesVCF = $('<a>').attr('href', workflow.stacked_vcf).attr('rel', "nofolllow").attr('href', workflow.stacked_vcf).attr('download', 'stacked.vcf').addClass('stackSamplesVCF fa fa-download').attr('title',  "Download Stacked VCF"); 
-                    mappingIgv.append(stackSamplesIgv);
+                    var workflowIgvButton = document.createElement('a');
+                    workflowIgvButton.href = 'teleflu_workflow_igv/' + workflow.pk;
+                    workflowIgvButton.className = 'stackSamplesIGV workflowIGVButton fa fa-barcode';
+                    workflowIgvButton.target = '_blank';
+                    workflowIgvButton.title = 'Workflow IGV';
+                    workflowIgvButton.setAttribute('aria-hidden', 'true');
+                    var stackSamplesVariantIgv = $('<a>').attr('href', workflow.stacked_html).addClass('stackSamplesIGV fa fa-bullseye').attr('target', '_blank').attr('title', 'Variants VCF IGV').attr('aria-hidden', 'true');
+                    var stackSamplesVCF = $('<a>').attr('href', workflow.stacked_variants_vcf).attr('rel', "nofolllow").attr('href', workflow.stacked_variants_vcf).attr('download', 'stacked.vcf').addClass('stackSamplesVCF fa fa-download').attr('title', "Download Stacked VCF"); 
+                    
+                    mappingIgv.append(workflowIgvButton);
+                    mappingIgv.append(stackSamplesVariantIgv);
                     mappingIgv.append(stackSamplesVCF);
                 }
     

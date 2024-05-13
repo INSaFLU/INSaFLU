@@ -107,18 +107,24 @@ var load_teleflu_workflows = function () {
                     var stackSamplesButton = $('<i>').addClass('stackSamplesButton fa fa-flask').css('color', '#b3b3b3');
                     mappingIgv.append(stackSamplesButton);
                 }
-    
-                if (workflow.stacked_html_exists) {
+                
+                if (workflow.mapped_success > 0) {
                     var workflowIgvButton = document.createElement('a');
                     workflowIgvButton.href = 'teleflu_workflow_igv/' + workflow.pk;
-                    workflowIgvButton.className = 'stackSamplesIGV workflowIGVButton fa fa-barcode';
+                    workflowIgvButton.className = 'stackSamplesIGV workflowIGVButton';
                     workflowIgvButton.target = '_blank';
                     workflowIgvButton.title = 'Workflow IGV';
+                    workflowIgvButton.style.fontWeight = 'bold'; // Make the text bold
+                    //workflowIgvButton.style.fontSize = 'small'; // Make the text smaller
+                    workflowIgvButton.textContent = 'IGV';
+                    workflowIgvButton.style.backgroundColor = 'transparent'; // Remove the background color
                     workflowIgvButton.setAttribute('aria-hidden', 'true');
-                    var stackSamplesVariantIgv = $('<a>').attr('href', workflow.stacked_html).addClass('stackSamplesIGV fa fa-bullseye').attr('target', '_blank').attr('title', 'Variants VCF IGV').attr('aria-hidden', 'true');
-                    var stackSamplesVCF = $('<a>').attr('href', workflow.stacked_variants_vcf).attr('rel', "nofolllow").attr('href', workflow.stacked_variants_vcf).attr('download', 'stacked.vcf').addClass('stackSamplesVCF fa fa-download').attr('title', "Download Stacked VCF"); 
-                    
                     mappingIgv.append(workflowIgvButton);
+                }
+
+                if (workflow.stacked_html_exists) {
+                    var stackSamplesVariantIgv = $('<a>').attr('href', workflow.stacked_html).addClass('stackSamplesIGV fa fa-barcode').attr('target', '_blank').attr('title', 'Variants VCF IGV').attr('aria-hidden', 'true');
+                    var stackSamplesVCF = $('<a>').attr('href', workflow.stacked_variants_vcf).attr('rel', "nofolllow").attr('href', workflow.stacked_variants_vcf).attr('download', 'stacked.vcf').addClass('stackSamplesVCF fa fa-download').attr('title', "Download Variants VCF"); 
                     mappingIgv.append(stackSamplesVariantIgv);
                     mappingIgv.append(stackSamplesVCF);
                 }
@@ -165,7 +171,6 @@ var load_teleflu_workflows = function () {
                     var mapped_proportion = sampleSummary[sample].mapped_prop;
                     var error_rate = sampleSummary[sample].error_rate;
 
-                    console.log(mapped_proportion);
                     var indicatorValues = [mappedIndicator, successIndicator, coverageIndicator, depthIndicator, mappedReadsIndicator, start_proportion, mapped_proportion, error_rate];
 
                     indicatorValues.forEach(function(value) {
@@ -202,7 +207,6 @@ var load_teleflu_workflows = function () {
             $(".mapSamplesButton").click(function () {
                 var workflow= $(this).attr('workflow');
                 var workflow_id = $(this).attr('workflow-id');
-                console.log(workflow_id);
                 $('#id-label-map-workflow').text('Map Samples to Workflow ' + workflow + '?');
                 $('#id-map-button').attr('workflow', workflow_id);            
             });

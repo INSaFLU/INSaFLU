@@ -124,37 +124,49 @@ var load_teleflu_workflows = function () {
                 var summaryList = document.createElement('div');
                 summaryList.className = 'summary-list workfow-' + workflow.node;
                 summaryList.style.display = 'none'; // Hide the list initially
-                var list = document.createElement('ul'); // Create a list
-                
+                // Create table and add 'summary-table' class
+                var table = document.createElement('table');
+                table.classList.add('summary-table');
+
+                // Create header row
+                var headerRow = document.createElement('tr');
+                var headers = ['Sample', 'Mapped', 'Success', 'Coverage', 'Depth', 'Mapped Reads'];
+
+                headers.forEach(function(header) {
+                    var th = document.createElement('th');
+                    th.innerHTML = header;
+                    headerRow.appendChild(th);
+                });
+
+                table.appendChild(headerRow);
+
+                // Create data rows
                 for (var sample in sampleSummary) {
-                    var listItem = document.createElement('li');
-                    var sampleName = document.createElement('div');
-                    sampleName.classList.add('summary-sample-name');
-                    sampleName.innerHTML = '<strong>Sample: ' + sample + '</strong>';
+                    var row = document.createElement('tr');
+
+                    var sampleNameCell = document.createElement('td');
+                    sampleNameCell.innerHTML = sample;
+                    row.appendChild(sampleNameCell);
+
                     var mappedIndicator = sampleSummary[sample].mapped ? '<span style="color: green;">&#x2714;</span>' : '<span style="color: red;">&#x2718;</span>';
                     var successIndicator = sampleSummary[sample].success ? '<span style="color: green;">&#x2714;</span>' : '<span style="color: red;">&#x2718;</span>';
-                    var indicators = document.createElement('div');
-                    indicators.classList.add('indicators');
-                    var coverageIndicator = sampleSummary[sample].coverage 
-                    var depthIndicator = sampleSummary[sample].depth 
-                    var mappedReadsIndicator = sampleSummary[sample].mapped_reads 
-                    
-                    var space = "&nbsp;&nbsp;&nbsp;&nbsp;";
+                    var coverageIndicator = sampleSummary[sample].coverage;
+                    var depthIndicator = sampleSummary[sample].depth;
+                    var mappedReadsIndicator = sampleSummary[sample].mapped_reads;
 
-                    indicators.innerHTML = `
-                        <strong>Mapped:&nbsp;</strong> ${mappedIndicator} ${space}
-                        <strong>Success:&nbsp;</strong> ${successIndicator} ${space}
-                        <strong>Coverage:&nbsp;</strong> ${coverageIndicator}% ${space}
-                        <strong>Depth:&nbsp;</strong> ${depthIndicator} ${space}
-                        <strong>Mapped Reads:&nbsp;</strong> ${mappedReadsIndicator}
-                    `;
+                    var indicatorValues = [mappedIndicator, successIndicator, coverageIndicator, depthIndicator, mappedReadsIndicator];
 
-                    listItem.appendChild(sampleName);
-                    listItem.appendChild(indicators);
-                    list.appendChild(listItem);
+                    indicatorValues.forEach(function(value) {
+                        var cell = document.createElement('td');
+                        cell.innerHTML = value;
+                        row.appendChild(cell);
+                    });
+
+                    table.appendChild(row);
                 }
 
-                summaryList.appendChild(list);
+                summaryList.appendChild(table);
+                
                 workflowContainerMain.append(workflowContainerAction);
     
                 workflowContainerMain.append(summaryList);

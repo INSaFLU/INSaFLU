@@ -157,7 +157,7 @@ var load_teleflu_workflows = function () {
                     var mapped_proportion = sampleSummary[sample].mapped_prop;
                     var error_rate = sampleSummary[sample].error_rate;
 
-
+                    console.log(mapped_proportion);
                     var indicatorValues = [mappedIndicator, successIndicator, coverageIndicator, depthIndicator, mappedReadsIndicator, start_proportion, mapped_proportion, error_rate];
 
                     indicatorValues.forEach(function(value) {

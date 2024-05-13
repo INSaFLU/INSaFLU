@@ -39,7 +39,7 @@ class ConstantsSettings:
     METAGENOMICS = True
     METAGENOMICS_file_limit = 1000000
 
-    ################################### pipeline_deployment_type
+    ################################### Pipeline_deployment_type
 
     DEPLOYMENT_TYPE_TREE = "tree"
     DEPLOYMENT_TYPE_PIPELINE = "pipeline"
@@ -93,6 +93,8 @@ class ConstantsSettings:
 
     clade_private_proportion = 0.5
     clade_shared_proportion_threshold = 0.2
+
+    ################################### Max Size
 
     ################################### Threads
 

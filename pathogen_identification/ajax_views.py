@@ -28,9 +28,8 @@ from pathogen_identification.models import (FinalReport, ParameterSet,
                                             TeleFluProject, TeleFluSample)
 from pathogen_identification.tables import ReferenceSourceTable
 from pathogen_identification.utilities.reference_utils import (
-    check_file_reference_submitted, check_metaReference_exists_from_ids,
-    check_raw_reference_submitted, check_user_reference_exists,
-    create_combined_reference)
+    check_file_reference_submitted, check_raw_reference_submitted,
+    check_user_reference_exists, create_combined_reference)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
 from pathogen_identification.utilities.televir_parameters import \
     TelevirParameters

@@ -9,6 +9,7 @@ from pathogen_identification.models import (
     PIProject_Sample,
     Projects,
     RawReference,
+    RunMain,
 )
 
 
@@ -388,7 +389,10 @@ class HitFactory:
     def hit_by_name(self, name: str) -> Hit:
 
         reference_hits = (
-            RawReference.objects.filter(run__sample__in=self.collection.samples_televir)
+            RawReference.objects.filter(
+                run__sample__in=self.collection.samples_televir,
+                run__run_type=RunMain.RUN_TYPE_PIPELINE,
+            )
             .exclude(run=None)
             .exclude(accid="-")
         )
@@ -458,6 +462,7 @@ def get_hit_best_classifier_reference(
         id__in=hit.raw_reference_id_list,
         run__read_classification=classifier,
         run__sample__name__icontains=panel,
+        run__run_type=RunMain.RUN_TYPE_PIPELINE,
     ).exclude(accid="-")
 
     if hit_references.exists():
@@ -694,7 +699,7 @@ def df_report_analysis(analysis_df_filename, project_id: int):
                 else:
                     new_row[f"{classifier}_{panel}_position"] = -1
                     new_row[f"{classifier}_{panel}_televir_sort_position"] = -1
-it
+
         new_table.append(new_row)
 
     new_df = pd.DataFrame(new_table)

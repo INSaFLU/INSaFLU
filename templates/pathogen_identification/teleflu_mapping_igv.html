@@ -41,7 +41,6 @@
         },
         tracks: [
             {% for sample_pk, sample_data in samples.items %}
-            console.log("{{ sample_data.name }}");
             {
                 name: "{{ sample_data.name }}",
                 url: "{{ sample_data.bam_file }}",

@@ -1190,7 +1190,7 @@ class TelefluMappingIGV(LoginRequiredMixin, generic.TemplateView):
         igv_genome_options = {
             "reference": reference_file,
             "reference_index": reference_index,
-            "reference_name": teleflu_mapping.teleflu_project.reference.description,
+            "reference_name": teleflu_mapping.teleflu_project.raw_reference.description,
         }
 
         # samples

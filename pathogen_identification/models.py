@@ -1325,11 +1325,11 @@ class TelefluMapping(models.Model):
             sample_summary[sample.name]["success"] = success
 
             if reports.exists():
-                sample_summary[sample.name]["coverage"] = round(reports[0].coverage, 2)
-                sample_summary[sample.name]["depth"] = round(reports[0].depth, 2)
-                sample_summary[sample.name]["mapped_reads"] = reports[0].mapped_reads
-                sample_summary[sample.name]["start_prop"] = reports[0].ref_proportion
-                sample_summary[sample.name]["mapped_prop"] = reports[0].error_rate
+                sample_summary[sample.name]["coverage"] = round(reports[0].coverage, 3)
+                sample_summary[sample.name]["depth"] = round(reports[0].depth, 3)
+                sample_summary[sample.name]["mapped_reads"] = round(reports[0].mapped_reads, 3)
+                sample_summary[sample.name]["start_prop"] = round(reports[0].ref_proportion, 3)
+                sample_summary[sample.name]["mapped_prop"] = round(reports[0].error_rate, 3)
 
         return sample_summary, mapped_samples, success_samples
 

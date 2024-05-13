@@ -1215,7 +1215,7 @@ class TelefluMappingIGV(LoginRequiredMixin, generic.TemplateView):
         if os.path.exists(reference_index) is False:
             televir_bioinf.index_fasta(reference_file)
         reference_file = remove_pre_static(reference_file)
-
+        reference_index = remove_pre_static(reference_index)
         # televir_reference
         teleflu_refs = teleflu_project.televir_references
 

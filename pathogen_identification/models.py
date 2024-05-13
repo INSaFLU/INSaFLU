@@ -1282,8 +1282,6 @@ class TelefluMapping(models.Model):
         success_samples = 0
 
         for sample in samples:
-            print("HOIJ")
-
             sample = PIProject_Sample.objects.get(pk=sample)
 
             sample_summary[sample.name] = {
@@ -1301,10 +1299,12 @@ class TelefluMapping(models.Model):
                 Q(accid__in=accids)
                 & Q(run__parameter_set__sample=sample)
                 & Q(run__parameter_set__leaf__index=self.leaf.index)
-                & Q(run__parameter_set__status=ParameterSet.STATUS_FINISHED)
-                | Q(run__parameter_set__status=ParameterSet.STATUS_ERROR),
+                & Q(
+                    run__parameter_set__status__in=[
+                        ParameterSet.STATUS_FINISHED,
+                    ]
+                )
             ).distinct()
-            print(refs)
 
             reports = FinalReport.objects.filter(
                 run__parameter_set__sample=sample,
@@ -1700,7 +1700,7 @@ class RawReferenceCompoundModel(models.Model):
     )
     selected_mapped_pk = models.IntegerField(blank=True, null=True)
     standard_score = models.FloatField(blank=True, null=True)
-    run_count= models.IntegerField(default=0)
+    run_count = models.IntegerField(default=0)
 
     @property
     def mapped_html(self):
@@ -1737,7 +1737,6 @@ class RawReferenceCompoundModel(models.Model):
                 + " Mapped, 0 reads"
                 + "</a>"
             )
-
 
     @property
     def runs_str(self):

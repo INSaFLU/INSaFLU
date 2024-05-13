@@ -96,6 +96,8 @@ class ConstantsSettings:
 
     ################################### Max Size
 
+    MAX_LENGTH_SEQUENCE_TOTAL_REFERENCE_FASTA = 30 * 10e6
+
     ################################### Threads
 
     DEPLOYMENT_THREADS = 5

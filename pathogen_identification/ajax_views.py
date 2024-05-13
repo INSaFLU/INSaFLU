@@ -20,6 +20,8 @@ from constants.software_names import SoftwareNames
 from fluwebvirus.settings import BASE_DIR, STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from pathogen_identification.models import (FinalReport, ParameterSet,
                                             PIProject_Sample, Projects,
                                             RawReference, ReferenceMap_Main,
@@ -2057,12 +2059,12 @@ def check_panel_upload_clean(request):
 
             if (
                 not some_error_in_files
-                and total_length_fasta > settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA
+                and total_length_fasta > PICS.MAX_LENGTH_SEQUENCE_TOTAL_REFERENCE_FASTA
             ):
                 some_error_in_files = True
                 error_message = (
                     "The max sum length of the sequences in fasta: {}".format(
-                        settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA
+                        PICS.MAX_LENGTH_SEQUENCE_TOTAL_REFERENCE_FASTA
                     )
                 )
                 data["is_error"] = True

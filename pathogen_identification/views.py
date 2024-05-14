@@ -1196,6 +1196,8 @@ class TelefluMappingIGV(LoginRequiredMixin, generic.TemplateView):
 
         # samples
         televir_project_samples = teleflu_mapping.mapped_samples
+        print("MAPPING PK ", teleflu_mapping_pk)
+        print("televir_project_samples")
         print(televir_project_samples)
         sample_dict = {}
 

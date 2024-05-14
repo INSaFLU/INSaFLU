@@ -3232,11 +3232,14 @@ class SoftwareTreeUtils:
     def generate_software_tree_extend(self, local_tree: PipelineTree):
         """Generate Software Tree Register and extend with local paths"""
         local_paths = local_tree.get_all_graph_paths_explicit()
+        print("$$$ local paths")
         pipeline_tree = self.generate_software_tree_register(local_tree)
+        print("$$$ pipeline tree")
         for leaf, path in local_paths.items():
             pipeline_tree = self.utility_manager.match_path_to_tree_extend(
                 path, pipeline_tree
             )
+        print("$$$ extend")
         self.update_software_tree(pipeline_tree)
         pipeline_tree = self.prep_tree_for_extend(pipeline_tree)
         return pipeline_tree

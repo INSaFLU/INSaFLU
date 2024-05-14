@@ -210,10 +210,6 @@ def check_metaReference_exists(references: List[RawReference]):
         project__id=references[0].run.project.id
     )
 
-    print([x.run.project.id for x in references])
-
-    print("meta_references", meta_references)
-
     metaref_ids = [metaref.metaid for metaref in meta_references]
     reference_ids = [reference.id for reference in references]
     reference_ids_sorted = sorted(reference_ids)
@@ -384,7 +380,6 @@ def create_genbank_for_fasta(fasta_filepath: str):
 def check_user_reference_exists(description, accid, user_id):
 
     description_clean = description_to_name(description)
-    print(description_clean)
 
     query_set = Reference.objects.filter(
         owner__id=user_id, is_obsolete=False, is_deleted=False
@@ -403,7 +398,6 @@ def check_user_reference_exists(description, accid, user_id):
 def check_reference_exists(description, accid):
 
     description_clean = description_to_name(description)
-    print(description_clean)
 
     query_set = Reference.objects.filter(is_obsolete=False, is_deleted=False).order_by(
         "-name"
@@ -501,13 +495,10 @@ def file_reference_to_insaflu(source_reference_id: int, user_id: int):
     accid = raw_reference.reference_source.accid
     description = raw_reference.reference_source.description
 
-    print(accid, description)
-
     if check_user_reference_exists(description, accid, user_id):
         return False, None
 
     reference_fasta = extract_file(accid)
-    print(reference_fasta)
 
     name = description_to_name(description)
     final_fasta_name = fasta_from_raw_reference(accid=accid, description=description)
@@ -747,12 +738,7 @@ def filter_reference_maps_select(
         run__parameter_set__status=ParameterSet.STATUS_FINISHED,
     )
 
-    print(ref_maps)
-
     for ref in ref_maps:
-        print(ref.bam_file_path)
-        print(ref.vcf)
-        print(ref.bai_file_path)
 
         if not ref.bam_file_path:
             continue
@@ -811,15 +797,9 @@ def create_televir_igv_report(teleflu_project_pk: int, leaf_index: int) -> bool:
 
     ### get sample files
 
-    print("televir_project_samples", televir_project_samples)
-    print(leaf_index)
-    print(accid_list_simple)
-
     for sample in televir_project_samples:
 
         ref_select = filter_reference_maps_select(sample, leaf_index, accid_list_simple)
-
-        print(ref_select)
 
         if ref_select is None:
             continue
@@ -833,7 +813,6 @@ def create_televir_igv_report(teleflu_project_pk: int, leaf_index: int) -> bool:
         }
 
     ### merge vcf files
-    print("sample_dict", sample_dict)
     if len(sample_dict) == 0:
         return False
     else:
@@ -854,8 +833,6 @@ def create_televir_igv_report(teleflu_project_pk: int, leaf_index: int) -> bool:
             reference_file,
             group_vcf,
         )
-
-        print("merged_success", merged_success)
 
         for sample_pk, sample_info in sample_dict.items():
             teleflu_sample = TeleFluSample.objects.get(

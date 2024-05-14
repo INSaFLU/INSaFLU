@@ -1660,8 +1660,7 @@ def load_teleflu_workflows(request):
             )
 
             samples_mapped = mapping.mapped_samples
-            print("MAPPING")
-            print(samples_mapped)
+
             samples_stacked = mapping.stacked_samples_televir
             node_info["pk"] = mapping.pk
             node_info["samples_stacked"] = samples_stacked.count()
@@ -1708,7 +1707,6 @@ def load_teleflu_workflows(request):
 def map_teleflu_workflow_samples(request):
 
     if request.is_ajax():
-        print(request.POST)
 
         data = {"is_ok": False, "is_error": False, "is_empty": False}
         project_id = int(request.POST["project_id"])
@@ -1716,7 +1714,6 @@ def map_teleflu_workflow_samples(request):
 
         teleflu_project = TeleFluProject.objects.get(pk=project_id)
         teleflu_samples = TeleFluSample.objects.filter(teleflu_project=teleflu_project)
-        print(teleflu_samples)
         teleflu_mapping = TelefluMapping.objects.get(pk=workflow_id)
         workflow_leaf = teleflu_mapping.leaf
         user = request.user
@@ -1724,12 +1721,10 @@ def map_teleflu_workflow_samples(request):
         mapping = TelefluMapping.objects.get(
             leaf=workflow_leaf, teleflu_project=teleflu_project
         )
-        print(mapping)
 
         samples_to_map = teleflu_samples.exclude(
             televir_sample__in=mapping.mapped_samples
         )
-        print(samples_to_map)
 
         references_to_map = teleflu_project.raw_reference.references
         process_SGE = ProcessSGE()
@@ -1739,7 +1734,6 @@ def map_teleflu_workflow_samples(request):
             return JsonResponse(data)
 
         deployed = 0
-        print(samples_to_map)
         for sample in samples_to_map:
             reference_manager = SampleReferenceManager(sample.televir_sample)
             mapping_run = reference_manager.mapping_request_run_from_leaf(workflow_leaf)
@@ -2048,7 +2042,6 @@ def check_panel_upload_clean(request):
             reference_fasta_temp_file_name.close()
             software.dos_2_unix(reference_fasta_temp_file_name.name)
         except Exception as e:
-            print(e)
             some_error_in_files = True
             error_message = "Error in the fasta file"
             data["is_error"] = True

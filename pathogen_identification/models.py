@@ -1240,13 +1240,10 @@ class TelefluMapping(models.Model):
     def mapped_samples(self):
 
         accids = self.teleflu_project.raw_reference.accids
-        print(self.pk)
-        print(accids)
-        print(self.teleflu_project)
+
         samples = TeleFluSample.objects.filter(
             teleflu_project=self.teleflu_project
         ).values_list("televir_sample", flat=True)
-        print(samples)
 
         refs = RawReference.objects.filter(
             run__parameter_set__sample__in=samples,
@@ -1256,12 +1253,8 @@ class TelefluMapping(models.Model):
             status=RawReference.STATUS_MAPPED,
         )
 
-        print(refs)
-
         sample_pks = list(set([ref.run.parameter_set.sample.pk for ref in refs]))
-        print(sample_pks)
         samples_to_return = PIProject_Sample.objects.filter(pk__in=sample_pks)
-        print(samples_to_return)
 
         return samples_to_return
 

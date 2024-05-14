@@ -806,7 +806,8 @@ def create_televir_igv_report(teleflu_project_pk: int, leaf_index: int) -> bool:
     accid_list_simple = [simplify_name(accid) for accid in accid_list]
 
     # samples
-    televir_project_samples = teleflu_mapping.mapped_samples
+    teleflu_project_samples = teleflu_mapping.mapped_samples
+    televir_project_samples = [x.televir_sample for x in teleflu_project_samples]
     sample_dict = {}
 
     ### get sample files

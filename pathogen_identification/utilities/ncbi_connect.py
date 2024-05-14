@@ -13,7 +13,6 @@ entrez_direct_bin = os.path.join(
 def query_taxid(description: str, tmp_dir) -> list:
     # 20 second max wait time
     wait_time_max = 20
-    print(description)
 
     tempfilename = (
         "query_"
@@ -55,7 +54,6 @@ def query_taxid(description: str, tmp_dir) -> list:
         return stdout
     else:
         os.remove(tempfilename)
-        print("NA")
         return []
 
 
@@ -71,10 +69,7 @@ def entrez_fetch_taxid_from_org_description(
         handle.close()
     except:
         return ["NA"]
-    # print(record)
-    # print(record)
-    # print(description)
-    print(description)
+
     if len(record["IdList"]) == 0:
         return ["NA"]
     return record["IdList"]

@@ -425,18 +425,15 @@ class Tree_Node:
 
     def determine_params(self, pipe_tree: PipelineTree, sample: PIProject_Sample):
         arguments_list = []
-        print("######## gettting node parameters ########")
-        print(self.branch)
+
         for node in self.branch:
-            print(node)
             node_metadata = pipe_tree.node_index.loc[node].node
 
             path_to_node = pipe_tree.paths_to_node(node)
             ps_visited = pipe_tree.check_if_leaf_steps_exist_list(
                 path_to_node, sample=sample
             )
-            print(path_to_node)
-            print(ps_visited)
+
             node_metadata = (
                 node_metadata[0],
                 node_metadata[1],
@@ -460,9 +457,6 @@ class Tree_Node:
         module = module_df.parameter.values[0]
         software = module_df.value.values[0]
         parameters_df = arguments_df[arguments_df.flag == "param"]
-
-        print(f"#### NODE {self.node_index} PARAMERTERS ####")
-        print(parameters_df)
 
         parameters_df["software"] = software
         parameters_df["module"] = module
@@ -821,7 +815,6 @@ class Tree_Progress:
                 node.run_manager.classification_updated = True
 
             if node.run_manager.run_engine.remapping_performed:
-                print("REMAPPING PERFORMED")
                 node.run_manager.run_engine.export_final_reports()
                 node.run_manager.run_engine.Summarize()
                 node.run_manager.run_engine.generate_output_data_classes()
@@ -1043,17 +1036,13 @@ class Tree_Progress:
         """
         deploy nodes remap by sample sources."""
         current_nodes = []
-        print("########## STACKED DEPLOYEMENT MAPPING ##########")
-        print(nodes_by_sample_sources)
 
         for nodes in nodes_by_sample_sources:
-            print("########### NODES ###########")
             if len(nodes) == 0:
                 continue
 
             nodes = self.get_remap_plans(nodes)
             group_targets = self.get_node_node_targets(nodes)
-            print(group_targets)
 
             volonteer = nodes[0]
 
@@ -1201,7 +1190,6 @@ class Tree_Progress:
 
         for node in self.current_nodes:
             if self.classification_monitor.ready_to_merge(node):
-                print("#### NODE READY TO MERGE ####")
                 node.run_manager.run_engine.plan_remap_prep_safe()
 
             self.update_node_leaves_dbs(node)
@@ -1592,7 +1580,6 @@ class TreeProgressGraph:
 
     def generate_graph(self):
         stacked_df = self.get_combined_progress_df()
-        print(stacked_df)
         if stacked_df.shape[0] == 0:
             if os.path.exists(self.graph_html_path):
                 os.remove(self.graph_html_path)

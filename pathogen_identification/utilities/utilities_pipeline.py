@@ -517,12 +517,14 @@ class PipelineTree:
         # nodes_index = [i for i, x in enumerate(self.nodes)]
 
         # nodes_index = self.node_index.index.tolist()
+        print("#### GENERATING GRAPH ####")
 
         self.graph = nx.DiGraph()
-
+        print("### ADD EDGES ###")
         self.graph.add_edges_from(self.edge_dict)
-
+        print("### ADD NODES ###")
         self.graph.add_nodes_from(self.node_index.index.tolist())
+        print("### GENERATED GRAPH ###")
 
     def get_all_graph_paths(self, sample: Optional[PIProject_Sample] = None) -> dict:
         """
@@ -530,6 +532,7 @@ class PipelineTree:
         """
 
         self.generate_graph()
+        print("#### GENERATED GRAPH ####")
         all_paths = list(nx.all_simple_paths(self.graph, 0, self.leaves))
         all_paths_explicit = [self.get_path_explicit(path) for path in all_paths]
 

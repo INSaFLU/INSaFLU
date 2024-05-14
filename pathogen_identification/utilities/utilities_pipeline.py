@@ -649,7 +649,6 @@ class PipelineTree:
         """
         Generate a dataframe from a path
         """
-        print("#### GENERATING DF ####")
         path_extensive = self.get_path_explicit(path_extensive)
 
         path = [x[1] for x in path_extensive]

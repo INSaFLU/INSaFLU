@@ -1660,7 +1660,7 @@ def load_teleflu_workflows(request):
             )
 
             samples_mapped = mapping.mapped_samples
-            print("MAPPING PK   ", mapping.pk)
+            print("MAPPING")
             print(samples_mapped)
             samples_stacked = mapping.stacked_samples_televir
             node_info["pk"] = mapping.pk

@@ -1256,9 +1256,14 @@ class TelefluMapping(models.Model):
             status=RawReference.STATUS_MAPPED,
         )
 
-        sample_pks = list(set([ref.run.parameter_set.sample.pk for ref in refs]))
+        print(refs)
 
-        return TeleFluSample.objects.filter(televir_sample__pk__in=sample_pks)
+        sample_pks = list(set([ref.run.parameter_set.sample.pk for ref in refs]))
+        print(sample_pks)
+        samples_to_return= PIProject_Sample.objects.filter(pk__in=sample_pks)
+        print(samples_to_return)
+
+        return samples_to_return
 
     @property
     def sample_summary(self):

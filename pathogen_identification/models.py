@@ -1258,7 +1258,7 @@ class TelefluMapping(models.Model):
 
         sample_pks = list(set([ref.run.parameter_set.sample.pk for ref in refs]))
 
-        return PIProject_Sample.objects.filter(pk__in=sample_pks)
+        return TeleFluSample.objects.filter(televir_sample__pk__in=sample_pks)
 
     @property
     def sample_summary(self):

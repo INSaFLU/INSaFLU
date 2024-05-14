@@ -10,22 +10,19 @@ import pandas as pd
 from django.contrib.auth.models import User
 from django.db.models import Q, QuerySet
 
-from constants.constants import Televir_Directory_Constants as Televir_Directories
+from constants.constants import \
+    Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.host_library import Host
-from pathogen_identification.models import (
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    RawReferenceCompoundModel,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
-from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
-from pathogen_identification.utilities.utilities_views import RawReferenceCompound
+from pathogen_identification.models import (ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            RawReferenceCompoundModel, RunMain,
+                                            SoftwareTree, SoftwareTreeNode)
+from pathogen_identification.utilities.utilities_televir_dbs import \
+    Utility_Repository
+from pathogen_identification.utilities.utilities_views import \
+    RawReferenceCompound
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -517,17 +514,10 @@ class PipelineTree:
         """
         Generate a graph of pipeline
         """
-        # nodes_index = [i for i, x in enumerate(self.nodes)]
-
-        # nodes_index = self.node_index.index.tolist()
-        print("#### GENERATING GRAPH ####")
 
         self.graph = nx.DiGraph()
-        print("### ADD EDGES ###")
         self.graph.add_edges_from(self.edge_dict)
-        print("### ADD NODES ###")
         self.graph.add_nodes_from(self.node_index.index.tolist())
-        print("### GENERATED GRAPH ###")
 
     def get_all_graph_paths(self, sample: Optional[PIProject_Sample] = None) -> dict:
         """
@@ -535,10 +525,8 @@ class PipelineTree:
         """
 
         self.generate_graph()
-        print("#### GENERATED GRAPH ####")
         all_paths = list(nx.all_simple_paths(self.graph, 0, self.leaves))
         all_paths_explicit = [self.get_path_explicit(path) for path in all_paths]
-        print("#### ALL PATHS +++ ####")
         path_dict = {
             all_paths_explicit[x][-1][0]: self.df_from_path(path, sample=sample)
             for x, path in enumerate(all_paths)
@@ -554,11 +542,8 @@ class PipelineTree:
 
         self.generate_graph()
         all_paths = list(nx.all_simple_paths(self.graph, 0, self.leaves))
-        print("1.")
         all_paths = [self.get_path_explicit(path) for path in all_paths]
-        print("2.")
         path_dict = {path[-1][0]: path for x, path in enumerate(all_paths)}
-        print("#### GENERATED PATHS ####")
 
         return path_dict
 
@@ -3074,15 +3059,12 @@ class SoftwareTreeUtils:
         utils = Utils_Manager()
 
         local_paths = local_tree.get_all_graph_paths_explicit()
-        print("### paths")
         pipeline_tree = self.generate_software_tree_extend(local_tree=local_tree)
         ### MANAGEMENT
-        print("### pipeline tree")
         matched_paths = {
             leaf: utils.utility_manager.match_path_to_tree_safe(path, pipeline_tree)
             for leaf, path in local_paths.items()
         }
-        print("### matched")
 
         available_paths = {
             leaf: path for leaf, path in matched_paths.items() if path is not None
@@ -3239,14 +3221,11 @@ class SoftwareTreeUtils:
     def generate_software_tree_extend(self, local_tree: PipelineTree):
         """Generate Software Tree Register and extend with local paths"""
         local_paths = local_tree.get_all_graph_paths_explicit()
-        print("$$$ local paths")
         pipeline_tree = self.generate_software_tree_register(local_tree)
-        print("$$$ pipeline tree")
         for leaf, path in local_paths.items():
             pipeline_tree = self.utility_manager.match_path_to_tree_extend(
                 path, pipeline_tree
             )
-        print("$$$ extend")
         self.update_software_tree(pipeline_tree)
         pipeline_tree = self.prep_tree_for_extend(pipeline_tree)
         return pipeline_tree

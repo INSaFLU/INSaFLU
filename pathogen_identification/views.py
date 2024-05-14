@@ -1121,6 +1121,7 @@ class TelefluProjectView(LoginRequiredMixin, generic.CreateView):
 
         context["mapping_workflows"] = mapping_workflows
         ####################################### get combinations to deploy
+        print("TREES")
 
         local_tree = software_utils.generate_software_tree_safe(
             software_utils.project,
@@ -1129,9 +1130,11 @@ class TelefluProjectView(LoginRequiredMixin, generic.CreateView):
             mapping_only=True,
             screening=False,
         )
-
+        print("HAVE TREE")
         all_paths = local_tree.get_all_graph_paths()
+        print("HAVE PATHS")
         available_path_nodes = software_utils.get_available_pathnodes(local_tree)
+        print("GOT NODES")
         ##########################################
         workflows = []
         for node, params_df in all_paths.items():

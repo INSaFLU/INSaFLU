@@ -978,6 +978,19 @@ def Update_RawReference(run_class: RunEngine_class, parameter_set: ParameterSet)
             remap_target.save()
 
 
+def translate_classification_success(success):
+
+    if success == "reads":
+        return "1"
+    if success == "contigs":
+        return "2"
+    if success == "reads and contigs":
+        return "3"
+
+    else:
+        return "0"
+
+
 def Update_FinalReport(run_class, runmain, sample):
     for i, row in run_class.report.iterrows():
         if row["ID"] == "None":
@@ -987,11 +1000,13 @@ def Update_FinalReport(run_class, runmain, sample):
             run=runmain,
             taxid=row["taxid"],
         )
+        counts = row["mapped"]
 
         if remap_targets.exists():
             for target in remap_targets:
                 target.status = RawReference.STATUS_MAPPED
                 target.save()
+                counts = target.counts
 
         try:
             report_row = FinalReport.objects.get(
@@ -1037,6 +1052,28 @@ def Update_FinalReport(run_class, runmain, sample):
             )
 
             report_row.save()
+
+        try:
+            RawReference.objects.get(
+                run=runmain,
+                taxid=row["taxid"],
+                accid=row["ID"],
+            )
+
+        except RawReference.DoesNotExist:
+            raw_reference = RawReference(
+                run=runmain,
+                taxid=row["taxid"],
+                accid=row["ID"],
+                status=RawReference.STATUS_MAPPED,
+                description=row["description"],
+                counts=counts,
+                classification_source=translate_classification_success(
+                    row["classification_success"]
+                ),
+            )
+
+            raw_reference.save()
 
 
 def Update_RefMap_DB(run_class: RunEngine_class, parameter_set: ParameterSet):

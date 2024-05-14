@@ -8,15 +8,26 @@ from django.contrib.auth.models import User
 from django.core.files import File
 from django.db import IntegrityError, transaction
 
-from pathogen_identification.models import (QC_REPORT, ContigClassification,
-                                            FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RawReference, ReadClassification,
-                                            ReferenceContigs,
-                                            ReferenceMap_Main, RunAssembly,
-                                            RunDetail, RunIndex, RunMain,
-                                            RunReadsRegister, RunRemapMain,
-                                            SampleQC, TelevirRunQC)
+from pathogen_identification.models import (
+    QC_REPORT,
+    ContigClassification,
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReadClassification,
+    ReferenceContigs,
+    ReferenceMap_Main,
+    RunAssembly,
+    RunDetail,
+    RunIndex,
+    RunMain,
+    RunReadsRegister,
+    RunRemapMain,
+    SampleQC,
+    TelevirRunQC,
+)
 from pathogen_identification.modules.object_classes import Sample_runClass
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunEngine_class
@@ -1015,7 +1026,7 @@ def Update_Run_Classification(run_class: RunEngine_class, parameter_set: Paramet
             status = RawReference.STATUS_MAPPED
         else:
             status = RawReference.STATUS_UNMAPPED
-            
+
         try:
             remap_target = RawReference.objects.get(
                 run=runmain,
@@ -1206,9 +1217,21 @@ def Update_Sample_Runs_DB(run_class: RunEngine_class, parameter_set: ParameterSe
     Update_FinalReport(run_class, runmain, sample)
 
 
+def translate_classification_success(success):
+
+    if success == "reads":
+        return "1"
+    if success == "contigs":
+        return "2"
+    if success == "reads and contigs":
+        return "3"
+
+    else:
+        return "0"
+
+
 def Update_FinalReport(run_class: RunEngine_class, runmain, sample):
-    print("# REPORT")
-    print(run_class.report)
+
     for i, row in run_class.report.iterrows():
         if row["ID"] == "None":
             continue
@@ -1217,11 +1240,13 @@ def Update_FinalReport(run_class: RunEngine_class, runmain, sample):
             run=runmain,
             taxid=row["taxid"],
         )
+        counts = row["mapped"]
 
         if remap_targets.exists():
             for target in remap_targets:
                 target.status = RawReference.STATUS_MAPPED
                 target.save()
+                counts = target.counts
 
         try:
             report_row = FinalReport.objects.get(
@@ -1268,6 +1293,28 @@ def Update_FinalReport(run_class: RunEngine_class, runmain, sample):
 
             report_row.save()
 
+        try:
+            RawReference.objects.get(
+                run=runmain,
+                taxid=row["taxid"],
+                accid=row["ID"],
+            )
+
+        except RawReference.DoesNotExist:
+            raw_reference = RawReference(
+                run=runmain,
+                taxid=row["taxid"],
+                accid=row["ID"],
+                status=RawReference.STATUS_MAPPED,
+                description=row["description"],
+                counts=counts,
+                classification_source=translate_classification_success(
+                    row["classification_success"]
+                ),
+            )
+
+            raw_reference.save()
+
 
 def Update_RefMap_DB(run_class: RunEngine_class, parameter_set: ParameterSet):
     """
@@ -1295,14 +1342,10 @@ def Update_ReferenceMap(
     - ReferenceContigs
     """
 
-
     remap_targets = RawReference.objects.filter(
         run=run,
         taxid=ref_map.reference.target.taxid,
     )
-
-    print("remap_targets")
-    print(run.parameter_set.leaf.index)
 
     if remap_targets.exists():
         for target in remap_targets:

@@ -17,8 +17,7 @@ from django.utils.translation import gettext_lazy as _
 from managing_files.models import Project as InsaFluProject
 from managing_files.models import Reference as InsaFluReference
 from managing_files.models import Sample
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.data_classes import IntermediateFiles
 
 # Create your models here.
@@ -1252,7 +1251,7 @@ class TelefluMapping(models.Model):
         refs = RawReference.objects.filter(
             run__parameter_set__sample__in=samples,
             accid__in=accids,
-            run__parameter_set__leaf=self.leaf,
+            run__parameter_set__leaf__index=self.leaf.index,
             run__parameter_set__status=ParameterSet.STATUS_FINISHED,
             status=RawReference.STATUS_MAPPED,
         )
@@ -1261,7 +1260,7 @@ class TelefluMapping(models.Model):
 
         sample_pks = list(set([ref.run.parameter_set.sample.pk for ref in refs]))
         print(sample_pks)
-        samples_to_return= PIProject_Sample.objects.filter(pk__in=sample_pks)
+        samples_to_return = PIProject_Sample.objects.filter(pk__in=sample_pks)
         print(samples_to_return)
 
         return samples_to_return
@@ -1315,6 +1314,7 @@ class TelefluMapping(models.Model):
                         ParameterSet.STATUS_FINISHED,
                     ]
                 )
+                & Q(status=RawReference.STATUS_MAPPED)
             ).distinct()
 
             reports = FinalReport.objects.filter(
@@ -1369,8 +1369,7 @@ class ReferenceTaxid(models.Model):
         return self.taxid
 
 
-from constants.constants import \
-    Televir_Directory_Constants as Televir_Directories
+from constants.constants import Televir_Directory_Constants as Televir_Directories
 
 
 class ReferenceSourceFile(models.Model):

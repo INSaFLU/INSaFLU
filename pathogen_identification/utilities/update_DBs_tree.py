@@ -1244,8 +1244,6 @@ def Update_FinalReport(run_class: RunEngine_class, runmain, sample):
 
         if remap_targets.exists():
             for target in remap_targets:
-                target.status = RawReference.STATUS_MAPPED
-                target.save()
                 counts = target.counts
 
         try:
@@ -1294,11 +1292,13 @@ def Update_FinalReport(run_class: RunEngine_class, runmain, sample):
             report_row.save()
 
         try:
-            RawReference.objects.get(
+            raw_reference = RawReference.objects.get(
                 run=runmain,
                 taxid=row["taxid"],
                 accid=row["ID"],
             )
+            raw_reference.status = RawReference.STATUS_MAPPED
+            raw_reference.save()
 
         except RawReference.DoesNotExist:
             raw_reference = RawReference(

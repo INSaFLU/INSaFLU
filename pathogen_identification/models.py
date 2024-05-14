@@ -1241,6 +1241,7 @@ class TelefluMapping(models.Model):
     def mapped_samples(self):
 
         accids = self.teleflu_project.raw_reference.accids
+        print(self.pk)
         print(accids)
         print(self.teleflu_project)
         samples = TeleFluSample.objects.filter(

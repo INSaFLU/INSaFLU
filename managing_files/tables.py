@@ -787,6 +787,8 @@ class ShowProjectSamplesResults(tables.Table):
         """
         return number
         """
+        if(record.classification is None):
+            return record.sample.type_subtype
         return record.classification
 
     def render_putative_mixed_infection(self, record):

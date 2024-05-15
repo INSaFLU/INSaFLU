@@ -225,7 +225,7 @@ class Constants(object):
         "https://clades.nextstrain.org/?dataset-name=flu_vic_ha&input-fasta="
     )
     NEXTCLADE_LINK_A_H5Nx = (
-        "https://clades.nextstrain.org?dataset-name=community/moncla-lab/iav-h5/ha/all-clades&input-fasta=https://insaflu.insa.pt/media/projects/result/user_535/project_5786/main_result/AllConsensus.fasta"
+        "https://clades.nextstrain.org?dataset-name=community/moncla-lab/iav-h5/ha/all-clades&input-fasta="
     )
     NEXTCLADE_LINK_hMPXV_B1 = (
         "https://clades.nextstrain.org/?dataset-name=hMPXV_B1&input-fasta="

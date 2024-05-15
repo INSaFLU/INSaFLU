@@ -55,6 +55,11 @@ def get_constext_nextclade(media_url_path, context, current_site, specie_identif
 				settings.WEB_SITE_HTTP_NAME,
 				current_site,
 				media_url_path)
+		context['nextclade_link_a_h5nx'] = "{}{}://{}{}".format(
+				Constants.NEXTCLADE_LINK_A_H5Nx,
+				settings.WEB_SITE_HTTP_NAME,
+				current_site,
+				media_url_path)		
 	elif (specie_identification == Reference.SPECIES_RSV):
 		context['nextclade_link_rsv_a'] = "{}{}://{}{}".format(
 				Constants.NEXTCLADE_LINK_RSV_A,

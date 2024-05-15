@@ -684,7 +684,7 @@ class Software(object):
                 MetaKeyAndValue.META_KEY_Identify_Sample,
                 MetaKeyAndValue.META_VALUE_Error,
                 result.to_json(),
-            )
+            )            
             self.utils.remove_dir(out_dir_result)
             return False
 
@@ -805,7 +805,7 @@ class Software(object):
             )
             self.utils.remove_dir(out_dir_result)
             return False
-
+        
         parseOutFiles = ParseOutFiles()
         (dict_data_out, clean_abricate_file) = parseOutFiles.parse_abricate_file(
             out_file_abricate,
@@ -2850,7 +2850,7 @@ class Software(object):
             print("Start run_fastq_and_trimmomatic")
             ### run trimmomatics
             b_has_data, b_it_ran = self.run_fastq_and_trimmomatic(sample, user)
-            
+
             print("Result run_fastq_and_trimmomatic: " + str(b_has_data))
             
             ### test Abricate ON/OFF
@@ -2871,12 +2871,13 @@ class Software(object):
                 
                 ### make identify species
                 if (b_make_identify_species):
+
                     sample_to_update.type_subtype = sample_to_update.get_type_sub_type()[:Sample.TYPE_SUBTYPE_LENGTH-1]
-                    
+
                     (tag_mixed_infection, alert, message) = sample_to_update.get_mixed_infection()
                     if (sample_to_update.number_alerts == None): sample_to_update.number_alerts = alert
                     else: sample_to_update.number_alerts += alert
-                        
+
                     manage_database = ManageDatabase()
                     if (message != None and len(message) > 0):
                         manage_database.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
@@ -2925,8 +2926,8 @@ class Software(object):
             meta_sample = manage_database.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue)
             if (meta_sample != None):
                 manage_database.set_sample_metakey(sample, sample.owner, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Success, meta_sample.description)
-
-        except:
+        
+        except Exception as e:
             process_SGE.set_process_controler(
                 user,
                 process_controler.get_name_sample(sample),

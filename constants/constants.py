@@ -227,6 +227,12 @@ class Constants(object):
     NEXTCLADE_LINK_A_H5Nx = (
         "https://clades.nextstrain.org?dataset-name=community/moncla-lab/iav-h5/ha/all-clades&input-fasta="
     )
+    NEXTCLADE_LINK_A_H5Nx_2344 = (
+        "https://clades.nextstrain.org?dataset-name=community/moncla-lab/iav-h5/ha/2.3.4.4&input-fasta="
+    )
+    NEXTCLADE_LINK_A_H5Nx_2321 = (
+        "https://clades.nextstrain.org?dataset-name=community/moncla-lab/iav-h5/ha/2.3.2.1&input-fasta="
+    )
     NEXTCLADE_LINK_hMPXV_B1 = (
         "https://clades.nextstrain.org/?dataset-name=hMPXV_B1&input-fasta="
     )

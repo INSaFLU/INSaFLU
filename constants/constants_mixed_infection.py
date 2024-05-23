@@ -164,7 +164,7 @@ class ConstantsMixedInfection(object):
         ## A and B
         if identifyvirus.exists_type(
             vect_identify_virus, ConstantsVirus.TYPE_A
-        ) and identifyvirus.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_B):
+        ) and identifyvirus.exists_type(vect_identify_virus, ConstantsVirus.TYPE_B):
             if (
                 identifyvirus.get_number_type(
                     vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE

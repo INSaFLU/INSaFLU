@@ -222,6 +222,8 @@ class Constants(object):
     DIR_NEXTSTRAIN_tables = "db/nextstrain"
     DIR_TEST_TYPE_REFERENCES = "tests/db/references/"
     DIR_TYPE_ALN2PHENO = "db/Alignment2phenotype/"
+    DIR_TYPE_IDENTIFICATION_PROJECTS = "db/type_identification_projects/"
+    TYPE_IDENTIFICATION_PROJECTS_DBNAME = "db_projects_v1"
 
     INSAFLU_NAME = "insaflu"
 
@@ -257,6 +259,15 @@ class Constants(object):
     )
     NEXTCLADE_LINK_B_Victoria = (
         "https://clades.nextstrain.org/?dataset-name=flu_vic_ha&input-fasta="
+    )
+    NEXTCLADE_LINK_A_H5Nx = (
+        "https://clades.nextstrain.org?dataset-name=community/moncla-lab/iav-h5/ha/all-clades&input-fasta="
+    )
+    NEXTCLADE_LINK_A_H5Nx_2344 = (
+        "https://clades.nextstrain.org?dataset-name=community/moncla-lab/iav-h5/ha/2.3.4.4&input-fasta="
+    )
+    NEXTCLADE_LINK_A_H5Nx_2321 = (
+        "https://clades.nextstrain.org?dataset-name=community/moncla-lab/iav-h5/ha/2.3.2.1&input-fasta="
     )
     NEXTCLADE_LINK_hMPXV_B1 = (
         "https://clades.nextstrain.org/?dataset-name=hMPXV_B1&input-fasta="

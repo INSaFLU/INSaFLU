@@ -991,36 +991,18 @@ class Software(object):
             self.utils.remove_dir(out_dir_result)
             return False
 
-        ### test id abricate has the database
-        try:
-            uploadFile = UploadFile.objects.order_by("-version")[0]
-        except UploadFile.DoesNotExist:
-            ## save error in MetaKeySample
-            result = Result()
-            result.set_error(
-                "Abricate (%s) fail to run"
-                % (self.software_names.get_abricate_version())
-            )
-            result.add_software(
-                SoftwareDesc(
-                    self.software_names.get_abricate_name(),
-                    self.software_names.get_abricate_version(),
-                    self.software_names.get_abricate_parameters(),
-                )
-            )
-            manageDatabase.set_project_sample_metakey(
-                projectsample,
-                owner,
-                MetaKeyAndValue.META_KEY_Identify_Sample,
-                MetaKeyAndValue.META_VALUE_Error,
-                result.to_json(),
-            )
-            self.utils.remove_dir(out_dir_result)
-            return False
-
-        if not self.is_exist_database_abricate(uploadFile.abricate_name):
+        if not self.is_exist_database_abricate(
+            Constants.TYPE_IDENTIFICATION_PROJECTS_DBNAME
+        ):
             try:
-                self.create_database_abricate(uploadFile.abricate_name, uploadFile.path)
+                path_to_find = os.path.join(
+                    getattr(settings, "STATIC_ROOT", None),
+                    Constants.DIR_TYPE_IDENTIFICATION_PROJECTS,
+                    Constants.TYPE_IDENTIFICATION_PROJECTS_DBNAME + ".fasta",
+                )
+                self.create_database_abricate(
+                    Constants.TYPE_IDENTIFICATION_PROJECTS_DBNAME, path_to_find
+                )
             except Exception:
                 result = Result()
                 result.set_error(
@@ -1048,7 +1030,7 @@ class Software(object):
         out_file_abricate = self.utils.get_temp_file("temp_abricate", ".txt")
         try:
             cmd = self.run_abricate(
-                uploadFile.abricate_name,
+                Constants.TYPE_IDENTIFICATION_PROJECTS_DBNAME,
                 file_out_contigs,
                 SoftwareNames.SOFTWARE_ABRICATE_PARAMETERS,
                 out_file_abricate,
@@ -1058,7 +1040,7 @@ class Software(object):
                     self.software_names.get_abricate_name(),
                     self.software_names.get_abricate_version(),
                     self.software_names.get_abricate_parameters()
-                    + " for type/subtype identification",
+                    + " for type/subtype identification in project consensus",
                 )
             )
         except Exception:
@@ -1072,7 +1054,7 @@ class Software(object):
                     self.software_names.get_abricate_name(),
                     self.software_names.get_abricate_version(),
                     self.software_names.get_abricate_parameters()
-                    + " for type/subtype identification",
+                    + " for type/subtype identification in project consensus",
                 )
             )
             manageDatabase.set_project_sample_metakey(
@@ -1119,9 +1101,11 @@ class Software(object):
         ### set the identification in database
         uploadFiles = UploadFiles()
         vect_data = uploadFiles.uploadIdentifyVirus(
-            dict_data_out, uploadFile.abricate_name
+            dict_data_out, self.software_names.get_abricate_name(), save=False
         )
+
         if len(vect_data) == 0:
+
             ## save error in MetaKeySample
             result = Result()
             result.set_error("Fail to identify type and sub type")
@@ -1140,9 +1124,49 @@ class Software(object):
                 result.to_json(),
             )
         else:
-            classification = IdentifyVirus().classify(vect_data)
-            # print(projectsample.sample.name + " " + classification)
-            projectsample.classification = classification
+            # Assume there's only these ranks....
+            rank0 = rank1 = rank2 = ""
+            for idv in vect_data:
+                nametoadd = idv.seq_virus.name
+                # print(idv.seq_virus.kind_type.name)
+                is_influenza = False
+                if idv.seq_virus.kind_type.name.find("influenza") != -1:
+                    is_influenza = True
+                if idv.rank == 0:
+                    if rank0 == "":
+                        rank0 = nametoadd
+                    else:
+                        rank0 = rank0 + "|" + nametoadd
+                else:
+                    if is_influenza:
+                        # Apparently ranks do not come in the expected order
+                        if nametoadd.find("H") != -1:
+                            if rank1 == "":
+                                rank1 = nametoadd
+                            else:
+                                rank1 = rank1 + "|" + nametoadd
+                        if nametoadd.find("N") != -1:
+                            if rank2 == "":
+                                rank2 = nametoadd
+                            else:
+                                rank2 = rank2 + "|" + nametoadd
+                    else:
+                        if idv.rank == 1:
+                            if rank1 == "":
+                                rank1 = nametoadd
+                            else:
+                                rank1 = rank1 + "|" + nametoadd
+                        if idv.rank == 2:
+                            if rank2 == "":
+                                rank2 = nametoadd
+                            else:
+                                rank2 = rank2 + "|" + nametoadd
+
+            if (rank1 != "") and (rank0 != ""):
+                rank1 = "-" + rank1
+            if (rank1.find("|") != -1) or (rank2.find("|") != -1):
+                rank2 = "|" + rank2
+            projectsample.classification = rank0 + rank1 + rank2
             projectsample.save()
 
         ## Save results to file...
@@ -2895,17 +2919,16 @@ class Software(object):
 
                 ### make identify species
                 if b_make_identify_species:
+
                     sample_to_update.type_subtype = (
                         sample_to_update.get_type_sub_type()[
                             : Sample.TYPE_SUBTYPE_LENGTH - 1
                         ]
                     )
 
-                    (
-                        tag_mixed_infection,
-                        alert,
-                        message,
-                    ) = sample_to_update.get_mixed_infection()
+                    (tag_mixed_infection, alert, message) = (
+                        sample_to_update.get_mixed_infection()
+                    )
                     if sample_to_update.number_alerts == None:
                         sample_to_update.number_alerts = alert
                     else:
@@ -2996,7 +3019,7 @@ class Software(object):
                     meta_sample.description,
                 )
 
-        except:
+        except Exception as e:
             process_SGE.set_process_controler(
                 user,
                 process_controler.get_name_sample(sample),

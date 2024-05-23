@@ -1699,7 +1699,7 @@ class RawReferenceCompoundModel(models.Model):
     )
     taxid = models.CharField(max_length=100, blank=True, null=True)
     accid = models.CharField(max_length=100, blank=True, null=True)
-    description = models.CharField(max_length=150, blank=True, null=True)
+    description = models.CharField(max_length=200, blank=True, null=True)
     family = models.ManyToManyField(RawReference, blank=True, related_name="family")
     runs = models.ManyToManyField(RunMain, blank=True, related_name="runs")
     manual_insert = models.BooleanField(default=False)

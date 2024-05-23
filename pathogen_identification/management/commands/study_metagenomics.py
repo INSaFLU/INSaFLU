@@ -4,13 +4,8 @@ import pandas as pd
 from django.core.management.base import BaseCommand
 from django.db.models import Q
 
-from pathogen_identification.models import (
-    FinalReport,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    RunMain,
-)
+from pathogen_identification.models import (FinalReport, PIProject_Sample,
+                                            Projects, RawReference, RunMain)
 
 
 def process_class(r2, maxt=6):
@@ -137,31 +132,26 @@ def merge_classes(r1: pd.DataFrame, r2: pd.DataFrame, maxt=6, exclude="phage"):
                 .drop_duplicates(subset=["taxid"], keep="first")
                 .reset_index(drop=True)
             )
-
     elif len(r2) == 0:
         r1 = r1.head(maxt)
     elif len(r1) == 0:
         r1 = r2.head(maxt)
     ###
-
     full_descriptor["taxid"] = full_descriptor["taxid"].astype(int)
     full_descriptor = descriptor_description_remove(full_descriptor)
     full_descriptor = descriptor_sources(full_descriptor, r1_raw, r2_raw)
     full_descriptor = descriptor_counts(full_descriptor, r1_raw, r2_raw)
-
     r1["taxid"] = r1.taxid.astype(int)
     merged_final = full_descriptor[full_descriptor.taxid.isin(r1.taxid.to_list())]
     # get taxid index in r1
     merged_final["taxid_index"] = merged_final.apply(
         lambda x: r1[r1.taxid == x.taxid].index[0], axis=1
     )
-    merged_final = merged_final.sort_values("taxid_index")
-
+    merged_final = merged_final.sort_values("taxid_index").reset_index(drop=True)
     merged_final["source"] = merged_final.source.apply(
         lambda x: ["none", "reads", "contigs", "reads/contigs"][x]
     )
     merged_final = merged_final[["taxid", "counts", "source"]]
-
     return merged_final, full_descriptor
 
 
@@ -388,14 +378,24 @@ class HitFactory:
 
     def hit_by_name(self, name: str) -> Hit:
 
-        reference_hits = (
-            RawReference.objects.filter(
-                run__sample__in=self.collection.samples_televir,
-                run__run_type=RunMain.RUN_TYPE_PIPELINE,
+        try:
+            reference_hits = (
+                RawReference.objects.filter(
+                    run__sample__in=self.collection.samples_televir,
+                    run__run_type=RunMain.RUN_TYPE_PIPELINE,
+                )
+                .exclude(run=None)
+                .exclude(accid="-")
             )
-            .exclude(run=None)
-            .exclude(accid="-")
-        )
+        except Exception as e:
+            reference_hits = (
+                RawReference.objects.filter(
+                    run__sample__in=self.collection.samples_televir,
+                )
+                .exclude(run=None)
+                .exclude(accid="-")
+            )
+
         reference_hits_list = []
 
         if reference_hits.exists():
@@ -458,12 +458,20 @@ def get_hit_best_classifier_reference(
     if len(hit.raw_reference_id_list) == 0:
         return None
 
-    hit_references = RawReference.objects.filter(
-        id__in=hit.raw_reference_id_list,
-        run__read_classification=classifier,
-        run__sample__name__icontains=panel,
-        run__run_type=RunMain.RUN_TYPE_PIPELINE,
-    ).exclude(accid="-")
+    try:
+        hit_references = RawReference.objects.filter(
+            id__in=hit.raw_reference_id_list,
+            run__read_classification=classifier,
+            run__sample__name__icontains=panel,
+            run__run_type=RunMain.RUN_TYPE_PIPELINE,
+        ).exclude(accid="-")
+
+    except Exception as e:
+        hit_references = RawReference.objects.filter(
+            id__in=hit.raw_reference_id_list,
+            run__read_classification=classifier,
+            run__sample__name__icontains=panel,
+        ).exclude(accid="-")
 
     if hit_references.exists():
         hit_references = [(x, determine_raw_ref_index(x)) for x in hit_references]
@@ -519,7 +527,6 @@ def get_frames(ref: RawReference):
     for ref in other_references:
         if ref.contig_counts != "0":
             contigs_df.append([int(ref.taxid), int(float(ref.contig_counts))])
-
         if ref.read_counts != "0":
             reads_df.append([int(ref.taxid), int(float(ref.read_counts))])
     contigs_df = pd.DataFrame(contigs_df, columns=["taxid", "counts"])
@@ -531,14 +538,29 @@ def determine_ref_televir_sort_index(ref: RawReference):
     """
     Determine the index of the reference in the televir sort."""
     contigs_df, reads_df = get_frames(ref)
+    contigs_df = contigs_df.sort_values("counts", ascending=False).reset_index(
+        drop=True
+    )
+    reads_df = reads_df.sort_values("counts", ascending=False).reset_index(drop=True)
     merged_final, full_descriptor = merge_classes(reads_df, contigs_df, maxt=3000)
-    print(ref.accid)
-    print(merged_final.head())
-    print(ref.taxid in contigs_df.taxid)
-    print(ref.taxid in reads_df.taxid)
-    print(int(ref.taxid), merged_final.taxid)
-    print(ref.taxid)
+
     ref_accid_index = merged_final[merged_final["taxid"] == int(ref.taxid)].index[0]
+    return ref_accid_index
+
+
+def determine_ref_televir_reads_index(ref: RawReference):
+    """
+    Determine the index of the reference in the televir sort."""
+    contigs_df, reads_df = get_frames(ref)
+    contigs_df = contigs_df.sort_values("counts", ascending=False).reset_index(
+        drop=True
+    )
+    reads_df = reads_df.sort_values("counts", ascending=False).reset_index(drop=True)
+
+    if int(ref.taxid) not in reads_df.taxid.to_list():
+        return -2
+
+    ref_accid_index = reads_df[reads_df["taxid"] == int(ref.taxid)].index[0]
     return ref_accid_index
 
 
@@ -688,11 +710,13 @@ def df_report_analysis(analysis_df_filename, project_id: int):
                 )
 
                 if best_mapping is not None:
-                    best_mapping_rank = determine_raw_ref_index(best_mapping)
+                    best_mapping_rank = determine_ref_televir_reads_index(best_mapping)
+
+                    new_row[f"{classifier}_{panel}_position"] = best_mapping_rank + 1
+
                     best_televir_sort_rank = determine_ref_televir_sort_index(
                         best_mapping
                     )
-                    new_row[f"{classifier}_{panel}_position"] = best_mapping_rank + 1
                     new_row[f"{classifier}_{panel}_televir_sort_position"] = (
                         best_televir_sort_rank + 1
                     )

@@ -57,16 +57,17 @@
 
 
 .bg-insa-fixed-top{
-    background-color: #fcc29c !important; /* Peach Puff */
+    background-color: #b0e498 !important; /* Pale Green */
     color: #05264c !important;
- }
+}
 
- .bg-insa-fixed-top-main{
+.bg-insa-fixed-top-main{
     background-color: #F6F6FF !important;
     color: #05264c !important;
 }
 
-a.bg-insa-fixed-top:focus, a.bg-insa-fixed-top:hover {
+ 
+ a.bg-insa-fixed-top:focus, a.bg-insa-fixed-top:hover {
    background-color: #A9A9A9 !important; /* Dark Gray */
    color: #05264c !important
  }

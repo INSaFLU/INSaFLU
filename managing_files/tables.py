@@ -290,7 +290,7 @@ class SampleTable(tables.Table):
             )
         return mark_safe(sample_name)
 
-    def render_technology(self, record):
+    def render_technology(self, record: Sample):
         """shows if it is Illumina or Minion"""
         ### is not processed yet
         if record.type_of_fastq == Sample.TYPE_OF_FASTQ_not_defined:

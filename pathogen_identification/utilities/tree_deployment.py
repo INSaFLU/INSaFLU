@@ -1038,6 +1038,7 @@ class Tree_Progress:
         current_nodes = []
 
         for nodes in nodes_by_sample_sources:
+
             if len(nodes) == 0:
                 continue
 

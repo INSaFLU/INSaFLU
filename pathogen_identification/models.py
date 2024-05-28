@@ -990,7 +990,7 @@ class RawReference(models.Model):
     @property
     def read_counts(self):
         if self.classification_source == "1":
-            return self.counts
+            return self.counts.split("/")[0]
 
         if self.classification_source == "2":
             return "0"

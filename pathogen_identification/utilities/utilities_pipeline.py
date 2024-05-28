@@ -3360,9 +3360,9 @@ class RawReferenceUtils:
     def merge_standard_scores(self, table: pd.DataFrame):
         if table.shape[0] == 0:
             return pd.DataFrame(columns=list(table.columns) + ["standard_score"])
-        table["standard_score"] = (
-            table["read_counts_standard_score"] + table["contig_counts_standard_score"]
-        ) / 2
+        table["standard_score"] = table[
+            "read_counts_standard_score"
+        ]  # + table["contig_counts_standard_score"]
         return table
 
     def run_references_standard_scores(self, table):
@@ -3396,7 +3396,9 @@ class RawReferenceUtils:
             }
         )
 
-        joint_tables = joint_tables.sort_values("standard_score", ascending=False)
+        joint_tables = joint_tables.sort_values(
+            ["contig_counts", "standard_score"], ascending=[False, False]
+        )
         joint_tables = joint_tables.reset_index(drop=True)
 
         return joint_tables

@@ -937,6 +937,8 @@ class Run_Deployment_Methods(RunDetail_main):
             logdir=self.log_dir,
         )
 
+        self.remap_prepped = True
+
     def deploy_REMAPPING(self):
 
         print(

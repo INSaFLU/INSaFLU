@@ -857,7 +857,7 @@ class Tree_Progress:
 
         for n in nodes:
             if n.run_manager.run_engine.remap_prepped is False:
-                n.run_manager.run_engine.plan_remap_prep()
+                n.run_manager.run_engine.plan_remap_prep_safe()
 
         return nodes
 

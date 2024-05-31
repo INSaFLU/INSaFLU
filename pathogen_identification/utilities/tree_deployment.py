@@ -955,7 +955,13 @@ class Tree_Progress:
             for x in volonteer.run_manager.run_engine.metadata_tool.remap_targets
         ]
 
+        print("#### original targets ####")
+        print(original_targets)
+
         volonteer.run_manager.update_merged_targets(group_targets)
+
+        print("#### group targets ####")
+        print(group_targets)
 
         run_success = self.run_node(volonteer)
 
@@ -1043,7 +1049,11 @@ class Tree_Progress:
                 continue
 
             nodes = self.get_remap_plans(nodes)
+
             group_targets = self.get_node_node_targets(nodes)
+
+            print("#### group targets ####")
+            print(group_targets)
 
             volonteer = nodes[0]
 
@@ -1085,6 +1095,8 @@ class Tree_Progress:
 
     def run_simplified_mapping(self):
         nodes_by_sample_sources = self.group_nodes_by_source_and_parameters()
+
+        print(nodes_by_sample_sources)
 
         self.stacked_deployement_mapping(nodes_by_sample_sources)
 

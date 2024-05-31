@@ -1354,16 +1354,11 @@ def create_teleflu_project(request):
             if len(ref_ids) == 1:
                 return "single reference project"
             return "multiple references project"
-        print(ref_ids)
-        print([(x, RawReference.objects.filter(pk=int(x))) for x in ref_ids])
-        
-        print(sample_ids)
+
         project_name = teleflu_project_name_from_refs(ref_ids)
-        print(project_name)
 
 
         first_ref = RawReference.objects.get(pk=int(ref_ids[0]))
-        print(first_ref.run)
 
         project = first_ref.run.project
         date = datetime.now()

@@ -3381,8 +3381,12 @@ class RawReferenceUtils:
         # group tables: average read_counts_standard_score, sum counts, read_counts, contig_counts
         if joint_tables.shape[0] == 0:
             return pd.DataFrame(columns=list(joint_tables.columns))
-        print(joint_tables[["contig_counts", "standard_score", "read_counts"]])
-        print(joint_tables.contig_counts.unique())
+        print(joint_tables[["contig_counts", "standard_score", "read_counts", ]])
+        print(
+            joint_tables.contig_counts.unique(),
+            joint_tables.standard_score.unique(),
+            joint_tables.read_counts.unique(),
+        )
         joint_tables = joint_tables.groupby(["taxid", "accid", "description"]).agg(
             {
                 "taxid": "first",
@@ -3390,7 +3394,7 @@ class RawReferenceUtils:
                 "description": "first",
                 "standard_score": "mean",
                 "contig_counts_standard_score": "mean",
-                "counts_str": "sum",
+                "counts_str": "first",
                 "read_counts": "sum",
                 "contig_counts": "sum",
             }

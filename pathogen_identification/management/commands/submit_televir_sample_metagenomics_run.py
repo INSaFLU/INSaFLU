@@ -185,7 +185,7 @@ class Command(BaseCommand):
                     threads=ConstantsSettings.DEPLOYMENT_THREADS,
                     combined_analysis=combined_analysis,
                     mapping_request=mapping_request,
-                    mapping_run_pk=mapping_run_pk,
+                    run_pk=mapping_run_pk,
                 )
 
                 run.is_available = True

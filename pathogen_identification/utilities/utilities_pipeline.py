@@ -1986,9 +1986,6 @@ class Parameter_DB_Utility:
         Get software tables for a user
         """
 
-        print("Getting software tables")
-        print(sample, technology, project, metagenomics, mapping_only, screening)
-
         if metagenomics:
             steps = CS.vect_pipeline_televir_metagenomics
         elif mapping_only:
@@ -2007,8 +2004,6 @@ class Parameter_DB_Utility:
             owner=user,
         ).distinct()
 
-        print(software_available.values())
-
         if not project and not sample:
             software_available = software_available.filter(
                 type_of_use__in=Software.TELEVIR_GLOBAL_TYPES
@@ -2024,9 +2019,6 @@ class Parameter_DB_Utility:
                 parameter__televir_project=project,
                 type_of_use__in=Software.TELEVIR_PROJECT_TYPES,
             )
-
-        print("### filtered")
-        print(software_available.values())
 
         parameters_available = Parameter.objects.filter(
             software__in=software_available,
@@ -2923,9 +2915,6 @@ class SoftwareTreeUtils:
             request_mapping=request_mapping,
         )
 
-        print("#### merged table ###")
-        print(merged_table[["pipeline_step", "software_name"]])
-
         if merged_table.shape[0] == 0:
             return PipelineTree(
                 technology=project.technology,
@@ -2934,8 +2923,6 @@ class SoftwareTreeUtils:
                 leaves=[],
                 makeup=-1,
             )
-
-        print("#### merged table pass ###")
 
         return self.generate_tree_from_combined_table(merged_table)
 
@@ -2951,9 +2938,6 @@ class SoftwareTreeUtils:
     ) -> PipelineTree:
         utility_drone = Utility_Pipeline_Manager()
         input_success = utility_drone.input(combined_table, technology=self.technology)
-
-        print("### input success ###")
-        print(input_success)
 
         if not input_success:
             return PipelineTree(

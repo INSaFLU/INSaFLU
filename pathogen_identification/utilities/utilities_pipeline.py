@@ -1981,6 +1981,9 @@ class Parameter_DB_Utility:
         Get software tables for a user
         """
 
+        print("Getting software tables")
+        print(sample, technology, project, metagenomics, mapping_only, screening)
+
         if metagenomics:
             steps = CS.vect_pipeline_televir_metagenomics
         elif mapping_only:
@@ -1998,6 +2001,8 @@ class Parameter_DB_Utility:
             is_to_run=True,
             owner=user,
         ).distinct()
+
+        print(software_available.values())
 
         if sample is not None:
             software_available = software_available.filter(

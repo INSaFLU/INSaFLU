@@ -3381,6 +3381,8 @@ class RawReferenceUtils:
         # group tables: average read_counts_standard_score, sum counts, read_counts, contig_counts
         if joint_tables.shape[0] == 0:
             return pd.DataFrame(columns=list(joint_tables.columns))
+        print(joint_tables.head())
+        print(joint_tables.contig_counts.unique())
         joint_tables = joint_tables.groupby(["taxid", "accid", "description"]).agg(
             {
                 "taxid": "first",
@@ -3397,15 +3399,19 @@ class RawReferenceUtils:
         # Define a function to calculate the final score
         def calculate_final_score(row):
             boost = 0
-            if row['contig_counts'] > 0:
+            if row["contig_counts"] > 0:
                 boost = 1  # Define the boost value according to your needs
-            return row['standard_score'] + boost * row["contig_counts_standard_score"] + boost
+            return (
+                row["standard_score"]
+                + boost * row["contig_counts_standard_score"]
+                + boost
+            )
 
         # Apply the function to each row
-        joint_tables['final_score'] = joint_tables.apply(calculate_final_score, axis=1)
+        joint_tables["final_score"] = joint_tables.apply(calculate_final_score, axis=1)
 
         # Sort the table by the final score
-        joint_tables = joint_tables.sort_values('final_score', ascending=False)
+        joint_tables = joint_tables.sort_values("final_score", ascending=False)
 
         # Reset the index
         joint_tables = joint_tables.reset_index(drop=True)

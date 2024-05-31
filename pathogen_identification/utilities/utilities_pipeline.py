@@ -3519,11 +3519,19 @@ class RawReferenceUtils:
         if not query_string:
             return references.exclude(accid="-")
 
-        return references.filter(
+        references_select = references.filter(
             Q(description__icontains=query_string)
             | Q(accid__icontains=query_string)
             | Q(taxid__icontains=query_string)
         ).exclude(accid="-")
+        exclude_refs = []
+        for ref in references_select:
+            if RawReference.objects.filter(pk=ref.selected_mapped_pk).exists() is False:
+                exclude_refs.append(ref.pk)
+
+        references_select = references_select.exclude(pk__in=exclude_refs)
+
+        return references_select
 
     def query_sample_compound_references(
         self, query_string: Optional[str] = None

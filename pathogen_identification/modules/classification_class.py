@@ -763,7 +763,7 @@ class run_kraken2(Classifier_init):
         cmd.append(self.query_path)
         cmd.append(self.r2)
 
-        self.cmd.run(cmd)
+        self.cmd.run_script_software(cmd)
 
     def get_report(self) -> pd.DataFrame:
         """

@@ -6,14 +6,21 @@ from typing import List, Optional
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (PIProject_Sample, RawReference,
-                                            ReferenceSourceFileMap, RunMain)
+from pathogen_identification.models import (
+    PIProject_Sample,
+    RawReference,
+    ReferenceSourceFileMap,
+    RunMain,
+)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
 from pathogen_identification.utilities.utilities_general import (
-    description_fails_filter, merge_classes, scrape_description, simplify_name)
-from pathogen_identification.utilities.utilities_pipeline import \
-    RawReferenceUtils
+    description_fails_filter,
+    merge_classes,
+    scrape_description,
+    simplify_name,
+)
+from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
 
 
 class RunMetadataHandler:
@@ -741,6 +748,9 @@ class RunMetadataHandler:
 
         """
         fasta_main_dir = self.config["source"]["REF_FASTA"]
+        print(
+            "######################## GENERATING TARGETS ############################"
+        )
 
         remap_targets = []
         remap_absent = []
@@ -748,8 +758,12 @@ class RunMetadataHandler:
         remap_plan = []
         targets.taxid = targets.taxid.astype(int)
 
+        print(targets.head())
+
         for taxid in targets.taxid.unique():
+            print(f"taxid: {taxid}")
             nset = self.metadata_from_taxid(taxid)
+            print(nset)
 
             if nset.empty:
                 remap_absent.append(taxid)
@@ -833,6 +847,8 @@ class RunMetadataHandler:
                     if added_counts > max_remap:
                         break
 
+        print("############# REMAP PLAN #############")
+        print(remap_plan)
         self.remap_plan = pd.DataFrame(
             remap_plan, columns=["taxid", "acc", "file", "description"]
         )

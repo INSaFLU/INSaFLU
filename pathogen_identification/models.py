@@ -989,13 +989,14 @@ class RawReference(models.Model):
 
     @property
     def read_counts(self):
+
+        if self.counts is None:
+            return "0"
+
         if self.classification_source == "1":
             return self.counts.split("/")[0]
 
         if self.classification_source == "2":
-            return "0"
-
-        if self.counts is None:
             return "0"
 
         if self.classification_source == "3":

@@ -10,19 +10,22 @@ import pandas as pd
 from django.contrib.auth.models import User
 from django.db.models import Q, QuerySet
 
-from constants.constants import \
-    Televir_Directory_Constants as Televir_Directories
+from constants.constants import Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.host_library import Host
-from pathogen_identification.models import (ParameterSet, PIProject_Sample,
-                                            Projects, RawReference,
-                                            RawReferenceCompoundModel, RunMain,
-                                            SoftwareTree, SoftwareTreeNode)
-from pathogen_identification.utilities.utilities_televir_dbs import \
-    Utility_Repository
-from pathogen_identification.utilities.utilities_views import \
-    RawReferenceCompound
+from pathogen_identification.models import (
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    RawReferenceCompoundModel,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
+from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
+from pathogen_identification.utilities.utilities_views import RawReferenceCompound
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -3381,7 +3384,23 @@ class RawReferenceUtils:
         # group tables: average read_counts_standard_score, sum counts, read_counts, contig_counts
         if joint_tables.shape[0] == 0:
             return pd.DataFrame(columns=list(joint_tables.columns))
-        print(joint_tables[["contig_counts", "standard_score", "read_counts", ]])
+        print(
+            joint_tables[
+                [
+                    "contig_counts",
+                    "standard_score",
+                    "read_counts",
+                    "contig_counts_standard_score",
+                ]
+            ]
+        )
+
+        joint_tables["standard_score"] = joint_tables["standard_score"].astype(float)
+        joint_tables["contig_counts"] = joint_tables["contig_counts"].astype(float)
+        joint_tables["read_counts"] = joint_tables["read_counts"].astype(float)
+        joint_tables["contig_counts_standard_score"] = joint_tables[
+            "contig_counts_standard_score"
+        ].astype(float)
         print(
             joint_tables.contig_counts.unique(),
             joint_tables.standard_score.unique(),
@@ -3392,9 +3411,9 @@ class RawReferenceUtils:
                 "taxid": "first",
                 "accid": "first",
                 "description": "first",
+                "counts_str": "first",
                 "standard_score": "mean",
                 "contig_counts_standard_score": "mean",
-                "counts_str": "first",
                 "read_counts": "sum",
                 "contig_counts": "sum",
             }

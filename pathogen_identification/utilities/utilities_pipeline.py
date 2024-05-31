@@ -516,7 +516,7 @@ class PipelineTree:
         """
 
         self.graph = nx.DiGraph()
-        
+
         self.graph.add_edges_from(self.edge_dict)
         self.graph.add_nodes_from(self.node_index.index.tolist())
 
@@ -2921,6 +2921,8 @@ class SoftwareTreeUtils:
                 leaves=[],
                 makeup=-1,
             )
+        
+        print("#### merged table pass ###")
 
         return self.generate_tree_from_combined_table(merged_table)
 
@@ -2936,6 +2938,9 @@ class SoftwareTreeUtils:
     ) -> PipelineTree:
         utility_drone = Utility_Pipeline_Manager()
         input_success = utility_drone.input(combined_table, technology=self.technology)
+
+        print("### input success ###")
+        print(input_success)
 
         if not input_success:
             return PipelineTree(

@@ -1128,6 +1128,7 @@ class TelefluProjectView(LoginRequiredMixin, generic.CreateView):
             mapping_only=True,
             screening=False,
         )
+
         all_paths = local_tree.get_all_graph_paths()
         available_path_nodes = software_utils.get_available_pathnodes(local_tree)
         ##########################################

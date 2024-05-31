@@ -2004,7 +2004,12 @@ class Parameter_DB_Utility:
 
         print(software_available.values())
 
-        if sample is not None:
+        if not project and not sample:
+            software_available = software_available.filter(
+                type_of_use__in=Software.TELEVIR_GLOBAL_TYPES
+            )
+
+        elif sample is not None:
             software_available = software_available.filter(
                 parameter__televir_project_sample=sample
             )
@@ -2015,10 +2020,10 @@ class Parameter_DB_Utility:
                 type_of_use__in=Software.TELEVIR_PROJECT_TYPES,
             )
 
-        if not project and not sample:
-            software_available = software_available.filter(
-                type_of_use__in=Software.TELEVIR_GLOBAL_TYPES
-            )
+
+
+        print("### filtered")
+        print(software_available.values())
 
         parameters_available = Parameter.objects.filter(
             software__in=software_available,
@@ -2926,7 +2931,7 @@ class SoftwareTreeUtils:
                 leaves=[],
                 makeup=-1,
             )
-        
+
         print("#### merged table pass ###")
 
         return self.generate_tree_from_combined_table(merged_table)

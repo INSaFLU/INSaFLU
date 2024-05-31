@@ -1337,6 +1337,7 @@ def create_teleflu_project(request):
         sample_ids = request.POST.getlist("sample_ids[]")
 
         def teleflu_project_name_from_refs(ref_ids):
+
             refs = [RawReference.objects.get(pk=int(x)) for x in ref_ids]
             date_now_str = datetime.now().strftime("%Y%m%d")
             if len(refs) == 0:
@@ -1354,6 +1355,8 @@ def create_teleflu_project(request):
                 return "single reference project"
             return "multiple references project"
         print(ref_ids)
+        print([(x, RawReference.objects.filter(pk=int(x))) for x in ref_ids])
+        
         print(sample_ids)
         project_name = teleflu_project_name_from_refs(ref_ids)
         print(project_name)

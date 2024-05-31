@@ -504,11 +504,22 @@ def get_run_parents(run_class: RunEngine_class, parameter_set: ParameterSet):
         else:
             runmain = RunMain.objects.get(
                 project=project,
+                suprun=run_class.suprun,
                 sample=sample,
+                name=run_class.prefix,
                 parameter_set=parameter_set,
             )
 
     except RunMain.DoesNotExist:
+        runmain = RunMain(
+            parameter_set=parameter_set,
+            run_type=run_class.run_type,
+            suprun=run_class.suprun,
+            project=project,
+            sample=sample,
+            name=run_class.prefix,
+        )
+
         return None, None, None
 
     return sample, runmain, project

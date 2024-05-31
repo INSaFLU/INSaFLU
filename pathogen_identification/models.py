@@ -1002,23 +1002,28 @@ class RawReference(models.Model):
         if self.classification_source == "3":
             return self.counts.split("/")[0]
 
-        return None
+        return "0"
 
     @property
     def contig_counts(self):
-        if self.classification_source == "1":
-            return "0"
-
-        if self.classification_source == "2":
-            return self.counts
 
         if self.counts is None:
             return "0"
 
+        if self.classification_source == "1":
+            return "0"
+
+        if self.classification_source == "2":
+
+            if "/" in self.counts:
+                return self.counts.split("/")[1]
+
+            return self.counts
+
         if self.classification_source == "3":
             return self.counts.split("/")[1]
 
-        return None
+        return "0"
 
     @property
     def counts_int_array(self):

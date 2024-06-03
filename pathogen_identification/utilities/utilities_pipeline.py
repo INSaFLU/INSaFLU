@@ -3455,7 +3455,7 @@ class RawReferenceUtils:
         targets = targets.reset_index(drop=True)
         joint_tables["taxid"] = joint_tables["taxid"].astype(int)
         targets["taxid"] = targets["taxid"].astype(int)
-        joint_tables = joint_tables.merge(targets["taxid", "global_ranking"], on=["taxid"], how="left")
+        joint_tables = joint_tables.merge(targets[["taxid", "global_ranking"]], on=["taxid"], how="left")
         ############################################# Reset the index
         joint_tables = joint_tables.reset_index(drop=True)
 

@@ -244,10 +244,15 @@ class RunMetadataHandler:
         references_table = references_table[references_table.taxid != "1"]
         if "description" not in references_table.columns:
             references_table["description"] = ""
-            
+
         references_table = references_table[
             ~references_table.description.isin(["root", "NA"])
         ]
+        if "accid" not in references_table.columns:
+            references_table["accid"] = references_table["taxid"].apply(
+                self.get_taxid_representative_accid
+            )
+            
         references_table = references_table[~references_table.accid.isin(["-"])]
 
         references_table["taxid"] = references_table["taxid"].astype(int)

@@ -1495,8 +1495,7 @@ class RunMainTree_class(Run_Deployment_Methods):
 
         ### ############################################################# ###
         reference_table = reference_utils.sample_reference_tables()
-        print("###############3")
-        print(reference_table.head())
+
         self.metadata_tool.generate_targets_from_report(reference_table, max_remap=1)
 
         self.prep_REMAPPING()

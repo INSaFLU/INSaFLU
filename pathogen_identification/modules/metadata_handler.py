@@ -167,9 +167,10 @@ class RunMetadataHandler:
         self.merge_reports_clean(
             max_taxids,
         )
-
+        print("###############3")
+        print(self.merged_targets)
         self.generate_targets_from_report(
-            self.merged_targets,
+            reference_table,
             max_taxids=max_taxids,
             max_remap=max_remap,
             skip_scrape=False,
@@ -252,7 +253,7 @@ class RunMetadataHandler:
             references_table["accid"] = references_table["taxid"].apply(
                 self.get_taxid_representative_accid
             )
-            
+
         references_table = references_table[~references_table.accid.isin(["-"])]
 
         references_table["taxid"] = references_table["taxid"].astype(int)

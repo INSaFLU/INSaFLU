@@ -10,23 +10,20 @@ import pandas as pd
 from django.contrib.auth.models import User
 from django.db.models import Q, QuerySet
 
-from constants.constants import Televir_Directory_Constants as Televir_Directories
+from constants.constants import \
+    Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.host_library import Host
-from pathogen_identification.models import (
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    RawReferenceCompoundModel,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.models import (ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            RawReferenceCompoundModel, RunMain,
+                                            SoftwareTree, SoftwareTreeNode)
 from pathogen_identification.utilities.utilities_general import merge_classes
-from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
-from pathogen_identification.utilities.utilities_views import RawReferenceCompound
+from pathogen_identification.utilities.utilities_televir_dbs import \
+    Utility_Repository
+from pathogen_identification.utilities.utilities_views import \
+    RawReferenceCompound
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -3458,7 +3455,7 @@ class RawReferenceUtils:
         targets = targets.reset_index(drop=True)
         joint_tables["taxid"] = joint_tables["taxid"].astype(int)
         targets["taxid"] = targets["taxid"].astype(int)
-        joint_tables = joint_tables.merge(targets, on=["taxid"], how="left")
+        joint_tables = joint_tables.merge(targets["taxid", "global_ranking"], on=["taxid"], how="left")
         ############################################# Reset the index
         joint_tables = joint_tables.reset_index(drop=True)
 
@@ -3802,7 +3799,16 @@ class RawReferenceUtils:
 
     def reference_table_renamed(self, merged_table, rename_dict: dict):
         proxy_ref = merged_table.copy()
-        proxy_ref = proxy_ref.rename(columns=rename_dict)
+
+        for key, value in rename_dict.items():
+            if key in proxy_ref.columns:
+                if value in proxy_ref.columns:
+                    # remove the column if it exists
+                    proxy_ref = proxy_ref.drop(columns=[value])
+                
+                proxy_ref = proxy_ref.rename(columns={value: key})
+
+        #proxy_ref = proxy_ref.rename(columns=rename_dict)
 
         proxy_ref["taxid"] = proxy_ref["taxid"].astype(int)
         proxy_ref["counts"] = proxy_ref["counts"].astype(float).astype(int)
@@ -3840,9 +3846,7 @@ class RawReferenceUtils:
     #    self,
     # ) -> pd.DataFrame:
     #    references = self.collect_references_all()
-
-
-#
-#    references_table = self.references_table_from_query(references)
-#    # references_table= sample_reference_tables()
-#    return references_table
+    #
+    #    references_table = self.references_table_from_query(references)
+    #    # references_table= sample_reference_tables()
+    #    return references_table

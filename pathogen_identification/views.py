@@ -1105,7 +1105,7 @@ class TelefluProjectView(LoginRequiredMixin, generic.CreateView):
         )
 
         if local_tree.makeup == -1:
-            all_paths= {}
+            all_paths = {}
             available_path_nodes = {}
         else:
             all_paths = local_tree.get_all_graph_paths()
@@ -1462,7 +1462,7 @@ def inject_references(references: list, request, table_type: str = "add_referenc
     if table_type == "add_reference":
         table = ReferenceSourceTable(references)
     else:
-        table = TeleFluReferenceTable(references, order_by=("standard_score",))
+        table = TeleFluReferenceTable(references, order_by=("global_score",))
 
     context["references_table"] = table
     context["references_count"] = len(references)

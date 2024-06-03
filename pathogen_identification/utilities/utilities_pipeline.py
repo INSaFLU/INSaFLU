@@ -10,22 +10,20 @@ import pandas as pd
 from django.contrib.auth.models import User
 from django.db.models import Q, QuerySet
 
-from constants.constants import Televir_Directory_Constants as Televir_Directories
+from constants.constants import \
+    Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.host_library import Host
-from pathogen_identification.models import (
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    RawReferenceCompoundModel,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
-from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
-from pathogen_identification.utilities.utilities_views import RawReferenceCompound
+from pathogen_identification.models import (ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            RawReferenceCompoundModel, RunMain,
+                                            SoftwareTree, SoftwareTreeNode)
+from pathogen_identification.utilities.utilities_general import merge_classes
+from pathogen_identification.utilities.utilities_televir_dbs import \
+    Utility_Repository
+from pathogen_identification.utilities.utilities_views import \
+    RawReferenceCompound
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -3252,7 +3250,9 @@ class RawReferenceUtils:
         self.project_registered = project
         self.runs_found = 0
         self.list_tables: List[pd.DataFrame] = []
-        self.merged_table: pd.DataFrame = pd.DataFrame()
+        self.merged_table: pd.DataFrame = pd.DataFrame(
+            columns=["read_counts", "contig_counts", "taxid", "accid", "description"]
+        )
 
     def references_table_from_query(
         self, references: Union[QuerySet, List[RawReference]]
@@ -3281,14 +3281,21 @@ class RawReferenceUtils:
                     "contig_counts",
                 ]
             )
+
         references_table = pd.DataFrame(table)
 
         references_table["read_counts"] = references_table["read_counts"].astype(float)
+        references_table["contig_counts"] = references_table["contig_counts"].astype(
+            float
+        )
 
-        references_table = references_table.sort_values("read_counts", ascending=False)
         references_table = references_table[references_table["read_counts"] > 1]
         references_table = references_table[references_table["accid"] != "-"]
         references_table = references_table[references_table["accid"] != ""]
+        references_table = references_table.sort_values(
+            ["contig_counts", "read_counts"], ascending=[False, False]
+        )
+        references_table["sort_rank"] = range(1, references_table.shape[0] + 1)
 
         return references_table
 
@@ -3405,6 +3412,98 @@ class RawReferenceUtils:
                 "contig_counts_standard_score": "mean",
                 "read_counts": "sum",
                 "contig_counts": "sum",
+                "sort_rank": "mean",
+            }
+        )
+
+        joint_tables = joint_tables.rename(columns={"sort_rank": "ensemble_ranking"})
+
+        #############################################
+        proxy_rclass = self.reference_table_renamed(
+            joint_tables, {"read_counts": "counts"}
+        )
+        proxy_aclass = self.reference_table_renamed(
+            joint_tables, {"contig_counts": "counts"}
+        )
+
+        targets, raw_targets = merge_classes(
+            proxy_rclass, proxy_aclass, maxt=joint_tables.shape[0]
+        )
+
+        targets["global_ranking"] = range(1, targets.shape[0] + 1)
+        def set_global_ranking_repeat_ranks(targets):
+            """
+            Set the global ranking for repeated ranks
+            """
+            current_counts= None
+            current_rank= 0
+            for row in targets.iterrows():
+                if current_counts != row[1]["counts"]:
+                    current_rank += 1
+                    current_counts = row[1]["counts"]
+
+
+                targets.at[row[0], "global_ranking"] = current_rank
+            
+            return targets
+        
+        targets= set_global_ranking_repeat_ranks(targets)
+
+        ####
+        joint_tables = joint_tables.reset_index(drop=True)
+        targets = targets.reset_index(drop=True)
+        joint_tables["taxid"] = joint_tables["taxid"].astype(int)
+        targets["taxid"] = targets["taxid"].astype(int)
+        print("###")
+        print(targets.head())
+        print("/")
+        print(joint_tables.head())
+        joint_tables = joint_tables.merge(
+            targets[["taxid", "global_ranking"]],
+            on=["taxid"],
+            how="left",
+        )
+        print("/")
+        print(joint_tables.head())
+        ############################################# Reset the index
+        joint_tables = joint_tables.reset_index(drop=True)
+
+        joint_tables = joint_tables.sort_values("global_ranking", ascending=True)
+        joint_tables = joint_tables.reset_index(drop=True)
+
+        return joint_tables
+
+    def merge_ref_tables_use_ranking(
+        self,
+        list_tables: List[pd.DataFrame],
+    ) -> pd.DataFrame:
+        joint_tables = [
+            self.run_references_standard_scores(table) for table in list_tables
+        ]
+
+        joint_tables = pd.concat(joint_tables)
+        # group tables: average read_counts_standard_score, sum counts, read_counts, contig_counts
+        if joint_tables.shape[0] == 0:
+            return pd.DataFrame(columns=list(joint_tables.columns))
+
+        joint_tables["standard_score"] = joint_tables["standard_score"].astype(float)
+        joint_tables["contig_counts"] = joint_tables["contig_counts"].astype(float)
+        joint_tables["read_counts"] = joint_tables["read_counts"].astype(float)
+        joint_tables["contig_counts_standard_score"] = joint_tables[
+            "contig_counts_standard_score"
+        ].astype(float)
+
+        joint_tables = joint_tables.groupby(["taxid", "accid", "description"]).agg(
+            {
+                "taxid": "first",
+                "accid": "first",
+                "description": "first",
+                "counts_str": "first",
+                "standard_score": "mean",
+                "contig_counts_standard_score": "mean",
+                "read_counts": "sum",
+                "contig_counts": "sum",
+                "sort_rank": "mean",
             }
         )
 
@@ -3472,8 +3571,9 @@ class RawReferenceUtils:
 
         run_references_tables = [self.run_references_table(run) for run in sample_runs]
 
+        # register tables
         self.list_tables.extend(run_references_tables)
-
+        #
         run_references_tables = self.merge_ref_tables()
         # replace nan with 0
         run_references_tables = run_references_tables.fillna(0)
@@ -3501,6 +3601,8 @@ class RawReferenceUtils:
         if score.shape[0] > 0:
             # compound_ref.standard_score = score.iloc[0]["standard_score"]
             compound_ref.standard_score = max(score["standard_score"])
+            compound_ref.global_ranking = min(score["global_ranking"])
+            compound_ref.ensemble_ranking = min(score["ensemble_ranking"])
 
     def update_scores_compound_references(
         self, compount_refs: List[RawReferenceCompound]
@@ -3540,11 +3642,11 @@ class RawReferenceUtils:
         if self.sample_registered is not None:
             query_set = RawReferenceCompoundModel.objects.filter(
                 sample=self.sample_registered
-            ).order_by("-standard_score")
+            ).order_by("global_ranking")
         elif self.project_registered is not None:
             query_set = RawReferenceCompoundModel.objects.filter(
                 sample__project=self.project_registered
-            ).order_by("-standard_score")
+            ).order_by("global_ranking")
         else:
             query_set = RawReferenceCompoundModel.objects.none()
 
@@ -3593,6 +3695,8 @@ class RawReferenceUtils:
             )
 
             compound_ref_model.standard_score = compound_ref.standard_score
+            compound_ref_model.global_ranking = compound_ref.global_ranking
+            compound_ref_model.ensemble_ranking = compound_ref.ensemble_ranking
             compound_ref_model.manual_insert = compound_ref.manual_insert
             compound_ref_model.mapped_final_report = compound_ref.mapped_final_report
             compound_ref_model.mapped_raw_reference = compound_ref.mapped_raw_reference
@@ -3610,6 +3714,8 @@ class RawReferenceUtils:
                 accid=compound_ref.accid,
                 sample=sample,
                 standard_score=compound_ref.standard_score,
+                global_ranking=compound_ref.global_ranking,
+                ensemble_ranking=compound_ref.ensemble_ranking,
                 manual_insert=compound_ref.manual_insert,
                 mapped_final_report=compound_ref.mapped_final_report,
                 mapped_raw_reference=compound_ref.mapped_raw_reference,
@@ -3736,11 +3842,13 @@ class RawReferenceUtils:
 
         return df
 
-    def collect_references_table_all(
-        self,
-    ) -> pd.DataFrame:
-        references = self.collect_references_all()
+    # def collect_references_table_all(
+    #    self,
+    # ) -> pd.DataFrame:
+    #    references = self.collect_references_all()
 
-        references_table = self.references_table_from_query(references)
-        # references_table= sample_reference_tables()
-        return references_table
+
+#
+#    references_table = self.references_table_from_query(references)
+#    # references_table= sample_reference_tables()
+#    return references_table

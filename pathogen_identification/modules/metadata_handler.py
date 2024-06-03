@@ -159,7 +159,7 @@ class RunMetadataHandler:
         Generate Remap Targets from all existing references for a given sample."""
         reference_utils = RawReferenceUtils(sample_registered)
         reference_utils.sample_reference_tables()
-        reference_table = reference_utils.merge_ref_tables()
+        reference_table = reference_utils.merged_table
 
         proxy_rclass = reference_utils.reference_table_renamed(
             reference_table, {"read_counts": "counts"}
@@ -176,7 +176,7 @@ class RunMetadataHandler:
         )
 
         self.generate_targets_from_report(
-            reference_table,
+            self.merged_targets,
             max_taxids=max_taxids,
             max_remap=max_remap,
             skip_scrape=False,
@@ -286,12 +286,10 @@ class RunMetadataHandler:
                 .reset_index()
             )
 
-        if "standard_score" in references_table.columns:
-            references_table = references_table.sort_values(
-                by="standard_score", ascending=False
-            )
-            print("##### standard score ######")
-            print(references_table.head(30))
+        # if "standard_score" in references_table.columns:
+        #    references_table = references_table.sort_values(
+        #        by="standard_score", ascending=False
+        #    )
 
         if max_taxids is not None:
             references_table = references_table.iloc[:max_taxids, :]

@@ -1033,6 +1033,16 @@ class TeleFluReferenceTable(tables.Table):
     def render_standard_score(self, record: RawReferenceCompound):
         return round(record.standard_score, 3)
 
+    def render_global_ranking(self, record: RawReferenceCompound):
+        if record.global_ranking is None:
+            return "Not available"
+        return record.global_ranking
+
+    def render_ensemble_ranking(self, record: RawReferenceCompound):
+        if record.ensemble_ranking is None:
+            return "Not available"
+        return record.ensemble_ranking
+
 
 class TeleFluInsaFLuProjectTable(tables.Table):
     header_attrs = {
@@ -1292,6 +1302,18 @@ class CompoundReferenceScore(CompoundReferenceTable):
         empty_values=(),
         order_by=("-standard_score",),
     )
+    global_ranking = tables.Column(
+        verbose_name="Global Ranking",
+        orderable=True,
+        empty_values=(),
+        order_by=("global_ranking",),
+    )
+    ensemble_ranking = tables.Column(
+        verbose_name="Ensemble Ranking",
+        orderable=True,
+        empty_values=(),
+        order_by=("ensemble_ranking",),
+    )
 
     class Meta:
         attrs = {"class": "paleblue"}
@@ -1299,6 +1321,16 @@ class CompoundReferenceScore(CompoundReferenceTable):
 
     def render_score(self, record: RawReferenceCompound):
         return round(record.standard_score, 3)
+
+    def render_global_ranking(self, record: RawReferenceCompound):
+        if record.global_ranking is None:
+            return "Not available"
+        return record.global_ranking
+
+    def render_ensemble_ranking(self, record: RawReferenceCompound):
+        if record.ensemble_ranking is None:
+            return "Not available"
+        return record.ensemble_ranking
 
 
 class CompoundRefereceScoreWithScreening(CompoundReferenceScore):

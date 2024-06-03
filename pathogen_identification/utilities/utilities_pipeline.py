@@ -3806,7 +3806,7 @@ class RawReferenceUtils:
                     # remove the column if it exists
                     proxy_ref = proxy_ref.drop(columns=[value])
                 
-                proxy_ref = proxy_ref.rename(columns={value: key})
+                proxy_ref = proxy_ref.rename(columns={key: value})
 
         #proxy_ref = proxy_ref.rename(columns=rename_dict)
 

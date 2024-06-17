@@ -4,8 +4,13 @@ import pandas as pd
 from django.core.management.base import BaseCommand
 from django.db.models import Q
 
-from pathogen_identification.models import (FinalReport, PIProject_Sample,
-                                            Projects, RawReference, RunMain)
+from pathogen_identification.models import (
+    FinalReport,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    RunMain,
+)
 
 
 def process_class(r2, maxt=6):

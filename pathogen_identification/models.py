@@ -17,8 +17,7 @@ from django.utils.translation import gettext_lazy as _
 from managing_files.models import Project as InsaFluProject
 from managing_files.models import Reference as InsaFluReference
 from managing_files.models import Sample
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.data_classes import IntermediateFiles
 
 # Create your models here.
@@ -1022,7 +1021,10 @@ class RawReference(models.Model):
             return self.counts
 
         if self.classification_source == "3":
-            return self.counts.split("/")[1]
+
+            if "/" in self.counts:
+                return self.counts.split("/")[1]
+            return self.counts
 
         return "0"
 
@@ -1369,8 +1371,7 @@ class ReferenceTaxid(models.Model):
         return self.taxid
 
 
-from constants.constants import \
-    Televir_Directory_Constants as Televir_Directories
+from constants.constants import Televir_Directory_Constants as Televir_Directories
 
 
 class ReferenceSourceFile(models.Model):
@@ -1719,7 +1720,7 @@ class RawReferenceCompoundModel(models.Model):
     )
     selected_mapped_pk = models.IntegerField(blank=True, null=True)
     standard_score = models.FloatField(blank=True, null=True)
-    global_ranking= models.IntegerField(blank=True, null=True)
+    global_ranking = models.IntegerField(blank=True, null=True)
     ensemble_ranking = models.IntegerField(blank=True, null=True)
     run_count = models.IntegerField(default=0)
 

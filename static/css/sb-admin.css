@@ -116,7 +116,7 @@ body.fixed-nav {
       -webkit-flex-direction: column;
       -ms-flex-direction: column;
       flex-direction: column;
-      margin-top: 56px; }
+      margin-top: 60px; }
       #mainNav .navbar-collapse .navbar-sidenav > .nav-item {
         width: 250px;
         padding: 0; }
@@ -149,7 +149,7 @@ body.fixed-nav {
 
 @media (min-width: 992px) {
   #mainNav.fixed-top .navbar-sidenav {
-    height: calc(100vh - 112px); }
+    height: calc(100vh - 115px); }
   #mainNav.fixed-top .sidenav-toggler {
     position: absolute;
     top: 0;

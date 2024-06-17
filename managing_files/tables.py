@@ -1,18 +1,18 @@
 import django_tables2 as tables
-from constants.constants import Constants, TypePath
-from constants.meta_key_and_values import MetaKeyAndValue
 from django.conf import settings
 from django.db.models import F
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
+
+from constants.constants import Constants, TypePath
+from constants.meta_key_and_values import MetaKeyAndValue
+from managing_files.manage_database import ManageDatabase
+from managing_files.models import Project, ProjectSample, Reference, Sample
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software_project_sample import DefaultProjectSoftware
 from utils.result import DecodeObjects
-
-from managing_files.manage_database import ManageDatabase
-from managing_files.models import Project, ProjectSample, Reference, Sample
 
 
 class CheckBoxColumnWithName(tables.CheckBoxColumn):
@@ -290,7 +290,7 @@ class SampleTable(tables.Table):
             )
         return mark_safe(sample_name)
 
-    def render_technology(self, record):
+    def render_technology(self, record: Sample):
         """shows if it is Illumina or Minion"""
         ### is not processed yet
         if record.type_of_fastq == Sample.TYPE_OF_FASTQ_not_defined:
@@ -609,7 +609,7 @@ class ProjectTable(tables.Table):
             tip_info
             + " ({}/{}/{}) ".format(n_processed, n_processing, n_error)
             + "<a href="
-            + reverse("add-sample-project", args=[record.pk])
+            + reverse("add-sample-project", args=[record.pk, 0])
             + ' data-toggle="tooltip" title="Add samples" ><i class="fa fa-plus-square"></i> Add</a>'  #         return mark_safe(tip_info + " ({}/{}/{}) ".format(n_processed, n_processing, n_error) + '<a href=# id="id_add_sample_message"' +\
             + add_remove
         )

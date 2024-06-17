@@ -17,8 +17,8 @@ from pathogen_identification.utilities.tree_deployment import (
     TreeProgressGraph,
 )
 from pathogen_identification.utilities.utilities_pipeline import (
+    RawReferenceUtils,
     SoftwareTreeUtils,
-    Utility_Pipeline_Manager,
     Utils_Manager,
 )
 from pathogen_identification.utilities.utilities_views import (
@@ -159,6 +159,8 @@ class Command(BaseCommand):
                     set_control_reports(project.pk)
 
                     calculate_reports_overlaps(project_sample, force=True)
+                    reference_utils = RawReferenceUtils(project_sample)
+                    _ = reference_utils.create_compound_references()
 
                     break
 
@@ -179,4 +181,7 @@ class Command(BaseCommand):
                 ),
                 ProcessControler.FLAG_ERROR,
             )
+            reference_utils = RawReferenceUtils(project_sample)
+            _ = reference_utils.create_compound_references()
+
             raise e

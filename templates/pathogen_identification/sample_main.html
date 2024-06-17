@@ -18,27 +18,14 @@
 
 {% block content %}
 
-<style>
-    .table th, .table td {
-        text-align: center;
-    }
-    .btn-group {
-        margin-bottom: 15px;
-    }
+{% block extra_head %}
+    <link rel="stylesheet" href="{% static 'css/televir_sample_main.css' %}">
+{% endblock %}
 
-    .table-title {
-        font-size: 24px;
-        font-weight: bold;
-        margin-bottom: 10px;
-      }
-      
-      .table-description {
-        font-size: 16px;
-        margin-bottom: 10px;
-      }
-      .table-separator {
-        margin-bottom: 20px;
-      }
+
+<style>
+
+
 </style>
 
 <div class="table-container">

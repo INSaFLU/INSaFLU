@@ -1,12 +1,12 @@
 
+
+
 $(document).ready(function () {
   
-  $('#teleflu_submit-button').click(function () {
-      console.log('clicked');
-      console.log($('#teleflu_submit-button').attr('href'));
-      var url = $('#teleflu_submit-button').attr('href');
-      var reload_url = $('#teleflu_submit-button').attr('reload_ref');
-      var csrf = $('#teleflu_submit-button').attr('csrf');
+  $('#teleflu_create-button').click(function () {
+
+      var url = $('#teleflu_create-button').attr('href');
+      var csrf = $('#teleflu_create-button').attr('csrf');
       
       // get checked reference rows
       var checkedRows_refs = [];
@@ -25,9 +25,6 @@ $(document).ready(function () {
         checkedRows_samples.push(sample_id);
       });
 
-      console.log(checkedRows_samples);
-
-      console.log(checkedRows_refs);
   
       // Process the checked rows
       // Add your processing logic here

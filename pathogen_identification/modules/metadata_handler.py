@@ -6,20 +6,14 @@ from typing import List, Optional
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (
-    PIProject_Sample,
-    RawReference,
-    ReferenceSourceFileMap,
-    RunMain,
-)
+from pathogen_identification.models import (PIProject_Sample, RawReference,
+                                            ReferenceSourceFileMap, RunMain)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
 from pathogen_identification.utilities.utilities_general import (
-    description_fails_filter,
-    merge_classes,
-    scrape_description,
-)
-from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
+    description_fails_filter, merge_classes, scrape_description, simplify_name)
+from pathogen_identification.utilities.utilities_pipeline import \
+    RawReferenceUtils
 
 
 class RunMetadataHandler:
@@ -121,18 +115,19 @@ class RunMetadataHandler:
 
         fasta_main_dir = self.config["source"]["REF_FASTA"]
 
-        for ref in references[:max_accids]:
+        for ref in references:
             refmaps = ReferenceSourceFileMap.objects.filter(
                 reference_source__taxid__taxid=ref.taxid,
                 reference_source__accid=ref.accid,
             )
+            accids_replete = 0
             for refmap in refmaps:
-                accid_simple = (
-                    ref.accid.replace(".", "_")
-                    .replace(";", "_")
-                    .replace(":", "_")
-                    .replace("|", "_")
-                )
+                if accids_replete > max_accids:
+                    break
+
+                if ref.accid is None:
+                    continue
+                accid_simple = simplify_name(ref.accid)
 
                 self.remap_targets.append(
                     Remap_Target(
@@ -148,6 +143,8 @@ class RunMetadataHandler:
                     )
                 )
 
+                accids_replete += 1
+
     def merge_sample_references(
         self, sample_registered: PIProject_Sample, max_taxids: int, max_remap: int = 15
     ):
@@ -155,7 +152,7 @@ class RunMetadataHandler:
         Generate Remap Targets from all existing references for a given sample."""
         reference_utils = RawReferenceUtils(sample_registered)
         reference_utils.sample_reference_tables()
-        reference_table = reference_utils.merge_ref_tables()
+        reference_table = reference_utils.merged_table
 
         proxy_rclass = reference_utils.reference_table_renamed(
             reference_table, {"read_counts": "counts"}
@@ -170,7 +167,8 @@ class RunMetadataHandler:
         self.merge_reports_clean(
             max_taxids,
         )
-
+        print("###############3")
+        print(self.merged_targets)
         self.generate_targets_from_report(
             reference_table,
             max_taxids=max_taxids,
@@ -245,9 +243,17 @@ class RunMetadataHandler:
 
         references_table = references_table[references_table.taxid != "0"]
         references_table = references_table[references_table.taxid != "1"]
+        if "description" not in references_table.columns:
+            references_table["description"] = ""
+
         references_table = references_table[
             ~references_table.description.isin(["root", "NA"])
         ]
+        if "accid" not in references_table.columns:
+            references_table["accid"] = references_table["taxid"].apply(
+                self.get_taxid_representative_accid
+            )
+
         references_table = references_table[~references_table.accid.isin(["-"])]
 
         references_table["taxid"] = references_table["taxid"].astype(int)
@@ -282,12 +288,10 @@ class RunMetadataHandler:
                 .reset_index()
             )
 
-        if "standard_score" in references_table.columns:
-            references_table = references_table.sort_values(
-                by="standard_score", ascending=False
-            )
-            print("##### standard score ######")
-            print(references_table.head(30))
+        # if "standard_score" in references_table.columns:
+        #    references_table = references_table.sort_values(
+        #        by="standard_score", ascending=False
+        #    )
 
         if max_taxids is not None:
             references_table = references_table.iloc[:max_taxids, :]
@@ -744,6 +748,9 @@ class RunMetadataHandler:
 
         """
         fasta_main_dir = self.config["source"]["REF_FASTA"]
+        print(
+            "######################## GENERATING TARGETS ############################"
+        )
 
         remap_targets = []
         remap_absent = []
@@ -751,8 +758,12 @@ class RunMetadataHandler:
         remap_plan = []
         targets.taxid = targets.taxid.astype(int)
 
+        print(targets.head())
+
         for taxid in targets.taxid.unique():
+            print(f"taxid: {taxid}")
             nset = self.metadata_from_taxid(taxid)
+            print(nset)
 
             if nset.empty:
                 remap_absent.append(taxid)
@@ -784,12 +795,8 @@ class RunMetadataHandler:
 
                 for pref in nsu.acc.unique():
                     nsnew = nsu[nsu.acc == pref].reset_index(drop=True)
-                    pref_simple = (
-                        pref.replace(".", "_")
-                        .replace(";", "_")
-                        .replace(":", "_")
-                        .replace("|", "_")
-                    )
+
+                    pref_simple = simplify_name(pref)
 
                     self.taxonomy_to_description.taxid = (
                         self.taxonomy_to_description.taxid.astype(int)
@@ -840,6 +847,8 @@ class RunMetadataHandler:
                     if added_counts > max_remap:
                         break
 
+        print("############# REMAP PLAN #############")
+        print(remap_plan)
         self.remap_plan = pd.DataFrame(
             remap_plan, columns=["taxid", "acc", "file", "description"]
         )

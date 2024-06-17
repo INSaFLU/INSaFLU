@@ -228,11 +228,9 @@ class BiopyFetchAccessionDescription(BiopythonEntrezWrapper):
 
         for chunk in chunks:
             chunk = [str(i).split(".")[0] for i in chunk]
-            print(chunk[0])
             handle = Entrez.efetch(db="Taxonomy", id=",".join(chunk), retmode="xml")
             record = Entrez.read(handle)
 
-            print(record[0])
             records = [
                 [record["AccessionVersion"], record["Title"]] for record in record
             ]
@@ -394,8 +392,6 @@ class EntrezWrapper:
             df.columns = self.bin_query.output_columns
         except pd.errors.EmptyDataError:
             df = pd.DataFrame(columns=self.bin_query.output_columns)
-
-        print(df.head())
 
         df.to_csv(self.output_path, sep="\t", index=False)
 

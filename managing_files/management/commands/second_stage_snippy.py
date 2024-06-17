@@ -53,6 +53,7 @@ class Command(BaseCommand):
         self.logger_debug.info(
             "Starting for project_sample_id: " + str(project_sample_id)
         )
+
         try:
             project_sample = ProjectSample.objects.get(pk=project_sample_id)
 

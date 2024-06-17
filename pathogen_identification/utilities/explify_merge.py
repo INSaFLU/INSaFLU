@@ -144,9 +144,7 @@ def merge_panels(illumina_found, telebac_found):
     all_samples = illumina_found.Sample.unique()
 
     final_set = pd.DataFrame()
-    print("Merging samples")
     for sample in all_samples:
-        print(sample)
 
         illumina_sample = illumina_found[
             illumina_found["Sample"] == sample

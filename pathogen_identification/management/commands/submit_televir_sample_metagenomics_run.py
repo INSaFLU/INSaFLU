@@ -11,15 +11,20 @@ from pathogen_identification.deployment_main import Run_Main_from_Leaf
 from pathogen_identification.models import (
     ParameterSet,
     PIProject_Sample,
+    RunMain,
     SoftwareTree,
     SoftwareTreeNode,
 )
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
 from pathogen_identification.utilities.utilities_pipeline import (
+    RawReferenceUtils,
     SoftwareTreeUtils,
     Utils_Manager,
 )
-from pathogen_identification.utilities.utilities_views import set_control_reports
+from pathogen_identification.utilities.utilities_views import (
+    calculate_reports_overlaps,
+    set_control_reports,
+)
 from utils.process_SGE import ProcessSGE
 
 
@@ -98,11 +103,11 @@ class Command(BaseCommand):
         leaf_index = options["leaf_id"]
         combined_analysis = options["combined_analysis"]
         mapping_request = options["mapping_request"]
-        mapping_run = options["mapping_run_id"]
+        mapping_run_pk = options["mapping_run_id"]
 
         if mapping_request:
             mapping_only = True
-            if mapping_run is None:
+            if mapping_run_pk is None:
                 raise Exception("mapping_run_id is required for mapping request")
         elif combined_analysis:
             metagenomics = True
@@ -149,11 +154,11 @@ class Command(BaseCommand):
             sample=target_sample, leaf=matched_path_node, project=project
         )
 
-        print("was_run_killed", was_run_killed)
-        print(f"leaf_index: {leaf_index}")
-
         ### draw graph
         graph_progress = TreeProgressGraph(target_sample)
+        #### Deployment RUn
+
+        mapping_run = RunMain.objects.get(pk=mapping_run_pk)
 
         ### SUBMISSION
         try:
@@ -165,7 +170,11 @@ class Command(BaseCommand):
                     status=ParameterSet.STATUS_NOT_STARTED,
                 )
 
-            else:
+            ### to remove condition for production
+            elif mapping_run.status not in [
+                RunMain.STATUS_FINISHED,
+                RunMain.STATUS_ERROR,
+            ]:
                 run = Run_Main_from_Leaf(
                     user=user,
                     input_data=target_sample,
@@ -176,7 +185,7 @@ class Command(BaseCommand):
                     threads=ConstantsSettings.DEPLOYMENT_THREADS,
                     combined_analysis=combined_analysis,
                     mapping_request=mapping_request,
-                    mapping_run_pk=mapping_run,
+                    run_pk=mapping_run_pk,
                 )
 
                 run.is_available = True
@@ -190,6 +199,10 @@ class Command(BaseCommand):
 
                 # graph_progress.generate_graph()
                 set_control_reports(project.pk)
+
+            reference_utils = RawReferenceUtils(target_sample)
+            _ = reference_utils.create_compound_references()
+            calculate_reports_overlaps(target_sample, force=True)
 
             process_SGE.set_process_controler(
                 user,
@@ -212,4 +225,8 @@ class Command(BaseCommand):
                 ),
                 ProcessControler.FLAG_ERROR,
             )
+
+            reference_utils = RawReferenceUtils(target_sample)
+            _ = reference_utils.create_compound_references()
+
             raise e

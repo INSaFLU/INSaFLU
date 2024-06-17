@@ -1,0 +1,402 @@
+{% extends '_layouts/base.html' %}
+
+{% load bootstrap4 %}
+{% load querystring from django_tables2 %}
+{% load title from django_tables2 %}
+{% load trans blocktrans from i18n %}
+{% load django_bootstrap_breadcrumbs %}
+{% load static %}
+{% load custom_tags %}
+
+
+{% block extra_messages %}
+<!-- set the messages -->
+<div class="container">
+	<div id="id_messages_remove"></div>
+</div>
+{% endblock %}
+
+{% block breadcrumbs %}
+{{ block.super }}
+{% breadcrumb "Project Index" "project-index" %}
+{% breadcrumb "TELEVIR Projects" "PIprojects_main" %}
+{% breadcrumb "Manage References" "" %}
+{% endblock %}
+
+
+
+{% block extra_nav %}
+<nav class="nav-style">
+    <ul style="list-style-type: none; margin: 0; padding: 0; overflow: hidden;">
+        <li style="float: left; margin-right: 10px;" class="tab" ><a href="{% url 'televir_reference_files' %}">Files</a></li>
+        <li style="float: left; margin-right: 10px;" class="tab " ><a href="{% url 'televir_references' %}">References</a></li>
+        <li style="float: left; margin-right: 10px;" class="tab active" ><a href="{% url 'reference_panels' %}">Panels</a></li>
+    </ul>
+</nav>
+{% endblock %}
+
+
+{% block content %}
+
+
+{% block extra_head %}
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{% static 'css/televir_reference_panels.css' %}">
+    <link rel="stylesheet" href="{% static 'css/televir_references_nav.css' %}">
+{% endblock %}
+
+
+<div class="container-panels">
+    <div class="panels-container">
+        <div class="panel-list" data-url="{% url 'panel_references_get' %}">
+            <!-- Button trigger modal -->
+            <button type="button" user_id="{{user_id}}"  id="new-panel-button" class="btn btn-primary" data-toggle="modal" data-target="#newPanelModal">
+                Create New Panel
+            </button>
+            <div> 
+                <ul id="panel-list">
+                    {% for panel in panels %}
+                    <li>
+                        <div class="panel-container clearfix" data-panel-id="{{ panel.id }}">
+                            <a data-panel-id="{{ panel.id }}" class="panel-link" href="#">{{ panel.name }}</a>
+                            <i class="fa {{ panel.icon }}"></i>
+
+
+                            <button class="remove-panel-button btn btn-danger" data-panel-id="{{ panel.id }}" title="Remove Panel" data-toggle="modal" data-target="#removePanelModal">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                            
+                            <button class="add-reference-button btn btn-primary" data-panel-id="{{ panel.id }}" data-toggle="modal" data-target="#myModal" title="Add References">
+                                <i class="fa fa-search-plus"></i>
+                            </button>
+
+                            <button class="select-file-button btn btn-primary" data-toggle="modal" data-target="#panelSelectModal" title="Select Panel" url-user-files="{% url 'available_televir_files' %}">
+                                <svg class="icon-white" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="15px" x="0px" y="0px" viewBox="0 0 114.066 122.881" enable-background="new 0 0 114.066 122.881" xml:space="preserve">
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M65.959,67.42h38.739c5.154,0,9.368,4.219,9.368,9.367v36.725 c0,5.154-4.221,9.369-9.368,9.369H65.959c-5.154,0-9.369-4.215-9.369-9.369V76.787C56.59,71.639,60.805,67.42,65.959,67.42 L65.959,67.42L65.959,67.42z M20.464,67.578c-1.495,0-2.74-1.352-2.74-2.988c0-1.672,1.209-2.989,2.74-2.989H43.88 c1.495,0,2.741,1.353,2.741,2.989c0,1.672-1.21,2.988-2.741,2.988H20.464L20.464,67.578L20.464,67.578z M87.795,18.186h9.822 c1.923,0,3.703,0.783,4.947,2.063c1.28,1.281,2.064,3.025,2.064,4.947v33.183h-6.051V25.196c0-0.285-0.107-0.533-0.285-0.711 c-0.177-0.178-0.426-0.285-0.711-0.285H87.76v34.18h-6.014V7.011c0-0.285-0.107-0.534-0.285-0.711 c-0.178-0.178-0.428-0.285-0.712-0.285H6.976c-0.285,0-0.535,0.106-0.712,0.285C6.085,6.478,5.979,6.726,5.979,7.011v83.348 c0,0.285,0.107,0.533,0.285,0.711s0.427,0.285,0.711,0.285h38.871v6.014H22.812v11.174c0,0.285,0.107,0.535,0.285,0.713 c0.177,0.176,0.427,0.285,0.711,0.285l22.038-0.002v6.014H23.844c-1.922,0-3.701-0.783-4.946-2.064 c-1.282-1.279-2.064-3.023-2.064-4.947l0-11.172H7.011c-1.922,0-3.701-0.785-4.946-2.064C0.783,94.023,0,92.279,0,90.357V7.011 C0,5.089,0.783,3.31,2.064,2.064C3.345,0.783,5.089,0,7.011,0h73.774c1.921,0,3.701,0.783,4.947,2.063 c1.28,1.282,2.063,3.025,2.063,4.947V18.186L87.795,18.186L87.795,18.186L87.795,18.186z M20.428,28.647 c-1.495,0-2.74-1.353-2.74-2.99c0-1.672,1.21-2.989,2.74-2.989l46.833,0c1.495,0,2.739,1.353,2.739,2.989 c0,1.672-1.208,2.99-2.739,2.99L20.428,28.647L20.428,28.647L20.428,28.647z M20.428,48.114c-1.495,0-2.74-1.353-2.74-2.989 c0-1.672,1.21-2.989,2.74-2.989l46.833,0c1.495,0,2.739,1.352,2.739,2.989c0,1.672-1.208,2.989-2.739,2.989L20.428,48.114 L20.428,48.114L20.428,48.114z M73.868,98.787c-2.007,0-3.634-1.627-3.634-3.635c0-2.006,1.627-3.633,3.634-3.633h7.823v-7.83 c0-2.006,1.628-3.633,3.634-3.633s3.634,1.627,3.634,3.633v7.83h7.829c2.007,0,3.634,1.627,3.634,3.633 c0,2.008-1.627,3.635-3.634,3.635h-7.823v7.83c0,2.006-1.627,3.633-3.634,3.633c-2.006,0-3.634-1.627-3.634-3.633v-7.83H73.868 L73.868,98.787L73.868,98.787z"/>
+                                </svg>   
+                            </button>
+
+                            <span class="reference-note " data-panel-id="{{ panel.id }}">{{ panel.references_count }} 
+                            </span>
+
+                        </div>
+                    </li>
+                    {% empty %}
+                    <li>No panels available.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <div class="reference-list">
+            <div class="reference-list-header">
+                <h3 class="reference-title">Panel References</h3>
+                <input type="search" id="referenceSearch" placeholder="Search references...">
+            </div>
+            <ul>
+                <p> no panel selected </p>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- The reference search -->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop="static">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title" id="myModalLabel">Add References - All Samples</h4>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-sm-9">          <!-- Your search form code here -->
+              <form id="reference-search-form">
+                <div class="input-group">
+                  <input id="search-input" type="text" class="form-control" placeholder="Description, Accid, Taxid, File">
+                  <div class="input-group-append">
+                    <button type="submit" class="load-content btn btn-primary" csrf="{{ csrf_token }}" href="{% url 'filter_reference_table' %}">Search</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+          <div id="reference_table_div" class="table-container">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" id="submit-button" csrf="{{ csrf_token }}" href="{% url 'add_references_to_panel' %}" reload_ref= "{% url 'added_reference_table' %}" >Submit</button>
+        </div>
+      </div>
+    </div>
+</div>
+
+
+<!-- Panel select Modal -->
+<div class="modal fade" id="panelSelectModal" tabindex="-1" role="dialog" aria-labelledby="panelSelectModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="panelSelectModalLabel">Select Panel</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div id="file-select">
+
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary" id="submit-file" url-register-file-panel="{% url 'register_file_panel' %}">Submit</button>
+        </div>
+      </div>
+    </div>
+</div>
+
+
+<!-- Modal -->
+<div class="modal fade" id="newPanelModal" tabindex="-1" role="dialog" aria-labelledby="newPanelModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="newPanelModalLabel">New Panel</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form id="new-panel-form" url="{% url 'create_reference_panel' %}">
+            {% csrf_token %}
+            <div class="form-label">
+            <label for="panel-name">Panel Name:</label>
+            <input type="text" id="panel-name" name="panel-name">
+            </div>
+            <div class="form-label">
+                <label>Panel Icon:</label>
+                <div class="icon-selection">
+                    <label>
+                        <input type="radio" name="panel-icon" value="">
+                        None
+                    </label>
+                    <label>
+                        <input type="radio" name="panel-icon" value="fa-tags">
+                        <i class="fa fa-tags"></i>
+                    </label>
+                    <label>
+                        <input type="radio" name="panel-icon" value="fa-star">
+                        <i class="fa fa-star"></i>
+                    </label>
+                    <label>
+                        <input type="radio" name="panel-icon" value="fa-heart">
+                        <i class="fa fa-heart"></i>
+                    </label>
+                    <label>
+                        <input type="radio" name="panel-icon" value="fa-bolt">
+                        <i class="fa fa-bolt"></i>
+                    </label>
+                    <label>
+                        <input type="radio" name="panel-icon" value="fa-bug">
+                        <i class="fa fa-bug"></i>
+                    </label>
+                    <!-- Add more icons as needed -->
+                </div>
+            </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary" id="create-panel-button" reload-url= "{% url 'panel_list' %}">Create</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<!-- Modal -->
+<div class="modal fade" id="removePanelModal" tabindex="-1" role="dialog" aria-labelledby="removePanelModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="removePanelModalLabel">Remove Panel</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to remove this panel?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="remove-panel-button" url= "{% url 'delete_reference_panel' %}" csrf="{{ csrf_token }}">Remove</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal -->
+<div id="removeReferenceModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="removeReferenceModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="removeReferenceModalLabel">Remove Reference</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          Are you sure you want to remove this reference from the panel?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-danger">Remove</button>
+        </div>
+      </div>
+    </div>
+</div>
+
+
+
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="{% static 'js/check-box-general.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/televir_projects/panel_functions.js' %}"></script>
+
+<script>
+
+
+    // Get the modal
+    var modal = document.getElementById("newPanelModal");
+
+    // Get the button that opens the modal
+    var btn = document.getElementById("new-panel-button");
+
+    // Get the <span> element that closes the modal
+    var span = document.getElementsByClassName("close")[0];
+
+    // When the user clicks the button, open the modal 
+    btn.onclick = function() {
+        modal.style.display = "block";
+    }
+
+    // When the user clicks on <span> (x), close the modal
+    span.onclick = function() {
+        modal.style.display = "none";
+    }
+
+    document.querySelector('#new-panel-button').addEventListener('click', function() {
+        document.querySelector('#newPanelModal').style.display = 'grid';
+    });
+
+    document.querySelector('#new-panel-form').addEventListener('submit', function() {
+        document.querySelector('#newPanelModal').style.display = 'none';
+    });
+
+
+    // Stop event propagation when the buttons are clicked
+
+    $('#referenceSearch').on('input', function() {
+        var searchValue = $(this).val().toLowerCase();
+        $('.reference-item').each(function() {
+            var referenceText = $(this).text().toLowerCase();
+            if (referenceText.indexOf(searchValue) > -1) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+    });
+
+
+    $('#removeReferenceModal').on('click', '.btn-danger', function() {
+        var ref_id = $('#removeReferenceModal').attr('ref_id');
+        var panel_id = $('#removeReferenceModal').attr('panel_id');
+        var user_id = '{{ user.id }}';
+        var url = '{% url "remove_panel_reference" %}';
+        var reload_url = '{% url "added_reference_table" %}';
+        $.ajax({
+            url: url,
+            method: 'POST',
+            data: {
+                'reference_id': ref_id,
+                'panel_id': panel_id,
+                'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            success: function(data) {
+                $('#removeReferenceModal').modal('hide');
+                load_panel_refs(panel_id);
+                $('.modal-backdrop').remove();
+                reload_panels(user_id);
+
+            },
+            error: function(error) {
+                console.error('Error:', error);
+            }
+        });
+    });
+
+    // AJAX to submit the form
+    document.getElementById('create-panel-button').addEventListener('click', function(e) {
+        e.preventDefault();
+        var name = document.getElementById('panel-name').value;
+        var url = document.getElementById('new-panel-form').getAttribute('url');
+        var icon = document.querySelector('input[name="panel-icon"]:checked').value;
+        var reload_url = '{% url "panel_list" %}';
+        console.log('icon', icon);
+        $.ajax({
+            url: url,  // Replace with the actual URL of your view
+            method: 'POST',
+            data: {
+                'name': name,
+                'icon': icon,
+                'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            success: function(data) {
+
+                modal.style.display = "none";
+                // unblock the UI
+                $('.modal-backdrop').remove();
+                // Reload the panel list
+                reload_panels("{{ user.id }}");
+                
+            },
+            error: function(error) {
+                console.error('Error:', error);
+            }
+            
+        });
+    });
+
+
+	$(document).ready(function () {
+        // Load the reference table
+        $('#submit-button').click(function () {
+            $.unblockUI();
+        });
+		$('.close').click(function () {
+			$.unblockUI();
+		});
+        $('.submit-button').click(function () {
+            $.unblockUI();
+        });
+
+        reload_connects();
+
+	});
+
+    window.onbeforeunload = function (e) {
+        $.unblockUI();
+    };
+
+
+    $(document).ready(ready_document("{{ user_id }}", "{% url 'panel_list' %}"));
+    
+
+    $('.load-content').on('click', loadThisContent);
+</script>
+
+{% endblock %}

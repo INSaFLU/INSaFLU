@@ -1,40 +1,32 @@
-import datetime
+import json
 import logging
 import os
 from typing import Dict, List, Optional
 
 import pandas as pd
 from braces.views import FormValidMessageMixin, LoginRequiredMixin
+from django.db import transaction
 from django.db.models.query import QuerySet
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.views import generic
 
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReferenceMap_Main,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PIConstantsSettings
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference, ReferenceMap_Main,
+                                            ReferencePanel,
+                                            ReferenceSourceFileMap,
+                                            RunAssembly, RunDetail, RunMain,
+                                            SoftwareTree, SoftwareTreeNode)
 from pathogen_identification.utilities.clade_objects import Clade
-from pathogen_identification.utilities.overlap_manager import ReadOverlapManager
-from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
+from pathogen_identification.utilities.overlap_manager import \
+    ReadOverlapManager
 from pathogen_identification.utilities.televir_parameters import (
-    LayoutParams,
-    TelevirParameters,
-)
+    LayoutParams, TelevirParameters)
 from pathogen_identification.utilities.utilities_general import (
-    infer_run_media_dir,
-    simplify_name,
-)
+    infer_run_media_dir, simplify_name)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
 
@@ -45,6 +37,27 @@ class SampleReferenceManager:
         self.software_tree: SoftwareTree = self.proxy_tree_prepare()
         self.software_tree_node_storage: SoftwareTreeNode = self.proxy_leaf_prepare()
         self.prep_storage()
+
+    def add_reference(self, reference: ReferenceSourceFileMap):
+        ref_description = reference.description
+
+        if ref_description is None:
+            ref_description = reference.accid
+
+        if len(ref_description) > 150:
+            ref_description = ref_description[:150]
+
+        new_reference = RawReference(
+            run=self.storage_run,
+            accid=reference.accid,
+            taxid=reference.taxid,
+            description=ref_description,
+            status=RawReference.STATUS_UNMAPPED,
+            counts=0,
+            classification_source="none",
+        )
+
+        new_reference.save()
 
     def proxy_tree_prepare(self):
         try:
@@ -66,6 +79,24 @@ class SampleReferenceManager:
             software_tree.save()
 
         return software_tree
+
+    def copy_panel(self, panel: ReferencePanel) -> ReferencePanel:
+        """
+        copy panel
+        """
+        with transaction.atomic():
+            original_pk = panel.pk
+            panel.pk = None
+            panel.panel_type = ReferencePanel.PANEL_TYPE_COPIED
+            panel.save()
+            try:
+                panel.parent = ReferencePanel.objects.get(pk=original_pk)
+                panel.save()
+
+            except ReferencePanel.DoesNotExist:
+                pass
+
+        return panel
 
     def proxy_leaf_prepare(self):
         try:
@@ -161,7 +192,10 @@ class SampleReferenceManager:
                 leaf=leaf,
                 project=self.sample.project,
             )
-            parameter_set.save()
+
+            if parameter_set.status == ParameterSet.STATUS_FINISHED:
+                parameter_set.status = ParameterSet.STATUS_QUEUED
+                parameter_set.save()
 
         except ParameterSet.DoesNotExist:
             parameter_set = ParameterSet.objects.create(
@@ -176,8 +210,13 @@ class SampleReferenceManager:
 
         return parameter_set
 
-    def create_mapping_run(self, leaf: SoftwareTreeNode, run_type: int):
+    def create_mapping_run(
+        self, leaf: SoftwareTreeNode, run_type: int, panel_pk: Optional[int] = None
+    ) -> RunMain:
         parameter_set = self.anchor_parameter_set_leaf(leaf)
+
+        if panel_pk is not None:
+            panel = ReferencePanel.objects.get(pk=panel_pk)
 
         mapping_run = RunMain.objects.create(
             name=leaf.name,
@@ -188,6 +227,7 @@ class SampleReferenceManager:
             host_depletion_performed=False,
             enrichment_performed=False,
             status=RunMain.STATUS_PREP,
+            panel=panel if panel_pk is not None else None,
         )
 
         return mapping_run
@@ -199,6 +239,14 @@ class SampleReferenceManager:
     def mapping_request_run_from_leaf(self, leaf: SoftwareTreeNode) -> RunMain:
         """ """
         return self.create_mapping_run(leaf, RunMain.RUN_TYPE_MAP_REQUEST)
+
+    def mapping_request_panel_run_from_leaf(
+        self, leaf: SoftwareTreeNode, panel_pk: int
+    ) -> RunMain:
+        """ """
+        return self.create_mapping_run(
+            leaf, RunMain.RUN_TYPE_PANEL_MAPPING, panel_pk=panel_pk
+        )
 
     def screening_run_from_leaf(self, leaf: SoftwareTreeNode) -> RunMain:
         """ """
@@ -255,10 +303,19 @@ def inform_control_flag(report: FinalReport, control_flag_str: str):
         return control_flag_str
 
 
+from fluwebvirus.settings import STATIC_ROOT
+
+
 class FinalReportWrapper:
     accid: str
     sample: PIProject_Sample
+    coverage: float
     mapped_proportion: float
+
+    media_fields = [
+        "covplot",
+        "refa_dotplot",
+    ]
 
     # can take either FinalReport or EmptyRemapMain
     def __init__(self, report: FinalReport):
@@ -272,6 +329,8 @@ class FinalReportWrapper:
                     continue
                 try:
                     setattr(self, attr, getattr(report, attr))
+                    if attr in self.media_fields:
+                        setattr(self, attr, self.prep_for_static(getattr(report, attr)))
                 except Exception as e:
                     raise e
 
@@ -279,6 +338,17 @@ class FinalReportWrapper:
         self.control_flag = report.control_flag
         self.control_flag_str = infer_control_flag_str(report)
         self.control_flag_str = inform_control_flag(report, self.control_flag_str)
+        self.first_in_group = False
+        self.row_class_name = "secondary-row"
+        self.display = "none"
+
+    @staticmethod
+    def prep_for_static(filepath: str) -> str:
+
+        if STATIC_ROOT in filepath:
+            return filepath.split(STATIC_ROOT)[-1]
+
+        return filepath
 
     def update_private_reads(self, private_reads: int):
         self.private_reads = private_reads
@@ -308,6 +378,10 @@ class FinalReportCompound(LoginRequiredMixin, generic.TemplateView):
         self.control_flag_str = infer_control_flag_str(report)
         self.control_flag_str = inform_control_flag(report, self.control_flag_str)
         self.private_reads = 0
+
+        self.row_class_name = report.row_class_name
+        self.first_in_group = report.first_in_group
+        self.display = report.display
 
     def update_private_reads(self, private_reads: int):
         self.private_reads = private_reads
@@ -340,11 +414,13 @@ class FinalReportCompound(LoginRequiredMixin, generic.TemplateView):
 
 
 class FinalReportGroup:
+    analysis_empty = False
+
     name: str
     total_counts: str
-    private_counts: str
-    shared_proportion: str
-    private_proportion: str
+    private_counts: int
+    shared_proportion: float
+    private_proportion: float
     group_list: List[FinalReportWrapper]
 
     def __init__(
@@ -357,16 +433,31 @@ class FinalReportGroup:
         group_list: List[FinalReportWrapper],
         heatmap_path: str = "",
         heatmap_exists: bool = False,
+        private_counts_exist: bool = True,
+        analysis_empty=False,
     ):
         self.name = name
         self.total_counts = f"total counts {total_counts}"
-        self.private_counts = f"private counts {private_counts}"
-        self.shared_proportion = f"shared proportion {shared_proportion:.2f}"
-        self.private_proportion = f"private proportion {private_proportion:.2f}"
+        self.private_counts = private_counts
+        self.shared_proportion = shared_proportion
+        self.private_proportion = round(private_proportion, 2)
         self.group_list = group_list
         self.heatmap_path = heatmap_path
         self.heatmap_exists = heatmap_exists
         self.max_private_reads = 0
+        self.max_coverage = 0
+        self.private_counts_exist = private_counts_exist
+        self.update_max_coverage()
+        self.js_heatmap_ready = False
+        self.js_heatmap_data = None
+        self.analysis_empty = analysis_empty
+        self.has_multiple = True if len(group_list) > 1 else False
+        self.toggle = (
+            "off"
+            if shared_proportion
+            > PIConstantsSettings.SORT_GROUP_DISPLAY_DEFAULT_THRESHOLD_SHARED
+            else "on"
+        )
 
     def reports_have_private_reads(self) -> bool:
         for report in self.group_list:
@@ -374,10 +465,22 @@ class FinalReportGroup:
                 return True
         return False
 
+    def update_max_coverage(self):
+        for report in self.group_list:
+            if report.coverage > self.max_coverage:
+                self.max_coverage = report.coverage
+
     def update_max_private_reads(self):
         for report in self.group_list:
             if report.private_reads > self.max_private_reads:
                 self.max_private_reads = report.private_reads
+
+    def set_unsorted(self):
+
+        for report in self.group_list:
+            report.row_class_name = "unsorted-row"
+            report.first_in_group = False
+            report.display = "table-row"
 
 
 def check_sample_software_exists(sample: PIProject_Sample) -> bool:
@@ -548,6 +651,7 @@ class ReportSorter:
         level=0,
     ):
         self.reports: List[FinalReport] = reports
+        self.analysis_empty = False
         self.max_error_rate = 0
         self.max_quality_avg = 1
         self.max_mapped_prop = 0
@@ -634,6 +738,38 @@ class ReportSorter:
             self.overlap_heatmap_path = None
             self.overlap_pca_exists = False
             self.overlap_pca_path = None
+
+    def read_shared_matrix(self):
+        """
+        read accession shared reads matrix
+        """
+        try:
+            distance_matrix = pd.read_csv(
+                self.overlap_manager.shared_prop_matrix_path, index_col=0
+            )
+            return distance_matrix
+        except Exception as e:
+            print(e)
+            return None
+
+    def read_clade_shared_matrix(self):
+        """
+        read clade shared matrix
+        """
+        try:
+            clade_shared_matrix = pd.read_csv(
+                self.overlap_manager.clade_shared_prop_matrix_path, index_col=0
+            )
+
+            # fill diagonal with 0
+            for i in range(clade_shared_matrix.shape[0]):
+                clade_shared_matrix.iloc[i, i] = 1
+
+            return clade_shared_matrix
+
+        except Exception as e:
+            print(e)
+            return None
 
     def update_max_error_rate(self, report: FinalReport):
         """
@@ -947,17 +1083,23 @@ class ReportSorter:
         if self.model is None:
             return self.return_no_analysis()
 
+        try:
+            assert self.overlap_manager.tree_manager is not None
+        except AttributeError as e:
+            print(e)
+            return self.return_no_analysis()
+
         overlap_analysis = self.read_overlap_analysis(force=True)
         self.overlap_manager.plot_pca_full(overlap_analysis)
         overlap_analysis.to_csv(self.analysis_df_path, sep="\t", index=False)
 
         self.overlap_manager.get_private_reads_no_duplicates()
-        # self.overlap_manager.plot_pca_full()
 
         overlap_groups = list(overlap_analysis.groupby(["total_counts", "clade"]))[::-1]
 
         clades_to_keep = []
 
+        ## plot pairwise shared reads
         for group in overlap_groups:
             group_df = group[1]
 
@@ -970,6 +1112,7 @@ class ReportSorter:
             if len(group_list):
                 clades_to_keep.append(name)
                 if len(group_list) > 1:
+
                     pairwise_shared_within_clade = (
                         self.overlap_manager.within_clade_shared_reads(clade=name)
                     )
@@ -981,6 +1124,7 @@ class ReportSorter:
         pairwise_shared_among_clade = self.overlap_manager.between_clade_shared_reads(
             clades_filter=clades_to_keep
         )
+
         self.overlap_manager.plot_pairwise_shared_clade_reads(
             pairwise_shared_among_clade
         )
@@ -1033,6 +1177,13 @@ class ReportSorter:
         """
         group.group_list.sort(key=lambda x: x.private_reads, reverse=True)
 
+        if len(group.group_list) == 0:
+            return group
+
+        group.group_list[0].first_in_group = True
+        group.group_list[0].row_class_name = "primary-row"
+        group.group_list[0].display = "table-row"
+
         return group
 
     def sort_group_list_reports(
@@ -1054,7 +1205,6 @@ class ReportSorter:
             overlap_analysis = self.read_overlap_analysis()
 
         overlap_groups = list(overlap_analysis.groupby(["total_counts", "clade"]))[::-1]
-
         sorted_reports = []
 
         for group in overlap_groups:
@@ -1071,29 +1221,125 @@ class ReportSorter:
 
             if group_heatmap_exists:
                 group_heatmap = "/media/" + group_heatmap.split("media/")[-1]
+
             if len(group_list):
+
+                private_counts_present = "private_counts" in group_df.columns
+                private_counts = 0
+                if private_counts_present:
+                    private_counts = group_df.private_counts.iloc[0]
+
                 report_group = FinalReportGroup(
                     name=name,
                     total_counts=group_df.total_counts.iloc[0],
-                    private_counts=group_df.private_counts.iloc[0],
+                    private_counts=private_counts,
                     shared_proportion=group_df.shared_proportion.iloc[0],
                     private_proportion=group_df.private_proportion.iloc[0],
                     group_list=group_list,
                     heatmap_path=group_heatmap,
                     heatmap_exists=group_heatmap_exists,
+                    private_counts_exist=private_counts_present,
                 )
                 sorted_reports.append(report_group)
 
         # sort groups by max coverage among group
 
+        if len(sorted_reports) == 0:
+            return self.return_no_analysis()
+
         def get_private_proportion(group: FinalReportGroup):
             return group.private_proportion
 
-        sorted_groups = sorted(sorted_reports, key=get_private_proportion, reverse=True)
+        def get_group_max_coverage(group: FinalReportGroup):
+            return group.max_coverage
+
+        sorted_groups: List[FinalReportGroup] = sorted(
+            sorted_reports, key=get_group_max_coverage, reverse=True
+        )
+
         sorted_groups = self.get_reports_private_reads(sorted_groups)
         sorted_groups = self.sort_group_list_reports(sorted_groups)
+        sorted_groups = self.prep_heatmap_data_several(sorted_groups)
 
         return sorted_groups
+
+    def prep_heatmap_data_within_clade(
+        self, report_group: FinalReportGroup, distance_matrix: pd.DataFrame
+    ):
+        """
+        prepare heatmap data to be used to create javascript heatmap"""
+
+        group_members = report_group.group_list
+        group_members_accids = [member.accid for member in group_members]
+
+        distance_matrix = distance_matrix[
+            distance_matrix.index.isin(group_members_accids)
+        ]
+        distance_matrix = distance_matrix[group_members_accids]
+
+        json_data = self.prep_heatmap_data(distance_matrix)
+
+        return json_data
+
+    def prep_heatmap_data(self, distance_matrix: pd.DataFrame):
+
+        distance_matrix = distance_matrix.fillna(0)
+
+        # Convert the DataFrame to JSON
+        json_data = []
+
+        # Calculate row sums
+        row_sums = distance_matrix.sum(axis=1)
+
+        # Sort rows by row sums in descending order
+        sorted_row_index = row_sums.sort_values(ascending=False).index
+
+        # Sort rows
+        distance_matrix = distance_matrix.reindex(sorted_row_index)
+
+        # Sort columns using the same order as rows
+        distance_matrix = distance_matrix.reindex(sorted_row_index, axis=1)
+
+        for ix, row in distance_matrix.iterrows():
+            for col, value in row.items():
+                json_data.append({"x": ix, "y": col, "value": value})
+
+        json_data = json.dumps(json_data)
+
+        return json_data
+
+    def prep_heatmap_data_several(self, report_groups: List[FinalReportGroup]):
+        """
+        prepare heatmap data to be used to create javascript heatmap
+        """
+        distance_matrix = self.read_shared_matrix()
+
+        if distance_matrix is None:
+            return report_groups
+
+        for report_group in report_groups:
+            json_data = self.prep_heatmap_data_within_clade(
+                report_group, distance_matrix
+            )
+            report_group.js_heatmap_data = json_data
+            report_group.js_heatmap_ready = True
+
+        return report_groups
+
+    def clade_heatmap_json(self, to_keep=Optional[List[str]]):
+
+        distance_matrix = self.read_clade_shared_matrix()
+
+        if distance_matrix is None:
+            return None
+
+        try:
+            distance_matrix = distance_matrix.loc[to_keep, to_keep]
+        except KeyError as e:
+            print(e)
+            return None
+
+        return self.prep_heatmap_data(distance_matrix)
 
     def return_no_analysis(self) -> List[FinalReportGroup]:
         report_group = FinalReportGroup(
@@ -1103,8 +1349,11 @@ class ReportSorter:
             shared_proportion=0,
             private_proportion=0,
             group_list=[self.wrap_report(report) for report in self.reports],
+            analysis_empty=True,
         )
+        self.analysis_empty = True
         report_group = self.wrap_group_reports(report_group)
+        report_group.set_unsorted()
         return [report_group]
 
     def get_reports(self) -> List[FinalReportGroup]:
@@ -1125,8 +1374,12 @@ class ReportSorter:
                 shared_proportion=0,
                 private_proportion=0,
                 group_list=[self.wrap_report(report) for report in self.reports],
+                analysis_empty=True,
             )
+
+            self.analysis_empty = True
             report_group = self.wrap_group_reports(report_group)
+            report_group.set_unsorted()
             return [report_group]
 
         return self.get_sorted_reports()
@@ -1137,10 +1390,14 @@ class ReportSorter:
         if len(reports) == 0:
             return []
 
-        for report_groups in reports:
-            report_groups.group_list = [
-                FinalReportCompound(report) for report in report_groups.group_list
-            ]
+        for report_group in reports:
+            new_list = []
+            for wapped_report in report_group.group_list:
+                report_compound = FinalReportCompound(wapped_report)
+                report_compound.update_private_reads(wapped_report.private_reads)
+                new_list.append(report_compound)
+
+            report_group.group_list = new_list
 
         return reports
 
@@ -1167,6 +1424,7 @@ class ReportSorter:
         )
 
         report_group = self.wrap_group_reports(report_group)
+        report_group.set_unsorted()
 
         return report_group
 
@@ -1203,26 +1461,28 @@ class ReferenceManager:
 
 class RawReferenceCompound:
     def __init__(self, raw_reference: RawReference):
-        self.pk = raw_reference.pk
-        self.project_id = raw_reference.run.project.pk
-        self.id = raw_reference.id
+        # self.pk = raw_reference.pk
+        # self.project_id = raw_reference.run.project.pk
+        self.sample_id = raw_reference.run.sample.pk
+        self.selected_mapped_pk = raw_reference.id
         self.taxid = raw_reference.taxid
         self.accid = raw_reference.accid
         self.description = raw_reference.description
         self.family = []
         self.runs = []
         self.manual_insert = False
-        self.mapped: Optional[FinalReport] = None
+        # self.mapped: Optional[FinalReport] = None
+        self.mapped_final_report: Optional[FinalReport] = None
+        self.mapped_raw_reference: Optional[RawReference] = None
         self.standard_score = 0
+        self.ensemble_ranking = None
+        self.global_ranking = None
 
         if raw_reference.run.sample is not None:
             self.find_across_sample(raw_reference.run.sample)
-            self.mapped = self.find_mapped(raw_reference.run.sample)
+            self.find_mapped(raw_reference.run.sample)
 
         self.determine_runs()
-
-    def update_score(self, score: int):
-        self.standard_score = score
 
     def find_across_sample(self, sample: PIProject_Sample):
         """
@@ -1266,7 +1526,7 @@ class RawReferenceCompound:
         find mapped, get the first, sorted by coverage
         """
 
-        mapped = (
+        self.mapped_final_report = (
             FinalReport.objects.filter(
                 taxid=self.taxid,
                 sample=sample,
@@ -1275,26 +1535,23 @@ class RawReferenceCompound:
             .first()
         )
 
-        if mapped is None:
-            mapped = RawReference.objects.filter(
-                taxid=self.taxid,
-                accid=self.accid,
-                run__sample=sample,
-                status=RawReference.STATUS_MAPPED,
-            ).first()
-
-        return mapped
+        self.mapped_raw_reference = RawReference.objects.filter(
+            taxid=self.taxid,
+            accid=self.accid,
+            run__sample=sample,
+            status=RawReference.STATUS_MAPPED,
+        ).first()
 
     @property
     def mapped_html(self):
-        if self.mapped is None:
+        if self.mapped_final_report is None and self.mapped_raw_reference is None:
             return mark_safe(
                 '<a><i class="fa fa-times" title="unmapped"></i> Unmapped</a>'
             )
 
-        run = self.mapped.run
+        if self.mapped_final_report is not None:
+            run = self.mapped_final_report.run
 
-        if isinstance(self.mapped, FinalReport):
             return mark_safe(
                 '<a href="'
                 + reverse(
@@ -1307,7 +1564,8 @@ class RawReferenceCompound:
                 + "</a>"
             )
 
-        elif isinstance(self.mapped, RawReference):
+        elif self.mapped_raw_reference is not None:
+            run = self.mapped_raw_reference.run
             return mark_safe(
                 '<a href="'
                 + reverse(

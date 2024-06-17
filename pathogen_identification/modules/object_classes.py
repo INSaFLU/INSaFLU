@@ -13,8 +13,12 @@ import pandas as pd
 from numpy import ERR_CALL
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import (ParameterSet, RunDetail, RunMain,
-                                            RunReadsRegister)
+from pathogen_identification.models import (
+    ParameterSet,
+    RunDetail,
+    RunMain,
+    RunReadsRegister,
+)
 from pathogen_identification.utilities.utilities_general import fastqc_parse
 
 matplotlib.use("Agg")
@@ -761,8 +765,10 @@ class Read_class:
             for line in open(fastq):
                 line = line.strip()
                 if line.startswith("@") and counter == 0:
-                    if line[-2:] == "/1" or line[-2:] == "/2":
-                        line = line[:-2]
+                    if line.strip()[-2:] == "/1":
+                        line = line.strip()[:-2] + ""
+                    elif line.strip()[-2:] == "/2":
+                        line = line.strip()[:-2] + ""
 
                 f.write(line + "\n")
 
@@ -788,7 +794,7 @@ class Read_class:
         temp_fq_gz = final_temp + ".gz"
 
         cmd_unzip = "gunzip -c %s > %s" % (self.current, temp_fq)
-        cmd_zip = "bgzip %s" % final_temp
+        cmd_zip = "gzip %s" % final_temp
 
         self.cmd.run_bash(cmd_unzip)
         self.clean_fastq_headers_python(temp_fq, final_temp)
@@ -1205,25 +1211,25 @@ class SoftwareUnit:
         except ParameterSet.DoesNotExist:
             return ("", "")
 
-        try:
-            run_main = RunMain.objects.get(parameter_set=parameter_set)
-        except RunMain.DoesNotExist:
-            return ("", "")
+        runs = RunMain.objects.filter(parameter_set=parameter_set)
 
-        try:
-            read_register = RunReadsRegister.objects.get(run=run_main)
+        for run_main in runs:
+            try:
+                read_register = RunReadsRegister.objects.get(run=run_main)
 
-            processed_reads_r1 = (
-                read_register.qc_reads_r1 if read_register.qc_reads_r1 else ""
-            )
-            processed_reads_r2 = (
-                read_register.qc_reads_r2 if read_register.qc_reads_r2 else ""
-            )
+                processed_reads_r1 = (
+                    read_register.qc_reads_r1 if read_register.qc_reads_r1 else ""
+                )
+                processed_reads_r2 = (
+                    read_register.qc_reads_r2 if read_register.qc_reads_r2 else ""
+                )
 
-            return (processed_reads_r1, processed_reads_r2)
+                return (processed_reads_r1, processed_reads_r2)
 
-        except RunReadsRegister.DoesNotExist:
-            return ("", "")
+            except RunReadsRegister.DoesNotExist:
+                continue
+
+        return ("", "")
 
     @staticmethod
     def find_enriched_reads(ps_pk: int) -> Tuple[str, str]:
@@ -1236,34 +1242,30 @@ class SoftwareUnit:
         except ParameterSet.DoesNotExist:
             return ("", "")
 
-        try:
-            run_main = RunMain.objects.get(parameter_set=parameter_set)
-        except RunMain.DoesNotExist:
-            return ("", "")
+        runs = RunMain.objects.filter(parameter_set=parameter_set)
 
-        print(
-            "REGISTER EXISTS: ", RunReadsRegister.objects.filter(run=run_main).exists()
-        )
+        for run_main in runs:
 
-        try:
-            read_register = RunReadsRegister.objects.get(run=run_main)
-            print("REGISTER EXISTS: ", read_register.enriched_reads_r1)
+            try:
+                read_register = RunReadsRegister.objects.get(run=run_main)
 
-            processed_reads_r1 = (
-                read_register.enriched_reads_r1
-                if read_register.enriched_reads_r1
-                else ""
-            )
-            processed_reads_r2 = (
-                read_register.enriched_reads_r2
-                if read_register.enriched_reads_r2
-                else ""
-            )
+                processed_reads_r1 = (
+                    read_register.enriched_reads_r1
+                    if read_register.enriched_reads_r1
+                    else ""
+                )
+                processed_reads_r2 = (
+                    read_register.enriched_reads_r2
+                    if read_register.enriched_reads_r2
+                    else ""
+                )
 
-            return (processed_reads_r1, processed_reads_r2)
+                return (processed_reads_r1, processed_reads_r2)
 
-        except RunReadsRegister.DoesNotExist:
-            return ("", "")
+            except RunReadsRegister.DoesNotExist:
+                continue
+
+        return ("", "")
 
     @staticmethod
     def find_depleted_reads(ps_pk: int) -> Tuple[str, str]:
@@ -1276,29 +1278,29 @@ class SoftwareUnit:
         except ParameterSet.DoesNotExist:
             return ("", "")
 
-        try:
-            run_main = RunMain.objects.get(parameter_set=parameter_set)
-        except RunMain.DoesNotExist:
-            return ("", "")
+        runs = RunMain.objects.filter(parameter_set=parameter_set)
 
-        try:
-            read_register = RunReadsRegister.objects.get(run=run_main)
+        for run_main in runs:
+            try:
+                read_register = RunReadsRegister.objects.get(run=run_main)
 
-            processed_reads_r1 = (
-                read_register.depleted_reads_r1
-                if read_register.depleted_reads_r1
-                else ""
-            )
-            processed_reads_r2 = (
-                read_register.depleted_reads_r2
-                if read_register.depleted_reads_r2
-                else ""
-            )
+                processed_reads_r1 = (
+                    read_register.depleted_reads_r1
+                    if read_register.depleted_reads_r1
+                    else ""
+                )
+                processed_reads_r2 = (
+                    read_register.depleted_reads_r2
+                    if read_register.depleted_reads_r2
+                    else ""
+                )
 
-            return (processed_reads_r1, processed_reads_r2)
+                return (processed_reads_r1, processed_reads_r2)
 
-        except RunReadsRegister.DoesNotExist:
-            return ("", "")
+            except RunReadsRegister.DoesNotExist:
+                continue
+
+        return ("", "")
 
     @staticmethod
     def enriched_read_number(ps_pk: int) -> int:
@@ -1362,7 +1364,7 @@ class SoftwareUnit:
 
         for leaf_pk in self.leaves:
             print("LEAF PK", leaf_pk)
-            
+
             processed_r1, processed_r2 = self.find_qc_reads(leaf_pk)
             print(processed_r1, processed_r2)
             print(self.check_return_reads(processed_r1, processed_r2))

@@ -10,18 +10,30 @@ import logging
 import os
 from datetime import datetime
 
-from constants.constants import (Constants, FileExtensions, FileType, TypeFile,
-                                 TypePath)
-from constants.meta_key_and_values import MetaKeyAndValue
-from constants.software_names import SoftwareNames
 from django.conf import settings
 from django.db import transaction
 from django.http import JsonResponse
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_protect
+
+from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
+from constants.meta_key_and_values import MetaKeyAndValue
+from constants.software_names import SoftwareNames
 from extend_user.models import Profile
-from pathogen_identification.models import PIProject_Sample, ParameterSet
+from managing_files.manage_database import ManageDatabase
+from managing_files.models import (
+    DataSet,
+    MetaKey,
+    ProcessControler,
+    Project,
+    ProjectSample,
+    Reference,
+    Sample,
+    UploadFiles,
+    VaccineStatus,
+)
+from pathogen_identification.models import ParameterSet, PIProject_Sample
 from pathogen_identification.models import Projects as Televir_Project
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
@@ -32,11 +44,6 @@ from utils.result import Coverage, DecodeObjects
 from utils.software import Software
 from utils.utils import Utils
 
-from managing_files.manage_database import ManageDatabase
-from managing_files.models import (DataSet, MetaKey, ProcessControler, Project,
-                                   ProjectSample, Reference, Sample,
-                                   UploadFiles, VaccineStatus)
-from pathogen_identification.models import PIProject_Sample
 ### Logger
 logger_debug = logging.getLogger("fluWebVirus.debug")
 logger_production = logging.getLogger("fluWebVirus.production")
@@ -56,6 +63,7 @@ def set_check_box_values(request):
     if request.is_ajax():
         data = {"is_ok": False}
         utils = Utils()
+
         if Constants.CHECK_BOX_ALL in request.GET:
             request.session[Constants.CHECK_BOX_ALL] = utils.str2bool(
                 request.GET.get(Constants.CHECK_BOX_ALL)
@@ -161,6 +169,7 @@ def show_phylo_canvas(request):
         key_with_project_id = "project_id"
         if key_with_project_id in request.GET:
             project_id = int(request.GET.get(key_with_project_id))
+
             element_name = "all_together"
             key_element_name = "key_element_name"
             if key_element_name in request.GET:
@@ -326,7 +335,7 @@ def show_aln2pheno(request):
                 project = Project.objects.get(id=project_id)
                 out_file = project.get_global_file_by_project(
                     TypePath.MEDIA_ROOT,
-                    #Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK,
+                    # Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK,
                     Project.PROJECT_FILE_NAME_Aln2pheno_report_carabelli,
                 )
                 if os.path.exists(out_file) and os.stat(out_file).st_size > 0:
@@ -335,7 +344,7 @@ def show_aln2pheno(request):
                         request.build_absolute_uri(
                             project.get_global_file_by_project(
                                 TypePath.MEDIA_URL,
-                                #Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK,
+                                # Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK,
                                 Project.PROJECT_FILE_NAME_Aln2pheno_report_carabelli,
                             )
                         )
@@ -420,9 +429,11 @@ def show_coverage_as_a_table(request):
                         default_software.get_mask_consensus_single_parameter(
                             project_sample,
                             DefaultParameters.MASK_CONSENSUS_threshold,
-                            ConstantsSettings.TECHNOLOGY_illumina
-                            if project_sample.is_sample_illumina()
-                            else ConstantsSettings.TECHNOLOGY_minion,
+                            (
+                                ConstantsSettings.TECHNOLOGY_illumina
+                                if project_sample.is_sample_illumina()
+                                else ConstantsSettings.TECHNOLOGY_minion
+                            ),
                         )
                     )
 
@@ -738,9 +749,9 @@ def show_count_variations(request):
                         data["data_50_var_90_50"].append(data_temp[1])
                     data["sample_number"] = len(data_out)
                 else:
-                    data[
-                        "error_message"
-                    ] = "There's no samples to collect data to show."
+                    data["error_message"] = (
+                        "There's no samples to collect data to show."
+                    )
             except Project.DoesNotExist:
                 pass
         return JsonResponse(data)
@@ -1127,18 +1138,18 @@ def remove_single_value_database(request):
                             if is_to_test:
                                 data["is_ok"] = False
                                 data["is_can_remove"] = False
-                                data[
-                                    "message"
-                                ] = "You can't remove '{}' name because has a relation in database.".format(
-                                    value
+                                data["message"] = (
+                                    "You can't remove '{}' name because has a relation in database.".format(
+                                        value
+                                    )
                                 )
                             else:
                                 data["is_ok"] = False
                                 data["is_remove"] = False
-                                data[
-                                    "message"
-                                ] = "You can't remove '{}' name because has a relation in database.".format(
-                                    value
+                                data["message"] = (
+                                    "You can't remove '{}' name because has a relation in database.".format(
+                                        value
+                                    )
                                 )
                         else:
                             if is_to_test:
@@ -1161,18 +1172,18 @@ def remove_single_value_database(request):
                         if is_to_test:
                             data["is_ok"] = False
                             data["is_can_remove"] = False
-                            data[
-                                "message"
-                            ] = "You can't remove '{}' name because has a relation in database.".format(
-                                value
+                            data["message"] = (
+                                "You can't remove '{}' name because has a relation in database.".format(
+                                    value
+                                )
                             )
                         else:
                             data["is_ok"] = False
                             data["is_remove"] = False
-                            data[
-                                "message"
-                            ] = "You can't remove '{}' name because has a relation in database.".format(
-                                value
+                            data["message"] = (
+                                "You can't remove '{}' name because has a relation in database.".format(
+                                    value
+                                )
                             )
                     else:
                         if is_to_test:
@@ -1246,7 +1257,7 @@ def remove_sample(request):
     """
     if request.is_ajax():
         data = {"is_ok": False, "present_in_televir_project": False}
-        
+
         sample_id_a = "sample_id"
         if sample_id_a in request.GET:
 
@@ -1265,9 +1276,9 @@ def remove_sample(request):
                 sample = Sample.objects.get(pk=sample_id)
             except Sample.DoesNotExist:
                 return JsonResponse(data)
-            
+
             #### check if found in televir projects
-            televir_samples = PIProject_Sample.objects.filter(sample= sample)
+            televir_samples = PIProject_Sample.objects.filter(sample=sample)
             for pisample in televir_samples:
                 if pisample.is_deleted == False:
                     data["present_in_televir_project"] = True
@@ -1415,7 +1426,7 @@ def remove_televir_project(request):
 
             ### delete all project samples
             ### this is only necessary for consistency
-            
+
             for parameter_set in ParameterSet.objects.filter(project=project):
                 parameter_set.delete_run_data()
 
@@ -1701,9 +1712,9 @@ def unlock_sample_file(request):
         if number_of_changes == 1:
             data["message_number_of_changes"] = "One sample file was unlocked..."
         elif number_of_changes > 1:
-            data[
-                "message_number_of_changes"
-            ] = "{} sample files were unlocked...".format(number_of_changes)
+            data["message_number_of_changes"] = (
+                "{} sample files were unlocked...".format(number_of_changes)
+            )
 
         return JsonResponse(data)
 

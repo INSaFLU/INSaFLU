@@ -3,6 +3,7 @@ Created on 04/05/2020
 
 @author: mmp
 """
+
 import os
 
 from crispy_forms.helper import FormHelper
@@ -221,6 +222,13 @@ class SoftwareForm(forms.ModelForm):
                                 parameter.software.name.lower(), []
                             )
                         ]
+                elif (
+                    parameter.name == SoftwareNames.SOFTWARE_DUSTMASKER_PARAM_MASK_name
+                ):
+                    list_data = [
+                        [data_, data_]
+                        for data_ in SoftwareNames.SOFTWARE_DUSTMASKER_PARAM_MASK_OPTIONS
+                    ]
                 elif (
                     parameter.name == "-x"
                     and parameter.software.name

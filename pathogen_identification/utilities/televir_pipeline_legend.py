@@ -11,6 +11,8 @@ pipeline_steps_to_r_colours = {
     "Metagenomics Combine": "dodgerblue",
     "Remapping": "khaki",
     "Remap Filtering": "darkslategray",
+    "Map Filtering": "darkolivegreen",
+    "Request Mapping": "darkolivegreen",
     "Leaves": "lightblue",
 }
 

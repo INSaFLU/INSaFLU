@@ -1,0 +1,112 @@
+.panel-list {
+    margin-bottom: 10px;
+    border-radius: 8px;
+    padding: 10px;
+    list-style-type: none;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+ul {
+    list-style-type: none;
+    padding-left: 7px;
+    padding-right: 7px;
+}
+
+.panel-list-modal {
+    margin-bottom: 10px;
+    border-radius: 8px;
+    padding: 10px;
+    list-style-type: none;
+    padding-left: 0;
+}
+
+#panel-list-modal {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.reference-note {
+    background-color: #b3b3b3; 
+    float: right;
+    border: none;
+    color: #000;
+    text-align: center;
+    text-decoration: none;
+    margin: 0px 5px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 14px;
+    padding: 6px 8px; 
+    font-family: Arial, sasns-serif;
+}
+
+
+.panel-container {
+    border: 1px solid #ddd;
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    align-items: center;
+}
+
+
+li.no-panels {
+    text-align: center;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+.clearfix::after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+.panel-checkbox {
+    float: right;
+    margin-left: 10px;
+    height: 20px;
+    width: 20px;
+    background-color: #eee;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.panel-checkbox:checked {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.remove-panel-button {
+    background-color: #007bff;
+    float: right;
+    border: none;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    margin: 0px 5px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 14px;
+    padding: 6px 8px; 
+    font-family: Arial, sasns-serif;
+}
+
+.panel-checkbox:checked::after {
+    content: "";
+    display: block;
+    width: 10px;
+    height: 10px;
+    background: white;
+    position: relative;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+}

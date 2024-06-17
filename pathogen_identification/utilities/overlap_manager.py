@@ -15,9 +15,9 @@ from scipy.spatial.distance import pdist, squareform
 
 from pathogen_identification.utilities.clade_objects import Clade, CladeFilter
 from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
-
 ## pairwise matrix by individual reads
-from pathogen_identification.utilities.utilities_general import readname_from_fasta
+from pathogen_identification.utilities.utilities_general import \
+    readname_from_fasta
 
 
 def accid_from_metadata(metadata: pd.DataFrame, read_name: str) -> str:
@@ -36,6 +36,8 @@ import logging
 
 class ReadOverlapManager:
     distance_matrix_filename: str = "distance_matrix_{}.tsv"
+    shared_prop_matrix_filename: str = "shared_prop_matrix_{}.tsv"
+    clade_shared_prop_matrix_filename: str = "clade_shared_prop_matrix_{}.tsv"
     clade_statistics_filename: str = "clade_statistics_{}.tsv"
     accid_statistics_filename: str = "accid_statistics_{}.tsv"
     tree_plot_filename: str = "tree_{}.png"
@@ -59,6 +61,7 @@ class ReadOverlapManager:
         self.media_dir = media_dir
         self.pid = pid
         self.force_tree_rebuild = force_tree_rebuild
+        self.parsed = False
 
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
@@ -66,6 +69,14 @@ class ReadOverlapManager:
         self.distance_matrix_path = os.path.join(
             self.media_dir, self.distance_matrix_filename.format(pid)
         )
+        self.shared_prop_matrix_path = os.path.join(
+            self.media_dir, self.shared_prop_matrix_filename.format(pid)
+        )
+
+        self.clade_shared_prop_matrix_path = os.path.join(
+            self.media_dir, self.clade_shared_prop_matrix_filename.format(pid)
+        )
+
         self.clade_statistics_path = os.path.join(
             self.media_dir, self.clade_statistics_filename.format(pid)
         )
@@ -88,9 +99,22 @@ class ReadOverlapManager:
 
         self.metadata["filepath"] = self.metadata["file"]
 
-        self.tree_manager = self.prep_tree_for_clade_analysis()
+        try:
+            self.tree_manager = self.prep_tree_for_clade_analysis()
+        except Exception as e:
+            print(e)
+
+        if self.force_tree_rebuild:
+            self.parse_for_data()
+            self.generate_shared_proportion_matrix()
+            self.generate_clade_shared_proportion_matrix()
+
         if not os.path.exists(self.tree_plot_path):
-            self.tree_manager.plot_tree(self.tree_plot_path)
+            print("Plotting tree")
+            try:
+                self.tree_manager.plot_tree(self.tree_plot_path)
+            except Exception as e:
+                print(e)
 
         self.tree_plot_exists = os.path.exists(self.tree_plot_path)
         self.tree_plot_path_render = os.path.join(
@@ -118,6 +142,10 @@ class ReadOverlapManager:
 
     def parse_for_data(self):
         # self.read_names_dict: Dict[str, List[str]] = self.get_accid_readname_dict()
+
+        if self.parsed:
+            return
+
         accid_df = self.metadata[["accid", "description"]]
 
         self.read_profile_matrix: pd.DataFrame = self.generate_read_matrix()
@@ -141,6 +169,8 @@ class ReadOverlapManager:
             lambda x: self.get_proportion_counts(x)
         )
         accid_df.to_csv(self.accid_statistics_path, sep="\t", index=False)
+
+        self.parsed = True
 
     def overlap_heatmap_plot(self) -> None:
         """
@@ -268,24 +298,36 @@ class ReadOverlapManager:
             index=read_profile_matrix.index,
         )
 
-    def pairwise_shared_reads(self, read_profile_matrix: pd.DataFrame) -> pd.DataFrame:
+    def pairwise_shared_reads_distance(
+        self, read_profile_matrix: pd.DataFrame
+    ) -> pd.DataFrame:
         """
         Return dataframe of pairwise shared reads
+        this is a symmetrical matrix with the max proportion of shared reads as their mutual distance.
         """
-        pairwise_shared_count = self.pairwise_shared_count(read_profile_matrix)
-        pairwise_props = pairwise_shared_count / pairwise_shared_count.sum(axis=0)
+        # pairwise_shared_count = self.pairwise_shared_count(read_profile_matrix)
 
+        # pairwise_props = pairwise_shared_count / pairwise_shared_count.sum(axis=0)
+        pairwise_props = self.square_and_fill_diagonal(read_profile_matrix)
         for i in range(pairwise_props.shape[0]):
             pairwise_props.iloc[i, i] = 1
             for j in range(i + 1, pairwise_props.shape[1]):
                 shared_ij = pairwise_props.iloc[i, j]
                 shared_ji = pairwise_props.iloc[j, i]
                 shared_pair = (shared_ij, shared_ji)
-
                 pairwise_props.iloc[i, j] = max(shared_pair)
                 pairwise_props.iloc[j, i] = max(shared_pair)
-
         pairwise_props = 1 - pairwise_props
+
+        return pairwise_props
+
+    def pairwise_shared_reads(self, read_profile_matrix: pd.DataFrame) -> pd.DataFrame:
+        """
+        Return dataframe of pairwise shared reads
+        this is a symmetrical matrix with the max proportion of shared reads as their mutual distance.
+        """
+
+        pairwise_props = self.square_and_fill_diagonal(read_profile_matrix)
 
         return pairwise_props
 
@@ -313,8 +355,7 @@ class ReadOverlapManager:
         """
         distmat = self.matrix_to_phylotriangle(distance_matrix)
         constructor = DistanceTreeConstructor()
-        print("##### building trree ######")
-        print(distance_matrix.shape)
+
         if distance_matrix.shape[0] <= 1:
             tree = constructor.nj(distmat)
         else:
@@ -493,13 +534,13 @@ class ReadOverlapManager:
             distance_matrix = pd.read_csv(self.distance_matrix_path, index_col=0)
         else:
             self.parse_for_data()
-            distance_matrix = self.pairwise_shared_reads(
+            distance_matrix = self.pairwise_shared_reads_distance(
                 self.read_profile_matrix_filtered
             )
 
         if not self.check_all_accessions_in_distance_matrix(distance_matrix):
             self.parse_for_data()
-            distance_matrix = self.pairwise_shared_reads(
+            distance_matrix = self.pairwise_shared_reads_distance(
                 self.read_profile_matrix_filtered
             )
 
@@ -509,6 +550,26 @@ class ReadOverlapManager:
             pass
 
         return distance_matrix
+
+    def generate_shared_proportion_matrix(self):
+        """
+        Generate shared proportion matrix
+        """
+        self.parse_for_data()
+        proportion_matrix = self.square_and_fill_diagonal(
+            self.read_profile_matrix_filtered
+        )
+
+        proportion_matrix.to_csv(self.shared_prop_matrix_path)
+
+    def generate_clade_shared_proportion_matrix(self):
+        """
+        Generate shared proportion matrix
+        """
+        self.parse_for_data()
+        clade_shared_proportion_matrix = self.between_clade_shared_reads()
+
+        clade_shared_proportion_matrix.to_csv(self.clade_shared_prop_matrix_path)
 
     def generate_tree(self):
         """
@@ -748,7 +809,6 @@ class ReadOverlapManager:
         shared_clade_matrix = self.pairwise_shared_count(clade_read_matrix)
 
         ## divide rows of shared_clade_matrix by clade_read_matrix row sums
-
         shared_clade_matrix = shared_clade_matrix.div(
             clade_read_matrix.sum(axis=1),
             axis=0,
@@ -1171,6 +1231,7 @@ class ReadOverlapManager:
                     (
                         leaf,
                         "None",
+                        0,
                         0,
                         0,
                         0,

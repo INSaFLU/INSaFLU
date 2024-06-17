@@ -14,7 +14,6 @@ from managing_files.models import Project as InsafluProject
 from managing_files.models import ProjectSample
 from pathogen_identification.models import TeleFluProject, TeleFluSample
 from pathogen_identification.utilities.reference_utils import (
-    create_teleflu_igv_report,
     teleflu_to_insaflu_reference,
 )
 from settings.default_software_project_sample import DefaultProjectSoftware
@@ -106,18 +105,18 @@ class Command(BaseCommand):
 
             teleflu_project = TeleFluProject.objects.get(pk=project_id)
 
-            project = InsafluProject.objects.create(
+            insaflu_project = InsafluProject.objects.create(
                 owner=user,
                 name=teleflu_project.name,
                 reference=insaflu_reference,
             )
 
-            teleflu_project.insaflu_project = project
+            teleflu_project.insaflu_project = insaflu_project
             teleflu_project.save()
 
             default_software = DefaultProjectSoftware()
             default_software.test_all_defaults(
-                user, project, None, None
+                user, insaflu_project, None, None
             )  ## the user can have defaults yet
 
             process_SGE = ProcessSGE()
@@ -130,12 +129,12 @@ class Command(BaseCommand):
 
                 try:
                     project_sample = ProjectSample.objects.get(
-                        project=project,
+                        project=insaflu_project,
                         sample=original_sample,
                     )
                 except ProjectSample.DoesNotExist:
                     project_sample = ProjectSample.objects.create(
-                        project=project,
+                        project=insaflu_project,
                         sample=original_sample,
                     )
 
@@ -173,13 +172,13 @@ class Command(BaseCommand):
                     )
 
                     ### need to collect global files again
-                    taskID = process_SGE.set_collect_global_files(project, user)
+                    taskID = process_SGE.set_collect_global_files(insaflu_project, user)
                     manageDatabase.set_project_metakey(
-                        project,
+                        insaflu_project,
                         user,
                         metaKeyAndValue.get_meta_key(
                             MetaKeyAndValue.META_KEY_Queue_TaskID_Project,
-                            project.id,
+                            insaflu_project.id,
                         ),
                         MetaKeyAndValue.META_VALUE_Queue,
                         taskID,

@@ -166,6 +166,8 @@ class PathogenIdentification_deployment:
             self.parameter_set.project.owner, self.parameter_set.project
         )
 
+        print("configuring params")
+        print(self.tree_makup)
         all_paths = software_tree_utils.get_all_technology_pipelines(self.tree_makup)
 
         self.run_params_db = all_paths.get(self.pipeline_index, None)
@@ -266,14 +268,14 @@ class Run_Main_from_Leaf:
         threads: int = 3,
         combined_analysis: bool = False,
         mapping_request: bool = False,
-        mapping_run_pk: Optional[int] = None,
+        run_pk: Optional[int] = None,
     ):
         self.user = user
         self.sample = input_data
         self.project = project
         self.combined_analysis = combined_analysis
         self.mapping_request = mapping_request
-        self.mapping_run_pk = mapping_run_pk
+        self.run_pk = run_pk
         self.pipeline_leaf = pipeline_leaf
         self.pipeline_tree = pipeline_tree
         # prefix = f"{simplify_name_lower(input_data.name)}_{user.pk}_{project.pk}_{pipeline_leaf.pk}"
@@ -444,14 +446,14 @@ class Run_Main_from_Leaf:
         try:
             self.container.run_main_prep()
 
+            if self.run_pk is not None:
+                self.container.run_engine.run_pk = self.run_pk
+
             if (
                 self.container.run_engine.run_type
                 == RunMainTree_class.RUN_TYPE_SCREENING
             ):
                 self.container.run_engine.remap_params.manual_references_include = True
-
-            if self.mapping_run_pk is not None:
-                self.container.run_engine.run_pk = self.mapping_run_pk
 
             if self.mapping_request:
                 self.container.run_engine.run_type = (
@@ -460,7 +462,7 @@ class Run_Main_from_Leaf:
 
                 # self.container.run_engine.remap_params.manual_references_include = True
                 self.container.run_engine.metadata_tool.get_mapping_references(
-                    self.mapping_run_pk,
+                    self.run_pk,
                     max_accids=self.container.run_engine.remap_params.max_accids,
                 )
 
@@ -551,7 +553,7 @@ class Run_Main_from_Leaf:
             return False
 
         try:
-            # self.container.run_engine.remap_prepped = True
+            #
             self.container.run_engine.Run_Remapping()
             self.container.run_engine.export_sequences()
             self.container.run_engine.export_intermediate_reports()
@@ -560,6 +562,7 @@ class Run_Main_from_Leaf:
             self.container.run_engine.export_logdir()
 
             db_updated = Update_Remap(self.container.run_engine, self.parameter_set)
+
             if not db_updated:
                 return False
 
@@ -582,14 +585,14 @@ class Run_Main_from_Leaf:
         new_run.register_subprocess()
         print("registered_submission")
 
-        if self.mapping_run_pk:
-            run = RunMain.objects.get(pk=self.mapping_run_pk)
+        if self.run_pk:
+            run = RunMain.objects.get(pk=self.run_pk)
             run.status = RunMain.STATUS_PREP
             run.save()
 
     def register_running(self):
-        if self.mapping_run_pk:
-            run = RunMain.objects.get(pk=self.mapping_run_pk)
+        if self.run_pk:
+            run = RunMain.objects.get(pk=self.run_pk)
             run.status = RunMain.STATUS_RUNNING
             run.save()
 
@@ -602,8 +605,8 @@ class Run_Main_from_Leaf:
         new_run.register_error()
 
         try:
-            if self.mapping_run_pk:
-                run = RunMain.objects.get(pk=self.mapping_run_pk)
+            if self.run_pk:
+                run = RunMain.objects.get(pk=self.run_pk)
                 run.status = RunMain.STATUS_ERROR
                 run.save()
             else:
@@ -642,8 +645,8 @@ class Run_Main_from_Leaf:
         new_run = ParameterSet.objects.get(pk=self.pk)
         new_run.register_finished()
 
-        if self.mapping_run_pk:
-            run = RunMain.objects.get(pk=self.mapping_run_pk)
+        if self.run_pk:
+            run = RunMain.objects.get(pk=self.run_pk)
             run.status = RunMain.STATUS_FINISHED
             run.save()
 

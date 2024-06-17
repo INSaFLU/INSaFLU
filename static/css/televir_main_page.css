@@ -1,0 +1,163 @@
+.modal-title-description {
+    font-size: 18px;
+    color: #666;
+    display: block;
+}
+
+#teleflu-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+#teleflu-list li {
+    border: 1px solid #ddd;
+    border-left: 5px solid #333;
+    margin: 10px 0;
+    padding: 5px;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+
+}
+
+.teleflu-panel-container {
+    align-items: center;
+    font-size: 0.8em; /* This will make the font size smaller */
+    text-align: center;
+    padding-left: 5px; 
+    display: flex;
+    align-items: flex-start; 
+    justify-content: space-between;
+}
+
+.teleflu-panel-container .card-title {
+    font-size: 1.2em;
+    color: #333;
+    align-self: center;
+    margin-bottom: 0;
+}
+
+.btn {
+    cursor: pointer;
+}
+
+.teleflu-panel-container .card-text {
+    font-size: 1.2em;
+    color: #333;
+    align-self: center;
+}
+
+.teleflu-details {
+    align-self: center;
+}
+
+.reference-item {
+    width: 800px;
+    float: left; /* make the reference item float to the left */
+    list-style-type: none; /* remove bullet points */
+    border: none; /* add a border around each reference */
+    padding: 5px; /* add some padding */
+    margin-bottom: 0px; /* add some space between references */
+    background-color: #f9f9f9;
+    padding-right: 80px; /* add some space between references */
+    margin-right: 20px; /* add some space between references */
+    border-right: 2px solid #ddd; /* add a border between references */
+}
+
+.reference-samples {
+    margin-right: 20px;
+    float: left;
+    list-style-type: none; /* remove bullet points */
+    border: none; /* add a border around each reference */
+    padding: 5px; /* add some padding */
+    margin-bottom: 0px; /* add some space between references */
+    border-radius: 5px;
+    color: white;
+    background-color: #f9f9f9;
+    display: flex;
+}
+
+.reference-id {
+    display: inline; /* display taxid and accid on the same line */
+    margin-right: 10px; /* add some space between taxid and accid */
+    font-size: 1.2em; /* This will increase the font size */
+
+}
+
+.reference-description {
+    margin-bottom: 2px; /* add some space between description and the next reference */
+    font-weight: bold; /* This will make the text bold */
+    font-size: 1.5em; /* This will increase the font size */
+}
+
+.reference-note {
+    align-self: center;
+    background-color: #b3b3b3;
+    border: none;
+    color: #000;
+    text-align: center;
+    text-decoration: none;
+    margin: 0px 5px;
+    margin-right: 10px;
+    padding: 6px 5px;
+    padding-right: 20px;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: bold;
+    font-family: Arial, sasns-serif;
+}
+
+.request-add-teleflu-sample {
+    align-self: center;
+    background-color: #b3b3b3;
+    border: none;
+    cursor: pointer;
+}
+
+.insaflu-exists {
+    font-size: 1.3em;
+    display: inherit;
+    background-color: #007bff;
+    color: black;
+    padding: 10px 15px;
+    margin-left: 20px;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    font-family: Arial, sans-serif;
+    color: white;
+}
+
+.teleflu-results {
+    order: 2;
+    align-items: center;
+    font-size: 0.8em; /* This will make the font size smaller */
+    text-align: center;
+    padding-left: 20px; 
+    padding-right: 20px;
+    display: flex;
+    align-self: center;
+}
+
+.teleflu-manage {
+    order: 1;
+    align-items: center;
+    font-size: 0.8em; /* This will make the font size smaller */
+    text-align: center;
+    padding-left: 20px; 
+    display: flex;
+}
+
+.table td {
+    text-align: center;
+}
+
+table .sample-name {
+    text-align: left;
+}
+
+
+.report  {
+    text-align: center;
+    border-bottom-width: 2px;
+}

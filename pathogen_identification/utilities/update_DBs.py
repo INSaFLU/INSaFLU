@@ -239,6 +239,7 @@ def Update_RunMain_Initial(run_class: RunEngine_class, parameter_set: ParameterS
                 run_class.RUN_TYPE_MAPPING_REQUEST,
                 run_class.RUN_TYPE_SCREENING,
                 run_class.RUN_TYPE_COMBINED_MAPPING,
+                run_class.RUN_TYPE_PANEL_MAPPING,
             ]:
                 Update_RunMain_noCheck(run_class, parameter_set)
             else:
@@ -502,6 +503,9 @@ def get_run_parents(run_class: RunEngine_class, parameter_set: ParameterSet):
         name=run_class.sample.sample_name,
     )
 
+    print("############ get_run_parents ############")
+    print(run_class.run_pk)
+
     try:
         if run_class.run_pk is not None:
             runmain = RunMain.objects.get(
@@ -517,7 +521,10 @@ def get_run_parents(run_class: RunEngine_class, parameter_set: ParameterSet):
             )
 
     except RunMain.DoesNotExist:
+
         return None, None, None
+
+    print(runmain.sample, runmain, runmain.project)
 
     return sample, runmain, project
 
@@ -974,6 +981,19 @@ def Update_RawReference(run_class: RunEngine_class, parameter_set: ParameterSet)
             remap_target.save()
 
 
+def translate_classification_success(success):
+
+    if success == "reads":
+        return "1"
+    if success == "contigs":
+        return "2"
+    if success == "reads and contigs":
+        return "3"
+
+    else:
+        return "0"
+
+
 def Update_FinalReport(run_class, runmain, sample):
     for i, row in run_class.report.iterrows():
         if row["ID"] == "None":
@@ -982,13 +1002,13 @@ def Update_FinalReport(run_class, runmain, sample):
         remap_targets = RawReference.objects.filter(
             run=runmain,
             taxid=row["taxid"],
-            accid=row["ID"],
         )
+        counts = row["mapped"]
 
         if remap_targets.exists():
             for target in remap_targets:
-                target.status = RawReference.STATUS_MAPPED
-                target.save()
+
+                counts = target.counts
 
         try:
             report_row = FinalReport.objects.get(
@@ -1035,6 +1055,30 @@ def Update_FinalReport(run_class, runmain, sample):
 
             report_row.save()
 
+        try:
+            raw_reference = RawReference.objects.get(
+                run=runmain,
+                taxid=row["taxid"],
+                accid=row["ID"],
+            )
+            raw_reference.status = RawReference.STATUS_MAPPED
+            raw_reference.save()
+
+        except RawReference.DoesNotExist:
+            raw_reference = RawReference(
+                run=runmain,
+                taxid=row["taxid"],
+                accid=row["ID"],
+                status=RawReference.STATUS_MAPPED,
+                description=row["description"],
+                counts=counts,
+                classification_source=translate_classification_success(
+                    row["classification_success"]
+                ),
+            )
+
+            raw_reference.save()
+
 
 def Update_RefMap_DB(run_class: RunEngine_class, parameter_set: ParameterSet):
     """
@@ -1067,6 +1111,9 @@ def Update_ReferenceMap(
         taxid=ref_map.reference.target.taxid,
     )
 
+    print("remap_targets")
+    print(run.parameter_set.leaf.index)
+
     if remap_targets.exists():
         for target in remap_targets:
             target.status = RawReference.STATUS_MAPPED
@@ -1078,23 +1125,34 @@ def Update_ReferenceMap(
             sample=sample,
             run=run,
         )
+
+        print("ReferenceMap_Main exists")
     except ReferenceMap_Main.DoesNotExist:
-        map_db = ReferenceMap_Main(
-            reference=ref_map.reference.target.acc_simple,
-            sample=sample,
-            run=run,
-            taxid=ref_map.reference.target.taxid,
-            bam_file_path=ref_map.reference.read_map_sorted_bam,
-            bai_file_path=ref_map.reference.read_map_sorted_bam_index,
-            fasta_file_path=ref_map.reference.reference_file,
-            fai_file_path=ref_map.reference.reference_fasta_index,
-            mapped_subset_r1=ref_map.reference.mapped_subset_r1,
-            mapped_subset_r2=ref_map.reference.mapped_subset_r2,
-            mapped_subset_r1_fasta=ref_map.reference.mapped_subset_r1_fasta,
-            mapped_subset_r2_fasta=ref_map.reference.mapped_subset_r2_fasta,
-            vcf=ref_map.reference.vcf,
+
+        print("Creating REFMAP_MAIN")
+        print(ref_map.reference.read_map_sorted_bam)
+        print(
+            ref_map.reference.mapped_subset_r1_fasta,
         )
-        map_db.save()
+
+        if ref_map.mapping_success is not "none":
+
+            map_db = ReferenceMap_Main(
+                reference=ref_map.reference.target.acc_simple,
+                sample=sample,
+                run=run,
+                taxid=ref_map.reference.target.taxid,
+                bam_file_path=ref_map.reference.read_map_sorted_bam,
+                bai_file_path=ref_map.reference.read_map_sorted_bam_index,
+                fasta_file_path=ref_map.reference.reference_file,
+                fai_file_path=ref_map.reference.reference_fasta_index,
+                mapped_subset_r1=ref_map.reference.mapped_subset_r1,
+                mapped_subset_r2=ref_map.reference.mapped_subset_r2,
+                mapped_subset_r1_fasta=ref_map.reference.mapped_subset_r1_fasta,
+                mapped_subset_r2_fasta=ref_map.reference.mapped_subset_r2_fasta,
+                vcf=ref_map.reference.vcf,
+            )
+            map_db.save()
 
     if ref_map.assembly is not None:
         remap_stats = ref_map.assembly.report.set_index("ID")

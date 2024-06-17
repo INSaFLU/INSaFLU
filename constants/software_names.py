@@ -611,6 +611,21 @@ class SoftwareNames(object):
     )
     SOFTWARE_MSAMTOOLS_VERSION = "1.1.3"
 
+    SOFTWARE_DUSTMASKER_name = "dustmasker"
+    SOFTWARE_DUSTMASKER_name_extended = "dustmasker - Low complexity filtering"
+    SOFTWARE_DUSTMASKER = "/usr/bin/dustmasker"
+    SOFTWARE_DUSTMASKER_VERSION = "2.7.1"
+
+    SOFTWARE_DUSTMASKER_PARAM_MASK_name= "-masking"
+    SOFTWARE_DUSTMASKER_PARAM_MASK_SOFT = "soft_masking"
+    SOFTWARE_DUSTMASKER_PARAM_MASK_HARD = "hard_masking"
+    SOFTWARE_DUSTMASKER_PARAM_MASK_NONE = "no_masking"
+    SOFTWARE_DUSTMASKER_PARAM_MASK_OPTIONS = [
+        SOFTWARE_DUSTMASKER_PARAM_MASK_SOFT,
+        SOFTWARE_DUSTMASKER_PARAM_MASK_HARD,
+        SOFTWARE_DUSTMASKER_PARAM_MASK_NONE,
+    ]
+
     ###
 
     PATHOGEN_IDENTIFICATION_name = "Pathogen Identification"

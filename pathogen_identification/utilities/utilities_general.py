@@ -381,7 +381,6 @@ def merge_classes(r1: pd.DataFrame, r2: pd.DataFrame, maxt=6, exclude="phage"):
             fd["source"] = 1
         else:
             fd["source"] = fd.apply(get_source, axis=1)
-
         return fd
 
     def descriptor_counts(fd):
@@ -393,7 +392,6 @@ def merge_classes(r1: pd.DataFrame, r2: pd.DataFrame, maxt=6, exclude="phage"):
             return fd
         else:
             fd["counts"] = fd.apply(get_counts, axis=1)
-
         return fd
 
     def get_counts(row):

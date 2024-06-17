@@ -14,33 +14,21 @@ from django.db.models import QuerySet
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from constants.constants import TypePath
 from fluwebvirus.settings import STATIC_ROOT
-from pathogen_identification.constants_settings import ConstantsSettings as PIConstants
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PIConstants
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            SoftwareTree, SoftwareTreeNode)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunMainTree_class
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.update_DBs_tree import (
-    Update_Assembly,
-    Update_Classification,
-    Update_Remap,
-    Update_RunMain_Initial,
-    Update_RunMain_Secondary,
-    get_run_parents,
-)
+    Update_Assembly, Update_Classification, Update_Remap,
+    Update_RunMain_Initial, Update_RunMain_Secondary, get_run_parents)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Pipeline_Makeup,
-    PipelineTree,
-    Utils_Manager,
-)
+    Pipeline_Makeup, PipelineTree, Utils_Manager)
 from pathogen_identification.utilities.utilities_views import ReportSorter
 from settings.constants_settings import ConstantsSettings
 from utils.utils import Utils
@@ -426,18 +414,15 @@ class Tree_Node:
 
     def determine_params(self, pipe_tree: PipelineTree, sample: PIProject_Sample):
         arguments_list = []
-        print("######## gettting node parameters ########")
-        print(self.branch)
+
         for node in self.branch:
-            print(node)
             node_metadata = pipe_tree.node_index.loc[node].node
 
             path_to_node = pipe_tree.paths_to_node(node)
             ps_visited = pipe_tree.check_if_leaf_steps_exist_list(
                 path_to_node, sample=sample
             )
-            print(path_to_node)
-            print(ps_visited)
+
             node_metadata = (
                 node_metadata[0],
                 node_metadata[1],
@@ -461,9 +446,6 @@ class Tree_Node:
         module = module_df.parameter.values[0]
         software = module_df.value.values[0]
         parameters_df = arguments_df[arguments_df.flag == "param"]
-
-        print(f"#### NODE {self.node_index} PARAMERTERS ####")
-        print(parameters_df)
 
         parameters_df["software"] = software
         parameters_df["module"] = module
@@ -810,6 +792,9 @@ class Tree_Progress:
                 self.classification_monitor.classification_performed(node)
                 and node.run_manager.classification_updated == False
             ):
+                node.run_manager.run_engine.plan_remap_prep_safe()
+                node.run_manager.run_engine.export_intermediate_reports()
+                node.run_manager.run_engine.generate_output_data_classes()
                 db_updated = Update_Classification(
                     node.run_manager.run_engine, node.parameter_set
                 )
@@ -819,7 +804,6 @@ class Tree_Progress:
                 node.run_manager.classification_updated = True
 
             if node.run_manager.run_engine.remapping_performed:
-                print("REMAPPING PERFORMED")
                 node.run_manager.run_engine.export_final_reports()
                 node.run_manager.run_engine.Summarize()
                 node.run_manager.run_engine.generate_output_data_classes()
@@ -861,8 +845,8 @@ class Tree_Progress:
         Get remap plans for all nodes in a list"""
 
         for n in nodes:
-            if n.run_manager.run_engine.remap_prepped is False:
-                n.run_manager.run_engine.plan_remap_prep()
+            #if n.run_manager.run_engine.remap_prepped is False:
+            n.run_manager.run_engine.plan_remap_prep_safe()
 
         return nodes
 
@@ -1041,17 +1025,15 @@ class Tree_Progress:
         """
         deploy nodes remap by sample sources."""
         current_nodes = []
-        print("########## STACKED DEPLOYEMENT MAPPING ##########")
-        print(nodes_by_sample_sources)
 
         for nodes in nodes_by_sample_sources:
-            print("########### NODES ###########")
+
             if len(nodes) == 0:
                 continue
 
             nodes = self.get_remap_plans(nodes)
+
             group_targets = self.get_node_node_targets(nodes)
-            print(group_targets)
 
             volonteer = nodes[0]
 
@@ -1199,7 +1181,6 @@ class Tree_Progress:
 
         for node in self.current_nodes:
             if self.classification_monitor.ready_to_merge(node):
-                print("#### NODE READY TO MERGE ####")
                 node.run_manager.run_engine.plan_remap_prep_safe()
 
             self.update_node_leaves_dbs(node)
@@ -1342,6 +1323,9 @@ class TreeProgressGraph:
             ConstantsSettings.PIPELINE_NAME_map_filtering: "dodgerblue",
             ConstantsSettings.PIPELINE_NAME_remapping: "khaki",
             ConstantsSettings.PIPELINE_NAME_remap_filtering: "darkslategray",
+            ConstantsSettings.PIPELINE_NAME_metagenomics_screening: "dodgerblue",
+            ConstantsSettings.PIPELINE_NAME_request_mapping: "khaki",
+            ConstantsSettings.PIPELINE_NAME_map_filtering: "darkslategray",
             ConstantsSettings.PIPELINE_NAME_metagenomics_screening: "dodgerblue",
             "Combined analysis": "darkslategray",
             "leaves2": "lightblue",
@@ -1598,7 +1582,7 @@ class TreeProgressGraph:
             + "/bin/"
             + "Rscript",
             "--vanilla",
-            os.path.join(STATIC_ROOT, "R", "pipeline_dendrograph.R"),
+            os.path.join(STATIC_ROOT, "R", "pipeline_dendrograph_network.R"),
             self.stacked_df_path,
             self.graph_html_path,
             ",".join(stacked_df.columns).replace(" ", "."),

@@ -34,12 +34,12 @@ class index(TemplateView):
     def get_context_data(self, **kwargs):
         context = super(index, self).get_context_data(**kwargs)
         default_software = DefaultSoftware()
-        context[
-            "televir_available"
-        ] = default_software.test_televir_software_available()
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["televir_available"] = (
+            default_software.test_televir_software_available()
+        )
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
 
@@ -143,9 +143,9 @@ class PIMetagenSampleView(LoginRequiredMixin, ListView):
             context["sample_name"] = sample.name
             context["sample_id"] = sample.pk
 
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
 
@@ -327,9 +327,10 @@ class PISettingsView(LoginRequiredMixin, ListView):
 
         if level > 0:
             televir_project = Televir_Project.objects.get(pk=int(self.kwargs["level"]))
+
         ### test all defaults first, if exist in database
         default_software = DefaultSoftware()
-        default_software.test_all_defaults(
+        default_software.test_all_defaults_once(
             self.request.user
         )  ## the user can have defaults yet
 
@@ -346,6 +347,7 @@ class PISettingsView(LoginRequiredMixin, ListView):
             technologies = ConstantsSettings.vect_technology
 
         all_tables = []  ## order by Technology, PipelineStep, table
+
         ## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],
         ##    [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...], etc
         ## Technology goes to NAV-container, PipelineStep goes to NAV-container, then table
@@ -373,9 +375,6 @@ class PISettingsView(LoginRequiredMixin, ListView):
                         parameter__televir_project_sample=None,
                         is_obsolete=False,
                     ).distinct()
-
-                    print("pipeline_step_name", pipeline_step_name)
-                    print(query_set)
 
                 else:
                     query_set = Software.objects.filter(
@@ -435,9 +434,9 @@ class PISettingsView(LoginRequiredMixin, ListView):
             context["project_id"] = televir_project.pk
         else:
             context["settings_pathogenid"] = True
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
 
@@ -453,7 +452,7 @@ class PISettingsGroupsView(PISettingsView):
             televir_project = Televir_Project.objects.get(pk=int(self.kwargs["level"]))
         ### test all defaults first, if exist in database
         default_software = DefaultSoftware()
-        default_software.test_all_defaults(
+        default_software.test_all_defaults_once(
             self.request.user
         )  ## the user can have defaults yet
 
@@ -580,9 +579,9 @@ class PISettingsGroupsView(PISettingsView):
             context["project_id"] = televir_project.pk
         else:
             context["settings_pathogenid"] = True
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
 
@@ -604,7 +603,7 @@ class QCSettingsView(LoginRequiredMixin, ListView):
 
         ### test all defaults first, if exist in database
         default_software = DefaultSoftware()
-        default_software.test_all_defaults(
+        default_software.test_all_defaults_once(
             self.request.user
         )  ## the user can have defaults yet
 
@@ -654,9 +653,9 @@ class QCSettingsView(LoginRequiredMixin, ListView):
         context["all_softwares"] = all_tables
         context["nav_settings"] = True
         context["qc_settings"] = True  ## True for global softwares
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
 
@@ -678,7 +677,7 @@ class SettingsView(LoginRequiredMixin, ListView):
 
         ### test all defaults first, if exist in database
         default_software = DefaultSoftware()
-        default_software.test_all_defaults(
+        default_software.test_all_defaults_once(
             self.request.user
         )  ## the user can have defaults yet
 
@@ -728,9 +727,9 @@ class SettingsView(LoginRequiredMixin, ListView):
         context["all_softwares"] = all_tables
         context["nav_settings"] = True
         context["main_settings"] = True  ## True for global softwares
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
 
@@ -807,9 +806,9 @@ class UpdateParametersView(LoginRequiredMixin, UpdateView):
         context["type_of_use"] = context["software"].type_of_use
         context["nav_settings"] = True
         context["nav_modal"] = True  ## short the size of modal window
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
     def form_valid(self, form):
@@ -892,9 +891,9 @@ class UpdateParametersTelevirProjView(LoginRequiredMixin, UpdateView):
         context["pk_televir_project"] = self.kwargs.get("pk_televir_project")
         context["nav_project"] = True
         context["nav_modal"] = True  ## short the size of modal window
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
     def form_valid(self, form):
@@ -995,9 +994,9 @@ class UpdateParametersProjView(LoginRequiredMixin, UpdateView):
         context["pk_project"] = self.kwargs.get("pk_proj")
         context["nav_project"] = True
         context["nav_modal"] = True  ## short the size of modal window
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
     def form_valid(self, form):
@@ -1092,9 +1091,9 @@ class UpdateParametersDatasetView(LoginRequiredMixin, UpdateView):
         context["pk_dataset"] = self.kwargs.get("pk_dataset")
         context["nav_dataset"] = True
         context["nav_modal"] = True  ## short the size of modal window
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
     def form_valid(self, form):
@@ -1230,9 +1229,9 @@ class UpdateParametersProjSampleView(LoginRequiredMixin, UpdateView):
         context["pk_proj_sample"] = self.kwargs.get("pk_proj_sample")
         context["sample_project_settings"] = True
         context["nav_modal"] = True  ## short the size of modal window
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
     def form_valid(self, form):
@@ -1391,9 +1390,9 @@ class UpdateParametersSampleView(LoginRequiredMixin, UpdateView):
         context["pk_sample"] = self.kwargs.get("pk_sample")
         context["sample_settings"] = True
         context["nav_modal"] = True  ## short the size of modal window
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
     def form_valid(self, form):

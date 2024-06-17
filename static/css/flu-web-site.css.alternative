@@ -1,0 +1,217 @@
+
+/**
+* used in header forms
+*/
+.insa-image-left{
+	float : left;
+	text-align: left;
+}
+
+.alert-limit-text {
+   	max-width: 900px;
+}
+  
+.insa-recaptcha{
+	padding:15px	
+}
+
+.insa-center-text {
+  text-align: center;
+}
+
+.main-page-documentation {
+	padding-right:30px;
+	padding-top:19px;
+	font-size: 1.5rem;
+}
+
+.rounded-header {
+	border-radius: 5px;
+	background: #569dd4;
+	border-color: #05264c;
+	color: #05264c;
+	padding: 13px;
+	margin-bottom: 30px;
+	font-size: 24px;
+	font-weight: 700;
+}
+
+.padding-button-table{
+	padding-right:10px;
+}
+
+.disable_fa_icon{
+	color:grey;
+}
+
+.warning_fa_icon{
+	color:orange;
+}
+
+.header-software-settings {
+	padding-top:12px;
+	padding-bottom:12px;
+	text-align: center;
+	font-size: 1.7rem;
+}
+
+
+.bg-insa-fixed-top{
+    background-color: #fcc29c !important; /* Peach Puff */
+    color: #05264c !important;
+ }
+
+ .bg-insa-fixed-top-main{
+    background-color: #F6F6FF !important;
+    color: #05264c !important;
+}
+
+a.bg-insa-fixed-top:focus, a.bg-insa-fixed-top:hover {
+   background-color: #A9A9A9 !important; /* Dark Gray */
+   color: #05264c !important
+ }
+
+.rounded-group-box {
+    border-radius: 25px;
+    border: 2px solid #246bce;
+    padding-left: 15px;
+    padding-right: 15px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+/*
+*	set the background color to the sample_add
+*/
+.rounded-group-box-legend {
+    border-radius: 2px;
+    background: #88d1fb; 										/* For browsers that do not support gradients */
+    background: -webkit-linear-gradient(#88d1fb, #bfe3f7); 		/* For Safari 5.1 to 6.0 */
+    background: -o-linear-gradient(#88d1fb, #bfe3f7); 			/* For Opera 11.1 to 12.0 */
+    background: -moz-linear-gradient(#88d1fb, #bfe3f7); 		/* For Firefox 3.6 to 15 */
+    background: linear-gradient(#88d1fb, #bfe3f7); 				/* Standard syntax */
+    padding-left: 15px;
+    padding-right: 15px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+/**
+*	Show text
+*/
+.box-blue {
+    padding: 8px 8px 0;
+    margin-bottom: 20px;
+    font-size: 14px;
+    background: #eaf5ff;
+    border: 1px solid rgba(27,31,35,0.15);
+    border-radius: 3px;
+}
+.box-deeper-blue {
+    padding: 8px 8px 0;
+    margin-bottom: 20px;
+    font-size: 14px;
+    background: #b5d3f1;
+    border: 1px solid rgba(27,31,35,0.15);
+    border-radius: 3px;
+}
+
+/**
+*	regular header
+*/
+p.title-box {
+    margin-bottom: 15px;
+    font-size: 18px;
+    font-weight: 600;
+    color: #05264c;
+    background: #dddddd;
+    padding: 5px;
+    border-radius: 3px;
+}
+
+p.software {
+    margin: 0 0 8px;
+    font-size: 13px;
+    color: #05264c;
+}
+
+/**
+*	Increase size of container-fluid
+*/
+@media only screen and (min-width : 1000px) {
+    .container { width: 1500px; } 
+}
+
+/**
+*	Color in expand of buttons in code
+*/
+.box_tooltip_flu{
+	color: #ffc107;
+}
+
+/**
+*	color in fields errors
+*/
+.fields_error {
+	color: #C70039
+}
+
+/**
+*	draw line around the input
+*
+.error input, .error select {
+    border: 2px red solid;
+}
+*/
+
+/*
+*	START tooltip, show two tooltips
+*/
+/* .tip{
+    position: relative;
+    background
+}
+
+.tip:hover:after{
+    background: #333;
+    background: rgba(0,0,0,.8);
+    border-radius: 5px;
+    bottom: 26px;
+    color: #fff;
+    content: attr(title);
+    left: 20%;
+    padding: 5px 15px;
+    position: absolute;
+    z-index: 98;
+    width: 320px;
+} */
+
+/*
+*	END tooltip
+*/
+
+#phylocanvas {
+      width: 100%;
+      height: 36em;
+}
+
+.extra_info{
+	margin: 0 0 8px;
+    font-size: 20px;
+    color: #05264c;
+}
+.regular_info_box{
+	padding: 5px;
+    border-radius: 3px;
+    background-color: #b5d3f1;
+    border-bottom: 1px solid #83baf1
+}
+
+a.disabled {
+   pointer-events: none;
+   cursor: default;
+}
+
+#mainNav .navbar-collapse .navbar-sidenav {
+    margin-top: 60px;
+}

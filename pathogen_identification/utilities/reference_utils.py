@@ -1,6 +1,6 @@
 import ntpath
 import os
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from Bio import SeqIO
 from Bio.Seq import Seq
@@ -16,10 +16,40 @@ from constants.televir_directories import Televir_Directory_Constants
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
 from managing_files.models import Reference
-from pathogen_identification.models import RawReference, ReferenceSourceFileMap
+from pathogen_identification.models import (
+    ParameterSet,
+    PIProject_Sample,
+    RawReference,
+    ReferenceMap_Main,
+    ReferenceSourceFileMap,
+    TelefluMapping,
+)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
+from pathogen_identification.utilities.utilities_general import simplify_name
 from utils.software import Software
 from utils.utils import Utils
+
+
+class ReferenceMapWrapper:
+
+    def __init__(self, source_map: ReferenceSourceFileMap, user: User):
+        self.source_map = source_map
+        self.description = source_map.reference_source.description
+        self.taxid = source_map.reference_source.taxid
+        self.accid = source_map.reference_source.accid
+        self.file = source_map.reference_source_file.file
+        self.id = source_map.pk
+        self.user = user
+
+
+def remove_unwanted_chars(description: str):
+    unwanted_chars = [",", "}", "{", "[", "]", "(", ")", ":", ";", " ", "'"]
+    for char in unwanted_chars:
+        if char == " ":
+            description = description.replace(char, "_")
+        else:
+            description = description.replace(char, "")
+    return description
 
 
 def description_to_name(description, keep: int = 4):
@@ -32,17 +62,16 @@ def description_to_name(description, keep: int = 4):
     description = "_".join(description)
 
     description = utils.clean_name(description)
-    description = description.replace(",", "")
+    description = remove_unwanted_chars(description)
     return description
 
 
-def fasta_from_reference(reference_id):
+def fasta_from_raw_reference(accid, description):
     """
     This function takes the raw reference id and returns the fasta name"""
-    reference = RawReference.objects.get(id=reference_id)
 
-    description_clean = description_to_name(reference.description)
-    fasta_name = f"{reference.accid}_{description_clean}.fasta"
+    description_clean = description_to_name(description)
+    fasta_name = f"{accid}_{description_clean}.fasta"
 
     return fasta_name
 
@@ -131,10 +160,12 @@ def extract_file(accid):
         description_simple = description_to_name(description)
         tmp_fasta = utils.get_temp_file(description_simple, ".fasta")
 
-        source_file = os.path.join(
-            fasta_directory, reference.reference_source_file.file
-        )
-        print("SOURCE FILE", source_file)
+        print(f"Extracting {accid} to {tmp_fasta}")
+
+        source_file = reference.reference_source_file.filepath
+
+        print(f"source_file: {source_file}")
+
         extracted = televir_bioinf.extract_reference(source_file, accid, tmp_fasta)
         if extracted:
             return tmp_fasta
@@ -233,7 +264,6 @@ def create_metaReference(references: List[RawReference]):
             raw_reference=reference,
         )
         raw_ref_map.save()
-        print(raw_ref_map)
 
     return metaref
 
@@ -347,16 +377,31 @@ def create_genbank_for_fasta(fasta_filepath: str):
     return temp_genbank_file
 
 
-def check_reference_exists(raw_reference_id, user_id):
-    raw_ref = RawReference.objects.get(id=raw_reference_id)
+def check_user_reference_exists(description, accid, user_id):
 
-    description = raw_ref.description
     description_clean = description_to_name(description)
-    accid = raw_ref.accid
 
     query_set = Reference.objects.filter(
         owner__id=user_id, is_obsolete=False, is_deleted=False
     ).order_by("-name")
+
+    if query_set.filter(
+        Q(name__icontains=description_clean)
+        | Q(reference_genbank_name__icontains=accid)
+        | Q(reference_fasta_name__icontains=accid)
+    ).exists():
+        return True
+
+    return False
+
+
+def check_reference_exists(description, accid):
+
+    description_clean = description_to_name(description)
+
+    query_set = Reference.objects.filter(is_obsolete=False, is_deleted=False).order_by(
+        "-name"
+    )
 
     if query_set.filter(
         Q(name__icontains=description_clean)
@@ -389,13 +434,28 @@ def delete_reference(raw_reference_id, user_id):
         existing.delete()
 
 
-def check_reference_submitted(ref_id, user_id):
+def check_raw_reference_submitted(ref_id, user_id):
     user = User.objects.get(pk=user_id)
     process_controler = ProcessControler()
 
     process = ProcessControler.objects.filter(
         owner__id=user.pk,
-        name=process_controler.get_name_televir_teleflu_ref_create(
+        name=process_controler.get_name_raw_televir_teleflu_ref_create(
+            ref_id=ref_id,
+        ),
+        is_finished=False,
+        is_error=False,
+    )
+    return process.exists()
+
+
+def check_file_reference_submitted(ref_id, user_id):
+    user = User.objects.get(pk=user_id)
+    process_controler = ProcessControler()
+
+    process = ProcessControler.objects.filter(
+        owner__id=user.pk,
+        name=process_controler.get_name_file_televir_teleflu_ref_create(
             ref_id=ref_id,
         ),
         is_finished=False,
@@ -409,13 +469,39 @@ def raw_reference_to_insaflu(raw_reference_id: int, user_id: int):
     raw_reference = RawReference.objects.get(id=raw_reference_id)
     accid = raw_reference.accid
 
-    if check_reference_exists(raw_reference_id, user_id):
+    description = raw_reference.description
+
+    if check_user_reference_exists(description, accid, user_id):
         return False, None
 
     reference_fasta = extract_file(accid)
 
     name = description_to_name(raw_reference.description)
-    final_fasta_name = fasta_from_reference(raw_reference_id)
+    final_fasta_name = fasta_from_raw_reference(accid=accid, description=description)
+
+    if reference_fasta is None:
+        return None, None
+
+    success, reference_id = generate_insaflu_reference(
+        reference_fasta, name, final_fasta_name, user
+    )
+
+    return success, reference_id
+
+
+def file_reference_to_insaflu(source_reference_id: int, user_id: int):
+    user = User.objects.get(id=user_id)
+    raw_reference = ReferenceSourceFileMap.objects.get(id=source_reference_id)
+    accid = raw_reference.reference_source.accid
+    description = raw_reference.reference_source.description
+
+    if check_user_reference_exists(description, accid, user_id):
+        return False, None
+
+    reference_fasta = extract_file(accid)
+
+    name = description_to_name(description)
+    final_fasta_name = fasta_from_raw_reference(accid=accid, description=description)
 
     if reference_fasta is None:
         return None, None
@@ -429,9 +515,10 @@ def raw_reference_to_insaflu(raw_reference_id: int, user_id: int):
 
 def teleflu_to_insaflu_reference(project_id: int, user_id: int):
     user = User.objects.get(id=user_id)
-    print("UPDATING TELEFLU TO INSAFLU")
     teleflu_project = TeleFluProject.objects.get(id=project_id)
-    print("TELEFLU PROJECT", teleflu_project.name)
+    if teleflu_project.reference is not None:
+        return True, teleflu_project.reference
+
     metareference = teleflu_project.raw_reference
     reference_fasta = teleflu_project.raw_reference.file_path
     name = metareference.description
@@ -449,7 +536,7 @@ def teleflu_to_insaflu_reference(project_id: int, user_id: int):
 
 def generate_insaflu_reference(
     reference_fasta: str, name: str, final_fasta_name: str, user: User
-):
+) -> Tuple[bool, int]:
     utils = Utils()
     software = Software()
     final_gb_name = final_fasta_name.replace(".fasta", ".gbk")
@@ -457,7 +544,7 @@ def generate_insaflu_reference(
     temp_genbank_file = create_genbank_for_fasta(reference_fasta)
 
     if reference_fasta is None:
-        return None, None
+        return False, None
 
     ### Create reference
 
@@ -570,11 +657,9 @@ def create_teleflu_igv_report(teleflu_project_pk: int) -> bool:
     ### get reference
     reference = teleflu_project.reference
     if reference is None:
-        print("NO REFERENCE")
         return False
 
     reference_file = reference.get_reference_fasta(TypePath.MEDIA_ROOT)
-    reference_index = reference.get_reference_fasta_index(TypePath.MEDIA_ROOT)
 
     samples = InsafluProjectSample.objects.filter(project=insaflu_project)
     # samples= [sample.sample for sample in samples]
@@ -603,8 +688,6 @@ def create_teleflu_igv_report(teleflu_project_pk: int) -> bool:
             TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, filename
         )
 
-        print(bam_file, bam_file_index, vcf_file)
-
         if bam_file and bam_file_index and os.path.exists(vcf_file):
             sample_dict[sample.sample.pk] = {
                 "name": sample.sample.name,
@@ -632,8 +715,147 @@ def create_teleflu_igv_report(teleflu_project_pk: int) -> bool:
             output_html=stacked_html,
         )
 
-        # for sample_pk, files in sample_dict.items():
-        #    print(sample_pk, files)
+        return True
+    except Exception as e:
+        print(e)
+        return False
+
+
+def filter_reference_maps_select(
+    sample: PIProject_Sample, leaf_id: int, reference: List[str]
+) -> Optional[ReferenceMap_Main]:
+
+    ref_maps = ReferenceMap_Main.objects.filter(
+        sample=sample,
+        run__parameter_set__leaf__index=leaf_id,
+        reference__in=reference,
+    )
+
+    refs = RawReference.objects.filter(
+        run__parameter_set__sample=sample,
+        accid__in=reference,
+        run__parameter_set__leaf__index=leaf_id,
+        run__parameter_set__status=ParameterSet.STATUS_FINISHED,
+    )
+
+    for ref in ref_maps:
+
+        if not ref.bam_file_path:
+            continue
+        if not ref.bai_file_path:
+            continue
+
+        if os.path.exists(ref.bam_file_path) == False:
+            continue
+
+        if os.path.exists(ref.vcf) == False:
+            continue
+
+        if os.path.exists(ref.bai_file_path) == False:
+            continue
+
+        return ref
+
+    return None
+
+
+from pathogen_identification.models import TeleFluSample
+
+
+def create_televir_igv_report(teleflu_project_pk: int, leaf_index: int) -> bool:
+
+    teleflu_project = TeleFluProject.objects.get(pk=teleflu_project_pk)
+    teleflu_mapping = TelefluMapping.objects.get(
+        teleflu_project=teleflu_project, leaf__index=leaf_index
+    )
+
+    print("teleflu_mapping", teleflu_mapping)
+    # reference_accid= teleflu_project.raw_reference.
+
+    ### get reference
+    teleflu_reference = teleflu_project.raw_reference
+    print("reference_reference", teleflu_reference)
+    if teleflu_reference is None:
+        return False
+
+    reference_file = teleflu_reference.file_path
+    print("reference File", reference_file)
+
+    # televir_reference
+    teleflu_refs = teleflu_project.televir_references
+    print("teleflu_refs", teleflu_refs)
+
+    if teleflu_refs is None:
+        return False
+
+    accid_list = [ref.accid for ref in teleflu_refs if ref.accid]
+    accid_list_simple = [simplify_name(accid) for accid in accid_list]
+
+    # samples
+    televir_project_samples = teleflu_mapping.mapped_samples
+    sample_dict = {}
+
+    ### get sample files
+
+    for sample in televir_project_samples:
+
+        ref_select = filter_reference_maps_select(sample, leaf_index, accid_list_simple)
+
+        if ref_select is None:
+            continue
+
+        sample_dict[sample.pk] = {
+            "name": sample.name,
+            "bam_file": ref_select.bam_file_path,
+            "bam_file_index": ref_select.bai_file_path,
+            "vcf_file": ref_select.vcf,
+            "sample": sample,
+        }
+
+    ### merge vcf files
+    if len(sample_dict) == 0:
+        return False
+    else:
+        os.makedirs(teleflu_mapping.mapping_directory, exist_ok=True)
+
+    televir_bioinf = TelevirBioinf()
+    # vcf_files = [files["vcf_file"] for sample_pk, files in sample_dict.items()]
+    group_vcf = teleflu_mapping.variants_mapping_vcf
+    stacked_html = teleflu_mapping.mapping_igv_report
+
+    os.makedirs(teleflu_project.project_vcf_directory, exist_ok=True)
+
+    # merged_success = televir_bioinf.merge_vcf_files(vcf_files, group_vcf)
+
+    try:
+        merged_success = televir_bioinf.vcf_from_bam(
+            [files["bam_file"] for sample_pk, files in sample_dict.items()],
+            reference_file,
+            group_vcf,
+        )
+
+        for sample_pk, sample_info in sample_dict.items():
+            teleflu_sample = TeleFluSample.objects.get(
+                teleflu_project=teleflu_project,
+                televir_sample=sample_info["sample"],
+            )
+
+            teleflu_mapping.stacked_samples.add(teleflu_sample)
+            teleflu_mapping.save()
+
+    except Exception as e:
+        print(e)
+        return False
+
+    try:
+
+        televir_bioinf.create_igv_report(
+            reference_file,
+            vcf_file=group_vcf,
+            tracks=sample_dict,
+            output_html=stacked_html,
+        )
+
         return True
     except Exception as e:
         print(e)

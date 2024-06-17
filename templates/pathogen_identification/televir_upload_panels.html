@@ -1,0 +1,93 @@
+{% extends '_layouts/base.html' %}
+
+{% load bootstrap4 %}
+{% load querystring from django_tables2 %}
+{% load title from django_tables2 %}
+{% load trans blocktrans from i18n %}
+{% load django_bootstrap_breadcrumbs %}
+{% load static %}
+{% load custom_tags %}
+
+
+{% block extra_messages %}
+<!-- set the messages -->
+<div class="container">
+	<div id="id_messages_remove"></div>
+</div>
+{% endblock %}
+
+{% block breadcrumbs %}
+{{ block.super }}
+{% breadcrumb "Project Index" "project-index" %}
+{% breadcrumb "TELEVIR Projects" "PIprojects_main" %}
+{% breadcrumb "Manage References" "" %}
+{% endblock %}
+
+
+{% block content %}
+
+
+{% block extra_head %}
+
+<link rel="stylesheet" href="{% static 'css/televir_references_nav.css' %}">
+<link rel="stylesheet" href="{% static 'css/televir_upload_file.css' %}">
+{% endblock %}
+
+
+<form id="upload-form" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div id="summary" style="border: 1px solid; padding: 10px; margin-bottom: 10px;">
+        <p>Upload Summary.</p>
+    </div>
+    <button type="button" id="check-button" url="{% url 'check_televir_panel_upload' %}">Check</button>
+    
+    <div class="button-container">
+        <button onclick="location.href='{% url 'televir_reference_files' %}'" class="cancel-button">Cancel</button>
+        <button type="submit" class="upload-button">Upload</button>
+    </div>
+</form>
+
+{% endblock %}
+
+{% block js %}
+<script>
+    $(document).ready(function() {
+        $('button[type="submit"]').prop('disabled', true);
+
+        let url = $('#check-button').attr('url');
+        console.log(url);
+        
+        $('#check-button').click(function() {
+            var formData = new FormData($('#upload-form')[0]);
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(data) {
+                    $('#summary').html(data);
+                    if (data["is_ok"] == true) {
+                        if (data["pass"] == true) {
+                            $('button[type="submit"]').prop('disabled', false);
+                        }
+                        $('#summary').html(data["log"].join('<br>'));
+                        $('#summary').addClass('active');
+                        $('#summary').html(data["log"].join('<br>')).show();
+                        // remove height of the summary div
+                        $('#summary').css('height', 'auto');                  
+                    } else if (data["is_error"]) {
+                        $('#id_messages_remove').append('<div class="alert alert-danger" role="alert">' + data["error_message"] + '</div>');
+                    } else {
+                        $('button[type="submit"]').prop('disabled', true);
+                    }
+                }
+            });
+        });
+    });
+
+    
+</script>
+
+{% endblock %}

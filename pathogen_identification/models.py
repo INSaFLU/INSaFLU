@@ -1022,7 +1022,10 @@ class RawReference(models.Model):
             return self.counts
 
         if self.classification_source == "3":
-            return self.counts.split("/")[1]
+
+            if "/" in self.counts:
+                return self.counts.split("/")[1]
+            return self.counts
 
         return "0"
 

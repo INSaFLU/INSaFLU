@@ -537,11 +537,7 @@
                         <tr class="parent {{value.row_class_name}}" style="display: {{value.display}}" id="row_{{value.accid}}" group-name="{{final_report.name}}" first="{{value.first_in_group}}">
 
                             <td data-title="Description" style="text-align: left;">
-                                {% if value.first_in_group %}
-                                {% if final_report.has_multiple %}                                        
-                                        <i class="fa fa-first-order sort-icon"  title="Best Coverage"></i>
-                                {% endif %}
-                                {% endif %}
+
                                 <a href="#" id="plot_show" >{{value.description}}</a>
                             </td>
                             <td data-title="Taxid">{{value.taxid}}</td>

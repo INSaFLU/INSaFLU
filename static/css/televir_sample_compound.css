@@ -190,6 +190,27 @@ border-top: 1px;
 .select option.hidden_option{
     display: none;
 }
+
+.showSecondaryRows {
+    float: left;
+    background-color: transparent;
+    border: none;
+}
+
+button.showSecondaryRows:focus {
+    outline: none;
+}
+
+
+.toggle {
+    border: none;
+}
+
+.toggle-icon {
+    color: #007bff;
+    font-size: 21px;
+}
+
 .expand-button {
     display: block;
     width: 100%;

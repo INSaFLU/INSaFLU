@@ -823,8 +823,8 @@ def Update_Run_QC(run_class: RunEngine_class, parameter_set: ParameterSet):
     run_qc_exists = TelevirRunQC.objects.filter(run=runmain).exists()
 
     if run_qc_exists:
-        run_qc = TelevirRunQC.objects.get(run=runmain)
 
+        run_qc = TelevirRunQC.objects.get(run=runmain)
         run_qc.run = runmain
         run_qc.performed = run_class.qc_report.performed
         run_qc.method = run_class.qc_report.method
@@ -1240,11 +1240,16 @@ def Update_FinalReport(run_class: RunEngine_class, runmain, sample):
             run=runmain,
             taxid=row["taxid"],
         )
+
         counts = row["mapped"]
 
         if remap_targets.exists():
             for target in remap_targets:
                 counts = target.counts
+
+        classification_success = translate_classification_success(
+            row["classification_success"]
+        )
 
         try:
             report_row = FinalReport.objects.get(
@@ -1252,6 +1257,7 @@ def Update_FinalReport(run_class: RunEngine_class, runmain, sample):
                 sample=sample,
                 unique_id=row["unique_id"],
             )
+
         except FinalReport.DoesNotExist:
             report_row = FinalReport(
                 run=runmain,
@@ -1308,9 +1314,7 @@ def Update_FinalReport(run_class: RunEngine_class, runmain, sample):
                 status=RawReference.STATUS_MAPPED,
                 description=row["description"],
                 counts=counts,
-                classification_source=translate_classification_success(
-                    row["classification_success"]
-                ),
+                classification_source=classification_success,
             )
 
             raw_reference.save()

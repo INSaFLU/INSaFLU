@@ -1,3 +1,4 @@
+import copy
 import logging
 import os
 import re
@@ -13,21 +14,17 @@ from scipy.stats import kstest
 from constants.software_names import SoftwareNames
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.modules.object_classes import (
-    Bedgraph,
-    MappingStats,
-    Read_class,
-    Remap_Target,
-    RunCMD,
-    SoftwareDetail,
-    SoftwareRemap,
-)
+from pathogen_identification.modules.object_classes import (Bedgraph,
+                                                            MappingStats,
+                                                            Read_class,
+                                                            Remap_Target,
+                                                            RunCMD,
+                                                            SoftwareDetail,
+                                                            SoftwareRemap)
 from pathogen_identification.utilities.televir_bioinf import DustMasker
 from pathogen_identification.utilities.televir_parameters import RemapParams
 from pathogen_identification.utilities.utilities_general import (
-    plot_dotplot,
-    read_paf_coordinates,
-)
+    plot_dotplot, read_paf_coordinates)
 
 pd.options.mode.chained_assignment = None
 np.warnings.filterwarnings("ignore")
@@ -2179,14 +2176,30 @@ class Mapping_Manager(Tandem_Remap):
             return False
 
     def validate_mapped_instance_taxid(self, mapped_instance: Mapping_Instance):
-        if str(mapped_instance.reference.target.taxid) in self.target_taxids:
-            return True
-        else:
-            return False
+        # if str(mapped_instance.reference.target.taxid) in self.target_taxids:
+        #    return True
+        # else:
+        #    return False
+
+        for target in self.remap_targets:
+            if target.taxid == mapped_instance.reference.target.taxid:
+                return True
+
+        return False
 
     def update_mapped_instance_safe(self, mapped_instance: Mapping_Instance):
         if self.verify_mapped_instance(mapped_instance):
             if self.validate_mapped_instance_taxid(mapped_instance):
+
+                mapping_instance_copy = copy.deepcopy(mapped_instance)
+
+                for target in self.remap_targets:
+                    if target.taxid == mapped_instance.reference.target.taxid:
+                        mapping_instance_copy.apres = target.contigs
+                        mapping_instance_copy.rpres = target.reads
+                        mapping_instance_copy.assert_classification_success()
+                        mapping_instance_copy.produce_mapping_report()
+
                 self.mapped_instances.append(mapped_instance)
 
     def update_mapped_instance(self, mapped_instance: Mapping_Instance):

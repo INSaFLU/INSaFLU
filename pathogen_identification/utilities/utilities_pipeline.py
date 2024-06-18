@@ -10,20 +10,23 @@ import pandas as pd
 from django.contrib.auth.models import User
 from django.db.models import Q, QuerySet
 
-from constants.constants import \
-    Televir_Directory_Constants as Televir_Directories
+from constants.constants import Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.host_library import Host
-from pathogen_identification.models import (ParameterSet, PIProject_Sample,
-                                            Projects, RawReference,
-                                            RawReferenceCompoundModel, RunMain,
-                                            SoftwareTree, SoftwareTreeNode)
+from pathogen_identification.models import (
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    RawReferenceCompoundModel,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
 from pathogen_identification.utilities.utilities_general import merge_classes
-from pathogen_identification.utilities.utilities_televir_dbs import \
-    Utility_Repository
-from pathogen_identification.utilities.utilities_views import \
-    RawReferenceCompound
+from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
+from pathogen_identification.utilities.utilities_views import RawReferenceCompound
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -3289,12 +3292,13 @@ class RawReferenceUtils:
             float
         )
 
-        references_table = references_table[references_table["read_counts"] > 1]
+        # references_table = references_table[references_table["read_counts"] > 1]
         references_table = references_table[references_table["accid"] != "-"]
         references_table = references_table[references_table["accid"] != ""]
         references_table = references_table.sort_values(
             ["contig_counts", "read_counts"], ascending=[False, False]
         )
+
         references_table["sort_rank"] = range(1, references_table.shape[0] + 1)
 
         return references_table
@@ -3303,9 +3307,6 @@ class RawReferenceUtils:
         self,
         references_table: pd.DataFrame,
     ) -> pd.DataFrame:
-        # references = RawReference.objects.filter(run=run)
-
-        # references_table = references_table_from_query(references)
 
         if references_table.shape[0] == 0:
             return pd.DataFrame(
@@ -3433,38 +3434,39 @@ class RawReferenceUtils:
 
         targets["global_ranking"] = range(1, targets.shape[0] + 1)
 
-        def set_global_ranking_repeat_ranks(targets):
+        def set_global_ranking_repeat_ranks(
+            targets, rank_column="global_ranking", counts_column="counts"
+        ):
             """
             Set the global ranking for repeated ranks
             """
             current_counts = None
             current_rank = 0
             for row in targets.iterrows():
-                if current_counts != row[1]["counts"]:
+                if current_counts != row[1][counts_column]:
                     current_rank += 1
-                    current_counts = row[1]["counts"]
+                    current_counts = row[1][counts_column]
 
-                targets.at[row[0], "global_ranking"] = current_rank
+                targets.at[row[0], rank_column] = current_rank
 
             return targets
 
-        targets = set_global_ranking_repeat_ranks(targets)
+        targets = set_global_ranking_repeat_ranks(targets, rank_column="global_ranking")
 
         ####
         joint_tables = joint_tables.reset_index(drop=True)
         targets = targets.reset_index(drop=True)
         joint_tables["taxid"] = joint_tables["taxid"].astype(int)
         targets["taxid"] = targets["taxid"].astype(int)
-        print(targets.head())
-        print("&")
-        print(joint_tables.head())
+
         joint_tables = joint_tables.merge(
             targets[["taxid", "global_ranking"]], on=["taxid"], how="left"
         )
         ############################################# Reset the index
         joint_tables = joint_tables.reset_index(drop=True)
 
-        joint_tables = joint_tables.sort_values("global_ranking", ascending=True)
+        joint_tables = joint_tables.sort_values("ensemble_ranking", ascending=True)
+
         joint_tables = joint_tables.reset_index(drop=True)
 
         return joint_tables
@@ -3638,11 +3640,11 @@ class RawReferenceUtils:
         if self.sample_registered is not None:
             query_set = RawReferenceCompoundModel.objects.filter(
                 sample=self.sample_registered
-            ).order_by("global_ranking")
+            ).order_by("ensemble_ranking")
         elif self.project_registered is not None:
             query_set = RawReferenceCompoundModel.objects.filter(
                 sample__project=self.project_registered
-            ).order_by("global_ranking")
+            ).order_by("ensemble_ranking")
         else:
             query_set = RawReferenceCompoundModel.objects.none()
 

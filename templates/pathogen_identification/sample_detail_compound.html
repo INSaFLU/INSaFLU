@@ -74,15 +74,17 @@
                         <div class="col-sm-2 link-container">
                             {% for run in runs_pipeline %}
                             <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Workflow report {{run.parameter_set.leaf.index}} </a>
-                            <br>
+
                             {% endfor %}
                             {% for run in runs_mapping %}
                             <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Mapping report {{run.parameter_set.leaf.index}}  </a>
                             {% endfor %}
                         </div>
                         {% if graph_json %}
-                        <div class="col-sm-10">
-                                <div id="{{graph_id}}" style="width:95%;height:250px;position:center;margin-left: 8%;" class="collapsibleTree html-widget"></div>
+                        <div class="col-sm-1">
+                        </div>
+                        <div class="col-sm-9">
+                                <div id="{{graph_id}}" style="width:95%;height:{{graph_height}}px;position:center;" class="collapsibleTree html-widget"></div>
                                 <script type="application/json" data-for="{{graph_id}}">{{graph_json|safe}}</script>
                         </div>
                         <div class="col-sm-12">
@@ -93,7 +95,6 @@
                         </div>
                         {% endif %}
                     </div>
-                    
                 </div>
             </div>
         </div>
@@ -224,13 +225,13 @@
                                     {% if final_report.has_multiple %}
                                     <div class="primary-row" style= "margin-top: 2px;">
                                         <button class="showSecondaryRows" type="button" group-name="{{final_report.name}}" title="Toggle Secondary Rows">
-                                            <i class="fa fa-toggle-{{final_report.toggle}} toggle-icon"></i>
+                                            <i class="fa fa-toggle-off toggle-icon"></i>
                                         </button>                                        
                                     </div>
                                      {% else %}
                                      <div class="primary-row" style="visibility: hidden; ">
                                         <button class="showSecondaryRows" type="button" style="visibility: hidden;">
-                                            <i class="fa fa-toggle-{{final_report.toggle}} toggle-icon"></i>
+                                            <i class="fa fa-toggle-off toggle-icon"></i>
                                         </button>                                        
                                     </div>
                                     {% endif %}
@@ -284,7 +285,7 @@
                             <td data-title="Description" style="text-align: left;">
                                 {% if value.first_in_group %}
                                 {% if final_report.has_multiple %}
-                                        <i class="fa fa-first-order sort-icon"  title="Best Coverage"></i>
+                                        <i class="fa fa-empty sort-icon"  title="Best Coverage"></i>
                                 {% else %}
                                         <i class="fa fa-empty sort-icon"  title="Best Coverage"></i>
                                 

@@ -302,6 +302,21 @@ max-height: 500px; /* Adjust the value to the desired height */
 
 .showSecondaryRows {
     float: left;
+    background-color: transparent;
+    border: none;
+}
+
+button.showSecondaryRows:focus {
+    outline: none;
+}
+
+.toggle {
+    border: none;
+}
+
+.toggle-icon {
+    color: #007bff;
+    font-size: 21px;
 }
 
 .description-column {

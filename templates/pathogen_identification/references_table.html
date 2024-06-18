@@ -74,7 +74,6 @@
                           {% for run in runs %}
                           <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Workflow report {{run.parameter_set.leaf.index}} </a>
                           <br>
-                          <br>
                           {% endfor %}
                       </div>
                       {% if graph_json %}
@@ -82,6 +81,7 @@
                               <div id="{{graph_id}}" style="width:95%;height:250px;position:center;" class="collapsibleTree html-widget"></div>
                               <script type="application/json" data-for="{{graph_id}}">{{graph_json|safe}}</script>
                       </div>
+                      <br>
                       <div class="col-sm-2">
                         <div class="info-icon">
                           <img src="{% static "img/pipeline_steps_classification.jpg" %}" alt="Graph Information">

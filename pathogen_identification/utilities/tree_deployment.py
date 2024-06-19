@@ -920,7 +920,7 @@ class Tree_Progress:
                 source_paramaters_combinations[source]["nodes"].append(node)
 
         for node in self.current_nodes:
-            sample_source = node.run_manager.run_engine.sample.sources_list()
+            
             update_combination_dict(node)
 
         grouped_nodes = [

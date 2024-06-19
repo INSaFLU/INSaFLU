@@ -6,18 +6,25 @@ from typing import List, Optional
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (PIProject_Sample, RawReference,
-                                            ReferenceSourceFileMap, RunMain)
+from pathogen_identification.models import (
+    PIProject_Sample,
+    RawReference,
+    ReferenceSourceFileMap,
+    RunMain,
+)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
 from pathogen_identification.utilities.utilities_general import (
-    description_fails_filter, merge_classes, scrape_description, simplify_name)
-from pathogen_identification.utilities.utilities_pipeline import \
-    RawReferenceUtils
+    description_fails_filter,
+    merge_classes,
+    scrape_description,
+    simplify_name,
+)
+from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
 
 
 class RunMetadataHandler:
-    remap_targets: List[Remap_Target] = []
+    # remap_targets: List[Remap_Target] = []
 
     def __init__(
         self,

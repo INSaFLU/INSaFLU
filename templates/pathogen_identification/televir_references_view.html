@@ -170,8 +170,14 @@
                 },
                 success: function(data) {
                     console.log(data);
-                    if (data['status'] == 'success') {
-                        location.reload();
+                    if (data['is_ok'] == true) {
+                        if (data['exists'] == true) {
+                            alert('Reference already exists');
+                        } else {
+                            alert('Reference created');
+                            location.reload();
+                        } 
+                        
                     } else {
                         alert('Error: ' + data['message']);
                     }

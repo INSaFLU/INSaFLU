@@ -75,7 +75,8 @@ var reload_panels = function(userId) {
                     button.className = "select-file-button btn btn-primary";
                     button.setAttribute("data-toggle", "modal");
                     button.setAttribute("data-target", "#panelSelectModal");
-                    button.title = "Select Panel";
+                    button.setAttribute
+                    button.title = "Add from File";
                     
                     // Create the SVG
                     var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -271,8 +272,11 @@ var reload_connects = function () {
         $(".select-file-button").click(function(){
             var user_id = $("#new-panel-button").attr('user_id');
             var panel_id = $(this).closest('.panel-container').attr('data-panel-id');
+            var url_user_files = $(".panel-list").attr('url-user-files');
+            console.log("Oin");
             console.log(panel_id);
-            var url_user_files= $(this).attr('url-user-files');
+            console.log(url_user_files);
+            console.log(user_id);
             $.ajax({
                 url: url_user_files,
                 method: 'POST',
@@ -282,8 +286,8 @@ var reload_connects = function () {
                 },
 
                 success: function(data) {
-                    console.log(data)
                     var html = '';
+                    console.log(data.files);
                     for(var index in data.files) {
                         html += '<input type="radio" file-id="'+index+'" panel-id="'+panel_id+'" name="file" value="'+data.files[index]+'">';
                         html += '<label for="file'+index+'">'+data.files[index]+'</label><br>';
@@ -294,13 +298,11 @@ var reload_connects = function () {
         });
 
         $("#submit-file").click(function(){
-            console.log("OIHOI")
             var user_id = $("#new-panel-button").attr('user_id');
             var selected_file_id= $('input[name="file"]:checked').attr('file-id');
             var panel_id = $('input[name="file"]:checked').attr('panel-id');
             var url_register_file_panel = $(this).attr('url-register-file-panel');
-            console.log(panel_id);
-            console.log(selected_file_id);
+
             if (selected_file_id) {
                 // Submit the selected file
                 $.ajax({

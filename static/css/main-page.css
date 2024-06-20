@@ -146,6 +146,11 @@
 	margin-top: 7px;
 	margin-bottom: 0;
 }
+
+.card-footer {
+    text-align: center;
+}
+
 /*
  * Main column and sidebar layout
  */

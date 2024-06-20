@@ -133,10 +133,18 @@
 .card{
 	border: 0px
 }
+
+.card-title {
+    text-align: center;
+}
+
+
 .card-text{
 	margin-top: 7px;
 	margin-bottom: 0;
+	text-align: center;
 }
+
 .card-link{
 	margin-top: 7px;
 	margin-bottom: 0;

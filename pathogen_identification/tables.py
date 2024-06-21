@@ -28,6 +28,9 @@ from pathogen_identification.models import (
     TeleFluProject,
     TelevirRunQC,
 )
+from pathogen_identification.utilities.reference_utils import (
+    check_file_reference_submitted,
+)
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.utilities_general import (
     get_project_dir,
@@ -870,6 +873,10 @@ class TelevirReferencesTable(tables.Table):
         },
     )
 
+    def __init__(self, records, user_id=None):
+        super(TelevirReferencesTable, self).__init__(records)
+        self.user_id = user_id
+
     class Meta:
         # attrs = {"class": "paleblue"}
 
@@ -898,6 +905,10 @@ class TelevirReferencesTable(tables.Table):
             record.reference_source.description, record.reference_source.accid
         ):
             return ""
+
+        if check_file_reference_submitted(ref_id=record.id, user_id=self.user_id):
+
+            return '<i class="fa fa-spinner fa-spin"></i>'
 
         return mark_safe(
             '<a href="#create_teleflu_reference" '

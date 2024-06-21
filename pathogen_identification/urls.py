@@ -5,6 +5,7 @@ import pathogen_identification.views as PIviews
 from managing_files import ajax_views, views
 
 urlpatterns = [
+    url("download-template/", PIviews.download_template_view, name="download_template"),
     url(
         r"services$",
         PIviews.Services.as_view(),

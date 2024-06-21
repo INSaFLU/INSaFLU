@@ -450,11 +450,11 @@ def check_raw_reference_submitted(ref_id, user_id):
 
 
 def check_file_reference_submitted(ref_id, user_id):
-    user = User.objects.get(pk=user_id)
+    # user = User.objects.get(pk=user_id)
     process_controler = ProcessControler()
 
     process = ProcessControler.objects.filter(
-        owner__id=user.pk,
+        owner__id=user_id,
         name=process_controler.get_name_file_televir_teleflu_ref_create(
             ref_id=ref_id,
         ),

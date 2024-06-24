@@ -231,14 +231,16 @@
                         </form>
                     </th>                  
                 </tr>
-            
               <tr>
                 {% for column in table.columns %}
-                  {% if column.orderable %}
+                  {% if column.name == "select_ref" %}
+                    <th>
+                      <button id="clearSelections" class="clear-selections-btn" title="Clear selection">x</button>                    </th>
+                  {% elif column.orderable %}
                       <th {{ column.attrs.th.as_html }}><a href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header|title }}</a></th>
-                    {% else %}
-                      <th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
-                    {% endif %}
+                  {% else %}
+                    <th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
+                  {% endif %}
                 {% endfor %}
               </tr>
             </thead>

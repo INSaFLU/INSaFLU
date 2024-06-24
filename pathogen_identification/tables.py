@@ -1233,19 +1233,17 @@ class TeleFluInsaFLuProjectTable(tables.Table):
 
 
 class CompoundReferenceTable(tables.Table):
+
     select_ref = tables.CheckBoxColumn(
-        accessor="pk", attrs={"th__input": {"id": "checkBoxAll"}}, orderable=False
+        accessor="pk",
+        orderable=False,
+        attrs={
+            "th": {"style": "text-align: center;"},
+            "td": {"style": "text-align: center;"},
+        },
     )
+
     description = tables.Column(verbose_name="Description")
-    # create_teleflu_reference = tables.Column(
-    #    verbose_name="Create Reference",
-    #    orderable=False,
-    #    empty_values=(),
-    #    attrs={
-    #        "th": {"style": "text-align: center;"},
-    #        "td": {"style": "text-align: center;"},
-    #    },
-    # )
 
     accid = tables.Column(verbose_name="Accession id")
     taxid = tables.Column(

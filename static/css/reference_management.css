@@ -101,3 +101,21 @@
 .info-icon:hover img {
   display: block;
 }
+
+.clear-selections-btn {
+  color: #666; 
+  border: none; /* No border */
+  cursor: pointer; /* Cursor changes to pointer to indicate it's clickable */
+  padding: 2px 8px;
+  border-radius: 5px; /* Rounded corners */
+  transition: background-color 0.3s; /* Smooth transition for background color */
+}
+
+.clear-selections-btn:hover {
+  color: white;
+  background-color: #943939; /* Darker shade of red on hover */
+}
+
+.clear-selections-btn:focus {
+  outline: none; /* Removes the outline to keep the design clean */
+}

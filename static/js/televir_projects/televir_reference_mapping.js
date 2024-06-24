@@ -56,6 +56,40 @@ $('#request_map_selected').on("click", function(e){
     })
   });
 
+  $('.class-ref-checkbox').on('change', function() {
+    var checkedRows = JSON.parse(localStorage.getItem('checkedRows')) || [];
+    $('.class-ref-checkbox:checked').each(function () {
+      
+      var ref_id = $(this).attr('ref_id');
+      if (!checkedRows.includes(ref_id)) {
+        checkedRows.push(ref_id);
+      }
+    });
+    // Store the array of checked rows in local storage
+    localStorage.setItem('checkedRows', JSON.stringify(checkedRows));
+  });
+
+  function clearSelections() {
+    // Assuming your checkboxes have a common class name 'table-checkbox'
+    var checkedRows = []
+    localStorage.setItem('checkedRows', JSON.stringify(checkedRows));
+    $('.class-ref-checkbox').prop('checked', false);
+
+  }
+
+
+  $(document).ready(function() {
+    var checkedRows = JSON.parse(localStorage.getItem('checkedRows')) || [];
+    console.log("checkedRows: " + checkedRows);
+    $('.class-ref-checkbox').each(function() {
+        var ref_id = $(this).attr('ref_id');
+        if (checkedRows.includes(ref_id)) {
+            $(this).prop('checked', true);
+        }
+    });
+    document.getElementById('clearSelections').addEventListener('click', clearSelections);
+  });
+
 
   $('#id-map-selected-button').on('click', function() {
 
@@ -63,15 +97,9 @@ $('#request_map_selected').on("click", function(e){
     var csrf_token = $('#id-modal-body-map-selected').attr('data-csrf'); 
     var sample_id = $('#headingsample').attr('sample-id');
 
-    var checkedRows = [];
-    $('.class-ref-checkbox:checked').each(function() {
-      // collect ids of checked rows
-
-      var ref_id= $(this).attr('ref_id');
-
-      checkedRows.push(ref_id);
-    });
-
+    var checkedRows = JSON.parse(localStorage.getItem('checkedRows')) || [];
+    console.log("OIN");
+    console.log("checkedRows: " + checkedRows);
 
     $.ajax({
       type: 'POST',
@@ -124,6 +152,8 @@ $('#request_map_selected').on("click", function(e){
             // drop modal
             $('#id_map_selected_modal').modal('hide');
         } 
+        localStorage.removeItem('checkedRows');
+        $('.class-ref-checkbox').prop('checked', false);
       }
     })
   });

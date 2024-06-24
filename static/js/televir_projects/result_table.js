@@ -10,9 +10,7 @@ $("tr.parent").find("A#plot_show").click(function(e) {
     if (e.target.tagName === "A" && e.target.id === "plot_show") {
         e.preventDefault();
         var parent_tr = e.target.parentNode.parentNode;
-        console.log(parent_tr);
         var child_tr = nextTr(parent_tr);
-        console.log(child_tr);
         $(child_tr).toggleClass("active");
         
     }   
@@ -25,7 +23,6 @@ $(document).on("click", "a", function (e) {
     var id= $(this).attr("id");
     var ref_id= $(this).attr("ref_id");
     if (id === "remap_reference") {
-        console.log(ref_id);
         $.ajax({
             url: "{% url 'deploy_televir_map' %}",
             type: "POST",
@@ -34,7 +31,6 @@ $(document).on("click", "a", function (e) {
                 'reference_id': ref_id
             },
             success: function (data) {
-                console.log(data);
                 if (data["is_ok"] === true) {
                     alert("Reference remap deployed");
                 } else {
@@ -42,7 +38,6 @@ $(document).on("click", "a", function (e) {
                 }
             },
             error: function (data) {
-                console.log(data);
                 alert("Reference remapping failed");
             }
         });

@@ -7,7 +7,6 @@ $(document).on("click", "a", function (e) {
         var ref_name = $(this).attr('ref_name');
         var sample_pk = $(this).attr('pk');
         var csrf_token = $("#submit-button").attr('csrf');
-        console.log(csrf_token);
         
         // For some browsers, `attr` is undefined; for others `attr` is false.  Check for both.
 
@@ -16,7 +15,6 @@ $(document).on("click", "a", function (e) {
         var icon = $(this).find('i');
         var icon_class = icon.attr('class');
 
-        console.log(icon_class);
         
         if (icon_class === 'fa fa-circle-o'){
             $('#id-label-set-control').text('Set \'' + ref_name + '\' as control?');
@@ -223,7 +221,6 @@ $("#deploypi_added_mapping_btn").click(function (e) {
         },
         data_type: 'json',
         success: function (data) {
-            console.log(data);
             if (data["is_ok"] == true && data["is_deployed"] == false) {
                 alert(data["message"]);
             }

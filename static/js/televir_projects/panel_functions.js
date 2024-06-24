@@ -273,10 +273,7 @@ var reload_connects = function () {
             var user_id = $("#new-panel-button").attr('user_id');
             var panel_id = $(this).closest('.panel-container').attr('data-panel-id');
             var url_user_files = $(".panel-list").attr('url-user-files');
-            console.log("Oin");
-            console.log(panel_id);
-            console.log(url_user_files);
-            console.log(user_id);
+
             $.ajax({
                 url: url_user_files,
                 method: 'POST',
@@ -287,7 +284,6 @@ var reload_connects = function () {
 
                 success: function(data) {
                     var html = '';
-                    console.log(data.files);
                     for(var index in data.files) {
                         html += '<input type="radio" file-id="'+index+'" panel-id="'+panel_id+'" name="file" value="'+data.files[index]+'">';
                         html += '<label for="file'+index+'">'+data.files[index]+'</label><br>';

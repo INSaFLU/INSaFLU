@@ -41,7 +41,6 @@ $(document).ready(function() {
               
               // drop modal
               $('#myModal').modal('hide');
-              console.log('reload_url', reload_url);
 
           } else if (data['is_error']) {
             $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +

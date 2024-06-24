@@ -223,7 +223,6 @@ function download_table_as_csv(table_id, separator = '\t') {
     var rows = document.querySelectorAll('table#' + table_id + ' tr');
     var sample_id = $("#igv_browse").attr("sample_name");
     // Construct csv
-    console.log(sample_id);
     var csv = [];
     for (var i = 0; i < rows.length; i++) {
         var row = [],

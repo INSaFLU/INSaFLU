@@ -215,11 +215,7 @@ var load_teleflu_workflows = function () {
                 var project_id = $('.workflow-main').attr('project_id');
                 var workflow_id = $(this).attr('workflow-id');
                 var url = $(this).attr('url');
-                console.log(workflow);
-                console.log(project_id);
-                console.log(workflow);
-                console.log(csrf);
-    
+
                 $.ajax({
                     url: url,
                     type: 'POST',
@@ -310,7 +306,6 @@ var buttons_background = function () {
     $("#id-map-button").click(function () {
 
         var workflow = $(this).attr('workflow');
-        console.log(workflow);
         var url = $(this).attr('utl');
         var project_id = $('.workflow-main').attr('project_id');
         var csrf = $('.workflow-main').attr('csrf');

@@ -77,8 +77,7 @@ $('#id-kill-all-button').on('click', function(){
   url= $('#id-modal-body-kill-all-sample').attr("remove-all-value-url");
   project_id = $('#id-kill-all-button').attr('project_id');
   token = $('#id-modal-body-kill-sample').attr('csrfmiddlewaretoken');
-  console.log(project_id);
-  console.log(url);
+
   $.ajax({
         url: url,
         type: 'POST',
@@ -88,7 +87,6 @@ $('#id-kill-all-button').on('click', function(){
         }, // data sent with the post request
             
     success: function (data) {
-          console.log(data);
           if (data['is_ok']) {
             if (data['is_empty']) {
               $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +

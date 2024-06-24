@@ -7,7 +7,6 @@ var load_panels_main = function(load_url, target, load = false, suggest= true) {
         data: {},
         success: function(data) {
             // Clear the panel list
-            console.log(data);
             while (panelList.firstChild) {
                 panelList.removeChild(panelList.firstChild);
             }

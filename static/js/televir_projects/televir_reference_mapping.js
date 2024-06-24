@@ -80,7 +80,6 @@ $('#request_map_selected').on("click", function(e){
 
   $(document).ready(function() {
     var checkedRows = JSON.parse(localStorage.getItem('checkedRows')) || [];
-    console.log("checkedRows: " + checkedRows);
     $('.class-ref-checkbox').each(function() {
         var ref_id = $(this).attr('ref_id');
         if (checkedRows.includes(ref_id)) {
@@ -98,8 +97,6 @@ $('#request_map_selected').on("click", function(e){
     var sample_id = $('#headingsample').attr('sample-id');
 
     var checkedRows = JSON.parse(localStorage.getItem('checkedRows')) || [];
-    console.log("OIN");
-    console.log("checkedRows: " + checkedRows);
 
     $.ajax({
       type: 'POST',
@@ -366,7 +363,6 @@ $('#request_map_selected').on("click", function(e){
   $('#request-map-panels').on('click', function() {
     var sample_name = $(this).attr('sample-name');
     var sample_id = $(this).attr('sample-id');
-    console.log("sample_id: " + sample_id);
     $('#id-modal-body-map-panel').attr('sample_id', sample_id);
     $('#id-label-map-panel').text('Map sample \'' + sample_name + '\' to Added Reference Panels?');
   });
@@ -375,8 +371,7 @@ $('#request_map_selected').on("click", function(e){
     var sample_id = $('#id-modal-body-map-panel').attr('sample_id');
     var url = $('#id-modal-body-map-panel').attr('map-panel-single-value-url');
     var csrf = $('#id-modal-body-map-panel').attr('data-csrf');
-    console.log(url);
-    console.log(sample_id);
+
     var data = {
       'sample_id': sample_id,
       'csrfmiddlewaretoken': csrf
@@ -386,7 +381,6 @@ $('#request_map_selected').on("click", function(e){
       url: url,
       data: data,
       success: function(data) {
-        console.log(data);
         if (data['is_ok'] === true && data['is_deployed'] === true) {
           $('#id_messages_remove').append('<div class="alert alert-success alert-dismissible" role="alert"><button type="button" ' +
             'class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>'+

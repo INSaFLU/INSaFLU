@@ -13,13 +13,13 @@ $(".remove_file").on('click', function(){
 $("#id-remove-button").on('click', function(){
     var remove_single_value_url = $(this).attr('remove-single-value-url');
     var file_pk = $("#id-modal-body-remove-sample").attr('file_pk');
-
+    var csrf_token = $(this).attr('csrf-token');
     $.ajax({
         url: remove_single_value_url,
         type: 'POST',
         data: {
             'file_id': file_pk,
-            'csrfmiddlewaretoken': '{{ csrf_token }}'
+            'csrfmiddlewaretoken': csrf_token
         },
         success: function(data){
             if (data["is_ok"] == true){

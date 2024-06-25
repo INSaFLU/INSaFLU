@@ -65,7 +65,7 @@ class UploadFileForm(forms.Form):
         self.fields["fasta_file"].widget.attrs["id"] = "fasta_file"
         self.fields["metadata"].widget.attrs["id"] = "metadata"
 
-    def is_valid(self) -> bool:
+    def is_valid1(self) -> bool:
         """
         Check if the form is valid
         """

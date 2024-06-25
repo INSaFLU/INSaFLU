@@ -34,6 +34,13 @@
 <link rel="stylesheet" href="{% static 'css/televir_upload_file.css' %}">
 {% endblock %}
 
+<style>
+    .locked-input {
+        background-color: #e9ecef; /* Light grey background */
+        color: #6c757d; /* Dimmed text color */
+        cursor: not-allowed; /* Shows a 'not allowed' cursor when hovering */
+    }
+</style>
 
 <form id="upload-form" method="post" enctype="multipart/form-data">
     {% csrf_token %}
@@ -64,6 +71,17 @@
 
 {% block js %}
 <script>
+
+    function lockInput(elementId) {
+        var element = $('#' + elementId);
+        element.on('click keydown dragover drop', function(event) {
+            // Prevent the default behavior for click, keydown, dragover, and drop events
+            event.preventDefault();
+        });
+        // Add the 'locked-input' class to visually indicate the element is locked
+        element.addClass('locked-input');
+    }
+
     $(document).ready(function() {
         $('button[type="submit"]').prop('disabled', true);
 
@@ -82,8 +100,9 @@
                     if (data["is_ok"] == true) {
                         if (data["pass"] == true) {
                             $('button[type="submit"]').prop('disabled', false);
-                            $('#fasta_file').prop('disabled', true);
-                            $('#metadata').prop('disabled', true);
+
+                            lockInput('fasta_file');
+                            lockInput('metadata');
                         }
                         $('#summary').html(data["log"].join('<br>'));
                         $('#summary').addClass('active');

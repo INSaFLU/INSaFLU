@@ -1832,8 +1832,6 @@ def upload_reference_panel_view(request):
                 return JsonResponse(data)
 
             process_SGE = ProcessSGE()
-            print(reference_fasta_file)
-            print(reference_fasta_temp_file_name.name)
 
             try:
                 # create reference source file

@@ -1683,10 +1683,14 @@ class ReferenceManagement(LoginRequiredMixin, generic.CreateView):
 
         tag_search = "search_references"
 
-        references = ReferenceSourceFileMap.objects.filter(
-            Q(reference_source_file__owner=None)
-            | Q(reference_source_file__owner__id=user.pk)
-        ).order_by("reference_source__description")
+        references = (
+            ReferenceSourceFileMap.objects.filter(
+                Q(reference_source_file__owner=None)
+                | Q(reference_source_file__owner__id=user.pk)
+            )
+            .order_by("reference_source__description", "reference_source__accid")
+            .distinct("reference_source__description", "reference_source__accid")
+        )
 
         if self.request.GET.get(tag_search) != None and self.request.GET.get(
             tag_search

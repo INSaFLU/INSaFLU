@@ -862,7 +862,7 @@ class TelevirReferencesTable(tables.Table):
     description = tables.Column(verbose_name="Description")
     accid = tables.Column(verbose_name="Accession ID")
     taxid = tables.Column(verbose_name="TaxID")
-    source = tables.Column(verbose_name="Source", empty_values=())
+    source = tables.Column(verbose_name="Files", empty_values=(), orderable=False)
     create_teleflu_reference = tables.Column(
         verbose_name="Create Reference",
         orderable=False,
@@ -897,7 +897,13 @@ class TelevirReferencesTable(tables.Table):
         return record.reference_source.taxid
 
     def render_source(self, record: ReferenceSourceFileMap):
-        return record.reference_source_file.file
+        records_same_accid = ReferenceSourceFileMap.objects.filter(
+            reference_source__accid=record.reference_source.accid
+        ).distinct("reference_source_file")
+        files_flat = [
+            record.reference_source_file.file for record in records_same_accid
+        ]
+        return ", ".join(files_flat)
 
     def render_create_teleflu_reference(self, record: ReferenceSourceFileMap):
 

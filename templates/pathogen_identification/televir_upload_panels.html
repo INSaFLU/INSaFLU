@@ -20,7 +20,8 @@
 {{ block.super }}
 {% breadcrumb "Project Index" "project-index" %}
 {% breadcrumb "TELEVIR Projects" "PIprojects_main" %}
-{% breadcrumb "Manage References" "" %}
+{% breadcrumb "Manage References" "televir_reference_files" %}
+{% breadcrumb "Upload New File" "" %}
 {% endblock %}
 
 
@@ -67,7 +68,6 @@
         $('button[type="submit"]').prop('disabled', true);
 
         let url = $('#check-button').attr('url');
-        console.log(url);
         
         $('#check-button').click(function() {
             var formData = new FormData($('#upload-form')[0]);
@@ -82,6 +82,8 @@
                     if (data["is_ok"] == true) {
                         if (data["pass"] == true) {
                             $('button[type="submit"]').prop('disabled', false);
+                            $('#fasta_file').prop('disabled', true);
+                            $('#metadata').prop('disabled', true);
                         }
                         $('#summary').html(data["log"].join('<br>'));
                         $('#summary').addClass('active');

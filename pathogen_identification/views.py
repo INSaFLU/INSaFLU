@@ -1832,6 +1832,8 @@ def upload_reference_panel_view(request):
                 return JsonResponse(data)
 
             process_SGE = ProcessSGE()
+            print(reference_fasta_file)
+            print(reference_fasta_temp_file_name.name)
 
             try:
                 # create reference source file
@@ -2066,7 +2068,7 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
             + 'title="Run combined metagenomics"'
             + f"pk={sample_pk} "
             + f"ref_name={sample_name} style='color: #fff;'"
-            + f'><i class="padding-button-table fa fa-paw padding-button-table" {color}></i> Map Combined </a>'
+            + f">Map Combined </a>"
         )
         metagenomics_parameters = (
             "<a href="

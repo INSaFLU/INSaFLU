@@ -20,27 +20,36 @@ from constants.software_names import SoftwareNames
 from fluwebvirus.settings import BASE_DIR, STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
-from pathogen_identification.models import (FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RawReference, ReferenceMap_Main,
-                                            ReferencePanel,
-                                            ReferenceSourceFileMap, RunMain,
-                                            TeleFluProject, TeleFluSample)
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.models import (
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReferenceMap_Main,
+    ReferencePanel,
+    ReferenceSourceFileMap,
+    RunMain,
+    TeleFluProject,
+    TeleFluSample,
+)
 from pathogen_identification.tables import ReferenceSourceTable
 from pathogen_identification.utilities.reference_utils import (
-    check_file_reference_submitted, check_raw_reference_submitted,
-    check_user_reference_exists, create_combined_reference)
+    check_file_reference_submitted,
+    check_raw_reference_submitted,
+    check_user_reference_exists,
+    create_combined_reference,
+)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
-from pathogen_identification.utilities.utilities_general import \
-    get_services_dir
-from pathogen_identification.utilities.utilities_pipeline import \
-    SoftwareTreeUtils
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.utilities_general import get_services_dir
+from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter, SampleReferenceManager, set_control_reports)
+    ReportSorter,
+    SampleReferenceManager,
+    set_control_reports,
+)
 from pathogen_identification.views import inject__added_references
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
@@ -1530,7 +1539,9 @@ def add_teleflu_sample(request):
 
 from pathogen_identification.models import SoftwareTreeNode, TelefluMapping
 from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils, Utils_Manager)
+    SoftwareTreeUtils,
+    Utils_Manager,
+)
 
 
 @login_required
@@ -1993,6 +2004,21 @@ def check_panel_upload_clean(request):
         reference_metadata_table_file = request.FILES.get("metadata", None)
         reference_fasta_file = request.FILES.get("fasta_file", None)
 
+        if os.path.splitext(reference_metadata_table_file.name)[1] not in [
+            ".tsv",
+            ".csv",
+        ]:
+            data["is_error"] = True
+            data["error_message"] = "Metadata file must be in tsv or csv format."
+            return JsonResponse(data)
+
+        if os.path.splitext(reference_fasta_file.name)[1] not in [".fasta", ".fa"]:
+            data["is_error"] = True
+            data["error_message"] = (
+                "Fasta file must be in fasta (.fa or .fasta) format."
+            )
+            return JsonResponse(data)
+
         reference_metadata_table = pd.DataFrame(
             columns=["accid", "taxid", "description"]
         )
@@ -2033,6 +2059,7 @@ def check_panel_upload_clean(request):
             reference_fasta_temp_file_name.flush()
             reference_fasta_temp_file_name.close()
             software.dos_2_unix(reference_fasta_temp_file_name.name)
+            data["temp_file"] = reference_fasta_temp_file_name.name
         except Exception as e:
             some_error_in_files = True
             error_message = "Error in the fasta file"

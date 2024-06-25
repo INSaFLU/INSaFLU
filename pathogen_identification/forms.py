@@ -58,6 +58,38 @@ class UploadFileForm(forms.Form):
     fasta_file = forms.FileField(help_text=description_fasta)
     metadata = forms.FileField(help_text=description_metadata)
 
+    def __init__(self, *args, **kwargs):
+        ## add ids to filefields
+        super(UploadFileForm, self).__init__(*args, **kwargs)
+
+        self.fields["fasta_file"].widget.attrs["id"] = "fasta_file"
+        self.fields["metadata"].widget.attrs["id"] = "metadata"
+
+    def is_valid(self) -> bool:
+        """
+        Check if the form is valid
+        """
+        valid = super(UploadFileForm, self).is_valid()
+        if not valid:
+            return valid
+
+        fasta_file = self.cleaned_data.get("fasta_file")
+        metadata = self.cleaned_data.get("metadata")
+
+        print("#TESTING")
+        print(fasta_file)
+        print(metadata)
+
+        if fasta_file is None:
+            self.add_error("fasta_file", "Please upload a FASTA file.")
+            return False
+
+        if metadata is None:
+            self.add_error("metadata", "Please upload a metadata file.")
+            return False
+
+        return True
+
 
 ## https://kuanyui.github.io/2015/04/13/django-crispy-inline-form-layout-with-bootstrap/
 class PanelReferencesUploadForm(forms.ModelForm):

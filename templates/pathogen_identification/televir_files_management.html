@@ -109,45 +109,12 @@
 {% endblock content %}
 
 
+
 {% block js %}
-    {% load static from staticfiles %}
-    <script type="text/javascript">
+{% load static from staticfiles %}
 
-        $(".remove_file").on('click', function(){
-            console.log('remove file');
-            var file_name = $(this).attr('file-name');
-            var file_pk = $(this).attr('pk');
-            console.log(file_name);
-            var remove_single_value_url = $(this).attr('remove-single-value-url');
-            $("#id-modal-body-remove-sample").html('<label id="id-label-remove" class="col-form-label">Remove file: '+file_name+'?</label>');
-            $("#id-modal-body-remove-sample").attr('file_pk', file_pk);
-            $("#id-remove-button").attr('remove-single-value-url', remove_single_value_url);
-            $("#id_remove_modal").modal('show');
-        });
+{% load static from staticfiles %}
 
-        $("#id-remove-button").on('click', function(){
-            var remove_single_value_url = $(this).attr('remove-single-value-url');
-            var file_pk = $("#id-modal-body-remove-sample").attr('file_pk');
-            console.log('remove file');
-            console.log(file_pk);
-            console.log(remove_single_value_url);
-            $.ajax({
-                url: remove_single_value_url,
-                type: 'POST',
-                data: {
-                    'file_id': file_pk,
-                    'csrfmiddlewaretoken': '{{ csrf_token }}'
-                },
-                success: function(data){
-                    if (data["is_ok"] == true){
-                        location.reload();
-                    } else {
-                        alert(data["message"]);
-                    }
-                }
-            });
-        });
-
-    </script>
+<script type="text/javascript" src="{% static 'js/televir_projects/reference_files.js' %}"></script>
 
 {% endblock js %}

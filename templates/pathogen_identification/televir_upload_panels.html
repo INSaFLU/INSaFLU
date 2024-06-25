@@ -70,56 +70,7 @@
 {% endblock %}
 
 {% block js %}
-<script>
+<script type="text/javascript" src="{% static 'js/televir_projects/reference_files.js' %}"></script>
 
-    function lockInput(elementId) {
-        var element = $('#' + elementId);
-        element.on('click keydown dragover drop', function(event) {
-            // Prevent the default behavior for click, keydown, dragover, and drop events
-            event.preventDefault();
-        });
-        // Add the 'locked-input' class to visually indicate the element is locked
-        element.addClass('locked-input');
-    }
-
-    $(document).ready(function() {
-        $('button[type="submit"]').prop('disabled', true);
-
-        let url = $('#check-button').attr('url');
-        
-        $('#check-button').click(function() {
-            var formData = new FormData($('#upload-form')[0]);
-            $.ajax({
-                url: url,
-                type: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function(data) {
-                    $('#summary').html(data);
-                    if (data["is_ok"] == true) {
-                        if (data["pass"] == true) {
-                            $('button[type="submit"]').prop('disabled', false);
-
-                            lockInput('fasta_file');
-                            lockInput('metadata');
-                        }
-                        $('#summary').html(data["log"].join('<br>'));
-                        $('#summary').addClass('active');
-                        $('#summary').html(data["log"].join('<br>')).show();
-                        // remove height of the summary div
-                        $('#summary').css('height', 'auto');                  
-                    } else if (data["is_error"]) {
-                        $('#id_messages_remove').append('<div class="alert alert-danger" role="alert">' + data["error_message"] + '</div>');
-                    } else {
-                        $('button[type="submit"]').prop('disabled', true);
-                    }
-                }
-            });
-        });
-    });
-
-    
-</script>
 
 {% endblock %}

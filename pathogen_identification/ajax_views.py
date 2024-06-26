@@ -20,36 +20,27 @@ from constants.software_names import SoftwareNames
 from fluwebvirus.settings import BASE_DIR, STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReferenceMap_Main,
-    ReferencePanel,
-    ReferenceSourceFileMap,
-    RunMain,
-    TeleFluProject,
-    TeleFluSample,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference, ReferenceMap_Main,
+                                            ReferencePanel,
+                                            ReferenceSourceFileMap, RunMain,
+                                            TeleFluProject, TeleFluSample)
 from pathogen_identification.tables import ReferenceSourceTable
 from pathogen_identification.utilities.reference_utils import (
-    check_file_reference_submitted,
-    check_raw_reference_submitted,
-    check_user_reference_exists,
-    create_combined_reference,
-)
+    check_file_reference_submitted, check_raw_reference_submitted,
+    check_user_reference_exists, create_combined_reference)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
-from pathogen_identification.utilities.utilities_general import get_services_dir
-from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
+from pathogen_identification.utilities.utilities_general import \
+    get_services_dir
+from pathogen_identification.utilities.utilities_pipeline import \
+    SoftwareTreeUtils
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter,
-    SampleReferenceManager,
-    set_control_reports,
-)
+    ReportSorter, SampleReferenceManager, set_control_reports)
 from pathogen_identification.views import inject__added_references
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
@@ -430,6 +421,92 @@ def submit_sample_mapping_panels(request):
                             map_run_pk=panel_mapping_run.pk,
                         )
                         data["is_deployed"] = True
+
+        except Exception as e:
+            print(e)
+            print("error")
+
+            data["is_ok"] = False
+        return JsonResponse(data)
+
+
+@login_required
+@require_POST
+def submit_samples_mapping_panels(request):
+    if request.is_ajax():
+        data = {
+            "is_ok": True,
+            "is_deployed": False,
+            "is_empty": False,
+            "samples_deployed": 0,
+            "message": "",
+        }
+
+        project_id = int(request.POST["project_id"])
+        project = Projects.objects.get(id=int(project_id))
+        user= request.user
+
+        project_samples = PIProject_Sample.objects.filter(project=project)
+
+        sample_ids = request.POST.getlist("sample_ids[]")
+        sample_ids = [int(sample_id) for sample_id in sample_ids]
+
+        if len(sample_ids) > 0:
+            project_samples = project_samples.filter(pk__in=sample_ids)
+
+        try:
+            for sample in project_samples:
+                reference_manager = SampleReferenceManager(sample)
+
+                software_utils = SoftwareTreeUtils(user, project, sample=sample)
+                runs_to_deploy, workflow_deployed_dict = (
+                    software_utils.check_runs_to_submit_mapping_only(sample)
+                )
+
+                if len(runs_to_deploy) == 0:
+                    return data
+
+                sample_panels = sample.panels_added
+
+                if len(sample_panels) == 0:
+                    data["is_empty"] = True
+                    continue
+
+                try:
+                    for sample, leaves_to_deploy in runs_to_deploy.items():
+                        for leaf in leaves_to_deploy:
+                            for panel in sample_panels:
+                                if panel.is_deleted:
+                                    continue
+
+                                references = RawReference.objects.filter(panel=panel)
+                                run_panel_copy = reference_manager.copy_panel(panel)
+
+                                panel_mapping_run = (
+                                    reference_manager.mapping_request_panel_run_from_leaf(
+                                        leaf, panel_pk=run_panel_copy.pk
+                                    )
+                                )
+                                for reference in references:
+                                    reference.pk = None
+                                    reference.run = panel_mapping_run
+                                    reference.panel = run_panel_copy
+                                    reference.save()
+
+                                taskID = process_SGE.set_submit_televir_sample_metagenomics(
+                                    user=request.user,
+                                    sample_pk=sample.pk,
+                                    leaf_pk=leaf.pk,
+                                    mapping_request=True,
+                                    map_run_pk=panel_mapping_run.pk,
+                                )
+                                data["is_deployed"] = True
+                
+                except Exception as e:
+                    print(e)
+                    print("error")
+
+                    data["is_ok"] = False
 
         except Exception as e:
             print(e)
@@ -1539,9 +1616,7 @@ def add_teleflu_sample(request):
 
 from pathogen_identification.models import SoftwareTreeNode, TelefluMapping
 from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils,
-    Utils_Manager,
-)
+    SoftwareTreeUtils, Utils_Manager)
 
 
 @login_required

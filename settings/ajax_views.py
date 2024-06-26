@@ -3,6 +3,7 @@ Created on Dec 6, 2017
 
 @author: mmp
 """
+
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 
@@ -13,7 +14,8 @@ from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project, ProjectSample, Sample
 from pathogen_identification.models import PIProject_Sample
 from pathogen_identification.models import Projects as PIProjects
-from pathogen_identification.utilities.utilities_pipeline import Pipeline_Makeup
+from pathogen_identification.utilities.utilities_pipeline import \
+    Pipeline_Makeup
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software import DefaultSoftware
@@ -139,9 +141,11 @@ def set_default_parameters(request):
                         ### need to re-run this sample with snippy if the values change
                         if default_project_software.is_change_values_for_software(
                             software.name,
-                            ConstantsSettings.TECHNOLOGY_illumina
-                            if project_sample.is_sample_illumina()
-                            else ConstantsSettings.TECHNOLOGY_minion,
+                            (
+                                ConstantsSettings.TECHNOLOGY_illumina
+                                if project_sample.is_sample_illumina()
+                                else ConstantsSettings.TECHNOLOGY_minion
+                            ),
                             request.user.username,
                         ):
                             b_change = True
@@ -213,10 +217,10 @@ def set_default_parameters(request):
                     ### can not do anything because the sample is running
                     if sample.is_sample_in_the_queue:
                         data = {"is_ok": False}
-                        data[
-                            "message"
-                        ] = "You cannot do this operation. The sample '{}' is in pipeline to run.".format(
-                            sample.name
+                        data["message"] = (
+                            "You cannot do this operation. The sample '{}' is in pipeline to run.".format(
+                                sample.name
+                            )
                         )
                         return JsonResponse(data)
 
@@ -243,9 +247,11 @@ def set_default_parameters(request):
                     ### need to re-run this sample with NanoFilt if the values change
                     if default_project_software.is_change_values_for_software(
                         software.name,
-                        ConstantsSettings.TECHNOLOGY_illumina
-                        if sample.is_type_fastq_gz_sequencing()
-                        else ConstantsSettings.TECHNOLOGY_minion,
+                        (
+                            ConstantsSettings.TECHNOLOGY_illumina
+                            if sample.is_type_fastq_gz_sequencing()
+                            else ConstantsSettings.TECHNOLOGY_minion
+                        ),
                         request.user.username,
                     ):
                         b_change = True
@@ -408,29 +414,29 @@ def mask_consensus(request):
 
             if change_mask_consensus_in_project(project, masking_consensus_proposed):
                 b_change_data = True
-                data[
-                    "message"
-                ] = "The project '{}' is going to mask/unmask consensus. ".format(
-                    project.name
+                data["message"] = (
+                    "The project '{}' is going to mask/unmask consensus. ".format(
+                        project.name
+                    )
                 )
                 data["is_going_to_mask"] = True
             else:
-                data[
-                    "message"
-                ] = "Masking regions are the same, nothing to do for project '{}'".format(
-                    project.name
+                data["message"] = (
+                    "Masking regions are the same, nothing to do for project '{}'".format(
+                        project.name
+                    )
                 )
                 data["is_going_to_mask"] = False
 
-            data[
-                "new_title_i"
-            ] = masking_consensus_proposed.get_message_mask_to_show_in_web_site()
-            data[
-                "new_class_i"
-            ] = "padding-button-table {} fa fa-2x fa-pencil padding-button-table tip".format(
-                "warning_fa_icon"
-                if masking_consensus_proposed.has_masking_data()
-                else ""
+            data["new_title_i"] = (
+                masking_consensus_proposed.get_message_mask_to_show_in_web_site()
+            )
+            data["new_class_i"] = (
+                "padding-button-table {} fa fa-2x fa-pencil padding-button-table tip".format(
+                    "warning_fa_icon"
+                    if masking_consensus_proposed.has_masking_data()
+                    else ""
+                )
             )
             data["default"] = (
                 "Has positions masked"
@@ -453,25 +459,25 @@ def mask_consensus(request):
                 project_sample, masking_consensus_proposed
             ):
                 b_change_data = True
-                data[
-                    "message"
-                ] = "The project sample is going to mask/unmask consensus. "
+                data["message"] = (
+                    "The project sample is going to mask/unmask consensus. "
+                )
                 data["is_going_to_mask"] = True
             else:
-                data[
-                    "message"
-                ] = "Masking regions are the same, nothing to do for project sample"
+                data["message"] = (
+                    "Masking regions are the same, nothing to do for project sample"
+                )
                 data["is_going_to_mask"] = False
 
-            data[
-                "new_title_i"
-            ] = masking_consensus_proposed.get_message_mask_to_show_in_web_site()
-            data[
-                "new_class_i"
-            ] = "padding-button-table {} fa fa-2x fa-pencil padding-button-table tip".format(
-                "warning_fa_icon"
-                if masking_consensus_proposed.has_masking_data()
-                else ""
+            data["new_title_i"] = (
+                masking_consensus_proposed.get_message_mask_to_show_in_web_site()
+            )
+            data["new_class_i"] = (
+                "padding-button-table {} fa fa-2x fa-pencil padding-button-table tip".format(
+                    "warning_fa_icon"
+                    if masking_consensus_proposed.has_masking_data()
+                    else ""
+                )
             )
             data["default"] = (
                 "Has positions masked"
@@ -507,10 +513,10 @@ def mask_consensus(request):
                     data = {"is_ok": False}
             else:  ### there's no projects to apply
                 data["is_ok"] = True
-                data[
-                    "message"
-                ] = "Mask/unmask consensus for the project '{}' are set.".format(
-                    project.name
+                data["message"] = (
+                    "Mask/unmask consensus for the project '{}' are set.".format(
+                        project.name
+                    )
                 )
 
         return JsonResponse(data)
@@ -667,9 +673,9 @@ def get_mask_consensus_actual_values(request):
                 ).count()
                 > 0
             ):
-                data[
-                    "warning_project"
-                ] = "If you modify mask values it will change all the masks in the samples associated to the this project."
+                data["warning_project"] = (
+                    "If you modify mask values it will change all the masks in the samples associated to the this project."
+                )
             data["is_ok"] = True
         elif not project_sample_id is None:
             try:
@@ -715,7 +721,7 @@ def turn_on_off_software(request):
     Don't do this if the software already run
     """
     if request.is_ajax():
-        data = {"is_ok": False}
+        data = {"is_ok": False, "other_kills": []}
         software_id_a = "software_id"
         sample_id_a = "sample_id"
         project_id_a = "project_id"
@@ -723,6 +729,7 @@ def turn_on_off_software(request):
         type_of_use_id_a = "type_of_use_id"
         televir_project_id_a = "televir_project_id"
         televir_project_sample_id_a = "televir_project_sample_id"
+        
 
         ## some pre-requisites
         if not request.user.is_active or not request.user.is_authenticated:
@@ -776,7 +783,6 @@ def turn_on_off_software(request):
                 )
                 software = Software.objects.get(pk=software_id)
                 current_is_to_run = software.is_to_run
-                print(televir_project_id, televir_project_sample_id)
                 if (
                     not televir_project_sample_id is None
                     and not televir_project_id is None
@@ -784,6 +790,7 @@ def turn_on_off_software(request):
                     televir_project_sample = PIProject_Sample.objects.get(
                         pk=televir_project_sample_id
                     )
+
                     pipeline_steps_project_sample = (
                         pipeline_makeup.get_pipeline_makeup_result_of_operation(
                             software,
@@ -793,16 +800,13 @@ def turn_on_off_software(request):
                         )
                     )
 
-                    print(set(pipeline_steps_project_sample))
-
                     makeup = pipeline_makeup.match_makeup_name_from_list(
                         pipeline_steps_project_sample
                     )
-                    print("makeup", makeup)
                     if makeup is None:
-                        data[
-                            "message"
-                        ] = f"You cannot perform this operation. Project '{televir_project_sample.project.name}' with sample '{televir_project_sample.sample.name}' would not meet minimum pipeline step requirements."
+                        data["message"] = (
+                            f"You cannot perform this operation. Project '{televir_project_sample.project.name}' with sample '{televir_project_sample.sample.name}' would not meet minimum pipeline step requirements."
+                        )
 
                         return JsonResponse(data)
 
@@ -821,9 +825,9 @@ def turn_on_off_software(request):
                         pipeline_steps_televir_project
                     )
                     if makeup is None:
-                        data[
-                            "message"
-                        ] = f"You cannot perform this operation. Project '{televir_project}' would not meet minimum pipeline step requirements."
+                        data["message"] = (
+                            f"You cannot perform this operation. Project '{televir_project}' would not meet minimum pipeline step requirements."
+                        )
 
                         return JsonResponse(data)
 
@@ -841,9 +845,9 @@ def turn_on_off_software(request):
                             )
                         )
                         if makeup is None:
-                            data[
-                                "message"
-                            ] = "You cannot perform this operation. Deployment would not meet minimum pipeline step requirements."
+                            data["message"] = (
+                                "You cannot perform this operation. Deployment would not meet minimum pipeline step requirements."
+                            )
 
                             return JsonResponse(data)
 
@@ -854,10 +858,10 @@ def turn_on_off_software(request):
 
                     ## sample is not ready for run again, To prevent to many ON|OFF
                     if not project_sample.is_finished:
-                        data[
-                            "message"
-                        ] = "You cannot do this operation. The project '{}' with sample '{}' is in pipeline to run.".format(
-                            project_sample.project.name, project_sample.sample.name
+                        data["message"] = (
+                            "You cannot do this operation. The project '{}' with sample '{}' is in pipeline to run.".format(
+                                project_sample.project.name, project_sample.sample.name
+                            )
                         )
                         return JsonResponse(data)
 
@@ -929,10 +933,10 @@ def turn_on_off_software(request):
 
                     ## sample is not ready for run again
                     if sample.is_sample_in_the_queue:
-                        data[
-                            "message"
-                        ] = "You cannot do this operation. The sample '{}' is in pipeline to run.".format(
-                            sample.name
+                        data["message"] = (
+                            "You cannot do this operation. The sample '{}' is in pipeline to run.".format(
+                                sample.name
+                            )
                         )
                         return JsonResponse(data)
 
@@ -981,6 +985,79 @@ def turn_on_off_software(request):
                 is_to_run = default_parameters.set_software_to_run_by_software(
                     software, project, televir_project, project_sample, sample
                 )
+
+                if (
+                    software.pipeline_step.name
+                    == ConstantsSettings.PIPELINE_NAME_remapping
+                    and not is_to_run
+                ):
+
+                    if (
+                        Software.objects.filter(
+                            owner=software.owner,
+                            type_of_use=software.type_of_use,
+                            parameter__televir_project=televir_project,
+                            parameter__televir_project_sample=televir_project_sample,
+                            pipeline_step=software.pipeline_step,
+                            technology=software.technology,
+                            is_to_run=True,
+                        ).exists()
+                        == False
+                    ):
+
+                        active_filters = Software.objects.filter(
+                            owner=software.owner,
+                            type_of_use=software.type_of_use,
+                            parameter__televir_project=televir_project,
+                            parameter__televir_project_sample=televir_project_sample,
+                            pipeline_step__name=ConstantsSettings.PIPELINE_NAME_remap_filtering,
+                            technology=software.technology,
+                            is_to_run=True,
+                        ).distinct()
+
+                        for filter in active_filters:
+
+                            _ = default_parameters.set_software_to_run_by_software(
+                                filter, project, televir_project, project_sample, sample
+                            )
+
+                            data["other_kills"] += [filter.pk]
+
+                if (
+                    software.pipeline_step.name
+                    == ConstantsSettings.PIPELINE_NAME_request_mapping
+                    and not is_to_run
+                ):
+                    if (
+                        Software.objects.filter(
+                            owner=software.owner,
+                            type_of_use=software.type_of_use,
+                            parameter__televir_project=televir_project,
+                            parameter__televir_project_sample=televir_project_sample,
+                            pipeline_step=software.pipeline_step,
+                            technology=software.technology,
+                            is_to_run=True,
+                        ).exists()
+                        == False
+                    ):
+
+                        active_filters = Software.objects.filter(
+                            owner=software.owner,
+                            type_of_use=software.type_of_use,
+                            parameter__televir_project=televir_project,
+                            parameter__televir_project_sample=televir_project_sample,
+                            pipeline_step__name=ConstantsSettings.PIPELINE_NAME_map_filtering,
+                            technology=software.technology,
+                            is_to_run=True,
+                        ).distinct()
+
+                        for filter in active_filters:
+
+                            _ = default_parameters.set_software_to_run_by_software(
+                                filter, project, televir_project, project_sample, sample
+                            )
+
+                            data["other_kills"] += [filter.pk]
 
                 ## set a new default
                 data["is_to_run"] = is_to_run
@@ -1089,18 +1166,18 @@ def get_software_name_to_turn_on_off(request):
                         is_to_run = software.is_to_run
 
                     data["is_ok"] = True
-                    data[
-                        "message"
-                    ] = "Do you want to turn {} '{}' in '{}' technology?.".format(
-                        "OFF" if is_to_run else "ON",
-                        software.name_extended,
-                        software.technology.name,
+                    data["message"] = (
+                        "Do you want to turn {} '{}' in '{}' technology?.".format(
+                            "OFF" if is_to_run else "ON",
+                            software.name_extended,
+                            software.technology.name,
+                        )
                     )
                 else:
-                    data[
-                        "message"
-                    ] = "'{}' in '{}' technology can not be ON/OFF.".format(
-                        software.name_extended, software.technology.name
+                    data["message"] = (
+                        "'{}' in '{}' technology can not be ON/OFF.".format(
+                            software.name_extended, software.technology.name
+                        )
                     )
 
             except Software.DoesNotExist:

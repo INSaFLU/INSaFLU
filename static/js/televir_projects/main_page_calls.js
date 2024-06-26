@@ -234,6 +234,46 @@ $("#deploypi_added_mapping_btn").click(function (e) {
     });
 });
 
+
+$("#deploypi_panels_btn").click(function (e) {
+    var user_id = $('#deploypi_btn').attr('user-id');
+    var project_id = $('#deploypi_btn').attr('project-id');
+    csrf_token = $('#teleflu_create-button').attr("csrf");
+
+    // get checked samples rows
+    var checkedRows_samples = [];
+    $('.select_sample-checkbox:checked').each(function () {
+        // collect ids of checked rows
+        var sample_id = $(this).attr('sample_id');
+        checkedRows_samples.push(sample_id);
+    });
+    
+    $.ajax({
+        url: $('#deploypi_panels_btn').attr("deploy-url"),
+        type: "POST",
+        data: {
+            'csrfmiddlewaretoken': csrf_token,
+            'id': $(this).attr('id'),
+            'user_id': user_id,
+            'project_id': project_id,
+            'sample_ids': checkedRows_samples,
+        },
+        data_type: 'json',
+        success: function (data) {
+            if (data["is_ok"] == true && data["is_deployed"] == false) {
+                alert(data["message"]);
+            }
+            else if (data["is_ok"] == true && data["is_deployed"] == true) {
+                var how_many = data["samples_deployed"];
+                alert(data["message"]);
+            }
+            $.unblockUI();
+        }
+
+    });
+});
+
+
 $("#deploypi_btn").click(function (e) {
 
     var user_id = $('#deploypi_btn').attr('user-id');

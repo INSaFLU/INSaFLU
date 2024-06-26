@@ -222,6 +222,11 @@ urlpatterns = [
         name="map_selected_references_project_samples",
     ),
     url(
+        r"deploy_panel_mapping_request_project_samples$",
+        PIajax_views.submit_samples_mapping_panels,
+        name="map_panels_project_samples",
+    ),
+    url(
         r"deploy_mapping_screeing$",
         PIajax_views.submit_sample_screening_televir,
         name="deploy_screening_televir_project_sample",

@@ -15,7 +15,6 @@ $('#id-set-turn-on-off-button').on('click', function(){
 	var type_of_use_id = $('#id-set-turn-on-off-button').attr('type_of_use_id');
 	//block all page
 	wait_screen();
-	console.log('televir_project_sample_id: ' + televir_project_sample_id);
 	
 	$.ajax({
         url: '/settings/ajax/turn_on_off_software',
@@ -34,7 +33,12 @@ $('#id-set-turn-on-off-button').on('click', function(){
 	    	if (data['is_ok']) {
 				var element = document.getElementById('check_box_' + software_id);
 				element.checked = data['is_to_run'];
-	        	  
+				
+				for (const new_id of data['other_kills']) {
+					var new_element = document.getElementById('check_box_' + new_id);
+					new_element.checked = data['is_to_run'];
+				}
+	        	
 	        	/// add message with informaton
 	        	$('#id_messages_set_default').append('<div class="alert alert-dismissible alert-success">' +
 	        		data['message'] +
@@ -77,7 +81,6 @@ $(document).on("click", "a", function(e){
 		var project_id = $('#id_show_turn_on_off_modal').attr('project_id');
 		var project_sample_id = $('#id_show_turn_on_off_modal').attr('project_sample_id');
 		var sample_id = $('#id_show_turn_on_off_modal').attr('sample_id');
-		console.log('televir_project_sample_id: ' + televir_project_sample_id);
 		//block all page
 		wait_screen();
 		

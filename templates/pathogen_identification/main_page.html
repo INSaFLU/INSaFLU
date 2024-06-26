@@ -71,9 +71,10 @@
                                 <a><span class="hidden-phone"> Run </span></a> 
                             </button>
                             <div class="dropdown-menu pull-right">
-                                <a href="#" id="deploypi_btn" class="dropdown-item" style="text-align:center;" deploy-url="{% url deploy_url %}" user-id="{{ user_id }}" project-id= "{{ project_index }}"><span class="hidden-phone" >  Classic Workflows </span></a>
-                                <a href="#" id="deploypi_mapping_btn" class="dropdown-item" style="text-align:center;" deploy-url="{% url 'deploy_Project_PIMapping' %}" ><span class="hidden-phone"> Map Combined </span></a>
-                                <a href="#" id="deploypi_added_mapping_btn" class="dropdown-item" style="text-align:center;" deploy-url="{% url 'map_selected_references_project_samples' %}" ><span class="hidden-phone"> Map Added </span></a>
+                                <a href="#" id="deploypi_btn" class="dropdown-item" style="text-align:left;" deploy-url="{% url deploy_url %}" user-id="{{ user_id }}" project-id= "{{ project_index }}"><span class="hidden-phone" >  Classic Workflows </span></a>
+                                <a href="#" id="deploypi_mapping_btn" class="dropdown-item" style="text-align:left;" deploy-url="{% url 'deploy_Project_PIMapping' %}" ><span class="hidden-phone"> Map Combined </span></a>
+                                <a href="#" id="deploypi_added_mapping_btn" class="dropdown-item" style="text-align:left;" deploy-url="{% url 'map_selected_references_project_samples' %}" ><span class="hidden-phone"> Map Added </span></a>
+                                <a href="#" id="deploypi_panels_btn" class="dropdown-item" style="text-align:left;" deploy-url="{% url 'map_panels_project_samples' %}" ><span class="hidden-phone"> Map Panels </span></a>
                             </div>
                             {% else %}
                             <button type="button" class="btn btn-primary dark" id="deploypi_btn" deploy-url="{% url deploy_url %}" aria-haspopup="true" aria-expanded="false">

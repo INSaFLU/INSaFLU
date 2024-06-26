@@ -392,9 +392,11 @@ class SampleTableOne(tables.Table):
         orderable=False,
         attrs={
             "th": {
-                "style": "background-color: #dce4f0; border-left: 5px solid #ddd; text-align: center;",
+                "style": "background-color: #dce4f0; border-left: 5px solid #ddd; border-right: 5px solid #ddd; text-align: center;",
             },
-            "td": {"style": "text-align: center;"},
+            "td": {
+                "style": "background-color: #dce4f0; border-left: 5px solid #ddd; border-right: 5px solid #ddd; text-align: center;"
+            },
             "th__input": {"id": "checkBoxAll"},
         },
     )
@@ -404,10 +406,8 @@ class SampleTableOne(tables.Table):
         orderable=False,
         empty_values=(),
         attrs={
-            "td": {"style": "border-left: 5px solid #ddd; text-align: center;"},
-            "th": {
-                "style": "border-left: 5px solid #ddd; background-color: #dce4f0; text-align: center;"
-            },
+            "td": {"style": "text-align: center;"},
+            "th": {"style": "text-align: center;"},
         },
     )
 

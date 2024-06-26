@@ -260,6 +260,7 @@ $("#deploypi_panels_btn").click(function (e) {
         },
         data_type: 'json',
         success: function (data) {
+            console.log(data);
             if (data["is_ok"] == true && data["is_deployed"] == false) {
                 alert(data["message"]);
             }

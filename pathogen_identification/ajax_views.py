@@ -442,9 +442,11 @@ def submit_samples_mapping_panels(request):
             "message": "",
         }
 
+        process_SGE = ProcessSGE()
+
         project_id = int(request.POST["project_id"])
         project = Projects.objects.get(id=int(project_id))
-        user= request.user
+        user = request.user
 
         project_samples = PIProject_Sample.objects.filter(project=project)
 
@@ -455,6 +457,9 @@ def submit_samples_mapping_panels(request):
             project_samples = project_samples.filter(pk__in=sample_ids)
 
         try:
+            samples_submitted = 0
+            errors= ""
+
             for sample in project_samples:
                 reference_manager = SampleReferenceManager(sample)
 
@@ -482,10 +487,8 @@ def submit_samples_mapping_panels(request):
                                 references = RawReference.objects.filter(panel=panel)
                                 run_panel_copy = reference_manager.copy_panel(panel)
 
-                                panel_mapping_run = (
-                                    reference_manager.mapping_request_panel_run_from_leaf(
-                                        leaf, panel_pk=run_panel_copy.pk
-                                    )
+                                panel_mapping_run = reference_manager.mapping_request_panel_run_from_leaf(
+                                    leaf, panel_pk=run_panel_copy.pk
                                 )
                                 for reference in references:
                                     reference.pk = None
@@ -493,26 +496,33 @@ def submit_samples_mapping_panels(request):
                                     reference.panel = run_panel_copy
                                     reference.save()
 
-                                taskID = process_SGE.set_submit_televir_sample_metagenomics(
-                                    user=request.user,
-                                    sample_pk=sample.pk,
-                                    leaf_pk=leaf.pk,
-                                    mapping_request=True,
-                                    map_run_pk=panel_mapping_run.pk,
+                                taskID = (
+                                    process_SGE.set_submit_televir_sample_metagenomics(
+                                        user=request.user,
+                                        sample_pk=sample.pk,
+                                        leaf_pk=leaf.pk,
+                                        mapping_request=True,
+                                        map_run_pk=panel_mapping_run.pk,
+                                    )
                                 )
                                 data["is_deployed"] = True
-                
+
                 except Exception as e:
                     print(e)
                     print("error")
 
                     data["is_ok"] = False
+                    errors += f" Error deploying sample {sample.name}"
 
         except Exception as e:
             print(e)
             print("error")
 
             data["is_ok"] = False
+            data["message"] = errors
+
+        data["message"]= f"Deployed {samples_submitted} samples. {errors}"
+
         return JsonResponse(data)
 
 

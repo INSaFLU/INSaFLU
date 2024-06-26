@@ -191,6 +191,13 @@ class RunMetadataHandler:
 
         ### ############################################################# ###
         reference_table = reference_utils.sample_reference_tables()
+        print("REFERENCE TABLE")
+        print(reference_table.head())
+        print(
+            reference_table[
+                ["taxid", "accid", "description", "global_ranking", "ensemble_ranking"]
+            ]
+        )
 
         self.generate_targets_from_report(reference_table, max_remap=1)
 

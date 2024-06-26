@@ -96,7 +96,7 @@ $('#id-kill-all-button').on('click', function(){
             } else {
               /// add message with informaton
               $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
-                'Project + \'' + $('#id-kill-all-button').attr('project_name') + '\' Rybs were successfully terminated.' +
+                'Project + \'' + $('#id-kill-all-button').attr('project-name') + '\' jobs were successfully terminated.' +
                 '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
                 '</div>');
               location.reload();

@@ -431,7 +431,7 @@
         <div id="collapseReport" class="collapse show" role="tabpanel" aria-labelledby="headingReport">
             <div class="card-block">
                 <div style="padding: 2px; overflow-x:auto;">    
-                    <table class="table" width="100%" id="report_table">
+                <table class="table table-fixed" width="100%" id="report_table">
                     <thead>
                         <tr class="header">
                             <th class="description-column">Description</th>
@@ -461,9 +461,10 @@
                             {% endif %}
                         </tr>
                     </thead>
+
                     <tbody>
 
-                        {% for final_report in report_list %}
+                    {% for final_report in report_list %}
                         {% if sort_performed %}
                         <tr>
                             <td colspan="100%">
@@ -479,7 +480,7 @@
                                        <button class="showSecondaryRows" type="button" style="visibility: hidden;">
                                            <i class="fa fa-toggle-off toggle-icon"></i>
                                        </button>                                        
-                                   </div>
+                                    </div>
                                     {% endif %}
                                     <!-- First section -->
                                     <div class="custom-section" id="info_{{ final_report.name }}">
@@ -537,7 +538,15 @@
                         <tr class="parent {{value.row_class_name}}" style="display: {{value.display}}" id="row_{{value.accid}}" group-name="{{final_report.name}}" first="{{value.first_in_group}}">
 
                             <td data-title="Description" style="text-align: left;">
-
+                                {% if value.first_in_group %}
+                                {% if final_report.has_multiple %}
+                                        <i class="fa fa-empty sort-icon"  title="Best Coverage"></i>
+                                {% else %}
+                                        <i class="fa fa-empty sort-icon"  title="Best Coverage"></i>
+                                
+                                {% endif %}
+                                
+                                {% endif %}
                                 <a href="#" id="plot_show" >{{value.description}}</a>
                             </td>
                             <td data-title="Taxid">{{value.taxid}}</td>
@@ -755,7 +764,7 @@
                     </tr>
                     {% endfor %}
                     </tbody>
-                    </table>
+                </table>
                 </div>
             </div>
         </div>

@@ -164,6 +164,7 @@ class RunMetadataHandler:
         proxy_rclass = reference_utils.reference_table_renamed(
             reference_table, {"read_counts": "counts"}
         )
+
         proxy_aclass = reference_utils.reference_table_renamed(
             reference_table, {"contig_counts": "counts"}
         )
@@ -174,8 +175,7 @@ class RunMetadataHandler:
         self.merge_reports_clean(
             max_taxids,
         )
-        print("###############3")
-        print(self.merged_targets)
+
         self.generate_targets_from_report(
             reference_table,
             max_taxids=max_taxids,

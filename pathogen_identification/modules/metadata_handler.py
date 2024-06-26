@@ -152,7 +152,7 @@ class RunMetadataHandler:
 
                 accids_replete += 1
 
-    def merge_sample_references(
+    def merge_sample_references_classic_compound(
         self, sample_registered: PIProject_Sample, max_taxids: int, max_remap: int = 15
     ):
         """
@@ -175,6 +175,24 @@ class RunMetadataHandler:
         self.merge_reports_clean(
             max_taxids,
         )
+
+        self.generate_targets_from_report(
+            reference_table,
+            max_taxids=max_taxids,
+            max_remap=max_remap,
+            skip_scrape=False,
+        )
+
+    def merge_sample_references_ensemble(
+        self, sample_registered: PIProject_Sample, max_taxids: int, max_remap: int = 15
+    ):
+
+        reference_utils = RawReferenceUtils(sample_registered)
+
+        ### ############################################################# ###
+        reference_table = reference_utils.sample_reference_tables()
+
+        self.generate_targets_from_report(reference_table, max_remap=1)
 
         self.generate_targets_from_report(
             reference_table,

@@ -9,6 +9,7 @@ from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.models import (
     PIProject_Sample,
     RawReference,
+    RawReferenceCompoundModel,
     ReferenceSourceFileMap,
     RunMain,
 )
@@ -188,23 +189,56 @@ class RunMetadataHandler:
     ):
 
         reference_utils = RawReferenceUtils(sample_registered)
-
         ### ############################################################# ###
-        reference_table = reference_utils.sample_reference_tables()
-        print("REFERENCE TABLE")
-        print(reference_table.head())
-        print(
-            reference_table[
-                ["taxid", "accid", "description", "global_ranking", "ensemble_ranking"]
-            ]
+        compound_refs: List[RawReferenceCompoundModel] = (
+            reference_utils.query_sample_compound_references()
+        )
+        compound_refs = compound_refs[:max_taxids]
+
+        remap_plan = []
+        remap_targets = []
+        remap_absent_taxid_list = []
+
+        for ref in compound_refs:
+            ref_in_file = ReferenceSourceFileMap.objects.filter(
+                reference_source__taxid__taxid=ref.taxid,
+                reference_source__accid=ref.accid,
+            )
+            if len(ref_in_file) == 0:
+                remap_absent_taxid_list.append(ref.taxid)
+                continue
+
+            target = Remap_Target(
+                ref.accid,
+                simplify_name(ref.accid),
+                ref.taxid,
+                os.path.join(
+                    self.config["source"]["REF_FASTA"],
+                    ref_in_file[0].reference_source_file.file,
+                ),
+                self.prefix,
+                ref.description,
+                [ref.accid],
+                False,
+                False,
+            )
+
+            remap_targets.append(target)
+            remap_plan.append(
+                [
+                    ref.taxid,
+                    ref.accid,
+                    ref_in_file[0].reference_source_file.file,
+                    ref.description,
+                ]
+            )
+
+        self.remap_plan = pd.DataFrame(
+            remap_plan, columns=["taxid", "acc", "file", "description"]
         )
 
-        self.generate_targets_from_report(
-            reference_table,
-            max_taxids=max_taxids,
-            max_remap=max_remap,
-            skip_scrape=False,
-        )
+        self.remap_targets.extend(remap_targets)
+        self.remap_absent_taxid_list.extend(remap_absent_taxid_list)
 
     def match_and_select_targets(
         self,

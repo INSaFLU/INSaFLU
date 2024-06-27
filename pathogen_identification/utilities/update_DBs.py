@@ -360,6 +360,7 @@ def Update_Remap(run_class: RunEngine_class, parameter_set: ParameterSet):
         with transaction.atomic():
             Update_RefMap_DB(run_class, parameter_set)
             Update_FinalReport(run_class, runmain, sample)
+            Update_Targets(run_class, runmain)
             Update_Run_Detail_noCheck(run_class, parameter_set)
             Update_RunMain_noCheck(run_class, parameter_set, tag="finished")
         return True
@@ -1075,6 +1076,35 @@ def Update_FinalReport(run_class, runmain, sample):
                 classification_source=translate_classification_success(
                     row["classification_success"]
                 ),
+            )
+
+            raw_reference.save()
+
+
+def Update_Targets(run_class: RunEngine_class, runmain):
+
+    print("UPDATING TARGETS")
+    print(len(run_class.metadata_tool.remap_targets))
+
+    for target in run_class.metadata_tool.remap_targets:
+        print(target.taxid, target.accid)
+
+        try:
+            raw_reference = RawReference.objects.get(
+                run=runmain,
+                taxid=target.taxid,
+                accid=target.accid,
+            )
+            raw_reference.status = RawReference.STATUS_MAPPED
+            raw_reference.save()
+
+        except RawReference.DoesNotExist:
+            raw_reference = RawReference(
+                run=runmain,
+                taxid=target.taxid,
+                accid=target.accid,
+                status=RawReference.STATUS_MAPPED,
+                description=target.description,
             )
 
             raw_reference.save()

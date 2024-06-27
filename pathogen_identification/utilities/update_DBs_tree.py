@@ -1233,7 +1233,11 @@ def translate_classification_success(success):
 
 def Update_Targets(run_class: RunEngine_class, runmain):
 
+    print("UPDATING TARGETS")
+    print(len(run_class.metadata_tool.remap_targets))
+
     for target in run_class.metadata_tool.remap_targets:
+        print(target.taxid, target.accid)
 
         try:
             raw_reference = RawReference.objects.get(

@@ -1,11 +1,6 @@
 
 
 
-.sidebar-header {
-    padding: 10px;
-    background-color: #ccc; /* Set the background color for the header */
-    text-align: center;
-  }
 
 .table-container {
     width: 100%;
@@ -37,18 +32,18 @@
 }
 
 .sidebar-header {
+  color: #090909; /* Set text color to white for contrast */
   padding: 15px 20px; /* Increased padding for better spacing */
-  background-color: #007bff; /* A fresh, modern blue */
+  background-color: #ccc; /* A fresh, modern blue */
   border-radius: 5px; /* Rounded corners for a softer look */
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Soft shadow for depth */
+  text-align: center;
 }
 
 .sidebar-header h3 {
   margin: 0;
-  color: #fff; /* Keep text color white for contrast */
+  color: #3d3d3d; /* Keep text color white for contrast */
   font-size: 18px; /* Slightly larger font size */
   font-weight: 800; /* Medium font weight for better readability */
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.2); /* Subtle text shadow for depth */
 }
 
 .sidebar-actions {

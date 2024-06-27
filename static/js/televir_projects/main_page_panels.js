@@ -91,6 +91,59 @@ var load_panels_main = function(load_url, target, load = false, suggest= true) {
     });
   }
 
+  /// set wait screen
+  $(".request-add-teleflu-sample").on("click", function () {
+    var teleflu_id = $(this).attr('teleflu-id');
+    $("#id-add-teleflu-sample-button").attr('teleflu-id', teleflu_id);
+    
+    var checkedRows_samples = [];
+    $('.select_sample-checkbox:checked').each(function () {
+        // collect ids of checked rows
+        var sample_id = $(this).attr('sample_id');
+        checkedRows_samples.push(sample_id);
+    });
+    // change text
+    if (checkedRows_samples.length == 0) {
+      $("#id-label-add-teleflu-sample").text("No samples selected.");
+    } else {
+      $("#id-label-add-teleflu-sample").text("Add selected samples ?");
+    }
+  });
+
+  $("#id-add-teleflu-sample-button").on("click", function () {
+
+      var teleflu_id = $(this).attr('teleflu-id');
+      var url = $('#id-modal-body-add-teleflu-sample').attr('add-teleflu-single-value-url');
+      var csrf = $('#teleflu_create-button').attr('csrf');
+
+      // get checked samples rows
+      var checkedRows_samples = [];
+      $('.select_sample-checkbox:checked').each(function () {
+          // collect ids of checked rows
+          var sample_id = $(this).attr('sample_id');
+          checkedRows_samples.push(sample_id);
+      });
+      $.ajax({
+          url: url,
+          type: 'POST',
+          data: {
+              'teleflu_id': teleflu_id,
+              'sample_ids': checkedRows_samples,
+              'csrfmiddlewaretoken': csrf
+          },
+          success: function (data) {
+              if (data['not_added'] == true) {
+                  alert('No samples added. They may already be in the project.');
+              } else if (data['is_empty'] == true) {
+                  alert('No samples selected.');
+              } else {
+                  alert('Samples added.');
+                  location.reload();
+              }
+          }
+      });
+
+  });
 
 
   $('#panel-submit-button').click(function () {

@@ -7,7 +7,7 @@
 
 
 .workflow-container-main {
-    border: 1px solid #eee; /* Even lighter gray */
+    border: 1px solid #e6e6e6; /* Even lighter gray */
     padding: 10px;
     margin-bottom: 10px;
     display: block;
@@ -23,6 +23,79 @@
     background-color: #f9f9f9; /* Subtle background color */
 }
 
+.summary-table {
+    width: 100%; /* Make the table wider */
+}
+
+.summary-table th, .summary-table td {
+    padding: 10px; /* Add space inside the cells */
+    text-align: center; /* Align the text to the left */
+    border-left: 1px solid #ddd; /* Add a left border to the cells */
+    border-right: 1px solid #ddd; /* Add a right border to the cells */
+}
+
+.summary-table th {
+    background-color: #f2f2f2; /* Add a background color to the header cells */
+}
+
+.summary-table tr:nth-child(even) {
+    background-color: #f2f2f2; /* Add a background color to every other row */
+}
+
+.summary-table th:first-child, .summary-table td:first-child {
+    border-left: none; /* Remove the left border from the first cell in each row */
+}
+
+.summary-table th:last-child, .summary-table td:last-child {
+    border-right: none; /* Remove the right border from the last cell in each row */
+}
+
+.outer-container {
+    margin-bottom: 20px; /* Adjust as needed */
+    margin-right: 20px; /* Add margin to the right side of the container */
+}
+
+.workflow-table-container {
+    background-color: #f9f9f9; /* Light grey background */
+    border: 1px solid #eee; /* Even lighter gray */
+    border-radius: 8px; /* Rounded corners */
+    padding: 20px; /* Spacing inside the container */
+    margin: 20px 0; /* Spacing outside the container */
+}
+
+.workflow-table-container .title {
+    font-size: 24px; /* Larger font size */
+    font-weight: bold; /* Bold font weight */
+    margin-bottom: 12px; /* Space below the title */
+    color: #333; /* Dark grey color for better readability */
+}
+
+#workflow-list {
+    list-style-type: none; /* Remove default list styling */
+    padding: 0; /* Remove default padding */
+}
+
+.subtitle {
+    font-size: 16px; /* Larger font size */
+    margin-bottom: 10px; /* Space below the subtitle */
+    margin-top: 5px; /* Space above the subtitle */
+    color: #656565; /* Dark grey color for better readability */
+}
+
+.insaflu-table-container {
+    background-color: #f9f9f9; /* Light grey background */
+    border-radius: 8px; /* Rounded corners */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Subtle shadow */
+    padding: 20px; /* Spacing inside the container */
+    margin: 20px 0; /* Spacing outside the container */
+}
+
+.insaflu-table-container .title {
+    font-size: 24px; /* Larger font size */
+    font-weight: bold; /* Bold font weight */
+    margin-bottom: 12px; /* Space below the title */
+    color: #333; /* Dark grey color for better readability */
+}
 
 .summary-list {
     border: 1px solid #eee; /* Even lighter gray */
@@ -112,7 +185,7 @@
     justify-content: center;
     align-items: center;
     padding: 10px;
-    background-color: #f5f5f5; /* Light gray background */
+    background-color: #f9f9f9; /* Light gray background */
     border-radius: 5px;
     margin-bottom: 0px;
     margin-right: 20px;
@@ -281,3 +354,5 @@
 .stackSamplesVCF:hover {
     background-color: #b3b3b3; /* Darker green background when hovering */
 }
+
+

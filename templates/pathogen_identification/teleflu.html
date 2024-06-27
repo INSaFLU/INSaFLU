@@ -26,39 +26,10 @@
 
 {% block content %}
 
-<style>
+{% block extra_head %}
+    <link rel="stylesheet" href="{% static 'css/teleflu_main.css' %}">
 
-    .summary-table {
-        width: 100%; /* Make the table wider */
-    }
-    
-    .summary-table th, .summary-table td {
-        padding: 10px; /* Add space inside the cells */
-        text-align: center; /* Align the text to the left */
-        border-left: 1px solid #ddd; /* Add a left border to the cells */
-        border-right: 1px solid #ddd; /* Add a right border to the cells */
-    }
-    
-    .summary-table th {
-        background-color: #f2f2f2; /* Add a background color to the header cells */
-    }
-    
-    .summary-table tr:nth-child(even) {
-        background-color: #f2f2f2; /* Add a background color to every other row */
-    }
-    
-    .summary-table th:first-child, .summary-table td:first-child {
-        border-left: none; /* Remove the left border from the first cell in each row */
-    }
-    
-    .summary-table th:last-child, .summary-table td:last-child {
-        border-right: none; /* Remove the right border from the last cell in each row */
-    }
-</style>
-
-<link rel="stylesheet" href="{% static 'css/teleflu_main.css' %}">
-
-
+{% endblock %}
 
 <div class="outer-container">
     <button id="open-modal-button" type="button" class="btn btn-primary" data-toggle="modal" csrf="{{ csrf_token }}"  url-workflows='{% url "load_teleflu_workflows" %}' project-id='{{ teleflu_project_pk }}' data-target="#id_workflow_modal" url-stack="{% url 'stack_igv_teleflu_workflow' %}">
@@ -73,54 +44,64 @@
         <i class="fa fa-cog" aria-hidden="true" ></i>
         <a href="{% url "pathogenID_pipeline" level=project_index %}"><span class="hidden-phone" style="color:white"><i>Project Settings</i></span></a>
     </button>
-    <br>
-    <br>
-    <h3 class="title">Workflow List</h3>
-    <div id="workflow-list">
+
+</div>
+
+<div class="outer-container">
+    <div class="workflow-table-container">
+        <h3 class="title">Mapping Workflows</h3>
+        <p class="subtitle">Click on the workflow to see the samples</p>
+        <div id="workflow-list">
+        </div>
     </div>
 </div>
 
-<div class="table-container">
+{% if insaflu_connection_exists %}
 
-    {% if insaflu_connection_exists %}
-    <h3 class="table-title"> INSaFLU  </h3>
-    
-    <div class="table-responsive">
-        <table class="table table-hover table-bordered table-striped" {% if insaflu_table.attrs %}z
-            {{ insaflu_table.attrs.as_html }}{% endif %}>
-            <thead>
-                <tr>
-                    {% for column in insaflu_table.columns %}
-                    {% if column.orderable %}
-                        <th {{ column.attrs.th.as_html }}><a href="{% querystring insaflu_table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header|title }}</a></th>
-                    {% else %}
-                        <th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
+<div class="outer-container">
+    <div class="insaflu-table-container">
+        <h3 class="title"> INSaFLU Project </h3>
+        <p class="subtitle">Reference-based genome assembly</p>
+        <div class="table-responsive">
+            <table class="table table-hover table-bordered table-striped" {% if insaflu_table.attrs %}z
+                {{ insaflu_table.attrs.as_html }}{% endif %}>
+                <thead>
+                    <tr>
+                        {% for column in insaflu_table.columns %}
+                        {% if column.orderable %}
+                            <th {{ column.attrs.th.as_html }}><a href="{% querystring insaflu_table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header|title }}</a></th>
+                        {% else %}
+                            <th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
+                        {% endif %}
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in insaflu_table.page.object_list|default:insaflu_table.rows %} {# support pagination #}
+                    {% block insaflu_table.tbody.row %}
+                    <tr id="row_{{ row.record.id }}" class="{% cycle "odd" "even" %}">
+                        {% for column, cell in row.items %}
+                        <td {{ column.attrs.td.as_html }}>{{ cell }}</td>
+                        {% endfor %}
+                    </tr>
+                    {% endblock insaflu_table.tbody.row %}
+                    {% empty %}
+                    {% if insaflu_table.empty_text %}
+                    {% block insaflu_table.tbody.empty_text %}
+                        <tr><td colspan="{{ insaflu_table.columns|length }}">{{ insaflu_table.empty_text }}</td></tr>
+                    {% endblock insaflu_table.tbody.empty_text %}
                     {% endif %}
                     {% endfor %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in insaflu_table.page.object_list|default:insaflu_table.rows %} {# support pagination #}
-                  {% block insaflu_table.tbody.row %}
-                  <tr id="row_{{ row.record.id }}" class="{% cycle "odd" "even" %}">
-                    {% for column, cell in row.items %}
-                      <td {{ column.attrs.td.as_html }}>{{ cell }}</td>
-                    {% endfor %}
-                  </tr>
-                  {% endblock insaflu_table.tbody.row %}
-                {% empty %}
-                  {% if insaflu_table.empty_text %}
-                  {% block insaflu_table.tbody.empty_text %}
-                      <tr><td colspan="{{ insaflu_table.columns|length }}">{{ insaflu_table.empty_text }}</td></tr>
-                  {% endblock insaflu_table.tbody.empty_text %}
-                  {% endif %}
-                {% endfor %}
-            </tbody>
-            <tfoot></tfoot>
-        </table>
+                </tbody>
+                <tfoot></tfoot>
+            </table>
+        </div>
     </div>
-    {% endif %}
+</div>
+{% endif %}
 
+
+<div>
     <a href="javascript:history.go(0)" class="btn btn-small btn-primary dark"><i class="fa fa-refresh"></i> Refresh</a>
 
 </div>

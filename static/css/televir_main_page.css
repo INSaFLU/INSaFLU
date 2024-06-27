@@ -4,6 +4,36 @@
     display: block;
 }
 
+.table-description {
+    font-size: 16px;
+    color: #525252;
+    display: block;
+    margin-left: 10px;
+}
+
+.teleflu-table-container {
+    border-top: 2px solid #e9e9e9;
+    padding-top: 15px;
+    padding-left: 15px;
+    padding-right: 15px;
+    padding-bottom: 15px;
+    border-radius: 7px;
+    margin-bottom: 20px;
+    background-color: #efefef;
+}
+
+.metagenomics-table-container {
+    padding-top: 15px;
+    padding-left: 15px;
+    padding-right: 15px;
+    padding-bottom: 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    background-color: #ffffff;
+}
+
+
+
 #teleflu-list {
     list-style-type: none;
     padding: 0;
@@ -52,7 +82,7 @@
 }
 
 .reference-item {
-    width: 800px;
+    width: 700px;
     float: left; /* make the reference item float to the left */
     list-style-type: none; /* remove bullet points */
     border: none; /* add a border around each reference */
@@ -61,26 +91,16 @@
     background-color: #f9f9f9;
     padding-right: 80px; /* add some space between references */
     margin-right: 20px; /* add some space between references */
-    border-right: 2px solid #ddd; /* add a border between references */
+    border-right: 4px solid #d4d4d4; /* add a border between references */
+    text-align: left;
+
 }
 
-.reference-samples {
-    margin-right: 20px;
-    float: left;
-    list-style-type: none; /* remove bullet points */
-    border: none; /* add a border around each reference */
-    padding: 5px; /* add some padding */
-    margin-bottom: 0px; /* add some space between references */
-    border-radius: 5px;
-    color: white;
-    background-color: #f9f9f9;
-    display: flex;
-}
 
 .reference-id {
     display: inline; /* display taxid and accid on the same line */
     margin-right: 10px; /* add some space between taxid and accid */
-    font-size: 1.2em; /* This will increase the font size */
+    font-size: 1.4em; /* This will increase the font size */
 
 }
 
@@ -97,21 +117,18 @@
     color: #000;
     text-align: center;
     text-decoration: none;
-    margin: 0px 5px;
+    padding: 0px;
     margin-right: 10px;
-    padding: 6px 5px;
-    padding-right: 20px;
+    padding: 4px;
     border-radius: 5px;
-    font-size: 14px;
-    font-weight: bold;
-    font-family: Arial, sasns-serif;
 }
 
 .request-add-teleflu-sample {
     align-self: center;
+    border-color: #b3b3b3;
     background-color: #b3b3b3;
-    border: none;
-    cursor: pointer;
+    color: #000;
+    margin-left: 10px;
 }
 
 .insaflu-exists {
@@ -143,7 +160,6 @@
     order: 1;
     align-items: center;
     font-size: 0.8em; /* This will make the font size smaller */
-    text-align: center;
     padding-left: 20px; 
     display: flex;
 }
@@ -160,4 +176,20 @@ table .sample-name {
 .report  {
     text-align: center;
     border-bottom-width: 2px;
+}
+
+.btn-warning {
+    border: 2px solid #b3b3b3;
+    background-color: #FFC000; 
+    color: white;
+}
+.dropdown-item {
+    cursor: pointer;
+}
+
+.table-title {
+    font-size: 24px; /* Larger font size */
+    font-weight: bold; /* Bold font weight */
+    margin-bottom: 15px; /* Space below the title */
+    color: #333; /* Dark grey color for better readability */
 }

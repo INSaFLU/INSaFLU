@@ -1370,13 +1370,60 @@ class CompoundRefereceScoreWithScreening(CompoundReferenceScore):
         return screen_value
 
 
-class RawReferenceTable(tables.Table):
+class RawReferenceTable_Basic(tables.Table):
     taxid = tables.Column(verbose_name="Taxid")
     accid = tables.Column(verbose_name="Taxid representativde Accession id")
     description = tables.Column(verbose_name="Taxid representative Description")
+    status = tables.Column(verbose_name="Status")
+
+    class Meta:
+        model = RawReference
+        attrs = {"class": "paleblue"}
+        fields = (
+            "taxid",
+            "accid",
+            "description",
+            "status",
+        )
+
+        sequence = (
+            "taxid",
+            "accid",
+            "description",
+            "status",
+        )
+
+    def render_status(self, record):
+        if record.status == RawReference.STATUS_MAPPING:
+            return "Running"
+        elif record.status == RawReference.STATUS_MAPPED:
+            taxids_in_report = FinalReport.objects.filter(run=record.run).values_list(
+                "taxid", flat=True
+            )
+            if record.taxid in taxids_in_report:
+                return "Mapped"
+            else:
+                return "Mapped (0 reads)"
+
+        elif record.status == RawReference.STATUS_FAIL:
+            return "Fail"
+
+        elif record.status == RawReference.STATUS_UNMAPPED:
+            button = (
+                " <a "
+                + 'href="#" '
+                + 'id="remap_reference" '
+                + f"ref_id={record.pk} "
+                + f"project_id={record.run.project.pk} "
+                + '"><i class="fa fa-eye"></i></span> </a>'
+            )
+            return mark_safe("Unmapped" + button)
+
+
+class RawReferenceTable(RawReferenceTable_Basic):
+
     classification_source = tables.Column(verbose_name="Classification Source")
     counts = tables.Column(verbose_name="Counts")
-    status = tables.Column(verbose_name="Status")
 
     class Meta:
         model = RawReference
@@ -1407,32 +1454,6 @@ class RawReferenceTable(tables.Table):
 
         if record.classification_source == "3":
             return "reads / contigs"
-
-    def render_status(self, record):
-        if record.status == RawReference.STATUS_MAPPING:
-            return "Running"
-        elif record.status == RawReference.STATUS_MAPPED:
-            taxids_in_report = FinalReport.objects.filter(run=record.run).values_list(
-                "taxid", flat=True
-            )
-            if record.taxid in taxids_in_report:
-                return "Mapped"
-            else:
-                return "Mapped (0 reads)"
-
-        elif record.status == RawReference.STATUS_FAIL:
-            return "Fail"
-
-        elif record.status == RawReference.STATUS_UNMAPPED:
-            button = (
-                " <a "
-                + 'href="#" '
-                + 'id="remap_reference" '
-                + f"ref_id={record.pk} "
-                + f"project_id={record.run.project.pk} "
-                + '"><i class="fa fa-eye"></i></span> </a>'
-            )
-            return mark_safe("Unmapped" + button)
 
 
 class RawReferenceTableNoRemapping(RawReferenceTable):

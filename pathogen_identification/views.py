@@ -73,6 +73,7 @@ from pathogen_identification.tables import (
     ContigTable,
     ProjectTable,
     RawReferenceTable,
+    RawReferenceTable_Basic,
     RawReferenceTableNoRemapping,
     ReferenceSourceTable,
     RunMainTable,
@@ -2260,10 +2261,11 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
                 run_main_pipeline.parameter_set.leaf, CS.PIPELINE_NAME_remapping
             )
 
-        if remapping_performed is True:
+        if is_classification is True:
             raw_reference_table = RawReferenceTable(raw_references)
+
         else:
-            raw_reference_table = RawReferenceTableNoRemapping(raw_references)
+            raw_reference_table = RawReferenceTable_Basic(raw_references)
 
         #
         run_detail = RunDetail.objects.get(sample=sample_main, run=run_main_pipeline)

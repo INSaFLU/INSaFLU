@@ -168,6 +168,14 @@
     </div>
     {% endblock table %}
 
+    <p class="insa-description bg-insa-fixed-top" style=""><strong>
+        <i class="fa fa-info-circle"></i> 
+        <span class="hidden-phone">
+            Note: You can change parameters to run new workflows. Results will be integrated to the Combined Report cumulatively.
+            </span>
+        </strong>
+    </p>
+
     {% if table.page and show_paginatior %}
 	{% block pagination %}
 	<label id="id-total-list" class="pull-right">Total samples: {{ query_set_count }}</label>
@@ -177,13 +185,7 @@
     {% else %}
     <label id="id-total-list" class="pull-right">Total samples: {{ query_set_count }}</label>
     {% endif %}
-    <p class="insa-description bg-insa-fixed-top" style=""><strong>
-        <i class="fa fa-info-circle"></i> 
-        <span class="hidden-phone">
-            Note: You can change parameters to run new workflows. Results will be integrated to the Combined Report cumulatively.
-            </span>
-        </strong>
-    </p>
+
     <br>
 
 

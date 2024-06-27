@@ -106,18 +106,17 @@
                             <div class="dropdown-menu">
                                 <button class="dropdown-item" data-toggle="modal" data-target="#myModal">Add Targets</button>
                                 <button class="dropdown-item add-panels" data-toggle="modal" data-target="#addPanelModal" href="{% url 'get_project_panel_suggestions' %}">Add Panels</button>
+                                <button id="teleflu_open" class="dropdown-item" data-toggle="modal" data-target="#teleflu_ref_modal">
+                                    <i class="fa fa-crosshairs fa-lg" aria-hidden="true" style="margin-right: 5px;">‌</i>  Focus
+                                </button>
                             </div>
                         </div>
                     </th>
-                    <th colspan="1" style="border-left: 5px solid #f2f2f2;">
-                        <div class="btn-group d-flex justify-content-center">
-                            <button type="button" id="teleflu_open" class="btn btn-primary" data-toggle="modal" data-target="#teleflu_ref_modal">
-                                <i class="fa fa-crosshairs fa-lg" aria-hidden="true">‌</i>  Focus
-                              </button>
-                        </div>
 
+                    <th colspan="1" style="text-align: center;">
+                        Sample Select
                     </th>
-                    <th colspan="4" style="border-left: 5px solid #f2f2f2;">
+                    <th colspan="4" style="">
 
                         <form method="get" class="form-inline form-search pull-right">
                             {% csrf_token %}

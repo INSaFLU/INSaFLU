@@ -388,15 +388,14 @@ class SampleTableOne(tables.Table):
     )
 
     select_ref = tables.CheckBoxColumn(
+        verbose_name="Select Samples",
         accessor="pk",
         orderable=False,
         attrs={
             "th": {
-                "style": "background-color: #dce4f0; border-left: 5px solid #ddd; border-right: 5px solid #ddd; text-align: center;",
+                "style": "background-color: #dce4f0; text-align: center;",
             },
-            "td": {
-                "style": "background-color: #dce4f0; border-left: 5px solid #ddd; border-right: 5px solid #ddd; text-align: center;"
-            },
+            "td": {"style": "background-color: #dce4f0; text-align: center;"},
             "th__input": {"id": "checkBoxAll"},
         },
     )
@@ -416,10 +415,8 @@ class SampleTableOne(tables.Table):
         orderable=False,
         empty_values=(),
         attrs={
-            "td": {"style": "border-left: 5px solid #ddd;"},
-            "th": {
-                "style": "border-left: 5px solid #ddd; background-color: #eaf5ff; text-align: center;"
-            },
+            "td": {"style": ""},
+            "th": {"style": "background-color: #eaf5ff; text-align: center;"},
         },
     )
     mapping_runs = tables.Column(

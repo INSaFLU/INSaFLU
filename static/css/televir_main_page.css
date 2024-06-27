@@ -185,9 +185,13 @@ table .sample-name {
 }
 .dropdown-item {
     cursor: pointer;
+    align-items: center;
+    text-align: center;
+
 }
 
 .table-title {
+    padding-left: 10px;
     font-size: 24px; /* Larger font size */
     font-weight: bold; /* Bold font weight */
     margin-bottom: 15px; /* Space below the title */

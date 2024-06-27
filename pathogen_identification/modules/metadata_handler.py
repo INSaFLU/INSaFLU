@@ -193,6 +193,7 @@ class RunMetadataHandler:
         compound_refs: List[RawReferenceCompoundModel] = (
             reference_utils.query_sample_compound_references()
         )
+
         compound_refs = compound_refs[:max_taxids]
 
         remap_plan = []
@@ -204,9 +205,15 @@ class RunMetadataHandler:
                 reference_source__taxid__taxid=ref.taxid,
                 reference_source__accid=ref.accid,
             )
+
             if len(ref_in_file) == 0:
                 remap_absent_taxid_list.append(ref.taxid)
                 continue
+
+            files_to_map = self.filter_query_set_files(ref_in_file)
+            ref_in_file = ref_in_file.filter(
+                reference_source_file__file__in=files_to_map
+            )
 
             target = Remap_Target(
                 ref.accid,
@@ -608,6 +615,27 @@ class RunMetadataHandler:
         if len(files_to_map) == 1 and files_count.shape[0] > 1:
             files_count = files_count[files_count.index != files_to_map[0]]
             files_to_map.append(files_count.index[0])
+
+        return files_to_map
+
+    def filter_query_set_files(self, nset: List[ReferenceSourceFileMap]) -> list:
+
+        ref1 = "refseq_viral.genome.fna.gz"
+        ref2 = "virosaurus90_vertebrate-20200330.fas.gz"
+
+        files_to_map = []
+        files_count = [x.reference_source_file.file for x in nset]
+
+        if ref1 in files_count:
+            files_to_map.append(ref1)
+        if ref2 in files_count:
+            files_to_map.append(ref2)
+
+        if len(files_to_map) == 0:
+            files_to_map.append(files_count[0])
+        if len(files_to_map) == 1 and len(files_count) > 1:
+            files_count = [x for x in files_count if x != files_to_map[0]]
+            files_to_map.append(files_count[0])
 
         return files_to_map
 

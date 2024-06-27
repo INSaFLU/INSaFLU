@@ -199,8 +199,6 @@ class RunMetadataHandler:
             ]
         )
 
-        self.generate_targets_from_report(reference_table, max_remap=1)
-
         self.generate_targets_from_report(
             reference_table,
             max_taxids=max_taxids,
@@ -305,24 +303,19 @@ class RunMetadataHandler:
         references_table.rename(columns={"accid": "acc"}, inplace=True)
 
         ## group by taxids
-        if references_table.shape[0] > 0:
-            references_table = (
-                references_table.groupby(["taxid"])
-                .agg(
-                    {
-                        "acc": "first",
-                        "description": "first",
-                        "read_counts": "first",
-                        "standard_score": "first",
-                        "contig_counts": "first",
-                    }
-                )
-                .reset_index()
-            )
-
-        # if "standard_score" in references_table.columns:
-        #    references_table = references_table.sort_values(
-        #        by="standard_score", ascending=False
+        # if references_table.shape[0] > 0:
+        #    references_table = (
+        #        references_table.groupby(["taxid"])
+        #        .agg(
+        #            {
+        #                "acc": "first",
+        #                "description": "first",
+        #                "read_counts": "first",
+        #                "standard_score": "first",
+        #                "contig_counts": "first",
+        #            }
+        #        )
+        #        .reset_index()
         #    )
 
         if max_taxids is not None:
@@ -795,7 +788,6 @@ class RunMetadataHandler:
         for taxid in targets.taxid.unique():
             print(f"taxid: {taxid}")
             nset = self.metadata_from_taxid(taxid)
-            print(nset)
 
             if nset.empty:
                 remap_absent.append(taxid)

@@ -3404,7 +3404,7 @@ class RawReferenceUtils:
         ].astype(float)
         joint_tables["sort_rank"] = joint_tables["sort_rank"].astype(float)
 
-        joint_tables = joint_tables.groupby(["taxid", "accid", "description"]).agg(
+        joint_tables = joint_tables.groupby(["taxid"]).agg(
             {
                 "taxid": "first",
                 "accid": "first",

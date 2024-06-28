@@ -14,12 +14,8 @@ from django.core.files.temp import NamedTemporaryFile
 from django.db import transaction
 from django.db.models import Q
 from django.forms.models import model_to_dict
-from django.http import (
-    Http404,
-    HttpResponse,
-    HttpResponseNotFound,
-    HttpResponseRedirect,
-)
+from django.http import (Http404, HttpResponse, HttpResponseNotFound,
+                         HttpResponseRedirect)
 from django.http.response import HttpResponse
 from django.shortcuts import redirect, render
 from django.template.defaultfilters import filesizeformat, pluralize
@@ -40,70 +36,47 @@ from managing_files.models import ProjectSample as InsafluProjectSample
 from managing_files.models import Reference
 from managing_files.tables import SampleToProjectsTable
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
-from pathogen_identification.forms import PanelReferencesUploadForm, ReferenceForm
-from pathogen_identification.models import (
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReadClassification,
-    ReferenceContigs,
-    ReferenceMap_Main,
-    ReferencePanel,
-    ReferenceSourceFile,
-    ReferenceSourceFileMap,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    RunRemapMain,
-    Sample,
-    TelefluMapping,
-    TeleFluProject,
-    TeleFluSample,
-    TelevirRunQC,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
+from pathogen_identification.forms import (PanelReferencesUploadForm,
+                                           ReferenceForm)
+from pathogen_identification.models import (ContigClassification, FinalReport,
+                                            ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            ReadClassification,
+                                            ReferenceContigs,
+                                            ReferenceMap_Main, ReferencePanel,
+                                            ReferenceSourceFile,
+                                            ReferenceSourceFileMap,
+                                            RunAssembly, RunDetail, RunMain,
+                                            RunRemapMain, Sample,
+                                            TelefluMapping, TeleFluProject,
+                                            TeleFluSample, TelevirRunQC)
 from pathogen_identification.modules.object_classes import RunQC_report
-from pathogen_identification.tables import (
-    AddedReferenceTable,
-    CompoundRefereceScoreWithScreening,
-    CompoundReferenceScore,
-    ContigTable,
-    ProjectTable,
-    RawReferenceTable,
-    RawReferenceTable_Basic,
-    RawReferenceTableNoRemapping,
-    ReferenceSourceTable,
-    RunMainTable,
-    RunMappingTable,
-    SampleTableOne,
-    TeleFluInsaFLuProjectTable,
-    TeleFluReferenceTable,
-)
+from pathogen_identification.tables import (AddedReferenceTable,
+                                            CompoundRefereceScoreWithScreening,
+                                            CompoundReferenceScore,
+                                            ContigTable, ProjectTable,
+                                            RawReferenceTable,
+                                            RawReferenceTable_Basic,
+                                            RawReferenceTableNoRemapping,
+                                            ReferenceSourceTable, RunMainTable,
+                                            RunMappingTable, SampleTableOne,
+                                            TeleFluInsaFLuProjectTable,
+                                            TeleFluReferenceTable)
 from pathogen_identification.utilities.reference_utils import (
-    generate_insaflu_reference,
-    temp_fasta_copy,
-)
+    generate_insaflu_reference, temp_fasta_copy)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
 from pathogen_identification.utilities.utilities_general import (
-    get_services_dir,
-    infer_run_media_dir,
-)
+    get_services_dir, infer_run_media_dir)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility,
-    RawReferenceUtils,
-)
+    Parameter_DB_Utility, RawReferenceUtils)
 from pathogen_identification.utilities.utilities_views import (
-    EmptyRemapMain,
-    RawReferenceCompound,
-    ReportSorter,
-    final_report_best_cov_by_accid,
-    recover_assembly_contigs,
-)
+    EmptyRemapMain, RawReferenceCompound, ReportSorter,
+    final_report_best_cov_by_accid, recover_assembly_contigs)
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
 from utils.software import Software
@@ -1022,9 +995,7 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
 
 
 from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils,
-    Utils_Manager,
-)
+    SoftwareTreeUtils, Utils_Manager)
 
 
 def excise_paths_leaf_last(string_with_paths):
@@ -1170,16 +1141,10 @@ class TelefluProjectView(LoginRequiredMixin, generic.CreateView):
         return context
 
 
-from fluwebvirus.settings import (
-    BASE_DIR,
-    MEDIA_ROOT,
-    MEDIA_URL,
-    STATIC_ROOT,
-    STATIC_URL,
-)
-from pathogen_identification.utilities.reference_utils import (
-    filter_reference_maps_select,
-)
+from fluwebvirus.settings import (BASE_DIR, MEDIA_ROOT, MEDIA_URL, STATIC_ROOT,
+                                  STATIC_URL)
+from pathogen_identification.utilities.reference_utils import \
+    filter_reference_maps_select
 from pathogen_identification.utilities.utilities_general import simplify_name
 
 
@@ -1597,10 +1562,8 @@ class ReferencePanelManagement(LoginRequiredMixin, generic.CreateView):
 
 from django.views.generic import ListView, TemplateView
 
-from pathogen_identification.tables import (
-    ReferenceSourceFileTable,
-    TelevirReferencesTable,
-)
+from pathogen_identification.tables import (ReferenceSourceFileTable,
+                                            TelevirReferencesTable)
 
 
 class ReferenceManagementBase(TemplateView):
@@ -2526,7 +2489,8 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         runs_mapping = RunMain.objects.filter(pk__in=runs).exclude(
             run_type=RunMain.RUN_TYPE_PIPELINE
         )
-        runs_number = len(runs) > 0
+        runs_number = len(runs) 
+        runs_exist= runs_number > 0
 
         context = {
             "project": project_name,
@@ -2547,8 +2511,8 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
             "report_list": sorted_reports,
             "runs_pipeline": runs_pipeline,
             "runs_mapping": runs_mapping,
-            "runs_number": runs_number,
-            "graph_height": len(runs_pipeline) * 22 + 100,
+            "runs_number": runs_exist,
+            "graph_height": runs_number * 22 + 100,
             "owner": True,
             "in_control": has_controlled_flag,
             "error_rate_available": report_sorter.error_rate_available,

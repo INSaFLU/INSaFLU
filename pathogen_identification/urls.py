@@ -207,6 +207,16 @@ urlpatterns = [
         name="create_teleflu_project",
     ),
     url(
+        r"Projects/query_teleflu_project$",
+        PIajax_views.query_teleflu_projects,
+        name="query_teleflu_projects",
+    ),
+    url(
+        "Projects/teleflu_project_delete$",
+        PIajax_views.delete_teleflu_project,
+        name="delete_teleflu_project",
+    ),
+    url(
         r"deploy_mapping_request$",
         PIajax_views.submit_sample_mapping_televir,
         name="map_selected_references",

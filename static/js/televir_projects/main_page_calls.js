@@ -260,7 +260,6 @@ $("#deploypi_panels_btn").click(function (e) {
         },
         data_type: 'json',
         success: function (data) {
-            console.log(data);
             if (data["is_ok"] == true && data["is_deployed"] == false) {
                 alert(data["message"]);
             }
@@ -341,3 +340,28 @@ $("#sortpi_btn").click(function () {
 
     });
 });
+
+$('#confirm-delete-teleflu-project-button').click(function() {
+    const projectId = $(this).attr('project-id'); // Assuming 'project-id' is stored as a data attribute
+    const deleteUrl = $(this).attr('delete-url'); // Get the delete URL from the button's attribute
+
+    // Make the AJAX call
+    $.ajax({
+        url: deleteUrl,
+        type: 'POST', // Assuming the server expects a POST request for deletion
+        data: {
+            'project_id': projectId, // Send the project ID as part of the request
+            'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val() // Include CSRF token for Django
+        },
+        success: function(data) {
+            if (data['is_ok']) {
+                alert('Project deleted successfully');
+                teleflu_projects_load();
+            }
+        },
+        error: function(xhr, errmsg, err) {
+            // Handle error (e.g., show an error message)
+            alert('Error deleting project: ' + errmsg);
+        }
+    });
+  });

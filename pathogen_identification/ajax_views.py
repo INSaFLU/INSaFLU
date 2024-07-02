@@ -20,36 +20,27 @@ from constants.software_names import SoftwareNames
 from fluwebvirus.settings import BASE_DIR, STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReferenceMap_Main,
-    ReferencePanel,
-    ReferenceSourceFileMap,
-    RunMain,
-    TeleFluProject,
-    TeleFluSample,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference, ReferenceMap_Main,
+                                            ReferencePanel,
+                                            ReferenceSourceFileMap, RunMain,
+                                            TeleFluProject, TeleFluSample)
 from pathogen_identification.tables import ReferenceSourceTable
 from pathogen_identification.utilities.reference_utils import (
-    check_file_reference_submitted,
-    check_raw_reference_submitted,
-    check_user_reference_exists,
-    create_combined_reference,
-)
+    check_file_reference_submitted, check_raw_reference_submitted,
+    check_user_reference_exists, create_combined_reference)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
-from pathogen_identification.utilities.utilities_general import get_services_dir
-from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
+from pathogen_identification.utilities.utilities_general import \
+    get_services_dir
+from pathogen_identification.utilities.utilities_pipeline import \
+    SoftwareTreeUtils
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter,
-    SampleReferenceManager,
-    set_control_reports,
-)
+    ReportSorter, SampleReferenceManager, set_control_reports)
 from pathogen_identification.views import inject__added_references
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
@@ -1483,6 +1474,13 @@ def create_teleflu_project(request):
                     raw_reference=metareference,
                 )
 
+                data["is_ok"] = True
+                data["exists"] = True
+                data["project_id"] = teleflu_project.pk
+                data["project_name"] = teleflu_project.name
+
+                return JsonResponse(data)
+
             except TeleFluProject.DoesNotExist:
 
                 teleflu_project = TeleFluProject(
@@ -1512,6 +1510,98 @@ def create_teleflu_project(request):
 
         return JsonResponse(data)
 
+
+@login_required
+@csrf_protect
+def query_teleflu_projects(request):
+    """
+    query teleflu_projects
+    """
+    if request.is_ajax():
+        data = {
+            "is_ok": False,
+            "is_error": False,
+            "is_empty": False,
+            "teleflu_data": [],
+        }
+        print(request.GET)
+        televir_project_id = int(request.GET["project_id"])
+
+        ## TeleFlu Projects
+        try:
+            teleflu_projects = TeleFluProject.objects.filter(
+                televir_project=televir_project_id, is_deleted=False
+            ).order_by("-last_change_date")
+
+            teleflu_data = []
+            for tproj in teleflu_projects:
+
+                tproject_data = {
+                    "id": tproj.pk,
+                    "samples": tproj.nsamples,
+                    "ref_description": tproj.raw_reference.description_first,
+                    "ref_accid": tproj.raw_reference.accids_str,
+                    "ref_taxid": tproj.raw_reference.taxids_str,
+                    "insaflu_project": False if tproj.insaflu_project is None else True,
+                }
+
+                insaflu_project = tproj.insaflu_project
+                if insaflu_project is None:
+                    tproject_data["insaflu_project"] = "None"
+                else:
+                    count_not_finished = InsafluProjectSample.objects.filter(
+                        project__id=insaflu_project.id,
+                        is_deleted=False,
+                        is_error=False,
+                        is_finished=False,
+                    ).count()
+
+                    if count_not_finished == 0:
+                        tproject_data["insaflu_project"] = "Finished"
+
+                    else:
+                        tproject_data["insaflu_project"] = "Processing"
+
+                teleflu_data.append(tproject_data)
+
+        except Exception as e:
+            print(e)
+            data["is_error"] = True
+            return JsonResponse(data)
+
+        if len(teleflu_data) == 0:
+            data["is_empty"] = True
+            return JsonResponse(data)
+
+        data["teleflu_projects"] = teleflu_data
+        data["is_ok"] = True
+
+        return JsonResponse(data)
+
+
+@login_required
+@csrf_protect
+def delete_teleflu_project(request):
+    """
+    delete teleflu project
+    """
+    if request.is_ajax():
+        data = {"is_ok": False, "is_error": False}
+
+        try:
+            teleflu_project_id = int(request.POST["project_id"])
+            teleflu_project = TeleFluProject.objects.get(pk=teleflu_project_id)
+
+            teleflu_project.is_deleted = True
+            teleflu_project.save()
+
+            data["is_ok"] = True
+
+        except Exception as e:
+            print(e)
+            data["is_error"] = True
+
+        return JsonResponse(data)
 
 @login_required
 @csrf_protect
@@ -1636,9 +1726,7 @@ def add_teleflu_sample(request):
 
 from pathogen_identification.models import SoftwareTreeNode, TelefluMapping
 from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils,
-    Utils_Manager,
-)
+    SoftwareTreeUtils, Utils_Manager)
 
 
 @login_required
@@ -2100,7 +2188,6 @@ def check_panel_upload_clean(request):
         # name = request.POST.get("name", "").strip()
         reference_metadata_table_file = request.FILES.get("metadata", None)
         reference_fasta_file = request.FILES.get("fasta_file", None)
-        print(reference_fasta_file.name)
         try:
             ReferenceSourceFile.objects.get(
                 file=reference_fasta_file.name, owner=request.user, is_deleted=False

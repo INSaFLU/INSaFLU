@@ -949,15 +949,7 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
             teleflu_data.append(tproject_data)
 
         context["teleflu_projects"] = teleflu_data
-        context["teleflu_table"] = None
         context["teleflu_projects_exist"] = teleflu_projects.exists()
-
-        if teleflu_projects.exists():
-
-            context["teleflu_table"] = TeleFluInsaFLuProjectTable(teleflu_projects)
-            RequestConfig(
-                self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
-            ).configure(context["teleflu_table"])
 
         ### set the check_box
         RequestConfig(
@@ -1365,6 +1357,7 @@ def inject_references_filter(request, max_references: int = 30):
     panel_id = None
     project_id = None
     project = None
+
 
     if request.GET.get("max_references") and request.GET.get("max_references") != "":
         max_references = int(request.GET.get("max_references"))
@@ -1989,14 +1982,11 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
         context[Constants.CHECK_BOX_ALL] = self.request.session[Constants.CHECK_BOX_ALL]
         ## need to clean all the others if are reject in filter
         dt_sample_id_add_temp = {}
-        print(context[Constants.CHECK_BOX_ALL])
         if context[Constants.CHECK_BOX_ALL]:
-            print("check all")
             for sample in query_set:
                 dt_sample_id_add_temp[sample.id] = (
                     1  ## add the ids that are in the tables
                 )
-            print(self.request.session.keys())
             for key in self.request.session.keys():
                 if (
                     key.startswith(Constants.CHECK_BOX)
@@ -2489,8 +2479,8 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         runs_mapping = RunMain.objects.filter(pk__in=runs).exclude(
             run_type=RunMain.RUN_TYPE_PIPELINE
         )
-        runs_number = len(runs) 
-        runs_exist= runs_number > 0
+        runs_number = len(runs)
+        runs_exist = runs_number > 0
 
         context = {
             "project": project_name,

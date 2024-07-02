@@ -1105,7 +1105,6 @@ class Utility_Pipeline_Manager:
         pipe_makeup_manager = Pipeline_Makeup()
 
         pipelines_available = combined_table.pipeline_step.unique().tolist()
-        print("pipelines available", pipelines_available)
 
         self.pipeline_makeup = pipe_makeup_manager.match_makeup_name_from_list(
             pipelines_available
@@ -3621,6 +3620,17 @@ class RawReferenceUtils:
             | Q(accid__icontains=query_string)
             | Q(taxid__icontains=query_string)
         ).exclude(accid="-")
+
+        return references_select
+
+    def filter_reference_query_set_compound(
+        self, references: QuerySet, query_string: Optional[str] = ""
+    ):
+        """
+        Filter a query set of references by a query string
+        """
+        references_select = self.filter_reference_query_set(references, query_string)
+
         exclude_refs = []
         for ref in references_select:
             if RawReference.objects.filter(pk=ref.selected_mapped_pk).exists() is False:
@@ -3645,7 +3655,7 @@ class RawReferenceUtils:
         else:
             query_set = RawReferenceCompoundModel.objects.none()
 
-        return self.filter_reference_query_set(query_set, query_string)
+        return self.filter_reference_query_set_compound(query_set, query_string)
 
     def query_sample_references(self, query_string: Optional[str] = "") -> QuerySet:
 
@@ -3756,11 +3766,11 @@ class RawReferenceUtils:
         # pks of classification runs as integer list
         runs_pks = [run.pk for run in classification_runs]
 
-        if classification_runs.exists():
-            self.sample_reference_tables_filter(runs_filter=runs_pks)
+        #if classification_runs.exists():
+        self.sample_reference_tables_filter(runs_filter=runs_pks)
 
-            self.update_scores_compound_references(raw_reference_compound)
-            self.register_compound_references(raw_reference_compound)
+        self.update_scores_compound_references(raw_reference_compound)
+        self.register_compound_references(raw_reference_compound)
 
     def retrieve_compound_references(
         self, query_string: Optional[str] = None
@@ -3769,6 +3779,7 @@ class RawReferenceUtils:
         Retrieve compound references for a sample
         """
         compound_refs = self.query_sample_compound_references(query_string)
+
         if compound_refs.exists():
 
             return compound_refs
@@ -3790,6 +3801,7 @@ class RawReferenceUtils:
             references = self.query_sample_references(query_string)
         except Exception as e:
             print(e)
+
 
         if references.exists():
             self.create_compound(references)

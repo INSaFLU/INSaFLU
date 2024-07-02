@@ -203,4 +203,174 @@ var load_panels_main = function(load_url, target, load = false, suggest= true) {
     });
   });
 
+  function createTelefluProjectButtons(project, panelContainer) {
+    // Assuming 'project' is an object that includes 'id' and 'samples'
 
+    // Create the 'View Details' button
+    var viewDetailsButton = document.createElement('a');
+    viewDetailsButton.href = `/pathogen_identification/teleflu_project/${project.id}`; // Adjust the URL pattern as needed
+    viewDetailsButton.className = 'teleflu-details btn btn-primary';
+    viewDetailsButton.textContent = 'View Details';
+
+    // Create the 'Add Samples' button
+    var addSamplesButton = document.createElement('a');
+    addSamplesButton.setAttribute('teleflu-id', project.id);
+    addSamplesButton.href = "#";
+    addSamplesButton.className = 'request-add-teleflu-sample btn btn-primary';
+    addSamplesButton.setAttribute('data-toggle', 'modal');
+    addSamplesButton.setAttribute('data-target', '#add_teleflu_sample_modal');
+
+    var icon = document.createElement('i');
+    icon.className = 'fa fa-plus';
+    icon.setAttribute('aria-hidden', 'true');
+    icon.style.marginRight = '5px';
+    addSamplesButton.appendChild(icon);
+
+    var samplesText = document.createTextNode(` Samples: ${project.samples}`);
+    addSamplesButton.appendChild(samplesText);
+
+    // Assuming 'panelContainer' is the container to which you want to append the buttons
+    panelContainer.append(viewDetailsButton);
+    panelContainer.append(addSamplesButton);
+
+    // Append 'panelContainer' to the desired parent element in your document
+    // For example, document.getElementById('someParentElementId').appendChild(panelContainer);
+  }
+
+
+  function addInsafluProjectStatusToPanel(project, panelContainer) {
+    // Create the 'teleflu-results' div
+    var resultsDiv = document.createElement('div');
+    resultsDiv.className = 'teleflu-results';
+
+    // Check the project's 'insaflu_project' status and create the corresponding elements
+    if (project.insaflu_project === "Finished") {
+        var span = document.createElement('span');
+        span.className = 'insaflu-exists';
+        var a = document.createElement('a');
+        var i = document.createElement('i');
+        i.className = 'fa fa-check';
+        i.setAttribute('aria-hidden', 'true');
+        a.append(i);
+        a.append(' INSaFLU Project');
+        span.append(a);
+        resultsDiv.append(span);
+    } else if (project.insaflu_project === "Processing") {
+        var span = document.createElement('span');
+        span.className = 'insaflu-processing';
+        var a = document.createElement('a');
+        var i = document.createElement('i');
+        i.className = 'fa fa-spinner fa-spin';
+        i.setAttribute('aria-hidden', 'true');
+        a.append(i);
+        a.append(' INSaFLU Project');
+        span.append(a);
+        resultsDiv.append(span);
+    }
+
+    // Append the 'teleflu-results' div to the 'panelContainer'
+    panelContainer.append(resultsDiv);
+}
+
+var teleflu_projects_load = function() {
+  var url = $('#teleflu-projects-info').attr('teleflu-projects-url');
+
+  $.ajax({
+    url: url, // The URL to your endpoint that returns teleflu_projects data
+    type: 'GET', // or 'POST', depending on your server setup
+    dataType: 'json', // Expecting JSON data in response
+    data: {
+      'project_id': $('#panel-submit-button').attr('project-id'),
+    },
+    success: function (data) {
+
+      if (data["is_ok"] === true && data["is_empty"] === false) {
+          // Create the container div
+          var containerDiv = $('<div>', { class: 'teleflu-table-container' });
+          
+          // Add title and description
+          containerDiv.append('<h4 class="table-title">Reference Analysis</h4>');
+          containerDiv.append('<p class="table-description"><i class="fa fa-crosshairs fa-lg" aria-hidden="true">‌</i>Focus on selected targets for validation. Coordinate processing and mapping workflows against selected references across multiple samples.</p>');
+          
+          // Create the list
+          var projectsList = $('<ul>', { id: 'teleflu-list' });
+          $.each(data.teleflu_projects, function(i, project) {
+              var listItem = $('<li>');
+
+              var panelContainer = $('<div>', { class: 'teleflu-panel-container' });
+              var teleflu_manage = $('<div>', { class: 'teleflu-manage clearfix' });
+            
+              // Create the 'Delete Project' button
+              var deleteProjectButton = document.createElement('button');
+              deleteProjectButton.className = 'btn delete-project-button';
+              deleteProjectButton.setAttribute('data-toggle', 'modal');
+              deleteProjectButton.setAttribute('data-target', '#delete_teleflu_project_modal');
+              // Optionally, set a custom attribute to hold the project ID for deletion
+              deleteProjectButton.setAttribute('project-id', project.id);
+              deleteProjectButton.setAttribute('data-project-name', project.ref_accid);
+              teleflu_manage.append(deleteProjectButton); // Append the delete button
+              
+              // Add project details to panelContainer...
+              teleflu_manage.append('<div class="reference-item"><p class="reference-description">' + project.ref_description + '</p><p class="reference-id">Taxid: ' + project.ref_taxid + '</p><p class="reference-id">Accid: ' + project.ref_accid + '</p></div>');
+              
+              // Add buttons to panelContainer
+              createTelefluProjectButtons(project, teleflu_manage);            
+              panelContainer.append(teleflu_manage);
+            
+              addInsafluProjectStatusToPanel(project, panelContainer);
+
+              // Add more project details as needed...
+              listItem.append(panelContainer);
+              projectsList.append(listItem);
+          });
+          
+          // Append the list to the container
+          containerDiv.append(projectsList);
+          // clear previous content
+          $('#teleflu-projects-info').empty();
+          // Append the container to the teleflu-projects-info div or any other target element
+          $('#teleflu-projects-info').append(containerDiv);
+          
+          /// set wait screen
+          $(".request-add-teleflu-sample").on("click", function () {
+            var teleflu_id = $(this).attr('teleflu-id');
+            $("#id-add-teleflu-sample-button").attr('teleflu-id', teleflu_id);
+            
+            var checkedRows_samples = [];
+            $('.select_sample-checkbox:checked').each(function () {
+                // collect ids of checked rows
+                var sample_id = $(this).attr('sample_id');
+                checkedRows_samples.push(sample_id);
+            });
+            // change text
+            if (checkedRows_samples.length == 0) {
+              $("#id-label-add-teleflu-sample").text("No samples selected.");
+            } else {
+              $("#id-label-add-teleflu-sample").text("Add selected samples ?");
+            }
+          });
+        
+          
+          $(".delete-project-button").on("click", function () {
+            var project_id = $(this).attr('project-id');
+            var project_name = $(this).attr('data-project-name');
+
+            // Update the modal's body to include the project name
+            const modalBody = document.querySelector('#delete_teleflu_project_modal .modal-body');
+            modalBody.innerHTML = `Are you sure you want to delete the project: <strong>${project_name}</strong>?`;
+
+            // Set the 'project-id' attribute on the 'confirm-delete-teleflu-project-button'
+            const confirmDeleteButton = document.querySelector('#confirm-delete-teleflu-project-button');
+            confirmDeleteButton.setAttribute('project-id',project_id);
+          });
+
+
+
+        
+      }
+    },
+    error: function(xhr, status, error) {
+        console.error("Error fetching teleflu projects: ", error);
+    }
+});
+}

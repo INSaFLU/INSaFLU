@@ -37,8 +37,9 @@ $(document).ready(function () {
           'ref_ids': checkedRows_refs,
           'sample_ids': checkedRows_samples,
         },
-        success: function(data) {
-          if (data['is_ok']) {
+        success: function (data) {
+          console.log(data);
+          if (data['is_ok'] && !data['exists']) {
             $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
               'References successfully added' +
               '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
@@ -49,10 +50,12 @@ $(document).ready(function () {
               $('#teleflu_search-input').val('');
               // clear selection 
               $('.teleflu_reference-checkbox').prop('checked', false);
-              
-              
+            
               // drop modal
-              $('#myModal').modal('hide');
+              $('#teleflu_ref_modal').modal('hide');
+              // reload teleflu project
+              teleflu_projects_load();
+
 
           } else if (data['is_error']) {
             $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
@@ -61,7 +64,8 @@ $(document).ready(function () {
               '</div>');
 
               // drop modal
-              $('#myModal').modal('hide');
+              $('#teleflu_ref_modal').modal('hide');
+            
           } else if (data['is_empty']) {
             $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
               'No references were selected.' +
@@ -77,7 +81,7 @@ $(document).ready(function () {
               '</div>');
 
               // drop modal
-              $('#myModal').modal('hide');
+              $('#teleflu_ref_modal').modal('hide');
           }
           
         }
@@ -85,7 +89,6 @@ $(document).ready(function () {
 
     });
 });
-
 
 /// add function to toggle the checkbox in tables
 /// set the Listener and get the checked in the server, and set the box check in the client
@@ -148,7 +151,7 @@ var loadTelefluContent = function (event) {
             url: $('#teleflu_table_with_check_id').attr("set-check-box-values-url"),
             data : { 
               get_check_box_single : '1',
-              csrfmiddlewaretoken: '{{ csrf_token }}' }, // data sent with the post request
+              csrfmiddlewaretoken: csrf }, // data sent with the post request
             success: function (data) {
               for (key in data){
                 if (key === 'is_ok'){ continue; }

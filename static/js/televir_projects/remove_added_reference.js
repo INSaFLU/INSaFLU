@@ -41,24 +41,10 @@ $('#id-remove-button').on('click', function () {
           /// add message with informaton
           $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
           'The reference \'' + $('#id-modal-body-remove-sample').attr('ref_name') + '\' was successfully removed.' +
-      '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-            '</div>');
+          '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+          '</div>');
           
-          var reload_url = $('#submit-button').attr('reload_ref');
-          /// update table
-          $.ajax({
-            url: reload_url,
-            type: 'GET',
-            data: {
-                sample_id: $('#id-modal-body-remove-sample').attr('sample_id'),
-                csrfmiddlewaretoken: csrftoken,
-            },
-            success: function (data) {
-
-              $('#collapsehead2').html(data.my_content);
-
-            }
-          });
+          update_ref_table();
 
           
         }

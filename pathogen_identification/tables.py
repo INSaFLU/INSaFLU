@@ -20,6 +20,7 @@ from pathogen_identification.models import (
     PIProject_Sample,
     Projects,
     RawReference,
+    RawReferenceCompoundModel,
     ReadClassification,
     ReferenceContigs,
     RunAssembly,
@@ -702,6 +703,7 @@ class SampleTableOne(tables.Table):
         )
 
     def render_ref_management(self, record: PIProject_Sample):
+        nreferences = RawReferenceCompoundModel.objects.filter(sample=record).count()
         references_management_button = (
             '<a href="'
             + reverse(
@@ -711,6 +713,7 @@ class SampleTableOne(tables.Table):
             + '"'
             + 'title="Sample Reference Management">'
             + '<i class="fa fa-database"></i></span> </a>'
+            + f" ({nreferences})"
         )
 
         return mark_safe(references_management_button)

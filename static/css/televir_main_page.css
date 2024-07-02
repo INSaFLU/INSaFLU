@@ -60,6 +60,15 @@
     justify-content: space-between;
 }
 
+.panel-container {
+    border: 1px solid #ddd;
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    align-items: center;
+}
+
 .teleflu-panel-container .card-title {
     font-size: 1.2em;
     color: #333;
@@ -123,6 +132,28 @@
     border-radius: 5px;
 }
 
+.delete-project-button {
+    border: 1px solid #d9534f; /* Darker red border for contrast */
+    color: #fff; /* White text color for readability */
+    background-color: #d9534f; /* Classic red background for delete buttons */
+    font-size: 14px; /* Standard font size for clarity */
+    padding: 4px 8px; /* Balanced padding for a compact look */
+    display: inline-block; /* Ensure it doesn't take full width */
+    margin-right: 15px; /* Margin to separate from other buttons */
+    border-radius: 4px; /* Slightly rounded corners for a softer look */
+    width: auto; /* Auto width to fit content */
+    height: auto; /* Auto height to fit content */
+    text-align: center; /* Center the text/icon */
+    vertical-align: middle; /* Align vertically */
+    line-height: normal; /* Default line height for better text alignment */
+    cursor: pointer; /* Change cursor to pointer to indicate clickable */
+}
+
+.delete-project-button::before {
+    content: 'X'; /* Change from 'X' to 'Delete' for clarity */
+    font-weight: bold; /* Make the text bold for emphasis */
+}
+
 .request-add-teleflu-sample {
     align-self: center;
     border-color: #b3b3b3;
@@ -160,7 +191,7 @@
     order: 1;
     align-items: center;
     font-size: 0.8em; /* This will make the font size smaller */
-    padding-left: 20px; 
+    padding-left: 10px; 
     display: flex;
 }
 

@@ -364,9 +364,9 @@ var teleflu_projects_load = function() {
             confirmDeleteButton.setAttribute('project-id',project_id);
           });
 
-
-
-        
+      } else if (data["is_empty"] === true) {
+          // Display a message when no teleflu projects are available
+          $('#teleflu-projects-info').empty();
       }
     },
     error: function(xhr, status, error) {

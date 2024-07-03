@@ -18,8 +18,7 @@
 
 {% block breadcrumbs %}
 {{ block.super }}
-{% breadcrumb "Project Index" "project-index" %}
-{% breadcrumb "TELEVIR Projects" "PIprojects_main" %}
+{% breadcrumb "References Index" "references-index" %}
 {% breadcrumb "Manage References" "" %}
 {% endblock %}
 
@@ -37,76 +36,122 @@
 
 {% block content %}
 
+<style>
+
+    .summary-section {
+        margin-top: 60px;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: #f9f9f9;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .summary-item {
+        display: flex; /* Enables flexbox */
+        margin-bottom: 10px; /* Adds space between items */
+    }
+    
+    .summary-item span {
+        font-weight: bold;
+        margin-right: 5px; /* Adds space between the label and its value */
+        min-width: 150px; /* Ensures labels have enough space and are aligned */
+    }
+    
+    .summary-item:last-child {
+        margin-bottom: 0; /* Removes bottom margin from the last item */
+    }
+
+</style>
+
 
 {% block extra_head %}
 
     <link rel="stylesheet" href="{% static 'css/televir_references_nav.css' %}">
 {% endblock %}
 
+<!-- Adjusted Summary Section with Flexbox -->
+<div class="container-fluid">
+    <div class="row">
+        <!-- Summary Section -->
+        <div class="col-md-4">
+            <div class="summary-section">
+                <!-- Flex container for each label-value pair -->
+                <div class="summary-item"><span>Total:</span> {{ summary.total }}</div>
+                <div class="summary-item"><span>Accession ID:</span> {{ summary.accession_id }}</div>
+                <div class="summary-item"><span>TaxID:</span> {{ summary.taxID }}</div>
+                <div class="summary-item"><span>Sources:</span> {{ summary.Source }}</div>
+            </div>
+        </div>
 
-<div class="table-responsive">
-    <table class="table table-hover table-bordered table-striped" {% if files_table.attrs %}z
-            {{ files_table.attrs.as_html }}{% endif %}>
-            {% block table.thead %}
-            <thead>
-            <tr>
-                <th colspan="11">
+        <!-- Table Section -->
+        <div class="col-md-8">
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered table-striped" {% if files_table.attrs %}z
+                        {{ files_table.attrs.as_html }}{% endif %}>
+                        {% block table.thead %}
+                        <thead>
+                        <tr>
+                            <th colspan="11">
+                                <form method="get" class="form-inline form-search pull-right">
+                                    {% csrf_token %}
+                                    <input id="search_form_id" name="search_references" type="text" class="form-control col-md-8"
+                                        placeholder="Reference Name, Taxid, Accid, Source" {% if search_references %}
+                                        value="{{ search_references }}" {% endif %}>
+                                    <button type="submit" class="btn btn-small btn-dark"><i class="fa fa-search"></i>
+                                        Search</button>
+                                </form>
+                            </th>
+                        </tr>
+                        <tr>
+                            {% for column in files_table.columns %}
+                            {% if column.orderable %}
+                                <th {{ column.attrs.th.as_html }}><a href="{% querystring files_table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header|title }}</a></th>
+                            {% else %}
+                                <th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
+                            {% endif %}                    
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    {% endblock table.thead %}
+                    {% block table.tbody %}
+                    <tbody>
+                        {% for row in files_table.page.object_list|default:files_table.rows %} {# support pagination #}
+                          {% block table.tbody.row %}
+                          <tr id="row_{{ row.record.id }}" class="{% cycle "odd" "even" %}">
+                            {% for column, cell in row.items %}
+                              <td {{ column.attrs.td.as_html }}>{{ cell }}</td>
+                            {% endfor %}
+                          </tr>
+                          {% endblock table.tbody.row %}
+                        {% empty %}
+                          {% if files_table.empty_text %}
+                          {% block table.tbody.empty_text %}
+                              <tr><td colspan="{{ files_table.columns|length }}">{{ files_table.empty_text }}</td></tr>
+                          {% endblock table.tbody.empty_text %}
+                          {% endif %}
+                        {% endfor %}
+                    </tbody>
+                    {% endblock table.tbody %}
+                </table>
+            </div>
 
-                    <form method="get" class="form-inline form-search pull-right">
-                        {% csrf_token %}
-                        <input id="search_form_id" name="search_references" type="text" class="form-control col-md-8"
-                            placeholder="Reference Name, Taxid, Accid, Source" {% if search_references %}
-                            value="{{ search_references }}" {% endif %}>
-                        <button type="submit" class="btn btn-small btn-dark"><i class="fa fa-search"></i>
-                            Search</button>
-                    </form>
+            {% if files_table.page and show_paginatior %}
+                {% block pagination %}
+                <label id="id-total-list" class="pull-right"> Total references: {{ query_set_count }}</label>
+                {% bootstrap_pagination files_table.page url=request.get_full_path %}
+                {% endblock pagination %}
 
-                </th>
-            </tr>
-
-
-            <tr>
-                {% for column in files_table.columns %}
-                {% if column.orderable %}
-                    <th {{ column.attrs.th.as_html }}><a href="{% querystring files_table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header|title }}</a></th>
                 {% else %}
-                    <th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
-                {% endif %}                    
-                {% endfor %}
-            </tr>
-        </thead>
-        {% endblock table.thead %}
-        {% block table.tbody %}
-        <tbody>
-            {% for row in files_table.page.object_list|default:files_table.rows %} {# support pagination #}
-              {% block table.tbody.row %}
-              <tr id="row_{{ row.record.id }}" class="{% cycle "odd" "even" %}">
-                {% for column, cell in row.items %}
-                  <td {{ column.attrs.td.as_html }}>{{ cell }}</td>
-                {% endfor %}
-              </tr>
-              {% endblock table.tbody.row %}
-            {% empty %}
-              {% if files_table.empty_text %}
-              {% block table.tbody.empty_text %}
-                  <tr><td colspan="{{ files_table.columns|length }}">{{ files_table.empty_text }}</td></tr>
-              {% endblock table.tbody.empty_text %}
-              {% endif %}
-            {% endfor %}
-        </tbody>
-        {% endblock table.tbody %}
-    </table>
-</div>
-    
-{% if files_table.page and show_paginatior %}
-    {% block pagination %}
-    <label id="id-total-list" class="pull-right"> Total references: {{ query_set_count }}</label>
-    {% bootstrap_pagination files_table.page url=request.get_full_path %}
-    {% endblock pagination %}
+                <label id="id-total-list" class="pull-right">Total references: {{ query_set_count }}</label>
+            {% endif %}
 
-    {% else %}
-    <label id="id-total-list" class="pull-right">Total references: {{ query_set_count }}</label>
-{% endif %}
+
+
+        </div>
+    </div>
+</div>
 
 
 <!-- The create insaflu reference -->
@@ -144,8 +189,6 @@
         $('.add_teleflu_reference').click(function() {
             var ref_id = $(this).attr('ref_id');
             var ref_acc = $(this).attr('ref_accid');
-            console.log(ref_id);
-            console.log(ref_acc);
 
             $('#id-label-ref').text('Create INSaFLU Reference Accession ID: ' + ref_acc + ' ?');
             $('#id-modal-body-insaflu-ref').attr('ref_id', ref_id);
@@ -156,9 +199,7 @@
             var ref_id = $('#id-modal-body-insaflu-ref').attr('ref_id');
             var url = $('#id-modal-body-insaflu-ref').attr('ref-single-value-url');
             var user_id = $("#id-create-button").attr('user-id');
-            console.log(user_id);
-            console.log(ref_id);
-            console.log(user_id);
+
             $.ajax({
                 url: url,
                 type: 'POST',

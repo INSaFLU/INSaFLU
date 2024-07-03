@@ -103,7 +103,7 @@ urlpatterns = [
     ),
     url(
         r"televir_panel_upload",
-        PIviews.upload_reference_panel_view,
+        PIviews.UploadReferencePanel.as_view(),
         name="upload_reference_panel_view",
     ),
     url(

@@ -133,9 +133,9 @@
 }
 
 .delete-project-button {
-    border: 1px solid #d9534f; /* Darker red border for contrast */
-    color: #fff; /* White text color for readability */
-    background-color: #d9534f; /* Classic red background for delete buttons */
+    border: 2px solid #8b8b8b; /* Darker red border for contrast */
+    color: #ffffff; /* White text color for readability */
+    background-color: #d47878; /* Classic red background for delete buttons */
     font-size: 14px; /* Standard font size for clarity */
     padding: 4px 8px; /* Balanced padding for a compact look */
     display: inline-block; /* Ensure it doesn't take full width */
@@ -153,6 +153,11 @@
     content: 'X'; /* Change from 'X' to 'Delete' for clarity */
     font-weight: bold; /* Make the text bold for emphasis */
 }
+
+.delete-project-button:hover {
+    background-color: #d70d0d; /* Change to a brighter red on hover */
+}
+
 
 .request-add-teleflu-sample {
     align-self: center;

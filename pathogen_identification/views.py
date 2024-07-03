@@ -14,8 +14,12 @@ from django.core.files.temp import NamedTemporaryFile
 from django.db import transaction
 from django.db.models import Q
 from django.forms.models import model_to_dict
-from django.http import (Http404, HttpResponse, HttpResponseNotFound,
-                         HttpResponseRedirect)
+from django.http import (
+    Http404,
+    HttpResponse,
+    HttpResponseNotFound,
+    HttpResponseRedirect,
+)
 from django.http.response import HttpResponse
 from django.shortcuts import redirect, render
 from django.template.defaultfilters import filesizeformat, pluralize
@@ -36,47 +40,70 @@ from managing_files.models import ProjectSample as InsafluProjectSample
 from managing_files.models import Reference
 from managing_files.tables import SampleToProjectsTable
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
-from pathogen_identification.forms import (PanelReferencesUploadForm,
-                                           ReferenceForm)
-from pathogen_identification.models import (ContigClassification, FinalReport,
-                                            ParameterSet, PIProject_Sample,
-                                            Projects, RawReference,
-                                            ReadClassification,
-                                            ReferenceContigs,
-                                            ReferenceMap_Main, ReferencePanel,
-                                            ReferenceSourceFile,
-                                            ReferenceSourceFileMap,
-                                            RunAssembly, RunDetail, RunMain,
-                                            RunRemapMain, Sample,
-                                            TelefluMapping, TeleFluProject,
-                                            TeleFluSample, TelevirRunQC)
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.forms import PanelReferencesUploadForm, ReferenceForm
+from pathogen_identification.models import (
+    ContigClassification,
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReadClassification,
+    ReferenceContigs,
+    ReferenceMap_Main,
+    ReferencePanel,
+    ReferenceSourceFile,
+    ReferenceSourceFileMap,
+    RunAssembly,
+    RunDetail,
+    RunMain,
+    RunRemapMain,
+    Sample,
+    TelefluMapping,
+    TeleFluProject,
+    TeleFluSample,
+    TelevirRunQC,
+)
 from pathogen_identification.modules.object_classes import RunQC_report
-from pathogen_identification.tables import (AddedReferenceTable,
-                                            CompoundRefereceScoreWithScreening,
-                                            CompoundReferenceScore,
-                                            ContigTable, ProjectTable,
-                                            RawReferenceTable,
-                                            RawReferenceTable_Basic,
-                                            RawReferenceTableNoRemapping,
-                                            ReferenceSourceTable, RunMainTable,
-                                            RunMappingTable, SampleTableOne,
-                                            TeleFluInsaFLuProjectTable,
-                                            TeleFluReferenceTable)
+from pathogen_identification.tables import (
+    AddedReferenceTable,
+    CompoundRefereceScoreWithScreening,
+    CompoundReferenceScore,
+    ContigTable,
+    ProjectTable,
+    RawReferenceTable,
+    RawReferenceTable_Basic,
+    RawReferenceTableNoRemapping,
+    ReferenceSourceTable,
+    RunMainTable,
+    RunMappingTable,
+    SampleTableOne,
+    TeleFluInsaFLuProjectTable,
+    TeleFluReferenceTable,
+)
 from pathogen_identification.utilities.reference_utils import (
-    generate_insaflu_reference, temp_fasta_copy)
+    generate_insaflu_reference,
+    temp_fasta_copy,
+)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
 from pathogen_identification.utilities.utilities_general import (
-    get_services_dir, infer_run_media_dir)
+    get_services_dir,
+    infer_run_media_dir,
+)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility, RawReferenceUtils)
+    Parameter_DB_Utility,
+    RawReferenceUtils,
+)
 from pathogen_identification.utilities.utilities_views import (
-    EmptyRemapMain, RawReferenceCompound, ReportSorter,
-    final_report_best_cov_by_accid, recover_assembly_contigs)
+    EmptyRemapMain,
+    RawReferenceCompound,
+    ReportSorter,
+    final_report_best_cov_by_accid,
+    recover_assembly_contigs,
+)
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
 from utils.software import Software
@@ -987,7 +1014,9 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
 
 
 from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils, Utils_Manager)
+    SoftwareTreeUtils,
+    Utils_Manager,
+)
 
 
 def excise_paths_leaf_last(string_with_paths):
@@ -1133,10 +1162,16 @@ class TelefluProjectView(LoginRequiredMixin, generic.CreateView):
         return context
 
 
-from fluwebvirus.settings import (BASE_DIR, MEDIA_ROOT, MEDIA_URL, STATIC_ROOT,
-                                  STATIC_URL)
-from pathogen_identification.utilities.reference_utils import \
-    filter_reference_maps_select
+from fluwebvirus.settings import (
+    BASE_DIR,
+    MEDIA_ROOT,
+    MEDIA_URL,
+    STATIC_ROOT,
+    STATIC_URL,
+)
+from pathogen_identification.utilities.reference_utils import (
+    filter_reference_maps_select,
+)
 from pathogen_identification.utilities.utilities_general import simplify_name
 
 
@@ -1358,7 +1393,6 @@ def inject_references_filter(request, max_references: int = 30):
     project_id = None
     project = None
 
-
     if request.GET.get("max_references") and request.GET.get("max_references") != "":
         max_references = int(request.GET.get("max_references"))
 
@@ -1534,7 +1568,6 @@ class ReferencePanelManagement(LoginRequiredMixin, generic.CreateView):
 
     def get_context_data(self, **kwargs) -> Dict[str, Any]:
         context = super().get_context_data(**kwargs)
-        context["nav_project"] = True
         user = self.request.user
 
         panels = (
@@ -1549,14 +1582,17 @@ class ReferencePanelManagement(LoginRequiredMixin, generic.CreateView):
         )
         context["panels"] = panels
         context["user_id"] = user.pk
+        context["nav_reference"] = True
 
         return context
 
 
 from django.views.generic import ListView, TemplateView
 
-from pathogen_identification.tables import (ReferenceSourceFileTable,
-                                            TelevirReferencesTable)
+from pathogen_identification.tables import (
+    ReferenceSourceFileTable,
+    TelevirReferencesTable,
+)
 
 
 class ReferenceManagementBase(TemplateView):
@@ -1569,7 +1605,7 @@ class ReferenceManagementBase(TemplateView):
     def get_context_data(self, **kwargs) -> Dict[str, Any]:
 
         context = super().get_context_data(**kwargs)
-        context["nav_project"] = True
+        context["nav_reference"] = True
         return context
 
 
@@ -1594,7 +1630,6 @@ class ReferenceFileManagement(LoginRequiredMixin, generic.CreateView):
 
     def get_context_data(self, **kwargs) -> Dict[str, Any]:
         context = super().get_context_data(**kwargs)
-        context["nav_project"] = True
         user = self.request.user
 
         files = (
@@ -1607,7 +1642,7 @@ class ReferenceFileManagement(LoginRequiredMixin, generic.CreateView):
         RequestConfig(self.request, paginate={"per_page": 15}).configure(files_table)
 
         context["files_table"] = files_table
-        context["nav_sample"] = True
+        context["nav_reference"] = True
         context["show_paginatior"] = files.count() > 15
         context["query_set_count"] = files.count()
         context["user_id"] = user.pk
@@ -1635,15 +1670,14 @@ class ReferenceManagement(LoginRequiredMixin, generic.CreateView):
 
     def get_context_data(self, **kwargs) -> Dict[str, Any]:
         context = super().get_context_data(**kwargs)
-        context["nav_project"] = True
         user = self.request.user
 
         tag_search = "search_references"
 
         references = (
             ReferenceSourceFileMap.objects.filter(
-                Q(reference_source_file__owner=None)
-                | Q(reference_source_file__owner__id=user.pk)
+                Q(reference_source_file__owner__id=user.pk)
+                # | Q(reference_source_file__owner=None)
             )
             .order_by("reference_source__description", "reference_source__accid")
             .distinct("reference_source__description", "reference_source__accid")
@@ -1654,6 +1688,15 @@ class ReferenceManagement(LoginRequiredMixin, generic.CreateView):
         ):
             query_string = self.request.GET.get(tag_search)
             query_string = process_query_string(query_string)
+
+            references = (
+                ReferenceSourceFileMap.objects.filter(
+                    Q(reference_source_file__owner__id=user.pk)
+                    | Q(reference_source_file__owner=None)
+                )
+                .order_by("reference_source__description", "reference_source__accid")
+                .distinct("reference_source__description", "reference_source__accid")
+            )
 
             references = references.filter(
                 Q(
@@ -1676,13 +1719,13 @@ class ReferenceManagement(LoginRequiredMixin, generic.CreateView):
 
         summary = {
             "total": references.count(),
-            "Accession ID": references.values_list("reference_source__accid", flat=True)
+            "accession_id": references.values_list("reference_source__accid", flat=True)
             .distinct()
             .count(),
-            "TaxID": references.values_list("reference_source__taxid__taxid", flat=True)
+            "taxID": references.values_list("reference_source__taxid__taxid", flat=True)
             .distinct()
             .count(),
-            "Description": references.values_list(
+            "description": references.values_list(
                 "reference_source__description", flat=True
             )
             .distinct()
@@ -1698,9 +1741,11 @@ class ReferenceManagement(LoginRequiredMixin, generic.CreateView):
             paginate={"per_page": ConstantsSettings.TELEVIR_REFERENCE_PAGINATE_NUMBER},
         ).configure(files_table)
 
-        context["table_summary"] = summary
+        print(summary)
+
+        context["summary"] = summary
         context["files_table"] = files_table
-        context["nav_sample"] = True
+        context["nav_reference"] = True
         context["show_paginatior"] = references.count() > Constants.PAGINATE_NUMBER
         context["query_set_count"] = references.count()
         context["user_id"] = user.pk
@@ -1744,90 +1789,132 @@ def download_template_view(request):
         return response
 
 
-def upload_reference_panel_view(request):
-    if request.method == "POST":
-        form = UploadFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            data = {"is_error": False, "is_ok": False, "error_message": ""}
-            # Handle the uploaded files here
+class UploadReferencePanel(LoginRequiredMixin, FormValidMessageMixin, generic.FormView):
+    """
+    page to manage and create insaflu references files.
 
-            # name = form.cleaned_data["name"]
-            description = form.cleaned_data["description"]
-            reference_fasta_file = form.cleaned_data["fasta_file"]
-            metadata_file = form.cleaned_data["metadata"]
+    """
 
-            ###
-            software = Software()
-            utils = Utils()
+    template_name = "pathogen_identification/televir_upload_panels.html"
+    success_url = reverse_lazy("televir_reference_files")
+    form_class = UploadFileForm
 
-            reference_metadata_table = check_metadata_table_clean(metadata_file)
-            reference_fasta_temp_file_name = NamedTemporaryFile(
-                prefix="flu_fa_", delete=False
+    def get_form_kwargs(self):
+        """ """
+
+        kw = super(UploadReferencePanel, self).get_form_kwargs()
+        kw["request"] = self.request
+        return kw
+
+    def get_context_data(self, **kwargs):
+        context = super(UploadReferencePanel, self).get_context_data(
+            **kwargs
+        )  # Call the base implementation first to get a context
+        if "form" in kwargs and hasattr(kwargs["form"], "error_in_file"):
+            context["error_in_file"] = mark_safe(
+                kwargs["form"].error_in_file.replace("\n", "<br>")
+            )  ## pass a list
+        context["nav_reference"] = True
+        context["nav_modal"] = True  ## short the size of modal window
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
+        return context
+
+    def form_valid(self, form):
+        try:
+            profile = Profile.objects.get(user=self.request.user)
+            if profile.only_view_project:
+                messages.warning(
+                    self.request,
+                    "'{}' account can not add file with samples.".format(
+                        self.request.user.username
+                    ),
+                    fail_silently=True,
+                )
+                return super(UploadReferencePanel, self).form_invalid(form)
+        except Profile.DoesNotExist:
+            pass
+
+        data = {"is_error": False, "is_ok": False, "error_message": ""}
+        # Handle the uploaded files here
+
+        # name = form.cleaned_data["name"]
+        description = form.cleaned_data["description"]
+        reference_fasta_file = form.cleaned_data["fasta_file"]
+        metadata_file = form.cleaned_data["metadata"]
+        print(form.cleaned_data)
+        ###
+        software = Software()
+
+        reference_metadata_table = check_metadata_table_clean(metadata_file)
+        reference_fasta_temp_file_name = NamedTemporaryFile(
+            prefix="flu_fa_", delete=False
+        )
+        reference_metadata_temp_file_name = NamedTemporaryFile(
+            prefix="flu_fa_", delete=False, suffix=".tsv"
+        )
+
+        try:
+            file_data = reference_fasta_file.read()
+            reference_fasta_temp_file_name.write(file_data)
+            reference_fasta_temp_file_name.flush()
+            reference_fasta_temp_file_name.close()
+            software.dos_2_unix(reference_fasta_temp_file_name.name)
+        except Exception as e:
+
+            data["is_error"] = True
+            messages.error(
+                self.request,
+                "Error in the fasta file",
             )
-            reference_metadata_temp_file_name = NamedTemporaryFile(
-                prefix="flu_fa_", delete=False, suffix=".tsv"
+            return super(UploadReferencePanel, self).form_invalid(form)
+
+        try:
+            reference_metadata_table.to_csv(
+                reference_metadata_temp_file_name.name, sep="\t", index=False
+            )
+        except Exception as e:
+            print(e)
+
+            messages.error(
+                self.request,
+                "Error in the metadata file",
+            )
+            return super(UploadReferencePanel, self).form_invalid(form)
+
+        process_SGE = ProcessSGE()
+
+        try:
+            # create reference source file
+            reference_source_file = ReferenceSourceFile()
+            reference_source_file.owner = self.request.user
+            reference_source_file.file = reference_fasta_file
+            reference_source_file.description = description
+            reference_source_file.save()
+
+            taskID = process_SGE.set_submit_upload_reference_televir(
+                user=self.request.user,
+                file_id=reference_source_file.pk,
+                fasta=reference_fasta_temp_file_name.name,
+                metadata=reference_metadata_temp_file_name.name,
             )
 
-            try:
-                file_data = reference_fasta_file.read()
-                reference_fasta_temp_file_name.write(file_data)
-                reference_fasta_temp_file_name.flush()
-                reference_fasta_temp_file_name.close()
-                software.dos_2_unix(reference_fasta_temp_file_name.name)
-            except Exception as e:
-                print(e)
-                some_error_in_files = True
-                error_message = "Error in the fasta file"
-                data["is_error"] = True
-                return JsonResponse(data)
+        except Exception as e:
+            data["is_error"] = True
+            messages.error(
+                self.request,
+                "Error saving file",
+            )
+            return super(UploadReferencePanel, self).form_invalid(form)
 
-            try:
-                reference_metadata_table.to_csv(
-                    reference_metadata_temp_file_name.name, sep="\t", index=False
-                )
-            except Exception as e:
-                print(e)
-                some_error_in_files = True
-                error_message = "Error in the metadata file"
-                data["is_error"] = True
-                return JsonResponse(data)
+        messages.success(
+            self.request,
+            "Reference file '{}' uploaded successfully".format(description),
+        )
+        return super(UploadReferencePanel, self).form_valid(form)
 
-            process_SGE = ProcessSGE()
-
-            try:
-                # create reference source file
-                reference_source_file = ReferenceSourceFile()
-                reference_source_file.owner = request.user
-                reference_source_file.file = reference_fasta_file
-                reference_source_file.description = description
-                reference_source_file.save()
-
-                taskID = process_SGE.set_submit_upload_reference_televir(
-                    user=request.user,
-                    file_id=reference_source_file.pk,
-                    fasta=reference_fasta_temp_file_name.name,
-                    metadata=reference_metadata_temp_file_name.name,
-                )
-
-            except Exception as e:
-                print(e)
-                some_error_in_files = True
-                error_message = "Error in the metadata file"
-                data["is_error"] = True
-                render(
-                    request,
-                    "pathogen_identification/televir_upload_panels.html",
-                    {"form": form},
-                )
-
-            return redirect("televir_reference_files")
-
-    else:
-        form = UploadFileForm()
-
-    return render(
-        request, "pathogen_identification/televir_upload_panels.html", {"form": form}
-    )
+    form_valid_message = ""  ## need to have this
 
 
 class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):

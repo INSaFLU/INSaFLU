@@ -60,6 +60,8 @@ class UploadFileForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         ## add ids to filefields
+        print(args, kwargs)
+        self.request = kwargs.pop("request")
         super(UploadFileForm, self).__init__(*args, **kwargs)
 
         self.fields["fasta_file"].widget.attrs["id"] = "fasta_file"

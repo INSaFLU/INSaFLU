@@ -40,6 +40,7 @@ class index(TemplateView):
         context["show_info_main_page"] = (
             ShowInfoMainPage()
         )  ## show main information about the institute
+        context["nav_settings"] = True
         return context
 
 

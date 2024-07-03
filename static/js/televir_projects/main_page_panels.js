@@ -357,7 +357,7 @@ var teleflu_projects_load = function() {
 
             // Update the modal's body to include the project name
             const modalBody = document.querySelector('#delete_teleflu_project_modal .modal-body');
-            modalBody.innerHTML = `Are you sure you want to delete the project: <strong>${project_name}</strong>?`;
+            modalBody.innerHTML = `Delete the teleflu project for reference: <strong>${project_name}</strong>?`;
 
             // Set the 'project-id' attribute on the 'confirm-delete-teleflu-project-button'
             const confirmDeleteButton = document.querySelector('#confirm-delete-teleflu-project-button');

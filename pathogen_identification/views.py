@@ -13,8 +13,12 @@ from django.contrib import messages
 from django.core.files.temp import NamedTemporaryFile
 from django.db import transaction
 from django.db.models import Q
-from django.http import (Http404, HttpResponse, HttpResponseNotFound,
-                         HttpResponseRedirect)
+from django.http import (
+    Http404,
+    HttpResponse,
+    HttpResponseNotFound,
+    HttpResponseRedirect,
+)
 from django.http.response import HttpResponse
 from django.shortcuts import render
 from django.template.defaultfilters import pluralize
@@ -33,46 +37,66 @@ from managing_files.models import ProjectSample as InsafluProjectSample
 from managing_files.models import Reference
 from managing_files.tables import SampleToProjectsTable
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
-from pathogen_identification.forms import (PanelReferencesUploadForm,
-                                           ReferenceForm)
-from pathogen_identification.models import (ContigClassification, FinalReport,
-                                            ParameterSet, PIProject_Sample,
-                                            Projects, RawReference,
-                                            ReadClassification,
-                                            ReferenceContigs,
-                                            ReferenceMap_Main, ReferencePanel,
-                                            ReferenceSourceFile,
-                                            ReferenceSourceFileMap,
-                                            RunAssembly, RunDetail, RunMain,
-                                            RunRemapMain, Sample,
-                                            TelefluMapping, TeleFluProject,
-                                            TeleFluSample, TelevirRunQC)
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.forms import PanelReferencesUploadForm, ReferenceForm
+from pathogen_identification.models import (
+    ContigClassification,
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReadClassification,
+    ReferenceContigs,
+    ReferenceMap_Main,
+    ReferencePanel,
+    ReferenceSourceFile,
+    ReferenceSourceFileMap,
+    RunAssembly,
+    RunDetail,
+    RunMain,
+    RunRemapMain,
+    Sample,
+    TelefluMapping,
+    TeleFluProject,
+    TeleFluSample,
+    TelevirRunQC,
+)
 from pathogen_identification.modules.object_classes import RunQC_report
-from pathogen_identification.tables import (AddedReferenceTable,
-                                            CompoundRefereceScoreWithScreening,
-                                            CompoundReferenceScore,
-                                            ContigTable, ProjectTable,
-                                            RawReferenceTable,
-                                            RawReferenceTable_Basic,
-                                            ReferenceSourceTable, RunMainTable,
-                                            RunMappingTable, SampleTableOne,
-                                            TeleFluInsaFLuProjectTable,
-                                            TeleFluReferenceTable)
-from pathogen_identification.utilities.reference_utils import \
-    generate_insaflu_reference
+from pathogen_identification.tables import (
+    AddedReferenceTable,
+    CompoundRefereceScoreWithScreening,
+    CompoundReferenceScore,
+    ContigTable,
+    ProjectTable,
+    RawReferenceTable,
+    RawReferenceTable_Basic,
+    ReferenceSourceTable,
+    RunMainTable,
+    RunMappingTable,
+    SampleTableOne,
+    TeleFluInsaFLuProjectTable,
+    TeleFluReferenceTable,
+)
+from pathogen_identification.utilities.reference_utils import generate_insaflu_reference
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
 from pathogen_identification.utilities.utilities_general import (
-    get_services_dir, infer_run_media_dir)
+    get_services_dir,
+    infer_run_media_dir,
+)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility, RawReferenceUtils, SoftwareTreeUtils)
+    Parameter_DB_Utility,
+    RawReferenceUtils,
+    SoftwareTreeUtils,
+)
 from pathogen_identification.utilities.utilities_views import (
-    EmptyRemapMain, ReportSorter, final_report_best_cov_by_accid,
-    recover_assembly_contigs)
+    EmptyRemapMain,
+    ReportSorter,
+    final_report_best_cov_by_accid,
+    recover_assembly_contigs,
+)
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
 from utils.software import Software
@@ -878,6 +902,7 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
             query_set = query_set.filter(Q(name__icontains=query_string)).distinct()
 
         samples = SampleTableOne(query_set)
+        print("got samples")
 
         ### set the check_box
         if Constants.CHECK_BOX_ALL not in self.request.session:
@@ -907,45 +932,6 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
                     else:
                         self.request.session[key] = True
         ## END need to clean all the others if are reject in filter
-
-        ## TeleFlu Projects
-        teleflu_projects = TeleFluProject.objects.filter(
-            televir_project=project, is_deleted=False
-        ).order_by("-last_change_date")
-
-        teleflu_data = []
-        for tproj in teleflu_projects:
-
-            tproject_data = {
-                "id": tproj.pk,
-                "samples": tproj.nsamples,
-                "ref_description": tproj.raw_reference.description_first,
-                "ref_accid": tproj.raw_reference.accids_str,
-                "ref_taxid": tproj.raw_reference.taxids_str,
-                "insaflu_project": False if tproj.insaflu_project is None else True,
-            }
-
-            insaflu_project = tproj.insaflu_project
-            if insaflu_project is None:
-                tproject_data["insaflu_project"] = "None"
-            else:
-                count_not_finished = InsafluProjectSample.objects.filter(
-                    project__id=insaflu_project.id,
-                    is_deleted=False,
-                    is_error=False,
-                    is_finished=False,
-                ).count()
-
-                if count_not_finished == 0:
-                    tproject_data["insaflu_project"] = "Finished"
-
-                else:
-                    tproject_data["insaflu_project"] = "Processing"
-
-            teleflu_data.append(tproject_data)
-
-        context["teleflu_projects"] = teleflu_data
-        context["teleflu_projects_exist"] = teleflu_projects.exists()
 
         ### set the check_box
         RequestConfig(
@@ -1125,10 +1111,16 @@ class TelefluProjectView(LoginRequiredMixin, generic.CreateView):
         return context
 
 
-from fluwebvirus.settings import (BASE_DIR, MEDIA_ROOT, MEDIA_URL, STATIC_ROOT,
-                                  STATIC_URL)
-from pathogen_identification.utilities.reference_utils import \
-    filter_reference_maps_select
+from fluwebvirus.settings import (
+    BASE_DIR,
+    MEDIA_ROOT,
+    MEDIA_URL,
+    STATIC_ROOT,
+    STATIC_URL,
+)
+from pathogen_identification.utilities.reference_utils import (
+    filter_reference_maps_select,
+)
 from pathogen_identification.utilities.utilities_general import simplify_name
 
 
@@ -1546,8 +1538,10 @@ class ReferencePanelManagement(LoginRequiredMixin, generic.CreateView):
 
 from django.views.generic import ListView, TemplateView
 
-from pathogen_identification.tables import (ReferenceSourceFileTable,
-                                            TelevirReferencesTable)
+from pathogen_identification.tables import (
+    ReferenceSourceFileTable,
+    TelevirReferencesTable,
+)
 
 
 class ReferenceManagementBase(TemplateView):

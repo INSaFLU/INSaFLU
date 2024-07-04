@@ -1576,6 +1576,7 @@ def query_teleflu_projects(request):
 
         data["teleflu_projects"] = teleflu_data
         data["is_ok"] = True
+        print("done")
 
         return JsonResponse(data)
 
@@ -2203,13 +2204,13 @@ def check_panel_upload_clean(request):
             data["is_error"] = True
             data["error_message"] = "Fasta file already exists."
             return JsonResponse(data)
-        except ReferenceSourceFile.DoesNotExist:    
+        except ReferenceSourceFile.DoesNotExist:
             pass
         except ReferenceSourceFile.MultipleObjectsReturned:
             data["is_error"] = True
             data["error_message"] = "Fasta file already exists."
             return JsonResponse(data)
-        
+
         print("oih")
 
         if os.path.splitext(reference_metadata_table_file.name)[1] not in [

@@ -36,6 +36,7 @@ from pathogen_identification.utilities.televir_parameters import TelevirParamete
 from pathogen_identification.utilities.utilities_general import (
     get_project_dir,
     get_project_dir_no_media_root,
+    infer_run_media_dir,
 )
 from pathogen_identification.utilities.utilities_views import (
     RawReferenceCompound,
@@ -632,7 +633,7 @@ class SampleTableOne(tables.Table):
         if user.username == Constants.USER_ANONYMOUS:
             return mark_safe("report")
 
-        final_report = FinalReport.objects.filter(sample=record).order_by("-coverage")
+        final_report = FinalReport.objects.filter(sample=record)
 
         ## return empty square if no report
         if final_report.count() == 0:
@@ -642,8 +643,27 @@ class SampleTableOne(tables.Table):
         report_layout_params = TelevirParameters.get_report_layout_params(
             project_pk=record.project.pk
         )
-        report_sorter = ReportSorter(final_report, report_layout_params)
-        sorted = report_sorter.check_analysis_exists()
+        media_dir = None
+
+        for report in final_report:
+            try:
+                media_dir = infer_run_media_dir(report.run)
+                media_dir = os.path.dirname(media_dir)
+                break
+            except:
+                continue
+
+        if media_dir is None:
+            return mark_safe('<i class="fa fa-square-o" title="Empty"></i>')
+
+        analysis_df_path = os.path.join(
+            media_dir,
+            "overlap_analysis_{}.tsv".format(
+                report_layout_params.shared_proportion_threshold
+            ),
+        )
+
+        sorted = os.path.isfile(analysis_df_path)
 
         ### check if sorting
         process_controler = ProcessControler()

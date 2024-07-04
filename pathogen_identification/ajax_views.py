@@ -1570,13 +1570,14 @@ def query_teleflu_projects(request):
             data["is_error"] = True
             return JsonResponse(data)
 
+        print("done")
+
         if len(teleflu_data) == 0:
             data["is_empty"] = True
             return JsonResponse(data)
 
         data["teleflu_projects"] = teleflu_data
         data["is_ok"] = True
-        print("done")
 
         return JsonResponse(data)
 

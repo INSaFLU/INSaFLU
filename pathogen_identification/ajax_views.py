@@ -1404,7 +1404,6 @@ def inject_references(references: list, request):
     data = {}
 
     context["references_table"] = ReferenceSourceTable(references)
-    context["references_count"] = len(references)
 
     template_table_html = os.path.join(
         BASE_DIR,
@@ -1417,6 +1416,7 @@ def inject_references(references: list, request):
     rendered_table = render_to_string(template_table_html, context, request=request)
     data["my_content"] = rendered_table
     data["references_count"] = len(references)
+    data["is_empty"] = len(references) == 0
 
     return data
 
@@ -2076,6 +2076,7 @@ def remove_added_reference(request):
 
         context = inject__added_references(query_set_added_manual, request)
         data["added_references"] = context["my_content"]
+        data["is_empty"] = query_set_added_manual.count() == 0
 
         data = {"is_ok": True}
         return JsonResponse(data)

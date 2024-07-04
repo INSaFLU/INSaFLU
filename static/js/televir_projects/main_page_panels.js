@@ -290,7 +290,7 @@ var teleflu_projects_load = function() {
           
           // Add title and description
           containerDiv.append('<h4 class="table-title">Reference Analysis</h4>');
-          containerDiv.append('<p class="table-description"><i class="fa fa-crosshairs fa-lg" aria-hidden="true">‌</i>Focus on selected targets for validation. Coordinate processing and mapping workflows against selected references across multiple samples.</p>');
+          containerDiv.append('<p class="table-description"><i class="fa fa-crosshairs fa-lg" aria-hidden="true" style="margin-right: 5px;">‌</i>Focus on selected targets for validation. Coordinate processing and mapping workflows against selected references across multiple samples.</p>');
           
           // Create the list
           var projectsList = $('<ul>', { id: 'teleflu-list' });

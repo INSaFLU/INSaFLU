@@ -70,17 +70,20 @@
               <div style="padding: 20px">
                   
                   <div class="row">
-                      <div class="col-sm-2">
-                          {% for run in runs %}
-                          <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Workflow report {{run.parameter_set.leaf.index}} </a>
-                          <br>
-                          {% endfor %}
+                      <div class="col-sm-2 workflow-link-panel centered-links">
+                        <ul>
+                            {% for run in runs %}
+                            <li><a href="{% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}">Workflow report {{run.parameter_set.leaf.index}}</a></li>
+                            {% endfor %}
+                        </ul>
                       </div>
                       {% if graph_json %}
-                      <div class="col-sm-10">
-                              <div id="{{graph_id}}" style="width:95%;height:250px;position:center;" class="collapsibleTree html-widget"></div>
+                      <div class="col-sm-9">
+                              <div id="{{graph_id}}" style="width:95%;height:250px;position:center;margin-left: 100px;margin-top: 50px;" class="collapsibleTree html-widget"></div>
                               <script type="application/json" data-for="{{graph_id}}">{{graph_json|safe}}</script>
                       </div>
+                  </div>
+                  <div>
                       <br>
                       <div class="col-sm-2">
                         <div class="info-icon">
@@ -121,7 +124,8 @@
           </div>
       </div>
       <div id="collapsehead2" class="collapse" role="tabpanel" aria-labelledby="headingsample2">
-        {{ added_references_table }}
+        <div class="panel-list" id="reference-table-panel">
+        </div>
       </div>
 
   </div>
@@ -526,6 +530,8 @@
     // load panels
     load_panels('{{ sample_index }}', '{% url "get_sample_panels" %}', '.panel-list ul', true, false);
     prep_loads();
+
+    update_ref_table();
 
     $('.add-panels').click(function() {
       var url= $(this).attr('href');

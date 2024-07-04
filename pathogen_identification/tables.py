@@ -13,34 +13,22 @@ from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    RawReferenceCompoundModel,
-    ReadClassification,
-    ReferenceContigs,
-    RunAssembly,
-    RunMain,
-    SampleQC,
-    TeleFluProject,
-    TelevirRunQC,
-)
-from pathogen_identification.utilities.reference_utils import (
-    check_file_reference_submitted,
-)
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.models import (ContigClassification, FinalReport,
+                                            ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            RawReferenceCompoundModel,
+                                            ReadClassification,
+                                            ReferenceContigs, RunAssembly,
+                                            RunMain, SampleQC, TeleFluProject,
+                                            TelevirRunQC)
+from pathogen_identification.utilities.reference_utils import \
+    check_file_reference_submitted
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.utilities_general import (
-    get_project_dir,
-    get_project_dir_no_media_root,
-)
+    get_project_dir, get_project_dir_no_media_root)
 from pathogen_identification.utilities.utilities_views import (
-    RawReferenceCompound,
-    ReportSorter,
-)
+    RawReferenceCompound, ReportSorter)
 from settings.models import Parameter, Software
 from utils.process_SGE import ProcessSGE
 
@@ -467,7 +455,7 @@ class SampleTableOne(tables.Table):
             "queued_processes",
         )
 
-    def render_set_control(self, record):
+    def render_set_control(self, record: PIProject_Sample):
         """
         return a reference name
         """
@@ -568,11 +556,6 @@ class SampleTableOne(tables.Table):
             > 0
             and CS.METAGENOMICS
         ):
-            # if check_sample_software_exists(record) is False:
-            #    duplicate_metagenomics_software(record.project, record)
-            ## add light gray background using span
-
-            color = ""
 
             ## encase following butons in a tooltip
             metagen_buttons = " <span class='tooltip-wrap' data-toggle='tooltip' style='display: inline-block; visibility: visible;' >"
@@ -650,7 +633,6 @@ class SampleTableOne(tables.Table):
 
         ### check if sorting
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
 
         process = ProcessControler.objects.filter(
             owner__id=user.pk,
@@ -726,9 +708,7 @@ class SampleTableOne(tables.Table):
         return RunMain.objects.filter(
             sample__name=record.name,
             project=record.project,
-            parameter_set__status__in=[
-                ParameterSet.STATUS_FINISHED,
-            ],
+            parameter_set__status=ParameterSet.STATUS_FINISHED,
             run_type=RunMain.RUN_TYPE_PIPELINE,
         ).count()
 
@@ -736,13 +716,9 @@ class SampleTableOne(tables.Table):
         """
         return number of running processes in this project"""
 
-        running = 0
-        parameter_sets = ParameterSet.objects.filter(
-            sample=record, project=record.project
-        )
-        for parameter_set in parameter_sets:
-            if parameter_set.status == ParameterSet.STATUS_RUNNING:
-                running += 1
+        running = ParameterSet.objects.filter(
+            sample=record, project=record.project, status=ParameterSet.STATUS_RUNNING
+        ).count()
 
         return running
 
@@ -750,17 +726,9 @@ class SampleTableOne(tables.Table):
         """
         return number of running processes in this project"""
 
-        queued = 0
-        parameter_sets = ParameterSet.objects.filter(
-            sample=record, project=record.project
-        )
-        for parameter_set in parameter_sets:
-            if parameter_set.status == ParameterSet.STATUS_QUEUED:
-                queued += 1
-
-        mapping_runs = RunMain.objects.filter(
-            sample=record, status__in=[RunMain.STATUS_PREP]
-        )
+        queued = ParameterSet.objects.filter(
+            sample=record, project=record.project, status=ParameterSet.STATUS_QUEUED
+        ).count()
 
         return queued
 
@@ -786,7 +754,8 @@ class SampleTableOne(tables.Table):
         ).count()
 
 
-from pathogen_identification.models import ReferenceSourceFile, ReferenceSourceFileMap
+from pathogen_identification.models import (ReferenceSourceFile,
+                                            ReferenceSourceFileMap)
 
 
 class ReferenceSourceFileTable(tables.Table):
@@ -854,7 +823,8 @@ class ReferenceSourceFileTable(tables.Table):
         return record.creation_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE)
 
 
-from pathogen_identification.utilities.reference_utils import check_reference_exists
+from pathogen_identification.utilities.reference_utils import \
+    check_reference_exists
 
 
 class TelevirReferencesTable(tables.Table):

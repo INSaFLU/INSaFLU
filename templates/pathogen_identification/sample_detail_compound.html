@@ -81,8 +81,7 @@
                             {% endfor %}
                         </div>
                         {% if graph_json %}
-                        <div class="col-sm-1">
-                        </div>
+
                         <div class="col-sm-9">
                                 <div id="{{graph_id}}" style="width:95%;height:{{graph_height}}px;position:center;" class="collapsibleTree html-widget"></div>
                                 <script type="application/json" data-for="{{graph_id}}">{{graph_json|safe}}</script>

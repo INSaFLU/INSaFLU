@@ -878,11 +878,9 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
             query_set = query_set.filter(Q(name__icontains=query_string)).distinct()
 
         samples = SampleTableOne(query_set)
-        print("got samples")
 
         ### set the check_box
         if Constants.CHECK_BOX_ALL not in self.request.session:
-            print("HI")
             self.request.session[Constants.CHECK_BOX_ALL] = False
             is_all_check_box_in_session(
                 ["{}_{}".format(Constants.CHECK_BOX, key.id) for key in query_set],
@@ -893,7 +891,6 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
         ## need to clean all the others if are reject in filter
         dt_sample_id_add_temp = {}
         if context[Constants.CHECK_BOX_ALL]:
-            print("HELLO")
             for sample in query_set:
                 dt_sample_id_add_temp[sample.id] = (
                     1  ## add the ids that are in the tables
@@ -910,7 +907,6 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
                     else:
                         self.request.session[key] = True
         ## END need to clean all the others if are reject in filter
-        print("done checking")
         ### set the check_box
         RequestConfig(
             self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
@@ -1660,8 +1656,6 @@ class ReferenceManagement(LoginRequiredMixin, generic.CreateView):
             paginate={"per_page": ConstantsSettings.TELEVIR_REFERENCE_PAGINATE_NUMBER},
         ).configure(files_table)
 
-        print(summary)
-
         context["summary"] = summary
         context["files_table"] = files_table
         context["nav_reference"] = True
@@ -1762,7 +1756,6 @@ class UploadReferencePanel(LoginRequiredMixin, FormValidMessageMixin, generic.Fo
         description = form.cleaned_data["description"]
         reference_fasta_file = form.cleaned_data["fasta_file"]
         metadata_file = form.cleaned_data["metadata"]
-        print(form.cleaned_data)
         ###
         software = Software()
 

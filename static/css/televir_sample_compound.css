@@ -329,3 +329,7 @@ z-index: 9999; /* Set a higher z-index value */
 .info-icon:hover img {
 display: block;
 }
+
+.map-only-cell  {
+    background-color: #007bff;
+}

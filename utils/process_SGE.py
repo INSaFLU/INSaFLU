@@ -767,7 +767,7 @@ class ProcessSGE(object):
             Constants.QUEUE_SGE_NAME_FAST,
             vect_command,
             job_name,
-            False,
+            True,
             [job_name_wait],
         )
         try:
@@ -965,7 +965,6 @@ class ProcessSGE(object):
         )
         try:
             sge_id = self.submitte_job(path_file)
-            print("SGE_ID: " + str(sge_id))
 
             if sge_id != None:
                 pc_name = (
@@ -1072,7 +1071,6 @@ class ProcessSGE(object):
         )
         try:
             sge_id = self.submitte_job(path_file)
-            print("sample submitted, sge_id: " + str(sge_id))
             if sge_id != None:
                 self.set_process_controlers(
                     user,
@@ -1126,13 +1124,12 @@ class ProcessSGE(object):
             queue_name,
             vect_command,
             job_name,
-            False,
+            True,
             [job_name_wait],
             alternative_temp_dir=out_dir,
         )
         try:
             sge_id = self.submitte_job(path_file)
-            print("sample submitted, sge_id: " + str(sge_id))
             if sge_id != None:
                 self.set_process_controlers(
                     user,
@@ -1188,7 +1185,6 @@ class ProcessSGE(object):
         )
         try:
             sge_id = self.submitte_job(path_file)
-            print("sample submitted, sge_id: " + str(sge_id))
             if sge_id != None:
                 self.set_process_controlers(
                     user,
@@ -1236,7 +1232,6 @@ class ProcessSGE(object):
         )
         try:
             sge_id = self.submitte_job(path_file)
-            print("project submitted, sge_id: " + str(sge_id))
             if sge_id != None:
                 self.set_process_controlers(
                     user, process_controler.get_name_televir_project(project_pk), sge_id
@@ -1280,7 +1275,6 @@ class ProcessSGE(object):
         )
         try:
             sge_id = self.submitte_job(path_file)
-            print("project submitted, sge_id: " + str(sge_id))
             if sge_id != None:
                 self.set_process_controlers(
                     user,
@@ -1326,7 +1320,6 @@ class ProcessSGE(object):
         )
         try:
             sge_id = self.submitte_job(path_file)
-            print("project submitted, sge_id: " + str(sge_id))
             if sge_id != None:
                 self.set_process_controlers(
                     user,
@@ -1372,7 +1365,6 @@ class ProcessSGE(object):
         )
         try:
             sge_id = self.submitte_job(path_file)
-            print("project submitted, sge_id: " + str(sge_id))
             if sge_id != None:
                 self.set_process_controlers(
                     user,
@@ -1418,7 +1410,6 @@ class ProcessSGE(object):
         )
         try:
             sge_id = self.submitte_job(path_file)
-            print("project submitted, sge_id: " + str(sge_id))
             if sge_id != None:
                 self.set_process_controlers(
                     user,
@@ -1466,7 +1457,6 @@ class ProcessSGE(object):
         )
         try:
             sge_id = self.submitte_job(path_file)
-            print("project submitted, sge_id: " + str(sge_id))
             if sge_id != None:
                 self.set_process_controlers(
                     user,
@@ -1514,7 +1504,6 @@ class ProcessSGE(object):
         )
         try:
             sge_id = self.submitte_job(path_file)
-            print("project submitted, sge_id: " + str(sge_id))
             if sge_id != None:
                 self.set_process_controlers(
                     user, process_controler.get_name_televir_map(reference_pk), sge_id
@@ -1558,7 +1547,6 @@ class ProcessSGE(object):
         )
         try:
             sge_id = self.submitte_job(path_file)
-            print("project submitted, sge_id: " + str(sge_id))
             if sge_id != None:
                 self.set_process_controlers(
                     user,

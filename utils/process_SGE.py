@@ -767,7 +767,7 @@ class ProcessSGE(object):
             Constants.QUEUE_SGE_NAME_FAST,
             vect_command,
             job_name,
-            True,
+            False,
             [job_name_wait],
         )
         try:
@@ -894,7 +894,7 @@ class ProcessSGE(object):
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         queue_name = user.profile.queue_name_sge
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
-            Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
+            Profile.SGE_PROCESS_televir, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
         path_file = self.set_script_run_sge(
@@ -951,7 +951,7 @@ class ProcessSGE(object):
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         queue_name = user.profile.queue_name_sge
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
-            Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
+            Profile.SGE_PROCESS_televir, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
         path_file = self.set_script_run_sge(
@@ -1008,7 +1008,7 @@ class ProcessSGE(object):
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         queue_name = user.profile.queue_name_sge
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
-            Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
+            Profile.SGE_PROCESS_televir, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
         path_file = self.set_script_run_sge(
@@ -1058,7 +1058,7 @@ class ProcessSGE(object):
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         queue_name = user.profile.queue_name_sge
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
-            Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
+            Profile.SGE_PROCESS_televir, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
         path_file = self.set_script_run_sge(
@@ -1118,7 +1118,7 @@ class ProcessSGE(object):
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         queue_name = user.profile.queue_name_sge
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
-            Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
+            Profile.SGE_PROCESS_televir, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
         path_file = self.set_script_run_sge(
@@ -1174,7 +1174,7 @@ class ProcessSGE(object):
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         queue_name = user.profile.queue_name_sge
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
-            Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
+            Profile.SGE_PROCESS_televir, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
         path_file = self.set_script_run_sge(
@@ -1222,7 +1222,7 @@ class ProcessSGE(object):
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         queue_name = user.profile.queue_name_sge
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
-            Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
+            Profile.SGE_PROCESS_televir, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
         path_file = self.set_script_run_sge(
@@ -1266,7 +1266,7 @@ class ProcessSGE(object):
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         queue_name = user.profile.queue_name_sge
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
-            Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
+            Profile.SGE_PROCESS_televir, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
         path_file = self.set_script_run_sge(
@@ -1312,7 +1312,7 @@ class ProcessSGE(object):
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         queue_name = user.profile.queue_name_sge
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
-            Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
+            Profile.SGE_PROCESS_televir, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
         path_file = self.set_script_run_sge(
@@ -1358,7 +1358,7 @@ class ProcessSGE(object):
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         queue_name = user.profile.queue_name_sge
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
-            Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
+            Profile.SGE_PROCESS_televir, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
         path_file = self.set_script_run_sge(
@@ -1404,7 +1404,7 @@ class ProcessSGE(object):
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         queue_name = user.profile.queue_name_sge
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
-            Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
+            Profile.SGE_PROCESS_televir, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
         path_file = self.set_script_run_sge(
@@ -1452,7 +1452,7 @@ class ProcessSGE(object):
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         queue_name = user.profile.queue_name_sge
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
-            Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
+            Profile.SGE_PROCESS_televir, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
         path_file = self.set_script_run_sge(
@@ -1500,7 +1500,7 @@ class ProcessSGE(object):
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         queue_name = user.profile.queue_name_sge
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
-            Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
+            Profile.SGE_PROCESS_televir, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
         path_file = self.set_script_run_sge(
@@ -1544,7 +1544,7 @@ class ProcessSGE(object):
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         queue_name = user.profile.queue_name_sge
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
-            Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
+            Profile.SGE_PROCESS_televir, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
         path_file = self.set_script_run_sge(

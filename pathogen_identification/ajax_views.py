@@ -1525,7 +1525,7 @@ def query_teleflu_projects(request):
             "is_empty": False,
             "teleflu_data": [],
         }
-        print(request.GET)
+
         televir_project_id = int(request.GET["project_id"])
 
         ## TeleFlu Projects
@@ -1569,8 +1569,6 @@ def query_teleflu_projects(request):
             print(e)
             data["is_error"] = True
             return JsonResponse(data)
-
-        print("done")
 
         if len(teleflu_data) == 0:
             data["is_empty"] = True
@@ -2174,9 +2172,6 @@ def check_panel_upload_clean(request):
             "pass": False,
         }
 
-        print(request.POST)
-        print(request.FILES)
-
         description = request.POST.get("description", "").strip()
 
         if request.FILES.get("metadata", None) is None:
@@ -2211,8 +2206,6 @@ def check_panel_upload_clean(request):
             data["is_error"] = True
             data["error_message"] = "Fasta file already exists."
             return JsonResponse(data)
-
-        print("oih")
 
         if os.path.splitext(reference_metadata_table_file.name)[1] not in [
             ".tsv",

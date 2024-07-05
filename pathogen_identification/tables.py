@@ -619,10 +619,28 @@ class SampleTableOne(tables.Table):
         if user.username == Constants.USER_ANONYMOUS:
             return mark_safe("report")
 
-        final_report = FinalReport.objects.filter(sample=record)
+        ### check if sorting
+        process_controler = ProcessControler()
+
+        process = ProcessControler.objects.filter(
+            owner__id=user.pk,
+            name=process_controler.get_name_televir_project_sample_sort(
+                sample_pk=record.pk
+            ),
+            is_finished=False,
+            is_error=False,
+        )
+
+        if process.exists():
+            request_sorting = "<i class='fa fa-spinner fa-spin' title='Sorting'></i>"
+            return mark_safe(request_sorting)
+
+        ### check if sorted
+
+        sample_runs = RunMain.objects.filter(sample=record)
 
         ## return empty square if no report
-        if final_report.count() == 0:
+        if sample_runs.count() == 0:
             return mark_safe('<i class="fa fa-square-o" title="Empty"></i>')
         ## check sorted
 
@@ -631,9 +649,9 @@ class SampleTableOne(tables.Table):
         )
         media_dir = None
 
-        for report in final_report:
+        for run in sample_runs:
             try:
-                media_dir = infer_run_media_dir(report.run)
+                media_dir = infer_run_media_dir(run)
                 media_dir = os.path.dirname(media_dir)
                 break
             except:
@@ -651,51 +669,29 @@ class SampleTableOne(tables.Table):
 
         sorted = os.path.isfile(analysis_df_path)
 
-        ### check if sorting
-        process_controler = ProcessControler()
-
-        process = ProcessControler.objects.filter(
-            owner__id=user.pk,
-            name=process_controler.get_name_televir_project_sample_sort(
-                sample_pk=record.pk
-            ),
-            is_finished=False,
-            is_error=False,
-        )
-
-        if process.exists():
-            request_sorting = "<i class='fa fa-spinner fa-spin' title='Sorting'></i>"
-
-        else:
-            request_sorting = (
-                ' <a href="#" id="sort_sample_btn" class="kill-button" data-toggle="modal" data-toggle="tooltip" title="Sort"'
-                + ' sample_id="'
-                + str(record.pk)
-                + '"'
-                + ' sort-url="'
-                + reverse("sort_sample_reports")
-                + '"'
-                + '><i class="fa fa-sort"></i></span> </a>'
-            )
-
         ## sorted icon, green if sorted, red if not
         if sorted:
             sorted_icon_assess = (
                 ' <i class="fa fa-check" style="color: green;" title="Sorted"></i>'
             )
 
-        else:
-            sorted_icon_assess = (
-                ' <i class="fa fa-times" style="color: red;" title="un-sorted"></i>'
-            )
+            return mark_safe(sorted_icon_assess)
 
-        if sorted is False:
-            if process.exists():
-                return mark_safe(request_sorting)
+        sorted_icon_assess = (
+            ' <i class="fa fa-times" style="color: red;" title="un-sorted"></i>'
+        )
 
-            return mark_safe(sorted_icon_assess + request_sorting)
-
-        return mark_safe(sorted_icon_assess)
+        request_sorting = (
+            ' <a href="#" id="sort_sample_btn" class="kill-button" data-toggle="modal" data-toggle="tooltip" title="Sort"'
+            + ' sample_id="'
+            + str(record.pk)
+            + '"'
+            + ' sort-url="'
+            + reverse("sort_sample_reports")
+            + '"'
+            + '><i class="fa fa-sort"></i></span> </a>'
+        )
+        return mark_safe(sorted_icon_assess + request_sorting)
 
     def render_select_ref(self, value, record: PIProject_Sample):
         return mark_safe(

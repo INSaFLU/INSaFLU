@@ -24,41 +24,27 @@ from django.views import generic
 from django.views.generic import DetailView, ListView, TemplateView
 from django_tables2 import RequestConfig
 
-from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
+from constants.constants import (Constants, FileExtensions, FileType, TypeFile,
+                                 TypePath)
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.nextclade_links import get_constext_nextclade
 from constants.software_names import SoftwareNames
 from extend_user.models import Profile
 from manage_virus.constants_virus import ConstantsVirus
-from managing_files.forms import (
-    AddSampleProjectForm,
-    ReferenceForm,
-    ReferenceProjectFormSet,
-    SampleForm,
-    SamplesUploadDescriptionForm,
-    SamplesUploadDescriptionMetadataForm,
-    SamplesUploadMultipleFastqForm,
-)
+from managing_files.forms import (AddSampleProjectForm, ReferenceForm,
+                                  ReferenceProjectFormSet, SampleForm,
+                                  SamplesUploadDescriptionForm,
+                                  SamplesUploadDescriptionMetadataForm,
+                                  SamplesUploadMultipleFastqForm)
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import (
-    MetaKey,
-    Project,
-    ProjectSample,
-    Reference,
-    Sample,
-    UploadFiles,
-)
-from managing_files.tables import (
-    AddSamplesFromCvsFileTable,
-    AddSamplesFromCvsFileTableMetadata,
-    AddSamplesFromFastqFileTable,
-    ProjectTable,
-    ReferenceProjectTable,
-    ReferenceTable,
-    SampleTable,
-    SampleToProjectsTable,
-    ShowProjectSamplesResults,
-)
+from managing_files.models import (MetaKey, Project, ProjectSample, Reference,
+                                   Sample, UploadFiles)
+from managing_files.tables import (AddSamplesFromCvsFileTable,
+                                   AddSamplesFromCvsFileTableMetadata,
+                                   AddSamplesFromFastqFileTable, ProjectTable,
+                                   ReferenceProjectTable, ReferenceTable,
+                                   SampleTable, SampleToProjectsTable,
+                                   ShowProjectSamplesResults)
 from pathogen_identification.models import TeleFluProject
 from settings.constants_settings import ConstantsSettings
 from settings.default_software import DefaultSoftware
@@ -68,10 +54,8 @@ from settings.tables import SoftwaresTable
 from utils.collect_extra_data import CollectExtraData
 from utils.process_SGE import ProcessSGE
 from utils.result import DecodeObjects
-from utils.session_variables import (
-    clean_check_box_in_session,
-    is_all_check_box_in_session,
-)
+from utils.session_variables import (clean_check_box_in_session,
+                                     is_all_check_box_in_session)
 from utils.software import Software
 from utils.software_pangolin import SoftwarePangolin
 from utils.support_django_template import get_link_for_dropdown_item
@@ -968,7 +952,6 @@ class SamplesUploadDescriptionFileView(
                 ),
                 sz_file_to,
             )
-            print("move ")
             software.dos_2_unix(sz_file_to)
             if path_added is None:
                 upload_files.path_name.name = os.path.join(

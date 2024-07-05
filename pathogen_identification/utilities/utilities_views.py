@@ -1545,6 +1545,7 @@ class RawReferenceCompound:
         self.mapped_final_report = (
             FinalReport.objects.filter(
                 taxid=self.taxid,
+                accid=self.accid,
                 sample=sample,
             )
             .order_by("-coverage")
@@ -1560,6 +1561,7 @@ class RawReferenceCompound:
 
     @property
     def mapped_html(self):
+
         if self.mapped_final_report is None and self.mapped_raw_reference is None:
             return mark_safe(
                 '<a><i class="fa fa-times" title="unmapped"></i> Unmapped</a>'

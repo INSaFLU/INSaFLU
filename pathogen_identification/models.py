@@ -17,8 +17,7 @@ from django.utils.translation import gettext_lazy as _
 from managing_files.models import Project as InsaFluProject
 from managing_files.models import Reference as InsaFluReference
 from managing_files.models import Sample
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.data_classes import IntermediateFiles
 
 # Create your models here.
@@ -1373,8 +1372,7 @@ class ReferenceTaxid(models.Model):
         return self.taxid
 
 
-from constants.constants import \
-    Televir_Directory_Constants as Televir_Directories
+from constants.constants import Televir_Directory_Constants as Televir_Directories
 
 
 class ReferenceSourceFile(models.Model):
@@ -1723,12 +1721,13 @@ class RawReferenceCompoundModel(models.Model):
     )
     selected_mapped_pk = models.IntegerField(blank=True, null=True)
     standard_score = models.FloatField(blank=True, null=True)
-    global_ranking= models.IntegerField(blank=True, null=True)
+    global_ranking = models.IntegerField(blank=True, null=True)
     ensemble_ranking = models.IntegerField(blank=True, null=True)
     run_count = models.IntegerField(default=0)
 
     @property
     def mapped_html(self):
+
         if self.mapped_final_report is None and self.mapped_raw_reference is None:
             return mark_safe(
                 '<a><i class="fa fa-times" title="unmapped"></i> Unmapped</a>'

@@ -1275,7 +1275,8 @@ def Update_FinalReport(run_class: RunEngine_class, runmain, sample):
 
         if remap_targets.exists():
             for target in remap_targets:
-                counts = target.counts
+                if target.counts is not None:
+                    counts = target.counts
 
         classification_success = translate_classification_success(
             row["classification_success"]

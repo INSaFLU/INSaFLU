@@ -2195,9 +2195,10 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
 
         raw_references = (
             RawReference.objects.filter(run=run_main_pipeline)
+            .exclude(accid="-")
+            .exclude(counts=None)
             .order_by("taxid", "status")
             .distinct("taxid")
-            .exclude(accid="-")
         )
         raw_references = sorted(
             raw_references,

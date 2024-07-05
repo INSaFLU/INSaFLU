@@ -6,23 +6,25 @@ from typing import List, Optional
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (
-    PIProject_Sample,
-    RawReference,
-    RawReferenceCompoundModel,
-    ReferenceSourceFileMap,
-    RunMain,
-)
+from pathogen_identification.models import (PIProject_Sample, RawReference,
+                                            RawReferenceCompoundModel,
+                                            ReferenceSourceFileMap, RunMain)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
 from pathogen_identification.utilities.utilities_general import (
-    description_fails_filter,
-    merge_classes,
-    scrape_description,
-    simplify_name,
-)
-from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
+    description_fails_filter, merge_classes, scrape_description, simplify_name)
+from pathogen_identification.utilities.utilities_pipeline import \
+    RawReferenceUtils
 
+
+def determine_taxid_in_file(taxid, df: pd.DataFrame):
+    """
+    determine if an accession is in a dataframe.
+    """
+    if "taxid" in df.columns:
+        return str(taxid) in df.taxid.astype(str).unique()
+
+    return False
 
 class RunMetadataHandler:
     # remap_targets: List[Remap_Target] = []
@@ -342,22 +344,6 @@ class RunMetadataHandler:
 
         # references_table = references_table.drop_duplicates(subset=["taxid"])
         references_table.rename(columns={"accid": "acc"}, inplace=True)
-
-        ## group by taxids
-        # if references_table.shape[0] > 0:
-        #    references_table = (
-        #        references_table.groupby(["taxid"])
-        #        .agg(
-        #            {
-        #                "acc": "first",
-        #                "description": "first",
-        #                "read_counts": "first",
-        #                "standard_score": "first",
-        #                "contig_counts": "first",
-        #            }
-        #        )
-        #        .reset_index()
-        #    )
 
         if max_taxids is not None:
             references_table = references_table.iloc[:max_taxids, :]
@@ -828,6 +814,77 @@ class RunMetadataHandler:
         max_remap: int = 9,
         skip_scrape: bool = False,
     ):
+
+        print(
+            "######################## GENERATING TARGETS ############################"
+        )
+        remap_plan = []
+        remap_targets = []
+        remap_absent_taxid_list = []
+
+        for taxid in targets.taxid.unique():
+
+            refs_in_file = ReferenceSourceFileMap.objects.filter(
+                reference_source__taxid__taxid=taxid,
+            ).distinct("reference_source__accid")
+
+            if len(refs_in_file) == 0:
+                remap_absent_taxid_list.append(taxid)
+                continue
+
+            #
+            refs_in_file = refs_in_file[:max_remap]
+
+            for ref_in_file_by_accid in refs_in_file:
+                other_refs = ReferenceSourceFileMap.objects.filter(
+                    reference_source__taxid__taxid=taxid,
+                    reference_source__accid=ref_in_file_by_accid.reference_source.accid,
+                )
+
+                files_to_map = self.filter_query_set_files(other_refs)
+                ref_in_file = other_refs.filter(
+                    reference_source_file__file__in=files_to_map
+                ).first()
+
+                target = Remap_Target(
+                    ref_in_file.reference_source.accid,
+                    simplify_name(ref_in_file.reference_source.accid),
+                    ref_in_file.reference_source.taxid.taxid,
+                    os.path.join(
+                        self.config["source"]["REF_FASTA"],
+                        ref_in_file.reference_source_file.file,
+                    ),
+                    self.prefix,
+                    ref_in_file.reference_source.description,
+                    [ref_in_file.reference_source.accid],
+                    determine_taxid_in_file(taxid, self.rclass),
+                    determine_taxid_in_file(taxid, self.aclass),
+                )
+
+                remap_targets.append(target)
+                remap_plan.append(
+                    [
+                        ref_in_file.reference_source.taxid.taxid,
+                        ref_in_file.reference_source.accid,
+                        ref_in_file.reference_source_file.file,
+                        ref_in_file.reference_source.description,
+                    ]
+                )
+
+        self.remap_plan = pd.DataFrame(
+            remap_plan, columns=["taxid", "acc", "file", "description"]
+        )
+
+        self.remap_targets.extend(remap_targets)
+        self.remap_absent_taxid_list.extend(remap_absent_taxid_list)
+
+    def generate_mapping_targets_old(
+        self,
+        targets,
+        prefix: str,
+        max_remap: int = 9,
+        skip_scrape: bool = False,
+    ):
         """
         check for presence of taxid in targets in self.accession_to_taxid.
         if present, find every accession ID associated, and create a ReferenceMap object
@@ -904,14 +961,6 @@ class RunMetadataHandler:
                     if description_fails_filter(description, CS.DESCRIPTION_FILTERS):
                         continue
 
-                    def determine_taxid_in_file(taxid, df: pd.DataFrame):
-                        """
-                        determine if an accession is in a dataframe.
-                        """
-                        if "taxid" in df.columns:
-                            return str(taxid) in df.taxid.astype(str).unique()
-
-                        return False
 
                     remap_targets.append(
                         Remap_Target(
@@ -934,6 +983,7 @@ class RunMetadataHandler:
                         break
 
         print("############# REMAP PLAN #############")
+        print(len(remap_plan))
         print(remap_plan)
         self.remap_plan = pd.DataFrame(
             remap_plan, columns=["taxid", "acc", "file", "description"]

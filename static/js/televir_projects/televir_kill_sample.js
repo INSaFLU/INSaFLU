@@ -78,11 +78,21 @@ $('#id-kill-all-button').on('click', function(){
   project_id = $('#id-kill-all-button').attr('project_id');
   token = $('#id-modal-body-kill-sample').attr('csrfmiddlewaretoken');
 
+  // get checked samples rows
+  var checkedRows_samples = [];
+  $('.select_sample-checkbox:checked').each(function () {
+      // collect ids of checked rows
+      var sample_id = $(this).attr('sample_id');
+      checkedRows_samples.push(sample_id);
+  
+  });
+
   $.ajax({
         url: url,
         type: 'POST',
         data : {
-          project_id : project_id,
+          project_id: project_id,
+          'sample_ids': checkedRows_samples,
         csrfmiddlewaretoken: token,
         }, // data sent with the post request
             

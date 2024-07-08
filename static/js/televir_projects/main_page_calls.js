@@ -161,6 +161,26 @@ $(document).on("click", "a", function (e) {
 
 });
 
+$(".kill-runs").click(function (e) {
+
+    // get checked samples rows
+    var checkedRows_samples = [];
+    $('.select_sample-checkbox:checked').each(function () {
+        // collect ids of checked rows
+        var sample_id = $(this).attr('sample_id');
+        checkedRows_samples.push(sample_id);
+    
+    });
+
+    if (checkedRows_samples.length === 0) {
+        // change id-label-remove-all text
+        $('#id-label-remove-all').text('Terminate runs for all samples in project?');
+    } else {
+        $('#id-label-remove-all').text('Terminate runs for selected samples?');
+    }
+});
+
+
 
 $("#deploypi_mapping_btn").click(function (e) {
 

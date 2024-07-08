@@ -1102,8 +1102,12 @@ def kill_televir_project_all_sample(request):
 
         project_id = int(request.POST["project_id"])
         project = Projects.objects.get(id=int(project_id))
+        sample_ids = request.POST.getlist("sample_ids[]")
 
         samples = PIProject_Sample.objects.filter(project__id=int(project_id))
+
+        if len(sample_ids) > 0:
+            samples = samples.filter(pk__in=sample_ids)
 
         for sample in samples:
             try:  #

@@ -188,6 +188,7 @@ var load_teleflu_workflows = function () {
                 // Create and append the download button
                 var downloadBtn = document.createElement('button');
                 downloadBtn.innerHTML = 'Download TSV';
+                downloadBtn.className = 'download-tsv-btn';
                 downloadBtn.onclick = function() {
                     var tsvData = generateTSVData(workflow.sample_summary);
                     downloadTSV('summary-table.tsv', tsvData);

@@ -1456,12 +1456,26 @@ class ReferenceSourceFileMap(models.Model):
         return self.reference_source.accid
 
     @property
+    def accid_in_file(self):
+        if self.reference_source_file is None:
+            return self.accid
+        
+        if "virosaurus" in self.reference_source_file.file:
+            acc_simple = self.accid.split(".")[0]
+            return f"{acc_simple}:{acc_simple};"
+        return self.accid
+
+    @property
     def description(self):
         return self.reference_source.description
 
     @property
     def taxid(self):
         return self.reference_source.taxid
+    
+    @property
+    def filepath(self):
+        return self.reference_source_file.filepath
 
 
 class ReferenceSourceMap(models.Model):

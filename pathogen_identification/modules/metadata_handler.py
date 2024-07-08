@@ -6,15 +6,22 @@ from typing import List, Optional
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (PIProject_Sample, RawReference,
-                                            RawReferenceCompoundModel,
-                                            ReferenceSourceFileMap, RunMain)
+from pathogen_identification.models import (
+    PIProject_Sample,
+    RawReference,
+    RawReferenceCompoundModel,
+    ReferenceSourceFileMap,
+    RunMain,
+)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
 from pathogen_identification.utilities.utilities_general import (
-    description_fails_filter, merge_classes, scrape_description, simplify_name)
-from pathogen_identification.utilities.utilities_pipeline import \
-    RawReferenceUtils
+    description_fails_filter,
+    merge_classes,
+    scrape_description,
+    simplify_name,
+)
+from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
 
 
 def determine_taxid_in_file(taxid, df: pd.DataFrame):
@@ -124,7 +131,6 @@ class RunMetadataHandler:
         """
         Update the remap_targets list with references from list"""
 
-
         for ref in references:
             refmaps = ReferenceSourceFileMap.objects.filter(
                 reference_source__taxid__taxid=ref.taxid,
@@ -147,7 +153,7 @@ class RunMetadataHandler:
                         refmap.reference_source_file.filepath,
                         self.prefix,
                         ref.description,
-                        [ref.accid],
+                        [refmap.accid_in_file],
                         False,
                         False,
                     )
@@ -221,10 +227,10 @@ class RunMetadataHandler:
                 ref.accid,
                 simplify_name(ref.accid),
                 ref.taxid,
-                ref_in_file[0].reference_source_file.filepath,
+                ref_in_file[0].filepath,
                 self.prefix,
                 ref.description,
-                [ref.accid],
+                [ref_in_file[0].accid_in_file],
                 False,
                 False,
             )
@@ -846,11 +852,11 @@ class RunMetadataHandler:
                 target = Remap_Target(
                     ref_in_file.reference_source.accid,
                     simplify_name(ref_in_file.reference_source.accid),
-                    ref_in_file.reference_source.taxid.taxid,
+                    ref_in_file.taxid,
                     ref_in_file.reference_source_file.filepath,
                     self.prefix,
-                    ref_in_file.reference_source.description,
-                    [ref_in_file.reference_source.accid],
+                    ref_in_file.description,
+                    [ref_in_file.accid_in_file],
                     determine_taxid_in_file(taxid, self.rclass),
                     determine_taxid_in_file(taxid, self.aclass),
                 )

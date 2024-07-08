@@ -1307,6 +1307,7 @@ def inject_references_filter(request, max_references: int = 30):
     panel_id = None
     project_id = None
     project = None
+    user = request.user
 
     if request.GET.get("max_references") and request.GET.get("max_references") != "":
         max_references = int(request.GET.get("max_references"))
@@ -1322,6 +1323,7 @@ def inject_references_filter(request, max_references: int = 30):
         panel = ReferencePanel.objects.get(pk=panel_id)
 
     references = []
+
     if request.GET.get(tag_add_reference) is not None:
         if table_type == "teleflu_reference":
             request_tag = request.GET.get(tag_add_reference)
@@ -1376,7 +1378,11 @@ def inject_references_filter(request, max_references: int = 30):
                         | Q(
                             reference_source_file__file__icontains=request.GET.get(
                                 tag_add_reference
-                            )
+                            ),
+                            reference_source_file__owner__in=[
+                                None,
+                                user,
+                            ],  # allow public references only
                         )
                     )
                     .exclude(

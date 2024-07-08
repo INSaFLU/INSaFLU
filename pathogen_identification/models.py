@@ -17,7 +17,8 @@ from django.utils.translation import gettext_lazy as _
 from managing_files.models import Project as InsaFluProject
 from managing_files.models import Reference as InsaFluReference
 from managing_files.models import Sample
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from pathogen_identification.data_classes import IntermediateFiles
 
 # Create your models here.
@@ -1372,7 +1373,8 @@ class ReferenceTaxid(models.Model):
         return self.taxid
 
 
-from constants.constants import Televir_Directory_Constants as Televir_Directories
+from constants.constants import \
+    Televir_Directory_Constants as Televir_Directories
 
 
 class ReferenceSourceFile(models.Model):

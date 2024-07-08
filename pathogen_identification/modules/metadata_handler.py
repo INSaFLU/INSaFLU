@@ -6,22 +6,15 @@ from typing import List, Optional
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (
-    PIProject_Sample,
-    RawReference,
-    RawReferenceCompoundModel,
-    ReferenceSourceFileMap,
-    RunMain,
-)
+from pathogen_identification.models import (PIProject_Sample, RawReference,
+                                            RawReferenceCompoundModel,
+                                            ReferenceSourceFileMap, RunMain)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
 from pathogen_identification.utilities.utilities_general import (
-    description_fails_filter,
-    merge_classes,
-    scrape_description,
-    simplify_name,
-)
-from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
+    description_fails_filter, merge_classes, scrape_description, simplify_name)
+from pathogen_identification.utilities.utilities_pipeline import \
+    RawReferenceUtils
 
 
 def determine_taxid_in_file(taxid, df: pd.DataFrame):
@@ -131,7 +124,6 @@ class RunMetadataHandler:
         """
         Update the remap_targets list with references from list"""
 
-        fasta_main_dir = self.config["source"]["REF_FASTA"]
 
         for ref in references:
             refmaps = ReferenceSourceFileMap.objects.filter(
@@ -152,7 +144,7 @@ class RunMetadataHandler:
                         ref.accid,
                         accid_simple,
                         ref.taxid,
-                        os.path.join(fasta_main_dir, refmap.reference_source_file.file),
+                        refmap.reference_source_file.filepath,
                         self.prefix,
                         ref.description,
                         [ref.accid],
@@ -229,10 +221,7 @@ class RunMetadataHandler:
                 ref.accid,
                 simplify_name(ref.accid),
                 ref.taxid,
-                os.path.join(
-                    self.config["source"]["REF_FASTA"],
-                    ref_in_file[0].reference_source_file.file,
-                ),
+                ref_in_file[0].reference_source_file.filepath,
                 self.prefix,
                 ref.description,
                 [ref.accid],

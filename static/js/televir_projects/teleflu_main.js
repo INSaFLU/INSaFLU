@@ -184,6 +184,18 @@ var load_teleflu_workflows = function () {
 
                 summaryList.appendChild(table);
                 
+                // Create and append the download button
+                var downloadBtn = document.createElement('button');
+                downloadBtn.innerHTML = 'Download TSV';
+                downloadBtn.onclick = function() {
+                    var tsvData = generateTSVData(workflow.sample_summary);
+                    downloadTSV('summary-table.tsv', tsvData);
+                };
+
+                // Assuming 'summaryList' is the parent element where you want to append the button
+                summaryList.appendChild(downloadBtn);
+                //summaryList.style.display = 'block'; // Make sure the list (and button) is visible
+                
                 workflowContainerMain.append(workflowContainerAction);
     
                 workflowContainerMain.append(summaryList);
@@ -247,6 +259,44 @@ var load_teleflu_workflows = function () {
     });
 };
 
+// Assuming this code is added at the end of your existing script
+
+// Function to generate TSV data
+function generateTSVData(sampleSummary) {
+    var headers = ['Sample', 'Mapped', 'Success', 'Coverage', 'Depth', 'Mapped Reads', 'Start ::', 'Mapped ::', 'Error Rate'];
+    var tsvContent = headers.join('\t') + '\n'; // Header row
+
+    for (var sample in sampleSummary) {
+        var rowData = [
+            sample,
+            sampleSummary[sample].mapped ? 'Yes' : 'No',
+            sampleSummary[sample].success ? 'Yes' : 'No',
+            sampleSummary[sample].coverage,
+            sampleSummary[sample].depth,
+            sampleSummary[sample].mapped_reads,
+            sampleSummary[sample].start_prop,
+            sampleSummary[sample].mapped_prop,
+            sampleSummary[sample].error_rate
+        ];
+        tsvContent += rowData.join('\t') + '\n'; // Add row data
+    }
+
+    return tsvContent;
+}
+
+// Function to download TSV file
+function downloadTSV(filename, text) {
+    var element = document.createElement('a');
+    element.setAttribute('href', 'data:text/tab-separated-values;charset=utf-8,' + encodeURIComponent(text));
+    element.setAttribute('download', filename);
+
+    element.style.display = 'none';
+    document.body.appendChild(element);
+
+    element.click();
+
+    document.body.removeChild(element);
+}
 
 
 var addToProject = function (workflow, project_id) {

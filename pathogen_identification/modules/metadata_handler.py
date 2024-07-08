@@ -6,15 +6,22 @@ from typing import List, Optional
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (PIProject_Sample, RawReference,
-                                            RawReferenceCompoundModel,
-                                            ReferenceSourceFileMap, RunMain)
+from pathogen_identification.models import (
+    PIProject_Sample,
+    RawReference,
+    RawReferenceCompoundModel,
+    ReferenceSourceFileMap,
+    RunMain,
+)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
 from pathogen_identification.utilities.utilities_general import (
-    description_fails_filter, merge_classes, scrape_description, simplify_name)
-from pathogen_identification.utilities.utilities_pipeline import \
-    RawReferenceUtils
+    description_fails_filter,
+    merge_classes,
+    scrape_description,
+    simplify_name,
+)
+from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
 
 
 def determine_taxid_in_file(taxid, df: pd.DataFrame):
@@ -25,6 +32,7 @@ def determine_taxid_in_file(taxid, df: pd.DataFrame):
         return str(taxid) in df.taxid.astype(str).unique()
 
     return False
+
 
 class RunMetadataHandler:
     # remap_targets: List[Remap_Target] = []
@@ -850,10 +858,7 @@ class RunMetadataHandler:
                     ref_in_file.reference_source.accid,
                     simplify_name(ref_in_file.reference_source.accid),
                     ref_in_file.reference_source.taxid.taxid,
-                    os.path.join(
-                        self.config["source"]["REF_FASTA"],
-                        ref_in_file.reference_source_file.file,
-                    ),
+                    ref_in_file.reference_source_file.filepath,
                     self.prefix,
                     ref_in_file.reference_source.description,
                     [ref_in_file.reference_source.accid],
@@ -960,7 +965,6 @@ class RunMetadataHandler:
 
                     if description_fails_filter(description, CS.DESCRIPTION_FILTERS):
                         continue
-
 
                     remap_targets.append(
                         Remap_Target(

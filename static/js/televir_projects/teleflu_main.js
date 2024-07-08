@@ -96,6 +96,7 @@ var load_teleflu_workflows = function () {
                 } else {
                     mapSamplesButton.prop('disabled', true);
                 }
+                
                 workflowInfo.append(workflowMapped, workflowButton, mapSamplesButton);
     
                 var mappingIgv = $('<div>').addClass('mapping-igv');

@@ -60,7 +60,6 @@ class UploadFileForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         ## add ids to filefields
-        print(args, kwargs)
         self.request = kwargs.pop("request")
         super(UploadFileForm, self).__init__(*args, **kwargs)
 
@@ -77,10 +76,6 @@ class UploadFileForm(forms.Form):
 
         fasta_file = self.cleaned_data.get("fasta_file")
         metadata = self.cleaned_data.get("metadata")
-
-        print("#TESTING")
-        print(fasta_file)
-        print(metadata)
 
         if fasta_file is None:
             self.add_error("fasta_file", "Please upload a FASTA file.")
@@ -208,7 +203,6 @@ class PanelReferencesUploadForm(forms.ModelForm):
 
         ### testing file names
         reference_fasta = cleaned_data["reference_fasta"]
-        print("HIOUHIOUB")
 
         ## testing fasta
         some_error_in_files = False

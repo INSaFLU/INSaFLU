@@ -10,20 +10,17 @@ from django.contrib.auth.models import User
 from django.core.files.temp import NamedTemporaryFile
 from django.db.models import Q
 
-from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
+from constants.constants import (Constants, FileExtensions, FileType, TypeFile,
+                                 TypePath)
 from constants.software_names import SoftwareNames
 from constants.televir_directories import Televir_Directory_Constants
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
 from managing_files.models import Reference
-from pathogen_identification.models import (
-    ParameterSet,
-    PIProject_Sample,
-    RawReference,
-    ReferenceMap_Main,
-    ReferenceSourceFileMap,
-    TelefluMapping,
-)
+from pathogen_identification.models import (ParameterSet, PIProject_Sample,
+                                            RawReference, ReferenceMap_Main,
+                                            ReferenceSourceFileMap,
+                                            TelefluMapping)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
 from pathogen_identification.utilities.utilities_general import simplify_name
 from utils.software import Software
@@ -151,8 +148,6 @@ def extract_file(accid):
     utils = Utils()
     televir_bioinf = TelevirBioinf()
 
-    fasta_directory = Televir_Directory_Constants.ref_fasta_directory
-
     references = ReferenceSourceFileMap.objects.filter(reference_source__accid=accid)
 
     for reference in references:
@@ -194,11 +189,8 @@ def merge_multiple_refs(references: List[RawReference], output_prefix: str):
     return merged_fasta.name
 
 
-from pathogen_identification.models import (
-    MetaReference,
-    RawReferenceMap,
-    TeleFluProject,
-)
+from pathogen_identification.models import (MetaReference, RawReferenceMap,
+                                            TeleFluProject)
 
 
 def check_metaReference_exists(references: List[RawReference]):

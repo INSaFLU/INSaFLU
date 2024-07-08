@@ -50,7 +50,7 @@
 <div class="outer-container">
     <div class="workflow-table-container">
         <h3 class="title">Mapping Workflows</h3>
-        <p class="subtitle">Click on the workflow to see the samples</p>
+        <p class="subtitle">Click on <i class="fa fa-list-alt" aria-hidden="true"></i> to display sample mapping summary</p>
         <div id="workflow-list">
         </div>
     </div>
@@ -118,21 +118,25 @@
 
             <div class="modal-body workflow-modal-body">
                 <div id="workflow-list">
-                    {% for workflow in workflows %}
-                        <div class="workflow-container">
-                            <button class="add-to-project-button" onclick="addToProject('{{ workflow.pk }}', '{{teleflu_project_pk}}')" url="{% url 'add_workflow_to_project' %}" csrf = "{{ csrf_token }}" >Add to project</button>
-                            <div class="workflow-title">
-                                <span class="workflow-name">Workflow {{ workflow.node }}</span>
-                            </div>
-                            <div class="step-container">
+                    {% if workflows %} 
+                        {% for workflow in workflows %}
+                            <div class="workflow-container">
+                                <button class="add-to-project-button" onclick="addToProject('{{ workflow.pk }}', '{{teleflu_project_pk}}')" url="{% url 'add_workflow_to_project' %}" csrf = "{{ csrf_token }}" >Add to project</button>
+                                <div class="workflow-title">
+                                    <span class="workflow-name">Workflow {{ workflow.node }}</span>
+                                </div>
+                                <div class="step-container">
 
-                            {% for step in workflow.modules %}
-                                <span class="step-circle {{ step.available }}" title="{{ step.module }}" data-parameters="{{ step.parameters }}" onclick="showParameters(this)">{{ step.short_name }}</span>
-                                <div class="parameters-container" ></div>
-                            {% endfor %}
+                                {% for step in workflow.modules %}
+                                    <span class="step-circle {{ step.available }}" title="{{ step.module }}" data-parameters="{{ step.parameters }}" onclick="showParameters(this)">{{ step.short_name }}</span>
+                                    <div class="parameters-container" ></div>
+                                {% endfor %}
+                                </div>
                             </div>
-                        </div>
-                    {% endfor %}
+                        {% endfor %}
+                    {% else %}
+                        <p class="no-workflows">No new workflows available. Change Televir Project settings to add new workflows.</p>
+                    {% endif %}
                 </div>
             </div>
 			<!-- Modal footer -->

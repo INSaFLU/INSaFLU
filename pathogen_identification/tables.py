@@ -861,7 +861,7 @@ class TelevirReferencesTable(tables.Table):
     taxid = tables.Column(verbose_name="TaxID")
     source = tables.Column(verbose_name="Files", empty_values=(), orderable=False)
     create_teleflu_reference = tables.Column(
-        verbose_name="Create Reference",
+        verbose_name="Create INSaFLU Reference",
         orderable=False,
         empty_values=(),
         attrs={
@@ -924,7 +924,7 @@ class TelevirReferencesTable(tables.Table):
             + record.reference_source.accid
             + '" '
             + 'data-toggle="modal" '
-            + 'title="Create Reference" '
+            + 'title="Create INSaFLU Reference" '
             + 'ref-single-value-url="'
             + reverse("create_teleflu_reference")
             + '" '
@@ -1287,7 +1287,7 @@ class CompoundReferenceTable(tables.Table):
             + str(record.selected_mapped_pk)
             + " "
             + 'data-toggle="tooltip" '
-            + 'title="Create Reference" '
+            + 'title="Create INSaFLU Reference" '
             + 'url="'
             + reverse("create_teleflu_reference")
             + '" '

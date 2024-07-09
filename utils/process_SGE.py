@@ -1124,7 +1124,7 @@ class ProcessSGE(object):
             queue_name,
             vect_command,
             job_name,
-            True,
+            False,
             [job_name_wait],
             alternative_temp_dir=out_dir,
         )

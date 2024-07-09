@@ -1528,6 +1528,10 @@ class Classifier:
         return only query and reference sequence id columns from classifier output.
         """
         return self.classifier.get_report_simple()
+        # try:
+        #    return self.classifier.get_report_simple()
+        # except Exception as e:
+        #    return pd.DataFrame(columns=["qseqid", "acc"])
 
     def collect_report(self) -> pd.DataFrame:
         """

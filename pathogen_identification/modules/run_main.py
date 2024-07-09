@@ -271,7 +271,7 @@ class RunDetail_main:
             config,
             self.prefix,
         )
-        # self.run_type = self.RUN_TYPE_SCREENING
+        #
 
         self.check_metagenomics_classification_exists()
 
@@ -279,6 +279,9 @@ class RunDetail_main:
         self.metagenomics_classification = (
             self.metagenomics_classification_method.check_exists()
         )
+
+        if self.metagenomics_classification:
+            self.run_type = self.RUN_TYPE_SCREENING
 
     def pick_remapping_method(
         self, config: dict, method_args: pd.DataFrame
@@ -1509,7 +1512,10 @@ class RunMainTree_class(Run_Deployment_Methods):
         reference_utils = RawReferenceUtils(self.sample_registered)
 
         ### ############################################################# ###
-        reference_table = reference_utils.sample_reference_tables()
+        # reference_table = reference_utils.sample_reference_tables()
+        reference_table = reference_utils.sample_compound_refs_table()
+        print("REFERENCE TABLE: ", reference_table)
+        print("#### REFERENCE TABLE SHAPE: ", reference_table.shape)
 
         self.metadata_tool.generate_targets_from_report(reference_table, max_remap=1)
 

@@ -96,6 +96,7 @@ class ConstantsSettings(object):
         PIPELINE_NAME_extra_qc,
         PIPELINE_NAME_viral_enrichment,
         PIPELINE_NAME_host_depletion,
+        PIPELINE_NAME_map_filtering,
         PIPELINE_NAME_metagenomics_screening,
         PIPELINE_NAME_metagenomics_settings,
     ]

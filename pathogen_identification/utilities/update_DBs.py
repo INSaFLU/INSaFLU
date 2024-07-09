@@ -8,27 +8,27 @@ from django.contrib.auth.models import User
 from django.core.files import File
 from django.db import IntegrityError, transaction
 
-from pathogen_identification.models import (
-    QC_REPORT,
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReadClassification,
-    ReferenceContigs,
-    ReferenceMap_Main,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    RunRemapMain,
-    SampleQC,
-    TelevirRunQC,
-)
+from pathogen_identification.models import (QC_REPORT, ContigClassification,
+                                            FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference,
+                                            RawReferenceCompoundModel,
+                                            ReadClassification,
+                                            ReferenceContigs,
+                                            ReferenceMap_Main, RunAssembly,
+                                            RunDetail, RunMain, RunRemapMain,
+                                            SampleQC, TelevirRunQC)
 from pathogen_identification.modules.object_classes import Sample_runClass
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunEngine_class
+
+
+def summarize_description(description, max_length=100):
+
+    if len(description) > max_length:
+        return description[:max_length]
+
+    return description
 
 
 ####################################################################################################################
@@ -315,7 +315,35 @@ def Update_Classification(
     try:
         with transaction.atomic():
             Update_RunMain_noCheck(run_class, parameter_set, tag=tag)
+            Update_Run_Detail_noCheck(run_class, parameter_set)
             Update_Run_Classification(run_class, parameter_set)
+
+        return True
+
+    except IntegrityError as e:
+        print(f"failed to update sample {run_class.sample_name}")
+        return False
+
+
+@transaction.atomic
+def Update_Metagenomics(
+    run_class: RunEngine_class, parameter_set: ParameterSet, tag="secondary"
+):
+    """get run data
+    Update TABLES:
+    - RunMain,
+    - ReadClassification,
+    - ContigClassification,
+
+    :param sample_class:
+    :return: run_data
+    """
+
+    try:
+        with transaction.atomic():
+            Update_RunMain_noCheck(run_class, parameter_set, tag=tag)
+            Update_Run_Detail_noCheck(run_class, parameter_set)
+            Update_Metagenomics_Classification(run_class, parameter_set)
 
         return True
 
@@ -429,6 +457,8 @@ def Update_RunMain(run_class: RunEngine_class, parameter_set: ParameterSet):
 
     if run_class.run_type == run_class.RUN_TYPE_COMBINED_MAPPING:
         run_type = RunMain.RUN_TYPE_COMBINED_MAPPING
+    elif run_class.run_type == run_class.RUN_TYPE_SCREENING:
+        run_type = RunMain.RUN_TYPE_SCREENING
 
     try:
         runmain = RunMain.objects.get(
@@ -529,6 +559,62 @@ def get_run_parents(run_class: RunEngine_class, parameter_set: ParameterSet):
 
     return sample, runmain, project
 
+
+def Update_Metagenomics_Classification(
+    run_class: RunEngine_class, parameter_set: ParameterSet
+):
+
+    sample, runmain, _ = get_run_parents(run_class, parameter_set)
+
+    read_classification = run_class.read_classification_drone.classification_report
+    map_targets = run_class.metadata_tool.remap_targets
+
+    for target in map_targets:
+
+        try:
+            screening_count = read_classification[
+                read_classification.acc == target.accid
+            ]
+
+            if len(screening_count) > 0:
+                screening_count = screening_count[
+                    screening_count.acc == target.accid
+                ].shape[0]
+            else:
+                screening_count = 0
+            print(screening_count)
+
+            compound_ref = RawReferenceCompoundModel.objects.get(
+                taxid=target.taxid,
+                accid=target.accid,
+                sample=sample,
+            )
+            compound_ref.screening_count = screening_count
+            compound_ref.save()
+
+        except RawReferenceCompoundModel.DoesNotExist:
+            pass
+#
+        #try:
+        #    RawReference.objects.get(
+        #        run=runmain,
+        #        taxid=target.taxid,
+        #        accid=target.accid,
+        #    )
+        #except RawReference.DoesNotExist:
+#
+        #    remap_target = RawReference(
+        #        run=runmain,
+        #        taxid=target.taxid,
+        #        accid=target.accid,
+        #        status=RawReference.STATUS_MAPPED,
+        #        description=summarize_description(target.description),
+        #        counts=screening_count,
+        #        classification_source="1",
+        #    )
+#
+        #    remap_target.save()
+#
 
 def Update_RunMain_noCheck(
     run_class: RunEngine_class, parameter_set: ParameterSet, tag="secondary"
@@ -678,6 +764,8 @@ def Update_Run_Detail_noCheck(run_class: RunEngine_class, parameter_set: Paramet
         return
 
     run_detail_exists = RunDetail.objects.filter(run=runmain, sample=sample).exists()
+    print("############ Update_Run_Detail_noCheck ############")
+    print(sample, runmain, run_detail_exists)
 
     if run_detail_exists:
         run_detail = RunDetail.objects.get(run=runmain, sample=sample)
@@ -948,6 +1036,9 @@ def Update_Run_Classification(run_class: RunEngine_class, parameter_set: Paramet
         )
         remap_main.save()
 
+    print("UPDATING RAW TARGETS")
+    print(run_class.raw_targets.head())
+    print(run_class.raw_targets.shape)
     Update_RawReference(run_class, parameter_set)
 
 
@@ -1104,7 +1195,7 @@ def Update_Targets(run_class: RunEngine_class, runmain):
                 taxid=target.taxid,
                 accid=target.accid,
                 status=RawReference.STATUS_MAPPED,
-                description=target.description,
+                description=summarize_description(target.description, 200),
             )
 
             raw_reference.save()

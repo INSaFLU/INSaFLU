@@ -2083,8 +2083,10 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
         context["meta_parameters"] = mark_safe(metagenomics_parameters)
         context["deploy_metagenomics"] = mark_safe(deploy_metagenomics)
         context["nav_sample"] = True
-        context["show_paginatior"] = query_set.count() > Constants.PAGINATE_NUMBER
-        context["query_set_count"] = query_set.count()
+        context["show_paginatior"] = (
+            raw_reference_compound.count() > Constants.PAGINATE_NUMBER
+        )
+        context["query_set_count"] = raw_reference_compound.count()
         context["show_info_main_page"] = ShowInfoMainPage()
         context["nav_modal"] = True  ## short the size of modal window
 

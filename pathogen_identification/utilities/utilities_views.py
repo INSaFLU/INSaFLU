@@ -1552,12 +1552,18 @@ class RawReferenceCompound:
             .first()
         )
 
-        self.mapped_raw_reference = RawReference.objects.filter(
-            taxid=self.taxid,
-            accid=self.accid,
-            run__sample=sample,
-            status=RawReference.STATUS_MAPPED,
-        ).first()
+        self.mapped_raw_reference = (
+            RawReference.objects.filter(
+                taxid=self.taxid,
+                accid=self.accid,
+                run__sample=sample,
+                status=RawReference.STATUS_MAPPED,
+            )
+            .exclude(
+                run__run_type__in=[RunMain.RUN_TYPE_SCREENING, RunMain.RUN_TYPE_STORAGE]
+            )
+            .first()
+        )
 
     @property
     def mapped_html(self):

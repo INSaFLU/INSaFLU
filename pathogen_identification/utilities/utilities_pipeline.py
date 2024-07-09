@@ -181,6 +181,7 @@ class Pipeline_Graph_Metagenomics(PipelineTreeBase):
                 self.VIRAL_ENRICHMENT_SPECIAL_STEP,
             ],
             CS.PIPELINE_NAME_map_filtering: [
+                self.ROOT,
                 CS.PIPELINE_NAME_extra_qc,
                 self.ASSEMBLY_SPECIAL_STEP,
                 CS.PIPELINE_NAME_host_depletion,
@@ -195,6 +196,8 @@ class Pipeline_Graph_Metagenomics(PipelineTreeBase):
                 self.VIRAL_ENRICHMENT_SPECIAL_STEP,
             ],
             CS.PIPELINE_NAME_metagenomics_screening: [
+                self.ROOT,
+                CS.PIPELINE_NAME_extra_qc,
                 CS.PIPELINE_NAME_map_filtering,
                 self.ASSEMBLY_SPECIAL_STEP,
                 CS.PIPELINE_NAME_host_depletion,
@@ -1994,6 +1997,9 @@ class Parameter_DB_Utility:
         else:
             steps = CS.vect_pipeline_televir_classic
 
+        print(sample, project)
+        print(steps)
+
         software_available = Software.objects.filter(
             technology__name=technology,
             pipeline_step__name__in=steps,
@@ -2024,6 +2030,9 @@ class Parameter_DB_Utility:
         software_table = pd.DataFrame(software_available.values())
 
         parameters_table = pd.DataFrame(parameters_available.values())
+        print(software_table.head())
+        if software_table.shape[0]:
+            print(software_table["name_extended"])
 
         return software_table, parameters_table
 
@@ -3134,6 +3143,7 @@ class SoftwareTreeUtils:
             screening=True,
             mapping_only=False,
         )
+        print(available_path_nodes)
         clean_samples_leaf_dict, workflow_deployed_dict = (
             self.utils_manager.sample_nodes_check_repeat_allowed(
                 submission_dict, available_path_nodes, self.project
@@ -3546,7 +3556,9 @@ class RawReferenceUtils:
         else:
             sample_runs = RunMain.objects.filter(sample=self.sample_registered)
 
-        return sample_runs
+        return sample_runs.exclude(
+            run_type__in=[RunMain.RUN_TYPE_SCREENING, RunMain.RUN_TYPE_STORAGE]
+        )
 
     def collect_references_all(self) -> QuerySet:
         sample_runs = self.filter_runs()
@@ -3554,6 +3566,26 @@ class RawReferenceUtils:
         references = RawReference.objects.filter(run__in=sample_runs)
 
         return references
+
+    def sample_compound_refs_table(self) -> pd.DataFrame:
+
+        compound_refs = RawReferenceCompoundModel.objects.filter(
+            sample=self.sample_registered
+        )
+
+        compound_refs_table = pd.DataFrame(
+            list(
+                compound_refs.values(
+                    "taxid",
+                    "accid",
+                    "description",
+                    "ensemble_ranking",
+                    "standard_score",
+                )
+            )
+        )
+
+        return compound_refs_table
 
     def sample_reference_tables(
         self, run_pks: Optional[List[int]] = None
@@ -3568,12 +3600,21 @@ class RawReferenceUtils:
         # register tables
         self.list_tables.extend(run_references_tables)
         #
-        run_references_tables = self.merge_ref_tables()
-        # replace nan with 0
-        run_references_tables = run_references_tables.fillna(0)
-        self.merged_table = run_references_tables
-
-        return run_references_tables
+        if len(self.list_tables):
+            run_references_tables = self.merge_ref_tables()
+            # replace nan with 0
+            run_references_tables = run_references_tables.fillna(0)
+            self.merged_table = run_references_tables
+        else:
+            return pd.DataFrame(
+                columns=[
+                    "read_counts",
+                    "contig_counts",
+                    "taxid",
+                    "accid",
+                    "description",
+                ]
+            )
 
     def sample_reference_tables_filter(self, runs_filter: Optional[List[int]] = None):
         """
@@ -3665,7 +3706,13 @@ class RawReferenceUtils:
                 RawReference.objects.filter(
                     run__sample__pk=self.sample_registered.pk,
                 )
-                .exclude(run__run_type=RunMain.RUN_TYPE_STORAGE, accid="-")
+                .exclude(
+                    run__run_type__in=[
+                        RunMain.RUN_TYPE_STORAGE,
+                        RunMain.RUN_TYPE_SCREENING,
+                    ],
+                    accid="-",
+                )
                 .distinct("accid")
             )
         elif self.project_registered is not None:
@@ -3673,11 +3720,20 @@ class RawReferenceUtils:
                 RawReference.objects.filter(
                     run__sample__project__pk=self.project_registered.pk,
                 )
-                .exclude(run__run_type=RunMain.RUN_TYPE_STORAGE, accid="-")
+                .exclude(
+                    run__run_type__in=[
+                        RunMain.RUN_TYPE_STORAGE,
+                        RunMain.RUN_TYPE_SCREENING,
+                    ],
+                    accid="-",
+                )
                 .distinct("accid")
             )
         else:
             query_set = RawReference.objects.none()
+
+        print("QUERYING REFS: ", query_set)
+        print("query_set: ", query_set.count())
 
         return self.filter_reference_query_set(query_set, query_string)
 
@@ -3757,9 +3813,12 @@ class RawReferenceUtils:
 
     def create_compound(self, raw_references: List[RawReference]):
 
+        print("#### Creating compound ####")
         raw_reference_compound = [
             RawReferenceCompound(raw_reference) for raw_reference in raw_references
         ]
+
+        print("n references: ", len(raw_reference_compound))
 
         classification_runs = self.get_classification_runs()
 
@@ -3767,7 +3826,7 @@ class RawReferenceUtils:
         runs_pks = [run.pk for run in classification_runs]
 
         # if classification_runs.exists():
-        self.sample_reference_tables_filter(runs_filter=runs_pks)
+        self.sample_reference_tables_filter()
 
         self.update_scores_compound_references(raw_reference_compound)
         self.register_compound_references(raw_reference_compound)

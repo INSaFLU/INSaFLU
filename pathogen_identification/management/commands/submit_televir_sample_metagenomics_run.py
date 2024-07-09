@@ -173,7 +173,7 @@ class Command(BaseCommand):
             ### to remove condition for production
             elif mapping_run.status not in [
                 RunMain.STATUS_FINISHED,
-                RunMain.STATUS_ERROR,
+                # RunMain.STATUS_ERROR,
             ]:
                 run = Run_Main_from_Leaf(
                     user=user,

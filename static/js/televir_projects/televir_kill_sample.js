@@ -104,12 +104,12 @@ $('#id-kill-all-button').on('click', function(){
                 '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
                 '</div>');
             } else {
+              location.reload();
               /// add message with informaton
               $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
                 'Project + \'' + $('#id-kill-all-button').attr('project-name') + '\' jobs were successfully terminated.' +
                 '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
                 '</div>');
-              location.reload();
             }
           }
           else{

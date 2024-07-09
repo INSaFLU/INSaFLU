@@ -1740,6 +1740,7 @@ class RawReferenceCompoundModel(models.Model):
     global_ranking = models.IntegerField(blank=True, null=True)
     ensemble_ranking = models.IntegerField(blank=True, null=True)
     run_count = models.IntegerField(default=0)
+    screening_count= models.IntegerField(default=0)
 
     @property
     def mapped_html(self):

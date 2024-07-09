@@ -25,10 +25,10 @@ from pathogen_identification.utilities.televir_parameters import TelevirParamete
 from pathogen_identification.utilities.update_DBs import (
     Update_Assembly,
     Update_Classification,
+    Update_Metagenomics,
     Update_Remap,
     Update_RunMain_Initial,
     Update_RunMain_Secondary,
-    UpdateRawReferences_safe,
     get_run_parents,
 )
 from pathogen_identification.utilities.utilities_general import simplify_name_lower
@@ -449,6 +449,8 @@ class Run_Main_from_Leaf:
             if self.run_pk is not None:
                 self.container.run_engine.run_pk = self.run_pk
 
+            print("RUN TYPE", self.container.run_engine.run_type)
+
             if (
                 self.container.run_engine.run_type
                 == RunMainTree_class.RUN_TYPE_SCREENING
@@ -537,16 +539,23 @@ class Run_Main_from_Leaf:
         try:
             self.container.run_engine.Run_Metagenomics_Classification()
 
-            ref_update = UpdateRawReferences_safe(
-                self.container.run_engine, self.parameter_set
-            )
+            # ref_update = UpdateRawReferences_safe(
+            #    self.container.run_engine, self.parameter_set
+            # )
             #
 
-            db_updated = Update_Classification(
+            db_updated = Update_Metagenomics(
                 self.container.run_engine, self.parameter_set
             )
             if not db_updated:
                 return False
+
+            if (
+                self.container.run_engine.read_metagenomics_classification_performed
+                is True
+            ):
+                return True
+
         except Exception as e:
             print(traceback.format_exc())
             print(e)

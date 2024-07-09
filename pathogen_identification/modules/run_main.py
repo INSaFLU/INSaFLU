@@ -1517,7 +1517,9 @@ class RunMainTree_class(Run_Deployment_Methods):
         print("REFERENCE TABLE: ", reference_table)
         print("#### REFERENCE TABLE SHAPE: ", reference_table.shape)
 
-        self.metadata_tool.generate_targets_from_report(reference_table, max_remap=1)
+        self.metadata_tool.merge_sample_references_ensemble(
+            self.sample_registered, max_remap=1
+        )
 
         self.prep_REMAPPING()
         self.remap_manager.generate_remap_targets_fasta()

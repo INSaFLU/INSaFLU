@@ -193,7 +193,10 @@ class RunMetadataHandler:
         )
 
     def merge_sample_references_ensemble(
-        self, sample_registered: PIProject_Sample, max_taxids: int, max_remap: int = 15
+        self,
+        sample_registered: PIProject_Sample,
+        max_taxids: Optional[int] = None,
+        max_remap: int = 15,
     ):
 
         reference_utils = RawReferenceUtils(sample_registered)
@@ -202,7 +205,8 @@ class RunMetadataHandler:
             reference_utils.query_sample_compound_references()
         )
 
-        compound_refs = compound_refs[:max_taxids]
+        if max_taxids is not None:
+            compound_refs = compound_refs[:max_taxids]
 
         remap_plan = []
         remap_targets = []

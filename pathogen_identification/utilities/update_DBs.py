@@ -534,9 +534,6 @@ def get_run_parents(run_class: RunEngine_class, parameter_set: ParameterSet):
         name=run_class.sample.sample_name,
     )
 
-    print("############ get_run_parents ############")
-    print(run_class.run_pk)
-
     try:
         if run_class.run_pk is not None:
             runmain = RunMain.objects.get(
@@ -554,8 +551,6 @@ def get_run_parents(run_class: RunEngine_class, parameter_set: ParameterSet):
     except RunMain.DoesNotExist:
 
         return None, None, None
-
-    print(runmain.sample, runmain, runmain.project)
 
     return sample, runmain, project
 
@@ -582,7 +577,6 @@ def Update_Metagenomics_Classification(
                 ].shape[0]
             else:
                 screening_count = 0
-            print(screening_count)
 
             compound_ref = RawReferenceCompoundModel.objects.get(
                 taxid=target.taxid,
@@ -594,27 +588,30 @@ def Update_Metagenomics_Classification(
 
         except RawReferenceCompoundModel.DoesNotExist:
             pass
+
+
 #
-        #try:
-        #    RawReference.objects.get(
-        #        run=runmain,
-        #        taxid=target.taxid,
-        #        accid=target.accid,
-        #    )
-        #except RawReference.DoesNotExist:
+# try:
+#    RawReference.objects.get(
+#        run=runmain,
+#        taxid=target.taxid,
+#        accid=target.accid,
+#    )
+# except RawReference.DoesNotExist:
 #
-        #    remap_target = RawReference(
-        #        run=runmain,
-        #        taxid=target.taxid,
-        #        accid=target.accid,
-        #        status=RawReference.STATUS_MAPPED,
-        #        description=summarize_description(target.description),
-        #        counts=screening_count,
-        #        classification_source="1",
-        #    )
+#    remap_target = RawReference(
+#        run=runmain,
+#        taxid=target.taxid,
+#        accid=target.accid,
+#        status=RawReference.STATUS_MAPPED,
+#        description=summarize_description(target.description),
+#        counts=screening_count,
+#        classification_source="1",
+#    )
 #
-        #    remap_target.save()
+#    remap_target.save()
 #
+
 
 def Update_RunMain_noCheck(
     run_class: RunEngine_class, parameter_set: ParameterSet, tag="secondary"
@@ -1036,9 +1033,6 @@ def Update_Run_Classification(run_class: RunEngine_class, parameter_set: Paramet
         )
         remap_main.save()
 
-    print("UPDATING RAW TARGETS")
-    print(run_class.raw_targets.head())
-    print(run_class.raw_targets.shape)
     Update_RawReference(run_class, parameter_set)
 
 
@@ -1174,11 +1168,7 @@ def Update_FinalReport(run_class, runmain, sample):
 
 def Update_Targets(run_class: RunEngine_class, runmain):
 
-    print("UPDATING TARGETS")
-    print(len(run_class.metadata_tool.remap_targets))
-
     for target in run_class.metadata_tool.remap_targets:
-        print(target.taxid, target.accid)
 
         try:
             raw_reference = RawReference.objects.get(

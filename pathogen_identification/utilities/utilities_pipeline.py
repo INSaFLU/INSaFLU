@@ -10,20 +10,23 @@ import pandas as pd
 from django.contrib.auth.models import User
 from django.db.models import Q, QuerySet
 
-from constants.constants import \
-    Televir_Directory_Constants as Televir_Directories
+from constants.constants import Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.host_library import Host
-from pathogen_identification.models import (ParameterSet, PIProject_Sample,
-                                            Projects, RawReference,
-                                            RawReferenceCompoundModel, RunMain,
-                                            SoftwareTree, SoftwareTreeNode)
+from pathogen_identification.models import (
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    RawReferenceCompoundModel,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
 from pathogen_identification.utilities.utilities_general import merge_classes
-from pathogen_identification.utilities.utilities_televir_dbs import \
-    Utility_Repository
-from pathogen_identification.utilities.utilities_views import \
-    RawReferenceCompound
+from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
+from pathogen_identification.utilities.utilities_views import RawReferenceCompound
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -1997,9 +2000,6 @@ class Parameter_DB_Utility:
         else:
             steps = CS.vect_pipeline_televir_classic
 
-        print(sample, project)
-        print(steps)
-
         software_available = Software.objects.filter(
             technology__name=technology,
             pipeline_step__name__in=steps,
@@ -2030,9 +2030,6 @@ class Parameter_DB_Utility:
         software_table = pd.DataFrame(software_available.values())
 
         parameters_table = pd.DataFrame(parameters_available.values())
-        print(software_table.head())
-        if software_table.shape[0]:
-            print(software_table["name_extended"])
 
         return software_table, parameters_table
 
@@ -3143,7 +3140,7 @@ class SoftwareTreeUtils:
             screening=True,
             mapping_only=False,
         )
-        print(available_path_nodes)
+
         clean_samples_leaf_dict, workflow_deployed_dict = (
             self.utils_manager.sample_nodes_check_repeat_allowed(
                 submission_dict, available_path_nodes, self.project
@@ -3732,9 +3729,6 @@ class RawReferenceUtils:
         else:
             query_set = RawReference.objects.none()
 
-        print("QUERYING REFS: ", query_set)
-        print("query_set: ", query_set.count())
-
         return self.filter_reference_query_set(query_set, query_string)
 
     def register_compound_references(self, compound_refs: List[RawReferenceCompound]):
@@ -3813,12 +3807,9 @@ class RawReferenceUtils:
 
     def create_compound(self, raw_references: List[RawReference]):
 
-        print("#### Creating compound ####")
         raw_reference_compound = [
             RawReferenceCompound(raw_reference) for raw_reference in raw_references
         ]
-
-        print("n references: ", len(raw_reference_compound))
 
         classification_runs = self.get_classification_runs()
 

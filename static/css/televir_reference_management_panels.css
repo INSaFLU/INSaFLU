@@ -60,6 +60,16 @@ li.no-panels {
     background-color: #f9f9f9;
 }
 
+.screen-header-style {
+    text-align: center;
+    background-color: #d2e6fc; /* Light blue background */
+}
+
+.screen-cell-style {
+    text-align: center;
+    background-color: #d2e6fc; /* Light blue background */
+}
+
 .clearfix::after {
     content: "";
     display: table;

@@ -2043,7 +2043,6 @@ class Mapping_Manager(Tandem_Remap):
 
         if os.path.exists(self.combined_fasta_gz_path):
             os.remove(self.combined_fasta_gz_path)
-        print("HOW MANY TARGETS TO REMAP", len(self.remap_targets))
         for target in self.remap_targets:
             for accid in target.accid_in_file:
                 accid_clean = (

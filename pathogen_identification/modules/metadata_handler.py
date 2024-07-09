@@ -351,6 +351,10 @@ class RunMetadataHandler:
         if max_taxids is not None:
             references_table = references_table.iloc[:max_taxids, :]
 
+        print("############# REFERENCES TABLE #############")
+        print(references_table.head())
+        print(references_table.shape)
+
         self.generate_mapping_targets(
             references_table,
             prefix=self.prefix,

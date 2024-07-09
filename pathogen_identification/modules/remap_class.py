@@ -14,17 +14,21 @@ from scipy.stats import kstest
 from constants.software_names import SoftwareNames
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.modules.object_classes import (Bedgraph,
-                                                            MappingStats,
-                                                            Read_class,
-                                                            Remap_Target,
-                                                            RunCMD,
-                                                            SoftwareDetail,
-                                                            SoftwareRemap)
+from pathogen_identification.modules.object_classes import (
+    Bedgraph,
+    MappingStats,
+    Read_class,
+    Remap_Target,
+    RunCMD,
+    SoftwareDetail,
+    SoftwareRemap,
+)
 from pathogen_identification.utilities.televir_bioinf import DustMasker
 from pathogen_identification.utilities.televir_parameters import RemapParams
 from pathogen_identification.utilities.utilities_general import (
-    plot_dotplot, read_paf_coordinates)
+    plot_dotplot,
+    read_paf_coordinates,
+)
 
 pd.options.mode.chained_assignment = None
 np.warnings.filterwarnings("ignore")
@@ -2039,7 +2043,7 @@ class Mapping_Manager(Tandem_Remap):
 
         if os.path.exists(self.combined_fasta_gz_path):
             os.remove(self.combined_fasta_gz_path)
-
+        print("HOW MANY TARGETS TO REMAP", len(self.remap_targets))
         for target in self.remap_targets:
             for accid in target.accid_in_file:
                 accid_clean = (

@@ -13,6 +13,33 @@ from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.modules.object_classes import RunCMD, SoftwareDetail
 
 
+def read_sam_file(
+    file: str, sep: str = "\t", columns_to_keep: list = None
+) -> pd.DataFrame:
+    """
+    read file line by line, keep only lines that do not start with @, return dataframe.
+
+    """
+
+    with open(file, "r") as f:
+        line = f.readline()
+        while line.startswith("@"):
+            line = f.readline()
+
+        if columns_to_keep:
+            columns_to_keep = [int(c) for c in columns_to_keep]
+            data = [line.split(sep)[c] for c in columns_to_keep]
+        else:
+            data = line.split(sep)
+            columns_to_keep = list(range(len(data)))
+
+        data = [data]
+        for line in f:
+            data.append([line.split(sep)[c] for c in columns_to_keep])
+
+    return pd.DataFrame(data, columns=columns_to_keep)
+
+
 def check_report_empty(file, comment="@"):
     if not os.path.exists(file):
         return True
@@ -1243,8 +1270,12 @@ class run_minimap2_ONT(Classifier_init):
         if check_report_empty(self.report_path):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
-        report = pd.read_csv(
-            self.report_path, sep="\t", header=None, usecols=[0, 2], comment="@"
+        # report = pd.read_csv(
+        #    self.report_path, sep="\t", header=None, usecols=[0, 2], comment="@"
+        # ).rename(columns={0: "qseqid", 2: "acc"})
+
+        report = read_sam_file(
+            self.report_path, sep="\t", columns_to_keep=[0, 2]
         ).rename(columns={0: "qseqid", 2: "acc"})
 
         report = report[report["acc"] != "*"]

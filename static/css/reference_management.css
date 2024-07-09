@@ -103,8 +103,8 @@
 }
 
 .clear-selections-btn {
+  border: 1px solid #a05f5f; /* Add a border */
   color: #666; 
-  border: none; /* No border */
   cursor: pointer; /* Cursor changes to pointer to indicate it's clickable */
   padding: 2px 8px;
   border-radius: 5px; /* Rounded corners */

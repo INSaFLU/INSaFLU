@@ -6,15 +6,22 @@ from typing import List, Optional
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (PIProject_Sample, RawReference,
-                                            RawReferenceCompoundModel,
-                                            ReferenceSourceFileMap, RunMain)
+from pathogen_identification.models import (
+    PIProject_Sample,
+    RawReference,
+    RawReferenceCompoundModel,
+    ReferenceSourceFileMap,
+    RunMain,
+)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
 from pathogen_identification.utilities.utilities_general import (
-    description_fails_filter, merge_classes, scrape_description, simplify_name)
-from pathogen_identification.utilities.utilities_pipeline import \
-    RawReferenceUtils
+    description_fails_filter,
+    merge_classes,
+    scrape_description,
+    simplify_name,
+)
+from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
 
 
 def determine_taxid_in_file(taxid, df: pd.DataFrame):
@@ -318,7 +325,10 @@ class RunMetadataHandler:
         references_table = references_table[
             ~references_table.description.isin(["root", "NA"])
         ]
-        if "accid" not in references_table.columns and "acc" not in references_table.columns:
+        if (
+            "accid" not in references_table.columns
+            and "acc" not in references_table.columns
+        ):
             references_table["accid"] = references_table["taxid"].apply(
                 self.get_taxid_representative_accid
             )
@@ -829,6 +839,7 @@ class RunMetadataHandler:
             ).distinct("reference_source__accid")
 
             if len(refs_in_file) == 0:
+                print("skipping taxid with no references", taxid)
                 remap_absent_taxid_list.append(taxid)
                 continue
 
@@ -871,7 +882,8 @@ class RunMetadataHandler:
         self.remap_plan = pd.DataFrame(
             remap_plan, columns=["taxid", "acc", "file", "description"]
         )
-
+        print("ABSENT TAXIDS")
+        print(remap_absent_taxid_list)
         self.remap_targets.extend(remap_targets)
         self.remap_absent_taxid_list.extend(remap_absent_taxid_list)
 

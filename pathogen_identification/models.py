@@ -287,7 +287,6 @@ class PIProject_Sample(models.Model):
 
     def add_panel(self, panel_pk: int):
         panels = self.panels_pks
-        print("# sample panels: ", panels)
         if panel_pk in panels:
             return
         panels.append(panel_pk)

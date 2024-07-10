@@ -159,7 +159,6 @@ class TelevirBioinf:
 
         command += f"--output {output_html}"
 
-        print(command)
         subprocess.call(command, shell=True)
 
     @staticmethod

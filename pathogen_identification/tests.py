@@ -77,6 +77,8 @@ def update_software_params_global_project(project, user):
         ],
         is_obsolete=False,
         technology__name=project.technology,
+        parameter__televir_project=None,
+        parameter__televir_project_sample=None,
     )
     project = Projects.objects.get(pk=project.pk)
     for software in query_set:
@@ -85,13 +87,18 @@ def update_software_params_global_project(project, user):
         )
 
         software.pk = None
-        software.type_of_use = Software.TYPE_OF_USE_televir_project
+
+        if software.type_of_use == Software.TYPE_OF_USE_televir_global:
+            software.type_of_use = Software.TYPE_OF_USE_televir_project
+        else:
+            software.type_of_use = Software.TYPE_OF_USE_televir_project_settings
 
         try:
             Software.objects.get(
                 name=software.name,
-                type_of_use=Software.TYPE_OF_USE_televir_project,
+                type_of_use=software.type_of_use,
                 parameter__televir_project=project,
+                parameter__televir_project_sample=None,
                 pipeline_step=software.pipeline_step,
             )
 
@@ -107,17 +114,25 @@ def update_software_params_global_project(project, user):
                 parameter.save()
 
 
-def duplicate_software_params_global_project(user, project):
+def check_project_params_exist(project):
+    """
+    check if project parameters exist
+    """
+
+    query_set = Parameter.objects.filter(televir_project=project.pk)
+    if query_set.count() == 0:
+        return False
+    return True
+
+
+def duplicate_software_params_global_project(user, project: Projects):
     """
     duplicate software global to project
     """
     ### get all global software
     query_set = Software.objects.filter(
         owner=user,
-        type_of_use__in=[
-            Software.TYPE_OF_USE_televir_global,
-            Software.TYPE_OF_USE_televir_settings,
-        ],
+        type_of_use__in=Software.TELEVIR_GLOBAL_TYPES,
         type_of_software__in=[
             Software.TYPE_SOFTWARE,
             Software.TYPE_INSAFLU_PARAMETER,
@@ -125,6 +140,7 @@ def duplicate_software_params_global_project(user, project):
         is_obsolete=False,
         technology__name=project.technology,
         parameter__televir_project=None,
+        parameter__televir_project_sample=None,
     )
 
     for software in query_set:
@@ -143,6 +159,7 @@ def duplicate_software_params_global_project(user, project):
                 name=software.name,
                 type_of_use=software.type_of_use,
                 parameter__televir_project=project,
+                parameter__televir_project_sample=None,
                 pipeline_step=software.pipeline_step,
             )
 
@@ -216,7 +233,7 @@ def reset_project_makeup(project: Projects):
 def get_global_tree(local_tree: PipelineTree, project: Projects):
     user = project.owner
     software_tree_manager = SoftwareTreeUtils(user, project)
-    # local_tree = software_tree_manager.generate_project_tree()
+
     tree_makeup = local_tree.makeup
     pipeline_tree = software_tree_manager.generate_software_tree_extend(local_tree)
     pipeline_tree_index = software_tree_manager.get_software_tree_index(tree_makeup)
@@ -634,7 +651,11 @@ class Televir_Project_Test(TestCase):
         for _, makeup in self.pipeline_makeup.MAKEUP.items():
             reset_project_makeup(self.project_ont)
             set_project_makeup(self.project_ont, makeup)
-
+            if (
+                self.pipeline_makeup.check_makeuplist_has_classification(makeup)
+                is False
+            ):
+                continue
             local_tree = software_tree_utils.generate_project_tree()
 
             self.assertEqual(local_tree.__class__.__name__, "PipelineTree")
@@ -646,7 +667,14 @@ class Televir_Project_Test(TestCase):
         utils_manager = Utils_Manager()
         software_tree_utils = SoftwareTreeUtils(self.test_user, self.project_ont)
         for _, makeup in self.pipeline_makeup.MAKEUP.items():
+            if (
+                self.pipeline_makeup.check_makeuplist_has_classification(makeup)
+                is False
+            ):
+                continue
+
             reset_project_makeup(self.project_ont)
+
             set_project_makeup(self.project_ont, makeup)
 
             local_tree = software_tree_utils.generate_project_tree()
@@ -704,13 +732,18 @@ class Televir_Project_Test(TestCase):
         software_tree_utils = SoftwareTreeUtils(self.test_user, self.project_ont)
 
         for makeup, makeup_explicit in self.pipeline_makeup.MAKEUP.items():
-            reset_project_makeup(self.project_ont)
-            set_project_makeup(self.project_ont, makeup_explicit)
+
+            if (
+                self.pipeline_makeup.check_makeuplist_has_classification(
+                    makeup_explicit
+                )
+                is False
+            ):
+                continue
 
             pipeline_tree, available_paths = determine_available_paths(
                 self.project_ont, self.test_user
             )
-
             pipeline_tree_index = software_tree_utils.get_software_tree_index(makeup)
 
             available_path_nodes = {

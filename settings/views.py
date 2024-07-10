@@ -273,7 +273,8 @@ class PISettingsView(LoginRequiredMixin, ListView):
                     parameter.televir_project = project
                     parameter.save()
 
-    def check_project_params_exist(self, project):
+    @staticmethod
+    def check_project_params_exist(project):
         """
         check if project parameters exist
         """

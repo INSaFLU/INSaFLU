@@ -10,23 +10,20 @@ import pandas as pd
 from django.contrib.auth.models import User
 from django.db.models import Q, QuerySet
 
-from constants.constants import Televir_Directory_Constants as Televir_Directories
+from constants.constants import \
+    Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.host_library import Host
-from pathogen_identification.models import (
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    RawReferenceCompoundModel,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.models import (ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            RawReferenceCompoundModel, RunMain,
+                                            SoftwareTree, SoftwareTreeNode)
 from pathogen_identification.utilities.utilities_general import merge_classes
-from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
-from pathogen_identification.utilities.utilities_views import RawReferenceCompound
+from pathogen_identification.utilities.utilities_televir_dbs import \
+    Utility_Repository
+from pathogen_identification.utilities.utilities_views import \
+    RawReferenceCompound
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -34,7 +31,7 @@ from utils.lock_atomic_transaction import LockedAtomicTransaction
 tree = lambda: defaultdict(tree)
 
 
-def exclued_steps_decorator(function):
+def excluded_steps_decorator(function):
     """
     create excluded steps given project"""
 
@@ -89,6 +86,7 @@ class PipelineTreeBase:
     ROOT = "root"
     ASSEMBLY_SPECIAL_STEP = "ASSEMBLY_SPECIAL"
     VIRAL_ENRICHMENT_SPECIAL_STEP = "VIRAL_ENRICHMENT"
+    MAP_FILTERING_SPECIAL_STEP = "MAP_FILTERING"
     SINK = "sink"
     dependencies_graph_root = SINK
     dependencies_graph_sink = ROOT
@@ -190,19 +188,25 @@ class Pipeline_Graph_Metagenomics(PipelineTreeBase):
                 CS.PIPELINE_NAME_host_depletion,
                 self.VIRAL_ENRICHMENT_SPECIAL_STEP,
             ],
+            self.MAP_FILTERING_SPECIAL_STEP: [
+                self.ROOT,
+                CS.PIPELINE_NAME_extra_qc,
+                CS.PIPELINE_NAME_host_depletion,
+                self.VIRAL_ENRICHMENT_SPECIAL_STEP,
+            ],
             CS.PIPELINE_NAME_request_mapping: [
                 self.ROOT,
                 CS.PIPELINE_NAME_extra_qc,
-                CS.PIPELINE_NAME_map_filtering,
-                self.ASSEMBLY_SPECIAL_STEP,
+                # self.ASSEMBLY_SPECIAL_STEP,
+                self.MAP_FILTERING_SPECIAL_STEP,
                 CS.PIPELINE_NAME_host_depletion,
                 self.VIRAL_ENRICHMENT_SPECIAL_STEP,
             ],
             CS.PIPELINE_NAME_metagenomics_screening: [
                 self.ROOT,
                 CS.PIPELINE_NAME_extra_qc,
-                CS.PIPELINE_NAME_map_filtering,
-                self.ASSEMBLY_SPECIAL_STEP,
+                self.MAP_FILTERING_SPECIAL_STEP,
+                # self.ASSEMBLY_SPECIAL_STEP,
                 CS.PIPELINE_NAME_host_depletion,
                 self.VIRAL_ENRICHMENT_SPECIAL_STEP,
             ],
@@ -249,9 +253,11 @@ class Pipeline_Makeup(PipelineTreeBase):
         Processes the path to remove the root node
         """
         dpath = [
-            x.replace(self.ASSEMBLY_SPECIAL_STEP, CS.PIPELINE_NAME_assembly).replace(
+            x.replace(self.ASSEMBLY_SPECIAL_STEP, CS.PIPELINE_NAME_assembly)
+            .replace(
                 self.VIRAL_ENRICHMENT_SPECIAL_STEP, CS.PIPELINE_NAME_viral_enrichment
             )
+            .replace(self.MAP_FILTERING_SPECIAL_STEP, CS.PIPELINE_NAME_map_filtering)
             for x in dpath
             if x not in [self.ROOT, self.SINK]
         ]
@@ -334,7 +340,7 @@ class Pipeline_Makeup(PipelineTreeBase):
     def makeup_available(self, makeup: int) -> bool:
         return makeup in self.MAKEUP
 
-    @exclued_steps_decorator
+    @excluded_steps_decorator
     def get_software_pipeline_list_including(
         self,
         software: Software,
@@ -367,7 +373,7 @@ class Pipeline_Makeup(PipelineTreeBase):
 
         return pipeline_steps_project
 
-    @exclued_steps_decorator
+    @excluded_steps_decorator
     def get_software_pipeline_list_excluding(
         self,
         software: Software,
@@ -2933,7 +2939,6 @@ class SoftwareTreeUtils:
         """
         Generate a project tree
         """
-
         return self.generate_software_tree_safe(self.project)
 
     def generate_tree_from_combined_table(

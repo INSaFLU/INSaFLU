@@ -771,7 +771,7 @@ def create_televir_igv_report(teleflu_project_pk: int, leaf_index: int) -> bool:
 
     # televir_reference
     teleflu_refs = teleflu_project.televir_references
-c
+
     if teleflu_refs is None:
         return False
 

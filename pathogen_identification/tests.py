@@ -46,71 +46,6 @@ from utils.software import Software as SoftwareUtils
 from utils.utils import Utils
 
 
-class MergeClassesTest(TestCase):
-    def setUp(self):
-        # Setup data frames similar to the pytest fixtures
-        self.data_frame_1 = pd.DataFrame(
-            {
-                "taxid": [1, 2, 3],
-                "counts": [10, 20, 30],
-                "description": ["bacteria", "virus", "phage"],
-            }
-        )
-
-        self.data_frame_2 = pd.DataFrame(
-            {
-                "taxid": [3, 4, 5],
-                "counts": [30, 40, 50],
-                "description": ["phage", "fungi", "protozoa"],
-            }
-        )
-
-    def test_non_overlapping_merge(self):
-        merged, _ = merge_classes(
-            self.data_frame_1.head(2), self.data_frame_2.tail(2), exclude="phage"
-        )
-        self.assertEqual(len(merged), 4, "Should merge non-overlapping data correctly.")
-
-    def test_partial_overlap_merge(self):
-        merged, _ = merge_classes(self.data_frame_1, self.data_frame_2, exclude="phage")
-        self.assertEqual(
-            len(merged),
-            4,
-            "Should correctly merge and handle partially overlapping data.",
-        )
-
-    def test_full_overlap_merge(self):
-        merged, _ = merge_classes(self.data_frame_1, self.data_frame_1, exclude="phage")
-        self.assertEqual(
-            len(merged),
-            2,
-            "Should handle fully overlapping data correctly, excluding 'phage'.",
-        )
-
-    def test_exclusion_parameter(self):
-        _, full_descriptor = merge_classes(self.data_frame_1, self.data_frame_2)
-        self.assertNotIn(
-            3,
-            full_descriptor["taxid"].values,
-            "Should exclude specified categories.",
-        )
-
-    def test_empty_dataframe_merge(self):
-        empty_df = pd.DataFrame(columns=["taxid", "counts", "description"])
-        merged, _ = merge_classes(self.data_frame_1, empty_df)
-        self.assertEqual(
-            len(merged),
-            2,
-            "Should handle empty data frames correctly, excluding 'phage'.",
-        )
-
-    def test_maxt_parameter(self):
-        merged, _ = merge_classes(
-            self.data_frame_1, self.data_frame_2, maxt=1, exclude="phage"
-        )
-        self.assertLessEqual(len(merged), 1, "Should respect the maxt parameter.")
-
-
 class AttrDict(dict):
     def __init__(self, *args, **kwargs):
         super(AttrDict, self).__init__(*args, **kwargs)
@@ -382,6 +317,71 @@ def generate_compressed_tree(user, project, sample, makeup):
     module_tree = utils_manager.module_tree(pipeline_tree, list(matched_paths.values()))
 
     return module_tree
+
+
+class MergeClassesTest(TestCase):
+    def setUp(self):
+        # Setup data frames similar to the pytest fixtures
+        self.data_frame_1 = pd.DataFrame(
+            {
+                "taxid": [1, 2, 3],
+                "counts": [10, 20, 30],
+                "description": ["bacteria", "virus", "phage"],
+            }
+        )
+
+        self.data_frame_2 = pd.DataFrame(
+            {
+                "taxid": [3, 4, 5],
+                "counts": [30, 40, 50],
+                "description": ["phage", "fungi", "protozoa"],
+            }
+        )
+
+    def test_non_overlapping_merge(self):
+        merged, _ = merge_classes(
+            self.data_frame_1.head(2), self.data_frame_2.tail(2), exclude="phage"
+        )
+        self.assertEqual(len(merged), 4, "Should merge non-overlapping data correctly.")
+
+    def test_partial_overlap_merge(self):
+        merged, _ = merge_classes(self.data_frame_1, self.data_frame_2, exclude="phage")
+        self.assertEqual(
+            len(merged),
+            4,
+            "Should correctly merge and handle partially overlapping data.",
+        )
+
+    def test_full_overlap_merge(self):
+        merged, _ = merge_classes(self.data_frame_1, self.data_frame_1, exclude="phage")
+        self.assertEqual(
+            len(merged),
+            2,
+            "Should handle fully overlapping data correctly, excluding 'phage'.",
+        )
+
+    def test_exclusion_parameter(self):
+        _, full_descriptor = merge_classes(self.data_frame_1, self.data_frame_2)
+        self.assertNotIn(
+            3,
+            full_descriptor["taxid"].values,
+            "Should exclude specified categories.",
+        )
+
+    def test_empty_dataframe_merge(self):
+        empty_df = pd.DataFrame(columns=["taxid", "counts", "description"])
+        merged, _ = merge_classes(self.data_frame_1, empty_df)
+        self.assertEqual(
+            len(merged),
+            2,
+            "Should handle empty data frames correctly, excluding 'phage'.",
+        )
+
+    def test_maxt_parameter(self):
+        merged, _ = merge_classes(
+            self.data_frame_1, self.data_frame_2, maxt=1, exclude="phage"
+        )
+        self.assertLessEqual(len(merged), 1, "Should respect the maxt parameter.")
 
 
 class Televir_Software_Test(TestCase):
@@ -936,7 +936,7 @@ class Televir_Project_Test(TestCase):
         software_tree_utils = SoftwareTreeUtils(
             self.test_user, self.project_ont, self.ont_project_sample
         )
-        for makeup_int, makeup in self.pipeline_makeup.MAKEUP.items():
+        for _, makeup in self.pipeline_makeup.MAKEUP.items():
             if (
                 self.pipeline_makeup.check_makeuplist_has_classification(makeup)
                 is False
@@ -958,14 +958,7 @@ class Televir_Project_Test(TestCase):
 
             deployment_tree.deploy_nodes()
 
-            print(len(deployment_tree.current_nodes))
-            print(deployment_tree.current_module)
             first_node = deployment_tree.current_nodes[0]
-            print(first_node.run_manager.run_engine.contig_classification_performed)
-            print(first_node.run_manager.run_engine.read_classification_performed)
-            print(makeup)
-            ## print class of classification  monitor
-            print(type(deployment_tree.classification_monitor))
 
             self.assertFalse(
                 deployment_tree.classification_monitor.ready_to_merge(first_node)
@@ -977,16 +970,14 @@ class Televir_Project_Test(TestCase):
                 )
             )
 
-            # deployment_tree.register_node_leaves(first_node)
-
             for leaf_index in first_node.leaves:
-                print(first_node.run_manager.sent)
+
                 leaf_node = deployment_tree.spawn_node_child_prepped(
                     first_node, leaf_index
                 )
+
                 registraction_success = deployment_tree.register_node_safe(leaf_node)
                 self.assertTrue(registraction_success)
-                print(registraction_success)
 
                 self.assertTrue(
                     leaf_node.parameter_set.status == ParameterSet.STATUS_RUNNING

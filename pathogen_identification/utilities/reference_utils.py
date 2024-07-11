@@ -10,19 +10,23 @@ from django.contrib.auth.models import User
 from django.core.files.temp import NamedTemporaryFile
 from django.db.models import Q
 
-from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
+from constants.constants import Constants, FileExtensions, FileType, TypePath
 from constants.software_names import SoftwareNames
 from constants.televir_directories import Televir_Directory_Constants
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
 from managing_files.models import Reference
 from pathogen_identification.models import (
+    MetaReference,
     ParameterSet,
     PIProject_Sample,
     RawReference,
+    RawReferenceMap,
     ReferenceMap_Main,
     ReferenceSourceFileMap,
     TelefluMapping,
+    TeleFluProject,
+    TeleFluSample,
 )
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
 from pathogen_identification.utilities.utilities_general import simplify_name
@@ -186,13 +190,6 @@ def merge_multiple_refs(references: List[RawReference], output_prefix: str):
     merged_fasta.close()
 
     return merged_fasta.name
-
-
-from pathogen_identification.models import (
-    MetaReference,
-    RawReferenceMap,
-    TeleFluProject,
-)
 
 
 def check_metaReference_exists(references: List[RawReference]):
@@ -405,27 +402,6 @@ def check_reference_exists(description, accid):
         return True
 
     return False
-
-
-def delete_reference(raw_reference_id, user_id):
-    raw_ref = RawReference.objects.get(id=raw_reference_id)
-
-    description = raw_ref.description
-    description_clean = description_to_name(description)
-    accid = raw_ref.accid
-
-    query_set = Reference.objects.filter(
-        owner__id=user_id, is_obsolete=False, is_deleted=False
-    ).order_by("-name")
-
-    existing = query_set.filter(
-        Q(name__icontains=description_clean)
-        | Q(reference_genbank_name__icontains=accid)
-        | Q(reference_fasta_name__icontains=accid)
-    )
-
-    if existing.exists():
-        existing.delete()
 
 
 def check_raw_reference_submitted(ref_id, user_id):
@@ -698,7 +674,7 @@ def create_teleflu_igv_report(teleflu_project_pk: int) -> bool:
 
     os.makedirs(teleflu_project.project_vcf_directory, exist_ok=True)
 
-    merged_success = televir_bioinf.merge_vcf_files(vcf_files, group_vcf)
+    _ = televir_bioinf.merge_vcf_files(vcf_files, group_vcf)
 
     try:
 
@@ -753,9 +729,6 @@ def filter_reference_maps_select(
     return None
 
 
-from pathogen_identification.models import TeleFluSample
-
-
 def create_televir_igv_report(teleflu_project_pk: int, leaf_index: int) -> bool:
 
     teleflu_project = TeleFluProject.objects.get(pk=teleflu_project_pk)
@@ -806,22 +779,19 @@ def create_televir_igv_report(teleflu_project_pk: int, leaf_index: int) -> bool:
         os.makedirs(teleflu_mapping.mapping_directory, exist_ok=True)
 
     televir_bioinf = TelevirBioinf()
-    # vcf_files = [files["vcf_file"] for sample_pk, files in sample_dict.items()]
     group_vcf = teleflu_mapping.variants_mapping_vcf
     stacked_html = teleflu_mapping.mapping_igv_report
 
     os.makedirs(teleflu_project.project_vcf_directory, exist_ok=True)
 
-    # merged_success = televir_bioinf.merge_vcf_files(vcf_files, group_vcf)
-
     try:
-        merged_success = televir_bioinf.vcf_from_bam(
+        _ = televir_bioinf.vcf_from_bam(
             [files["bam_file"] for sample_pk, files in sample_dict.items()],
             reference_file,
             group_vcf,
         )
 
-        for sample_pk, sample_info in sample_dict.items():
+        for _, sample_info in sample_dict.items():
             teleflu_sample = TeleFluSample.objects.get(
                 teleflu_project=teleflu_project,
                 televir_sample=sample_info["sample"],

@@ -1,7 +1,9 @@
 import os
 from random import sample
-from typing import Dict, Tuple
+from typing import Dict, List, Optional, Tuple
 
+# Create your tests here.
+import pandas as pd
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.test import TestCase, tag
@@ -26,6 +28,11 @@ from pathogen_identification.modules.object_classes import (
     RunCMD,
     Temp_File,
 )
+from pathogen_identification.utilities.tree_deployment import (
+    Tree_Progress,
+    TreeProgressGraph,
+)
+from pathogen_identification.utilities.utilities_general import merge_classes
 from pathogen_identification.utilities.utilities_pipeline import (
     Pipeline_Makeup,
     PipelineTree,
@@ -38,7 +45,70 @@ from settings.models import Parameter, Sample, Software
 from utils.software import Software as SoftwareUtils
 from utils.utils import Utils
 
-# Create your tests here.
+
+class MergeClassesTest(TestCase):
+    def setUp(self):
+        # Setup data frames similar to the pytest fixtures
+        self.data_frame_1 = pd.DataFrame(
+            {
+                "taxid": [1, 2, 3],
+                "counts": [10, 20, 30],
+                "description": ["bacteria", "virus", "phage"],
+            }
+        )
+
+        self.data_frame_2 = pd.DataFrame(
+            {
+                "taxid": [3, 4, 5],
+                "counts": [30, 40, 50],
+                "description": ["phage", "fungi", "protozoa"],
+            }
+        )
+
+    def test_non_overlapping_merge(self):
+        merged, _ = merge_classes(
+            self.data_frame_1.head(2), self.data_frame_2.tail(2), exclude="phage"
+        )
+        self.assertEqual(len(merged), 4, "Should merge non-overlapping data correctly.")
+
+    def test_partial_overlap_merge(self):
+        merged, _ = merge_classes(self.data_frame_1, self.data_frame_2, exclude="phage")
+        self.assertEqual(
+            len(merged),
+            4,
+            "Should correctly merge and handle partially overlapping data.",
+        )
+
+    def test_full_overlap_merge(self):
+        merged, _ = merge_classes(self.data_frame_1, self.data_frame_1, exclude="phage")
+        self.assertEqual(
+            len(merged),
+            2,
+            "Should handle fully overlapping data correctly, excluding 'phage'.",
+        )
+
+    def test_exclusion_parameter(self):
+        _, full_descriptor = merge_classes(self.data_frame_1, self.data_frame_2)
+        self.assertNotIn(
+            3,
+            full_descriptor["taxid"].values,
+            "Should exclude specified categories.",
+        )
+
+    def test_empty_dataframe_merge(self):
+        empty_df = pd.DataFrame(columns=["taxid", "counts", "description"])
+        merged, _ = merge_classes(self.data_frame_1, empty_df)
+        self.assertEqual(
+            len(merged),
+            2,
+            "Should handle empty data frames correctly, excluding 'phage'.",
+        )
+
+    def test_maxt_parameter(self):
+        merged, _ = merge_classes(
+            self.data_frame_1, self.data_frame_2, maxt=1, exclude="phage"
+        )
+        self.assertLessEqual(len(merged), 1, "Should respect the maxt parameter.")
 
 
 class AttrDict(dict):
@@ -260,6 +330,58 @@ def determine_available_paths(project: Projects, user: User):
     }
 
     return pipeline_tree_query, available_paths
+
+
+def generate_compressed_tree(user, project, sample, makeup):
+    software_tree_utils = SoftwareTreeUtils(user, project, sample)
+    utils_manager = Utils_Manager()
+
+    runs_to_deploy: Dict[PIProject_Sample, List[SoftwareTreeNode]] = (
+        software_tree_utils.check_runs_to_deploy_sample(sample)
+    )
+
+    local_tree = software_tree_utils.generate_project_tree()
+    local_paths = local_tree.get_all_graph_paths_explicit()
+
+    pipeline_tree = software_tree_utils.generate_software_tree_extend(local_tree)
+    pipeline_tree_index = local_tree.software_tree_pk
+
+    matched_paths = {
+        leaf: utils_manager.utility_manager.match_path_to_tree_safe(path, pipeline_tree)
+        for leaf, path in local_paths.items()
+    }
+
+    assert set(list(matched_paths.keys())) == set(
+        [x.index for x in runs_to_deploy[sample]]
+    )
+
+    available_path_nodes = {
+        leaf: SoftwareTreeNode.objects.get(
+            software_tree__pk=pipeline_tree_index, index=path
+        )
+        for leaf, path in matched_paths.items()
+    }
+
+    available_path_nodes = {
+        leaf: utils_manager.parameter_util.check_ParameterSet_available_to_run(
+            sample=sample,
+            leaf=matched_path_node,
+            project=project,
+        )
+        for leaf, matched_path_node in available_path_nodes.items()
+    }
+
+    matched_paths = {
+        k: v for k, v in matched_paths.items() if available_path_nodes[k] == True
+    }
+
+    assert set(list(matched_paths.keys())) == set(
+        [x.index for x in runs_to_deploy[sample]]
+    )
+
+    module_tree = utils_manager.module_tree(pipeline_tree, list(matched_paths.values()))
+
+    return module_tree
 
 
 class Televir_Software_Test(TestCase):
@@ -645,6 +767,7 @@ class Televir_Project_Test(TestCase):
         default_software.test_all_defaults_pathogen_identification(self.test_user)
         duplicate_software_params_global_project(self.test_user, self.project_ont)
 
+    @tag("slow")
     def test_project_trees_exist_ont(self):
         software_tree_utils = SoftwareTreeUtils(self.test_user, self.project_ont)
 
@@ -674,7 +797,6 @@ class Televir_Project_Test(TestCase):
                 continue
 
             reset_project_makeup(self.project_ont)
-
             set_project_makeup(self.project_ont, makeup)
 
             local_tree = software_tree_utils.generate_project_tree()
@@ -718,6 +840,158 @@ class Televir_Project_Test(TestCase):
 
                 self.assertTrue(node)
 
+    @tag("slow")
+    def test_compress_tree(self):
+        utils_manager = Utils_Manager()
+        software_tree_utils = SoftwareTreeUtils(
+            self.test_user, self.project_ont, self.ont_project_sample
+        )
+        for _, makeup in self.pipeline_makeup.MAKEUP.items():
+            if (
+                self.pipeline_makeup.check_makeuplist_has_classification(makeup)
+                is False
+            ):
+                continue
+
+            reset_project_makeup(self.project_ont)
+            set_project_makeup(self.project_ont, makeup)
+
+            runs_to_deploy: Dict[PIProject_Sample, List[SoftwareTreeNode]] = (
+                software_tree_utils.check_runs_to_deploy_sample(self.ont_project_sample)
+            )
+
+            local_tree = software_tree_utils.generate_project_tree()
+            local_paths = local_tree.get_all_graph_paths_explicit()
+
+            pipeline_tree = software_tree_utils.generate_software_tree_extend(
+                local_tree
+            )
+            pipeline_tree_index = local_tree.software_tree_pk
+
+            matched_paths = {
+                leaf: utils_manager.utility_manager.match_path_to_tree_safe(
+                    path, pipeline_tree
+                )
+                for leaf, path in local_paths.items()
+            }
+
+            assert set(list(matched_paths.keys())) == set(
+                [x.index for x in runs_to_deploy[self.ont_project_sample]]
+            )
+
+            available_path_nodes = {
+                leaf: SoftwareTreeNode.objects.get(
+                    software_tree__pk=pipeline_tree_index, index=path
+                )
+                for leaf, path in matched_paths.items()
+            }
+
+            available_path_nodes = {
+                leaf: utils_manager.parameter_util.check_ParameterSet_available_to_run(
+                    sample=self.ont_project_sample,
+                    leaf=matched_path_node,
+                    project=self.project_ont,
+                )
+                for leaf, matched_path_node in available_path_nodes.items()
+            }
+
+            matched_paths = {
+                k: v
+                for k, v in matched_paths.items()
+                if available_path_nodes[k] == True
+            }
+
+            assert set(list(matched_paths.keys())) == set(
+                [x.index for x in runs_to_deploy[self.ont_project_sample]]
+            )
+
+            module_tree = utils_manager.module_tree(
+                pipeline_tree, list(matched_paths.values())
+            )
+
+            for leaf in module_tree.leaves:
+                self.assertTrue(leaf in module_tree.compress_dag_dict)
+                self.assertTrue(module_tree.compress_dag_dict[leaf] == [])
+
+            modules_passed = []
+
+            for node_index in module_tree.compress_dag_dict.keys():
+
+                node_info = module_tree.node_index.node[node_index]
+
+                if node_index == 0:
+                    self.assertTrue(node_info[0] == "root")
+                    continue
+
+                if node_index in module_tree.leaves:
+                    continue
+
+                self.assertTrue(node_info[0] in makeup)
+                modules_passed.append(node_info[0])
+
+            self.assertEqual(set(modules_passed), set(makeup))
+
+    def test_progress_tree_tree(self):
+        utils_manager = Utils_Manager()
+        software_tree_utils = SoftwareTreeUtils(
+            self.test_user, self.project_ont, self.ont_project_sample
+        )
+        for makeup_int, makeup in self.pipeline_makeup.MAKEUP.items():
+            if (
+                self.pipeline_makeup.check_makeuplist_has_classification(makeup)
+                is False
+            ):
+                continue
+
+            reset_project_makeup(self.project_ont)
+            set_project_makeup(self.project_ont, makeup)
+
+            module_tree = generate_compressed_tree(
+                self.test_user, self.project_ont, self.ont_project_sample, makeup
+            )
+
+            deployment_tree = Tree_Progress(
+                module_tree, self.ont_project_sample, self.project_ont
+            )
+
+            self.assertTrue(deployment_tree.get_current_module() == "root")
+
+            deployment_tree.deploy_nodes()
+
+            print(len(deployment_tree.current_nodes))
+            print(deployment_tree.current_module)
+            first_node = deployment_tree.current_nodes[0]
+            print(first_node.run_manager.run_engine.contig_classification_performed)
+            print(first_node.run_manager.run_engine.read_classification_performed)
+            print(makeup)
+            ## print class of classification  monitor
+            print(type(deployment_tree.classification_monitor))
+
+            self.assertFalse(
+                deployment_tree.classification_monitor.ready_to_merge(first_node)
+            )
+
+            self.assertFalse(
+                deployment_tree.classification_monitor.classification_performed(
+                    first_node
+                )
+            )
+
+            # deployment_tree.register_node_leaves(first_node)
+
+            for leaf_index in first_node.leaves:
+                print(first_node.run_manager.sent)
+                leaf_node = deployment_tree.spawn_node_child_prepped(
+                    first_node, leaf_index
+                )
+                registraction_success = deployment_tree.register_node_safe(leaf_node)
+                self.assertTrue(registraction_success)
+                print(registraction_success)
+
+                self.assertTrue(
+                    leaf_node.parameter_set.status == ParameterSet.STATUS_RUNNING
+                )
+
     def contained_test_workflow_software_exist(self, run: Run_Main_from_Leaf):
         run.container.run_engine.software_check_map()
 
@@ -732,6 +1006,8 @@ class Televir_Project_Test(TestCase):
         software_tree_utils = SoftwareTreeUtils(self.test_user, self.project_ont)
 
         for makeup, makeup_explicit in self.pipeline_makeup.MAKEUP.items():
+            reset_project_makeup(self.project_ont)
+            set_project_makeup(self.project_ont, makeup_explicit)
 
             if (
                 self.pipeline_makeup.check_makeuplist_has_classification(

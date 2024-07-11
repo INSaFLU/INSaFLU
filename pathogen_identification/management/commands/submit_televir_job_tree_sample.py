@@ -6,12 +6,7 @@ from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
 from managing_files.models import ProcessControler
-from pathogen_identification.models import (
-    PIProject_Sample,
-    Projects,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.models import PIProject_Sample, Projects, SoftwareTreeNode
 from pathogen_identification.utilities.tree_deployment import (
     Tree_Progress,
     TreeProgressGraph,

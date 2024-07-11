@@ -140,8 +140,7 @@ class Command(BaseCommand):
             screening=screening,
             mapping_only=mapping_only,
         )
-        # tree_makeup = local_tree.makeup
-        # pipeline_tree= utils.generate_software_tree_extend(local_tree, user)
+
         pipeline_tree_index = local_tree.software_tree_pk
         pipeline_tree_query = SoftwareTree.objects.get(pk=pipeline_tree_index)
 
@@ -154,8 +153,6 @@ class Command(BaseCommand):
             sample=target_sample, leaf=matched_path_node, project=project
         )
 
-        ### draw graph
-        graph_progress = TreeProgressGraph(target_sample)
         #### Deployment RUn
 
         mapping_run = RunMain.objects.get(pk=mapping_run_pk)

@@ -324,7 +324,6 @@ class MappingResultsParser:
 
         readname_dict = self.get_accid_readname_dict()
         all_reads = self.all_reads_set(list(readname_dict.values()))
-        print(all_reads)
         read_profile_dict = self.read_profile_dict_get(readname_dict, all_reads)
         read_profile_matrix = self.transform_dataframe(read_profile_dict)
         ## create list of duplicated rows
@@ -545,25 +544,6 @@ class ReadOverlapManager(MappingResultsParser):
         Return list of read names that are in both lists
         """
         return list(set(lista).intersection(set(listb)))
-
-    def readoverlap_allpairs(
-        self,
-        read_lists: List[List[str]],
-    ) -> Dict[Tuple[str, str], List[str]]:
-        """
-        Return dictionary of read overlap between all pairs of lists
-        """
-        read_overlap_dict = {}
-        for i in range(len(read_lists)):
-            for j in range(len(read_lists)):
-                read_overlap = self.readoverlap_2_files(read_lists[i], read_lists[j])
-                percent_i = len(read_overlap) / len(read_lists[i])
-                percent_j = len(read_overlap) / len(read_lists[j])
-                summary = f"{percent_i:.2f} - {percent_j:.2f}"
-
-                read_overlap_dict[(i, j)] = percent_i
-
-        return read_overlap_dict
 
     def readoverlap_allpairs_df(self):
         """

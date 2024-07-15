@@ -139,7 +139,7 @@ class Command(BaseCommand):
 
                 files = accid_file_df[accid_file_df.acc == accid_str].file
 
-                if len(["virosaurus" in file for file in files]) > 0:
+                if sum(["virosaurus" in file for file in files]) > 0:
 
                     if not ignore_dict:
                         viros_file = [file for file in files if "virosaurus" in file][0]

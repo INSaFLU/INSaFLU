@@ -5,6 +5,7 @@ from typing import Dict, List, Optional, Tuple, Union
 from constants.software_names import SoftwareNames
 from pathogen_identification.constants_settings import ConstantsSettings as PI_CS
 from pathogen_identification.models import Projects, RunMain
+from pathogen_identification.utilities.clade_objects import Clade
 from pathogen_identification.utilities.mapping_flags import MappingFlagBuild
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, Software
@@ -53,6 +54,7 @@ class LayoutParams:
         """
         Update flag build based on flag_str
         """
+        print("#############3  flag_str", flag_str)
         flag_build_list = [
             x for x in MappingFlagBuild.__subclasses__() if x.build_name == flag_str
         ]
@@ -64,6 +66,9 @@ class LayoutParams:
 
         else:
             self.flag_build = flag_build_list[0]
+
+    def __str__(self):
+        return f"read_overlap_threshold: {self.read_overlap_threshold}, shared_proportion_threshold: {self.shared_proportion_threshold}, flag_str: {self.flag_str}, flag_build: {self.flag_build}"
 
 
 class TelevirParameters:
@@ -187,6 +192,7 @@ class TelevirParameters:
         """
         Get layout parameters
         """
+        print("############################33")
         report_layout_params = LayoutParams(
             PI_CS.clade_private_proportion,
             PI_CS.clade_shared_proportion_threshold,
@@ -204,6 +210,7 @@ class TelevirParameters:
                     param.parameter
                 )
 
+        print("report_layout_params", report_layout_params)
         return report_layout_params
 
     @staticmethod

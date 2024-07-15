@@ -32,6 +32,7 @@ from pathogen_identification.modules.object_classes import (
 )
 from pathogen_identification.utilities.overlap_manager import (  # Adjust the import path as necessary; Replace 'your_app' with the actual app name
     MappingResultsParser,
+    ReadOverlapManager,
     clade_private_proportions,
     pairwise_shared_count,
     pairwise_shared_reads,
@@ -39,6 +40,7 @@ from pathogen_identification.utilities.overlap_manager import (  # Adjust the im
     square_and_fill_diagonal,
     very_similar_groups_from_dataframe,
 )
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.tree_deployment import (
     Tree_Progress,
     TreeProgressGraph,
@@ -50,6 +52,7 @@ from pathogen_identification.utilities.utilities_pipeline import (
     SoftwareTreeUtils,
     Utils_Manager,
 )
+from pathogen_identification.utilities.utilities_views import ReportSorter
 from settings.constants_settings import ConstantsSettings as CS
 from settings.default_software import DefaultSoftware
 from settings.models import Parameter, Sample, Software
@@ -336,6 +339,10 @@ class OverlapManagerTests(TestCase):
         self.baseDirectory = os.path.join(
             getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS
         )
+
+        self.test_user = test_user()
+        self.project_ont = televir_test_project(self.test_user)
+
         self.temp_directory = os.path.join(self.baseDirectory, "temp_objects_tests")
         os.makedirs(self.temp_directory, exist_ok=True)
 
@@ -363,23 +370,6 @@ class OverlapManagerTests(TestCase):
                 )
 
         self.metadata_df = pd.DataFrame(metadata)
-
-    def test_parse_for_data(self):
-
-        mapping_parser = MappingResultsParser(
-            self.metadata_df, self.temp_directory, "test_pid"
-        )
-
-        mapping_parser.parse_for_data()
-
-        self.assertTrue(mapping_parser.parsed)
-
-        pd.testing.assert_frame_equal(
-            mapping_parser.read_profile_matrix,
-            mapping_parser.read_profile_matrix_filtered,
-        )
-
-        self.assertTrue(mapping_parser.total_read_counts.sum() == 8)
 
     def test_pairwise_shared_count(self):
         result = pairwise_shared_count(self.test_matrix)
@@ -443,6 +433,44 @@ class OverlapManagerTests(TestCase):
             columns=["id1", "id2", "id3"],
         )
         pd.testing.assert_frame_equal(result, expected_result)
+
+    def test_parse_for_data(self):
+
+        mapping_parser = MappingResultsParser(
+            self.metadata_df, self.temp_directory, "test_pid"
+        )
+
+        mapping_parser.parse_for_data()
+
+        self.assertTrue(mapping_parser.parsed)
+
+        pd.testing.assert_frame_equal(
+            mapping_parser.read_profile_matrix,
+            mapping_parser.read_profile_matrix_filtered,
+        )
+
+        self.assertTrue(mapping_parser.total_read_counts.sum() == 8)
+
+    def test_televir_parameters(self):
+
+        report_layout_params = TelevirParameters.get_report_layout_params(
+            project_pk=self.project_ont.pk
+        )
+        print(report_layout_params)
+
+    def test_overlap_manager(self):
+
+        report_layout_params = TelevirParameters.get_report_layout_params(
+            project_pk=self.project_ont.pk
+        )
+
+        reference_clade = ReportSorter.generate_reference_clade(report_layout_params)
+
+        mapping_parser = ReadOverlapManager(
+            self.metadata_df, reference_clade, self.temp_directory, "test_pid"
+        )
+
+        self.assertFalse(mapping_parser.all_accs_analyzed())
 
 
 class MappingResultsParserTests(TestCase):
@@ -964,10 +992,10 @@ class Televir_Project_Test(TestCase):
         )
 
         self.test_user = test_user()
+        self.project_ont = televir_test_project(self.test_user)
         self.sample_ont = test_fastq_file(self.baseDirectory, self.test_user)
         self.assertTrue(self.sample_ont.path_name_1.name)
 
-        self.project_ont = televir_test_project(self.test_user)
         self.ont_project_sample = televir_test_sample(self.project_ont, self.sample_ont)
 
         ######

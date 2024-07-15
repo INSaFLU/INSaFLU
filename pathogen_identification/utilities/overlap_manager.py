@@ -1,5 +1,6 @@
 import itertools
 import itertools as it
+import logging
 import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -17,34 +18,417 @@ from pathogen_identification.utilities.clade_objects import Clade, CladeFilter
 from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
 
 ## pairwise matrix by individual reads
-from pathogen_identification.utilities.utilities_general import readname_from_fasta
 
 
-def accid_from_metadata(metadata: pd.DataFrame, read_name: str) -> str:
+
+
+def pairwise_shared_count(
+    read_profile_matrix: pd.DataFrame,
+) -> pd.DataFrame:
     """
-    Return accession id of read from metadata
+    Return dataframe of pairwise shared read counts,
+    use matrix multiplication to sum shared reads from binary matrix for each pair.
     """
-    filename = os.path.basename(read_name)
-    try:
-        return metadata[metadata["filename"] == filename]["accid"].values[0]
-    except IndexError:
-        return read_name
+
+    binary_matrix = np.array(read_profile_matrix)
+
+    shared_reads = []
+    for i in range(binary_matrix.shape[0]):
+        row = binary_matrix[i].reshape(1, -1)
+        prod0 = row @ binary_matrix.T
+
+        shared_reads.append(prod0)
+
+    if len(shared_reads) == 0:
+        return pd.DataFrame(
+            index=read_profile_matrix.index, columns=read_profile_matrix.index
+        )
+    shared_reads = np.concatenate(shared_reads, axis=0)
+
+    shared_reads = pd.DataFrame(
+        shared_reads,
+        index=read_profile_matrix.index,
+        columns=read_profile_matrix.index,
+    )
+
+    return shared_reads
 
 
-import logging
+def square_and_fill_diagonal(clade_read_matrix: pd.DataFrame) -> pd.DataFrame:
+    shared_clade_matrix = pairwise_shared_count(clade_read_matrix)
+
+    ## divide rows of shared_clade_matrix by clade_read_matrix row sums
+    shared_clade_matrix = shared_clade_matrix.div(
+        clade_read_matrix.sum(axis=1),
+        axis=0,
+    )
+
+    # set diagonal to 0
+    np.fill_diagonal(shared_clade_matrix.values, 0)
+
+    # fill na with 0
+    shared_clade_matrix = shared_clade_matrix.fillna(0)
+
+    return shared_clade_matrix
 
 
-class ReadOverlapManager:
+def very_similar_groups_from_dataframe(
+    read_profile_matrix_filtered: pd.DataFrame, threshold=0.95
+) -> List[tuple]:
+    """
+    find very similar entries entries in pairwise shared clade
+    """
+
+    shared_read_matrix = square_and_fill_diagonal(read_profile_matrix_filtered)
+
+    clusters_assigment_dict = {}
+    clusternum = 0
+
+    for i in range(shared_read_matrix.shape[0]):
+        for j in range(shared_read_matrix.shape[1]):
+            if i == j:
+                continue
+            if (
+                shared_read_matrix.iloc[i, j] >= threshold
+                or shared_read_matrix.iloc[j, i] >= threshold
+            ):
+                assingments = [
+                    clusters_assigment_dict.get(i, None),
+                    clusters_assigment_dict.get(j, None),
+                ]
+                assingments = [x for x in assingments if x is not None]
+                if len(assingments) == 0:
+                    clusters_assigment_dict[i] = clusternum
+                    clusters_assigment_dict[j] = clusternum
+                    clusternum += 1
+                elif len(assingments) == 1:
+                    clusters_assigment_dict[i] = assingments[0]
+                    clusters_assigment_dict[j] = assingments[0]
+
+    clusters = {}
+    for k, v in clusters_assigment_dict.items():
+        clusters.setdefault(v, []).append(k)
+
+    clusters = [v for k, v in clusters.items()]
+    for i in range(shared_read_matrix.shape[0]):
+        if i not in clusters_assigment_dict.keys():
+            clusters.append([i])
+
+    # clusters = [x for x in clusters if len(x) > 1]
+    clusters = [
+        tuple([read_profile_matrix_filtered.index[y] for y in x]) for x in clusters
+    ]
+
+    return clusters
+
+
+def clade_private_proportions_old(read_profile_matrix_filtered, leaves: list) -> float:
+    """ """
+    group = read_profile_matrix_filtered.loc[leaves]
+    group_sum = group.sum(axis=0)
+    group_sum_as_bool = group_sum > 0
+    group_sum_as_bool_list = group_sum_as_bool.tolist()
+
+    group_reads = read_profile_matrix_filtered.iloc[:, group_sum_as_bool_list]
+
+    group_reads_sum_all = group_reads.sum(axis=0)
+    group_reads_sum_group = group_reads.loc[leaves].sum(axis=0)
+    group_reads_sum_group = group_reads_sum_group.fillna(0)
+
+    read_proportions = group_reads_sum_group / group_reads_sum_all
+    read_proportions = read_proportions.fillna(0)
+
+    # proportion of reads in group that are private
+    proportion_private = read_proportions.sum() / len(read_proportions)
+
+    return proportion_private
+
+
+def clade_private_proportions(
+    read_profile_matrix: pd.DataFrame, leaves: list
+) -> Tuple[float, float, float]:
+    """ """
+    group = read_profile_matrix.loc[leaves]
+    group_sum = group.sum(axis=0)
+    group_sum_as_bool = group_sum > 0
+    group_sum_as_bool_list = group_sum_as_bool.tolist()
+
+    sum_all = read_profile_matrix.iloc[:, group_sum_as_bool_list].sum(axis=0)
+    sum_group = read_profile_matrix.loc[leaves]
+    sum_group = sum_group.iloc[:, group_sum_as_bool_list].sum(axis=0)
+
+    private_reads = sum_group == sum_all
+
+    private_reads = sum(private_reads)
+
+    if sum(group_sum_as_bool_list) == 0:
+        private_reads = 0
+        total_reads = 0
+        proportion_private = 0
+    else:
+        total_reads = sum(group_sum_as_bool_list)
+        proportion_private = private_reads / total_reads
+
+    return private_reads, total_reads, proportion_private
+
+
+def pairwise_shared_reads_distance(read_profile_matrix: pd.DataFrame) -> pd.DataFrame:
+    """
+    Return dataframe of pairwise shared reads
+    this is a symmetrical matrix with the max proportion of shared reads as their mutual distance.
+    """
+    #########
+    pairwise_props = square_and_fill_diagonal(read_profile_matrix)
+
+    for i in range(pairwise_props.shape[0]):
+        pairwise_props.iloc[i, i] = 1
+        for j in range(i + 1, pairwise_props.shape[1]):
+            shared_ij = pairwise_props.iloc[i, j]
+            shared_ji = pairwise_props.iloc[j, i]
+            shared_pair = (shared_ij, shared_ji)
+            pairwise_props.iloc[i, j] = max(shared_pair)
+            pairwise_props.iloc[j, i] = max(shared_pair)
+
+    pairwise_props = 1 - pairwise_props
+
+    return pairwise_props
+
+
+def pairwise_shared_reads(read_profile_matrix: pd.DataFrame) -> pd.DataFrame:
+    """
+    Return dataframe of pairwise shared reads
+    this is a symmetrical matrix with the max proportion of shared reads as their mutual distance.
+    """
+
+    pairwise_props = square_and_fill_diagonal(read_profile_matrix)
+
+    return pairwise_props
+
+def pairwise_shared_reads_old(read_profile_matrix: pd.DataFrame) -> pd.DataFrame:
+    """
+    Return dataframe of pairwise shared reads
+    """
+
+    if read_profile_matrix.shape[1] == 0:
+        return pd.DataFrame()
+
+    return pd.DataFrame(
+        squareform(pdist(read_profile_matrix, metric="jaccard")),
+        columns=read_profile_matrix.index,
+        index=read_profile_matrix.index,
+    )
+
+
+class MappingResultsParser:
+
+    read_profile_matrix: pd.DataFrame
+    read_profile_matrix_filtered: pd.DataFrame
+    overlap_matrix: pd.DataFrame
+    total_read_counts: int
+    accid_statistics_filename: str = "accid_statistics_{}.tsv"
+    min_freq: float = 0
+    max_reads: int = 500000
+
+    def __init__(
+        self,
+        metadata_df: pd.DataFrame,
+        media_dir: str,
+        pid: str,
+    ):
+        self.metadata = metadata_df
+        self.fasta_list = metadata_df["file"].tolist()
+        self.media_dir = media_dir
+
+        self.accid_statistics_path = os.path.join(
+            self.media_dir, self.accid_statistics_filename.format(pid)
+        )
+
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.INFO)
+
+
+    @staticmethod
+    def accid_from_metadata(metadata: pd.DataFrame, read_name: str) -> str:
+        """
+        Return accession id of read from metadata
+        """
+        filename = os.path.basename(read_name)
+        try:
+            return metadata[metadata["filename"] == filename]["accid"].values[0]
+        except IndexError:
+            return read_name
+
+    @staticmethod
+    def readname_from_fasta(fastafile) -> list:
+        """
+        Read in fasta file and return list of read names
+        """
+        read_names = []
+        with open(fastafile) as f:
+            for line in f:
+                if line[0] == ">":
+                    read_names.append(line[1:].strip())
+        return read_names
+
+
+    def get_accid_readname_dict(self):
+        """
+        Return dictionary of read names and descriptions
+        """
+        readname_dict = {}
+        for fasta_file in self.fasta_list:
+            accid = self.accid_from_metadata(self.metadata, fasta_file)
+            read_names = self.readname_from_fasta(fasta_file)
+
+            readname_dict[accid] = read_names
+        return readname_dict
+
+    @staticmethod
+    def all_reads_set(files_readnames: List[list]) -> list:
+        all_reads = list(it.chain.from_iterable(files_readnames))
+        all_reads = list(set(all_reads))
+
+        return all_reads
+
+    @staticmethod
+    def render_binary_profile(accid: str, readname_dict: dict, all_reads: list) -> list:
+        """
+        Return list of 1s and 0s for presence/absence of read in accid
+        """
+        acc_read_dict = {read: 1 for read in readname_dict[accid]}
+
+        return [acc_read_dict.get(read, 0) for read in all_reads]
+
+    def read_profile_dict_get(self, readname_dict: dict, all_reads: list) -> dict:
+        """
+        Return dictionary of read profiles for all accids
+        """
+        read_profile_dict = {}
+        for accid in readname_dict.keys():
+            read_profile_dict[accid] = self.render_binary_profile(
+                accid, readname_dict, all_reads
+            )
+        return read_profile_dict
+
+    @staticmethod
+    def transform_dataframe(read_profile_dict: dict) -> pd.DataFrame:
+        """
+        Return dataframe of read profiles
+        """
+        return pd.DataFrame(read_profile_dict).T
+
+    def generate_read_matrix(self):
+        """
+        Generate read matrix
+        """
+        self.logger.info("generating read matrix")
+
+        readname_dict = self.get_accid_readname_dict()
+        all_reads = self.all_reads_set(list(readname_dict.values()))
+        read_profile_dict = self.read_profile_dict_get(readname_dict, all_reads)
+        read_profile_matrix = self.transform_dataframe(read_profile_dict)
+        ## create list of duplicated rows
+        return read_profile_matrix
+
+    def get_accession_total_counts(self, accid: str):
+        """
+        Get total counts for accession
+        """
+        return self.read_profile_matrix_filtered.loc[accid].sum()
+
+    def get_proportion_counts(self, accid: str):
+        """
+        Get proportion counts for accession
+        """
+
+        return (
+            self.get_accession_total_counts(accid)
+            / self.read_profile_matrix_filtered.sum().sum()
+        )
+
+    def prep_accid_table(self):
+        #########
+        accid_df = self.metadata[["accid", "description"]]
+
+        accid_df["read_count"] = accid_df.accid.apply(self.get_accession_total_counts)
+
+        # sort table by accid and then by read count
+        accid_df = accid_df.sort_values(["accid", "read_count"], ascending=False)
+
+        # drop duplicates of accid
+        accid_df = accid_df.drop_duplicates(subset=["accid"])
+
+        # get proportion of reads
+        accid_df["proportion"] = accid_df["accid"].apply(
+            lambda x: self.get_proportion_counts(x)
+        )
+        accid_df.to_csv(self.accid_statistics_path, sep="\t", index=False)
+
+        return accid_df
+
+    def filter_read_matrix(self, read_profile_matrix: pd.DataFrame) -> pd.DataFrame:
+        """
+        Filter read matrix, reads as columns, accids as rows
+        """
+
+        if read_profile_matrix.shape[1] == 0:
+            self.logger.info("No reads with frequency > min_freq")
+            return read_profile_matrix
+
+        read_counts = read_profile_matrix.sum(axis=0)
+        read_freqs = read_counts / read_profile_matrix.shape[0]
+        # filter reads by frequency
+        read_profile_matrix_filtered = read_profile_matrix.loc[
+            :, read_freqs > self.min_freq
+        ]
+
+        if read_profile_matrix_filtered.shape[1] == 0:
+            self.logger.info("No reads with frequency > min_freq")
+            return read_profile_matrix
+
+        if self.max_reads:
+            if read_profile_matrix_filtered.shape[1] > self.max_reads:
+                self.logger.info(
+                    f"More than {self.max_reads} reads ({read_profile_matrix_filtered.shape[1]}) - sampling"
+                )
+                ## sample reads
+                read_profile_matrix_filtered = read_profile_matrix_filtered.sample(
+                    n=self.max_reads, axis=1
+                )
+
+        return read_profile_matrix_filtered
+
+    def parse_for_data(self):
+
+        if self.parsed:
+            return
+
+        self.read_profile_matrix: pd.DataFrame = self.generate_read_matrix()
+
+        self.total_read_counts = self.read_profile_matrix.sum(axis=0)
+
+        self.read_profile_matrix_filtered: pd.DataFrame = self.filter_read_matrix(
+            self.read_profile_matrix
+        )
+
+        self.overlap_matrix: pd.DataFrame = pairwise_shared_count(
+            self.read_profile_matrix_filtered
+        )
+
+        self.prep_accid_table()
+
+        self.parsed = True
+
+
+class ReadOverlapManager(MappingResultsParser):
     distance_matrix_filename: str = "distance_matrix_{}.tsv"
     shared_prop_matrix_filename: str = "shared_prop_matrix_{}.tsv"
     clade_shared_prop_matrix_filename: str = "clade_shared_prop_matrix_{}.tsv"
     clade_statistics_filename: str = "clade_statistics_{}.tsv"
-    accid_statistics_filename: str = "accid_statistics_{}.tsv"
+
     tree_plot_filename: str = "tree_{}.png"
     overlap_matrix_plot_filename: str = "overlap_matrix_{}.png"
     overlap_pca_plot_filename: str = "overlap_pca_{}.png"
-    min_freq: float = 0
-    max_reads: int = 500000
 
     def __init__(
         self,
@@ -54,17 +438,17 @@ class ReadOverlapManager:
         pid: str,
         force_tree_rebuild: bool = False,
     ):
-        self.metadata = metadata_df
-        self.fasta_list = metadata_df["file"].tolist()
+        # self.metadata = metadata_df
+        # self.fasta_list = metadata_df["file"].tolist()
+        # self.media_dir = media_dir
+
+        super().__init__(metadata_df, media_dir, pid)
+
         self.clade_filter = CladeFilter(reference_clade=reference_clade)
         self.excluded_leaves = []
-        self.media_dir = media_dir
         self.pid = pid
         self.force_tree_rebuild = force_tree_rebuild
         self.parsed = False
-
-        self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.INFO)
 
         self.distance_matrix_path = os.path.join(
             self.media_dir, self.distance_matrix_filename.format(pid)
@@ -139,38 +523,6 @@ class ReadOverlapManager:
 
         return True
 
-    def parse_for_data(self):
-        # self.read_names_dict: Dict[str, List[str]] = self.get_accid_readname_dict()
-
-        if self.parsed:
-            return
-
-        accid_df = self.metadata[["accid", "description"]]
-
-        self.read_profile_matrix: pd.DataFrame = self.generate_read_matrix()
-        self.total_read_counts = self.read_profile_matrix.sum(axis=0)
-        self.read_profile_matrix_filtered: pd.DataFrame = self.filter_read_matrix(
-            self.read_profile_matrix
-        )
-
-        self.overlap_matrix: pd.DataFrame = self.pairwise_shared_count(
-            self.read_profile_matrix_filtered
-        )
-
-        accid_df["read_count"] = accid_df.accid.apply(self.get_accession_total_counts)
-
-        # sort table by accid and then by read count
-        accid_df = accid_df.sort_values(["accid", "read_count"], ascending=False)
-        # drop duplicates of accid
-        accid_df = accid_df.drop_duplicates(subset=["accid"])
-
-        accid_df["proportion"] = accid_df["accid"].apply(
-            lambda x: self.get_proportion_counts(x)
-        )
-        accid_df.to_csv(self.accid_statistics_path, sep="\t", index=False)
-
-        self.parsed = True
-
     def overlap_heatmap_plot(self) -> None:
         """
         Plot heatmap of read overlap between all pairs of lists
@@ -186,18 +538,6 @@ class ReadOverlapManager:
             for leaf in leaves:
                 if leaf not in read_profile_matrix.index:
                     self.excluded_leaves.append(leaf)
-
-    def get_accid_readname_dict(self):
-        """
-        Return dictionary of read names and descriptions
-        """
-        readname_dict = {}
-        for fasta_file in self.fasta_list:
-            accid = accid_from_metadata(self.metadata, fasta_file)
-            read_names = readname_from_fasta(fasta_file)
-
-            readname_dict[accid] = read_names
-        return readname_dict
 
     @staticmethod
     def readoverlap_2_files(lista, listb) -> list:
@@ -225,33 +565,6 @@ class ReadOverlapManager:
 
         return read_overlap_dict
 
-    @staticmethod
-    def all_reads_set(files_readnames: List[list]) -> list:
-        all_reads = list(it.chain.from_iterable(files_readnames))
-        all_reads = list(set(all_reads))
-
-        return all_reads
-
-    @staticmethod
-    def read_profile_get(accid: str, readname_dict: dict, all_reads: list) -> list:
-        """
-        Return list of 1s and 0s for presence/absence of read in accid
-        """
-        acc_read_dict = {read: 1 for read in readname_dict[accid]}
-
-        return [acc_read_dict.get(read, 0) for read in all_reads]
-
-    def read_profile_dict_get(self, readname_dict: dict, all_reads: list) -> dict:
-        """
-        Return dictionary of read profiles for all accids
-        """
-        read_profile_dict = {}
-        for accid in readname_dict.keys():
-            read_profile_dict[accid] = self.read_profile_get(
-                accid, readname_dict, all_reads
-            )
-        return read_profile_dict
-
     def readoverlap_allpairs_df(self):
         """
         Return dataframe of read overlap between all pairs of lists
@@ -274,61 +587,6 @@ class ReadOverlapManager:
         )
 
         return pair_overlap_matrix
-
-    @staticmethod
-    def read_profile_matrix_get(read_profile_dict: dict) -> pd.DataFrame:
-        """
-        Return dataframe of read profiles
-        """
-        return pd.DataFrame(read_profile_dict).T
-
-    @staticmethod
-    def pairwise_shared_reads_old(read_profile_matrix: pd.DataFrame) -> pd.DataFrame:
-        """
-        Return dataframe of pairwise shared reads
-        """
-
-        if read_profile_matrix.shape[1] == 0:
-            return pd.DataFrame()
-
-        return pd.DataFrame(
-            squareform(pdist(read_profile_matrix, metric="jaccard")),
-            columns=read_profile_matrix.index,
-            index=read_profile_matrix.index,
-        )
-
-    def pairwise_shared_reads_distance(
-        self, read_profile_matrix: pd.DataFrame
-    ) -> pd.DataFrame:
-        """
-        Return dataframe of pairwise shared reads
-        this is a symmetrical matrix with the max proportion of shared reads as their mutual distance.
-        """
-        # pairwise_shared_count = self.pairwise_shared_count(read_profile_matrix)
-
-        # pairwise_props = pairwise_shared_count / pairwise_shared_count.sum(axis=0)
-        pairwise_props = self.square_and_fill_diagonal(read_profile_matrix)
-        for i in range(pairwise_props.shape[0]):
-            pairwise_props.iloc[i, i] = 1
-            for j in range(i + 1, pairwise_props.shape[1]):
-                shared_ij = pairwise_props.iloc[i, j]
-                shared_ji = pairwise_props.iloc[j, i]
-                shared_pair = (shared_ij, shared_ji)
-                pairwise_props.iloc[i, j] = max(shared_pair)
-                pairwise_props.iloc[j, i] = max(shared_pair)
-        pairwise_props = 1 - pairwise_props
-
-        return pairwise_props
-
-    def pairwise_shared_reads(self, read_profile_matrix: pd.DataFrame) -> pd.DataFrame:
-        """
-        Return dataframe of pairwise shared reads
-        this is a symmetrical matrix with the max proportion of shared reads as their mutual distance.
-        """
-
-        pairwise_props = self.square_and_fill_diagonal(read_profile_matrix)
-
-        return pairwise_props
 
     @staticmethod
     def matrix_lower_triangle(matrix: pd.DataFrame) -> pd.DataFrame:
@@ -368,53 +626,6 @@ class ReadOverlapManager:
     ## Construct tree ##
     ####################
 
-    def filter_read_matrix(self, read_profile_matrix: pd.DataFrame) -> pd.DataFrame:
-        """
-        Filter read matrix, reads as columns, accids as rows
-        """
-
-        if read_profile_matrix.shape[1] == 0:
-            self.logger.info("No reads with frequency > min_freq")
-            return read_profile_matrix
-
-        read_counts = read_profile_matrix.sum(axis=0)
-        read_freqs = read_counts / read_profile_matrix.shape[0]
-        # filter out reads that are only present in one accession
-        # read_profile_matrix_filtered = read_profile_matrix.loc[:, read_counts > 1]
-        # filter reads with less than min_freq
-        read_profile_matrix_filtered = read_profile_matrix.loc[
-            :, read_freqs > self.min_freq
-        ]
-
-        if read_profile_matrix_filtered.shape[1] == 0:
-            self.logger.info("No reads with frequency > min_freq")
-            return read_profile_matrix
-
-        if self.max_reads:
-            if read_profile_matrix_filtered.shape[1] > self.max_reads:
-                self.logger.info(
-                    f"More than {self.max_reads} reads ({read_profile_matrix_filtered.shape[1]}) - sampling"
-                )
-                ## sample reads
-                read_profile_matrix_filtered = read_profile_matrix_filtered.sample(
-                    n=self.max_reads, axis=1
-                )
-
-        return read_profile_matrix_filtered
-
-    def generate_read_matrix(self):
-        """
-        Generate read matrix
-        """
-        self.logger.info("generating read matrix")
-
-        readname_dict = self.get_accid_readname_dict()
-        all_reads = self.all_reads_set(list(readname_dict.values()))
-        read_profile_dict = self.read_profile_dict_get(readname_dict, all_reads)
-        read_profile_matrix = self.read_profile_matrix_get(read_profile_dict)
-        ## create list of duplicated rows
-        return read_profile_matrix
-
     def get_private_reads_no_duplicates(
         self,
     ):
@@ -424,7 +635,9 @@ class ReadOverlapManager:
         # duplicate_groups = self.duplicate_groups_from_dataframe(
         #    self.read_profile_matrix
         # )
-        similar_groups = self.very_similar_groups_from_dataframe()
+        similar_groups = very_similar_groups_from_dataframe(
+            self.read_profile_matrix_filtered
+        )
 
         if "private_reads" not in accid_df.columns:
             accid_df["private_reads"] = 0
@@ -433,47 +646,17 @@ class ReadOverlapManager:
             # group_private_counts = self.get_accession_private_counts(duplicate_group)
             (
                 group_private_counts,
-                total_reads,
-                proportion_private,
-            ) = self.clade_private_proportions(list(duplicate_group))
+                _,
+                _,
+            ) = clade_private_proportions(
+                self.read_profile_matrix, list(duplicate_group)
+            )
 
             accid_df.loc[accid_df.accid.isin(duplicate_group), "private_reads"] = (
                 group_private_counts
             )
 
         accid_df.to_csv(self.accid_statistics_path, sep="\t", index=False)
-
-    def pairwise_shared_count(
-        self,
-        read_profile_matrix: pd.DataFrame,
-    ) -> pd.DataFrame:
-        """
-        Return dataframe of pairwise shared read counts,
-        use matrix multiplication to sum shared reads from binary matrix for each pair.
-        """
-
-        binary_matrix = np.array(read_profile_matrix)
-
-        shared_reads = []
-        for i in range(binary_matrix.shape[0]):
-            row = binary_matrix[i].reshape(1, -1)
-            prod0 = row @ binary_matrix.T
-
-            shared_reads.append(prod0)
-
-        if len(shared_reads) == 0:
-            return pd.DataFrame(
-                index=read_profile_matrix.index, columns=read_profile_matrix.index
-            )
-        shared_reads = np.concatenate(shared_reads, axis=0)
-
-        shared_reads = pd.DataFrame(
-            shared_reads,
-            index=read_profile_matrix.index,
-            columns=read_profile_matrix.index,
-        )
-
-        return shared_reads
 
     def read_overlap_proportions(self) -> pd.DataFrame:
         """
@@ -502,22 +685,6 @@ class ReadOverlapManager:
             ].values.tolist()
         return reads_dict
 
-    def get_accession_total_counts(self, accid: str):
-        """
-        Get total counts for accession
-        """
-        return self.read_profile_matrix_filtered.loc[accid].sum()
-
-    def get_proportion_counts(self, accid: str):
-        """
-        Get proportion counts for accession
-        """
-
-        return (
-            self.get_accession_total_counts(accid)
-            / self.read_profile_matrix_filtered.sum().sum()
-        )
-
     def check_all_accessions_in_distance_matrix(self, distance_matrix):
         for accid in self.metadata["accid"].values:
             if accid not in distance_matrix.columns:
@@ -533,13 +700,13 @@ class ReadOverlapManager:
             distance_matrix = pd.read_csv(self.distance_matrix_path, index_col=0)
         else:
             self.parse_for_data()
-            distance_matrix = self.pairwise_shared_reads_distance(
+            distance_matrix = pairwise_shared_reads_distance(
                 self.read_profile_matrix_filtered
             )
 
         if not self.check_all_accessions_in_distance_matrix(distance_matrix):
             self.parse_for_data()
-            distance_matrix = self.pairwise_shared_reads_distance(
+            distance_matrix = pairwise_shared_reads_distance(
                 self.read_profile_matrix_filtered
             )
 
@@ -555,9 +722,7 @@ class ReadOverlapManager:
         Generate shared proportion matrix
         """
         self.parse_for_data()
-        proportion_matrix = self.square_and_fill_diagonal(
-            self.read_profile_matrix_filtered
-        )
+        proportion_matrix = square_and_fill_diagonal(self.read_profile_matrix_filtered)
 
         proportion_matrix.to_csv(self.shared_prop_matrix_path)
 
@@ -595,7 +760,7 @@ class ReadOverlapManager:
 
     def clade_shared_by_pair(self, leaves: list) -> pd.DataFrame:
         group = self.read_profile_matrix_filtered.loc[leaves]
-        group_pairwise_shared = self.pairwise_shared_count(group)
+        group_pairwise_shared = pairwise_shared_count(group)
 
         group_pairwise_shared /= group.sum(axis=1)
 
@@ -678,52 +843,6 @@ class ReadOverlapManager:
         """
         return int(self.read_profile_matrix_filtered.loc[leaves].sum().sum())
 
-    def clade_private_proportions_old(self, leaves: list) -> float:
-        """ """
-        group = self.read_profile_matrix_filtered.loc[leaves]
-        group_sum = group.sum(axis=0)
-        group_sum_as_bool = group_sum > 0
-        group_sum_as_bool_list = group_sum_as_bool.tolist()
-
-        group_reads = self.read_profile_matrix_filtered.iloc[:, group_sum_as_bool_list]
-
-        group_reads_sum_all = group_reads.sum(axis=0)
-        group_reads_sum_group = group_reads.loc[leaves].sum(axis=0)
-        group_reads_sum_group = group_reads_sum_group.fillna(0)
-
-        read_proportions = group_reads_sum_group / group_reads_sum_all
-        read_proportions = read_proportions.fillna(0)
-
-        # proportion of reads in group that are private
-        proportion_private = read_proportions.sum() / len(read_proportions)
-
-        return proportion_private
-
-    def clade_private_proportions(self, leaves: list) -> Tuple[float, float, float]:
-        """ """
-        group = self.read_profile_matrix.loc[leaves]
-        group_sum = group.sum(axis=0)
-        group_sum_as_bool = group_sum > 0
-        group_sum_as_bool_list = group_sum_as_bool.tolist()
-
-        sum_all = self.read_profile_matrix.iloc[:, group_sum_as_bool_list].sum(axis=0)
-        sum_group = self.read_profile_matrix.loc[leaves]
-        sum_group = sum_group.iloc[:, group_sum_as_bool_list].sum(axis=0)
-
-        private_reads = sum_group == sum_all
-
-        private_reads = sum(private_reads)
-
-        if sum(group_sum_as_bool_list) == 0:
-            private_reads = 0
-            total_reads = 0
-            proportion_private = 0
-        else:
-            total_reads = sum(group_sum_as_bool_list)
-            proportion_private = private_reads / total_reads
-
-        return private_reads, total_reads, proportion_private
-
     def get_accession_private_counts(self, duplicate_group: tuple) -> int:
         """
         Get private counts for accession
@@ -773,10 +892,10 @@ class ReadOverlapManager:
             belonging.append(clade.name)
             if sort_private:
                 (
-                    private_reads,
-                    total_reads,
+                    _,
+                    _,
                     proportion_private,
-                ) = self.clade_private_proportions(leaves)
+                ) = clade_private_proportions(self.read_profile_matrix, leaves)
 
                 private_sort[clade.name] = proportion_private
 
@@ -804,30 +923,13 @@ class ReadOverlapManager:
 
         return reads_in_clade
 
-    def square_and_fill_diagonal(self, clade_read_matrix: pd.DataFrame) -> pd.DataFrame:
-        shared_clade_matrix = self.pairwise_shared_count(clade_read_matrix)
-
-        ## divide rows of shared_clade_matrix by clade_read_matrix row sums
-        shared_clade_matrix = shared_clade_matrix.div(
-            clade_read_matrix.sum(axis=1),
-            axis=0,
-        )
-
-        # set diagonal to 0
-        np.fill_diagonal(shared_clade_matrix.values, 0)
-
-        # fill na with 0
-        shared_clade_matrix = shared_clade_matrix.fillna(0)
-
-        return shared_clade_matrix
-
     def between_clade_shared_reads(self, clades_filter=[]) -> pd.DataFrame:
         """
         Return dataframe of pairwise shared reads between all pairs of clades"""
         clade_read_matrix = self.between_clade_reads_matrix(
             filter_names=clades_filter, remove_leaves=False
         )
-        shared_clade_matrix = self.square_and_fill_diagonal(clade_read_matrix)
+        shared_clade_matrix = square_and_fill_diagonal(clade_read_matrix)
 
         return shared_clade_matrix
 
@@ -839,7 +941,7 @@ class ReadOverlapManager:
         leaves = self.all_clade_leaves_filtered[clade_node]
 
         clade_read_matrix = self.within_clade_reads_matrix(leaves)
-        shared_clade_matrix = self.square_and_fill_diagonal(clade_read_matrix)
+        shared_clade_matrix = square_and_fill_diagonal(clade_read_matrix)
         return shared_clade_matrix
 
     def duplicate_groups_from_dataframe(self, pairwise_shared_clade: pd.DataFrame):
@@ -853,57 +955,6 @@ class ReadOverlapManager:
         )
         # duplicate_groups = [x for x in duplicate_groups if len(x) > 1]
         return duplicate_groups
-
-    def very_similar_groups_from_dataframe(self) -> List[tuple]:
-        """
-        find very similar entries entries in pairwise shared clade
-        """
-
-        shared_read_matrix = self.square_and_fill_diagonal(
-            self.read_profile_matrix_filtered
-        )
-        threshold = 0.95
-
-        clusters_assigment_dict = {}
-        clusternum = 0
-
-        for i in range(shared_read_matrix.shape[0]):
-            for j in range(shared_read_matrix.shape[1]):
-                if i == j:
-                    continue
-                if (
-                    shared_read_matrix.iloc[i, j] >= threshold
-                    and shared_read_matrix.iloc[j, i] >= threshold
-                ):
-                    assingments = [
-                        clusters_assigment_dict.get(i, None),
-                        clusters_assigment_dict.get(j, None),
-                    ]
-                    assingments = [x for x in assingments if x is not None]
-                    if len(assingments) == 0:
-                        clusters_assigment_dict[i] = clusternum
-                        clusters_assigment_dict[j] = clusternum
-                        clusternum += 1
-                    elif len(assingments) == 1:
-                        clusters_assigment_dict[i] = assingments[0]
-                        clusters_assigment_dict[j] = assingments[0]
-
-        clusters = {}
-        for k, v in clusters_assigment_dict.items():
-            clusters.setdefault(v, []).append(k)
-
-        clusters = [v for k, v in clusters.items()]
-        for i in range(shared_read_matrix.shape[0]):
-            if i not in clusters_assigment_dict.keys():
-                clusters.append([i])
-
-        # clusters = [x for x in clusters if len(x) > 1]
-        clusters = [
-            tuple([self.read_profile_matrix_filtered.index[y] for y in x])
-            for x in clusters
-        ]
-
-        return clusters
 
     def plot_pairwise_shared_clade_reads(
         self, pairwise_shared_clade: pd.DataFrame, subplot=False, clade_str=""
@@ -1014,7 +1065,7 @@ class ReadOverlapManager:
                 private_reads,
                 total_reads,
                 proportion_private,
-            ) = self.clade_private_proportions(leaves)
+            ) = clade_private_proportions(self.read_profile_matrix, leaves)
             total_proportion = total_reads / self.read_profile_matrix_filtered.shape[1]
 
             clade_counts = self.clade_total_counts(leaves)
@@ -1090,7 +1141,6 @@ class ReadOverlapManager:
     def clade_dict_from_summary(
         self,
         clade_summary: pd.DataFrame,
-        tree,
         inner_node_leaf_dict: Dict[Phylo.BaseTree.Clade, list],
     ) -> Dict[Phylo.BaseTree.Clade, Clade]:
         """
@@ -1151,7 +1201,6 @@ class ReadOverlapManager:
             clade_summary = pd.read_csv(self.clade_statistics_path)
             node_statistics_dict = self.clade_dict_from_summary(
                 clade_summary=clade_summary,
-                tree=self.tree_manager.tree,
                 inner_node_leaf_dict=self.all_clade_leaves_filtered,
             )
 
@@ -1261,8 +1310,7 @@ class ReadOverlapManager:
                         )
                     )
 
-        ##
-
+        ## create dataframe
         leaf_clades_df = pd.DataFrame(
             leaf_clades_dict,
             columns=[
@@ -1313,6 +1361,7 @@ class ReadOverlapManager:
         return leaf_clades_df
 
     def get_leaf_clades(self, force=False) -> pd.DataFrame:
+
         statistics_dict_all = self.get_node_statistics(force=force)
 
         selected_clades = self.filter_clades(statistics_dict_all)

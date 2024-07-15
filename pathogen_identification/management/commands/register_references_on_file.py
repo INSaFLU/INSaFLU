@@ -18,6 +18,53 @@ from pathogen_identification.models import (
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
 
 
+def return_zgrep(file, pattern, filter=None):
+
+    if filter:
+        cmd = f"zgrep {pattern} {file} | {filter}"
+    else:
+        cmd = f"zgrep {pattern} {file}"
+
+    return cmd
+
+
+def find_pattern_in_file(file, pattern, filter=None):
+    """
+    Return result of zgrep pattern file
+    """
+
+    cmd = return_zgrep(file, pattern, filter)
+
+    result = os.popen(cmd).read()
+    result = result.split("\n")
+
+    return [line for line in result if line]
+
+
+def find_pattern_multiple_files(files, pattern, filter=None):
+    """
+    Return result of zgrep pattern file
+    """
+
+    cmd = f"zgrep {pattern} {' '.join(files)}"
+
+    result = os.popen(cmd).read()
+    result = result.split("\n")
+    return [line for line in result if line]
+
+
+def extract_file_accids(file, output_file, pattern):
+
+    cmd = f"zgrep {pattern} {file} | cut -f1 -d' ' | sort | uniq > {output_file}"
+    os.system(cmd)
+
+    # to dict
+    with open(output_file, "r") as f:
+        accids = f.readlines()
+
+    return {accid.strip(): 0 for accid in accids}
+
+
 class Command(BaseCommand):
     help = "deploy run"
 
@@ -36,6 +83,8 @@ class Command(BaseCommand):
             help="output directory",
         )
 
+        parser.add_argument("--parse_file", type=str, help="parse file", default=None)
+
     def handle(self, *args, **options):
         ###
         # get user
@@ -44,6 +93,7 @@ class Command(BaseCommand):
 
         user = User.objects.get(pk=options["user_id"])
         outdir = options["outdir"]
+        parse_file = options["parse_file"]
         os.makedirs(outdir, exist_ok=True)
         metadadata_constants = Televir_Metadata_Constants()
 
@@ -69,8 +119,17 @@ class Command(BaseCommand):
         print("Retrieved entrez descriptions")
         print(f"Number of entrez descriptions: {len(entrez_descriptions)}")
         print("Registering entrez descriptions")
+        ignore_dict = {}
+        d = 0
 
         for taxid_str, taxid_df in entrez_descriptions.groupby("taxid"):
+            ### register a log every 1000 taxids
+            d += 1
+
+            if d % 1000 == 0:
+                print(f"Taxid: {taxid_str}")
+                print(f"Number of taxids processed: {d}")
+
             try:
                 ref_taxid = ReferenceTaxid.objects.get(taxid=taxid_str)
             except ReferenceTaxid.DoesNotExist:
@@ -86,9 +145,29 @@ class Command(BaseCommand):
 
                 files = accid_file_df[accid_file_df.acc == accid_str].file
 
-                try:
-                    ref_source = ReferenceSource.objects.get(accid=accid_str)
-                except ReferenceSource.DoesNotExist:
+                if len(["virosaurus" in file for file in files]) > 0:
+
+                    if not ignore_dict:
+                        viros_file = [file for file in files if "virosaurus" in file][0]
+                        os.makedirs(outdir, exist_ok=True)
+
+                        ignore_dict = extract_file_accids(
+                            os.path.join(
+                                Televir_Metadata_Constants.SOURCE["REF_FASTA"],
+                                viros_file,
+                            ),
+                            os.path.join(outdir, "ignore_accids.txt"),
+                            "GENE",
+                        )
+
+                    if ignore_dict.get(accid_str):
+                        ref_source = ReferenceSource.objects.filter(accid=accid_str)
+                        if ref_source:
+                            ref_source.delete()
+                        continue
+
+                ref_source = ReferenceSource.objects.filter(accid=accid_str)
+                if ref_source.exists() is False:
                     ref_source = ReferenceSource.objects.create(
                         accid=accid_str, description=description, taxid=ref_taxid
                     )
@@ -106,13 +185,13 @@ class Command(BaseCommand):
                     description = entrez_connection
 
                     try:
-                        ref_source_file_map = ReferenceSourceFileMap.objects.get(
+                        _ = ReferenceSourceFileMap.objects.get(
                             reference_source=ref_source,
                             reference_source_file=ref_source_file,
                         )
 
                     except ReferenceSourceFileMap.DoesNotExist:
-                        ref_source_file_map = ReferenceSourceFileMap.objects.create(
+                        _ = ReferenceSourceFileMap.objects.create(
                             reference_source=ref_source,
                             reference_source_file=ref_source_file,
                         )

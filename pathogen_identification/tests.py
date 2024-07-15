@@ -2,6 +2,7 @@ import os
 from random import sample
 from typing import Dict, List, Optional, Tuple
 
+import numpy as np
 # Create your tests here.
 import pandas as pd
 from django.conf import settings
@@ -13,32 +14,23 @@ from constants.constants import Televir_Metadata_Constants as Deployment_Params
 from constants.constantsTestsCase import ConstantsTestsCase
 from constants.software_names import SoftwareNames
 from fluwebvirus.settings import STATIC_ROOT
-from pathogen_identification.constants_settings import ConstantsSettings as PI_CS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PI_CS
 from pathogen_identification.deployment_main import Run_Main_from_Leaf
-from pathogen_identification.models import (
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.models import (ParameterSet, PIProject_Sample,
+                                            Projects, SoftwareTree,
+                                            SoftwareTreeNode)
 from pathogen_identification.modules.object_classes import (
-    Operation_Temp_Files,
-    Read_class,
-    RunCMD,
-    Temp_File,
-)
+    Operation_Temp_Files, Read_class, RunCMD, Temp_File)
+from pathogen_identification.utilities.overlap_manager import (  # Adjust the import path as necessary; Replace 'your_app' with the actual app name
+    MappingResultsParser, clade_private_proportions, pairwise_shared_count,
+    pairwise_shared_reads, pairwise_shared_reads_distance,
+    square_and_fill_diagonal, very_similar_groups_from_dataframe)
 from pathogen_identification.utilities.tree_deployment import (
-    Tree_Progress,
-    TreeProgressGraph,
-)
+    Tree_Progress, TreeProgressGraph)
 from pathogen_identification.utilities.utilities_general import merge_classes
 from pathogen_identification.utilities.utilities_pipeline import (
-    Pipeline_Makeup,
-    PipelineTree,
-    SoftwareTreeUtils,
-    Utils_Manager,
-)
+    Pipeline_Makeup, PipelineTree, SoftwareTreeUtils, Utils_Manager)
 from settings.constants_settings import ConstantsSettings as CS
 from settings.default_software import DefaultSoftware
 from settings.models import Parameter, Sample, Software
@@ -317,6 +309,161 @@ def generate_compressed_tree(user, project, sample, makeup):
     module_tree = utils_manager.module_tree(pipeline_tree, list(matched_paths.values()))
 
     return module_tree
+
+
+class OverlapManagerTests(TestCase):
+    def setUp(self):
+        # Setup test data
+        self.test_matrix = pd.DataFrame(
+            [[1, 0, 1, 1], [0, 1, 1, 0], [1, 1, 0, 1]],
+            index=["id1", "id2", "id3"],
+            columns=["feature1", "feature2", "feature3", "feature4"],
+        )
+
+    def test_pairwise_shared_count(self):
+        result = pairwise_shared_count(self.test_matrix)
+        expected_result = pd.DataFrame(
+            [[3, 1, 2], [1, 2, 1], [2, 1, 3]],
+            index=["id1", "id2", "id3"],
+            columns=["id1", "id2", "id3"],
+        )
+
+        pd.testing.assert_frame_equal(result, expected_result)
+
+    def test_square_and_fill_diagonal(self):
+        result = square_and_fill_diagonal(self.test_matrix)
+        # Calculate expected result
+        shared_counts = pairwise_shared_count(self.test_matrix)
+        row_sums = self.test_matrix.sum(axis=1)
+        expected_result = shared_counts.div(row_sums, axis=0)
+        np.fill_diagonal(expected_result.values, 0)
+        expected_result = expected_result.fillna(0)
+
+        pd.testing.assert_frame_equal(result, expected_result)
+
+    def test_very_similar_groups_from_dataframe(self):
+        result = very_similar_groups_from_dataframe(self.test_matrix, threshold=0.6)
+
+        expected_result = [
+            ("id1", "id3"),
+            ("id2",),
+        ]
+        self.assertEqual(sorted(result), sorted(expected_result))
+
+    def test_clade_private_proportions(self):
+        private_reads, total_reads, proportion_private = clade_private_proportions(
+            self.test_matrix, ["id1", "id2"]
+        )
+        expected_private_reads = 1  # Replace with actual expected value
+        expected_total_reads = 4  # Replace with actual expected value
+        expected_proportion_private = 0.25  # Replace with actual expected value
+        self.assertEqual(private_reads, expected_private_reads)
+        self.assertEqual(total_reads, expected_total_reads)
+        self.assertAlmostEqual(proportion_private, expected_proportion_private)
+
+    def test_pairwise_shared_reads_distance(self):
+        result = pairwise_shared_reads_distance(self.test_matrix)
+        one_thirds = 1 / 3
+        expected_result = pd.DataFrame(
+            [[0, 0.5, one_thirds], [0.5, 0, 0.5], [one_thirds, 0.5, 0]],
+            index=["id1", "id2", "id3"],
+            columns=["id1", "id2", "id3"],
+        )
+        pd.testing.assert_frame_equal(result, expected_result)
+
+    def test_pairwise_shared_reads(self):
+        result = pairwise_shared_reads(self.test_matrix)
+
+        one_thirds = 1 / 3
+        two_thirds = 2 / 3
+        expected_result = pd.DataFrame(
+            [[0, one_thirds, two_thirds], [0.5, 0, 0.5], [two_thirds, one_thirds, 0]],
+            index=["id1", "id2", "id3"],
+            columns=["id1", "id2", "id3"],
+        )
+        pd.testing.assert_frame_equal(result, expected_result)
+
+
+class MappingResultsParserTests(TestCase):
+
+    def setUp(self):
+        # Setup test data
+        self.metadata_df = pd.DataFrame(
+            {
+                "file": ["file1.fasta", "file2.fasta"],
+                "filename": ["file1", "file2"],
+                "accid": ["acc1", "acc2"],
+                "description": ["desc1", "desc2"],
+            }
+        )
+        self.media_dir = "/tmp"
+        self.pid = "test_pid"
+        self.parser = MappingResultsParser(self.metadata_df, self.media_dir, self.pid)
+
+    def test_initialization(self):
+        # Test object initialization
+        self.assertEqual(self.parser.media_dir, self.media_dir)
+        self.assertEqual(
+            self.parser.accid_statistics_path,
+            os.path.join(self.media_dir, f"accid_statistics_{self.pid}.tsv"),
+        )
+
+    def test_accid_from_metadata(self):
+        # Test accid_from_metadata static method
+        accid = MappingResultsParser.accid_from_metadata(self.metadata_df, "file1")
+        self.assertEqual(accid, "acc1")
+
+    def test_readname_from_fasta(self):
+        # Test readname_from_fasta static method
+        # This requires a real fasta file in the setup or a mocked one
+        pass
+
+    def test_get_accid_readname_dict(self):
+        # Test get_accid_readname_dict method
+        # This test depends on the implementation of readname_from_fasta and requires actual fasta files or mocking
+        pass
+
+    def test_all_reads_set(self):
+        # Test all_reads_set static method
+        files_readnames = [["read1", "read2"], ["read2", "read3"]]
+        all_reads = MappingResultsParser.all_reads_set(files_readnames)
+        self.assertCountEqual(all_reads, ["read1", "read2", "read3"])
+
+    def test_render_binary_profile(self):
+        # Test render_binary_profile static method
+        readname_dict = {"acc1": ["read1", "read2"]}
+        all_reads = ["read1", "read2", "read3"]
+        binary_profile = MappingResultsParser.render_binary_profile(
+            "acc1", readname_dict, all_reads
+        )
+        self.assertEqual(binary_profile, [1, 1, 0])
+
+    def test_transform_dataframe(self):
+        # Test transform_dataframe static method
+        read_profile_dict = {"acc1": [1, 0], "acc2": [0, 1]}
+        df = MappingResultsParser.transform_dataframe(read_profile_dict)
+        self.assertTrue(isinstance(df, pd.DataFrame))
+        self.assertEqual(df.shape, (2, 2))
+
+    def test_generate_read_matrix(self):
+        # Test generate_read_matrix method
+        # This test depends on the implementation of other methods and might require mocking or actual data files
+        pass
+
+    def test_filter_read_matrix(self):
+        # Test filter_read_matrix method
+        # This requires setting up a DataFrame that mimics the expected read_profile_matrix
+        pass
+
+    def test_prep_accid_table(self):
+        # Test prep_accid_table method
+        # This test depends on the implementation of other methods and might require mocking or actual data files
+        pass
+
+    def test_parse_for_data(self):
+        # Test parse_for_data method
+        # This is an integration test that might require extensive setup or mocking
+        pass
 
 
 class MergeClassesTest(TestCase):
@@ -931,6 +1078,7 @@ class Televir_Project_Test(TestCase):
 
             self.assertEqual(set(modules_passed), set(makeup))
 
+    @tag("slow")
     def test_progress_tree_tree(self):
         utils_manager = Utils_Manager()
         software_tree_utils = SoftwareTreeUtils(

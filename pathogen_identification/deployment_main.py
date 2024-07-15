@@ -11,37 +11,26 @@ from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from constants.constants import TypePath
 from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RunMain, SoftwareTree,
+                                            SoftwareTreeNode)
 from pathogen_identification.modules.run_main import RunMainTree_class
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.update_DBs import (
-    Update_Assembly,
-    Update_Classification,
-    Update_Metagenomics,
-    Update_Remap,
-    Update_RunMain_Initial,
-    Update_RunMain_Secondary,
-    get_run_parents,
-)
-from pathogen_identification.utilities.utilities_general import simplify_name_lower
+    Update_Assembly, Update_Classification, Update_Metagenomics, Update_Remap,
+    Update_RunMain_Initial, Update_RunMain_Secondary, get_run_parents)
+from pathogen_identification.utilities.utilities_general import \
+    simplify_name_lower
 from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils,
-    Utils_Manager,
-)
+    SoftwareTreeUtils, Utils_Manager)
 from pathogen_identification.utilities.utilities_views import ReportSorter
 from utils.process_SGE import ProcessSGE
 
 
 class PathogenIdentification_deployment:
-    project: str
+    project_name: str
     prefix: str
     rdir: str
     threads: int
@@ -56,7 +45,7 @@ class PathogenIdentification_deployment:
         self,
         pipeline_index: int,
         sample: PIProject_Sample,  # sample name
-        project: str = "test",
+        project_name: str = "test",
         prefix: str = "main",
         username: str = "admin",
         technology: str = "ONT",
@@ -68,8 +57,9 @@ class PathogenIdentification_deployment:
         self.pipeline_index = pipeline_index
 
         self.username = username
-        self.project = project
+        self.project_name = project_name
         self.sample = sample
+        self.project_pk= sample.project.pk
         self.prefix = prefix
         self.deployment_root_dir = deployment_root_dir
         self.dir_branch = dir_branch
@@ -180,7 +170,7 @@ class PathogenIdentification_deployment:
 
     def generate_config_file(self):
         self.config = {
-            "project": self.project,
+            "project": self.project_name,
             "source": self.install_registry.SOURCE,
             "technology": self.technology,
             "deployment_root_dir": self.deployment_root_dir,
@@ -188,7 +178,7 @@ class PathogenIdentification_deployment:
             "directories": {},
             "threads": self.threads,
             "prefix": self.prefix,
-            "project_name": self.project,
+            "project_name": self.project_name,
             "metadata": {
                 x: os.path.join(self.install_registry.METADATA["ROOT"], g)
                 for x, g in self.install_registry.METADATA.items()
@@ -316,7 +306,7 @@ class Run_Main_from_Leaf:
         self.container = PathogenIdentification_deployment(
             pipeline_index=pipeline_leaf.index,
             sample=input_data,
-            project=self.project_name,
+            project_name=self.project_name,
             prefix=prefix,
             username=self.user.username,
             deployment_root_dir=odir,

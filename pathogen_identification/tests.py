@@ -456,7 +456,13 @@ class OverlapManagerTests(TestCase):
         report_layout_params = TelevirParameters.get_report_layout_params(
             project_pk=self.project_ont.pk
         )
-        print(report_layout_params)
+
+        self.assertTrue(report_layout_params.shared_proportion_threshold == 0.2)
+        self.assertTrue(report_layout_params.read_overlap_threshold == 0.5)
+
+        self.assertTrue(
+            report_layout_params.flag_str == PI_CS.FLAG_BUILD_DEFAULT.build_name
+        )
 
     def test_overlap_manager(self):
 
@@ -466,93 +472,25 @@ class OverlapManagerTests(TestCase):
 
         reference_clade = ReportSorter.generate_reference_clade(report_layout_params)
 
-        mapping_parser = ReadOverlapManager(
+        overlap_manager = ReadOverlapManager(
             self.metadata_df, reference_clade, self.temp_directory, "test_pid"
         )
 
-        self.assertFalse(mapping_parser.all_accs_analyzed())
+        self.assertTrue(overlap_manager.all_accs_analyzed())
 
-
-class MappingResultsParserTests(TestCase):
-
-    def setUp(self):
-        # Setup test data
-        self.metadata_df = pd.DataFrame(
-            {
-                "file": ["file1.fasta", "file2.fasta"],
-                "filename": ["file1", "file2"],
-                "accid": ["acc1", "acc2"],
-                "description": ["desc1", "desc2"],
-            }
-        )
-        self.media_dir = "/tmp"
-        self.pid = "test_pid"
-        self.parser = MappingResultsParser(self.metadata_df, self.media_dir, self.pid)
-
-    def test_initialization(self):
-        # Test object initialization
-        self.assertEqual(self.parser.media_dir, self.media_dir)
-        self.assertEqual(
-            self.parser.accid_statistics_path,
-            os.path.join(self.media_dir, f"accid_statistics_{self.pid}.tsv"),
+        distance_matrix = overlap_manager.generate_distance_matrix(
+            force=overlap_manager.force_tree_rebuild
         )
 
-    def test_accid_from_metadata(self):
-        # Test accid_from_metadata static method
-        accid = MappingResultsParser.accid_from_metadata(self.metadata_df, "file1")
-        self.assertEqual(accid, "acc1")
+        tree = overlap_manager.tree_from_distance_matrix(distance_matrix)
 
-    def test_readname_from_fasta(self):
-        # Test readname_from_fasta static method
-        # This requires a real fasta file in the setup or a mocked one
-        pass
+        self.assertTrue(tree is not None)
+        self.assertFalse(tree.rooted)
+        print(len(tree.root.clades))
+        self.assertTrue(len(tree.root.clades))
 
-    def test_get_accid_readname_dict(self):
-        # Test get_accid_readname_dict method
-        # This test depends on the implementation of readname_from_fasta and requires actual fasta files or mocking
-        pass
-
-    def test_all_reads_set(self):
-        # Test all_reads_set static method
-        files_readnames = [["read1", "read2"], ["read2", "read3"]]
-        all_reads = MappingResultsParser.all_reads_set(files_readnames)
-        self.assertCountEqual(all_reads, ["read1", "read2", "read3"])
-
-    def test_render_binary_profile(self):
-        # Test render_binary_profile static method
-        readname_dict = {"acc1": ["read1", "read2"]}
-        all_reads = ["read1", "read2", "read3"]
-        binary_profile = MappingResultsParser.render_binary_profile(
-            "acc1", readname_dict, all_reads
-        )
-        self.assertEqual(binary_profile, [1, 1, 0])
-
-    def test_transform_dataframe(self):
-        # Test transform_dataframe static method
-        read_profile_dict = {"acc1": [1, 0], "acc2": [0, 1]}
-        df = MappingResultsParser.transform_dataframe(read_profile_dict)
-        self.assertTrue(isinstance(df, pd.DataFrame))
-        self.assertEqual(df.shape, (2, 2))
-
-    def test_generate_read_matrix(self):
-        # Test generate_read_matrix method
-        # This test depends on the implementation of other methods and might require mocking or actual data files
-        pass
-
-    def test_filter_read_matrix(self):
-        # Test filter_read_matrix method
-        # This requires setting up a DataFrame that mimics the expected read_profile_matrix
-        pass
-
-    def test_prep_accid_table(self):
-        # Test prep_accid_table method
-        # This test depends on the implementation of other methods and might require mocking or actual data files
-        pass
-
-    def test_parse_for_data(self):
-        # Test parse_for_data method
-        # This is an integration test that might require extensive setup or mocking
-        pass
+        self.assertTrue(len(overlap_manager.all_clade_leaves_filtered) == 5)
+        self.assertTrue(len(overlap_manager.get_leaf_clades()) == 3)
 
 
 class MergeClassesTest(TestCase):

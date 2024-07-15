@@ -74,12 +74,16 @@ class RunEngine:
     igv_dir: str = f"igv"
 
     def __init__(
-        self, config: dict, method_args: pd.DataFrame, project_name: str, username: str
+        self,
+        config: dict,
+        method_args: pd.DataFrame,
+        project: Projects,
     ):
+
         self.sample_name = config["sample_name"]
         self.type = config["type"]
-        self.project_name = project_name
-        self.username = username
+        self.project_name = project.name
+        self.username = project.owner.username
         self.prefix = "none"
         self.config = config
         self.taxid = config["taxid"]
@@ -87,6 +91,7 @@ class RunEngine:
         self.threads = config["threads"]
         self.house_cleaning = False
         self.clean = config["clean"]
+        self.project_pk = project.pk
 
         self.full_report = os.path.join(
             self.config["directories"][CS.PIPELINE_NAME_remapping], "full_report.csv"
@@ -175,9 +180,7 @@ class RunEngine:
         self.maximum_coverage = 1000000000
 
         ### metadata
-        remap_params = TelevirParameters.get_remap_software(
-            self.username, self.project_name
-        )
+        remap_params = TelevirParameters.get_remap_software(self.project_pk)
         self.metadata_tool = RunMetadataHandler(
             self.username,
             self.config,
@@ -584,11 +587,8 @@ class Command(BaseCommand):
             input_generator.generate_config()
 
             run_engine = RunEngine(
-                input_generator.config,
-                input_generator.method_args,
-                project_name,
-                user.username,
-            )
+                input_generator.config, input_generator.method_args, project
+            )  # type: ignore
             run_engine.generate_targets()
             run_engine.run()
             run_engine.export_sequences()

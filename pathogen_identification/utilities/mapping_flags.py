@@ -28,7 +28,7 @@ class MapFlagViruses(MappingFlagBuild):
 
         if self.depth == 0:
             return True
-        
+
         if self.depthc / self.depth > 10 and self.coverage < 5:
             return True
 

@@ -10,7 +10,7 @@ from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import MEDIA_ROOT, ConstantsSettings
 from pathogen_identification.install_registry import Params_Illumina, Params_Nanopore
-from pathogen_identification.models import FinalReport, RawReference, RunMain
+from pathogen_identification.models import FinalReport, Projects, RawReference
 from pathogen_identification.modules.metadata_handler import RunMetadataHandler
 from pathogen_identification.modules.object_classes import (
     Read_class,
@@ -21,10 +21,7 @@ from pathogen_identification.modules.remap_class import (
     Mapping_Instance,
     Mapping_Manager,
 )
-from pathogen_identification.utilities.televir_parameters import (
-    RemapParams,
-    TelevirParameters,
-)
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.update_DBs import (
     Update_FinalReport,
     Update_ReferenceMap,
@@ -62,13 +59,11 @@ class RunMain:
     dir_plots: str = f"plots"
     igv_dir: str = f"igv"
 
-    def __init__(
-        self, config: dict, method_args: pd.DataFrame, username: str, project_name: str
-    ):
+    def __init__(self, config: dict, method_args: pd.DataFrame, project: Projects):
         self.sample_name = config["sample_name"]
         self.type = config["type"]
-        self.project_name = project_name
-        self.username = username
+        self.project_name = project.name
+        self.username = project.owner.username
         self.prefix = "none"
         self.config = config
         self.taxid = config["taxid"]
@@ -76,6 +71,7 @@ class RunMain:
         self.threads = config["threads"]
         self.house_cleaning = False
         self.clean = config["clean"]
+        self.project_pk = project.pk
 
         self.full_report = os.path.join(
             self.config["directories"][CS.PIPELINE_NAME_remapping], "full_report.csv"
@@ -451,6 +447,19 @@ class Command(BaseCommand):
         raw_reference_id = int(options["ref_id"])
 
         reference = RawReference.objects.get(pk=raw_reference_id)
+
+        if reference is None:
+            print("reference not found")
+            return
+
+        if reference.run is None:
+            print("run not found")
+            return
+
+        if reference.run.project is None:
+            print("project not found")
+            return
+
         project_name = reference.run.project.name
         user = reference.run.project.owner
         project_name = reference.run.project.name
@@ -476,8 +485,7 @@ class Command(BaseCommand):
             run_engine = RunMain(
                 input_generator.config,
                 input_generator.method_args,
-                username=user.username,
-                project_name=project_name,
+                reference.run.project,
             )
             run_engine.generate_targets()
             run_engine.run()

@@ -54,7 +54,7 @@ class LayoutParams:
         """
         Update flag build based on flag_str
         """
-        print("#############3  flag_str", flag_str)
+
         flag_build_list = [
             x for x in MappingFlagBuild.__subclasses__() if x.build_name == flag_str
         ]
@@ -68,7 +68,7 @@ class LayoutParams:
             self.flag_build = flag_build_list[0]
 
     def __str__(self):
-        return f"read_overlap_threshold: {self.read_overlap_threshold}, shared_proportion_threshold: {self.shared_proportion_threshold}, flag_str: {self.flag_str}, flag_build: {self.flag_build}"
+        return f"read_overlap_threshold: {self.read_overlap_threshold}, shared_proportion_threshold: {self.shared_proportion_threshold}, flag_str: {self.flag_str}"
 
 
 class TelevirParameters:
@@ -82,19 +82,16 @@ class TelevirParameters:
             raise Exception(f"Unknown technology {project.technology}")
 
     @staticmethod
-    def retrieve_project_software(software_name: str, username: str, project_name: str):
+    def retrieve_project_software(software_name: str, project: Projects):
         """
         Retrieve software parameters for a project
         """
         try:
-            project = Projects.objects.get(
-                name=project_name, owner__username=username, is_deleted=False
-            )
 
             try:
                 software = Software.objects.filter(
                     name=software_name,
-                    owner__username=username,
+                    owner=project.owner,
                     technology__name=project.technology,
                     type_of_use=Software.TYPE_OF_USE_televir_project_settings,
                     parameter__televir_project=project,
@@ -103,7 +100,7 @@ class TelevirParameters:
             except IndexError:
                 software = Software.objects.get(
                     name=software_name,
-                    owner__username=username,
+                    owner=project.owner,
                     technology__name=project.technology,
                     type_of_use=Software.TYPE_OF_USE_televir_settings,
                 )
@@ -113,7 +110,7 @@ class TelevirParameters:
             # raise Exception(f"Remap software not found for user {username}") from exc
 
         software_params = Parameter.objects.filter(
-            software=software, televir_project__name=project_name
+            software=software, televir_project=project
         )
         if software_params.count() == 0:
             software_params = Parameter.objects.filter(
@@ -121,23 +118,21 @@ class TelevirParameters:
             )
         if software_params.count() == 0:
             raise WrongParameters(
-                f"Software parameters not found for user {username} and project {project_name}"
+                f"Software parameters not found for user {project.owner.username} and project {project.name}"
             )
 
         return software_params, software
 
     @staticmethod
-    def get_remap_software(username: str, project_name):
+    def get_remap_software(project_pk: int):
         """
         Get remap software
         """
 
-        project = Projects.objects.get(
-            name=project_name, owner__username=username, is_deleted=False
-        )
+        project = Projects.objects.get(pk=project_pk)
 
         remap_params, _ = TelevirParameters.retrieve_project_software(
-            SoftwareNames.SOFTWARE_REMAP_PARAMS_name, username, project_name
+            SoftwareNames.SOFTWARE_REMAP_PARAMS_name, project
         )
 
         max_taxids = 0
@@ -161,38 +156,34 @@ class TelevirParameters:
 
         return remap
 
-    @staticmethod
-    def get_prinseq_software(username: str, project_name) -> PrinseqParams:
-        """
-        Get prinseq software
-        """
-
-        prinseq_params, prinseq_software = TelevirParameters.retrieve_project_software(
-            SoftwareNames.SOFTWARE_PRINSEQ_name, username, project_name
-        )
-
-        entropy_threshold = 0
-        dust_threshold = 0
-        for param in prinseq_params:
-            if param.name == SoftwareNames.SOFTWARE_PRINSEQ_lc_entropy:
-                entropy_threshold = float(param.parameter)
-            elif param.name == SoftwareNames.SOFTWARE_PRINSEQ_lc_dust:
-                dust_threshold = float(param.parameter)
-
-        prinseq = PrinseqParams(
-            entropy_threshold=entropy_threshold,
-            dust_threshold=dust_threshold,
-            is_to_run=prinseq_software.is_to_run,
-        )
-
-        return prinseq
+    # @staticmethod
+    # def get_prinseq_software(username: str, project_name) -> PrinseqParams:
+    #    """
+    #    Get prinseq software
+    #    """
+    #    prinseq_params, prinseq_software = TelevirParameters.retrieve_project_software(
+    #        SoftwareNames.SOFTWARE_PRINSEQ_name, username, project_name
+    #    )
+    #    entropy_threshold = 0
+    #    dust_threshold = 0
+    #    for param in prinseq_params:
+    #        if param.name == SoftwareNames.SOFTWARE_PRINSEQ_lc_entropy:
+    #            entropy_threshold = float(param.parameter)
+    #        elif param.name == SoftwareNames.SOFTWARE_PRINSEQ_lc_dust:
+    #            dust_threshold = float(param.parameter)
+    #    prinseq = PrinseqParams(
+    #        entropy_threshold=entropy_threshold,
+    #        dust_threshold=dust_threshold,
+    #        is_to_run=prinseq_software.is_to_run,
+    #    )
+    #    return prinseq
 
     @staticmethod
     def layout_config_get(run_params: List[Parameter]) -> LayoutParams:
         """
         Get layout parameters
         """
-        print("############################33")
+
         report_layout_params = LayoutParams(
             PI_CS.clade_private_proportion,
             PI_CS.clade_shared_proportion_threshold,
@@ -210,7 +201,6 @@ class TelevirParameters:
                     param.parameter
                 )
 
-        print("report_layout_params", report_layout_params)
         return report_layout_params
 
     @staticmethod
@@ -227,9 +217,7 @@ class TelevirParameters:
             flag_build_params,
             _,
         ) = TelevirParameters.retrieve_project_software(
-            SoftwareNames.SOFTWARE_televir_report_layout_name,
-            username,
-            project.name,
+            SoftwareNames.SOFTWARE_televir_report_layout_name, project
         )
 
         report_layout_params = TelevirParameters.layout_config_get(flag_build_params)
@@ -251,15 +239,11 @@ class TelevirParameters:
         else:
             raise Exception("No run or project pk")
 
-        username = project.owner.username
-
         (
             layout_params,
             _,
         ) = TelevirParameters.retrieve_project_software(
-            SoftwareNames.SOFTWARE_televir_report_layout_name,
-            username,
-            project.name,
+            SoftwareNames.SOFTWARE_televir_report_layout_name, project
         )
 
         report_layout_config = TelevirParameters.layout_config_get(layout_params)

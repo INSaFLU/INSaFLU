@@ -545,6 +545,22 @@ class ReadOverlapManager(MappingResultsParser):
         """
         return list(set(lista).intersection(set(listb)))
 
+    def read_overlap_proportions(self) -> pd.DataFrame:
+        """
+        Return dataframe of pairwise shared read proportions."""
+        proxy_overlap = self.overlap_matrix
+
+        def standardize_by_index_values(row: pd.Series) -> pd.Series:
+            """ """
+            # get value of first index
+            row = row / row[row.name]
+            return row
+
+        proportions_matrix = proxy_overlap.apply(standardize_by_index_values, axis=1)
+        ## fill upper triable with transposed lower triangle
+
+        return proportions_matrix
+
     def readoverlap_allpairs_df(self):
         """
         Return dataframe of read overlap between all pairs of lists
@@ -586,6 +602,28 @@ class ReadOverlapManager(MappingResultsParser):
 
         return distmat
 
+    def generate_shared_proportion_matrix(self):
+        """
+        Generate shared proportion matrix
+        """
+        self.parse_for_data()
+        proportion_matrix = square_and_fill_diagonal(self.read_profile_matrix_filtered)
+
+        proportion_matrix.to_csv(self.shared_prop_matrix_path)
+
+    def generate_clade_shared_proportion_matrix(self):
+        """
+        Generate shared proportion matrix
+        """
+        self.parse_for_data()
+        clade_shared_proportion_matrix = self.between_clade_shared_reads()
+
+        clade_shared_proportion_matrix.to_csv(self.clade_shared_prop_matrix_path)
+
+    ####################
+    ## Construct tree ##
+    ####################
+
     def tree_from_distance_matrix(self, distance_matrix: pd.DataFrame):
         """
         Return tree from distance matrix
@@ -601,10 +639,6 @@ class ReadOverlapManager(MappingResultsParser):
         tree.rooted = False
         tree.ladderize()
         return tree
-
-    ####################
-    ## Construct tree ##
-    ####################
 
     def get_private_reads_no_duplicates(
         self,
@@ -623,7 +657,7 @@ class ReadOverlapManager(MappingResultsParser):
             accid_df["private_reads"] = 0
 
         for duplicate_group in similar_groups:
-            # group_private_counts = self.get_accession_private_counts(duplicate_group)
+
             (
                 group_private_counts,
                 _,
@@ -637,22 +671,6 @@ class ReadOverlapManager(MappingResultsParser):
             )
 
         accid_df.to_csv(self.accid_statistics_path, sep="\t", index=False)
-
-    def read_overlap_proportions(self) -> pd.DataFrame:
-        """
-        Return dataframe of pairwise shared read proportions."""
-        proxy_overlap = self.overlap_matrix
-
-        def standardize_by_index_values(row: pd.Series) -> pd.Series:
-            """ """
-            # get value of first index
-            row = row / row[row.name]
-            return row
-
-        proportions_matrix = proxy_overlap.apply(standardize_by_index_values, axis=1)
-        ## fill upper triable with transposed lower triangle
-
-        return proportions_matrix
 
     def reads_dict_from_matrix(self, read_profile_matrix: pd.DataFrame) -> dict:
         """
@@ -696,24 +714,6 @@ class ReadOverlapManager(MappingResultsParser):
             pass
 
         return distance_matrix
-
-    def generate_shared_proportion_matrix(self):
-        """
-        Generate shared proportion matrix
-        """
-        self.parse_for_data()
-        proportion_matrix = square_and_fill_diagonal(self.read_profile_matrix_filtered)
-
-        proportion_matrix.to_csv(self.shared_prop_matrix_path)
-
-    def generate_clade_shared_proportion_matrix(self):
-        """
-        Generate shared proportion matrix
-        """
-        self.parse_for_data()
-        clade_shared_proportion_matrix = self.between_clade_shared_reads()
-
-        clade_shared_proportion_matrix.to_csv(self.clade_shared_prop_matrix_path)
 
     def generate_tree(self):
         """
@@ -774,47 +774,6 @@ class ReadOverlapManager(MappingResultsParser):
             ],
         )
 
-        return combinations
-
-    def clade_shared_by_pair_old(self, leaves: list) -> pd.DataFrame:
-        """
-        return tuple of proportions of reads shared by each pair of leaves
-        """
-        overlap_df = self.readoverlap_allpairs_df()
-
-        subset_clade = overlap_df.loc[
-            (overlap_df.accid_A.isin(leaves)) & (overlap_df.accid_B.isin(leaves))
-        ]
-
-        subset_clade = subset_clade.loc[subset_clade.accid_A != subset_clade.accid_B]
-
-        pair_proportions_df = []
-
-        accids = subset_clade.accid_A.unique()
-        combinations = itertools.combinations(accids, 2)
-
-        for pair in combinations:
-            pair_proportions = subset_clade.loc[
-                (subset_clade.accid_A.isin(pair)) & (subset_clade.accid_B.isin(pair))
-            ]
-
-            pair_proportions_df.append(
-                [pair[0], pair[1], pair_proportions.overlap.tolist()]
-            )
-
-        combinations = pd.DataFrame(
-            pair_proportions_df, columns=["accid_A", "accid_B", "proportion_shared"]
-        )
-
-        combinations["proportion_max"] = combinations.proportion_shared.apply(
-            lambda x: max(x)
-        )
-        combinations["proportion_min"] = combinations.proportion_shared.apply(
-            lambda x: min(x)
-        )
-        combinations["proportion_std"] = combinations.proportion_shared.apply(
-            lambda x: np.std(x)
-        )
         return combinations
 
     def clade_total_counts(self, leaves: list) -> float:

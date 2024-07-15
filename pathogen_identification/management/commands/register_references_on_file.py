@@ -54,15 +54,12 @@ def find_pattern_multiple_files(files, pattern, filter=None):
 
 
 def extract_file_accids(file, output_file, pattern):
-
     cmd = f"zgrep {pattern} {file} | cut -f1 -d' ' | sort | uniq > {output_file}"
     os.system(cmd)
-
     # to dict
     with open(output_file, "r") as f:
         accids = f.readlines()
-
-    return {accid.strip(): 0 for accid in accids}
+    return {accid.strip().split(":")[0].replace(">", ""): 0 for accid in accids}
 
 
 class Command(BaseCommand):
@@ -83,8 +80,6 @@ class Command(BaseCommand):
             help="output directory",
         )
 
-        parser.add_argument("--parse_file", type=str, help="parse file", default=None)
-
     def handle(self, *args, **options):
         ###
         # get user
@@ -93,7 +88,6 @@ class Command(BaseCommand):
 
         user = User.objects.get(pk=options["user_id"])
         outdir = options["outdir"]
-        parse_file = options["parse_file"]
         os.makedirs(outdir, exist_ok=True)
         metadadata_constants = Televir_Metadata_Constants()
 
@@ -159,8 +153,10 @@ class Command(BaseCommand):
                             os.path.join(outdir, "ignore_accids.txt"),
                             "GENE",
                         )
+                    simple_accid = accid_str.split(".")[0]
 
-                    if ignore_dict.get(accid_str):
+                    if ignore_dict.get(simple_accid, None):
+                        print("Ignoring accid", accid_str)
                         ref_source = ReferenceSource.objects.filter(accid=accid_str)
                         if ref_source:
                             ref_source.delete()
@@ -172,8 +168,17 @@ class Command(BaseCommand):
                         accid=accid_str, description=description, taxid=ref_taxid
                     )
 
-                # get reference source file
+                elif ref_source.count() > 1:
 
+                    ref_source.delete()
+                    ref_source = ReferenceSource.objects.create(
+                        accid=accid_str, description=description, taxid=ref_taxid
+                    )
+
+                else:
+                    ref_source = ref_source.first()
+
+                # get reference source file
                 for file_str in files:
                     try:
                         ref_source_file = ReferenceSourceFile.objects.get(file=file_str)

@@ -20,8 +20,6 @@ from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
 ## pairwise matrix by individual reads
 
 
-
-
 def pairwise_shared_count(
     read_profile_matrix: pd.DataFrame,
 ) -> pd.DataFrame:
@@ -204,6 +202,7 @@ def pairwise_shared_reads(read_profile_matrix: pd.DataFrame) -> pd.DataFrame:
 
     return pairwise_props
 
+
 def pairwise_shared_reads_old(read_profile_matrix: pd.DataFrame) -> pd.DataFrame:
     """
     Return dataframe of pairwise shared reads
@@ -243,9 +242,10 @@ class MappingResultsParser:
             self.media_dir, self.accid_statistics_filename.format(pid)
         )
 
+        self.parsed = False
+
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
-
 
     @staticmethod
     def accid_from_metadata(metadata: pd.DataFrame, read_name: str) -> str:
@@ -269,7 +269,6 @@ class MappingResultsParser:
                 if line[0] == ">":
                     read_names.append(line[1:].strip())
         return read_names
-
 
     def get_accid_readname_dict(self):
         """
@@ -325,6 +324,7 @@ class MappingResultsParser:
 
         readname_dict = self.get_accid_readname_dict()
         all_reads = self.all_reads_set(list(readname_dict.values()))
+        print(all_reads)
         read_profile_dict = self.read_profile_dict_get(readname_dict, all_reads)
         read_profile_matrix = self.transform_dataframe(read_profile_dict)
         ## create list of duplicated rows

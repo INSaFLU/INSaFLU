@@ -3,6 +3,7 @@ from random import sample
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
+
 # Create your tests here.
 import pandas as pd
 from django.conf import settings
@@ -14,23 +15,41 @@ from constants.constants import Televir_Metadata_Constants as Deployment_Params
 from constants.constantsTestsCase import ConstantsTestsCase
 from constants.software_names import SoftwareNames
 from fluwebvirus.settings import STATIC_ROOT
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PI_CS
+from pathogen_identification.constants_settings import ConstantsSettings as PI_CS
 from pathogen_identification.deployment_main import Run_Main_from_Leaf
-from pathogen_identification.models import (ParameterSet, PIProject_Sample,
-                                            Projects, SoftwareTree,
-                                            SoftwareTreeNode)
+from pathogen_identification.models import (
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
 from pathogen_identification.modules.object_classes import (
-    Operation_Temp_Files, Read_class, RunCMD, Temp_File)
+    Operation_Temp_Files,
+    Read_class,
+    RunCMD,
+    Temp_File,
+)
 from pathogen_identification.utilities.overlap_manager import (  # Adjust the import path as necessary; Replace 'your_app' with the actual app name
-    MappingResultsParser, clade_private_proportions, pairwise_shared_count,
-    pairwise_shared_reads, pairwise_shared_reads_distance,
-    square_and_fill_diagonal, very_similar_groups_from_dataframe)
+    MappingResultsParser,
+    clade_private_proportions,
+    pairwise_shared_count,
+    pairwise_shared_reads,
+    pairwise_shared_reads_distance,
+    square_and_fill_diagonal,
+    very_similar_groups_from_dataframe,
+)
 from pathogen_identification.utilities.tree_deployment import (
-    Tree_Progress, TreeProgressGraph)
+    Tree_Progress,
+    TreeProgressGraph,
+)
 from pathogen_identification.utilities.utilities_general import merge_classes
 from pathogen_identification.utilities.utilities_pipeline import (
-    Pipeline_Makeup, PipelineTree, SoftwareTreeUtils, Utils_Manager)
+    Pipeline_Makeup,
+    PipelineTree,
+    SoftwareTreeUtils,
+    Utils_Manager,
+)
 from settings.constants_settings import ConstantsSettings as CS
 from settings.default_software import DefaultSoftware
 from settings.models import Parameter, Sample, Software
@@ -314,11 +333,53 @@ def generate_compressed_tree(user, project, sample, makeup):
 class OverlapManagerTests(TestCase):
     def setUp(self):
         # Setup test data
+        self.baseDirectory = os.path.join(
+            getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS
+        )
+        self.temp_directory = os.path.join(self.baseDirectory, "temp_objects_tests")
+        os.makedirs(self.temp_directory, exist_ok=True)
+
         self.test_matrix = pd.DataFrame(
             [[1, 0, 1, 1], [0, 1, 1, 0], [1, 1, 0, 1]],
             index=["id1", "id2", "id3"],
             columns=["feature1", "feature2", "feature3", "feature4"],
         )
+
+        ## create files and metadata, iterate index
+        metadata = []
+        for idx in self.test_matrix.index:
+            with open(os.path.join(self.temp_directory, f"{idx}.fasta"), "w") as f:
+                for feature in self.test_matrix.columns:
+                    if self.test_matrix.loc[idx, feature] == 1:
+                        f.write(f">{feature}\n")
+
+                metadata.append(
+                    {
+                        "filename": f"{idx}.fasta",
+                        "file": os.path.join(self.temp_directory, f"{idx}.fasta"),
+                        "accid": idx,
+                        "description": f"desc{idx}",
+                    }
+                )
+
+        self.metadata_df = pd.DataFrame(metadata)
+
+    def test_parse_for_data(self):
+
+        mapping_parser = MappingResultsParser(
+            self.metadata_df, self.temp_directory, "test_pid"
+        )
+
+        mapping_parser.parse_for_data()
+
+        self.assertTrue(mapping_parser.parsed)
+
+        pd.testing.assert_frame_equal(
+            mapping_parser.read_profile_matrix,
+            mapping_parser.read_profile_matrix_filtered,
+        )
+
+        self.assertTrue(mapping_parser.total_read_counts.sum() == 8)
 
     def test_pairwise_shared_count(self):
         result = pairwise_shared_count(self.test_matrix)

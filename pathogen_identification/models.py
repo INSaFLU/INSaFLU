@@ -749,6 +749,41 @@ class RunMain(models.Model):
             print(e)
 
 
+    @property
+    def references_sorted(self):
+        raw_references_mapped = (
+            RawReference.objects.filter(
+                run=self, status=RawReference.STATUS_MAPPED
+            )
+            .exclude(accid="-")
+            .exclude(counts=None)
+            .order_by("taxid", "status")
+            .distinct("taxid")
+        )
+
+        raw_references_mapped = sorted(
+            raw_references_mapped,
+            key=lambda x: float(x.read_counts if x.read_counts else 0),
+            reverse=True,
+        )
+
+        raw_references_unmapped = (
+            RawReference.objects.filter(run=self)
+            .exclude(status=RawReference.STATUS_MAPPED)
+            .exclude(accid="-")
+            .order_by("taxid", "status")
+            .distinct("taxid")
+        )
+        raw_references_unmapped = sorted(
+            raw_references_unmapped,
+            key=lambda x: float(x.read_counts if x.read_counts else 0),
+            reverse=True,
+        )
+
+        raw_references = raw_references_mapped + raw_references_unmapped
+
+        return raw_references
+
 class RunReadsRegister(models.Model):
     run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)
 

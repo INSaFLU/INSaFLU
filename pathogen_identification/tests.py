@@ -3,7 +3,6 @@ import random
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
-
 # Create your tests here.
 import pandas as pd
 from django.conf import settings
@@ -15,48 +14,31 @@ from constants.constants import Televir_Metadata_Constants as Deployment_Params
 from constants.constantsTestsCase import ConstantsTestsCase
 from constants.software_names import SoftwareNames
 from fluwebvirus.settings import STATIC_ROOT
-from pathogen_identification.constants_settings import ConstantsSettings as PI_CS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PI_CS
 from pathogen_identification.deployment_main import Run_Main_from_Leaf
-from pathogen_identification.models import (
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReferenceSource,
-    ReferenceSourceFile,
-    ReferenceSourceFileMap,
-    ReferenceTaxid,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.models import (ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            ReferenceSource,
+                                            ReferenceSourceFile,
+                                            ReferenceSourceFileMap,
+                                            ReferenceTaxid, RunMain,
+                                            SoftwareTree, SoftwareTreeNode)
 from pathogen_identification.modules.metadata_handler import RunMetadataHandler
 from pathogen_identification.modules.object_classes import (
-    Operation_Temp_Files,
-    Read_class,
-    RunCMD,
-    Temp_File,
-)
+    Operation_Temp_Files, Read_class, RunCMD, Temp_File)
 from pathogen_identification.utilities.overlap_manager import (
-    MappingResultsParser,
-    ReadOverlapManager,
-    clade_private_proportions,
-    pairwise_shared_count,
-    pairwise_shared_reads,
-    pairwise_shared_reads_distance,
-    square_and_fill_diagonal,
-    very_similar_groups_from_dataframe,
-)
+    MappingResultsParser, ReadOverlapManager, clade_private_proportions,
+    pairwise_shared_count, pairwise_shared_reads,
+    pairwise_shared_reads_distance, square_and_fill_diagonal,
+    very_similar_groups_from_dataframe)
 from pathogen_identification.utilities.reference_utils import extract_file
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.tree_deployment import Tree_Progress
 from pathogen_identification.utilities.utilities_general import merge_classes
 from pathogen_identification.utilities.utilities_pipeline import (
-    Pipeline_Makeup,
-    PipelineTree,
-    SoftwareTreeUtils,
-    Utils_Manager,
-)
+    Pipeline_Makeup, PipelineTree, SoftwareTreeUtils, Utils_Manager)
 from pathogen_identification.utilities.utilities_views import ReportSorter
 from settings.constants_settings import ConstantsSettings as CS
 from settings.default_software import DefaultSoftware
@@ -424,7 +406,7 @@ class OverlapManagerTests(TestCase):
         self.test_user = test_user()
         self.project_ont = televir_test_project(self.test_user)
 
-        self.temp_directory = os.path.join(self.baseDirectory, "temp_objects_tests")
+        self.temp_directory = os.path.join(self.baseDirectory, PI_CS.test_subdirectory)
         os.makedirs(self.temp_directory, exist_ok=True)
 
         self.test_matrix = pd.DataFrame(
@@ -644,7 +626,7 @@ class MetadataManagementTests(TestCase):
             STATIC_ROOT, ConstantsTestsCase.MANAGING_TESTS
         )
         self.test_user = test_user()
-        self.temp_directory = os.path.join(self.baseDirectory, "temp_objects_tests")
+        self.temp_directory = os.path.join(self.baseDirectory, PI_CS.test_subdirectory)
         self.sample_ont = test_fastq_file(self.baseDirectory, self.test_user)
         self.project_ont = televir_test_project(self.test_user)
         self.project_sample = televir_test_sample(self.project_ont, self.sample_ont)
@@ -688,6 +670,14 @@ class MetadataManagementTests(TestCase):
                 f.write(
                     "".join(np.random.choice(["A", "C", "G", "T"], 1000, replace=True))
                 )
+            
+        files= list(set([ref["file"] for ref in refs]))
+        for file in files:
+
+            ref_source_file = ReferenceSourceFile()
+            ref_source_file.file = ref["file"]
+            ref_source_file.save()
+
 
         ### generate references
         for ref in refs:
@@ -700,9 +690,7 @@ class MetadataManagementTests(TestCase):
             ref_source.description = ref["description"]
             ref_source.save()
 
-            ref_source_file = ReferenceSourceFile()
-            ref_source_file.file = ref["file"]
-            ref_source_file.save()
+            ref_source_file= ReferenceSourceFile.objects.get(file=ref["file"])
 
             ref_source_file_map = ReferenceSourceFileMap()
             ref_source_file_map.reference_source = ref_source
@@ -731,9 +719,8 @@ class MetadataManagementTests(TestCase):
 
     def test_add_reference(self):
 
-        from pathogen_identification.utilities.utilities_views import (
-            SampleReferenceManager,
-        )
+        from pathogen_identification.utilities.utilities_views import \
+            SampleReferenceManager
 
         sample_ref_manager = SampleReferenceManager(self.project_sample)
         self.assertTrue(RunMain.objects.filter(project=self.project_ont).exists())
@@ -766,6 +753,7 @@ class MetadataManagementTests(TestCase):
     def dont_test_extract_file(self):
         tmp_fasta = extract_file("ref1")
         self.assertFalse(tmp_fasta is None)
+        print(tmp_fasta)
         self.assertTrue(os.path.exists(tmp_fasta))
 
 
@@ -878,7 +866,7 @@ class Televir_Objects_TestCase(TestCase):
         self.baseDirectory = os.path.join(
             STATIC_ROOT, ConstantsTestsCase.MANAGING_TESTS
         )
-        self.temp_directory = os.path.join(self.baseDirectory, "temp_objects_tests")
+        self.temp_directory = os.path.join(self.baseDirectory, PI_CS.test_subdirectory)
         os.makedirs(self.temp_directory, exist_ok=True)
 
         self.test_user = test_user()

@@ -1919,7 +1919,9 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
 
         ##### check Screening performed
         screening_performed = RunMain.objects.filter(
-            sample=sample_main, run_type=RunMain.RUN_TYPE_SCREENING, parameter_set__status=ParameterSet.STATUS_FINISHED
+            sample=sample_main,
+            run_type=RunMain.RUN_TYPE_SCREENING,
+            parameter_set__status=ParameterSet.STATUS_FINISHED,
         ).exists()
 
         reference_table_class = CompoundReferenceScore
@@ -2198,19 +2200,8 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         #
         is_classification = run_main_pipeline.run_type == RunMain.RUN_TYPE_PIPELINE
         #
-
-        raw_references = (
-            RawReference.objects.filter(run=run_main_pipeline)
-            .exclude(accid="-")
-            .exclude(counts=None)
-            .order_by("taxid", "status")
-            .distinct("taxid")
-        )
-        raw_references = sorted(
-            raw_references,
-            key=lambda x: float(x.read_counts if x.read_counts else 0),
-            reverse=True,
-        )
+        #######################
+        raw_references = run_main_pipeline.references_sorted
 
         ########
         remapping_performed = True

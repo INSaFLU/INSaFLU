@@ -1038,6 +1038,7 @@ class Remapping:
                 self.filter_mapping_bamutil(filter)
 
             if filter.name == SoftwareNames.SOFTWARE_MSAMTOOLS_name:
+                print("############# FILTERING BAM FILE : msamtools")
                 self.filter_mapping_msamtools(filter)
 
         self.filter_bam_unmapped()
@@ -1119,6 +1120,8 @@ class Remapping:
             ">",
             temp_file,
         ]
+
+        print("".join(cmd))
 
         try:
             self.cmd.run_script_software(cmd)
@@ -2025,7 +2028,6 @@ class Mapping_Manager(Tandem_Remap):
             temp_dir=self.remapping_methods.output_dir,
             id=id,
         )
-
         dustmasker.run_mask_hard(fasta_file)
 
         os.remove(fasta_file)

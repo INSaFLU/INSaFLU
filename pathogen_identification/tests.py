@@ -1,5 +1,5 @@
 import os
-from random import sample
+import random
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
@@ -21,9 +21,16 @@ from pathogen_identification.models import (
     ParameterSet,
     PIProject_Sample,
     Projects,
+    RawReference,
+    ReferenceSource,
+    ReferenceSourceFile,
+    ReferenceSourceFileMap,
+    ReferenceTaxid,
+    RunMain,
     SoftwareTree,
     SoftwareTreeNode,
 )
+from pathogen_identification.modules.metadata_handler import RunMetadataHandler
 from pathogen_identification.modules.object_classes import (
     Operation_Temp_Files,
     Read_class,
@@ -40,6 +47,7 @@ from pathogen_identification.utilities.overlap_manager import (
     square_and_fill_diagonal,
     very_similar_groups_from_dataframe,
 )
+from pathogen_identification.utilities.reference_utils import extract_file
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.tree_deployment import Tree_Progress
 from pathogen_identification.utilities.utilities_general import merge_classes
@@ -61,6 +69,82 @@ class AttrDict(dict):
     def __init__(self, *args, **kwargs):
         super(AttrDict, self).__init__(*args, **kwargs)
         self.__dict__ = self
+
+
+def televir_test_project(user: User, project_ont_name: str = "project_televir"):
+    ######### ONT ##########
+
+    try:
+        project_ont = Projects.objects.get(name=project_ont_name)
+    except Projects.DoesNotExist:
+        project_ont = Projects()
+        project_ont.name = project_ont_name
+        project_ont.owner = user
+        project_ont.technology = CS.TECHNOLOGY_minion
+
+        project_ont.save()
+
+    return project_ont
+
+
+def televir_test_sample(project_ont, sample_ont: Sample):
+    try:
+        ont_project_sample = PIProject_Sample.objects.get(
+            project__id=project_ont.pk, sample__id=sample_ont.pk
+        )
+    except PIProject_Sample.DoesNotExist:
+        ont_project_sample = PIProject_Sample()
+        ont_project_sample.project = project_ont
+        ont_project_sample.sample = sample_ont
+        ont_project_sample.name = sample_ont.name
+        ont_project_sample.save()
+
+    return ont_project_sample
+
+
+def test_user():
+    try:
+        user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+    except User.DoesNotExist:
+        user = User()
+        user.username = ConstantsTestsCase.TEST_USER_NAME
+        user.is_active = False
+        user.password = ConstantsTestsCase.TEST_USER_NAME
+        user.save()
+
+    return user
+
+
+def test_fastq_file(
+    baseDirectory, user: User, sample_name: str = "televir_sample_minion_1"
+):
+    utils = Utils()
+
+    file_name = os.path.join(
+        STATIC_ROOT,
+        "tests",
+        ConstantsTestsCase.DIR_FASTQ,
+        ConstantsTestsCase.FASTQ_MINION_1,
+    )
+
+    utils.copy_file(file_name, os.path.join(baseDirectory, ConstantsTestsCase.FASTQ1_1))
+
+    try:
+        sample_ont = Sample.objects.get(name=sample_name)
+    except Sample.DoesNotExist:
+        sample_ont = Sample()
+        sample_ont.name = sample_name
+        sample_ont.is_valid_1 = True
+        sample_ont.file_name_1 = ConstantsTestsCase.FASTQ1_1
+        sample_ont.path_name_1.name = os.path.join(
+            baseDirectory, ConstantsTestsCase.FASTQ1_1
+        )
+        sample_ont.is_valid_2 = False
+        sample_ont.type_of_fastq = Sample.TYPE_OF_FASTQ_minion
+        sample_ont.owner = user
+        sample_ont.save()
+
+    return sample_ont
 
 
 def get_bindir_from_binaries(binaries, key, value: str = ""):
@@ -334,7 +418,7 @@ class OverlapManagerTests(TestCase):
     def setUp(self):
         # Setup test data
         self.baseDirectory = os.path.join(
-            getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS
+            STATIC_ROOT, ConstantsTestsCase.MANAGING_TESTS
         )
 
         self.test_user = test_user()
@@ -495,7 +579,7 @@ class MergeClassificationsTest(TestCase):
             {
                 "taxid": [1, 2, 3],
                 "counts": [10, 20, 30],
-                "description": ["bacteria", "virus", "phage"],
+                "description": ["btests_acteria", "virus", "phage"],
             }
         )
 
@@ -553,6 +637,138 @@ class MergeClassificationsTest(TestCase):
         self.assertLessEqual(len(merged), 1, "Should respect the maxt parameter.")
 
 
+class MetadataManagementTests(TestCase):
+
+    def setUp(self):
+        self.baseDirectory = os.path.join(
+            STATIC_ROOT, ConstantsTestsCase.MANAGING_TESTS
+        )
+        self.test_user = test_user()
+        self.temp_directory = os.path.join(self.baseDirectory, "temp_objects_tests")
+        self.sample_ont = test_fastq_file(self.baseDirectory, self.test_user)
+        self.project_ont = televir_test_project(self.test_user)
+        self.project_sample = televir_test_sample(self.project_ont, self.sample_ont)
+        refs = [
+            {
+                "accid": "ref1",
+                "taxid": 1,
+                "description": "virus1",
+                "file": "tests_file1",
+            },
+            {
+                "accid": "ref2",
+                "taxid": 2,
+                "description": "virus2",
+                "file": "tests_file1",
+            },
+            {
+                "accid": "ref3",
+                "taxid": 3,
+                "description": "virus3",
+                "file": "tests_file2",
+            },
+            {
+                "accid": "ref4",
+                "taxid": 4,
+                "description": "virus4",
+                "file": "tests_file2",
+            },
+            {
+                "accid": "ref5",
+                "taxid": 5,
+                "description": "virus5",
+                "file": "tests_file2",
+            },
+        ]
+
+        ### write files
+        for ref in refs:
+            with open(os.path.join(self.temp_directory, ref["file"]), "w") as f:
+                f.write(f"{ref['accid']}\n")
+                f.write(
+                    "".join(np.random.choice(["A", "C", "G", "T"], 1000, replace=True))
+                )
+
+        ### generate references
+        for ref in refs:
+            taxid = ReferenceTaxid()
+            taxid.taxid = ref["taxid"]
+            taxid.save()
+            ref_source = ReferenceSource()
+            ref_source.accid = ref["accid"]
+            ref_source.taxid = taxid
+            ref_source.description = ref["description"]
+            ref_source.save()
+
+            ref_source_file = ReferenceSourceFile()
+            ref_source_file.file = ref["file"]
+            ref_source_file.save()
+
+            ref_source_file_map = ReferenceSourceFileMap()
+            ref_source_file_map.reference_source = ref_source
+            ref_source_file_map.reference_source_file = ref_source_file
+            ref_source_file_map.save()
+
+        self.dataframe_1 = pd.DataFrame(
+            {
+                "taxid": [1, 2, 3],
+                "counts": [10, 20, 30],
+            }
+        )
+
+        self.dataframe_2 = pd.DataFrame(
+            {
+                "taxid": [3, 4, 5],
+                "counts": [30, 40, 50],
+            }
+        )
+
+        ###########################
+        ######
+        default_software = DefaultSoftware()
+        default_software.test_all_defaults_pathogen_identification(self.test_user)
+        duplicate_software_params_global_project(self.test_user, self.project_ont)
+
+    def test_add_reference(self):
+
+        from pathogen_identification.utilities.utilities_views import (
+            SampleReferenceManager,
+        )
+
+        sample_ref_manager = SampleReferenceManager(self.project_sample)
+        self.assertTrue(RunMain.objects.filter(project=self.project_ont).exists())
+        ref = ReferenceSourceFileMap.objects.get(reference_source__accid="ref1")
+        sample_ref_manager.add_reference(ref)
+
+        self.assertTrue(
+            RawReference.objects.filter(run=sample_ref_manager.storage_run).exists()
+        )
+
+        self.assertTrue(
+            SoftwareTree.objects.filter(project=self.project_ont, model=-1).exists()
+        )
+
+        software_utils = SoftwareTreeUtils(
+            self.test_user, self.project_ont, sample=self.project_sample
+        )
+        runs_to_deploy = software_utils.check_runs_to_submit_metagenomics_sample(
+            self.project_sample
+        )
+        reference_manager = SampleReferenceManager(self.project_sample)
+
+        for leaf in runs_to_deploy[self.project_sample]:
+            metagenomics_run = reference_manager.mapping_run_from_leaf(leaf)
+            self.assertTrue(ParameterSet.objects.filter(leaf=leaf).exists())
+
+        print("#####################")
+        print(runs_to_deploy)
+
+    def dont_test_extract_file(self):
+        tmp_fasta = extract_file("ref1")
+        self.assertFalse(tmp_fasta is None)
+        self.assertTrue(os.path.exists(tmp_fasta))
+
+
 class Televir_Software_Test(TestCase):
     software = SoftwareUtils()
     utils = Utils()
@@ -563,7 +779,7 @@ class Televir_Software_Test(TestCase):
 
     def setUp(self):
         self.baseDirectory = os.path.join(
-            getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS
+            STATIC_ROOT, ConstantsTestsCase.MANAGING_TESTS
         )
 
         try:
@@ -655,88 +871,12 @@ class Televir_Software_Test(TestCase):
         )
 
 
-def televir_test_project(user: User, project_ont_name: str = "project_televir"):
-    ######### ONT ##########
-
-    try:
-        project_ont = Projects.objects.get(name=project_ont_name)
-    except Projects.DoesNotExist:
-        project_ont = Projects()
-        project_ont.name = project_ont_name
-        project_ont.owner = user
-        project_ont.technology = CS.TECHNOLOGY_minion
-
-        project_ont.save()
-
-    return project_ont
-
-
-def televir_test_sample(project_ont, sample_ont: Sample):
-    try:
-        ont_project_sample = PIProject_Sample.objects.get(
-            project__id=project_ont.pk, sample__id=sample_ont.pk
-        )
-    except PIProject_Sample.DoesNotExist:
-        ont_project_sample = PIProject_Sample()
-        ont_project_sample.project = project_ont
-        ont_project_sample.sample = sample_ont
-        ont_project_sample.name = sample_ont.name
-        ont_project_sample.save()
-
-    return ont_project_sample
-
-
-def test_user():
-    try:
-        user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
-    except User.DoesNotExist:
-        user = User()
-        user.username = ConstantsTestsCase.TEST_USER_NAME
-        user.is_active = False
-        user.password = ConstantsTestsCase.TEST_USER_NAME
-        user.save()
-
-    return user
-
-
-def test_fastq_file(
-    baseDirectory, user: User, sample_name: str = "televir_sample_minion_1"
-):
-    utils = Utils()
-
-    file_name = os.path.join(
-        STATIC_ROOT,
-        "tests",
-        ConstantsTestsCase.DIR_FASTQ,
-        ConstantsTestsCase.FASTQ_MINION_1,
-    )
-
-    utils.copy_file(file_name, os.path.join(baseDirectory, ConstantsTestsCase.FASTQ1_1))
-
-    try:
-        sample_ont = Sample.objects.get(name=sample_name)
-    except Sample.DoesNotExist:
-        sample_ont = Sample()
-        sample_ont.name = sample_name
-        sample_ont.is_valid_1 = True
-        sample_ont.file_name_1 = ConstantsTestsCase.FASTQ1_1
-        sample_ont.path_name_1.name = os.path.join(
-            baseDirectory, ConstantsTestsCase.FASTQ1_1
-        )
-        sample_ont.is_valid_2 = False
-        sample_ont.type_of_fastq = Sample.TYPE_OF_FASTQ_minion
-        sample_ont.owner = user
-        sample_ont.save()
-
-    return sample_ont
-
-
 class Televir_Objects_TestCase(TestCase):
     install_registry = Deployment_Params
 
     def setUp(self):
         self.baseDirectory = os.path.join(
-            getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS
+            STATIC_ROOT, ConstantsTestsCase.MANAGING_TESTS
         )
         self.temp_directory = os.path.join(self.baseDirectory, "temp_objects_tests")
         os.makedirs(self.temp_directory, exist_ok=True)
@@ -878,7 +1018,7 @@ class Televir_Objects_TestCase(TestCase):
         read_names = r1.get_read_names_fastq()
         self.assertEqual(len(read_names), r1.read_number_raw)
 
-        read_names_subset = sample(read_names, 100)
+        read_names_subset = random.sample(read_names, 100)
         temp_read_file = Temp_File(self.temp_directory, suffix=".fq.gz")
 
         with temp_read_file as tpf:
@@ -893,7 +1033,7 @@ class Televir_Objects_TestCase(TestCase):
             )
 
             self.assertEqual(temp_read.read_number_raw, len(read_names_subset))
-            subsample = sample(read_names_subset, 10)
+            subsample = random.sample(read_names_subset, 10)
             temp_reads_file = Temp_File(self.temp_directory, suffix=".lst")
             with temp_reads_file as spf:
                 with open(spf, "w") as f:
@@ -921,7 +1061,7 @@ class Televir_Project_Test(TestCase):
 
     def setUp(self):
         self.baseDirectory = os.path.join(
-            getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS
+            STATIC_ROOT, ConstantsTestsCase.MANAGING_TESTS
         )
 
         self.test_user = test_user()

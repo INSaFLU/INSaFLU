@@ -10,6 +10,7 @@ from pathogen_identification.models import (
     PIProject_Sample,
     RawReference,
     RawReferenceCompoundModel,
+    ReferenceSource,
     ReferenceSourceFileMap,
     RunMain,
 )
@@ -60,6 +61,7 @@ class RunMetadataHandler:
         self.logger = logging.getLogger(f"{__name__}_{self.prefix}")
         self.logger.setLevel(logging.INFO)
         self.logger.addHandler(logging.StreamHandler())
+
         if self.logger.hasHandlers():
             self.logger.handlers.clear()
         self.logger.propagate = False
@@ -277,7 +279,6 @@ class RunMetadataHandler:
 
         self.generate_mapping_targets(
             self.merged_targets,
-            prefix=self.prefix,
             max_remap=max_remap,
         )
 
@@ -364,10 +365,22 @@ class RunMetadataHandler:
 
         self.generate_mapping_targets(
             references_table,
-            prefix=self.prefix,
             max_remap=max_remap,
-            skip_scrape=skip_scrape,
         )
+
+    @staticmethod
+    def filter_taxids_no_in_db(df) -> pd.DataFrame:
+
+        def get_refs_existing(taxid):
+            refs_in_file = ReferenceSourceFileMap.objects.filter(
+                reference_source__taxid__taxid=taxid,
+            ).distinct("reference_source__accid")
+            return len(refs_in_file) > 0
+
+        df["has_refs"] = df["taxid"].apply(get_refs_existing)
+        df = df[df["has_refs"] == True]
+        df.drop(columns=["has_refs"], inplace=True)
+        return df
 
     def results_collect_metadata(
         self, df: pd.DataFrame, sift: bool = True
@@ -383,9 +396,12 @@ class RunMetadataHandler:
 
         df = self.merge_report_to_metadata_taxid(df)
 
+        df = self.filter_taxids_no_in_db(df)
+
         df = self.map_hit_report(df)
 
-        df = self.entrez_get_taxid_descriptions(df)
+        df = self.db_get_taxid_descriptions(df)
+        # df = self.entrez_get_taxid_descriptions(df)
         # df = self.entrez_conn.entrez_get_taxid_descriptions(df)
         # df = self.merge_report_to_metadata_description(df)
 
@@ -529,28 +545,22 @@ class RunMetadataHandler:
 
         return df
 
-    def entrez_get_taxid_descriptions(self, df: pd.DataFrame) -> pd.DataFrame:
+    def db_get_taxid_descriptions(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Get taxid descriptions from entrez.
-        """
-
-        return self.entrez_conn.entrez_get_taxid_descriptions(df)
-
-    def merge_report_to_metadata_description(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Merge df with taxonomy to description file.
+        Get taxid descriptions from database.
         """
 
-        df["taxid"] = df["taxid"].astype(int)
-        df = self.merge_check_column_types(df, self.taxonomy_to_description, "taxid")
-        df = df.sort_values(by="taxid")
-        df = df.drop_duplicates(subset=["taxid"], keep="first")
+        def get_description(taxid: str):
+            try:
+                return (
+                    ReferenceSource.objects.filter(taxid__taxid=taxid)
+                    .first()
+                    .description
+                )
+            except:
+                return ""
 
-        df = df.dropna(subset=["taxid"])
-        df.taxid = df.taxid.astype(float)
-        df = df.dropna(subset=["taxid"])
-        df.taxid = df.taxid.astype(int)
-        df = df[df.taxid != 0]
+        df["description"] = df["taxid"].apply(get_description)
 
         return df
 
@@ -702,55 +712,14 @@ class RunMetadataHandler:
         """
         Return representative accession for a given taxid.
         """
-        if str(taxid) not in self.accession_to_taxid.taxid.astype(str).unique():
-            return "-"
 
-        accid_set = self.accession_to_taxid[
-            self.accession_to_taxid.taxid.astype(str) == str(taxid)
-        ].reset_index()
+        sources = ReferenceSource.objects.filter(taxid__taxid=taxid)
+        sources = [x for x in sources if x.accid != "-" and x.accid is not None]
 
-        accid_set = accid_set.dropna(subset=["acc"])
-
-        if accid_set.shape[0] == 0:
+        if len(sources) == 0:
             return "-"
         else:
-            return accid_set.acc.iloc[0]
-
-    def get_taxid_representative_accid_df(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Return representative accession for a given taxid.
-        """
-
-        new_df = df.copy()
-        if "acc" in new_df.columns:
-            new_df.drop(columns=["acc"], inplace=True)
-
-        new_df = (
-            new_df.merge(self.accession_to_taxid, on="taxid", how="left")
-            .sort_values(["taxid", "acc"], ascending=[True, True])
-            .drop_duplicates(subset=["taxid"], keep="first")
-            .fillna("-")
-        )
-
-        return new_df
-
-    def get_taxid_representative_description(self, taxid: int) -> str:
-        """
-        Return representative accession for a given taxid.
-        """
-        if str(taxid) not in self.taxonomy_to_description.taxid.astype(str).unique():
-            return "-"
-
-        desc_set = self.taxonomy_to_description[
-            self.taxonomy_to_description.taxid.astype(str) == str(taxid)
-        ].reset_index()
-
-        desc_set = desc_set.dropna(subset=["description"])
-
-        if desc_set.shape[0] == 0:
-            return "-"
-        else:
-            return desc_set.description.iloc[0]
+            return sources[0].accid
 
     def merge_reports_clean(
         self,
@@ -784,49 +753,10 @@ class RunMetadataHandler:
         self.raw_targets = raw_targets
         self.merged_targets = targets
 
-    @staticmethod
-    def metadata_from_taxid(taxid: str) -> pd.DataFrame:
-        ref_db = pd.DataFrame(columns=["taxid", "acc", "description", "file"])
-        reference_source = ReferenceSourceFileMap.objects.filter(
-            reference_source__taxid__taxid=taxid
-        )
-
-        if len(reference_source) == 0:
-            return ref_db
-
-        ref_db = []
-        for ref in reference_source:
-            ref_db.append(
-                [
-                    ref.reference_source.taxid.taxid,
-                    ref.reference_source.accid,
-                    ref.reference_source.description,
-                    ref.reference_source_file.file,
-                ]
-            )
-
-        ref_db = pd.DataFrame(ref_db, columns=["taxid", "acc", "description", "file"])
-
-        def acc_on_file(row: pd.Series):
-            acc = row.acc
-            file = row.file
-            acc_on_file = acc
-            if file == "virosaurus90_vertebrate-20200330.fas.gz":
-                acc_on_file = acc.split(".")[0]
-                acc_on_file = f"{acc_on_file}:{acc_on_file};"
-
-            return acc_on_file
-
-        ref_db["acc_in_file"] = ref_db.apply(acc_on_file, axis=1)
-
-        return ref_db
-
     def generate_mapping_targets(
         self,
         targets,
-        prefix: str,
         max_remap: int = 9,
-        skip_scrape: bool = False,
     ):
 
         print(
@@ -890,116 +820,3 @@ class RunMetadataHandler:
         print(remap_absent_taxid_list)
         self.remap_targets.extend(remap_targets)
         self.remap_absent_taxid_list.extend(remap_absent_taxid_list)
-
-    def generate_mapping_targets_old(
-        self,
-        targets,
-        prefix: str,
-        max_remap: int = 9,
-        skip_scrape: bool = False,
-    ):
-        """
-        check for presence of taxid in targets in self.accession_to_taxid.
-        if present, find every accession ID associated, and create a ReferenceMap object
-        for each accession ID.
-
-        """
-        fasta_main_dir = self.config["source"]["REF_FASTA"]
-        print(
-            "######################## GENERATING TARGETS ############################"
-        )
-
-        remap_targets = []
-        remap_absent = []
-        # taxf = self.accession_to_taxid
-        remap_plan = []
-        targets.taxid = targets.taxid.astype(int)
-
-        print(targets.head())
-
-        for taxid in targets.taxid.unique():
-            print(f"taxid: {taxid}")
-            nset = self.metadata_from_taxid(taxid)
-
-            if nset.empty:
-                remap_absent.append(taxid)
-
-                nset = pd.DataFrame(columns=["taxid"])
-                remap_plan.append([taxid, "none", "none", "none"])
-                continue
-
-            # nset = (
-            #    taxf[taxf.taxid == taxid]
-            #    .reset_index(drop=True)
-            #    .drop_duplicates(subset=["acc"], keep="first")
-            # )
-            ###
-
-            files_to_map = self.filter_files_to_map(nset)
-
-            ####
-
-            for fileset in files_to_map:
-                nsu = nset[nset.file == fileset]
-
-                added_counts = 0
-
-                if nsu.shape[0] > max_remap:
-                    nsu = nsu.drop_duplicates(
-                        subset=["taxid"], keep="first"
-                    ).reset_index()
-
-                for pref in nsu.acc.unique():
-                    nsnew = nsu[nsu.acc == pref].reset_index(drop=True)
-
-                    pref_simple = simplify_name(pref)
-
-                    self.taxonomy_to_description.taxid = (
-                        self.taxonomy_to_description.taxid.astype(int)
-                    )
-                    description = self.taxonomy_to_description[
-                        self.taxonomy_to_description.taxid.astype(int) == int(taxid)
-                    ].description.unique()
-
-                    if len(description) == 0:
-                        description = [""]
-
-                    if len(description) > 1:
-                        description = sorted(description, key=len)
-
-                    description = description[0]
-                    if skip_scrape is False:
-                        description = scrape_description(pref, description)
-
-                    if description_fails_filter(description, CS.DESCRIPTION_FILTERS):
-                        continue
-
-                    remap_targets.append(
-                        Remap_Target(
-                            pref,
-                            pref_simple,
-                            taxid,
-                            os.path.join(fasta_main_dir, fileset),
-                            prefix,
-                            description,
-                            [nsnew.acc_in_file[0]],
-                            determine_taxid_in_file(taxid, self.rclass),
-                            determine_taxid_in_file(taxid, self.aclass),
-                        )
-                    )
-
-                    remap_plan.append([taxid, pref, fileset, description])
-
-                    added_counts += 1
-                    if added_counts > max_remap:
-                        break
-
-        print("############# REMAP PLAN #############")
-        print(len(remap_plan))
-        print(remap_plan)
-        self.remap_plan = pd.DataFrame(
-            remap_plan, columns=["taxid", "acc", "file", "description"]
-        )
-
-        self.remap_targets.extend(remap_targets)
-        self.remap_absent_taxid_list.extend(remap_absent)

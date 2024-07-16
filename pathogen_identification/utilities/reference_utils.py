@@ -165,6 +165,7 @@ def extract_file(accid):
         source_file = reference.reference_source_file.filepath
 
         extracted = televir_bioinf.extract_reference(source_file, accid, tmp_fasta)
+        print(f"Extracted: {extracted}")
         if extracted:
             return tmp_fasta
         else:

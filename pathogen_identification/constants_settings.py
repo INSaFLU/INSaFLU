@@ -27,6 +27,7 @@ class ConstantsSettings:
     run_files_zipped = "run.zip"
     PAGINATE_NUMBER = 10
     TELEVIR_REFERENCE_PAGINATE_NUMBER = 15
+    test_subdirectory = "temp_objects_tests"
 
     USER_TREE_INDEX = 0
 

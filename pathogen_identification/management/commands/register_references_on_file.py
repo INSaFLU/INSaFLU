@@ -80,6 +80,12 @@ class Command(BaseCommand):
             help="output directory",
         )
 
+        parser.add_argument(
+            "--curate",
+            action="store_true",
+            help="curate references",
+        )
+
     def handle(self, *args, **options):
         ###
         # get user
@@ -107,22 +113,31 @@ class Command(BaseCommand):
 
         print(f"Number of accids on file: {len(accid_file_df)}")
 
-        entrez_descriptions = entrez_connection.run_entrez_query(
-            query_list=accid_file_df.acc.unique().tolist(),
-        )
+        if options["curate"] is False:
+            entrez_descriptions = entrez_connection.run_entrez_query(
+                query_list=accid_file_df.acc.unique().tolist(),
+            )
+        else:
+            entrez_descriptions = ReferenceSource.objects.all()
+            entrez_descriptions = pd.DataFrame(
+                [
+                    {
+                        "accession": source.accid,
+                        "description": source.description,
+                        "taxid": source.taxid.taxid,
+                    }
+                    for source in entrez_descriptions
+                ]
+            )
+
         print("Retrieved entrez descriptions")
         print(f"Number of entrez descriptions: {len(entrez_descriptions)}")
         print("Registering entrez descriptions")
+        print(entrez_descriptions.head())
         ignore_dict = {}
         d = 0
 
         for taxid_str, taxid_df in entrez_descriptions.groupby("taxid"):
-            ### register a log every 1000 taxids
-            d += 1
-
-            if d % 1000 == 0:
-                print(f"Taxid: {taxid_str}")
-                print(f"Number of taxids processed: {d}")
 
             try:
                 ref_taxid = ReferenceTaxid.objects.get(taxid=taxid_str)
@@ -130,8 +145,15 @@ class Command(BaseCommand):
                 ref_taxid = ReferenceTaxid.objects.create(taxid=taxid_str)
 
             for ix, row in taxid_df.iterrows():
-                accid_str = row.accession
 
+                ### register a log every 1000 taxids
+                d += 1
+
+                if d % 1000 == 0:
+                    print(f"Taxid: {taxid_str}")
+                    print(f"Number of taxids processed: {d}")
+
+                accid_str = row.accession
                 description = row.description
 
                 if len(description) > 300:
@@ -153,9 +175,10 @@ class Command(BaseCommand):
                             os.path.join(outdir, "ignore_accids.txt"),
                             "GENE",
                         )
+
                     simple_accid = accid_str.split(".")[0]
 
-                    if ignore_dict.get(simple_accid, None):
+                    if ignore_dict.get(simple_accid, None) is not None:
                         print("Ignoring accid", accid_str)
                         ref_source = ReferenceSource.objects.filter(accid=accid_str)
                         if ref_source:

@@ -17,9 +17,7 @@ from pathogen_identification.models import (
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
 from pathogen_identification.utilities.utilities_general import (
-    description_fails_filter,
     merge_classes,
-    scrape_description,
     simplify_name,
 )
 from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils

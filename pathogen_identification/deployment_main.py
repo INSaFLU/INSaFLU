@@ -223,7 +223,7 @@ class PathogenIdentification_deployment:
         self.prepped = True
 
         self.run_engine = RunMainTree_class(
-            self.config, self.run_params_db, self.username
+            self.config, self.run_params_db, self.project_pk
         )
 
         utils = Utils_Manager()

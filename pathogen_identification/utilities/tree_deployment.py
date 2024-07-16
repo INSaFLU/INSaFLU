@@ -213,7 +213,7 @@ class PathogenIdentification_Deployment_Manager:
             return
 
         self.run_engine = RunMainTree_class(
-            self.config, self.run_params_db, self.username
+            self.config, self.run_params_db, self.project_pk
         )
         self.run_engine.Prep_deploy()
         self.run_engine.generate_output_data_classes()

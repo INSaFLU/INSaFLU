@@ -114,7 +114,7 @@ class TelevirParameters:
         )
         if software_params.count() == 0:
             software_params = Parameter.objects.filter(
-                software=software, televir_project__name=None
+                software=software, televir_project=None
             )
         if software_params.count() == 0:
             raise WrongParameters(

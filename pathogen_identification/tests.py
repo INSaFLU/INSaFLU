@@ -30,7 +30,7 @@ from pathogen_identification.modules.object_classes import (
     RunCMD,
     Temp_File,
 )
-from pathogen_identification.utilities.overlap_manager import (  # Adjust the import path as necessary; Replace 'your_app' with the actual app name
+from pathogen_identification.utilities.overlap_manager import (
     MappingResultsParser,
     ReadOverlapManager,
     clade_private_proportions,
@@ -41,10 +41,7 @@ from pathogen_identification.utilities.overlap_manager import (  # Adjust the im
     very_similar_groups_from_dataframe,
 )
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
-from pathogen_identification.utilities.tree_deployment import (
-    Tree_Progress,
-    TreeProgressGraph,
-)
+from pathogen_identification.utilities.tree_deployment import Tree_Progress
 from pathogen_identification.utilities.utilities_general import merge_classes
 from pathogen_identification.utilities.utilities_pipeline import (
     Pipeline_Makeup,
@@ -486,14 +483,12 @@ class OverlapManagerTests(TestCase):
 
         self.assertTrue(tree is not None)
         self.assertFalse(tree.rooted)
-        print(len(tree.root.clades))
-        self.assertTrue(len(tree.root.clades))
-
+        self.assertTrue(len(tree.root.clades) == 2)
         self.assertTrue(len(overlap_manager.all_clade_leaves_filtered) == 5)
         self.assertTrue(len(overlap_manager.get_leaf_clades()) == 3)
 
 
-class MergeClassesTest(TestCase):
+class MergeClassificationsTest(TestCase):
     def setUp(self):
         # Setup data frames similar to the pytest fixtures
         self.data_frame_1 = pd.DataFrame(

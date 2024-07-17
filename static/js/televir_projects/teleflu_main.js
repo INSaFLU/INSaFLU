@@ -85,7 +85,7 @@ var load_teleflu_workflows = function () {
                 // mapping summary: mapping fail / mapping success / total samples
                 var workflowMapped = $('<span>').addClass('workflow-mapped').text(workflow.mapped_fail + ' / '  + workflow.mapped_success + ' / ' + data.project_nsamples).attr('title', 'Mapping Fail / Mapping Success / Total Samples');
                 var workflowButton = $('<button>').attr('type', 'button').addClass('workflow-summary btn btn-primary').attr('node', workflow.node);
-                workflowButton.append('<i class="fa fa-list-alt" aria-hidden="true"></i>'); // Add an icon to the button
+                workflowButton.append('<i class="fa fa-list-alt large-icon" aria-hidden="true"></i>'); // Add an icon to the button
                 
 
 

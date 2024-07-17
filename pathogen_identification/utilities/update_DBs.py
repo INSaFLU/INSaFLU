@@ -8,16 +8,25 @@ from django.contrib.auth.models import User
 from django.core.files import File
 from django.db import IntegrityError, transaction
 
-from pathogen_identification.models import (QC_REPORT, ContigClassification,
-                                            FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RawReference,
-                                            RawReferenceCompoundModel,
-                                            ReadClassification,
-                                            ReferenceContigs,
-                                            ReferenceMap_Main, RunAssembly,
-                                            RunDetail, RunMain, RunRemapMain,
-                                            SampleQC, TelevirRunQC)
+from pathogen_identification.models import (
+    QC_REPORT,
+    ContigClassification,
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    RawReferenceCompoundModel,
+    ReadClassification,
+    ReferenceContigs,
+    ReferenceMap_Main,
+    RunAssembly,
+    RunDetail,
+    RunMain,
+    RunRemapMain,
+    SampleQC,
+    TelevirRunQC,
+)
 from pathogen_identification.modules.object_classes import Sample_runClass
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunEngine_class
@@ -1167,8 +1176,12 @@ def Update_FinalReport(run_class, runmain, sample):
 
 
 def Update_Targets(run_class: RunEngine_class, runmain):
-
+    print("UPDATING TARGETS")
+    print(len(run_class.metadata_tool.remap_targets))
+    print(runmain.pk)
     for target in run_class.metadata_tool.remap_targets:
+
+        print(target.taxid, target.accid)
 
         try:
             raw_reference = RawReference.objects.get(

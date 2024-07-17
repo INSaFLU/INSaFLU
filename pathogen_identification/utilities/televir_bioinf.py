@@ -68,8 +68,7 @@ class DustMasker:
         """
         Run dustmasker on a fasta file
         """
-        print("################# Running Dustmasker #################")
-        print(fasta_file)
+
         self.mask_sequence_hard(fasta_file)
         os.remove(self.fasta_soft_mask)
 

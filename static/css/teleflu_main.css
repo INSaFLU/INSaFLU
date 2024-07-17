@@ -238,6 +238,8 @@
 }
 
 .workflow-info {
+    display: flex;
+    align-items: center; /* Centers children vertically */
     border-right: 2px solid #e0e0e0; /* Even lighter gray */
     padding: 5px;
     padding-right: 25px;
@@ -305,6 +307,10 @@
     cursor: pointer;
 }
 
+.large-icon {
+    font-size: 20px; /* Or any size you prefer */
+}
+
 .workflow-mapped {
     align-self: center;
     background-color: #b3b3b3;
@@ -316,16 +322,14 @@
     margin-right: 6px;
     padding: 8px 8px;
     border-radius: 5px;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: bold;
     font-family: Arial, sasns-serif;
 }
 
 .workflow-summary {
     align-self: center;
-    background-color: #b3b3b3;
     border: none;
-    color: #000;
     text-align: center;
     text-decoration: none;
     margin: 0px 5px;

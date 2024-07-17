@@ -8,11 +8,13 @@
     margin-right: 10px;
 }
 
+
 .tab {
     border-radius: 3px;
     background-color: #f8f9fa;
 
 }
+
 
 ul li.active {
     background-color: #007bff; /* Light, desaturated blue */
@@ -25,8 +27,8 @@ ul li.active a {
     color: white; /* Font color */
     padding-bottom: 10px;
     padding-top: 10px;
-    padding-left: 3px;
-    padding-right: 3px;
+    padding-left: 15px;
+    padding-right: 15px;
 }
 
 #id_remove_modal .modal-dialog {

@@ -534,7 +534,8 @@
         });
         $('.add-panels').click(function() {
             var url= $(this).attr('href');
-            load_panels_main(url, '.panel-list-modal ul', false, true);
+            var user_id = $(".deploypi_btn").attr('user-id');
+            load_panels_main(url, user_id, '.panel-list-modal ul', false, true);
         });
 
         teleflu_projects_load();

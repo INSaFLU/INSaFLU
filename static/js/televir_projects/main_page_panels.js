@@ -1,4 +1,4 @@
-var load_panels_main = function(load_url, target, load = false, suggest= true) {
+var load_panels_main = function(load_url, user_id, target, load = false, suggest= true) {
     // var url = '{% url "panel_list" %}';
     var panelList = document.querySelector(target);
     $.ajax({

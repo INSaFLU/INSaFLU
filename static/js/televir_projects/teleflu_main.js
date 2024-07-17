@@ -228,7 +228,8 @@ var load_teleflu_workflows = function () {
             $('.stack-deploy').click(function() {
                 var project_id = $('.workflow-main').attr('project_id');
                 var workflow_id = $(this).attr('workflow-id');
-                var url = $(this).attr('url');
+                var url = $('#open-modal-button').attr('url-stack');
+                var csrf = $('#open-modal-button').attr('csrf');
 
                 $.ajax({
                     url: url,

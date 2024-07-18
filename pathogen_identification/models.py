@@ -23,15 +23,12 @@ from pathogen_identification.data_classes import IntermediateFiles
 
 # Create your models here.
 
-# Create your models here.
-
 no_space_validator = RegexValidator(
     r" ",
     _("No spaces allowed"),
     code="invalid_username",
     inverse_match=True,
 )
-
 
 class Projects(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE)

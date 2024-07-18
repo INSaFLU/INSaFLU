@@ -1111,6 +1111,7 @@ def Update_FinalReport(run_class, runmain, sample):
                 sample=sample,
                 unique_id=row["unique_id"],
             )
+
         except FinalReport.DoesNotExist:
             report_row = FinalReport(
                 run=runmain,

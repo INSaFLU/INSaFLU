@@ -10,6 +10,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from django.db import models
+from django.db.models import QuerySet
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
@@ -29,6 +30,7 @@ no_space_validator = RegexValidator(
     code="invalid_username",
     inverse_match=True,
 )
+
 
 class Projects(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -338,7 +340,6 @@ class ParameterSet(models.Model):
 
         if self.leaf is None:
             return []
-
         descendants = self.leaf.get_descendants(include_self=True)
 
         return descendants
@@ -745,15 +746,11 @@ class RunMain(models.Model):
         except Exception as e:
             print(e)
 
-
     @property
-    def references_sorted(self):
+    def references_sorted(self) -> QuerySet:
         raw_references_mapped = (
-            RawReference.objects.filter(
-                run=self, status=RawReference.STATUS_MAPPED
-            )
+            RawReference.objects.filter(run=self, status=RawReference.STATUS_MAPPED)
             .exclude(accid="-")
-            .exclude(counts=None)
             .order_by("taxid", "status")
             .distinct("taxid")
         )
@@ -780,6 +777,7 @@ class RunMain(models.Model):
         raw_references = raw_references_mapped + raw_references_unmapped
 
         return raw_references
+
 
 class RunReadsRegister(models.Model):
     run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)
@@ -1490,7 +1488,7 @@ class ReferenceSourceFileMap(models.Model):
     def accid_in_file(self):
         if self.reference_source_file is None:
             return self.accid
-        
+
         if "virosaurus" in self.reference_source_file.file:
             acc_simple = self.accid.split(".")[0]
             return f"{acc_simple}:{acc_simple};"
@@ -1503,7 +1501,7 @@ class ReferenceSourceFileMap(models.Model):
     @property
     def taxid(self):
         return self.reference_source.taxid
-    
+
     @property
     def filepath(self):
         return self.reference_source_file.filepath
@@ -1771,7 +1769,7 @@ class RawReferenceCompoundModel(models.Model):
     global_ranking = models.IntegerField(blank=True, null=True)
     ensemble_ranking = models.IntegerField(blank=True, null=True)
     run_count = models.IntegerField(default=0)
-    screening_count= models.IntegerField(default=0)
+    screening_count = models.IntegerField(default=0)
 
     @property
     def mapped_html(self):

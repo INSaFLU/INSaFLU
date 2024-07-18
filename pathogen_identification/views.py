@@ -2200,7 +2200,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         #
         is_classification = run_main_pipeline.run_type == RunMain.RUN_TYPE_PIPELINE
         #
-        #######################
+        ########
         raw_references = run_main_pipeline.references_sorted
 
         ########
@@ -2212,12 +2212,13 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             )
 
         if is_classification is True:
+            
             raw_reference_table = RawReferenceTable(raw_references)
 
         else:
             raw_reference_table = RawReferenceTable_Basic(raw_references)
 
-        #
+        #####
         run_detail = RunDetail.objects.get(sample=sample_main, run=run_main_pipeline)
 
         #

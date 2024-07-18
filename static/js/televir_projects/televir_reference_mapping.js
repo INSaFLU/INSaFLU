@@ -267,6 +267,14 @@ $('#request_map_selected').on("click", function(e){
       checkedRows.push(ref_id);
     });
 
+    if (checkedRows.length == 0) {
+      $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+        'No references were selected.' +
+        '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+        '</div>');
+      return;
+    }
+
     // Process the checked rows
     // Add your processing logic here
     // send row ids to server using .ajax

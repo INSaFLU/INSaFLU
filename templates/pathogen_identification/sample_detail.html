@@ -87,7 +87,7 @@
                                     {% if files.intermediate_reports_zip %} {{ files.intermediate_reports_zip }} {% endif %}
                                     {% if files.final_reports_csv %} {{ files.final_reports_csv }} {% endif %}
                                 </div>
-                            </div>     
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -319,13 +319,16 @@
                 <div style="padding: 20px">
                     <div class="row">
                         <div class= "col-sm">
+                            
                             <p> Remapping was performed using the software <strong>{{run_remap.method}}</strong>. </p>
+                            {% if is_classification %}
                             <p> Of the references identified, {{run_detail.merged_number}} corresponding accession id(s) were found in
                                 our
                                 databases. References tagged as phages in local databases were excluded. </p>
                             <p style=padding-left:4em> Of these, {{number_validated}} successful alignments were produced.
                             </p>
                             <p> The following <strong>Pathogen identification</strong> table shows the results of the remapping onto identified references. Below, in the <strong>Raw Classification and Mapping Summary</strong> table, you can select extra hits for remapping. </p>
+                            {% endif %}
                             <p> Results are shown for a minimum coverage of {{run_remap.coverage_minimum}}X and a maximum coverage
                                 of
                                 {{run_remap.coverage_maximum}}X. </p>                    
@@ -355,7 +358,7 @@
                 <div class="col-sm" >
                     <h5 class="mb-0" >
                         <a class="collapsed"   data-toggle="collapse" data-parent="#accordion" href="#collapseReport" aria-expanded="false" aria-controls="collapseReport">
-                            <strong>Validation Mapping Results</strong>
+                            <strong> {% if is_classification %} Validation {% endif %} Mapping Results</strong>
                         </a>
                         <a href="https://insaflu.readthedocs.io/en/latest/metagenomics_virus_detection.html#televir-output-visualization-and-download" target="_blank">
                             <i class="fa fa-info-circle" aria-hidden="true"></i>
@@ -773,7 +776,7 @@
         <div class="card-header" role="tab" id="headingMapExtra" url-remap="{% url 'deploy_televir_map' %}" csrf-token= '{{csrf_token}}'>
             <h5 class="mb-0">
                 <a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseMapExtra" aria-expanded="false" aria-controls="collapseMapExtra">
-                    <strong>Raw Classification and Mapping Summary</strong>
+                    <strong> {% if is_classification %} Raw Classification and {% endif %} Mapping Summary</strong>
                 </a>
                 </h5>
         </div>

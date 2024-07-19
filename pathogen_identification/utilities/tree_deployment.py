@@ -96,7 +96,7 @@ class PathogenIdentification_Deployment_Manager:
         self.dir = os.path.join(self.deployment_root_dir, dir_branch)
 
         self.technology = technology
-        self.install_registry = Televir_Metadata
+        self.install_registry = Televir_Metadata()
 
         self.threads = threads
 
@@ -158,10 +158,7 @@ class PathogenIdentification_Deployment_Manager:
             "threads": self.threads,
             "prefix": self.prefix,
             "project_name": self.project.name,
-            "metadata": {
-                x: os.path.join(self.install_registry.METADATA["ROOT"], g)
-                for x, g in self.install_registry.METADATA.items()
-            },
+            "metadata": self.install_registry.metadata_full_path,
             "technology": self.technology,
             "bin": self.install_registry.BINARIES,
             "actions": {},

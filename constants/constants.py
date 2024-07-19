@@ -86,12 +86,23 @@ class Televir_Metadata_Constants:
     }
 
     @property
+    def metadata_full_path(self) -> Dict[str, str]:
+        """
+        Get the full path to the metadata files
+        """
+        return {
+            key: os.path.join(self.SOURCE["METAD"], value)
+            for key, value in self.METADATA.items()
+            if key != "ROOT"
+        }
+
+    @property
     def accession_to_taxid_path(self) -> str:
         """
         Get the path to the accession to taxid file
         """
         return os.path.join(
-            self.METADATA["ROOT"], self.METADATA["input_accession_to_taxid_path"]
+            self.SOURCE["METAD"], self.METADATA["input_accession_to_taxid_path"]
         )
 
     def get_software_bin_directory(self, software: str):

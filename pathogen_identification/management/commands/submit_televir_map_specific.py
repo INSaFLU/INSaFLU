@@ -338,7 +338,7 @@ class Input_Generator:
     def __init__(self, reference: RawReference, output_dir: str, threads: int = 4):
         self.utils = Utils_Manager()
         self.reference = reference
-        self.install_registry = Televir_Metadata
+        self.install_registry = Televir_Metadata()
 
         self.dir_branch = os.path.join(
             ConstantsSettings.televir_subdirectory,
@@ -471,10 +471,7 @@ class Input_Generator:
             "threads": self.threads,
             "prefix": self.prefix,
             "project_name": self.project,
-            "metadata": {
-                x: os.path.join(self.install_registry.METADATA["ROOT"], g)
-                for x, g in self.install_registry.METADATA.items()
-            },
+            "metadata": self.install_registry.metadata_full_path,
             "bin": self.install_registry.BINARIES,
             "taxid": self.taxid,
             "accid": self.accid,

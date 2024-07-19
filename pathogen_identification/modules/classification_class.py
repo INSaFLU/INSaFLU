@@ -10,7 +10,8 @@ from typing import Any, Type
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.modules.object_classes import RunCMD, SoftwareDetail
+from pathogen_identification.modules.object_classes import (RunCMD,
+                                                            SoftwareDetail)
 
 
 def read_sam_file(

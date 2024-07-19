@@ -48,7 +48,9 @@ class SampleReferenceManager:
     def __init__(self, sample: PIProject_Sample):
         self.sample = sample
         self.software_tree: SoftwareTree = self.proxy_tree_prepare()
-        self.software_tree_node_storage: SoftwareTreeNode = self.proxy_leaf_prepare()
+        self.software_tree_node_storage: Optional[SoftwareTreeNode] = (
+            self.proxy_leaf_prepare()
+        )
         self.prep_storage()
 
     def add_reference(self, reference: ReferenceSourceFileMap):
@@ -192,8 +194,6 @@ class SampleReferenceManager:
             sample=self.sample,
         )
 
-    #################################################
-
     def anchor_parameter_set_leaf(self, leaf: SoftwareTreeNode):
         """
         mapping run from leaf
@@ -278,44 +278,6 @@ class EmptyRemapMain:
     coverage_mean = ""
 
 
-def infer_control_flag_str(report: FinalReport) -> str:
-    control_flag_options = {
-        FinalReport.CONTROL_FLAG_NONE: "",
-        FinalReport.CONTROL_FLAG_PRESENT: "Taxid found in control",
-        FinalReport.CONTROL_FLAG_SOURCE: "",
-    }
-
-    return control_flag_options[report.control_flag]
-
-
-def inform_control_flag(report: FinalReport, control_flag_str: str):
-    if report.control_flag == FinalReport.CONTROL_FLAG_PRESENT:
-        current_mapped_prop = report.mapped_proportion
-        control_reports = FinalReport.objects.filter(
-            sample__project=report.sample.project,
-            control_flag=FinalReport.CONTROL_FLAG_SOURCE,
-            run__parameter_set__leaf__index=report.run.parameter_set.leaf.index,
-        )
-
-        if control_reports.exists() == False:
-            return control_flag_str
-        mapped_props = [
-            report.mapped_proportion
-            for report in control_reports
-            if report.mapped_proportion is not None
-        ]
-        if len(mapped_props) == 1:
-            mapped_prop = mapped_props[0]
-        else:
-            mapped_prop = sum(mapped_props) / len(mapped_props)
-
-        ratio = current_mapped_prop / mapped_prop
-
-        return f"{control_flag_str} \n (x{ratio:.2f})"
-    else:
-        return control_flag_str
-
-
 class FinalReportWrapper:
     accid: str
     sample: PIProject_Sample
@@ -346,8 +308,7 @@ class FinalReportWrapper:
 
         self.private_reads = 0
         self.control_flag = report.control_flag
-        self.control_flag_str = infer_control_flag_str(report)
-        self.control_flag_str = inform_control_flag(report, self.control_flag_str)
+        self.control_flag_str = report.control_flag_str
         self.first_in_group = False
         self.row_class_name = "secondary-row"
         self.display = "none"
@@ -364,7 +325,7 @@ class FinalReportWrapper:
         self.private_reads = private_reads
 
 
-class FinalReportCompound(LoginRequiredMixin, generic.TemplateView):
+class FinalReportCompound:
     def __init__(self, report: FinalReport):
         """
         copy all attributes from report
@@ -385,8 +346,8 @@ class FinalReportCompound(LoginRequiredMixin, generic.TemplateView):
         self.run_index = self.run_main.pk
         self.data_exists = self.check_data_exists(report)
         self.control_flag = report.control_flag
-        self.control_flag_str = infer_control_flag_str(report)
-        self.control_flag_str = inform_control_flag(report, self.control_flag_str)
+        self.control_flag_str = report.control_flag_str
+        # self.control_flag_str = inform_control_flag(report, self.control_flag_str)
         self.private_reads = 0
 
         self.row_class_name = report.row_class_name
@@ -396,18 +357,12 @@ class FinalReportCompound(LoginRequiredMixin, generic.TemplateView):
     def update_private_reads(self, private_reads: int):
         self.private_reads = private_reads
 
-    def get_identical_reports_ps(self, report: FinalReport) -> list:
+    def get_identical_reports_ps(self, report: FinalReport) -> str:
         references_found_in = RawReference.objects.filter(
             run__project__pk=report.run.project.pk,
             run__run_type=RunMain.RUN_TYPE_PIPELINE,
             run__sample__pk=report.sample.pk,
             taxid=report.taxid,
-        )
-
-        reports_unique = FinalReport.objects.filter(
-            run__project__pk=report.run.project.pk,
-            sample__pk=report.sample.pk,
-            accid=report.accid,
         )
 
         sets = set([r.run.parameter_set.leaf.index for r in references_found_in])
@@ -418,12 +373,14 @@ class FinalReportCompound(LoginRequiredMixin, generic.TemplateView):
         return ", ".join([str(s) for s in sets])
 
     def check_data_exists(self, report: FinalReport) -> bool:
+        if report.run is None:
+            return False
         return report.run.data_deleted == False
 
     def get_report_rundetail(self, report: FinalReport) -> RunDetail:
         return RunDetail.objects.get(sample=report.sample, run=report.run)
 
-    def get_report_runmain(self, report: FinalReport) -> RunMain:
+    def get_report_runmain(self, report: FinalReport) -> Optional[RunMain]:
         return report.run
 
 
@@ -495,19 +452,6 @@ class FinalReportGroup:
             report.row_class_name = "unsorted-row"
             report.first_in_group = False
             report.display = "table-row"
-
-
-def check_sample_software_exists(sample: PIProject_Sample) -> bool:
-    """
-    Return True if sample software exists
-    """
-
-    parameters_exist = Parameter.objects.filter(
-        televir_project=sample.project,
-        televir_project_sample=sample,
-    ).exists()
-
-    return parameters_exist
 
 
 def check_project_params_exist(project: Projects) -> bool:

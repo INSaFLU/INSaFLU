@@ -6,21 +6,16 @@ from typing import List, Optional
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (
-    PIProject_Sample,
-    RawReference,
-    RawReferenceCompoundModel,
-    ReferenceSource,
-    ReferenceSourceFileMap,
-    RunMain,
-)
+from pathogen_identification.models import (PIProject_Sample, RawReference,
+                                            RawReferenceCompoundModel,
+                                            ReferenceSource,
+                                            ReferenceSourceFileMap, RunMain)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
-from pathogen_identification.utilities.utilities_general import (
-    merge_classes,
-    simplify_name,
-)
-from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
+from pathogen_identification.utilities.utilities_general import (merge_classes,
+                                                                 simplify_name)
+from pathogen_identification.utilities.utilities_pipeline import \
+    RawReferenceUtils
 
 
 def determine_taxid_in_file(taxid, df: pd.DataFrame):
@@ -267,6 +262,7 @@ class RunMetadataHandler:
             report_1,
             report_2,
         )
+
         if self.merged_targets.empty:
             self.merge_reports_clean(
                 taxid_limit=taxid_limit,
@@ -753,13 +749,15 @@ class RunMetadataHandler:
 
     def generate_mapping_targets(
         self,
-        targets,
+        targets: pd.DataFrame,
         max_remap: int = 9,
     ):
 
         print(
             "######################## GENERATING TARGETS ############################"
         )
+        print(targets.head())
+        print(targets.shape)
         remap_plan = []
         remap_targets = []
         remap_absent_taxid_list = []

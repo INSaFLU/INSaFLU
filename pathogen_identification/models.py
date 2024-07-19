@@ -1,7 +1,7 @@
 import codecs
 import datetime
 import os
-from typing import Any, List
+from typing import Any, List, Optional
 
 import networkx as nx
 import numpy as np
@@ -1693,6 +1693,12 @@ class FinalReport(models.Model):
     CONTROL_FLAG_PRESENT = 2
     CONTROL_FLAG_WARNING = 3
 
+    control_flag_options = {
+        CONTROL_FLAG_NONE: "",
+        CONTROL_FLAG_PRESENT: "Taxid found in control",
+        CONTROL_FLAG_SOURCE: "",
+    }
+
     run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)
     sample = models.ForeignKey(
         PIProject_Sample, blank=True, null=True, on_delete=models.CASCADE
@@ -1746,6 +1752,58 @@ class FinalReport(models.Model):
     def in_control(self):
         return self.control_flag in [self.CONTROL_FLAG_PRESENT]
 
+    @property
+    def control_relative_mapped(self) -> Optional[float]:
+        current_mapped_prop = self.mapped_proportion
+
+        if current_mapped_prop is None:
+            return None
+
+        if self.control_flag == FinalReport.CONTROL_FLAG_PRESENT:
+
+            control_reports = FinalReport.objects.filter(
+                sample__project=self.sample.project,
+                control_flag=FinalReport.CONTROL_FLAG_SOURCE,
+                run__parameter_set__leaf__index=self.run.parameter_set.leaf.index,
+            )
+
+            if control_reports.exists() == False:
+                return None
+
+            mapped_props = [
+                report.mapped_proportion
+                for report in control_reports
+                if report.mapped_proportion is not None
+            ]
+            if len(mapped_props) == 1:
+                mapped_prop = mapped_props[0]
+            else:
+                mapped_prop = sum(mapped_props) / len(mapped_props)
+
+            ratio = current_mapped_prop / mapped_prop
+
+            return ratio
+
+        return None
+
+
+    @property
+    def infer_control_flag_str(self) -> str:
+
+        return FinalReport.control_flag_options[self.control_flag]
+    
+    @property
+    def control_flag_str(self) -> str:
+        """
+        function to divide mapped proportion by that of controls"""
+
+        control_flag_str= self.infer_control_flag_str
+        relative_proportion = self.control_relative_mapped
+
+        if relative_proportion is not None:
+            return f"{control_flag_str} \n (x{relative_proportion:.2f})"
+
+        return control_flag_str
 
 class RawReferenceCompoundModel(models.Model):
 

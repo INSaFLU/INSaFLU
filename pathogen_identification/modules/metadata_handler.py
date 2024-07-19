@@ -6,21 +6,16 @@ from typing import List, Optional
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (
-    PIProject_Sample,
-    RawReference,
-    RawReferenceCompoundModel,
-    ReferenceSource,
-    ReferenceSourceFileMap,
-    RunMain,
-)
+from pathogen_identification.models import (PIProject_Sample, RawReference,
+                                            RawReferenceCompoundModel,
+                                            ReferenceSource,
+                                            ReferenceSourceFileMap, RunMain)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
-from pathogen_identification.utilities.utilities_general import (
-    merge_classes,
-    simplify_name,
-)
-from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
+from pathogen_identification.utilities.utilities_general import (merge_classes,
+                                                                 simplify_name)
+from pathogen_identification.utilities.utilities_pipeline import \
+    RawReferenceUtils
 
 
 def determine_taxid_in_file(taxid, df: pd.DataFrame):
@@ -406,9 +401,9 @@ class RunMetadataHandler:
 
         df = self.clean_report(df)
 
-        df = self.map_hit_report(df)
-
         df = self.merge_report_to_metadata_taxid(df)
+
+        df = self.map_hit_report(df)
 
         df = self.filter_taxids_not_in_db(df)
 

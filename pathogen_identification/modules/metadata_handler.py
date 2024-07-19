@@ -6,16 +6,21 @@ from typing import List, Optional
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (PIProject_Sample, RawReference,
-                                            RawReferenceCompoundModel,
-                                            ReferenceSource,
-                                            ReferenceSourceFileMap, RunMain)
+from pathogen_identification.models import (
+    PIProject_Sample,
+    RawReference,
+    RawReferenceCompoundModel,
+    ReferenceSource,
+    ReferenceSourceFileMap,
+    RunMain,
+)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
-from pathogen_identification.utilities.utilities_general import (merge_classes,
-                                                                 simplify_name)
-from pathogen_identification.utilities.utilities_pipeline import \
-    RawReferenceUtils
+from pathogen_identification.utilities.utilities_general import (
+    merge_classes,
+    simplify_name,
+)
+from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
 
 
 def determine_taxid_in_file(taxid, df: pd.DataFrame):
@@ -379,10 +384,13 @@ class RunMetadataHandler:
     def filter_taxids_not_in_db(df) -> pd.DataFrame:
 
         def get_refs_existing(taxid):
-            refs_in_file = ReferenceSourceFileMap.objects.filter(
-                reference_source__taxid__taxid=taxid,
-            ).distinct("reference_source__accid")
-            return len(refs_in_file) > 0
+            return (
+                ReferenceSourceFileMap.objects.filter(
+                    reference_source__taxid__taxid=taxid,
+                )
+                .distinct("reference_source__accid")
+                .exists()
+            )
 
         df["has_refs"] = df["taxid"].apply(get_refs_existing)
         df = df[df["has_refs"] == True]

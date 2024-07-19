@@ -445,8 +445,6 @@ class Run_Main_from_Leaf:
             if self.run_pk is not None:
                 self.container.run_engine.run_pk = self.run_pk
 
-            print("RUN TYPE", self.container.run_engine.run_type)
-
             if (
                 self.container.run_engine.run_type
                 == RunMainTree_class.RUN_TYPE_SCREENING

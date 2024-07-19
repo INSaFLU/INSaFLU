@@ -396,13 +396,10 @@ class Tree_Node:
     ):
         tree_node = self.generate_software_tree_node_entry(tree)
 
-        print("tree-node", tree_node)
-
         if tree_node is None:
             return False
 
         parameter_set = self.setup_parameterset(project, sample, tree_node)
-        print("parameter-set", parameter_set)
         if parameter_set is None:
             return False
 
@@ -655,6 +652,11 @@ class Tree_Progress:
             self.register_node(leaf_node)
             self.update_node_dbs(leaf_node)
 
+            node.run_manager.classification_updated = (
+                leaf_node.run_manager.classification_updated
+            )
+            node.run_manager.assembly_udated = leaf_node.run_manager.assembly_udated
+
     def register_finished(self, node: Tree_Node):
         self.logger.info(f"Registering node {node.node_index} as finished")
 
@@ -731,9 +733,12 @@ class Tree_Progress:
         new_node = Tree_Node(
             self.tree, child, node.software_tree_pk, sample=self.sample
         )
-        # node.run_manager.run_engine.logger = None
 
         run_manager_copy = copy.deepcopy(node.run_manager)
+        run_manager_copy.classification_updated = (
+            node.run_manager.classification_updated
+        )
+        run_manager_copy.assembly_udated = node.run_manager.assembly_udated
         new_node.receive_run_manager(run_manager_copy)
 
         return new_node
@@ -794,7 +799,6 @@ class Tree_Progress:
                 self.classification_monitor.classification_performed(node)
                 and node.run_manager.classification_updated == False
             ):
-                print("######## CLASSIFICATION PERFORMED ########")
                 node.run_manager.run_engine.plan_remap_prep_safe()
                 node.run_manager.run_engine.export_intermediate_reports()
                 node.run_manager.run_engine.generate_output_data_classes()
@@ -1040,12 +1044,9 @@ class Tree_Progress:
 
             nodes = self.get_remap_plans(nodes)
 
-            print("NODES", nodes)
             group_targets = self.get_node_node_targets(nodes)
 
-            print(
-                f"#### Total targets registered for remap: {len(group_targets)}"
-            )
+            self.logger.info(f"#### Total targets registered for remap: {len(group_targets)}")
 
             volonteer = nodes[0]
 
@@ -1192,7 +1193,10 @@ class Tree_Progress:
         action()
 
         for node in self.current_nodes:
-            if self.classification_monitor.ready_to_merge(node) and node.run_manager.classification_updated == False:
+            if (
+                self.classification_monitor.ready_to_merge(node)
+                and node.run_manager.classification_updated == False
+            ):
                 node.run_manager.run_engine.plan_remap_prep_safe()
 
             self.update_node_leaves_dbs(node)

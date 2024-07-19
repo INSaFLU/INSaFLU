@@ -1241,9 +1241,6 @@ def summarize_description(description, max_length=100):
 
 def Update_Targets(run_class: RunEngine_class, runmain):
 
-    print("UPDATING TARGETS Tree")
-    print(len(run_class.metadata_tool.remap_targets))
-
     for target in run_class.metadata_tool.remap_targets:
         print(target.taxid, target.accid)
 

@@ -5,7 +5,6 @@ import shutil
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
-
 # Create your tests here.
 import pandas as pd
 from django.conf import settings
@@ -18,59 +17,36 @@ from constants.constants import TypePath
 from constants.constantsTestsCase import ConstantsTestsCase
 from constants.software_names import SoftwareNames
 from fluwebvirus.settings import STATIC_ROOT
-from pathogen_identification.constants_settings import ConstantsSettings as PI_CS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PI_CS
 from pathogen_identification.deployment_main import (
-    PathogenIdentification_deployment,
-    Run_Main_from_Leaf,
-)
-from pathogen_identification.models import (
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReferenceSource,
-    ReferenceSourceFile,
-    ReferenceSourceFileMap,
-    ReferenceTaxid,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+    PathogenIdentification_deployment, Run_Main_from_Leaf)
+from pathogen_identification.models import (ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            ReferenceSource,
+                                            ReferenceSourceFile,
+                                            ReferenceSourceFileMap,
+                                            ReferenceTaxid, RunMain,
+                                            SoftwareTree, SoftwareTreeNode)
 from pathogen_identification.modules.metadata_handler import RunMetadataHandler
 from pathogen_identification.modules.object_classes import (
-    Operation_Temp_Files,
-    Read_class,
-    RunCMD,
-    Temp_File,
-)
-from pathogen_identification.modules.remap_class import (
-    Mapping_Instance,
-    Mapping_Manager,
-)
+    Operation_Temp_Files, Read_class, RunCMD, Temp_File)
+from pathogen_identification.modules.remap_class import (Mapping_Instance,
+                                                         Mapping_Manager)
 from pathogen_identification.utilities.overlap_manager import (
-    MappingResultsParser,
-    ReadOverlapManager,
-    clade_private_proportions,
-    pairwise_shared_count,
-    pairwise_shared_reads,
-    pairwise_shared_reads_distance,
-    square_and_fill_diagonal,
-    very_similar_groups_from_dataframe,
-)
+    MappingResultsParser, ReadOverlapManager, clade_private_proportions,
+    pairwise_shared_count, pairwise_shared_reads,
+    pairwise_shared_reads_distance, square_and_fill_diagonal,
+    very_similar_groups_from_dataframe)
 from pathogen_identification.utilities.reference_utils import extract_file
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.tree_deployment import Tree_Progress
 from pathogen_identification.utilities.utilities_general import merge_classes
 from pathogen_identification.utilities.utilities_pipeline import (
-    Pipeline_Makeup,
-    PipelineTree,
-    SoftwareTreeUtils,
-    Utils_Manager,
-)
+    Pipeline_Makeup, PipelineTree, SoftwareTreeUtils, Utils_Manager)
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter,
-    SampleReferenceManager,
-)
+    ReportSorter, SampleReferenceManager)
 from settings.constants_settings import ConstantsSettings as CS
 from settings.default_software import DefaultSoftware
 from settings.models import Parameter, Sample, Software
@@ -1040,7 +1016,7 @@ class MetadataManagementTests(TestCase):
         software_utils = SoftwareTreeUtils(
             self.test_user, self.project_ont, sample=self.project_sample_ont
         )
-        runs_to_deploy, workflow_deployed_dict = (
+        runs_to_deploy, _ = (
             software_utils.check_runs_to_submit_mapping_only(self.project_sample_illu)
         )
 
@@ -1062,6 +1038,7 @@ class MetadataManagementTests(TestCase):
         )
 
         run_engine.configure()
+        run_engine.container.run_main_prep()
         ##
         print(run_engine.container.run_engine.software_remap)
 

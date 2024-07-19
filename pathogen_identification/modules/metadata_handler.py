@@ -406,11 +406,11 @@ class RunMetadataHandler:
 
         df = self.clean_report(df)
 
+        df = self.map_hit_report(df)
+
         df = self.merge_report_to_metadata_taxid(df)
 
         df = self.filter_taxids_not_in_db(df)
-
-        df = self.map_hit_report(df)
 
         df = self.db_get_taxid_descriptions(df)
         # df = self.entrez_get_taxid_descriptions(df)

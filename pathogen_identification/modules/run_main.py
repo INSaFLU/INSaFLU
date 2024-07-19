@@ -558,13 +558,7 @@ class RunDetail_main:
 
         remap_params = TelevirParameters.get_remap_software(self.project_pk)
 
-        self.metadata_tool = RunMetadataHandler(
-            self.username,
-            self.config,
-            sift_query=config["sift_query"],
-            prefix=self.prefix,
-            rundir=self.deployment_dir,
-        )
+        self.set_metadata_tool()
 
         self.max_remap = remap_params.max_accids
         self.taxid_limit = remap_params.max_taxids
@@ -622,6 +616,15 @@ class RunDetail_main:
         self.merged_classification_summary = os.path.join(
             self.media_dir_classification,
             f"{self.prefix}_mclass_summary.tsv",
+        )
+
+    def set_metadata_tool(self):
+        self.metadata_tool = RunMetadataHandler(
+            self.username,
+            self.config,
+            sift_query=self.config["sift_query"],
+            prefix=self.prefix,
+            rundir=self.deployment_dir,
         )
 
     def update_reads(self):

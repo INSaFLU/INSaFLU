@@ -1,5 +1,7 @@
+import logging
 import os
 import random
+import shutil
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
@@ -11,12 +13,14 @@ from django.test import TestCase, tag
 
 from constants.constants import Constants
 from constants.constants import Televir_Metadata_Constants as Deployment_Params
+from constants.constants import TypePath
 from constants.constantsTestsCase import ConstantsTestsCase
 from constants.software_names import SoftwareNames
 from fluwebvirus.settings import STATIC_ROOT
 from pathogen_identification.constants_settings import \
     ConstantsSettings as PI_CS
-from pathogen_identification.deployment_main import Run_Main_from_Leaf
+from pathogen_identification.deployment_main import (
+    PathogenIdentification_deployment, Run_Main_from_Leaf)
 from pathogen_identification.models import (ParameterSet, PIProject_Sample,
                                             Projects, RawReference,
                                             ReferenceSource,
@@ -27,6 +31,8 @@ from pathogen_identification.models import (ParameterSet, PIProject_Sample,
 from pathogen_identification.modules.metadata_handler import RunMetadataHandler
 from pathogen_identification.modules.object_classes import (
     Operation_Temp_Files, Read_class, RunCMD, Temp_File)
+from pathogen_identification.modules.remap_class import (Mapping_Instance,
+                                                         Mapping_Manager)
 from pathogen_identification.utilities.overlap_manager import (
     MappingResultsParser, ReadOverlapManager, clade_private_proportions,
     pairwise_shared_count, pairwise_shared_reads,
@@ -749,6 +755,7 @@ class MetadataManagementTests(TestCase):
         self.baseDirectory = os.path.join(
             STATIC_ROOT, ConstantsTestsCase.MANAGING_TESTS
         )
+        self.nthreads = 3
 
         self.install_registry = Deployment_Params()
 
@@ -984,13 +991,91 @@ class MetadataManagementTests(TestCase):
             taxid_limit=3,
         )
 
-        self.assertTrue(len(metadata_tool.remap_targets))
-        print(metadata_tool.remap_targets)
-        print(len(metadata_tool.remap_targets))
-        for target in metadata_tool.remap_targets:
-            print(target)
-            print(target.taxid)
-            print(target.acc_simple)
+        self.assertTrue(len(metadata_tool.remap_targets) == 1)
+
+    def import_read_file(self, sample: Sample):
+        fastq1 = self.project_sample_illu.sample.get_fastq_available(
+            TypePath.MEDIA_ROOT, True
+        )
+        fastq1_basename = os.path.basename(fastq1)
+        r1_path = os.path.join(self.temp_directory, fastq1_basename)
+        shutil.copy(fastq1, r1_path)
+
+        fastq2 = self.project_sample_illu.sample.get_fastq_available(
+            TypePath.MEDIA_ROOT, False
+        )
+        fastq2_basename = os.path.basename(fastq2)
+        r2_path = os.path.join(self.temp_directory, fastq2_basename)
+        shutil.copy(fastq2, r2_path)
+
+        return r1_path, r2_path
+
+    def test_metadataHandler(self):
+        reference_manager = SampleReferenceManager(self.project_sample_illu)
+
+        software_utils = SoftwareTreeUtils(
+            self.test_user, self.project_ont, sample=self.project_sample_ont
+        )
+        runs_to_deploy, workflow_deployed_dict = (
+            software_utils.check_runs_to_submit_mapping_only(self.project_sample_illu)
+        )
+
+        first_run_node = runs_to_deploy[self.project_sample_illu][0]
+        mapping_run = reference_manager.create_mapping_run(
+            first_run_node, RunMain.RUN_TYPE_MAP_REQUEST
+        )
+
+        run_engine = Run_Main_from_Leaf(
+            self.test_user,
+            self.project_sample_illu,
+            self.project_ont,
+            pipeline_leaf=first_run_node,
+            pipeline_tree=first_run_node.software_tree,
+            odir=self.temp_directory,
+            combined_analysis=False,
+            mapping_request=True,
+            run_pk=mapping_run.pk,
+        )
+
+        run_engine.configure()
+
+
+
+
+    def dont_test_this_setup(self):
+
+        config = {
+            "metadata": self.install_registry.metadata_full_path,
+            "bin": self.install_registry.BINARIES,
+        }
+
+        metadata_tool = RunMetadataHandler(
+            self.test_user.username,
+            config,
+            sift_query="phage",
+            prefix="test_run",
+            rundir=self.temp_directory,
+        )
+
+        sample1, sample2 = self.import_read_file(self.project_sample_illu)
+
+        remap_manager = Mapping_Manager(
+            metadata_tool.remap_targets,
+            sample1,
+            sample2,
+            software_remap,
+            "no_assembly_available",
+            PI_CS.PAIR_END,
+            "test_mapping",
+            self.nthreads,
+            get_bindir_from_binaries(config["bin"], CS.PIPELINE_NAME_remapping),
+            logging.INFO,
+            True,
+            remap_params=remap_params,
+            logdir=self.temp_directory,
+        )
+
+        self.remap_prepped = True
 
 
 class Televir_Software_Test(TestCase):

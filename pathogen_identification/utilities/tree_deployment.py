@@ -794,6 +794,7 @@ class Tree_Progress:
                 self.classification_monitor.classification_performed(node)
                 and node.run_manager.classification_updated == False
             ):
+                print("######## CLASSIFICATION PERFORMED ########")
                 node.run_manager.run_engine.plan_remap_prep_safe()
                 node.run_manager.run_engine.export_intermediate_reports()
                 node.run_manager.run_engine.generate_output_data_classes()
@@ -848,6 +849,7 @@ class Tree_Progress:
 
         for n in nodes:
             # if n.run_manager.run_engine.remap_prepped is False:
+            n.run_manager.run_engine.metadata_tool.reset()
             n.run_manager.run_engine.plan_remap_prep_safe()
 
         return nodes
@@ -857,7 +859,7 @@ class Tree_Progress:
         Get merged targets from a list of nodes
 
         :param nodes_list: list of nodes"""
-        accids_in_list= {}
+        accids_in_list = {}
 
         combined_list = []
 
@@ -866,9 +868,6 @@ class Tree_Progress:
                 if target.accid not in accids_in_list:
                     accids_in_list[target.accid] = True
                     combined_list.append(target)
-            #combined_list.extend(
-            #    node.run_manager.run_engine.metadata_tool.remap_targets
-            #)
 
         return combined_list
 
@@ -1041,7 +1040,12 @@ class Tree_Progress:
 
             nodes = self.get_remap_plans(nodes)
 
+            print("NODES", nodes)
             group_targets = self.get_node_node_targets(nodes)
+
+            print(
+                f"#### Total targets registered for remap: {len(group_targets)}"
+            )
 
             volonteer = nodes[0]
 
@@ -1188,7 +1192,7 @@ class Tree_Progress:
         action()
 
         for node in self.current_nodes:
-            if self.classification_monitor.ready_to_merge(node):
+            if self.classification_monitor.ready_to_merge(node) and node.run_manager.classification_updated == False:
                 node.run_manager.run_engine.plan_remap_prep_safe()
 
             self.update_node_leaves_dbs(node)

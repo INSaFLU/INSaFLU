@@ -106,6 +106,14 @@ class RunMetadataHandler:
         )
         self.get_metadata()
 
+    def reset(self):
+        self.remap_targets: List[Remap_Target] = []
+        self.remap_absent_taxid_list: List[str] = []
+        self.remap_plan = pd.DataFrame
+        self.sift_report = pd.DataFrame(
+            [[0, 0, 0]], columns=["input", "output", "removed"]
+        )
+
     def get_manual_references(self, sample: PIProject_Sample, max_accids: int = 15):
         """
         Get manual references for a given sample. update map request with references.

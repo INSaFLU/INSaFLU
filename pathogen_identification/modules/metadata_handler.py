@@ -6,16 +6,21 @@ from typing import List, Optional
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (PIProject_Sample, RawReference,
-                                            RawReferenceCompoundModel,
-                                            ReferenceSource,
-                                            ReferenceSourceFileMap, RunMain)
+from pathogen_identification.models import (
+    PIProject_Sample,
+    RawReference,
+    RawReferenceCompoundModel,
+    ReferenceSource,
+    ReferenceSourceFileMap,
+    RunMain,
+)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
-from pathogen_identification.utilities.utilities_general import (merge_classes,
-                                                                 simplify_name)
-from pathogen_identification.utilities.utilities_pipeline import \
-    RawReferenceUtils
+from pathogen_identification.utilities.utilities_general import (
+    merge_classes,
+    simplify_name,
+)
+from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
 
 
 def determine_taxid_in_file(taxid, df: pd.DataFrame):
@@ -363,7 +368,7 @@ class RunMetadataHandler:
         )
 
     @staticmethod
-    def filter_taxids_no_in_db(df) -> pd.DataFrame:
+    def filter_taxids_not_in_db(df) -> pd.DataFrame:
 
         def get_refs_existing(taxid):
             refs_in_file = ReferenceSourceFileMap.objects.filter(
@@ -390,7 +395,7 @@ class RunMetadataHandler:
 
         df = self.merge_report_to_metadata_taxid(df)
 
-        df = self.filter_taxids_no_in_db(df)
+        df = self.filter_taxids_not_in_db(df)
 
         df = self.map_hit_report(df)
 
@@ -775,6 +780,7 @@ class RunMetadataHandler:
 
             #
             refs_in_file = refs_in_file[:max_remap]
+            print("#refs in file", len(refs_in_file))
 
             for ref_in_file_by_accid in refs_in_file:
                 other_refs = ReferenceSourceFileMap.objects.filter(
@@ -814,5 +820,6 @@ class RunMetadataHandler:
         )
         print("ABSENT TAXIDS")
         print(remap_absent_taxid_list)
+        print(len(remap_targets))
         self.remap_targets.extend(remap_targets)
         self.remap_absent_taxid_list.extend(remap_absent_taxid_list)

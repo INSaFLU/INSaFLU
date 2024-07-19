@@ -15,17 +15,31 @@ from pathogen_identification.modules.assembly_class import Assembly_class
 from pathogen_identification.modules.classification_class import Classifier
 from pathogen_identification.modules.metadata_handler import RunMetadataHandler
 from pathogen_identification.modules.object_classes import (
-    Assembly_results, Contig_classification_results, Read_class,
-    Read_classification_results, Remap_main, Remap_Target, Run_detail_report,
-    RunCMD, RunQC_report, Sample_runClass, SoftwareDetail,
-    SoftwareDetailCompound, SoftwareRemap, SoftwareUnit)
+    Assembly_results,
+    Contig_classification_results,
+    Read_class,
+    Read_classification_results,
+    Remap_main,
+    Remap_Target,
+    Run_detail_report,
+    RunCMD,
+    RunQC_report,
+    Sample_runClass,
+    SoftwareDetail,
+    SoftwareDetailCompound,
+    SoftwareRemap,
+    SoftwareUnit,
+)
 from pathogen_identification.modules.preprocess_class import Preprocess
-from pathogen_identification.modules.remap_class import (Mapping_Instance,
-                                                         Mapping_Manager)
+from pathogen_identification.modules.remap_class import (
+    Mapping_Instance,
+    Mapping_Manager,
+)
 from pathogen_identification.utilities.televir_parameters import (
-    RemapParams, TelevirParameters)
-from pathogen_identification.utilities.utilities_pipeline import \
-    RawReferenceUtils
+    RemapParams,
+    TelevirParameters,
+)
+from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -542,9 +556,7 @@ class RunDetail_main:
         self.maximum_coverage = 1000000000
         ### metadata
 
-        remap_params = TelevirParameters.get_remap_software(
-            self.project_pk
-        )
+        remap_params = TelevirParameters.get_remap_software(self.project_pk)
 
         self.metadata_tool = RunMetadataHandler(
             self.username,
@@ -1433,8 +1445,9 @@ class RunMainTree_class(Run_Deployment_Methods):
                 ###########################
                 ###########################
 
-                from pathogen_identification.utilities.televir_bioinf import \
-                    TelevirBioinf
+                from pathogen_identification.utilities.televir_bioinf import (
+                    TelevirBioinf,
+                )
 
                 # televir_bioinf = TelevirBioinf()
                 # alignment_file = self.depletion_drone.classifier.report_path
@@ -1566,7 +1579,7 @@ class RunMainTree_class(Run_Deployment_Methods):
 
         print("########### PLANNING REMAP PREP ###########")
         print("remap prep: ", self.remap_prepped)
-        print("remap targets: ", self.metadata_tool.remap_targets)
+
         print("MAX TAXIDS: ", self.remap_params.max_taxids)
         print("MAX ACCIDS: ", self.remap_params.max_accids)
 
@@ -1576,6 +1589,8 @@ class RunMainTree_class(Run_Deployment_Methods):
             max_remap=self.remap_params.max_accids,
             taxid_limit=self.remap_params.max_taxids,
         )
+
+        print("remap targets: ", self.metadata_tool.remap_targets)
 
         self.import_from_remap_prep()
 
@@ -1657,6 +1672,7 @@ class RunMainTree_class(Run_Deployment_Methods):
         print("path exists: ", os.path.exists(path))
         print("dirname exists: ", os.path.exists(dirname))
         print(df.shape)
+
         if not os.path.exists(dirname):
             os.makedirs(dirname, exist_ok=True)
 

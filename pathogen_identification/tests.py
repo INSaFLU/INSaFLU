@@ -680,7 +680,6 @@ class MergeClassificationsTest(TestCase):
         self.deployment_dir = os.path.join(
             STATIC_ROOT, ConstantsTestsCase.MANAGING_TESTS
         )
-        self.install_registry= Deployment_Params()
         self.test_user = test_user()
         self.data_frame_1 = pd.DataFrame(
             {
@@ -743,21 +742,6 @@ class MergeClassificationsTest(TestCase):
         )
         self.assertLessEqual(len(merged), 1, "Should respect the maxt parameter.")
 
-    def test_metadataHandler(self):
-
-        config = {
-            "metadata": self.install_registry.metadata_full_path,
-            "bin": self.install_registry.BINARIES,
-        }
-
-        metadata_tool = RunMetadataHandler(
-            self.test_user.username,
-            config,
-            sift_query="phage",
-            prefix="test_run",
-            rundir=self.deployment_dir,
-        )
-
 
 class MetadataManagementTests(TestCase):
 
@@ -765,6 +749,9 @@ class MetadataManagementTests(TestCase):
         self.baseDirectory = os.path.join(
             STATIC_ROOT, ConstantsTestsCase.MANAGING_TESTS
         )
+
+        self.install_registry = Deployment_Params()
+
         self.test_user = test_user()
         self.temp_directory = os.path.join(self.baseDirectory, PI_CS.test_subdirectory)
         self.sample_illu = test_fastq_illu1_file(self.baseDirectory, self.test_user)
@@ -780,24 +767,7 @@ class MetadataManagementTests(TestCase):
                 "accid": "KT022278.1",
                 "description": "Influenza A virus (A/chicken/Guangxi/125C8/2012(H3N2)) segment 6 neuraminidase (NA) gene, complete cds",
                 "file": "NA_H3N2.fasta.gz",
-            }
-        ]
-
-        self.reads_report = pd.DataFrame(
-            {
-                "taxid": [
-                    "1674969",
-                ],
-                "counts": [4000],
-                "description": [
-                    "Influenza A virus (A/chicken/Guangxi/125C8/2012(H3N2)) segment 6 neuraminidase (NA) gene, complete cds"
-                ],
-            }
-        )
-
-        self.contig_report = pd.DataFrame(columns=["taxid", "counts", "description"])
-
-        refs_fake = [
+            },
             {
                 "accid": "ref1",
                 "taxid": 1,
@@ -810,26 +780,30 @@ class MetadataManagementTests(TestCase):
                 "description": "virus2",
                 "file": "tests_file1",
             },
-            {
-                "accid": "ref3",
-                "taxid": 3,
-                "description": "virus3",
-                "file": "tests_file2",
-            },
-            {
-                "accid": "ref4",
-                "taxid": 4,
-                "description": "virus4",
-                "file": "tests_file2",
-            },
-            {
-                "accid": "ref5",
-                "taxid": 5,
-                "description": "virus5",
-                "file": "tests_file2",
-            },
         ]
 
+        self.reads_report = pd.DataFrame(
+            {
+                "taxid": [
+                    "1674969",
+                ],
+                "counts": [
+                    4000,
+                ],
+                "description": [
+                    "Influenza A virus (A/chicken/Guangxi/125C8/2012(H3N2)) segment 6 neuraminidase (NA) gene, complete cds",
+                ],
+            }
+        )
+
+        self.contig_report = pd.DataFrame(
+            [
+                {
+                    "taxid": "1674969",
+                    "counts": 30,
+                }
+            ]
+        )
         ### write files
         for ref in refs:
             with open(os.path.join(self.temp_directory, ref["file"]), "w") as f:
@@ -925,6 +899,98 @@ class MetadataManagementTests(TestCase):
         self.assertFalse(tmp_fasta is None)
 
         self.assertTrue(os.path.exists(tmp_fasta))
+
+    def test_metadataHandler(self):
+
+        config = {
+            "metadata": self.install_registry.metadata_full_path,
+            "bin": self.install_registry.BINARIES,
+        }
+
+        metadata_tool = RunMetadataHandler(
+            self.test_user.username,
+            config,
+            sift_query="phage",
+            prefix="test_run",
+            rundir=self.temp_directory,
+        )
+
+        reads_report = pd.DataFrame(
+            {
+                "taxid": [
+                    "1674969",
+                    "1",
+                ],
+                "counts": [
+                    4000,
+                    1000,
+                ],
+                "description": [
+                    "Influenza A virus (A/chicken/Guangxi/125C8/2012(H3N2)) segment 6 neuraminidase (NA) gene, complete cds",
+                    "virus1",
+                ],
+            }
+        )
+
+        contig_report = pd.DataFrame(
+            [
+                {
+                    "taxid": "1674969",
+                    "counts": 30,
+                }
+            ]
+        )
+
+        metadata_tool.match_and_select_targets(
+            reads_report, contig_report, max_remap=3, taxid_limit=3
+        )
+
+        self.assertTrue(metadata_tool.merged_targets.shape[0] == 2)
+        self.assertTrue(
+            metadata_tool.merged_targets.iloc[0]["source"] == "reads/contigs"
+        )
+        self.assertTrue(metadata_tool.merged_targets.iloc[1]["source"] == "reads")
+
+        metadata_tool.merged_targets = pd.DataFrame(columns=["taxid", "counts"])
+        metadata_tool.match_and_select_targets(
+            pd.DataFrame(columns=["taxid", "counts"]),
+            contig_report,
+            max_remap=3,
+            taxid_limit=3,
+        )
+
+        self.assertTrue(metadata_tool.merged_targets.iloc[0]["source"] == "contigs")
+        self.assertTrue(metadata_tool.merged_targets.shape[0] == 1)
+        ####
+        metadata_tool.merged_targets = pd.DataFrame(columns=["taxid", "counts"])
+        metadata_tool.match_and_select_targets(
+            pd.DataFrame(columns=["taxid", "countsuy"]),
+            contig_report,
+            max_remap=3,
+            taxid_limit=3,
+        )
+
+        self.assertTrue(metadata_tool.merged_targets.iloc[0]["source"] == "contigs")
+        self.assertTrue(metadata_tool.merged_targets.shape[0] == 1)
+
+        ###
+        ####
+        metadata_tool.merged_targets = pd.DataFrame(columns=["taxid", "counts"])
+        metadata_tool.remap_targets = []
+        metadata_tool.match_and_select_targets(
+            self.reads_report,
+            self.contig_report,
+            max_remap=3,
+            taxid_limit=3,
+        )
+
+        self.assertTrue(len(metadata_tool.remap_targets))
+        print(metadata_tool.remap_targets)
+        print(len(metadata_tool.remap_targets))
+        for target in metadata_tool.remap_targets:
+            print(target)
+            print(target.taxid)
+            print(target.acc_simple)
 
 
 class Televir_Software_Test(TestCase):

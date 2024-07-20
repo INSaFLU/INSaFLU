@@ -5,7 +5,6 @@ import shutil
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
-
 # Create your tests here.
 import pandas as pd
 from django.conf import settings
@@ -18,59 +17,36 @@ from constants.constants import TypePath
 from constants.constantsTestsCase import ConstantsTestsCase
 from constants.software_names import SoftwareNames
 from fluwebvirus.settings import STATIC_ROOT
-from pathogen_identification.constants_settings import ConstantsSettings as PI_CS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PI_CS
 from pathogen_identification.deployment_main import (
-    PathogenIdentification_deployment,
-    Run_Main_from_Leaf,
-)
-from pathogen_identification.models import (
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReferenceSource,
-    ReferenceSourceFile,
-    ReferenceSourceFileMap,
-    ReferenceTaxid,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+    PathogenIdentification_deployment, Run_Main_from_Leaf)
+from pathogen_identification.models import (ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            ReferenceSource,
+                                            ReferenceSourceFile,
+                                            ReferenceSourceFileMap,
+                                            ReferenceTaxid, RunMain,
+                                            SoftwareTree, SoftwareTreeNode)
 from pathogen_identification.modules.metadata_handler import RunMetadataHandler
 from pathogen_identification.modules.object_classes import (
-    Operation_Temp_Files,
-    Read_class,
-    RunCMD,
-    Temp_File,
-)
-from pathogen_identification.modules.remap_class import (
-    Mapping_Instance,
-    Mapping_Manager,
-)
+    Operation_Temp_Files, Read_class, RunCMD, Temp_File)
+from pathogen_identification.modules.remap_class import (Mapping_Instance,
+                                                         Mapping_Manager)
 from pathogen_identification.utilities.overlap_manager import (
-    MappingResultsParser,
-    ReadOverlapManager,
-    clade_private_proportions,
-    pairwise_shared_count,
-    pairwise_shared_reads,
-    pairwise_shared_reads_distance,
-    square_and_fill_diagonal,
-    very_similar_groups_from_dataframe,
-)
+    MappingResultsParser, ReadOverlapManager, clade_private_proportions,
+    pairwise_shared_count, pairwise_shared_reads,
+    pairwise_shared_reads_distance, square_and_fill_diagonal,
+    very_similar_groups_from_dataframe)
 from pathogen_identification.utilities.reference_utils import extract_file
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.tree_deployment import Tree_Progress
 from pathogen_identification.utilities.utilities_general import merge_classes
 from pathogen_identification.utilities.utilities_pipeline import (
-    Pipeline_Makeup,
-    PipelineTree,
-    SoftwareTreeUtils,
-    Utils_Manager,
-)
+    Pipeline_Makeup, PipelineTree, SoftwareTreeUtils, Utils_Manager)
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter,
-    SampleReferenceManager,
-)
+    ReportSorter, SampleReferenceManager)
 from settings.constants_settings import ConstantsSettings as CS
 from settings.default_software import DefaultSoftware
 from settings.models import Parameter, Sample, Software
@@ -437,6 +413,22 @@ def duplicate_software_params_global_project(user, project: Projects):
                 parameter.software = software
                 parameter.televir_project = project
                 parameter.save()
+
+
+def user_project_turn_off_pipeline_steps(user, project, pipeline_steps):
+    """
+    turn off pipeline steps
+    """
+
+    software = Software.objects.filter(
+        owner=user,
+        parameter__televir_project=project,
+        pipeline_step__name__in=pipeline_steps,
+    )
+
+    for software in software:
+        software.is_to_run = False
+        software.save()
 
 
 def check_project_params_exist(project):
@@ -1152,10 +1144,15 @@ class MetadataManagementTests(TestCase):
         Run for mappings against reference for both illumina and ont reads"""
 
         #####
+        user_project_turn_off_pipeline_steps(
+            self.test_user, self.project_illu, [CS.PIPELINE_NAME_viral_enrichment]
+        )
         run_engine = self.run_setup(self.project_sample_illu, self.project_illu)
         deployed_and_updated = run_engine.Deploy_Parts()
 
         self.assertTrue(deployed_and_updated)
+
+        reset_project_makeup(self.project_illu)
 
 
 class Televir_Software_Test(TestCase):

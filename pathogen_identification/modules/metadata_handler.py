@@ -323,6 +323,9 @@ class RunMetadataHandler:
         return df
 
     def filter_references_table(self, references_table: pd.DataFrame) -> pd.DataFrame:
+        """
+        Filter references table to only include taxids with references, remove duplicates and unwanted taxids.
+        """
         references_table["taxid"] = references_table["taxid"].astype(str)
 
         references_table = references_table[references_table.taxid != "0"]
@@ -563,6 +566,9 @@ class RunMetadataHandler:
                 return ""
 
         df["description"] = df["taxid"].apply(get_description)
+
+        df["description"] = df["description"].fillna("NA")
+        df["description"] = df["description"].astype(str)
 
         return df
 

@@ -233,7 +233,6 @@ class PathogenIdentification_deployment:
         )
 
         utils = Utils_Manager()
-
         utils.utility_repository.dump_tables(self.run_engine.log_dir)
 
 
@@ -274,7 +273,7 @@ class Run_Main_from_Leaf:
         self.run_pk = run_pk
         self.pipeline_leaf = pipeline_leaf
         self.pipeline_tree = pipeline_tree
-        # prefix = f"{simplify_name_lower(input_data.name)}_{user.pk}_{project.pk}_{pipeline_leaf.pk}"
+        ########################################
         prefix = f"{simplify_name_lower(input_data.name)}_run{pipeline_leaf.index}"
         self.date_submitted = datetime.datetime.now()
 
@@ -383,7 +382,53 @@ class Run_Main_from_Leaf:
             self.file_r1,
             r2_path=self.file_r2,
         )
-        return configured
+
+        if not configured:
+            return False
+
+        self.container.run_main_prep()
+
+        try:
+
+            if self.run_pk is not None:
+                self.container.run_engine.run_pk = self.run_pk
+
+            if (
+                self.container.run_engine.run_type
+                == RunMainTree_class.RUN_TYPE_SCREENING
+            ):
+                self.container.run_engine.remap_params.manual_references_include = True
+
+            if self.mapping_request:
+                self.container.run_engine.run_type = (
+                    RunMainTree_class.RUN_TYPE_MAPPING_REQUEST
+                )
+
+                self.container.run_engine.metadata_tool.get_mapping_references(
+                    self.run_pk,
+                    max_accids=self.container.run_engine.remap_params.max_accids,
+                )
+
+            if self.combined_analysis:
+                self.container.run_engine.run_type = (
+                    RunMainTree_class.RUN_TYPE_COMBINED_MAPPING
+                )
+
+                if (
+                    self.container.run_engine.remap_params.manual_references_include
+                    is True
+                ):
+                    self.container.run_engine.metadata_tool.get_manual_references(
+                        self.sample,
+                        max_accids=self.container.run_engine.remap_params.max_accids,
+                    )
+
+        except Exception as e:
+            print(e)
+            print(traceback.format_exc())
+            return False
+
+        return True
 
     def set_run_process_running(self):
         process_controler = ProcessControler()
@@ -424,57 +469,8 @@ class Run_Main_from_Leaf:
             ProcessControler.FLAG_FINISHED,
         )
 
-    def Deploy(self):
-        try:
-            self.container.run_main_prep()
-            self.container.run_engine.Run_Full_Pipeline()
-            self.container.run_engine.export_sequences()
-            self.container.run_engine.Summarize()
-            self.container.run_engine.generate_output_data_classes()
-            self.container.run_engine.export_logdir()
-            return True
-        except Exception as e:
-            print(traceback.format_exc())
-            print(e)
-            return False
-
     def Deploy_Parts(self):
         try:
-            self.container.run_main_prep()
-
-            if self.run_pk is not None:
-                self.container.run_engine.run_pk = self.run_pk
-
-            if (
-                self.container.run_engine.run_type
-                == RunMainTree_class.RUN_TYPE_SCREENING
-            ):
-                self.container.run_engine.remap_params.manual_references_include = True
-
-            if self.mapping_request:
-                self.container.run_engine.run_type = (
-                    RunMainTree_class.RUN_TYPE_MAPPING_REQUEST
-                )
-
-                # self.container.run_engine.remap_params.manual_references_include = True
-                self.container.run_engine.metadata_tool.get_mapping_references(
-                    self.run_pk,
-                    max_accids=self.container.run_engine.remap_params.max_accids,
-                )
-
-            if self.combined_analysis:
-                self.container.run_engine.run_type = (
-                    RunMainTree_class.RUN_TYPE_COMBINED_MAPPING
-                )
-
-                if (
-                    self.container.run_engine.remap_params.manual_references_include
-                    is True
-                ):
-                    self.container.run_engine.metadata_tool.get_manual_references(
-                        self.sample,
-                        max_accids=self.container.run_engine.remap_params.max_accids,
-                    )
 
             self.container.run_engine.Prep_deploy()
             self.container.run_engine.Run_QC()
@@ -532,11 +528,6 @@ class Run_Main_from_Leaf:
 
         try:
             self.container.run_engine.Run_Metagenomics_Classification()
-
-            # ref_update = UpdateRawReferences_safe(
-            #    self.container.run_engine, self.parameter_set
-            # )
-            #
 
             db_updated = Update_Metagenomics(
                 self.container.run_engine, self.parameter_set

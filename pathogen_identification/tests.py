@@ -5,6 +5,7 @@ import shutil
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
+
 # Create your tests here.
 import pandas as pd
 from django.conf import settings
@@ -17,36 +18,59 @@ from constants.constants import TypePath
 from constants.constantsTestsCase import ConstantsTestsCase
 from constants.software_names import SoftwareNames
 from fluwebvirus.settings import STATIC_ROOT
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PI_CS
+from pathogen_identification.constants_settings import ConstantsSettings as PI_CS
 from pathogen_identification.deployment_main import (
-    PathogenIdentification_deployment, Run_Main_from_Leaf)
-from pathogen_identification.models import (ParameterSet, PIProject_Sample,
-                                            Projects, RawReference,
-                                            ReferenceSource,
-                                            ReferenceSourceFile,
-                                            ReferenceSourceFileMap,
-                                            ReferenceTaxid, RunMain,
-                                            SoftwareTree, SoftwareTreeNode)
+    PathogenIdentification_deployment,
+    Run_Main_from_Leaf,
+)
+from pathogen_identification.models import (
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReferenceSource,
+    ReferenceSourceFile,
+    ReferenceSourceFileMap,
+    ReferenceTaxid,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
 from pathogen_identification.modules.metadata_handler import RunMetadataHandler
 from pathogen_identification.modules.object_classes import (
-    Operation_Temp_Files, Read_class, RunCMD, Temp_File)
-from pathogen_identification.modules.remap_class import (Mapping_Instance,
-                                                         Mapping_Manager)
+    Operation_Temp_Files,
+    Read_class,
+    RunCMD,
+    Temp_File,
+)
+from pathogen_identification.modules.remap_class import (
+    Mapping_Instance,
+    Mapping_Manager,
+)
 from pathogen_identification.utilities.overlap_manager import (
-    MappingResultsParser, ReadOverlapManager, clade_private_proportions,
-    pairwise_shared_count, pairwise_shared_reads,
-    pairwise_shared_reads_distance, square_and_fill_diagonal,
-    very_similar_groups_from_dataframe)
+    MappingResultsParser,
+    ReadOverlapManager,
+    clade_private_proportions,
+    pairwise_shared_count,
+    pairwise_shared_reads,
+    pairwise_shared_reads_distance,
+    square_and_fill_diagonal,
+    very_similar_groups_from_dataframe,
+)
 from pathogen_identification.utilities.reference_utils import extract_file
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.tree_deployment import Tree_Progress
 from pathogen_identification.utilities.utilities_general import merge_classes
 from pathogen_identification.utilities.utilities_pipeline import (
-    Pipeline_Makeup, PipelineTree, SoftwareTreeUtils, Utils_Manager)
+    Pipeline_Makeup,
+    PipelineTree,
+    SoftwareTreeUtils,
+    Utils_Manager,
+)
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter, SampleReferenceManager)
+    ReportSorter,
+    SampleReferenceManager,
+)
 from settings.constants_settings import ConstantsSettings as CS
 from settings.default_software import DefaultSoftware
 from settings.models import Parameter, Sample, Software
@@ -60,7 +84,7 @@ class AttrDict(dict):
         self.__dict__ = self
 
 
-def televir_test_project(user: User, project_ont_name: str = "project_televir"):
+def televir_test_project_ont(user: User, project_ont_name: str = "project_televir"):
     ######### ONT ##########
 
     try:
@@ -76,19 +100,39 @@ def televir_test_project(user: User, project_ont_name: str = "project_televir"):
     return project_ont
 
 
-def televir_test_sample(project_ont, sample_ont: Sample):
+def televir_test_project_illu(
+    user: User, project_illu_name: str = "project_televir_illu"
+):
+    ######### ILLUMINA ##########
+
     try:
-        ont_project_sample = PIProject_Sample.objects.get(
-            project__id=project_ont.pk, sample__id=sample_ont.pk
+        project_illu = Projects.objects.get(
+            name=project_illu_name, technology=CS.TECHNOLOGY_illumina
+        )
+    except Projects.DoesNotExist:
+        project_illu = Projects()
+        project_illu.name = project_illu_name
+        project_illu.owner = user
+        project_illu.technology = CS.TECHNOLOGY_illumina
+
+        project_illu.save()
+
+    return project_illu
+
+
+def televir_test_sample(project, sample: Sample):
+    try:
+        project_sample = PIProject_Sample.objects.get(
+            project__id=project.pk, sample__id=sample.pk
         )
     except PIProject_Sample.DoesNotExist:
-        ont_project_sample = PIProject_Sample()
-        ont_project_sample.project = project_ont
-        ont_project_sample.sample = sample_ont
-        ont_project_sample.name = sample_ont.name
-        ont_project_sample.save()
+        project_sample = PIProject_Sample()
+        project_sample.project = project
+        project_sample.sample = sample
+        project_sample.name = sample.name
+        project_sample.save()
 
-    return ont_project_sample
+    return project_sample
 
 
 def test_user():
@@ -121,7 +165,9 @@ def test_fastq_ont_file(
     )
 
     try:
-        sample_ont = Sample.objects.get(name=sample_name)
+        sample_ont = Sample.objects.get(
+            name=sample_name, type_of_fastq=Sample.TYPE_OF_FASTQ_minion
+        )
     except Sample.DoesNotExist:
         sample_ont = Sample()
         sample_ont.name = sample_name
@@ -139,7 +185,7 @@ def test_fastq_ont_file(
 
 
 def test_fastq_illu1_file(
-    baseDirectory, user: User, sample_name: str = "televir_sample_minion_1"
+    baseDirectory, user: User, sample_name: str = "televir_sample_illumina_1"
 ) -> Sample:
     utils = Utils()
 
@@ -162,7 +208,9 @@ def test_fastq_illu1_file(
     utils.copy_file(file_name, os.path.join(baseDirectory, ConstantsTestsCase.FASTQ1_2))
 
     try:
-        sample_illu1 = Sample.objects.get(name=sample_name)
+        sample_illu1 = Sample.objects.get(
+            name=sample_name, type_of_fastq=Sample.TYPE_OF_FASTQ_illumina
+        )
     except Sample.DoesNotExist:
         sample_illu1 = Sample()
         sample_illu1.name = sample_name
@@ -187,10 +235,13 @@ def test_fastq_illu1_file(
 def generate_influenza_reference(
     output_file: str, accid_in_file: str, accid_to_be: Optional[str] = None
 ):
+    deployment_params = Deployment_Params()
+    output_file_gz = output_file + ".gz"
 
     source = os.path.join(
         STATIC_ROOT,
         ConstantsTestsCase.MANAGING_TESTS,
+        ConstantsTestsCase.MANAGING_DIR,
         ConstantsTestsCase.MANAGING_FILES_FASTA,
     )
 
@@ -200,6 +251,9 @@ def generate_influenza_reference(
         "bin",
         "samtools",
     )
+
+    if os.path.exists(output_file + ".gz"):
+        os.remove(output_file + ".gz")
 
     cmd = f"{samtools_bin} faidx {source} {accid_in_file} > {output_file}"
 
@@ -211,20 +265,21 @@ def generate_influenza_reference(
         os.system(cmd)
 
     ## compress and index
-    cmd = f"bgzip {output_file}"
+    cmd = f"{deployment_params.get_software_binary('bgzip')} {output_file}"
     os.system(cmd)
 
-    cmd = f"{samtools_bin} {output_file}.gz"
+    cmd = f"{deployment_params.get_software_binary('samtools')} faidx {output_file_gz}"
     os.system(cmd)
+
+    return output_file_gz
 
 
 def generate_NA_televir_reference(output_dir: str):
 
-    taxid = "1674969"
+    taxid_str = "1674969"
     accid = "KT022278.1"
     accid_in_file = "NA"
     reference_file = "NA_H3N2.fasta"
-    reference_file_gz = f"{reference_file}.gz"
     description = "Influenza A virus (A/chicken/Guangxi/125C8/2012(H3N2)) segment 6 neuraminidase (NA) gene, complete cds"
     output_file = os.path.join(output_dir, reference_file)
 
@@ -233,19 +288,19 @@ def generate_NA_televir_reference(output_dir: str):
     )
     test_reference = os.path.basename(test_reference_path)
 
-    ## replace accid with in file with accid, use sed
-    cmd = f"sed -i 's/{accid_in_file}/{accid}/g' {output_file}"
-    os.system(cmd)
-
     ####
     taxid = ReferenceTaxid()
-    taxid.taxid = taxid
+    taxid.taxid = taxid_str
     taxid.save()
     ref_source = ReferenceSource()
     ref_source.accid = accid
     ref_source.taxid = taxid
     ref_source.description = description
     ref_source.save()
+
+    ref_source_file = ReferenceSourceFile()
+    ref_source_file.file = test_reference
+    ref_source_file.save()
 
     ref_source_file = ReferenceSourceFile.objects.get(file=test_reference)
 
@@ -530,7 +585,7 @@ class OverlapManagerTests(TestCase):
         )
 
         self.test_user = test_user()
-        self.project_ont = televir_test_project(self.test_user)
+        self.project_ont = televir_test_project_ont(self.test_user)
 
         self.temp_directory = os.path.join(self.baseDirectory, PI_CS.test_subdirectory)
         os.makedirs(self.temp_directory, exist_ok=True)
@@ -763,18 +818,17 @@ class MetadataManagementTests(TestCase):
         self.temp_directory = os.path.join(self.baseDirectory, PI_CS.test_subdirectory)
         self.sample_illu = test_fastq_illu1_file(self.baseDirectory, self.test_user)
         self.sample_ont = test_fastq_ont_file(self.baseDirectory, self.test_user)
-        self.project_ont = televir_test_project(self.test_user)
+
+        self.project_ont = televir_test_project_ont(self.test_user, "project_ont")
+        self.project_illu = televir_test_project_illu(self.test_user, "project_illu")
         self.project_sample_ont = televir_test_sample(self.project_ont, self.sample_ont)
         self.project_sample_illu = televir_test_sample(
-            self.project_ont, self.sample_illu
+            self.project_illu, self.sample_illu
         )
+        self.test_mapping_reference_accid = "KT022278.1"
+        generate_NA_televir_reference(self.temp_directory)
+
         refs = [
-            {
-                "taxid": "1674969",
-                "accid": "KT022278.1",
-                "description": "Influenza A virus (A/chicken/Guangxi/125C8/2012(H3N2)) segment 6 neuraminidase (NA) gene, complete cds",
-                "file": "NA_H3N2.fasta.gz",
-            },
             {
                 "accid": "ref1",
                 "taxid": 1,
@@ -993,42 +1047,44 @@ class MetadataManagementTests(TestCase):
 
         self.assertTrue(len(metadata_tool.remap_targets) == 1)
 
-    def import_read_file(self, sample: Sample):
-        fastq1 = self.project_sample_illu.sample.get_fastq_available(
-            TypePath.MEDIA_ROOT, True
-        )
-        fastq1_basename = os.path.basename(fastq1)
-        r1_path = os.path.join(self.temp_directory, fastq1_basename)
-        shutil.copy(fastq1, r1_path)
+    def run_mapping_to_reference(
+        self, sample_to_test: PIProject_Sample, project_to_test: Projects
+    ):
 
-        fastq2 = self.project_sample_illu.sample.get_fastq_available(
-            TypePath.MEDIA_ROOT, False
-        )
-        fastq2_basename = os.path.basename(fastq2)
-        r2_path = os.path.join(self.temp_directory, fastq2_basename)
-        shutil.copy(fastq2, r2_path)
-
-        return r1_path, r2_path
-
-    def test_metadataHandler(self):
-        reference_manager = SampleReferenceManager(self.project_sample_illu)
+        reference_manager = SampleReferenceManager(sample_to_test)
 
         software_utils = SoftwareTreeUtils(
-            self.test_user, self.project_ont, sample=self.project_sample_ont
-        )
-        runs_to_deploy, _ = (
-            software_utils.check_runs_to_submit_mapping_only(self.project_sample_illu)
+            self.test_user, project_to_test, sample=sample_to_test
         )
 
-        first_run_node = runs_to_deploy[self.project_sample_illu][0]
+        runs_to_deploy, _ = software_utils.check_runs_to_submit_mapping_only(
+            sample_to_test
+        )
+
+        first_run_node = runs_to_deploy[sample_to_test][0]
+
+        references_to_add = ReferenceSourceFileMap.objects.get(
+            reference_source__accid=self.test_mapping_reference_accid
+        )
+
+        reference_manager.add_reference(references_to_add)
+
         mapping_run = reference_manager.create_mapping_run(
             first_run_node, RunMain.RUN_TYPE_MAP_REQUEST
         )
 
+        ref_storage = RawReference.objects.filter(
+            run__sample=sample_to_test, run__run_type=RunMain.RUN_TYPE_STORAGE
+        ).first()
+
+        ref_storage.pk = None
+        ref_storage.run = mapping_run
+        ref_storage.save()
+
         run_engine = Run_Main_from_Leaf(
             self.test_user,
-            self.project_sample_illu,
-            self.project_ont,
+            sample_to_test,
+            project_to_test,
             pipeline_leaf=first_run_node,
             pipeline_tree=first_run_node.software_tree,
             odir=self.temp_directory,
@@ -1037,45 +1093,53 @@ class MetadataManagementTests(TestCase):
             run_pk=mapping_run.pk,
         )
 
+        ########
+        ########
         run_engine.configure()
-        run_engine.container.run_main_prep()
         ##
-        print(run_engine.container.run_engine.software_remap)
-
-    def dont_test_this_setup(self):
-
-        config = {
-            "metadata": self.install_registry.metadata_full_path,
-            "bin": self.install_registry.BINARIES,
-        }
-
-        metadata_tool = RunMetadataHandler(
-            self.test_user.username,
-            config,
-            sift_query="phage",
-            prefix="test_run",
-            rundir=self.temp_directory,
+        self.assertTrue(
+            run_engine.container.run_engine.metadata_tool.remap_targets[0].accid
+            == ref_storage.accid
         )
 
-        sample1, sample2 = self.import_read_file(self.project_sample_illu)
+        ## replace fasta file path with temp file
+        for remap_target in run_engine.container.run_engine.metadata_tool.remap_targets:
+            remap_target.file = os.path.join(
+                self.temp_directory,
+                os.path.basename(remap_target.file),
+            )
 
-        remap_manager = Mapping_Manager(
-            metadata_tool.remap_targets,
-            sample1,
-            sample2,
-            software_remap,
-            "no_assembly_available",
-            PI_CS.PAIR_END,
-            "test_mapping",
-            self.nthreads,
-            get_bindir_from_binaries(config["bin"], CS.PIPELINE_NAME_remapping),
-            logging.INFO,
-            True,
-            remap_params=remap_params,
-            logdir=self.temp_directory,
+        self.assertTrue(
+            os.path.exists(
+                run_engine.container.run_engine.metadata_tool.remap_targets[0].file
+            )
         )
 
-        self.remap_prepped = True
+        #### run mapping
+        run_engine.container.run_engine.Prep_deploy()
+        run_engine.container.run_engine.prep_REMAPPING()
+        run_engine.container.run_engine.Run_Remapping()
+
+        return run_engine
+
+    def test_mapping_to_reference(self):
+        """
+        Run for mappings against reference for both illumina and ont reads
+        """
+
+        run_engine = self.run_mapping_to_reference(
+            self.project_sample_ont, self.project_ont
+        )
+
+        self.assertTrue(run_engine.container.run_engine.remap_manager.report.empty)
+
+        run_engine = self.run_mapping_to_reference(
+            self.project_sample_illu, self.project_illu
+        )
+
+        self.assertTrue(
+            run_engine.container.run_engine.remap_manager.report.shape[0] == 1
+        )
 
 
 class Televir_Software_Test(TestCase):
@@ -1374,7 +1438,7 @@ class Televir_Project_Test(TestCase):
         )
 
         self.test_user = test_user()
-        self.project_ont = televir_test_project(self.test_user)
+        self.project_ont = televir_test_project_ont(self.test_user)
         self.sample_ont = test_fastq_ont_file(self.baseDirectory, self.test_user)
         self.assertTrue(self.sample_ont.path_name_1.name)
 

@@ -6,21 +6,16 @@ from typing import List, Optional
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (
-    PIProject_Sample,
-    RawReference,
-    RawReferenceCompoundModel,
-    ReferenceSource,
-    ReferenceSourceFileMap,
-    RunMain,
-)
+from pathogen_identification.models import (PIProject_Sample, RawReference,
+                                            RawReferenceCompoundModel,
+                                            ReferenceSource,
+                                            ReferenceSourceFileMap, RunMain)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
-from pathogen_identification.utilities.utilities_general import (
-    merge_classes,
-    simplify_name,
-)
-from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
+from pathogen_identification.utilities.utilities_general import (merge_classes,
+                                                                 simplify_name)
+from pathogen_identification.utilities.utilities_pipeline import \
+    RawReferenceUtils
 
 
 def determine_taxid_in_file(taxid, df: pd.DataFrame):
@@ -271,21 +266,17 @@ class RunMetadataHandler:
         max_remap: int = 15,
         taxid_limit: int = 12,
     ):
-        print(report_1.shape)
-        print(report_2.shape)
-        print("### processing reports")
+
         self.process_reports(
             report_1,
             report_2,
         )
 
-        print("### merging reports")
         if self.merged_targets.empty:
             self.merge_reports_clean(
                 taxid_limit=taxid_limit,
             )
 
-        print("### generating targets")
         #######
         #######
 
@@ -370,10 +361,6 @@ class RunMetadataHandler:
 
         if max_taxids is not None:
             references_table = references_table.iloc[:max_taxids, :]
-
-        print("############# REFERENCES TABLE #############")
-        print(references_table.head())
-        print(references_table.shape)
 
         self.generate_mapping_targets(
             references_table,
@@ -773,12 +760,8 @@ class RunMetadataHandler:
         targets: pd.DataFrame,
         max_remap: int = 9,
     ):
-
-        print(
-            "######################## GENERATING TARGETS ############################"
-        )
-        print(targets.head())
-        print(targets.shape)
+        """
+        Generate remap targets from a dataframe of targets."""
         remap_plan = []
         remap_targets = []
         remap_absent_taxid_list = []
@@ -796,7 +779,6 @@ class RunMetadataHandler:
 
             #
             refs_in_file = refs_in_file[:max_remap]
-            print("#refs in file", len(refs_in_file))
 
             for ref_in_file_by_accid in refs_in_file:
                 other_refs = ReferenceSourceFileMap.objects.filter(
@@ -834,8 +816,6 @@ class RunMetadataHandler:
         self.remap_plan = pd.DataFrame(
             remap_plan, columns=["taxid", "acc", "file", "description"]
         )
-        print("ABSENT TAXIDS")
-        print(remap_absent_taxid_list)
-        print(len(remap_targets))
+
         self.remap_targets.extend(remap_targets)
         self.remap_absent_taxid_list.extend(remap_absent_taxid_list)

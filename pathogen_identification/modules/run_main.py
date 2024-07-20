@@ -1619,6 +1619,8 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.remap_prepped = True
 
     def Run_Remapping(self, prep=True):
+        print("remapping: ", self.remapping)
+        print(self.remap_prepped)
         if not self.remap_prepped:
             return
 

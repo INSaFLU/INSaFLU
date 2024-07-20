@@ -77,6 +77,7 @@ class Televir_Metadata_Constants:
             "collapsibleTree": "remap/Renv",
             "create_report": "Pyenv/igv_reports",
             "entrez_direct": "entrez_direct",
+            "bgzip": "hostDepletion/hostdep_env",
         },
         CS.PIPELINE_NAME_remapping: {"default": "remap/remap"},
         CS.PIPELINE_NAME_remap_filtering: {"default": "remap/remap"},

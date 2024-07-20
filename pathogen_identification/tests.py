@@ -1047,9 +1047,7 @@ class MetadataManagementTests(TestCase):
 
         self.assertTrue(len(metadata_tool.remap_targets) == 1)
 
-    def run_mapping_to_reference(
-        self, sample_to_test: PIProject_Sample, project_to_test: Projects
-    ):
+    def run_setup(self, sample_to_test: PIProject_Sample, project_to_test: Projects):
 
         reference_manager = SampleReferenceManager(sample_to_test)
 
@@ -1115,6 +1113,13 @@ class MetadataManagementTests(TestCase):
             )
         )
 
+        return run_engine
+
+    def run_mapping_to_reference(
+        self, sample_to_test: PIProject_Sample, project_to_test: Projects
+    ):
+
+        run_engine = self.run_setup(sample_to_test, project_to_test)
         #### run mapping
         run_engine.container.run_engine.Prep_deploy()
         run_engine.container.run_engine.prep_REMAPPING()
@@ -1133,6 +1138,7 @@ class MetadataManagementTests(TestCase):
 
         self.assertTrue(run_engine.container.run_engine.remap_manager.report.empty)
 
+        #########################################################
         run_engine = self.run_mapping_to_reference(
             self.project_sample_illu, self.project_illu
         )
@@ -1140,6 +1146,16 @@ class MetadataManagementTests(TestCase):
         self.assertTrue(
             run_engine.container.run_engine.remap_manager.report.shape[0] == 1
         )
+
+    def test_deploy_mapping(self):
+        """
+        Run for mappings against reference for both illumina and ont reads"""
+
+        #####
+        run_engine = self.run_setup(self.project_sample_illu, self.project_illu)
+        deployed_and_updated = run_engine.Deploy_Parts()
+
+        self.assertTrue(deployed_and_updated)
 
 
 class Televir_Software_Test(TestCase):

@@ -135,7 +135,7 @@ class Command(BaseCommand):
                     )
 
                     if run.is_available:
-                        run.get_in_line()
+                        run.set_to_queued()
                         submission_dict[target_sample].append(run)
 
                     for sample, runs in submission_dict.items():

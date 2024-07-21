@@ -458,7 +458,7 @@ class Input_Generator:
                 f"no remapping parameters found for {self.reference.accid} in leaf {parameter_leaf}"
             )
 
-    def generate_config(self):
+    def generate_config_file(self):
         self.config = {
             "sample_name": simplify_name_lower(
                 os.path.basename(self.r1_path).replace(".fastq.gz", "")
@@ -581,7 +581,7 @@ class Command(BaseCommand):
         try:
             input_generator.generate_reference_method_args()
             # input_generator.generate_request_mapping_method_args()
-            input_generator.generate_config()
+            input_generator.generate_config_file()
 
             run_engine = RunEngine(
                 input_generator.config, input_generator.method_args, project

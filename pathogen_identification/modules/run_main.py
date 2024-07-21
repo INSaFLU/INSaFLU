@@ -15,31 +15,17 @@ from pathogen_identification.modules.assembly_class import Assembly_class
 from pathogen_identification.modules.classification_class import Classifier
 from pathogen_identification.modules.metadata_handler import RunMetadataHandler
 from pathogen_identification.modules.object_classes import (
-    Assembly_results,
-    Contig_classification_results,
-    Read_class,
-    Read_classification_results,
-    Remap_main,
-    Remap_Target,
-    Run_detail_report,
-    RunCMD,
-    RunQC_report,
-    Sample_runClass,
-    SoftwareDetail,
-    SoftwareDetailCompound,
-    SoftwareRemap,
-    SoftwareUnit,
-)
+    Assembly_results, Contig_classification_results, Read_class,
+    Read_classification_results, Remap_main, Remap_Target, Run_detail_report,
+    RunCMD, RunQC_report, Sample_runClass, SoftwareDetail,
+    SoftwareDetailCompound, SoftwareRemap, SoftwareUnit)
 from pathogen_identification.modules.preprocess_class import Preprocess
-from pathogen_identification.modules.remap_class import (
-    Mapping_Instance,
-    Mapping_Manager,
-)
+from pathogen_identification.modules.remap_class import (Mapping_Instance,
+                                                         Mapping_Manager)
 from pathogen_identification.utilities.televir_parameters import (
-    RemapParams,
-    TelevirParameters,
-)
-from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
+    RemapParams, TelevirParameters)
+from pathogen_identification.utilities.utilities_pipeline import \
+    RawReferenceUtils
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -719,9 +705,9 @@ class RunDetail_main:
 
 class Run_Deployment_Methods(RunDetail_main):
     def __init__(
-        self, config_json: os.PathLike, method_args: pd.DataFrame, project_pk: int
+        self, config_dict: dict, method_args: pd.DataFrame, project_pk: int
     ):
-        super().__init__(config_json, method_args, project_pk)
+        super().__init__(config_dict, method_args, project_pk)
         self.mapped_instances = []
 
     def Prep_deploy(self, remap_prep=True):
@@ -1313,9 +1299,9 @@ class RunEngine_class(Run_Deployment_Methods):
 
 class RunMainTree_class(Run_Deployment_Methods):
     def __init__(
-        self, config_json: os.PathLike, method_args: pd.DataFrame, project_pk: int
+        self, config_dict: dict, method_args: pd.DataFrame, project_pk: int
     ):
-        super().__init__(config_json, method_args, project_pk)
+        super().__init__(config_dict, method_args, project_pk)
 
         self.logger.info("Starting Pipeline")
 
@@ -1446,9 +1432,8 @@ class RunMainTree_class(Run_Deployment_Methods):
                 ###########################
                 ###########################
 
-                from pathogen_identification.utilities.televir_bioinf import (
-                    TelevirBioinf,
-                )
+                from pathogen_identification.utilities.televir_bioinf import \
+                    TelevirBioinf
 
                 # televir_bioinf = TelevirBioinf()
                 # alignment_file = self.depletion_drone.classifier.report_path

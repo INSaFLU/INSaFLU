@@ -8,14 +8,19 @@ from django.core.management.base import BaseCommand
 from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.deployment_main import Run_Main_from_Leaf
-from pathogen_identification.models import (ParameterSet, PIProject_Sample,
-                                            Projects, SoftwareTree,
-                                            SoftwareTreeNode)
+from pathogen_identification.models import (
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
 from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils, Utils_Manager)
-from pathogen_identification.utilities.utilities_views import \
-    set_control_reports
+    SoftwareTreeUtils,
+    Utils_Manager,
+)
+from pathogen_identification.utilities.utilities_views import set_control_reports
 from utils.process_SGE import ProcessSGE
 
 
@@ -93,12 +98,12 @@ class Command(BaseCommand):
 
         ### UTILITIES
         utils = Utils_Manager()
-        software_utils= SoftwareTreeUtils(user, project)
+        software_utils = SoftwareTreeUtils(user, project)
 
         local_tree = software_utils.generate_project_tree()
 
-        #tree_makeup = local_tree.makeup
-        #pipeline_tree= utils.generate_software_tree_extend(local_tree, user)
+        # tree_makeup = local_tree.makeup
+        # pipeline_tree= utils.generate_software_tree_extend(local_tree, user)
         pipeline_tree_index = local_tree.software_tree_pk
         pipeline_tree_query = SoftwareTree.objects.get(pk=pipeline_tree_index)
 
@@ -111,10 +116,8 @@ class Command(BaseCommand):
 
         print("was_run_killed", was_run_killed)
 
-
         ### draw graph
         graph_progress = TreeProgressGraph(target_sample)
-
 
         ### SUBMISSION
         try:
@@ -149,14 +152,14 @@ class Command(BaseCommand):
                 )
 
                 if run.is_available:
-                    run.get_in_line()
+                    run.set_to_queued()
                     submission_dict[target_sample].append(run)
 
                 for sample, runs in submission_dict.items():
                     for run in runs:
 
                         run.Submit()
-                
+
                 graph_progress.generate_graph()
                 set_control_reports(project.pk)
 

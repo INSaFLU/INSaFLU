@@ -20,7 +20,7 @@ from fluwebvirus.settings import STATIC_ROOT
 from pathogen_identification.constants_settings import \
     ConstantsSettings as PI_CS
 from pathogen_identification.deployment_main import (
-    PathogenIdentification_deployment, Run_Main_from_Leaf)
+    PathogenIdentification_SingleDeployment, Run_Main_from_Leaf)
 from pathogen_identification.models import (ParameterSet, PIProject_Sample,
                                             Projects, RawReference,
                                             ReferenceSource,
@@ -1727,7 +1727,7 @@ class Televir_Project_Test(TestCase):
                     threads=3,
                 )
 
-                run.get_in_line()
+                run.set_to_queued()
 
                 self.assertEqual(run.get_status(), ParameterSet.STATUS_QUEUED)
                 self.assertEqual(run.check_finished(), False)
@@ -1762,7 +1762,7 @@ class Televir_Project_Test(TestCase):
                 self.assertEqual(
                     os.path.join(
                         os.path.join(run.container.dir, "reads"),
-                        os.path.basename(run.file_r1),
+                        os.path.basename(run.container.file_r1),
                     ),
                     run.container.config["r1"],
                 )
@@ -1785,7 +1785,7 @@ class Televir_Project_Test(TestCase):
                     self.assertEqual(os.path.exists(sbdir), True)
 
                 ##### test prepping
-                run.container.run_main_prep()
+                run.container.run_main_prep_dump_tables()
                 self.assertEqual(run.container.prepped, True)
                 self.assertEqual(
                     os.path.exists(run.container.run_engine.media_dir_classification),

@@ -634,7 +634,8 @@ class ReadOverlapManager(MappingResultsParser):
         if distance_matrix.shape[0] <= 1:
             tree = constructor.nj(distmat)
         else:
-            tree = constructor.upgma(distmat)
+            #tree = constructor.upgma(distmat)
+            tree = constructor.nj(distmat)
 
         tree.rooted = False
         tree.ladderize()

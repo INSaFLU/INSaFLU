@@ -3,7 +3,6 @@ import os
 import shutil
 import time
 from dataclasses import dataclass
-from random import randint
 from typing import Dict, List, Optional
 
 import numpy as np
@@ -15,31 +14,17 @@ from pathogen_identification.modules.assembly_class import Assembly_class
 from pathogen_identification.modules.classification_class import Classifier
 from pathogen_identification.modules.metadata_handler import RunMetadataHandler
 from pathogen_identification.modules.object_classes import (
-    Assembly_results,
-    Contig_classification_results,
-    Read_class,
-    Read_classification_results,
-    Remap_main,
-    Remap_Target,
-    Run_detail_report,
-    RunCMD,
-    RunQC_report,
-    Sample_runClass,
-    SoftwareDetail,
-    SoftwareDetailCompound,
-    SoftwareRemap,
-    SoftwareUnit,
-)
+    Assembly_results, Contig_classification_results, Read_class,
+    Read_classification_results, Remap_main, Remap_Target, Run_detail_report,
+    RunCMD, RunQC_report, Sample_runClass, SoftwareDetail,
+    SoftwareDetailCompound, SoftwareRemap, SoftwareUnit)
 from pathogen_identification.modules.preprocess_class import Preprocess
-from pathogen_identification.modules.remap_class import (
-    Mapping_Instance,
-    Mapping_Manager,
-)
+from pathogen_identification.modules.remap_class import (Mapping_Instance,
+                                                         Mapping_Manager)
 from pathogen_identification.utilities.televir_parameters import (
-    RemapParams,
-    TelevirParameters,
-)
-from pathogen_identification.utilities.utilities_pipeline import RawReferenceUtils
+    RemapParams, TelevirParameters)
+from pathogen_identification.utilities.utilities_pipeline import \
+    RawReferenceUtils
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -123,18 +108,6 @@ class RunDetail_main:
     remapping: bool
     house_cleaning: bool
     depletion_report = None
-
-    # activity log
-
-    # qc_performed: bool
-    # enrichment_performed: bool
-    # depletion_performed: bool
-    # assembly_performed: bool
-    # read_classification_performed: bool
-    # contig_classification_performed: bool
-    # remap_prepped: bool
-    # remapping_performed: bool
-    # remap_prepped: bool
 
     ## methods
     preprocess_method: SoftwareUnit
@@ -1442,9 +1415,8 @@ class RunMainTree_class(Run_Deployment_Methods):
                 ###########################
                 ###########################
 
-                from pathogen_identification.utilities.televir_bioinf import (
-                    TelevirBioinf,
-                )
+                from pathogen_identification.utilities.televir_bioinf import \
+                    TelevirBioinf
 
                 # televir_bioinf = TelevirBioinf()
                 # alignment_file = self.depletion_drone.classifier.report_path

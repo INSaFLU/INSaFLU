@@ -87,8 +87,6 @@ class PathogenIdentification_TreeDeployment(PathogenIdentificationDeploymentCore
         super().__init__(sample, deployment_root_dir, dir_branch, prefix, threads)
 
         self.sent = False
-        self.pk: int
-
         self.assembly_udated = False
         self.classification_updated = False
 
@@ -1312,12 +1310,12 @@ class TreeProgressGraph:
             tree_pk: SoftwareTree.objects.get(pk=tree_pk) for tree_pk in trees_pk_list
         }
 
-        pipetrees_dict = {
-            tree_pk: pipeline_utils.parameter_util.convert_softwaretree_to_pipeline_tree(
-                tree
-            )
-            for tree_pk, tree in software_tree_dict.items()
-        }
+        # pipetrees_dict = {
+        #    tree_pk: pipeline_utils.parameter_util.convert_softwaretree_to_pipeline_tree(
+        #        tree
+        #    )
+        #    for tree_pk, tree in software_tree_dict.items()
+        # }
 
         stacked_df_dict = {}
 
@@ -1349,13 +1347,13 @@ class TreeProgressGraph:
         ]
 
         all_columns = set()
-        for makeup, stacked_df in stacked_df_dict.items():
+        for _, stacked_df in stacked_df_dict.items():
             all_columns.update(stacked_df.columns)
 
         all_columns = list(all_columns)
         all_columns = [column for column in column_order if column in all_columns]
 
-        for makeup, stacked_df in stacked_df_dict.items():
+        for _, stacked_df in stacked_df_dict.items():
             missing_columns = [
                 column for column in all_columns if column not in stacked_df.columns
             ]
@@ -1389,7 +1387,7 @@ class TreeProgressGraph:
         if existing_parameter_sets.count() == 0:
             return pd.DataFrame()
 
-        # stacked_df = self.get_node_params(existing_parameter_sets)
+        #
         test_df = self.get_node_params_network(existing_parameter_sets)
         #
 
@@ -1407,7 +1405,7 @@ class TreeProgressGraph:
         deployment_tree = Tree_Progress(tree, self.sample, self.project)
 
         stacked_df = deployment_tree.stacked_changes_log()
-        # stacked_df.to_csv(self.stacked_df_path, sep="\t")
+        #
 
         return stacked_df
 

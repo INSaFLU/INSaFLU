@@ -5,7 +5,6 @@ import shutil
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
-
 # Create your tests here.
 import pandas as pd
 from django.conf import settings
@@ -18,52 +17,33 @@ from constants.constants import TypePath
 from constants.constantsTestsCase import ConstantsTestsCase
 from constants.software_names import SoftwareNames
 from fluwebvirus.settings import STATIC_ROOT
-from pathogen_identification.constants_settings import ConstantsSettings as PI_CS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PI_CS
 from pathogen_identification.deployment_main import Run_Main_from_Leaf
-from pathogen_identification.models import (
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReferenceSource,
-    ReferenceSourceFile,
-    ReferenceSourceFileMap,
-    ReferenceTaxid,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference, ReferenceSource,
+                                            ReferenceSourceFile,
+                                            ReferenceSourceFileMap,
+                                            ReferenceTaxid, RunMain,
+                                            SoftwareTree, SoftwareTreeNode)
 from pathogen_identification.modules.metadata_handler import RunMetadataHandler
 from pathogen_identification.modules.object_classes import (
-    Operation_Temp_Files,
-    Read_class,
-    RunCMD,
-    Temp_File,
-)
+    Operation_Temp_Files, Read_class, RunCMD, Temp_File)
 from pathogen_identification.utilities.overlap_manager import (
-    MappingResultsParser,
-    ReadOverlapManager,
-    clade_private_proportions,
-    pairwise_shared_count,
-    pairwise_shared_reads,
-    pairwise_shared_reads_distance,
-    square_and_fill_diagonal,
-    very_similar_groups_from_dataframe,
-)
+    MappingResultsParser, ReadOverlapManager, clade_private_proportions,
+    pairwise_shared_count, pairwise_shared_reads,
+    pairwise_shared_reads_distance, square_and_fill_diagonal,
+    very_similar_groups_from_dataframe)
 from pathogen_identification.utilities.reference_utils import extract_file
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.tree_deployment import Tree_Progress
 from pathogen_identification.utilities.utilities_general import merge_classes
 from pathogen_identification.utilities.utilities_pipeline import (
-    Pipeline_Makeup,
-    PipelineTree,
-    SoftwareTreeUtils,
-    Utils_Manager,
-)
+    Pipeline_Makeup, PipelineTree, SoftwareTreeUtils, Utils_Manager)
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter,
-    SampleReferenceManager,
-)
+    ReportSorter, SampleReferenceManager)
 from settings.constants_settings import ConstantsSettings as CS
 from settings.default_software import DefaultSoftware
 from settings.models import Parameter, Sample, Software
@@ -75,6 +55,19 @@ class AttrDict(dict):
     def __init__(self, *args, **kwargs):
         super(AttrDict, self).__init__(*args, **kwargs)
         self.__dict__ = self
+
+
+def test_user():
+    try:
+        user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+    except User.DoesNotExist:
+        user = User()
+        user.username = ConstantsTestsCase.TEST_USER_NAME
+        user.is_active = False
+        user.password = ConstantsTestsCase.TEST_USER_NAME
+        user.save()
+
+    return user
 
 
 def televir_test_project_ont(user: User, project_ont_name: str = "project_televir"):
@@ -126,19 +119,6 @@ def televir_test_sample(project, sample: Sample):
         project_sample.save()
 
     return project_sample
-
-
-def test_user():
-    try:
-        user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
-    except User.DoesNotExist:
-        user = User()
-        user.username = ConstantsTestsCase.TEST_USER_NAME
-        user.is_active = False
-        user.password = ConstantsTestsCase.TEST_USER_NAME
-        user.save()
-
-    return user
 
 
 def test_fastq_ont_file(
@@ -448,17 +428,6 @@ def user_project_turn_off_pipeline_steps(user, project, pipeline_steps):
         software.save()
 
 
-def check_project_params_exist(project):
-    """
-    check if project parameters exist
-    """
-
-    query_set = Parameter.objects.filter(televir_project=project.pk)
-    if query_set.count() == 0:
-        return False
-    return True
-
-
 def create_project_params(user, televir_project):
     if not check_project_params_exist(televir_project):
         duplicate_software_params_global_project(user, televir_project)
@@ -584,6 +553,11 @@ def generate_compressed_tree(user, project, sample, makeup):
     module_tree = utils_manager.module_tree(pipeline_tree, list(matched_paths.values()))
 
     return module_tree
+
+
+#########################################################################
+#########################################################################
+###### Tests Begin Here
 
 
 class OverlapManagerTests(TestCase):
@@ -1136,6 +1110,7 @@ class MetadataManagementTests(TestCase):
 
         return run_engine
 
+    @tag("slow")
     def test_mapping_to_reference(self):
         """
         Run for mappings against reference for both illumina and ont reads
@@ -1170,6 +1145,23 @@ class MetadataManagementTests(TestCase):
         self.assertTrue(deployed_and_updated)
 
         reset_project_makeup(self.project_illu)
+
+        mapping_run = RunMain.objects.get(pk=run_engine.run_pk)
+        raw_references = mapping_run.references_sorted
+
+        print("###############################RF")
+        print(raw_references)
+
+        final_report = FinalReport.objects.filter(
+            sample=self.project_sample_illu, run=mapping_run
+        ).order_by("-coverage")
+
+        print("###############################FR")
+        print(final_report)
+        report_layout_params = TelevirParameters.get_report_layout_params(
+            run_pk=run_engine.run_pk
+        )
+        report_sorter = ReportSorter(final_report, report_layout_params)
 
 
 class Televir_Software_Test(TestCase):

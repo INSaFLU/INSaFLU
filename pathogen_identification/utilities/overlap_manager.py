@@ -634,8 +634,7 @@ class ReadOverlapManager(MappingResultsParser):
         if distance_matrix.shape[0] <= 1:
             tree = constructor.nj(distmat)
         else:
-            #tree = constructor.upgma(distmat)
-            tree = constructor.nj(distmat)
+            tree = constructor.upgma(distmat)
 
         tree.rooted = False
         tree.ladderize()
@@ -647,9 +646,7 @@ class ReadOverlapManager(MappingResultsParser):
         """ """
 
         accid_df = pd.read_csv(self.accid_statistics_path, sep="\t")
-        # duplicate_groups = self.duplicate_groups_from_dataframe(
-        #    self.read_profile_matrix
-        # )
+
         similar_groups = very_similar_groups_from_dataframe(
             self.read_profile_matrix_filtered
         )

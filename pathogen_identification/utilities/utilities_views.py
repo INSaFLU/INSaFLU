@@ -12,34 +12,22 @@ from django.utils.safestring import mark_safe
 from django.views import generic
 
 from fluwebvirus.settings import STATIC_ROOT
-from pathogen_identification.constants_settings import (
-    ConstantsSettings as PIConstantsSettings,
-)
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReferenceMap_Main,
-    ReferencePanel,
-    ReferenceSourceFileMap,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PIConstantsSettings
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference, ReferenceMap_Main,
+                                            ReferencePanel,
+                                            ReferenceSourceFileMap,
+                                            RunAssembly, RunDetail, RunMain,
+                                            SoftwareTree, SoftwareTreeNode)
 from pathogen_identification.utilities.clade_objects import Clade
-from pathogen_identification.utilities.overlap_manager import ReadOverlapManager
+from pathogen_identification.utilities.overlap_manager import \
+    ReadOverlapManager
 from pathogen_identification.utilities.televir_parameters import (
-    LayoutParams,
-    TelevirParameters,
-)
+    LayoutParams, TelevirParameters)
 from pathogen_identification.utilities.utilities_general import (
-    infer_run_media_dir,
-    simplify_name,
-)
+    infer_run_media_dir, simplify_name)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
 
@@ -418,7 +406,6 @@ class FinalReportGroup:
         self.max_private_reads = 0
         self.max_coverage = 0
         self.private_counts_exist = private_counts_exist
-        self.update_max_coverage()
         self.js_heatmap_ready = False
         self.js_heatmap_data = None
         self.analysis_empty = analysis_empty
@@ -429,6 +416,9 @@ class FinalReportGroup:
             > PIConstantsSettings.SORT_GROUP_DISPLAY_DEFAULT_THRESHOLD_SHARED
             else "on"
         )
+
+        self.update_max_coverage()
+
 
     def reports_have_private_reads(self) -> bool:
         for report in self.group_list:

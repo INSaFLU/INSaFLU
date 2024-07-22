@@ -5,6 +5,7 @@ import shutil
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
+
 # Create your tests here.
 import pandas as pd
 from django.conf import settings
@@ -17,33 +18,54 @@ from constants.constants import TypePath
 from constants.constantsTestsCase import ConstantsTestsCase
 from constants.software_names import SoftwareNames
 from fluwebvirus.settings import STATIC_ROOT
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PI_CS
+from pathogen_identification.constants_settings import ConstantsSettings as PI_CS
 from pathogen_identification.deployment_main import Run_Main_from_Leaf
-from pathogen_identification.models import (FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RawReference, ReferenceSource,
-                                            ReferenceSourceFile,
-                                            ReferenceSourceFileMap,
-                                            ReferenceTaxid, RunMain,
-                                            SoftwareTree, SoftwareTreeNode)
+from pathogen_identification.models import (
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReferenceSource,
+    ReferenceSourceFile,
+    ReferenceSourceFileMap,
+    ReferenceTaxid,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
 from pathogen_identification.modules.metadata_handler import RunMetadataHandler
 from pathogen_identification.modules.object_classes import (
-    Operation_Temp_Files, Read_class, RunCMD, Temp_File)
+    Operation_Temp_Files,
+    Read_class,
+    RunCMD,
+    Temp_File,
+)
 from pathogen_identification.utilities.overlap_manager import (
-    MappingResultsParser, ReadOverlapManager, clade_private_proportions,
-    pairwise_shared_count, pairwise_shared_reads,
-    pairwise_shared_reads_distance, square_and_fill_diagonal,
-    very_similar_groups_from_dataframe)
+    MappingResultsParser,
+    ReadOverlapManager,
+    clade_private_proportions,
+    pairwise_shared_count,
+    pairwise_shared_reads,
+    pairwise_shared_reads_distance,
+    square_and_fill_diagonal,
+    very_similar_groups_from_dataframe,
+)
 from pathogen_identification.utilities.reference_utils import extract_file
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.tree_deployment import Tree_Progress
 from pathogen_identification.utilities.utilities_general import merge_classes
 from pathogen_identification.utilities.utilities_pipeline import (
-    Pipeline_Makeup, PipelineTree, SoftwareTreeUtils, Utils_Manager)
+    Pipeline_Makeup,
+    PipelineTree,
+    SoftwareTreeUtils,
+    Utils_Manager,
+)
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter, SampleReferenceManager)
+    FinalReportCompound,
+    ReportSorter,
+    SampleReferenceManager,
+)
 from settings.constants_settings import ConstantsSettings as CS
 from settings.default_software import DefaultSoftware
 from settings.models import Parameter, Sample, Software
@@ -713,6 +735,7 @@ class OverlapManagerTests(TestCase):
 
         self.assertTrue(tree is not None)
         self.assertFalse(tree.rooted)
+
         self.assertTrue(len(tree.root.clades) == 2)
         self.assertTrue(len(overlap_manager.all_clade_leaves_filtered) == 5)
         self.assertTrue(len(overlap_manager.get_leaf_clades()) == 3)
@@ -1147,21 +1170,41 @@ class MetadataManagementTests(TestCase):
         reset_project_makeup(self.project_illu)
 
         mapping_run = RunMain.objects.get(pk=run_engine.run_pk)
-        raw_references = mapping_run.references_sorted
-
-        print("###############################RF")
-        print(raw_references)
 
         final_report = FinalReport.objects.filter(
             sample=self.project_sample_illu, run=mapping_run
         ).order_by("-coverage")
 
-        print("###############################FR")
-        print(final_report)
         report_layout_params = TelevirParameters.get_report_layout_params(
             run_pk=run_engine.run_pk
         )
         report_sorter = ReportSorter(final_report, report_layout_params)
+
+        sorted_reports = report_sorter.get_reports()
+
+        excluded_reports_exist = report_sorter.check_excluded_exist()
+        empty_reports = report_sorter.get_reports_empty()
+
+        first_report_group = sorted_reports[0]
+        self.assertEquals(first_report_group.max_coverage, 100)
+        self.assertEquals(first_report_group.total_counts, "total counts 0")
+        self.assertEquals(first_report_group.shared_proportion, 0)
+        self.assertEquals(first_report_group.max_private_reads, 0)
+        self.assertFalse(first_report_group.has_multiple)
+        self.assertEquals(first_report_group.toggle, "on")
+
+        self.assertFalse(excluded_reports_exist)
+
+        sorted_reports = report_sorter.get_reports_compound()
+
+        first_report_group = sorted_reports[0]
+
+        first_compound: FinalReportCompound = first_report_group.group_list[0]
+        self.assertEquals(first_compound.found_in, "M")
+        self.assertTrue(first_compound.run_main == mapping_run)
+        self.assertTrue(first_compound.data_exists)
+        self.assertEquals(first_compound.control_flag, FinalReport.CONTROL_FLAG_NONE)
+        self.assertEquals(first_compound.private_reads, 0)
 
 
 class Televir_Software_Test(TestCase):

@@ -431,6 +431,19 @@
             </div>
         </div>
         {% endif %}
+        {% if no_mapping %}
+        <div id="collapseReport" class="collapse show" role="tabpanel" aria-labelledby="headingReport">
+            <div class="card-block">
+                <div style="padding: 20px">
+                    <div class="row">
+                        <div class="col-sm" style="padding: 20px; background-color: #e9ecef; border-radius: 5px; text-align: center;">
+                            <p> No mapping requested for this run (check settings). Request mapping utilities in Sample Reference Management or below. </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
         <div id="collapseReport" class="collapse show" role="tabpanel" aria-labelledby="headingReport">
             <div class="card-block">
                 <div style="padding: 2px; overflow-x:auto;">    
@@ -771,6 +784,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
     </div>
     <div class="card">
         <div class="card-header" role="tab" id="headingMapExtra" url-remap="{% url 'deploy_televir_map' %}" csrf-token= '{{csrf_token}}'>

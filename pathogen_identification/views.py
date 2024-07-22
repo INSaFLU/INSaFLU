@@ -2388,6 +2388,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "overlap_pca_exists": report_sorter.overlap_pca_exists,
             "overlap_pca_path": report_sorter.overlap_pca_path,
             "private_reads_available": private_reads_available,
+            "no_mapping": run_main_pipeline.remap == "None",
         }
 
         ### downloadable files

@@ -12,7 +12,6 @@ import pandas as pd
 from django.db.models import QuerySet
 
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
-from constants.constants import TypePath
 from fluwebvirus.settings import STATIC_ROOT
 from pathogen_identification.constants_settings import ConstantsSettings as PIConstants
 from pathogen_identification.deployment_main import PathogenIdentificationDeploymentCore
@@ -35,7 +34,6 @@ from pathogen_identification.utilities.update_DBs_tree import (
     Update_Remap,
     Update_RunMain_Initial,
     Update_RunMain_Secondary,
-    get_run_parents,
 )
 from pathogen_identification.utilities.utilities_pipeline import (
     Pipeline_Makeup,
@@ -54,7 +52,7 @@ def logger_copy(x, memo):
 copy._deepcopy_dispatch[logging.Logger] = logger_copy
 
 
-class PathogenIdentification_Deployment_Manager(PathogenIdentificationDeploymentCore):
+class PathogenIdentification_TreeDeployment(PathogenIdentificationDeploymentCore):
     project: Projects
     sample: PIProject_Sample
     prefix: str
@@ -79,10 +77,7 @@ class PathogenIdentification_Deployment_Manager(PathogenIdentificationDeployment
 
     def __init__(
         self,
-        sample: PIProject_Sample,  # sample name
-        # project: Projects,
-        # username: str = "admin",
-        # technology: str = "ONT",
+        sample: PIProject_Sample,
         deployment_root_dir: str = "/tmp/insaflu/insaflu_something",
         dir_branch: str = "deployment",
         prefix: str = "run",
@@ -91,191 +86,11 @@ class PathogenIdentification_Deployment_Manager(PathogenIdentificationDeployment
 
         super().__init__(sample, deployment_root_dir, dir_branch, prefix, threads)
 
-        # self.username = username
-        # self.project = project
-        # self.project_pk = project.pk
-        # self.sample = sample
-        # self.prefix = prefix
-        # self.deployment_root_dir = deployment_root_dir
-        # self.dir_branch = dir_branch
-        # self.dir = os.path.join(self.deployment_root_dir, dir_branch)
-        # self.technology = technology
-        # self.install_registry = Televir_Metadata()
-
-        # self.threads = threads
-        # self.prepped = False
-
         self.sent = False
         self.pk: int
 
-        # self.file_r1 = sample.sample.get_fastq_available(TypePath.MEDIA_ROOT, True)
-        # if sample.sample.exist_file_2():
-        #    self.file_r2 = sample.sample.get_fastq_available(TypePath.MEDIA_ROOT, False)
-        # else:
-        #    self.file_r2 = ""
-
         self.assembly_udated = False
         self.classification_updated = False
-
-
-#    def input_read_project_path(self, filepath) -> str:
-#        """copy input reads to project directory and return new path"""
-#
-#        if not os.path.isfile(filepath):
-#            return ""
-#
-#        rname = os.path.basename(filepath)
-#        new_rpath = os.path.join(self.dir, "reads") + "/" + rname
-#        shutil.copy(filepath, new_rpath)
-#        return new_rpath
-#
-#    def delete_run_media(self):
-#        """delete project media directory"""
-#
-#        if self.prepped:
-#            if os.path.isdir(self.run_engine.media_dir):
-#                shutil.rmtree(self.run_engine.media_dir, ignore_errors=True)
-#
-#    def delete_run_static(self):
-#        """delete project static directory"""
-#
-#        if self.prepped:
-#            if os.path.isdir(self.run_engine.static_dir):
-#                shutil.rmtree(self.run_engine.static_dir, ignore_errors=True)
-#
-#    def get_constants(self):
-#        """set constants for technology"""
-#        if self.technology == ConstantsSettings.TECHNOLOGY_illumina:
-#            self.constants = PIConstants.CONSTANTS_ILLUMINA
-#        if self.technology == ConstantsSettings.TECHNOLOGY_minion:
-#            self.constants = PIConstants.CONSTANTS_ONT
-#
-#    def generate_config_file(self):
-#        self.config = {
-#            "project": self.project.name,
-#            "source": self.install_registry.SOURCE,
-#            "technology": self.technology,
-#            "deployment_root_dir": self.deployment_root_dir,
-#            "sub_directory": self.dir_branch,
-#            "directories": {},
-#            "threads": self.threads,
-#            "prefix": self.prefix,
-#            "project_name": self.project.name,
-#            "metadata": self.install_registry.metadata_full_path,
-#            "bin": self.install_registry.BINARIES,
-#            "actions": {},
-#        }
-#
-#        for dr, g in PIConstants.DIRS.items():
-#            self.config["directories"][dr] = os.path.join(self.dir, g)
-#
-#        for dr, g in PIConstants.ACTIONS.items():
-#            self.config["actions"][dr] = g
-#
-#        self.config.update(self.constants)
-#
-#    def prep_test_env(self):
-#        """
-#        from main directory bearing scripts, params.py and main.sh, create metagenome run directory
-#
-#        :return:
-#        """
-#        os.makedirs(self.dir, exist_ok=True)
-#        os.makedirs(
-#            os.path.join(PIConstants.media_directory, self.dir_branch),
-#            exist_ok=True,
-#        )
-#        os.makedirs(
-#            os.path.join(PIConstants.static_directory, self.dir_branch),
-#            exist_ok=True,
-#        )
-#
-#        for directory in self.config["directories"].values():
-#            os.makedirs(directory, exist_ok=True)
-#
-
-#
-#    def run_main_prep_check_first(self):
-#        """
-#        check if run_main has been prepped and not root, if so, prep it
-#        by equiping it with the run_engine"""
-#        if self.prepped or self.run_params_db.empty:
-#            return
-#
-#        self.run_engine = RunMainTree_class(
-#            self.config, self.run_params_db, self.project_pk
-#        )
-#        self.run_engine.Prep_deploy()
-#        self.run_engine.generate_output_data_classes()
-#        self.prepped = True
-#
-#    def update_config_prefix(self):
-#        self.config["prefix"] = self.prefix
-#
-#    def close(self):
-#        if os.path.exists(self.dir):
-#            shutil.rmtree(self.dir)
-#
-#
-#    def import_params(self, run_params_db: pd.DataFrame):
-#
-#        self.run_params_db = run_params_db
-#
-#    def run_main(self):
-#        self.run_engine.Run_QC()
-#        self.run_engine.Run_PreProcess()
-#        self.run_engine.Sanitize_reads()
-#        self.run_engine.Run_Assembly()
-#        self.run_engine.Run_Contig_classification()
-#        self.run_engine.Run_Read_classification()
-#        self.run_engine.Run_Remapping()
-#
-#    def update_engine(self):
-#
-#        if "module" in self.run_params_db.columns:
-#            self.run_engine.Update(self.config, self.run_params_db)
-#            self.run_engine.Prep_deploy(remap_prep=False)
-#
-#    def update_merged_targets(self, merged_targets: List[Remap_Target]):
-#        self.run_engine.update_merged_targets(merged_targets)
-#
-#    def delete_run_record(self, parameter_set: ParameterSet):
-#        """delete project record in database"""
-#
-#        if self.prepped:
-#            _, runmain, _ = get_run_parents(self.run_engine, parameter_set)
-#
-#            if runmain is not None:
-#                runmain.delete()
-
-#    def delete_run(self, parameter_set: ParameterSet):
-#        """delete project record in database"""
-#
-#        # self.delete_run_media()
-#        # self.delete_run_static()
-#        self.delete_run_record(parameter_set)
-
-
-#    def configure_constants(self) -> bool:
-#        """generate config dictionary for run_main, and copy input reads to project directory."""
-#        self.get_constants()
-#
-#        self.generate_config_file()
-#        self.prep_test_env()
-#
-#        new_r1_path = self.input_read_project_path(self.file_r1)
-#        new_r2_path = self.input_read_project_path(self.file_r2)
-#
-#        self.config["sample_name"] = self.sample.name
-#        self.config["sample_registered"] = self.sample
-#
-#        self.config["r1"] = new_r1_path
-#        self.config["r2"] = new_r2_path
-#        self.config["type"] = [PIConstants.SINGLE_END, PIConstants.PAIR_END][
-#            int(os.path.isfile(self.config["r2"]))
-#        ]
-#
-#        return True
 
 
 class Tree_Node:
@@ -285,7 +100,7 @@ class Tree_Node:
     children: list
     parameters: pd.DataFrame
     software_tree_pk: int
-    run_manager: PathogenIdentification_Deployment_Manager
+    run_manager: PathogenIdentification_TreeDeployment
     tree_node: SoftwareTreeNode
     parameter_set: ParameterSet
 
@@ -326,9 +141,7 @@ class Tree_Node:
         report_sorter = ReportSorter(final_report, report_layout_params)
         report_sorter.sort_reports_save()
 
-    def receive_run_manager(
-        self, run_manager: PathogenIdentification_Deployment_Manager
-    ):
+    def receive_run_manager(self, run_manager: PathogenIdentification_TreeDeployment):
         run_manager.prefix = f"run_leaf_{self.node_index}"
         run_manager.configure_constants()
         run_manager.import_params(self.parameters)
@@ -650,7 +463,7 @@ class Tree_Progress:
             prefix,
         )
 
-        deployment_manager = PathogenIdentification_Deployment_Manager(
+        deployment_manager = PathogenIdentification_TreeDeployment(
             self.sample,
             # self.project,
             # self.project.owner.username,

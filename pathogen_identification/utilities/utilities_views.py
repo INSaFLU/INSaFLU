@@ -6,6 +6,7 @@ from typing import Dict, List, Optional, Union
 import pandas as pd
 from braces.views import FormValidMessageMixin, LoginRequiredMixin
 from django.db import transaction
+from django.db.models import Q
 from django.db.models.query import QuerySet
 from django.urls import reverse
 from django.utils.safestring import mark_safe
@@ -13,24 +14,37 @@ from django.views import generic
 
 from constants.constants import Constants
 from fluwebvirus.settings import STATIC_ROOT
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PIConstantsSettings
-from pathogen_identification.models import (ContigClassification, FinalReport,
-                                            ParameterSet, PIProject_Sample,
-                                            Projects, RawReference,
-                                            RawReferenceCompoundModel,
-                                            ReadClassification,
-                                            ReferenceMap_Main, ReferencePanel,
-                                            ReferenceSourceFileMap,
-                                            RunAssembly, RunDetail, RunMain,
-                                            SoftwareTree, SoftwareTreeNode)
+from pathogen_identification.constants_settings import (
+    ConstantsSettings as PIConstantsSettings,
+)
+from pathogen_identification.models import (
+    ContigClassification,
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    RawReferenceCompoundModel,
+    ReadClassification,
+    ReferenceMap_Main,
+    ReferencePanel,
+    ReferenceSourceFileMap,
+    RunAssembly,
+    RunDetail,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
 from pathogen_identification.utilities.clade_objects import Clade
-from pathogen_identification.utilities.overlap_manager import \
-    ReadOverlapManager
+from pathogen_identification.utilities.overlap_manager import ReadOverlapManager
 from pathogen_identification.utilities.televir_parameters import (
-    LayoutParams, TelevirParameters)
+    LayoutParams,
+    TelevirParameters,
+)
 from pathogen_identification.utilities.utilities_general import (
-    infer_run_media_dir, simplify_name)
+    infer_run_media_dir,
+    simplify_name,
+)
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
@@ -310,7 +324,7 @@ class RunMainWrapper:
 
     def progress_display(self) -> str:
 
-        if self.user.username == Constants.USER_ANONYMOUS: 
+        if self.user.username == Constants.USER_ANONYMOUS:
             return mark_safe("report")
 
         run_log = self.run_progess_tracker()
@@ -2113,6 +2127,7 @@ class RawReferenceUtils:
         references_select = self.filter_reference_query_set(references, query_string)
 
         exclude_refs = []
+
         for ref in references_select:
             if RawReference.objects.filter(pk=ref.selected_mapped_pk).exists() is False:
                 exclude_refs.append(ref.pk)

@@ -129,10 +129,6 @@ def remove_pre_static(path: str) -> str:
     return path
 
 
-class UploadPanelReferencesView:
-    pass
-
-
 def process_query_string(query_string: Optional[str]):
     if query_string is None:
         return ""
@@ -140,6 +136,114 @@ def process_query_string(query_string: Optional[str]):
     query_string = query_string.strip()
 
     return query_string
+
+
+def clean_check_box_in_session(request):
+    """
+    check all check boxes on samples/references to add samples
+    """
+    utils = Utils()
+    ## clean all check unique
+    if Constants.CHECK_BOX_ALL in request.session:
+        del request.session[Constants.CHECK_BOX_ALL]
+    vect_keys_to_remove = []
+    for key in request.session.keys():
+        if (
+            key.startswith(Constants.CHECK_BOX)
+            and len(key.split("_")) == 3
+            and utils.is_integer(key.split("_")[2])
+        ):
+            vect_keys_to_remove.append(key)
+    for key in vect_keys_to_remove:
+        del request.session[key]
+
+
+def is_all_check_box_in_session(
+    vect_check_to_test, request, prefix: str = Constants.CHECK_BOX
+):
+    """
+    test if all check boxes are in session
+    If not remove the ones that are in and create the new ones all False
+    """
+    utils = Utils()
+    dt_data = {}
+
+    ## get the dictonary
+    for key in request.session.keys():
+        if (
+            key.startswith(prefix)
+            and len(key.split("_")) == 3
+            and utils.is_integer(key.split("_")[2])
+        ):
+            dt_data[key] = True
+
+    b_different = False
+    if len(vect_check_to_test) != len(dt_data):
+        b_different = True
+
+    ## test the vector
+    if not b_different:
+        for key in vect_check_to_test:
+            if key not in dt_data:
+                b_different = True
+                break
+
+    if b_different:
+        ## remove all
+        for key in dt_data:
+            del request.session[key]
+
+        ## create new
+        for key in vect_check_to_test:
+            request.session[key] = False
+        return False
+    return True
+
+
+##############################################################
+##############################################################
+
+
+# Create your views here.
+class IGVform(forms.Form):
+    sample_pk = forms.CharField(max_length=100)
+    run_pk = forms.CharField(max_length=100)
+    reference = forms.CharField(max_length=100)
+    unique_id = forms.CharField(max_length=100)
+    project_pk = forms.CharField(max_length=100)
+
+
+class download_form(forms.Form):
+    file_path = forms.CharField(max_length=300)
+
+    class Meta:
+        widgets = {
+            "myfield": forms.TextInput(
+                attrs={"style": "border-color:darkgoldenrod; border-radius: 10px;"}
+            ),
+        }
+
+
+class download_ref_form(forms.Form):
+    file = forms.CharField(max_length=300)
+    taxid = forms.CharField(max_length=50)
+    run = forms.IntegerField()
+    accid = forms.CharField(max_length=50)
+
+    class Meta:
+        widgets = {
+            "myfield": forms.TextInput(
+                attrs={"style": "border-color:darkgoldenrod; border-radius: 10px;"}
+            ),
+        }
+
+
+################################################################
+################################################################
+
+
+class UploadPanelReferencesView:
+    pass
 
 
 class UploadNewReferencesView(
@@ -290,105 +394,6 @@ class UploadNewReferencesView(
             return super(UploadNewReferencesView, self).form_invalid(form)
 
     form_valid_message = ""  ## need to have this
-
-
-def clean_check_box_in_session(request):
-    """
-    check all check boxes on samples/references to add samples
-    """
-    utils = Utils()
-    ## clean all check unique
-    if Constants.CHECK_BOX_ALL in request.session:
-        del request.session[Constants.CHECK_BOX_ALL]
-    vect_keys_to_remove = []
-    for key in request.session.keys():
-        if (
-            key.startswith(Constants.CHECK_BOX)
-            and len(key.split("_")) == 3
-            and utils.is_integer(key.split("_")[2])
-        ):
-            vect_keys_to_remove.append(key)
-    for key in vect_keys_to_remove:
-        del request.session[key]
-
-
-def is_all_check_box_in_session(
-    vect_check_to_test, request, prefix: str = Constants.CHECK_BOX
-):
-    """
-    test if all check boxes are in session
-    If not remove the ones that are in and create the new ones all False
-    """
-    utils = Utils()
-    dt_data = {}
-
-    ## get the dictonary
-    for key in request.session.keys():
-        if (
-            key.startswith(prefix)
-            and len(key.split("_")) == 3
-            and utils.is_integer(key.split("_")[2])
-        ):
-            dt_data[key] = True
-
-    b_different = False
-    if len(vect_check_to_test) != len(dt_data):
-        b_different = True
-
-    ## test the vector
-    if not b_different:
-        for key in vect_check_to_test:
-            if key not in dt_data:
-                b_different = True
-                break
-
-    if b_different:
-        ## remove all
-        for key in dt_data:
-            del request.session[key]
-
-        ## create new
-        for key in vect_check_to_test:
-            request.session[key] = False
-        return False
-    return True
-
-
-# Create your views here.
-class IGVform(forms.Form):
-    sample_pk = forms.CharField(max_length=100)
-    run_pk = forms.CharField(max_length=100)
-    reference = forms.CharField(max_length=100)
-    unique_id = forms.CharField(max_length=100)
-    project_pk = forms.CharField(max_length=100)
-
-
-class download_form(forms.Form):
-    file_path = forms.CharField(max_length=300)
-
-    class Meta:
-        widgets = {
-            "myfield": forms.TextInput(
-                attrs={"style": "border-color:darkgoldenrod; border-radius: 10px;"}
-            ),
-        }
-
-
-class download_ref_form(forms.Form):
-    file = forms.CharField(max_length=300)
-    taxid = forms.CharField(max_length=50)
-    run = forms.IntegerField()
-    accid = forms.CharField(max_length=50)
-
-    class Meta:
-        widgets = {
-            "myfield": forms.TextInput(
-                attrs={"style": "border-color:darkgoldenrod; border-radius: 10px;"}
-            ),
-        }
-
-
-################################################################
 
 
 class Services(LoginRequiredMixin, generic.CreateView):
@@ -1366,6 +1371,8 @@ def inject_references_filter(request, max_references: int = 30):
 
     references = []
 
+    print(table_type)
+
     if request.GET.get(tag_add_reference) is not None:
         if table_type == "teleflu_reference":
             request_tag = request.GET.get(tag_add_reference)
@@ -2075,9 +2082,9 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
         )
         metagenomics_parameters = (
             "<a href="
-            + reverse("pathogenID_sample_settings", kwargs={"sample": sample_pk})
-            + ' data-toggle="tooltip" data-toggle="modal" title="Manage combine settings" style="color: #fff;">'
-            + f'<i class="padding-button-table fa fa-pencil-square padding-button-table" {color}></i> Parameters </a>'
+            + reverse("pathogenID_pipeline", kwargs={"level": sample_main.project.pk})
+            + ' data-toggle="tooltip" data-toggle="modal" title="Project settings" style="color: #fff;">'
+            + f'<i class="padding-button-table fa fa-cog padding-button-table" {color}></i> Settings </a>'
         )
 
         context["runs"] = classification_runs

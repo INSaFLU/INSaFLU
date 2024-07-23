@@ -746,14 +746,20 @@ class RunMain(models.Model):
         except Exception as e:
             print(e)
 
-    @property
-    def references_sorted(self) -> QuerySet:
-        raw_references_mapped = (
-            RawReference.objects.filter(run=self, status=RawReference.STATUS_MAPPED)
-            .exclude(accid="-")
-            .order_by("taxid", "status")
-            .distinct("taxid")
-        )
+    def references_sorted(self, mapping_only=False) -> QuerySet:
+
+        raw_references_mapped = RawReference.objects.filter(
+            run=self, status=RawReference.STATUS_MAPPED
+        ).exclude(accid="-")
+
+        if mapping_only is False:
+            raw_references_mapped = raw_references_mapped.exclude(
+                classification_source=None
+            )
+
+        raw_references_mapped = raw_references_mapped.order_by(
+            "taxid", "status"
+        ).distinct("taxid")
 
         raw_references_mapped = sorted(
             raw_references_mapped,
@@ -761,13 +767,25 @@ class RunMain(models.Model):
             reverse=True,
         )
 
+        ##########################
+        ##########################
+
         raw_references_unmapped = (
             RawReference.objects.filter(run=self)
             .exclude(status=RawReference.STATUS_MAPPED)
             .exclude(accid="-")
-            .order_by("taxid", "status")
-            .distinct("taxid")
         )
+
+        if mapping_only is False:
+            raw_references_unmapped = (
+                raw_references_unmapped
+                .exclude(classification_source=None)
+                )
+
+        raw_references_unmapped = raw_references_unmapped.order_by(
+            "taxid", "status"
+        ).distinct("taxid")
+
         raw_references_unmapped = sorted(
             raw_references_unmapped,
             key=lambda x: float(x.read_counts if x.read_counts else 0),
@@ -1786,24 +1804,24 @@ class FinalReport(models.Model):
 
         return None
 
-
     @property
     def infer_control_flag_str(self) -> str:
 
         return FinalReport.control_flag_options[self.control_flag]
-    
+
     @property
     def control_flag_str(self) -> str:
         """
         function to divide mapped proportion by that of controls"""
 
-        control_flag_str= self.infer_control_flag_str
+        control_flag_str = self.infer_control_flag_str
         relative_proportion = self.control_relative_mapped
 
         if relative_proportion is not None:
             return f"{control_flag_str} \n (x{relative_proportion:.2f})"
 
         return control_flag_str
+
 
 class RawReferenceCompoundModel(models.Model):
 

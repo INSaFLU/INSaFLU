@@ -1183,7 +1183,7 @@ class MetadataManagementTests(TestCase):
         sorted_reports = report_sorter.get_reports()
 
         excluded_reports_exist = report_sorter.check_excluded_exist()
-        empty_reports = report_sorter.get_reports_empty()
+        # empty_reports = report_sorter.get_reports_empty()
 
         first_report_group = sorted_reports[0]
         self.assertEquals(first_report_group.max_coverage, 100)

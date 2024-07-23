@@ -608,7 +608,7 @@ def deploy_ProjectPI(request):
                 runs_to_deploy = software_utils.check_runs_to_deploy_sample(sample)
 
                 if len(runs_to_deploy) > 0:
-                    for sample, leafs_to_deploy in runs_to_deploy.items():
+                    for sample, _ in runs_to_deploy.items():
                         taskID = process_SGE.set_submit_televir_sample(
                             user=user,
                             project_pk=project.pk,

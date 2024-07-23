@@ -1194,11 +1194,28 @@ def Update_Targets(run_class: RunEngine_class, runmain):
             raw_reference.save()
 
         except RawReference.DoesNotExist:
+            counts = None
+            source = None
+
+            if run_class.raw_targets is not None:
+                if (
+                    run_class.raw_targets.shape[0] > 0
+                    and target.accid in run_class.raw_targets.accid.values
+                ):
+                    counts = run_class.raw_targets.loc[
+                        run_class.raw_targets.accid == target.accid, "counts"
+                    ].values[0]
+                    source = run_class.raw_targets.loc[
+                        run_class.raw_targets.accid == target.accid, "source"
+                    ].values[0]
+
             raw_reference = RawReference(
                 run=runmain,
                 taxid=target.taxid,
                 accid=target.accid,
                 status=RawReference.STATUS_MAPPED,
+                counts=counts,
+                classification_source=source,
                 description=summarize_description(target.description, 200),
             )
 

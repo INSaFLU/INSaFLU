@@ -272,8 +272,7 @@ class DefaultParameters(object):
         """
         # logger = logging.getLogger("fluWebVirus.debug")
         # logger.debug("Get parameters: software-{} user-{} typeofuse-{} project-{} psample-{} sample-{} tec-{} dataset-{}",software_name, user, type_of_use, project, project_sample, sample, technology_name, dataset)
-        
-        
+
         if self.check_software_is_polyvalent(software_name):
             if pipeline_step is None:
                 prefered_pipeline = self.get_polyvalent_software_pipeline(software_name)
@@ -321,7 +320,6 @@ class DefaultParameters(object):
             DefaultParameters.MASK_DONT_care,
         ]:
             return DefaultParameters.MASK_not_applicable
-
 
         ### parse them
         dict_out = {}
@@ -953,11 +951,36 @@ class DefaultParameters(object):
             )
 
         elif software.name == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name:
-            return self.get_minimap2_remap_ONT_default(
-                software.owner,
-                Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_minion,
-            )
+
+            if (
+                software.name_extended
+                == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name_extended_screening
+            ):
+                return self.get_minimap2_remap_ONT_default(
+                    software.owner,
+                    Software.TYPE_OF_USE_televir_global,
+                    ConstantsSettings.TECHNOLOGY_minion,
+                    pipeline_step=ConstantsSettings.PIPELINE_NAME_metagenomics_screening,
+                    job = "screening",
+                )
+            elif (
+                software.name_extended
+                == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name_extended_request_mapping
+            ):
+                return self.get_minimap2_remap_ONT_default(
+                    software.owner,
+                    Software.TYPE_OF_USE_televir_global,
+                    ConstantsSettings.TECHNOLOGY_minion,
+                    pipeline_step=ConstantsSettings.PIPELINE_NAME_request_mapping,
+                    job= "request_mapping",
+                )
+            else:
+                return self.get_minimap2_remap_ONT_default(
+                    software.owner,
+                    Software.TYPE_OF_USE_televir_global,
+                    ConstantsSettings.TECHNOLOGY_minion,
+                )
+
         elif software.name == SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ONT_name:
             return self.get_minimap2_depletion_ONT_default(
                 software.owner,

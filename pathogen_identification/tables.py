@@ -40,10 +40,10 @@ from pathogen_identification.utilities.utilities_general import (
 )
 from pathogen_identification.utilities.utilities_views import (
     RawReferenceCompound,
-    ReportSorter,
+    RunMainWrapper,
 )
+from settings.constants_settings import ConstantsSettings as SettingsCS
 from settings.models import Parameter, Software
-from utils.process_SGE import ProcessSGE
 
 
 class ProjectTable(tables.Table):
@@ -181,7 +181,6 @@ class ProjectTable(tables.Table):
         return mark_safe(results)
 
     def render_name(self, record):
-        from crequest.middleware import CrequestMiddleware
 
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
@@ -1446,6 +1445,7 @@ class RawReferenceTable(RawReferenceTable_Basic):
         )
 
     def render_classification_source(self, record):
+
         if record.classification_source == "1":
             return "reads"
 
@@ -1454,6 +1454,11 @@ class RawReferenceTable(RawReferenceTable_Basic):
 
         if record.classification_source == "3":
             return "reads / contigs"
+
+        else:
+            print("Unknown classification source")
+
+            return record.classification_source
 
 
 class RawReferenceTableNoRemapping(RawReferenceTable):
@@ -1532,7 +1537,7 @@ class ContigTable(tables.Table):
 
 class RunMappingTable(tables.Table):
     name = tables.Column(verbose_name="Run")
-    report = tables.Column(verbose_name="Report", orderable=False, empty_values=())
+    progress_display = tables.Column(verbose_name="Report", orderable=False)
     nmapped = tables.Column(
         verbose_name="Mapped",
         orderable=False,
@@ -1576,7 +1581,7 @@ class RunMappingTable(tables.Table):
         },
     )
 
-    remapping = tables.Column(
+    mapping = tables.Column(
         verbose_name="Mapping",
         orderable=False,
         empty_values=(),
@@ -1591,58 +1596,25 @@ class RunMappingTable(tables.Table):
     runtime = tables.Column(verbose_name="Runtime", orderable=False, empty_values=())
 
     class Meta:
-        model = RunMain
+
         attrs = {
             "class": "paleblue",
-            "title": "Run Mapping",
-            "description": "Run Mapping",
         }
-
-        fields = (
-            "name",
-            "report",
-            "extra_filtering",
-            "enrichment",
-            "host_depletion",
-        )
 
         sequence = (
             "name",
-            "report",
+            "progress_display",
             "extra_filtering",
             "enrichment",
             "host_depletion",
-            "remapping",
+            "mapping",
             "nmapped",
             "created",
             "success",
             "runtime",
         )
 
-        odering = ("created",)
-
-    def get_software_extended_name(self, software_name):
-        name_extended = software_name
-
-        try:
-            software = Software.objects.filter(name__iexact=software_name).first()
-            name_extended = software.name_extended
-        except:
-            name_extended = software_name
-
-        if name_extended is None:
-            return software_name
-
-        # remove parenthesis
-        if "(" in name_extended:
-            name_extended = name_extended.split("(")[0]
-
-        # if "-" in name_extended:
-        #    name_extended = name_extended.split("-")[0]
-
-        return name_extended
-
-    def render_name(self, record: RunMain):
+    def render_name(self, record: RunMainWrapper):
         prefix = ""
 
         if record.run_type == RunMain.RUN_TYPE_MAP_REQUEST:
@@ -1657,13 +1629,28 @@ class RunMappingTable(tables.Table):
 
         return f"{prefix}{record.parameter_set.leaf.index}"
 
-    def render_nmapped(self, record: RunMain):
-        refs_all = RawReference.objects.filter(run=record).count()
+    def render_enrichment(self, record: RunMainWrapper):
+
+        method_name = record.get_pipeline_software(SettingsCS.PIPELINE_NAME_enrichment)
+
+        return mark_safe(method_name)
+
+    def render_host_depletion(self, record: RunMainWrapper):
+
+        method_name = record.get_pipeline_software(
+            SettingsCS.PIPELINE_NAME_host_depletion
+        )
+
+        return mark_safe(method_name)
+
+    def render_nmapped(self, record: RunMainWrapper):
+        # record = record_wrapped.record
+        refs_all = RawReference.objects.filter(run=record.record).count()
         refs_mapped = RawReference.objects.filter(
-            run=record, status=RawReference.STATUS_MAPPED
+            run=record.record, status=RawReference.STATUS_MAPPED
         ).count()
         success_mapped = (
-            FinalReport.objects.filter(run=record).distinct("taxid").count()
+            FinalReport.objects.filter(run=record.record).distinct("taxid").count()
         )
         string_mapped = f"{success_mapped} / {refs_mapped} / {refs_all}"
         return mark_safe(string_mapped)
@@ -1673,10 +1660,10 @@ class RunMappingTable(tables.Table):
             return "N/A"
         return record.created_in.strftime(settings.DATETIME_FORMAT_FOR_TABLE)
 
-    def render_success(self, record):
+    def render_success(self, record: RunMainWrapper):
         success = False
-        final_reports = FinalReport.objects.filter(run=record).count()
-        for final_report in FinalReport.objects.filter(run=record):
+        final_reports = FinalReport.objects.filter(run=record.record).count()
+        for final_report in FinalReport.objects.filter(run=record.record):
             if final_report.classification_success != "none":
                 success = True
         success = final_reports > 0
@@ -1685,122 +1672,26 @@ class RunMappingTable(tables.Table):
         else:
             return mark_safe('<i class="fa fa-times"></i>')
 
-    def render_enrichment(self, record: RunMain):
-        method = record.enrichment
-        method_name = self.get_software_extended_name(method)
+    def render_extra_filtering(self, record: RunMainWrapper):
+
+        method_name = record.get_pipeline_software(SettingsCS.PIPELINE_NAME_extra_qc)
 
         return mark_safe(method_name)
 
-    def render_host_depletion(self, record: RunMain):
-        method = record.host_depletion
-        method_name = self.get_software_extended_name(method)
+    def render_mapping(self, record: RunMainWrapper):
 
+        method_name = record.get_pipeline_software(
+            SettingsCS.PIPELINE_NAME_request_mapping
+        )
         return mark_safe(method_name)
 
-    def render_extra_filtering(self, record):
-        try:
-            run_qc = TelevirRunQC.objects.get(run=record)
-            method = run_qc.method
-            method_name = self.get_software_extended_name(method)
-            return mark_safe(method_name)
-        except:
-            return mark_safe("None")
+    def render_runtime(self, record: RunMainWrapper):
 
-    def render_remapping(self, record: RunMain):
-        method = record.remap
-        method_name = self.get_software_extended_name(method)
-
-        return mark_safe(method_name)
-
-    def render_report(self, record: RunMain):
-        from crequest.middleware import CrequestMiddleware
-
-        current_request = CrequestMiddleware.get_request()
-        user = current_request.user
-
-        finished_preprocessing = record.report != "initial"
-        finished_assembly = RunAssembly.objects.filter(run=record).count() > 0
-        finished_classification = (
-            ContigClassification.objects.filter(run=record).exists()
-            and ReadClassification.objects.filter(run=record).exists()
-        )
-
-        finished_processing = (
-            record.parameter_set.status == ParameterSet.STATUS_FINISHED
-        )
-        # finished_processing = FinalReport.objects.filter(run=record).count() > 0
-        finished_remapping = record.report == "finished"
-        report_link = (
-            '<a href="'
-            + reverse(
-                "sample_detail",
-                args=[record.project.pk, record.sample.pk, record.pk],
-            )
-            + '">'
-            + "<i class='fa fa-bar-chart'></i>"
-            + "</a>"
-        )
-
-        if finished_processing or finished_remapping:
-            if user.username == Constants.USER_ANONYMOUS:
-                return mark_safe("report")
-            if user.username == record.project.owner.username:
-                return mark_safe(report_link)
-
-        else:
-            runlog = " <a " + 'href="#" >'
-            if finished_preprocessing:
-                runlog += '<i class="fa fa-check"'
-                runlog += 'title="Preprocessing finished"></i>'
-            else:
-                runlog += '<i class="fa fa-cog"'
-                runlog += 'title="Preprocessing running."></i>'
-
-            runlog += "</a>"
-
-            ###
-
-            runlog += " <a " + 'href="#" >'
-
-            if finished_assembly:
-                runlog += '<i class="fa fa-check"'
-                runlog += 'title="Assembly finished"></i>'
-            else:
-                runlog += '<i class="fa fa-cog"'
-                if finished_preprocessing:
-                    runlog += 'title="Assembly running."></i>'
-                else:
-                    runlog += 'title="Assembly." style="color: gray;"></i>'
-            runlog += "</a>"
-
-            ###
-
-            runlog += " <a " + 'href="#" >'
-
-            if finished_classification:
-                runlog += '<i class="fa fa-check"'
-                runlog += 'title="Classification finished"></i>'
-            else:
-                runlog += '<i class="fa fa-cog"'
-                if finished_assembly:
-                    runlog += 'title="Classification running."></i>'
-                else:
-                    runlog += 'title="Classification." style="color: gray;"></i>'
-            runlog += "</a>"
-
-            runlog += " <a " + 'href="#" >'
-
-            runlog += '<i class="fa fa-cog"'
-            if finished_classification:
-                runlog += 'title="Mapping to references."></i>'
-            else:
-                runlog += 'title="Validation mapping" style="color: gray;"></i>'
-            runlog += "</a>"
-
-            return mark_safe(runlog)
+        return mark_safe(record.runtime)
 
 
-class RunMainTable(RunMappingTable):
+class RunMainTable(tables.Table):
+
     name = tables.Column(verbose_name="Run")
     report = tables.Column(verbose_name="Report", orderable=False, empty_values=())
     success = tables.Column(verbose_name="Confirmed", orderable=False, empty_values=())
@@ -1881,21 +1772,10 @@ class RunMainTable(RunMappingTable):
     runtime = tables.Column(verbose_name="Runtime", orderable=False, empty_values=())
 
     class Meta:
-        model = RunMain
+        # model = RunMain
         attrs = {
             "class": "paleblue",
         }
-
-        fields = (
-            "name",
-            "report",
-            "extra_filtering",
-            "enrichment",
-            "host_depletion",
-            "assembly_method",
-            "read_classification",
-            "contig_classification",
-        )
 
         sequence = (
             "name",
@@ -1911,38 +1791,92 @@ class RunMainTable(RunMappingTable):
             "runtime",
         )
 
-    def render_assembly_method(self, record: RunMain):
-        method = record.assembly_method
-        method_name = self.get_software_extended_name(method)
+    def render_report(self, record: RunMainWrapper):
+
+        if record.user.username == Constants.USER_ANONYMOUS:
+            return mark_safe("report")
+
+        run_log = record.run_progess_tracker()
+
+        return mark_safe(run_log)
+
+    def render_success(self, record: RunMainWrapper):
+        success = False
+        final_reports = FinalReport.objects.filter(run=record.record).count()
+        for final_report in FinalReport.objects.filter(run=record.record):
+            if final_report.classification_success != "none":
+                success = True
+        success = final_reports > 0
+        if success:
+            return mark_safe('<i class="fa fa-check"></i>')
+        else:
+            return mark_safe('<i class="fa fa-times"></i>')
+
+    def render_runtime(self, record: RunMainWrapper):
+
+        return mark_safe(record.runtime)
+
+    def render_name(self, record: RunMainWrapper):
+        prefix = ""
+
+        if record.run_type == RunMain.RUN_TYPE_MAP_REQUEST:
+            prefix = "Request - "
+        elif record.run_type == RunMain.RUN_TYPE_COMBINED_MAPPING:
+            prefix = "Combined - "
+
+        elif record.run_type == RunMain.RUN_TYPE_PANEL_MAPPING:
+            prefix = "Panel - "
+            if record.panel is not None:
+                prefix += record.panel.name + " - "
+
+        return f"{prefix}{record.parameter_set.leaf.index}"
+
+    def render_enrichment(self, record: RunMainWrapper):
+
+        method_name = record.get_pipeline_software(
+            SettingsCS.PIPELINE_NAME_viral_enrichment
+        )
 
         return mark_safe(method_name)
 
-    def render_contig_classification(self, record: RunMain):
-        method = record.contig_classification
-        method_name = self.get_software_extended_name(method)
+    def render_host_depletion(self, record: RunMainWrapper):
+
+        method_name = record.get_pipeline_software(
+            SettingsCS.PIPELINE_NAME_host_depletion
+        )
 
         return mark_safe(method_name)
 
-    def render_extra_filtering(self, record):
-        try:
-            run_qc = TelevirRunQC.objects.get(run=record)
-            method = run_qc.method
-            method_name = self.get_software_extended_name(method)
-            return mark_safe(method_name)
-        except:
-            return mark_safe("None")
+    def render_extra_filtering(self, record: RunMainWrapper):
 
-    def render_read_classification(self, record: RunMain):
-        method = record.read_classification
+        method_name = record.get_pipeline_software(SettingsCS.PIPELINE_NAME_extra_qc)
 
-        if method is None:
-            return "None"
-        method = method[0].upper() + method[1:]
+        return mark_safe(method_name)
 
-        return mark_safe(method)
+    def render_assembly_method(self, record: RunMainWrapper):
 
-    def render_remapping(self, record: RunMain):
-        method = record.remap
-        method_name = self.get_software_extended_name(method)
+        method_name = record.get_pipeline_software(SettingsCS.PIPELINE_NAME_assembly)
+
+        return mark_safe(method_name)
+
+    def render_contig_classification(self, record: RunMainWrapper):
+
+        method_name = record.get_pipeline_software(
+            SettingsCS.PIPELINE_NAME_contig_classification
+        )
+
+        return mark_safe(method_name)
+
+    def render_read_classification(self, record: RunMainWrapper):
+
+        method_name = record.get_pipeline_software(
+            SettingsCS.PIPELINE_NAME_read_classification
+        )
+
+        return mark_safe(method_name)
+
+    def render_remapping(self, record: RunMainWrapper):
+
+        method_name = record.get_pipeline_software(SettingsCS.PIPELINE_NAME_remapping)
 
         return mark_safe(method_name)

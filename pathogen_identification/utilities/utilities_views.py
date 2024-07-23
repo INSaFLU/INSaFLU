@@ -1,7 +1,7 @@
 import json
 import logging
 import os
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 import pandas as pd
 from braces.views import FormValidMessageMixin, LoginRequiredMixin
@@ -11,13 +11,16 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.views import generic
 
+from constants.constants import Constants
 from fluwebvirus.settings import STATIC_ROOT
 from pathogen_identification.constants_settings import \
     ConstantsSettings as PIConstantsSettings
-from pathogen_identification.models import (FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RawReference, ReferenceMap_Main,
-                                            ReferencePanel,
+from pathogen_identification.models import (ContigClassification, FinalReport,
+                                            ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            RawReferenceCompoundModel,
+                                            ReadClassification,
+                                            ReferenceMap_Main, ReferencePanel,
                                             ReferenceSourceFileMap,
                                             RunAssembly, RunDetail, RunMain,
                                             SoftwareTree, SoftwareTreeNode)
@@ -28,6 +31,7 @@ from pathogen_identification.utilities.televir_parameters import (
     LayoutParams, TelevirParameters)
 from pathogen_identification.utilities.utilities_general import (
     infer_run_media_dir, simplify_name)
+from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
 
@@ -254,6 +258,155 @@ class SampleReferenceManager:
         return self.create_mapping_run(leaf, RunMain.RUN_TYPE_SCREENING)
 
 
+class RunMainWrapper:
+
+    def __init__(self, run: RunMain):
+
+        self.name = f"run {run.parameter_set.leaf.index}"
+
+        self.record = run
+        self.user = run.project.owner
+        self.project = run.project
+        self.sample = run.sample
+        self.parameter_set = run.parameter_set
+        self.pk = run.pk
+
+        if run.parameter_set is None:
+            self.params_df = pd.DataFrame()
+
+        else:
+            utils_manager = Utils_Manager()
+            self.params_df = utils_manager.get_leaf_parameters(run.parameter_set.leaf)
+
+            self.params_df.drop_duplicates(["module", "software"], inplace=True)
+            self.params_df.set_index("module", inplace=True)
+
+        self.run_type = run.run_type
+        self.panel = run.panel
+        self.created_in = run.created_in
+        self.runtime = run.runtime
+
+    @staticmethod
+    def capitalize_software(software_name: str) -> str:
+
+        software_name_list = software_name.split(" ")
+        software_name_list = [word.capitalize() for word in software_name_list]
+
+        return " ".join(software_name_list)
+
+    def get_pipeline_software(self, pipeline_name: str):
+
+        software_name = "None"
+
+        if pipeline_name in self.params_df.index:
+
+            software_name = self.params_df.loc[pipeline_name, "software"]
+            software_name = str(software_name)
+
+        if "(" in software_name:
+            software_name = software_name.split("(")[0]
+
+        return self.capitalize_software(software_name)
+
+    def progress_display(self) -> str:
+
+        if self.user.username == Constants.USER_ANONYMOUS: 
+            return mark_safe("report")
+
+        run_log = self.run_progess_tracker()
+
+        return mark_safe(run_log)
+
+    def run_progess_tracker(self) -> str:
+
+        finished_preprocessing = self.record.report != "initial"
+        finished_assembly = RunAssembly.objects.filter(run=self.record).count() > 0
+        finished_classification = (
+            ContigClassification.objects.filter(run=self.record).exists()
+            and ReadClassification.objects.filter(run=self.record).exists()
+        )
+
+        finished_processing = (
+            self.record.parameter_set.status == ParameterSet.STATUS_FINISHED
+        )
+        #
+
+        finished_remapping = self.record.report == "finished"
+
+        report_link = (
+            '<a href="'
+            + reverse(
+                "sample_detail",
+                args=[
+                    self.record.project.pk,
+                    self.record.sample.pk,
+                    self.record.pk,
+                ],
+            )
+            + '">'
+            + "<i class='fa fa-bar-chart'></i>"
+            + "</a>"
+        )
+
+        if finished_processing or finished_remapping:
+
+            return report_link
+
+        else:
+            runlog = " <a " + 'href="#" >'
+            if finished_preprocessing:
+                runlog += '<i class="fa fa-check"'
+                runlog += 'title="Preprocessing finished"></i>'
+            else:
+                runlog += '<i class="fa fa-cog"'
+                runlog += 'title="Preprocessing running."></i>'
+
+            runlog += "</a>"
+
+            ###
+
+            runlog += " <a " + 'href="#" >'
+
+            if finished_assembly:
+                runlog += '<i class="fa fa-check"'
+                runlog += 'title="Assembly finished"></i>'
+            else:
+                runlog += '<i class="fa fa-cog"'
+                if finished_preprocessing:
+                    runlog += 'title="Assembly running."></i>'
+                else:
+                    runlog += 'title="Assembly." style="color: gray;"></i>'
+            runlog += "</a>"
+
+            ###
+
+            runlog += " <a " + 'href="#" >'
+
+            if finished_classification:
+                runlog += '<i class="fa fa-check"'
+                runlog += 'title="Classification finished"></i>'
+            else:
+                runlog += '<i class="fa fa-cog"'
+                if finished_assembly:
+                    runlog += 'title="Classification running."></i>'
+                else:
+                    runlog += 'title="Classification." style="color: gray;"></i>'
+            runlog += "</a>"
+
+            runlog += " <a " + 'href="#" >'
+
+            runlog += '<i class="fa fa-cog"'
+            if finished_classification:
+                runlog += 'title="Mapping to references."></i>'
+            else:
+                runlog += 'title="Validation mapping" style="color: gray;"></i>'
+            runlog += "</a>"
+
+            return runlog
+
+        return ""
+
+
 class EmptyRemapMain:
     run = None
     sample = None
@@ -418,7 +571,6 @@ class FinalReportGroup:
         )
 
         self.update_max_coverage()
-
 
     def reports_have_private_reads(self) -> bool:
         for report in self.group_list:
@@ -1535,3 +1687,665 @@ class RawReferenceCompound:
     @property
     def runs_str(self):
         return ", ".join([str(r.parameter_set.leaf.index) for r in self.runs])
+
+
+class RawReferenceUtils:
+    def __init__(
+        self,
+        sample: Optional[PIProject_Sample] = None,
+        project: Optional[Projects] = None,
+    ):
+        self.sample_registered = sample
+        self.project_registered = project
+        self.runs_found = 0
+        self.list_tables: List[pd.DataFrame] = []
+        self.merged_table: pd.DataFrame = pd.DataFrame(
+            columns=["read_counts", "contig_counts", "taxid", "accid", "description"]
+        )
+
+    def references_table_from_query(
+        self, references: Union[QuerySet, List[RawReference]]
+    ) -> pd.DataFrame:
+        table = []
+        for ref in references:
+            table.append(
+                {
+                    "taxid": ref.taxid,
+                    "accid": ref.accid,
+                    "description": ref.description,
+                    "counts_str": ref.counts,
+                    "read_counts": ref.read_counts,
+                    "contig_counts": ref.contig_counts,
+                }
+            )
+
+        if len(table) == 0:
+            return pd.DataFrame(
+                columns=[
+                    "taxid",
+                    "accid",
+                    "description",
+                    "counts_str",
+                    "read_counts",
+                    "contig_counts",
+                ]
+            )
+
+        references_table = pd.DataFrame(table)
+
+        references_table["read_counts"] = references_table["read_counts"].astype(float)
+        references_table["contig_counts"] = references_table["contig_counts"].astype(
+            float
+        )
+
+        # references_table = references_table[references_table["read_counts"] > 1]
+        references_table = references_table[references_table["accid"] != "-"]
+        references_table = references_table[references_table["accid"] != ""]
+        references_table = references_table.sort_values(
+            ["contig_counts", "read_counts"], ascending=[False, False]
+        )
+
+        references_table["sort_rank"] = range(1, references_table.shape[0] + 1)
+
+        return references_table
+
+    def run_references_standard_score_reads(
+        self,
+        references_table: pd.DataFrame,
+    ) -> pd.DataFrame:
+
+        if references_table.shape[0] == 0:
+            return pd.DataFrame(
+                columns=list(references_table.columns) + ["read_counts_standard_score"]
+            )
+
+        if max(references_table["read_counts"]) == 0:
+            references_table["read_counts_standard_score"] = 1
+            return references_table
+
+        references_table["read_counts"] = references_table["read_counts"].astype(float)
+
+        references_table["read_counts_standard_score"] = (
+            references_table["read_counts"] - references_table["read_counts"].mean()
+        ) / references_table["read_counts"].std()
+
+        references_table["read_counts_standard_score"] = (
+            references_table["read_counts_standard_score"]
+            - references_table["read_counts_standard_score"].min()
+        ) / (
+            references_table["read_counts_standard_score"].max()
+            - references_table["read_counts_standard_score"].min()
+        )
+
+        return references_table
+
+    def run_references_standard_score_contigs(
+        self,
+        references_table: pd.DataFrame,
+    ) -> pd.DataFrame:
+        # references = RawReference.objects.filter(run=run)
+
+        # references_table = references_table_from_query(references)
+
+        if references_table.shape[0] == 0:
+            return pd.DataFrame(
+                columns=list(references_table.columns)
+                + ["contig_counts_standard_score"]
+            )
+
+        references_table["contig_counts"] = references_table["contig_counts"].astype(
+            float
+        )
+        if max(references_table["contig_counts"]) == 0:
+            references_table["contig_counts_standard_score"] = 1
+            return references_table
+
+        references_table["contig_counts_standard_score"] = (
+            references_table["contig_counts"] - references_table["contig_counts"].mean()
+        ) / references_table["contig_counts"].std()
+
+        references_table["contig_counts_standard_score"] = (
+            references_table["contig_counts_standard_score"]
+            - references_table["contig_counts_standard_score"].min()
+        ) / (
+            references_table["contig_counts_standard_score"].max()
+            - references_table["contig_counts_standard_score"].min()
+        )
+
+        return references_table
+
+    def merge_standard_scores(self, table: pd.DataFrame):
+        if table.shape[0] == 0:
+            return pd.DataFrame(columns=list(table.columns) + ["standard_score"])
+        table["standard_score"] = table[
+            "read_counts_standard_score"
+        ]  # + table["contig_counts_standard_score"]
+        return table
+
+    def run_references_standard_scores(self, table):
+        table = self.run_references_standard_score_reads(table)
+
+        table = self.run_references_standard_score_contigs(table)
+        table = self.merge_standard_scores(table)
+        return table
+
+    def merge_ref_tables_use_standard_score(
+        self,
+        list_tables: List[pd.DataFrame],
+    ) -> pd.DataFrame:
+        joint_tables = [
+            self.run_references_standard_scores(table) for table in list_tables
+        ]
+
+        joint_tables = pd.concat(joint_tables)
+        # group tables: average read_counts_standard_score, sum counts, read_counts, contig_counts
+        if joint_tables.shape[0] == 0:
+            return pd.DataFrame(columns=list(joint_tables.columns))
+
+        joint_tables["standard_score"] = joint_tables["standard_score"].astype(float)
+        joint_tables["contig_counts"] = joint_tables["contig_counts"].astype(float)
+        joint_tables["read_counts"] = joint_tables["read_counts"].astype(float)
+        joint_tables["contig_counts_standard_score"] = joint_tables[
+            "contig_counts_standard_score"
+        ].astype(float)
+        joint_tables["sort_rank"] = joint_tables["sort_rank"].astype(float)
+
+        joint_tables = joint_tables.groupby(["taxid"]).agg(
+            {
+                "taxid": "first",
+                "accid": "first",
+                "description": "first",
+                "counts_str": "first",
+                "standard_score": "mean",
+                "contig_counts_standard_score": "mean",
+                "read_counts": "sum",
+                "contig_counts": "sum",
+                "sort_rank": "mean",
+            }
+        )
+
+        joint_tables = joint_tables.rename(columns={"sort_rank": "ensemble_ranking"})
+
+        #############################################
+        proxy_rclass = self.reference_table_renamed(
+            joint_tables, {"read_counts": "counts"}
+        ).reset_index(drop=True)
+        proxy_aclass = self.reference_table_renamed(
+            joint_tables, {"contig_counts": "counts"}
+        ).reset_index(drop=True)
+
+        targets, raw_targets = merge_classes(
+            proxy_rclass, proxy_aclass, maxt=joint_tables.shape[0]
+        )
+
+        targets["global_ranking"] = range(1, targets.shape[0] + 1)
+
+        def set_global_ranking_repeat_ranks(
+            targets, rank_column="global_ranking", counts_column="counts"
+        ):
+            """
+            Set the global ranking for repeated ranks
+            """
+            current_counts = None
+            current_rank = 0
+            for row in targets.iterrows():
+                if current_counts != row[1][counts_column]:
+                    current_rank += 1
+                    current_counts = row[1][counts_column]
+
+                targets.at[row[0], rank_column] = current_rank
+
+            return targets
+
+        targets = set_global_ranking_repeat_ranks(targets, rank_column="global_ranking")
+
+        ####
+        joint_tables = joint_tables.reset_index(drop=True)
+        targets = targets.reset_index(drop=True)
+        joint_tables["taxid"] = joint_tables["taxid"].astype(int)
+        targets["taxid"] = targets["taxid"].astype(int)
+
+        joint_tables = joint_tables.merge(
+            targets[["taxid", "global_ranking"]], on=["taxid"], how="left"
+        )
+        ############################################# Reset the index
+        joint_tables = joint_tables.reset_index(drop=True)
+
+        joint_tables = joint_tables.sort_values("ensemble_ranking", ascending=True)
+
+        joint_tables = joint_tables.reset_index(drop=True)
+
+        return joint_tables
+
+    def merge_ref_tables_use_ranking(
+        self,
+        list_tables: List[pd.DataFrame],
+    ) -> pd.DataFrame:
+        joint_tables = [
+            self.run_references_standard_scores(table) for table in list_tables
+        ]
+
+        joint_tables = pd.concat(joint_tables)
+        # group tables: average read_counts_standard_score, sum counts, read_counts, contig_counts
+        if joint_tables.shape[0] == 0:
+            return pd.DataFrame(columns=list(joint_tables.columns))
+
+        joint_tables["standard_score"] = joint_tables["standard_score"].astype(float)
+        joint_tables["contig_counts"] = joint_tables["contig_counts"].astype(float)
+        joint_tables["read_counts"] = joint_tables["read_counts"].astype(float)
+        joint_tables["contig_counts_standard_score"] = joint_tables[
+            "contig_counts_standard_score"
+        ].astype(float)
+
+        joint_tables = joint_tables.groupby(["taxid", "accid", "description"]).agg(
+            {
+                "taxid": "first",
+                "accid": "first",
+                "description": "first",
+                "counts_str": "first",
+                "standard_score": "mean",
+                "contig_counts_standard_score": "mean",
+                "read_counts": "sum",
+                "contig_counts": "sum",
+                "sort_rank": "mean",
+            }
+        )
+
+        # Define a function to calculate the final score
+        def calculate_final_score(row):
+            boost = 0
+            if row["contig_counts"] > 0:
+                boost = 1  # Define the boost value according to your needs
+            return (
+                row["standard_score"]
+                + boost * row["contig_counts_standard_score"]
+                + boost
+            )
+
+        # Apply the function to each row
+        joint_tables["final_score"] = joint_tables.apply(calculate_final_score, axis=1)
+
+        # Sort the table by the final score
+        joint_tables = joint_tables.sort_values("final_score", ascending=False)
+
+        # Reset the index
+        joint_tables = joint_tables.reset_index(drop=True)
+
+        joint_tables = joint_tables.sort_values(
+            ["contig_counts", "standard_score"], ascending=[False, False]
+        )
+        joint_tables = joint_tables.reset_index(drop=True)
+
+        return joint_tables
+
+    def run_references_table(self, run: RunMain) -> pd.DataFrame:
+        references = RawReference.objects.filter(run=run)
+
+        references_table = self.references_table_from_query(references)
+
+        return references_table
+
+    def filter_runs(self):
+        if self.sample_registered is None and self.project_registered is None:
+            raise Exception("No sample or project registered")
+
+        if self.sample_registered is None:
+            sample_runs = RunMain.objects.filter(
+                sample__project=self.project_registered
+            )
+        else:
+            sample_runs = RunMain.objects.filter(sample=self.sample_registered)
+
+        return sample_runs.exclude(
+            run_type__in=[RunMain.RUN_TYPE_SCREENING, RunMain.RUN_TYPE_STORAGE]
+        )
+
+    def collect_references_all(self) -> QuerySet:
+        sample_runs = self.filter_runs()
+
+        references = RawReference.objects.filter(run__in=sample_runs)
+
+        return references
+
+    def sample_compound_refs_table(self) -> pd.DataFrame:
+
+        compound_refs = RawReferenceCompoundModel.objects.filter(
+            sample=self.sample_registered
+        )
+
+        compound_refs_table = pd.DataFrame(
+            list(
+                compound_refs.values(
+                    "taxid",
+                    "accid",
+                    "description",
+                    "ensemble_ranking",
+                    "standard_score",
+                )
+            )
+        )
+
+        return compound_refs_table
+
+    def sample_reference_tables(
+        self, run_pks: Optional[List[int]] = None
+    ) -> pd.DataFrame:
+        sample_runs = self.filter_runs()
+        if run_pks is not None:
+            sample_runs = sample_runs.filter(pk__in=run_pks)
+        self.runs_found = sample_runs.count()
+
+        run_references_tables = [self.run_references_table(run) for run in sample_runs]
+
+        # register tables
+        self.list_tables.extend(run_references_tables)
+        #
+        if len(self.list_tables):
+            run_references_tables = self.merge_ref_tables()
+            # replace nan with 0
+            run_references_tables = run_references_tables.fillna(0)
+            self.merged_table = run_references_tables
+        else:
+            return pd.DataFrame(
+                columns=[
+                    "read_counts",
+                    "contig_counts",
+                    "taxid",
+                    "accid",
+                    "description",
+                ]
+            )
+
+    def sample_reference_tables_filter(self, runs_filter: Optional[List[int]] = None):
+        """
+        Filter the sample reference tables to only include runs in the list
+        """
+        if runs_filter == []:
+            runs_filter = None
+
+        _ = self.sample_reference_tables(runs_filter)
+
+    def compound_reference_update_standard_score(
+        self, compound_ref: RawReferenceCompound
+    ):
+        """
+        Update the standard score for a compound reference based on accid"""
+
+        score = self.merged_table[self.merged_table.accid == compound_ref.accid]
+
+        if score.shape[0] > 0:
+            # compound_ref.standard_score = score.iloc[0]["standard_score"]
+            compound_ref.standard_score = max(score["standard_score"])
+            compound_ref.global_ranking = min(score["global_ranking"])
+            compound_ref.ensemble_ranking = min(score["ensemble_ranking"])
+
+    def update_scores_compound_references(
+        self, compount_refs: List[RawReferenceCompound]
+    ):
+        """
+        Update the standard score for a list of compound references based on accid"""
+        for compound_ref in compount_refs:
+            self.compound_reference_update_standard_score(compound_ref)
+
+    def filter_reference_query_set(
+        self, references: QuerySet, query_string: Optional[str] = ""
+    ):
+        """
+        Filter a query set of references by a query string
+        """
+        if not query_string:
+            return references.exclude(accid="-")
+
+        references_select = references.filter(
+            Q(description__icontains=query_string)
+            | Q(accid__icontains=query_string)
+            | Q(taxid__icontains=query_string)
+        ).exclude(accid="-")
+
+        return references_select
+
+    def filter_reference_query_set_compound(
+        self, references: QuerySet, query_string: Optional[str] = ""
+    ):
+        """
+        Filter a query set of references by a query string
+        """
+        references_select = self.filter_reference_query_set(references, query_string)
+
+        exclude_refs = []
+        for ref in references_select:
+            if RawReference.objects.filter(pk=ref.selected_mapped_pk).exists() is False:
+                exclude_refs.append(ref.pk)
+
+        references_select = references_select.exclude(pk__in=exclude_refs)
+
+        return references_select
+
+    def query_sample_compound_references(
+        self, query_string: Optional[str] = None
+    ) -> List[RawReferenceCompoundModel]:
+
+        if self.sample_registered is not None:
+            query_set = RawReferenceCompoundModel.objects.filter(
+                sample=self.sample_registered
+            ).order_by("ensemble_ranking")
+        elif self.project_registered is not None:
+            query_set = RawReferenceCompoundModel.objects.filter(
+                sample__project=self.project_registered
+            ).order_by("ensemble_ranking")
+        else:
+            query_set = RawReferenceCompoundModel.objects.none()
+
+        return self.filter_reference_query_set_compound(query_set, query_string)
+
+    def query_sample_references(self, query_string: Optional[str] = "") -> QuerySet:
+
+        if self.sample_registered is not None:
+
+            query_set = (
+                RawReference.objects.filter(
+                    run__sample__pk=self.sample_registered.pk,
+                )
+                .exclude(
+                    run__run_type__in=[
+                        RunMain.RUN_TYPE_STORAGE,
+                        RunMain.RUN_TYPE_SCREENING,
+                    ],
+                    accid="-",
+                )
+                .distinct("accid")
+            )
+        elif self.project_registered is not None:
+            query_set = (
+                RawReference.objects.filter(
+                    run__sample__project__pk=self.project_registered.pk,
+                )
+                .exclude(
+                    run__run_type__in=[
+                        RunMain.RUN_TYPE_STORAGE,
+                        RunMain.RUN_TYPE_SCREENING,
+                    ],
+                    accid="-",
+                )
+                .distinct("accid")
+            )
+        else:
+            query_set = RawReference.objects.none()
+
+        return self.filter_reference_query_set(query_set, query_string)
+
+    def register_compound_references(self, compound_refs: List[RawReferenceCompound]):
+        """
+        Register a list of compound references in the database
+        """
+
+        for compound_ref in compound_refs:
+            self.register_compound_reference(compound_ref)
+
+    def register_compound_reference(self, compound_ref: RawReferenceCompound):
+        """
+        Register a compound reference in the database
+        """
+
+        try:
+            compound_ref_model = RawReferenceCompoundModel.objects.get(
+                accid=compound_ref.accid, sample__id=compound_ref.sample_id
+            )
+
+            compound_ref_model.standard_score = compound_ref.standard_score
+            compound_ref_model.global_ranking = compound_ref.global_ranking
+            compound_ref_model.ensemble_ranking = compound_ref.ensemble_ranking
+            compound_ref_model.manual_insert = compound_ref.manual_insert
+            compound_ref_model.mapped_final_report = compound_ref.mapped_final_report
+            compound_ref_model.mapped_raw_reference = compound_ref.mapped_raw_reference
+            compound_ref_model.selected_mapped_pk = compound_ref.selected_mapped_pk
+            compound_ref_model.run_count = compound_ref.run_count
+            compound_ref_model.save()
+
+        except RawReferenceCompoundModel.DoesNotExist:
+            sample = PIProject_Sample.objects.get(pk=compound_ref.sample_id)
+
+            description_short = compound_ref.description[:200]
+            compound_ref_model = RawReferenceCompoundModel(
+                taxid=compound_ref.taxid,
+                description=description_short,
+                accid=compound_ref.accid,
+                sample=sample,
+                standard_score=compound_ref.standard_score,
+                global_ranking=compound_ref.global_ranking,
+                ensemble_ranking=compound_ref.ensemble_ranking,
+                manual_insert=compound_ref.manual_insert,
+                mapped_final_report=compound_ref.mapped_final_report,
+                mapped_raw_reference=compound_ref.mapped_raw_reference,
+                selected_mapped_pk=compound_ref.selected_mapped_pk,
+                run_count=compound_ref.run_count,
+            )
+            compound_ref_model.save()
+
+            for run in compound_ref.runs:
+                compound_ref_model.runs.add(run)
+
+            for ref_pk in compound_ref.family:
+                ref = RawReference.objects.get(pk=ref_pk)
+                compound_ref_model.family.add(ref)
+
+    def get_classification_runs(self):
+
+        if self.sample_registered is not None:
+            classification_runs = RunMain.objects.filter(
+                sample=self.sample_registered, run_type=RunMain.RUN_TYPE_PIPELINE
+            )
+
+        elif self.project_registered is not None:
+
+            classification_runs = RunMain.objects.filter(
+                sample__project=self.project_registered,
+                run_type=RunMain.RUN_TYPE_PIPELINE,
+            )
+
+        else:
+            classification_runs = RunMain.objects.none()
+
+        return classification_runs
+
+    def create_compound(self, raw_references: List[RawReference]):
+
+        raw_reference_compound = [
+            RawReferenceCompound(raw_reference) for raw_reference in raw_references
+        ]
+
+        classification_runs = self.get_classification_runs()
+
+        # pks of classification runs as integer list
+        runs_pks = [run.pk for run in classification_runs]
+
+        # if classification_runs.exists():
+        self.sample_reference_tables_filter()
+
+        self.update_scores_compound_references(raw_reference_compound)
+        self.register_compound_references(raw_reference_compound)
+
+    def retrieve_compound_references(
+        self, query_string: Optional[str] = None
+    ) -> QuerySet:
+        """
+        Retrieve compound references for a sample
+        """
+        compound_refs = self.query_sample_compound_references(query_string)
+
+        if compound_refs.exists():
+
+            return compound_refs
+
+        compound_refs = self.create_compound_references(query_string=query_string)
+
+        return compound_refs
+
+    def create_compound_references(self, query_string: Optional[str] = None):
+        """
+        Create compound references for a sample_name, query_string):
+
+        Returns a list of references that match the query string.
+        :param query_string:
+        :return:
+
+        """
+        try:
+            references = self.query_sample_references(query_string)
+        except Exception as e:
+            print(e)
+
+        if references.exists():
+            self.create_compound(references)
+
+            compound_refs = self.query_sample_compound_references(query_string)
+
+        else:
+            compound_refs = RawReferenceCompoundModel.objects.none()
+
+        return compound_refs
+
+    def reference_table_renamed(self, merged_table, rename_dict: dict):
+        proxy_ref = merged_table.copy()
+
+        for key, value in rename_dict.items():
+            if key in proxy_ref.columns:
+                if value in proxy_ref.columns:
+                    # remove the column if it exists
+                    proxy_ref = proxy_ref.drop(columns=[value])
+
+                proxy_ref = proxy_ref.rename(columns={key: value})
+
+        # proxy_ref = proxy_ref.rename(columns=rename_dict)
+
+        proxy_ref["taxid"] = proxy_ref["taxid"].astype(int)
+        proxy_ref["counts"] = proxy_ref["counts"].astype(float).astype(int)
+        proxy_ref = proxy_ref[proxy_ref["counts"] > 0]
+        proxy_ref = proxy_ref[proxy_ref["taxid"] > 0]
+        proxy_ref = proxy_ref[proxy_ref["description"] != "-"]
+        proxy_ref = proxy_ref[proxy_ref["accid"] != "-"]
+
+        return proxy_ref
+
+    def merge_ref_tables(self):
+        run_references_tables = self.merge_ref_tables_use_standard_score(
+            self.list_tables
+        )
+
+        run_references_tables = run_references_tables[run_references_tables.taxid != 0]
+
+        return run_references_tables
+
+    @staticmethod
+    def simplify_by_description(df: pd.DataFrame):
+        if "description" not in df.columns:
+            return df
+
+        df["description_first"] = df["description"].str.split(" ").str[0]
+
+        df = df.sort_values("standard_score", ascending=False)
+        df = df.drop_duplicates(subset=["description_first"], keep="first")
+
+        df.drop(columns=["description_first"], inplace=True)
+
+        return df

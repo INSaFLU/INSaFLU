@@ -101,12 +101,13 @@ from pathogen_identification.utilities.utilities_general import (
 )
 from pathogen_identification.utilities.utilities_pipeline import (
     Parameter_DB_Utility,
-    RawReferenceUtils,
     SoftwareTreeUtils,
 )
 from pathogen_identification.utilities.utilities_views import (
     EmptyRemapMain,
+    RawReferenceUtils,
     ReportSorter,
+    RunMainWrapper,
     final_report_best_cov_by_accid,
     recover_assembly_contigs,
 )
@@ -1282,11 +1283,18 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
             sample_name = "sample"
             project_name = "project"
 
-        runs_table = RunMainTable(runs, exclude=("created", "nmapped", "mapping"))
+        wrapped_runs = [RunMainWrapper(run) for run in runs]
+        runs_table = RunMainTable(
+            wrapped_runs, exclude=("created", "nmapped", "mapping")
+        )
         rendered_table = ""
 
         if run_mapping.exists():
-            run_mappings_table = RunMappingTable(run_mapping, order_by=("created",))
+            wrapped_mapping_runs = [RunMainWrapper(run) for run in run_mapping]
+            print([x.run_progess_tracker() for x in wrapped_mapping_runs])
+            run_mappings_table = RunMappingTable(
+                wrapped_mapping_runs, order_by=("created",)
+            )
             small_context = {
                 "nav_sample": True,
                 "total_items": run_mapping.count(),
@@ -2235,7 +2243,6 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         is_classification = run_main_pipeline.run_type == RunMain.RUN_TYPE_PIPELINE
         #
         ########
-        raw_references = run_main_pipeline.references_sorted
 
         ########
         remapping_performed = True
@@ -2246,10 +2253,11 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             )
 
         if is_classification is True:
-
+            raw_references = run_main_pipeline.references_sorted()
             raw_reference_table = RawReferenceTable(raw_references)
 
         else:
+            raw_references = run_main_pipeline.references_sorted(mapping_only=True)
             raw_reference_table = RawReferenceTable_Basic(raw_references)
 
         #####
@@ -2379,7 +2387,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "error_rate_available": report_sorter.error_rate_available,
             "max_error_rate": report_sorter.max_error_rate,
             "quality_avg_available": report_sorter.quality_avg_available,
-            "max_quality_avg": report_sorter.max_quality_avg,
+            "max_qualit y_avg": report_sorter.max_quality_avg,
             "max_mapped_prop": report_sorter.max_mapped_prop,
             "max_coverage": report_sorter.max_coverage,
             "max_windows_covered": report_sorter.max_windows_covered,

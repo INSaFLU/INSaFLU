@@ -23,8 +23,7 @@ from pathogen_identification.modules.remap_class import (Mapping_Instance,
                                                          Mapping_Manager)
 from pathogen_identification.utilities.televir_parameters import (
     RemapParams, TelevirParameters)
-from pathogen_identification.utilities.utilities_pipeline import \
-    RawReferenceUtils
+from pathogen_identification.utilities.utilities_views import RawReferenceUtils
 from settings.constants_settings import ConstantsSettings as CS
 
 

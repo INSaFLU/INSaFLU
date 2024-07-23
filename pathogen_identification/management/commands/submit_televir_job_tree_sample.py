@@ -12,11 +12,11 @@ from pathogen_identification.utilities.tree_deployment import (
     TreeProgressGraph,
 )
 from pathogen_identification.utilities.utilities_pipeline import (
-    RawReferenceUtils,
     SoftwareTreeUtils,
     Utils_Manager,
 )
 from pathogen_identification.utilities.utilities_views import (
+    RawReferenceUtils,
     calculate_reports_overlaps,
     set_control_reports,
 )

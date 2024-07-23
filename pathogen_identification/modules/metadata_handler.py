@@ -6,16 +6,21 @@ from typing import List, Optional
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (PIProject_Sample, RawReference,
-                                            RawReferenceCompoundModel,
-                                            ReferenceSource,
-                                            ReferenceSourceFileMap, RunMain)
+from pathogen_identification.models import (
+    PIProject_Sample,
+    RawReference,
+    RawReferenceCompoundModel,
+    ReferenceSource,
+    ReferenceSourceFileMap,
+    RunMain,
+)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
-from pathogen_identification.utilities.utilities_general import (merge_classes,
-                                                                 simplify_name)
-from pathogen_identification.utilities.utilities_pipeline import \
-    RawReferenceUtils
+from pathogen_identification.utilities.utilities_general import (
+    merge_classes,
+    simplify_name,
+)
+from pathogen_identification.utilities.utilities_views import RawReferenceUtils
 
 
 def determine_taxid_in_file(taxid, df: pd.DataFrame):
@@ -91,6 +96,7 @@ class RunMetadataHandler:
 
         self.rclass: pd.DataFrame
         self.aclass: pd.DataFrame
+        self.raw_targets: pd.DataFrame = pd.DataFrame()
         self.merged_targets: pd.DataFrame = pd.DataFrame()
         self.remap_targets: List[Remap_Target] = []
         self.remap_absent_taxid_list: List[str] = []

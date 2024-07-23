@@ -18,10 +18,12 @@ from django.http import (
     HttpResponse,
     HttpResponseNotFound,
     HttpResponseRedirect,
+    JsonResponse,
 )
 from django.http.response import HttpResponse
 from django.shortcuts import render
 from django.template.defaultfilters import pluralize
+from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
 from django.utils.safestring import mark_safe
 from django.views import generic
@@ -87,6 +89,10 @@ from pathogen_identification.tables import (
     TeleFluInsaFLuProjectTable,
     TeleFluReferenceTable,
 )
+
+##########################################
+########################################## MAKE THESE DISAPPEAR - MORE TABLES
+########################################## FIND OR CREATE - LINK TO SAMPLES, RUNS.
 from pathogen_identification.utilities.reference_utils import (
     filter_reference_maps_select,
     generate_insaflu_reference,
@@ -99,11 +105,11 @@ from pathogen_identification.utilities.utilities_general import (
     infer_run_media_dir,
     simplify_name,
 )
-from pathogen_identification.utilities.utilities_pipeline import (
+from pathogen_identification.utilities.utilities_pipeline import (  # ### KEEP THIS
     Parameter_DB_Utility,
     SoftwareTreeUtils,
 )
-from pathogen_identification.utilities.utilities_views import (
+from pathogen_identification.utilities.utilities_views import (  # ############################################
     EmptyRemapMain,
     RawReferenceUtils,
     ReportSorter,
@@ -1336,12 +1342,6 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
         }
 
         return context
-
-
-from django.http import JsonResponse
-from django.template.loader import render_to_string
-
-from fluwebvirus.settings import BASE_DIR
 
 
 def inject_references_filter(request, max_references: int = 30):

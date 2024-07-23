@@ -43,6 +43,7 @@ from pathogen_identification.utilities.televir_parameters import (
 )
 from pathogen_identification.utilities.utilities_general import (
     infer_run_media_dir,
+    merge_classes,
     simplify_name,
 )
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
@@ -1888,7 +1889,7 @@ class RawReferenceUtils:
             joint_tables, {"contig_counts": "counts"}
         ).reset_index(drop=True)
 
-        targets, raw_targets = merge_classes(
+        targets, _ = merge_classes(
             proxy_rclass, proxy_aclass, maxt=joint_tables.shape[0]
         )
 
@@ -2136,9 +2137,12 @@ class RawReferenceUtils:
 
         return references_select
 
-    def query_sample_compound_references(
+    def query_sample_compound_references_regressive(
         self, query_string: Optional[str] = None
     ) -> List[RawReferenceCompoundModel]:
+        """
+        Query compound references using sample, project or none, in that order. Filter by query string
+        """
 
         if self.sample_registered is not None:
             query_set = RawReferenceCompoundModel.objects.filter(
@@ -2284,9 +2288,9 @@ class RawReferenceUtils:
         self, query_string: Optional[str] = None
     ) -> QuerySet:
         """
-        Retrieve compound references for a sample
+        Retrieve compound references for a sample, query, or create them if they do not exist
         """
-        compound_refs = self.query_sample_compound_references(query_string)
+        compound_refs = self.query_sample_compound_references_regressive(query_string)
 
         if compound_refs.exists():
 
@@ -2313,7 +2317,9 @@ class RawReferenceUtils:
         if references.exists():
             self.create_compound(references)
 
-            compound_refs = self.query_sample_compound_references(query_string)
+            compound_refs = self.query_sample_compound_references_regressive(
+                query_string
+            )
 
         else:
             compound_refs = RawReferenceCompoundModel.objects.none()

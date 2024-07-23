@@ -211,7 +211,7 @@ class RunMetadataHandler:
         reference_utils = RawReferenceUtils(sample_registered)
         ### ############################################################# ###
         compound_refs: List[RawReferenceCompoundModel] = (
-            reference_utils.query_sample_compound_references()
+            reference_utils.query_sample_compound_references_regressive()
         )
 
         if max_taxids is not None:

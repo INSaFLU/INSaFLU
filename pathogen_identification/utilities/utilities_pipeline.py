@@ -18,7 +18,6 @@ from pathogen_identification.host_library import Host
 from pathogen_identification.models import (ParameterSet, PIProject_Sample,
                                             Projects, SoftwareTree,
                                             SoftwareTreeNode)
-from pathogen_identification.utilities.utilities_general import merge_classes
 from pathogen_identification.utilities.utilities_televir_dbs import \
     Utility_Repository
 from settings.constants_settings import ConstantsSettings as CS

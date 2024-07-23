@@ -12,10 +12,13 @@ from django.conf import settings
 
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PI_ConstantsSettings
+from pathogen_identification.constants_settings import (
+    ConstantsSettings as PI_ConstantsSettings,
+)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility, Utility_Pipeline_Manager)
+    Parameter_DB_Utility,
+    Utility_Pipeline_Manager,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -790,6 +793,7 @@ class DefaultParameters(object):
         ####
         #### PATHOGEN IDENTIFICATION
         ####
+
         elif software.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_name:
             return self.get_remap_defaults(
                 software.owner,
@@ -914,6 +918,7 @@ class DefaultParameters(object):
                 software.owner,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=software.pipeline_step.name,
             )
 
         elif software.name == SoftwareNames.SOFTWARE_BOWTIE2_DEPLETE_name:
@@ -931,6 +936,20 @@ class DefaultParameters(object):
             )
 
         elif software.name == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ILLU_name:
+
+            print(software.name_extended, "#OUINOINO")
+
+            if (
+                software.name_extended
+                == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ILLU_name_extended_screening
+            ):
+                return self.get_minimap2_remap_illumina_default(
+                    software.owner,
+                    Software.TYPE_OF_USE_televir_global,
+                    ConstantsSettings.TECHNOLOGY_illumina,
+                    pipeline_step=ConstantsSettings.PIPELINE_NAME_metagenomics_screening,
+                )
+
             return self.get_minimap2_remap_illumina_default(
                 software.owner,
                 Software.TYPE_OF_USE_televir_global,
@@ -961,7 +980,7 @@ class DefaultParameters(object):
                     Software.TYPE_OF_USE_televir_global,
                     ConstantsSettings.TECHNOLOGY_minion,
                     pipeline_step=ConstantsSettings.PIPELINE_NAME_metagenomics_screening,
-                    job = "screening",
+                    job="screening",
                 )
             elif (
                 software.name_extended
@@ -972,7 +991,7 @@ class DefaultParameters(object):
                     Software.TYPE_OF_USE_televir_global,
                     ConstantsSettings.TECHNOLOGY_minion,
                     pipeline_step=ConstantsSettings.PIPELINE_NAME_request_mapping,
-                    job= "request_mapping",
+                    job="request_mapping",
                 )
             else:
                 return self.get_minimap2_remap_ONT_default(
@@ -2755,9 +2774,9 @@ class DefaultParameters(object):
 
         software.is_to_run = False  ## set to True if it is going to run, for example Trimmomatic can run or not
 
-        if job == "request_mapping":
-            software.can_be_on_off_in_pipeline = False
-            software.is_to_run = True
+        # if job == "request_mapping":
+        #    software.can_be_on_off_in_pipeline = False
+        #    software.is_to_run = True
         ###  small description of software
         software.help_text = ""
 
@@ -2936,7 +2955,7 @@ class DefaultParameters(object):
         )
         software.technology = self.get_technology(technology_name)
         software.can_be_on_off_in_pipeline = (
-            True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
+            False  ## set to True if can be ON/OFF in pipeline, otherwise always ON
         )
         software.is_to_run = is_to_run
 
@@ -4181,13 +4200,21 @@ class DefaultParameters(object):
 
         return vect_parameters
 
-    def get_snippy_pi_default(self, user, type_of_use, technology_name, sample=None):
+    def get_snippy_pi_default(
+        self, user, type_of_use, technology_name, sample=None, pipeline_step=None
+    ):
         """
         snippy for televir mapping
         –mapqual: minimum mapping quality to allow (–mapqual 20)
         —mincov: minimum coverage of variant site (–mincov 10)
         –minfrac: minumum proportion for variant evidence (–minfrac 0.51)
         """
+        if not pipeline_step:
+            pipeline_step = ConstantsSettings.PIPELINE_NAME_remapping
+
+        else:
+            pipeline_step = pipeline_step
+
         software = Software()
         software.name = SoftwareNames.SOFTWARE_SNIPPY_PI_name
         software.name_extended = SoftwareNames.SOFTWARE_SNIPPY_PI_name_extended
@@ -4207,9 +4234,7 @@ class DefaultParameters(object):
         software.help_text = ""
 
         ###  which part of pipeline is going to run; NEED TO CHECK
-        software.pipeline_step = self._get_pipeline(
-            ConstantsSettings.PIPELINE_NAME_remapping
-        )
+        software.pipeline_step = self._get_pipeline(pipeline_step)
 
         software.owner = user
 

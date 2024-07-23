@@ -63,6 +63,7 @@ from pathogen_identification.utilities.utilities_pipeline import (
 )
 from pathogen_identification.utilities.utilities_views import (
     FinalReportCompound,
+    RawReferenceUtils,
     ReportSorter,
     SampleReferenceManager,
 )
@@ -1178,6 +1179,8 @@ class MetadataManagementTests(TestCase):
         report_layout_params = TelevirParameters.get_report_layout_params(
             run_pk=run_engine.run_pk
         )
+        reference_utils = RawReferenceUtils(project=self.project_illu)
+
         report_sorter = ReportSorter(final_report, report_layout_params)
 
         sorted_reports = report_sorter.get_reports()
@@ -1196,6 +1199,12 @@ class MetadataManagementTests(TestCase):
         self.assertFalse(excluded_reports_exist)
 
         sorted_reports = report_sorter.get_reports_compound()
+
+        #############################
+        query_string = "Influenza A virus"
+        references = reference_utils.retrieve_compound_references(query_string)
+        print("###################")
+        print(references)
 
         first_report_group = sorted_reports[0]
 

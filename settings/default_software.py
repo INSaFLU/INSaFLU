@@ -649,6 +649,17 @@ class DefaultSoftware(object):
         )
 
         self.test_default_db(
+            SoftwareNames.SOFTWARE_SNIPPY_PI_name,
+            self.default_parameters.get_snippy_pi_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_request_mapping,
+            ),
+            user,
+        )
+
+        self.test_default_db(
             SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name,
             self.default_parameters.get_minimap2_remap_ONT_default(
                 user,
@@ -878,7 +889,8 @@ class DefaultSoftware(object):
         except:
             pass
         try:
-            Software.objects.get(
+
+            software_queried = Software.objects.get(
                 name=software_name,
                 owner=user,
                 type_of_use=vect_parameters[0].software.type_of_use,

@@ -621,7 +621,7 @@ class ReadOverlapManager(MappingResultsParser):
         clade_shared_proportion_matrix.to_csv(self.clade_shared_prop_matrix_path)
 
     ####################
-    ## Construct tree ##
+    ## Construct tree ###########################################################
     ####################
 
     def tree_from_distance_matrix(self, distance_matrix: pd.DataFrame):

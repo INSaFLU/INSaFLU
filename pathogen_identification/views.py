@@ -1302,7 +1302,7 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
 
         if run_mapping.exists():
             wrapped_mapping_runs = [RunMainWrapper(run) for run in run_mapping]
-            print([x.run_progess_tracker() for x in wrapped_mapping_runs])
+
             run_mappings_table = RunMappingTable(
                 wrapped_mapping_runs, order_by=("created",)
             )

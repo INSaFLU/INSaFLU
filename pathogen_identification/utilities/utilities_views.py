@@ -14,38 +14,24 @@ from django.views import generic
 
 from constants.constants import Constants
 from fluwebvirus.settings import STATIC_ROOT
-from pathogen_identification.constants_settings import (
-    ConstantsSettings as PIConstantsSettings,
-)
-from pathogen_identification.models import (
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    RawReferenceCompoundModel,
-    ReadClassification,
-    ReferenceMap_Main,
-    ReferencePanel,
-    ReferenceSourceFileMap,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PIConstantsSettings
+from pathogen_identification.models import (ContigClassification, FinalReport,
+                                            ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            RawReferenceCompoundModel,
+                                            ReadClassification,
+                                            ReferenceMap_Main, ReferencePanel,
+                                            ReferenceSourceFileMap,
+                                            RunAssembly, RunDetail, RunMain,
+                                            SoftwareTree, SoftwareTreeNode)
 from pathogen_identification.utilities.clade_objects import Clade
-from pathogen_identification.utilities.overlap_manager import ReadOverlapManager
+from pathogen_identification.utilities.overlap_manager import \
+    ReadOverlapManager
 from pathogen_identification.utilities.televir_parameters import (
-    LayoutParams,
-    TelevirParameters,
-)
+    LayoutParams, TelevirParameters)
 from pathogen_identification.utilities.utilities_general import (
-    infer_run_media_dir,
-    merge_classes,
-    simplify_name,
-)
+    infer_run_media_dir, merge_classes, simplify_name)
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
@@ -320,6 +306,9 @@ class RunMainWrapper:
 
         if "(" in software_name:
             software_name = software_name.split("(")[0]
+        
+        if "_" in software_name:
+            software_name = software_name.split("_")[0]
 
         return self.capitalize_software(software_name)
 
@@ -855,38 +844,6 @@ class ReportSorter:
             self.overlap_pca_exists = False
             self.overlap_pca_path = None
 
-    def read_shared_matrix(self):
-        """
-        read accession shared reads matrix
-        """
-        try:
-            distance_matrix = pd.read_csv(
-                self.overlap_manager.shared_prop_matrix_path, index_col=0
-            )
-            return distance_matrix
-        except Exception as e:
-            print(e)
-            return None
-
-    def read_clade_shared_matrix(self):
-        """
-        read clade shared matrix
-        """
-        try:
-            clade_shared_matrix = pd.read_csv(
-                self.overlap_manager.clade_shared_prop_matrix_path, index_col=0
-            )
-
-            # fill diagonal with 0
-            for i in range(clade_shared_matrix.shape[0]):
-                clade_shared_matrix.iloc[i, i] = 1
-
-            return clade_shared_matrix
-
-        except Exception as e:
-            print(e)
-            return None
-
     def update_max_error_rate(self, report: FinalReport):
         """
         update max error rate"""
@@ -973,6 +930,9 @@ class ReportSorter:
         return True
 
     def set_level(self, final_report_list: List[FinalReport], level):
+        """
+        return sample or run depending on level of analysis"""
+
         if len(final_report_list) == 0:
             return None
         final_report = final_report_list[0]
@@ -1416,6 +1376,38 @@ class ReportSorter:
         json_data = json.dumps(json_data)
 
         return json_data
+
+
+    def read_shared_matrix(self):
+        """
+        read accession shared reads matrix
+        """
+        try:
+            distance_matrix = pd.read_csv(
+                self.overlap_manager.shared_prop_matrix_path, index_col=0
+            )
+            return distance_matrix
+        except Exception as e:
+            print(e)
+            return None
+
+    def read_clade_shared_matrix(self):
+        """
+        read clade shared matrix
+        """
+        try:
+            clade_shared_matrix = pd.read_csv(
+                self.overlap_manager.clade_shared_prop_matrix_path, index_col=0
+            )
+
+            # fill diagonal with 0
+            for i in range(clade_shared_matrix.shape[0]):
+                clade_shared_matrix.iloc[i, i] = 1
+
+            return clade_shared_matrix
+
+        except Exception as e:
+            return None
 
     def prep_heatmap_data_several(self, report_groups: List[FinalReportGroup]):
         """

@@ -73,7 +73,6 @@ class ProcessSGE(object):
             settings.SGE_ROOT, file_name, temp_file
         )
         exist_status = os.system(cmd)
-        print("cmd: {}".format(cmd))
 
         if exist_status != 0:
             if os.path.exists(temp_file):

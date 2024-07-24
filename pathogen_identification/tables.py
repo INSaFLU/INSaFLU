@@ -1631,7 +1631,9 @@ class RunMappingTable(tables.Table):
 
     def render_enrichment(self, record: RunMainWrapper):
 
-        method_name = record.get_pipeline_software(SettingsCS.PIPELINE_NAME_enrichment)
+        method_name = record.get_pipeline_software(
+            SettingsCS.PIPELINE_NAME_viral_enrichment
+        )
 
         return mark_safe(method_name)
 

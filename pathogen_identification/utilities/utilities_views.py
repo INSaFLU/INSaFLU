@@ -14,24 +14,38 @@ from django.views import generic
 
 from constants.constants import Constants
 from fluwebvirus.settings import STATIC_ROOT
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PIConstantsSettings
-from pathogen_identification.models import (ContigClassification, FinalReport,
-                                            ParameterSet, PIProject_Sample,
-                                            Projects, RawReference,
-                                            RawReferenceCompoundModel,
-                                            ReadClassification,
-                                            ReferenceMap_Main, ReferencePanel,
-                                            ReferenceSourceFileMap,
-                                            RunAssembly, RunDetail, RunMain,
-                                            SoftwareTree, SoftwareTreeNode)
+from pathogen_identification.constants_settings import (
+    ConstantsSettings as PIConstantsSettings,
+)
+from pathogen_identification.models import (
+    ContigClassification,
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    RawReferenceCompoundModel,
+    ReadClassification,
+    ReferenceMap_Main,
+    ReferencePanel,
+    ReferenceSourceFileMap,
+    RunAssembly,
+    RunDetail,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
 from pathogen_identification.utilities.clade_objects import Clade
-from pathogen_identification.utilities.overlap_manager import \
-    ReadOverlapManager
+from pathogen_identification.utilities.overlap_manager import ReadOverlapManager
 from pathogen_identification.utilities.televir_parameters import (
-    LayoutParams, TelevirParameters)
+    LayoutParams,
+    TelevirParameters,
+)
 from pathogen_identification.utilities.utilities_general import (
-    infer_run_media_dir, merge_classes, simplify_name)
+    infer_run_media_dir,
+    merge_classes,
+    simplify_name,
+)
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
@@ -306,7 +320,7 @@ class RunMainWrapper:
 
         if "(" in software_name:
             software_name = software_name.split("(")[0]
-        
+
         if "_" in software_name:
             software_name = software_name.split("_")[0]
 
@@ -743,18 +757,20 @@ def recover_assembly_contigs(run_main: RunMain, run_assembly: RunAssembly):
 class ReportSorter:
     analysis_filename = "overlap_analysis_{}.tsv"
     all_clade_filename = "all_clades_{}.tsv"
-    report_dict: Dict[str, List[FinalReport]]
-    excluded_dict: Dict[str, List[FinalReport]]
+    report_dict: Dict[str, FinalReport]
+    excluded_dict: Dict[str, FinalReport]
     error_rate_available: bool
 
     def __init__(
         self,
+        sample: PIProject_Sample,
         reports: List[FinalReport],
         report_layout_params: LayoutParams,
         force=False,
         level=0,
     ):
         self.reports: List[FinalReport] = reports
+        self.sample = sample
         self.analysis_empty = False
         self.max_error_rate = 0
         self.max_quality_avg = 1
@@ -766,83 +782,68 @@ class ReportSorter:
         self.assess_max_mapped_prop()
         self.assess_max_coverage()
         self.reference_clade = self.generate_reference_clade(report_layout_params)
-        self.report_dict = {
-            report.accid: report
-            for report in reports
-            if self.retrieved_mapped_subset(report)
-        }
-        self.excluded_dict = {
-            report.accid: report
-            for report in reports
-            if not self.retrieved_mapped_subset(report)
-        }
+
+        self.report_dict = {}
+        self.excluded_dict = {}
+
+        for report in reports:
+            if report.accid is None:
+                continue
+            if self.retrieved_mapped_subset(report):
+                self.report_dict[report.accid] = report
+            else:
+                self.excluded_dict[report.accid] = report
+
         self.metadata_df = self.prep_metadata_df()
 
         self.fasta_files = self.metadata_df.file.tolist()
         self.level = level
 
-        self.model = self.set_level(reports, level)
-        self.run = self.infer_run()
+        self.reports_availble = len(reports) > 0
 
+        self.media_dir = sample.media_dir
+        self.force = force
+        self.overlap_manager = ReadOverlapManager(
+            self.metadata_df,
+            self.reference_clade,
+            self.media_dir,
+            str(self.sample.pk),
+            force_tree_rebuild=force,
+        )
+
+        self.all_clades_df_path = os.path.join(self.media_dir, self.all_clade_filename)
+
+        self.analysis_df_path = os.path.join(
+            self.media_dir,
+            self.analysis_filename.format(
+                report_layout_params.shared_proportion_threshold
+            ),
+        )
+
+        self.tree_plot_path = self.overlap_manager.tree_plot_path
+        #
+        self.tree_plot_exists = os.path.exists(self.tree_plot_path)
+        self.tree_plot_path = "/media/" + self.tree_plot_path.split("media/")[-1]
+
+        self.overlap_heatmap_exists = os.path.exists(
+            self.overlap_manager.overlap_matrix_plot_path
+        )
+        self.overlap_heatmap_path = (
+            "/media/"
+            + self.overlap_manager.overlap_matrix_plot_path.split("media/")[-1]
+        )
+        self.overlap_pca_exists = os.path.exists(
+            self.overlap_manager.overlap_pca_plot_path
+        )
+        self.overlap_pca_path = (
+            "/media/" + self.overlap_manager.overlap_pca_plot_path.split("media/")[-1]
+        )
+
+        #####################################
+        #####################################
         self.logger = logging.getLogger(__name__)
-        self.logger.info("ReportSorter: {}".format(self.run))
-        # set logger level
-        self.logger.setLevel(logging.INFO)
-
-        if self.model is not None and self.run is not None:
-            self.media_dir = self.infer_media_dir()
-
-            self.all_clades_df_path = os.path.join(
-                self.media_dir, self.all_clade_filename
-            )
-
-            self.analysis_df_path = os.path.join(
-                self.media_dir,
-                self.analysis_filename.format(
-                    report_layout_params.shared_proportion_threshold
-                ),
-            )
-
-            self.force = force
-            self.overlap_manager = ReadOverlapManager(
-                self.metadata_df,
-                self.reference_clade,
-                self.media_dir,
-                str(self.model.pk),
-                force_tree_rebuild=force,
-            )
-            self.tree_plot_path = self.overlap_manager.tree_plot_path
-            # remove everything before media dir
-            self.tree_plot_exists = os.path.exists(self.tree_plot_path)
-            self.tree_plot_path = "/media/" + self.tree_plot_path.split("media/")[-1]
-
-            self.overlap_heatmap_exists = os.path.exists(
-                self.overlap_manager.overlap_matrix_plot_path
-            )
-            self.overlap_heatmap_path = (
-                "/media/"
-                + self.overlap_manager.overlap_matrix_plot_path.split("media/")[-1]
-            )
-            self.overlap_pca_exists = os.path.exists(
-                self.overlap_manager.overlap_pca_plot_path
-            )
-            self.overlap_pca_path = (
-                "/media/"
-                + self.overlap_manager.overlap_pca_plot_path.split("media/")[-1]
-            )
-
-        else:
-            self.overlap_manager = None
-            self.media_dir = None
-            self.analysis_df_path = None
-            self.all_clades_df_path = None
-            self.force = False
-            self.tree_plot_exists = False
-            self.tree_plot_path = None
-            self.overlap_heatmap_exists = False
-            self.overlap_heatmap_path = None
-            self.overlap_pca_exists = False
-            self.overlap_pca_path = None
+        self.logger.info("ReportSorter: {}".format(self.media_dir))
+        self.logger.setLevel(logging.DEBUG)
 
     def update_max_error_rate(self, report: FinalReport):
         """
@@ -929,29 +930,6 @@ class ReportSorter:
 
         return True
 
-    def set_level(self, final_report_list: List[FinalReport], level):
-        """
-        return sample or run depending on level of analysis"""
-
-        if len(final_report_list) == 0:
-            return None
-        final_report = final_report_list[0]
-        if level == 0:
-            return final_report.sample
-        elif level == 1:
-            return final_report.run
-
-        return None
-
-    def infer_media_dir(self):
-        """
-        Return media directory
-        """
-        if self.level == 0:
-            return self.inferred_sample_media_dir()
-        elif self.level == 1:
-            return self.inferred_run_media_dir()
-
     @staticmethod
     def generate_reference_clade(layout_params: LayoutParams):
         """
@@ -971,50 +949,6 @@ class ReportSorter:
         )
 
         return ref_clade
-
-    def infer_run(self):
-        """
-        Return run
-        """
-        if not self.reports:
-            return None
-
-        run_with_media_dir = [
-            report.run for report in self.reports if report.run is not None
-        ]
-        run_with_media_dir = [
-            run for run in run_with_media_dir if infer_run_media_dir(run)
-        ]
-
-        if len(run_with_media_dir) == 0:
-            return None
-
-        return self.reports[0].run
-
-    def inferred_run_media_dir(self):
-        """
-        Return run media directory
-        """
-        if not self.model:
-            raise Exception("No run found")
-
-        return infer_run_media_dir(self.run)
-
-    def inferred_sample_media_dir(self):
-        """
-        Return run media directory
-        """
-        if not self.model:
-            raise Exception("No model found")
-
-        rundir = infer_run_media_dir(self.run)
-
-        if rundir is None:
-            return None
-
-        sample_dir = os.path.dirname(rundir)
-
-        return sample_dir
 
     def retrieved_mapped_subset(self, report: FinalReport):
         """
@@ -1064,20 +998,6 @@ class ReportSorter:
 
         return metadata_df
 
-    def read_overlap_analysis(self, force: bool = False):
-        """
-        Return read overlap analysis as dataframe
-        columns: leaf (accid), clade, read_count, group_count
-        """
-        ### time operations
-        self.logger.info("generating tree")
-
-        clades = self.overlap_manager.get_leaf_clades(force=force)
-
-        self.update_report_excluded_dicts(self.overlap_manager)
-
-        return clades
-
     def update_report_excluded_dicts(self, overlap_manager: ReadOverlapManager):
         new_report_dict = {}
 
@@ -1104,7 +1024,7 @@ class ReportSorter:
             self.metadata_df,
             self.reference_clade,
             self.media_dir,
-            str(self.model.pk),
+            str(self.sample.pk),
         )
 
         if not os.path.exists(overlap_manager.distance_matrix_path):
@@ -1145,11 +1065,65 @@ class ReportSorter:
 
         return True
 
+    def wrap_report(self, report: FinalReport) -> FinalReportWrapper:
+        return FinalReportWrapper(report)
+
+    def wrap_group_reports(self, report_group: FinalReportGroup) -> FinalReportGroup:
+        report_group.group_list = [
+            self.wrap_report(report) for report in report_group.group_list
+        ]
+        return report_group
+
+    def wrap_group_list_reports(
+        self, report_groups: List[FinalReportGroup]
+    ) -> List[FinalReportGroup]:
+        return [self.wrap_group_reports(report_group) for report_group in report_groups]
+
+    def sort_group_by_private_reads(self, group: FinalReportGroup) -> FinalReportGroup:
+        """
+        sort group by private reads
+        """
+        group.group_list.sort(key=lambda x: x.private_reads, reverse=True)
+
+        if len(group.group_list) == 0:
+            return group
+
+        group.group_list[0].first_in_group = True
+        group.group_list[0].row_class_name = "primary-row"
+        group.group_list[0].display = "table-row"
+
+        return group
+
+    def sort_group_list_reports(
+        self, report_groups: List[FinalReportGroup]
+    ) -> List[FinalReportGroup]:
+        """
+        sort group list reports
+        """
+        return [
+            self.sort_group_by_private_reads(report_group)
+            for report_group in report_groups
+        ]
+
+    def read_overlap_analysis(self, force: bool = False):
+        """
+        Return read overlap analysis as dataframe
+        columns: leaf (accid), clade, read_count, group_count
+        """
+        ### time operations
+        self.logger.info("generating tree")
+
+        clades = self.overlap_manager.get_leaf_clades(force=force)
+
+        self.update_report_excluded_dicts(self.overlap_manager)
+
+        return clades
+
     def sort_reports_save(self, force=False):
         """
         Return sorted reports
         """
-        if self.model is None:
+        if self.reports_availble is None:
             return self.return_no_analysis()
 
         try:
@@ -1198,20 +1172,6 @@ class ReportSorter:
             pairwise_shared_among_clade
         )
 
-    def wrap_report(self, report: FinalReport) -> FinalReportWrapper:
-        return FinalReportWrapper(report)
-
-    def wrap_group_reports(self, report_group: FinalReportGroup) -> FinalReportGroup:
-        report_group.group_list = [
-            self.wrap_report(report) for report in report_group.group_list
-        ]
-        return report_group
-
-    def wrap_group_list_reports(
-        self, report_groups: List[FinalReportGroup]
-    ) -> List[FinalReportGroup]:
-        return [self.wrap_group_reports(report_group) for report_group in report_groups]
-
     def get_reports_private_reads(
         self, report_groups: List[FinalReportGroup]
     ) -> List[FinalReportGroup]:
@@ -1219,6 +1179,7 @@ class ReportSorter:
         Update reports with private reads
         """
         accid_df = pd.read_csv(self.overlap_manager.accid_statistics_path, sep="\t")
+
         if "private_reads" not in accid_df.columns:
             report_groups = self.wrap_group_list_reports(report_groups)
             return report_groups
@@ -1239,32 +1200,6 @@ class ReportSorter:
             report_group.update_max_private_reads()
 
         return report_groups
-
-    def sort_group_by_private_reads(self, group: FinalReportGroup) -> FinalReportGroup:
-        """
-        sort group by private reads
-        """
-        group.group_list.sort(key=lambda x: x.private_reads, reverse=True)
-
-        if len(group.group_list) == 0:
-            return group
-
-        group.group_list[0].first_in_group = True
-        group.group_list[0].row_class_name = "primary-row"
-        group.group_list[0].display = "table-row"
-
-        return group
-
-    def sort_group_list_reports(
-        self, report_groups: List[FinalReportGroup]
-    ) -> List[FinalReportGroup]:
-        """
-        sort group list reports
-        """
-        return [
-            self.sort_group_by_private_reads(report_group)
-            for report_group in report_groups
-        ]
 
     def get_sorted_reports(self) -> List[FinalReportGroup]:
 
@@ -1332,6 +1267,37 @@ class ReportSorter:
 
         return sorted_groups
 
+    def read_shared_matrix(self):
+        """
+        read accession shared reads matrix
+        """
+        try:
+            distance_matrix = pd.read_csv(
+                self.overlap_manager.shared_prop_matrix_path, index_col=0
+            )
+            return distance_matrix
+        except Exception as e:
+            print(e)
+            return None
+
+    def read_clade_shared_matrix(self):
+        """
+        read clade shared matrix
+        """
+        try:
+            clade_shared_matrix = pd.read_csv(
+                self.overlap_manager.clade_shared_prop_matrix_path, index_col=0
+            )
+
+            # fill diagonal with 1s
+            for i in range(clade_shared_matrix.shape[0]):
+                clade_shared_matrix.iloc[i, i] = 1
+
+            return clade_shared_matrix
+
+        except Exception as e:
+            return None
+
     def prep_heatmap_data_within_clade(
         self, report_group: FinalReportGroup, distance_matrix: pd.DataFrame
     ):
@@ -1376,38 +1342,6 @@ class ReportSorter:
         json_data = json.dumps(json_data)
 
         return json_data
-
-
-    def read_shared_matrix(self):
-        """
-        read accession shared reads matrix
-        """
-        try:
-            distance_matrix = pd.read_csv(
-                self.overlap_manager.shared_prop_matrix_path, index_col=0
-            )
-            return distance_matrix
-        except Exception as e:
-            print(e)
-            return None
-
-    def read_clade_shared_matrix(self):
-        """
-        read clade shared matrix
-        """
-        try:
-            clade_shared_matrix = pd.read_csv(
-                self.overlap_manager.clade_shared_prop_matrix_path, index_col=0
-            )
-
-            # fill diagonal with 0
-            for i in range(clade_shared_matrix.shape[0]):
-                clade_shared_matrix.iloc[i, i] = 1
-
-            return clade_shared_matrix
-
-        except Exception as e:
-            return None
 
     def prep_heatmap_data_several(self, report_groups: List[FinalReportGroup]):
         """
@@ -1461,7 +1395,7 @@ class ReportSorter:
         """
         Return sorted reports
         """
-        if self.model is None:
+        if self.reports_availble is None:
             return self.return_no_analysis()
 
         if self.metadata_df.empty:
@@ -1538,7 +1472,9 @@ def calculate_reports_overlaps(sample: PIProject_Sample, force=False):
     report_layout_params = TelevirParameters.get_report_layout_params(
         project_pk=sample.project.pk
     )
-    report_sorter = ReportSorter(final_reports, report_layout_params, force=force)
+    report_sorter = ReportSorter(
+        sample, final_reports, report_layout_params, force=force
+    )
     report_sorter.sort_reports_save()
 
 

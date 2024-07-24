@@ -237,15 +237,18 @@ class MappingResultsParser:
         self.metadata = metadata_df
         self.fasta_list = metadata_df["file"].tolist()
         self.media_dir = media_dir
-
-        self.accid_statistics_path = os.path.join(
-            self.media_dir, self.accid_statistics_filename.format(pid)
-        )
+        self.pid = pid
 
         self.parsed = False
 
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
+
+    @property
+    def accid_statistics_path(self):
+        return os.path.join(
+            self.media_dir, self.accid_statistics_filename.format(self.pid)
+        )
 
     @staticmethod
     def accid_from_metadata(metadata: pd.DataFrame, read_name: str) -> str:
@@ -437,44 +440,13 @@ class ReadOverlapManager(MappingResultsParser):
         pid: str,
         force_tree_rebuild: bool = False,
     ):
-        # self.metadata = metadata_df
-        # self.fasta_list = metadata_df["file"].tolist()
-        # self.media_dir = media_dir
 
         super().__init__(metadata_df, media_dir, pid)
 
         self.clade_filter = CladeFilter(reference_clade=reference_clade)
         self.excluded_leaves = []
-        self.pid = pid
         self.force_tree_rebuild = force_tree_rebuild
         self.parsed = False
-
-        self.distance_matrix_path = os.path.join(
-            self.media_dir, self.distance_matrix_filename.format(pid)
-        )
-        self.shared_prop_matrix_path = os.path.join(
-            self.media_dir, self.shared_prop_matrix_filename.format(pid)
-        )
-
-        self.clade_shared_prop_matrix_path = os.path.join(
-            self.media_dir, self.clade_shared_prop_matrix_filename.format(pid)
-        )
-
-        self.clade_statistics_path = os.path.join(
-            self.media_dir, self.clade_statistics_filename.format(pid)
-        )
-        self.accid_statistics_path = os.path.join(
-            self.media_dir, self.accid_statistics_filename.format(pid)
-        )
-        self.tree_plot_path = os.path.join(
-            self.media_dir, self.tree_plot_filename.format(pid)
-        )
-        self.overlap_matrix_plot_path = os.path.join(
-            self.media_dir, self.overlap_matrix_plot_filename.format(pid)
-        )
-        self.overlap_pca_plot_path = os.path.join(
-            self.media_dir, self.overlap_pca_plot_filename.format(pid)
-        )
 
         self.metadata["filename"] = self.metadata["file"].apply(
             lambda x: x.split("/")[-1]
@@ -492,17 +464,57 @@ class ReadOverlapManager(MappingResultsParser):
             self.generate_shared_proportion_matrix()
             self.generate_clade_shared_proportion_matrix()
 
-        if not os.path.exists(self.tree_plot_path):
-            try:
-                self.tree_manager.plot_tree(self.tree_plot_path)
-            except Exception as e:
-                print(e)
+            if not os.path.exists(self.tree_plot_path):
+                try:
+                    self.tree_manager.plot_tree(self.tree_plot_path)
+                except Exception as e:
+                    print(e)
 
         self.tree_plot_exists = os.path.exists(self.tree_plot_path)
         self.tree_plot_path_render = os.path.join(
             "/media/", self.tree_plot_path.split("/media/")[-1]
         )
         self.overlap_matrix_plot_exists = os.path.exists(self.overlap_matrix_plot_path)
+
+    @property
+    def distance_matrix_path(self):
+        return os.path.join(
+            self.media_dir, self.distance_matrix_filename.format(self.pid)
+        )
+
+    @property
+    def shared_prop_matrix_path(self):
+        return os.path.join(
+            self.media_dir, self.shared_prop_matrix_filename.format(self.pid)
+        )
+
+    @property
+    def clade_shared_prop_matrix_path(self):
+        return os.path.join(
+            self.media_dir, self.clade_shared_prop_matrix_filename.format(self.pid)
+        )
+
+    @property
+    def clade_statistics_path(self):
+        return os.path.join(
+            self.media_dir, self.clade_statistics_filename.format(self.pid)
+        )
+
+    @property
+    def tree_plot_path(self):
+        return os.path.join(self.media_dir, self.tree_plot_filename.format(self.pid))
+
+    @property
+    def overlap_matrix_plot_path(self):
+        return os.path.join(
+            self.media_dir, self.overlap_matrix_plot_filename.format(self.pid)
+        )
+
+    @property
+    def overlap_pca_plot_path(self):
+        return os.path.join(
+            self.media_dir, self.overlap_pca_plot_filename.format(self.pid)
+        )
 
     def get_media_path_heatmap_clade(self, clade_str: str):
         clade_str_keep = clade_str.replace(" ", "_").lower()
@@ -1295,6 +1307,7 @@ class ReadOverlapManager(MappingResultsParser):
         )
 
         leaf_clades_df.reset_index(drop=True, inplace=True)
+        
         return leaf_clades_df
 
     def get_leaf_clades(self, force=False) -> pd.DataFrame:

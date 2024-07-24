@@ -18,8 +18,7 @@ from django.utils.translation import gettext_lazy as _
 from managing_files.models import Project as InsaFluProject
 from managing_files.models import Reference as InsaFluReference
 from managing_files.models import Sample
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.data_classes import IntermediateFiles
 
 # Create your models here.
@@ -304,7 +303,8 @@ class PIProject_Sample(models.Model):
 
         return taxid_list
 
-    def get_media_dir(self):
+    @property
+    def media_dir(self):
         return os.path.join(
             PICS.media_directory,
             PICS.televir_subdirectory,
@@ -777,10 +777,9 @@ class RunMain(models.Model):
         )
 
         if mapping_only is False:
-            raw_references_unmapped = (
-                raw_references_unmapped
-                .exclude(classification_source=None)
-                )
+            raw_references_unmapped = raw_references_unmapped.exclude(
+                classification_source=None
+            )
 
         raw_references_unmapped = raw_references_unmapped.order_by(
             "taxid", "status"
@@ -1420,8 +1419,7 @@ class ReferenceTaxid(models.Model):
         return self.taxid
 
 
-from constants.constants import \
-    Televir_Directory_Constants as Televir_Directories
+from constants.constants import Televir_Directory_Constants as Televir_Directories
 
 
 class ReferenceSourceFile(models.Model):

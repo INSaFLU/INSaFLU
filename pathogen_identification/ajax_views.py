@@ -1166,9 +1166,9 @@ def sort_report_projects(request):
             for sample in samples:
                 final_reports = FinalReport.objects.filter(sample=sample)
 
-                report_sorter = ReportSorter(final_reports, report_layout_params)
+                report_sorter = ReportSorter(sample, final_reports, report_layout_params)
 
-                if report_sorter.run is None:
+                if report_sorter.reports_availble is False:
                     pass
                 elif report_sorter.check_analyzed():
                     pass
@@ -1197,7 +1197,7 @@ def sort_report_sample(request):
         data = {"is_ok": False, "is_deployed": False}
         process_SGE = ProcessSGE()
         sample = PIProject_Sample.objects.get(pk=int(request.POST["sample_id"]))
-        references = request.POST.getlist("references[]")
+        #references = request.POST.getlist("references[]")
 
         project = sample.project
         report_layout_params = TelevirParameters.get_report_layout_params(
@@ -1205,9 +1205,9 @@ def sort_report_sample(request):
         )
         try:
             final_reports = FinalReport.objects.filter(sample=sample)
-            report_sorter = ReportSorter(final_reports, report_layout_params)
+            report_sorter = ReportSorter(sample, final_reports, report_layout_params)
 
-            if report_sorter.run is None:
+            if report_sorter.reports_availble is False:
                 pass
             elif report_sorter.check_analyzed():
                 pass

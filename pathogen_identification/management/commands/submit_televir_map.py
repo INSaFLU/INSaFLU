@@ -414,8 +414,10 @@ class Input_Generator:
             "-coverage"
         )
         #
+        if sample is None:
+            return
         report_layout_params = TelevirParameters.get_report_layout_params(run_pk=run.pk)
-        report_sorter = ReportSorter(final_report, report_layout_params)
+        report_sorter = ReportSorter(sample, final_report, report_layout_params)
         report_sorter.sort_reports_save()
 
 

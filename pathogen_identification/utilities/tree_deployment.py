@@ -136,7 +136,9 @@ class Tree_Node:
         report_layout_params = TelevirParameters.get_report_layout_params(
             project_pk=self.parameter_set.project.pk
         )
-        report_sorter = ReportSorter(final_report, report_layout_params)
+        report_sorter = ReportSorter(
+            self.parameter_set.sample, final_report, report_layout_params
+        )
         report_sorter.sort_reports_save()
 
     def receive_run_manager(self, run_manager: PathogenIdentification_TreeDeployment):
@@ -1125,7 +1127,7 @@ class TreeProgressGraph:
 
     def __init__(self, sample: PIProject_Sample):
         self.sample = sample
-        self.media_dir = sample.get_media_dir()
+        self.media_dir = sample.media_dir
         self.project = sample.project
         self.stacked_df_path = os.path.join(
             self.media_dir, self.progress_stackl_df_name.format(sample.pk)

@@ -706,7 +706,7 @@ class Run_Main_from_Leaf:
         if final_reports.exists() is False:
             return
 
-        report_sorter = ReportSorter(final_reports, report_layout_params)
+        report_sorter = ReportSorter(self.sample, final_reports, report_layout_params)
 
         try:
             report_sorter.sort_reports_save()

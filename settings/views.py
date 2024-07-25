@@ -181,7 +181,7 @@ class PISettingsView(LoginRequiredMixin, ListView):
             parameter__televir_project_sample=None,
         )
         project = Televir_Project.objects.get(pk=project.pk)
-        type_of_use_conversion= {
+        type_of_use_conversion = {
             Software.TYPE_OF_USE_televir_global: Software.TYPE_OF_USE_televir_project,
             Software.TYPE_OF_USE_televir_settings: Software.TYPE_OF_USE_televir_project_settings,
         }
@@ -191,7 +191,7 @@ class PISettingsView(LoginRequiredMixin, ListView):
             )
 
             type_of_use = type_of_use_conversion[software.type_of_use]
-            
+
             try:
                 Software.objects.get(
                     name=software.name,
@@ -334,11 +334,12 @@ class PISettingsView(LoginRequiredMixin, ListView):
             televir_project = Televir_Project.objects.get(pk=int(self.kwargs["level"]))
 
         ### test all defaults first, if exist in database
+        print("############## 1.")
         default_software = DefaultSoftware()
         default_software.test_all_defaults_once(
             self.request.user
         )  ## the user can have defaults yet
-
+        print("############## done.")
         ### project parameters
         if televir_project:
             # if not self.check_project_params_exist(televir_project):
@@ -360,6 +361,7 @@ class PISettingsView(LoginRequiredMixin, ListView):
         ### IMPORTANT, must have technology__name, because old versions don't
         constant_settings = PICS()
         condensed_pipeline_names = constant_settings.vect_pipeline_names_condensed
+        print("###################")
 
         for technology in technologies:  ## run over all technology
             vect_pipeline_step = []
@@ -414,7 +416,11 @@ class PISettingsView(LoginRequiredMixin, ListView):
                                 technology.replace(" ", "").replace("/", ""),
                             ),
                             pipeline_step_name,
-                            SoftwaresTable(query_set, televir_project=televir_project),
+                            SoftwaresTable(
+                                query_set,
+                                televir_project=televir_project,
+                                default_software=default_software,
+                            ),
                         ]
                     )
             ## if there is software for the pipeline step
@@ -456,6 +462,7 @@ class PISettingsGroupsView(PISettingsView):
         if level > 0:
             televir_project = Televir_Project.objects.get(pk=int(self.kwargs["level"]))
         ### test all defaults first, if exist in database
+
         default_software = DefaultSoftware()
         default_software.test_all_defaults_once(
             self.request.user
@@ -481,7 +488,6 @@ class PISettingsGroupsView(PISettingsView):
         ### IMPORTANT, must have technology__name, because old versions don't
         constant_settings = PICS()
         condensed_pipeline_groups = constant_settings.vect_pipeline_groups
-
         for technology in technologies:  ## run over all technology
             groups_tables = []
             for (
@@ -550,7 +556,9 @@ class PISettingsGroupsView(PISettingsView):
                                 ),
                                 pipeline_step_name,
                                 SoftwaresTable(
-                                    query_set, televir_project=televir_project
+                                    query_set,
+                                    televir_project=televir_project,
+                                    default_software=default_software,
                                 ),
                             ]
                         )

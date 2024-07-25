@@ -10,16 +10,18 @@ import pandas as pd
 from django.contrib.auth.models import User
 from django.db.models import Q, QuerySet
 
-from constants.constants import \
-    Televir_Directory_Constants as Televir_Directories
+from constants.constants import Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.host_library import HomoSapiens, Host
-from pathogen_identification.models import (ParameterSet, PIProject_Sample,
-                                            Projects, SoftwareTree,
-                                            SoftwareTreeNode)
-from pathogen_identification.utilities.utilities_televir_dbs import \
-    Utility_Repository
+from pathogen_identification.models import (
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
+from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -1078,8 +1080,7 @@ class Utility_Pipeline_Manager:
 
     def __init__(self):
         self.utility_repository = Utility_Repository(
-            db_path=Televir_Directories.docker_app_directory,
-            install_type="docker",
+            db_path=Televir_Directories.docker_app_directory, install_type="docker"
         )
 
         self.steps_db_dependant = ConstantsSettings.PIPELINE_STEPS_DB_DEPENDENT
@@ -1308,6 +1309,7 @@ class Utility_Pipeline_Manager:
             possibilities.append(element)
             possibilities.append(element.lower())
 
+        print(self.host_dbs.keys())
         for possibility in possibilities:
             if possibility in self.host_dbs.keys():
                 host_df = self.host_dbs[possibility]
@@ -1319,7 +1321,7 @@ class Utility_Pipeline_Manager:
                     host_df = host_df[
                         host_df.host_name == human_reference.host_name
                     ].append(host_df[host_df.host_name != human_reference.host_name])
-                
+
                 print(host_df)
 
                 return list(

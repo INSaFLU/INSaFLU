@@ -9,11 +9,10 @@ from curses.ascii import SO
 from django.contrib.auth.models import User
 
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from pathogen_identification.utilities.utilities_pipeline import (
-    Utility_Pipeline_Manager,
-    Utils_Manager,
-)
+    Utility_Pipeline_Manager, Utils_Manager)
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.models import Parameter, Software, SoftwareDefaultTest
@@ -27,11 +26,11 @@ class DefaultSoftware(object):
 
     software_names = SoftwareNames()
 
-    def __init__(self):
+    def __init__(self, test: int = 1):
         """change values"""
         self.default_parameters = DefaultParameters()
         self.televir_utiltity = Utility_Pipeline_Manager()
-        self.televir_utiltity.get_software_db_dict()
+        # self.televir_utiltity.get_software_db_dict()
 
         self.change_values_software = {}  ### the key is the name of the software
 
@@ -66,7 +65,7 @@ class DefaultSoftware(object):
         """test if televir software is available"""
         user_system = User.objects.get(username="system")
 
-        self.test_all_defaults_pathogen_identification_once(user_system)
+        # self.test_all_defaults_pathogen_identification_once(user_system)
 
         televir_available = self.test_televir_pipelines_available_once(user_system)
 

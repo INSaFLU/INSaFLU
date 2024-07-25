@@ -12,13 +12,10 @@ from django.conf import settings
 
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import (
-    ConstantsSettings as PI_ConstantsSettings,
-)
-from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility,
-    Utility_Pipeline_Manager,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PI_ConstantsSettings
+from pathogen_identification.utilities.utilities_pipeline import \
+    Utility_Pipeline_Manager
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -58,18 +55,21 @@ class DefaultParameters(object):
     ### MINIMUN of MAX of NanoFilt
     NANOFILT_MINIMUN_MAX = 100
 
-    def __init__(self):
+    def __init__(self, prep_dbs: bool = True):
         """
         Constructor
         """
-        televir_util = Parameter_DB_Utility()
-        software_list = televir_util.get_software_list()
+        #televir_util = Parameter_DB_Utility()
+        #software_list = televir_util.get_software_list()
 
         self.televir_db_manager = Utility_Pipeline_Manager()
 
         # self.televir_db_manager.set_software_list(software_list)
 
-        self.televir_db_manager.get_software_db_dict()
+        if prep_dbs:
+            self.televir_db_manager.get_software_db_dict()
+            self.televir_db_manager.get_host_dbs()
+
 
     def get_software_parameters_version(self, software_name):
         """
@@ -966,8 +966,6 @@ class DefaultParameters(object):
             )
 
         elif software.name == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ILLU_name:
-
-            print(software.name_extended, "#OUINOINO")
 
             if (
                 software.name_extended
@@ -2743,12 +2741,13 @@ class DefaultParameters(object):
         dbs_available = self.televir_db_manager.get_from_host_db(
             software.name.lower(), ["None"]
         )
+        print(dbs_available)
 
         vect_parameters = []
 
         parameter = Parameter()
         parameter.name = "--db"
-        parameter.parameter = dbs_available[0]
+        parameter.parameter = dbs_available[0][0]
         parameter.type_data = Parameter.PARAMETER_char_list
         parameter.software = software
         parameter.sample = sample
@@ -3067,13 +3066,14 @@ class DefaultParameters(object):
         vect_parameters = []
 
         ### software db
+        print(software.name.lower())
         dbs_available = self.televir_db_manager.get_from_host_db(
-            software.name.lower(), ["None"]
+            software.name.lower(), [["None", "None"]]
         )
 
         parameter = Parameter()
         parameter.name = "--db"
-        parameter.parameter = dbs_available[0]
+        parameter.parameter = dbs_available[0][0]
         parameter.type_data = Parameter.PARAMETER_char_list
         parameter.software = software
         parameter.sample = sample
@@ -3163,7 +3163,7 @@ class DefaultParameters(object):
 
         parameter = Parameter()
         parameter.name = "--db"
-        parameter.parameter = dbs_available[0]
+        parameter.parameter = dbs_available[0][0]
         parameter.type_data = Parameter.PARAMETER_char_list
         parameter.software = software
         parameter.sample = sample
@@ -3748,7 +3748,7 @@ class DefaultParameters(object):
 
         parameter = Parameter()
         parameter.name = "--db"
-        parameter.parameter = dbs_available[0]
+        parameter.parameter = dbs_available[0][0]
         parameter.type_data = Parameter.PARAMETER_char_list
         parameter.software = software
         parameter.sample = sample

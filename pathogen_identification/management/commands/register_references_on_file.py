@@ -134,8 +134,26 @@ class Command(BaseCommand):
         print(f"Number of entrez descriptions: {len(entrez_descriptions)}")
         print("Registering entrez descriptions")
         print(entrez_descriptions.head())
-        ignore_dict = {}
+
         d = 0
+
+        ignore_dict = extract_file_accids(
+            os.path.join(
+                Televir_Metadata_Constants.SOURCE["REF_FASTA"],
+                viros_file,
+            ),
+            os.path.join(outdir, "ignore_accids.txt"),
+            "GENE",
+        )
+
+        keep_dict = extract_file_accids(
+            os.path.join(
+                Televir_Metadata_Constants.SOURCE["REF_FASTA"],
+                viros_file,
+            ),
+            os.path.join(outdir, "ignore_accids.txt"),
+            "-v GENE",
+        )
 
         for taxid_str, taxid_df in entrez_descriptions.groupby("taxid"):
 
@@ -144,7 +162,7 @@ class Command(BaseCommand):
             except ReferenceTaxid.DoesNotExist:
                 ref_taxid = ReferenceTaxid.objects.create(taxid=taxid_str)
 
-            for ix, row in taxid_df.iterrows():
+            for _, row in taxid_df.iterrows():
 
                 ### register a log every 1000 taxids
                 d += 1
@@ -162,30 +180,38 @@ class Command(BaseCommand):
                 files = accid_file_df[accid_file_df.acc == accid_str].file
 
                 if sum(["virosaurus" in file for file in files]) > 0:
-
-                    if not ignore_dict:
-                        viros_file = [file for file in files if "virosaurus" in file][0]
-                        os.makedirs(outdir, exist_ok=True)
-
-                        ignore_dict = extract_file_accids(
-                            os.path.join(
-                                Televir_Metadata_Constants.SOURCE["REF_FASTA"],
-                                viros_file,
-                            ),
-                            os.path.join(outdir, "ignore_accids.txt"),
-                            "GENE",
-                        )
+                    viros_file = [file for file in files if "virosaurus" in file][0]
 
                     simple_accid = accid_str.split(".")[0]
 
-                    if ignore_dict.get(simple_accid, None) is not None:
+                    if (
+                        ignore_dict.get(simple_accid, None) is not None
+                        and keep_dict.get(simple_accid, None) is None
+                    ):
+
                         print("Ignoring accid", accid_str)
                         ref_source = ReferenceSource.objects.filter(accid=accid_str)
-                        if ref_source:
+
+                        viro_maps = ReferenceSourceFileMap.objects.filter(
+                            reference_source__accid=accid_str,
+                            reference_source_file__file=viros_file,
+                        )
+                        viro_maps.delete()
+
+                        any_left = ReferenceSourceFileMap.objects.filter(
+                            reference_source__accid=accid_str,
+                        )
+
+                        if ref_source and not any_left.exists():
                             ref_source.delete()
-                        continue
+
+                        files = [file for file in files if file != viros_file]
+
+                if len(files) == 0:
+                    continue
 
                 ref_source = ReferenceSource.objects.filter(accid=accid_str)
+
                 if ref_source.exists() is False:
                     ref_source = ReferenceSource.objects.create(
                         accid=accid_str, description=description, taxid=ref_taxid

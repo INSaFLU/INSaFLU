@@ -503,8 +503,8 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 			sample.has_files = True
 			
 			### set type of sequencing, illumina, minion...
-			## here, the file is already tested for gastq.gz and illumina and minion
-			sample.set_type_of_fastq_sequencing(form.cleaned_data['type_fastq'])
+			## here, the file is already tested for fastq.gz and illumina and minion
+            #sample.set_type_of_fastq_sequencing(form.cleaned_data['type_fastq'])               
 			
 			if (like_dates == 'date_of_onset'):
 				sample.day = int(sample.date_of_onset.strftime("%d"))
@@ -535,6 +535,17 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 				sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_to_fastq_file(self.request.user.id, sample.id), sample.file_name_2)
 				utils.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), sample.path_name_2.name), sz_file_to)
 				sample.path_name_2.name = os.path.join(utils.get_path_to_fastq_file(self.request.user.id, sample.id), sample.file_name_2)
+			sample.save()
+               
+			if(form.cleaned_data['type_of_fastq'] == -1):
+				sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_to_fastq_file(self.request.user.id, sample.id), sample.file_name_1)
+				(is_fastq, type_of_fastq) = utils.is_fastq_gz(sz_file_to)
+				if(type_of_fastq == Constants.FORMAT_FASTQ_illumina):
+					sample.type_of_fastq = Sample.TYPE_OF_FASTQ_illumina
+				elif(type_of_fastq == Constants.FORMAT_FASTQ_ont):
+					sample.type_of_fastq = Sample.TYPE_OF_FASTQ_illumina                         
+			else: 
+				sample.type_of_fastq = form.cleaned_data['type_of_fastq']
 			sample.save()
 
 		### create a task to perform the analysis of fastq and trimmomatic

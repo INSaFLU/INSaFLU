@@ -1059,7 +1059,7 @@ class TelefluProjectView(LoginRequiredMixin, generic.CreateView):
         ####################################### get combinations to deploy
         local_tree = software_utils.generate_software_tree_safe(
             software_utils.project,
-            software_utils.sample,
+            None,
             metagenomics=False,
             mapping_only=True,
             screening=False,
@@ -1071,11 +1071,12 @@ class TelefluProjectView(LoginRequiredMixin, generic.CreateView):
         else:
             all_paths = local_tree.get_all_graph_paths()
             available_path_nodes = software_utils.get_available_pathnodes(local_tree)
-        ##########################################
+        ########################################## get workflows
         workflows = []
         for node, params_df in all_paths.items():
             if node not in available_path_nodes:
                 continue
+
             if available_path_nodes[node].pk in existing_mapping_pks:
                 continue
 

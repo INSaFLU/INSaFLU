@@ -2023,6 +2023,7 @@ class Parameter_DB_Utility:
         elif project is not None:
             software_available = software_available.filter(
                 parameter__televir_project=project,
+                parameter__televir_project_sample= None,
                 type_of_use__in=Software.TELEVIR_PROJECT_TYPES,
             )
 

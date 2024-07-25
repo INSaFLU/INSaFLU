@@ -12,13 +12,10 @@ from django.conf import settings
 
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import (
-    ConstantsSettings as PI_ConstantsSettings,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PI_ConstantsSettings
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility,
-    Utility_Pipeline_Manager,
-)
+    Parameter_DB_Utility, Utility_Pipeline_Manager)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -152,7 +149,7 @@ class DefaultParameters(object):
             ## set sequential number
 
     def persist_parameters_update(
-        self, vect_parameters: List[Parameter], software: Software
+        self, vect_parameters: List[Parameter], software: Software, range_update= False
     ):
         """
         persist a specific software by default
@@ -164,11 +161,34 @@ class DefaultParameters(object):
             assert parameter.sequence_out not in dt_out_sequential
 
             try:
-                Parameter.objects.get(
+                parameter_existing = Parameter.objects.get(
                     software=software,
                     name=parameter.name,
                     sequence_out=parameter.sequence_out,
                 )
+
+                if range_update:
+                    if parameter.type_data == Parameter.PARAMETER_int:
+
+                        if parameter.range_available != parameter_existing.range_available:
+                            parameter_existing.range_available = parameter.range_available
+                            parameter_existing.save()
+
+                        if parameter.range_max != parameter_existing.range_max:
+                            parameter_existing.range_max = parameter.range_max
+                            parameter_existing.save()
+
+                        if parameter.range_min != parameter_existing.range_min:
+                            parameter_existing.range_min = parameter.range_min
+                            parameter_existing.save()
+
+                        if parameter.parameter is not None:
+
+                            if int(parameter_existing.parameter) > int(
+                                parameter_existing.range_max
+                            ):
+                                parameter_existing.parameter = parameter_existing.range_max
+                                parameter_existing.save()
 
             except Parameter.DoesNotExist:
 
@@ -2007,7 +2027,7 @@ class DefaultParameters(object):
 
         parameter = Parameter()
         parameter.name = SoftwareNames.SOFTWARE_REMAP_PARAMS_max_accids
-        parameter.parameter = "12"
+        parameter.parameter = "4"
         parameter.type_data = Parameter.PARAMETER_int
         parameter.software = software
         parameter.sample = sample

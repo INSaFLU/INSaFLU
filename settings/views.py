@@ -11,12 +11,12 @@ from datasets.models import Dataset, DatasetConsensus
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project, ProjectSample, Sample
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from pathogen_identification.models import PIProject_Sample
 from pathogen_identification.models import Projects as Televir_Project
-from pathogen_identification.utilities.utilities_views import (
-    duplicate_metagenomics_software,
-)
+from pathogen_identification.utilities.utilities_views import \
+    duplicate_metagenomics_software
 from settings.constants_settings import ConstantsSettings
 from settings.default_software import DefaultSoftware
 from settings.forms import SoftwareForm
@@ -181,21 +181,22 @@ class PISettingsView(LoginRequiredMixin, ListView):
             parameter__televir_project_sample=None,
         )
         project = Televir_Project.objects.get(pk=project.pk)
+        type_of_use_conversion= {
+            Software.TYPE_OF_USE_televir_global: Software.TYPE_OF_USE_televir_project,
+            Software.TYPE_OF_USE_televir_settings: Software.TYPE_OF_USE_televir_project_settings,
+        }
         for software in query_set:
             software_parameters = Parameter.objects.filter(
                 software=software,
             )
 
-            software.pk = None
-            if software.type_of_use == Software.TYPE_OF_USE_televir_global:
-                software.type_of_use = Software.TYPE_OF_USE_televir_project
-            else:
-                software.type_of_use = Software.TYPE_OF_USE_televir_project_settings
-
+            type_of_use = type_of_use_conversion[software.type_of_use]
+            
             try:
                 Software.objects.get(
                     name=software.name,
-                    type_of_use=software.type_of_use,
+                    name_extended=software.name_extended,
+                    type_of_use=type_of_use,
                     parameter__televir_project=project,
                     parameter__televir_project_sample=None,
                     pipeline_step=software.pipeline_step,
@@ -205,6 +206,8 @@ class PISettingsView(LoginRequiredMixin, ListView):
                 pass
 
             except Software.DoesNotExist:
+                software.pk = None
+                software.type_of_use = type_of_use
                 software.save()
                 for parameter in software_parameters:
                     parameter.pk = None

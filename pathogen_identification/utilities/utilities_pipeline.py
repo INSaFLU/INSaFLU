@@ -14,7 +14,7 @@ from constants.constants import \
     Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.host_library import Host
+from pathogen_identification.host_library import HomoSapiens, Host
 from pathogen_identification.models import (ParameterSet, PIProject_Sample,
                                             Projects, SoftwareTree,
                                             SoftwareTreeNode)
@@ -1311,6 +1311,17 @@ class Utility_Pipeline_Manager:
         for possibility in possibilities:
             if possibility in self.host_dbs.keys():
                 host_df = self.host_dbs[possibility]
+                human_reference = HomoSapiens()
+                if (
+                    human_reference.host_name in host_df.host_name.unique()
+                ):  # place human dbs first
+
+                    host_df = host_df[
+                        host_df.host_name == human_reference.host_name
+                    ].append(host_df[host_df.host_name != human_reference.host_name])
+                
+                print(host_df)
+
                 return list(
                     host_df[["path", "file_str"]].itertuples(index=False, name=None)
                 )
@@ -2023,7 +2034,7 @@ class Parameter_DB_Utility:
         elif project is not None:
             software_available = software_available.filter(
                 parameter__televir_project=project,
-                parameter__televir_project_sample= None,
+                parameter__televir_project_sample=None,
                 type_of_use__in=Software.TELEVIR_PROJECT_TYPES,
             )
 

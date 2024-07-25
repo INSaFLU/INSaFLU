@@ -12,10 +12,13 @@ from django.conf import settings
 
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PI_ConstantsSettings
+from pathogen_identification.constants_settings import (
+    ConstantsSettings as PI_ConstantsSettings,
+)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility, Utility_Pipeline_Manager)
+    Parameter_DB_Utility,
+    Utility_Pipeline_Manager,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -149,7 +152,7 @@ class DefaultParameters(object):
             ## set sequential number
 
     def persist_parameters_update(
-        self, vect_parameters: List[Parameter], software: Software, range_update= False
+        self, vect_parameters: List[Parameter], software: Software, range_update=False
     ):
         """
         persist a specific software by default
@@ -170,8 +173,13 @@ class DefaultParameters(object):
                 if range_update:
                     if parameter.type_data == Parameter.PARAMETER_int:
 
-                        if parameter.range_available != parameter_existing.range_available:
-                            parameter_existing.range_available = parameter.range_available
+                        if (
+                            parameter.range_available
+                            != parameter_existing.range_available
+                        ):
+                            parameter_existing.range_available = (
+                                parameter.range_available
+                            )
                             parameter_existing.save()
 
                         if parameter.range_max != parameter_existing.range_max:
@@ -187,7 +195,9 @@ class DefaultParameters(object):
                             if int(parameter_existing.parameter) > int(
                                 parameter_existing.range_max
                             ):
-                                parameter_existing.parameter = parameter_existing.range_max
+                                parameter_existing.parameter = (
+                                    parameter_existing.range_max
+                                )
                                 parameter_existing.save()
 
             except Parameter.DoesNotExist:
@@ -2730,7 +2740,7 @@ class DefaultParameters(object):
         software.owner = user
 
         ### software db
-        dbs_available = self.televir_db_manager.software_dbs_dict.get(
+        dbs_available = self.televir_db_manager.get_from_host_db(
             software.name.lower(), ["None"]
         )
 
@@ -3056,8 +3066,9 @@ class DefaultParameters(object):
 
         vect_parameters = []
 
-        dbs_available = self.televir_db_manager.get_from_software_db_dict(
-            software_name=software.name, empty=["None"]
+        ### software db
+        dbs_available = self.televir_db_manager.get_from_host_db(
+            software.name.lower(), ["None"]
         )
 
         parameter = Parameter()
@@ -3145,8 +3156,9 @@ class DefaultParameters(object):
 
         vect_parameters = []
 
-        dbs_available = self.televir_db_manager.get_from_software_db_dict(
-            software_name=software.name, empty=["None"]
+        ### software db
+        dbs_available = self.televir_db_manager.get_from_host_db(
+            software.name.lower(), ["None"]
         )
 
         parameter = Parameter()
@@ -3727,9 +3739,11 @@ class DefaultParameters(object):
 
         software.owner = user
 
-        dbs_available = self.televir_db_manager.software_dbs_dict.get(
+        ### software db
+        dbs_available = self.televir_db_manager.get_from_host_db(
             software.name.lower(), ["None"]
         )
+
         vect_parameters = []
 
         parameter = Parameter()

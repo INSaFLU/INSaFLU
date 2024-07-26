@@ -585,6 +585,17 @@ class ParseInFiles(object):
 				tag_names = TagNames(tag_name=tag_name, sample=sample, value=tag_samples_temp.value)
 				tag_names.save()
 
+				# If there is a column named 'technology', then specify sample type_of_fastq
+				if(tag_name.name == "technology"):
+					if(int(tag_samples_temp.value) in [-1,0,1]):
+						if(sample.candidate_file_name_2 != ""):
+							# Can only be illumina
+							sample.type_of_fastq = Sample.TYPE_OF_FASTQ_illumina
+						else:
+							# Can be what the user specifies
+							sample.type_of_fastq = int(tag_samples_temp.value)
+						sample.save()
+
 			upload_files.samples.add(sample)
 			
 		## save uplaod files
@@ -782,7 +793,9 @@ class ParseInFiles(object):
 				utils.link_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), upload_files_1.path_name.name), sz_file_to)
 				sample.path_name_1.name = os.path.join(utils.get_path_to_fastq_file(user.id, sample.id), sample.candidate_file_name_1)
 				sample.file_name_1 = sample.candidate_file_name_1
-				sample.set_type_of_fastq_sequencing(type_sequence_file_upload_file_1)
+				# Only set automatic if it is not yet defined
+				if(sample.type_of_fastq == Sample.TYPE_OF_FASTQ_not_defined):
+					sample.set_type_of_fastq_sequencing(type_sequence_file_upload_file_1)
 				sample.is_valid_1 = True
 				
 				upload_files_1.is_processed = True

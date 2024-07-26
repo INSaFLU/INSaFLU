@@ -166,6 +166,9 @@ urlpatterns = [
         r"^ajax/remove_sample$", ajax_views.remove_sample, name="remove_sample"
     ),  ## remove a sample
     url(
+        r"^ajax/swap_technology$", ajax_views.swap_technology, name="swap_technology"
+    ),  ## swap technology in sample    
+    url(
         r"^ajax/remove_project$", ajax_views.remove_project, name="remove_project"
     ),  ## remove a project
     url(

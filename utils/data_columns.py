@@ -105,6 +105,11 @@ DICT_MANDATORY_FIELDS = {
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha : VECT_NEXTSTRAIN_mandatory_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na : VECT_NEXTSTRAIN_mandatory_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2 : VECT_NEXTSTRAIN_mandatory_generic,		
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb1 : VECT_NEXTSTRAIN_mandatory_generic,		
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pa : VECT_NEXTSTRAIN_mandatory_generic,		
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_np : VECT_NEXTSTRAIN_mandatory_generic,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_mp : VECT_NEXTSTRAIN_mandatory_generic,					
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns : VECT_NEXTSTRAIN_mandatory_generic,						
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a : VECT_NEXTSTRAIN_mandatory_rsv,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b : VECT_NEXTSTRAIN_mandatory_rsv
 }
@@ -152,6 +157,11 @@ DICT_MANDATORY_FIELDS_DEFAULTS = {
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha : DICT_NEXTSTRAIN_default_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na : DICT_NEXTSTRAIN_default_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2 : DICT_NEXTSTRAIN_default_generic,		
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb1 : DICT_NEXTSTRAIN_default_generic,	
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pa : DICT_NEXTSTRAIN_default_generic,	
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_np : DICT_NEXTSTRAIN_default_generic,	
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_mp : DICT_NEXTSTRAIN_default_generic,	
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns : DICT_NEXTSTRAIN_default_generic,	
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic : DICT_NEXTSTRAIN_default_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic_time : DICT_NEXTSTRAIN_default_generic,	
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a : DICT_NEXTSTRAIN_default_rsv,
@@ -241,7 +251,6 @@ class Metadata(object):
 		:param dt_header_normal_out keys that are present only in INSAFLu list files
 		:param csv_writer 
 		"""
-	
 		dt_out_id_project_sample = {}
 		count = 0
 		for project_sample_pk in self.dt_rows_id:

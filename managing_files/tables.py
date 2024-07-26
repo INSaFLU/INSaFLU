@@ -280,7 +280,7 @@ class SampleTable(tables.Table):
                     return mark_safe(sample_name)
 
             return mark_safe(
-                '<a href="#id_remove_modal" id="id_remove_reference_modal" data-toggle="modal"'
+                '<a href="#id_remove_modal" id="id_remove_sample_modal" data-toggle="modal"'
                 + ' ref_name="'
                 + record.name
                 + '" pk="'
@@ -295,10 +295,27 @@ class SampleTable(tables.Table):
         ### is not processed yet
         if record.type_of_fastq == Sample.TYPE_OF_FASTQ_not_defined:
             return "Undefined"
-        return (
-            ConstantsSettings.TECHNOLOGY_illumina
-            if record.is_type_fastq_gz_sequencing()
-            else ConstantsSettings.TECHNOLOGY_minion
+        if( 
+                record.exist_file_2()
+                and
+                (record.get_type_technology() == ConstantsSettings.TECHNOLOGY_illumina)
+            ): return(ConstantsSettings.TECHNOLOGY_illumina)
+        
+        # If sample is ready for projects we'll assume it is ok
+        if(record.is_ready_for_projects):
+            if record.is_type_fastq_gz_sequencing():
+                return ConstantsSettings.TECHNOLOGY_illumina
+            else:
+                return ConstantsSettings.TECHNOLOGY_minion
+
+        return mark_safe(
+                '<a href="#id_swap_modal" id="id_swap_technology_modal" data-toggle="modal"'
+                + ' ref_name="'
+                + record.name
+                + '" pk="'
+                + str(record.pk)
+                + '"><i class="fa fa-recycle"></i></span> </a>'              
+                + (ConstantsSettings.TECHNOLOGY_illumina if record.is_type_fastq_gz_sequencing() else ConstantsSettings.TECHNOLOGY_minion)
         )
 
     def render_creation_date(self, **kwargs):
@@ -787,6 +804,8 @@ class ShowProjectSamplesResults(tables.Table):
         """
         return number
         """
+        if(record.classification is None):
+            return record.sample.type_subtype
         return record.classification
 
     def render_putative_mixed_infection(self, record):

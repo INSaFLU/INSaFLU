@@ -1600,6 +1600,7 @@ class ProcessSGE(object):
         """
 
         bash_command = (
+            # SLURM: scancel process_id
             "export SGE_ROOT={}; export PATH={}/bin/lx-amd64/:$PATH; qdel {}".format(
                 settings.SGE_ROOT, settings.SGE_ROOT, process_id
             )

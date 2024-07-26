@@ -30,13 +30,13 @@ $('#request_map_selected').on("click", function(e){
       success: function(data) {
         if (data['is_ok'] == true && data['is_deployed'] == true) {
           $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
-            'Screening deployed. ' + data['message'] +
+            'Screening deployed. ' +
             '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
             '</div>');
 
         } else if (data['is_ok']) {
           $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-            'Screening not deployed. Check settings.' + data['message'] +
+            'Screening not deployed. Check settings.' +
             '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
             '</div>');
 

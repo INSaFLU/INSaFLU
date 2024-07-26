@@ -4,7 +4,20 @@
     display: block;
 }
 
+#workflow-container-spinner {
 
+    visibility: visible; /* Ensures the spinner is always visible */
+    font-size: 18px; /* Adjust size as needed */
+    float: right; /* Align the spinner to the right */
+    color:#6e6e6e; /* Black color */
+}
+
+.spinner-container {
+    display: flex; /* Align children horizontally */
+    justify-content: center; /* Center the spinner */
+    align-items: center; /* Center the spinner */
+    height: 100%; /* Fill the height of the container */
+}
 
 .workflow-container-main {
     border: 1px solid #e6e6e6; /* Even lighter gray */
@@ -17,6 +30,7 @@
 }
 
 .workflow-container {
+    width: 100%;
     padding: 10px;
     display: flex;
     align-items: center;

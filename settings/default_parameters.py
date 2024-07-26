@@ -2741,8 +2741,6 @@ class DefaultParameters(object):
         dbs_available = self.televir_db_manager.get_from_host_db(
             software.name.lower(), ["None"]
         )
-        print(dbs_available)
-
         vect_parameters = []
 
         parameter = Parameter()
@@ -3066,7 +3064,6 @@ class DefaultParameters(object):
         vect_parameters = []
 
         ### software db
-        print(software.name.lower())
         dbs_available = self.televir_db_manager.get_from_host_db(
             software.name.lower(), [["None", "None"]]
         )

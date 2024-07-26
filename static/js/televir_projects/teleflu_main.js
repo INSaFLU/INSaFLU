@@ -90,10 +90,14 @@ var load_teleflu_workflows = function () {
 
 
                 var mapSamplesButton = $('<button>').attr('workflow', workflow.node).attr('workflow-id', workflow.pk).attr('type', 'button').addClass('mapSamplesButton btn btn-primary').attr('data-toggle', 'modal').attr('data-target', '#id_map_workflow_modal').text('Map Samples');
+                
+                mapSamplesButton.prop('disabled', true);
 
-                if (workflow.left_to_map) {
+                if (workflow.left_to_map == true) {
                     mapSamplesButton.prop('disabled', false);
-                } else {
+                }
+                
+                if (workflow.running_or_queued == true) {
                     mapSamplesButton.prop('disabled', true);
                 }
                 
@@ -129,10 +133,20 @@ var load_teleflu_workflows = function () {
                     mappingIgv.append(stackSamplesVariantIgv);
                     mappingIgv.append(stackSamplesVCF);
                 }
-    
+
+
+
     
                 workflowContainerAction.append(workflowTitle, stepContainer, workflowInfo, mappingIgv);
-
+                if (workflow.running_or_queued == true) {
+                    var spinnerContainer = $('<div class="spinner-container"></div>');
+                    // Create the spinner icon
+                    var spinner = $('<i id="workflow-container-spinner" class="fa fa-spin fa-circle-o-notch"></i>');
+                    // Append the spinner to the div
+                    spinnerContainer.append(spinner);
+                    // Append the div to the workflow container
+                    workflowContainerAction.append(spinnerContainer);
+                }
                 /// Summary List
 
                 var sampleSummary = workflow.sample_summary;

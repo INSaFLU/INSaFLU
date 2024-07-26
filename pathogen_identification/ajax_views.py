@@ -1856,6 +1856,7 @@ def load_teleflu_workflows(request):
             samples_mapped = mapping.mapped_samples
 
             samples_stacked = mapping.stacked_samples_televir
+            node_info["running_or_queued"] = mapping.queued_or_running_mappings_exist
             node_info["pk"] = mapping.pk
             node_info["samples_stacked"] = samples_stacked.count()
             node_info["samples_to_stack"] = samples_mapped.exclude(

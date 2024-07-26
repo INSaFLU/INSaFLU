@@ -89,9 +89,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         ###
         # get user
-        if not options["user_id"]:
-            username = "admin"
-
         user = User.objects.get(pk=options["user_id"])
         outdir = options["outdir"]
         os.makedirs(outdir, exist_ok=True)
@@ -136,7 +133,7 @@ class Command(BaseCommand):
                     Televir_Metadata_Constants.SOURCE["REF_FASTA"],
                     viros_file,
                 ),
-                os.path.join(outdir, "ignore_accids.txt"),
+                os.path.join(outdir, "keep_accids.txt"),
                 "-v GENE",
             )
 
@@ -160,7 +157,6 @@ class Command(BaseCommand):
         print("Retrieved entrez descriptions")
         print(f"Number of entrez descriptions: {len(entrez_descriptions)}")
         print("Registering entrez descriptions")
-        print(entrez_descriptions.head())
 
         d = 0
 

@@ -113,6 +113,33 @@ class Command(BaseCommand):
 
         print(f"Number of accids on file: {len(accid_file_df)}")
 
+        files = accid_file_df.file.unique().tolist()
+        viros_file = [file for file in files if "virosaurus" in file]
+
+        if len(viros_file) == 0:
+            ignore_dict = {}
+            keep_dict = {}
+        else:
+            viros_file = viros_file[0]
+
+            ignore_dict = extract_file_accids(
+                os.path.join(
+                    Televir_Metadata_Constants.SOURCE["REF_FASTA"],
+                    viros_file,
+                ),
+                os.path.join(outdir, "ignore_accids.txt"),
+                "GENE",
+            )
+
+            keep_dict = extract_file_accids(
+                os.path.join(
+                    Televir_Metadata_Constants.SOURCE["REF_FASTA"],
+                    viros_file,
+                ),
+                os.path.join(outdir, "ignore_accids.txt"),
+                "-v GENE",
+            )
+
         if options["curate"] is False:
             entrez_descriptions = entrez_connection.run_entrez_query(
                 query_list=accid_file_df.acc.unique().tolist(),
@@ -136,24 +163,6 @@ class Command(BaseCommand):
         print(entrez_descriptions.head())
 
         d = 0
-
-        ignore_dict = extract_file_accids(
-            os.path.join(
-                Televir_Metadata_Constants.SOURCE["REF_FASTA"],
-                viros_file,
-            ),
-            os.path.join(outdir, "ignore_accids.txt"),
-            "GENE",
-        )
-
-        keep_dict = extract_file_accids(
-            os.path.join(
-                Televir_Metadata_Constants.SOURCE["REF_FASTA"],
-                viros_file,
-            ),
-            os.path.join(outdir, "ignore_accids.txt"),
-            "-v GENE",
-        )
 
         for taxid_str, taxid_df in entrez_descriptions.groupby("taxid"):
 

@@ -14,8 +14,7 @@ from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project, ProjectSample, Sample
 from pathogen_identification.models import PIProject_Sample
 from pathogen_identification.models import Projects as PIProjects
-from pathogen_identification.utilities.utilities_pipeline import \
-    Pipeline_Makeup
+from pathogen_identification.utilities.utilities_pipeline import Pipeline_Makeup
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software import DefaultSoftware
@@ -729,7 +728,6 @@ def turn_on_off_software(request):
         type_of_use_id_a = "type_of_use_id"
         televir_project_id_a = "televir_project_id"
         televir_project_sample_id_a = "televir_project_sample_id"
-        
 
         ## some pre-requisites
         if not request.user.is_active or not request.user.is_authenticated:
@@ -763,7 +761,7 @@ def turn_on_off_software(request):
         if televir_project_sample_id_a in request.GET:
             televir_project_sample_id = request.GET[televir_project_sample_id_a]
 
-        default_parameters = DefaultParameters()
+        default_parameters = DefaultParameters(prep_televir_dbs=False)
         if software_id_a in request.GET:
             software_id = request.GET[software_id_a]
 

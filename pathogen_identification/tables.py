@@ -1373,7 +1373,9 @@ class RawReferenceTable_Basic(tables.Table):
     taxid = tables.Column(verbose_name="Taxid")
     accid = tables.Column(verbose_name="Taxid representativde Accession id")
     description = tables.Column(verbose_name="Taxid representative Description")
-    status = tables.Column(verbose_name="Status")
+    status = tables.Column(
+        verbose_name="Status",
+    )
 
     class Meta:
         model = RawReference
@@ -1421,7 +1423,9 @@ class RawReferenceTable_Basic(tables.Table):
 
 class RawReferenceTable(RawReferenceTable_Basic):
 
-    classification_source = tables.Column(verbose_name="Classification Source")
+    classification_source = tables.Column(
+        verbose_name="Classification Source",
+    )
     counts = tables.Column(verbose_name="Counts")
 
     class Meta:

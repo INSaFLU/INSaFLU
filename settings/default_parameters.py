@@ -55,7 +55,7 @@ class DefaultParameters(object):
     ### MINIMUN of MAX of NanoFilt
     NANOFILT_MINIMUN_MAX = 100
 
-    def __init__(self, prep_dbs: bool = True):
+    def __init__(self, prep_televir_dbs: bool = True):
         """
         Constructor
         """
@@ -66,7 +66,7 @@ class DefaultParameters(object):
 
         # self.televir_db_manager.set_software_list(software_list)
 
-        if prep_dbs:
+        if prep_televir_dbs:
             self.televir_db_manager.get_software_db_dict()
             self.televir_db_manager.get_host_dbs()
 

@@ -24,7 +24,7 @@ class DefaultProjectSoftware(object):
 
     def __init__(self):
         """change values"""
-        self.default_parameters = DefaultParameters(prep_dbs=False)
+        self.default_parameters = DefaultParameters(prep_televir_dbs=False)
         self.change_values_software = {}  ### the key is the name of the software
 
     def test_all_defaults(self, user, project, project_sample, sample, dataset=None):

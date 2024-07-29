@@ -423,49 +423,62 @@ var ready_document = function (user_id, reload_url) {
           'reference_ids': checkedRows,
         },
         success: function(data) {
-          if (data['is_ok']) {
-            $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
-              'References successfully added' +
-              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-              '</div>');
-              // reload table
-              $('#reference_table_div').html(data.empty_content);
-              // empty #search-input
-              $('#search-input').val('');
-              // clear selection 
-              $('.reference-checkbox').prop('checked', false);
-              
-              
-              // drop modal
-              load_panel_refs(panel_index);
-              reload_panels(user_id);
-              // close modal 
-              $('#myModal').modal('hide');
-              $('body').removeClass('modal-open');
-              $('.modal-backdrop').remove();
-              // unblock the UI
-              $.unblockUI();
+            if (data['is_ok']) {
+                $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
+                    'References successfully added' +
+                    '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                    '</div>');
+                // reload table
+                $('#reference_table_div').html(data.empty_content);
+                // empty #search-input
+                $('#search-input').val('');
+                // clear selection 
+                $('.reference-checkbox').prop('checked', false);
+                
+                // drop modal
+                load_panel_refs(panel_index);
+                reload_panels(user_id);
 
+                // close modal 
+                $('#myModal').modal('hide');
+                $('body').removeClass('modal-open');
+                $('.modal-backdrop').remove();
+                // unblock the UI
+                $.unblockUI();
 
-          } else if (data['is_error']) {
-            $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-              'The references were not added.' +
-              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-              '</div>');
+            } else if (data['is_full']) {
+                $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+                    'Some references were not added. The panel is full. The maximum number of references per panel is ' + data["max_references"] +
+                    '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                    '</div>');
+                // drop modal
+                $('#myModal').modal('hide');
+                $('body').removeClass('modal-open');
+                $('.modal-backdrop').remove();
+                // unblock the UI
+                $.unblockUI();
 
-              // drop modal
-              $('#myModal').modal('hide');
-            
-          } else if (data['is_empty']) {
-            $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-              'No references were selected.' +
-              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-              '</div>');
+            } else if (data['is_error']) {
+                $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+                'The references were not added.' +
+                '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                '</div>');
 
-              // drop modal
-              
-          }
-          $.unblockUI();
+                // drop modal
+                $('#myModal').modal('hide');
+                $('body').removeClass('modal-open');
+                $('.modal-backdrop').remove();
+                // unblock the UI
+                $.unblockUI();
+                
+            } else if (data['is_empty']) {
+                $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+                'No references were selected.' +
+                '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                '</div>');
+
+                // drop modal
+            }
         }
       })
 

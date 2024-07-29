@@ -9,10 +9,8 @@ from typing import Dict, List
 import networkx as nx
 
 from fluwebvirus.settings import MEDIA_ROOT, STATIC_ROOT, STATICFILES_DIRS
-from pathogen_identification.utilities.mapping_flags import (
-    MapFlagProbes,
-    MapFlagViruses,
-)
+from pathogen_identification.utilities.mapping_flags import (MapFlagProbes,
+                                                             MapFlagViruses)
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -30,6 +28,10 @@ class ConstantsSettings:
     test_subdirectory = "temp_objects_tests"
 
     USER_TREE_INDEX = 0
+
+    ################################### Panels
+
+    MAX_REFERENCES_PANEL = 100
 
     ################################### Pipeline steps
 

@@ -1166,7 +1166,9 @@ def sort_report_projects(request):
             for sample in samples:
                 final_reports = FinalReport.objects.filter(sample=sample)
 
-                report_sorter = ReportSorter(sample, final_reports, report_layout_params)
+                report_sorter = ReportSorter(
+                    sample, final_reports, report_layout_params
+                )
 
                 if report_sorter.reports_availble is False:
                     pass
@@ -1197,7 +1199,7 @@ def sort_report_sample(request):
         data = {"is_ok": False, "is_deployed": False}
         process_SGE = ProcessSGE()
         sample = PIProject_Sample.objects.get(pk=int(request.POST["sample_id"]))
-        #references = request.POST.getlist("references[]")
+        # references = request.POST.getlist("references[]")
 
         project = sample.project
         report_layout_params = TelevirParameters.get_report_layout_params(
@@ -2538,6 +2540,8 @@ def add_references_to_panel(request):
         reference_ids = request.POST.getlist("reference_ids[]")
         already_added = []
         for reference_id in reference_ids:
+            if panel.references_count >= PICS.MAX_REFERENCES_PANEL:
+                return JsonResponse({"is_full": True, "max_references": PICS.MAX_REFERENCES_PANEL})
             try:
                 reference = ReferenceSourceFileMap.objects.get(pk=int(reference_id))
                 description = reference.description
@@ -2546,8 +2550,10 @@ def add_references_to_panel(request):
                 ).exists():
                     already_added.append(reference.reference_source.accid)
                     continue
+
                 if description is None:
                     description = ""
+
                 if len(description) > 200:
                     description = description[:200]
                 _ = RawReference.objects.create(
@@ -2579,12 +2585,15 @@ def add_file_to_panel(request):
 
         try:
             for reference in refs:
+                if panel.references_count >= PICS.MAX_REFERENCES_PANEL:
+                    return JsonResponse({"is_full": True, "max_references": PICS.MAX_REFERENCES_PANEL, "is_ok": True})
+
                 if RawReference.objects.filter(
                     accid=reference.reference_source.accid, panel=panel
                 ).exists():
                     continue
 
-                panel_reference = RawReference.objects.create(
+                RawReference.objects.create(
                     accid=reference.reference_source.accid,
                     taxid=reference.reference_source.taxid,
                     description=reference.reference_source.description,

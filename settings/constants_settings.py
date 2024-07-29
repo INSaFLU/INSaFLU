@@ -58,13 +58,13 @@ class ConstantsSettings(object):
         PIPELINE_NAME_assembly,
         PIPELINE_NAME_contig_classification,
         PIPELINE_NAME_read_classification,
-        PIPELINE_NAME_metagenomics_screening,
         PIPELINE_NAME_metagenomics_settings,
         PIPELINE_NAME_request_mapping,
         PIPELINE_NAME_remapping,
         PIPELINE_NAME_remap_filtering,
         PIPELINE_NAME_map_filtering,
         PIPELINE_NAME_reporting,
+        PIPELINE_NAME_metagenomics_screening,
     ]
 
     vect_pipeline_televir_classic = [

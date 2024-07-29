@@ -87,13 +87,13 @@ class TelevirBioinf:
     def get_mapped_reads(self, bam_file, outfile=None):
         command = f"{self.samtools_binary} view -F 0x4 {bam_file} | cut -f 1 | sort | uniq > {outfile}"
         subprocess.call(command, shell=True)
-        mapped_reads = os.path.getsize(outfile)
-        return int(mapped_reads)
+        return self.check_file_exists_not_empty(outfile)
 
-    def get_mapped_reads_list(self, bam_file, outfile=None) -> List[str]:
+    def get_mapped_reads_list(self, bam_file, outfile: str) -> List[str]:
 
         deployed = self.get_mapped_reads(bam_file, outfile)
-        if deployed is None:
+
+        if deployed is False:
             return []
 
         with open(outfile, "r") as f:

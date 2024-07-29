@@ -78,9 +78,9 @@ class ConstantsSettings:
     ]
 
     PIPELINE_STEPS_MAPPINGS = [
-        CS.PIPELINE_NAME_metagenomics_screening,
         CS.PIPELINE_NAME_request_mapping,
         CS.PIPELINE_NAME_map_filtering,
+        CS.PIPELINE_NAME_metagenomics_screening,
     ]
 
     PIPELINE_STEPS_GLOBAL = [

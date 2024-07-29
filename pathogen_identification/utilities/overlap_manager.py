@@ -288,18 +288,14 @@ class MappingResultsParser:
 
         
         for ix, row in self.metadata.iterrows():
-            fasta_file= row["file"]
+            
             accid = row["accid"]
             bam= row["bam"]
 
             temp_file= Temp_File(temp_dir)
             with temp_file as tpf:
                 read_names= televir_bioinf.get_mapped_reads_list(bam, tpf)
-            
-            # f"samtools view -F 0x4 {self.read_map_sorted_bam} | cut -f 1 | sort | uniq > {self.mapped_reads_file}"
-            
-            #read_names = self.readname_from_fasta(fasta_file)
-            print(accid, len(read_names))
+
             if accid in readname_dict:
                 readname_dict[accid] += read_names
             else:

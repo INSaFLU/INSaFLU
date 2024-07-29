@@ -223,7 +223,7 @@ class MappingResultsParser:
     read_profile_matrix: pd.DataFrame
     read_profile_matrix_filtered: pd.DataFrame
     overlap_matrix: pd.DataFrame
-    total_read_counts: int
+    total_read_counts: pd.Series
     accid_statistics_filename: str = "accid_statistics_{}.tsv"
     min_freq: float = 0
     max_reads: int = 500000
@@ -281,6 +281,8 @@ class MappingResultsParser:
         for fasta_file in self.fasta_list:
             accid = self.accid_from_metadata(self.metadata, fasta_file)
             read_names = self.readname_from_fasta(fasta_file)
+            if accid in readname_dict:
+                readname_dict[accid] += read_names
 
             readname_dict[accid] = read_names
         return readname_dict
@@ -1307,7 +1309,7 @@ class ReadOverlapManager(MappingResultsParser):
         )
 
         leaf_clades_df.reset_index(drop=True, inplace=True)
-        
+
         return leaf_clades_df
 
     def get_leaf_clades(self, force=False) -> pd.DataFrame:

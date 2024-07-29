@@ -283,8 +283,8 @@ class MappingResultsParser:
             read_names = self.readname_from_fasta(fasta_file)
             if accid in readname_dict:
                 readname_dict[accid] += read_names
-
-            readname_dict[accid] = read_names
+            else:
+                readname_dict[accid] = read_names
         return readname_dict
 
     @staticmethod

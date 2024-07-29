@@ -14,8 +14,11 @@ from Bio import Phylo
 from Bio.Phylo.TreeConstruction import DistanceMatrix, DistanceTreeConstructor
 from scipy.spatial.distance import pdist, squareform
 
+from pathogen_identification.modules.object_classes import Temp_File
 from pathogen_identification.utilities.clade_objects import Clade, CladeFilter
 from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
+from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
+from utils.utils import Utils
 
 ## pairwise matrix by individual reads
 
@@ -226,18 +229,19 @@ class MappingResultsParser:
     total_read_counts: pd.Series
     accid_statistics_filename: str = "accid_statistics_{}.tsv"
     min_freq: float = 0
-    max_reads: int = 500000
+    max_reads: int
 
     def __init__(
         self,
         metadata_df: pd.DataFrame,
         media_dir: str,
         pid: str,
+        max_reads: int = 500000,
     ):
         self.metadata = metadata_df
-        self.fasta_list = metadata_df["file"].tolist()
         self.media_dir = media_dir
         self.pid = pid
+        self.max_reads = max_reads
 
         self.parsed = False
 
@@ -278,9 +282,24 @@ class MappingResultsParser:
         Return dictionary of read names and descriptions
         """
         readname_dict = {}
-        for fasta_file in self.fasta_list:
-            accid = self.accid_from_metadata(self.metadata, fasta_file)
-            read_names = self.readname_from_fasta(fasta_file)
+        utils = Utils()
+        temp_dir = utils.get_temp_dir()
+        televir_bioinf= TelevirBioinf()
+
+        
+        for ix, row in self.metadata.iterrows():
+            fasta_file= row["file"]
+            accid = row["accid"]
+            bam= row["bam"]
+
+            temp_file= Temp_File(temp_dir)
+            with temp_file as tpf:
+                read_names= televir_bioinf.get_mapped_reads_list(bam, tpf)
+            
+            # f"samtools view -F 0x4 {self.read_map_sorted_bam} | cut -f 1 | sort | uniq > {self.mapped_reads_file}"
+            
+            #read_names = self.readname_from_fasta(fasta_file)
+            print(accid, len(read_names))
             if accid in readname_dict:
                 readname_dict[accid] += read_names
             else:
@@ -312,6 +331,7 @@ class MappingResultsParser:
             read_profile_dict[accid] = self.render_binary_profile(
                 accid, readname_dict, all_reads
             )
+
         return read_profile_dict
 
     @staticmethod
@@ -441,9 +461,10 @@ class ReadOverlapManager(MappingResultsParser):
         media_dir: str,
         pid: str,
         force_tree_rebuild: bool = False,
+        max_reads: int = 500000,
     ):
 
-        super().__init__(metadata_df, media_dir, pid)
+        super().__init__(metadata_df, media_dir, pid, max_reads= max_reads)
 
         self.clade_filter = CladeFilter(reference_clade=reference_clade)
         self.excluded_leaves = []

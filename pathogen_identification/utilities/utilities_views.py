@@ -4,13 +4,11 @@ import os
 from typing import Dict, List, Optional, Union
 
 import pandas as pd
-from braces.views import FormValidMessageMixin, LoginRequiredMixin
 from django.db import transaction
 from django.db.models import Q
 from django.db.models.query import QuerySet
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-from django.views import generic
 
 from constants.constants import Constants
 from fluwebvirus.settings import STATIC_ROOT
@@ -794,21 +792,23 @@ class ReportSorter:
             else:
                 self.excluded_dict[report.accid] = report
 
-        self.metadata_df = self.prep_metadata_df()
-
-        self.fasta_files = self.metadata_df.file.tolist()
         self.level = level
 
         self.reports_availble = len(reports) > 0
 
         self.media_dir = sample.media_dir
         self.force = force
+
+        self.metadata_df = self.prep_metadata_df()
+        self.fasta_files = self.metadata_df.file.tolist()
+
         self.overlap_manager = ReadOverlapManager(
             self.metadata_df,
             self.reference_clade,
             self.media_dir,
             str(self.sample.pk),
             force_tree_rebuild=force,
+            max_reads=PIConstantsSettings.MAX_READS_INPUT,
         )
 
         self.all_clades_df_path = os.path.join(self.media_dir, self.all_clade_filename)
@@ -973,6 +973,37 @@ class ReportSorter:
         except ReferenceMap_Main.DoesNotExist:
             return None
 
+        except Exception as e:
+            print(e)
+            return None
+
+    def retrieved_mapped_bam(self, report: FinalReport):
+        """
+        Return subset of retrieved and mapped reads
+        """
+        if report.depth == 0:
+            return None
+
+        try:
+            simple_accid = simplify_name(report.accid)
+
+            mapped_ref = ReferenceMap_Main.objects.get(
+                reference=simple_accid, run=report.run
+            )
+
+            if not mapped_ref.bam_file_path:
+                return None
+
+            if os.path.exists(mapped_ref.bam_file_path):
+                return mapped_ref.bam_file_path
+
+        except ReferenceMap_Main.DoesNotExist:
+            return None
+
+        except Exception as e:
+            print(e)
+            return None
+
     def prep_metadata_df(self):
         """
         Return metadata dataframe
@@ -984,17 +1015,24 @@ class ReportSorter:
             accid = report.accid
             description = report.description
             mapped_subset_r1 = self.retrieved_mapped_subset(report)
+            mapped_bam = self.retrieved_mapped_bam(report)
+            # f"samtools view -F 0x4 {self.read_map_sorted_bam} | cut -f 1 | sort | uniq > {self.mapped_reads_file}"
             if not mapped_subset_r1:
                 continue
             filename = mapped_subset_r1
             metadata_dict.append(
-                {"file": filename, "description": description, "accid": accid}
+                {
+                    "file": filename,
+                    "description": description,
+                    "accid": accid,
+                    "bam": mapped_bam,
+                }
             )
 
         metadata_df = pd.DataFrame(metadata_dict)
 
         if metadata_df.empty:
-            metadata_df = pd.DataFrame(columns=["file", "description", "accid"])
+            metadata_df = pd.DataFrame(columns=["file", "description", "accid", "bam"])
 
         return metadata_df
 
@@ -1025,6 +1063,7 @@ class ReportSorter:
             self.reference_clade,
             self.media_dir,
             str(self.sample.pk),
+            max_reads=PIConstantsSettings.MAX_READS_INPUT,
         )
 
         if not os.path.exists(overlap_manager.distance_matrix_path):

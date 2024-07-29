@@ -9,7 +9,6 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 
 from constants.constants import Televir_Metadata_Constants
-from pathogen_identification.models import RawReference
 from pathogen_identification.modules.object_classes import MappingStats
 
 
@@ -75,12 +74,32 @@ class DustMasker:
         return self.fasta_hard_mask
 
 
+from pathogen_identification.modules.object_classes import Temp_File
+
+
 class TelevirBioinf:
 
     def __init__(self):
         self.metadata_constants = Televir_Metadata_Constants()
         self.samtools_binary = self.metadata_constants.get_software_binary("samtools")
         self.bcf_tools_binary = self.metadata_constants.get_software_binary("bcftools")
+
+    def get_mapped_reads(self, bam_file, outfile=None):
+        command = f"{self.samtools_binary} view -F 0x4 {bam_file} | cut -f 1 | sort | uniq > {outfile}"
+        subprocess.call(command, shell=True)
+        mapped_reads = os.path.getsize(outfile)
+        return int(mapped_reads)
+
+    def get_mapped_reads_list(self, bam_file, outfile=None) -> List[str]:
+
+        deployed = self.get_mapped_reads(bam_file, outfile)
+        if deployed is None:
+            return []
+
+        with open(outfile, "r") as f:
+            reads = f.readlines()
+
+        return [x.strip() for x in reads]
 
     @staticmethod
     def virosaurus_formatting(accid):

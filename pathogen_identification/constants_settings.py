@@ -9,8 +9,10 @@ from typing import Dict, List
 import networkx as nx
 
 from fluwebvirus.settings import MEDIA_ROOT, STATIC_ROOT, STATICFILES_DIRS
-from pathogen_identification.utilities.mapping_flags import (MapFlagProbes,
-                                                             MapFlagViruses)
+from pathogen_identification.utilities.mapping_flags import (
+    MapFlagProbes,
+    MapFlagViruses,
+)
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -160,6 +162,7 @@ class ConstantsSettings:
 
     ################################## TAXONOMY
 
+    MAX_READS_INPUT = 500000
     READ_OVERLAP_THRESHOLD = 0.9
     SHARED_READS_THRESHOLD = 0.5
 

@@ -9,10 +9,11 @@ from curses.ascii import SO
 from django.contrib.auth.models import User
 
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.utilities.utilities_pipeline import (
-    Utility_Pipeline_Manager, Utils_Manager)
+    Utility_Pipeline_Manager,
+    Utils_Manager,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.models import Parameter, Software, SoftwareDefaultTest
@@ -787,6 +788,7 @@ class DefaultSoftware(object):
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
                 pipeline_step=ConstantsSettings.PIPELINE_NAME_contig_classification,
+                is_to_run=False,
             ),
             user,
         )
@@ -798,6 +800,7 @@ class DefaultSoftware(object):
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_minion,
                 pipeline_step=ConstantsSettings.PIPELINE_NAME_read_classification,
+                is_to_run=False,
             ),
             user,
         )
@@ -809,6 +812,7 @@ class DefaultSoftware(object):
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_minion,
                 pipeline_step=ConstantsSettings.PIPELINE_NAME_contig_classification,
+                is_to_run=False,
             ),
             user,
         )
@@ -820,6 +824,7 @@ class DefaultSoftware(object):
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
                 pipeline_step=ConstantsSettings.PIPELINE_NAME_viral_enrichment,
+                is_to_run=False,
             ),
             user,
         )

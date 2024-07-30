@@ -3318,7 +3318,7 @@ class DefaultParameters(object):
         return vect_parameters
 
     def get_kraken2_default(
-        self, user, type_of_use, technology_name, sample=None, pipeline_step=""
+        self, user, type_of_use, technology_name, sample=None, pipeline_step="", is_to_run=True
     ):
         """
         kraken2 default
@@ -3340,7 +3340,7 @@ class DefaultParameters(object):
         software.can_be_on_off_in_pipeline = (
             True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
         )
-        software.is_to_run = True
+        software.is_to_run = is_to_run
 
         ###  small description of software
         software.help_text = ""

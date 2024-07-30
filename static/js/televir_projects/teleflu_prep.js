@@ -17,6 +17,15 @@ $(document).ready(function () {
 
         checkedRows_refs.push(ref_id);
       });
+    
+      if (checkedRows_refs.length == 0){
+        $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+        'No references were selected.' +
+        '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+        '</div>');
+        return;
+      }
+    
       // get checked samples rows
       var checkedRows_samples = [];
       $('.select_sample-checkbox:checked').each(function () {
@@ -38,7 +47,6 @@ $(document).ready(function () {
           'sample_ids': checkedRows_samples,
         },
         success: function (data) {
-          console.log(data);
           if (data['is_ok'] && !data['exists']) {
             $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
               'References successfully added' +

@@ -233,3 +233,8 @@ table .sample-name {
     margin-bottom: 15px; /* Space below the title */
     color: #333; /* Dark grey color for better readability */
 }
+
+td.e_rank, th.e_rank {
+    text-align: center;
+    width: 11%;
+}

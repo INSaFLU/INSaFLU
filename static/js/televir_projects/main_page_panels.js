@@ -123,6 +123,8 @@ var load_panels_main = function(load_url, user_id, target, load = false, suggest
           var sample_id = $(this).attr('sample_id');
           checkedRows_samples.push(sample_id);
       });
+    
+
       $.ajax({
           url: url,
           type: 'POST',

@@ -13,35 +13,22 @@ from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    RawReferenceCompoundModel,
-    ReadClassification,
-    ReferenceContigs,
-    RunAssembly,
-    RunMain,
-    SampleQC,
-    TeleFluProject,
-    TelevirRunQC,
-)
-from pathogen_identification.utilities.reference_utils import (
-    check_file_reference_submitted,
-)
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.models import (ContigClassification, FinalReport,
+                                            ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            RawReferenceCompoundModel,
+                                            ReadClassification,
+                                            ReferenceContigs, RunAssembly,
+                                            RunMain, SampleQC, TeleFluProject,
+                                            TelevirRunQC)
+from pathogen_identification.utilities.reference_utils import \
+    check_file_reference_submitted
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.utilities_general import (
-    get_project_dir,
-    get_project_dir_no_media_root,
-    infer_run_media_dir,
-)
+    get_project_dir, get_project_dir_no_media_root, infer_run_media_dir)
 from pathogen_identification.utilities.utilities_views import (
-    RawReferenceCompound,
-    RunMainWrapper,
-)
+    RawReferenceCompound, RunMainWrapper)
 from settings.constants_settings import ConstantsSettings as SettingsCS
 from settings.models import Parameter, Software
 
@@ -786,7 +773,8 @@ class SampleTableOne(tables.Table):
         ).count()
 
 
-from pathogen_identification.models import ReferenceSourceFile, ReferenceSourceFileMap
+from pathogen_identification.models import (ReferenceSourceFile,
+                                            ReferenceSourceFileMap)
 
 
 class ReferenceSourceFileTable(tables.Table):
@@ -854,7 +842,8 @@ class ReferenceSourceFileTable(tables.Table):
         return record.creation_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE)
 
 
-from pathogen_identification.utilities.reference_utils import check_reference_exists
+from pathogen_identification.utilities.reference_utils import \
+    check_reference_exists
 
 
 class TelevirReferencesTable(tables.Table):
@@ -1012,17 +1001,18 @@ class TeleFluReferenceTable(tables.Table):
         attrs={
             "th__input": {
                 "name": "teleflu_select_ref",
+                "style": "display: none;"
             }
         },
     )
     description = tables.Column(verbose_name="Description", orderable=False)
     accid = tables.Column(verbose_name="Accession id", orderable=False)
     taxid = tables.Column(verbose_name="Taxid", orderable=False)
-    standard_score = tables.Column(
-        verbose_name="Max Score",
+    e_rank = tables.Column(
+        verbose_name="E Rank",
         orderable=False,
         empty_values=(),
-        order_by=("-standard_score",),
+        order_by=("-ensemble_ranking",),
     )
 
     class Meta:
@@ -1047,8 +1037,10 @@ class TeleFluReferenceTable(tables.Table):
     def render_taxid(self, record: RawReferenceCompound):
         return record.taxid
 
-    def render_standard_score(self, record: RawReferenceCompound):
-        return round(record.standard_score, 3)
+    def render_e_rank(self, record: RawReferenceCompound):
+        if record.ensemble_ranking is None:
+            return "N/A"
+        return round(record.ensemble_ranking, 3)
 
     def render_global_ranking(self, record: RawReferenceCompound):
         if record.global_ranking is None:
@@ -1311,12 +1303,12 @@ class CompoundReferenceTable(tables.Table):
 
 
 class CompoundReferenceScore(CompoundReferenceTable):
-    score = tables.Column(
-        verbose_name="Score",
-        orderable=True,
-        empty_values=(),
-        order_by=("-standard_score",),
-    )
+    # score = tables.Column(
+    #    verbose_name="Score",
+    #    orderable=True,
+    #    empty_values=(),
+    #    order_by=("-standard_score",),
+    # )
     global_ranking = tables.Column(
         verbose_name="Global Ranking",
         orderable=True,
@@ -1333,6 +1325,16 @@ class CompoundReferenceScore(CompoundReferenceTable):
     class Meta:
         attrs = {"class": "paleblue"}
         # order_by = ("-standard_score",)
+        sequence = (
+            "select_ref",
+            "description",
+            "accid",
+            "taxid",
+            "runs",
+            "global_ranking",
+            "ensemble_ranking",
+            "mapped",
+        )
 
     def render_score(self, record: RawReferenceCompound):
         return round(record.standard_score, 3)

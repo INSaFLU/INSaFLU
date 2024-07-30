@@ -119,3 +119,23 @@
 .clear-selections-btn:focus {
   outline: none; /* Removes the outline to keep the design clean */
 }
+
+td.ensemble_ranking, th.ensemble_ranking {
+  text-align: center; /* Horizontally centers the content */
+  vertical-align: middle; /* Vertically centers the content */
+}
+
+td.global_ranking, th.global_ranking {
+  text-align: center; /* Horizontally centers the content */
+  vertical-align: middle; /* Vertically centers the content */
+}
+
+td.runs, th.runs {
+  text-align: center; /* Horizontally centers the content */
+  vertical-align: middle; /* Vertically centers the content */
+}
+
+td.mapped, th.mapped {
+  vertical-align: middle; /* Vertically centers the content */
+  min-width: 200px;
+}

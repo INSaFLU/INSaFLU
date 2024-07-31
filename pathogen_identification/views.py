@@ -947,7 +947,7 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
         context["user_id"] = project.owner.pk
         context["project_index"] = project.pk
         context["project_name"] = project_name
-        context["nav_sample"] = True
+        context["nav_project"] = True
         context["total_items"] = query_set.count()
         context["show_paginatior"] = query_set.count() > Constants.PAGINATE_NUMBER
         context["show_info_main_page"] = ShowInfoMainPage()
@@ -1096,6 +1096,7 @@ class TelefluProjectView(LoginRequiredMixin, generic.CreateView):
         context["focus_teleflu"] = (
             f"Focus: {this_project.raw_reference.description_first}"
         )
+        context["nav_project"] = True
         ###
 
         return context
@@ -1286,7 +1287,7 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
         ).configure(runs_table)
 
         context = {
-            "nav_sample": True,
+            "nav_project": True,
             "total_items": runs.count(),
             "show_paginatior": runs.count() > ConstantsSettings.PAGINATE_NUMBER,
             "show_info_main_page": ShowInfoMainPage(),
@@ -1330,8 +1331,6 @@ def inject_references_filter(request, max_references: int = 30):
         panel = ReferencePanel.objects.get(pk=panel_id)
 
     references = []
-
-    print(table_type)
 
     if request.GET.get(tag_add_reference) is not None:
         if table_type == "teleflu_reference":
@@ -2051,13 +2050,13 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
         context["graph_id"] = graph_id
         context["meta_parameters"] = mark_safe(metagenomics_parameters)
         context["deploy_metagenomics"] = mark_safe(deploy_metagenomics)
-        context["nav_sample"] = True
         context["show_paginatior"] = (
             raw_reference_compound.count() > Constants.PAGINATE_NUMBER
         )
         context["query_set_count"] = raw_reference_compound.count()
         context["show_info_main_page"] = ShowInfoMainPage()
         context["nav_modal"] = True  ## short the size of modal window
+        context["nav_project"] = True
 
         context["owner"] = True
         context["references"] = raw_reference_compound
@@ -2362,6 +2361,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "overlap_pca_path": report_sorter.overlap_pca_path,
             "private_reads_available": private_reads_available,
             "no_mapping": run_main_pipeline.remap == "None",
+            "nav_project": True,
         }
 
         ### downloadable files
@@ -2488,6 +2488,7 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
 
         context = {
             "project": project_name,
+            "nav_project": True,
             "graph_json": graph_json,
             "sort_performed": sort_performed,
             "groups_count": len(sorted_reports),
@@ -2582,7 +2583,7 @@ class Scaffold_Remap(LoginRequiredMixin, generic.CreateView):
             )
 
         context = {
-            "nav_sample": True,
+            "nav_project": True,
             "total_items": map_db.count(),
             "show_paginatior": map_db.count() > ConstantsSettings.PAGINATE_NUMBER,
             "show_info_main_page": ShowInfoMainPage(),

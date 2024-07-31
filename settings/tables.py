@@ -3,8 +3,10 @@ Created on 03/05/2020
 
 @author: mmp
 """
+
 import logging
 import os
+from typing import Optional
 
 import django_tables2 as tables
 from django.urls import reverse
@@ -55,6 +57,7 @@ class SoftwaresTable(tables.Table):
         televir_project_sample=None,
         b_enable_options=True,
         dataset=None,
+        default_software: Optional[DefaultSoftware] = None,
     ):
         tables.Table.__init__(self, query_set)
         self.project = project
@@ -64,6 +67,10 @@ class SoftwaresTable(tables.Table):
         self.b_enable_options = b_enable_options
         self.televir_project = televir_project
         self.televir_project_sample = televir_project_sample
+        if default_software is None:
+            self.default_software = DefaultSoftware(test= 1)
+        else:
+            self.default_software = default_software
 
         self.count_project_sample = 0
         ### get number of samples inside of this project, if project exist
@@ -111,18 +118,24 @@ class SoftwaresTable(tables.Table):
         sz_href = (
             '<a href="{}id_turn_software_on_off" {} '.format(
                 "#" if record.can_be_on_off_in_pipeline and b_enable_options else "",
-                'id="id_show_turn_on_off_modal"'
-                if record.can_be_on_off_in_pipeline and b_enable_options
-                else "",
+                (
+                    'id="id_show_turn_on_off_modal"'
+                    if record.can_be_on_off_in_pipeline and b_enable_options
+                    else ""
+                ),
             )
             + 'data-toggle="modal" type_of_use_id="{}" {} {} software_id="{}" {}'.format(
                 record.type_of_use,
-                f'televir_project_id="{self.televir_project.id}"'
-                if self.televir_project
-                else "",
-                f'televir_project_sample_id="{self.televir_project_sample.id}"'
-                if self.televir_project_sample
-                else "",
+                (
+                    f'televir_project_id="{self.televir_project.id}"'
+                    if self.televir_project
+                    else ""
+                ),
+                (
+                    f'televir_project_sample_id="{self.televir_project_sample.id}"'
+                    if self.televir_project_sample
+                    else ""
+                ),
                 record.id,
                 sz_ids,
             )
@@ -131,9 +144,11 @@ class SoftwaresTable(tables.Table):
                 record.id,
                 record.id,
                 "checked" if is_to_run else "",
-                ""
-                if record.can_be_on_off_in_pipeline and b_enable_options
-                else "disabled",
+                (
+                    ""
+                    if record.can_be_on_off_in_pipeline and b_enable_options
+                    else "disabled"
+                ),
             )
         )
         return mark_safe(sz_href)
@@ -161,8 +176,8 @@ class SoftwaresTable(tables.Table):
             and self.dataset is None
             and self.televir_project is None
         ):
-            default_software = DefaultSoftware()
-            return default_software.get_parameters(
+
+            return self.default_software.get_parameters(
                 record.name, user, technology_name, pipeline_step=record.pipeline_step
             )
         elif self.dataset is not None:
@@ -733,6 +748,7 @@ class INSaFLUParametersTable(tables.Table):
         self.project = project
         self.project_sample = project_sample
         self.b_enable_options = b_enable_options
+        self.default_software = DefaultSoftware()
 
         self.count_project_sample = 0
         ### get number of samples inside of this project, if project exist
@@ -794,8 +810,8 @@ class INSaFLUParametersTable(tables.Table):
         )
 
         if self.project is None and self.project_sample is None:
-            default_software = DefaultSoftware()
-            return default_software.get_parameters(
+            # default_software = DefaultSoftware()
+            return self.default_software.get_parameters(
                 record.name, user, technology_name, pipeline_step=pipeline_step
             )
         elif self.project_sample is None:

@@ -3,6 +3,7 @@ Created on Oct 28, 2017
 
 @author: mmp
 """
+
 import cmd
 import datetime
 import gzip
@@ -15,13 +16,14 @@ from BCBio import GFF
 from Bio import SeqIO
 from Bio.Seq import MutableSeq, Seq
 from Bio.SeqRecord import SeqRecord
-from constants.constants import Constants, FileExtensions, FileType, TypePath
-from constants.meta_key_and_values import MetaKeyAndValue
-from constants.software_names import SoftwareNames
 from django.conf import settings
 from django.template.defaultfilters import filesizeformat
 from ete3 import Tree
-from manage_virus.models import UploadFile, IdentifyVirus
+
+from constants.constants import Constants, FileExtensions, FileType, TypePath
+from constants.meta_key_and_values import MetaKeyAndValue
+from constants.software_names import SoftwareNames
+from manage_virus.models import IdentifyVirus, UploadFile
 from manage_virus.uploadFiles import UploadFiles
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import (MixedInfectionsTag, ProcessControler,
@@ -29,7 +31,6 @@ from managing_files.models import (MixedInfectionsTag, ProcessControler,
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software_project_sample import DefaultProjectSoftware
-
 from utils.coverage import DrawAllCoverage
 from utils.mixed_infections_management import MixedInfectionsManagement
 from utils.parse_coverage_file import GetCoverage
@@ -319,7 +320,6 @@ class Software(object):
         return result
 
     def creat_new_reference_to_snippy(self, project_sample):
-
         ### get temp file
         temp_file = self.utils.get_temp_file("new_reference", FileExtensions.FILE_FASTA)
         cmd = "perl %s %s %s" % (
@@ -421,25 +421,28 @@ class Software(object):
             self.logger_production.error("Fastq 1 not found: " + fastq_1)
             self.logger_debug.error("Fastq 1 not found: " + fastq_1)
             raise Exception("Fastq 1 not found: " + fastq_1)
-        
+
         cmd = "%s -t %d %s %s --graphical-fragment-assembly %s > %s" % (
             self.software_names.SOFTWARE_RAVEN,
             settings.THREADS_TO_RUN_FAST,
             self.software_names.SOFTWARE_RAVEN_PARAMETERS,
             fastq_1,
             os.path.join(out_dir, "contigs.gfa"),
-            os.path.join(out_dir, "contigs.fasta")
+            os.path.join(out_dir, "contigs.fasta"),
         )
         exit_status = os.system(cmd)
         if exit_status != 0:
             self.logger_production.error("Fail to run: " + cmd)
             self.logger_debug.error("Fail to run: " + cmd)
             raise Exception("Fail to run raven")
-        
+
         if os.path.exists(os.path.join(out_dir, "contigs.gfa")):
-            cmd = "cat %s | grep '^S' | awk 'BEGIN {OFS=\"\\n\"} { print \">\"$2\" \"$4\" \"$5, $3}' > %s" % (
-                os.path.join(out_dir, "contigs.gfa"),                         
-                os.path.join(out_dir, "contigs.fasta")
+            cmd = (
+                'cat %s | grep \'^S\' | awk \'BEGIN {OFS="\\n"} { print ">"$2" "$4" "$5, $3}\' > %s'
+                % (
+                    os.path.join(out_dir, "contigs.gfa"),
+                    os.path.join(out_dir, "contigs.fasta"),
+                )
             )
             exit_status = os.system(cmd)
             if exit_status != 0:
@@ -448,7 +451,6 @@ class Software(object):
                 raise Exception("Fail to run raven postprocessing")
 
         return cmd
-
 
     def convert_fastq_to_fasta(self, fastq_1, fasta_out_file):
         """
@@ -526,28 +528,31 @@ class Software(object):
         """
         Run abricate
         """
-        temp_file = self.utils.get_temp_file("abricate_fasta", FileExtensions.FILE_FASTA)
+        temp_file = self.utils.get_temp_file(
+            "abricate_fasta", FileExtensions.FILE_FASTA
+        )
         self.utils.clean_fasta_file(file_name, temp_file)
-        
+
         cmd = "%s --db %s %s --quiet %s > %s" % (
             self.software_names.get_abricate(),
             database,
             parameters,
-            #file_name,
+            # file_name,
             temp_file,
-            out_file
+            out_file,
         )
         exist_status = os.system(cmd)
         self.utils.remove_temp_file(temp_file)
         if exist_status != 0:
             self.logger_production.error("Fail to run: " + cmd)
             self.logger_debug.error("Fail to run: " + cmd)
-            raise Exception("Fail to run abricate")        
+            raise Exception("Fail to run abricate")
         return cmd
 
     """
     Global processing
     """
+
     #     @transaction.atomic
     def identify_type_and_sub_type(
         self, sample, fastq1_1, fastq1_2, owner, b_run_tests=False
@@ -608,9 +613,9 @@ class Software(object):
             try:
                 cmd = self.run_raven(fastq_1=fastq1_1, out_dir=out_dir_result)
 
-                #cmd = self.convert_fastq_to_fasta(
+                # cmd = self.convert_fastq_to_fasta(
                 #    fastq1_1, os.path.join(out_dir_result, "contigs.fasta")
-                #)
+                # )
                 result_all.add_software(
                     SoftwareDesc(
                         self.software_names.SOFTWARE_RAVEN_name,
@@ -620,8 +625,8 @@ class Software(object):
                 )
             except Exception:
                 result = Result()
-                #result.set_error("Fail to convert fastq to fasta.")
-                #result.add_software(SoftwareDesc("sed", "", ""))
+                # result.set_error("Fail to convert fastq to fasta.")
+                # result.add_software(SoftwareDesc("sed", "", ""))
                 result.set_error(
                     "Raven (%s) fail to run"
                     % (self.software_names.SOFTWARE_RAVEN_VERSION)
@@ -632,7 +637,7 @@ class Software(object):
                         self.software_names.SOFTWARE_RAVEN_VERSION,
                         self.software_names.SOFTWARE_RAVEN_PARAMETERS,
                     )
-                )                
+                )
                 manageDatabase.set_sample_metakey(
                     sample,
                     owner,
@@ -642,7 +647,7 @@ class Software(object):
                 )
                 self.utils.remove_dir(out_dir_result)
                 return False
-            
+
         file_out_contigs = os.path.join(out_dir_result, "contigs.fasta")
         if (
             not os.path.exists(file_out_contigs)
@@ -663,10 +668,10 @@ class Software(object):
                     )
                 )
             else:
-                #result.set_error(
+                # result.set_error(
                 #    "Low number of reads in fasta file. Came from fastq.gz"
-                #)
-                #result.add_software(SoftwareDesc("sed", "", ""))
+                # )
+                # result.add_software(SoftwareDesc("sed", "", ""))
                 result.set_error(
                     "Raven (%s) fail to run, empty contigs.fasta file."
                     % (self.software_names.SOFTWARE_RAVEN_VERSION)
@@ -677,7 +682,7 @@ class Software(object):
                         self.software_names.SOFTWARE_RAVEN_VERSION,
                         self.software_names.SOFTWARE_RAVEN_PARAMETERS,
                     )
-                )                
+                )
             manageDatabase.set_sample_metakey(
                 sample,
                 owner,
@@ -846,7 +851,7 @@ class Software(object):
             clean_abricate_file, sample.get_abricate_output(TypePath.MEDIA_ROOT)
         )
 
-        ## Only identify Contigs for Illuminua, because Spades runs. 
+        ## Only identify Contigs for Illuminua, because Spades runs.
         ## In ONT doesn't run because it is identify in reads.
         try:
             ## copy the contigs from spades/raven
@@ -858,15 +863,16 @@ class Software(object):
                 file_name=file_out_contigs,
                 file_name_out=os.path.basename(
                     sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)
-                ), b_create_fasta=True
+                ),
+                b_create_fasta=True,
             )
-            ## copy the contigs from spades    
+            ## copy the contigs from spades
             if os.path.exists(out_file_clean):
                 self.utils.copy_file(
                     out_file_clean,
                     sample.get_draft_contigs_output(TypePath.MEDIA_ROOT),
                 )
-            if os.path.exists(clean_abricate_file):             
+            if os.path.exists(clean_abricate_file):
                 self.utils.copy_file(
                     clean_abricate_file,
                     sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT),
@@ -875,7 +881,7 @@ class Software(object):
                 SoftwareDesc(
                     self.software_names.get_abricate_name(),
                     self.software_names.get_abricate_version(),
-                    #self.software_names.get_abricate_parameters_mincov_30()
+                    # self.software_names.get_abricate_parameters_mincov_30()
                     self.software_names.SOFTWARE_ABRICATE_PARAMETERS_mincov_30
                     + " for segments/references assignment",
                 )
@@ -892,7 +898,7 @@ class Software(object):
                 SoftwareDesc(
                     self.software_names.get_abricate_name(),
                     self.software_names.get_abricate_version(),
-                    #self.software_names.get_abricate_parameters_mincov_30()
+                    # self.software_names.get_abricate_parameters_mincov_30()
                     self.software_names.SOFTWARE_ABRICATE_PARAMETERS_mincov_30
                     + " for segments/references assignment",
                 )
@@ -943,13 +949,10 @@ class Software(object):
         self.utils.remove_file(clean_abricate_file)
         return True
 
-
     #     @transaction.atomic
-    def run_classification(
-        self, projectsample, owner, b_run_tests=False
-    ):
+    def run_classification(self, projectsample, owner, b_run_tests=False):
         """
-        Identify classification 
+        Identify classification
         (type and sub_type for project sample consensus)
         """
 
@@ -957,15 +960,15 @@ class Software(object):
 
         ### temp dir out spades
         out_dir_result = self.utils.get_temp_dir()
-        result_all = Result() 
-        
+        result_all = Result()
+
         file_out_contigs = projectsample.get_consensus_file(TypePath.MEDIA_ROOT)
         if (
             not os.path.exists(file_out_contigs)
             or os.path.getsize(file_out_contigs) < 50
         ):
             ## save error in MetaKeySample
-            result = Result()               
+            result = Result()
             manageDatabase.set_project_sample_metakey(
                 projectsample,
                 owner,
@@ -1141,7 +1144,7 @@ class Software(object):
 
         ## Save results to file...
         try:
-            if os.path.exists(clean_abricate_file):             
+            if os.path.exists(clean_abricate_file):
                 self.utils.copy_file(
                     clean_abricate_file,
                     projectsample.get_abricate_output(TypePath.MEDIA_ROOT),
@@ -1182,7 +1185,6 @@ class Software(object):
         self.utils.remove_file(out_file_abricate)
         self.utils.remove_file(clean_abricate_file)
         return True
-
 
     def get_species_tag(self, reference):
         """
@@ -1247,7 +1249,12 @@ class Software(object):
             return Reference.SPECIES_NOT_SET
 
         ### test number of right segments
-        number_right_beta_cov, number_right_mpxv, number_right_influenza, number_right_rsv = (0, 0, 0, 0)
+        (
+            number_right_beta_cov,
+            number_right_mpxv,
+            number_right_influenza,
+            number_right_rsv,
+        ) = (0, 0, 0, 0)
         for identify_virus in vect_data:
             if (
                 identify_virus.seq_virus.name == "BetaCoV"
@@ -1290,7 +1297,7 @@ class Software(object):
                 number_right_mpxv += 1
             elif identify_virus.seq_virus.name.startswith("RSV"):
                 number_right_rsv += 1
-        
+
         ## if right at least two
         if number_right_beta_cov > 0:
             reference.specie_tag = Reference.SPECIES_SARS_COV_2
@@ -1361,7 +1368,6 @@ class Software(object):
             temp_dir,
             name_strain,
         )
-        print(cmd)
         exist_status = os.system(cmd)
         if exist_status != 0:
             self.logger_production.error("Fail to run: " + cmd)
@@ -1679,6 +1685,7 @@ class Software(object):
                 file_name_1,
                 file_name_2,
             )
+        print("SNIPPY: ", cmd)
         exist_status = os.system(cmd)
         if exist_status != 0:
             self.logger_production.error("Fail to run: " + cmd)
@@ -1754,7 +1761,9 @@ class Software(object):
             sequences.replace(".fasta", ".insertions.csv"),
         )
 
-    def run_genbank2gff3(self, genbank, out_file, for_nextclade=False):
+    def run_genbank2gff3(
+        self, genbank, out_file, for_nextclade=False, genbank2gff3_stdout="stdout"
+    ):
         """
         for_nextclade = True; need to add gene annotation and gene_name in INFO
         """
@@ -1766,10 +1775,14 @@ class Software(object):
 
         cmd = "perl {} ".format(
             SoftwareNames.SOFTWARE_genbank_to_perl
-        ) + "-f GenBank {} -out stdout -x gene > {}".format(out_file_gb, temp_file)
+        ) + "-f GenBank {} -out {} -x gene > {}".format(
+            out_file_gb, genbank2gff3_stdout, temp_file
+        )
+
         exist_status = os.system(cmd)
+
         if exist_status != 0:
-            os.unlink(out_file_gb)
+            # os.unlink(out_file_gb)
             self.logger_production.error("Fail to run: " + cmd)
             self.logger_debug.error("Fail to run: " + cmd)
             raise Exception("Fail to run genbank2gff3")
@@ -2339,6 +2352,7 @@ class Software(object):
     """
     Global processing
     """
+
     #     @transaction.atomic
     def run_fastq_and_trimmomatic(self, sample, owner):
         """
@@ -2814,7 +2828,6 @@ class Software(object):
     """
 
     def run_fastq_and_trimmomatic_and_identify_species(self, sample, user):
-
         print("Start ProcessControler")
         process_controler = ProcessControler()
         process_SGE = ProcessSGE()
@@ -2839,95 +2852,148 @@ class Software(object):
         manage_database = ManageDatabase()
         for keys_to_remove in MetaKeyAndValue.VECT_TO_REMOVE_RUN_SAMPLE:
             manage_database.remove_sample_start_metakey(sample, keys_to_remove)
-        
-        ### remove some other 
+
+        ### remove some other
         sample.identify_virus.all().delete()
-        if (not sample.mixed_infections_tag is None): sample.mixed_infections_tag = None
+        if not sample.mixed_infections_tag is None:
+            sample.mixed_infections_tag = None
         sample.number_alerts = 0
         sample.save()
-        
+
         try:
             print("Start run_fastq_and_trimmomatic")
             ### run trimmomatics
             b_has_data, b_it_ran = self.run_fastq_and_trimmomatic(sample, user)
 
             print("Result run_fastq_and_trimmomatic: " + str(b_has_data))
-            
+
             ### test Abricate ON/OFF
             default_software_project = DefaultProjectSoftware()
-            b_make_identify_species = default_software_project.is_to_run_abricate(sample.owner, sample,
-                                            ConstantsSettings.TECHNOLOGY_illumina)
-            
+            b_make_identify_species = default_software_project.is_to_run_abricate(
+                sample.owner, sample, ConstantsSettings.TECHNOLOGY_illumina
+            )
+
             ### queue the quality check and
-            if (b_has_data and b_make_identify_species):    ## don't run for single file because spades doesn't work for one single file
-                self.identify_type_and_sub_type(sample, sample.get_fastq_available(TypePath.MEDIA_ROOT, True),\
-                    sample.get_fastq_available(TypePath.MEDIA_ROOT, False), user)
-    
+            if (
+                b_has_data and b_make_identify_species
+            ):  ## don't run for single file because spades doesn't work for one single file
+                self.identify_type_and_sub_type(
+                    sample,
+                    sample.get_fastq_available(TypePath.MEDIA_ROOT, True),
+                    sample.get_fastq_available(TypePath.MEDIA_ROOT, False),
+                    user,
+                )
+
             ## set the flag that is ready for process
             sample_to_update = Sample.objects.get(pk=sample.id)
             sample_to_update.is_sample_in_the_queue = False
-            if (b_has_data):
+            if b_has_data:
                 sample_to_update.is_ready_for_projects = True
-                
+
                 ### make identify species
-                if (b_make_identify_species):
+                if b_make_identify_species:
+                    sample_to_update.type_subtype = (
+                        sample_to_update.get_type_sub_type()[
+                            : Sample.TYPE_SUBTYPE_LENGTH - 1
+                        ]
+                    )
 
-                    sample_to_update.type_subtype = sample_to_update.get_type_sub_type()[:Sample.TYPE_SUBTYPE_LENGTH-1]
-
-                    (tag_mixed_infection, alert, message) = sample_to_update.get_mixed_infection()
-                    if (sample_to_update.number_alerts == None): sample_to_update.number_alerts = alert
-                    else: sample_to_update.number_alerts += alert
+                    (
+                        tag_mixed_infection,
+                        alert,
+                        message,
+                    ) = sample_to_update.get_mixed_infection()
+                    if sample_to_update.number_alerts == None:
+                        sample_to_update.number_alerts = alert
+                    else:
+                        sample_to_update.number_alerts += alert
 
                     manage_database = ManageDatabase()
-                    if (message != None and len(message) > 0):
-                        manage_database.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
-                                            MetaKeyAndValue.META_VALUE_Success, message)
-        
+                    if message != None and len(message) > 0:
+                        manage_database.set_sample_metakey(
+                            sample,
+                            user,
+                            MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,
+                            MetaKeyAndValue.META_VALUE_Success,
+                            message,
+                        )
+
                     ### save tag mixed_infecion
-                    manage_database.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_TAG_MIXED_INFECTION_TYPE_SUBTYPE,\
-                                MetaKeyAndValue.META_VALUE_Success, tag_mixed_infection)
-    
+                    manage_database.set_sample_metakey(
+                        sample,
+                        user,
+                        MetaKeyAndValue.META_KEY_TAG_MIXED_INFECTION_TYPE_SUBTYPE,
+                        MetaKeyAndValue.META_VALUE_Success,
+                        tag_mixed_infection,
+                    )
+
                     try:
-                        mixed_infections_tag = MixedInfectionsTag.objects.get(name=tag_mixed_infection)
+                        mixed_infections_tag = MixedInfectionsTag.objects.get(
+                            name=tag_mixed_infection
+                        )
                     except MixedInfectionsTag.DoesNotExist as e:
                         mixed_infections_tag = MixedInfectionsTag()
                         mixed_infections_tag.name = tag_mixed_infection
                         mixed_infections_tag.save()
-                    
+
                     sample_to_update.mixed_infections_tag = mixed_infections_tag
                 else:
                     sample_to_update.type_subtype = Constants.EMPTY_VALUE_NA
                     tag_mixed_infection = Constants.EMPTY_VALUE_NA
                     try:
-                        mixed_infections_tag = MixedInfectionsTag.objects.get(name=tag_mixed_infection)
+                        mixed_infections_tag = MixedInfectionsTag.objects.get(
+                            name=tag_mixed_infection
+                        )
                     except MixedInfectionsTag.DoesNotExist as e:
                         mixed_infections_tag = MixedInfectionsTag()
                         mixed_infections_tag.name = tag_mixed_infection
                         mixed_infections_tag.save()
-                    
+
                     sample_to_update.mixed_infections_tag = mixed_infections_tag
-                    
+
                     manage_database = ManageDatabase()
                     message = "Info: Abricate turned OFF by the user."
-                    manage_database.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
-                                MetaKeyAndValue.META_VALUE_Success, message)
+                    manage_database.set_sample_metakey(
+                        sample,
+                        user,
+                        MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,
+                        MetaKeyAndValue.META_VALUE_Success,
+                        message,
+                    )
             else:
                 manage_database = ManageDatabase()
-                manage_database.set_sample_metakey(sample_to_update, user, MetaKeyAndValue.META_KEY_ALERT_NO_READS_AFTER_FILTERING,\
-                                        MetaKeyAndValue.META_VALUE_Success, "Warning: no reads left after filtering.")
-                
-                if (sample_to_update.number_alerts == None): sample_to_update.number_alerts = 1
-                else: sample_to_update.number_alerts += 1
+                manage_database.set_sample_metakey(
+                    sample_to_update,
+                    user,
+                    MetaKeyAndValue.META_KEY_ALERT_NO_READS_AFTER_FILTERING,
+                    MetaKeyAndValue.META_VALUE_Success,
+                    "Warning: no reads left after filtering.",
+                )
+
+                if sample_to_update.number_alerts == None:
+                    sample_to_update.number_alerts = 1
+                else:
+                    sample_to_update.number_alerts += 1
                 sample_to_update.is_ready_for_projects = False
                 sample_to_update.type_subtype = Constants.EMPTY_VALUE_TYPE_SUBTYPE
             sample_to_update.save()
-            
-            ### set the flag of the end of the task        
-            meta_sample = manage_database.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue)
-            if (meta_sample != None):
-                manage_database.set_sample_metakey(sample, sample.owner, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Success, meta_sample.description)
-        
-        except Exception as e:
+
+            ### set the flag of the end of the task
+            meta_sample = manage_database.get_sample_metakey_last(
+                sample,
+                MetaKeyAndValue.META_KEY_Queue_TaskID,
+                MetaKeyAndValue.META_VALUE_Queue,
+            )
+            if meta_sample != None:
+                manage_database.set_sample_metakey(
+                    sample,
+                    sample.owner,
+                    MetaKeyAndValue.META_KEY_Queue_TaskID,
+                    MetaKeyAndValue.META_VALUE_Success,
+                    meta_sample.description,
+                )
+
+        except:
             process_SGE.set_process_controler(
                 user,
                 process_controler.get_name_sample(sample),
@@ -2962,8 +3028,11 @@ class Software(object):
     """
     Global processing, Snippy, Coverage, Freebayes and MixedInfections
     """
+
     #     @transaction.atomic
-    def __process_second_stage_snippy_coverage_freebayes(self, project_sample, user):
+    def __process_second_stage_snippy_coverage_freebayes(
+        self, project_sample: ProjectSample, user
+    ):
         """
         Global processing, snippy, coverage,
         """
@@ -2974,6 +3043,7 @@ class Software(object):
         result_all = Result()
         ### metakey for this process
         metaKeyAndValue = MetaKeyAndValue()
+        os.chdir("/tmp/insaFlu/")
         try:
             meta_key_project_sample = (
                 metaKeyAndValue.get_meta_key_queue_by_project_sample_id(
@@ -3004,6 +3074,9 @@ class Software(object):
                     default_project_software.get_snippy_parameters_all_possibilities(
                         user, project_sample
                     )
+                )
+                snippy_parameters = default_project_software.edit_primerNone_parameters(
+                    snippy_parameters
                 )
                 out_put_path = self.run_snippy(
                     project_sample.sample.get_fastq_available(
@@ -3111,7 +3184,6 @@ class Software(object):
             ## get coverage from deep file
             get_coverage = GetCoverage()
             try:
-
                 ### limit of the coverage for a project, can be None, if not exist
                 coverage_for_project = (
                     default_project_software.get_snippy_single_parameter_for_project(
@@ -3348,7 +3420,6 @@ class Software(object):
                         )
                     )
                 except Exception as e:
-
                     ### can fail the freebayes parallel and try the regular one
                     try:
                         out_put_path = self.run_freebayes(
@@ -3494,7 +3565,7 @@ class Software(object):
                         count_hits.to_json(),
                     )
 
-                ### mixed infection
+                    ### mixed infection
                 try:
                     ## get instances
                     mixed_infections_management = MixedInfectionsManagement()
@@ -3971,7 +4042,6 @@ class Software(object):
                         record.id, limit_make_mask
                     )
                 ):  ### make mask
-
                     ### get sequences
                     vect_out_fasta_to_align = []
                     record_id = record.id
@@ -4253,7 +4323,6 @@ class Software(object):
     def run_nextstrain(
         self,
         alignments,
-
         metadata,
         build,
         cores=1,
@@ -4292,7 +4361,6 @@ class Software(object):
                 + "/* "
                 + temp_dir
             )
-
 
         # Copy the setup folder and alignment and metadata files to the appropriate place in the temp folder
         self.utils.copy_file(
@@ -4598,10 +4666,10 @@ class Software(object):
             reference,
             os.path.join(temp_dir, "Snakefile"),
         )
-        if(time):
+        if time:
             # replace the command
             cmd = "cp {} {}".format(
-                os.path.join(temp_dir, "Snakefile_base_timetree"),  
+                os.path.join(temp_dir, "Snakefile_base_timetree"),
                 os.path.join(temp_dir, "Snakefile"),
             )
         exit_status = os.system(cmd)
@@ -4791,9 +4859,8 @@ class Software(object):
 
         return [tree_file, alignment_file, auspice_zip]
 
-
     def run_nextstrain_avianflu(
-        self, alignments, metadata, strain="h5n1", gene='ha', cores=1
+        self, alignments, metadata, strain="h5n1", gene="ha", cores=1
     ):
         """
         run nextstrain
@@ -4832,54 +4899,64 @@ class Software(object):
             )
 
         # add sequences.fasta and metadata.tsv to data folder
-        #genes = ["ha"]
-        #if(gene != 'ha'):
+        # genes = ["ha"]
+        # if(gene != 'ha'):
         #    genes = ["ha",gene]
 
         genes = [gene]
-        #genes = ("ha","mp","na","ns","np","pa","pb1","pb2")
+        # genes = ("ha","mp","na","ns","np","pa","pb1","pb2")
         for gene in genes:
             self.utils.copy_file(
                 alignments,
-                os.path.join(temp_dir, "data", "sequences_{}_{}.fasta".format(strain, gene))
+                os.path.join(
+                    temp_dir, "data", "sequences_{}_{}.fasta".format(strain, gene)
+                ),
             )
             self.utils.copy_file(
-                metadata, os.path.join(temp_dir, "data", "metadata_{}_{}.tsv".format(strain, gene))
+                metadata,
+                os.path.join(
+                    temp_dir, "data", "metadata_{}_{}.tsv".format(strain, gene)
+                ),
             )
-
 
         # Need to estimate clades of these new samples (only for H5N1 ha)
-        if((strain == "h5n1") and (gene == 'ha')):
-     
+        if (strain == "h5n1") and (gene == "ha"):
             cmd = "cd {}; {} -s Snakefile_h5n1.clades --cores {} --config label={}".format(
-                 temp_dir,  SoftwareNames.SOFTWARE_NEXTSTRAIN_snakemake, str(cores), SoftwareNames.SOFTWARE_NEXTSTRAIN_LABEL
+                temp_dir,
+                SoftwareNames.SOFTWARE_NEXTSTRAIN_snakemake,
+                str(cores),
+                SoftwareNames.SOFTWARE_NEXTSTRAIN_LABEL,
             )
             exit_status = os.system(cmd)
             if exit_status != 0:
                 self.logger_production.error("Fail to run: " + cmd)
                 self.logger_debug.error("Fail to run: " + cmd)
 
-            cmd = "rm -R -f {} {} {}".format(os.path.join(temp_dir, ".snakemake"),
-                                             os.path.join(temp_dir, "results"), 
-                                             os.path.join(temp_dir, "auspice"))
+            cmd = "rm -R -f {} {} {}".format(
+                os.path.join(temp_dir, ".snakemake"),
+                os.path.join(temp_dir, "results"),
+                os.path.join(temp_dir, "auspice"),
+            )
             exit_status = os.system(cmd)
             if exit_status != 0:
                 self.logger_production.error("Fail to run: " + cmd)
                 self.logger_debug.error("Fail to run: " + cmd)
-
 
         # just do this one now...
         genes = [gene]
         for gene in genes:
             # Now run Nextstrain (eventually cycle through the genes)
             cmd = "cd {}; {} --cores {} auspice/flu_avian_{}_{}.json".format(
-                temp_dir, SoftwareNames.SOFTWARE_NEXTSTRAIN_snakemake, str(cores), strain, gene
+                temp_dir,
+                SoftwareNames.SOFTWARE_NEXTSTRAIN_snakemake,
+                str(cores),
+                strain,
+                gene,
             )
             exit_status = os.system(cmd)
             if exit_status != 0:
                 self.logger_production.error("Fail to run: " + cmd)
                 self.logger_debug.error("Fail to run: " + cmd)
-       
 
         tree_file = self.utils.get_temp_file("treefile.nwk", sz_type="nwk")
         # Convert json to tree
@@ -4898,7 +4975,7 @@ class Software(object):
             raise CmdException(
                 message="Fail to run conversion of json to tree.",
                 cmd=cmd,
-                output_path=temp_dir
+                output_path=temp_dir,
             )
 
         # Copy log folder to auspice to be included in the zip
@@ -4934,11 +5011,7 @@ class Software(object):
 
         return [tree_file, alignment_file, auspice_zip]
 
-
-
-    def run_nextstrain_rsv(
-        self, alignments, metadata, type="a", cores=1
-    ):
+    def run_nextstrain_rsv(self, alignments, metadata, type="a", cores=1):
         """
         run nextstrain
         :param  alignments: sequence file with nucleotides
@@ -4981,19 +5054,18 @@ class Software(object):
             os.path.join(temp_dir, "data", type, "sequences.fasta"),
         )
         self.utils.copy_file(
-            metadata, 
-            os.path.join(temp_dir, "data", type, "metadata.tsv")
+            metadata, os.path.join(temp_dir, "data", type, "metadata.tsv")
         )
 
         # Now run Nextstrain
-        #cmd = "{} -j {} {}/auspice/rsv_{}_genome.json {}/auspice/rsv_{}_G.json {}/auspice/rsv_{}_F.json --configfile {}/config/configfile.yaml".format(
-        cmd = "cd {} && {} -j {} auspice/rsv_{}_genome.json --configfile config/configfile.yaml".format(            
+        # cmd = "{} -j {} {}/auspice/rsv_{}_genome.json {}/auspice/rsv_{}_G.json {}/auspice/rsv_{}_F.json --configfile {}/config/configfile.yaml".format(
+        cmd = "cd {} && {} -j {} auspice/rsv_{}_genome.json --configfile config/configfile.yaml".format(
             temp_dir,
-            SoftwareNames.SOFTWARE_NEXTSTRAIN_RSV, 
-            str(cores), 
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_RSV,
+            str(cores),
             type,
-            #type,
-            #type,
+            # type,
+            # type,
         )
         exit_status = os.system(cmd)
         if exit_status != 0:
@@ -5007,9 +5079,7 @@ class Software(object):
         # Convert json to tree
         cmd = "{} --tree {} --output-tree {}".format(
             os.path.join(settings.DIR_SOFTWARE, "nextstrain/auspice_tree_to_table.sh"),
-            os.path.join(
-                temp_dir, "auspice", "rsv_" + type + "_genome.json"
-            ),
+            os.path.join(temp_dir, "auspice", "rsv_" + type + "_genome.json"),
             tree_file,
         )
         exit_status = os.system(cmd)
@@ -5051,10 +5121,9 @@ class Software(object):
             alignment_file,
         )
 
-        #self.utils.remove_dir(temp_dir)
+        # self.utils.remove_dir(temp_dir)
 
         return [tree_file, alignment_file, auspice_zip]
-
 
     def run_nextstrain_mpx(self, alignments, metadata, cores=1):
         """
@@ -5296,7 +5365,7 @@ class Contigs2Sequences(object):
         out_file = self.utils.get_temp_file(
             "abricate_contig2seq", FileExtensions.FILE_TXT
         )
-   
+
         ### run abricate
         software.run_abricate(
             database_name,

@@ -9,7 +9,7 @@ django-braces==1.13.0
 django-tables2==1.16
 django-nose==1.4.6
 django-bootstrap4==0.0.8
-pyyaml==5.4
+pyyaml==6.0.1
 ua-parser==0.8.0
 user-agents==2.0
 scipy==1.2.0
@@ -17,7 +17,6 @@ crispy-forms-foundation==0.7.0
 NumPy==1.16.1
 biopython==1.78
 plotly==3.9.0
-Pillow==8.1.2
 psycopg2-binary
 pysam
 portalocker==1.4.0
@@ -29,7 +28,6 @@ nanofilt==2.6.0
 chardet==3.0.4
 ete3==3.1.2
 beautifulsoup4==4.11.1
-dataclasses==0.8
 networkx==2.4
 matplotlib==3.3.2
 sqlalchemy==1.3.23

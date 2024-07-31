@@ -5,6 +5,7 @@ import pandas as pd
 from django.contrib.auth.models import User
 from django.core.management import BaseCommand
 
+from constants.software_names import SoftwareNames
 from fluwebvirus.settings import MEDIA_ROOT
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
@@ -17,6 +18,38 @@ def remapping_can_be_off():
     for software in remap_software:
         software.can_be_on_off_in_pipeline = True
         software.save()
+
+
+def update_remap_params():
+    from settings.default_software import DefaultSoftware
+
+    default_software = DefaultSoftware()
+
+    software_remap = Software.objects.filter(
+        name=SoftwareNames.SOFTWARE_REMAP_PARAMS_name
+    )
+
+    updated_total = 0
+
+    for software in software_remap:
+        user = software.owner
+        if user is None:
+            continue
+
+        remap_params = default_software.default_parameters.get_remap_defaults(
+            user,
+            Software.TYPE_OF_USE_televir_settings,
+            ConstantsSettings.TECHNOLOGY_illumina,
+        )
+
+        updated = default_software.default_parameters.persist_parameters_update(
+            vect_parameters=remap_params,
+            software=software,
+        )
+
+        updated_total += int(updated)
+
+    print(f"Updated {updated_total} remap parameters.")
 
 
 class Command(BaseCommand):
@@ -42,8 +75,18 @@ class Command(BaseCommand):
             help="Metagenomics",
         )
 
+        parser.add_argument(
+            "--remapping",
+            action="store_true",
+            required=False,
+            default=False,
+            help="Remapping",
+        )
+
     # A command must define handle()
     def handle(self, *args, **options):
         if options["metagenomics"]:
             remapping_can_be_off()
-            return
+
+        if options["remapping"]:
+            update_remap_params()

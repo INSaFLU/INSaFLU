@@ -1,0 +1,107 @@
+
+.alert {
+    margin-top: 10px;
+}
+.help-text {
+    color: gray;
+    font-style: italic;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #f6f6f6;
+    font-family: Arial, sans-serif;
+}
+
+form {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.1);
+}
+
+button {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 20px;
+    margin: 10px 0;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    border-radius: 4px;
+}
+
+button[type="submit"]:disabled {
+    background-color: #cccccc;
+}
+
+#id_description {
+    width: 100%;
+    height: 50px;
+}
+
+#id_name {
+    width: 100%;
+}
+
+#summary {
+    border: 1px solid;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+.helptext {
+    color: gray;
+    display: block;
+    margin-top: 5px;
+    margin-bottom: 0px;
+    margin-left: 20px;
+
+}
+.tab {
+    margin-left: 20px;
+    color: gray;
+    display: block;
+    margin-top: 0px;
+}
+
+textarea {
+    border: 1px solid #ced4da;
+    border-radius: .25rem;
+}
+
+#summary {
+    border: 1px solid #ced4da;
+    border-radius: .25rem;
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: #F0F8FF; /* Adjust as needed */
+    color: gray; /* Adjust as needed */
+    font-size: 12px; /* Adjust as needed */
+    height: 100px;
+    font-family: Arial, sans-serif;
+    font-style: italic;
+    font-size: 16px;
+}
+
+#summary active {
+    font-style: normal;
+    color: black;
+}
+ 
+.button-container {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.button-container button {
+    margin: 5px;
+}
+
+#check-button {
+    margin: 5px;
+}

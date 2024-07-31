@@ -12,7 +12,6 @@ $("#project_name").keyup(function(){
 
       })
       .done(function(response){
-        console.log(response);
         if(response=="True"){
             alert("Username already taken");    }
       })

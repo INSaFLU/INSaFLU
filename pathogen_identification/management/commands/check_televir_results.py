@@ -3,24 +3,24 @@ Created on January 30, 2023
 
 @author: daniel.sobral
 """
-import os
 import logging
-import pandas as pd
-from django.core.management import BaseCommand
-from django.contrib.auth.models import User
+import os
 
-from pathogen_identification.models import (
-    Projects,
-    RunMain,
-    ParameterSet,
-    FinalReport,
-    PIProject_Sample,
-)
+import pandas as pd
+from django.contrib.auth.models import User
+from django.core.management import BaseCommand
+
+from fluwebvirus.settings import MEDIA_ROOT
 from pathogen_identification.constants_settings import (
     ConstantsSettings as ConstantsSettingsPI,
 )
-from fluwebvirus.settings import MEDIA_ROOT
-import pandas as pd
+from pathogen_identification.models import (
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RunMain,
+)
 
 
 class Command(BaseCommand):
@@ -58,7 +58,6 @@ class Command(BaseCommand):
 
     # A command must define handle()
     def handle(self, *args, **options):
-
         project_name = options["project_name"]
         account = options["user_login"]
 
@@ -68,7 +67,6 @@ class Command(BaseCommand):
         # report_file = options['report_file']
 
         try:
-
             user = User.objects.get(username=account)
 
             project = Projects.objects.get(

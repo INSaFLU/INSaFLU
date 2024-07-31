@@ -4,10 +4,8 @@ from datetime import datetime
 from operator import itemgetter
 
 from django.conf import settings
-
 # from django.db.models import Manager as GeoManager
 from django.contrib.auth.models import User
-
 # Create your models here.
 from django.contrib.gis.db.models import GeoManager  # #  change to django  2.x
 from django.contrib.gis.db.models import PointField
@@ -563,9 +561,11 @@ class Sample(models.Model):
             "application/gzip",
             "application/x-gzip",
         ],
-        max_upload_size=settings.MAX_FASTQ_FILE_WITH_DOWNSIZE
-        if settings.DOWN_SIZE_FASTQ_FILES
-        else settings.MAX_FASTQ_FILE_UPLOAD,
+        max_upload_size=(
+            settings.MAX_FASTQ_FILE_WITH_DOWNSIZE
+            if settings.DOWN_SIZE_FASTQ_FILES
+            else settings.MAX_FASTQ_FILE_UPLOAD
+        ),
         max_length=500,
     )
     is_valid_2 = models.BooleanField(default=False)
@@ -580,9 +580,11 @@ class Sample(models.Model):
             "application/gzip",
             "application/x-gzip",
         ],
-        max_upload_size=settings.MAX_FASTQ_FILE_WITH_DOWNSIZE
-        if settings.DOWN_SIZE_FASTQ_FILES
-        else settings.MAX_FASTQ_FILE_UPLOAD,
+        max_upload_size=(
+            settings.MAX_FASTQ_FILE_WITH_DOWNSIZE
+            if settings.DOWN_SIZE_FASTQ_FILES
+            else settings.MAX_FASTQ_FILE_UPLOAD
+        ),
         max_length=500,
     )
 
@@ -788,13 +790,15 @@ class Sample(models.Model):
             return None
         return os.path.join(
             self.__get_path__(type_path, b_first_file),
-            self.file_name_1.replace(
-                FileExtensions.FILE_FASTQ_GZ, "_fastqc.html"
-            ).replace(FileExtensions.FILE_FQ_GZ, "_fastqc.html")
-            if b_first_file
-            else self.file_name_2.replace(
-                FileExtensions.FILE_FASTQ_GZ, "_fastqc.html"
-            ).replace(FileExtensions.FILE_FQ_GZ, "_fastqc.html"),
+            (
+                self.file_name_1.replace(
+                    FileExtensions.FILE_FASTQ_GZ, "_fastqc.html"
+                ).replace(FileExtensions.FILE_FQ_GZ, "_fastqc.html")
+                if b_first_file
+                else self.file_name_2.replace(
+                    FileExtensions.FILE_FASTQ_GZ, "_fastqc.html"
+                ).replace(FileExtensions.FILE_FQ_GZ, "_fastqc.html")
+            ),
         )
 
     def get_rabbitQC_output(self, type_path):
@@ -843,7 +847,6 @@ class Sample(models.Model):
         return a string with Type/Subtpye
         """
         return IdentifyVirus().classify(self.identify_virus.all())
-
 
     def get_mixed_infection(self):
         """
@@ -1514,7 +1517,7 @@ class ProjectSample(models.Model):
         return type of technology
         """
         return self.sample.get_type_technology()
-    
+
     def get_abricate_output(self, type_path, b_gzip_file=False):
         """
         type_path = [MEDIA_ROOT, MEDIA_URL]
@@ -1706,9 +1709,11 @@ class UploadFiles(models.Model):
             "text/tab-separated-values",
             "text/plain",
         ],
-        max_upload_size=settings.MAX_FASTQ_FILE_WITH_DOWNSIZE
-        if settings.DOWN_SIZE_FASTQ_FILES
-        else settings.MAX_FASTQ_FILE_UPLOAD,
+        max_upload_size=(
+            settings.MAX_FASTQ_FILE_WITH_DOWNSIZE
+            if settings.DOWN_SIZE_FASTQ_FILES
+            else settings.MAX_FASTQ_FILE_UPLOAD
+        ),
         max_length=500,
     )
 
@@ -1837,9 +1842,52 @@ class ProcessControler(models.Model):
             ProcessControler.PREFIX_TELEVIR_PROJECT, sample_pk
         )
 
+    def get_name_raw_televir_teleflu_ref_create(self, ref_id):
+        return "{}_teleflu_ref_{}".format(
+            ProcessControler.PREFIX_TELEVIR_PROJECT, ref_id
+        )
+    
+    def get_name_file_televir_teleflu_ref_create(self, ref_id):
+        return "{}_teleflu_file_ref_{}".format(
+            ProcessControler.PREFIX_TELEVIR_PROJECT, ref_id
+        )
+
+    def get_name_televir_file_upload(self, file_id):
+        return "televir_file_ref_{}".format(file_id)
+
+    def get_name_televir_teleflu_igv_stack(self, teleflu_mapping_id):
+        return "{}_teleflu_mapping_stack_{}".format(
+            ProcessControler.PREFIX_TELEVIR_PROJECT, teleflu_mapping_id
+        )
+
+    def get_name_televir_teleflu_project_create(self, project_id):
+        return "{}_teleflu_project_create_{}".format(
+            ProcessControler.PREFIX_TELEVIR_PROJECT, project_id
+        )
+
+    def get_name_televir_teleflu_reference_create(self, project_id):
+        return "{}_teleflu_project_reference_create_{}".format(
+            ProcessControler.PREFIX_TELEVIR_PROJECT, project_id
+        )
+
+    def get_name_televir_teleflu_project_process(self, project_id):
+        return "{}_teleflu_project_process_{}".format(
+            ProcessControler.PREFIX_TELEVIR_PROJECT, project_id
+        )
+
     def get_name_televir_project_merge_explify(self, project_pk):
         return "{}_report_merge_explify_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, project_pk
+        )
+
+    def get_name_add_references_to_sample(self, sample_pk):
+        return "{}_add_references_to_sample_{}".format(
+            ProcessControler.PREFIX_TELEVIR_PROJECT, sample_pk
+        )
+
+    def get_name_televir_project_merge_explify_external(self, user_pk):
+        return "{}_report_merge_explify_EXT_{}".format(
+            ProcessControler.PREFIX_TELEVIR_PROJECT, user_pk
         )
 
     def get_name_televir_run(self, project_pk, sample_pk, leaf_pk) -> str:

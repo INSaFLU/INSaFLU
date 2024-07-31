@@ -1,0 +1,340 @@
+
+.table tr.igv_tab.open .card-block {
+    max-height: 2001px;
+    transition: max-height .5s;
+    transition-timing-function: ease-in;
+}
+
+.table tr.igv_tab .card-block {
+    max-height: 0px;
+    transition: max-height .7s;
+    transition-timing-function: ease-out;
+}
+
+.table tr.igv_tab.open .igv-root-div {
+    max-height: 2001px;
+    transition: max-height .8s;
+    transition-timing-function: ease-in;
+}
+
+.table tr.igv_tab .igv-root-div {
+    max-height: 0px;
+    transition: max-height .5s;
+    transition-timing-function: ease-out;
+}
+
+.table tr.igv_tab.open .igv-navbar {
+    max-height: 2001px;
+    transition: max-height .3s;
+    transition-timing-function: ease-in;
+}
+
+.table tr.igv_tab .igv-navbar {
+    max-height: 0px;
+    transition: max-height .3s;
+    transition-timing-function: ease-out;
+}
+
+.table tr.igv_tab.open .igv-loader {
+    max-height: 2001px;
+    transition: max-height .3s;
+    transition-timing-function: ease-in;
+}
+
+.table tr.igv_tab .igv-loader {
+    max-height: 0px;
+    transition: max-height .3s;
+    transition-timing-function: ease-out;
+}
+
+.parent {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+    height: 80px;
+}
+
+.parent:hover {
+    background-color: #ddd;
+}
+
+
+a:link {
+    color: #2b2bcf;
+    background-color: transparent;
+    text-decoration: none;
+}
+
+a:visited {
+    color: blueviolet;
+    background-color: transparent;
+    text-decoration: none;
+}
+
+a:hover {
+    color: blue;
+    background-color: transparent;
+    text-decoration: underline;
+}
+
+a:active {
+    color: cornflowerblue;
+    background-color: transparent;
+    text-decoration: underline;
+}
+
+.column {
+    float: left;
+    padding: 10px;
+}
+
+
+.left {
+    width: 70%;
+}
+
+.right {
+    width: 30%;
+    postion: absolute;
+
+}
+
+.left_small {
+
+    width: 30%;
+}
+
+.center {
+    width: 40%;
+}
+
+form {
+    padding: 12px;
+    position: relative;
+}
+
+.modebar {
+    display: none !important;
+}
+
+.row {
+    border: none;
+    border-radius: 8px;
+    padding: 1px;
+    border-color: #b0b0b07d;
+}
+
+#cov_div {
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+}
+
+.table td, .table th {
+    vertical-align: middle;
+    
+}
+  
+.overlap-button {
+    padding-right: 10px;
+}
+
+.header {
+background: #3498db;
+color: #fff;
+}
+
+.collapse-report span {
+cursor: pointer;
+background: #2cc16a;
+transition: background .5s;
+}
+
+.active span {
+background: #fff;
+}
+
+.table tr.collapse-report .table__wrapper {
+max-height: 0px;
+overflow: hidden;
+transition: max-height .8s;
+}
+
+.table tr.active .table__wrapper {
+max-height: 2000px;
+transition: max-height .8s;
+}
+
+
+.table-inner td p {
+margin: 0;
+}
+
+.table tr.igv_tab.open {
+max-height: 2001px;
+transition: max-height 1s;
+}
+
+.table tr.igv_tab {
+max-height: 0px;
+transition: max-height 1s;
+}
+
+.table td {
+padding-top: 0rem;
+padding-bottom: 0rem;
+border-top: 0px;
+}
+
+.table tr.head {
+height: 1rem;
+border-top: 1px;
+}
+
+.select option.hidden_option{
+    display: none;
+}
+
+.row-to-toggle {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s;
+  }
+
+.row-to-toggle.active {
+max-height: 500px; /* Adjust the value to the desired height */
+}
+
+.expand-button {
+    display: block;
+    width: 100%;
+    background-color: #e6f2ff;
+    color: #333;
+    padding: 7px 0px;
+    cursor: pointer;
+    text-align: center;
+  }
+  
+  .plot-container {
+    margin: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .pull-right {
+    float: right;
+  }
+
+.custom-section-container {
+    display: flex;
+    overflow: hidden;
+}
+
+.custom-section {
+    flex: 1;
+    padding: 5px;
+    border-right: 1px solid #ccc;
+    text-align: center;
+    background-color: #fff; /* White background */
+    color: #333;
+    transition: background-color 0.3s ease; /* Smooth transition */
+}
+
+/* Change background color on hover */
+.custom-section:hover {
+    background-color: #e6f0ff; /* Light blue background */
+}
+
+/* Remove border from the last section */
+.custom-section:last-child {
+    border-right: none;
+}
+
+.custom-link {
+    color: #007bff; /* Bootstrap primary color */
+    text-decoration: none; /* Remove the underline */
+}
+
+/* Change link color on hover */
+.custom-link:hover {
+    color: #0056b3; /* Darker blue */
+}
+
+.table thead th {
+    text-align: center; /* Align text to the center */
+}
+
+.secondary-row {
+    display: none;
+}
+
+.unsorted-row {
+    display: table-row;
+}
+
+
+.sort-icon {
+    float: left;
+    margin-right: 15px; /* Adjust this value to create space between the icon and the description */
+    margin-left: 10px; /* Adjust this value to create space between the icon and the description */
+}
+
+.inactive-button {
+    border: 3px solid red; /* Thicker border */
+    cursor: not-allowed; /* Forbidding cursor */
+}
+
+.empty-icon {
+    float: left;
+    margin-right: 30px; /* Adjust this value to create space between the icon and the description */
+    margin-left: 10px; /* Adjust this value to create space between the icon and the description */
+}
+
+.description-content {
+    display: inline-block;
+}
+
+.text-left {
+    text-align: left;
+}
+
+.showSecondaryRows {
+    float: left;
+    background-color: transparent;
+    border: none;
+}
+
+button.showSecondaryRows:focus {
+    outline: none;
+}
+
+.toggle {
+    border: none;
+}
+
+.toggle-icon {
+    color: #007bff;
+    font-size: 21px;
+}
+
+.description-column {
+    max-width: 230px; /* Adjust this value to set the maximum width of the column */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+td.status {
+    text-align: center;
+}
+
+td.classification_source {
+    text-align: center;
+}
+
+
+td.counts {
+    text-align: center;
+}

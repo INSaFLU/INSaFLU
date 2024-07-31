@@ -13,6 +13,7 @@ from typing import Optional
 
 import matplotlib.pyplot as plt
 import pandas as pd
+from django.contrib.auth.models import User
 
 from fluwebvirus.settings import MEDIA_ROOT
 from pathogen_identification.constants_settings import ConstantsSettings as CS
@@ -53,18 +54,6 @@ def reverse_dict_of_lists(dict_of_lists: dict) -> dict:
     Return dictionary of lists with keys as values and values as keys
     """
     return {value: key for key, values in dict_of_lists.items() for value in values}
-
-
-def readname_from_fasta(fastafile) -> list:
-    """
-    Read in fasta file and return list of read names
-    """
-    read_names = []
-    with open(fastafile) as f:
-        for line in f:
-            if line[0] == ">":
-                read_names.append(line[1:].strip())
-    return read_names
 
 
 def simplify_name(name: str):
@@ -380,7 +369,6 @@ def merge_classes(r1: pd.DataFrame, r2: pd.DataFrame, maxt=6, exclude="phage"):
             fd["source"] = 1
         else:
             fd["source"] = fd.apply(get_source, axis=1)
-
         return fd
 
     def descriptor_counts(fd):
@@ -392,7 +380,6 @@ def merge_classes(r1: pd.DataFrame, r2: pd.DataFrame, maxt=6, exclude="phage"):
             return fd
         else:
             fd["counts"] = fd.apply(get_counts, axis=1)
-
         return fd
 
     def get_counts(row):
@@ -422,6 +409,16 @@ def get_project_dir(project: Projects):
     return os.path.join(
         MEDIA_ROOT, CS.televir_subdirectory, str(project.owner.pk), str(project.pk)
     )
+
+
+def get_services_dir(user: User):
+    services_dir = os.path.join(
+        MEDIA_ROOT, CS.televir_subdirectory, str(user.pk), "services"
+    )
+    if not os.path.isdir(services_dir):
+        os.makedirs(services_dir)
+
+    return services_dir
 
 
 def get_project_dir_no_media_root(project: Projects):

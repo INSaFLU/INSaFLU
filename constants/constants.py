@@ -3,6 +3,8 @@ Created on Oct 13, 2017
 
 @author: mmp
 """
+
+import os
 from abc import ABC
 from enum import Enum
 from typing import Dict
@@ -58,6 +60,9 @@ class Televir_Metadata_Constants:
             "blastp": "hostDepletion/hostdep_env",
             "snippy": config("DIR_SOFTWARE") + "/snippy",
             "bamutil": "remap/remap",
+            "msamtools": "remap/remap",
+            "bcftools": "remap/remap",
+            "samtools": "remap/remap",
             "bwa": "remap/remap",
             "bowtie2": "remap/remap",
             "bowtie2_remap": "remap/remap",
@@ -70,7 +75,9 @@ class Televir_Metadata_Constants:
             "prinseq++": "preprocess/prinseq",
             "prinseq": "preprocess/prinseq",
             "collapsibleTree": "remap/Renv",
+            "create_report": "Pyenv/igv_reports",
             "entrez_direct": "entrez_direct",
+            "bgzip": "hostDepletion/hostdep_env",
         },
         CS.PIPELINE_NAME_remapping: {"default": "remap/remap"},
         CS.PIPELINE_NAME_remap_filtering: {"default": "remap/remap"},
@@ -78,6 +85,44 @@ class Televir_Metadata_Constants:
         CS.PIPELINE_NAME_extra_qc: {"default": "preprocess/preproc"},
         CS.PIPELINE_NAME_assembly: {"default": "assembly/assembly"},
     }
+
+    @property
+    def metadata_full_path(self) -> Dict[str, str]:
+        """
+        Get the full path to the metadata files
+        """
+        return {
+            key: os.path.join(self.SOURCE["METAD"], value)
+            for key, value in self.METADATA.items()
+            if key != "ROOT"
+        }
+
+    @property
+    def accession_to_taxid_path(self) -> str:
+        """
+        Get the path to the accession to taxid file
+        """
+        return os.path.join(
+            self.SOURCE["METAD"], self.METADATA["input_accession_to_taxid_path"]
+        )
+
+    def get_software_bin_directory(self, software: str):
+        """
+        Get the bin directory of a software"""
+        if software not in self.BINARIES["software"]:
+            raise ValueError(f"Software {software} not found in binaries")
+
+        return os.path.join(
+            self.BINARIES["ROOT"], self.BINARIES["software"][software], "bin"
+        )
+
+    def get_software_binary(self, software: str):
+        if software not in self.BINARIES["software"]:
+            raise ValueError(f"Software {software} not found in binaries")
+
+        return os.path.join(
+            self.BINARIES["ROOT"], self.BINARIES["software"][software], "bin", software
+        )
 
 
 class Constants(object):
@@ -138,6 +183,9 @@ class Constants(object):
 
     ## DIR_PROCESSED_FILES_FROM_WEB/userId_<id>/refId_<id>
     DIR_PROCESSED_FILES_REFERENCE = DIR_PROCESSED_FILES_UPLOADS + "/references"
+    DIR_PROCESSED_FILES_TELEFLU_REFERENCE = (
+        DIR_PROCESSED_FILES_UPLOADS + "/teleflu_references"
+    )
     DIR_PROCESSED_FILES_CONSENSUS = DIR_PROCESSED_FILES_UPLOADS + "/consensus"
     DIR_PROCESSED_FILES_FASTQ = DIR_PROCESSED_FILES_UPLOADS + "/fastq"
     DIR_PROCESSED_FILES_PROJECT = "projects/result"
@@ -261,6 +309,7 @@ class Constants(object):
     GET_CHANGE_CHECK_BOX_SINGLE = "get_change_check_box_single"
     COUNT_CHECK_BOX = "count_check_boxes"
     CHECK_BOX_VALUE = "value"
+    TELEFLU_CHECK_BOX = "teleflu_check_box"
     CHECK_BOX_not_show_processed_files = "check_box_not_show_processed_files"
 
     ### empty value used in tables

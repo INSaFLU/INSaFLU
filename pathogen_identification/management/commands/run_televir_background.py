@@ -208,10 +208,7 @@ class DeploymentManager(ABC):
         return False
 
 
-from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils,
-    Utils_Manager,
-)
+from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
 
 
 class TelevirMetagenomicsDeploymentManager(DeploymentManager):

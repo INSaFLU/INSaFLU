@@ -18,7 +18,7 @@
 			<div class="col-sm-8">
 				<div class="insa-header">
 					<h1 class="insa-title" style="margin:10px">From “reads” to viral metagenomics detection and routine genomic surveillance</h1>
-					<div class="insa-description bg-insa-fixed-top" style="">INSaFLU (“INSide the FLU”) is a free bioinformatics web-based (also locally installable) suite that deals
+					<div class="insa-description bg-insa-fixed-top-main" style="">INSaFLU (“INSide the FLU”) is a free bioinformatics web-based (also locally installable) suite that deals
 							with primary sequencing data (Illumina, Ion Torrent and Oxford Nanopore Technologies reads) towards:
 						<ul>
 							<li><strong>metagenomics virus detection </strong> (from reads to virus detection).</li>
@@ -43,14 +43,15 @@
 				
 				</style>
 
-				<div class="row">
+				<div class="row justify-content-center">
+
 					{% if televir_available %}
 					<div class="col-md">
 						<div class="card mb-2">
 							<img class="img-index" src="{% static "img/Logo_TELEVIR_INSaFlu.png" %}">
 							<div class="card-body">
-								<h5 class="card-title">{{ 'Virus Detection' }}</h5>
-								<p class="card-text">{{ 'From Reads to viral detection' }} </p>
+								<h5 class="card-title portal">{{ 'Virus Detection' }}</h5>
+								<p class="card-text portal">{{ 'From Reads to viral detection' }} </p>
 							</div>
 						</div>
 					</div>
@@ -59,8 +60,8 @@
 						<div class="card mb-2">
 							<img class="img-index" src="{% static "img/Logo_insaflu.png" %}">
 							<div class="card-body">
-								<h5 class="card-title">{{ 'Reference-based genome assembly' }}</h5>
-								<p class="card-text">{{ 'From reads to consensus sequence, mutations list, alignments, Pango lineage classification, etc.' }}</p>
+								<h5 class="card-title portal">{{ 'Reference-based genome assembly' }}</h5>
+								<p class="card-text portal">{{ 'From reads to consensus sequence, mutations list, alignments, Pango lineage classification, etc.' }}</p>
 							</div>
 						</div>
 					</div>
@@ -68,17 +69,17 @@
 						<div class="card mb-2">
 							<img class="img-index" src="{% static "img/Logo_NEXTSTRAIN_INSaFlu.png" %}">
 							<div class="card-body">
-								<h5 class="card-title">{{ 'Nextstrain' }}</h5>
-									<p class="card-text">{{ 'From consensus sequences to phylogeographic and temporal analysis and metadatada navigation' }}</p>
+								<h5 class="card-title portal">{{ 'Nextstrain' }}</h5>
+									<p class="card-text portal">{{ 'From consensus sequences to phylogeographic and temporal analysis and metadatada navigation' }}</p>
 							</div>
 						</div>
 					</div>
 				</div>
-				<div class="row">
+				<div class="row justify-content-center">
 					{% if televir_available %}
 					<div class="col-md">
 						<div class="card mb-2">
-							<div class="card-footer">
+							<div class="card-footer portal">
 								<a href="{% url 'PIprojects_main' %}" class="btn btn-primary">
 									Projects
 								</a>
@@ -86,9 +87,9 @@
 						</div>
 					</div>
 					{% endif %}
-					<div class="col-md">
+					<div class="col-md justify-content-center">
 						<div class="card mb-2">
-							<div class="card-footer">
+							<div class="card-footer portal">
 								<a href="{% url 'projects' %}" class="btn btn-primary">
 									Projects
 								</a>
@@ -97,7 +98,7 @@
 					</div>
 					<div class="col-md">
 						<div class="card mb-2">
-							<div class="card-footer">
+							<div class="card-footer portal">
 								<a href="{% url 'datasets' %}" class="btn btn-primary">
 									Datasets
 								</a>
@@ -130,7 +131,7 @@
 				<div class="card">
 					<div class="card-block">
 						<h4 class="card-title">More information</h4>
-						<ul>
+						<ul class="no-bullets">
 						<li><p class="card-text"><strong>Documentation: </strong>
 						<a href="https://insaflu.readthedocs.io/en/latest" target="_blank" class="card-link">https://insaflu.readthedocs.io/en/latest</a></p></li>
 						<li><p class="card-text"><strong>Code: </strong>

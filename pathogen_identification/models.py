@@ -18,8 +18,7 @@ from django.utils.translation import gettext_lazy as _
 from managing_files.models import Project as InsaFluProject
 from managing_files.models import Reference as InsaFluReference
 from managing_files.models import Sample
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.data_classes import IntermediateFiles
 
 # Create your models here.
@@ -1293,7 +1292,7 @@ class TelefluMapping(models.Model):
     @property
     def mapping_igv_report(self):
         return os.path.join(self.mapping_directory, "igv_report.html")
-    
+
     @property
     def queued_or_running_mappings_exist(self) -> bool:
 
@@ -1304,12 +1303,13 @@ class TelefluMapping(models.Model):
         refs = RawReference.objects.filter(
             run__parameter_set__sample__in=samples,
             run__parameter_set__leaf__index=self.leaf.index,
-            run__parameter_set__status__in=[ParameterSet.STATUS_QUEUED, ParameterSet.STATUS_RUNNING],
+            run__parameter_set__status__in=[
+                ParameterSet.STATUS_QUEUED,
+                ParameterSet.STATUS_RUNNING,
+            ],
         )
 
         return refs.exists()
-
-
 
     @property
     def mapped_samples(self):
@@ -1437,8 +1437,7 @@ class ReferenceTaxid(models.Model):
         return self.taxid
 
 
-from constants.constants import \
-    Televir_Directory_Constants as Televir_Directories
+from constants.constants import Televir_Directory_Constants as Televir_Directories
 
 
 class ReferenceSourceFile(models.Model):
@@ -1527,6 +1526,10 @@ class ReferenceSourceFileMap(models.Model):
         if "virosaurus" in self.reference_source_file.file:
             acc_simple = self.accid.split(".")[0]
             return f"{acc_simple}:{acc_simple};"
+
+        if "kraken2" in self.reference_source_file.file:
+            return f"kraken:taxid|{self.taxid.taxid}|{self.accid}"
+
         return self.accid
 
     @property

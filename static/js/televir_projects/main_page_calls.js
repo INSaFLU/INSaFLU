@@ -376,7 +376,7 @@ $("#update-project").click(function () {
         data_type: 'json',
         success: function (data) {
             if (data["is_ok"] == true) {
-                alert("Project updated");
+                alert("Project update submitted.");
                 // set button to disabled
 
                 $('#update-project').prop('disabled', true);

@@ -257,6 +257,11 @@ urlpatterns = [
         name="explify_delete_external",
     ),
     url(
+        "Projects/update_televir_project$",
+        PIajax_views.Update_televir_project,
+        name="update_televir_project",
+    ),
+    url(
         r"Projects/project_(?P<pk1>\d+)/sample_(?P<pk2>\d+)",
         PIviews.Sample_main.as_view(),
         name="sample_main",

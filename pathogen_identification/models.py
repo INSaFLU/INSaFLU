@@ -7,6 +7,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 from django import forms
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from django.db import models
@@ -73,6 +74,10 @@ class Projects(models.Model):
     )
 
     running_processes = models.IntegerField(default=0)
+
+    updated_version = models.CharField(
+        default=settings.APP_VERSION_NUMBER, max_length=10
+    )
 
     class Meta:
         ordering = ["name", "-creation_date"]

@@ -361,6 +361,35 @@ $("#sortpi_btn").click(function () {
     });
 });
 
+$("#update-project").click(function () {
+
+    var url = $(this).attr("update-url");
+    var project_id = $(this).attr("project-id");
+
+    $.ajax({
+        url: url,
+        type: "POST",
+        data: {
+            'csrfmiddlewaretoken': $('#teleflu_create-button').attr("csrf"),
+            'project_id': project_id,
+        },
+        data_type: 'json',
+        success: function (data) {
+            if (data["is_ok"] == true) {
+                alert("Project updated");
+                // set button to disabled
+
+                $('#update-project').prop('disabled', true);
+                // unblock UI
+                $.unblockUI();
+            }
+            else {
+                alert("Project not updated");
+            }
+        }
+    });
+});
+
 $('#confirm-delete-teleflu-project-button').click(function() {
     const projectId = $(this).attr('project-id'); // Assuming 'project-id' is stored as a data attribute
     const deleteUrl = $(this).attr('delete-url'); // Get the delete URL from the button's attribute

@@ -12,24 +12,38 @@ from django.utils.safestring import mark_safe
 
 from constants.constants import Constants
 from fluwebvirus.settings import STATIC_ROOT
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PIConstantsSettings
-from pathogen_identification.models import (ContigClassification, FinalReport,
-                                            ParameterSet, PIProject_Sample,
-                                            Projects, RawReference,
-                                            RawReferenceCompoundModel,
-                                            ReadClassification,
-                                            ReferenceMap_Main, ReferencePanel,
-                                            ReferenceSourceFileMap,
-                                            RunAssembly, RunDetail, RunMain,
-                                            SoftwareTree, SoftwareTreeNode)
+from pathogen_identification.constants_settings import (
+    ConstantsSettings as PIConstantsSettings,
+)
+from pathogen_identification.models import (
+    ContigClassification,
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    RawReferenceCompoundModel,
+    ReadClassification,
+    ReferenceMap_Main,
+    ReferencePanel,
+    ReferenceSourceFileMap,
+    RunAssembly,
+    RunDetail,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
 from pathogen_identification.utilities.clade_objects import Clade
-from pathogen_identification.utilities.overlap_manager import \
-    ReadOverlapManager
+from pathogen_identification.utilities.overlap_manager import ReadOverlapManager
 from pathogen_identification.utilities.televir_parameters import (
-    LayoutParams, TelevirParameters)
+    LayoutParams,
+    TelevirParameters,
+)
 from pathogen_identification.utilities.utilities_general import (
-    infer_run_media_dir, merge_classes, simplify_name)
+    infer_run_media_dir,
+    merge_classes,
+    simplify_name,
+)
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
@@ -1287,7 +1301,7 @@ class ReportSorter:
         )
 
         sorted_groups = self.get_reports_private_reads(sorted_groups)
-        #sorted_groups = self.sort_group_list_reports(sorted_groups)
+        # sorted_groups = self.sort_group_list_reports(sorted_groups)
         sorted_groups = self.prep_heatmap_data_several(sorted_groups)
 
         return sorted_groups

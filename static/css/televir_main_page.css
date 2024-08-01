@@ -215,8 +215,8 @@ table .sample-name {
 }
 
 #update-project {
-    border: none;
-    background-color: #522cb9;
+    border: 1px solid #17a2b8;
+    background-color: #17a2b8;
     color: white;
 }
 

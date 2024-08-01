@@ -91,7 +91,7 @@
                                 <a href="{% url "pathogenID_pipeline" level=project_index %}"><span class="hidden-phone" style="color:white"><i>Project Settings</i></span></a>
                                     </button>
                         </div>
-                        {% if project_not_udpated %}
+                        {% if project_not_updated %}
                             <div class="btn-group">
                                 <button type="button" id="update-project" class="btn btn-primary dark" aria-haspopup="true" aria-expanded="false" update-url="{% url "update_televir_project" %}" project-id="{{ project_index }}" {% if update_running %} disabled {% endif %}>
                                     <a href="#"><span class="hidden-phone" style="color:white"><i>Update</i></span></a>

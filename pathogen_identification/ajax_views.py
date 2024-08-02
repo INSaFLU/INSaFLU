@@ -20,27 +20,36 @@ from constants.software_names import SoftwareNames
 from fluwebvirus.settings import BASE_DIR, STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
-from pathogen_identification.models import (FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RawReference, ReferenceMap_Main,
-                                            ReferencePanel,
-                                            ReferenceSourceFileMap, RunMain,
-                                            TeleFluProject, TeleFluSample)
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.models import (
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReferenceMap_Main,
+    ReferencePanel,
+    ReferenceSourceFileMap,
+    RunMain,
+    TeleFluProject,
+    TeleFluSample,
+)
 from pathogen_identification.tables import ReferenceSourceTable
 from pathogen_identification.utilities.reference_utils import (
-    check_file_reference_submitted, check_raw_reference_submitted,
-    check_user_reference_exists, create_combined_reference)
+    check_file_reference_submitted,
+    check_raw_reference_submitted,
+    check_user_reference_exists,
+    create_combined_reference,
+)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
-from pathogen_identification.utilities.utilities_general import \
-    get_services_dir
-from pathogen_identification.utilities.utilities_pipeline import \
-    SoftwareTreeUtils
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.utilities_general import get_services_dir
+from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter, SampleReferenceManager, set_control_reports)
+    ReportSorter,
+    SampleReferenceManager,
+    set_control_reports,
+)
 from pathogen_identification.views import inject__added_references
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
@@ -551,10 +560,8 @@ def submit_project_samples_mapping_televir(request):
             project_samples = project_samples.filter(pk__in=sample_ids)
 
         try:
-            samples_map_launched = []
             data_dump = []
             for sample in project_samples:
-                sample_id = sample.pk
                 data = deploy_remap(sample, project, [])
                 data_dump.append(data)
 
@@ -882,7 +889,7 @@ def Project_explify_merge(request):
             )
             televir_reports.to_csv(report_path, sep="\t", index=False)
 
-            taskID = process_SGE.set_submit_televir_explify_merge(
+            _ = process_SGE.set_submit_televir_explify_merge(
                 user=request.user,
                 project_pk=project.pk,
                 rpip_filepath=rpip_report_path,
@@ -962,6 +969,38 @@ def Project_explify_merge_external(request):
             )
 
             data["is_deployed"] = True
+
+        data["is_ok"] = True
+        return JsonResponse(data)
+
+
+@login_required
+@require_POST
+def Update_televir_project(request):
+    """
+    update televir project
+    """
+
+    if request.is_ajax():
+        data = {"is_ok": False, "is_deployed": False}
+
+        process_SGE = ProcessSGE()
+        user = request.user
+
+        project_id = int(request.POST["project_id"])
+        project = Projects.objects.get(id=int(project_id))
+
+        try:
+            _ = process_SGE.set_submit_update_televir_project(
+                user=request.user,
+                project_id=project.pk,
+            )
+
+            data["is_deployed"] = True
+
+        except Exception as e:
+            print(e)
+            data["is_deployed"] = False
 
         data["is_ok"] = True
         return JsonResponse(data)
@@ -1734,7 +1773,9 @@ def add_teleflu_sample(request):
 
 from pathogen_identification.models import SoftwareTreeNode, TelefluMapping
 from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils, Utils_Manager)
+    SoftwareTreeUtils,
+    Utils_Manager,
+)
 
 
 @login_required
@@ -2541,7 +2582,9 @@ def add_references_to_panel(request):
         already_added = []
         for reference_id in reference_ids:
             if panel.references_count >= PICS.MAX_REFERENCES_PANEL:
-                return JsonResponse({"is_full": True, "max_references": PICS.MAX_REFERENCES_PANEL})
+                return JsonResponse(
+                    {"is_full": True, "max_references": PICS.MAX_REFERENCES_PANEL}
+                )
             try:
                 reference = ReferenceSourceFileMap.objects.get(pk=int(reference_id))
                 description = reference.description
@@ -2586,7 +2629,13 @@ def add_file_to_panel(request):
         try:
             for reference in refs:
                 if panel.references_count >= PICS.MAX_REFERENCES_PANEL:
-                    return JsonResponse({"is_full": True, "max_references": PICS.MAX_REFERENCES_PANEL, "is_ok": True})
+                    return JsonResponse(
+                        {
+                            "is_full": True,
+                            "max_references": PICS.MAX_REFERENCES_PANEL,
+                            "is_ok": True,
+                        }
+                    )
 
                 if RawReference.objects.filter(
                     accid=reference.reference_source.accid, panel=panel

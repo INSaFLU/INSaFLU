@@ -284,17 +284,16 @@ class MappingResultsParser:
         readname_dict = {}
         utils = Utils()
         temp_dir = utils.get_temp_dir()
-        televir_bioinf= TelevirBioinf()
+        televir_bioinf = TelevirBioinf()
 
-        
         for ix, row in self.metadata.iterrows():
-            
-            accid = row["accid"]
-            bam= row["bam"]
 
-            temp_file= Temp_File(temp_dir)
+            accid = row["accid"]
+            bam = row["bam"]
+
+            temp_file = Temp_File(temp_dir)
             with temp_file as tpf:
-                read_names= televir_bioinf.get_mapped_reads_list(bam, tpf)
+                read_names = televir_bioinf.get_mapped_reads_list(bam, tpf)
 
             if accid in readname_dict:
                 readname_dict[accid] += read_names
@@ -460,7 +459,7 @@ class ReadOverlapManager(MappingResultsParser):
         max_reads: int = 500000,
     ):
 
-        super().__init__(metadata_df, media_dir, pid, max_reads= max_reads)
+        super().__init__(metadata_df, media_dir, pid, max_reads=max_reads)
 
         self.clade_filter = CladeFilter(reference_clade=reference_clade)
         self.excluded_leaves = []
@@ -478,7 +477,14 @@ class ReadOverlapManager(MappingResultsParser):
         except Exception as e:
             print(e)
 
-        if self.force_tree_rebuild:
+        self.tree_plot_exists = os.path.exists(self.tree_plot_path)
+        self.tree_plot_path_render = os.path.join(
+            "/media/", self.tree_plot_path.split("/media/")[-1]
+        )
+        self.overlap_matrix_plot_exists = os.path.exists(self.overlap_matrix_plot_path)
+        self.analysis_exists = os.path.exists(self.media_dir)
+
+        if self.force_tree_rebuild and self.tree_plot_exists:
             self.parse_for_data()
             self.generate_shared_proportion_matrix()
             self.generate_clade_shared_proportion_matrix()
@@ -488,12 +494,6 @@ class ReadOverlapManager(MappingResultsParser):
                     self.tree_manager.plot_tree(self.tree_plot_path)
                 except Exception as e:
                     print(e)
-
-        self.tree_plot_exists = os.path.exists(self.tree_plot_path)
-        self.tree_plot_path_render = os.path.join(
-            "/media/", self.tree_plot_path.split("/media/")[-1]
-        )
-        self.overlap_matrix_plot_exists = os.path.exists(self.overlap_matrix_plot_path)
 
     @property
     def distance_matrix_path(self):

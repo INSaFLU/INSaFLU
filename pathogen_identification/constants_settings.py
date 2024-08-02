@@ -7,6 +7,7 @@ import os
 from typing import Dict, List
 
 import networkx as nx
+from django.conf import settings
 
 from fluwebvirus.settings import MEDIA_ROOT, STATIC_ROOT, STATICFILES_DIRS
 from pathogen_identification.utilities.mapping_flags import (
@@ -101,7 +102,9 @@ class ConstantsSettings:
 
     ################################### Max Size
 
-    MAX_LENGTH_SEQUENCE_TOTAL_REFERENCE_FASTA = 30 * 10e6
+    MAX_LENGTH_SEQUENCE_TOTAL_REFERENCE_FASTA = (
+        settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA * 10
+    )  # 30 * 10e6
 
     ################################### Threads
 

@@ -87,7 +87,7 @@ class TelevirBioinf:
     def get_mapped_reads(self, bam_file, outfile=None):
         command = f"{self.samtools_binary} view -F 0x4 {bam_file} | cut -f 1 | sort | uniq > {outfile}"
         subprocess.call(command, shell=True)
-        return self.check_file_exists_not_empty(outfile)
+        return os.path.exists(outfile)
 
     def get_mapped_reads_list(self, bam_file, outfile: str) -> List[str]:
 
@@ -99,7 +99,12 @@ class TelevirBioinf:
         with open(outfile, "r") as f:
             reads = f.readlines()
 
-        return [x.strip() for x in reads]
+        processed_reads = []
+        for read in reads:
+            read = read.strip()
+            if read:
+                processed_reads.append(read)
+        return processed_reads
 
     @staticmethod
     def virosaurus_formatting(accid):

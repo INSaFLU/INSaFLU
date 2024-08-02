@@ -863,6 +863,54 @@ class ProcessSGE(object):
             raise Exception("Fail to submit the job.")
         return sge_id
 
+    def set_submit_update_televir_project(self, project_id: int, user: User):
+        """
+        submit job to add references to sample
+        """
+        process_controler = ProcessControler()
+
+        vect_command = [
+            "python3 {} update_sample_references --project_id {}".format(
+                os.path.join(settings.BASE_DIR, "manage.py"),
+                project_id,
+            )
+        ]
+
+        self.logger_production.info("Processing: " + ";".join(vect_command))
+        self.logger_debug.info("Processing: " + ";".join(vect_command))
+        queue_name = user.profile.queue_name_sge
+        (job_name_wait, job_name) = user.profile.get_name_sge_seq(
+            Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
+        )
+        outdir_sge = self.utils.get_temp_dir()
+        path_file = self.set_script_run_sge(
+            outdir_sge,
+            queue_name,
+            vect_command,
+            job_name,
+            True,
+            [job_name_wait],
+        )
+
+        try:
+            sge_id = self.submitte_job(path_file)
+            print("SGE_ID", sge_id)
+            if sge_id != None:
+                pc_name = process_controler.get_name_update_televir_project(project_id)
+                self.set_process_controlers(
+                    user,
+                    pc_name,
+                    sge_id,
+                )
+                self.set_process_controlers(
+                    user,
+                    pc_name,
+                    sge_id,
+                )
+        except:
+            raise Exception("Fail to submit the job.")
+        return sge_id
+
     def set_submit_televir_explify_merge(
         self,
         user: User,

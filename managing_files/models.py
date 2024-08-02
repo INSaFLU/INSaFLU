@@ -1884,6 +1884,11 @@ class ProcessControler(models.Model):
         return "{}_add_references_to_sample_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, sample_pk
         )
+    
+    def get_name_update_televir_project(self, project_id):
+        return "{}_update_project_{}".format(
+            ProcessControler.PREFIX_TELEVIR_PROJECT, project_id
+        )
 
     def get_name_televir_project_merge_explify_external(self, user_pk):
         return "{}_report_merge_explify_EXT_{}".format(

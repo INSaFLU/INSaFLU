@@ -12,38 +12,24 @@ from django.utils.safestring import mark_safe
 
 from constants.constants import Constants
 from fluwebvirus.settings import STATIC_ROOT
-from pathogen_identification.constants_settings import (
-    ConstantsSettings as PIConstantsSettings,
-)
-from pathogen_identification.models import (
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    RawReferenceCompoundModel,
-    ReadClassification,
-    ReferenceMap_Main,
-    ReferencePanel,
-    ReferenceSourceFileMap,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PIConstantsSettings
+from pathogen_identification.models import (ContigClassification, FinalReport,
+                                            ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            RawReferenceCompoundModel,
+                                            ReadClassification,
+                                            ReferenceMap_Main, ReferencePanel,
+                                            ReferenceSourceFileMap,
+                                            RunAssembly, RunDetail, RunMain,
+                                            SoftwareTree, SoftwareTreeNode)
 from pathogen_identification.utilities.clade_objects import Clade
-from pathogen_identification.utilities.overlap_manager import ReadOverlapManager
+from pathogen_identification.utilities.overlap_manager import \
+    ReadOverlapManager
 from pathogen_identification.utilities.televir_parameters import (
-    LayoutParams,
-    TelevirParameters,
-)
+    LayoutParams, TelevirParameters)
 from pathogen_identification.utilities.utilities_general import (
-    infer_run_media_dir,
-    merge_classes,
-    simplify_name,
-)
+    infer_run_media_dir, merge_classes, simplify_name)
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
@@ -1133,6 +1119,23 @@ class ReportSorter:
 
         return group
 
+
+    def sort_group_by_coverage(self, group: FinalReportGroup) -> FinalReportGroup:
+        """
+        sort group by private reads
+        """
+        group.group_list.sort(key=lambda x: x.coverage, reverse=True)
+
+        if len(group.group_list) == 0:
+            return group
+
+        group.group_list[0].first_in_group = True
+        group.group_list[0].row_class_name = "primary-row"
+        group.group_list[0].display = "table-row"
+
+        return group
+
+
     def sort_group_list_reports(
         self, report_groups: List[FinalReportGroup]
     ) -> List[FinalReportGroup]:
@@ -1140,9 +1143,10 @@ class ReportSorter:
         sort group list reports
         """
         return [
-            self.sort_group_by_private_reads(report_group)
+            self.sort_group_by_coverage(report_group)
             for report_group in report_groups
         ]
+
 
     def read_overlap_analysis(self, force: bool = False):
         """
@@ -1537,8 +1541,7 @@ class ReferenceManager:
 
 class RawReferenceCompound:
     def __init__(self, raw_reference: RawReference):
-        # self.pk = raw_reference.pk
-        # self.project_id = raw_reference.run.project.pk
+
         self.sample_id = raw_reference.run.sample.pk
         self.selected_mapped_pk = raw_reference.id
         self.taxid = raw_reference.taxid
@@ -1547,7 +1550,6 @@ class RawReferenceCompound:
         self.family = []
         self.runs = []
         self.manual_insert = False
-        # self.mapped: Optional[FinalReport] = None
         self.mapped_final_report: Optional[FinalReport] = None
         self.mapped_raw_reference: Optional[RawReference] = None
         self.standard_score = 0
@@ -1903,21 +1905,17 @@ class RawReferenceUtils:
         self,
         list_tables: List[pd.DataFrame],
     ) -> pd.DataFrame:
-        joint_tables = [
-            self.run_references_standard_scores(table) for table in list_tables
-        ]
+        # joint_tables = [
+        #    self.run_references_standard_scores(table) for table in list_tables
+        # ]
 
-        joint_tables = pd.concat(joint_tables)
+        joint_tables = pd.concat(list_tables)
         # group tables: average read_counts_standard_score, sum counts, read_counts, contig_counts
         if joint_tables.shape[0] == 0:
             return pd.DataFrame(columns=list(joint_tables.columns))
 
-        joint_tables["standard_score"] = joint_tables["standard_score"].astype(float)
         joint_tables["contig_counts"] = joint_tables["contig_counts"].astype(float)
         joint_tables["read_counts"] = joint_tables["read_counts"].astype(float)
-        joint_tables["contig_counts_standard_score"] = joint_tables[
-            "contig_counts_standard_score"
-        ].astype(float)
 
         joint_tables = joint_tables.groupby(["taxid", "accid", "description"]).agg(
             {
@@ -1925,37 +1923,59 @@ class RawReferenceUtils:
                 "accid": "first",
                 "description": "first",
                 "counts_str": "first",
-                "standard_score": "mean",
-                "contig_counts_standard_score": "mean",
                 "read_counts": "sum",
                 "contig_counts": "sum",
                 "sort_rank": "mean",
             }
         )
+        joint_tables["standard_score"] = 0
+        joint_tables = joint_tables.rename(columns={"sort_rank": "ensemble_ranking"})
 
-        # Define a function to calculate the final score
-        def calculate_final_score(row):
-            boost = 0
-            if row["contig_counts"] > 0:
-                boost = 1  # Define the boost value according to your needs
-            return (
-                row["standard_score"]
-                + boost * row["contig_counts_standard_score"]
-                + boost
-            )
+        proxy_rclass = self.reference_table_renamed(
+            joint_tables, {"read_counts": "counts"}
+        ).reset_index(drop=True)
+        proxy_aclass = self.reference_table_renamed(
+            joint_tables, {"contig_counts": "counts"}
+        ).reset_index(drop=True)
 
-        # Apply the function to each row
-        joint_tables["final_score"] = joint_tables.apply(calculate_final_score, axis=1)
-
-        # Sort the table by the final score
-        joint_tables = joint_tables.sort_values("final_score", ascending=False)
-
-        # Reset the index
-        joint_tables = joint_tables.reset_index(drop=True)
-
-        joint_tables = joint_tables.sort_values(
-            ["contig_counts", "standard_score"], ascending=[False, False]
+        targets, _ = merge_classes(
+            proxy_rclass, proxy_aclass, maxt=joint_tables.shape[0]
         )
+
+        targets["global_ranking"] = range(1, targets.shape[0] + 1)
+
+        def set_global_ranking_repeat_ranks(
+            targets, rank_column="global_ranking", counts_column="counts"
+        ):
+            """
+            Set the global ranking for repeated ranks
+            """
+            current_counts = None
+            current_rank = 0
+            for row in targets.iterrows():
+                if current_counts != row[1][counts_column]:
+                    current_rank += 1
+                    current_counts = row[1][counts_column]
+
+                targets.at[row[0], rank_column] = current_rank
+
+            return targets
+
+        targets = set_global_ranking_repeat_ranks(targets, rank_column="global_ranking")
+
+        ####
+        joint_tables = joint_tables.reset_index(drop=True)
+        targets = targets.reset_index(drop=True)
+        joint_tables["taxid"] = joint_tables["taxid"].astype(int)
+        targets["taxid"] = targets["taxid"].astype(int)
+
+        joint_tables = joint_tables.merge(
+            targets[["taxid", "global_ranking"]], on=["taxid"], how="left"
+        )
+        ############################################# Reset the index
+
+        joint_tables = joint_tables.sort_values("ensemble_ranking", ascending=True)
+
         joint_tables = joint_tables.reset_index(drop=True)
 
         return joint_tables
@@ -2047,9 +2067,7 @@ class RawReferenceUtils:
 
         _ = self.sample_reference_tables(runs_filter)
 
-    def compound_reference_update_standard_score(
-        self, compound_ref: RawReferenceCompound
-    ):
+    def compound_reference_update_ranks(self, compound_ref: RawReferenceCompound):
         """
         Update the standard score for a compound reference based on accid"""
 
@@ -2067,7 +2085,7 @@ class RawReferenceUtils:
         """
         Update the standard score for a list of compound references based on accid"""
         for compound_ref in compount_refs:
-            self.compound_reference_update_standard_score(compound_ref)
+            self.compound_reference_update_ranks(compound_ref)
 
     def filter_reference_query_set(
         self, references: QuerySet, query_string: Optional[str] = ""
@@ -2208,12 +2226,18 @@ class RawReferenceUtils:
             )
             compound_ref_model.save()
 
-            for run in compound_ref.runs:
-                compound_ref_model.runs.add(run)
+            # for run in compound_ref.runs:
+            #    compound_ref_model.runs.add(run)
+            compound_ref_model.runs.add(*compound_ref.runs)
 
-            for ref_pk in compound_ref.family:
-                ref = RawReference.objects.get(pk=ref_pk)
-                compound_ref_model.family.add(ref)
+            refs = RawReference.objects.filter(pk__in=compound_ref.family)
+
+            ## add family
+            compound_ref_model.family.add(*refs)
+
+            # for ref_pk in compound_ref.family:
+            #    ref = RawReference.objects.get(pk=ref_pk)
+            #    compound_ref_model.family.add(ref)
 
     def get_classification_runs(self):
 
@@ -2240,12 +2264,6 @@ class RawReferenceUtils:
             RawReferenceCompound(raw_reference) for raw_reference in raw_references
         ]
 
-        classification_runs = self.get_classification_runs()
-
-        # pks of classification runs as integer list
-        runs_pks = [run.pk for run in classification_runs]
-
-        # if classification_runs.exists():
         self.sample_reference_tables_filter()
 
         self.update_scores_compound_references(raw_reference_compound)
@@ -2316,9 +2334,7 @@ class RawReferenceUtils:
         return proxy_ref
 
     def merge_ref_tables(self):
-        run_references_tables = self.merge_ref_tables_use_standard_score(
-            self.list_tables
-        )
+        run_references_tables = self.merge_ref_tables_use_ranking(self.list_tables)
 
         run_references_tables = run_references_tables[run_references_tables.taxid != 0]
 

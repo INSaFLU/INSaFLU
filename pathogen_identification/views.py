@@ -927,6 +927,25 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
             self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
         ).configure(samples)
 
+        project_updated = project.is_up_to_date
+
+        update_running = False
+
+        if project_updated == False:
+            process_controler = ProcessControler()
+            print(
+                ProcessControler.objects.filter(
+                    name=process_controler.get_name_update_televir_project(project.pk),
+                    is_finished=False,
+                    is_error=False,
+                )
+            )
+            update_running = ProcessControler.objects.filter(
+                name=process_controler.get_name_update_televir_project(project.pk),
+                is_finished=False,
+                is_error=False,
+            ).exists()
+
         ### type of deployment
         DEPLOY_TYPE = PICS.DEPLOYMENT_DEFAULT
         DEPLOY_URL = "deploy_ProjectPI"
@@ -941,6 +960,8 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
             "queued_processes",
         ]
 
+        context["project_not_updated"] = project_updated == False
+        context["update_running"] = update_running
         context["metagenomics"] = ConstantsSettings.METAGENOMICS
         context["table"] = samples
         context["deploy_url"] = DEPLOY_URL

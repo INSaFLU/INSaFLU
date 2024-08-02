@@ -15,11 +15,13 @@ from django.db.models import QuerySet
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
+from pkg_resources import packaging
 
 from managing_files.models import Project as InsaFluProject
 from managing_files.models import Reference as InsaFluReference
 from managing_files.models import Sample
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from pathogen_identification.data_classes import IntermediateFiles
 
 # Create your models here.
@@ -78,6 +80,10 @@ class Projects(models.Model):
     updated_version = models.CharField(
         default=settings.APP_VERSION_NUMBER, max_length=10
     )
+
+    @property
+    def is_up_to_date(self):
+        return packaging.version.parse(self.updated_version) >= packaging.version.parse("2.1.0")
 
     class Meta:
         ordering = ["name", "-creation_date"]
@@ -1442,7 +1448,8 @@ class ReferenceTaxid(models.Model):
         return self.taxid
 
 
-from constants.constants import Televir_Directory_Constants as Televir_Directories
+from constants.constants import \
+    Televir_Directory_Constants as Televir_Directories
 
 
 class ReferenceSourceFile(models.Model):

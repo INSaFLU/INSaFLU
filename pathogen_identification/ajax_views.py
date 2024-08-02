@@ -1049,7 +1049,7 @@ def kill_televir_project_sample(request):
         sample = PIProject_Sample.objects.get(id=int(sample_id))
         project = Projects.objects.get(id=int(sample.project.pk))
 
-        runs = ParameterSet.objects.filter(
+        runs_params = ParameterSet.objects.filter(
             sample=sample,
             status__in=[
                 ParameterSet.STATUS_RUNNING,
@@ -1057,10 +1057,10 @@ def kill_televir_project_sample(request):
             ],
         )
 
-        for run in runs:
+        for single_run_param in runs_params:
             try:  # kill process
                 process_SGE.kill_televir_process_controler_runs(
-                    user.pk, project.pk, sample.pk, run.leaf.pk
+                    user.pk, project.pk, sample.pk, single_run_param.leaf.pk
                 )
 
             except ProcessControler.DoesNotExist as e:
@@ -1068,11 +1068,11 @@ def kill_televir_project_sample(request):
                 print("ProcessControler.DoesNotExist")
                 pass
 
-            if run.status == ParameterSet.STATUS_RUNNING:
-                run.delete_run_data()
+            if single_run_param.status == ParameterSet.STATUS_RUNNING:
+                single_run_param.delete_run_data()
 
-            run.status = ParameterSet.STATUS_KILLED
-            run.save()
+            single_run_param.status = ParameterSet.STATUS_KILLED
+            single_run_param.save()
 
         data["is_ok"] = True
         return JsonResponse(data)

@@ -22,7 +22,6 @@ from pathogen_identification.utilities.utilities_pipeline import (
 )
 from pathogen_identification.utilities.utilities_views import (
     RawReferenceUtils,
-    calculate_reports_overlaps,
     set_control_reports,
 )
 from utils.process_SGE import ProcessSGE

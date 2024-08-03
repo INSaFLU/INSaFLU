@@ -870,7 +870,7 @@ class ProcessSGE(object):
         process_controler = ProcessControler()
 
         vect_command = [
-            "python3 {} update_sample_references --project_id {}".format(
+            "python3 {} update_project_references --project_id {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 project_id,
             )

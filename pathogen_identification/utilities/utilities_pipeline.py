@@ -2712,30 +2712,6 @@ class Utils_Manager:
         return module_tree
 
 
-class CompressedPipelineTree(PipelineTree):
-
-    nodes_df: pd.DataFrame
-    edges_df: pd.DataFrame
-
-    def __init__(
-        self,
-        pipeline_tree: PipelineTree,
-    ):
-        super().__init__(
-            technology=pipeline_tree.technology,
-            nodes=pipeline_tree.nodes,
-            edges=pipeline_tree.edges,
-            leaves=pipeline_tree.leaves,
-            makeup=pipeline_tree.makeup,
-            sorted=pipeline_tree.sorted,
-        )
-
-        self.nodes_df = pd.DataFrame(self.nodes_compress, columns=["index", "node"])
-        self.edges_df = pd.DataFrame(self.edge_compress, columns=["parent", "child"])
-
-        self.software_tree_pk = software_tree_pk
-
-
 class SoftwareTreeUtils:
     def __init__(
         self,

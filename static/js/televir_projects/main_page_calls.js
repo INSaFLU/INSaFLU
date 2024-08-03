@@ -59,6 +59,7 @@ $('#id-deploy-metagenomics-button').on('click', function () {
             csrfmiddlewaretoken: csrf_token,
         }, // data sent with the post request
         success: function (data) {
+
             if (data['is_ok'] === true && data['is_deployed'] === true) {
                 /// add message with informaton
                 $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +

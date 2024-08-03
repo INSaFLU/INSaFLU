@@ -339,7 +339,13 @@ $('#request_map_selected').on("click", function(e){
         }, // data sent with the post request
         success: function(data) {
 
-          
+          if (data['no_references'] === true) {
+            /// add message with informaton
+            $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+                'No references to deploy.' +
+                '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                '</div>');
+          }
           if (data['is_ok'] === true && data['is_deployed'] === true){
               /// add message with informaton
               $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +

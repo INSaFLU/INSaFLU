@@ -136,23 +136,29 @@
         {% if sort_performed %}
         <div id="summary" class="collapsible">
             <div class="card-block collapsible-summary" style="display: none;">
-                <div style="padding: 20px">
+                <div style="padding: 20px; padding-bottom: 0px">
                     <div class="row">
                         <div class="col-sm">
                             <p> 
                             <p> 
                                 Shared read analysis recovered <strong>{{ groups_count }} groups of references</strong>.
                             </p> 
+
+                        </div>
+                    </div>
+                </div>
+                {% if clade_heatmap_json_exists %}
+                <div style="padding: 20px; padding-top: 0px">
+                    <div class="row">
+                        <div class="col-sm">
                             <p> 
-                                The shared heatmap displays below the proportion of reads of one group (column) that are shared with another group (row).
+                                The shared heatmap displays the proportion of reads of one group (column) that are shared with another group (row).
                                 Groups are sorted by maximum coverage. If the heatmap is not visible, please re-run sorting for this sample. 
                             </p>
                         </div>
                     </div>
                 </div>
-                {% if clade_heatmap_json_exists %}
                 <div id="clade-heatmap" class="plot-container">
-                
                 </div>
                 <script>
                     createHeatmapClades('{{ clade_heatmap_json|safe }}', "clade-heatmap");

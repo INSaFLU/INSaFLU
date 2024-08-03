@@ -374,7 +374,7 @@
                     {% if sort_performed %}
                     <div class="float-right overlap-button">
                         <a href="#" class="summary-header btn btn-primary dark"> 
-                            <span>Read Overlap Summary</span>
+                            <span><i class="fa fa-exclamation-circle"></i> Read Overlap Summary</span>
                         </a>
                     </div> 
 
@@ -386,13 +386,20 @@
         {% if sort_performed %}
         <div id="summary" class="collapsible">
             <div class="card-block collapsible-summary" style="display: none;">
-                <div style="padding: 20px">
+                <div style="padding: 20px; padding-bottom: 0px;">
                     <div class="row">
                         <div class="col-sm">
                             <p> 
                             <p> 
                                 Shared read analysis recovered <strong>{{ groups_count }} groups of references</strong>.
                             </p> 
+                        </div>
+                    </div>
+                </div>
+                {% if clade_heatmap_json_exists %}
+                <div style="padding: 20px; padding-top: 0px;">
+                    <div class="row">
+                        <div class="col-sm">
                             <p> 
                                 The shared heatmap displays the proportion of reads of one group (column) that are shared with another group (row). 
                                 Groups are sorted by maximum coverage. 
@@ -400,7 +407,6 @@
                         </div>
                     </div>
                 </div>
-                {% if clade_heatmap_json_exists %}
                 <div id="clade-heatmap" class="plot-container">
                 
                 </div>

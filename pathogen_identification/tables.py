@@ -110,6 +110,15 @@ class ProjectTable(tables.Table):
             if parameter_set.status == ParameterSet.STATUS_QUEUED:
                 queued += 1
 
+        mapping_runs = RunMain.objects.filter(
+            sample=record,
+            run_type=RunMain.RUN_TYPE_MAP_REQUEST,
+            status=RunMain.STATUS_PREP,
+            parameter_set__status=ParameterSet.STATUS_PROXIED,
+        ).count()
+
+        queued += mapping_runs
+
         return queued
 
     def render_finished_processes(self, record):
@@ -998,12 +1007,7 @@ class TeleFluReferenceTable(tables.Table):
         verbose_name=("Select One"),
         accessor="pk",
         orderable=False,
-        attrs={
-            "th__input": {
-                "name": "teleflu_select_ref",
-                "style": "display: none;"
-            }
-        },
+        attrs={"th__input": {"name": "teleflu_select_ref", "style": "display: none;"}},
     )
     description = tables.Column(verbose_name="Description", orderable=False)
     accid = tables.Column(verbose_name="Accession id", orderable=False)

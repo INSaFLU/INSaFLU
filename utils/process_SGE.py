@@ -1670,25 +1670,26 @@ class ProcessSGE(object):
         """
         process_controler = ProcessControler()
 
-        processes = ProcessControler.objects.filter(
-            owner__id=user_pk,
-            name=process_controler.get_name_televir_run(project_pk, sample_pk, leaf_pk),
-            is_error=False,
-            is_finished=False,
-        )
-
-        self.kill_processes(processes)
-
-        processes = ProcessControler.objects.filter(
-            owner__id=user_pk,
-            name=process_controler.get_name_televir_project_sample(
+        names_processes = [
+            process_controler.get_name_televir_run(project_pk, sample_pk, leaf_pk),
+            process_controler.get_name_televir_project_sample(
                 project_pk=project_pk, sample_pk=sample_pk
             ),
+            process_controler.get_name_televir_project_sample_metagenomics_run(
+                sample_pk,
+                leaf_pk,
+            ),
+        ]
+
+        processes = ProcessControler.objects.filter(
+            owner__id=user_pk,
+            name__in=names_processes,
             is_error=False,
             is_finished=False,
         )
 
         self.kill_processes(processes)
+
 
     @transaction.atomic
     def kill_televir_process_controler_samples(

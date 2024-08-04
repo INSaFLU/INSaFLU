@@ -477,8 +477,6 @@ class ReadOverlapManager(MappingResultsParser):
         except Exception as e:
             print(e)
 
-
-
         if self.force_tree_rebuild:
             self.parse_for_data()
             self.generate_shared_proportion_matrix()

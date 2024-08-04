@@ -1690,7 +1690,6 @@ class ProcessSGE(object):
 
         self.kill_processes(processes)
 
-
     @transaction.atomic
     def kill_televir_process_controler_samples(
         self, user_pk: int, project_pk: int, sample_pk: int

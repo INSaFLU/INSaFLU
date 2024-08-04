@@ -1119,7 +1119,6 @@ class ReportSorter:
 
         return group
 
-
     def sort_group_by_coverage(self, group: FinalReportGroup) -> FinalReportGroup:
         """
         sort group by private reads
@@ -1135,7 +1134,6 @@ class ReportSorter:
 
         return group
 
-
     def sort_group_list_reports(
         self, report_groups: List[FinalReportGroup]
     ) -> List[FinalReportGroup]:
@@ -1143,10 +1141,8 @@ class ReportSorter:
         sort group list reports
         """
         return [
-            self.sort_group_by_coverage(report_group)
-            for report_group in report_groups
+            self.sort_group_by_coverage(report_group) for report_group in report_groups
         ]
-
 
     def read_overlap_analysis(self, force: bool = False):
         """
@@ -1310,7 +1306,7 @@ class ReportSorter:
 
         return sorted_groups
 
-    def read_shared_matrix(self):
+    def read_shared_matrix(self) -> pd.DataFrame:
         """
         read accession shared reads matrix
         """
@@ -1320,8 +1316,7 @@ class ReportSorter:
             )
             return distance_matrix
         except Exception as e:
-            print(e)
-            return None
+            return pd.DataFrame()
 
     def read_clade_shared_matrix(self):
         """
@@ -1392,7 +1387,7 @@ class ReportSorter:
         """
         distance_matrix = self.read_shared_matrix()
 
-        if distance_matrix is None:
+        if distance_matrix.empty is True:
             return report_groups
 
         for report_group in report_groups:

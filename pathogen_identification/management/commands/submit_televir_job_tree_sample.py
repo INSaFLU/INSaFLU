@@ -17,7 +17,6 @@ from pathogen_identification.utilities.utilities_pipeline import (
 )
 from pathogen_identification.utilities.utilities_views import (
     RawReferenceUtils,
-    calculate_reports_overlaps,
     set_control_reports,
 )
 from utils.process_SGE import ProcessSGE
@@ -153,9 +152,13 @@ class Command(BaseCommand):
                     graph_progress.generate_graph()
                     set_control_reports(project.pk)
 
-                    calculate_reports_overlaps(project_sample, force=True)
                     reference_utils = RawReferenceUtils(project_sample)
                     _ = reference_utils.create_compound_references()
+
+                    _ = process_SGE.set_submit_televir_sort_pisample_reports(
+                        user=user,
+                        pisample_pk=project_sample.pk,
+                    )
 
                     break
 

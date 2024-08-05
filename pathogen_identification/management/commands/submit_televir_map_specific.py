@@ -8,44 +8,30 @@ from django.core.management.base import BaseCommand
 
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from managing_files.models import ProcessControler
-from pathogen_identification.constants_settings import MEDIA_ROOT, ConstantsSettings
-from pathogen_identification.install_registry import Params_Illumina, Params_Nanopore
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    Projects,
-    RawReference,
-    RunAssembly,
-    RunMain,
-    SoftwareTreeNode,
-)
+from pathogen_identification.constants_settings import (MEDIA_ROOT,
+                                                        ConstantsSettings)
+from pathogen_identification.install_registry import (Params_Illumina,
+                                                      Params_Nanopore)
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            Projects, RawReference,
+                                            RunAssembly, RunMain,
+                                            SoftwareTreeNode)
 from pathogen_identification.modules.metadata_handler import RunMetadataHandler
 from pathogen_identification.modules.object_classes import (
-    Read_class,
-    Sample_runClass,
-    SoftwareDetail,
-    SoftwareDetailCompound,
-    SoftwareRemap,
-)
-from pathogen_identification.modules.remap_class import (
-    Mapping_Instance,
-    Mapping_Manager,
-)
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+    Read_class, Sample_runClass, SoftwareDetail, SoftwareDetailCompound,
+    SoftwareRemap)
+from pathogen_identification.modules.remap_class import (Mapping_Instance,
+                                                         Mapping_Manager)
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.update_DBs import (
-    Update_FinalReport,
-    Update_ReferenceMap_Update,
-)
-from pathogen_identification.utilities.utilities_general import simplify_name_lower
+    Update_FinalReport, Update_ReferenceMap_Update)
+from pathogen_identification.utilities.utilities_general import \
+    simplify_name_lower
 from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils,
-    Utils_Manager,
-)
+    SoftwareTreeUtils, Utils_Manager)
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter,
-    TelevirParameters,
-    recover_assembly_contigs,
-)
+    ReportSorter, TelevirParameters, recover_assembly_contigs)
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
 
@@ -400,42 +386,6 @@ class Input_Generator:
         shutil.copy(filepath, new_rpath)
         return new_rpath
 
-    def generate_request_mapping_method_args(self):
-        sample = self.reference.run.sample
-        project = sample.project
-        user = project.owner
-
-        software_utils = SoftwareTreeUtils(user, project, sample=sample)
-
-        local_tree = software_utils.generate_software_tree_safe(
-            project,
-            sample=sample,
-            request_mapping=True,
-        )
-
-        pathnodes: dict = software_utils.get_available_pathnodes(local_tree)
-        # get first pathnode
-        leaf = pathnodes[list(pathnodes.keys())[0]]
-
-        try:
-            parameter_set = ParameterSet.objects.get(leaf=leaf)
-        except ParameterSet.DoesNotExist:
-            ParameterSet.objects.create(sample=sample, leaf=leaf, project=project)
-
-        ps_leaves = self.utils.get_parameterset_leaves(parameter_set, local_tree)
-        parameter_leaf_index = ps_leaves[0]
-        parameter_leaf = SoftwareTreeNode.objects.get(
-            index=parameter_leaf_index, software_tree=parameter_set.leaf.software_tree
-        )
-
-        run_df = self.utils.get_leaf_parameters(parameter_leaf)
-
-        self.method_args = run_df[run_df.module == CS.PIPELINE_NAME_remapping]
-
-        if self.method_args.empty:
-            raise ValueError(
-                f"no remapping parameters found for {self.reference.accid} in leaf {parameter_leaf}"
-            )
 
     def generate_reference_method_args(self):
         parameter_set = self.reference.run.parameter_set

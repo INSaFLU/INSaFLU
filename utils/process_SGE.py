@@ -870,7 +870,7 @@ class ProcessSGE(object):
         process_controler = ProcessControler()
 
         vect_command = [
-            "python3 {} update_sample_references --project_id {}".format(
+            "python3 {} update_project_references --project_id {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 project_id,
             )
@@ -1308,7 +1308,7 @@ class ProcessSGE(object):
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         queue_name = user.profile.queue_name_sge
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
-            Profile.SGE_PROCESS_televir, Profile.SGE_LINK
+            Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
         path_file = self.set_script_run_sge(
@@ -1670,20 +1670,20 @@ class ProcessSGE(object):
         """
         process_controler = ProcessControler()
 
-        processes = ProcessControler.objects.filter(
-            owner__id=user_pk,
-            name=process_controler.get_name_televir_run(project_pk, sample_pk, leaf_pk),
-            is_error=False,
-            is_finished=False,
-        )
-
-        self.kill_processes(processes)
-
-        processes = ProcessControler.objects.filter(
-            owner__id=user_pk,
-            name=process_controler.get_name_televir_project_sample(
+        names_processes = [
+            process_controler.get_name_televir_run(project_pk, sample_pk, leaf_pk),
+            process_controler.get_name_televir_project_sample(
                 project_pk=project_pk, sample_pk=sample_pk
             ),
+            process_controler.get_name_televir_project_sample_metagenomics_run(
+                sample_pk,
+                leaf_pk,
+            ),
+        ]
+
+        processes = ProcessControler.objects.filter(
+            owner__id=user_pk,
+            name__in=names_processes,
             is_error=False,
             is_finished=False,
         )

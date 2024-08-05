@@ -477,14 +477,7 @@ class ReadOverlapManager(MappingResultsParser):
         except Exception as e:
             print(e)
 
-        self.tree_plot_exists = os.path.exists(self.tree_plot_path)
-        self.tree_plot_path_render = os.path.join(
-            "/media/", self.tree_plot_path.split("/media/")[-1]
-        )
-        self.overlap_matrix_plot_exists = os.path.exists(self.overlap_matrix_plot_path)
-        self.analysis_exists = os.path.exists(self.media_dir)
-
-        if self.force_tree_rebuild and self.tree_plot_exists:
+        if self.force_tree_rebuild:
             self.parse_for_data()
             self.generate_shared_proportion_matrix()
             self.generate_clade_shared_proportion_matrix()
@@ -494,6 +487,13 @@ class ReadOverlapManager(MappingResultsParser):
                     self.tree_manager.plot_tree(self.tree_plot_path)
                 except Exception as e:
                     print(e)
+
+        self.tree_plot_exists = os.path.exists(self.tree_plot_path)
+        self.tree_plot_path_render = os.path.join(
+            "/media/", self.tree_plot_path.split("/media/")[-1]
+        )
+        self.overlap_matrix_plot_exists = os.path.exists(self.overlap_matrix_plot_path)
+        self.analysis_exists = os.path.exists(self.media_dir)
 
     @property
     def distance_matrix_path(self):
@@ -637,7 +637,6 @@ class ReadOverlapManager(MappingResultsParser):
         """
         Generate shared proportion matrix
         """
-        self.parse_for_data()
         proportion_matrix = square_and_fill_diagonal(self.read_profile_matrix_filtered)
 
         proportion_matrix.to_csv(self.shared_prop_matrix_path)
@@ -646,7 +645,6 @@ class ReadOverlapManager(MappingResultsParser):
         """
         Generate shared proportion matrix
         """
-        self.parse_for_data()
         clade_shared_proportion_matrix = self.between_clade_shared_reads()
 
         clade_shared_proportion_matrix.to_csv(self.clade_shared_prop_matrix_path)

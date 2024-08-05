@@ -165,6 +165,8 @@ class Tree_Node:
     def setup_parameterset(
         self, project: Projects, sample: PIProject_Sample, node: SoftwareTreeNode
     ):
+        utils_manager = Utils_Manager()
+
         try:
             parameter_set = ParameterSet.objects.get(
                 project=project, sample=sample, leaf=node
@@ -177,6 +179,11 @@ class Tree_Node:
             parameter_set.status = ParameterSet.STATUS_RUNNING
             parameter_set.leaf = node
             parameter_set.save()
+        
+        except ParameterSet.MultipleObjectsReturned:
+            parameter_set = ParameterSet.objects.filter(
+                project=project, sample=sample, leaf=node
+            ).first()
 
         return parameter_set
 
@@ -1130,7 +1137,6 @@ class TreeProgressGraph:
     def get_node_params_network(
         self, existing_parameter_sets: Union[QuerySet, List[ParameterSet]]
     ) -> pd.DataFrame:
-        pipeline_utils = Utils_Manager()
 
         technologies = [ps.project.technology for ps in existing_parameter_sets]
         if len(set(technologies)) > 1:
@@ -1148,7 +1154,7 @@ class TreeProgressGraph:
         }
 
         pipetrees_dict = {
-            tree_pk: pipeline_utils.parameter_util.convert_softwaretree_to_pipeline_tree(
+            tree_pk: self.pipeline_utils.parameter_util.convert_softwaretree_to_pipeline_tree(
                 tree
             )
             for tree_pk, tree in software_tree_dict.items()

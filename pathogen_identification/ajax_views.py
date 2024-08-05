@@ -46,6 +46,7 @@ from pathogen_identification.utilities.televir_parameters import TelevirParamete
 from pathogen_identification.utilities.utilities_general import get_services_dir
 from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
 from pathogen_identification.utilities.utilities_views import (
+    RawReferenceUtils,
     ReportSorter,
     SampleReferenceManager,
     set_control_reports,
@@ -70,7 +71,7 @@ def simplify_name(name: str):
 @require_POST
 def submit_sample_metagenomics_televir(request):
     if request.is_ajax():
-        data = {"is_ok": False, "is_deployed": False}
+        data = {"is_ok": False, "is_deployed": False, "no_references": False}
 
         process_SGE = ProcessSGE()
 
@@ -83,6 +84,13 @@ def submit_sample_metagenomics_televir(request):
         software_utils = SoftwareTreeUtils(user, project, sample=sample)
         runs_to_deploy = software_utils.check_runs_to_submit_metagenomics_sample(sample)
         reference_manager = SampleReferenceManager(sample)
+        reference_utils = RawReferenceUtils(sample)
+
+        count_references = reference_utils.query_sample_compound_references_regressive()
+
+        if count_references.exists() is False:
+            data["no_references"] = True
+            return JsonResponse(data)
 
         try:
             if len(runs_to_deploy) > 0:
@@ -124,6 +132,14 @@ def submit_sample_screening_televir(request):
 
         software_utils = SoftwareTreeUtils(user, project, sample=sample)
         runs_to_deploy = software_utils.check_runs_to_submit_screening_sample(sample)
+
+        reference_utils = RawReferenceUtils(sample)
+
+        count_references = reference_utils.query_sample_compound_references_regressive()
+
+        if count_references.exists() is False:
+            data["no_references"] = True
+            return JsonResponse(data)
 
         try:
             if len(runs_to_deploy) > 0:
@@ -258,6 +274,16 @@ def deploy_remap(
                 for sample in runs_to_deploy
             }
             for sample, leaves_to_deploy in runs_to_deploy.items():
+
+                reference_utils = RawReferenceUtils(sample)
+
+                count_references = (
+                    reference_utils.query_sample_compound_references_regressive()
+                )
+
+                if count_references.exists() is False:
+                    continue
+
                 for leaf in leaves_to_deploy:
 
                     references_added = []
@@ -707,38 +733,43 @@ def deploy_ProjectPI_combined_runs(request):
         if len(sample_ids) > 0:
             samples = samples.filter(pk__in=sample_ids)
 
-        first_sample = samples.first()
-        software_utils = SoftwareTreeUtils(user, project, sample=first_sample)
-        runs_to_deploy = software_utils.check_runs_to_submit_metagenomics_sample(
-            first_sample
-        )
-
-        if len(runs_to_deploy) == 0:
-            data["is_ok"] = True
-            return JsonResponse(data)
-
         try:
-            if len(runs_to_deploy) > 0:
-                for sample in samples:
-                    software_utils = SoftwareTreeUtils(user, project, sample=sample)
-                    runs_to_deploy = (
-                        software_utils.check_runs_to_submit_metagenomics_sample(sample)
-                    )
-                    for sample, leaves_to_deploy in runs_to_deploy.items():
-                        reference_manager = SampleReferenceManager(sample)
-                        for leaf in leaves_to_deploy:
-                            metagenomics_run = reference_manager.mapping_run_from_leaf(
-                                leaf
-                            )
 
-                            taskID = process_SGE.set_submit_televir_sample_metagenomics(
-                                user=request.user,
-                                sample_pk=sample.pk,
-                                leaf_pk=leaf.pk,
-                                combined_analysis=True,
-                                map_run_pk=metagenomics_run.pk,
-                            )
+            samples_deployed = 0
 
+            for sample in samples:
+
+                reference_utils = RawReferenceUtils(sample)
+
+                count_references = (
+                    reference_utils.query_sample_compound_references_regressive()
+                )
+                print(count_references)
+
+                if count_references.exists() is False:
+                    continue
+
+                software_utils = SoftwareTreeUtils(user, project, sample=sample)
+                runs_to_deploy = (
+                    software_utils.check_runs_to_submit_metagenomics_sample(sample)
+                )
+                for sample, leaves_to_deploy in runs_to_deploy.items():
+
+                    reference_manager = SampleReferenceManager(sample)
+                    for leaf in leaves_to_deploy:
+                        metagenomics_run = reference_manager.mapping_run_from_leaf(leaf)
+
+                        taskID = process_SGE.set_submit_televir_sample_metagenomics(
+                            user=request.user,
+                            sample_pk=sample.pk,
+                            leaf_pk=leaf.pk,
+                            combined_analysis=True,
+                            map_run_pk=metagenomics_run.pk,
+                        )
+
+                samples_deployed += 1
+
+            if samples_deployed > 0:
                 data["is_deployed"] = True
 
         except Exception as e:
@@ -1049,7 +1080,7 @@ def kill_televir_project_sample(request):
         sample = PIProject_Sample.objects.get(id=int(sample_id))
         project = Projects.objects.get(id=int(sample.project.pk))
 
-        runs = ParameterSet.objects.filter(
+        runs_params = ParameterSet.objects.filter(
             sample=sample,
             status__in=[
                 ParameterSet.STATUS_RUNNING,
@@ -1057,10 +1088,10 @@ def kill_televir_project_sample(request):
             ],
         )
 
-        for run in runs:
+        for single_run_param in runs_params:
             try:  # kill process
                 process_SGE.kill_televir_process_controler_runs(
-                    user.pk, project.pk, sample.pk, run.leaf.pk
+                    user.pk, project.pk, sample.pk, single_run_param.leaf.pk
                 )
 
             except ProcessControler.DoesNotExist as e:
@@ -1068,11 +1099,11 @@ def kill_televir_project_sample(request):
                 print("ProcessControler.DoesNotExist")
                 pass
 
-            if run.status == ParameterSet.STATUS_RUNNING:
-                run.delete_run_data()
+            if single_run_param.status == ParameterSet.STATUS_RUNNING:
+                single_run_param.delete_run_data()
 
-            run.status = ParameterSet.STATUS_KILLED
-            run.save()
+            single_run_param.status = ParameterSet.STATUS_KILLED
+            single_run_param.save()
 
         data["is_ok"] = True
         return JsonResponse(data)

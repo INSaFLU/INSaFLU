@@ -933,13 +933,7 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
 
         if project_updated == False:
             process_controler = ProcessControler()
-            print(
-                ProcessControler.objects.filter(
-                    name=process_controler.get_name_update_televir_project(project.pk),
-                    is_finished=False,
-                    is_error=False,
-                )
-            )
+
             update_running = ProcessControler.objects.filter(
                 name=process_controler.get_name_update_televir_project(project.pk),
                 is_finished=False,

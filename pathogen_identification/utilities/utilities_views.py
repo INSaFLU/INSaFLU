@@ -831,8 +831,10 @@ class ReportSorter:
         self.logger.setLevel(logging.DEBUG)
 
     def build_tree(self):
+        
+        if self.reports_availble:
+            self.overlap_manager.build_tree()
 
-        self.overlap_manager.build_tree()
 
     def update_max_error_rate(self, report: FinalReport):
         """
@@ -1165,7 +1167,7 @@ class ReportSorter:
         """
         Return sorted reports
         """
-        if self.reports_availble is None:
+        if self.reports_availble is False:
             return self.return_no_analysis()
 
         try:
@@ -1436,7 +1438,7 @@ class ReportSorter:
         """
         Return sorted reports
         """
-        if self.reports_availble is None:
+        if self.reports_availble is False:
             return self.return_no_analysis()
 
         if self.metadata_df.empty:
@@ -1518,7 +1520,6 @@ def calculate_reports_overlaps(sample: PIProject_Sample, force=False):
     )
 
     report_sorter.build_tree()
-
     report_sorter.sort_reports_save()
 
 

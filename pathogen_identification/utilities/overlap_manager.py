@@ -527,6 +527,9 @@ class ReadOverlapManager(MappingResultsParser):
     def build_tree(self):
 
         self.parse_for_data()
+
+        
+
         self.generate_shared_proportion_matrix()
         self.generate_clade_shared_proportion_matrix()
 

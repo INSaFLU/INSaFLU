@@ -20,37 +20,28 @@ from constants.software_names import SoftwareNames
 from fluwebvirus.settings import BASE_DIR, STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReferenceMap_Main,
-    ReferencePanel,
-    ReferenceSourceFileMap,
-    RunMain,
-    TeleFluProject,
-    TeleFluSample,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference, ReferenceMap_Main,
+                                            ReferencePanel,
+                                            ReferenceSourceFileMap, RunMain,
+                                            TeleFluProject, TeleFluSample)
 from pathogen_identification.tables import ReferenceSourceTable
 from pathogen_identification.utilities.reference_utils import (
-    check_file_reference_submitted,
-    check_raw_reference_submitted,
-    check_user_reference_exists,
-    create_combined_reference,
-)
+    check_file_reference_submitted, check_raw_reference_submitted,
+    check_user_reference_exists, create_combined_reference)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
-from pathogen_identification.utilities.utilities_general import get_services_dir
-from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
+from pathogen_identification.utilities.utilities_general import \
+    get_services_dir
+from pathogen_identification.utilities.utilities_pipeline import \
+    SoftwareTreeUtils
 from pathogen_identification.utilities.utilities_views import (
-    RawReferenceUtils,
-    ReportSorter,
-    SampleReferenceManager,
-    set_control_reports,
-)
+    RawReferenceUtils, ReportSorter, SampleReferenceManager,
+    set_control_reports)
 from pathogen_identification.views import inject__added_references
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
@@ -744,7 +735,6 @@ def deploy_ProjectPI_combined_runs(request):
                 count_references = (
                     reference_utils.query_sample_compound_references_regressive()
                 )
-                print(count_references)
 
                 if count_references.exists() is False:
                     continue
@@ -1804,9 +1794,7 @@ def add_teleflu_sample(request):
 
 from pathogen_identification.models import SoftwareTreeNode, TelefluMapping
 from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils,
-    Utils_Manager,
-)
+    SoftwareTreeUtils, Utils_Manager)
 
 
 @login_required
@@ -2205,9 +2193,17 @@ def check_metadata_table_clean(metadata_table_file) -> Optional[pd.DataFrame]:
     """
 
     metadata_table = metadata_table_file.read().decode("utf-8")
-    metadata_table = metadata_table.split("\n")
-    sep = os.path.splitext(metadata_table_file.name)[1]
-    sep = "\t" if sep == ".tsv" else ","
+    ### determine line terminator
+    lineterminator = "\n"
+    if "\r\n" in metadata_table:
+        lineterminator = "\r\n"
+        
+    metadata_table = metadata_table.split(lineterminator)
+    file_extention = os.path.splitext(metadata_table_file.name)[1]
+
+    sep = "\t" if file_extention == ".tsv" else ","
+    # check for the line terminator
+
     metadata_table = [x.split(sep) for x in metadata_table]
     metadata_table = [x for x in metadata_table if len(x) > 1]
 

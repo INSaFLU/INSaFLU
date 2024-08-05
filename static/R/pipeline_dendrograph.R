@@ -20,7 +20,7 @@ columns= gsub(" ", ".", columns)
 
 
 ##
-cat(columns, file = stderr())
+#cat(columns, file = stderr())
 
 ##
 pipeline_steps = c(

@@ -477,17 +477,6 @@ class ReadOverlapManager(MappingResultsParser):
         except Exception as e:
             print(e)
 
-        if self.force_tree_rebuild:
-            self.parse_for_data()
-            self.generate_shared_proportion_matrix()
-            self.generate_clade_shared_proportion_matrix()
-
-            if not os.path.exists(self.tree_plot_path):
-                try:
-                    self.tree_manager.plot_tree(self.tree_plot_path)
-                except Exception as e:
-                    print(e)
-
         self.tree_plot_exists = os.path.exists(self.tree_plot_path)
         self.tree_plot_path_render = os.path.join(
             "/media/", self.tree_plot_path.split("/media/")[-1]
@@ -534,6 +523,18 @@ class ReadOverlapManager(MappingResultsParser):
         return os.path.join(
             self.media_dir, self.overlap_pca_plot_filename.format(self.pid)
         )
+
+    def build_tree(self):
+
+        self.parse_for_data()
+        self.generate_shared_proportion_matrix()
+        self.generate_clade_shared_proportion_matrix()
+
+        if not os.path.exists(self.tree_plot_path):
+            try:
+                self.tree_manager.plot_tree(self.tree_plot_path)
+            except Exception as e:
+                print(e)
 
     def get_media_path_heatmap_clade(self, clade_str: str):
         clade_str_keep = clade_str.replace(" ", "_").lower()
@@ -659,6 +660,9 @@ class ReadOverlapManager(MappingResultsParser):
         """
         distmat = self.matrix_to_phylotriangle(distance_matrix)
         constructor = DistanceTreeConstructor()
+
+        if distance_matrix.empty is True:
+            return Phylo.BaseTree.Tree(rooted="True")
 
         if distance_matrix.shape[0] <= 1:
             tree = constructor.nj(distmat)
@@ -837,6 +841,7 @@ class ReadOverlapManager(MappingResultsParser):
         private_sort = {}
 
         for clade, leaves in self.all_clade_leaves_filtered.items():
+
             if len(leaves) == 0:
                 continue
 

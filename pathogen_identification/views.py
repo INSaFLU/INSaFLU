@@ -937,7 +937,6 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
             update_running = ProcessControler.objects.filter(
                 name=process_controler.get_name_update_televir_project(project.pk),
                 is_finished=False,
-                is_error=False,
             ).exists()
 
         ### type of deployment

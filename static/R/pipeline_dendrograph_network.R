@@ -18,7 +18,7 @@ columns= strsplit(columns, ",")[[1]]
 ## remove spaces
 columns= gsub(" ", ".", columns)
 
-cat(columns, file = stderr())
+#cat(columns, file = stderr())
 
 ##
 pipeline_steps = c(
@@ -70,14 +70,6 @@ for (i in 1:length(columns)) {
 ### read the data frame
 
 input = read.table(df_path, header = TRUE, sep = "\t")
-
-write.table(input, file = stderr(), sep = "\t", row.names = FALSE)
-
-cat("\n", file = stderr())
-# print column names to stderr
-
-#cat("column names: ", colnames(input), file = stderr())
-#cat("\n", file = stderr())
 
 p <- collapsibleTreeNetwork(
   input, 

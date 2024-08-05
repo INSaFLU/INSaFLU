@@ -783,7 +783,6 @@ class ReportSorter:
         self.reports_availble = len(reports) > 0
 
         self.media_dir = sample.media_dir
-        self.force = force
 
         self.metadata_df = self.prep_metadata_df()
         self.fasta_files = self.metadata_df.file.tolist()
@@ -830,6 +829,10 @@ class ReportSorter:
         self.logger = logging.getLogger(__name__)
         self.logger.info("ReportSorter: {}".format(self.media_dir))
         self.logger.setLevel(logging.DEBUG)
+
+    def build_tree(self):
+
+        self.overlap_manager.build_tree()
 
     def update_max_error_rate(self, report: FinalReport):
         """
@@ -1513,6 +1516,9 @@ def calculate_reports_overlaps(sample: PIProject_Sample, force=False):
     report_sorter = ReportSorter(
         sample, final_reports, report_layout_params, force=force
     )
+
+    report_sorter.build_tree()
+
     report_sorter.sort_reports_save()
 
 

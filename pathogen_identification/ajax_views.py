@@ -1260,6 +1260,7 @@ def sort_report_sample(request):
         process_SGE = ProcessSGE()
         sample = PIProject_Sample.objects.get(pk=int(request.POST["sample_id"]))
         # references = request.POST.getlist("references[]")
+        print("OIHJNOIN")
 
         project = sample.project
         report_layout_params = TelevirParameters.get_report_layout_params(
@@ -1267,7 +1268,9 @@ def sort_report_sample(request):
         )
         try:
             final_reports = FinalReport.objects.filter(sample=sample)
+
             report_sorter = ReportSorter(sample, final_reports, report_layout_params)
+            print(report_sorter.reports_availble)
 
             if report_sorter.reports_availble is False:
                 pass
@@ -2197,7 +2200,7 @@ def check_metadata_table_clean(metadata_table_file) -> Optional[pd.DataFrame]:
     lineterminator = "\n"
     if "\r\n" in metadata_table:
         lineterminator = "\r\n"
-        
+
     metadata_table = metadata_table.split(lineterminator)
     file_extention = os.path.splitext(metadata_table_file.name)[1]
 

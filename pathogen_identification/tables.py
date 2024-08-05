@@ -544,7 +544,7 @@ class SampleTableOne(tables.Table):
             return mark_safe(record_name)
 
         record_name = (
-            '<a href="#" id="deploypi_sample_btn" class="kill-button" data-toggle="modal" data-toggle="tooltip" title="Run Televir Classic Workflow"'
+            '<a href="#" id="deploypi_sample_btn" class="sample-deploy" data-toggle="modal" data-toggle="tooltip" title="Run Televir Classic Workflow"'
             + ' ref_name="'
             + record.name
             + '"sample_id="'
@@ -690,7 +690,7 @@ class SampleTableOne(tables.Table):
         )
 
         request_sorting = (
-            ' <a href="#" id="sort_sample_btn" class="kill-button" data-toggle="modal" data-toggle="tooltip" title="Sort"'
+            ' <a href="#" id="sort_sample_btn" class="sort-sample" data-toggle="modal" data-toggle="tooltip" title="Sort"'
             + ' sample_id="'
             + str(record.pk)
             + '"'
@@ -757,8 +757,6 @@ class SampleTableOne(tables.Table):
         queued = ParameterSet.objects.filter(
             sample=record, project=record.project, status=ParameterSet.STATUS_QUEUED
         ).count()
-
-
 
         mapping_runs = RunMain.objects.filter(
             sample=record,

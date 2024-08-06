@@ -2637,6 +2637,7 @@ def add_references_to_panel(request):
 
                 if len(description) > 200:
                     description = description[:200]
+
                 _ = RawReference.objects.create(
                     accid=reference.reference_source.accid,
                     taxid=reference.reference_source.taxid,
@@ -2657,6 +2658,8 @@ def add_file_to_panel(request):
     """
     add references to panel"""
     if request.is_ajax():
+        print("####################################################")
+        print("####################################################")
         panel_id = int(request.POST.get("panel_id"))
         file_id = int(request.POST.get("file_id"))
 
@@ -2665,7 +2668,7 @@ def add_file_to_panel(request):
         refs = ReferenceSourceFileMap.objects.filter(
             reference_source_file=file
         ).distinct()
-
+        print("COUNTS")
         print(refs.count())
 
         try:

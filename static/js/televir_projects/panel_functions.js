@@ -268,73 +268,72 @@ var reload_connects = function () {
         $('#submit-button').attr('ref_index', panel_id);
     });
 
-    $(document).ready(function(){
-        $(".select-file-button").click(function(){
-            var user_id = $("#new-panel-button").attr('user_id');
-            var panel_id = $(this).closest('.panel-container').attr('data-panel-id');
-            var url_user_files = $(".panel-list").attr('url-user-files');
+    $(".select-file-button").click(function(){
+        var user_id = $("#new-panel-button").attr('user_id');
+        var panel_id = $(this).closest('.panel-container').attr('data-panel-id');
+        var url_user_files = $(".panel-list").attr('url-user-files');
 
-            $.ajax({
-                url: url_user_files,
-                method: 'POST',
-                data : {
-                    'user_id': user_id,
-                    'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                },
+        $.ajax({
+            url: url_user_files,
+            method: 'POST',
+            data : {
+                'user_id': user_id,
+                'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
 
-                success: function(data) {
-                    var html = '';
-                    for(var index in data.files) {
-                        html += '<input type="radio" file-id="'+index+'" panel-id="'+panel_id+'" name="file" value="'+data.files[index]+'">';
-                        html += '<label for="file'+index+'">'+data.files[index]+'</label><br>';
-                    }
-                    $("#file-select").html(html);
+            success: function(data) {
+                var html = '';
+                for(var index in data.files) {
+                    html += '<input type="radio" file-id="'+index+'" panel-id="'+panel_id+'" name="file" value="'+data.files[index]+'">';
+                    html += '<label for="file'+index+'">'+data.files[index]+'</label><br>';
                 }
-            });
-        });
-
-        $("#submit-file").click(function(){
-            var user_id = $("#new-panel-button").attr('user_id');
-            var selected_file_id= $('input[name="file"]:checked').attr('file-id');
-            var panel_id = $('input[name="file"]:checked').attr('panel-id');
-            var url_register_file_panel = $(this).attr('url-register-file-panel');
-
-            if (selected_file_id) {
-                // Submit the selected file
-                $.ajax({
-                    url: url_register_file_panel,
-                    type: 'post',
-                    data: {
-                        'file_id': selected_file_id,
-                        'panel_id': panel_id,
-                        'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                    },
-                    success: function(response) {
-                        // Handle the success response
-                        // For example, you can close the modal and show a success message
-                        $('#panelSelectModal').modal('hide');
-                        load_panel_refs(panel_id);
-                        $('.modal-backdrop').remove();
-                        reload_panels(user_id);
-                        alert('File registered successfully');
-                    },
-                    error: function(response) {
-                        // Handle the error response
-                        // For example, you can show an error message
-                        alert('Error registering file');
-                    }
-                });
-            } else {
-                alert("Please select a file");
+                $("#file-select").html(html);
             }
         });
-
     });
 
 }
 
 
 var ready_document = function (user_id, reload_url) {
+
+    $("#submit-file").click(function(){
+        var user_id = $("#new-panel-button").attr('user_id');
+        var selected_file_id= $('input[name="file"]:checked').attr('file-id');
+        var panel_id = $('input[name="file"]:checked').attr('panel-id');
+        var url_register_file_panel = $(this).attr('url-register-file-panel');
+
+        console.log("selecting file");
+
+        if (selected_file_id) {
+            // Submit the selected file
+            $.ajax({
+                url: url_register_file_panel,
+                type: 'post',
+                data: {
+                    'file_id': selected_file_id,
+                    'panel_id': panel_id,
+                    'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                success: function(response) {
+                    // Handle the success response
+                    // For example, you can close the modal and show a success message
+                    $('#panelSelectModal').modal('hide');
+                    load_panel_refs(panel_id);
+                    $('.modal-backdrop').remove();
+                    reload_panels(user_id);
+                    alert('File registered successfully');
+                },
+                error: function(response) {
+                    // Handle the error response
+                    // For example, you can show an error message
+                    alert('Error registering file');
+                }
+            });
+        } else {
+            alert("Please select a file");
+        }
+    });
 
     $('.remove-panel-button').click(function () {
 

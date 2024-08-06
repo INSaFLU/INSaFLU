@@ -1471,6 +1471,7 @@ class ReferenceSourceFile(models.Model):
 
         else:
             filepath = os.path.join(
+                settings.MEDIA_ROOT,
                 Constants.DIR_TELEVIR_UPLOAD_FILES,
                 "userId_{0}".format(self.owner.pk),
                 self.file,

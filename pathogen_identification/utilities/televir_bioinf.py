@@ -90,6 +90,10 @@ class TelevirBioinf:
         subprocess.call(command, shell=True)
         return f"{file_path}.gz"
 
+    def tabix(self, file_path):
+        command = f"{self.bgzip_binary} -f {file_path}"
+        subprocess.call(command, shell=True)
+
     def get_mapped_reads(self, bam_file, outfile=None):
         command = f"{self.samtools_binary} view -F 0x4 {bam_file} | cut -f 1 | sort | uniq > {outfile}"
         subprocess.call(command, shell=True)

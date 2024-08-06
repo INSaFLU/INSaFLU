@@ -20,6 +20,7 @@ from Bio.Data.IUPACData import protein_letters_3to1
 from Bio.Seq import MutableSeq, Seq
 from Bio.SeqFeature import CompoundLocation
 from Bio.SeqRecord import SeqRecord
+from django.conf import settings
 
 from constants.constants import Constants, FileExtensions, TypeFile, TypePath
 from constants.meta_key_and_values import MetaKeyAndValue
@@ -86,8 +87,10 @@ class Utils(object):
         """
         get the path to reference
         """
-        user_televir_ref_dir= os.path.join(
-            Constants.DIR_TELEVIR_UPLOAD_FILES, "userId_{0}".format(user_id)
+        user_televir_ref_dir = os.path.join(
+            settings.MEDIA_ROOT,
+            Constants.DIR_TELEVIR_UPLOAD_FILES,
+            "userId_{0}".format(user_id),
         )
         os.makedirs(user_televir_ref_dir, exist_ok=True)
 

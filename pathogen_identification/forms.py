@@ -213,6 +213,7 @@ class PanelReferencesUploadForm(forms.ModelForm):
         reference_fasta_temp_file_name.flush()
         reference_fasta_temp_file_name.close()
         self.software.dos_2_unix(reference_fasta_temp_file_name.name)
+        print("OIUBNOINBOINOin")
         try:
             number_locus = self.utils.is_fasta(reference_fasta_temp_file_name.name)
             self.request.session[Constants.NUMBER_LOCUS_FASTA_FILE] = number_locus

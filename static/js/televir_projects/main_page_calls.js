@@ -86,8 +86,10 @@ $('#id-deploy-metagenomics-button').on('click', function () {
     })
 });
 
-$('.kill-button').on('click', function () {
+$('.sample-deploy').on('click', function () {
     event.preventDefault();
+
+    console.log("#id-label-remove-all");
 
     csrf_token = $('#teleflu_create-button').attr("csrf");
     url = $(this).attr("deploy-url");
@@ -113,7 +115,7 @@ $('.kill-button').on('click', function () {
     });
 });
 
-$('#sort_sample_btn').on('click', function () {
+$('.sort-sample').on('click', function () {
 
     event.preventDefault();
         

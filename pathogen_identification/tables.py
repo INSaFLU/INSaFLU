@@ -13,22 +13,35 @@ from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (ContigClassification, FinalReport,
-                                            ParameterSet, PIProject_Sample,
-                                            Projects, RawReference,
-                                            RawReferenceCompoundModel,
-                                            ReadClassification,
-                                            ReferenceContigs, RunAssembly,
-                                            RunMain, SampleQC, TeleFluProject,
-                                            TelevirRunQC)
-from pathogen_identification.utilities.reference_utils import \
-    check_file_reference_submitted
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
+from pathogen_identification.models import (
+    ContigClassification,
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    RawReferenceCompoundModel,
+    ReadClassification,
+    ReferenceContigs,
+    RunAssembly,
+    RunMain,
+    SampleQC,
+    TeleFluProject,
+    TelevirRunQC,
+)
+from pathogen_identification.utilities.reference_utils import (
+    check_file_reference_submitted,
+)
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.utilities_general import (
-    get_project_dir, get_project_dir_no_media_root, infer_run_media_dir)
+    get_project_dir,
+    get_project_dir_no_media_root,
+    infer_run_media_dir,
+)
 from pathogen_identification.utilities.utilities_views import (
-    RawReferenceCompound, RunMainWrapper)
+    RawReferenceCompound,
+    RunMainWrapper,
+)
 from settings.constants_settings import ConstantsSettings as SettingsCS
 from settings.models import Parameter, Software
 
@@ -544,7 +557,7 @@ class SampleTableOne(tables.Table):
             return mark_safe(record_name)
 
         record_name = (
-            '<a href="#" id="deploypi_sample_btn" class="kill-button" data-toggle="modal" data-toggle="tooltip" title="Run Televir Classic Workflow"'
+            '<a href="#" id="deploypi_sample_btn" class="sample-deploy" data-toggle="modal" data-toggle="tooltip" title="Run Televir Classic Workflow"'
             + ' ref_name="'
             + record.name
             + '"sample_id="'
@@ -690,7 +703,7 @@ class SampleTableOne(tables.Table):
         )
 
         request_sorting = (
-            ' <a href="#" id="sort_sample_btn" class="kill-button" data-toggle="modal" data-toggle="tooltip" title="Sort"'
+            ' <a href="#" id="sort_sample_btn" class="sort-sample" data-toggle="modal" data-toggle="tooltip" title="Sort"'
             + ' sample_id="'
             + str(record.pk)
             + '"'
@@ -758,8 +771,6 @@ class SampleTableOne(tables.Table):
             sample=record, project=record.project, status=ParameterSet.STATUS_QUEUED
         ).count()
 
-
-
         mapping_runs = RunMain.objects.filter(
             sample=record,
             run_type=RunMain.RUN_TYPE_MAP_REQUEST,
@@ -793,8 +804,7 @@ class SampleTableOne(tables.Table):
         ).count()
 
 
-from pathogen_identification.models import (ReferenceSourceFile,
-                                            ReferenceSourceFileMap)
+from pathogen_identification.models import ReferenceSourceFile, ReferenceSourceFileMap
 
 
 class ReferenceSourceFileTable(tables.Table):
@@ -862,8 +872,7 @@ class ReferenceSourceFileTable(tables.Table):
         return record.creation_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE)
 
 
-from pathogen_identification.utilities.reference_utils import \
-    check_reference_exists
+from pathogen_identification.utilities.reference_utils import check_reference_exists
 
 
 class TelevirReferencesTable(tables.Table):
@@ -1673,7 +1682,7 @@ class RunMappingTable(tables.Table):
             run=record.record, status=RawReference.STATUS_MAPPED
         ).count()
         success_mapped = (
-            FinalReport.objects.filter(run=record.record).distinct("taxid").count()
+            FinalReport.objects.filter(run=record.record).distinct("accid").count()
         )
         string_mapped = f"{success_mapped} / {refs_mapped} / {refs_all}"
         return mark_safe(string_mapped)

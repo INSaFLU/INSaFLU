@@ -744,7 +744,6 @@ def deploy_ProjectPI_combined_runs(request):
                 count_references = (
                     reference_utils.query_sample_compound_references_regressive()
                 )
-                print(count_references)
 
                 if count_references.exists() is False:
                     continue
@@ -1269,7 +1268,6 @@ def sort_report_sample(request):
         data = {"is_ok": False, "is_deployed": False}
         process_SGE = ProcessSGE()
         sample = PIProject_Sample.objects.get(pk=int(request.POST["sample_id"]))
-        # references = request.POST.getlist("references[]")
 
         project = sample.project
         report_layout_params = TelevirParameters.get_report_layout_params(
@@ -1277,6 +1275,7 @@ def sort_report_sample(request):
         )
         try:
             final_reports = FinalReport.objects.filter(sample=sample)
+
             report_sorter = ReportSorter(sample, final_reports, report_layout_params)
 
             if report_sorter.reports_availble is False:
@@ -2205,9 +2204,17 @@ def check_metadata_table_clean(metadata_table_file) -> Optional[pd.DataFrame]:
     """
 
     metadata_table = metadata_table_file.read().decode("utf-8")
-    metadata_table = metadata_table.split("\n")
-    sep = os.path.splitext(metadata_table_file.name)[1]
-    sep = "\t" if sep == ".tsv" else ","
+    ### determine line terminator
+    lineterminator = "\n"
+    if "\r\n" in metadata_table:
+        lineterminator = "\r\n"
+
+    metadata_table = metadata_table.split(lineterminator)
+    file_extention = os.path.splitext(metadata_table_file.name)[1]
+
+    sep = "\t" if file_extention == ".tsv" else ","
+    # check for the line terminator
+
     metadata_table = [x.split(sep) for x in metadata_table]
     metadata_table = [x for x in metadata_table if len(x) > 1]
 
@@ -2630,6 +2637,7 @@ def add_references_to_panel(request):
 
                 if len(description) > 200:
                     description = description[:200]
+
                 _ = RawReference.objects.create(
                     accid=reference.reference_source.accid,
                     taxid=reference.reference_source.taxid,
@@ -2650,12 +2658,18 @@ def add_file_to_panel(request):
     """
     add references to panel"""
     if request.is_ajax():
+        print("####################################################")
+        print("####################################################")
         panel_id = int(request.POST.get("panel_id"))
         file_id = int(request.POST.get("file_id"))
 
         panel = ReferencePanel.objects.get(pk=panel_id)
         file = ReferenceSourceFile.objects.get(pk=file_id)
-        refs = ReferenceSourceFileMap.objects.filter(reference_source_file=file)
+        refs = ReferenceSourceFileMap.objects.filter(
+            reference_source_file=file
+        ).distinct()
+        print("COUNTS")
+        print(refs.count())
 
         try:
             for reference in refs:

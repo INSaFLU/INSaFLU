@@ -1,3 +1,4 @@
+import traceback
 from datetime import date
 
 from django.conf import settings
@@ -74,6 +75,7 @@ class Command(BaseCommand):
 
         except Exception as e:
             print(f"Error: {e}")
+            print(traceback.format_exc())
             process_SGE.set_process_controler(
                 project.owner,
                 process_controler.get_name_update_televir_project(

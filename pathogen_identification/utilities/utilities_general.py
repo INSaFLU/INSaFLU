@@ -58,18 +58,20 @@ def reverse_dict_of_lists(dict_of_lists: dict) -> dict:
 
 def simplify_name(name: str):
     """simplify sample name"""
-    return name.replace(".", "_").replace(";", "_").replace(":", "_").replace("|", "_")
+
+    chars_to_replace = [".", ";", ":", "|", "/", " ", "[", "]", "-", "(", ")", ","]
+    for char in chars_to_replace:
+        name = name.replace(char, "_")
+
+    return name
 
 
 def simplify_name_lower(name: str):
     """simplify sample name"""
-    return (
-        name.replace("_", "_")
-        .replace("-", "_")
-        .replace(" ", "_")
-        .replace(".", "_")
-        .lower()
-    )
+
+    name = simplify_name(name)
+
+    return name.lower()
 
 
 def simplify_accid(accid):

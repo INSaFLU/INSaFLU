@@ -607,15 +607,15 @@ class SamplesUploadDescriptionForm(forms.ModelForm):
 		self.helper.form_method = 'POST'
 		self.helper.layout = Layout(
 			HTML('<p> </p>'),
-			HTML('<div class="alert alert-dark"> <a href="' + mark_safe(os.path.join(getattr(settings, "STATIC_URL", None), Constants.DIR_TEMPLATE_INPUT,\
-					Constants.FILE_TEMPLATE_INPUT_csv)) + '" download> <span> <i class="fa fa-download"></i></span> Template file \'csv\'</a> </div>'),
-			HTML('<p> </p>'),
+			#HTML('<div class="alert alert-dark"> <a href="' + mark_safe(os.path.join(getattr(settings, "STATIC_URL", None), Constants.DIR_TEMPLATE_INPUT,\
+			#		Constants.FILE_TEMPLATE_INPUT_csv)) + '" download> <span> <i class="fa fa-download"></i></span> Template file \'csv\'</a> </div>'),
+			#HTML('<p> </p>'),
 			HTML('<div class="alert alert-dark"> <a href="' + mark_safe(os.path.join(getattr(settings, "STATIC_URL", None), Constants.DIR_TEMPLATE_INPUT,\
 					Constants.FILE_TEMPLATE_INPUT_tsv)) + '" download> <span> <i class="fa fa-download"></i></span> Template file \'tsv\'</a> </div>'),
 			HTML('<p> </p>'),
-			HTML('<div class="alert alert-dark"> <a href="' + mark_safe(os.path.join(getattr(settings, "STATIC_URL", None), Constants.DIR_TEMPLATE_INPUT,\
-					Constants.FILE_TEMPLATE_INPUT_data_csv)) + '" download> <span> <i class="fa fa-download"></i></span> Example Template file \'csv\'</a> </div>'),
-			HTML('<p> </p>'),
+			#HTML('<div class="alert alert-dark"> <a href="' + mark_safe(os.path.join(getattr(settings, "STATIC_URL", None), Constants.DIR_TEMPLATE_INPUT,\
+			#		Constants.FILE_TEMPLATE_INPUT_data_csv)) + '" download> <span> <i class="fa fa-download"></i></span> Example Template file \'csv\'</a> </div>'),
+			#HTML('<p> </p>'),
 			HTML('<div class="alert alert-dark"> <a href="' + mark_safe(os.path.join(getattr(settings, "STATIC_URL", None), Constants.DIR_TEMPLATE_INPUT,\
 					Constants.FILE_TEMPLATE_INPUT_data_tsv)) + '" download> <span> <i class="fa fa-download"></i></span> Example Template file \'tsv\'</a> </div>'),
 			HTML('<p> </p>'),

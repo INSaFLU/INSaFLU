@@ -83,6 +83,12 @@ class TelevirBioinf:
         self.metadata_constants = Televir_Metadata_Constants()
         self.samtools_binary = self.metadata_constants.get_software_binary("samtools")
         self.bcf_tools_binary = self.metadata_constants.get_software_binary("bcftools")
+        self.bgzip_binary = self.metadata_constants.get_software_binary("bgzip")
+
+    def bgzip(self, file_path):
+        command = f"{self.bgzip_binary} {file_path}"
+        subprocess.call(command, shell=True)
+        return f"{file_path}.gz"
 
     def get_mapped_reads(self, bam_file, outfile=None):
         command = f"{self.samtools_binary} view -F 0x4 {bam_file} | cut -f 1 | sort | uniq > {outfile}"

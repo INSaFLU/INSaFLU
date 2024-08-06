@@ -15,6 +15,7 @@ from pathogen_identification.models import (
     ReferenceTaxid,
 )
 from pathogen_identification.utilities.reference_utils import raw_reference_to_insaflu
+from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
 from utils.process_SGE import ProcessSGE
 
 
@@ -57,6 +58,8 @@ class Command(BaseCommand):
         filepath = file.filepath
         filepath_dir = os.path.dirname(filepath)
         os.makedirs(filepath_dir, exist_ok=True)
+
+        bioinf_utils = TelevirBioinf()
 
         metadata_path = options["metadata"]
         fasta_path = options["fasta"]
@@ -136,6 +139,18 @@ class Command(BaseCommand):
                         reference_source_file=file,
                         reference_source=reference_source,
                     )
+
+                ## bgzip compress filepath and create index
+                file_path_gz = bioinf_utils.bgzip(filepath)
+                bioinf_utils.index_fasta(file_path_gz)
+
+                ## update file path
+                file.file = os.path.basename(file_path_gz)
+                file.save()
+
+                # delete files
+                os.remove(metadata_path)
+                os.remove(fasta_path)
 
         except Exception as e:
             print(e)

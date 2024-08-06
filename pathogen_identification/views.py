@@ -1785,13 +1785,17 @@ class UploadReferencePanel(LoginRequiredMixin, FormValidMessageMixin, generic.Fo
         ###
         software = Software()
         utils = Utils()
+        
         reference_metadata_table = check_metadata_table_clean(metadata_file)
-
-        reference_fasta_temp_file_name = utils.get_temp_file(
-            "televir_ref_upload", ".fasta"
+        user_televir_ref_dir = utils.get_path_to_user_televir_references(
+            self.request.user.id
         )
-        reference_metadata_temp_file_name = utils.get_temp_file(
-            "televir_metadata_upload", ".tsv"
+
+        reference_fasta_temp_file_name = utils.get_temp_file_from_dir(
+            user_televir_ref_dir, "televir_ref_upload", ".fasta"
+        )
+        reference_metadata_temp_file_name = utils.get_temp_file_from_dir(
+            user_televir_ref_dir, "televir_metadata_upload", ".tsv"
         )
 
         try:

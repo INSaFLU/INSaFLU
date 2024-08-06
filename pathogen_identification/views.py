@@ -1784,21 +1784,31 @@ class UploadReferencePanel(LoginRequiredMixin, FormValidMessageMixin, generic.Fo
         metadata_file = form.cleaned_data["metadata"]
         ###
         software = Software()
-
+        utils = Utils()
+        
         reference_metadata_table = check_metadata_table_clean(metadata_file)
-        reference_fasta_temp_file_name = NamedTemporaryFile(
-            prefix="flu_fa_", delete=False
+        user_televir_ref_dir = utils.get_path_to_user_televir_references(
+            self.request.user.id
         )
-        reference_metadata_temp_file_name = NamedTemporaryFile(
-            prefix="flu_fa_", delete=False, suffix=".tsv"
+
+        reference_fasta_temp_file_name = utils.get_temp_file_from_dir(
+            user_televir_ref_dir, "televir_ref_upload", ".fasta"
+        )
+        reference_metadata_temp_file_name = utils.get_temp_file_from_dir(
+            user_televir_ref_dir, "televir_metadata_upload", ".tsv"
         )
 
         try:
             file_data = reference_fasta_file.read()
-            reference_fasta_temp_file_name.write(file_data)
-            reference_fasta_temp_file_name.flush()
-            reference_fasta_temp_file_name.close()
-            software.dos_2_unix(reference_fasta_temp_file_name.name)
+
+            with open(reference_fasta_temp_file_name, "wb") as fw:
+
+                fw.write(file_data)
+                fw.flush()
+                fw.close()
+
+            software.dos_2_unix(reference_fasta_temp_file_name)
+
         except Exception as e:
 
             data["is_error"] = True
@@ -1810,7 +1820,7 @@ class UploadReferencePanel(LoginRequiredMixin, FormValidMessageMixin, generic.Fo
 
         try:
             reference_metadata_table.to_csv(
-                reference_metadata_temp_file_name.name, sep="\t", index=False
+                reference_metadata_temp_file_name, sep="\t", index=False
             )
         except Exception as e:
             print(e)
@@ -1834,8 +1844,8 @@ class UploadReferencePanel(LoginRequiredMixin, FormValidMessageMixin, generic.Fo
             taskID = process_SGE.set_submit_upload_reference_televir(
                 user=self.request.user,
                 file_id=reference_source_file.pk,
-                fasta=reference_fasta_temp_file_name.name,
-                metadata=reference_metadata_temp_file_name.name,
+                fasta=reference_fasta_temp_file_name,
+                metadata=reference_metadata_temp_file_name,
             )
 
         except Exception as e:

@@ -186,6 +186,7 @@ class Constants(object):
     DIR_PROCESSED_FILES_TELEFLU_REFERENCE = (
         DIR_PROCESSED_FILES_UPLOADS + "/teleflu_references"
     )
+    DIR_TELEVIR_UPLOAD_FILES = DIR_PROCESSED_FILES_UPLOADS + "/televir_references"
     DIR_PROCESSED_FILES_CONSENSUS = DIR_PROCESSED_FILES_UPLOADS + "/consensus"
     DIR_PROCESSED_FILES_FASTQ = DIR_PROCESSED_FILES_UPLOADS + "/fastq"
     DIR_PROCESSED_FILES_PROJECT = "projects/result"
@@ -272,15 +273,9 @@ class Constants(object):
     NEXTCLADE_LINK_B_Victoria = (
         "https://clades.nextstrain.org/?dataset-name=flu_vic_ha&input-fasta="
     )
-    NEXTCLADE_LINK_A_H5Nx = (
-        "https://clades.nextstrain.org?dataset-name=community/moncla-lab/iav-h5/ha/all-clades&input-fasta="
-    )
-    NEXTCLADE_LINK_A_H5Nx_2344 = (
-        "https://clades.nextstrain.org?dataset-name=community/moncla-lab/iav-h5/ha/2.3.4.4&input-fasta="
-    )
-    NEXTCLADE_LINK_A_H5Nx_2321 = (
-        "https://clades.nextstrain.org?dataset-name=community/moncla-lab/iav-h5/ha/2.3.2.1&input-fasta="
-    )
+    NEXTCLADE_LINK_A_H5Nx = "https://clades.nextstrain.org?dataset-name=community/moncla-lab/iav-h5/ha/all-clades&input-fasta="
+    NEXTCLADE_LINK_A_H5Nx_2344 = "https://clades.nextstrain.org?dataset-name=community/moncla-lab/iav-h5/ha/2.3.4.4&input-fasta="
+    NEXTCLADE_LINK_A_H5Nx_2321 = "https://clades.nextstrain.org?dataset-name=community/moncla-lab/iav-h5/ha/2.3.2.1&input-fasta="
     NEXTCLADE_LINK_hMPXV_B1 = (
         "https://clades.nextstrain.org/?dataset-name=hMPXV_B1&input-fasta="
     )

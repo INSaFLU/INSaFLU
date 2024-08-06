@@ -17,6 +17,8 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from pkg_resources import packaging
 
+from constants.constants import Constants
+from constants.constants import Televir_Directory_Constants as Televir_Directories
 from managing_files.models import Project as InsaFluProject
 from managing_files.models import Reference as InsaFluReference
 from managing_files.models import Sample
@@ -534,8 +536,7 @@ class ReferencePanel(models.Model):
 
     @property
     def references_count(self):
-        print("OIHOIHOIH")
-        print(self.pk, RawReference.objects.filter(panel=self).count())
+
         return RawReference.objects.filter(panel=self).count()
 
 
@@ -1451,9 +1452,6 @@ class ReferenceTaxid(models.Model):
         return self.taxid
 
 
-from constants.constants import Televir_Directory_Constants as Televir_Directories
-
-
 class ReferenceSourceFile(models.Model):
 
     file = models.CharField(max_length=100, blank=True, null=True)
@@ -1473,10 +1471,9 @@ class ReferenceSourceFile(models.Model):
 
         else:
             filepath = os.path.join(
-                PICS.media_directory,
-                PICS.televir_subdirectory,
-                str(self.owner.pk),
-                "reference",
+                settings.MEDIA_ROOT,
+                Constants.DIR_TELEVIR_UPLOAD_FILES,
+                "userId_{0}".format(self.owner.pk),
                 self.file,
             )
 

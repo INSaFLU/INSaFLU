@@ -302,7 +302,8 @@ class SampleTable(tables.Table):
             ): return(ConstantsSettings.TECHNOLOGY_illumina)
         
         # If sample is ready for projects we'll assume it is ok
-        if(record.is_ready_for_projects):
+        # Can only swap if there are files associated with the sample
+        if(record.is_ready_for_projects or not(record.has_files)):
             if record.is_type_fastq_gz_sequencing():
                 return ConstantsSettings.TECHNOLOGY_illumina
             else:

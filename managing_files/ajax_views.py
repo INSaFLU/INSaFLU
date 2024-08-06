@@ -43,6 +43,7 @@ from utils.process_SGE import ProcessSGE
 from utils.result import Coverage, DecodeObjects
 from utils.software import Software
 from utils.utils import Utils
+from utils.parse_in_files import ParseInFiles
 
 ### Logger
 logger_debug = logging.getLogger("fluWebVirus.debug")
@@ -1755,6 +1756,34 @@ def remove_uploaded_files(request):
 
         return JsonResponse(data)
 
+
+@transaction.atomic
+@csrf_protect
+def relink_uploaded_files(request):
+    """
+    relink fastq files that are not yet linked
+    """
+    if request.is_ajax():
+        data = {"is_ok": False}
+        data["message_number_files_relinked"] = "No files were linked."
+
+        ## some pre-requisites
+        if not request.user.is_active or not request.user.is_authenticated:
+            return JsonResponse(data)
+        try:
+            profile = Profile.objects.get(user__pk=request.user.pk)
+        except Profile.DoesNotExist:
+            return JsonResponse(data)
+        if profile.only_view_project:
+            return JsonResponse(data)
+        
+        parse_in_files = ParseInFiles()
+        parse_in_files.link_files(user=request.user)
+
+        data = {"is_ok": True}
+        data["message_number_files_relinked"] = "File(s) linked"
+
+        return JsonResponse(data)
 
 ####
 def unlock_upload_file(upload_file):

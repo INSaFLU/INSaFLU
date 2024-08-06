@@ -752,6 +752,7 @@ class ParseInFiles(object):
 		n_files_processed = 0
 		vect_sample_to_trimmomatic = []
 		for sample in upload_files.samples.all():
+
 			if (sample.has_files):
 				n_files_processed += 1
 				continue
@@ -762,16 +763,24 @@ class ParseInFiles(object):
 			upload_files_2 = None
 			type_sequence_file_upload_file_2 = None
 			if (len(sample.candidate_file_name_1) > 0):
+				
 				try:
+
 					upload_files_1 = UploadFiles.objects.get(file_name=sample.candidate_file_name_1, owner=user, is_processed=False,\
 										is_deleted=False, is_valid=True, type_file__name=TypeFile.TYPE_FILE_fastq_gz)
+
 					path_to_file = os.path.join(getattr(settings, "MEDIA_ROOT", None), upload_files_1.path_name.name)
+
 					if (not os.path.exists(path_to_file) or not utils.is_fastq_gz(path_to_file)[0] ): upload_files_1 = None
 					else:	## get type of sequencing
 						type_sequence_file_upload_file_1 = utils.get_type_file(path_to_file)
 
 				except UploadFiles.DoesNotExist as e:
 					pass
+				except Exception as e:
+					print("Exception:"+str(e))
+					return
+
 			if (not upload_files_1 is None and len(sample.candidate_file_name_2) > 0):
 				try:
 					upload_files_2 = UploadFiles.objects.get(file_name=sample.candidate_file_name_2, owner=user, is_processed=False,\
@@ -783,11 +792,11 @@ class ParseInFiles(object):
 
 				except UploadFiles.DoesNotExist as e:
 					pass
-			
+		
 			## can set the data
 			if ((len(sample.candidate_file_name_2) > 0 and not upload_files_1 is None and not upload_files_2 is None) or\
 				(len(sample.candidate_file_name_2) == 0 and not upload_files_1 is None)):
-				
+
 				## link the files to the right place
 				sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_to_fastq_file(user.id, sample.id), sample.candidate_file_name_1)
 				utils.link_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), upload_files_1.path_name.name), sz_file_to)
@@ -808,6 +817,7 @@ class ParseInFiles(object):
 				### only illumina can add second file to the sample
 				if (not upload_files_2 is None and type_sequence_file_upload_file_1 == Constants.FORMAT_FASTQ_illumina and
 						type_sequence_file_upload_file_2 == Constants.FORMAT_FASTQ_illumina):
+
 					sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_to_fastq_file(user.id, sample.id), sample.candidate_file_name_2)
 					utils.link_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), upload_files_2.path_name.name), sz_file_to)
 					sample.path_name_2.name = os.path.join(utils.get_path_to_fastq_file(user.id, sample.id), sample.candidate_file_name_2)
@@ -820,7 +830,7 @@ class ParseInFiles(object):
 					upload_files_2.samples.add(sample)
 					upload_files_2.attached_date = datetime.now()
 					upload_files_2.save()
-					
+				
 				### sample file
 				sample.has_files = True
 				sample.save()
@@ -830,28 +840,31 @@ class ParseInFiles(object):
 					### send signal to process the type and sub type
 					### create a task to perform the analysis of fastq and trimmomatic
 					### it doesn't work if runs immediately
-					vect_sample_to_trimmomatic.append(sample)
-					
-		
+					vect_sample_to_trimmomatic.append(sample)	
+
 		## samples that can proceed to trimmomatic
 		process_name = None
-		for sample in vect_sample_to_trimmomatic:
+		for sample in vect_sample_to_trimmomatic:	
 			try:
 				if process_name is None:
 					(job_name_wait, process_name) = user.profile.get_name_sge_seq(
 						Profile.SGE_PROCESS_clean_sample, Profile.SGE_SAMPLE) 
 				## here can be direct because came from a django
+
 				process_SGE = ProcessSGE()
-				if (sample.is_type_fastq_gz_sequencing()): taskID = process_SGE.set_run_trimmomatic_species(sample, user, process_name)
-				else: taskID = process_SGE.set_run_clean_minion(sample, user, process_name)	### minion
+				if (sample.is_type_fastq_gz_sequencing()): 
+					taskID = process_SGE.set_run_trimmomatic_species(sample, user, process_name)
+				else: 
+					taskID = process_SGE.set_run_clean_minion(sample, user, process_name)	### minion
 				
+				#continue
 				### information that been queued 
 				manageDatabase = ManageDatabase()
 				manageDatabase.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_Queue_TaskID,
 							MetaKeyAndValue.META_VALUE_Queue, taskID)
 			except:
 				pass
-		
+	
 		## create sample list for this user
 		if not process_name is None:
 			process_SGE.set_create_sample_list_by_user(user, [process_name])

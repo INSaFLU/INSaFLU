@@ -550,7 +550,7 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 				if(type_of_fastq == Constants.FORMAT_FASTQ_illumina):
 					sample.type_of_fastq = Sample.TYPE_OF_FASTQ_illumina
 				elif(type_of_fastq == Constants.FORMAT_FASTQ_ont):
-					sample.type_of_fastq = Sample.TYPE_OF_FASTQ_illumina						 
+					sample.type_of_fastq = Sample.TYPE_OF_FASTQ_minion						 
 			else: 
 				sample.type_of_fastq = form.cleaned_data['type_of_fastq']
 			sample.save()
@@ -1189,12 +1189,16 @@ class SamplesAddFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.For
 		if number_files_can_be_removed == 0:
 			context["message_remove_files"] = "There's no files to remove"
 			context["message_remove_files_2"] = "There's no files to remove..."
+			context["message_relink"] = "There's no files to relink..."
 		elif number_files_can_be_removed == 1:
 			context["message_remove_files"] = (
 				"It is going to remove one file not processed"
 			)
 			context["message_remove_files_2"] = (
 				"Do you want to remove one file not processed?"
+			)
+			context["message_relink"] = (
+				"Do you want to try to relink one unlinked file?"
 			)
 		else:
 			context["message_remove_files"] = (
@@ -1204,6 +1208,11 @@ class SamplesAddFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.For
 			)
 			context["message_remove_files_2"] = (
 				"Do you want to remove {} files not processed?".format(
+					number_files_can_be_removed
+				)
+			)
+			context["message_relink"] = (
+				"Do you want to try to relink {} files not linked?".format(
 					number_files_can_be_removed
 				)
 			)

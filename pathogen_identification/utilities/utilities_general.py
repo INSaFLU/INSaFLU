@@ -59,7 +59,7 @@ def reverse_dict_of_lists(dict_of_lists: dict) -> dict:
 def simplify_name(name: str):
     """simplify sample name"""
 
-    chars_to_replace = [".", ";", ":", "|", "/", " ", "[", "]", "-"]
+    chars_to_replace = [".", ";", ":", "|", "/", " ", "[", "]", "-", "(", ")", ","]
     for char in chars_to_replace:
         name = name.replace(char, "_")
 
@@ -68,8 +68,8 @@ def simplify_name(name: str):
 
 def simplify_name_lower(name: str):
     """simplify sample name"""
-    
-    name= simplify_name(name)
+
+    name = simplify_name(name)
 
     return name.lower()
 

@@ -20,28 +20,37 @@ from constants.software_names import SoftwareNames
 from fluwebvirus.settings import BASE_DIR, STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
-from pathogen_identification.models import (FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RawReference, ReferenceMap_Main,
-                                            ReferencePanel,
-                                            ReferenceSourceFileMap, RunMain,
-                                            TeleFluProject, TeleFluSample)
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.models import (
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReferenceMap_Main,
+    ReferencePanel,
+    ReferenceSourceFileMap,
+    RunMain,
+    TeleFluProject,
+    TeleFluSample,
+)
 from pathogen_identification.tables import ReferenceSourceTable
 from pathogen_identification.utilities.reference_utils import (
-    check_file_reference_submitted, check_raw_reference_submitted,
-    check_user_reference_exists, create_combined_reference)
+    check_file_reference_submitted,
+    check_raw_reference_submitted,
+    check_user_reference_exists,
+    create_combined_reference,
+)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
-from pathogen_identification.utilities.utilities_general import \
-    get_services_dir
-from pathogen_identification.utilities.utilities_pipeline import \
-    SoftwareTreeUtils
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.utilities_general import get_services_dir
+from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
 from pathogen_identification.utilities.utilities_views import (
-    RawReferenceUtils, ReportSorter, SampleReferenceManager,
-    set_control_reports)
+    RawReferenceUtils,
+    ReportSorter,
+    SampleReferenceManager,
+    set_control_reports,
+)
 from pathogen_identification.views import inject__added_references
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
@@ -1259,8 +1268,6 @@ def sort_report_sample(request):
         data = {"is_ok": False, "is_deployed": False}
         process_SGE = ProcessSGE()
         sample = PIProject_Sample.objects.get(pk=int(request.POST["sample_id"]))
-        # references = request.POST.getlist("references[]")
-        print("OIHJNOIN")
 
         project = sample.project
         report_layout_params = TelevirParameters.get_report_layout_params(
@@ -1270,7 +1277,6 @@ def sort_report_sample(request):
             final_reports = FinalReport.objects.filter(sample=sample)
 
             report_sorter = ReportSorter(sample, final_reports, report_layout_params)
-            print(report_sorter.reports_availble)
 
             if report_sorter.reports_availble is False:
                 pass
@@ -1797,7 +1803,9 @@ def add_teleflu_sample(request):
 
 from pathogen_identification.models import SoftwareTreeNode, TelefluMapping
 from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils, Utils_Manager)
+    SoftwareTreeUtils,
+    Utils_Manager,
+)
 
 
 @login_required
@@ -2654,7 +2662,11 @@ def add_file_to_panel(request):
 
         panel = ReferencePanel.objects.get(pk=panel_id)
         file = ReferenceSourceFile.objects.get(pk=file_id)
-        refs = ReferenceSourceFileMap.objects.filter(reference_source_file=file)
+        refs = ReferenceSourceFileMap.objects.filter(
+            reference_source_file=file
+        ).distinct()
+
+        print(refs.count())
 
         try:
             for reference in refs:

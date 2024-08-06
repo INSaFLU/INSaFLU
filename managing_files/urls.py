@@ -197,6 +197,11 @@ urlpatterns = [
         name="remove_uploaded_files",
     ),  ## remove remove_uploaded_files, several at once
     url(
+        r"^ajax/relink_uploaded_file$",
+        ajax_views.relink_uploaded_files,
+        name="relink_uploaded_files",
+    ),  ## remove remove_uploaded_file    
+    url(
         r"^ajax/unlock_sample_file$",
         ajax_views.unlock_sample_file,
         name="unlock_sample_file",

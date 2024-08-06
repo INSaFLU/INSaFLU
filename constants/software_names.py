@@ -356,7 +356,8 @@ class SoftwareNames(object):
     SOFTWARE_PROKKA_name = "Prokka"
     SOFTWARE_PROKKA_VERSION = "1.2"
     SOFTWARE_PROKKA_PARAMETERS = (
-        "--kingdom Viruses --locustag locus --genus Influenzavirus --species Influenzavirus --strain "
+        #"--kingdom Viruses --locustag locus --genus Influenzavirus --species Influenzavirus --strain "
+        "--kingdom Viruses --genus Virus --locustag locus --strain "
         "ref_PREFIX_FILES_OUT --gcode " + str(Constants.TRANSLATE_TABLE_NUMBER)
     )
 

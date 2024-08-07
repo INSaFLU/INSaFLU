@@ -130,13 +130,6 @@ function show_igv(item) {
     var url = item.attr('show-igv-url');
 
     $.ajax({
-        /// spin 
-        //beforeSend: function() {
-        //    $('#igv_display_' + accid).show();
-        //},
-        //complete: function(){
-        //    $('#igv_display_' + accid).hide();
-        //},
         
         data : { 
             'project_pk': project_pk,

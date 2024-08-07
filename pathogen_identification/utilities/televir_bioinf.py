@@ -141,11 +141,30 @@ class TelevirBioinf:
     def check_file_exists_not_empty(self, file_path):
         return os.path.exists(file_path) and os.path.getsize(file_path) > 100
 
-    def extract_reference(self, source_file, accid, output_file):
-        accid_code = self.process_accid(accid, source_file)
+    def replace_in_file(self, file_path, old, new, starts_with=None):
+        """
+        Replace a string in a file, use sed, if starts_with is not None, only replace lines that start with starts_with
+
+        """
+
+        if not os.path.exists(file_path):
+            return False
+
+        if starts_with is not None:
+            command = f"sed -i '/^{starts_with}/s/{old}/{new}/g' {file_path}"
+        else:
+            command = f"sed -i 's/{old}/{new}/g' {file_path}"
+
+        subprocess.call(command, shell=True)
+
+        return True
+
+    def extract_reference(self, source_file, accid_code, output_file):
+        # accid_code = self.process_accid(accid, source_file)
         command = (
             f'{self.samtools_binary} faidx {source_file} "{accid_code}" > {output_file}'
         )
+
         subprocess.call(command, shell=True)
 
         return self.check_file_exists_not_empty(output_file)

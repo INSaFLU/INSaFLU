@@ -22,8 +22,6 @@ function showParametersHover(element) {
         });    
         parametersContainer.style.display = 'none';
     }
-
-
 }
 
 function showParameters(element) {

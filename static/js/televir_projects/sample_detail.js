@@ -62,8 +62,6 @@ function nextTr(row) {
     return row;
 }
 
-
-
 $("tr.parent").find("A#plot_show").click(function(e) {
 
     if (e.target.tagName === "A" && e.target.id === "plot_show") {
@@ -133,12 +131,12 @@ function show_igv(item) {
 
     $.ajax({
         /// spin 
-        beforeSend: function() {
-            $('#igv_display_' + accid).show();
-        },
-        complete: function(){
-            $('#igv_display_' + accid).hide();
-        },
+        //beforeSend: function() {
+        //    $('#igv_display_' + accid).show();
+        //},
+        //complete: function(){
+        //    $('#igv_display_' + accid).hide();
+        //},
         
         data : { 
             'project_pk': project_pk,
@@ -208,8 +206,6 @@ function show_igv(item) {
         }
     });
 }
-
-
 
 //  Download the table as a CSV file
 

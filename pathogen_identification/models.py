@@ -18,11 +18,13 @@ from django.utils.translation import gettext_lazy as _
 from pkg_resources import packaging
 
 from constants.constants import Constants
-from constants.constants import Televir_Directory_Constants as Televir_Directories
+from constants.constants import \
+    Televir_Directory_Constants as Televir_Directories
 from managing_files.models import Project as InsaFluProject
 from managing_files.models import Reference as InsaFluReference
 from managing_files.models import Sample
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from pathogen_identification.data_classes import IntermediateFiles
 
 # Create your models here.
@@ -289,7 +291,7 @@ class PIProject_Sample(models.Model):
         panels = self.panels_pks
         return ReferencePanel.objects.filter(
             pk__in=panels, panel_type=ReferencePanel.PANEL_TYPE_MAIN
-        )
+        ).exclude(is_deleted=True)
 
     def remove_panel(self, panel_pk: int):
         panels = self.panels_pks

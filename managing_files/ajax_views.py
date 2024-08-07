@@ -1756,6 +1756,57 @@ def remove_uploaded_files(request):
 
         return JsonResponse(data)
 
+@transaction.atomic
+@csrf_protect
+def remove_unattached_samples(request):
+    """
+    remove unattached samples
+    """
+    if request.is_ajax():
+        number_samples_removed = 0
+        data = {"is_ok": False}
+        data["number_samples_removed"] = number_samples_removed
+        data["message_number_samples_removed"] = "No samples removed."
+
+        ## some pre-requisites
+        if not request.user.is_active or not request.user.is_authenticated:
+            return JsonResponse(data)
+        try:
+            profile = Profile.objects.get(user__pk=request.user.pk)
+        except Profile.DoesNotExist:
+            return JsonResponse(data)
+        if profile.only_view_project:
+            return JsonResponse(data)
+
+        ### get all samples that can be deleted
+        query_set = Sample.objects.filter(
+			owner=request.user, is_deleted=False
+            )		
+
+        for sample in query_set:
+            if(PIProject_Sample.objects.filter(sample=sample, is_deleted=False).count()>0):
+				# Cannot be deleted
+                continue
+            if(ProjectSample.objects.filter(sample=sample, is_deleted=False).count()>0):
+                # Cannot be deleted
+                continue
+            ### now you can remove
+            sample.is_deleted = True
+            sample.is_deleted_in_file_system = False
+            sample.date_deleted = datetime.now()
+            sample.save()
+            number_samples_removed += 1
+
+        data = {"is_ok": True}
+        data["number_samples_removed"] = number_samples_removed
+        if number_samples_removed == 1:
+            data["message_number_samples_removed"] = "One sample removed."
+        elif number_samples_removed > 1:
+            data["message_number_samples_removed"] = "{} samples removed.".format(
+                number_samples_removed
+            )
+
+        return JsonResponse(data)
 
 @transaction.atomic
 @csrf_protect

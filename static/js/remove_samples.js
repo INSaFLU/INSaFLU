@@ -20,6 +20,11 @@ $(document).on("click", "a", function (e) {
       $('#id-modal-body-swap-technology').attr('ref_name', ref_name);
       $('#id-modal-body-swap-technology').attr('tr_to_swap', tr_to_remove);
       $('#id-label-swap').val('');
+    } else {
+      if (attr === 'id_remove_unattached_modal') {
+        $('#id-label-remove-unattached').text('Do you want to remove unattached samples?');
+        $('#id-label-remove-unattached').val('');
+      }
     }
   }
 });
@@ -69,6 +74,45 @@ $('#id-remove-button').on('click', function () {
             '</div>');
 
         }
+      }
+    },
+
+    // handle a non-successful response
+    error: function (xhr, errmsg, err) {
+      alert(errmsg);
+      console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
+    }
+  });
+});
+
+
+$('#id-remove-unattached-button').on('click', function () {
+
+  $.ajax({
+    url: $('#id-modal-body-remove-unattached').attr("remove-single-value-url"),
+    data: {
+      csrfmiddlewaretoken: '{{ csrf_token }}'
+    }, // data sent with the post request
+
+    success: function (data) {
+
+      if (data['is_ok']) {
+
+        /// add message with informaton
+        $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
+          data["message_number_samples_removed"] + ' Refresh the window to see the changes.' +
+          '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+          '</div>');
+
+      }
+      else {
+        /// special message in case present_in_televir_project == True
+        /// add message with informaton
+        $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+          'Unattached samples were not properly removed.' +
+          '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+          '</div>');
+
       }
     },
 

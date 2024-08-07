@@ -45,7 +45,7 @@ from managing_files.tables import (AddSamplesFromCvsFileTable,
                                    ReferenceProjectTable, ReferenceTable,
                                    SampleTable, SampleToProjectsTable,
                                    ShowProjectSamplesResults)
-from pathogen_identification.models import TeleFluProject
+from pathogen_identification.models import TeleFluProject, PIProject_Sample
 from settings.constants_settings import ConstantsSettings
 from settings.default_software import DefaultSoftware
 from settings.default_software_project_sample import DefaultProjectSoftware
@@ -433,6 +433,22 @@ class SamplesView(LoginRequiredMixin, ListView):
 					self.request.user.id, "MEDIA_URL", FileExtensions.FILE_TSV
 				)
 			)
+
+		context["unattached_samples"] = False
+		context["message_remove_unattached"] = "No unattached sample."
+		
+		for sample in query_set:
+			# if there are no active projects with the sample, it can be removed
+			if(PIProject_Sample.objects.filter(sample=sample, is_deleted=False).count()>0):
+				# Cannot be deleted
+				continue
+			if(ProjectSample.objects.filter(sample=sample, is_deleted=False).count()>0):
+				# Cannot be deleted
+				continue
+			# If there are no active Televir or INSaFLU projects, sample can be deleted
+			context["unattached_samples"] = True
+			context["message_remove_unattached"] = "There are unattached samples."
+			break
 
 		context["table"] = table
 		context["nav_sample"] = True

@@ -22,8 +22,6 @@ function showParametersHover(element) {
         });    
         parametersContainer.style.display = 'none';
     }
-
-
 }
 
 function showParameters(element) {
@@ -347,8 +345,10 @@ var buttons_background = function () {
 
     $("#id-insaflu-button").click(function () {
         var url = $(this).attr('utl');
-        var project_id = $('.workflow-main').attr('project_id');
-        var csrf = $('.workflow-main').attr('csrf');
+        var project_id = $('#id-insaflu-button').attr('project-id');
+        var csrf = $('#id-insaflu-button').attr('csrf');
+        console.log(csrf);
+        console.log(project_id);
         var data = {
             'project_id': project_id,
             'csrfmiddlewaretoken': csrf,

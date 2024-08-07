@@ -401,7 +401,6 @@ def submit_sample_mapping_panels(request):
 
         sample_id = int(request.POST["sample_id"])
         sample = PIProject_Sample.objects.get(id=int(sample_id))
-        reference_manager = SampleReferenceManager(sample)
 
         project = sample.project
         software_utils = SoftwareTreeUtils(user, project, sample=sample)
@@ -425,26 +424,12 @@ def submit_sample_mapping_panels(request):
                         if panel.is_deleted:
                             continue
 
-                        references = RawReference.objects.filter(panel=panel)
-                        run_panel_copy = reference_manager.copy_panel(panel)
-
-                        panel_mapping_run = (
-                            reference_manager.mapping_request_panel_run_from_leaf(
-                                leaf, panel_pk=run_panel_copy.pk
-                            )
-                        )
-                        for reference in references:
-                            reference.pk = None
-                            reference.run = panel_mapping_run
-                            reference.panel = run_panel_copy
-                            reference.save()
-
-                        taskID = process_SGE.set_submit_televir_sample_metagenomics(
+                        taskID = process_SGE.set_submit_televir_sample_panel_map(
                             user=request.user,
                             sample_pk=sample.pk,
                             leaf_pk=leaf.pk,
                             mapping_request=True,
-                            map_run_pk=panel_mapping_run.pk,
+                            panel_pk=panel.pk,
                         )
                         data["is_deployed"] = True
 
@@ -1416,7 +1401,8 @@ def create_insaflu_reference_from_filemap(request):
                 data["exists"] = True
                 return JsonResponse(data)
             # success = create_reference(ref_id, user_id)
-            taskID = process_SGE.set_submit_file_televir_teleflu_create(user, ref_id)
+            print("OINOINOINONONO")
+            _ = process_SGE.set_submit_file_televir_teleflu_create(user, ref_id)
 
         except Exception as e:
             print(e)
@@ -1681,6 +1667,8 @@ def create_insaflu_project(request):
         teleflu_project_id = int(request.POST["project_id"])
         teleflu_project = TeleFluProject.objects.get(pk=teleflu_project_id)
         process_SGE = ProcessSGE()
+
+        print("oinoino")
 
         if teleflu_project.insaflu_project is not None:
             data["exists"] = True

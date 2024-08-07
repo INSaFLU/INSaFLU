@@ -192,7 +192,7 @@
                 <button id="id-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal"
                     aria-hidden="true">Cancel</button>
                 <button id="id-insaflu-button" type="button" class="btn btn-primary" data-dismiss="modal" utl="{% url 'teleflu_televir_connect' %}"
-                    aria-hidden="true">Create</button>
+                    aria-hidden="true" csrf= "{{ csrf_token }}" project-id='{{ teleflu_project_pk }}' >Create</button>
             </div>
         </div>
     </div>

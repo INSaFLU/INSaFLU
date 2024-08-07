@@ -141,6 +141,9 @@ class Command(BaseCommand):
                     )
 
                 ## bgzip compress filepath and create index
+                ## check if file is already compressed
+                if os.path.exists(filepath + ".gz"):
+                    os.remove(filepath + ".gz")
                 file_path_gz = bioinf_utils.bgzip(filepath)
                 bioinf_utils.index_fasta(file_path_gz)
 

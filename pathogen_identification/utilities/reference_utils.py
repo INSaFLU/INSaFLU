@@ -150,7 +150,9 @@ def process_fasta(
 
 def extract_file(accid):
     """ "
-    This function takes the accid and returns the fasta file"""
+    This function takes the accid and returns the fasta file
+    Always replace accid_in_file with the accid - formats are specific to source files virosaurus and kraken2.
+    """
 
     utils = Utils()
     televir_bioinf = TelevirBioinf()
@@ -164,8 +166,17 @@ def extract_file(accid):
 
         source_file = reference.reference_source_file.filepath
 
-        extracted = televir_bioinf.extract_reference(source_file, accid, tmp_fasta)
+        accid_in_file = reference.accid_in_file
+
+        extracted = televir_bioinf.extract_reference(
+            source_file, accid_in_file, tmp_fasta
+        )
         if extracted:
+            ## replace accid_in_file with the accid
+            televir_bioinf.replace_in_file(
+                tmp_fasta, accid_in_file, accid, starts_with=">"
+            )
+
             return tmp_fasta
         else:
             if os.path.exists(tmp_fasta):
@@ -174,7 +185,8 @@ def extract_file(accid):
 
 def merge_multiple_refs(references: List[RawReference], output_prefix: str):
     """
-    This function takes a list of references and creates a merged fasta file
+    This function takes a list of references and creates a merged fasta file.
+
     """
     merged_fasta = NamedTemporaryFile(
         prefix=output_prefix, suffix=".fasta", delete=False
@@ -182,6 +194,8 @@ def merge_multiple_refs(references: List[RawReference], output_prefix: str):
 
     for reference in references:
         fasta_file = extract_file(reference.accid)
+        if fasta_file is None:
+            continue
         process_fasta(fasta_file)
         with open(fasta_file, "r") as reference_fasta:
             merged_fasta.write(reference_fasta.read().encode())
@@ -388,15 +402,12 @@ def check_user_reference_exists(description, accid, user_id):
 
 def check_reference_exists(description, accid):
 
-    description_clean = description_to_name(description)
-
     query_set = Reference.objects.filter(is_obsolete=False, is_deleted=False).order_by(
         "-name"
     )
 
     if query_set.filter(
-        Q(name__icontains=description_clean)
-        | Q(reference_genbank_name__icontains=accid)
+        Q(reference_genbank_name__icontains=accid)
         | Q(reference_fasta_name__icontains=accid)
     ).exists():
         return True

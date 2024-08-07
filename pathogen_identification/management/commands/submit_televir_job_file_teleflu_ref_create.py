@@ -70,7 +70,6 @@ class Command(BaseCommand):
 
         try:
             success, ref_id = file_reference_to_insaflu(ref_id, user_id)
-            print(success, ref_id)
             if success is False:
                 process_SGE.set_process_controler(
                     user,

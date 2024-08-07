@@ -176,7 +176,7 @@ class RunMetadataHandler:
         """
         Generate Remap Targets from all existing references for a given sample."""
         reference_utils = RawReferenceUtils(sample_registered)
-        reference_utils.sample_reference_tables()
+        _ = reference_utils.sample_reference_tables()
         reference_table = reference_utils.merged_table
 
         proxy_rclass = reference_utils.reference_table_renamed(

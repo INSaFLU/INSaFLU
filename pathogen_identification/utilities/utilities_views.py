@@ -831,10 +831,9 @@ class ReportSorter:
         self.logger.setLevel(logging.DEBUG)
 
     def build_tree(self):
-        
+
         if self.reports_availble:
             self.overlap_manager.build_tree()
-
 
     def update_max_error_rate(self, report: FinalReport):
         """
@@ -1907,9 +1906,6 @@ class RawReferenceUtils:
         self,
         list_tables: List[pd.DataFrame],
     ) -> pd.DataFrame:
-        # joint_tables = [
-        #    self.run_references_standard_scores(table) for table in list_tables
-        # ]
 
         joint_tables = pd.concat(list_tables)
         # group tables: average read_counts_standard_score, sum counts, read_counts, contig_counts
@@ -2031,12 +2027,15 @@ class RawReferenceUtils:
 
         return compound_refs_table
 
-    def sample_reference_tables(
-        self, run_pks: Optional[List[int]] = None
-    ) -> pd.DataFrame:
+    def sample_reference_tables(self, pipeline_only=False) -> pd.DataFrame:
+
         sample_runs = self.filter_runs()
-        if run_pks is not None:
-            sample_runs = sample_runs.filter(pk__in=run_pks)
+
+        if pipeline_only:
+            sample_runs = sample_runs.filter(run_type=RunMain.RUN_TYPE_PIPELINE)
+        print(sample_runs)
+        for run in sample_runs:
+            print(run.status, run.run_type)
         self.runs_found = sample_runs.count()
 
         run_references_tables = [self.run_references_table(run) for run in sample_runs]
@@ -2057,17 +2056,11 @@ class RawReferenceUtils:
                     "taxid",
                     "accid",
                     "description",
+                    "standard_score",
+                    "global_ranking",
+                    "ensemble_ranking",
                 ]
             )
-
-    def sample_reference_tables_filter(self, runs_filter: Optional[List[int]] = None):
-        """
-        Filter the sample reference tables to only include runs in the list
-        """
-        if runs_filter == []:
-            runs_filter = None
-
-        _ = self.sample_reference_tables(runs_filter)
 
     def compound_reference_update_ranks(self, compound_ref: RawReferenceCompound):
         """
@@ -2266,7 +2259,7 @@ class RawReferenceUtils:
             RawReferenceCompound(raw_reference) for raw_reference in raw_references
         ]
 
-        self.sample_reference_tables_filter()
+        _ = self.sample_reference_tables(pipeline_only=True)
 
         self.update_scores_compound_references(raw_reference_compound)
         self.register_compound_references(raw_reference_compound)

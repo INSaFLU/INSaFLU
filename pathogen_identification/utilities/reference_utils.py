@@ -402,15 +402,12 @@ def check_user_reference_exists(description, accid, user_id):
 
 def check_reference_exists(description, accid):
 
-    description_clean = description_to_name(description)
-
     query_set = Reference.objects.filter(is_obsolete=False, is_deleted=False).order_by(
         "-name"
     )
 
     if query_set.filter(
-        Q(name__icontains=description_clean)
-        | Q(reference_genbank_name__icontains=accid)
+        Q(reference_genbank_name__icontains=accid)
         | Q(reference_fasta_name__icontains=accid)
     ).exists():
         return True

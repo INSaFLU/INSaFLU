@@ -420,7 +420,7 @@ class ProcessSGE(object):
         """
         process_controler = ProcessControler()
         vect_command = [
-            "/usr/bin/python3 {} second_stage_snippy --project_sample_id {} --user_id {}".format(
+            "python3 {} second_stage_snippy --project_sample_id {} --user_id {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 project_sample.pk,
                 user.pk,
@@ -460,7 +460,7 @@ class ProcessSGE(object):
         """
         process_controler = ProcessControler()
         vect_command = [
-            "/usr/bin/python3 {} second_stage_medaka --project_sample_id {} --user_id {}".format(
+            "python3 {} second_stage_medaka --project_sample_id {} --user_id {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 project_sample.pk,
                 user.pk,
@@ -699,7 +699,7 @@ class ProcessSGE(object):
         """
         process_controler = ProcessControler()
         vect_command = [
-            "/usr/bin/python3 {} create_projects_list_by_user --user_id {} {}".format(
+            "python3 {} create_projects_list_by_user --user_id {} {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user.pk,
                 "--settings fluwebvirus.settings_test" if b_test else "",
@@ -1401,7 +1401,7 @@ class ProcessSGE(object):
         out_dir = self.utils.get_temp_dir()
 
         vect_command = [
-            "/usr/bin/python3 {} submit_televir_job_teleflu_ref_create --user_id {} --ref_id {} -o {}".format(
+            "python3 {} submit_televir_job_teleflu_ref_create --user_id {} --ref_id {} -o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user_pk,
                 ref_id,
@@ -1446,7 +1446,7 @@ class ProcessSGE(object):
         out_dir = self.utils.get_temp_dir()
 
         vect_command = [
-            "/usr/bin/python3 {} submit_televir_job_file_teleflu_ref_create --user_id {} --ref_id {} -o {}".format(
+            "python3 {} submit_televir_job_file_teleflu_ref_create --user_id {} --ref_id {} -o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user_pk,
                 ref_id,
@@ -1491,7 +1491,7 @@ class ProcessSGE(object):
         out_dir = self.utils.get_temp_dir()
 
         vect_command = [
-            "/usr/bin/python3 {} submit_televir_job_teleflu_project_create --user_id {} --project_id {} -o {}".format(
+            "python3 {} submit_televir_job_teleflu_project_create --user_id {} --project_id {} -o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user_pk,
                 project_pk,
@@ -1538,7 +1538,7 @@ class ProcessSGE(object):
         out_dir = self.utils.get_temp_dir()
 
         vect_command = [
-            "/usr/bin/python3 {} submit_televir_job_teleflu_reference_create --user_id {} --project_id {} -o {}".format(
+            "python3 {} submit_televir_job_teleflu_reference_create --user_id {} --project_id {} -o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user_pk,
                 project_pk,

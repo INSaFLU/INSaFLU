@@ -340,7 +340,7 @@
                             {% endif %}
                         </tr>
                         <tr class="collapse-report" group-name="{{final_report.name}}">
-                        <td colspan="14">
+                        <td colspan="18">
                             <div class="table__wrapper">
                             <table class="table table-inner">
                                 <tbody>
@@ -383,7 +383,7 @@
         
                                     {% if value.coverage > 0 %}
                                     <tr class="igv_tab" id="igv_display_{{value.accid}}">
-                                        <td colspan="14" align="center">
+                                        <td colspan="18" align="center">
                                             <div class="card-block">
                                                 <div class="container-fluid">
                                                     <div class="igv-loader" id="loader_igv_{{value.accid}}"><img src="{{ spinner_url }}"/></div>

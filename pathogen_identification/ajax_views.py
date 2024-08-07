@@ -1668,6 +1668,8 @@ def create_insaflu_project(request):
         teleflu_project = TeleFluProject.objects.get(pk=teleflu_project_id)
         process_SGE = ProcessSGE()
 
+        print("oinoino")
+
         if teleflu_project.insaflu_project is not None:
             data["exists"] = True
             return JsonResponse(data)

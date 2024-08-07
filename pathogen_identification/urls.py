@@ -27,6 +27,11 @@ urlpatterns = [
         name="teleflu_project",
     ),
     url(
+        r"insaflu_project_igv/(?P<pk>\d+)$",
+        PIviews.INSaFLUMappingIGV.as_view(),
+        name="insaflu_project_igv",
+    ),
+    url(
         r"teleflu_workflow_igv/(?P<pk>\d+)$",
         PIviews.TelefluMappingIGV.as_view(),
         name="teleflu_workflow_igv",

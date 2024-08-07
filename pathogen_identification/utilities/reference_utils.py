@@ -743,9 +743,16 @@ def filter_reference_maps_select(
 def create_televir_igv_report(teleflu_project_pk: int, leaf_index: int) -> bool:
 
     teleflu_project = TeleFluProject.objects.get(pk=teleflu_project_pk)
-    teleflu_mapping = TelefluMapping.objects.get(
-        teleflu_project=teleflu_project, leaf__index=leaf_index
-    )
+    try:
+        teleflu_mapping = TelefluMapping.objects.get(
+            teleflu_project=teleflu_project, leaf__index=leaf_index
+        )
+    except TelefluMapping.DoesNotExist:
+        return False
+    except TelefluMapping.MultipleObjectsReturned:
+        teleflu_mapping = TelefluMapping.objects.filter(
+            teleflu_project=teleflu_project, leaf__index=leaf_index
+        ).first()
     ### get reference
     teleflu_reference = teleflu_project.raw_reference
     if teleflu_reference is None:

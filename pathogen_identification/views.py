@@ -1245,13 +1245,12 @@ class INSaFLUMappingIGV(LoginRequiredMixin, generic.TemplateView):
     template_name = "pathogen_identification/teleflu_mapping_igv.html"
 
     def get_context_data(self, **kwargs):
-        context = super(TelefluMappingIGV, self).get_context_data(**kwargs)
+        context = super(INSaFLUMappingIGV, self).get_context_data(**kwargs)
         televir_bioinf = TelevirBioinf()
 
-        teleflu_mapping_pk = int(self.kwargs["pk"])
-        teleflu_mapping = TelefluMapping.objects.get(pk=teleflu_mapping_pk)
-        leaf_index = teleflu_mapping.leaf.index
-        teleflu_project = teleflu_mapping.teleflu_project
+        teleflu_pk = int(self.kwargs["pk"])
+
+        teleflu_project = TeleFluProject.objects.get(pk=teleflu_pk)
         televir_project_index = teleflu_project.televir_project.pk
 
         insaflu_project = teleflu_project.insaflu_project
@@ -1273,7 +1272,7 @@ class INSaFLUMappingIGV(LoginRequiredMixin, generic.TemplateView):
         igv_genome_options = {
             "reference": reference_file,
             "reference_index": reference_index,
-            "reference_name": teleflu_mapping.teleflu_project.raw_reference.description,
+            "reference_name": teleflu_project.raw_reference.description,
         }
 
         # samples
@@ -1315,13 +1314,13 @@ class INSaFLUMappingIGV(LoginRequiredMixin, generic.TemplateView):
 
         context["igv_genome"] = igv_genome_options
         context["samples"] = sample_dict
-        context["project"] = teleflu_mapping.teleflu_project.name
+        context["project"] = teleflu_project.name
         context["project_index"] = televir_project_index
         context["teleflu_project_index"] = teleflu_project.pk
         context["teleflu_project_name"] = (
             f"Focus: {teleflu_project.raw_reference.description_first}"
         )
-        context["mapping_id"] = f"IGV Mapping Workflow {teleflu_mapping.leaf.index}"
+        context["mapping_id"] = f"IGV Mapping Workflow {teleflu_project.pk}"
 
         return context
 

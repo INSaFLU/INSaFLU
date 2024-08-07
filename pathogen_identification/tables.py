@@ -1152,7 +1152,7 @@ class TeleFluInsaFLuProjectTable(tables.Table):
             ## open link to html in new tab
             igv_results = (
                 '<a rel="nofollow" target="_blank" href="'
-                + reverse("show-igv-report", args=[record.pk])
+                + reverse("insaflu_project_igv", args=[record.pk])
                 + '" title="IGV Report">'
                 + '<i class="fa fa-eye"></i></span> </a>'
             )

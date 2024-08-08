@@ -280,7 +280,7 @@ class SampleTable(tables.Table):
                     return mark_safe(sample_name)
             
             #Assume that when project is deleted all project_samples are also deleted...
-            if(PIProject_Sample.objects.filter(sample=record.sample, is_deleted=False).count()>0):
+            if(PIProject_Sample.objects.filter(sample=record, is_deleted=False).count()>0):
                 return mark_safe(sample_name)
 
             return mark_safe(

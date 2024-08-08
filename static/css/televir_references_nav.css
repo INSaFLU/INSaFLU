@@ -19,16 +19,11 @@
 ul li.active {
     background-color: #007bff; /* Light, desaturated blue */
     color: white; /* Font color */
-    padding: 2px; /* Padding */
 }
 
 ul li.active a {
     background-color: #007bff; /* Light, desaturated blue */
     color: white; /* Font color */
-    padding-bottom: 10px;
-    padding-top: 10px;
-    padding-left: 15px;
-    padding-right: 15px;
 }
 
 #id_remove_modal .modal-dialog {

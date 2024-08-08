@@ -109,7 +109,7 @@ $('#id-remove-unattached-button').on('click', function () {
         /// special message in case present_in_televir_project == True
         /// add message with informaton
         $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-          'Unattached samples were not properly removed.' +
+          'Unused samples were not properly removed.' +
           '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
           '</div>');
 

@@ -13,7 +13,7 @@ from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software_project_sample import DefaultProjectSoftware
 from utils.result import DecodeObjects
-
+from pathogen_identification.models import PIProject_Sample
 
 class CheckBoxColumnWithName(tables.CheckBoxColumn):
     @property
@@ -278,6 +278,10 @@ class SampleTable(tables.Table):
                     and not project_samples.project.is_deleted
                 ):
                     return mark_safe(sample_name)
+            
+            #Assume that when project is deleted all project_samples are also deleted...
+            if(PIProject_Sample.objects.filter(sample=record.sample, is_deleted=False).count()>0):
+                return mark_safe(sample_name)
 
             return mark_safe(
                 '<a href="#id_remove_modal" id="id_remove_sample_modal" data-toggle="modal"'

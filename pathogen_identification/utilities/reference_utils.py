@@ -16,18 +16,12 @@ from constants.televir_directories import Televir_Directory_Constants
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
 from managing_files.models import Reference
-from pathogen_identification.models import (
-    MetaReference,
-    ParameterSet,
-    PIProject_Sample,
-    RawReference,
-    RawReferenceMap,
-    ReferenceMap_Main,
-    ReferenceSourceFileMap,
-    TelefluMapping,
-    TeleFluProject,
-    TeleFluSample,
-)
+from pathogen_identification.models import (MetaReference, ParameterSet,
+                                            PIProject_Sample, RawReference,
+                                            RawReferenceMap, ReferenceMap_Main,
+                                            ReferenceSourceFileMap,
+                                            TelefluMapping, TeleFluProject,
+                                            TeleFluSample)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
 from pathogen_identification.utilities.utilities_general import simplify_name
 from utils.software import Software
@@ -400,11 +394,11 @@ def check_user_reference_exists(description, accid, user_id):
     return False
 
 
-def check_reference_exists(description, accid):
+def check_reference_exists(accid, user_id):
 
-    query_set = Reference.objects.filter(is_obsolete=False, is_deleted=False).order_by(
-        "-name"
-    )
+    query_set = Reference.objects.filter(
+        is_obsolete=False, is_deleted=False, owner__id=user_id
+    ).order_by("-name")
 
     if query_set.filter(
         Q(reference_genbank_name__icontains=accid)
@@ -458,6 +452,8 @@ def raw_reference_to_insaflu(raw_reference_id: int, user_id: int):
     reference_fasta = extract_file(accid)
 
     name = description_to_name(raw_reference.description)
+    accid_simple = simplify_name(accid)
+    name = f"{accid_simple}_{name}"
     final_fasta_name = fasta_from_raw_reference(accid=accid, description=description)
 
     if reference_fasta is None:
@@ -482,6 +478,8 @@ def file_reference_to_insaflu(source_reference_id: int, user_id: int):
     reference_fasta = extract_file(accid)
 
     name = description_to_name(description)
+    accid_simple = simplify_name(accid)
+    name = f"{accid_simple}_{name}"
     final_fasta_name = fasta_from_raw_reference(accid=accid, description=description)
 
     if reference_fasta is None:

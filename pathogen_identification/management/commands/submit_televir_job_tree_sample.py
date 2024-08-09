@@ -6,22 +6,19 @@ from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
 from managing_files.models import ProcessControler
-from pathogen_identification.models import (
-    PIProject_Sample,
-    Projects,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.models import PIProject_Sample, Projects, SoftwareTreeNode
 from pathogen_identification.utilities.tree_deployment import (
     Tree_Progress,
     TreeProgressGraph,
 )
 from pathogen_identification.utilities.utilities_pipeline import (
     SoftwareTreeUtils,
-    Utility_Pipeline_Manager,
     Utils_Manager,
 )
-from pathogen_identification.utilities.utilities_views import set_control_reports
+from pathogen_identification.utilities.utilities_views import (
+    RawReferenceUtils,
+    set_control_reports,
+)
 from utils.process_SGE import ProcessSGE
 
 
@@ -137,10 +134,6 @@ class Command(BaseCommand):
 
         module_tree = utils.module_tree(pipeline_tree, list(matched_paths.values()))
 
-        # reduced_tree = utils.tree_subset(pipeline_tree, )
-        # reduced_tree= utils.prep_tree_for_extend(reduced_tree, user)
-        # module_tree = pipeline_utils.compress_software_tree(reduced_tree)
-
         try:
             for project_sample in samples:
                 if project_sample.is_deleted:
@@ -158,6 +151,14 @@ class Command(BaseCommand):
 
                     graph_progress.generate_graph()
                     set_control_reports(project.pk)
+
+                    reference_utils = RawReferenceUtils(project_sample)
+                    _ = reference_utils.create_compound_references()
+
+                    _ = process_SGE.set_submit_televir_sort_pisample_reports(
+                        user=user,
+                        pisample_pk=project_sample.pk,
+                    )
 
                     break
 
@@ -178,4 +179,7 @@ class Command(BaseCommand):
                 ),
                 ProcessControler.FLAG_ERROR,
             )
+            reference_utils = RawReferenceUtils(project_sample)
+            _ = reference_utils.create_compound_references()
+
             raise e

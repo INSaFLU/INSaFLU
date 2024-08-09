@@ -1,0 +1,266 @@
+.panels-container {
+    display: flex;
+    justify-content: space-between;
+}
+
+.panel-list, .reference-list {
+    border: 1px solid #ddd;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.panel-list {
+    width: 33%;
+}
+.reference-list {
+    width: 65%;
+}
+
+#new-panel-button {
+    margin-bottom: 20px;
+}
+
+#panel-list {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.panel-container {
+    border: 1px solid #ddd;
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    align-items: center;
+}
+
+
+.clearfix::after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+#new-panel-modal {
+    display: none;
+    place-items: center;
+    height: 100vh; /* This makes the container take up the full viewport height */
+}
+
+.reference-note {
+    background-color: #b3b3b3; 
+    float: right;
+    border: none;
+    color: #000;
+    text-align: center;
+    text-decoration: none;
+    margin: 0px 5px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 14px;
+    padding: 6px 8px; 
+    font-family: Arial, sasns-serif;
+}
+
+.add-reference-button {
+    background-color: #007bff; 
+    float: right;
+    border: none;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    margin: 0px 5px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 14px;
+    padding: 6px 8px; 
+    font-family: Arial, sasns-serif;
+}
+
+.select-file-button {
+    background-color: #007bff; 
+    float: right;
+    border: none;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    margin: 0px 5px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 14px;
+    padding: 6px 8px; 
+    font-family: Arial, sasns-serif;
+}
+
+.remove-panel-button {
+    background-color: #007bff;
+    float: right;
+    border: none;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    margin: 0px 5px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 14px;
+    padding: 6px 8px; 
+    font-family: Arial, sasns-serif;
+}
+
+.remove-reference-button {
+    background-color: #007bff;
+    float: right;
+    border: none;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    margin: 0px 5px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 14px;
+    padding: 6px 8px; 
+    font-family: Arial, sasns-serif;
+
+}
+
+.panels-container {
+    width: 99%;
+    margin: 0 auto;
+}
+.container-panels {
+    width: 90%;
+    margin: 0 auto;
+}
+
+.reference-item {
+    list-style-type: none; /* remove bullet points */
+    border: 1px solid #ddd; /* add a border around each reference */
+    padding: 10px; /* add some padding */
+    margin-bottom: 10px; /* add some space between references */
+    border-radius: 5px;
+    background-color: #f9f9f9;
+
+}
+
+.reference-id {
+    display: inline; /* display taxid and accid on the same line */
+    margin-right: 10px; /* add some space between taxid and accid */
+}
+
+.reference-description {
+    margin-top: 5px; /* add some space between taxid/accid and description */
+    margin-bottom: 2px; /* add some space between description and the next reference */
+}
+
+
+.reference-list-header {
+    font-size: 1.5em; /* adjust the font size */
+    color: #333; /* adjust the text color */
+    background-color: #f5f5f5; /* adjust the background color */
+    padding: 10px; /* add some padding */
+    margin-bottom: 20px; /* add some space below the header */
+    border-radius: 5px;
+    display: center;
+}
+
+#referenceSearch {
+    width: 100%; /* Full-width */
+    font-size: 16px; /* Increase font-size */
+    padding: 12px 20px; /* Add some padding */
+    margin: 8px 0; /* Add some margin */
+    box-sizing: border-box; /* Make sure that width includes padding */
+    border: none; /* Remove border */
+    border-radius: 4px; /* Slightly rounded corners */
+    background-color: #f1f1f1; /* Light-grey background */
+}
+
+#referenceSearch:focus {
+    outline: none; /* Remove outline when focused */
+    background-color: #ddd; /* Light-grey background when focused */
+}
+.icon-selection {
+    margin-top: 0;
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    margin-top: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.icon-selection label {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.icon-selection input[type="radio"] {
+    margin-right: 5px;
+}
+
+#new-panel-form label {
+    display: block;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+#new-panel-form input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.icon-selection label {
+    display: inline-block;
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+.icon-selection input[type="radio"] {
+    display: none;
+}
+
+.icon-selection input[type="radio"]:checked + i {
+    color: #007bff;
+}
+
+.icon-white {
+    fill: white;
+    height: 100%; /* Make the SVG fill the height of its container */
+    width: auto;  
+}
+
+#file-select {
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+#file-select input[type="radio"] {
+    margin: 10px 5px;
+    vertical-align: middle;
+}
+
+#file-select label {
+    display: inline-block;
+    margin: 5px 0;
+    padding: 5px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+#file-select label:hover {
+    background-color: #e0e0e0;
+}
+
+#panelSelectModal .modal-dialog {
+    max-width: 800px;
+    width: 100%;
+}

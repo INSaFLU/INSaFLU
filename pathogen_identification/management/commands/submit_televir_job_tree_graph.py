@@ -5,28 +5,16 @@ from typing import List
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
-from managing_files.models import ProcessControler
-from pathogen_identification.models import (
-    PIProject_Sample,
-    Projects,
-    ParameterSet,
-    SoftwareTreeNode,
-)
-from pathogen_identification.utilities.tree_deployment import (
-    Tree_Progress,
-    TreeProgressGraph,
-)
-from pathogen_identification.utilities.utilities_pipeline import (
-    Utility_Pipeline_Manager,
-    Utils_Manager,
-)
-from pathogen_identification.utilities.utilities_pipeline import Parameter_DB_Utility
-from utils.process_SGE import ProcessSGE
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from constants.constants import Televir_Metadata_Constants
+from managing_files.models import ProcessControler
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.models import PIProject_Sample, Projects
+from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
+from utils.process_SGE import ProcessSGE
 
 
 class Command(BaseCommand):
+
     help = "deploy run"
 
     def add_arguments(self, parser):
@@ -85,11 +73,13 @@ class Command(BaseCommand):
 
         try:
             for project_sample in samples:
+                print(f"########### {project_sample.sample.name} ###########")
                 if not project_sample.is_deleted:
                     graph_progress = TreeProgressGraph(project_sample)
                     graph_progress.generate_graph()
 
-                    graph_data = graph_progress.get_graph_data()
+                    graph_data, _ = graph_progress.get_graph_data()
+                    import re
 
                     print(graph_data)
 

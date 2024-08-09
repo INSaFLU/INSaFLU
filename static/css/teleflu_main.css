@@ -1,0 +1,406 @@
+.modal-title-description {
+    font-size: 18px;
+    color: #666;
+    display: block;
+}
+
+#workflow-container-spinner {
+
+    visibility: visible; /* Ensures the spinner is always visible */
+    font-size: 18px; /* Adjust size as needed */
+    float: right; /* Align the spinner to the right */
+    color:#6e6e6e; /* Black color */
+}
+
+.spinner-container {
+    display: flex; /* Align children horizontally */
+    justify-content: center; /* Center the spinner */
+    align-items: center; /* Center the spinner */
+    height: 100%; /* Fill the height of the container */
+}
+
+.workflow-container-main {
+    border: 1px solid #e6e6e6; /* Even lighter gray */
+    padding: 10px;
+    margin-bottom: 10px;
+    display: block;
+    align-items: center;
+    border-radius: 5px;
+    background-color: #f9f9f9; /* Subtle background color */
+}
+
+.workflow-container {
+    width: 100%;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    background-color: #f9f9f9; /* Subtle background color */
+}
+
+.summary-table {
+    width: 100%; /* Make the table wider */
+}
+
+.summary-table th, .summary-table td {
+    padding: 10px; /* Add space inside the cells */
+    text-align: center; /* Align the text to the left */
+    border-left: 1px solid #ddd; /* Add a left border to the cells */
+    border-right: 1px solid #ddd; /* Add a right border to the cells */
+}
+
+.summary-table th {
+    background-color: #f2f2f2; /* Add a background color to the header cells */
+}
+
+.summary-table tr:nth-child(even) {
+    background-color: #f2f2f2; /* Add a background color to every other row */
+}
+
+.summary-table th:first-child, .summary-table td:first-child {
+    border-left: none; /* Remove the left border from the first cell in each row */
+}
+
+.summary-table th:last-child, .summary-table td:last-child {
+    border-right: none; /* Remove the right border from the last cell in each row */
+}
+
+.outer-container {
+    margin-bottom: 20px; /* Adjust as needed */
+    margin-right: 20px; /* Add margin to the right side of the container */
+}
+
+.download-tsv-btn {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.add-to-project-button {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.no-workflows {
+    padding: 10px;
+    background-color: #f0f4f8; /* Light grey background */
+    color: #333; /* Dark text color for contrast */
+    border-left: 5px solid #2196F3; /* Blue left border for emphasis */
+    margin: 20px 0; /* Add some margin around the element */
+    border-radius: 4px; /* Slightly rounded corners */
+    font-style: italic; /* Italic font style */
+}
+
+.workflow-table-container {
+    background-color: #f9f9f9; /* Light grey background */
+    border: 1px solid #eee; /* Even lighter gray */
+    border-radius: 8px; /* Rounded corners */
+    padding: 20px; /* Spacing inside the container */
+    margin: 20px 0; /* Spacing outside the container */
+}
+
+.workflow-table-container .title {
+    font-size: 24px; /* Larger font size */
+    font-weight: bold; /* Bold font weight */
+    margin-bottom: 12px; /* Space below the title */
+    color: #333; /* Dark grey color for better readability */
+}
+
+#workflow-list {
+    list-style-type: none; /* Remove default list styling */
+    padding: 0; /* Remove default padding */
+}
+
+.subtitle {
+    font-size: 16px; /* Larger font size */
+    margin-bottom: 10px; /* Space below the subtitle */
+    margin-top: 5px; /* Space above the subtitle */
+    color: #656565; /* Dark grey color for better readability */
+}
+
+.insaflu-table-container {
+    background-color: #f9f9f9; /* Light grey background */
+    border-radius: 8px; /* Rounded corners */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Subtle shadow */
+    padding: 20px; /* Spacing inside the container */
+    margin: 20px 0; /* Spacing outside the container */
+}
+
+.insaflu-table-container .title {
+    font-size: 24px; /* Larger font size */
+    font-weight: bold; /* Bold font weight */
+    margin-bottom: 12px; /* Space below the title */
+    color: #333; /* Dark grey color for better readability */
+}
+
+.summary-list {
+    border: 1px solid #eee; /* Even lighter gray */
+    display: none;
+    margin-left: 20px;
+    border: 1px solid #eee; /* Even lighter gray */
+    border-radius: 5px;
+}
+
+.summary-list li {
+    list-style-type: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.summary-list li div {
+    margin-right: 50px;
+}
+
+.summary-sample-name {
+    font-weight: bold;
+    width: 300px;
+}
+
+.indicators {
+    display: flex;
+    justify-content: space-between;
+}
+.indicators span {
+    margin-right: 30px;
+}
+
+.workflow-name {
+    margin-left: 10px;
+    margin-right: 20px;
+    align-self: center;
+}
+.outer-container {
+    margin-bottom: 20px; /* Adjust as needed */
+}
+
+.step-circle {
+    display: center;
+    float: right;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    line-height: 40px; /* Equal to the height */
+    text-align: center;
+    background-color: #ccc;
+    margin-right: 10px;
+    margin-left: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    align-items: center;
+}
+
+.step-circle-display {
+    position: relative;
+    display: center;
+    float: right;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    line-height: 40px; /* Equal to the height */
+    text-align: center;
+    background-color: #ccc;
+    margin-right: 10px;
+    margin-left: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    align-items: center;
+}
+
+.software_off {
+    background-color: #ccc;
+}
+
+.software_on {
+    background-color: #007bff;
+    color: white;
+}
+
+.workflow-title {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+    background-color: #f9f9f9; /* Light gray background */
+    border-radius: 5px;
+    margin-bottom: 0px;
+    margin-right: 20px;
+}
+
+.workflow-name {
+    font-size: 1.2em;
+    font-weight: bold;
+    width: 120px;
+
+}
+.step-container {
+    display: flex;
+    justify-content: flex-start; /* Align items to the start of the container */
+    align-items: center;
+    padding: 5px;
+    border-right: 2px solid #e0e0e0; /* Even lighter gray */
+    padding-right: 10px;
+    margin-right: 20px;
+}
+
+.workflow-info {
+    display: flex;
+    align-items: center; /* Centers children vertically */
+    border-right: 2px solid #e0e0e0; /* Even lighter gray */
+    padding: 5px;
+    padding-right: 25px;
+    margin-right: 20px;
+}
+
+
+.parameters-container {
+    border-radius: 5px;
+    background-color: #e0e0e0; /* Light gray background */
+    transition: opacity 0.5s ease-in-out, width 0.5s ease-in-out;
+    opacity: 0;
+    max-width: 0;
+    overflow: hidden;
+    white-space: nowrap; /* Prevent the text from wrapping */
+}
+
+.parameters-container.visible {
+    padding: 5px;
+    padding-left: 10px;
+    padding-right: 10px;
+    margin-right: 10px; /* Adjust as needed */
+    margin-left: 10px; /* Adjust as needed */
+}
+
+.parameters-container-hover {
+    color: #000;
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    border-radius: 5px;
+    border: 2px solid #ccc;
+    background-color: #e0e0e0; /* Light gray background */
+    transition: opacity 0.5s ease-in-out, width 0.5s ease-in-out;
+    overflow: hidden;
+    white-space: nowrap; /* Prevent the text from wrapping */
+    padding: 5px;
+    padding-left: 10px;
+    padding-right: 10px;
+    margin-right: 10px; /* Adjust as needed */
+    margin-left: 10px; /* Adjust as needed */
+    top: 50%;
+    left: 50%;
+    transform: translate(0%, -0%);
+    /* other styles... */
+    z-index: 1; /* Ensure it appears above the step-circle-display */
+
+}
+
+
+.workflow-dialog {
+    max-width: 90%; /* Adjust as needed */
+}
+
+.workflow-modal-body {
+    margin-left: 10px;
+}
+
+.mapSamplesButton {
+    cursor: pointer;
+}
+
+.btn {
+    cursor: pointer;
+}
+
+.large-icon {
+    font-size: 20px; /* Or any size you prefer */
+}
+
+.workflow-mapped {
+    align-self: center;
+    background-color: #b3b3b3;
+    border: none;
+    color: #000;
+    text-align: center;
+    text-decoration: none;
+    margin: 0px 5px;
+    margin-right: 6px;
+    padding: 8px 8px;
+    border-radius: 5px;
+    font-size: 15px;
+    font-weight: bold;
+    font-family: Arial, sasns-serif;
+}
+
+.workflow-summary {
+    align-self: center;
+    border: none;
+    text-align: center;
+    text-decoration: none;
+    margin: 0px 5px;
+    margin-right: 10px;
+    padding: 8px 8px;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: bold;
+    font-family: Arial, sasns-serif;
+}
+
+
+.stackSamplesButton {
+    justify-content: center;
+    margin-right: 20px;
+    background-color: #e0e0e0; /* Green background */
+    border-radius: 50%; /* Make it circular */
+    color: #007bff; /* White icon */
+    padding: 10px; /* Space around the icon */
+    cursor: pointer; /* Change cursor to pointer when hovering over the icon */
+    transition: background-color 0.3s ease; /* Smooth transition */
+}
+
+.stackSamplesButton:hover {
+    background-color: #b3b3b3; /* Darker green background when hovering */
+}
+
+.stackSamplesIGV {
+    justify-content: center;
+    margin-right: 10px;
+    background-color: #e0e0e0; /* Green background */
+    border-radius: 50%; /* Make it circular */
+    color: #007bff; /* White icon */
+    padding: 10px; /* Space around the icon */
+    cursor: pointer; /* Change cursor to pointer when hovering over the icon */
+    transition: background-color 0.3s ease; /* Smooth transition */
+}
+
+.stackSamplesIGV:hover {
+    background-color: #b3b3b3; /* Darker green background when hovering */
+}
+
+
+
+.stackSamplesVCF {
+    justify-content: center;
+    margin-right: 10px;
+    background-color: #e0e0e0; /* Green background */
+    border-radius: 50%; /* Make it circular */
+    color: #007bff; /* White icon */
+    padding: 10px; /* Space around the icon */
+    cursor: pointer; /* Change cursor to pointer when hovering over the icon */
+    transition: background-color 0.3s ease; /* Smooth transition */
+}
+
+.stackSamplesVCF:hover {
+    background-color: #b3b3b3; /* Darker green background when hovering */
+}
+
+

@@ -18,6 +18,7 @@
         <link rel="stylesheet" href="{% static 'css/result_table.css' %}" />
         <link rel="stylesheet" href="{% static 'css/result_detail.css' %}" />
         <link rel="stylesheet" href="{% static 'css/result_detail_buttons.css' %}" />
+        <link rel="stylesheet" href="{% static 'css/televir_sample_compound.css' %}" />
         <link rel="stylesheet" href="{% static 'css/televir_software_graph/collapsibleTree-0.1.6/collapsibleTree.css' %}" />
 {% endblock css %}
 
@@ -37,208 +38,11 @@
 
 
 {% block content %}
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script type="text/javascript" src="{% static 'js/televir_projects/heatmap_clades.js' %}"></script>
 
-<style>
-
-    .table tr.igv_tab.open .card-block {
-        max-height: 2001px;
-        transition: max-height .5s;
-        transition-timing-function: ease-in;
-    }
-
-    .table tr.igv_tab .card-block {
-        max-height: 0px;
-        transition: max-height .7s;
-        transition-timing-function: ease-out;
-    }
-
-    .table tr.igv_tab.open .igv-root-div {
-        max-height: 2001px;
-        transition: max-height .8s;
-        transition-timing-function: ease-in;
-    }
-
-    .table tr.igv_tab .igv-root-div {
-        max-height: 0px;
-        transition: max-height .5s;
-        transition-timing-function: ease-out;
-    }
-
-    .table tr.igv_tab.open .igv-navbar {
-        max-height: 2001px;
-        transition: max-height .3s;
-        transition-timing-function: ease-in;
-    }
-
-    .table tr.igv_tab .igv-navbar {
-        max-height: 0px;
-        transition: max-height .3s;
-        transition-timing-function: ease-out;
-    }
-
-    .table tr.igv_tab.open .igv-loader {
-        max-height: 2001px;
-        transition: max-height .3s;
-        transition-timing-function: ease-in;
-    }
-
-    .table tr.igv_tab .igv-loader {
-        max-height: 0px;
-        transition: max-height .3s;
-        transition-timing-function: ease-out;
-    }
-
-    .parent {
-        border: 1px solid #ddd;
-        padding: 8px;
-        text-align: center;
-        height: 80px;
-    }
-
-    .parent:hover {
-        background-color: #ddd;
-    }
-    
-
-    a:link {
-        color: #2b2bcf;
-        background-color: transparent;
-        text-decoration: none;
-    }
-    
-    a:visited {
-        color: blueviolet;
-        background-color: transparent;
-        text-decoration: none;
-    }
-    
-    a:hover {
-        color: blue;
-        background-color: transparent;
-        text-decoration: underline;
-    }
-    
-    a:active {
-        color: cornflowerblue;
-        background-color: transparent;
-        text-decoration: underline;
-    }
-    
-    .column {
-        float: left;
-        padding: 10px;
-    }
-
-
-    .left {
-        width: 70%;
-    }
-
-    .right {
-        width: 30%;
-        postion: absolute;
-
-    }
-
-    .left_small {
-
-        width: 30%;
-    }
-
-    .center {
-        width: 40%;
-    }
-
-    form {
-        padding: 12px;
-        position: relative;
-    }
-
-    .modebar {
-        display: none !important;
-    }
-    
-    .row {
-        border: none;
-        border-radius: 8px;
-        padding: 1px;
-        border-color: #b0b0b07d;
-    }
-    
-    #cov_div {
-        width: 100%;
-        height: 100%;
-        top: 0;
-        left: 0;
-    }
-
-    .table td, .table th {
-        vertical-align: middle;
-        
-    }
-      
-
-    
-    .header {
-    background: #3498db;
-    color: #fff;
-    }
-    
-    .collapse-report span {
-    cursor: pointer;
-    background: #2cc16a;
-    transition: background .5s;
-    }
-    
-    .active span {
-    background: #fff;
-    }
-    
-    .table tr.collapse-report .table__wrapper {
-    max-height: 0px;
-    overflow: hidden;
-    transition: max-height .8s;
-    }
-    
-    .table tr.active .table__wrapper {
-    max-height: 2000px;
-    transition: max-height .8s;
-    }
-    
-
-    .table-inner td p {
-    margin: 0;
-    }
-    
-    .table tr.igv_tab.open {
-    max-height: 2001px;
-    transition: max-height 1s;
-    }
-
-    .table tr.igv_tab {
-    max-height: 0px;
-    transition: max-height 1s;
-    }
-
-    .table td {
-    padding-top: 0rem;
-    padding-bottom: 0rem;
-    border-top: 0px;
-    }
-
-    .table tr.head {
-    height: 1rem;
-    border-top: 1px;
-    }
-
-    .select option.hidden_option{
-        display: none;
-    }
-
-</style>
 
 {% if owner %}
-
 
 <div id="accordion1" role="tablist" aria-multiselectable="true">
     <div class="card">
@@ -261,27 +65,35 @@
                 </div>
             </div>
         </div>
-        {% if runs_number %}
+        {% if runs_number %} 
         <div id="collapsehead" class="collapse show" role="tabpanel" aria-labelledby="headingsample">
             <div class="card-block">
                 <div style="padding: 20px">
                     
                     <div class="row">
-                        <div class="col-sm-2">
-                            {% for run in runs %}
-                            <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Workflow {{run.parameter_set.leaf.index}} report </a>
-                            <br>
-                            <br>
+                        <div class="col-sm-2 link-container">
+                            {% for run in runs_pipeline %}
+                            <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Workflow report {{run.parameter_set.leaf.index}} </a>
+
+                            {% endfor %}
+                            {% for run in runs_mapping %}
+                            <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Mapping report {{run.parameter_set.leaf.index}}  </a>
                             {% endfor %}
                         </div>
                         {% if graph_json %}
-                        <div class="col-sm-10">
-                                <div id="{{graph_id}}" style="width:95%;height:250px;position:center;" class="collapsibleTree html-widget"></div>
+
+                        <div class="col-sm-9">
+                                <div id="{{graph_id}}" style="width:95%;height:{{graph_height}}px;position:center;" class="collapsibleTree html-widget"></div>
                                 <script type="application/json" data-for="{{graph_id}}">{{graph_json|safe}}</script>
+                        </div>
+                        <div class="col-sm-12">
+                            <div class="info-icon">
+                              <img src="{% static "img/pipeline_steps_classification.jpg" %}" alt="Graph Information">
+                              <i class="fa fa-info-circle"></i>
+                            </div>
                         </div>
                         {% endif %}
                     </div>
-                    
                 </div>
             </div>
         </div>
@@ -310,17 +122,81 @@
                     <a href="#" id="report_download" class="btn btn-primary dark"> 
                         <span class="hidden-phone"></span>Download as TSV </a>
                     </div>
+
+                    {% if sort_performed %}
+                    <div class="float-right overlap-button">
+                        <a href="#" class="summary-header btn btn-primary dark"> 
+                            <span>Read Overlap Summary</span>
+                        </a>
+                    </div>  
+                    {% endif %}
                 </div>
             </div>
         </div>
-        
+        {% if sort_performed %}
+        <div id="summary" class="collapsible">
+            <div class="card-block collapsible-summary" style="display: none;">
+                <div style="padding: 20px; padding-bottom: 0px">
+                    <div class="row">
+                        <div class="col-sm">
+                            <p> 
+                            <p> 
+                                Shared read analysis recovered <strong>{{ groups_count }} groups of references</strong>.
+                            </p> 
+
+                        </div>
+                    </div>
+                </div>
+                {% if clade_heatmap_json_exists %}
+                <div style="padding: 20px; padding-top: 0px">
+                    <div class="row">
+                        <div class="col-sm">
+                            <p> 
+                                The shared heatmap displays the proportion of reads of one group (column) that are shared with another group (row).
+                                Groups are sorted by maximum coverage. If the heatmap is not visible, please re-run sorting for this sample. 
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div id="clade-heatmap" class="plot-container">
+                </div>
+                <script>
+                    createHeatmapClades('{{ clade_heatmap_json|safe }}', "clade-heatmap");
+                </script>
+                {% if overlap_heatmap_available %} 
+                <div id="plot" class="plot-container">
+                    <img src={{overlap_heatmap_path}} alt="Image">
+                </div>
+                {% endif %}
+                {% endif %}
+                <div style="padding: 20px">
+                    <div class="row">
+                        <div class="col-sm">
+                            <p> 
+                                <i class="fa fa-exclamation-circle"></i> <strong>
+                                    We recommend manual inspection of the results
+                                    using the within-group <strong>Read Overlap</strong> heatmaps. 
+                                    Group sorting aims at identifying cross-hits and false positives. While robust, this method may mask similar true positive hits. </strong>
+                            </p>
+                            <p>
+                                <i class="fa fa-exclamation-circle"></i> <strong>
+                                This sorting algorith is taxonomy-blind. Groups are constructed according to a minimum shared mapped read threshold of <strong>{{ min_shared_reads }} % </strong> between between remapped hits. </strong>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        {% endif %}
+
         <div id="collapseReport" class="collapse show" role="tabpanel" aria-labelledby="headingReport">
             <div class="card-block">
                 <div style="padding: 2px; overflow-x:auto;">    
                     <table class="table" width="100%" id="report_table">
                     <thead>
                         <tr class="header">
-                            <th>Description</th>
+                            <th class="description-column">Description</th>
                             <th>Taxid</th>
                             <th>accID</th>
                             <th>Workflows</th>
@@ -332,6 +208,12 @@
                             <th>mapped_prop (%)</th>
                             <th>Gaps</th>
                             <th>Windows Covered</th>
+                            {% if private_reads_available %}
+                            <th>Private reads</th>
+                            {% endif %}
+                            {% if error_rate_available %}
+                            <th>Mismatch rate</th>
+                            {% endif %}
                             <th>class. success</th>
                             <th>mapping success</th>                
                             <th>Warning</th>
@@ -342,15 +224,87 @@
                     </thead>
                     <tbody>
                         {% for final_report in report_list %}
-                        {% for value in final_report %}
-                        <tr class="parent">
-                            <td data-title="Description"><a href="#" id="plot_show" >{{value.description}}</a></td>
+                        <tr>
+                            <td colspan="100%">
+                                <div class="custom-section-container">
+                                    {% if final_report.has_multiple %}
+                                    <div class="primary-row" style= "margin-top: 2px;">
+                                        <button class="showSecondaryRows" type="button" group-name="{{final_report.name}}" title="Toggle Secondary Rows">
+                                            <i class="fa fa-toggle-off toggle-icon"></i>
+                                        </button>                                        
+                                    </div>
+                                     {% else %}
+                                     <div class="primary-row" style="visibility: hidden; ">
+                                        <button class="showSecondaryRows" type="button" style="visibility: hidden;">
+                                            <i class="fa fa-toggle-off toggle-icon"></i>
+                                        </button>                                        
+                                    </div>
+                                    {% endif %}
+                                    <!-- First section -->
+                                    <div class="custom-section" id="info_{{ final_report.name }}">
+                                        {{final_report.name}}
+                                    </div>
+                                    {% if final_report.private_counts_exist %}
+                                    <!-- Second section -->
+                                    <div class="custom-section">
+                                        private reads: {{final_report.private_counts}}
+                                    </div>
+                                    {% endif %}
+                                    <!-- Third section -->
+                                    <div class="custom-section">
+                                        private reads proportion: {{final_report.private_proportion}}
+                                    </div>
+                                    <!-- Forth section -->
+                                    <div class="custom-section">
+                                        Group size {{final_report.group_list|length}}
+                                    </div>
+                                    <div class="custom-section">
+                                        <a href="#" id="showButton" class="custom-link">Read Overlap</a>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% if final_report.js_heatmap_ready %}
+                        <tr class="row-to-toggle" id="rowToToggle" style="display: none;">
+                            <td colspan="16">
+                                <div id="plot-{{final_report.name}}" class="plot-container">
+                                   
+                                </div>
+                                <script>
+                                    createHeatmap('{{ final_report.js_heatmap_data|safe }}', "plot-{{final_report.name}}");
+                                </script>
+
+                            </td>
+                        </tr>
+                        {% elif final_report.heatmap_exists %}
+                        <tr class="row-to-toggle" id="rowToToggle" style="display: none;">
+                            <td colspan="100%">
+                                <div id="plot" class="plot-container">
+                                    <img src={{final_report.heatmap_path}} alt="Image">
+                                </div>
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% for value in final_report.group_list %}
+                        <tr class="parent {{value.row_class_name}}"  style="display: {{value.display}}" id="row_{{value.accid}}" group-name="{{final_report.name}}" first="{{value.first_in_group}}" accid>
+                            <td data-title="Description" style="text-align: left;">
+                                {% if value.first_in_group %}
+                                {% if final_report.has_multiple %}
+                                        <i class="fa fa-empty sort-icon"  title="Best Coverage"></i>
+                                {% else %}
+                                        <i class="fa fa-empty sort-icon"  title="Best Coverage"></i>
+                                
+                                {% endif %}
+                                
+                                {% endif %}
+                                <a href="#" id="plot_show" >{{value.description}}</a>
+                            </td>                         
                             <td data-title="Taxid">{{value.taxid}}</td>
                             <td data-title="accID">
                                 <a href={{value.accid|link_ncbi}}>{{value.accid}}</a>
                             </td>
-                            <td data-title="Support">{{value.found_in}}</td>
-                            <td data-title="Cov" style="{{ value.coverage|color_code }}">
+                            <td data-title="Support" {% if value.found_in == "M" %} class="map-only-cell" {% endif %} >{{value.found_in}}</td>                                
+                            <td data-title="Cov" style="{% depth_color value.coverage max_coverage %}">
                                 {{value.coverage|round}}</td>
                             <td data-title="Depth" style="{% depth_color value.depth value.run_detail.max_depth %}">
                                 {{value.depth|round}}</td>
@@ -364,8 +318,16 @@
                                 {{value.mapped_proportion|round_to_int}}</td>
                             <td data-title="Gaps" style="{% depth_color value.ngaps value.run_detail.max_gaps %}">
                                 {{value.ngaps}}</td>
-                            <td data-title="Windows Covered">
+                            <td data-title="Windows Covered" style="{% depth_color_windows value.windows_covered max_windows_covered %}">
                                 {% windows_safe value.windows_covered %}</td>
+                            {% if private_reads_available %}
+                            <td data-title="Private reads" style="{% depth_color value.private_reads final_report.max_private_reads %}">
+                                {{value.private_reads}}</td>
+                            {% endif %}
+                            {% if error_rate_available %}
+                            <td data-title="Error rate" style="{% depth_color_error value.error_rate max_error_rate %}">
+                                {{value.error_rate}}</td>
+                            {% endif %}
                             <td data-title="class. success" style="{% success_count_color value.classification_success %}">
                                 {{value.classification_success}}</td>
                             <td data-title="mapping success" style="{% success_count_color value.mapping_success %}">
@@ -374,12 +336,11 @@
                                 {% flag_false_positive value.depth value.depthR value.coverage value.mapped_reads value.windows_covered project_index %}</td>
                             {% if in_control %}
                             <td data-title="Control" style="{% flag_control_color value.control_flag %}">
-                                {% flag_control value.control_flag %}</td>
+                                {{ value.control_flag_str }}</td>
                             {% endif %}
-
                         </tr>
-                        <tr class="collapse-report">
-                        <td colspan="14">
+                        <tr class="collapse-report" group-name="{{final_report.name}}">
+                        <td colspan="18">
                             <div class="table__wrapper">
                             <table class="table table-inner">
                                 <tbody>
@@ -422,7 +383,7 @@
         
                                     {% if value.coverage > 0 %}
                                     <tr class="igv_tab" id="igv_display_{{value.accid}}">
-                                        <td colspan="14" align="center">
+                                        <td colspan="18" align="center">
                                             <div class="card-block">
                                                 <div class="container-fluid">
                                                     <div class="igv-loader" id="loader_igv_{{value.accid}}"><img src="{{ spinner_url }}"/></div>
@@ -441,8 +402,8 @@
                                         <td colspan="1" align="center">
                         
                                             <div style="position:relative height=100%" >
-                                                <button class="btn btn-primary" id="igv_browse" type="button" project_pk="{{project_index}}" sample_pk="{{sample_index}}" 
-                                                run_pk="{{value.run_index}}" accid="{{value.accid}}" reference_id="{{value.unique_id}}" >IGV</button>
+                                                <button class="igv_browse btn btn-primary" id="igv_browse" type="button" project_pk="{{project_index}}" sample_pk="{{sample_index}}" sample_name="{{ sample }}"
+                                                run_pk="{{value.run_index}}" accid="{{value.accid}}" show-igv-url="{% url 'igv_browser' %}" reference_id="{{value.unique_id}}" >IGV</button>
                                             </div>
                                             {% if value.data_exists %}
                                             <div id="cov_div" >
@@ -497,7 +458,7 @@
         
                                     {% endif %}
                                     {% if value.refa_dotplot_exists == True %}
-                                    <tr class="detail">
+                                    <tr class="detail ">
                                         <td colspan="1" align="center">
                                             <p>Assembly to reference dotplot</p>
                                         </td>
@@ -544,8 +505,9 @@
                         </td>
                         </tr>
                     {% endfor %}
+
                     <tr class="detail" style="background-color: #f2f2f2; padding: 0px; margin: 0px; border: 0px;">
-                        <td colspan="16" align="center" style="padding: 0px; margin: 0px">
+                        <td colspan="18" align="center" style="padding: 0px; margin: 0px">
                             <hr class="solid" style="height: 1px; background-color: #000000; margin: 0px;">
                         </td>
                     </tr>
@@ -564,22 +526,6 @@
 {% load static from staticfiles%}
 {% block js %}
 
-<script type="text/javascript">
-
-    $("tr.parent").find("A#plot_show").click(function(e) {
-
-        if (e.target.tagName === "A" && e.target.id === "plot_show") {
-            e.preventDefault();
-            var parent_tr = e.target.parentNode.parentNode;
-            var child_tr = nextTr(parent_tr);
-            $(child_tr).toggleClass("active");
-            
-        }   
-
-      });
-      
-</script>
-
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.min.js"></script>
 <script type="text/javascript" src="https://igv.org/web/release/2.3.3/dist/igv.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/es5-shim/4.5.7/es5-shim.min.js"></script>
@@ -589,348 +535,48 @@
 <script type="text/javascript" src="{% static 'js/graph_televir/htmlwidgets-1.6.2/htmlwidgets.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/graph_televir/d3-4.10.2/d3.min.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/graph_televir/collapsibleTree-binding-0.1.7/collapsibleTree.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/televir_projects/sample_detail.js' %}"></script>
 
 
 <script type="text/javascript">
 
-    //document.getElementById("igv_browse").addEventListener("click", function (e) {
-    $(document).on('click', '.btn', function (e) {
-        if (e.target.id == "igv_browse") 
-            var accid=$(this).attr('accid');
-            var igv_display = document.getElementById('igv_display_' + accid);
-            var igv_display_status= igv_display.style.display;
-            var igv_display_className= igv_display.className;
+
+    var buttons = document.querySelectorAll('.showSecondaryRows, .showSecondaryRows i');
+    for (var b = 0; b < buttons.length; b++) {
+        buttons[b].addEventListener('click', function(event) {
+            event.stopPropagation();
+            var button = event.target.closest('.showSecondaryRows');
+            var groupName = button.getAttribute('group-name');
+            var allRows = document.querySelectorAll('.secondary-row[group-name="' + groupName + '"]');
+            var icon = button.querySelector('.toggle-icon');
             
-            if (/\bopen\b/.test(igv_display_className)){
-                igv_display.className= igv_display.className.replace(" open",'');
-                setTimeout(function() {
-                    var show_igv_div = document.getElementById('show_igv_' + accid);
-                    show_igv_div.innerHTML = "";
-                }, 300);
+            for (var i = 0; i < allRows.length; i++) {
+                if (allRows[i].classList.contains('parent')) {
+                    if (allRows[i].style.display === 'none') {
+                        allRows[i].style.display = 'table-row';
+                        icon.classList.remove('fa-toggle-off');
+                        icon.classList.add('fa-toggle-on');
+                    } else {
 
-            }else{
-                igv_display.className += " open";
-                show_igv($(this));
-            }
-    });
+                        inner_row= nextTr(allRows[i]);
+                        if ($(inner_row).hasClass("active")) {
+                            $(inner_row).toggleClass("active");
+                        }       
 
-    function replace_igv_div(accid) {
-        var show_igv_div = document.getElementById('show_igv_' + accid);
-        var igv_display = document.getElementById('igv_display_' + accid);
-        
-        show_igv_div.innerHTML = "";
-    }
-
-</script>
-
-
-<script type="text/javascript">
-
-    function show_igv(item) {
-        var accid=item.attr('accid');
-        var project_pk= item.attr('project_pk');
-        var sample_pk= item.attr('sample_pk');
-        var run_pk = item.attr('run_pk');
-        var unique_id = item.attr('reference_id');
-        var url = "{% url 'igv_browser' %}";
-
-        $.ajax({
-            /// spin 
-            beforeSend: function() {
-                $('#igv_display_' + accid).show();
-            },
-            complete: function(){
-                $('#igv_display_' + accid).hide();
-            },
-            
-            data : { 
-                'project_pk': project_pk,
-                'sample_pk': sample_pk,
-                'run_pk': run_pk,
-                'unique_id': unique_id,
-                'accid': accid,
-            }, // data sent with the get request
-            
-            url: url,
-
-            success: function (data) {
-                if (data['is_ok']) {
-                    
-                    /// set the files names
-                    $('#bam_file_id').empty()
-                    $('#bam_file_id').append(data['bam_file_id'])
-                    $('#bai_file_id').empty()
-                    $('#bai_file_id').append(data['bai_file_id'])
-                    $('#vcf_file_id').empty()
-                    $('#vcf_file_id').append(data['vcf_file_id'])
-                    $('#reference_id').empty()
-                    $('#reference_id').append(data['reference_id'])
-                    $('#reference_index_id').empty()
-                    $('#reference_index_id').append(data['reference_index_id'])
-                    
-                    /// set options 
-                    options = {
-                            showNavigation: true,
-                            showRuler: true,
-                            showChromosomeWidget: true,
-                            reference: {
-                            id: data['reference_name'],
-                            fastaURL: data['path_reference'],
-                            indexURL: data['path_reference_index'],
-                        },
-                        trackDefaults: {
-                            bam: {
-                                coverageThreshold: 0.2,
-                                coverageQualityWeight: true
-                            }
-                        },
-                            tracks: [
-                            {
-                                type: "bam",
-                                url: data['path_bam'],
-                                height: 500,
-                                autoHeight: false,
-                                viewAsPairs: false,
-                                name: data['sample_name'],
-                                colorBy: "firstOfPairStrand",
-                            },                        
-                        ]
+                        allRows[i].style.display = 'none';
+                        icon.classList.remove('fa-toggle-on');
+                        icon.classList.add('fa-toggle-off');
+             
                     }
-
-                    browser = igv.createBrowser(document.getElementById('show_igv_' + accid), options);
                 }
-                else{
-                    $('#show_igv_' + accid).append('<div class="alert alert-warning alert-dismissable"><strong>Fail</strong> to load bam file.</div>')
-                }
-            },
-            
-            // handle a non-successful response
-            error : function(xhr,errmsg,err) {
-                $('#show_igv_' + accid).append('<div class="alert alert-warning alert-dismissable"><strong>Fail</strong> to load bam file.</div>')
-                console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
             }
         });
     }
 
-
-</script>
- 
-<script>
-    var my_form = document.forms["igv_display_{{value.accid}}"];
-    my_form.elements["sample_pk"].value = "{{sample_index}}";
-    my_form.elements["run_pk"].value = "{{run_index}}";
-    my_form.elements["reference"].value = "{{value.simple_id}}";
-    my_form.elements["unique_id"].value = "{{value.unique_id}}";
-    my_form.elements["project_pk"].value = "{{project_index}}";
-    document.getElementById("my_form").submit();
 </script>
 
+{% endblock js %}
 
-<script>
-    var my_form = document.forms["download_params"];
-    var static_dir = "{% static 'classification_reports/' %}";
-    my_form.elements["file_path"].value = static_dir + "{{run_main.params_file_path}}";
-    document.getElementById("my_form").submit();
-</script>
-
-<script>
-    var my_form = document.forms["download_processed_reads_r1"];
-    var static_dir = "{% static 'depleted_reads/' %}";
-    my_form.elements["file_path"].value = static_dir + "{{run_main.processed_reads_r1}}";
-    document.getElementById("my_form").submit();
-</script>
-<script>
-    var my_form = document.forms["download_processed_reads_r2"];
-    var static_dir = "{% static 'depleted_reads/' %}";
-    my_form.elements["file_path"].value = static_dir + "{{run_main.processed_reads_r2}}";
-    document.getElementById("my_form").submit();
-</script>
-<script>
-    var my_form = document.forms["download_assembly"];
-    var static_dir = "{% static 'assemblies/' %}";
-    my_form.elements["file_path"].value = static_dir + "{{assembly.assembly_contigs}}";
-    document.getElementById("my_form").submit();
-</script>
-<script>
-    var my_form = document.forms["download_contig_class_report"];
-    var static_dir = "{% static 'classification_reports/' %}";
-    my_form.elements["file_path"].value = static_dir + "{{contig_classification.contig_classification_report}}";
-    document.getElementById("my_form").submit();
-</script>
-<script>
-    var my_form = document.forms["download_read_class_report"];
-    var static_dir = "{% static 'classification_reports/' %}";
-    my_form.elements["file_path"].value = static_dir + "{{read_classification.read_classification_report}}";
-    document.getElementById("my_form").submit();
-</script>
-<script>
-    var my_form = document.forms["merged_report_download"];
-    var static_dir = "{% static 'classification_reports/' %}";
-    my_form.elements["file_path"].value = static_dir + "{{run_remap.merged_log}}";
-    document.getElementById("my_form").submit();
-</script>
-<script>
-    var my_form = document.forms["download_remap_plan"];
-    var static_dir = "{% static 'classification_reports/' %}";
-    my_form.elements["file_path"].value = static_dir + "{{run_remap.remap_plan}}";
-    document.getElementById("my_form").submit();
-</script>
-
-<script>
-    var my_form = document.forms["download_bam_{{value.accid}}"];
-    var static_dir = "{% static 'classification_reports/' %}";
-    my_form.elements["file_path"].value = static_dir + "{{value.path_bam}}";
-    document.getElementById("my_form").submit();
-</script>
-<script>
-    var my_form = document.forms["download_bai_{{value.accid}}"];
-    var static_dir = "{% static 'igv_files/' %}";
-    my_form.elements["file_path"].value = static_dir + "{{value.path_bai}}";
-    document.getElementById("my_form").submit();
-</script>
-<script>
-    var my_form = document.forms["download_mapped_r1_{{value.accid}}"];
-    var static_dir = "{% static 'igv_files/' %}";
-    document.getElementById("my_form").submit();
-</script>
-<script>
-    var my_form = document.forms["download_mapped_r2_{{value.accid}}"];
-    var static_dir = "{% static 'igv_files/' %}";
-    document.getElementById("my_form").submit();
-</script>
-<script>
-    var my_form = document.forms["download_reference_{{value.accid}}"];
-    var static_dir = "{% static 'igv_files/' %}";
-    my_form.elements["file_path"].value = static_dir + "{{value.reference_path}}";
-    document.getElementById("my_form").submit();
-</script>
-<script>
-    var my_form = document.forms["download_reference_index_{{value.accid}}"];
-    var static_dir = "{% static 'igv_files/' %}";
-    my_form.elements["file_path"].value = static_dir + "{{value.reference_index_path}}";
-    document.getElementById("my_form").submit();
-</script>
-<script>
-    var my_form = document.forms["remap_paf_{{value.accid}}"];
-    var static_dir = "{% static 'igv_files/' %}";
-    my_form.elements["file_path"].value = static_dir + "{{value.reference_assembly_paf}}";
-    document.getElementById("my_form").submit();
-</script>
-<script>
-    var my_form = document.forms["mapped_scaffolds_{{value.accid}}"];
-    var static_dir = "{% static 'igv_files/' %}";
-    my_form.elements["file_path"].value = static_dir + "{{value.mapped_scaffolds_path}}";
-    document.getElementById("my_form").submit();
-</script>
-<script>
-    var my_form = document.forms["mapped_scaffolds_index_{{value.accid}}"];
-    var static_dir = "{% static 'igv_files/' %}";
-    my_form.elements["file_path"].value = static_dir + "{{value.mapped_scaffolds_index_path}}";
-    document.getElementById("my_form").submit();
-</script>
-
-
-
-<script type="text/javascript">
-
-    $(document).on("click", "a", function (e) {
-        
-        var id= $(this).attr("id");
-        var ref_id= $(this).attr("ref_id");
-        if (id === "remap_reference") {
-            e.preventDefault();
-            $.ajax({
-                url: "{% url 'deploy_televir_map' %}",
-                type: "POST",
-                data: {
-                    'csrfmiddlewaretoken': '{{ csrf_token }}',
-                    'reference_id': ref_id
-                },
-                success: function (data) {
-                    if (data["is_ok"] === true) {
-                        alert("Reference remap deployed");
-                    } else {
-                        alert("Reference remapping failed");
-                    }
-                },
-                error: function (data) {
-                    alert("Reference remapping failed");
-                }
-            });
-        }
-    });
-
-
-    function nextTr(row) {
-    while ((row = row.nextSibling) && row.nodeType != 1);
-    return row;
-    }
-
-</script>
-
-
-<script>
-    document.getElementById("report_download").addEventListener("click", function(e){
-        console.log("download");
-        e.preventDefault();
-        download_table_as_csv("report_table")
-    })
-
-    function download_table_as_csv(table_id, separator = '\t') {
-        // Select rows from table_id
-        var rows = document.querySelectorAll('table#' + table_id + ' tr');
-        // Construct csv
-        var csv = [];
-        for (var i = 0; i < rows.length; i++) {
-            var row = [],
-                cols = rows[i].querySelectorAll('td, th');
-                        
-            if ( rows[i].className == "header" ) {
-            
-                for (var j = 0; j < cols.length; j++) {
-                    // Clean innertext to remove multiple spaces and jumpline (break csv)
-                    var data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, '').replace(/(\s\s)/gm, ' ')
-                    // Escape double-quote with double-double-quote (see https://stackoverflow.com/questions/17808511/properly-escape-a-double-quote-in-csv)
-                    data = data.replace(/"/g, '""');
-                    // Push escaped string
-                    row.push(data);
-                }
-                csv.push(row.join(separator));
-            }
-
-            if ( rows[i].className == "parent" ) {
-            
-                for (var j = 0; j < cols.length; j++) {
-                    // Clean innertext to remove multiple spaces and jumpline (break csv)
-                    var data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, '').replace(/(\s\s)/gm, ' ')
-                    // Escape double-quote with double-double-quote (see https://stackoverflow.com/questions/17808511/properly-escape-a-double-quote-in-csv)
-                    data = data.replace(/"/g, '""');
-                    // Push escaped string
-                    row.push(data);
-                }
-                csv.push(row.join(separator));
-            }
-        }
-        var csv_string = csv.join('\n');
-        // Download it
-        var filename = 'export_' + table_id + '_' + new Date().toLocaleDateString() + '.tsv';
-        var link = document.createElement('a');
-        //link.style.display = 'none';
-        link.setAttribute('target', '_blank');
-        link.setAttribute('href', 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv_string));
-        link.setAttribute('download', filename);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
-</script>
-
-<script>	
-  $('#id_go_back_button').on('click', function(){
-      wait_screen();
-  });
-</script>	
-{% endblock %}
 
 
 

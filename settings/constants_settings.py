@@ -35,11 +35,14 @@ class ConstantsSettings(object):
     PIPELINE_NAME_host_depletion = "Host depletion"
     PIPELINE_NAME_contig_classification = "Contig classification"
     PIPELINE_NAME_read_classification = "Read classification"
-    PIPELINE_NAME_metagenomics_combine = "Combined analysis"
+    PIPELINE_NAME_metagenomics_screening = "Screening"
+    PIPELINE_NAME_request_mapping = "Request Mapping"
     PIPELINE_NAME_assembly = "Assembly"
     PIPELINE_NAME_remapping = "Remapping"
     PIPELINE_NAME_remap_filtering = "Remap filtering"
+    PIPELINE_NAME_map_filtering = "Map filtering"
     PIPELINE_NAME_reporting = "Reporting"
+    PIPELINE_NAME_metagenomics_settings = "Metagenomics settings"
 
     ## values to upload to database
     vect_pipeline_names = [
@@ -55,18 +58,96 @@ class ConstantsSettings(object):
         PIPELINE_NAME_assembly,
         PIPELINE_NAME_contig_classification,
         PIPELINE_NAME_read_classification,
-        PIPELINE_NAME_metagenomics_combine,
+        PIPELINE_NAME_metagenomics_settings,
+        PIPELINE_NAME_request_mapping,
         PIPELINE_NAME_remapping,
         PIPELINE_NAME_remap_filtering,
+        PIPELINE_NAME_map_filtering,
         PIPELINE_NAME_reporting,
+        PIPELINE_NAME_metagenomics_screening,
+    ]
+
+    vect_pipeline_televir_classic = [
+        PIPELINE_NAME_extra_qc,
+        PIPELINE_NAME_viral_enrichment,
+        PIPELINE_NAME_host_depletion,
+        PIPELINE_NAME_assembly,
+        PIPELINE_NAME_contig_classification,
+        PIPELINE_NAME_read_classification,
+        PIPELINE_NAME_remapping,
+        PIPELINE_NAME_remap_filtering,
     ]
 
     vect_pipeline_televir_metagenomics = [
-        PIPELINE_NAME_metagenomics_combine,
-        PIPELINE_NAME_remapping,
-        PIPELINE_NAME_remap_filtering,
+        PIPELINE_NAME_extra_qc,
+        PIPELINE_NAME_viral_enrichment,
+        PIPELINE_NAME_host_depletion,
+        PIPELINE_NAME_metagenomics_settings,
+        PIPELINE_NAME_request_mapping,
+        PIPELINE_NAME_map_filtering,
         PIPELINE_NAME_reporting,
     ]
+
+    vect_pipeline_televir_metagenomics_for_parameters = (
+        vect_pipeline_televir_metagenomics + [PIPELINE_NAME_metagenomics_screening]
+    )
+
+    vect_pipeline_televir_screening = [
+        PIPELINE_NAME_extra_qc,
+        PIPELINE_NAME_viral_enrichment,
+        PIPELINE_NAME_host_depletion,
+        PIPELINE_NAME_map_filtering,
+        PIPELINE_NAME_metagenomics_screening,
+        PIPELINE_NAME_metagenomics_settings,
+    ]
+
+    vect_pipeline_televir_mapping_only = [
+        PIPELINE_NAME_extra_qc,
+        PIPELINE_NAME_viral_enrichment,
+        PIPELINE_NAME_host_depletion,
+        PIPELINE_NAME_request_mapping,
+        PIPELINE_NAME_map_filtering,
+        PIPELINE_NAME_reporting,
+    ]
+
+    vect_pipeline_televir_workflows_display = [
+        PIPELINE_NAME_extra_qc,
+        PIPELINE_NAME_viral_enrichment,
+        PIPELINE_NAME_host_depletion,
+        PIPELINE_NAME_request_mapping,
+        PIPELINE_NAME_map_filtering,
+    ]
+
+    vect_pipeline_televir_request_mapping = [
+        PIPELINE_NAME_extra_qc,
+        PIPELINE_NAME_viral_enrichment,
+        PIPELINE_NAME_host_depletion,
+        PIPELINE_NAME_request_mapping,
+        PIPELINE_NAME_map_filtering,
+        PIPELINE_NAME_reporting,
+    ]
+
+    vect_short_acronyms = {
+        PIPELINE_NAME_read_quality_analysis: "RQA",
+        PIPELINE_NAME_type_and_subtype_analysis: "TSA",
+        PIPELINE_NAME_variant_detection: "VD",
+        PIPELINE_NAME_coverage_analysis: "CA",
+        PIPELINE_NAME_alignment: "AL",
+        PIPELINE_NAME_intra_host_minor_variant_detection: "IHVD",
+        PIPELINE_NAME_extra_qc: "EQC",
+        PIPELINE_NAME_viral_enrichment: "VE",
+        PIPELINE_NAME_host_depletion: "HD",
+        PIPELINE_NAME_contig_classification: "CC",
+        PIPELINE_NAME_read_classification: "RC",
+        PIPELINE_NAME_metagenomics_screening: "MS",
+        PIPELINE_NAME_metagenomics_settings: "MS",
+        PIPELINE_NAME_request_mapping: "RM",
+        PIPELINE_NAME_assembly: "AS",
+        PIPELINE_NAME_remapping: "REM",
+        PIPELINE_NAME_remap_filtering: "REF",
+        PIPELINE_NAME_map_filtering: "MF",
+        PIPELINE_NAME_reporting: "REP",
+    }
 
     ###############################
     ### technology available
@@ -110,7 +191,7 @@ class ConstantsSettings(object):
     def vect_pipeline_televir_metagenomics_condensed(self) -> Dict[str, List[str]]:
         pipeline_steps_dict = {
             pipeline_step: self.pipeline_step_to_pipeline_name(pipeline_step)
-            for pipeline_step in self.vect_pipeline_televir_metagenomics
+            for pipeline_step in self.vect_pipeline_televir_metagenomics_for_parameters
         }
 
         pipeline_names_dict = self.reverse_set_dict(pipeline_steps_dict)
@@ -120,7 +201,6 @@ class ConstantsSettings(object):
     def pipeline_step_to_pipeline_name(self, pipeline_step: str) -> str:
         """
         Translate pipeline step names - use to combine steps."""
-        if pipeline_step == self.PIPELINE_NAME_remap_filtering:
-            return self.PIPELINE_NAME_remapping
-
+        if pipeline_step == self.PIPELINE_NAME_metagenomics_settings:
+            return self.PIPELINE_NAME_metagenomics_screening
         return pipeline_step

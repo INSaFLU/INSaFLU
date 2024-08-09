@@ -18,19 +18,21 @@ def coverage_col(coverage_value):
     ncol = f"background-color: rgba({cell_color}, {int(coverage_value)}%);"
     return ncol
 
+
 @register.filter(name="round_str")
 def round_str(value):
     if value is None or value == "":
         value = 0
-    value= float(value)
+    value = float(value)
     ncol = round(value, 2)
     return ncol
+
 
 @register.filter(name="round_str_perc_invert")
 def round_str(value):
     if value is None or value == "":
         value = 0
-    value= float(value)
+    value = float(value)
     ncol = round(100 - value, 2)
     return ncol
 
@@ -86,10 +88,54 @@ def map_success_col(success_count):
 
 
 @register.simple_tag
+def depth_color_error(depth_value, max_value):
+    if depth_value and max_value:
+        ncol = float(depth_value) * 100 / float(max_value)
+    else:
+        ncol = 0
+
+    ncol = 100 - ncol
+
+    ncol = f"background-color: rgba({cell_color}, {int(ncol)}%);"
+    return ncol
+
+
+@register.simple_tag
 def depth_color(depth_value, max_value):
     if depth_value and max_value:
         ncol = float(depth_value) * 100 / float(max_value)
     else:
+        ncol = 0
+
+    ncol = f"background-color: rgba({cell_color}, {int(ncol)}%);"
+    return ncol
+
+
+@register.simple_tag
+def depth_color_gaps(depth_value, max_value):
+    if depth_value and max_value:
+        ncol = float(depth_value) * 100 / float(max_value)
+    else:
+        ncol = 0
+
+    ncol = 100 - ncol
+
+    ncol = f"background-color: rgba({cell_color}, {int(ncol)}%);"
+    return ncol
+
+
+@register.simple_tag
+def depth_color_windows(window_value: str, max_prop):
+    if window_value and max_prop:
+        if "/" in window_value:
+            window_value = window_value.split("/")
+
+            window_value = int(window_value[0]) / int(window_value[1])
+        ncol = float(window_value) * 100 / float(max_prop)
+    else:
+        ncol = 0
+
+    if str(ncol) == "nan":
         ncol = 0
 
     ncol = f"background-color: rgba({cell_color}, {int(ncol)}%);"
@@ -111,6 +157,20 @@ def flag_false_positive(depth, depthc, coverage, mapped, windows_covered, projec
 
 
 @register.simple_tag
+def success_count_color(success):
+    counts_dict = {
+        "": 0,
+        "none": 0,
+        "reads": 1,
+        "contigs": 1,
+        "reads and contigs": 2,
+    }
+
+    ncol = f"background-color: rgba({cell_color}, {counts_dict[success] * 50}%);"
+    return ncol
+
+
+@register.simple_tag
 def flag_false_positive_color(
     depth, depthc, coverage, mapped, windows_covered, project_pk
 ):
@@ -124,26 +184,12 @@ def flag_false_positive_color(
     elif flag_build.assert_vestigial():
         return "background-color: rgba(255, 0, 0, 0.5);"
 
-    return ""
-
-
-@register.simple_tag
-def success_count_color(success):
-    counts_dict = {
-        "none": 0,
-        "reads": 1,
-        "contigs": 1,
-        "reads and contigs": 2,
-    }
-
-    ncol = f"background-color: rgba({cell_color}, {counts_dict[success] * 50}%);"
-    return ncol
+    return "background-color: rgba(169, 169, 169, 1);"  # Dark gray
 
 
 @register.simple_tag
 def flag_control_color(flag):
-    """
-    set background color to red if flag is True"""
+    """Set background color to red if flag is True, otherwise set it to dark gray."""
     if flag in [FinalReport.CONTROL_FLAG_PRESENT]:
         return "background-color: rgba(255, 0, 0, 0.5);"
-    return ""
+    return "background-color: rgba(169, 169, 169, 1);"  # Dark gray

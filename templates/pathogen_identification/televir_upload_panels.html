@@ -1,0 +1,75 @@
+{% extends '_layouts/base.html' %}
+
+{% load bootstrap4 %}
+{% load querystring from django_tables2 %}
+{% load title from django_tables2 %}
+{% load trans blocktrans from i18n %}
+{% load django_bootstrap_breadcrumbs %}
+{% load static %}
+{% load custom_tags %}
+
+
+{% block extra_messages %}
+<!-- set the messages -->
+<div class="container">
+	<div id="id_messages_remove"></div>
+</div>
+{% endblock %}
+
+{% block breadcrumbs %}
+{{ block.super }}
+{% breadcrumb "Project Index" "project-index" %}
+{% breadcrumb "TELEVIR Projects" "PIprojects_main" %}
+{% breadcrumb "Manage Project References" "televir_reference_files" %}
+{% breadcrumb "Upload New File" "" %}
+{% endblock %}
+
+
+{% block content %}
+
+{% block extra_head %}
+
+<link rel="stylesheet" href="{% static 'css/televir_references_nav.css' %}">
+<link rel="stylesheet" href="{% static 'css/televir_upload_file.css' %}">
+{% endblock %}
+
+<style>
+    .locked-input {
+        background-color: #e9ecef; /* Light grey background */
+        color: #6c757d; /* Dimmed text color */
+        cursor: not-allowed; /* Shows a 'not allowed' cursor when hovering */
+    }
+</style>
+
+<form id="upload-form" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <p>{{ form.description.label_tag }} {{ form.description }}</p>
+    <p class="help-text">{{ form.description.help_text }}</p>
+    <p>{{ form.fasta_file.label_tag }} {{ form.fasta_file }}</p>
+    <p class="help-text">{{ form.fasta_file.help_text|safe }}</p>
+    <p>
+        {{ form.metadata.label_tag }} {{ form.metadata }}
+        <!-- Download Template Button next to the Metadata Upload Button -->
+        <a href="{% url 'download_template' %}" style="float: right;" class="btn btn-info" download>Download Metadata Template</a>
+    </p>
+    <p class="help-text">{{ form.metadata.help_text|safe }}</p>
+
+    <div id="summary" style="border: 1px solid; padding: 10px; margin-bottom: 10px;">
+        <p>Upload Summary.</p>
+    </div>
+    <div class="button-container">
+    <button type="button" id="check-button" url="{% url 'check_televir_panel_upload' %}">Check</button>
+    </div>
+    <div class="button-container">
+        <button onclick="location.href='{% url 'televir_reference_files' %}'" class="cancel-button">Cancel</button>
+        <button type="submit" class="upload-button">Upload</button>
+    </div>
+</form>
+
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript" src="{% static 'js/televir_projects/reference_files.js' %}"></script>
+
+
+{% endblock %}

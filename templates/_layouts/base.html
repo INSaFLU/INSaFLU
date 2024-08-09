@@ -54,7 +54,7 @@
           </a>
         </li>
         <li class="nav-item {% if nav_reference %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="References Management">
-          <a class="nav-link " href="{% url 'references' %}">
+          <a class="nav-link " href="{% url 'references-index' %}">
             <i class="fa fa-fw fa-bug "></i>
             <span class="nav-link-text ">References</span>
           </a>
@@ -156,9 +156,7 @@
 			</ul>
 		</div>
 	</nav>
-
 	<div class="content-wrapper">
-
 		<div class="container-fluid">
 			<!-- MESSAGES -->
 			{% if messages %}
@@ -187,10 +185,15 @@
 				{% endif %}
 
 				{% block header %}{% endblock header %}
+				{% block extra_nav %}{% endblock %}
+
 				{% block content %}{% endblock content %}
 				<p> </p>
 				{% if nav_modal %} </div> {% endif %}
 		</div>
+
+
+
 	</div>
 	<!-- /.container-fluid-->
 	<!-- /.content-wrapper-->

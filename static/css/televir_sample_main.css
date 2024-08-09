@@ -1,0 +1,50 @@
+.table th, .table td {
+    text-align: center;
+}
+.btn-group {
+    margin-bottom: 15px;
+}
+
+.table-title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.table-description {
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+.table-separator {
+    margin-bottom: 20px;
+}
+
+
+.runtime {
+    width : 100px;
+}
+
+.success {
+    width: 100px;
+}
+
+.name {
+    width: 250px;
+
+}
+
+.report {
+    width: 100px;
+}
+
+.progress_display {
+    width: 100px;
+}
+
+.nmapped {
+    width: 130px;
+}
+
+.created {
+    width: 180px;
+}

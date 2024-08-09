@@ -3,10 +3,12 @@ Created on 04/05/2020
 
 @author: mmp
 """
+
 import os
 
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Button, ButtonHolder, Div, Fieldset, Layout, Submit
+from crispy_forms.layout import (Button, ButtonHolder, Div, Fieldset, Layout,
+                                 Submit)
 from django import forms
 from django.urls import reverse
 from django.utils.html import escape
@@ -15,12 +17,12 @@ from django.utils.translation import ugettext_lazy as _
 from constants.software_names import SoftwareNames
 from datasets.models import Dataset
 from managing_files.models import Project, ProjectSample
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from pathogen_identification.models import Projects as TelevirProject
 from pathogen_identification.modules.remap_class import Remap_Bowtie2
-from pathogen_identification.utilities.utilities_pipeline import (
-    Utility_Pipeline_Manager,
-)
+from pathogen_identification.utilities.utilities_pipeline import \
+    Utility_Pipeline_Manager
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.models import Parameter, Sample, Software
@@ -84,11 +86,6 @@ class SoftwareForm(forms.ModelForm):
         super(SoftwareForm, self).__init__(*args, **kwargs)
 
         ### return the parameters that is possible to change
-        print(self.instance)
-        ps = Parameter.objects.filter(software=self.instance)
-        for p in ps:
-            print(p.televir_project)
-        print(televir_project)
         paramers = Parameter.objects.filter(
             software=self.instance,
             project=project,
@@ -99,7 +96,6 @@ class SoftwareForm(forms.ModelForm):
         )
         dt_fields = {}
         vect_divs = []
-        print("paramers: ", paramers)
         for parameter in paramers:
             if not parameter.can_change or parameter.is_null():
                 dt_fields[parameter.get_unique_id()] = forms.CharField(
@@ -190,6 +186,22 @@ class SoftwareForm(forms.ModelForm):
                         for data_ in SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_vect_available
                     ]
                 elif (
+                    parameter.name == SoftwareNames.SOFTWARE_COMBINED_include_screening
+                ):
+                    list_data = [
+                        [data_, data_]
+                        for data_ in SoftwareNames.SOFTWARE_COMBINED_include_screening_options
+                    ]
+
+                elif (
+                    parameter.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_include_manual
+                ):
+                    list_data = [
+                        [data_, data_]
+                        for data_ in SoftwareNames.SOFTWARE_REMAP_PARAMS_include_manual_options
+                    ]
+
+                elif (
                     parameter.name == "--db"
                     and parameter.software.pipeline_step.name
                     in self.televir_utiltity.steps_db_dependant
@@ -211,6 +223,13 @@ class SoftwareForm(forms.ModelForm):
                                 parameter.software.name.lower(), []
                             )
                         ]
+                elif (
+                    parameter.name == SoftwareNames.SOFTWARE_DUSTMASKER_PARAM_MASK_name
+                ):
+                    list_data = [
+                        [data_, data_]
+                        for data_ in SoftwareNames.SOFTWARE_DUSTMASKER_PARAM_MASK_OPTIONS
+                    ]
                 elif (
                     parameter.name == "-x"
                     and parameter.software.name
@@ -242,6 +261,15 @@ class SoftwareForm(forms.ModelForm):
                     and parameter.name == "[mode]"
                 ):
                     list_data = [[x, x] for x in Remap_Bowtie2.modes]
+                elif (
+                    parameter.software.name == SoftwareNames.SOFTWARE_DIAMOND_name
+                    and parameter.name
+                    == SoftwareNames.SOFTWARE_DIAMOND_PARAMETER_SENSITIVITY_name
+                ):
+                    list_data = [
+                        [x, x]
+                        for x in SoftwareNames.SOFTWARE_DIAMOND_PARAMETER_SENSITIVITY_options
+                    ]
 
                 elif (
                     parameter.software.name == SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name

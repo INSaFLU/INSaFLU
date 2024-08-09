@@ -7,11 +7,13 @@ import datetime
 import logging
 import os
 
+from django.conf import settings
+from django.template.defaultfilters import filesizeformat
+from pysam import pysam
+
 from constants.constants import Constants, FileType, TypePath
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
-from django.conf import settings
-from django.template.defaultfilters import filesizeformat
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import (
     MixedInfectionsTag,
@@ -19,12 +21,10 @@ from managing_files.models import (
     ProjectSample,
     Sample,
 )
-from pysam import pysam
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.models import Software as SoftwareSettings
-
 from utils.coverage import DrawAllCoverage
 from utils.mixed_infections_management import MixedInfectionsManagement
 from utils.parse_coverage_file import GetCoverage
@@ -64,7 +64,7 @@ class SoftwareMinion(object):
         """
         pass
 
-    def run_clean_minion(self, sample, user, b_make_identify_species=False):
+    def run_clean_minion(self, sample: Sample, user, b_make_identify_species=False):
         """
         Global processing, RabbitQC, NanoStat, NanoFilt and GetSpecies
         """
@@ -101,7 +101,6 @@ class SoftwareMinion(object):
         sample.save()
 
         try:
-
             ### run stat and rabbit for Images
             b_has_data, b_it_ran = self.run_nanofilt_and_stat(sample, user)
 
@@ -248,7 +247,7 @@ class SoftwareMinion(object):
         )
         return b_has_data
 
-    def run_nanofilt_and_stat(self, sample, owner):
+    def run_nanofilt_and_stat(self, sample: Sample, owner):
         """
         run clean and stat before and after
         :output (Has data?, Is NanoFilt run?)
@@ -463,7 +462,7 @@ class SoftwareMinion(object):
             result_average.to_json(),
         )
 
-        ### run start again
+        ### run stat again
         try:
             ## if the user set a high coverage it can get no reads to process
             result_nano_stat = self.run_nanostat(
@@ -871,7 +870,6 @@ class SoftwareMinion(object):
             ## get coverage from deep file
             get_coverage = GetCoverage()
             try:
-
                 ### limit of the coverage for a project, can be None, if not exist
                 b_coverage_default = (
                     False  ## because in ONT the limit is different than10

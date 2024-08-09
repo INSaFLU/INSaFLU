@@ -14,7 +14,6 @@
 {% endblock %}
 
 {% block content %}
-
 <style>
 
     .img-index {
@@ -24,60 +23,91 @@
     }
 
     .col-md {
-        max-width: 250px;
+        max-width : 250px;
     }
 
     .card {
         height: 100%;
     }
 
+    .card-footer {
+        text-align: center;
+    }
+    .card-title {
+        text-align: center;
+    }
+    .card-text {
+        text-align: center;
+    }
+    
+
+    .page-container {
+        margin-top: 70px;
+    }
+
 </style>
 
-
-<div class="row">
-    {% if televir_available %}
-    <div class="col-md">
+<div class="page-container">
+    <div class="row justify-content-center">
+        {% if televir_available %}
+        <div class="col-md">
+            <div class="card mb-2">
+                <img class="img-index" src="{% static "img/Logo_TELEVIR_INSaFlu.png" %}">
+                <div class="card-body">
+                    <h5 class="card-title">{{ 'Virus Detection' }}</h5>
+                    <p class="card-text">{{ 'From Reads to viral detection' }}</p>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'PIprojects_main' %}" class="btn btn-primary">
+                        Projects
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        <div class="col-md">
+            <div class="card mb-2">
+                <img class="img-index" src="{% static "img/Logo_insaflu.png" %}">
+                <div class="card-body">
+                    <h5 class="card-title">{{ 'Reference-based genome assembly' }}</h5>
+                    <p class="card-text">{{ 'From reads to consensus sequence, mutations list, alignments, Pango lineage classification, etc.' }}</p>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'projects' %}" class="btn btn-primary">
+                        Projects
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md">
+            <div class="card mb-2">
+                <img class="img-index" src="{% static "img/Logo_NEXTSTRAIN_INSaFlu.png" %}">
+                <div class="card-body">
+                    <h5 class="card-title">{{ 'Nextstrain' }}</h5>
+                    <p class="card-text">{{ 'From consensus sequences to phylogeographic and temporal analysis and metadatada navigation' }}</p>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'datasets' %}" class="btn btn-primary">
+                        Datasets
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% if services %}
+        <div class="col-md">
         <div class="card mb-2">
-            <img class="img-index" src="{% static "img/Logo_TELEVIR_INSaFlu.png" %}">
+            <img class="img-index" src="{% static "img/dwemer.png" %}">
             <div class="card-body">
-                <h5 class="card-title">{{ 'Virus Detection' }}</h5>
-                <p class="card-text">{{ 'From Reads to viral detection' }}</p>
+                <h5 class="card-title">{{ 'Services' }}</h5>
+                <p class="card-text">{{ 'General Purpose Tools' }}</p>
             </div>
             <div class="card-footer">
-                <a href="{% url 'PIprojects_main' %}" class="btn btn-primary">
-                    Projects
+                <a href="{% url 'PIservices_main' %}" class="btn btn-primary">
+                    Services
                 </a>
             </div>
         </div>
-    </div>
-    {% endif %}
-    <div class="col-md">
-        <div class="card mb-2">
-            <img class="img-index" src="{% static "img/Logo_insaflu.png" %}">
-            <div class="card-body">
-                <h5 class="card-title">{{ 'Reference-based genome assembly' }}</h5>
-                <p class="card-text">{{ 'From reads to consensus sequence, mutations list, alignments, Pango lineage classification, etc.' }}</p>
-            </div>
-            <div class="card-footer">
-                <a href="{% url 'projects' %}" class="btn btn-primary">
-                    Projects
-                </a>
-            </div>
-        </div>
-    </div>
-    <div class="col-md">
-        <div class="card mb-2">
-            <img class="img-index" src="{% static "img/Logo_NEXTSTRAIN_INSaFlu.png" %}">
-            <div class="card-body">
-                <h5 class="card-title">{{ 'Nextstrain' }}</h5>
-                <p class="card-text">{{ 'From consensus sequences to phylogeographic and temporal analysis and metadatada navigation' }}</p>
-            </div>
-            <div class="card-footer">
-                <a href="{% url 'datasets' %}" class="btn btn-primary">
-                    Datasets
-                </a>
-            </div>
-        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

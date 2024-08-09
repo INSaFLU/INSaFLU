@@ -3,6 +3,7 @@ Created on 29/11/2021
 
 @author: mmp
 """
+
 import logging
 
 from django.core.management import BaseCommand
@@ -93,11 +94,7 @@ class Command(BaseCommand):
                     software.pipeline_step.name
                     != vect_parameters[0].software.pipeline_step.name
                 ):
-                    print(
-                        software.name,
-                        software.pipeline_step.name,
-                        vect_parameters[0].software.pipeline_step.name,
-                    )
+
                     software.pipeline_step = vect_parameters[0].software.pipeline_step
                     software.save()
 

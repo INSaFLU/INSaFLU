@@ -8,47 +8,38 @@ from django.core.management.base import BaseCommand
 
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from managing_files.models import ProcessControler
-from pathogen_identification.constants_settings import MEDIA_ROOT, ConstantsSettings
-from pathogen_identification.install_registry import Params_Illumina, Params_Nanopore
-from pathogen_identification.models import (
-    FinalReport,
-    Projects,
-    RawReference,
-    RunAssembly,
-    RunMain,
-    SoftwareTreeNode,
-)
-from pathogen_identification.modules.metadata_handler import Metadata_handler
+from pathogen_identification.constants_settings import (MEDIA_ROOT,
+                                                        ConstantsSettings)
+from pathogen_identification.install_registry import (Params_Illumina,
+                                                      Params_Nanopore)
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            Projects, RawReference,
+                                            RunAssembly, RunMain,
+                                            SoftwareTreeNode)
+from pathogen_identification.modules.metadata_handler import RunMetadataHandler
 from pathogen_identification.modules.object_classes import (
-    Read_class,
-    Sample_runClass,
-    Software_detail,
-    SoftwareRemap,
-)
-from pathogen_identification.modules.remap_class import (
-    Mapping_Instance,
-    Mapping_Manager,
-)
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+    Read_class, Sample_runClass, SoftwareDetail, SoftwareDetailCompound,
+    SoftwareRemap)
+from pathogen_identification.modules.remap_class import (Mapping_Instance,
+                                                         Mapping_Manager)
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.update_DBs import (
-    Update_FinalReport,
-    Update_ReferenceMap_Update,
-)
-from pathogen_identification.utilities.utilities_general import simplify_name_lower
-from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
+    Update_FinalReport, Update_ReferenceMap_Update)
+from pathogen_identification.utilities.utilities_general import \
+    simplify_name_lower
+from pathogen_identification.utilities.utilities_pipeline import (
+    SoftwareTreeUtils, Utils_Manager)
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter,
-    TelevirParameters,
-    recover_assembly_contigs,
-)
+    ReportSorter, TelevirParameters, recover_assembly_contigs)
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
 
 
-class RunMain:
+class RunEngine:
     remap_manager: Mapping_Manager
     mapping_instance: Mapping_Instance
-    metadata_tool: Metadata_handler
+    metadata_tool: RunMetadataHandler
 
     ##  metadata
     sift_query: str
@@ -69,12 +60,16 @@ class RunMain:
     igv_dir: str = f"igv"
 
     def __init__(
-        self, config: dict, method_args: pd.DataFrame, project_name: str, username: str
+        self,
+        config: dict,
+        method_args: pd.DataFrame,
+        project: Projects,
     ):
+
         self.sample_name = config["sample_name"]
         self.type = config["type"]
-        self.project_name = project_name
-        self.username = username
+        self.project_name = project.name
+        self.username = project.owner.username
         self.prefix = "none"
         self.config = config
         self.taxid = config["taxid"]
@@ -82,6 +77,7 @@ class RunMain:
         self.threads = config["threads"]
         self.house_cleaning = False
         self.clean = config["clean"]
+        self.project_pk = project.pk
 
         self.full_report = os.path.join(
             self.config["directories"][CS.PIPELINE_NAME_remapping], "full_report.csv"
@@ -170,10 +166,8 @@ class RunMain:
         self.maximum_coverage = 1000000000
 
         ### metadata
-        remap_params = TelevirParameters.get_remap_software(
-            self.username, self.project_name
-        )
-        self.metadata_tool = Metadata_handler(
+        remap_params = TelevirParameters.get_remap_software(self.project_pk)
+        self.metadata_tool = RunMetadataHandler(
             self.username,
             self.config,
             sift_query=config["sift_query"],
@@ -186,15 +180,15 @@ class RunMain:
         self.remap_params = remap_params
 
         ### methods
-        self.remapping_method = Software_detail(
+        self.remapping_method = SoftwareDetail(
             CS.PIPELINE_NAME_remapping,
             method_args,
             config,
             self.prefix,
         )
 
-        self.remap_filtering_method = Software_detail(
-            CS.PIPELINE_NAME_remap_filtering,
+        self.remap_filtering_method = SoftwareDetailCompound(
+            [CS.PIPELINE_NAME_remap_filtering],
             method_args,
             config,
             self.prefix,
@@ -330,7 +324,7 @@ class Input_Generator:
     def __init__(self, reference: RawReference, output_dir: str, threads: int = 4):
         self.utils = Utils_Manager()
         self.reference = reference
-        self.install_registry = Televir_Metadata
+        self.install_registry = Televir_Metadata()
 
         self.dir_branch = os.path.join(
             ConstantsSettings.televir_subdirectory,
@@ -392,7 +386,8 @@ class Input_Generator:
         shutil.copy(filepath, new_rpath)
         return new_rpath
 
-    def generate_method_args(self):
+
+    def generate_reference_method_args(self):
         parameter_set = self.reference.run.parameter_set
 
         pipeline_tree = self.utils.parameter_util.convert_softwaretree_to_pipeline_tree(
@@ -413,7 +408,7 @@ class Input_Generator:
                 f"no remapping parameters found for {self.reference.accid} in leaf {parameter_leaf}"
             )
 
-    def generate_config(self):
+    def generate_config_file(self):
         self.config = {
             "sample_name": simplify_name_lower(
                 os.path.basename(self.r1_path).replace(".fastq.gz", "")
@@ -426,10 +421,7 @@ class Input_Generator:
             "threads": self.threads,
             "prefix": self.prefix,
             "project_name": self.project,
-            "metadata": {
-                x: os.path.join(self.install_registry.METADATA["ROOT"], g)
-                for x, g in self.install_registry.METADATA.items()
-            },
+            "metadata": self.install_registry.metadata_full_path,
             "bin": self.install_registry.BINARIES,
             "taxid": self.taxid,
             "accid": self.accid,
@@ -456,7 +448,7 @@ class Input_Generator:
     def update_raw_reference_status_fail(self):
         self.reference.update_raw_reference_status_fail()
 
-    def engine_report_modify_mapping_success(self, run_class: RunMain):
+    def engine_report_modify_mapping_success(self, run_class: RunEngine):
         def render_classification_source(record: RawReference):
             return record.classification_source_str
 
@@ -464,7 +456,7 @@ class Input_Generator:
             self.reference
         )
 
-    def update_final_report(self, run_class: RunMain):
+    def update_final_report(self, run_class: RunEngine):
         run = self.reference.run
         sample = run.sample
 
@@ -482,8 +474,10 @@ class Input_Generator:
             "-coverage"
         )
         #
+        if sample is None:
+            return
         report_layout_params = TelevirParameters.get_report_layout_params(run_pk=run.pk)
-        report_sorter = ReportSorter(final_report, report_layout_params)
+        report_sorter = ReportSorter(sample, final_report, report_layout_params)
         report_sorter.sort_reports_save()
 
 
@@ -537,15 +531,13 @@ class Command(BaseCommand):
         )
 
         try:
-            input_generator.generate_method_args()
-            input_generator.generate_config()
+            input_generator.generate_reference_method_args()
+            # input_generator.generate_request_mapping_method_args()
+            input_generator.generate_config_file()
 
-            run_engine = RunMain(
-                input_generator.config,
-                input_generator.method_args,
-                project_name,
-                user.username,
-            )
+            run_engine = RunEngine(
+                input_generator.config, input_generator.method_args, project
+            )  # type: ignore
             run_engine.generate_targets()
             run_engine.run()
             run_engine.export_sequences()

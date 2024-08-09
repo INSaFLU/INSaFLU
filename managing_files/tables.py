@@ -1,19 +1,19 @@
 import django_tables2 as tables
-from constants.constants import Constants, TypePath
-from constants.meta_key_and_values import MetaKeyAndValue
 from django.conf import settings
 from django.db.models import F
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
+
+from constants.constants import Constants, TypePath
+from constants.meta_key_and_values import MetaKeyAndValue
+from managing_files.manage_database import ManageDatabase
+from managing_files.models import Project, ProjectSample, Reference, Sample
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software_project_sample import DefaultProjectSoftware
 from utils.result import DecodeObjects
-
-from managing_files.manage_database import ManageDatabase
-from managing_files.models import Project, ProjectSample, Reference, Sample
-
+from pathogen_identification.models import PIProject_Sample
 
 class CheckBoxColumnWithName(tables.CheckBoxColumn):
     @property
@@ -278,9 +278,13 @@ class SampleTable(tables.Table):
                     and not project_samples.project.is_deleted
                 ):
                     return mark_safe(sample_name)
+            
+            #Assume that when project is deleted all project_samples are also deleted...
+            if(PIProject_Sample.objects.filter(sample=record, is_deleted=False).count()>0):
+                return mark_safe(sample_name)
 
             return mark_safe(
-                '<a href="#id_remove_modal" id="id_remove_reference_modal" data-toggle="modal"'
+                '<a href="#id_remove_modal" id="id_remove_sample_modal" data-toggle="modal"'
                 + ' ref_name="'
                 + record.name
                 + '" pk="'
@@ -290,15 +294,33 @@ class SampleTable(tables.Table):
             )
         return mark_safe(sample_name)
 
-    def render_technology(self, record):
+    def render_technology(self, record: Sample):
         """shows if it is Illumina or Minion"""
         ### is not processed yet
         if record.type_of_fastq == Sample.TYPE_OF_FASTQ_not_defined:
             return "Undefined"
-        return (
-            ConstantsSettings.TECHNOLOGY_illumina
-            if record.is_type_fastq_gz_sequencing()
-            else ConstantsSettings.TECHNOLOGY_minion
+        if( 
+                record.exist_file_2()
+                and
+                (record.get_type_technology() == ConstantsSettings.TECHNOLOGY_illumina)
+            ): return(ConstantsSettings.TECHNOLOGY_illumina)
+        
+        # If sample is ready for projects we'll assume it is ok
+        # Can only swap if there are files associated with the sample
+        if(record.is_ready_for_projects or not(record.has_files)):
+            if record.is_type_fastq_gz_sequencing():
+                return ConstantsSettings.TECHNOLOGY_illumina
+            else:
+                return ConstantsSettings.TECHNOLOGY_minion
+
+        return mark_safe(
+                '<a href="#id_swap_modal" id="id_swap_technology_modal" data-toggle="modal"'
+                + ' ref_name="'
+                + record.name
+                + '" pk="'
+                + str(record.pk)
+                + '"><i class="fa fa-recycle"></i></span> </a>'              
+                + (ConstantsSettings.TECHNOLOGY_illumina if record.is_type_fastq_gz_sequencing() else ConstantsSettings.TECHNOLOGY_minion)
         )
 
     def render_creation_date(self, **kwargs):
@@ -609,7 +631,7 @@ class ProjectTable(tables.Table):
             tip_info
             + " ({}/{}/{}) ".format(n_processed, n_processing, n_error)
             + "<a href="
-            + reverse("add-sample-project", args=[record.pk])
+            + reverse("add-sample-project", args=[record.pk, 0])
             + ' data-toggle="tooltip" title="Add samples" ><i class="fa fa-plus-square"></i> Add</a>'  #         return mark_safe(tip_info + " ({}/{}/{}) ".format(n_processed, n_processing, n_error) + '<a href=# id="id_add_sample_message"' +\
             + add_remove
         )

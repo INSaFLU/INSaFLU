@@ -356,7 +356,8 @@ class SoftwareNames(object):
     SOFTWARE_PROKKA_name = "Prokka"
     SOFTWARE_PROKKA_VERSION = "1.2"
     SOFTWARE_PROKKA_PARAMETERS = (
-        "--kingdom Viruses --locustag locus --genus Influenzavirus --species Influenzavirus --strain "
+        #"--kingdom Viruses --locustag locus --genus Influenzavirus --species Influenzavirus --strain "
+        "--kingdom Viruses --genus Virus --locustag locus --strain "
         "ref_PREFIX_FILES_OUT --gcode " + str(Constants.TRANSLATE_TABLE_NUMBER)
     )
 
@@ -583,6 +584,12 @@ class SoftwareNames(object):
     ### REMAP PARAMETERS
     SOFTWARE_REMAP_PARAMS_max_taxids = "--max-taxids"
     SOFTWARE_REMAP_PARAMS_max_accids = "--max-accids"
+    SOFTWARE_REMAP_PARAMS_include_manual = "--include-manual"
+    SOFTWARE_REMAP_PARAMS_include_manual_options = ["OFF", "ON"]
+
+    SOFTWARE_COMBINED_min_score = "--min-score"
+    SOFTWARE_COMBINED_include_screening = "--screening"
+    SOFTWARE_COMBINED_include_screening_options = ["OFF", "ON"]
 
     ### REPORT LAYOUT
     SOFTWARE_televir_report_layout = "report_layout"
@@ -594,6 +601,9 @@ class SoftwareNames(object):
     SOFTWARE_televir_report_layout_threshold_name = "--r-overlap"
     SOFTWARE_REMAP_PARAMS_min_quality = "--qualityThreshold"  # "--min-quality"
     SOFTWARE_REMAP_PARAMS_max_mismatch = "--mismatchThreshold"  # "--max-mismatch"
+    SOFTWARE_REMAP_PARAMS_min_length = "-l"
+    SOFTWARE_REMAP_PARAMS_min_identity = "-p"
+    SOFTWARE_REMAP_PARAMS_min_cover = "-z"
 
     ### QC SOFTWARE
     SOFTWARE_PRINSEQ = os.path.join(
@@ -615,6 +625,29 @@ class SoftwareNames(object):
         "preprocess/bamUtil/bin/bam",
     )
     SOFTWARE_BAMUTIL_VERSION = "1.0.15"
+
+    SOFTWARE_MSAMTOOLS_name = "msamtools"
+    SOFTWARE_MSAMTOOLS_name_extended = "msamtools - Mapping Filtering"
+    SOFTWARE_MSAMTOOLS = os.path.join(
+        settings.DIR_SOFTWARE,
+        "preprocess/msamtools/bin/msamtools",
+    )
+    SOFTWARE_MSAMTOOLS_VERSION = "1.1.3"
+
+    SOFTWARE_DUSTMASKER_name = "dustmasker"
+    SOFTWARE_DUSTMASKER_name_extended = "dustmasker - Low complexity filtering"
+    SOFTWARE_DUSTMASKER = "/usr/bin/dustmasker"
+    SOFTWARE_DUSTMASKER_VERSION = "2.7.1"
+
+    SOFTWARE_DUSTMASKER_PARAM_MASK_name= "-masking"
+    SOFTWARE_DUSTMASKER_PARAM_MASK_SOFT = "soft_masking"
+    SOFTWARE_DUSTMASKER_PARAM_MASK_HARD = "hard_masking"
+    SOFTWARE_DUSTMASKER_PARAM_MASK_NONE = "no_masking"
+    SOFTWARE_DUSTMASKER_PARAM_MASK_OPTIONS = [
+        SOFTWARE_DUSTMASKER_PARAM_MASK_SOFT,
+        SOFTWARE_DUSTMASKER_PARAM_MASK_HARD,
+        SOFTWARE_DUSTMASKER_PARAM_MASK_NONE,
+    ]
 
     ###
 
@@ -702,6 +735,12 @@ class SoftwareNames(object):
     SOFTWARE_DIAMOND_parameters = (
         "-p 5 --top 5 -e 0.01 --id 65 --query-cover 50 --sensitive"
     )
+    SOFTWARE_DIAMOND_PARAMETER_SENSITIVITY_name = "sensitivity"
+    SOFTWARE_DIAMOND_PARAMETER_SENSITIVITY_options = [
+        "--fast",
+        "--sensitive",
+        "--very-sensitive",
+    ]
 
     ### BLASTN
     SOFTWARE_BLAST_name = "Blastn"
@@ -757,6 +796,11 @@ class SoftwareNames(object):
 
     SOFTWARE_MINIMAP2_REMAP_ONT_name = "Minimap2"
     SOFTWARE_MINIMAP2_REMAP_ONT_name_extended = "Minimap2 - Remapping"
+    SOFTWARE_MINIMAP2_REMAP_ONT_name_extended_screening = "Minimap2 - Screening"
+    SOFTWARE_MINIMAP2_REMAP_ONT_name_extended_request_mapping = (
+        "Minimap2 - Request Mapping"
+    )
+
     SOFTWARE_MINIMAP2_REMAP_ONT = os.path.join(
         settings.DIR_SOFTWARE,
         "preprocess/preproc/bin/minimap2",
@@ -766,6 +810,8 @@ class SoftwareNames(object):
 
     SOFTWARE_MINIMAP2_REMAP_ILLU_name = "Minimap2_remap"
     SOFTWARE_MINIMAP2_REMAP_ILLU_name_extended = "Minimap2 - Remapping"
+    SOFTWARE_MINIMAP2_REMAP_ILLU_name_extended_screening = "Minimap2 - Screening"
+
     SOFTWARE_MINIMAP2_REMAP_ILLU = os.path.join(
         settings.DIR_SOFTWARE,
         "preprocess/preproc/bin/minimap2",
@@ -775,6 +821,7 @@ class SoftwareNames(object):
 
     SOFTWARE_MINIMAP2_DEPLETE_ONT_name = "Minimap2_ONT"
     SOFTWARE_MINIMAP2_DEPLETE_ONT_name_extended = "Minimap2"
+
     SOFTWARE_MINIMAP2_DEPLETE_ONT = os.path.join(
         settings.DIR_SOFTWARE,
         "hostDepletion/hostdep_env/bin/minimap2",
@@ -818,6 +865,9 @@ class SoftwareNames(object):
 
     SOFTWARE_BOWTIE2_REMAP_name = "Bowtie2_remap"
     SOFTWARE_BOWTIE2_REMAP_name_extended = "Bowtie2"
+    SOFTWARE_BOWTIE2_REMAP_name_extended_screening = "Bowtie2 - Screening"
+    SOFTWARE_BOWTIE2_REMAP_name_extended_request_mapping = "Bowtie2 - Request Mapping"
+
     SOFTWARE_BOWTIE2_REMAP = os.path.join(
         settings.DIR_SOFTWARE,
         "remap/remap/bin/bowtie2",
@@ -887,7 +937,11 @@ class SoftwareNames(object):
 
     SOFTWARE_REMAP_PARAMS_name = "Remapping - Management"
     SOFTWARE_REMAP_PARAMS_extended = "Remapping - Management"
-    SOFTWARE_REMAP_PARAMS_VERSION = "1"
+    SOFTWARE_REMAP_PARAMS_VERSION = "1.0.0"
+
+    SOFTWARE_METAGENOMICS_SETTINGS_name = "Metagenomics - Settings"
+    SOFTWARE_METAGENOMICS_SETTINGS_name_extended = "Metagenomics - Settings"
+    SOFTWARE_METAGENOMICS_SETTINGS_VERSION = "1.0.0"
 
     ###################################
     ###################################
@@ -935,6 +989,7 @@ class SoftwareNames(object):
         SOFTWARE_BOWTIE2_REMAP_name,
         SOFTWARE_KRAKEN2_name,
         SOFTWARE_MINIMAP2_REMAP_ONT_name,
+        SOFTWARE_MSAMTOOLS_name,
     ]
     # pipeline_steps per software, for software with multiple pipeline_steps.
 
@@ -945,7 +1000,8 @@ class SoftwareNames(object):
         ],
         SOFTWARE_BOWTIE2_REMAP_name: [
             ConstantsSettings.PIPELINE_NAME_remapping,
-            ConstantsSettings.PIPELINE_NAME_metagenomics_combine,
+            ConstantsSettings.PIPELINE_NAME_metagenomics_screening,
+            ConstantsSettings.PIPELINE_NAME_request_mapping,
         ],
         SOFTWARE_CENTRIFUGE_name: [
             ConstantsSettings.PIPELINE_NAME_viral_enrichment,
@@ -958,11 +1014,16 @@ class SoftwareNames(object):
         SOFTWARE_MINIMAP2_REMAP_ONT_name: [
             ConstantsSettings.PIPELINE_NAME_remapping,
             ConstantsSettings.PIPELINE_NAME_host_depletion,
-            ConstantsSettings.PIPELINE_NAME_metagenomics_combine,
+            ConstantsSettings.PIPELINE_NAME_metagenomics_screening,
+            ConstantsSettings.PIPELINE_NAME_request_mapping,
         ],
         SOFTWARE_BWA_name: [
             ConstantsSettings.PIPELINE_NAME_host_depletion,
             ConstantsSettings.PIPELINE_NAME_read_classification,
+        ],
+        SOFTWARE_MSAMTOOLS_name: [
+            ConstantsSettings.PIPELINE_NAME_remap_filtering,
+            ConstantsSettings.PIPELINE_NAME_map_filtering,
         ],
     }
 

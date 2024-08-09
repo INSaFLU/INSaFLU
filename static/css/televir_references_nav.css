@@ -1,0 +1,32 @@
+.nav-style {
+    border-radius: 5px;
+    background-color: #f8f9fa;
+    padding-left: 10px;
+    padding-right: 10px;
+    margin-left: 10px;
+    margin-bottom: 10px;
+    margin-right: 10px;
+}
+
+
+.tab {
+    border-radius: 3px;
+    background-color: #f8f9fa;
+
+}
+
+
+ul li.active {
+    background-color: #007bff; /* Light, desaturated blue */
+    color: white; /* Font color */
+}
+
+ul li.active a {
+    background-color: #007bff; /* Light, desaturated blue */
+    color: white; /* Font color */
+}
+
+#id_remove_modal .modal-dialog {
+    max-width: 800px; /* Or any other value */
+}
+

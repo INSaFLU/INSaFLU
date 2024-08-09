@@ -131,10 +131,11 @@ class Command(BaseCommand):
                         pipeline_tree=pipeline_tree_query,
                         odir=options["outdir"],
                         threads=ConstantsSettings.DEPLOYMENT_THREADS,
+                        combined_analysis=True,
                     )
 
                     if run.is_available:
-                        run.get_in_line()
+                        run.set_to_queued()
                         submission_dict[target_sample].append(run)
 
                     for sample, runs in submission_dict.items():

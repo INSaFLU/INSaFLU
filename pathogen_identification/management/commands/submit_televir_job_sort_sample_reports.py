@@ -34,6 +34,12 @@ class Command(BaseCommand):
             type=str,
             help="output directory",
         )
+        parser.add_argument(
+            "-f",
+            "--force",
+            action="store_true",
+            help="force the run",
+        )
 
     def handle(self, *args, **options):
         ###
@@ -41,7 +47,7 @@ class Command(BaseCommand):
 
         user = User.objects.get(pk=options["user_id"])
         project_sample = PIProject_Sample.objects.get(pk=options["pisample_id"])
-
+        force = options["force"]
         # PROCESS CONTROLER
         process_controler = ProcessControler()
         process_SGE = ProcessSGE()
@@ -72,7 +78,7 @@ class Command(BaseCommand):
         # UTILITIES
         try:
             if not project_sample.is_deleted:
-                calculate_reports_overlaps(project_sample)
+                calculate_reports_overlaps(project_sample, force=True)
 
         except Exception as e:
             print(e)

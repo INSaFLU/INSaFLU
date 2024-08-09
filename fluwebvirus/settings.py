@@ -15,14 +15,14 @@ import os
 from decouple import config
 
 ## define APP version
-APP_VERSION_NUMBER = "2.0.0"
+APP_VERSION_NUMBER = "2.1.0"
 
 ### running tests in command line
 RUN_TEST_IN_COMMAND_LINE = False
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-print(BASE_DIR)
+
 ####	if the tests are running
 RUNNING_TEST = False
 

@@ -9,6 +9,21 @@ from pathogen_identification.models import Projects as TelevirProject
 # Create your models here.
 
 
+class SoftwareDefaultTest(models.Model):
+
+    user = models.ForeignKey(
+        User,
+        related_name="software_default_test",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+    )
+
+    is_tested_all_defaults = models.BooleanField(default=False)
+    is_tested_televir_defaults = models.BooleanField(default=False)
+    televir_pipelines_available = models.BooleanField(default=False)
+
+
 class Technology(models.Model):
     name = models.CharField(max_length=100, db_index=True, blank=True, null=True)
     name_extended = models.CharField(

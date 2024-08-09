@@ -29,7 +29,7 @@ $('#main_tab a').on('click', function (e) {
 				let href_main_active = $('#main_tab li:nth-child(' + (step + 1) + ') a').attr('href');
 				$(href_main_active).removeClass('active');
 				$('#main_tab li:nth-child(' + (step + 1) + ') a').removeClass('active');
-						
+
 				/// second
 				let number_li = parseInt($('#second_tab_' + step).attr('number_pipelines'));
 				for (let step_li = 1; step_li <= number_li; step_li++){
@@ -41,6 +41,9 @@ $('#main_tab a').on('click', function (e) {
 					}
 				}
 				break;
+
+
+
 			}
 		}
 		insalfu_nav_index_main_old = index_main;

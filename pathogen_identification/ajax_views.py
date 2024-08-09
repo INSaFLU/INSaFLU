@@ -419,9 +419,7 @@ def submit_sample_mapping_panels(request):
 
         project = sample.project
         software_utils = SoftwareTreeUtils(user, project, sample=sample)
-        runs_to_deploy, workflow_deployed_dict = (
-            software_utils.check_runs_to_submit_mapping_only(sample)
-        )
+        runs_to_deploy, _ = software_utils.check_runs_to_submit_mapping_only(sample)
 
         if len(runs_to_deploy) == 0:
             data["params_empty"] = True

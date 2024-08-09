@@ -133,7 +133,7 @@ $('#request_map_selected').on("click", function(e){
   
         } else if (data['is_ok']) {
           $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-            'References were not mapped. ' + data['message'] +
+            'References were not mapped. Check Request Mapping settings.' + data['message'] +
             '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
             '</div>');
 

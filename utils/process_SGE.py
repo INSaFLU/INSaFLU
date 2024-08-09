@@ -894,7 +894,7 @@ class ProcessSGE(object):
 
         try:
             sge_id = self.submitte_job(path_file)
-            print("SGE_ID", sge_id)
+
             if sge_id != None:
                 pc_name = process_controler.get_name_update_televir_project(project_id)
                 self.set_process_controlers(
@@ -1739,6 +1739,9 @@ class ProcessSGE(object):
                 sample_pk,
                 leaf_pk,
             ),
+            process_controler.get_name_televir_project_sample_panel_map(
+                sample_pk=sample_pk, leaf_pk=leaf_pk
+            ),
         ]
 
         processes = ProcessControler.objects.filter(
@@ -1752,18 +1755,30 @@ class ProcessSGE(object):
 
     @transaction.atomic
     def kill_televir_process_controler_samples(
-        self, user_pk: int, project_pk: int, sample_pk: int
+        self, user_pk: int, project_pk: int, sample_pk: int, leaf_pk: int
     ):
         """
         Kill the process in process controler.
         """
         process_controler = ProcessControler()
 
-        processes = ProcessControler.objects.filter(
-            owner__id=user_pk,
-            name=process_controler.get_name_televir_project_sample(
+        names_processes = [
+            process_controler.get_name_televir_run(project_pk, sample_pk, leaf_pk),
+            process_controler.get_name_televir_project_sample(
                 project_pk=project_pk, sample_pk=sample_pk
             ),
+            process_controler.get_name_televir_project_sample_metagenomics_run(
+                sample_pk,
+                leaf_pk,
+            ),
+            process_controler.get_name_televir_project_sample_panel_map(
+                sample_pk=sample_pk, leaf_pk=leaf_pk
+            ),
+        ]
+
+        processes = ProcessControler.objects.filter(
+            owner__id=user_pk,
+            name__in = names_processes,
             is_error=False,
             is_finished=False,
         )
@@ -1774,7 +1789,6 @@ class ProcessSGE(object):
         """ """
 
         for process in processes:
-            print("Killing process {}".format(process.name_sge_id))
 
             if process.name_sge_id:
                 self.kill_process(process.name_sge_id)

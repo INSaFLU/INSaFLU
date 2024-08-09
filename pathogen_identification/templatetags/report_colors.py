@@ -131,6 +131,8 @@ def depth_color_windows(window_value: str, max_prop):
             window_value = window_value.split("/")
 
             window_value = int(window_value[0]) / int(window_value[1])
+        elif window_value == "NA":
+            window_value = 0
         ncol = float(window_value) * 100 / float(max_prop)
     else:
         ncol = 0

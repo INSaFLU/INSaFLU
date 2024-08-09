@@ -2033,9 +2033,7 @@ class RawReferenceUtils:
 
         if pipeline_only:
             sample_runs = sample_runs.filter(run_type=RunMain.RUN_TYPE_PIPELINE)
-        print(sample_runs)
-        for run in sample_runs:
-            print(run.status, run.run_type)
+
         self.runs_found = sample_runs.count()
 
         run_references_tables = [self.run_references_table(run) for run in sample_runs]

@@ -61,15 +61,15 @@ class Command(BaseCommand):
                 user = User.objects.get(pk=user_id)
             software_minion.process_second_stage_medaka(project_sample, user)
 
-            is_teleflu_project = TeleFluProject.objects.filter(
-                insaflu_project=project_sample.project,
-            ).exists()
-
-            if is_teleflu_project:
-                teleflu_project = TeleFluProject.objects.get(
-                    insaflu_project=project_sample.project
-                )
-                create_teleflu_igv_report(teleflu_project.pk)
+            ### WAIT FOR TESTS
+            # is_teleflu_project = TeleFluProject.objects.filter(
+            #    insaflu_project=project_sample.project,
+            # ).exists()
+            # if is_teleflu_project:
+            #    teleflu_project = TeleFluProject.objects.get(
+            #        insaflu_project=project_sample.project
+            #    )
+            #    create_teleflu_igv_report(teleflu_project.pk)
 
             self.stdout.write("End")
         except ProjectSample.DoesNotExist as e:

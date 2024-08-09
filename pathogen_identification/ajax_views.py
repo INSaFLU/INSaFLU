@@ -20,28 +20,37 @@ from constants.software_names import SoftwareNames
 from fluwebvirus.settings import BASE_DIR, STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
-from pathogen_identification.models import (FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RawReference, ReferenceMap_Main,
-                                            ReferencePanel,
-                                            ReferenceSourceFileMap, RunMain,
-                                            TeleFluProject, TeleFluSample)
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.models import (
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReferenceMap_Main,
+    ReferencePanel,
+    ReferenceSourceFileMap,
+    RunMain,
+    TeleFluProject,
+    TeleFluSample,
+)
 from pathogen_identification.tables import ReferenceSourceTable
 from pathogen_identification.utilities.reference_utils import (
-    check_file_reference_submitted, check_raw_reference_submitted,
-    check_user_reference_exists, create_combined_reference)
+    check_file_reference_submitted,
+    check_raw_reference_submitted,
+    check_user_reference_exists,
+    create_combined_reference,
+)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
-from pathogen_identification.utilities.utilities_general import \
-    get_services_dir
-from pathogen_identification.utilities.utilities_pipeline import \
-    SoftwareTreeUtils
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.utilities_general import get_services_dir
+from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
 from pathogen_identification.utilities.utilities_views import (
-    RawReferenceUtils, ReportSorter, SampleReferenceManager,
-    set_control_reports)
+    RawReferenceUtils,
+    ReportSorter,
+    SampleReferenceManager,
+    set_control_reports,
+)
 from pathogen_identification.views import inject__added_references
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
@@ -88,7 +97,7 @@ def submit_sample_metagenomics_televir(request):
                 for sample, leaves_to_deploy in runs_to_deploy.items():
                     for leaf in leaves_to_deploy:
                         metagenomics_run = reference_manager.mapping_run_from_leaf(leaf)
-                        taskID = process_SGE.set_submit_televir_sample_metagenomics(
+                        _ = process_SGE.set_submit_televir_sample_metagenomics(
                             user=request.user,
                             sample_pk=sample.pk,
                             leaf_pk=leaf.pk,
@@ -137,7 +146,7 @@ def submit_sample_screening_televir(request):
                 for sample, leaves_to_deploy in runs_to_deploy.items():
                     for leaf in leaves_to_deploy:
                         screening_run = reference_manager.screening_run_from_leaf(leaf)
-                        taskID = process_SGE.set_submit_televir_sample_metagenomics(
+                        _ = process_SGE.set_submit_televir_sample_metagenomics(
                             user=request.user,
                             sample_pk=sample.pk,
                             leaf_pk=leaf.pk,
@@ -397,19 +406,24 @@ def submit_sample_mapping_panels(request):
     if request.is_ajax():
         process_SGE = ProcessSGE()
         user = request.user
-        data = {"is_ok": True, "is_deployed": False, "is_empty": False, "message": ""}
+        data = {
+            "is_ok": True,
+            "is_deployed": False,
+            "is_empty": False,
+            "params_empty": False,
+            "message": "",
+        }
 
         sample_id = int(request.POST["sample_id"])
         sample = PIProject_Sample.objects.get(id=int(sample_id))
 
         project = sample.project
         software_utils = SoftwareTreeUtils(user, project, sample=sample)
-        runs_to_deploy, workflow_deployed_dict = (
-            software_utils.check_runs_to_submit_mapping_only(sample)
-        )
+        runs_to_deploy, _ = software_utils.check_runs_to_submit_mapping_only(sample)
 
         if len(runs_to_deploy) == 0:
-            return data
+            data["params_empty"] = True
+            return JsonResponse(data)
 
         sample_panels = sample.panels_added
 
@@ -480,7 +494,7 @@ def submit_samples_mapping_panels(request):
                 )
 
                 if len(runs_to_deploy) == 0:
-                    return data
+                    continue
 
                 sample_panels = sample.panels_added
 
@@ -1065,20 +1079,21 @@ def kill_televir_project_sample(request):
 
         for single_run_param in runs_params:
             try:  # kill process
+
+                if single_run_param.status == ParameterSet.STATUS_RUNNING:
+                    single_run_param.delete_run_data()
+
                 process_SGE.kill_televir_process_controler_runs(
                     user.pk, project.pk, sample.pk, single_run_param.leaf.pk
                 )
+
+                single_run_param.status = ParameterSet.STATUS_KILLED
+                single_run_param.save()
 
             except ProcessControler.DoesNotExist as e:
                 print(e)
                 print("ProcessControler.DoesNotExist")
                 pass
-
-            if single_run_param.status == ParameterSet.STATUS_RUNNING:
-                single_run_param.delete_run_data()
-
-            single_run_param.status = ParameterSet.STATUS_KILLED
-            single_run_param.save()
 
         data["is_ok"] = True
         return JsonResponse(data)
@@ -1101,32 +1116,36 @@ def kill_televir_project_tree_sample(request):
         sample = PIProject_Sample.objects.get(id=int(sample_id))
         project = Projects.objects.get(id=int(sample.project.pk))
 
-        try:  # kill process
-            process_SGE.kill_televir_process_controler_samples(
-                user.pk,
-                project.pk,
-                sample.pk,
-            )
-
-        except ProcessControler.DoesNotExist as e:
-            print(e)
-            print("ProcessControler.DoesNotExist")
-            pass
-
-        runs = ParameterSet.objects.filter(
+        runs_params = ParameterSet.objects.filter(
             sample=sample,
             status__in=[
                 ParameterSet.STATUS_RUNNING,
                 ParameterSet.STATUS_QUEUED,
             ],
         )
+        killed = 0
 
-        for run in runs:
-            if run.status == ParameterSet.STATUS_RUNNING:
-                run.delete_run_data()
+        for single_run_param in runs_params:
+            try:  # kill process
 
-            run.status = ParameterSet.STATUS_KILLED
-            run.save()
+                if single_run_param.status == ParameterSet.STATUS_RUNNING:
+                    single_run_param.delete_run_data()
+
+                process_SGE.kill_televir_process_controler_samples(
+                    user.pk, project.pk, sample.pk, single_run_param.leaf.pk
+                )
+                killed += 1
+
+            except ProcessControler.DoesNotExist as e:
+                print(e)
+                print("ProcessControler.DoesNotExist")
+                pass
+
+            single_run_param.status = ParameterSet.STATUS_KILLED
+            single_run_param.save()
+
+        if killed > 0:
+            data["is_deployed"] = True
 
         data["is_ok"] = True
         return JsonResponse(data)
@@ -1154,36 +1173,38 @@ def kill_televir_project_all_sample(request):
         if len(sample_ids) > 0:
             samples = samples.filter(pk__in=sample_ids)
 
+        killed = 0
+
         for sample in samples:
-            try:  #
-                process_SGE.kill_televir_process_controler_samples(
-                    user.pk,
-                    project.pk,
-                    sample.pk,
-                )
 
-            except ProcessControler.DoesNotExist as e:
-                print(e)
-                print("ProcessControler.DoesNotExist")
-                pass
-
-            runs = ParameterSet.objects.filter(
+            runs_params = ParameterSet.objects.filter(
                 sample=sample,
                 status__in=[
                     ParameterSet.STATUS_RUNNING,
                     ParameterSet.STATUS_QUEUED,
                 ],
             )
+            for single_run_param in runs_params:
+                try:  # kill process
 
-            if runs.exists():
-                data["is_empty"] = False
+                    if single_run_param.status == ParameterSet.STATUS_RUNNING:
+                        single_run_param.delete_run_data()
 
-            for run in runs:
-                if run.status == ParameterSet.STATUS_RUNNING:
-                    run.delete_run_data()
+                    process_SGE.kill_televir_process_controler_samples(
+                        user.pk, project.pk, sample.pk, single_run_param.leaf.pk
+                    )
+                    killed += 1
 
-                run.status = ParameterSet.STATUS_KILLED
-                run.save()
+                except ProcessControler.DoesNotExist as e:
+                    print(e)
+                    print("ProcessControler.DoesNotExist")
+                    pass
+
+                single_run_param.status = ParameterSet.STATUS_KILLED
+                single_run_param.save()
+
+        if killed > 0:
+            data["is_empty"] = False
 
         data["is_ok"] = True
         return JsonResponse(data)
@@ -1782,7 +1803,9 @@ def add_teleflu_sample(request):
 
 from pathogen_identification.models import SoftwareTreeNode, TelefluMapping
 from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils, Utils_Manager)
+    SoftwareTreeUtils,
+    Utils_Manager,
+)
 
 
 @login_required

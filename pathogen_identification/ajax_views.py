@@ -397,10 +397,12 @@ def submit_sample_mapping_panels(request):
     if request.is_ajax():
         process_SGE = ProcessSGE()
         user = request.user
-        data = {"is_ok": True, "is_deployed": False, "is_empty": False, "message": ""}
+        data = {"is_ok": True, "is_deployed": False, "is_empty": False, "params_empty": False, "message": ""}
 
         sample_id = int(request.POST["sample_id"])
         sample = PIProject_Sample.objects.get(id=int(sample_id))
+
+        print(sample)
 
         project = sample.project
         software_utils = SoftwareTreeUtils(user, project, sample=sample)
@@ -409,7 +411,10 @@ def submit_sample_mapping_panels(request):
         )
 
         if len(runs_to_deploy) == 0:
-            return data
+            data["params_empty"] = True
+            return JsonResponse(data)
+
+        print("HELLO")
 
         sample_panels = sample.panels_added
 

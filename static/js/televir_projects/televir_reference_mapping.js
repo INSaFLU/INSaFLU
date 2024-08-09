@@ -397,12 +397,16 @@ $('#request_map_selected').on("click", function(e){
       success: function(data) {
         if (data['is_ok'] === true && data['is_deployed'] === true) {
           $('#id_messages_remove').append('<div class="alert alert-success alert-dismissible" role="alert"><button type="button" ' +
-            'class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>'+
+            'class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>' +
             'Panel mapping deployed successfully</div>');
-        } else if (data['is_empty'] === true) { 
+        } else if (data['is_empty'] === true) {
+          $('#id_messages_remove').append('<div class="alert alert-warning alert-dismissible" role="alert"><button type="button" ' +
+            'class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>' +
+            'No panels to map</div>');
+        } else if (data["params_empty"] === true) {
           $('#id_messages_remove').append('<div class="alert alert-warning alert-dismissible" role="alert"><button type="button" ' +
             'class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>'+
-            'No panels to map</div>');
+            'No parameters set for request mapping</div>');
         } else {
           $('#id_messages_remove').append('<div class="alert alert-danger alert-dismissible" role="alert"><button type="button" ' +
             'class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>'+

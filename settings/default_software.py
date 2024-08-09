@@ -9,10 +9,11 @@ from curses.ascii import SO
 from django.contrib.auth.models import User
 
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.utilities.utilities_pipeline import (
-    Utility_Pipeline_Manager, Utils_Manager)
+    Utility_Pipeline_Manager,
+    Utils_Manager,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.models import Parameter, Software, SoftwareDefaultTest
@@ -780,7 +781,7 @@ class DefaultSoftware(object):
         #            user,
         #        )
 
-        #self.test_default_db(
+        # self.test_default_db(
         #    SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ILLU_name,
         #    self.default_parameters.get_minimap2_depletion_illumina_default(
         #        user,
@@ -788,7 +789,7 @@ class DefaultSoftware(object):
         #        ConstantsSettings.TECHNOLOGY_illumina,
         #    ),
         #    user,
-        #)
+        # )
 
         self.test_default_db(
             SoftwareNames.SOFTWARE_KRAKEN2_name,
@@ -847,8 +848,6 @@ class DefaultSoftware(object):
             ),
             user,
         )
-
-
 
     def assess_db_dependency_met(self, vect_parameters, software_name):
         """for pipeline steps where sequence dbs are required, check that they exist."""

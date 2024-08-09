@@ -18,13 +18,11 @@ from django.utils.translation import gettext_lazy as _
 from pkg_resources import packaging
 
 from constants.constants import Constants
-from constants.constants import \
-    Televir_Directory_Constants as Televir_Directories
+from constants.constants import Televir_Directory_Constants as Televir_Directories
 from managing_files.models import Project as InsaFluProject
 from managing_files.models import Reference as InsaFluReference
 from managing_files.models import Sample
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.data_classes import IntermediateFiles
 
 # Create your models here.
@@ -373,19 +371,19 @@ class ParameterSet(models.Model):
         self.save()
 
     def delete_run_data(self):
-        if self.status in [self.STATUS_FINISHED, self.STATUS_ERROR]:
-            self.status = self.STATUS_NOT_STARTED
-            self.save()
 
-            runs = RunMain.objects.filter(parameter_set=self)
+        self.status = self.STATUS_NOT_STARTED
+        self.save()
 
-            for run in runs:
-                if run.status == RunMain.STATUS_FINISHED:
-                    continue
-                if run.status == RunMain.STATUS_RUNNING:
-                    run.status = RunMain.STATUS_KILLED
-                    run.save()
-                run.delete_data()
+        runs = RunMain.objects.filter(parameter_set=self)
+
+        for run in runs:
+            if run.status == RunMain.STATUS_FINISHED:
+                continue
+            if run.status == RunMain.STATUS_RUNNING:
+                run.status = RunMain.STATUS_KILLED
+                run.save()
+            # run.delete_data()
 
     def __str__(self):
         return self.sample.name

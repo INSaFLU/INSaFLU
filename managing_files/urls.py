@@ -52,6 +52,7 @@ urlpatterns = [
         name="sample-upload-fastq",
     ),  ## upload several fastq.gz
     url(r"project-index", views.ProjectIndex.as_view(), name="project-index"),
+    url(r"references-index", views.ReferencesIndex.as_view(), name="references-index"),
     url(r"project/projects$", views.ProjectsView.as_view(), name="projects"),
     url(r"project/project_add$", views.ProjectCreateView.as_view(), name="project-add"),
     url(
@@ -60,7 +61,7 @@ urlpatterns = [
         name="project-settings",
     ),
     url(
-        r"project_samples/(?P<pk>\d+)/add_sample_project$",
+        r"project_samples/(?P<pk>\d+)/(?P<tf>\d+)/add_sample_project$",
         views.AddSamplesProjectsView.as_view(),
         name="add-sample-project",
     ),
@@ -165,6 +166,9 @@ urlpatterns = [
         r"^ajax/remove_sample$", ajax_views.remove_sample, name="remove_sample"
     ),  ## remove a sample
     url(
+        r"^ajax/swap_technology$", ajax_views.swap_technology, name="swap_technology"
+    ),  ## swap technology in sample    
+    url(
         r"^ajax/remove_project$", ajax_views.remove_project, name="remove_project"
     ),  ## remove a project
     url(
@@ -192,6 +196,16 @@ urlpatterns = [
         ajax_views.remove_uploaded_files,
         name="remove_uploaded_files",
     ),  ## remove remove_uploaded_files, several at once
+    url(
+        r"^ajax/remove_unattached_samples$",
+        ajax_views.remove_unattached_samples,
+        name="remove_unattached_samples",
+    ),  ## remove unattached samples
+    url(
+        r"^ajax/relink_uploaded_file$",
+        ajax_views.relink_uploaded_files,
+        name="relink_uploaded_files",
+    ),  ## remove remove_uploaded_file    
     url(
         r"^ajax/unlock_sample_file$",
         ajax_views.unlock_sample_file,

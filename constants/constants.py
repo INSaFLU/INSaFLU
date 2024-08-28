@@ -77,6 +77,7 @@ class Televir_Metadata_Constants:
             "collapsibleTree": "remap/Renv",
             "create_report": "Pyenv/igv_reports",
             "entrez_direct": "entrez_direct",
+            "bgzip": "hostDepletion/hostdep_env",
         },
         CS.PIPELINE_NAME_remapping: {"default": "remap/remap"},
         CS.PIPELINE_NAME_remap_filtering: {"default": "remap/remap"},
@@ -86,12 +87,23 @@ class Televir_Metadata_Constants:
     }
 
     @property
+    def metadata_full_path(self) -> Dict[str, str]:
+        """
+        Get the full path to the metadata files
+        """
+        return {
+            key: os.path.join(self.SOURCE["METAD"], value)
+            for key, value in self.METADATA.items()
+            if key != "ROOT"
+        }
+
+    @property
     def accession_to_taxid_path(self) -> str:
         """
         Get the path to the accession to taxid file
         """
         return os.path.join(
-            self.METADATA["ROOT"], self.METADATA["input_accession_to_taxid_path"]
+            self.SOURCE["METAD"], self.METADATA["input_accession_to_taxid_path"]
         )
 
     def get_software_bin_directory(self, software: str):
@@ -174,6 +186,7 @@ class Constants(object):
     DIR_PROCESSED_FILES_TELEFLU_REFERENCE = (
         DIR_PROCESSED_FILES_UPLOADS + "/teleflu_references"
     )
+    DIR_TELEVIR_UPLOAD_FILES = DIR_PROCESSED_FILES_UPLOADS + "/televir_references"
     DIR_PROCESSED_FILES_CONSENSUS = DIR_PROCESSED_FILES_UPLOADS + "/consensus"
     DIR_PROCESSED_FILES_FASTQ = DIR_PROCESSED_FILES_UPLOADS + "/fastq"
     DIR_PROCESSED_FILES_PROJECT = "projects/result"
@@ -260,15 +273,9 @@ class Constants(object):
     NEXTCLADE_LINK_B_Victoria = (
         "https://clades.nextstrain.org/?dataset-name=flu_vic_ha&input-fasta="
     )
-    NEXTCLADE_LINK_A_H5Nx = (
-        "https://clades.nextstrain.org?dataset-name=community/moncla-lab/iav-h5/ha/all-clades&input-fasta="
-    )
-    NEXTCLADE_LINK_A_H5Nx_2344 = (
-        "https://clades.nextstrain.org?dataset-name=community/moncla-lab/iav-h5/ha/2.3.4.4&input-fasta="
-    )
-    NEXTCLADE_LINK_A_H5Nx_2321 = (
-        "https://clades.nextstrain.org?dataset-name=community/moncla-lab/iav-h5/ha/2.3.2.1&input-fasta="
-    )
+    NEXTCLADE_LINK_A_H5Nx = "https://clades.nextstrain.org?dataset-name=community/moncla-lab/iav-h5/ha/all-clades&input-fasta="
+    NEXTCLADE_LINK_A_H5Nx_2344 = "https://clades.nextstrain.org?dataset-name=community/moncla-lab/iav-h5/ha/2.3.4.4&input-fasta="
+    NEXTCLADE_LINK_A_H5Nx_2321 = "https://clades.nextstrain.org?dataset-name=community/moncla-lab/iav-h5/ha/2.3.2.1&input-fasta="
     NEXTCLADE_LINK_hMPXV_B1 = (
         "https://clades.nextstrain.org/?dataset-name=hMPXV_B1&input-fasta="
     )

@@ -3019,7 +3019,7 @@ class Software(object):
                     meta_sample.description,
                 )
 
-        except Exception as e:
+        except:
             process_SGE.set_process_controler(
                 user,
                 process_controler.get_name_sample(sample),

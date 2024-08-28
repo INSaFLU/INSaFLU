@@ -1,0 +1,118 @@
+{% extends '_layouts/base.html' %}
+
+{% load bootstrap4 %}
+{% load querystring from django_tables2 %}
+{% load title from django_tables2 %}
+{% load trans blocktrans from i18n %}
+{% load django_bootstrap_breadcrumbs %}
+{% load static %}
+{% load custom_tags %}
+
+
+{% block extra_messages %}
+<!-- set the messages -->
+<div class="container">
+	<div id="id_messages_remove"></div>
+</div>
+{% endblock %}
+
+{% block breadcrumbs %}
+{{ block.super }}
+{% breadcrumb "References Index" "references-index" %}
+{% breadcrumb "Manage References" "" %}
+{% endblock %}
+
+
+
+{% block extra_nav %}
+<nav class="nav-style">
+    <ul style="list-style-type: none; margin: 0; padding: 0; overflow: hidden;">
+        <li style="float: left; margin-right: 20px; padding: 10px 20px;" class="tab header active" ><a href="{% url 'televir_reference_files' %}" style="font-size: 18px;">Files</a></li>
+        <li style="float: left; margin-right: 20px; padding: 10px 0;" class="tab" ><a href="{% url 'televir_references' %}" style="font-size: 18px;">References</a></li>
+        <li style="float: left; margin-right: 20px; padding: 10px 0;" class="tab" ><a href="{% url 'reference_panels' %}" style="font-size: 18px;">Panels</a></li>
+    </ul>
+</nav>
+{% endblock %}
+
+{% block content %}
+
+{% block extra_head %}
+
+    <link rel="stylesheet" href="{% static 'css/televir_references_nav.css' %}">
+{% endblock %}
+
+<div class="table-responsive">
+    <table class="table table-striped table-bordered table-hover">
+        <thead>
+            <tr>
+                <th colspan="11">
+                    <a href="{% url 'upload_reference_panel_view' %}" class="btn  btn-small btn-primary dark">Upload Reference Panel</a>
+                </th>
+            </tr>
+
+
+           <tr>
+                {% for column in files_table.columns %}
+                    <th>{{ column }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for file in files_table.page.object_list %}
+                <tr>
+                    {% for column, value in file.items %}
+                        <td class={{column}}> {{ value}} </td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if files_table.page and show_paginatior %}
+{% block pagination %}
+<label id="id-total-list" class="pull-right"> Total files: {{ query_set_count }}</label>
+{% bootstrap_pagination files_table.page url=request.get_full_path %}
+{% endblock pagination %}
+{% else %}
+<label id="id-total-list" class="pull-right">Total files: {{ query_set_count }}</label>
+{% endif %}
+
+
+<!-- The remove Modal -->
+<div class="modal fade" id="id_remove_modal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <!-- Modal Header -->
+            <div class="modal-header">
+                <h4 class="modal-title">Remove Reference Panel</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+			<!-- Modal body -->
+			<div class="modal-body mx-auto mw-100">
+				<div id="id-modal-body-remove-sample" remove-single-value-url="{% url 'remove_televir_project' %}">
+					<label id="id-label-remove" class="col-form-label">Folder Name</label>
+				</div>
+			</div>
+			<!-- Modal footer -->
+			<div class="modal-footer" id="id-modal-footer-remove">
+				<button id="id-remove-button" type="button" class="btn btn-primary" csrf-token="{{ csrf_token }}" data-dismiss="modal">Remove</button>
+				<button id="id-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal"
+					aria-hidden="true">Cancel</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+{% endblock content %}
+
+
+
+{% block js %}
+{% load static from staticfiles %}
+
+{% load static from staticfiles %}
+
+<script type="text/javascript" src="{% static 'js/televir_projects/reference_files.js' %}"></script>
+
+{% endblock js %}

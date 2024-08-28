@@ -1,0 +1,39 @@
+{% extends '_layouts/base.html' %}
+
+{% load bootstrap4 %}
+{% load querystring from django_tables2 %}
+{% load title from django_tables2 %}
+{% load trans blocktrans from i18n %}
+{% load django_bootstrap_breadcrumbs %}
+{% load static %}
+{% load custom_tags %}
+
+
+{% block extra_messages %}
+<!-- set the messages -->
+<div class="container">
+	<div id="id_messages_remove"></div>
+</div>
+{% endblock %}
+
+{% block breadcrumbs %}
+{{ block.super }}
+{% breadcrumb "References Index" "references-index" %}
+{% breadcrumb "Manage References" "" %}
+{% endblock %}
+
+
+{% block extra_nav %}
+<nav style="border-radius: 5px; background-color: #f8f9fa; padding: 10px; margin-left: 20px; margin-bottom: 30px; margin-right: 20px;">
+    <ul style="list-style-type: none; margin: 0; padding: 0; overflow: hidden;">
+        <li style="float: left; margin-right: 10px; {% column_name_check request 'televir_reference_files' %}"><a href="{% url 'televir_reference_files' %}">Files</a></li>
+        <li style="float: left; margin- : 10px; {% column_name_check request 'televir_references' %}"><a href="{% url 'televir_references' %}">References</a></li>
+        <li style="float: left; margin-right: 10px; {% column_name_check request 'reference_panels' %}"><a href="{% url 'reference_panels' %}">Panels</a></li>
+    </ul>
+</nav>
+
+{% endblock %}
+
+{% block content %}
+
+{% endblock %}

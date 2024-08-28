@@ -3,14 +3,13 @@ import os
 import shutil
 import time
 from dataclasses import dataclass
-from random import randint
 from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import PIProject_Sample
+from pathogen_identification.models import PIProject_Sample, Projects
 from pathogen_identification.modules.assembly_class import Assembly_class
 from pathogen_identification.modules.classification_class import Classifier
 from pathogen_identification.modules.metadata_handler import RunMetadataHandler
@@ -24,8 +23,7 @@ from pathogen_identification.modules.remap_class import (Mapping_Instance,
                                                          Mapping_Manager)
 from pathogen_identification.utilities.televir_parameters import (
     RemapParams, TelevirParameters)
-from pathogen_identification.utilities.utilities_pipeline import \
-    RawReferenceUtils
+from pathogen_identification.utilities.utilities_views import RawReferenceUtils
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -68,6 +66,7 @@ class RunDetail_main:
     RUN_TYPE_MAPPING_REQUEST = 2
     RUN_TYPE_SCREENING = 3
     RUN_TYPE_COMBINED_MAPPING = 4
+    RUN_TYPE_PANEL_MAPPING = 5
 
     threads: int
     config: dict
@@ -108,18 +107,6 @@ class RunDetail_main:
     remapping: bool
     house_cleaning: bool
     depletion_report = None
-
-    # activity log
-
-    # qc_performed: bool
-    # enrichment_performed: bool
-    # depletion_performed: bool
-    # assembly_performed: bool
-    # read_classification_performed: bool
-    # contig_classification_performed: bool
-    # remap_prepped: bool
-    # remapping_performed: bool
-    # remap_prepped: bool
 
     ## methods
     preprocess_method: SoftwareUnit
@@ -256,7 +243,7 @@ class RunDetail_main:
             config,
             self.prefix,
         )
-        self.run_type = self.RUN_TYPE_SCREENING
+        #
 
         self.check_metagenomics_classification_exists()
 
@@ -264,6 +251,9 @@ class RunDetail_main:
         self.metagenomics_classification = (
             self.metagenomics_classification_method.check_exists()
         )
+
+        if self.metagenomics_classification:
+            self.run_type = self.RUN_TYPE_SCREENING
 
     def pick_remapping_method(
         self, config: dict, method_args: pd.DataFrame
@@ -348,19 +338,35 @@ class RunDetail_main:
         for _, software_get_function in self.settings_dict.items():
             software_get_function(config, method_args)
 
-        ###
-
         self.software_remap = SoftwareRemap(
             self.remapping_method,
             self.remap_filtering_method,
         )
 
-    def __init__(self, config: dict, method_args: pd.DataFrame, username: str):
-        self.project_name = config["project_name"]
-        self.username = username
+    def update_methods(self, config: dict, method_args: pd.DataFrame):
+        self.set_settings_dict()
+
+        for _, software_get_function in self.settings_dict.items():
+            software_get_function(config, method_args)
+
+        ###
+        self.software_remap.remap_software = self.remapping_method
+        self.software_remap.remap_filters.args_df = self.remap_filtering_method.args_df
+        self.software_remap.remap_filters.config = self.remap_filtering_method.config
+        self.software_remap.remap_filters.prefix = self.remap_filtering_method.prefix
+        self.software_remap.remap_filters.software_list.extend(
+            self.remap_filtering_method.software_list
+        )
+
+    def __init__(self, config: dict, method_args: pd.DataFrame, project_pk: int):
+        project = Projects.objects.get(pk=project_pk)
+        self.project_name = project.name
+        self.username = project.owner.username
+
         self.prefix = config["prefix"]
         self.suprun = self.prefix
         self.run_type = self.RUN_TYPE_PIPELINE
+        self.project_pk = project_pk
         self.run_pk = None
         self.ps_pk = None
 
@@ -368,7 +374,7 @@ class RunDetail_main:
         self.modules = list(self.method_args["module"].unique())
         self.config = config
         self.log_dir = config["directories"]["log_dir"]
-        print("logdir", self.log_dir)
+        print("logdir", self.log_dir, "run type", self.run_type)
 
         self.cmd = RunCMD(
             get_bindir_from_binaries(
@@ -426,7 +432,7 @@ class RunDetail_main:
         )
 
         self.static_dir_plots = os.path.join(
-            self.substructure_dir,
+            self.static_dir,
             self.dir_plots,
         )
 
@@ -441,7 +447,7 @@ class RunDetail_main:
         )
 
         os.makedirs(
-            os.path.join(ConstantsSettings.static_directory, self.static_dir_plots),
+            os.path.join(self.static_dir_plots),
             exist_ok=True,
         )
 
@@ -522,17 +528,9 @@ class RunDetail_main:
         self.maximum_coverage = 1000000000
         ### metadata
 
-        remap_params = TelevirParameters.get_remap_software(
-            self.username, self.project_name
-        )
+        remap_params = TelevirParameters.get_remap_software(self.project_pk)
 
-        self.metadata_tool = RunMetadataHandler(
-            self.username,
-            self.config,
-            sift_query=config["sift_query"],
-            prefix=self.prefix,
-            rundir=self.deployment_dir,
-        )
+        self.set_metadata_tool()
 
         self.max_remap = remap_params.max_accids
         self.taxid_limit = remap_params.max_taxids
@@ -592,6 +590,15 @@ class RunDetail_main:
             f"{self.prefix}_mclass_summary.tsv",
         )
 
+    def set_metadata_tool(self):
+        self.metadata_tool = RunMetadataHandler(
+            self.username,
+            self.config,
+            sift_query=self.config["sift_query"],
+            prefix=self.prefix,
+            rundir=self.deployment_dir,
+        )
+
     def update_reads(self):
         self.sample.r1.update(
             self.prefix,
@@ -636,7 +643,7 @@ class RunDetail_main:
 
         ### set software methods and actions
 
-        self.set_methods(config, method_args)
+        self.update_methods(config, method_args)
 
         ### set default actions
         self.sift = config["actions"]["SIFT"]
@@ -683,10 +690,8 @@ class RunDetail_main:
 
 
 class Run_Deployment_Methods(RunDetail_main):
-    def __init__(
-        self, config_json: os.PathLike, method_args: pd.DataFrame, username: str
-    ):
-        super().__init__(config_json, method_args, username)
+    def __init__(self, config_dict: dict, method_args: pd.DataFrame, project_pk: int):
+        super().__init__(config_dict, method_args, project_pk)
         self.mapped_instances = []
 
     def Prep_deploy(self, remap_prep=True):
@@ -797,7 +802,7 @@ class Run_Deployment_Methods(RunDetail_main):
             if self.preprocess_method.check_processed_exist():
                 r1_proc, r2_proc = self.preprocess_method.retrieve_qc_reads()
                 self.sample.r1.clean_exo = r1_proc
-                if self.type == "PE":
+                if self.type == ConstantsSettings.PAIR_END:
                     self.sample.r2.clean_exo = r2_proc
 
             self.preprocess_drone.run()
@@ -923,22 +928,9 @@ class Run_Deployment_Methods(RunDetail_main):
             logdir=self.log_dir,
         )
 
+        self.remap_prepped = True
+
     def deploy_REMAPPING(self):
-        self.remap_manager = Mapping_Manager(
-            self.metadata_tool.remap_targets,
-            self.sample.r1,
-            self.sample.r2,
-            self.software_remap,
-            self.assembly_drone.assembly_file_fasta_gz,
-            self.type,
-            self.prefix,
-            self.threads,
-            get_bindir_from_binaries(self.config["bin"], CS.PIPELINE_NAME_remapping),
-            self.logger_level_detail,
-            True,
-            remap_params=self.remap_params,
-            logdir=self.log_dir,
-        )
 
         print(
             f"{self.prefix} remapping # targets: {len(self.metadata_tool.remap_targets)}"
@@ -954,9 +946,9 @@ class Run_Deployment_Methods(RunDetail_main):
 
 class RunEngine_class(Run_Deployment_Methods):
     def __init__(
-        self, config_json: os.PathLike, method_args: pd.DataFrame, username: str
+        self, config_json: os.PathLike, method_args: pd.DataFrame, project_pk: int
     ):
-        super().__init__(config_json, method_args, username)
+        super().__init__(config_json, method_args, project_pk)
 
         self.logger.info("Starting Pipeline")
 
@@ -994,19 +986,13 @@ class RunEngine_class(Run_Deployment_Methods):
             print("Deploying QC")
             self.deploy_QC()
 
-            self.sample.r1.is_clean()
-            self.sample.r2.is_clean()
-
             self.sample.qc_soft = self.preprocess_drone.preprocess_method.name
             self.sample.input_fastqc_report = self.preprocess_drone.input_qc_report
             self.sample.processed_fastqc_report = (
                 self.preprocess_drone.processed_qc_report
             )
 
-            self.sample.reads_after_processing = self.sample.current_total_read_number()
-            self.sample.get_qc_data()
-            self.sample.r1.clean_read_names()
-            self.sample.r2.clean_read_names()
+            self.process_QC()
 
         else:
             self.deploy_QC(fake_run=True)
@@ -1022,13 +1008,7 @@ class RunEngine_class(Run_Deployment_Methods):
                 self.preprocess_drone.processed_qc_report
             )
 
-            self.sample.r1.is_clean()
-            self.sample.r2.is_clean()
-            self.sample.reads_after_processing = self.sample.current_total_read_number()
-            self.sample.get_fake_qc_data()
-
-            self.sample.r1.clean_read_names()
-            self.sample.r2.clean_read_names()
+            self.process_QC()
 
         self.Update_exec_time()
         self.generate_output_data_classes()
@@ -1302,10 +1282,8 @@ class RunEngine_class(Run_Deployment_Methods):
 
 
 class RunMainTree_class(Run_Deployment_Methods):
-    def __init__(
-        self, config_json: os.PathLike, method_args: pd.DataFrame, username: str
-    ):
-        super().__init__(config_json, method_args, username)
+    def __init__(self, config_dict: dict, method_args: pd.DataFrame, project_pk: int):
+        super().__init__(config_dict, method_args, project_pk)
 
         self.logger.info("Starting Pipeline")
 
@@ -1335,8 +1313,6 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.sample.r2.is_clean()
         self.sample.reads_after_processing = self.sample.current_total_read_number()
         self.sample.get_fake_qc_data()
-        self.sample.r1.clean_read_names()
-        self.sample.r2.clean_read_names()
 
     def Run_QC(self):
         if self.quality_control and not self.qc_performed:
@@ -1386,7 +1362,6 @@ class RunMainTree_class(Run_Deployment_Methods):
                     self.sample.r2.enriched_read_number = enriched_read_number
                 self.sample.r1.enriched_read_number = enriched_read_number
 
-                print("ENRICHED READS", self.sample.r1.enriched, r1_proc)
                 self.sample.r1.enriched_exo = r1_proc
                 shutil.copy(r1_proc, self.sample.r1.enriched)
 
@@ -1412,7 +1387,7 @@ class RunMainTree_class(Run_Deployment_Methods):
             self.enrichment_performed = True
 
         if self.depletion:
-            print(self.enrichment_method.check_enriched_exist())
+            print(self.enrichment_method.check_depleted_exist())
             print("DEPLETION EXISTS")
             if self.depletion_method.check_depleted_exist():
                 r1_proc, r2_proc = self.depletion_method.retrieve_depleted_reads()
@@ -1505,9 +1480,15 @@ class RunMainTree_class(Run_Deployment_Methods):
     def Prep_Metagenomics_Classification(self):
         reference_utils = RawReferenceUtils(self.sample_registered)
 
-        # reference_table = collect_references_table_all()
-        reference_table = reference_utils.sample_reference_tables()
-        self.metadata_tool.generate_targets_from_report(reference_table, max_remap=1)
+        ### ############################################################# ###
+        # reference_table = reference_utils.sample_reference_tables()
+        reference_table = reference_utils.sample_compound_refs_table()
+        print("REFERENCE TABLE: ", reference_table)
+        print("#### REFERENCE TABLE SHAPE: ", reference_table.shape)
+
+        self.metadata_tool.merge_sample_references_ensemble(
+            self.sample_registered, max_remap=1
+        )
 
         self.prep_REMAPPING()
         self.remap_manager.generate_remap_targets_fasta()
@@ -1563,12 +1544,21 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.remap_prepped = True
 
     def plan_remap_prep(self):
+
+        print("########### PLANNING REMAP PREP ###########")
+        print("remap prep: ", self.remap_prepped)
+
+        print("MAX TAXIDS: ", self.remap_params.max_taxids)
+        print("MAX ACCIDS: ", self.remap_params.max_accids)
+
         self.metadata_tool.match_and_select_targets(
             self.read_classification_drone.classification_report,
             self.contig_classification_drone.classification_report,
-            self.remap_params.max_accids,
-            self.remap_params.max_taxids,
+            max_remap=self.remap_params.max_accids,
+            taxid_limit=self.remap_params.max_taxids,
         )
+
+        print("remap targets: ", self.metadata_tool.remap_targets)
 
         self.import_from_remap_prep()
 
@@ -1576,11 +1566,13 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.aclass_summary = self.metadata_tool.aclass
         self.rclass_summary = self.metadata_tool.rclass
         self.merged_targets = self.metadata_tool.merged_targets
+
+        print("RAW TARGETS: ", self.metadata_tool.raw_targets)
         self.raw_targets = self.metadata_tool.raw_targets
         self.remap_plan = self.metadata_tool.remap_plan
 
     def plan_combined_remapping(self):
-        self.metadata_tool.merge_sample_references(
+        self.metadata_tool.merge_sample_references_ensemble(
             self.sample_registered,
             max_taxids=self.remap_params.max_taxids,
             max_remap=self.remap_params.max_accids,
@@ -1591,9 +1583,12 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.prep_REMAPPING()
         self.remap_prepped = True
 
-    def Run_Remapping(self):
+    def Run_Remapping(self, prep=True):
+        print("remapping: ", self.remapping)
+        print(self.remap_prepped)
         if not self.remap_prepped:
             return
+
         print("remapping: ", self.remapping)
         print(self.remap_prepped)
         if self.remapping is True and self.remapping_performed is False:
@@ -1602,7 +1597,9 @@ class RunMainTree_class(Run_Deployment_Methods):
 
             print("merged targets: ", self.merged_targets)
 
-            self.prep_REMAPPING()
+            if prep:
+                self.prep_REMAPPING()
+
             self.deploy_REMAPPING()
 
             self.remapping_performed = True
@@ -1641,6 +1638,11 @@ class RunMainTree_class(Run_Deployment_Methods):
 
     def save_df_check_exists(self, df: pd.DataFrame, path: str):
         dirname = os.path.dirname(path)
+        print("############### SAVING ", path)
+        print("path exists: ", os.path.exists(path))
+        print("dirname exists: ", os.path.exists(dirname))
+        print(df.shape)
+
         if not os.path.exists(dirname):
             os.makedirs(dirname, exist_ok=True)
 

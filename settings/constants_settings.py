@@ -58,13 +58,13 @@ class ConstantsSettings(object):
         PIPELINE_NAME_assembly,
         PIPELINE_NAME_contig_classification,
         PIPELINE_NAME_read_classification,
-        PIPELINE_NAME_metagenomics_screening,
         PIPELINE_NAME_metagenomics_settings,
         PIPELINE_NAME_request_mapping,
         PIPELINE_NAME_remapping,
         PIPELINE_NAME_remap_filtering,
         PIPELINE_NAME_map_filtering,
         PIPELINE_NAME_reporting,
+        PIPELINE_NAME_metagenomics_screening,
     ]
 
     vect_pipeline_televir_classic = [
@@ -96,6 +96,7 @@ class ConstantsSettings(object):
         PIPELINE_NAME_extra_qc,
         PIPELINE_NAME_viral_enrichment,
         PIPELINE_NAME_host_depletion,
+        PIPELINE_NAME_map_filtering,
         PIPELINE_NAME_metagenomics_screening,
         PIPELINE_NAME_metagenomics_settings,
     ]
@@ -109,6 +110,14 @@ class ConstantsSettings(object):
         PIPELINE_NAME_reporting,
     ]
 
+    vect_pipeline_televir_workflows_display = [
+        PIPELINE_NAME_extra_qc,
+        PIPELINE_NAME_viral_enrichment,
+        PIPELINE_NAME_host_depletion,
+        PIPELINE_NAME_request_mapping,
+        PIPELINE_NAME_map_filtering,
+    ]
+
     vect_pipeline_televir_request_mapping = [
         PIPELINE_NAME_extra_qc,
         PIPELINE_NAME_viral_enrichment,
@@ -117,6 +126,28 @@ class ConstantsSettings(object):
         PIPELINE_NAME_map_filtering,
         PIPELINE_NAME_reporting,
     ]
+
+    vect_short_acronyms = {
+        PIPELINE_NAME_read_quality_analysis: "RQA",
+        PIPELINE_NAME_type_and_subtype_analysis: "TSA",
+        PIPELINE_NAME_variant_detection: "VD",
+        PIPELINE_NAME_coverage_analysis: "CA",
+        PIPELINE_NAME_alignment: "AL",
+        PIPELINE_NAME_intra_host_minor_variant_detection: "IHVD",
+        PIPELINE_NAME_extra_qc: "EQC",
+        PIPELINE_NAME_viral_enrichment: "VE",
+        PIPELINE_NAME_host_depletion: "HD",
+        PIPELINE_NAME_contig_classification: "CC",
+        PIPELINE_NAME_read_classification: "RC",
+        PIPELINE_NAME_metagenomics_screening: "MS",
+        PIPELINE_NAME_metagenomics_settings: "MS",
+        PIPELINE_NAME_request_mapping: "RM",
+        PIPELINE_NAME_assembly: "AS",
+        PIPELINE_NAME_remapping: "REM",
+        PIPELINE_NAME_remap_filtering: "REF",
+        PIPELINE_NAME_map_filtering: "MF",
+        PIPELINE_NAME_reporting: "REP",
+    }
 
     ###############################
     ### technology available

@@ -14,6 +14,7 @@ from utils.process_SGE import ProcessSGE
 
 
 class Command(BaseCommand):
+
     help = "deploy run"
 
     def add_arguments(self, parser):

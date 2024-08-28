@@ -2,9 +2,7 @@ import copy
 import logging
 import os
 import re
-import shutil
 import traceback  # for debugging
-from copy import _copy_immutable, _deepcopy_dispatch
 from typing import Callable, List, Optional, Tuple, Union
 
 import numpy as np
@@ -12,9 +10,9 @@ import pandas as pd
 from django.db.models import QuerySet
 
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
-from constants.constants import TypePath
 from fluwebvirus.settings import STATIC_ROOT
 from pathogen_identification.constants_settings import ConstantsSettings as PIConstants
+from pathogen_identification.deployment_main import PathogenIdentificationDeploymentCore
 from pathogen_identification.models import (
     FinalReport,
     ParameterSet,
@@ -34,7 +32,6 @@ from pathogen_identification.utilities.update_DBs_tree import (
     Update_Remap,
     Update_RunMain_Initial,
     Update_RunMain_Secondary,
-    get_run_parents,
 )
 from pathogen_identification.utilities.utilities_pipeline import (
     Pipeline_Makeup,
@@ -53,7 +50,7 @@ def logger_copy(x, memo):
 copy._deepcopy_dispatch[logging.Logger] = logger_copy
 
 
-class PathogenIdentification_Deployment_Manager:
+class PathogenIdentification_TreeDeployment(PathogenIdentificationDeploymentCore):
     project: Projects
     sample: PIProject_Sample
     prefix: str
@@ -62,10 +59,10 @@ class PathogenIdentification_Deployment_Manager:
     run_engine: RunMainTree_class
     params = dict
     run_params_db = pd.DataFrame()
-    pk: int = 0
+    pk: int
     username: str
-    prepped: bool = False
-    sent: bool = False
+    prepped: bool
+    sent: bool
     parameter_set: ParameterSet
 
     STATUS_ZERO = 0
@@ -73,198 +70,23 @@ class PathogenIdentification_Deployment_Manager:
     STATUS_RUNNING = 2
     STATUS_SENT = 3
 
-    assembly_udated: bool = False
-    classification_updated: bool = False
+    assembly_udated: bool
+    classification_updated: bool
 
     def __init__(
         self,
-        sample: PIProject_Sample,  # sample name
-        project: Projects,
-        username: str = "admin",
-        technology: str = "ONT",
+        sample: PIProject_Sample,
         deployment_root_dir: str = "/tmp/insaflu/insaflu_something",
         dir_branch: str = "deployment",
+        prefix: str = "run",
         threads: int = 3,
     ) -> None:
-        self.username = username
-        self.project = project
-        self.sample = sample
 
-        self.deployment_root_dir = deployment_root_dir
-        self.dir_branch = dir_branch
-        self.dir = os.path.join(self.deployment_root_dir, dir_branch)
+        super().__init__(sample, deployment_root_dir, dir_branch, prefix, threads)
 
-        self.technology = technology
-        self.install_registry = Televir_Metadata
-
-        self.threads = threads
-
-        self.file_r1 = sample.sample.get_fastq_available(TypePath.MEDIA_ROOT, True)
-        if sample.sample.exist_file_2():
-            self.file_r2 = sample.sample.get_fastq_available(TypePath.MEDIA_ROOT, False)
-        else:
-            self.file_r2 = ""
-
+        self.sent = False
         self.assembly_udated = False
         self.classification_updated = False
-
-    def input_read_project_path(self, filepath) -> str:
-        """copy input reads to project directory and return new path"""
-
-        if not os.path.isfile(filepath):
-            return ""
-
-        rname = os.path.basename(filepath)
-        new_rpath = os.path.join(self.dir, "reads") + "/" + rname
-        shutil.copy(filepath, new_rpath)
-        return new_rpath
-
-    def configure(self) -> bool:
-        """generate config dictionary for run_main, and copy input reads to project directory."""
-        self.get_constants()
-
-        self.generate_config_file()
-        self.prep_test_env()
-
-        new_r1_path = self.input_read_project_path(self.file_r1)
-        new_r2_path = self.input_read_project_path(self.file_r2)
-
-        self.config["sample_name"] = self.sample.name
-        self.config["sample_registered"] = self.sample
-
-        self.config["r1"] = new_r1_path
-        self.config["r2"] = new_r2_path
-        self.config["type"] = [PIConstants.SINGLE_END, PIConstants.PAIR_END][
-            int(os.path.isfile(self.config["r2"]))
-        ]
-
-        return True
-
-    def get_constants(self):
-        """set constants for technology"""
-        if self.technology == ConstantsSettings.TECHNOLOGY_illumina:
-            self.constants = PIConstants.CONSTANTS_ILLUMINA
-        if self.technology == ConstantsSettings.TECHNOLOGY_minion:
-            self.constants = PIConstants.CONSTANTS_ONT
-
-    def generate_config_file(self):
-        self.config = {
-            "project": self.project.name,
-            "source": self.install_registry.SOURCE,
-            "deployment_root_dir": self.deployment_root_dir,
-            "sub_directory": self.dir_branch,
-            "directories": {},
-            "threads": self.threads,
-            "prefix": self.prefix,
-            "project_name": self.project.name,
-            "metadata": {
-                x: os.path.join(self.install_registry.METADATA["ROOT"], g)
-                for x, g in self.install_registry.METADATA.items()
-            },
-            "technology": self.technology,
-            "bin": self.install_registry.BINARIES,
-            "actions": {},
-        }
-
-        for dr, g in PIConstants.DIRS.items():
-            self.config["directories"][dr] = os.path.join(self.dir, g)
-
-        for dr, g in PIConstants.ACTIONS.items():
-            self.config["actions"][dr] = g
-
-        self.config.update(self.constants)
-
-    def update_config(self):
-        self.config["prefix"] = self.prefix
-
-    def prep_test_env(self):
-        """
-        from main directory bearing scripts, params.py and main.sh, create metagenome run directory
-
-        :return:
-        """
-        os.makedirs(self.dir, exist_ok=True)
-        os.makedirs(
-            os.path.join(PIConstants.media_directory, self.dir_branch),
-            exist_ok=True,
-        )
-        os.makedirs(
-            os.path.join(PIConstants.static_directory, self.dir_branch),
-            exist_ok=True,
-        )
-
-        for directory in self.config["directories"].values():
-            os.makedirs(directory, exist_ok=True)
-
-    def close(self):
-        if os.path.exists(self.dir):
-            shutil.rmtree(self.dir)
-
-    def import_params(self, run_params_db: pd.DataFrame):
-
-        self.run_params_db = run_params_db
-
-    def run_main_prep_check_first(self):
-        """
-        check if run_main has been prepped and not root, if so, prep it
-        by equiping it with the run_engine"""
-        if self.prepped or self.run_params_db.empty:
-            return
-
-        self.run_engine = RunMainTree_class(
-            self.config, self.run_params_db, self.username
-        )
-        self.run_engine.Prep_deploy()
-        self.run_engine.generate_output_data_classes()
-        self.prepped = True
-
-    def run_main(self):
-        self.run_engine.Run_QC()
-        self.run_engine.Run_PreProcess()
-        self.run_engine.Sanitize_reads()
-        self.run_engine.Run_Assembly()
-        self.run_engine.Run_Contig_classification()
-        self.run_engine.Run_Read_classification()
-        self.run_engine.Run_Remapping()
-
-    def update_engine(self):
-
-        if "module" in self.run_params_db.columns:
-            self.run_engine.Update(self.config, self.run_params_db)
-            self.run_engine.Prep_deploy(remap_prep=False)
-
-    def update_merged_targets(self, merged_targets: List[Remap_Target]):
-        self.run_engine.update_merged_targets(merged_targets)
-
-    def delete_run_media(self):
-        """delete project media directory"""
-
-        if self.prepped:
-            if os.path.isdir(self.run_engine.media_dir):
-                shutil.rmtree(self.run_engine.media_dir, ignore_errors=True)
-
-    def delete_run_static(self):
-        """delete project static directory"""
-
-        if self.prepped:
-            if os.path.isdir(self.run_engine.static_dir):
-                shutil.rmtree(self.run_engine.static_dir, ignore_errors=True)
-
-    def delete_run_record(self, parameter_set: ParameterSet):
-        """delete project record in database"""
-
-        if self.prepped:
-            _, runmain, _ = get_run_parents(self.run_engine, parameter_set)
-
-            if runmain is not None:
-                runmain.delete()
-
-    def delete_run(self, parameter_set: ParameterSet):
-        """delete project record in database"""
-
-        # self.delete_run_media()
-        # self.delete_run_static()
-        self.delete_run_record(parameter_set)
 
 
 class Tree_Node:
@@ -274,7 +96,7 @@ class Tree_Node:
     children: list
     parameters: pd.DataFrame
     software_tree_pk: int
-    run_manager: PathogenIdentification_Deployment_Manager
+    run_manager: PathogenIdentification_TreeDeployment
     tree_node: SoftwareTreeNode
     parameter_set: ParameterSet
 
@@ -312,14 +134,14 @@ class Tree_Node:
         report_layout_params = TelevirParameters.get_report_layout_params(
             project_pk=self.parameter_set.project.pk
         )
-        report_sorter = ReportSorter(final_report, report_layout_params)
+        report_sorter = ReportSorter(
+            self.parameter_set.sample, final_report, report_layout_params
+        )
         report_sorter.sort_reports_save()
 
-    def receive_run_manager(
-        self, run_manager: PathogenIdentification_Deployment_Manager
-    ):
+    def receive_run_manager(self, run_manager: PathogenIdentification_TreeDeployment):
         run_manager.prefix = f"run_leaf_{self.node_index}"
-        run_manager.configure()
+        run_manager.configure_constants()
         run_manager.import_params(self.parameters)
 
         run_manager.run_main_prep_check_first()
@@ -352,6 +174,8 @@ class Tree_Node:
     def setup_parameterset(
         self, project: Projects, sample: PIProject_Sample, node: SoftwareTreeNode
     ):
+        utils_manager = Utils_Manager()
+
         try:
             parameter_set = ParameterSet.objects.get(
                 project=project, sample=sample, leaf=node
@@ -364,6 +188,11 @@ class Tree_Node:
             parameter_set.status = ParameterSet.STATUS_RUNNING
             parameter_set.leaf = node
             parameter_set.save()
+
+        except ParameterSet.MultipleObjectsReturned:
+            parameter_set = ParameterSet.objects.filter(
+                project=project, sample=sample, leaf=node
+            ).first()
 
         return parameter_set
 
@@ -400,7 +229,7 @@ class Tree_Node:
         self.parameter_set.status = ParameterSet.STATUS_ERROR
         self.parameter_set.save()
 
-        self.run_manager.delete_run(self.parameter_set)
+        self.run_manager.delete_run()
 
         return True
 
@@ -408,11 +237,11 @@ class Tree_Node:
         self, project: Projects, sample: PIProject_Sample, tree: PipelineTree
     ):
         tree_node = self.generate_software_tree_node_entry(tree)
+
         if tree_node is None:
             return False
 
         parameter_set = self.setup_parameterset(project, sample, tree_node)
-
         if parameter_set is None:
             return False
 
@@ -426,18 +255,15 @@ class Tree_Node:
 
     def determine_params(self, pipe_tree: PipelineTree, sample: PIProject_Sample):
         arguments_list = []
-        print("######## gettting node parameters ########")
-        print(self.branch)
+
         for node in self.branch:
-            print(node)
             node_metadata = pipe_tree.node_index.loc[node].node
 
             path_to_node = pipe_tree.paths_to_node(node)
             ps_visited = pipe_tree.check_if_leaf_steps_exist_list(
                 path_to_node, sample=sample
             )
-            print(path_to_node)
-            print(ps_visited)
+
             node_metadata = (
                 node_metadata[0],
                 node_metadata[1],
@@ -461,9 +287,6 @@ class Tree_Node:
         module = module_df.parameter.values[0]
         software = module_df.value.values[0]
         parameters_df = arguments_df[arguments_df.flag == "param"]
-
-        print(f"#### NODE {self.node_index} PARAMERTERS ####")
-        print(parameters_df)
 
         parameters_df["software"] = software
         parameters_df["module"] = module
@@ -645,14 +468,14 @@ class Tree_Progress:
             prefix,
         )
 
-        deployment_manager = PathogenIdentification_Deployment_Manager(
+        deployment_manager = PathogenIdentification_TreeDeployment(
             self.sample,
-            self.project,
-            self.project.owner.username,
-            self.project.technology,
-            temp_dir,
-            deployment_directory_structure,
-            PIConstants.DEPLOYMENT_THREADS,
+            # self.project,
+            # self.project.owner.username,
+            # self.project.technology,
+            deployment_root_dir=temp_dir,
+            dir_branch=deployment_directory_structure,
+            threads=PIConstants.DEPLOYMENT_THREADS,
         )
 
         return deployment_manager
@@ -670,6 +493,11 @@ class Tree_Progress:
             leaf_node = self.spawn_node_child_prepped(node, leaf)
             self.register_node(leaf_node)
             self.update_node_dbs(leaf_node)
+
+            node.run_manager.classification_updated = (
+                leaf_node.run_manager.classification_updated
+            )
+            node.run_manager.assembly_udated = leaf_node.run_manager.assembly_udated
 
     def register_finished(self, node: Tree_Node):
         self.logger.info(f"Registering node {node.node_index} as finished")
@@ -747,9 +575,12 @@ class Tree_Progress:
         new_node = Tree_Node(
             self.tree, child, node.software_tree_pk, sample=self.sample
         )
-        # node.run_manager.run_engine.logger = None
 
         run_manager_copy = copy.deepcopy(node.run_manager)
+        run_manager_copy.classification_updated = (
+            node.run_manager.classification_updated
+        )
+        run_manager_copy.assembly_udated = node.run_manager.assembly_udated
         new_node.receive_run_manager(run_manager_copy)
 
         return new_node
@@ -757,7 +588,7 @@ class Tree_Progress:
     def spawn_node_child_prepped(self, node: Tree_Node, child: int) -> Tree_Node:
         new_node = self.spawn_node_child(node, child)
 
-        new_node.run_manager.update_config()
+        new_node.run_manager.update_config_prefix()
         new_node = self.transfer_sample(node, new_node)
         new_node.run_manager.update_engine()
 
@@ -810,6 +641,9 @@ class Tree_Progress:
                 self.classification_monitor.classification_performed(node)
                 and node.run_manager.classification_updated == False
             ):
+                node.run_manager.run_engine.plan_remap_prep_safe()
+                node.run_manager.run_engine.export_intermediate_reports()
+                node.run_manager.run_engine.generate_output_data_classes()
                 db_updated = Update_Classification(
                     node.run_manager.run_engine, node.parameter_set
                 )
@@ -819,7 +653,6 @@ class Tree_Progress:
                 node.run_manager.classification_updated = True
 
             if node.run_manager.run_engine.remapping_performed:
-                print("REMAPPING PERFORMED")
                 node.run_manager.run_engine.export_final_reports()
                 node.run_manager.run_engine.Summarize()
                 node.run_manager.run_engine.generate_output_data_classes()
@@ -861,8 +694,9 @@ class Tree_Progress:
         Get remap plans for all nodes in a list"""
 
         for n in nodes:
-            if n.run_manager.run_engine.remap_prepped is False:
-                n.run_manager.run_engine.plan_remap_prep()
+            # if n.run_manager.run_engine.remap_prepped is False:
+            n.run_manager.run_engine.metadata_tool.reset()
+            n.run_manager.run_engine.plan_remap_prep_safe()
 
         return nodes
 
@@ -871,12 +705,15 @@ class Tree_Progress:
         Get merged targets from a list of nodes
 
         :param nodes_list: list of nodes"""
+        accids_in_list = {}
+
         combined_list = []
 
         for node in nodes_list:
-            combined_list.extend(
-                node.run_manager.run_engine.metadata_tool.remap_targets
-            )
+            for target in node.run_manager.run_engine.metadata_tool.remap_targets:
+                if target.accid not in accids_in_list:
+                    accids_in_list[target.accid] = True
+                    combined_list.append(target)
 
         return combined_list
 
@@ -936,7 +773,7 @@ class Tree_Progress:
                 source_paramaters_combinations[source]["nodes"].append(node)
 
         for node in self.current_nodes:
-            sample_source = node.run_manager.run_engine.sample.sources_list()
+
             update_combination_dict(node)
 
         grouped_nodes = [
@@ -1041,17 +878,19 @@ class Tree_Progress:
         """
         deploy nodes remap by sample sources."""
         current_nodes = []
-        print("########## STACKED DEPLOYEMENT MAPPING ##########")
-        print(nodes_by_sample_sources)
 
         for nodes in nodes_by_sample_sources:
-            print("########### NODES ###########")
+
             if len(nodes) == 0:
                 continue
 
             nodes = self.get_remap_plans(nodes)
+
             group_targets = self.get_node_node_targets(nodes)
-            print(group_targets)
+
+            self.logger.info(
+                f"#### Total targets registered for remap: {len(group_targets)}"
+            )
 
             volonteer = nodes[0]
 
@@ -1198,8 +1037,10 @@ class Tree_Progress:
         action()
 
         for node in self.current_nodes:
-            if self.classification_monitor.ready_to_merge(node):
-                print("#### NODE READY TO MERGE ####")
+            if (
+                self.classification_monitor.ready_to_merge(node)
+                and node.run_manager.classification_updated == False
+            ):
                 node.run_manager.run_engine.plan_remap_prep_safe()
 
             self.update_node_leaves_dbs(node)
@@ -1291,7 +1132,7 @@ class TreeProgressGraph:
 
     def __init__(self, sample: PIProject_Sample):
         self.sample = sample
-        self.media_dir = sample.get_media_dir()
+        self.media_dir = sample.media_dir
         self.project = sample.project
         self.stacked_df_path = os.path.join(
             self.media_dir, self.progress_stackl_df_name.format(sample.pk)
@@ -1305,7 +1146,6 @@ class TreeProgressGraph:
     def get_node_params_network(
         self, existing_parameter_sets: Union[QuerySet, List[ParameterSet]]
     ) -> pd.DataFrame:
-        pipeline_utils = Utils_Manager()
 
         technologies = [ps.project.technology for ps in existing_parameter_sets]
         if len(set(technologies)) > 1:
@@ -1323,7 +1163,7 @@ class TreeProgressGraph:
         }
 
         pipetrees_dict = {
-            tree_pk: pipeline_utils.parameter_util.convert_softwaretree_to_pipeline_tree(
+            tree_pk: self.pipeline_utils.parameter_util.convert_softwaretree_to_pipeline_tree(
                 tree
             )
             for tree_pk, tree in software_tree_dict.items()
@@ -1342,6 +1182,9 @@ class TreeProgressGraph:
             ConstantsSettings.PIPELINE_NAME_map_filtering: "dodgerblue",
             ConstantsSettings.PIPELINE_NAME_remapping: "khaki",
             ConstantsSettings.PIPELINE_NAME_remap_filtering: "darkslategray",
+            ConstantsSettings.PIPELINE_NAME_metagenomics_screening: "dodgerblue",
+            ConstantsSettings.PIPELINE_NAME_request_mapping: "khaki",
+            ConstantsSettings.PIPELINE_NAME_map_filtering: "darkslategray",
             ConstantsSettings.PIPELINE_NAME_metagenomics_screening: "dodgerblue",
             "Combined analysis": "darkslategray",
             "leaves2": "lightblue",
@@ -1473,12 +1316,12 @@ class TreeProgressGraph:
             tree_pk: SoftwareTree.objects.get(pk=tree_pk) for tree_pk in trees_pk_list
         }
 
-        pipetrees_dict = {
-            tree_pk: pipeline_utils.parameter_util.convert_softwaretree_to_pipeline_tree(
-                tree
-            )
-            for tree_pk, tree in software_tree_dict.items()
-        }
+        # pipetrees_dict = {
+        #    tree_pk: pipeline_utils.parameter_util.convert_softwaretree_to_pipeline_tree(
+        #        tree
+        #    )
+        #    for tree_pk, tree in software_tree_dict.items()
+        # }
 
         stacked_df_dict = {}
 
@@ -1510,13 +1353,13 @@ class TreeProgressGraph:
         ]
 
         all_columns = set()
-        for makeup, stacked_df in stacked_df_dict.items():
+        for _, stacked_df in stacked_df_dict.items():
             all_columns.update(stacked_df.columns)
 
         all_columns = list(all_columns)
         all_columns = [column for column in column_order if column in all_columns]
 
-        for makeup, stacked_df in stacked_df_dict.items():
+        for _, stacked_df in stacked_df_dict.items():
             missing_columns = [
                 column for column in all_columns if column not in stacked_df.columns
             ]
@@ -1540,6 +1383,7 @@ class TreeProgressGraph:
             status__in=[
                 ParameterSet.STATUS_FINISHED,
             ],
+            run_main__run_type=RunMain.RUN_TYPE_PIPELINE,
             sample=self.sample,
         )
 
@@ -1549,7 +1393,7 @@ class TreeProgressGraph:
         if existing_parameter_sets.count() == 0:
             return pd.DataFrame()
 
-        # stacked_df = self.get_node_params(existing_parameter_sets)
+        #
         test_df = self.get_node_params_network(existing_parameter_sets)
         #
 
@@ -1567,7 +1411,7 @@ class TreeProgressGraph:
         deployment_tree = Tree_Progress(tree, self.sample, self.project)
 
         stacked_df = deployment_tree.stacked_changes_log()
-        # stacked_df.to_csv(self.stacked_df_path, sep="\t")
+        #
 
         return stacked_df
 
@@ -1598,7 +1442,7 @@ class TreeProgressGraph:
             + "/bin/"
             + "Rscript",
             "--vanilla",
-            os.path.join(STATIC_ROOT, "R", "pipeline_dendrograph.R"),
+            os.path.join(STATIC_ROOT, "R", "pipeline_dendrograph_network.R"),
             self.stacked_df_path,
             self.graph_html_path,
             ",".join(stacked_df.columns).replace(" ", "."),

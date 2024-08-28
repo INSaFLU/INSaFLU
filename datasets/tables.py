@@ -307,7 +307,7 @@ class DatasetConsensusTable(tables.Table):
 	name = tables.Column('Name', empty_values=())
 	project_name = tables.Column('Project Name', orderable=False, empty_values=())		## when came from projects
 	source = tables.Column('Source', orderable=False, empty_values=())
-	type_and_subtype = tables.LinkColumn('Classification', orderable=False, empty_values=())
+	type_and_subtype = tables.Column('Classification', orderable=False, empty_values=())
 	alerts = tables.Column('Alerts', empty_values=())
 	technology = tables.Column('Technology', orderable=False, empty_values=())
 	consensus_file = tables.LinkColumn('Consensus File', orderable=False, empty_values=())

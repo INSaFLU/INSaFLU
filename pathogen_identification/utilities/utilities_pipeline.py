@@ -8,20 +8,21 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 from django.contrib.auth.models import User
+from django.db import transaction
 from django.db.models import Q, QuerySet
 
-from constants.constants import \
-    Televir_Directory_Constants as Televir_Directories
+from constants.constants import Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.host_library import Host
-from pathogen_identification.models import (ParameterSet, PIProject_Sample,
-                                            Projects, RawReference, RunMain,
-                                            SoftwareTree, SoftwareTreeNode)
-from pathogen_identification.utilities.utilities_televir_dbs import \
-    Utility_Repository
-from pathogen_identification.utilities.utilities_views import \
-    RawReferenceCompound
+from pathogen_identification.host_library import HomoSapiens, Host
+from pathogen_identification.models import (
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
+from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -29,7 +30,7 @@ from utils.lock_atomic_transaction import LockedAtomicTransaction
 tree = lambda: defaultdict(tree)
 
 
-def exclued_steps_decorator(function):
+def excluded_steps_decorator(function):
     """
     create excluded steps given project"""
 
@@ -84,6 +85,7 @@ class PipelineTreeBase:
     ROOT = "root"
     ASSEMBLY_SPECIAL_STEP = "ASSEMBLY_SPECIAL"
     VIRAL_ENRICHMENT_SPECIAL_STEP = "VIRAL_ENRICHMENT"
+    MAP_FILTERING_SPECIAL_STEP = "MAP_FILTERING"
     SINK = "sink"
     dependencies_graph_root = SINK
     dependencies_graph_sink = ROOT
@@ -179,21 +181,31 @@ class Pipeline_Graph_Metagenomics(PipelineTreeBase):
                 self.VIRAL_ENRICHMENT_SPECIAL_STEP,
             ],
             CS.PIPELINE_NAME_map_filtering: [
+                self.ROOT,
                 CS.PIPELINE_NAME_extra_qc,
                 self.ASSEMBLY_SPECIAL_STEP,
+                CS.PIPELINE_NAME_host_depletion,
+                self.VIRAL_ENRICHMENT_SPECIAL_STEP,
+            ],
+            self.MAP_FILTERING_SPECIAL_STEP: [
+                self.ROOT,
+                CS.PIPELINE_NAME_extra_qc,
                 CS.PIPELINE_NAME_host_depletion,
                 self.VIRAL_ENRICHMENT_SPECIAL_STEP,
             ],
             CS.PIPELINE_NAME_request_mapping: [
+                self.ROOT,
                 CS.PIPELINE_NAME_extra_qc,
-                CS.PIPELINE_NAME_map_filtering,
-                self.ASSEMBLY_SPECIAL_STEP,
+                # self.ASSEMBLY_SPECIAL_STEP,
+                self.MAP_FILTERING_SPECIAL_STEP,
                 CS.PIPELINE_NAME_host_depletion,
                 self.VIRAL_ENRICHMENT_SPECIAL_STEP,
             ],
             CS.PIPELINE_NAME_metagenomics_screening: [
-                CS.PIPELINE_NAME_map_filtering,
-                self.ASSEMBLY_SPECIAL_STEP,
+                self.ROOT,
+                CS.PIPELINE_NAME_extra_qc,
+                self.MAP_FILTERING_SPECIAL_STEP,
+                # self.ASSEMBLY_SPECIAL_STEP,
                 CS.PIPELINE_NAME_host_depletion,
                 self.VIRAL_ENRICHMENT_SPECIAL_STEP,
             ],
@@ -240,9 +252,11 @@ class Pipeline_Makeup(PipelineTreeBase):
         Processes the path to remove the root node
         """
         dpath = [
-            x.replace(self.ASSEMBLY_SPECIAL_STEP, CS.PIPELINE_NAME_assembly).replace(
+            x.replace(self.ASSEMBLY_SPECIAL_STEP, CS.PIPELINE_NAME_assembly)
+            .replace(
                 self.VIRAL_ENRICHMENT_SPECIAL_STEP, CS.PIPELINE_NAME_viral_enrichment
             )
+            .replace(self.MAP_FILTERING_SPECIAL_STEP, CS.PIPELINE_NAME_map_filtering)
             for x in dpath
             if x not in [self.ROOT, self.SINK]
         ]
@@ -309,6 +323,7 @@ class Pipeline_Makeup(PipelineTreeBase):
             CS.PIPELINE_NAME_metagenomics_screening,
             CS.PIPELINE_NAME_request_mapping,
             CS.PIPELINE_NAME_map_filtering,
+            CS.PIPELINE_NAME_remap_filtering,
         ]
 
         makeup_return = self.match_makeup_name_from_list(makeup_list, ignore=ignore)
@@ -324,7 +339,7 @@ class Pipeline_Makeup(PipelineTreeBase):
     def makeup_available(self, makeup: int) -> bool:
         return makeup in self.MAKEUP
 
-    @exclued_steps_decorator
+    @excluded_steps_decorator
     def get_software_pipeline_list_including(
         self,
         software: Software,
@@ -357,7 +372,7 @@ class Pipeline_Makeup(PipelineTreeBase):
 
         return pipeline_steps_project
 
-    @exclued_steps_decorator
+    @excluded_steps_decorator
     def get_software_pipeline_list_excluding(
         self,
         software: Software,
@@ -440,6 +455,7 @@ class PipelineTree:
         #
         self.edges = edges
         self.leaves = leaves
+        self.sorted = sorted
         self.edge_dict = [(x[0], x[1]) for x in self.edges]
         self.makeup = makeup
         self.software_tree_pk = software_tree_pk
@@ -512,14 +528,10 @@ class PipelineTree:
         """
         Generate a graph of pipeline
         """
-        # nodes_index = [i for i, x in enumerate(self.nodes)]
-
-        # nodes_index = self.node_index.index.tolist()
 
         self.graph = nx.DiGraph()
 
         self.graph.add_edges_from(self.edge_dict)
-
         self.graph.add_nodes_from(self.node_index.index.tolist())
 
     def get_all_graph_paths(self, sample: Optional[PIProject_Sample] = None) -> dict:
@@ -530,7 +542,6 @@ class PipelineTree:
         self.generate_graph()
         all_paths = list(nx.all_simple_paths(self.graph, 0, self.leaves))
         all_paths_explicit = [self.get_path_explicit(path) for path in all_paths]
-
         path_dict = {
             all_paths_explicit[x][-1][0]: self.df_from_path(path, sample=sample)
             for x, path in enumerate(all_paths)
@@ -1070,8 +1081,7 @@ class Utility_Pipeline_Manager:
 
     def __init__(self):
         self.utility_repository = Utility_Repository(
-            db_path=Televir_Directories.docker_app_directory,
-            install_type="docker",
+            db_path=Televir_Directories.docker_app_directory, install_type="docker"
         )
 
         self.steps_db_dependant = ConstantsSettings.PIPELINE_STEPS_DB_DEPENDENT
@@ -1236,6 +1246,7 @@ class Utility_Pipeline_Manager:
         print("SOFTWARE DBS DICT", self.software_dbs_dict)
 
     def get_host_dbs(self):
+
         software_list = self.utility_repository.get_list_unique_field(
             "software", "name"
         )
@@ -1305,6 +1316,15 @@ class Utility_Pipeline_Manager:
         for possibility in possibilities:
             if possibility in self.host_dbs.keys():
                 host_df = self.host_dbs[possibility]
+                human_reference = HomoSapiens()
+                if (
+                    human_reference.host_name in host_df.host_name.unique()
+                ):  # place human dbs first
+
+                    host_df = host_df[
+                        host_df.host_name == human_reference.host_name
+                    ].append(host_df[host_df.host_name != human_reference.host_name])
+
                 return list(
                     host_df[["path", "file_str"]].itertuples(index=False, name=None)
                 )
@@ -2004,9 +2024,12 @@ class Parameter_DB_Utility:
             owner=user,
         ).distinct()
 
-        print(software_available)
+        if not project and not sample:
+            software_available = software_available.filter(
+                type_of_use__in=Software.TELEVIR_GLOBAL_TYPES
+            )
 
-        if sample is not None:
+        elif sample is not None:
             software_available = software_available.filter(
                 parameter__televir_project_sample=sample
             )
@@ -2014,19 +2037,13 @@ class Parameter_DB_Utility:
         elif project is not None:
             software_available = software_available.filter(
                 parameter__televir_project=project,
+                parameter__televir_project_sample=None,
                 type_of_use__in=Software.TELEVIR_PROJECT_TYPES,
-            )
-
-        if not project and not sample:
-            software_available = software_available.filter(
-                type_of_use__in=Software.TELEVIR_GLOBAL_TYPES
             )
 
         parameters_available = Parameter.objects.filter(
             software__in=software_available,
         ).distinct()
-
-        print(parameters_available)
 
         software_table = pd.DataFrame(software_available.values())
 
@@ -2165,8 +2182,6 @@ class Parameter_DB_Utility:
             request_mapping=request_mapping,
         )
 
-        print(technology, project, sample, metagenomics, mapping_only, screening)
-
         if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
             if sample is not None:
                 technology = sample.project.technology
@@ -2177,14 +2192,29 @@ class Parameter_DB_Utility:
                 technology,
                 owner,
                 project=project,
-                sample=sample,
+                sample=None,
                 metagenomics=metagenomics,
                 mapping_only=mapping_only,
                 screening=screening,
                 request_mapping=request_mapping,
             )
 
-        print(parameters_table.shape, software_table.shape)
+        if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
+            if sample is not None:
+                technology = sample.project.technology
+            elif project is not None:
+                technology = project.technology
+
+            software_table, parameters_table = self.get_software_tables(
+                technology,
+                owner,
+                project=None,
+                sample=None,
+                metagenomics=metagenomics,
+                mapping_only=mapping_only,
+                screening=screening,
+                request_mapping=request_mapping,
+            )
 
         if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
             return pd.DataFrame(
@@ -2270,7 +2300,7 @@ class Parameter_DB_Utility:
         if not self.check_ParameterSet_exists(sample, leaf, project):
             return True
 
-        parameter_set = ParameterSet.objects.get(
+        parameter_set = self.retrieve_parameterset(
             sample=sample, leaf=leaf, project=project
         )
 
@@ -2283,6 +2313,22 @@ class Parameter_DB_Utility:
 
         return True
 
+    def retrieve_parameterset(
+        self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
+    ):
+
+        try:
+
+            return ParameterSet.objects.get(sample=sample, leaf=leaf, project=project)
+        except ParameterSet.DoesNotExist:
+            return None
+
+        except ParameterSet.MultipleObjectsReturned:
+
+            return ParameterSet.objects.filter(
+                sample=sample, leaf=leaf, project=project
+            ).first()
+
     def parameterset_update_status(
         self,
         sample: PIProject_Sample,
@@ -2293,7 +2339,7 @@ class Parameter_DB_Utility:
         if not self.check_ParameterSet_exists(sample, leaf, project):
             return False
 
-        parameter_set = ParameterSet.objects.get(
+        parameter_set = self.retrieve_parameterset(
             sample=sample, leaf=leaf, project=project
         )
 
@@ -2323,7 +2369,7 @@ class Parameter_DB_Utility:
         if not self.check_ParameterSet_exists(sample, leaf, project):
             return True
 
-        parameter_set = ParameterSet.objects.get(
+        parameter_set = self.retrieve_parameterset(
             sample=sample, leaf=leaf, project=project
         )
 
@@ -2341,10 +2387,15 @@ class Parameter_DB_Utility:
         """
         Create a ParameterSet for a sample and leaf
         """
+
         self.logger.info("Creating ParameterSet")
-        parameter_set = ParameterSet.objects.create(
-            sample=sample, leaf=leaf, project=project
-        )
+
+        with transaction.atomic():
+            parameter_set = ParameterSet.objects.create(
+                sample=sample, leaf=leaf, project=project
+            )
+
+        return parameter_set
 
     def check_ParameterSet_processed(
         self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
@@ -2356,7 +2407,7 @@ class Parameter_DB_Utility:
         if not self.check_ParameterSet_exists(sample, leaf, project):
             return False
 
-        parameter_set = ParameterSet.objects.get(
+        parameter_set = self.retrieve_parameterset(
             sample=sample, leaf=leaf, project=project
         )
 
@@ -2369,27 +2420,17 @@ class Parameter_DB_Utility:
         else:
             return False
 
-    def set_parameterset_to_queue(
-        self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
-    ):
+    def set_parameterset_to_queue(self, parameter_set: ParameterSet):
         """
         Set ParameterSet to queue if it exists and is not finished or running.
         """
 
-        try:
-            parameter_set = ParameterSet.objects.get(
-                sample=sample, leaf=leaf, project=project
-            )
-
-            if parameter_set.status not in [
-                ParameterSet.STATUS_FINISHED,
-                ParameterSet.STATUS_RUNNING,
-            ]:
-                parameter_set.status = ParameterSet.STATUS_QUEUED
-                parameter_set.save()
-
-        except ParameterSet.DoesNotExist:
-            pass
+        if parameter_set.status not in [
+            ParameterSet.STATUS_FINISHED,
+            ParameterSet.STATUS_RUNNING,
+        ]:
+            parameter_set.status = ParameterSet.STATUS_QUEUED
+            parameter_set.save()
 
 
 class Utils_Manager:
@@ -2482,22 +2523,19 @@ class Utils_Manager:
                     available = utils.parameter_util.check_ParameterSet_available(
                         sample=sample, leaf=matched_path_node, project=project
                     )
-                    if (
-                        utils.parameter_util.check_ParameterSet_available(
-                            sample=sample, leaf=matched_path_node, project=project
-                        )
-                        is False
-                    ):
+                    if available is False:
                         continue
 
-                else:
-                    self.parameter_util.create_parameter_set(
+                    parameter_set = utils.parameter_util.retrieve_parameterset(
                         sample=sample, leaf=matched_path_node, project=project
                     )
 
-                utils.parameter_util.set_parameterset_to_queue(
-                    sample=sample, leaf=matched_path_node, project=project
-                )
+                else:
+                    parameter_set = self.parameter_util.create_parameter_set(
+                        sample=sample, leaf=matched_path_node, project=project
+                    )
+
+                utils.parameter_util.set_parameterset_to_queue(parameter_set)
                 runs_to_deploy += 1
                 samples_available.append(sample)
                 samples_leaf_dict[sample].append(matched_path_node)
@@ -2536,9 +2574,11 @@ class Utils_Manager:
                     else False
                 )
 
-                utils.parameter_util.set_parameterset_to_queue(
+                parameter_set = utils.parameter_util.retrieve_parameterset(
                     sample=sample, leaf=matched_path_node, project=project
                 )
+
+                utils.parameter_util.set_parameterset_to_queue(parameter_set)
                 runs_to_deploy += 1
                 samples_available.append(sample)
                 samples_leaf_dict[sample].append(matched_path_node)
@@ -2625,8 +2665,6 @@ class Utils_Manager:
         """
         pipeline_setup = Pipeline_Makeup()
 
-        print(user, technology)
-
         combined_table = self.parameter_util.generate_merged_table_safe(
             user, technology
         )
@@ -2641,6 +2679,12 @@ class Utils_Manager:
         """
         Test if televir is available
         """
+
+        software = Software.objects.filter(
+            type_of_use=Software.TYPE_OF_USE_televir_global, owner=user_system
+        )
+        if software.count() == 0:
+            return False
 
         for technology in self.utility_technologies:
             print(technology)
@@ -2697,6 +2741,7 @@ class SoftwareTreeUtils:
         """
         Query software tree
         """
+
         try:
             software_tree = (
                 SoftwareTree.objects.filter(
@@ -2918,7 +2963,6 @@ class SoftwareTreeUtils:
         """
         Generate a project tree
         """
-
         return self.generate_software_tree_safe(self.project)
 
     def generate_tree_from_combined_table(
@@ -3024,16 +3068,36 @@ class SoftwareTreeUtils:
 
         return self.get_available_pathnodes(local_tree)
 
-    def get_available_pathnodes(self, local_tree: PipelineTree) -> dict:
+    def get_available_nodes_summary(
+        self,
+        metagenomics: bool = False,
+        mapping_only: bool = False,
+        screening: bool = False,
+    ) -> dict:
+        """return path as df for each leaf"""
+
+        local_tree = self.generate_software_tree_safe(
+            self.project,
+            self.sample,
+            metagenomics=metagenomics,
+            mapping_only=mapping_only,
+            screening=screening,
+        )
+
+        all_paths = local_tree.get_all_graph_paths()
+        return all_paths
+
+    def get_available_pathnodes(
+        self, local_tree: PipelineTree
+    ) -> Dict[int, SoftwareTreeNode]:
         """ """
 
         # pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
         utils = Utils_Manager()
-        local_paths = local_tree.get_all_graph_paths_explicit()
 
+        local_paths = local_tree.get_all_graph_paths_explicit()
         pipeline_tree = self.generate_software_tree_extend(local_tree=local_tree)
         ### MANAGEMENT
-
         matched_paths = {
             leaf: utils.utility_manager.match_path_to_tree_safe(path, pipeline_tree)
             for leaf, path in local_paths.items()
@@ -3080,6 +3144,7 @@ class SoftwareTreeUtils:
             screening=False,
             mapping_only=False,
         )
+
         clean_samples_leaf_dict, workflow_deployed_dict = (
             self.utils_manager.sample_nodes_check_repeat_allowed(
                 submission_dict, available_path_nodes, self.project
@@ -3104,6 +3169,7 @@ class SoftwareTreeUtils:
             screening=True,
             mapping_only=False,
         )
+
         clean_samples_leaf_dict, workflow_deployed_dict = (
             self.utils_manager.sample_nodes_check_repeat_allowed(
                 submission_dict, available_path_nodes, self.project
@@ -3207,284 +3273,3 @@ class SoftwareTreeUtils:
             tree.makeup,
         )
         return tree
-
-
-class RawReferenceUtils:
-    def __init__(
-        self,
-        sample: Optional[PIProject_Sample] = None,
-        project: Optional[Projects] = None,
-    ):
-        self.sample_registered = sample
-        self.project_registered = project
-        self.runs_found = 0
-        self.list_tables: List[pd.DataFrame] = []
-        self.merged_table: pd.DataFrame = pd.DataFrame()
-
-    def references_table_from_query(
-        self, references: Union[QuerySet, List[RawReference]]
-    ) -> pd.DataFrame:
-        table = []
-        for ref in references:
-            table.append(
-                {
-                    "taxid": ref.taxid,
-                    "accid": ref.accid,
-                    "description": ref.description,
-                    "counts_str": ref.counts,
-                    "read_counts": ref.read_counts,
-                    "contig_counts": ref.contig_counts,
-                }
-            )
-
-        if len(table) == 0:
-            return pd.DataFrame(
-                columns=[
-                    "taxid",
-                    "accid",
-                    "description",
-                    "counts_str",
-                    "read_counts",
-                    "contig_counts",
-                ]
-            )
-        references_table = pd.DataFrame(table)
-
-        references_table["read_counts"] = references_table["read_counts"].astype(float)
-
-        references_table = references_table.sort_values("read_counts", ascending=False)
-        references_table = references_table[references_table["read_counts"] > 1]
-        references_table = references_table[references_table["accid"] != "-"]
-        references_table = references_table[references_table["accid"] != ""]
-
-        return references_table
-
-    def run_references_standard_score_reads(
-        self,
-        references_table: pd.DataFrame,
-    ) -> pd.DataFrame:
-        # references = RawReference.objects.filter(run=run)
-
-        # references_table = references_table_from_query(references)
-
-        if references_table.shape[0] == 0:
-            return pd.DataFrame(
-                columns=list(references_table.columns) + ["read_counts_standard_score"]
-            )
-
-        if max(references_table["read_counts"]) == 0:
-            references_table["read_counts_standard_score"] = 1
-            return references_table
-
-        references_table["read_counts"] = references_table["read_counts"].astype(float)
-
-        references_table["read_counts_standard_score"] = (
-            references_table["read_counts"] - references_table["read_counts"].mean()
-        ) / references_table["read_counts"].std()
-
-        references_table["read_counts_standard_score"] = (
-            references_table["read_counts_standard_score"]
-            - references_table["read_counts_standard_score"].min()
-        ) / (
-            references_table["read_counts_standard_score"].max()
-            - references_table["read_counts_standard_score"].min()
-        )
-
-        return references_table
-
-    def run_references_standard_score_contigs(
-        self,
-        references_table: pd.DataFrame,
-    ) -> pd.DataFrame:
-        # references = RawReference.objects.filter(run=run)
-
-        # references_table = references_table_from_query(references)
-
-        if references_table.shape[0] == 0:
-            return pd.DataFrame(
-                columns=list(references_table.columns)
-                + ["contig_counts_standard_score"]
-            )
-
-        references_table["contig_counts"] = references_table["contig_counts"].astype(
-            float
-        )
-        if max(references_table["contig_counts"]) == 0:
-            references_table["contig_counts_standard_score"] = 1
-            return references_table
-
-        references_table["contig_counts_standard_score"] = (
-            references_table["contig_counts"] - references_table["contig_counts"].mean()
-        ) / references_table["contig_counts"].std()
-
-        references_table["contig_counts_standard_score"] = (
-            references_table["contig_counts_standard_score"]
-            - references_table["contig_counts_standard_score"].min()
-        ) / (
-            references_table["contig_counts_standard_score"].max()
-            - references_table["contig_counts_standard_score"].min()
-        )
-
-        return references_table
-
-    def merge_standard_scores(self, table: pd.DataFrame):
-        if table.shape[0] == 0:
-            return pd.DataFrame(columns=list(table.columns) + ["standard_score"])
-        table["standard_score"] = (
-            table["read_counts_standard_score"] + table["contig_counts_standard_score"]
-        ) / 2
-        return table
-
-    def run_references_standard_scores(self, table):
-        table = self.run_references_standard_score_reads(table)
-
-        table = self.run_references_standard_score_contigs(table)
-        table = self.merge_standard_scores(table)
-        return table
-
-    def merge_ref_tables_use_standard_score(
-        self,
-        list_tables: List[pd.DataFrame],
-    ) -> pd.DataFrame:
-        joint_tables = [
-            self.run_references_standard_scores(table) for table in list_tables
-        ]
-
-        joint_tables = pd.concat(joint_tables)
-        # group tables: average read_counts_standard_score, sum counts, read_counts, contig_counts
-        if joint_tables.shape[0] == 0:
-            return pd.DataFrame(columns=list(joint_tables.columns))
-        joint_tables = joint_tables.groupby(["taxid", "accid", "description"]).agg(
-            {
-                "taxid": "first",
-                "accid": "first",
-                "description": "first",
-                "standard_score": "mean",
-                "counts_str": "sum",
-                "read_counts": "sum",
-                "contig_counts": "sum",
-            }
-        )
-
-        joint_tables = joint_tables.sort_values("standard_score", ascending=False)
-        joint_tables = joint_tables.reset_index(drop=True)
-
-        return joint_tables
-
-    def run_references_table(self, run: RunMain) -> pd.DataFrame:
-        references = RawReference.objects.filter(run=run)
-
-        references_table = self.references_table_from_query(references)
-
-        return references_table
-
-    def filter_runs(self):
-        if self.sample_registered is None and self.project_registered is None:
-            raise Exception("No sample or project registered")
-
-        if self.sample_registered is None:
-            sample_runs = RunMain.objects.filter(
-                sample__project=self.project_registered
-            )
-        else:
-            sample_runs = RunMain.objects.filter(sample=self.sample_registered)
-
-        return sample_runs
-
-    def collect_references_all(self) -> QuerySet:
-        sample_runs = self.filter_runs()
-
-        references = RawReference.objects.filter(run__in=sample_runs)
-
-        return references
-
-    def sample_reference_tables(
-        self, run_pks: Optional[List[int]] = None
-    ) -> pd.DataFrame:
-        sample_runs = self.filter_runs()
-        if run_pks is not None:
-            sample_runs = sample_runs.filter(pk__in=run_pks)
-        self.runs_found = sample_runs.count()
-        run_references_tables = [self.run_references_table(run) for run in sample_runs]
-
-        self.list_tables.extend(run_references_tables)
-
-        run_references_tables = self.merge_ref_tables()
-        # replace nan with 0
-        run_references_tables = run_references_tables.fillna(0)
-        self.merged_table = run_references_tables
-
-        return run_references_tables
-
-    def sample_reference_tables_filter(self, runs_filter: Optional[List[int]] = None):
-        """
-        Filter the sample reference tables to only include runs in the list
-        """
-        if runs_filter == []:
-            runs_filter = None
-        _ = self.sample_reference_tables(runs_filter)
-
-    def compound_reference_update_standard_score(
-        self, compound_ref: RawReferenceCompound
-    ):
-        """
-        Update the standard score for a compound reference based on accid"""
-
-        score = self.merged_table[self.merged_table.accid == compound_ref.accid]
-
-        if score.shape[0] > 0:
-            # compound_ref.standard_score = score.iloc[0]["standard_score"]
-            compound_ref.standard_score = max(score["standard_score"])
-
-    def update_scores_compound_references(
-        self, compount_refs: List[RawReferenceCompound]
-    ):
-        """
-        Update the standard score for a list of compound references based on accid"""
-        for compound_ref in compount_refs:
-            self.compound_reference_update_standard_score(compound_ref)
-
-    def reference_table_renamed(self, merged_table, rename_dict: dict):
-        proxy_ref = merged_table.copy()
-        proxy_ref = proxy_ref.rename(columns=rename_dict)
-
-        proxy_ref["taxid"] = proxy_ref["taxid"].astype(int)
-        proxy_ref["counts"] = proxy_ref["counts"].astype(float).astype(int)
-        proxy_ref = proxy_ref[proxy_ref["counts"] > 0]
-        proxy_ref = proxy_ref[proxy_ref["taxid"] > 0]
-        proxy_ref = proxy_ref[proxy_ref["description"] != "-"]
-        proxy_ref = proxy_ref[proxy_ref["accid"] != "-"]
-
-        return proxy_ref
-
-    def merge_ref_tables(self):
-        run_references_tables = self.merge_ref_tables_use_standard_score(
-            self.list_tables
-        )
-
-        run_references_tables = run_references_tables[run_references_tables.taxid != 0]
-
-        return run_references_tables
-
-    @staticmethod
-    def simplify_by_description(df: pd.DataFrame):
-        if "description" not in df.columns:
-            return df
-
-        df["description_first"] = df["description"].str.split(" ").str[0]
-
-        df = df.sort_values("standard_score", ascending=False)
-        df = df.drop_duplicates(subset=["description_first"], keep="first")
-
-        df.drop(columns=["description_first"], inplace=True)
-
-        return df
-
-    def collect_references_table_all(
-        self,
-    ) -> pd.DataFrame:
-        references = self.collect_references_all()
-
-        references_table = self.references_table_from_query(references)
-        # references_table= sample_reference_tables()
-        return references_table

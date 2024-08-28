@@ -11,6 +11,7 @@ from pathogen_identification.deployment_main import Run_Main_from_Leaf
 from pathogen_identification.models import (
     ParameterSet,
     PIProject_Sample,
+    RunMain,
     SoftwareTree,
     SoftwareTreeNode,
 )
@@ -19,7 +20,10 @@ from pathogen_identification.utilities.utilities_pipeline import (
     SoftwareTreeUtils,
     Utils_Manager,
 )
-from pathogen_identification.utilities.utilities_views import set_control_reports
+from pathogen_identification.utilities.utilities_views import (
+    RawReferenceUtils,
+    set_control_reports,
+)
 from utils.process_SGE import ProcessSGE
 
 
@@ -98,11 +102,11 @@ class Command(BaseCommand):
         leaf_index = options["leaf_id"]
         combined_analysis = options["combined_analysis"]
         mapping_request = options["mapping_request"]
-        mapping_run = options["mapping_run_id"]
+        mapping_run_pk = options["mapping_run_id"]
 
         if mapping_request:
             mapping_only = True
-            if mapping_run is None:
+            if mapping_run_pk is None:
                 raise Exception("mapping_run_id is required for mapping request")
         elif combined_analysis:
             metagenomics = True
@@ -135,8 +139,7 @@ class Command(BaseCommand):
             screening=screening,
             mapping_only=mapping_only,
         )
-        # tree_makeup = local_tree.makeup
-        # pipeline_tree= utils.generate_software_tree_extend(local_tree, user)
+
         pipeline_tree_index = local_tree.software_tree_pk
         pipeline_tree_query = SoftwareTree.objects.get(pk=pipeline_tree_index)
 
@@ -149,11 +152,9 @@ class Command(BaseCommand):
             sample=target_sample, leaf=matched_path_node, project=project
         )
 
-        print("was_run_killed", was_run_killed)
-        print(f"leaf_index: {leaf_index}")
+        #### Deployment RUn
 
-        ### draw graph
-        graph_progress = TreeProgressGraph(target_sample)
+        mapping_run = RunMain.objects.get(pk=mapping_run_pk)
 
         ### SUBMISSION
         try:
@@ -165,7 +166,11 @@ class Command(BaseCommand):
                     status=ParameterSet.STATUS_NOT_STARTED,
                 )
 
-            else:
+            ### to remove condition for production
+            elif mapping_run.status not in [
+                RunMain.STATUS_FINISHED,
+                # RunMain.STATUS_ERROR,
+            ]:
                 run = Run_Main_from_Leaf(
                     user=user,
                     input_data=target_sample,
@@ -176,11 +181,11 @@ class Command(BaseCommand):
                     threads=ConstantsSettings.DEPLOYMENT_THREADS,
                     combined_analysis=combined_analysis,
                     mapping_request=mapping_request,
-                    mapping_run_pk=mapping_run,
+                    run_pk=mapping_run_pk,
                 )
 
                 run.is_available = True
-                run.get_in_line()
+                run.set_to_queued()
 
                 submission_dict[target_sample].append(run)
 
@@ -190,6 +195,15 @@ class Command(BaseCommand):
 
                 # graph_progress.generate_graph()
                 set_control_reports(project.pk)
+
+            reference_utils = RawReferenceUtils(target_sample)
+            _ = reference_utils.create_compound_references()
+
+            _ = process_SGE.set_submit_televir_sort_pisample_reports(
+                user=user,
+                pisample_pk=target_sample.pk,
+            )
+            # calculate_reports_overlaps(target_sample, force=True)
 
             process_SGE.set_process_controler(
                 user,
@@ -212,4 +226,8 @@ class Command(BaseCommand):
                 ),
                 ProcessControler.FLAG_ERROR,
             )
+
+            reference_utils = RawReferenceUtils(target_sample)
+            _ = reference_utils.create_compound_references()
+
             raise e

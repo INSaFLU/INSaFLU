@@ -60,6 +60,11 @@
    color: #05264c !important;
 }
 
+.bg-insa-fixed-top-main{
+    background-color: #F6F6FF !important;
+    color: #05264c !important;
+}
+
 a.bg-insa-fixed-top:focus, a.bg-insa-fixed-top:hover {
   background-color: #e5e5e5 !important;
   color: #05264c !important
@@ -206,3 +211,6 @@ a.disabled {
    cursor: default;
 }
 
+#mainNav .navbar-collapse .navbar-sidenav {
+    margin-top: 60px;
+}

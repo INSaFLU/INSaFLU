@@ -18,6 +18,10 @@ columns= strsplit(columns, ",")[[1]]
 ## remove spaces
 columns= gsub(" ", ".", columns)
 
+
+##
+#cat(columns, file = stderr())
+
 ##
 pipeline_steps = c(
   "input",
@@ -30,6 +34,11 @@ pipeline_steps = c(
   "Read.classification",
   "Combined.analysis",
   "Remapping",
+  "Request.Mapping",
+  "Remap.filtering",
+  "Map.filtering",
+  "Screening",
+  "Reporting",
   "leaves"
 )
 
@@ -43,15 +52,26 @@ step_to_colour_map = c(
   "Contig.classification" = "#0000FF",
   "Read.classification" = "#4B0082",
   "Remapping" = "#EE82EE",
+  "Request.Mapping"= "#FFC0CB",
+  "Remap.filtering" = "#FFC0CB",
+  "Map.filtering" = "#FFC0CB",
+  "Screening" = "#FFC0CB",
+  "Reporting" = "#FFC0CB",
   "Combined.analysis" = "#FFC0CB",
   "leaves" = "#FFFFFF"
 )
+
 
 ## create a vector with the colours for each column (pipeline step)
 colours = rep("#FFFFFF", length(columns))
 for (i in 1:length(columns)) {
   colours[i] = step_to_colour_map[columns[i]]
 }
+
+cat("######################################## colors\n", file = stderr())
+cat(colours, file = stderr())
+cat("\n", file = stderr())
+
 cat(colours, file = stderr())
 cat("\n", file = stderr())
 ### read the data frame

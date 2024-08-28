@@ -16,6 +16,7 @@ from pathogen_identification.models import (
     PIProject_Sample,
     Projects,
     RawReference,
+    RawReferenceCompoundModel,
     ReadClassification,
     ReferenceContigs,
     ReferenceMap_Main,
@@ -29,6 +30,14 @@ from pathogen_identification.models import (
 from pathogen_identification.modules.object_classes import Sample_runClass
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunEngine_class
+
+
+def summarize_description(description, max_length=100):
+
+    if len(description) > max_length:
+        return description[:max_length]
+
+    return description
 
 
 ####################################################################################################################
@@ -239,6 +248,7 @@ def Update_RunMain_Initial(run_class: RunEngine_class, parameter_set: ParameterS
                 run_class.RUN_TYPE_MAPPING_REQUEST,
                 run_class.RUN_TYPE_SCREENING,
                 run_class.RUN_TYPE_COMBINED_MAPPING,
+                run_class.RUN_TYPE_PANEL_MAPPING,
             ]:
                 Update_RunMain_noCheck(run_class, parameter_set)
             else:
@@ -314,7 +324,35 @@ def Update_Classification(
     try:
         with transaction.atomic():
             Update_RunMain_noCheck(run_class, parameter_set, tag=tag)
+            Update_Run_Detail_noCheck(run_class, parameter_set)
             Update_Run_Classification(run_class, parameter_set)
+
+        return True
+
+    except IntegrityError as e:
+        print(f"failed to update sample {run_class.sample_name}")
+        return False
+
+
+@transaction.atomic
+def Update_Metagenomics(
+    run_class: RunEngine_class, parameter_set: ParameterSet, tag="secondary"
+):
+    """get run data
+    Update TABLES:
+    - RunMain,
+    - ReadClassification,
+    - ContigClassification,
+
+    :param sample_class:
+    :return: run_data
+    """
+
+    try:
+        with transaction.atomic():
+            Update_RunMain_noCheck(run_class, parameter_set, tag=tag)
+            Update_Run_Detail_noCheck(run_class, parameter_set)
+            Update_Metagenomics_Classification(run_class, parameter_set)
 
         return True
 
@@ -359,6 +397,7 @@ def Update_Remap(run_class: RunEngine_class, parameter_set: ParameterSet):
         with transaction.atomic():
             Update_RefMap_DB(run_class, parameter_set)
             Update_FinalReport(run_class, runmain, sample)
+            Update_Targets(run_class, runmain)
             Update_Run_Detail_noCheck(run_class, parameter_set)
             Update_RunMain_noCheck(run_class, parameter_set, tag="finished")
         return True
@@ -427,6 +466,8 @@ def Update_RunMain(run_class: RunEngine_class, parameter_set: ParameterSet):
 
     if run_class.run_type == run_class.RUN_TYPE_COMBINED_MAPPING:
         run_type = RunMain.RUN_TYPE_COMBINED_MAPPING
+    elif run_class.run_type == run_class.RUN_TYPE_SCREENING:
+        run_type = RunMain.RUN_TYPE_SCREENING
 
     try:
         runmain = RunMain.objects.get(
@@ -517,9 +558,68 @@ def get_run_parents(run_class: RunEngine_class, parameter_set: ParameterSet):
             )
 
     except RunMain.DoesNotExist:
+
         return None, None, None
 
     return sample, runmain, project
+
+
+def Update_Metagenomics_Classification(
+    run_class: RunEngine_class, parameter_set: ParameterSet
+):
+
+    sample, runmain, _ = get_run_parents(run_class, parameter_set)
+
+    read_classification = run_class.read_classification_drone.classification_report
+    map_targets = run_class.metadata_tool.remap_targets
+
+    for target in map_targets:
+
+        try:
+            screening_count = read_classification[
+                read_classification.acc == target.accid
+            ]
+
+            if len(screening_count) > 0:
+                screening_count = screening_count[
+                    screening_count.acc == target.accid
+                ].shape[0]
+            else:
+                screening_count = 0
+
+            compound_ref = RawReferenceCompoundModel.objects.get(
+                taxid=target.taxid,
+                accid=target.accid,
+                sample=sample,
+            )
+            compound_ref.screening_count = screening_count
+            compound_ref.save()
+
+        except RawReferenceCompoundModel.DoesNotExist:
+            pass
+
+
+#
+# try:
+#    RawReference.objects.get(
+#        run=runmain,
+#        taxid=target.taxid,
+#        accid=target.accid,
+#    )
+# except RawReference.DoesNotExist:
+#
+#    remap_target = RawReference(
+#        run=runmain,
+#        taxid=target.taxid,
+#        accid=target.accid,
+#        status=RawReference.STATUS_MAPPED,
+#        description=summarize_description(target.description),
+#        counts=screening_count,
+#        classification_source="1",
+#    )
+#
+#    remap_target.save()
+#
 
 
 def Update_RunMain_noCheck(
@@ -670,6 +770,8 @@ def Update_Run_Detail_noCheck(run_class: RunEngine_class, parameter_set: Paramet
         return
 
     run_detail_exists = RunDetail.objects.filter(run=runmain, sample=sample).exists()
+    print("############ Update_Run_Detail_noCheck ############")
+    print(sample, runmain, run_detail_exists)
 
     if run_detail_exists:
         run_detail = RunDetail.objects.get(run=runmain, sample=sample)
@@ -974,6 +1076,19 @@ def Update_RawReference(run_class: RunEngine_class, parameter_set: ParameterSet)
             remap_target.save()
 
 
+def translate_classification_success(success):
+
+    if success == "reads":
+        return "1"
+    if success == "contigs":
+        return "2"
+    if success == "reads and contigs":
+        return "3"
+
+    else:
+        return "0"
+
+
 def Update_FinalReport(run_class, runmain, sample):
     for i, row in run_class.report.iterrows():
         if row["ID"] == "None":
@@ -982,13 +1097,13 @@ def Update_FinalReport(run_class, runmain, sample):
         remap_targets = RawReference.objects.filter(
             run=runmain,
             taxid=row["taxid"],
-            accid=row["ID"],
         )
+        counts = row["mapped"]
 
         if remap_targets.exists():
             for target in remap_targets:
-                target.status = RawReference.STATUS_MAPPED
-                target.save()
+
+                counts = target.counts
 
         try:
             report_row = FinalReport.objects.get(
@@ -996,6 +1111,7 @@ def Update_FinalReport(run_class, runmain, sample):
                 sample=sample,
                 unique_id=row["unique_id"],
             )
+
         except FinalReport.DoesNotExist:
             report_row = FinalReport(
                 run=runmain,
@@ -1035,6 +1151,76 @@ def Update_FinalReport(run_class, runmain, sample):
 
             report_row.save()
 
+        try:
+            raw_reference = RawReference.objects.get(
+                run=runmain,
+                taxid=row["taxid"],
+                accid=row["ID"],
+            )
+            raw_reference.status = RawReference.STATUS_MAPPED
+            raw_reference.save()
+
+        except RawReference.DoesNotExist:
+            raw_reference = RawReference(
+                run=runmain,
+                taxid=row["taxid"],
+                accid=row["ID"],
+                status=RawReference.STATUS_MAPPED,
+                description=row["description"],
+                counts=counts,
+                classification_source=translate_classification_success(
+                    row["classification_success"]
+                ),
+            )
+
+            raw_reference.save()
+
+
+def Update_Targets(run_class: RunEngine_class, runmain):
+    print("UPDATING TARGETS")
+    print(len(run_class.metadata_tool.remap_targets))
+    print(runmain.pk)
+    for target in run_class.metadata_tool.remap_targets:
+
+        print(target.taxid, target.accid)
+
+        try:
+            raw_reference = RawReference.objects.get(
+                run=runmain,
+                taxid=target.taxid,
+                accid=target.accid,
+            )
+            raw_reference.status = RawReference.STATUS_MAPPED
+            raw_reference.save()
+
+        except RawReference.DoesNotExist:
+            counts = None
+            source = None
+
+            if run_class.raw_targets is not None:
+                if (
+                    run_class.raw_targets.shape[0] > 0
+                    and target.accid in run_class.raw_targets.accid.values
+                ):
+                    counts = run_class.raw_targets.loc[
+                        run_class.raw_targets.accid == target.accid, "counts"
+                    ].values[0]
+                    source = run_class.raw_targets.loc[
+                        run_class.raw_targets.accid == target.accid, "source"
+                    ].values[0]
+
+            raw_reference = RawReference(
+                run=runmain,
+                taxid=target.taxid,
+                accid=target.accid,
+                status=RawReference.STATUS_MAPPED,
+                counts=counts,
+                classification_source=source,
+                description=summarize_description(target.description, 200),
+            )
+
+            raw_reference.save()
+
 
 def Update_RefMap_DB(run_class: RunEngine_class, parameter_set: ParameterSet):
     """
@@ -1067,6 +1253,9 @@ def Update_ReferenceMap(
         taxid=ref_map.reference.target.taxid,
     )
 
+    print("remap_targets")
+    print(run.parameter_set.leaf.index)
+
     if remap_targets.exists():
         for target in remap_targets:
             target.status = RawReference.STATUS_MAPPED
@@ -1078,23 +1267,34 @@ def Update_ReferenceMap(
             sample=sample,
             run=run,
         )
+
+        print("ReferenceMap_Main exists")
     except ReferenceMap_Main.DoesNotExist:
-        map_db = ReferenceMap_Main(
-            reference=ref_map.reference.target.acc_simple,
-            sample=sample,
-            run=run,
-            taxid=ref_map.reference.target.taxid,
-            bam_file_path=ref_map.reference.read_map_sorted_bam,
-            bai_file_path=ref_map.reference.read_map_sorted_bam_index,
-            fasta_file_path=ref_map.reference.reference_file,
-            fai_file_path=ref_map.reference.reference_fasta_index,
-            mapped_subset_r1=ref_map.reference.mapped_subset_r1,
-            mapped_subset_r2=ref_map.reference.mapped_subset_r2,
-            mapped_subset_r1_fasta=ref_map.reference.mapped_subset_r1_fasta,
-            mapped_subset_r2_fasta=ref_map.reference.mapped_subset_r2_fasta,
-            vcf=ref_map.reference.vcf,
+
+        print("Creating REFMAP_MAIN")
+        print(ref_map.reference.read_map_sorted_bam)
+        print(
+            ref_map.reference.mapped_subset_r1_fasta,
         )
-        map_db.save()
+
+        if ref_map.mapping_success is not "none":
+
+            map_db = ReferenceMap_Main(
+                reference=ref_map.reference.target.acc_simple,
+                sample=sample,
+                run=run,
+                taxid=ref_map.reference.target.taxid,
+                bam_file_path=ref_map.reference.read_map_sorted_bam,
+                bai_file_path=ref_map.reference.read_map_sorted_bam_index,
+                fasta_file_path=ref_map.reference.reference_file,
+                fai_file_path=ref_map.reference.reference_fasta_index,
+                mapped_subset_r1=ref_map.reference.mapped_subset_r1,
+                mapped_subset_r2=ref_map.reference.mapped_subset_r2,
+                mapped_subset_r1_fasta=ref_map.reference.mapped_subset_r1_fasta,
+                mapped_subset_r2_fasta=ref_map.reference.mapped_subset_r2_fasta,
+                vcf=ref_map.reference.vcf,
+            )
+            map_db.save()
 
     if ref_map.assembly is not None:
         remap_stats = ref_map.assembly.report.set_index("ID")

@@ -13,6 +13,14 @@ $(document).ready(function() {
 
         checkedRows.push(ref_id);
       });
+
+      if (checkedRows.length == 0) {
+        $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+          'No references were selected.' +
+          '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+          '</div>');
+        return;
+      }
   
       // Process the checked rows
       // Add your processing logic here
@@ -37,8 +45,6 @@ $(document).ready(function() {
               $('#search-input').val('');
               // clear selection 
               $('.reference-checkbox').prop('checked', false);
-              
-              
               // drop modal
               $('#myModal').modal('hide');
 
@@ -50,6 +56,7 @@ $(document).ready(function() {
 
               // drop modal
               $('#myModal').modal('hide');
+            
           } else if (data['is_empty']) {
             $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
               'No references were selected.' +
@@ -59,7 +66,7 @@ $(document).ready(function() {
               // drop modal
               
           }
-          
+          $.unblockUI();
         }
       })
 

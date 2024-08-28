@@ -6,13 +6,7 @@ from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
 from managing_files.models import ProcessControler
-from pathogen_identification.models import PIProject_Sample, Projects, RawReference
-from pathogen_identification.utilities.reference_utils import (
-    check_reference_exists,
-    raw_reference_to_insaflu,
-)
-from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
-from pathogen_identification.utilities.utilities_views import calculate_reports_overlaps
+from pathogen_identification.utilities.reference_utils import raw_reference_to_insaflu
 from utils.process_SGE import ProcessSGE
 
 
@@ -52,7 +46,7 @@ class Command(BaseCommand):
 
         process_SGE.set_process_controler(
             user,
-            process_controler.get_name_televir_teleflu_ref_create(
+            process_controler.get_name_raw_televir_teleflu_ref_create(
                 ref_id=ref_id,
             ),
             ProcessControler.FLAG_RUNNING,
@@ -60,7 +54,7 @@ class Command(BaseCommand):
 
         process = ProcessControler.objects.filter(
             owner__id=user.pk,
-            name=process_controler.get_name_televir_teleflu_ref_create(
+            name=process_controler.get_name_raw_televir_teleflu_ref_create(
                 ref_id=ref_id,
             ),
             is_finished=False,
@@ -82,7 +76,7 @@ class Command(BaseCommand):
             if success is False:
                 process_SGE.set_process_controler(
                     user,
-                    process_controler.get_name_televir_teleflu_ref_create(
+                    process_controler.get_name_raw_televir_teleflu_ref_create(
                         ref_id=ref_id,
                     ),
                     ProcessControler.FLAG_ERROR,
@@ -93,7 +87,7 @@ class Command(BaseCommand):
             print(e)
             process_SGE.set_process_controler(
                 user,
-                process_controler.get_name_televir_teleflu_ref_create(
+                process_controler.get_name_raw_televir_teleflu_ref_create(
                     ref_id=ref_id,
                 ),
                 ProcessControler.FLAG_ERROR,
@@ -102,7 +96,7 @@ class Command(BaseCommand):
 
         process_SGE.set_process_controler(
             user,
-            process_controler.get_name_televir_teleflu_ref_create(
+            process_controler.get_name_raw_televir_teleflu_ref_create(
                 ref_id=ref_id,
             ),
             ProcessControler.FLAG_FINISHED,

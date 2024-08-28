@@ -76,10 +76,7 @@ class Command(BaseCommand):
                 software.is_to_run = vect_parameters[0].software.is_to_run
                 software.pipeline_step = vect_parameters[0].software.pipeline_step
                 software.help_text = vect_parameters[0].software.help_text
-                try:
-                    software.save()
-                except Exception as e:
-                    pass
+                software.save()
             else:  ### if PipelineStep not none, test if it is correct
                 if software.name in SoftwareNames.polyvalent_software:
                     if (
@@ -91,24 +88,15 @@ class Command(BaseCommand):
                         software.pipeline_step = vect_parameters[
                             0
                         ].software.pipeline_step
-                        try:
-                            software.save()
-                        except Exception as e:
-                            pass
+                        software.save()
+
                 elif (
                     software.pipeline_step.name
                     != vect_parameters[0].software.pipeline_step.name
                 ):
-                    print(
-                        software.name,
-                        software.pipeline_step.name,
-                        vect_parameters[0].software.pipeline_step.name,
-                    )
+
                     software.pipeline_step = vect_parameters[0].software.pipeline_step
-                    try:
-                        software.save()
-                    except Exception as e:
-                        pass
+                    software.save()
 
     def replace_old_technology_names(self):
         """replace old technology names"""

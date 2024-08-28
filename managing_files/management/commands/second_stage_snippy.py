@@ -53,6 +53,7 @@ class Command(BaseCommand):
         self.logger_debug.info(
             "Starting for project_sample_id: " + str(project_sample_id)
         )
+
         try:
             project_sample = ProjectSample.objects.get(pk=project_sample_id)
 
@@ -65,15 +66,15 @@ class Command(BaseCommand):
                 project_sample, user
             )
 
-            is_teleflu_project = TeleFluProject.objects.filter(
-                insaflu_project=project_sample.project,
-            ).exists()
-
-            if is_teleflu_project:
-                teleflu_project = TeleFluProject.objects.get(
-                    insaflu_project=project_sample.project
-                )
-                create_teleflu_igv_report(teleflu_project.pk)
+            ### WAIT FOR TESTS
+            # is_teleflu_project = TeleFluProject.objects.filter(
+            #    insaflu_project=project_sample.project,
+            # ).exists()
+            # if is_teleflu_project:
+            #    teleflu_project = TeleFluProject.objects.get(
+            #        insaflu_project=project_sample.project
+            #    )
+            #    create_teleflu_igv_report(teleflu_project.pk)
 
             self.stdout.write("End")
         except ProjectSample.DoesNotExist as e:

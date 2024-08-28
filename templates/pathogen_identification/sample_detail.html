@@ -18,6 +18,7 @@
         <link rel="stylesheet" href="{% static 'css/result_table.css' %}" />
         <link rel="stylesheet" href="{% static 'css/result_detail.css' %}" />
         <link rel="stylesheet" href="{% static 'css/result_detail_buttons.css' %}" />
+        <link rel="stylesheet" href="{% static 'css/televir_sample_detail.css' %}" />
 {% endblock css %}
 
 {% block breadcrumbs %}
@@ -34,239 +35,10 @@
 {% endif %}
 {% endblock %}
 
-
 {% block content %}
 
-<style>
-
-    .table tr.igv_tab.open .card-block {
-        max-height: 2001px;
-        transition: max-height .5s;
-        transition-timing-function: ease-in;
-    }
-
-    .table tr.igv_tab .card-block {
-        max-height: 0px;
-        transition: max-height .7s;
-        transition-timing-function: ease-out;
-    }
-
-    .table tr.igv_tab.open .igv-root-div {
-        max-height: 2001px;
-        transition: max-height .8s;
-        transition-timing-function: ease-in;
-    }
-
-    .table tr.igv_tab .igv-root-div {
-        max-height: 0px;
-        transition: max-height .5s;
-        transition-timing-function: ease-out;
-    }
-
-    .table tr.igv_tab.open .igv-navbar {
-        max-height: 2001px;
-        transition: max-height .3s;
-        transition-timing-function: ease-in;
-    }
-
-    .table tr.igv_tab .igv-navbar {
-        max-height: 0px;
-        transition: max-height .3s;
-        transition-timing-function: ease-out;
-    }
-
-    .table tr.igv_tab.open .igv-loader {
-        max-height: 2001px;
-        transition: max-height .3s;
-        transition-timing-function: ease-in;
-    }
-
-    .table tr.igv_tab .igv-loader {
-        max-height: 0px;
-        transition: max-height .3s;
-        transition-timing-function: ease-out;
-    }
-
-    .parent {
-        border: 1px solid #ddd;
-        padding: 8px;
-        text-align: center;
-        height: 80px;
-    }
-
-    .parent:hover {
-        background-color: #ddd;
-    }
-    
-
-    a:link {
-        color: #2b2bcf;
-        background-color: transparent;
-        text-decoration: none;
-    }
-    
-    a:visited {
-        color: blueviolet;
-        background-color: transparent;
-        text-decoration: none;
-    }
-    
-    a:hover {
-        color: blue;
-        background-color: transparent;
-        text-decoration: underline;
-    }
-    
-    a:active {
-        color: cornflowerblue;
-        background-color: transparent;
-        text-decoration: underline;
-    }
-    
-    .column {
-        float: left;
-        padding: 10px;
-    }
-
-
-    .left {
-        width: 70%;
-    }
-
-    .right {
-        width: 30%;
-        postion: absolute;
-
-    }
-
-    .left_small {
-
-        width: 30%;
-    }
-
-    .center {
-        width: 40%;
-    }
-
-    form {
-        padding: 12px;
-        position: relative;
-    }
-
-    .modebar {
-        display: none !important;
-    }
-    
-    .row {
-        border: none;
-        border-radius: 8px;
-        padding: 1px;
-        border-color: #b0b0b07d;
-    }
-    
-    #cov_div {
-        width: 100%;
-        height: 100%;
-        top: 0;
-        left: 0;
-    }
-
-    .table td, .table th {
-        vertical-align: middle;
-        
-    }
-      
-
-    
-    .header {
-    background: #3498db;
-    color: #fff;
-    }
-    
-    .collapse-report span {
-    cursor: pointer;
-    background: #2cc16a;
-    transition: background .5s;
-    }
-    
-    .active span {
-    background: #fff;
-    }
-    
-    .table tr.collapse-report .table__wrapper {
-    max-height: 0px;
-    overflow: hidden;
-    transition: max-height .8s;
-    }
-    
-    .table tr.active .table__wrapper {
-    max-height: 2000px;
-    transition: max-height .8s;
-    }
-    
-
-    .table-inner td p {
-    margin: 0;
-    }
-    
-    .table tr.igv_tab.open {
-    max-height: 2001px;
-    transition: max-height 1s;
-    }
-
-    .table tr.igv_tab {
-    max-height: 0px;
-    transition: max-height 1s;
-    }
-
-    .table td {
-    padding-top: 0rem;
-    padding-bottom: 0rem;
-    border-top: 0px;
-    }
-
-    .table tr.head {
-    height: 1rem;
-    border-top: 1px;
-    }
-
-    .select option.hidden_option{
-        display: none;
-    }
-
-    .row-to-toggle {
-        max-height: 0;
-        overflow: hidden;
-        transition: max-height 0.8s ease;
-      }
-    
-    .row-to-toggle.active {
-    max-height: 500px; /* Adjust the value to the desired height */
-    }
-
-    .expand-button {
-        display: block;
-        width: 100%;
-        background-color: #e6f2ff;
-        color: #333;
-        padding: 10px 20px;
-        border-radius: 10px;
-        cursor: pointer;
-        text-align: center;
-      }
-      
-      .plot-container {
-        margin: none;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-      }
-
-      .pull-right {
-        float: right;
-      }
-
-</style>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script type="text/javascript" src="{% static 'js/televir_projects/heatmap_clades.js' %}"></script>
 
 {% if owner %}
 
@@ -287,7 +59,7 @@
                             <p style="margin: 0;"> <strong>Sample name: </strong> {{sample}}</p>
                             <p style="margin: 0;"> <strong>Run: </strong> {{run_name}}</p>
                         </div>
-                        <div class="col-sm">
+                        <div class="col-sm" style="align-items: center;  justify-content: center; border: 1px solid #e9ecef; padding: 10px; margin: 0;">
                             {% if run_main.enrichment_performed %}
                             <p style="margin: 0;"> <strong>Viral enrichment:</strong> {{run_main.enrichment}} </p>
                             {% endif %}
@@ -306,7 +78,7 @@
                             <p style="margin: 0;"> <strong>Remapping:</strong> {{run_main.remap}} </p>                        
                         </div>
                         <div class= "col-sm">
-                            <div class="btn-group">
+                            <div class="btn-group" style="float: right;" >
                                 <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                     Summary Downloads
                                 </button>
@@ -315,7 +87,7 @@
                                     {% if files.intermediate_reports_zip %} {{ files.intermediate_reports_zip }} {% endif %}
                                     {% if files.final_reports_csv %} {{ files.final_reports_csv }} {% endif %}
                                 </div>
-                            </div>     
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -373,7 +145,7 @@
                         {% if run_main.enrichment_performed or run_main.host_depletion_performed %}
                         <form id="download_processed_reads_r1" action="{% url 'download_file' %}" method="POST">
                             {% csrf_token %}
-                            <input type=submit value="processed R1 (.gz)" name="btn1">
+                            <input type=submit value="processed R1 (.gz)" name="btn1" style= "font-size: 13px;">
                             <input type="hidden" name="file_path" value="{{run_main.processed_reads_r1}}">
                         </form>
                         {% if run_main.sample.sample.is_valid_2 %}
@@ -421,9 +193,9 @@
                     {% if data_exists %}
                     <div class="col-sm">
                         {% if assembly.contig_number > 0 %}
-                        <form id="download_assembly" action="{% url 'download_file' %}" method="POST">
+                        <form id="download_assembly" action="{% url 'download_file' %}" method="POST" style="padding-right: 0px; width: 50%; float: right;">
                             {% csrf_token %}
-                            <input type=submit value="assembly (.gz)" name="btn1">
+                            <input type=submit value="assembly (.gz)" name="btn1" style= "font-size: 13px;">
                             <input type="hidden" name="file_path" value="{{assembly.assembly_contigs}}">
                         </form>
                         {% endif %}
@@ -503,24 +275,24 @@
                         {% if data_exists %}
                         <div class="col-sm">
                             {% if contig_classification.classification_number > 0 %}
-                            <form id="download_contig_class_report" action="{% url 'download_file' %}" method="POST">
+                            <form id="download_contig_class_report" action="{% url 'download_file' %}" method="POST" style="padding-right: 0px; width: 50%; float: right; "> 
                                 {% csrf_token %}
-                                <input type=submit value="contig classification report" name="btn1">
+                                <input type=submit value="contig classification report" name="btn1" style= "font-size: 13px;">
                                 <input type="hidden" name="file_path" value="{{contig_classification.contig_classification_report}}">
                             </form>
                             {% endif %}
                             {% if read_classification.classification_number > 0 %}
-                            <form id="download_read_class_report" action="{% url 'download_file' %}" method="POST">
+                            <form id="download_read_class_report" action="{% url 'download_file' %}" method="POST" style="padding-right: 0px; width: 50%; float: right;">
                                 {% csrf_token %}
-                                <input type=submit value="read classification report" name="btn2">
+                                <input type=submit value="read classification report" name="btn2" style= "font-size: 13px;">
                                 <input type="hidden" name="file_path" value="{{read_classification.read_classification_report}}">
                             </form>
                             {% endif %}
                             {% if read_classification.classification_number > 0 and contig_classification.classification_number > 0 %}
                             {% if run_remap.merged_log %}
-                            <form id="merged_report_download" action="{% url 'download_file' %}" method="POST">
+                            <form id="merged_report_download" action="{% url 'download_file' %}" method="POST" style="padding-right: 0px; width: 50%; float: right;">
                                 {% csrf_token %}
-                                <input type=submit value="merged classification report" name="btn3">
+                                <input type=submit value="merged classification report" name="btn3" style= "font-size: 13px;">
                                 <input type="hidden" name="file_path" value="{{run_remap.merged_log}}">
                             </form>
                             {% endif %}
@@ -547,20 +319,23 @@
                 <div style="padding: 20px">
                     <div class="row">
                         <div class= "col-sm">
+                            
                             <p> Remapping was performed using the software <strong>{{run_remap.method}}</strong>. </p>
+                            {% if is_classification %}
                             <p> Of the references identified, {{run_detail.merged_number}} corresponding accession id(s) were found in
                                 our
                                 databases. References tagged as phages in local databases were excluded. </p>
-                            <p style=padding-left:4em> from these, {{number_validated}} successful alignments were produced.
+                            <p style=padding-left:4em> Of these, {{number_validated}} successful alignments were produced.
                             </p>
                             <p> The following <strong>Pathogen identification</strong> table shows the results of the remapping onto identified references. Below, in the <strong>Raw Classification and Mapping Summary</strong> table, you can select extra hits for remapping. </p>
+                            {% endif %}
                             <p> Results are shown for a minimum coverage of {{run_remap.coverage_minimum}}X and a maximum coverage
                                 of
                                 {{run_remap.coverage_maximum}}X. </p>                    
                         </div>
                         {% if data_exists %}
                         <div class="col-sm">
-                            <form id="download_remap_plan" action="{% url 'download_file' %}" method="POST">
+                            <form id="download_remap_plan" action="{% url 'download_file' %}" method="POST" style="width: 50%; float: right;">
                                 {% csrf_token %}
                                 <input type=submit value="database matches" name="btn1">
                                 <input type="hidden" name="file_path" value="{{run_remap.remap_plan}}">
@@ -583,45 +358,106 @@
                 <div class="col-sm" >
                     <h5 class="mb-0" >
                         <a class="collapsed"   data-toggle="collapse" data-parent="#accordion" href="#collapseReport" aria-expanded="false" aria-controls="collapseReport">
-                            <strong>Pathogen Identification</strong>
+                            <strong> {% if is_classification %} Validation {% endif %} Mapping Results</strong>
                         </a>
                         <a href="https://insaflu.readthedocs.io/en/latest/metagenomics_virus_detection.html#televir-output-visualization-and-download" target="_blank">
                             <i class="fa fa-info-circle" aria-hidden="true"></i>
                     </h5>
                 </div>
-                
+
                 <div class="col-sm">
                     <div class="float-right">
-                    <a href="#" id="report_download" class="btn btn-primary dark"> 
-                        <span class="hidden-phone"></span>Download as TSV </a>
+                    <a href="#" id="report_download" class="btn btn-primary dark">
+                        <span class="hidden-phone"></span> Download as TSV </a>
                     </div>
+
+                    {% if sort_performed %}
+                    <div class="float-right overlap-button">
+                        <a href="#" class="summary-header btn btn-primary dark"> 
+                            <span><i class="fa fa-exclamation-circle"></i> Read Overlap Summary</span>
+                        </a>
+                    </div> 
+
+                    {% endif %}
                 </div>
             </div>
         </div>
         
+        {% if sort_performed %}
+        <div id="summary" class="collapsible">
+            <div class="card-block collapsible-summary" style="display: none;">
+                <div style="padding: 20px; padding-bottom: 0px;">
+                    <div class="row">
+                        <div class="col-sm">
+                            <p> 
+                            <p> 
+                                Shared read analysis recovered <strong>{{ groups_count }} groups of references</strong>.
+                            </p> 
+                        </div>
+                    </div>
+                </div>
+                {% if clade_heatmap_json_exists %}
+                <div style="padding: 20px; padding-top: 0px;">
+                    <div class="row">
+                        <div class="col-sm">
+                            <p> 
+                                The shared heatmap displays the proportion of reads of one group (column) that are shared with another group (row). 
+                                Groups are sorted by maximum coverage. 
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div id="clade-heatmap" class="plot-container">
+                
+                </div>
+                <script>
+                    createHeatmapClades('{{ clade_heatmap_json|safe }}', "clade-heatmap");
+                </script>
+                {% if overlap_heatmap_available %} 
+                <div id="plot" class="plot-container">
+                    <img src={{overlap_heatmap_path}} alt="Image">
+                </div>
+                {% endif %}
+                {% endif %}
+                <div style="padding: 20px">
+                    <div class="row">
+                        <div class="col-sm">
+                            <p> 
+                                <i class="fa fa-exclamation-circle"></i> <strong>
+                                    We recommend manual inspection of the results
+                                    using the within-group <strong>Read Overlap</strong> heatmaps. 
+                                    Group sorting aims at identifying cross-hits and false positives. While robust, this method may mask similar true positive hits. </strong>
+                            </p>
+                            <p>
+                                <i class="fa fa-exclamation-circle"></i> <strong>
+                                This sorting algorith is taxonomy-blind. Groups are constructed according to a minimum shared mapped read threshold of <strong>{{ min_shared_reads }} % </strong> between between remapped hits. </strong>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% if no_mapping %}
+        <div id="collapseReport" class="collapse show" role="tabpanel" aria-labelledby="headingReport">
+            <div class="card-block">
+                <div style="padding: 20px">
+                    <div class="row">
+                        <div class="col-sm" style="padding: 20px; background-color: #e9ecef; border-radius: 5px; text-align: center;">
+                            <p> No mapping requested for this run (check settings). Request mapping utilities in Sample Reference Management or below. </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
         <div id="collapseReport" class="collapse show" role="tabpanel" aria-labelledby="headingReport">
             <div class="card-block">
                 <div style="padding: 2px; overflow-x:auto;">    
-                    <table class="table" width="100%" id="report_table">
+                <table class="table table-fixed" width="100%" id="report_table">
                     <thead>
-                        {% if overlap_heatmap_available %} 
-                        <tr>
-                            <td colspan="100%">
-                                <div class="collapsible">
-                                    <div class="collapsible-header">
-                                        <span class="expand-button">Read Overlap</span>
-                                    </div>
-                                    <div class="collapsible-body" style="display: none;">
-                                        <div id="plot" class="plot-container">
-                                            <img src={{overlap_heatmap_path}} alt="Image">
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endif %}
                         <tr class="header">
-                            <th>Description</th>
+                            <th class="description-column">Description</th>
                             <th>Taxid</th>
                             <th>accID</th>
                             <th>Cov (%)</th>
@@ -638,46 +474,83 @@
                             {% if error_rate_available %}
                             <th>Mismatch rate</th>
                             {% endif %}
+                            {% if is_classification %}
                             <th>class. success</th>
-                            <th>mapping success</th>                
+                            <th>mapping success</th>
+                            {% endif %}      
                             <th>Warning</th>
                             {% if in_control %}
                             <th>Control</th>
                             {% endif %}
                         </tr>
                     </thead>
+
                     <tbody>
 
-                        {% for final_report in report_list %}
+                    {% for final_report in report_list %}
+                        {% if sort_performed %}
                         <tr>
                             <td colspan="100%">
-                                <div style="display: flex; border-radius: 5px; overflow: hidden;">
+                                <div class="custom-section-container" >
+                                    {% if final_report.has_multiple %}
+                                    <div class="primary-row" style= "margin-top: 2px;">
+                                        <button class="showSecondaryRows" type="button" group-name="{{final_report.name}}" title="Toggle Secondary Rows">
+                                            <i class="fa fa-toggle-off toggle-icon"></i>
+                                        </button>                                        
+                                    </div>
+                                    {% else %}
+                                    <div class="primary-row" style="visibility: hidden; ">
+                                       <button class="showSecondaryRows" type="button" style="visibility: hidden;">
+                                           <i class="fa fa-toggle-off toggle-icon"></i>
+                                       </button>                                        
+                                    </div>
+                                    {% endif %}
                                     <!-- First section -->
-                                    <div style="flex: 1; padding: 5px; padding: 5px;border-right: 1px solid #ccc; border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
+                                    <div class="custom-section" id="info_{{ final_report.name }}">
                                         {{final_report.name}}
                                     </div>
+                                    {% if final_report.private_counts_exist %}
                                     <!-- Second section -->
-                                    <div style="flex: 1; padding: 10px; padding: 5px;border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
-                                        {{final_report.private_counts}}
+                                    <div class="custom-section">
+                                        private reads: {{final_report.private_counts}}
                                     </div>
+                                    {% endif %}
                                     <!-- Third section -->
-                                    <div style="flex: 1; padding: 10px; padding: 5px;border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
-                                        {{final_report.private_proportion}}
+                                    <div class="custom-section">
+                                        private reads proportion: {{final_report.private_proportion}}
                                     </div>
                                     <!-- Forth section -->
-                                    <div style="flex: 1; padding: 10px; padding: 5px;border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
-                                        {{final_report.group_list|length}}
+                                    <div class="custom-section">
+                                        Group size {{final_report.group_list|length}}
                                     </div>
-                                    <div style="flex: 1; padding: 10px; padding: 5px;border-radius: 5px; text-align: center; background-color: #e6f0ff; color: #333;">
-                                        <a href="#" id="showButton">Read Overlap</a>
+                                    <div class="custom-section">
+                                        {% if final_report.js_heatmap_ready %}
+                                        <a href="#" id="showButton" class="custom-link">Read Overlap</a>
+                                        {% elif final_report.heatmap_exists %}
+                                        <a href="#" id="showButton" class="custom-link">Read Overlap</a>
+                                        {% else %}
+                                        <a href="#" id="showButton" class="custom-link">Read Overlap</a>
+                                        {% endif %}
                                     </div>
-                                    
                                 </div>
                             </td>
                         </tr>
-                        {% if final_report.heatmap_exists %}
+                        {% endif %}
+                        {% if final_report.js_heatmap_ready %}
                         <tr class="row-to-toggle" id="rowToToggle" style="display: none;">
                             <td colspan="16">
+                                <div id="plot-{{final_report.name}}" class="plot-container">
+                                   
+                                </div>
+                                <script>
+                                    createHeatmap('{{ final_report.js_heatmap_data|safe }}', "plot-{{final_report.name}}");
+                                </script>
+
+                            </td>
+                        </tr>
+                        {% elif final_report.heatmap_exists %}
+                        <tr class="row-to-toggle" id="rowToToggle" style="display: none;">
+                            <td colspan="100%">
                                 <div id="plot" class="plot-container">
                                     <img src={{final_report.heatmap_path}} alt="Image">
                                 </div>
@@ -685,8 +558,20 @@
                         </tr>
                         {% endif %}
                         {% for value in final_report.group_list %}
-                        <tr class="parent">
-                            <td data-title="Description"><a href="#" id="plot_show" >{{value.description}}</a></td>
+                        <tr class="parent {{value.row_class_name}}" style="display: {{value.display}}" id="row_{{value.accid}}" group-name="{{final_report.name}}" first="{{value.first_in_group}}">
+
+                            <td data-title="Description" style="text-align: left;">
+                                {% if value.first_in_group %}
+                                {% if final_report.has_multiple %}
+                                        <i class="fa fa-empty sort-icon"  title="Best Coverage"></i>
+                                {% else %}
+                                        <i class="fa fa-empty sort-icon"  title="Best Coverage"></i>
+                                
+                                {% endif %}
+                                
+                                {% endif %}
+                                <a href="#" id="plot_show" >{{value.description}}</a>
+                            </td>
                             <td data-title="Taxid">{{value.taxid}}</td>
                             <td data-title="accID">
                                 <a href={{value.accid|link_ncbi}}>{{value.accid}}</a>
@@ -715,10 +600,12 @@
                             <td data-title="Error rate" style="{% depth_color_error value.error_rate max_error_rate %}">
                                 {{value.error_rate}}</td>
                             {% endif %}
+                            {% if is_classification %}
                             <td data-title="class. success" style="{% success_count_color value.classification_success %}">
                                 {{value.classification_success}}</td>
                             <td data-title="mapping success" style="{% success_count_color value.mapping_success %}">
                                 {{value.mapping_success}}</td>
+                            {% endif %}
                             <td data-title="Warning" style="{% flag_false_positive_color value.depth value.depthR value.coverage value.mapped_reads value.windows_covered project_index %}">
                                 {% flag_false_positive value.depth value.depthR value.coverage value.mapped_reads value.windows_covered project_index %}</td>
                             {% if in_control %}
@@ -727,8 +614,8 @@
                             {% endif %}
 
                         </tr>
-                        <tr class="collapse-report">
-                        <td colspan="16">
+                        <tr class="collapse-report" group-name="{{final_report.name}}">
+                        <td colspan="18">
                             <div class="table__wrapper">
                             <table class="table table-inner">
                                 <tbody>
@@ -771,7 +658,7 @@
         
                                     {% if value.coverage > 0 %}
                                     <tr class="igv_tab" id="igv_display_{{value.accid}}">
-                                        <td colspan="16" align="center">
+                                        <td colspan="18" align="center">
                                             <div class="card-block">
                                                 <div class="container-fluid">
                                                     <div class="igv-loader" id="loader_igv_{{value.accid}}"><img src="{{ spinner_url }}"/></div>
@@ -790,8 +677,8 @@
                                         <td colspan="1" align="center">
                         
                                             <div style="position:relative height=100%" >
-                                                <button class="btn btn-primary" id="igv_browse" type="button" project_pk="{{project_index}}" sample_pk="{{sample_index}}" 
-                                                run_pk="{{run_index}}" accid="{{value.accid}}" reference_id="{{value.unique_id}}" >IGV</button>
+                                                <button class="igv_browse btn btn-primary" id="igv_browse" type="button" show-igv-url="{% url 'igv_browser' %}" project_pk="{{project_index}}" sample_pk="{{sample_index}}" sample_name="{{ sample }}"
+                                                run_pk="{{run_index}}" accid="{{value.accid}}" reference_id="{{value.unique_id}}">IGV</button>
                                             </div>
                                             {% if data_exists %}
                                             <div id="cov_div" >
@@ -892,30 +779,32 @@
                         </td>
                         </tr>
                     {% endfor %}
+
                     <tr class="detail" style="background-color: #f2f2f2; padding: 0px; margin: 0px; border: 0px;">
-                        <td colspan="16" align="center" style="padding: 0px; margin: 0px">
+                        <td colspan="17" align="center" style="padding: 0px; margin: 0px">
                             <hr class="solid" style="height: 1px; background-color: #000000; margin: 0px;">
                         </td>
                     </tr>
                     {% endfor %}
                     </tbody>
-                    </table>
+                </table>
                 </div>
             </div>
         </div>
+        {% endif %}
     </div>
     <div class="card">
-        <div class="card-header" role="tab" id="headingMapExtra">
+        <div class="card-header" role="tab" id="headingMapExtra" url-remap="{% url 'deploy_televir_map' %}" csrf-token= '{{csrf_token}}'>
             <h5 class="mb-0">
                 <a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseMapExtra" aria-expanded="false" aria-controls="collapseMapExtra">
-                    <strong>Raw Classification and Mapping Summary</strong>
+                    <strong> {% if is_classification %} Raw Classification and {% endif %} Mapping Summary</strong>
                 </a>
                 </h5>
         </div>
         <div id="collapseMapExtra" class="collapse show" role="tabpanel" aria-labelledby="headingMapExtra">
             <div class="table-responsive">
                 <table class="table table-hover table-bordered table-striped" id="map_summary" {% if reference_table.attrs %}
-                    {{ reference_table.attrs.as_html }}{% endif %}>
+                    {{ reference_table.attrs.as_html }}{% endif %}> 
                     {% block table.thead %}
                     <thead>
                         <tr>
@@ -963,68 +852,53 @@
 
 {% block js %}
 
-<script type="text/javascript">
-
-    $(document).ready(function() {
-        $('.collapsible-header').click(function() {
-          $(this).toggleClass('active');
-          $(this).siblings('.collapsible-body').slideToggle('slow');
-        });
-      });
-
-
-    $("tr.parent").find("A#plot_show").click(function(e) {
-
-        if (e.target.tagName === "A" && e.target.id === "plot_show") {
-            e.preventDefault();
-            var parent_tr = e.target.parentNode.parentNode;
-            var child_tr = nextTr(parent_tr);
-            $(child_tr).toggleClass("active");
-            
-        }
-
-      });
-
-      $("A").click(function(event) {
-        var clickedButton = event.target;
-        var buttonId = clickedButton.id;
-        var buttonText = clickedButton.innerText;
-        var parent_tr = $(clickedButton).parent();
-
-        var parent_id = parent_tr.attr('id');
-
-      });
-
-      $("a").click(function(event) {
-
-        if (event.target.id == "showButton") {
-            event.preventDefault();
-            var clickedLink = $(this);
-            var rowElement = clickedLink.closest("tr");
-            
-            // Access the row element or perform further actions
-            // Get the next row element
-            var nextRowElement = rowElement.next();
-            var nextRowElementClass = nextRowElement.attr('class');
-            if (nextRowElementClass == "row-to-toggle") {
-                // toggle slow
-                nextRowElement.toggle('slow');
-            }
-        }
-
-      });
-
-      
-</script>
-
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.min.js"></script>
 <script type="text/javascript" src="https://igv.org/web/release/2.3.3/dist/igv.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/es5-shim/4.5.7/es5-shim.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/es6-shim/0.35.3/es6-shim.js"></script>
 <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script type="text/javascript" src="{% static 'js/televir_projects/sample_detail.js' %}"></script>
+<script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-core.min.js"></script>
+<script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-heatmap.min.js"></script> 
+
+
 
 
 <script type="text/javascript">
+
+    var buttons = document.querySelectorAll('.showSecondaryRows, .showSecondaryRows i');
+    for (var b = 0; b < buttons.length; b++) {
+        buttons[b].addEventListener('click', function(event) {
+            event.stopPropagation();
+            var button = event.target.closest('.showSecondaryRows');
+            var groupName = button.getAttribute('group-name');
+            var allRows = document.querySelectorAll('.secondary-row[group-name="' + groupName + '"]');
+            var icon = button.querySelector('.toggle-icon');
+            
+            for (var i = 0; i < allRows.length; i++) {
+                if (allRows[i].classList.contains('parent')) {
+                    if (allRows[i].style.display === 'none') {
+                        allRows[i].style.display = 'table-row';
+                        icon.classList.remove('fa-toggle-off');
+                        icon.classList.add('fa-toggle-on');
+                    } else {
+
+                        inner_row= nextTr(allRows[i]);
+                        if ($(inner_row).hasClass("active")) {
+                            $(inner_row).toggleClass("active");
+                        }       
+
+                        allRows[i].style.display = 'none';
+                        icon.classList.remove('fa-toggle-on');
+                        icon.classList.add('fa-toggle-off');
+             
+                    }
+                }
+            }
+        });
+    }
+
+
     // Load google charts
     google.charts.load('current', {'packages':['corechart']});
     google.charts.setOnLoadCallback(drawChart);
@@ -1033,8 +907,7 @@
     function drawChart() {
         var raw_data= [['Input', "Number"]];
         raw_data.push(["Kept", parseFloat("{{run_detail.processing_final|reconvert_string_to_int}}")]);
-        console.log("{{qc_report.performed}}");
-        console.log("{{qc_report.input_reads}}");
+
         if ("{{qc_report.performed}}" == "True" ) {
             if ("{{qc_report.input_reads}}" != "0" ) {
                 raw_data.push(['Extra filtering', parseFloat("{% difference_str_to_str qc_report.input_reads qc_report.output_reads %}")]);
@@ -1062,348 +935,7 @@
     }
 </script>
 
-<script type="text/javascript">
 
-    //document.getElementById("igv_browse").addEventListener("click", function (e) {
-    $(document).on('click', '.btn', function (e) {
-        if (e.target.id == "igv_browse") 
-            var accid=$(this).attr('accid');
-            var igv_display = document.getElementById('igv_display_' + accid);
-            var igv_display_status= igv_display.style.display;
-            var igv_display_className= igv_display.className;
-            
-            if (/\bopen\b/.test(igv_display_className)){
-                igv_display.className= igv_display.className.replace(" open",'');
-                setTimeout(function() {
-                    var show_igv_div = document.getElementById('show_igv_' + accid);
-                    show_igv_div.innerHTML = "";
-                }, 300);
-
-            }else{
-                igv_display.className += " open";
-                show_igv($(this));
-            }
-    });
-
-    function replace_igv_div(accid) {
-        var show_igv_div = document.getElementById('show_igv_' + accid);
-        var igv_display = document.getElementById('igv_display_' + accid);
-        
-        show_igv_div.innerHTML = "";
-    }
-
-</script>
-
-
-<script type="text/javascript">
-
-    function show_igv(item) {
-        var accid=item.attr('accid');
-        var project_pk= item.attr('project_pk');
-        var sample_pk= item.attr('sample_pk');
-        var run_pk = item.attr('run_pk');
-        var unique_id = item.attr('reference_id');
-        var url = "{% url 'igv_browser' %}";
-
-        $.ajax({
-            /// spin 
-            beforeSend: function() {
-                $('#igv_display_' + accid).show();
-            },
-            complete: function(){
-                $('#igv_display_' + accid).hide();
-            },
-            
-            data : { 
-                'project_pk': project_pk,
-                'sample_pk': sample_pk,
-                'run_pk': run_pk,
-                'unique_id': unique_id,
-                'accid': accid,
-            }, // data sent with the get request
-            
-            url: url,
-
-            success: function (data) {
-                if (data['is_ok']) {
-                    
-                    /// set the files names
-                    $('#bam_file_id').empty()
-                    $('#bam_file_id').append(data['bam_file_id'])
-                    $('#bai_file_id').empty()
-                    $('#bai_file_id').append(data['bai_file_id'])
-                    $('#vcf_file_id').empty()
-                    $('#vcf_file_id').append(data['vcf_file_id'])
-                    $('#reference_id').empty()
-                    $('#reference_id').append(data['reference_id'])
-                    $('#reference_index_id').empty()
-                    $('#reference_index_id').append(data['reference_index_id'])
-                    
-                    /// set options 
-                    options = {
-                            showNavigation: true,
-                            showRuler: true,
-                            showChromosomeWidget: true,
-                            reference: {
-                            id: data['reference_name'],
-                            fastaURL: data['path_reference'],
-                            indexURL: data['path_reference_index'],
-                        },
-                        trackDefaults: {
-                            bam: {
-                                coverageThreshold: 0.2,
-                                coverageQualityWeight: true
-                            }
-                        },
-                            tracks: [
-                            {
-                                type: "bam",
-                                url: data['path_bam'],
-                                height: 500,
-                                autoHeight: false,
-                                viewAsPairs: false,
-                                name: data['sample_name'],
-                                colorBy: "firstOfPairStrand",
-                            },                        
-                        ]
-                    }
-
-                    browser = igv.createBrowser(document.getElementById('show_igv_' + accid), options);
-                }
-                else{
-                    $('#show_igv_' + accid).append('<div class="alert alert-warning alert-dismissable"><strong>Fail</strong> to load bam file.</div>')
-                }
-            },
-            
-            // handle a non-successful response
-            error : function(xhr,errmsg,err) {
-                $('#show_igv_' + accid).append('<div class="alert alert-warning alert-dismissable"><strong>Fail</strong> to load bam file.</div>')
-                console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
-            }
-        });
-    }
-
-
-</script>
- 
-<script>
-    var my_form = document.forms["igv_display_{{value.accid}}"];
-    my_form.elements["sample_pk"].value = "{{sample_index}}";
-    my_form.elements["run_pk"].value = "{{run_index}}";
-    my_form.elements["reference"].value = "{{value.simple_id}}";
-    my_form.elements["unique_id"].value = "{{value.unique_id}}";
-    my_form.elements["project_pk"].value = "{{project_index}}";
-    document.getElementById("my_form").submit();
-</script>
-
-
-<script>
-    var my_form = document.forms["download_params"];
-    var static_dir = "{% static 'classification_reports/' %}";
-    my_form.elements["file_path"].value = static_dir + "{{run_main.params_file_path}}";
-    document.getElementById("my_form").submit();
-</script>
-
-<script>
-    var my_form = document.forms["download_processed_reads_r1"];
-    var static_dir = "{% static 'depleted_reads/' %}";
-    my_form.elements["file_path"].value = static_dir + "{{run_main.processed_reads_r1}}";
-    document.getElementById("my_form").submit();
-</script>
-<script>
-    var my_form = document.forms["download_processed_reads_r2"];
-    var static_dir = "{% static 'depleted_reads/' %}";
-    my_form.elements["file_path"].value = static_dir + "{{run_main.processed_reads_r2}}";
-    document.getElementById("my_form").submit();
-</script>
-<script>
-    var my_form = document.forms["download_assembly"];
-    var static_dir = "{% static 'assemblies/' %}";
-    my_form.elements["file_path"].value = static_dir + "{{assembly.assembly_contigs}}";
-    document.getElementById("my_form").submit();
-</script>
-<script>
-    var my_form = document.forms["download_contig_class_report"];
-    var static_dir = "{% static 'classification_reports/' %}";
-    my_form.elements["file_path"].value = static_dir + "{{contig_classification.contig_classification_report}}";
-    document.getElementById("my_form").submit();
-</script>
-<script>
-    var my_form = document.forms["download_read_class_report"];
-    var static_dir = "{% static 'classification_reports/' %}";
-    my_form.elements["file_path"].value = static_dir + "{{read_classification.read_classification_report}}";
-    document.getElementById("my_form").submit();
-</script>
-<script>
-    var my_form = document.forms["merged_report_download"];
-    var static_dir = "{% static 'classification_reports/' %}";
-    my_form.elements["file_path"].value = static_dir + "{{run_remap.merged_log}}";
-    document.getElementById("my_form").submit();
-</script>
-<script>
-    var my_form = document.forms["download_remap_plan"];
-    var static_dir = "{% static 'classification_reports/' %}";
-    my_form.elements["file_path"].value = static_dir + "{{run_remap.remap_plan}}";
-    document.getElementById("my_form").submit();
-</script>
-
-<script>
-    var my_form = document.forms["download_bam_{{value.accid}}"];
-    var static_dir = "{% static 'classification_reports/' %}";
-    my_form.elements["file_path"].value = static_dir + "{{value.path_bam}}";
-    document.getElementById("my_form").submit();
-</script>
-<script>
-    var my_form = document.forms["download_bai_{{value.accid}}"];
-    var static_dir = "{% static 'igv_files/' %}";
-    my_form.elements["file_path"].value = static_dir + "{{value.path_bai}}";
-    document.getElementById("my_form").submit();
-</script>
-<script>
-    var my_form = document.forms["download_mapped_r1_{{value.accid}}"];
-    var static_dir = "{% static 'igv_files/' %}";
-    document.getElementById("my_form").submit();
-</script>
-<script>
-    var my_form = document.forms["download_mapped_r2_{{value.accid}}"];
-    var static_dir = "{% static 'igv_files/' %}";
-    document.getElementById("my_form").submit();
-</script>
-<script>
-    var my_form = document.forms["download_reference_{{value.accid}}"];
-    var static_dir = "{% static 'igv_files/' %}";
-    my_form.elements["file_path"].value = static_dir + "{{value.reference_path}}";
-    document.getElementById("my_form").submit();
-</script>
-<script>
-    var my_form = document.forms["download_reference_index_{{value.accid}}"];
-    var static_dir = "{% static 'igv_files/' %}";
-    my_form.elements["file_path"].value = static_dir + "{{value.reference_index_path}}";
-    document.getElementById("my_form").submit();
-</script>
-<script>
-    var my_form = document.forms["remap_paf_{{value.accid}}"];
-    var static_dir = "{% static 'igv_files/' %}";
-    my_form.elements["file_path"].value = static_dir + "{{value.reference_assembly_paf}}";
-    document.getElementById("my_form").submit();
-</script>
-<script>
-    var my_form = document.forms["mapped_scaffolds_{{value.accid}}"];
-    var static_dir = "{% static 'igv_files/' %}";
-    my_form.elements["file_path"].value = static_dir + "{{value.mapped_scaffolds_path}}";
-    document.getElementById("my_form").submit();
-</script>
-<script>
-    var my_form = document.forms["mapped_scaffolds_index_{{value.accid}}"];
-    var static_dir = "{% static 'igv_files/' %}";
-    my_form.elements["file_path"].value = static_dir + "{{value.mapped_scaffolds_index_path}}";
-    document.getElementById("my_form").submit();
-</script>
-
-
-
-<script type="text/javascript">
-
-    $(document).on("click", "a", function (e) {
-        
-        var id= $(this).attr("id");
-        var ref_id= $(this).attr("ref_id");
-        var project_id= $(this).attr("project_id");
-        if (id === "remap_reference") {
-            e.preventDefault();
-            $.ajax({
-                url: "{% url 'deploy_televir_map' %}",
-                type: "POST",
-                data: {
-                    'csrfmiddlewaretoken': '{{ csrf_token }}',
-                    'reference_id': ref_id,
-                    'project_id': project_id
-                },
-                success: function (data) {
-                    if (data["is_ok"] === true) {
-                        alert("Reference remap deployed");
-                    } else {
-                        alert("Reference remapping failed");
-                    }
-                },
-                error: function (data) {
-                    alert("Reference remapping failed");
-                }
-            });
-        }
-    });
-
-
-    function nextTr(row) {
-    while ((row = row.nextSibling) && row.nodeType != 1);
-    return row;
-    }
-
-</script>
-
-
-<script>
-
-    document.getElementById("report_download").addEventListener("click", function(e){
-        console.log("download");
-        e.preventDefault();
-        download_table_as_csv("report_table")
-    })
-
-    function download_table_as_csv(table_id, separator = '\t') {
-        // Select rows from table_id
-        var rows = document.querySelectorAll('table#' + table_id + ' tr');
-        // Construct csv
-        var csv = [];
-        for (var i = 0; i < rows.length; i++) {
-            var row = [],
-                cols = rows[i].querySelectorAll('td, th');
-                        
-            if ( rows[i].className == "header" ) {
-            
-                for (var j = 0; j < cols.length; j++) {
-                    // Clean innertext to remove multiple spaces and jumpline (break csv)
-                    var data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, '').replace(/(\s\s)/gm, ' ')
-                    // Escape double-quote with double-double-quote (see https://stackoverflow.com/questions/17808511/properly-escape-a-double-quote-in-csv)
-                    data = data.replace(/"/g, '""');
-                    // Push escaped string
-                    row.push(data);
-                }
-                csv.push(row.join(separator));
-            }
-
-            if ( rows[i].className == "parent" ) {
-            
-                for (var j = 0; j < cols.length; j++) {
-                    // Clean innertext to remove multiple spaces and jumpline (break csv)
-                    var data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, '').replace(/(\s\s)/gm, ' ')
-                    // Escape double-quote with double-double-quote (see https://stackoverflow.com/questions/17808511/properly-escape-a-double-quote-in-csv)
-                    data = data.replace(/"/g, '""');
-                    // Push escaped string
-                    row.push(data);
-                }
-                csv.push(row.join(separator));
-            }
-        }
-        var csv_string = csv.join('\n');
-        // Download it
-        var filename = 'export_' + table_id + '_' + new Date().toLocaleDateString() + '.tsv';
-        var link = document.createElement('a');
-        //link.style.display = 'none';
-        link.setAttribute('target', '_blank');
-        link.setAttribute('href', 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv_string));
-        link.setAttribute('download', filename);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
-</script>
-
-<script>	
-  $('#id_go_back_button').on('click', function(){
-      wait_screen();
-  });
-</script>	
 {% endblock %}
 
 

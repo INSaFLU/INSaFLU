@@ -4,19 +4,12 @@
 */
 
 $(document).on('click', '.btn', function (e) {
-console.log("igv_browse");
 if (e.target.id == "igv_browse") 
     var accid=$(this).attr('accid');
-    console.log('igv_display_'+accid);
     var igv_display = document.getElementById('igv_display_' + accid);
     var igv_display_status= igv_display.style.display;
     var igv_display_className= igv_display.className;
-    console.log(igv_display_status);
-    console.log(igv_display_className);
-    console.log(accid);
-    console.log(/\bopen\b/.test(igv_display_className)); 
-    console.log(igv_display.className.replace(" open",''));   
-    
+
     if (/\bopen\b/.test(igv_display_className)){
         igv_display.className= igv_display.className.replace(" open",'');
         var show_igv_div = document.getElementById('show_igv_' + accid);
@@ -37,8 +30,6 @@ function show_igv(item) {
         var run_pk = item.attr('run_pk');
         var unique_id = item.attr('reference_id');
         var url = "{% url 'igv_browser' %}";
-        console.log("show_igv");
-        console.log(url);
 
         $.ajax({
             /// spin 
@@ -102,8 +93,7 @@ function show_igv(item) {
                             },                        
                         ]
                     }
-                    console.log("options");
-                    console.log(document.getElementById('show_igv_' + accid));
+
                     browser = igv.createBrowser(document.getElementById('show_igv_' + accid), options);
                 }
                 else{

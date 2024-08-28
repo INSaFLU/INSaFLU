@@ -25,7 +25,7 @@ class PhyloTreeManager:
                 self.leaves_use(child, leaves)
         return leaves
 
-    def children_use(self, node: Phylo.BaseTree.Clade, children=[]):
+    def all_node_children(self, node: Phylo.BaseTree.Clade, children=[]):
         """
         Return list of children for a node
         """
@@ -34,32 +34,20 @@ class PhyloTreeManager:
         else:
             for child in node.clades:
                 children.append(child)
-                self.children_use(child, children)
+                self.all_node_children(child, children)
         return children
 
     def get_node_leaves(self, node):
         """
         Return list of leaves for a node"""
 
-        # if node == self.tree.root:
-        #    # return neighbours
-        #    return [
-        #        neighbour
-        #        for neighbour in self.nx_tree.neighbors(node)
-        #        if len(neighbour) <= 1
-        #    ]
-        # else:
         return self.leaves_use(node, leaves=[])
 
     def get_node_children(self, node):
         """
         Return list of children for a node"""
 
-        # if node == self.tree.root:
-        # return neighbours
-        #    return [neighbour for neighbour in self.nx_tree.neighbors(node)]
-        # else:
-        return self.children_use(node, children=[])
+        return self.all_node_children(node, children=[])
 
     def inner_nodes_get(self):
         """
@@ -132,7 +120,7 @@ class PhyloTreeManager:
         }
 
         clade_leaves = {
-            node: [leaf.name for leaf in leaves]
+            node: [leaf.name for leaf in leaves if leaf.name]
             for node, leaves in clade_leaves.items()
         }
 
@@ -193,7 +181,7 @@ class PhyloTreeManager:
 
         return inner_node_clades
 
-    def leaf_clades_clean(self, private_clades: List[Clade]):
+    def leaf_clades_clean(self, private_clades: List[Clade]) -> Dict[str, Clade]:
         """
         Return dictionary of node clades
         """

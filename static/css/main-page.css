@@ -133,10 +133,16 @@
 .card{
 	border: 0px
 }
+
+.portal {
+    text-align: center;
+}
+
 .card-text{
 	margin-top: 7px;
 	margin-bottom: 0;
 }
+
 .card-link{
 	margin-top: 7px;
 	margin-bottom: 0;
@@ -146,6 +152,11 @@
 	margin-top: 7px;
 	margin-bottom: 0;
 }
+
+.card-footer {
+    text-align: center;
+}
+
 /*
  * Main column and sidebar layout
  */

@@ -7,9 +7,6 @@ from operator import attrgetter
 
 from Bio import SeqIO
 from braces.views import FormValidMessageMixin, LoginRequiredMixin
-from constants.constants import Constants, FileExtensions, TypeFile, TypePath
-from constants.nextclade_links import get_constext_nextclade
-from constants.software_names import SoftwareNames
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.sites.shortcuts import get_current_site
@@ -22,42 +19,34 @@ from django.utils.safestring import mark_safe
 from django.views import generic
 from django.views.generic import ListView
 from django_tables2 import RequestConfig
+
+from constants.constants import Constants, FileExtensions, TypeFile, TypePath
+from constants.meta_key_and_values import MetaKeyAndValue
+from constants.nextclade_links import get_constext_nextclade
+from constants.software_names import SoftwareNames
+from datasets.forms import (AddConsensusDatasetForm, AddProjectsDatasetForm,
+                            AddReferencesDatasetForm, ConsensusForm,
+                            DatastesUploadDescriptionMetadataForm)
+from datasets.models import (Consensus, Dataset, DatasetConsensus, MetaKey,
+                             UploadFiles)
+from datasets.tables import (AddDatasetFromCvsFileTableMetadata,
+                             ConsensusTable, DatasetConsensusTable,
+                             DatasetTable, ProjectTable, ReferenceTable)
 from extend_user.models import Profile
+from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project, ProjectSample, Reference
 from settings.constants_settings import ConstantsSettings
 from settings.default_software_project_sample import DefaultProjectSoftware
-from settings.default_parameters import DefaultParameters
-from settings.models import Software as SoftwareSettings
 from settings.models import Parameter
+from settings.models import Software as SoftwareSettings
 from settings.tables import SoftwaresTable
 from utils.process_SGE import ProcessSGE
-from utils.session_variables import (
-    clean_check_box_in_session,
-    is_all_check_box_in_session,
-)
+from utils.result import DecodeObjects
+from utils.session_variables import (clean_check_box_in_session,
+                                     is_all_check_box_in_session)
 from utils.software import Software
 from utils.support_django_template import get_link_for_dropdown_item
 from utils.utils import ShowInfoMainPage, Utils
-from utils.result import DecodeObjects
-from managing_files.manage_database import ManageDatabase
-from constants.meta_key_and_values import MetaKeyAndValue	
-
-from datasets.forms import (
-    AddConsensusDatasetForm,
-    AddProjectsDatasetForm,
-    AddReferencesDatasetForm,
-    ConsensusForm,
-    DatastesUploadDescriptionMetadataForm,
-)
-from datasets.models import Consensus, Dataset, DatasetConsensus, MetaKey, UploadFiles
-from datasets.tables import (
-    AddDatasetFromCvsFileTableMetadata,
-    ConsensusTable,
-    DatasetConsensusTable,
-    DatasetTable,
-    ProjectTable,
-    ReferenceTable,
-)
 
 
 class DatasetsView(LoginRequiredMixin, ListView):

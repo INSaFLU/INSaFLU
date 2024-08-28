@@ -1,25 +1,129 @@
 import os
+import re
 import shutil
 import subprocess
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import pandas as pd
+from Bio import SeqIO
+from Bio.Seq import Seq
 
 from constants.constants import Televir_Metadata_Constants
-from pathogen_identification.models import RawReference
 from pathogen_identification.modules.object_classes import MappingStats
 
 
+class DustMasker:
+
+    def __init__(self, temp_dir=None, id: Optional[str] = "0"):
+        self.dustmasker_binary = "dustmasker"
+        self.temp_dir = temp_dir
+        if self.temp_dir is None:
+            self.temp_dir = os.path.join(
+                os.path.dirname(self.dustmasker_binary), "temp"
+            )
+        if not os.path.exists(self.temp_dir):
+            os.mkdir(self.temp_dir)
+
+        self.bedout = os.path.join(self.temp_dir, f"dust.{id}.bed")
+        self.fasta_soft_mask = os.path.join(self.temp_dir, f"dust.{id}.fasta")
+        self.fasta_hard_mask = os.path.join(self.temp_dir, f"dust.{id}.hard.fasta")
+
+    def hardmask_fasta_output(self):
+        """
+        replace lower case bases with N
+        """
+        if not os.path.exists(self.fasta_soft_mask):
+            return False
+
+        with open(self.fasta_soft_mask, "r") as f:
+            with open(self.fasta_hard_mask, "w") as g:
+                for record in SeqIO.parse(f, "fasta"):
+                    ## replace lower case with N
+                    record.seq = Seq(re.sub("[a-z]", "N", str(record.seq)))
+
+                    g.write(record.format("fasta"))
+
+    def mask_sequence(self, fasta_file):
+        """
+        Run dustmasker on a fasta file
+        """
+
+        command = f"{self.dustmasker_binary} -in {fasta_file} -outfmt fasta -out {self.fasta_soft_mask}"
+        subprocess.call(command, shell=True)
+
+        return
+
+    def mask_sequence_hard(self, fasta_file):
+        """
+        Run dustmasker on a fasta file
+        """
+
+        self.mask_sequence(fasta_file)
+        self.hardmask_fasta_output()
+
+        return self.fasta_hard_mask
+
+    def run_mask_hard(self, fasta_file):
+        """
+        Run dustmasker on a fasta file
+        """
+
+        self.mask_sequence_hard(fasta_file)
+        os.remove(self.fasta_soft_mask)
+
+        return self.fasta_hard_mask
+
+
+from pathogen_identification.modules.object_classes import Temp_File
+
+
 class TelevirBioinf:
+
     def __init__(self):
         self.metadata_constants = Televir_Metadata_Constants()
         self.samtools_binary = self.metadata_constants.get_software_binary("samtools")
         self.bcf_tools_binary = self.metadata_constants.get_software_binary("bcftools")
+        self.bgzip_binary = self.metadata_constants.get_software_binary("bgzip")
+
+    def bgzip(self, file_path):
+        command = f"{self.bgzip_binary} {file_path}"
+        subprocess.call(command, shell=True)
+        return f"{file_path}.gz"
+
+    def tabix(self, file_path):
+        command = f"{self.bgzip_binary} -f {file_path}"
+        subprocess.call(command, shell=True)
+
+    def get_mapped_reads(self, bam_file, outfile=None):
+        command = f"{self.samtools_binary} view -F 0x4 {bam_file} | cut -f 1 | sort | uniq > {outfile}"
+        subprocess.call(command, shell=True)
+        return os.path.exists(outfile)
+
+    def get_mapped_reads_list(self, bam_file, outfile: str) -> List[str]:
+
+        deployed = self.get_mapped_reads(bam_file, outfile)
+
+        if deployed is False:
+            return []
+
+        with open(outfile, "r") as f:
+            reads = f.readlines()
+
+        processed_reads = []
+        for read in reads:
+            read = read.strip()
+            if read:
+                processed_reads.append(read)
+        return processed_reads
 
     @staticmethod
     def virosaurus_formatting(accid):
         accid_simple = accid.split(".")[0]
         return f"{accid_simple}:{accid_simple};"
+
+    def index_fasta(self, reference_file):
+        command = f"{self.samtools_binary} faidx {reference_file}"
+        subprocess.call(command, shell=True)
 
     @staticmethod
     def check_sourcefile_is_virosaurus(file_path):
@@ -34,14 +138,30 @@ class TelevirBioinf:
 
         return accid
 
-    def check_file_exists_not_empty(self, file_path):
-        return os.path.exists(file_path) and os.path.getsize(file_path) > 100
+    def replace_in_file(self, file_path, old, new, starts_with=None):
+        """
+        Replace a string in a file, use sed, if starts_with is not None, only replace lines that start with starts_with
 
-    def extract_reference(self, source_file, accid, output_file):
-        accid_code = self.process_accid(accid, source_file)
+        """
+
+        if not os.path.exists(file_path):
+            return False
+
+        if starts_with is not None:
+            command = f"sed -i '/^{starts_with}/s/{old}/{new}/g' {file_path}"
+        else:
+            command = f"sed -i 's/{old}/{new}/g' {file_path}"
+
+        subprocess.call(command, shell=True)
+
+        return True
+
+    def extract_reference(self, source_file, accid_code, output_file):
+        # accid_code = self.process_accid(accid, source_file)
         command = (
             f'{self.samtools_binary} faidx {source_file} "{accid_code}" > {output_file}'
         )
+
         subprocess.call(command, shell=True)
 
         return self.check_file_exists_not_empty(output_file)
@@ -51,6 +171,11 @@ class TelevirBioinf:
         subprocess.call(command, shell=True)
 
         return self.check_file_exists_not_empty(output_file)
+
+    def vcf_from_bam(self, bam_list: List[str], reference: str, output_vcf: str):
+        command = f"{self.metadata_constants.get_software_binary('bcftools')} mpileup -f {reference} {' '.join(bam_list)} | {self.metadata_constants.get_software_binary('bcftools')} call -mv -Ov -o {output_vcf}"
+        subprocess.call(command, shell=True)
+        return self.check_file_exists_not_empty(output_vcf)
 
     def merge_vcf_files(self, files: List[str], output_file):
 

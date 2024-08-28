@@ -7,10 +7,10 @@ import os
 from typing import Dict, List
 
 import networkx as nx
+from django.conf import settings
 
 from fluwebvirus.settings import MEDIA_ROOT, STATIC_ROOT, STATICFILES_DIRS
 from pathogen_identification.utilities.mapping_flags import (
-    MapFlagBacteria,
     MapFlagProbes,
     MapFlagViruses,
 )
@@ -27,8 +27,14 @@ class ConstantsSettings:
     televir_subdirectory = "televir_projects"
     run_files_zipped = "run.zip"
     PAGINATE_NUMBER = 10
+    TELEVIR_REFERENCE_PAGINATE_NUMBER = 15
+    test_subdirectory = "temp_objects_tests"
 
     USER_TREE_INDEX = 0
+
+    ################################### Panels
+
+    MAX_REFERENCES_PANEL = 100
 
     ################################### Pipeline steps
 
@@ -39,7 +45,7 @@ class ConstantsSettings:
     METAGENOMICS = True
     METAGENOMICS_file_limit = 1000000
 
-    ################################### pipeline_deployment_type
+    ################################### Pipeline_deployment_type
 
     DEPLOYMENT_TYPE_TREE = "tree"
     DEPLOYMENT_TYPE_PIPELINE = "pipeline"
@@ -73,10 +79,13 @@ class ConstantsSettings:
     ]
 
     PIPELINE_STEPS_MAPPINGS = [
-        CS.PIPELINE_NAME_metagenomics_screening,
-        CS.PIPELINE_NAME_reporting,
         CS.PIPELINE_NAME_request_mapping,
         CS.PIPELINE_NAME_map_filtering,
+        CS.PIPELINE_NAME_metagenomics_screening,
+    ]
+
+    PIPELINE_STEPS_GLOBAL = [
+        CS.PIPELINE_NAME_reporting,
     ]
 
     ################################### Pipeline steps aggregate
@@ -90,6 +99,12 @@ class ConstantsSettings:
 
     clade_private_proportion = 0.5
     clade_shared_proportion_threshold = 0.2
+
+    ################################### Max Size
+
+    MAX_LENGTH_SEQUENCE_TOTAL_REFERENCE_FASTA = (
+        settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA * 10
+    )  # 30 * 10e6
 
     ################################### Threads
 
@@ -113,6 +128,9 @@ class ConstantsSettings:
         CS.PIPELINE_NAME_read_classification: "classification/reads/",
         CS.PIPELINE_NAME_metagenomics_screening: "metagenomics/",
         CS.PIPELINE_NAME_remapping: "remap/",
+        CS.PIPELINE_NAME_request_mapping: "remap/",
+        CS.PIPELINE_NAME_map_filtering: "remap/",
+        CS.PIPELINE_NAME_metagenomics_screening: "metagenomics/",
         "log_dir": "logs/",
         "OUTD": "output/",
     }
@@ -147,6 +165,7 @@ class ConstantsSettings:
 
     ################################## TAXONOMY
 
+    MAX_READS_INPUT = 500000
     READ_OVERLAP_THRESHOLD = 0.9
     SHARED_READS_THRESHOLD = 0.5
 
@@ -172,6 +191,10 @@ class ConstantsSettings:
 
     PAIR_END = "PE"
     SINGLE_END = "SE"
+
+    ################################## PATHOGEN IDENTIFICATION REPORTS
+
+    SORT_GROUP_DISPLAY_DEFAULT_THRESHOLD_SHARED = 0.95
 
     ################################## ACTIONS DETAILS
 
@@ -233,6 +256,11 @@ class ConstantsSettings:
                 p: n
                 for p, n in pipeline_steps_dict.items()
                 if p in self.PIPELINE_STEPS_MAPPINGS
+            },
+            "Global": {
+                p: n
+                for p, n in pipeline_steps_dict.items()
+                if p in self.PIPELINE_STEPS_GLOBAL
             },
         }
 

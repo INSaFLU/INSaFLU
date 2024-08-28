@@ -15,6 +15,7 @@ from utils.utils import Utils
 from utils.parse_in_files import ParseInFiles
 from utils.software import Software
 from constants.constants import Constants, TypeFile
+from settings.constants_settings import ConstantsSettings
 from managing_files.models import Reference, Sample, DataSet, VaccineStatus, Project, UploadFiles
 from django.template.defaultfilters import filesizeformat
 import os, re, logging
@@ -251,7 +252,7 @@ class SampleForm(forms.ModelForm):
 		model = Sample
 		# specify what fields should be used in this form.
 		fields = ('name', 'vaccine_status', 'data_set', 'date_of_onset', 'date_of_collection',\
-				'date_of_receipt_lab', 'path_name_1', 'path_name_2')
+				'date_of_receipt_lab', 'path_name_1', 'path_name_2', 'type_of_fastq')
 
 	def __init__(self, *args, **kwargs):
 		self.request = kwargs.pop('request')
@@ -276,6 +277,8 @@ class SampleForm(forms.ModelForm):
 			'placeholder': 'dd/mm/yyyy',
 		})
 		
+		#self.fields['type_of_fastq'].queryset = [-1,0,1]
+
 		#placeholder="dd/mm/yyyy"
 		
 		## can exclude explicitly
@@ -316,6 +319,7 @@ class SampleForm(forms.ModelForm):
 			('path_name_1', 'Raw fastq.gz (R1)', message_r1, True),
 			('path_name_2', 'Raw fastq.gz (R2)', message_r2, False),
 			('like_dates', 'Choose a date', 'Choose the option you want to be used to calculate the calendar week number.', False),
+			('type_of_fastq', 'Technology', "Sequencing technology<br/> -1 : infer automatically<br/> 0 : Illumina / Ion Torrent<br/> 1 : ONT", False),
 		]
 		for x in field_text:
 			self.fields[x[0]].label = x[1]
@@ -365,8 +369,13 @@ class SampleForm(forms.ModelForm):
 			Fieldset(
 				'Fastq files',
 				Div(
-					Div('path_name_1', css_class = 'show-for-sr'),
-					Div('path_name_2', css_class = 'show-for-sr')),
+					#Div('path_name_1', css_class = 'show-for-sr'),
+					#Div('path_name_2', css_class = 'show-for-sr'),
+					#Div('type_of_fastq', css_class = "col-4"),
+					Div('path_name_1', css_class = 'col-sm-3'),
+					Div('path_name_2', css_class = "col-sm-3"),					
+					Div('type_of_fastq', css_class = "col-sm-3"),
+					),
 				css_class = 'article-content'
 			),
 # 			Div(
@@ -454,8 +463,8 @@ class SampleForm(forms.ModelForm):
 			
 			try:
 				if not self.utils.is_gzip(path_name_1.name): raise Exception("File need to have suffix '.fastq.gz'/'.fq.gz'")
-				(is_fastq, type_of_fastq) = self.utils.is_fastq_gz(fastaq_temp_file_name.name)
-				self.cleaned_data['type_fastq'] = type_of_fastq		### pass info to SamplesAddView
+				#(is_fastq, type_of_fastq) = self.utils.is_fastq_gz(fastaq_temp_file_name.name)
+				#self.cleaned_data['type_fastq'] = type_of_fastq		### pass info to SamplesAddView
 			except Exception as e:	## (e.errno, e.strerror)
 				os.unlink(fastaq_temp_file_name.name)
 				self.add_error('path_name_1', _(e.args[0]))
@@ -503,6 +512,16 @@ class SampleForm(forms.ModelForm):
 			self.logger_production.error("New Sample: {}  Path name2: {} Can't reach second file".format(name, path_name_1))
 			self.logger_debug.error("New Sample: {}  Path name2: {} Can't reach second file".format(name, path_name_2))
 			self.add_error('path_name_2', "Can't reach second file")
+		
+		type_of_fastq = self.cleaned_data.get('type_of_fastq')
+		if (type_of_fastq not in [-1,0,1]):
+			self.add_error('type_of_fastq', _("Error: Technology must be -1 (automatic), 0 (Illumina) or 1 (ONT)."))
+			return cleaned_data
+		
+		if ( (type_of_fastq == 1) and (self.cleaned_data.get('path_name_2') != None) ):
+			self.add_error('type_of_fastq', _("Error: ONT data cannot have second fastq"))
+			return cleaned_data
+
 		return cleaned_data
 		
 
@@ -588,15 +607,15 @@ class SamplesUploadDescriptionForm(forms.ModelForm):
 		self.helper.form_method = 'POST'
 		self.helper.layout = Layout(
 			HTML('<p> </p>'),
-			HTML('<div class="alert alert-dark"> <a href="' + mark_safe(os.path.join(getattr(settings, "STATIC_URL", None), Constants.DIR_TEMPLATE_INPUT,\
-					Constants.FILE_TEMPLATE_INPUT_csv)) + '" download> <span> <i class="fa fa-download"></i></span> Template file \'csv\'</a> </div>'),
-			HTML('<p> </p>'),
+			#HTML('<div class="alert alert-dark"> <a href="' + mark_safe(os.path.join(getattr(settings, "STATIC_URL", None), Constants.DIR_TEMPLATE_INPUT,\
+			#		Constants.FILE_TEMPLATE_INPUT_csv)) + '" download> <span> <i class="fa fa-download"></i></span> Template file \'csv\'</a> </div>'),
+			#HTML('<p> </p>'),
 			HTML('<div class="alert alert-dark"> <a href="' + mark_safe(os.path.join(getattr(settings, "STATIC_URL", None), Constants.DIR_TEMPLATE_INPUT,\
 					Constants.FILE_TEMPLATE_INPUT_tsv)) + '" download> <span> <i class="fa fa-download"></i></span> Template file \'tsv\'</a> </div>'),
 			HTML('<p> </p>'),
-			HTML('<div class="alert alert-dark"> <a href="' + mark_safe(os.path.join(getattr(settings, "STATIC_URL", None), Constants.DIR_TEMPLATE_INPUT,\
-					Constants.FILE_TEMPLATE_INPUT_data_csv)) + '" download> <span> <i class="fa fa-download"></i></span> Example Template file \'csv\'</a> </div>'),
-			HTML('<p> </p>'),
+			#HTML('<div class="alert alert-dark"> <a href="' + mark_safe(os.path.join(getattr(settings, "STATIC_URL", None), Constants.DIR_TEMPLATE_INPUT,\
+			#		Constants.FILE_TEMPLATE_INPUT_data_csv)) + '" download> <span> <i class="fa fa-download"></i></span> Example Template file \'csv\'</a> </div>'),
+			#HTML('<p> </p>'),
 			HTML('<div class="alert alert-dark"> <a href="' + mark_safe(os.path.join(getattr(settings, "STATIC_URL", None), Constants.DIR_TEMPLATE_INPUT,\
 					Constants.FILE_TEMPLATE_INPUT_data_tsv)) + '" download> <span> <i class="fa fa-download"></i></span> Example Template file \'tsv\'</a> </div>'),
 			HTML('<p> </p>'),

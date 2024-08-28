@@ -356,7 +356,8 @@ class SoftwareNames(object):
     SOFTWARE_PROKKA_name = "Prokka"
     SOFTWARE_PROKKA_VERSION = "1.2"
     SOFTWARE_PROKKA_PARAMETERS = (
-        "--kingdom Viruses --locustag locus --genus Influenzavirus --species Influenzavirus --strain "
+        #"--kingdom Viruses --locustag locus --genus Influenzavirus --species Influenzavirus --strain "
+        "--kingdom Viruses --genus Virus --locustag locus --strain "
         "ref_PREFIX_FILES_OUT --gcode " + str(Constants.TRANSLATE_TABLE_NUMBER)
     )
 
@@ -632,6 +633,21 @@ class SoftwareNames(object):
         "preprocess/msamtools/bin/msamtools",
     )
     SOFTWARE_MSAMTOOLS_VERSION = "1.1.3"
+
+    SOFTWARE_DUSTMASKER_name = "dustmasker"
+    SOFTWARE_DUSTMASKER_name_extended = "dustmasker - Low complexity filtering"
+    SOFTWARE_DUSTMASKER = "/usr/bin/dustmasker"
+    SOFTWARE_DUSTMASKER_VERSION = "2.7.1"
+
+    SOFTWARE_DUSTMASKER_PARAM_MASK_name= "-masking"
+    SOFTWARE_DUSTMASKER_PARAM_MASK_SOFT = "soft_masking"
+    SOFTWARE_DUSTMASKER_PARAM_MASK_HARD = "hard_masking"
+    SOFTWARE_DUSTMASKER_PARAM_MASK_NONE = "no_masking"
+    SOFTWARE_DUSTMASKER_PARAM_MASK_OPTIONS = [
+        SOFTWARE_DUSTMASKER_PARAM_MASK_SOFT,
+        SOFTWARE_DUSTMASKER_PARAM_MASK_HARD,
+        SOFTWARE_DUSTMASKER_PARAM_MASK_NONE,
+    ]
 
     ###
 

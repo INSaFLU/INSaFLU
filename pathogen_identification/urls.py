@@ -5,6 +5,7 @@ import pathogen_identification.views as PIviews
 from managing_files import ajax_views, views
 
 urlpatterns = [
+    url("download-template/", PIviews.download_template_view, name="download_template"),
     url(
         r"services$",
         PIviews.Services.as_view(),
@@ -21,6 +22,51 @@ urlpatterns = [
         name="PIproject_samples",
     ),
     url(
+        r"teleflu_project/(?P<pk>\d+)$",
+        PIviews.TelefluProjectView.as_view(),
+        name="teleflu_project",
+    ),
+    url(
+        r"insaflu_project_igv/(?P<pk>\d+)$",
+        PIviews.INSaFLUMappingIGV.as_view(),
+        name="insaflu_project_igv",
+    ),
+    url(
+        r"teleflu_workflow_igv/(?P<pk>\d+)$",
+        PIviews.TelefluMappingIGV.as_view(),
+        name="teleflu_workflow_igv",
+    ),
+    url(
+        r"add-teleflu-sample$",
+        PIajax_views.add_teleflu_sample,
+        name="add_teleflu_sample",
+    ),
+    url(
+        r"add-teleflu-mapping$",
+        PIajax_views.add_teleflu_mapping_workflow,
+        name="add_workflow_to_project",
+    ),
+    url(
+        "load-teleflu-workflows$",
+        PIajax_views.load_teleflu_workflows,
+        name="load_teleflu_workflows",
+    ),
+    url(
+        r"map-teleflu-workflow-samples$",
+        PIajax_views.map_teleflu_workflow_samples,
+        name="map_workflow_to_samples",
+    ),
+    url(
+        r"teleflu-televir-connect",
+        PIajax_views.create_insaflu_project,
+        name="teleflu_televir_connect",
+    ),
+    url(
+        r"teleflu-mapping-stack-igv",
+        PIajax_views.stack_igv_teleflu_workflow,
+        name="stack_igv_teleflu_workflow",
+    ),
+    url(
         r"project_add$",
         PIviews.PathID_ProjectCreateView.as_view(),
         name="PIproject-add",
@@ -29,6 +75,76 @@ urlpatterns = [
         r"check_project_name",
         PIajax_views.validate_project_name,
         name="check_project_name",
+    ),
+    url(
+        r"create_reference_panel",
+        PIajax_views.create_reference_panel,
+        name="create_reference_panel",
+    ),
+    url(
+        r"check_panel_upload",
+        PIajax_views.check_panel_upload_clean,
+        name="check_televir_panel_upload",
+    ),
+    url(
+        r"delete_reference_file",
+        PIajax_views.delete_reference_file,
+        name="delete_reference_file",
+    ),
+    url(
+        r"panel_references_add",
+        PIajax_views.add_references_to_panel,
+        name="add_references_to_panel",
+    ),
+    url(
+        r"panel_references_delete",
+        PIajax_views.delete_reference_panel,
+        name="delete_reference_panel",
+    ),
+    url(
+        r"panel_references_get",
+        PIajax_views.get_panel_references,
+        name="panel_references_get",
+    ),
+    url(
+        r"televir_panel_upload",
+        PIviews.UploadReferencePanel.as_view(),
+        name="upload_reference_panel_view",
+    ),
+    url(
+        r"panel_get_all",
+        PIajax_views.get_panels,
+        name="panel_list",
+    ),
+    url(
+        r"add_panels_to_sample",
+        PIajax_views.add_panels_to_sample,
+        name="add_panels_to_sample",
+    ),
+    url(
+        r"add_panels_to_project",
+        PIajax_views.add_panels_to_project,
+        name="add_panels_to_project",
+    ),
+    url(
+        r"remove_panels_from_sample",
+        PIajax_views.remove_sample_panel,
+        name="remove_added_panel",
+    ),
+    url(
+        r"get_sample_panels$",
+        PIajax_views.get_sample_panels,
+        name="get_sample_panels",
+    ),
+    url(
+        r"get_sample_panel_suggestions",
+        PIajax_views.get_sample_panel_suggestions,
+        name="get_sample_panel_suggestions",
+    ),
+    url(
+        r"get_project_panel_suggestions",
+        PIajax_views.get_project_panel_suggestions,
+        name="get_project_panel_suggestions",
     ),
     url(
         r"Project_samples/(?P<pk>\d+)/add_sample_project$",
@@ -51,8 +167,38 @@ urlpatterns = [
         name="all_PIproject_reports",
     ),
     url(
+        r"Projects/televir_reference_management$",
+        PIviews.ReferencePanelManagement.as_view(),
+        name="reference_panels",
+    ),
+    url(
+        r"Projects/reference_panels$",
+        PIviews.ReferenceManagementBase.as_view(),
+        name="reference_dashboard",
+    ),
+    url(
+        r"Projects/reference_files$",
+        PIviews.ReferenceFileManagement.as_view(),
+        name="televir_reference_files",
+    ),
+    url(
+        r"Projects/references_televir$",
+        PIviews.ReferenceManagement.as_view(),
+        name="televir_references",
+    ),
+    url(
+        r"References/teleflu_reference_files$",
+        PIajax_views.available_televir_files,
+        name="available_televir_files",
+    ),
+    url(
+        r"References/teleflu_register_reference_files_panel$",
+        PIajax_views.add_file_to_panel,
+        name="register_file_panel",
+    ),
+    url(
         r"Refereces/teleflu_references$",
-        PIajax_views.create_insaflu_reference,
+        PIajax_views.create_insaflu_reference_from_filemap,
         name="create_teleflu_reference",
     ),
     url(
@@ -66,14 +212,34 @@ urlpatterns = [
         name="create_teleflu_project",
     ),
     url(
+        r"Projects/query_teleflu_project$",
+        PIajax_views.query_teleflu_projects,
+        name="query_teleflu_projects",
+    ),
+    url(
+        "Projects/teleflu_project_delete$",
+        PIajax_views.delete_teleflu_project,
+        name="delete_teleflu_project",
+    ),
+    url(
         r"deploy_mapping_request$",
         PIajax_views.submit_sample_mapping_televir,
         name="map_selected_references",
     ),
     url(
+        r"deploy_sample_panel_map",
+        PIajax_views.submit_sample_mapping_panels,
+        name="map_selected_panels",
+    ),
+    url(
         r"deploy_mapping_request_project_samples$",
         PIajax_views.submit_project_samples_mapping_televir,
         name="map_selected_references_project_samples",
+    ),
+    url(
+        r"deploy_panel_mapping_request_project_samples$",
+        PIajax_views.submit_samples_mapping_panels,
+        name="map_panels_project_samples",
     ),
     url(
         r"deploy_mapping_screeing$",
@@ -94,6 +260,11 @@ urlpatterns = [
         "Projects/explify_external_delete$",
         PIajax_views.Project_explify_delete_external,
         name="explify_delete_external",
+    ),
+    url(
+        "Projects/update_televir_project$",
+        PIajax_views.Update_televir_project,
+        name="update_televir_project",
     ),
     url(
         r"Projects/project_(?P<pk1>\d+)/sample_(?P<pk2>\d+)",
@@ -144,6 +315,11 @@ urlpatterns = [
         r"added_reference_table$",
         PIviews.inject_references_added_html,
         name="added_reference_table",
+    ),
+    url(
+        r"remove_panel_reference$",
+        PIajax_views.remove_panel_reference,
+        name="remove_panel_reference",
     ),
     url(
         r"remove_reference$",
@@ -219,6 +395,11 @@ urlpatterns = [
         r"^ajax/kill_televir_sample$",
         PIajax_views.kill_televir_project_tree_sample,
         name="kill_televir_project_sample",
+    ),  ## remove a televir sample deployment
+    url(
+        r"^ajax/kill_televir_project_sample$",
+        PIajax_views.kill_televir_project_all_sample,
+        name="kill_all_televir_project_sample",
     ),  ## remove a televir project
     url(
         r"ajax/deploy_televir_map$",

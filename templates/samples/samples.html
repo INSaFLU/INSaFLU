@@ -57,6 +57,15 @@
 									</div>
 								</div>
 							{% endif %}
+
+							{% if unattached_samples %}
+								<div class="btn-group">
+									<a href="#id_remove_unattached_modal" data-title="Remove ALL samples not associated to projects"
+	                    			class="btn btn-small btn-primary dark" data-toggle="modal">
+	                    			<span class="hidden-phone"> Remove ALL <i class="fa fa-trash"></i> samples </span></a>	
+								</div>
+							{% endif %}
+
 	                        <form method="get" class="form-inline form-search pull-right">
 	                          {% csrf_token %}
 	                            <div>
@@ -126,7 +135,7 @@
     					<h4 class="modal-title-remove">Remove a sample</h4>
     					<button type="button" class="close" data-dismiss="modal">&times;</button>
   					</div>
-  
+
   					<!-- Modal body -->
   					<div class="modal-body mx-auto mw-100">
   						<div id="id-modal-body-remove-sample" remove-single-value-url="{% url 'remove_sample' %}">
@@ -141,12 +150,65 @@
 			</div>
  		</div>
 	</div>
-	
+
+	<!-- The remove Modal -->
+	<div class="modal fade" id="id_remove_unattached_modal" >
+		<div class="modal-dialog">
+			<div class="modal-content">
+   
+  					<!-- Modal Header -->
+  					<div class="modal-header alert alert-warning">
+    					<h4 class="modal-title-remove_unnatached">Remove samples</h4>
+    					<button type="button" class="close" data-dismiss="modal">&times;</button>
+  					</div>
+
+  					<!-- Modal body -->
+  					<div class="modal-body mx-auto mw-100">
+  						<div id="id-modal-body-remove-unattached" remove-single-value-url="{% url 'remove_unattached_samples' %}">
+  							<label id="id-label-remove-unattached" class="col-form-label">Remove ALL samples not associated to projects?</label>
+   						</div>
+  					</div>
+  					<!-- Modal footer -->
+  					<div class="modal-footer" id="id-modal-footer-remove-unattached">
+    					<button id="id-remove-unattached-button" type="button" class="btn btn-primary" data-dismiss="modal">Remove</button>
+    					<button id="id-cancel-unattached-button" type="button" class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">Cancel</button>
+  					</div>
+			</div>
+ 		</div>
+	</div>
+
+	<!-- The swap Modal -->
+	<div class="modal fade" id="id_swap_modal" >
+		<div class="modal-dialog">
+			<div class="modal-content">
+   
+  					<!-- Modal Header -->
+  					<div class="modal-header alert alert-warning">
+    					<h4 class="modal-title-swap">Swap Technology from a sample</h4>
+    					<button type="button" class="close" data-dismiss="modal">&times;</button>
+  					</div>
+
+  					<!-- Modal body -->
+  					<div class="modal-body mx-auto mw-100">
+  						<div id="id-modal-body-swap-technology" swap-single-value-url="{% url 'swap_technology' %}">
+  							<label id="id-label-swap" class="col-form-label"></label>
+   						</div>
+  					</div>
+  					<!-- Modal footer -->
+  					<div class="modal-footer" id="id-modal-footer-swap">
+    					<button id="id-swap-button" type="button" class="btn btn-primary" data-dismiss="modal">Swap Technology</button>
+    					<button id="id-cancel-swap-button" type="button" class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">Cancel</button>
+  					</div>
+			</div>
+ 		</div>
+	</div>	
+
 {% endblock content %} 
 
 {% block js %}
 	{% load static from staticfiles %}
-	    <script type="text/javascript" src="{% static 'js/remove_samples.js' %}"></script>
+	
+	<script type="text/javascript" src="{% static 'js/remove_samples.js' %}"></script>
 
 	<script>
 	
@@ -154,9 +216,21 @@
 			$('#id-cancel-button').click(function() { 
 				$.unblockUI();
 			});
+			$('#id-cancel-swap-button').click(function() { 
+				$.unblockUI();
+			});		
+			$('#id-cancel-unattached-button').click(function() { 
+				$.unblockUI();
+			});								
 			$('#id-remove-button').click(function() { 
 				$.unblockUI();
 			});
+			$('#id-remove-unattached-button').click(function() { 
+				$.unblockUI();
+			});			
+			$('#id-swap-button').click(function() { 
+				$.unblockUI();
+			});			
 		});
 	
 		/// set wait screen

@@ -4,10 +4,8 @@ from datetime import datetime
 from operator import itemgetter
 
 from django.conf import settings
-
 # from django.db.models import Manager as GeoManager
 from django.contrib.auth.models import User
-
 # Create your models here.
 from django.contrib.gis.db.models import GeoManager  # #  change to django  2.x
 from django.contrib.gis.db.models import PointField
@@ -850,7 +848,6 @@ class Sample(models.Model):
         """
         return IdentifyVirus().classify(self.identify_virus.all())
 
-
     def get_mixed_infection(self):
         """
         mixed infection based on the table static/mixed_infections/mixed_infections.xls
@@ -1520,7 +1517,7 @@ class ProjectSample(models.Model):
         return type of technology
         """
         return self.sample.get_type_technology()
-    
+
     def get_abricate_output(self, type_path, b_gzip_file=False):
         """
         type_path = [MEDIA_ROOT, MEDIA_URL]
@@ -1834,6 +1831,11 @@ class ProcessControler(models.Model):
         return "{}_combined_metagen_{}_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, sample_pk, leaf_pk
         )
+    
+    def get_name_televir_project_sample_panel_map(self, sample_pk, leaf_pk):
+        return "{}_televir_panel_map_{}_{}".format(
+            ProcessControler.PREFIX_TELEVIR_PROJECT, sample_pk, leaf_pk
+        )
 
     def get_name_televir_project_sample_metagenomics(self, sample_pk):
         return "{}_combined_metagen_{}".format(
@@ -1845,13 +1847,31 @@ class ProcessControler(models.Model):
             ProcessControler.PREFIX_TELEVIR_PROJECT, sample_pk
         )
 
-    def get_name_televir_teleflu_ref_create(self, ref_id):
+    def get_name_raw_televir_teleflu_ref_create(self, ref_id):
         return "{}_teleflu_ref_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, ref_id
+        )
+    
+    def get_name_file_televir_teleflu_ref_create(self, ref_id):
+        return "{}_teleflu_file_ref_{}".format(
+            ProcessControler.PREFIX_TELEVIR_PROJECT, ref_id
+        )
+
+    def get_name_televir_file_upload(self, file_id):
+        return "televir_file_ref_{}".format(file_id)
+
+    def get_name_televir_teleflu_igv_stack(self, teleflu_mapping_id):
+        return "{}_teleflu_mapping_stack_{}".format(
+            ProcessControler.PREFIX_TELEVIR_PROJECT, teleflu_mapping_id
         )
 
     def get_name_televir_teleflu_project_create(self, project_id):
         return "{}_teleflu_project_create_{}".format(
+            ProcessControler.PREFIX_TELEVIR_PROJECT, project_id
+        )
+
+    def get_name_televir_teleflu_reference_create(self, project_id):
+        return "{}_teleflu_project_reference_create_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, project_id
         )
 
@@ -1868,6 +1888,11 @@ class ProcessControler(models.Model):
     def get_name_add_references_to_sample(self, sample_pk):
         return "{}_add_references_to_sample_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, sample_pk
+        )
+    
+    def get_name_update_televir_project(self, project_id):
+        return "{}_update_project_{}".format(
+            ProcessControler.PREFIX_TELEVIR_PROJECT, project_id
         )
 
     def get_name_televir_project_merge_explify_external(self, user_pk):

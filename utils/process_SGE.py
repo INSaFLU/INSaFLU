@@ -73,7 +73,6 @@ class ProcessSGE(object):
             settings.SGE_ROOT, file_name, temp_file
         )
         exist_status = os.system(cmd)
-        print("cmd: {}".format(cmd))
 
         if exist_status != 0:
             if os.path.exists(temp_file):
@@ -421,7 +420,7 @@ class ProcessSGE(object):
         """
         process_controler = ProcessControler()
         vect_command = [
-            "/usr/bin/python3 {} second_stage_snippy --project_sample_id {} --user_id {}".format(
+            "python3 {} second_stage_snippy --project_sample_id {} --user_id {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 project_sample.pk,
                 user.pk,
@@ -439,7 +438,7 @@ class ProcessSGE(object):
         if queue_name == None:
             queue_name = Constants.QUEUE_SGE_NAME_GLOBAL
         path_file = self.set_script_run_sge(
-            out_dir, queue_name, vect_command, job_name, False, vect_job_name_wait
+            out_dir, queue_name, vect_command, job_name, True, vect_job_name_wait
         )
         try:
             sge_id = self.submitte_job(path_file)
@@ -461,7 +460,7 @@ class ProcessSGE(object):
         """
         process_controler = ProcessControler()
         vect_command = [
-            "/usr/bin/python3 {} second_stage_medaka --project_sample_id {} --user_id {}".format(
+            "python3 {} second_stage_medaka --project_sample_id {} --user_id {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 project_sample.pk,
                 user.pk,
@@ -700,7 +699,7 @@ class ProcessSGE(object):
         """
         process_controler = ProcessControler()
         vect_command = [
-            "/usr/bin/python3 {} create_projects_list_by_user --user_id {} {}".format(
+            "python3 {} create_projects_list_by_user --user_id {} {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user.pk,
                 "--settings fluwebvirus.settings_test" if b_test else "",
@@ -841,7 +840,7 @@ class ProcessSGE(object):
             queue_name,
             vect_command,
             job_name,
-            False,
+            True,
             [job_name_wait],
             alternative_temp_dir=out_dir,
         )
@@ -850,6 +849,54 @@ class ProcessSGE(object):
             sge_id = self.submitte_job(path_file)
             if sge_id != None:
                 pc_name = process_controler.get_name_add_references_to_sample(sample_pk)
+                self.set_process_controlers(
+                    user,
+                    pc_name,
+                    sge_id,
+                )
+                self.set_process_controlers(
+                    user,
+                    pc_name,
+                    sge_id,
+                )
+        except:
+            raise Exception("Fail to submit the job.")
+        return sge_id
+
+    def set_submit_update_televir_project(self, project_id: int, user: User):
+        """
+        submit job to add references to sample
+        """
+        process_controler = ProcessControler()
+
+        vect_command = [
+            "python3 {} update_project_references --project_id {}".format(
+                os.path.join(settings.BASE_DIR, "manage.py"),
+                project_id,
+            )
+        ]
+
+        self.logger_production.info("Processing: " + ";".join(vect_command))
+        self.logger_debug.info("Processing: " + ";".join(vect_command))
+        queue_name = user.profile.queue_name_sge
+        (job_name_wait, job_name) = user.profile.get_name_sge_seq(
+            Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
+        )
+        outdir_sge = self.utils.get_temp_dir()
+        path_file = self.set_script_run_sge(
+            outdir_sge,
+            queue_name,
+            vect_command,
+            job_name,
+            True,
+            [job_name_wait],
+        )
+
+        try:
+            sge_id = self.submitte_job(path_file)
+
+            if sge_id != None:
+                pc_name = process_controler.get_name_update_televir_project(project_id)
                 self.set_process_controlers(
                     user,
                     pc_name,
@@ -894,7 +941,7 @@ class ProcessSGE(object):
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         queue_name = user.profile.queue_name_sge
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
-            Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
+            Profile.SGE_PROCESS_televir, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
         path_file = self.set_script_run_sge(
@@ -902,7 +949,7 @@ class ProcessSGE(object):
             queue_name,
             vect_command,
             job_name,
-            False,
+            True,
             [job_name_wait],
             alternative_temp_dir=out_dir,
         )
@@ -951,7 +998,7 @@ class ProcessSGE(object):
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         queue_name = user.profile.queue_name_sge
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
-            Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
+            Profile.SGE_PROCESS_televir, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
         path_file = self.set_script_run_sge(
@@ -959,13 +1006,12 @@ class ProcessSGE(object):
             queue_name,
             vect_command,
             job_name,
-            False,
+            True,
             [job_name_wait],
             alternative_temp_dir=out_dir,
         )
         try:
             sge_id = self.submitte_job(path_file)
-            print("SGE_ID: " + str(sge_id))
 
             if sge_id != None:
                 pc_name = (
@@ -1008,7 +1054,7 @@ class ProcessSGE(object):
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         queue_name = user.profile.queue_name_sge
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
-            Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
+            Profile.SGE_PROCESS_televir, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
         path_file = self.set_script_run_sge(
@@ -1058,7 +1104,7 @@ class ProcessSGE(object):
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         queue_name = user.profile.queue_name_sge
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
-            Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
+            Profile.SGE_PROCESS_televir, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
         path_file = self.set_script_run_sge(
@@ -1066,13 +1112,12 @@ class ProcessSGE(object):
             queue_name,
             vect_command,
             job_name,
-            False,
+            True,
             [job_name_wait],
             alternative_temp_dir=out_dir,
         )
         try:
             sge_id = self.submitte_job(path_file)
-            print("sample submitted, sge_id: " + str(sge_id))
             if sge_id != None:
                 self.set_process_controlers(
                     user,
@@ -1118,7 +1163,122 @@ class ProcessSGE(object):
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         queue_name = user.profile.queue_name_sge
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
-            Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
+            Profile.SGE_PROCESS_televir, Profile.SGE_LINK
+        )
+        outdir_sge = self.utils.get_temp_dir()
+        path_file = self.set_script_run_sge(
+            outdir_sge,
+            queue_name,
+            vect_command,
+            job_name,
+            True,
+            [job_name_wait],
+            alternative_temp_dir=out_dir,
+        )
+        try:
+            sge_id = self.submitte_job(path_file)
+            if sge_id != None:
+                self.set_process_controlers(
+                    user,
+                    process_controler.get_name_televir_project_sample_metagenomics_run(
+                        sample_pk,
+                        leaf_pk,
+                    ),
+                    sge_id,
+                )
+        except:
+            raise Exception("Fail to submit the job.")
+        return sge_id
+
+    def set_submit_televir_sample_panel_map(
+        self,
+        user,
+        sample_pk: int,
+        leaf_pk: int,
+        combined_analysis: bool = False,
+        mapping_request: bool = False,
+        panel_pk: int = None,
+    ):
+        """
+        submit the job to televir
+        """
+        user_pk = user.pk
+        process_controler = ProcessControler()
+        out_dir = self.utils.get_temp_dir()
+
+        vect_command = [
+            "python3 {} submit_televir_sample_panel_run --user_id {} --sample_id {} --leaf_id {} {} {} {}-o {}".format(
+                os.path.join(settings.BASE_DIR, "manage.py"),
+                user_pk,
+                sample_pk,
+                leaf_pk,
+                "--combined_analysis" if combined_analysis else "",
+                "--mapping_request" if mapping_request else "",
+                "--panel_id {} ".format(panel_pk),
+                out_dir,
+            )
+        ]
+
+        self.logger_production.info("Processing: " + ";".join(vect_command))
+        self.logger_debug.info("Processing: " + ";".join(vect_command))
+        queue_name = user.profile.queue_name_sge
+        (job_name_wait, job_name) = user.profile.get_name_sge_seq(
+            Profile.SGE_PROCESS_televir, Profile.SGE_LINK
+        )
+        outdir_sge = self.utils.get_temp_dir()
+        path_file = self.set_script_run_sge(
+            outdir_sge,
+            queue_name,
+            vect_command,
+            job_name,
+            True,
+            [job_name_wait],
+            alternative_temp_dir=out_dir,
+        )
+        try:
+            sge_id = self.submitte_job(path_file)
+            if sge_id != None:
+                self.set_process_controlers(
+                    user,
+                    process_controler.get_name_televir_project_sample_panel_map(
+                        sample_pk,
+                        leaf_pk,
+                    ),
+                    sge_id,
+                )
+        except:
+            raise Exception("Fail to submit the job.")
+        return sge_id
+
+    def set_submit_upload_reference_televir(
+        self,
+        user,
+        file_id: int,
+        fasta: str,
+        metadata: str,
+    ):
+        """
+        submit the job to televir
+        """
+        user_pk = user.pk
+        process_controler = ProcessControler()
+        out_dir = self.utils.get_temp_dir()
+
+        vect_command = [
+            "python3 {} submit_televir_upload_reference_file --user_id {} --file_id {} --fasta {} --metadata {}".format(
+                os.path.join(settings.BASE_DIR, "manage.py"),
+                user_pk,
+                file_id,
+                fasta,
+                metadata,
+            )
+        ]
+
+        self.logger_production.info("Processing: " + ";".join(vect_command))
+        self.logger_debug.info("Processing: " + ";".join(vect_command))
+        queue_name = user.profile.queue_name_sge
+        (job_name_wait, job_name) = user.profile.get_name_sge_seq(
+            Profile.SGE_PROCESS_televir, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
         path_file = self.set_script_run_sge(
@@ -1132,13 +1292,11 @@ class ProcessSGE(object):
         )
         try:
             sge_id = self.submitte_job(path_file)
-            print("sample submitted, sge_id: " + str(sge_id))
             if sge_id != None:
                 self.set_process_controlers(
                     user,
-                    process_controler.get_name_televir_project_sample_metagenomics_run(
-                        sample_pk,
-                        leaf_pk,
+                    process_controler.get_name_televir_file_upload(
+                        file_id=file_id,
                     ),
                     sge_id,
                 )
@@ -1167,7 +1325,7 @@ class ProcessSGE(object):
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         queue_name = user.profile.queue_name_sge
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
-            Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
+            Profile.SGE_PROCESS_televir, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
         path_file = self.set_script_run_sge(
@@ -1181,7 +1339,6 @@ class ProcessSGE(object):
         )
         try:
             sge_id = self.submitte_job(path_file)
-            print("project submitted, sge_id: " + str(sge_id))
             if sge_id != None:
                 self.set_process_controlers(
                     user, process_controler.get_name_televir_project(project_pk), sge_id
@@ -1225,7 +1382,6 @@ class ProcessSGE(object):
         )
         try:
             sge_id = self.submitte_job(path_file)
-            print("project submitted, sge_id: " + str(sge_id))
             if sge_id != None:
                 self.set_process_controlers(
                     user,
@@ -1236,7 +1392,7 @@ class ProcessSGE(object):
             raise Exception("Fail to submit the job.")
         return sge_id
 
-    def set_submit_televir_teleflu_create(self, user, ref_id):
+    def set_submit_raw_televir_teleflu_create(self, user, ref_id):
         """
         submit the job to televir
         """
@@ -1245,7 +1401,7 @@ class ProcessSGE(object):
         out_dir = self.utils.get_temp_dir()
 
         vect_command = [
-            "/usr/bin/python3 {} submit_televir_job_teleflu_ref_create --user_id {} --ref_id {} -o {}".format(
+            "python3 {} submit_televir_job_teleflu_ref_create --user_id {} --ref_id {} -o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user_pk,
                 ref_id,
@@ -1271,11 +1427,55 @@ class ProcessSGE(object):
         )
         try:
             sge_id = self.submitte_job(path_file)
-            print("project submitted, sge_id: " + str(sge_id))
             if sge_id != None:
                 self.set_process_controlers(
                     user,
-                    process_controler.get_name_televir_teleflu_ref_create(ref_id),
+                    process_controler.get_name_file_televir_teleflu_ref_create(ref_id),
+                    sge_id,
+                )
+        except:
+            raise Exception("Fail to submit the job.")
+        return sge_id
+
+    def set_submit_file_televir_teleflu_create(self, user, ref_id):
+        """
+        submit the job to televir
+        """
+        user_pk = user.pk
+        process_controler = ProcessControler()
+        out_dir = self.utils.get_temp_dir()
+
+        vect_command = [
+            "python3 {} submit_televir_job_file_teleflu_ref_create --user_id {} --ref_id {} -o {}".format(
+                os.path.join(settings.BASE_DIR, "manage.py"),
+                user_pk,
+                ref_id,
+                out_dir,
+            )
+        ]
+
+        self.logger_production.info("Processing: " + ";".join(vect_command))
+        self.logger_debug.info("Processing: " + ";".join(vect_command))
+        queue_name = user.profile.queue_name_sge
+        (job_name_wait, job_name) = user.profile.get_name_sge_seq(
+            Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
+        )
+        outdir_sge = self.utils.get_temp_dir()
+        path_file = self.set_script_run_sge(
+            outdir_sge,
+            queue_name,
+            vect_command,
+            job_name,
+            True,
+            [job_name_wait],
+            alternative_temp_dir=out_dir,
+        )
+        try:
+            sge_id = self.submitte_job(path_file)
+            if sge_id != None:
+                self.set_process_controlers(
+                    user,
+                    process_controler.get_name_raw_televir_teleflu_ref_create(ref_id),
                     sge_id,
                 )
         except:
@@ -1291,7 +1491,7 @@ class ProcessSGE(object):
         out_dir = self.utils.get_temp_dir()
 
         vect_command = [
-            "/usr/bin/python3 {} submit_televir_job_teleflu_project_create --user_id {} --project_id {} -o {}".format(
+            "python3 {} submit_televir_job_teleflu_project_create --user_id {} --project_id {} -o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user_pk,
                 project_pk,
@@ -1311,17 +1511,63 @@ class ProcessSGE(object):
             queue_name,
             vect_command,
             job_name,
-            False,
+            True,
             [job_name_wait],
             alternative_temp_dir=out_dir,
         )
         try:
             sge_id = self.submitte_job(path_file)
-            print("project submitted, sge_id: " + str(sge_id))
             if sge_id != None:
                 self.set_process_controlers(
                     user,
                     process_controler.get_name_televir_teleflu_project_create(
+                        project_pk
+                    ),
+                    sge_id,
+                )
+        except:
+            raise Exception("Fail to submit the job.")
+        return sge_id
+
+    def set_submit_televir_teleflu_reference_create(self, user, project_pk):
+        """
+        submit the job to televir
+        """
+        user_pk = user.pk
+        process_controler = ProcessControler()
+        out_dir = self.utils.get_temp_dir()
+
+        vect_command = [
+            "python3 {} submit_televir_job_teleflu_reference_create --user_id {} --project_id {} -o {}".format(
+                os.path.join(settings.BASE_DIR, "manage.py"),
+                user_pk,
+                project_pk,
+                out_dir,
+            )
+        ]
+
+        self.logger_production.info("Processing: " + ";".join(vect_command))
+        self.logger_debug.info("Processing: " + ";".join(vect_command))
+        queue_name = user.profile.queue_name_sge
+        (job_name_wait, job_name) = user.profile.get_name_sge_seq(
+            Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
+        )
+        outdir_sge = self.utils.get_temp_dir()
+        path_file = self.set_script_run_sge(
+            outdir_sge,
+            queue_name,
+            vect_command,
+            job_name,
+            True,
+            [job_name_wait],
+            alternative_temp_dir=out_dir,
+        )
+        try:
+            sge_id = self.submitte_job(path_file)
+            if sge_id != None:
+                self.set_process_controlers(
+                    user,
+                    process_controler.get_name_televir_teleflu_reference_create(
                         project_pk
                     ),
                     sge_id,
@@ -1351,7 +1597,7 @@ class ProcessSGE(object):
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         queue_name = user.profile.queue_name_sge
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
-            Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
+            Profile.SGE_PROCESS_televir, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
         path_file = self.set_script_run_sge(
@@ -1365,10 +1611,54 @@ class ProcessSGE(object):
         )
         try:
             sge_id = self.submitte_job(path_file)
-            print("project submitted, sge_id: " + str(sge_id))
             if sge_id != None:
                 self.set_process_controlers(
                     user, process_controler.get_name_televir_map(reference_pk), sge_id
+                )
+        except:
+            raise Exception("Fail to submit the job.")
+        return sge_id
+
+    def set_submit_teleflu_map(self, user, leaf_pk, project_pk):
+        """
+        submit the job to televir
+        """
+        user_pk = user.pk
+        process_controler = ProcessControler()
+        out_dir = self.utils.get_temp_dir()
+
+        vect_command = [
+            "python3 {} submit_televir_job_teleflu_stacked_igv --leaf_id {} --project_id {} -o {}".format(
+                os.path.join(settings.BASE_DIR, "manage.py"),
+                leaf_pk,
+                project_pk,
+                out_dir,
+            )
+        ]
+
+        self.logger_production.info("Processing: " + ";".join(vect_command))
+        self.logger_debug.info("Processing: " + ";".join(vect_command))
+        queue_name = user.profile.queue_name_sge
+        (job_name_wait, job_name) = user.profile.get_name_sge_seq(
+            Profile.SGE_PROCESS_televir, Profile.SGE_LINK
+        )
+        outdir_sge = self.utils.get_temp_dir()
+        path_file = self.set_script_run_sge(
+            outdir_sge,
+            queue_name,
+            vect_command,
+            job_name,
+            True,
+            [job_name_wait],
+            alternative_temp_dir=out_dir,
+        )
+        try:
+            sge_id = self.submitte_job(path_file)
+            if sge_id != None:
+                self.set_process_controlers(
+                    user,
+                    process_controler.get_name_televir_teleflu_igv_stack(leaf_pk),
+                    sge_id,
                 )
         except:
             raise Exception("Fail to submit the job.")
@@ -1392,7 +1682,7 @@ class ProcessSGE(object):
         ]
         out_dir = self.utils.get_temp_dir()
         path_file = self.set_script_run_sge(
-            out_dir, Constants.QUEUE_SGE_NAME_FAST, vect_command, job_name, False
+            out_dir, Constants.QUEUE_SGE_NAME_FAST, vect_command, job_name, True
         )
         os.system("/bin/sh {}".format(path_file))
         try:
@@ -1418,6 +1708,7 @@ class ProcessSGE(object):
         """
 
         bash_command = (
+            # SLURM: scancel process_id
             "export SGE_ROOT={}; export PATH={}/bin/lx-amd64/:$PATH; qdel {}".format(
                 settings.SGE_ROOT, settings.SGE_ROOT, process_id
             )
@@ -1439,20 +1730,23 @@ class ProcessSGE(object):
         """
         process_controler = ProcessControler()
 
-        processes = ProcessControler.objects.filter(
-            owner__id=user_pk,
-            name=process_controler.get_name_televir_run(project_pk, sample_pk, leaf_pk),
-            is_error=False,
-            is_finished=False,
-        )
-
-        self.kill_processes(processes)
-
-        processes = ProcessControler.objects.filter(
-            owner__id=user_pk,
-            name=process_controler.get_name_televir_project_sample(
+        names_processes = [
+            process_controler.get_name_televir_run(project_pk, sample_pk, leaf_pk),
+            process_controler.get_name_televir_project_sample(
                 project_pk=project_pk, sample_pk=sample_pk
             ),
+            process_controler.get_name_televir_project_sample_metagenomics_run(
+                sample_pk,
+                leaf_pk,
+            ),
+            process_controler.get_name_televir_project_sample_panel_map(
+                sample_pk=sample_pk, leaf_pk=leaf_pk
+            ),
+        ]
+
+        processes = ProcessControler.objects.filter(
+            owner__id=user_pk,
+            name__in=names_processes,
             is_error=False,
             is_finished=False,
         )
@@ -1461,18 +1755,30 @@ class ProcessSGE(object):
 
     @transaction.atomic
     def kill_televir_process_controler_samples(
-        self, user_pk: int, project_pk: int, sample_pk: int
+        self, user_pk: int, project_pk: int, sample_pk: int, leaf_pk: int
     ):
         """
         Kill the process in process controler.
         """
         process_controler = ProcessControler()
 
-        processes = ProcessControler.objects.filter(
-            owner__id=user_pk,
-            name=process_controler.get_name_televir_project_sample(
+        names_processes = [
+            process_controler.get_name_televir_run(project_pk, sample_pk, leaf_pk),
+            process_controler.get_name_televir_project_sample(
                 project_pk=project_pk, sample_pk=sample_pk
             ),
+            process_controler.get_name_televir_project_sample_metagenomics_run(
+                sample_pk,
+                leaf_pk,
+            ),
+            process_controler.get_name_televir_project_sample_panel_map(
+                sample_pk=sample_pk, leaf_pk=leaf_pk
+            ),
+        ]
+
+        processes = ProcessControler.objects.filter(
+            owner__id=user_pk,
+            name__in = names_processes,
             is_error=False,
             is_finished=False,
         )
@@ -1483,7 +1789,6 @@ class ProcessSGE(object):
         """ """
 
         for process in processes:
-            print("Killing process {}".format(process.name_sge_id))
 
             if process.name_sge_id:
                 self.kill_process(process.name_sge_id)

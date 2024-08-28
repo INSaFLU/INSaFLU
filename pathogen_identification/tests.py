@@ -673,9 +673,6 @@ class OverlapManagerTests(TestCase):
 
         self.assertTrue(mapping_parser.parsed)
 
-        print(mapping_parser.read_profile_matrix)
-        print(mapping_parser.read_profile_matrix_filtered)
-
         pd.testing.assert_frame_equal(
             mapping_parser.read_profile_matrix,
             mapping_parser.read_profile_matrix_filtered,

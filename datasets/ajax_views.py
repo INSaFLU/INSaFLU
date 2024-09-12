@@ -382,8 +382,7 @@ def remove_consensus_in_dataset(request):
 
             ### test how many references exist in this dataset
             if (
-                ((build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic) or 
-                 (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic_time)) and
+                (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic) and
                 (not dataset_consensus.reference is None)
                 and (DatasetConsensus.objects.filter(
                     is_deleted=False, is_error=False, reference__isnull=False

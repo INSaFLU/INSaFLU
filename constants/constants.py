@@ -285,6 +285,9 @@ class Constants(object):
     NEXTCLADE_LINK_MPXV_All_clades = (
         "https://clades.nextstrain.org/?dataset-name=MPXV&input-fasta="
     )
+    NEXTCLADE_LINK_MPXV_CladeI = (
+        "https://clades.nextstrain.org/?dataset-name=nextstrain/mpox/clade-i&input-fasta="
+    )    
     NEXTCLADE_LINK_RSV_A = (
         "https://clades.nextstrain.org/?dataset-name=rsv_a&input-fasta="
     )

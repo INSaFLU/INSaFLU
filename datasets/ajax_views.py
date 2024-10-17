@@ -16,11 +16,12 @@ from django.utils.safestring import mark_safe
 from django.views.decorators.csrf import csrf_protect
 
 from constants.constants import TypePath
+from constants.software_names import SoftwareNames
 from datasets.manage_database import ManageDatabase
 from datasets.models import Consensus, Dataset, DatasetConsensus
 from extend_user.models import Profile
 from settings.default_parameters import DefaultParameters
-from settings.models import Software
+from settings.models import Software, Parameter
 from utils.process_SGE import ProcessSGE
 from utils.utils import Utils
 
@@ -370,17 +371,26 @@ def remove_consensus_in_dataset(request):
             ## different owner or belong to a project not deleted
             if dataset_consensus.dataset.owner.pk != request.user.pk:
                 return JsonResponse(data)
+            
+                    # check what is the build that is configured, otherwise use the default
+            build = SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_parameter
+
+            # See if there is a build parameter specific for this dataset, in which case use it
+            parameters_list = Parameter.objects.filter(dataset=dataset_consensus.dataset)
+            if len(list(parameters_list)) == 1:
+                build = list(parameters_list)[0].parameter
 
             ### test how many references exist in this dataset
             if (
-                not dataset_consensus.reference is None
-                and DatasetConsensus.objects.filter(
+                (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic) and
+                (not dataset_consensus.reference is None)
+                and (DatasetConsensus.objects.filter(
                     is_deleted=False, is_error=False, reference__isnull=False
                 ).count()
-                < 2
+                < 2)
             ):
                 data["message"] = (
-                    "You can not remove the remain reference sequence. At least one must be present."
+                    "At least one must be present for the generic build."
                 )
                 return JsonResponse(data)
 

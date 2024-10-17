@@ -375,10 +375,10 @@ class DatasetConsensusTable(tables.Table):
 		return number
 		"""
 		if  not record.project_sample is None: 
-			return record.project_sample.sample.type_subtype
+			if(record.project_sample.classification is None):
+				return record.project_sample.sample.type_subtype
+			return record.project_sample.classification
 		return self.EMPTY
-	
-		return record.sample.type_subtype
 	
 	def render_consensus_file(self, record):
 		"""

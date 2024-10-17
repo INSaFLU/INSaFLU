@@ -4551,6 +4551,7 @@ class Software(object):
             + " --configfile "
             + temp_dir
             + "/config/config.yaml"
+            + " > "+temp_dir+"/stdout.txt"
         )
 
         exit_status = os.system(cmd)
@@ -4593,6 +4594,12 @@ class Software(object):
                 cmd=cmd,
                 output_path=temp_dir,
             )
+
+        cmd = "mv {} {}".format(
+            os.path.join(temp_dir, "stdout.txt"),
+            os.path.join(temp_dir, "auspice", "log")
+        )
+        exit_status = os.system(cmd)
 
         # Collect results
         zip_out = self.zip_files_in_path(os.path.join(temp_dir, "auspice"))
@@ -4713,6 +4720,7 @@ class Software(object):
             + temp_dir
             + " --cores "
             + str(cores)
+            + " > " + temp_dir +"/stdout.txt"
         )
         exit_status = os.system(cmd)
         if exit_status != 0:
@@ -4754,6 +4762,13 @@ class Software(object):
                 cmd=cmd,
                 output_path=temp_dir,
             )
+        
+        cmd = "mv {} {}".format(
+            os.path.join(temp_dir, "stdout.txt"),
+            os.path.join(temp_dir, "auspice", "log")
+        )
+        exit_status = os.system(cmd)
+
 
         # Collect results
         zip_out = self.zip_files_in_path(os.path.join(temp_dir, "auspice"))
@@ -4821,8 +4836,8 @@ class Software(object):
         )
 
         # Now run Nextstrain
-        cmd = "{} build --native {} targets/flu_{}_ha_{} --cores {}".format(
-            SoftwareNames.SOFTWARE_NEXTSTRAIN, temp_dir, strain, period, str(cores)
+        cmd = "{} build --native {} targets/flu_{}_ha_{} --cores {} > {}/stdout.txt".format(
+            SoftwareNames.SOFTWARE_NEXTSTRAIN, temp_dir, strain, period, str(cores), temp_dir
         )
         exit_status = os.system(cmd)
         if exit_status != 0:
@@ -4866,6 +4881,12 @@ class Software(object):
                 cmd=cmd,
                 output_path=temp_dir,
             )
+
+        cmd = "mv {} {}".format(
+            os.path.join(temp_dir, "stdout.txt"),
+            os.path.join(temp_dir, "auspice", "log")
+        )
+        exit_status = os.system(cmd)
 
         # Collect results
         zip_out = self.zip_files_in_path(os.path.join(temp_dir, "auspice"))
@@ -4947,11 +4968,12 @@ class Software(object):
 
         # Need to estimate clades of these new samples (only for H5N1 ha)
         if (strain == "h5n1") and (gene == "ha"):
-            cmd = "cd {}; {} -s Snakefile_h5n1.clades --cores {} --config label={}".format(
+            cmd = "cd {}; {} -s Snakefile_h5n1.clades --cores {} --config label={} > {}/stdout.txt".format(
                 temp_dir,
                 SoftwareNames.SOFTWARE_NEXTSTRAIN_snakemake,
                 str(cores),
                 SoftwareNames.SOFTWARE_NEXTSTRAIN_LABEL,
+                temp_dir
             )
             exit_status = os.system(cmd)
             if exit_status != 0:
@@ -5019,6 +5041,13 @@ class Software(object):
                 output_path=temp_dir,
             )
 
+
+        cmd = "mv {} {}".format(
+            os.path.join(temp_dir, "stdout.txt"),
+            os.path.join(temp_dir, "auspice", "log")
+        )
+        exit_status = os.system(cmd)
+
         # Collect results
         zip_out = self.zip_files_in_path(os.path.join(temp_dir, "auspice"))
         auspice_zip = self.utils.get_temp_file("tempfile.zip", sz_type="zip")
@@ -5085,13 +5114,12 @@ class Software(object):
 
         # Now run Nextstrain
         # cmd = "{} -j {} {}/auspice/rsv_{}_genome.json {}/auspice/rsv_{}_G.json {}/auspice/rsv_{}_F.json --configfile {}/config/configfile.yaml".format(
-        cmd = "cd {} && {} -j {} auspice/rsv_{}_genome.json --configfile config/configfile.yaml".format(
+        cmd = "cd {} && {} -j {} auspice/rsv_{}_genome.json --configfile config/configfile.yaml > {}/stdout.txt".format(
             temp_dir,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_RSV,
             str(cores),
             type,
-            # type,
-            # type,
+            temp_dir
         )
         exit_status = os.system(cmd)
         if exit_status != 0:
@@ -5132,6 +5160,12 @@ class Software(object):
                 cmd=cmd,
                 output_path=temp_dir,
             )
+
+        cmd = "mv {} {}".format(
+            os.path.join(temp_dir, "stdout.txt"),
+            os.path.join(temp_dir, "auspice", "log")
+        )
+        exit_status = os.system(cmd)
 
         # Collect results
         zip_out = self.zip_files_in_path(os.path.join(temp_dir, "auspice"))
@@ -5205,8 +5239,8 @@ class Software(object):
             )
 
         # Now run Nextstrain
-        cmd = "{} build --native {} --cores {}  --configfile config/config_hmpxv1_big.yaml".format(
-            SoftwareNames.SOFTWARE_NEXTSTRAIN_MPX, temp_dir, str(cores)
+        cmd = "{} build --native {} --cores {}  --configfile config/config_hmpxv1_big.yaml > {}".format(
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_MPX, temp_dir, str(cores), os.path.join(temp_dir, "stdout.txt")
         )
         exit_status = os.system(cmd)
         if exit_status != 0:
@@ -5248,6 +5282,12 @@ class Software(object):
                 cmd=cmd,
                 output_path=temp_dir,
             )
+
+        cmd = "mv {} {}".format(
+            os.path.join(temp_dir, "stdout.txt"),
+            os.path.join(temp_dir, "auspice", "log")
+        )
+        exit_status = os.system(cmd)
 
         # Collect results
         zip_out = self.zip_files_in_path(os.path.join(temp_dir, "auspice"))

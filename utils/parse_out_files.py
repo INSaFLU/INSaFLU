@@ -115,7 +115,20 @@ class ParseOutFiles(object):
 		for key in dict_data_out:
 			dict_data_out[key] = sorted(dict_data_out[key], reverse=True, key=lambda k: (k[self.COVERAGE],
 															k[self.IDENTITY]) )
-
+		
+		# Deal with exceptions, in this case only monkeypox, but there could be others...
+		for key in dict_data_out:
+			present = False
+			new_list = []
+			for element in dict_data_out[key]:
+				#Take advantage that the list is sorted
+				if("MPXV_likely_" in element["Gene"]):
+					if(not present):
+						new_list.append(element)
+					present = True
+				else:
+					new_list.append(element)
+			dict_data_out[key] = new_list
 		
 		### order the key 
 		## order by coverage and identity, bigger better...

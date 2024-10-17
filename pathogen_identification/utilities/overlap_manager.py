@@ -528,8 +528,6 @@ class ReadOverlapManager(MappingResultsParser):
 
         self.parse_for_data()
 
-        
-
         self.generate_shared_proportion_matrix()
         self.generate_clade_shared_proportion_matrix()
 

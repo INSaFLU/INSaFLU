@@ -11,16 +11,18 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import Q, QuerySet
 
-from constants.constants import \
-    Televir_Directory_Constants as Televir_Directories
+from constants.constants import Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.host_library import HomoSapiens, Host
-from pathogen_identification.models import (ParameterSet, PIProject_Sample,
-                                            Projects, SoftwareTree,
-                                            SoftwareTreeNode)
-from pathogen_identification.utilities.utilities_televir_dbs import \
-    Utility_Repository
+from pathogen_identification.models import (
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
+from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -1241,6 +1243,8 @@ class Utility_Pipeline_Manager:
             for software in software_list
         }
 
+        print("SOFTWARE DBS DICT", self.software_dbs_dict)
+
     def get_host_dbs(self):
 
         software_list = self.utility_repository.get_list_unique_field(
@@ -2308,25 +2312,22 @@ class Parameter_DB_Utility:
             return False
 
         return True
-    
+
     def retrieve_parameterset(
         self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
     ):
-        
+
         try:
 
-            return ParameterSet.objects.get(
-                sample=sample, leaf=leaf, project=project
-            )
+            return ParameterSet.objects.get(sample=sample, leaf=leaf, project=project)
         except ParameterSet.DoesNotExist:
             return None
-        
+
         except ParameterSet.MultipleObjectsReturned:
 
             return ParameterSet.objects.filter(
                 sample=sample, leaf=leaf, project=project
             ).first()
-        
 
     def parameterset_update_status(
         self,
@@ -2386,14 +2387,14 @@ class Parameter_DB_Utility:
         """
         Create a ParameterSet for a sample and leaf
         """
-        
+
         self.logger.info("Creating ParameterSet")
 
         with transaction.atomic():
             parameter_set = ParameterSet.objects.create(
                 sample=sample, leaf=leaf, project=project
             )
-        
+
         return parameter_set
 
     def check_ParameterSet_processed(
@@ -2419,9 +2420,7 @@ class Parameter_DB_Utility:
         else:
             return False
 
-    def set_parameterset_to_queue(
-        self, parameter_set: ParameterSet
-    ):
+    def set_parameterset_to_queue(self, parameter_set: ParameterSet):
         """
         Set ParameterSet to queue if it exists and is not finished or running.
         """
@@ -2432,7 +2431,6 @@ class Parameter_DB_Utility:
         ]:
             parameter_set.status = ParameterSet.STATUS_QUEUED
             parameter_set.save()
-
 
 
 class Utils_Manager:
@@ -2528,20 +2526,16 @@ class Utils_Manager:
                     if available is False:
                         continue
 
-                    parameter_set= utils.parameter_util.retrieve_parameterset(
+                    parameter_set = utils.parameter_util.retrieve_parameterset(
                         sample=sample, leaf=matched_path_node, project=project
                     )
 
                 else:
-                    parameter_set= self.parameter_util.create_parameter_set(
+                    parameter_set = self.parameter_util.create_parameter_set(
                         sample=sample, leaf=matched_path_node, project=project
                     )
-                
 
-
-                utils.parameter_util.set_parameterset_to_queue(
-                    parameter_set
-                )
+                utils.parameter_util.set_parameterset_to_queue(parameter_set)
                 runs_to_deploy += 1
                 samples_available.append(sample)
                 samples_leaf_dict[sample].append(matched_path_node)
@@ -2580,13 +2574,11 @@ class Utils_Manager:
                     else False
                 )
 
-                parameter_set= utils.parameter_util.retrieve_parameterset(
+                parameter_set = utils.parameter_util.retrieve_parameterset(
                     sample=sample, leaf=matched_path_node, project=project
                 )
-                
-                utils.parameter_util.set_parameterset_to_queue(
-                    parameter_set
-                )
+
+                utils.parameter_util.set_parameterset_to_queue(parameter_set)
                 runs_to_deploy += 1
                 samples_available.append(sample)
                 samples_leaf_dict[sample].append(matched_path_node)
@@ -2695,6 +2687,8 @@ class Utils_Manager:
             return False
 
         for technology in self.utility_technologies:
+            print(technology)
+            print(self.check_any_pipeline_possible(technology, user_system))
             if self.check_any_pipeline_possible(technology, user_system):
                 return True
 

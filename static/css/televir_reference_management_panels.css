@@ -1,4 +1,12 @@
-.panel-list {
+
+
+ul {
+    list-style-type: none;
+    padding-left: 7px;
+    padding-right: 7px;
+}
+
+.panel-list, .reference-list {
     margin-bottom: 10px;
     border-radius: 8px;
     padding: 10px;
@@ -7,11 +15,6 @@
     padding-right: 0;
 }
 
-ul {
-    list-style-type: none;
-    padding-left: 7px;
-    padding-right: 7px;
-}
 
 .panel-list-modal {
     margin-bottom: 10px;

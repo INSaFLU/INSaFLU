@@ -245,6 +245,41 @@ var loadThisContent = function (event) {
   };
 
 
+  var loadPanelSuggestions = function (event) {
+    event.preventDefault();
+    var btn = $(this);
+    var csrf = btn.attr("csrf");
+    var panel_id = btn.attr("panel-id");
+    $.ajax({
+        url: btn.attr("href"),
+        type: 'GET',
+        data: {
+            search_add_project_reference: $('#search-input').val(),
+            max_references: 10,
+            panel_id: panel_id,
+            csrfmiddlewaretoken: csrf,
+        },
+        success: function (data) {
+
+          $('#reference_table_div').html(data.my_content);
+          
+          if (data["references_count"] > 0){
+
+          var selectAllCheckbox = document.getElementById('Select-All-Checkbox-Modal');
+
+          var referenceCheckboxes = document.getElementsByClassName('reference-checkbox');
+     
+          selectAllCheckbox.addEventListener('change', function() {
+            for (var i = 0; i < referenceCheckboxes.length; i++) {
+              referenceCheckboxes[i].checked = this.checked;
+            }
+          });
+          }
+        }
+    }
+    )
+  };
+
 var reload_connects = function () {
 
 

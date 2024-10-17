@@ -138,9 +138,6 @@ class TelevirBioinf:
 
         return accid
 
-    def check_file_exists_not_empty(self, file_path):
-        return os.path.exists(file_path) and os.path.getsize(file_path) > 100
-
     def replace_in_file(self, file_path, old, new, starts_with=None):
         """
         Replace a string in a file, use sed, if starts_with is not None, only replace lines that start with starts_with

@@ -26,8 +26,13 @@ from constants.software_names import SoftwareNames
 from manage_virus.models import IdentifyVirus, UploadFile
 from manage_virus.uploadFiles import UploadFiles
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import (MixedInfectionsTag, ProcessControler,
-                                   ProjectSample, Reference, Sample)
+from managing_files.models import (
+    MixedInfectionsTag,
+    ProcessControler,
+    ProjectSample,
+    Reference,
+    Sample,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software_project_sample import DefaultProjectSoftware
@@ -36,8 +41,15 @@ from utils.mixed_infections_management import MixedInfectionsManagement
 from utils.parse_coverage_file import GetCoverage
 from utils.parse_out_files import ParseOutFiles
 from utils.process_SGE import ProcessSGE
-from utils.result import (CountHits, DecodeObjects, KeyValue, MaskingConsensus,
-                          Result, ResultAverageAndNumberReads, SoftwareDesc)
+from utils.result import (
+    CountHits,
+    DecodeObjects,
+    KeyValue,
+    MaskingConsensus,
+    Result,
+    ResultAverageAndNumberReads,
+    SoftwareDesc,
+)
 from utils.utils import Utils
 
 
@@ -689,7 +701,7 @@ class Software(object):
                 MetaKeyAndValue.META_KEY_Identify_Sample,
                 MetaKeyAndValue.META_VALUE_Error,
                 result.to_json(),
-            )            
+            )
             self.utils.remove_dir(out_dir_result)
             return False
 
@@ -810,7 +822,7 @@ class Software(object):
             )
             self.utils.remove_dir(out_dir_result)
             return False
-        
+
         parseOutFiles = ParseOutFiles()
         (dict_data_out, clean_abricate_file) = parseOutFiles.parse_abricate_file(
             out_file_abricate,
@@ -979,15 +991,18 @@ class Software(object):
             self.utils.remove_dir(out_dir_result)
             return False
 
-        if not self.is_exist_database_abricate(Constants.TYPE_IDENTIFICATION_PROJECTS_DBNAME):
+        if not self.is_exist_database_abricate(
+            Constants.TYPE_IDENTIFICATION_PROJECTS_DBNAME
+        ):
             try:
-                path_to_find = os.path.join( 
-                    getattr(settings, "STATIC_ROOT", None), 
+                path_to_find = os.path.join(
+                    getattr(settings, "STATIC_ROOT", None),
                     Constants.DIR_TYPE_IDENTIFICATION_PROJECTS,
-                    Constants.TYPE_IDENTIFICATION_PROJECTS_DBNAME + ".fasta"
+                    Constants.TYPE_IDENTIFICATION_PROJECTS_DBNAME + ".fasta",
                 )
-                self.create_database_abricate(Constants.TYPE_IDENTIFICATION_PROJECTS_DBNAME, 
-                                              path_to_find)
+                self.create_database_abricate(
+                    Constants.TYPE_IDENTIFICATION_PROJECTS_DBNAME, path_to_find
+                )
             except Exception:
                 result = Result()
                 result.set_error(
@@ -1075,7 +1090,7 @@ class Software(object):
             )
             self.utils.remove_dir(out_dir_result)
             return False
-        
+
         parseOutFiles = ParseOutFiles()
         (dict_data_out, clean_abricate_file) = parseOutFiles.parse_abricate_file(
             out_file_abricate,
@@ -1086,8 +1101,7 @@ class Software(object):
         ### set the identification in database
         uploadFiles = UploadFiles()
         vect_data = uploadFiles.uploadIdentifyVirus(
-            dict_data_out, self.software_names.get_abricate_name(),
-            save=False
+            dict_data_out, self.software_names.get_abricate_name(), save=False
         )
 
         if len(vect_data) == 0:
@@ -1114,31 +1128,44 @@ class Software(object):
             rank0 = rank1 = rank2 = ""
             for idv in vect_data:
                 nametoadd = idv.seq_virus.name
-                #print(idv.seq_virus.kind_type.name)
+                # print(idv.seq_virus.kind_type.name)
                 is_influenza = False
-                if(idv.seq_virus.kind_type.name.find("influenza") != -1): is_influenza = True
-                if(idv.rank == 0):
-                    if(rank0 == ""): rank0 = nametoadd
-                    else: rank0 = rank0 + "|" + nametoadd
-                else: 
-                    if(is_influenza):
-                        #Apparently ranks do not come in the expected order
-                        if(nametoadd.find("H") != -1):
-                            if(rank1 == ""): rank1 = nametoadd
-                            else: rank1 = rank1 + "|" + nametoadd
-                        if(nametoadd.find("N") != -1):
-                            if(rank2 == ""): rank2 = nametoadd
-                            else: rank2 = rank2 + "|" + nametoadd
+                if idv.seq_virus.kind_type.name.find("influenza") != -1:
+                    is_influenza = True
+                if idv.rank == 0:
+                    if rank0 == "":
+                        rank0 = nametoadd
                     else:
-                        if(idv.rank == 1):
-                            if(rank1 == ""): rank1 = nametoadd
-                            else: rank1 = rank1 + "|" + nametoadd
-                        if(idv.rank == 2):
-                            if(rank2 == ""): rank2 = nametoadd
-                            else: rank2 = rank2 + "|" + nametoadd
+                        rank0 = rank0 + "|" + nametoadd
+                else:
+                    if is_influenza:
+                        # Apparently ranks do not come in the expected order
+                        if nametoadd.find("H") != -1:
+                            if rank1 == "":
+                                rank1 = nametoadd
+                            else:
+                                rank1 = rank1 + "|" + nametoadd
+                        if nametoadd.find("N") != -1:
+                            if rank2 == "":
+                                rank2 = nametoadd
+                            else:
+                                rank2 = rank2 + "|" + nametoadd
+                    else:
+                        if idv.rank == 1:
+                            if rank1 == "":
+                                rank1 = nametoadd
+                            else:
+                                rank1 = rank1 + "|" + nametoadd
+                        if idv.rank == 2:
+                            if rank2 == "":
+                                rank2 = nametoadd
+                            else:
+                                rank2 = rank2 + "|" + nametoadd
 
-            if((rank1 != "") and (rank0 != "")): rank1 = "-" + rank1
-            if( (rank1.find('|') != -1) or (rank2.find('|') != -1)): rank2 = "|" + rank2
+            if (rank1 != "") and (rank0 != ""):
+                rank1 = "-" + rank1
+            if (rank1.find("|") != -1) or (rank2.find("|") != -1):
+                rank2 = "|" + rank2
             projectsample.classification = rank0 + rank1 + rank2
             projectsample.save()
 
@@ -2892,17 +2919,16 @@ class Software(object):
 
                 ### make identify species
                 if b_make_identify_species:
+
                     sample_to_update.type_subtype = (
                         sample_to_update.get_type_sub_type()[
                             : Sample.TYPE_SUBTYPE_LENGTH - 1
                         ]
                     )
 
-                    (
-                        tag_mixed_infection,
-                        alert,
-                        message,
-                    ) = sample_to_update.get_mixed_infection()
+                    (tag_mixed_infection, alert, message) = (
+                        sample_to_update.get_mixed_infection()
+                    )
                     if sample_to_update.number_alerts == None:
                         sample_to_update.number_alerts = alert
                     else:

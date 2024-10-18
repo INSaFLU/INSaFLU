@@ -225,6 +225,7 @@ class RunMetadataHandler:
             ref_in_file = ReferenceSourceFileMap.objects.filter(
                 reference_source__taxid__taxid=ref.taxid,
                 reference_source__accid=ref.accid,
+                reference_source_file__owner=None,
             )
 
             if len(ref_in_file) == 0:
@@ -782,6 +783,7 @@ class RunMetadataHandler:
 
             refs_in_file = ReferenceSourceFileMap.objects.filter(
                 reference_source__taxid__taxid=taxid,
+                reference_source_file__owner=None,
             ).distinct("reference_source__accid")
 
             if len(refs_in_file) == 0:
@@ -795,6 +797,7 @@ class RunMetadataHandler:
             for ref_in_file_by_accid in refs_in_file:
                 other_refs = ReferenceSourceFileMap.objects.filter(
                     reference_source__taxid__taxid=taxid,
+                    reference_source_file__owner=None,
                     reference_source__accid=ref_in_file_by_accid.reference_source.accid,
                 )
 

@@ -18,11 +18,13 @@ from django.utils.translation import gettext_lazy as _
 from pkg_resources import packaging
 
 from constants.constants import Constants
-from constants.constants import Televir_Directory_Constants as Televir_Directories
+from constants.constants import \
+    Televir_Directory_Constants as Televir_Directories
 from managing_files.models import Project as InsaFluProject
 from managing_files.models import Reference as InsaFluReference
 from managing_files.models import Sample
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from pathogen_identification.data_classes import IntermediateFiles
 
 # Create your models here.
@@ -1317,6 +1319,7 @@ class TelefluMapping(models.Model):
 
         refs = RawReference.objects.filter(
             run__parameter_set__sample__in=samples,
+            accid__in=self.teleflu_project.raw_reference.accids,
             run__parameter_set__leaf__index=self.leaf.index,
             run__parameter_set__status__in=[
                 ParameterSet.STATUS_QUEUED,
@@ -1392,11 +1395,6 @@ class TelefluMapping(models.Model):
                 Q(accid__in=accids)
                 & Q(run__parameter_set__sample=sample)
                 & Q(run__parameter_set__leaf__index=self.leaf.index)
-                & Q(
-                    run__parameter_set__status__in=[
-                        ParameterSet.STATUS_FINISHED,
-                    ]
-                )
                 & Q(status=RawReference.STATUS_MAPPED)
             ).distinct()
 
@@ -1405,6 +1403,8 @@ class TelefluMapping(models.Model):
                 run__parameter_set__leaf__index=self.leaf.index,
                 unique_id__in=accids,
             )
+            print(refs)
+            print(reports)
 
             if refs.exists():
                 mapped_samples += 1

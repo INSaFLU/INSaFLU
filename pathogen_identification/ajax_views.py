@@ -467,7 +467,11 @@ def submit_samples_mapping_panels(request):
         project_samples = PIProject_Sample.objects.filter(project=project)
 
         sample_ids = request.POST.getlist("sample_ids[]")
-        sample_ids = [int(sample_id) for sample_id in sample_ids]
+        check_box_all_checked = request.POST.get("check_box_all_checked", False)
+        if check_box_all_checked:
+            sample_ids = []
+        else:
+            sample_ids = [int(sample_id) for sample_id in sample_ids]
 
         if len(sample_ids) > 0:
             project_samples = project_samples.filter(pk__in=sample_ids)
@@ -611,7 +615,10 @@ def deploy_ProjectPI(request):
 
         sample_ids = request.POST.getlist("sample_ids[]")
         sample_ids = [int(sample_id) for sample_id in sample_ids]
-        if len(sample_ids) > 0:
+        check_box_all_checked = request.POST.get("check_box_all_checked", False)
+        if check_box_all_checked:
+            samples = samples.filter(is_deleted_in_file_system=False)
+        elif len(sample_ids) > 0:
             samples = samples.filter(pk__in=sample_ids)
 
         software_utils = SoftwareTreeUtils(user, project)
@@ -661,7 +668,11 @@ def deploy_ProjectPI_runs(request):
         runs_to_deploy = software_utils.check_runs_to_deploy_project()
 
         sample_ids = request.POST.getlist("sample_ids[]")
-        sample_ids = [int(sample_id) for sample_id in sample_ids]
+        check_box_all_checked = request.POST.get("check_box_all_checked", False)
+        if check_box_all_checked:
+            sample_ids = []
+        else:
+            sample_ids = [int(sample_id) for sample_id in sample_ids]
 
         try:
             if len(runs_to_deploy) > 0:
@@ -710,9 +721,13 @@ def deploy_ProjectPI_combined_runs(request):
         )
 
         sample_ids = request.POST.getlist("sample_ids[]")
-        sample_ids = [int(sample_id) for sample_id in sample_ids]
-        if len(sample_ids) > 0:
-            samples = samples.filter(pk__in=sample_ids)
+        check_box_all_checked = request.POST.get("check_box_all_checked", False)
+        if check_box_all_checked:
+            samples = samples.filter(is_deleted_in_file_system=False)
+        elif len(sample_ids) > 0:
+            samples = samples.filter(
+                pk__in=[int(sample_id) for sample_id in sample_ids]
+            )
 
         try:
 
@@ -1158,6 +1173,11 @@ def kill_televir_project_all_sample(request):
         project_id = int(request.POST["project_id"])
         project = Projects.objects.get(id=int(project_id))
         sample_ids = request.POST.getlist("sample_ids[]")
+        check_box_all_checked = request.POST.get("check_box_all_checked", False)
+        if check_box_all_checked:
+            sample_ids = []
+        else:
+            sample_ids = [int(sample_id) for sample_id in sample_ids]
 
         samples = PIProject_Sample.objects.filter(project__id=int(project_id))
 
@@ -1496,6 +1516,7 @@ def create_teleflu_project(request):
 
         ref_ids = request.POST.getlist("ref_ids[]")
         sample_ids = request.POST.getlist("sample_ids[]")
+        check_box_all_checked = request.POST.get("check_box_all_checked", False)
 
         def teleflu_project_name_from_refs(ref_ids):
 
@@ -1521,6 +1542,10 @@ def create_teleflu_project(request):
         first_ref = RawReference.objects.get(pk=int(ref_ids[0]))
 
         project = first_ref.run.project
+        if check_box_all_checked:
+            sample_ids = PIProject_Sample.objects.filter(project=project).values_list(
+                "pk", flat=True
+            )
         date = datetime.now()
 
         try:
@@ -1755,8 +1780,13 @@ def add_teleflu_sample(request):
 
         sample_ids = request.POST.getlist("sample_ids[]")
         ref_id = int(request.POST["teleflu_id"])
+        check_box_all_checked = request.POST.get("check_box_all_checked", False)
 
         teleflu_project = TeleFluProject.objects.get(pk=ref_id)
+        if check_box_all_checked:
+            sample_ids = PIProject_Sample.objects.filter(
+                project=teleflu_project.televir_project
+            ).values_list("pk", flat=True)
 
         if len(sample_ids) == 0:
             data["is_empty"] = True
@@ -1902,7 +1932,6 @@ def load_teleflu_workflows(request):
         utils_manager = Utils_Manager()
 
         mappings = TelefluMapping.objects.filter(teleflu_project__pk=teleflu_project_pk)
-        print(mappings)
         teleflu_project = TeleFluProject.objects.get(pk=teleflu_project_pk)
         mapping_workflows = []
         existing_mapping_pks = []
@@ -2035,8 +2064,6 @@ def stack_igv_teleflu_workflow(request):
         except TelefluMapping.DoesNotExist:
             data["is_error"] = True
             return JsonResponse(data)
-
-        print("stack_igv_teleflu_workflow")
 
         process_SGE = ProcessSGE()
         process_controler = ProcessControler()

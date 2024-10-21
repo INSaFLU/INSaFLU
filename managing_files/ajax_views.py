@@ -39,11 +39,11 @@ from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software_project_sample import DefaultProjectSoftware
 from utils.collect_extra_data import CollectExtraData
+from utils.parse_in_files import ParseInFiles
 from utils.process_SGE import ProcessSGE
 from utils.result import Coverage, DecodeObjects
 from utils.software import Software
 from utils.utils import Utils
-from utils.parse_in_files import ParseInFiles
 
 ### Logger
 logger_debug = logging.getLogger("fluWebVirus.debug")
@@ -64,6 +64,8 @@ def set_check_box_values(request):
     if request.is_ajax():
         data = {"is_ok": False}
         utils = Utils()
+        print("HOI")
+        print(request.GET)
 
         if Constants.CHECK_BOX_ALL in request.GET:
             request.session[Constants.CHECK_BOX_ALL] = utils.str2bool(
@@ -1344,7 +1346,7 @@ def swap_technology(request):
     """
     if request.is_ajax():
         data = {"is_ok": False, "present_in_televir_project": False, "message": "Start"}
-        
+
         sample_id_a = "sample_id"
         if sample_id_a in request.GET:
 
@@ -1367,9 +1369,9 @@ def swap_technology(request):
             except Sample.DoesNotExist:
                 data["message"] = "Sample does not exist"
                 return JsonResponse(data)
-            
+
             #### check if found in televir projects
-            televir_samples = PIProject_Sample.objects.filter(sample= sample)
+            televir_samples = PIProject_Sample.objects.filter(sample=sample)
             for pisample in televir_samples:
                 if pisample.is_deleted == False:
                     data["present_in_televir_project"] = True
@@ -1394,14 +1396,14 @@ def swap_technology(request):
                     not project_samples.is_deleted
                     and not project_samples.project.is_deleted
                 ):
-                    data["message"] = "Sample cannot be changed as it is in non-deleted project(s)"
+                    data["message"] = (
+                        "Sample cannot be changed as it is in non-deleted project(s)"
+                    )
                     return JsonResponse(data)
-                
+
             # If sample is paired-end and is already Illumina, it cannot be swapped...
-            if( 
-                sample.exist_file_2()
-                and
-                (sample.get_type_technology() == ConstantsSettings.TECHNOLOGY_illumina)
+            if sample.exist_file_2() and (
+                sample.get_type_technology() == ConstantsSettings.TECHNOLOGY_illumina
             ):
                 data["message"] = "Illumina paired-end samples cannot be changed"
                 return JsonResponse(data)
@@ -1409,32 +1411,47 @@ def swap_technology(request):
             ### now you can swap technology
             try:
                 process_SGE = ProcessSGE()
-                (job_name_wait, job_name) = request.user.profile.get_name_sge_seq(Profile.SGE_PROCESS_clean_sample, Profile.SGE_SAMPLE)
-                if (sample.get_type_technology() == ConstantsSettings.TECHNOLOGY_illumina):
+                (job_name_wait, job_name) = request.user.profile.get_name_sge_seq(
+                    Profile.SGE_PROCESS_clean_sample, Profile.SGE_SAMPLE
+                )
+                if (
+                    sample.get_type_technology()
+                    == ConstantsSettings.TECHNOLOGY_illumina
+                ):
                     data["message"] = " swap illumina to ont "
                     sample.type_of_fastq = Sample.TYPE_OF_FASTQ_minion
                     sample.save()
-                    taskID = process_SGE.set_run_clean_minion(sample, request.user, job_name)
-                else:										### Minion, codify with other
+                    taskID = process_SGE.set_run_clean_minion(
+                        sample, request.user, job_name
+                    )
+                else:  ### Minion, codify with other
                     data["message"] = " swap ont to illumina "
                     sample.type_of_fastq = Sample.TYPE_OF_FASTQ_minion
                     sample.save()
-                    taskID = process_SGE.set_run_trimmomatic_species(sample, request.user, job_name)
-		
-		        ## refresh sample list for this user
+                    taskID = process_SGE.set_run_trimmomatic_species(
+                        sample, request.user, job_name
+                    )
+
+                ## refresh sample list for this user
                 if not job_name is None:
                     process_SGE.set_create_sample_list_by_user(request.user, [job_name])
-                ### 
+                ###
                 manageDatabase = ManageDatabase()
-                manageDatabase.set_sample_metakey(sample, request.user, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue, taskID)
-                
+                manageDatabase.set_sample_metakey(
+                    sample,
+                    request.user,
+                    MetaKeyAndValue.META_KEY_Queue_TaskID,
+                    MetaKeyAndValue.META_VALUE_Queue,
+                    taskID,
+                )
+
                 data["message"] = data["message"] + " finished successfully"
                 data["is_ok"] = True
 
             except Exception as e:
                 data["is_ok"] = False
                 data["message"] = data["message"] + " something failed: " + str(e)
-            
+
         return JsonResponse(data)
 
 
@@ -1756,6 +1773,7 @@ def remove_uploaded_files(request):
 
         return JsonResponse(data)
 
+
 @transaction.atomic
 @csrf_protect
 def remove_unattached_samples(request):
@@ -1779,15 +1797,19 @@ def remove_unattached_samples(request):
             return JsonResponse(data)
 
         ### get all samples that can be deleted
-        query_set = Sample.objects.filter(
-			owner=request.user, is_deleted=False
-            )		
+        query_set = Sample.objects.filter(owner=request.user, is_deleted=False)
 
         for sample in query_set:
-            if(PIProject_Sample.objects.filter(sample=sample, is_deleted=False).count()>0):
-				# Cannot be deleted
+            if (
+                PIProject_Sample.objects.filter(sample=sample, is_deleted=False).count()
+                > 0
+            ):
+                # Cannot be deleted
                 continue
-            if(ProjectSample.objects.filter(sample=sample, is_deleted=False).count()>0):
+            if (
+                ProjectSample.objects.filter(sample=sample, is_deleted=False).count()
+                > 0
+            ):
                 # Cannot be deleted
                 continue
             ### now you can remove
@@ -1808,6 +1830,7 @@ def remove_unattached_samples(request):
 
         return JsonResponse(data)
 
+
 @transaction.atomic
 @csrf_protect
 def relink_uploaded_files(request):
@@ -1827,7 +1850,7 @@ def relink_uploaded_files(request):
             return JsonResponse(data)
         if profile.only_view_project:
             return JsonResponse(data)
-        
+
         parse_in_files = ParseInFiles()
         parse_in_files.link_files(user=request.user)
 
@@ -1835,6 +1858,7 @@ def relink_uploaded_files(request):
         data["message_number_files_relinked"] = "File(s) linked"
 
         return JsonResponse(data)
+
 
 ####
 def unlock_upload_file(upload_file):

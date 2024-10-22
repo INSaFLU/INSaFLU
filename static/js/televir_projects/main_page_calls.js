@@ -180,22 +180,34 @@ $('#checkBoxAll').on('change', function () {
     var checkedRows = JSON.parse(sessionStorage.getItem('checkedRows')) || [];
     var sample_ids = [];
     if ($(this).is(':checked')) {
-        $('.select_sample-checkbox').each(function () {
-            var sample_id = $(this).attr('sample_id');
-            sample_ids.push(sample_id);
+        // get all sample ids
+        $.ajax({    
+            url: "ajax/select_all_samples_televir_project",
+            type: "POST",
+            data: {
+                'csrfmiddlewaretoken': $('#teleflu_create-button').attr("csrf"),
+                'project_id': $('#teleflu_create-button').attr("ref_index"),
+            },
+            data_type: 'json',
+            success: function (data) {
+                sample_ids = data["sample_ids"];
+            }
         });
+        
         checkedRows = sample_ids;
     } else {
         checkedRows = [];
-    }
+    };
+
+
+
     sessionStorage.setItem('checkedRows', JSON.stringify(checkedRows));
 });
 
 
 $(document).ready(function () {
     var checkedRows = JSON.parse(sessionStorage.getItem('checkedRows')) || [];
-    console.log(checkedRows);
-    console.log("OINOIN");
+
     checkedRows.forEach(function (sample_id) {
         $('.select_sample-checkbox[sample_id="' + sample_id + '"]').prop('checked', true);
     }

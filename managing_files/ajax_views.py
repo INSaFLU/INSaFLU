@@ -17,22 +17,15 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_protect
 
-from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
+from constants.constants import (Constants, FileExtensions, FileType, TypeFile,
+                                 TypePath)
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import (
-    DataSet,
-    MetaKey,
-    ProcessControler,
-    Project,
-    ProjectSample,
-    Reference,
-    Sample,
-    UploadFiles,
-    VaccineStatus,
-)
+from managing_files.models import (DataSet, MetaKey, ProcessControler, Project,
+                                   ProjectSample, Reference, Sample,
+                                   UploadFiles, VaccineStatus)
 from pathogen_identification.models import ParameterSet, PIProject_Sample
 from pathogen_identification.models import Projects as Televir_Project
 from settings.constants_settings import ConstantsSettings
@@ -64,8 +57,6 @@ def set_check_box_values(request):
     if request.is_ajax():
         data = {"is_ok": False}
         utils = Utils()
-        print("HOI")
-        print(request.GET)
 
         if Constants.CHECK_BOX_ALL in request.GET:
             request.session[Constants.CHECK_BOX_ALL] = utils.str2bool(

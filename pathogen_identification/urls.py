@@ -352,6 +352,11 @@ urlpatterns = [
         name="deploy_metagenomics_televir_project_sample",
     ),
     url(
+        r"ajax/select_all_samples_televir_project$",
+        PIajax_views.get_all_samples_selected,
+        name="select_all_samples_televir_project",
+    ),
+    url(
         r"ajax/deploy_ProjectPI$",
         PIajax_views.deploy_ProjectPI,
         name="deploy_ProjectPI",

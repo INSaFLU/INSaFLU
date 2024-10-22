@@ -1319,9 +1319,9 @@ class TelefluMapping(models.Model):
             run__parameter_set__sample__in=samples,
             accid__in=self.teleflu_project.raw_reference.accids,
             run__parameter_set__leaf__index=self.leaf.index,
-            run__parameter_set__status__in=[
-                ParameterSet.STATUS_QUEUED,
-                ParameterSet.STATUS_RUNNING,
+            run__status__in=[
+                RunMain.STATUS_RUNNING,
+                RunMain.STATUS_PREP,
             ],
         )
 

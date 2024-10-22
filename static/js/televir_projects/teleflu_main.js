@@ -347,8 +347,7 @@ var buttons_background = function () {
         var url = $(this).attr('utl');
         var project_id = $('#id-insaflu-button').attr('project-id');
         var csrf = $('#id-insaflu-button').attr('csrf');
-        console.log(csrf);
-        console.log(project_id);
+
         var data = {
             'project_id': project_id,
             'csrfmiddlewaretoken': csrf,

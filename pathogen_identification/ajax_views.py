@@ -615,7 +615,7 @@ def get_all_samples_selected(request):
         sample_ids = PIProject_Sample.objects.filter(
             project=project, is_deleted_in_file_system=False
         ).values_list("pk", flat=True)
-        sample_ids = [int(sample_id) for sample_id in sample_ids]
+        sample_ids = [str(sample_id) for sample_id in sample_ids]
 
         if len(sample_ids) > 0:
             data["sample_ids"] = sample_ids

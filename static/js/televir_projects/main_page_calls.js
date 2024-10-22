@@ -173,6 +173,7 @@ $('.select_sample-checkbox').on('change', function () {
             return value !== sample_id;
         });
     }
+    // print length of checkedRows
     sessionStorage.setItem('checkedRows', JSON.stringify(checkedRows));
 });
 

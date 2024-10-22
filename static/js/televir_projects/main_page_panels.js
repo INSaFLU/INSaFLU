@@ -96,12 +96,9 @@ var load_panels_main = function(load_url, user_id, target, load = false, suggest
     var teleflu_id = $(this).attr('teleflu-id');
     $("#id-add-teleflu-sample-button").attr('teleflu-id', teleflu_id);
     
-    var checkedRows_samples = [];
-    $('.select_sample-checkbox:checked').each(function () {
-        // collect ids of checked rows
-        var sample_id = $(this).attr('sample_id');
-        checkedRows_samples.push(sample_id);
-    });
+    var checkedRows_samples = JSON.parse(sessionStorage.getItem('checkedRows')) || [];
+    var remember = document.getElementById('checkBoxAll');
+
     // change text
     if (checkedRows_samples.length == 0) {
       $("#id-label-add-teleflu-sample").text("No samples selected.");
@@ -117,13 +114,9 @@ var load_panels_main = function(load_url, user_id, target, load = false, suggest
       var csrf = $('#teleflu_create-button').attr('csrf');
 
       // get checked samples rows
-      var checkedRows_samples = [];
-      $('.select_sample-checkbox:checked').each(function () {
-          // collect ids of checked rows
-          var sample_id = $(this).attr('sample_id');
-          checkedRows_samples.push(sample_id);
-      });
     
+      var checkedRows_samples = JSON.parse(sessionStorage.getItem('checkedRows')) || [];
+      var remember = document.getElementById('checkBoxAll');
 
       $.ajax({
           url: url,
@@ -131,6 +124,7 @@ var load_panels_main = function(load_url, user_id, target, load = false, suggest
           data: {
               'teleflu_id': teleflu_id,
               'sample_ids': checkedRows_samples,
+              'check_box_all': remember.checked,
               'csrfmiddlewaretoken': csrf
           },
           success: function (data) {

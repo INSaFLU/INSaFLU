@@ -1,12 +1,13 @@
 import mimetypes
 import os
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import pandas as pd
 from Bio import SeqIO
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.core.files.temp import NamedTemporaryFile
 from django.http import HttpResponse, JsonResponse
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
@@ -31,6 +32,8 @@ from pathogen_identification.models import (
     ReferencePanel,
     ReferenceSourceFileMap,
     RunMain,
+    SoftwareTreeNode,
+    TelefluMapping,
     TeleFluProject,
     TeleFluSample,
 )
@@ -44,7 +47,10 @@ from pathogen_identification.utilities.reference_utils import (
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.utilities_general import get_services_dir
-from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
+from pathogen_identification.utilities.utilities_pipeline import (
+    SoftwareTreeUtils,
+    Utils_Manager,
+)
 from pathogen_identification.utilities.utilities_views import (
     RawReferenceUtils,
     ReportSorter,
@@ -54,6 +60,7 @@ from pathogen_identification.utilities.utilities_views import (
 from pathogen_identification.views import inject__added_references
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
+from utils.software import Software
 from utils.utils import Utils
 
 
@@ -1852,13 +1859,6 @@ def add_teleflu_sample(request):
         return JsonResponse(data)
 
 
-from pathogen_identification.models import SoftwareTreeNode, TelefluMapping
-from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils,
-    Utils_Manager,
-)
-
-
 @login_required
 @require_POST
 def add_teleflu_mapping_workflow(request):
@@ -1894,6 +1894,10 @@ def add_teleflu_mapping_workflow(request):
             data["is_ok"] = False
 
         return JsonResponse(data)
+
+
+############
+# TELEFLU
 
 
 def excise_paths_leaf_last(string_with_paths: str):
@@ -2237,14 +2241,8 @@ def deploy_televir_map(request):
         return JsonResponse(data)
 
 
-from typing import Optional
-
-from django.conf import settings
-from django.core.files.temp import NamedTemporaryFile
-
-from managing_files.models import Reference
-from pathogen_identification.models import ReferenceSourceFileMetadata
-from utils.software import Software
+#######################################################################
+####################################################################### PANELS
 
 
 def check_metadata_table_clean(metadata_table_file) -> Optional[pd.DataFrame]:

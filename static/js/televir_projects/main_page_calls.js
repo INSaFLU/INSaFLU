@@ -177,8 +177,7 @@ $('.select_sample-checkbox').on('change', function () {
 });
 
 $('#checkBoxAll').on('change', function () {
-    var checkedRows = JSON.parse(sessionStorage.getItem('checkedRows')) || [];
-    var sample_ids = [];
+
     if ($(this).is(':checked')) {
         // get all sample ids
         $.ajax({    
@@ -190,18 +189,14 @@ $('#checkBoxAll').on('change', function () {
             },
             data_type: 'json',
             success: function (data) {
-                sample_ids = data["sample_ids"];
+                var checkedRows = data["sample_ids"];
+                sessionStorage.setItem('checkedRows', JSON.stringify(checkedRows));
             }
         });
-        
-        checkedRows = sample_ids;
+    
     } else {
-        checkedRows = [];
+        sessionStorage.setItem('checkedRows', JSON.stringify([]));
     };
-
-
-
-    sessionStorage.setItem('checkedRows', JSON.stringify(checkedRows));
 });
 
 

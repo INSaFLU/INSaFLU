@@ -1466,7 +1466,6 @@ def create_insaflu_reference_from_filemap(request):
                 data["exists"] = True
                 return JsonResponse(data)
             # success = create_reference(ref_id, user_id)
-            print("OINOINOINONONO")
             _ = process_SGE.set_submit_file_televir_teleflu_create(user, ref_id)
 
         except Exception as e:
@@ -1737,8 +1736,6 @@ def create_insaflu_project(request):
         teleflu_project_id = int(request.POST["project_id"])
         teleflu_project = TeleFluProject.objects.get(pk=teleflu_project_id)
         process_SGE = ProcessSGE()
-
-        print("oinoino")
 
         if teleflu_project.insaflu_project is not None:
             data["exists"] = True

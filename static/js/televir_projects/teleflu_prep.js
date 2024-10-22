@@ -27,12 +27,10 @@ $(document).ready(function () {
       }
     
       // get checked samples rows
-      var checkedRows_samples = [];
-      $('.select_sample-checkbox:checked').each(function () {
-        // collect ids of checked rows
-        var sample_id = $(this).attr('sample_id');
-        checkedRows_samples.push(sample_id);
-      });
+      var checkedRows_samples = JSON.parse(sessionStorage.getItem('checkedRows')) || [];
+      var remember = document.getElementById('checkBoxAll');
+
+    
 
   
       // Process the checked rows
@@ -45,6 +43,7 @@ $(document).ready(function () {
           'csrfmiddlewaretoken': csrf,
           'ref_ids': checkedRows_refs,
           'sample_ids': checkedRows_samples,
+          'check_box_all': remember.checked,
         },
         success: function (data) {
           if (data['is_ok'] && !data['exists']) {

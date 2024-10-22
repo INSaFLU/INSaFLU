@@ -1317,6 +1317,7 @@ class TelefluMapping(models.Model):
 
         refs = RawReference.objects.filter(
             run__parameter_set__sample__in=samples,
+            accid__in=self.teleflu_project.raw_reference.accids,
             run__parameter_set__leaf__index=self.leaf.index,
             run__parameter_set__status__in=[
                 ParameterSet.STATUS_QUEUED,
@@ -1392,11 +1393,6 @@ class TelefluMapping(models.Model):
                 Q(accid__in=accids)
                 & Q(run__parameter_set__sample=sample)
                 & Q(run__parameter_set__leaf__index=self.leaf.index)
-                & Q(
-                    run__parameter_set__status__in=[
-                        ParameterSet.STATUS_FINISHED,
-                    ]
-                )
                 & Q(status=RawReference.STATUS_MAPPED)
             ).distinct()
 

@@ -89,8 +89,6 @@ $('#id-deploy-metagenomics-button').on('click', function () {
 $('.sample-deploy').on('click', function () {
     event.preventDefault();
 
-    console.log("#id-label-remove-all");
-
     csrf_token = $('#teleflu_create-button').attr("csrf");
     url = $(this).attr("deploy-url");
 
@@ -164,16 +162,62 @@ $(document).on("click", "a", function (e) {
 
 });
 
+
+$('.select_sample-checkbox').on('change', function () {
+    var checkedRows = JSON.parse(sessionStorage.getItem('checkedRows')) || [];
+    var sample_id = $(this).attr('sample_id');
+    if ($(this).is(':checked')) {
+        checkedRows.push(sample_id);
+    } else {
+        checkedRows = checkedRows.filter(function (value, index, arr) {
+            return value !== sample_id;
+        });
+    }
+    // print length of checkedRows
+    sessionStorage.setItem('checkedRows', JSON.stringify(checkedRows));
+});
+
+$('#checkBoxAll').on('change', function () {
+
+    if ($(this).is(':checked')) {
+        // get all sample ids
+        $.ajax({    
+            url: "ajax/select_all_samples_televir_project",
+            type: "POST",
+            data: {
+                'csrfmiddlewaretoken': $('#teleflu_create-button').attr("csrf"),
+                'project_id': $('#teleflu_create-button').attr("ref_index"),
+            },
+            data_type: 'json',
+            success: function (data) {
+                var checkedRows = data["sample_ids"];
+                sessionStorage.setItem('checkedRows', JSON.stringify(checkedRows));
+            }
+        });
+    
+    } else {
+        sessionStorage.setItem('checkedRows', JSON.stringify([]));
+    };
+});
+
+
+$(document).ready(function () {
+    var checkedRows = JSON.parse(sessionStorage.getItem('checkedRows')) || [];
+
+    checkedRows.forEach(function (sample_id) {
+        $('.select_sample-checkbox[sample_id="' + sample_id + '"]').prop('checked', true);
+    }
+    );
+    sessionStorage.setItem('checkedRows', JSON.stringify(checkedRows));
+});
+
+
+
 $(".kill-runs").click(function (e) {
 
     // get checked samples rows
-    var checkedRows_samples = [];
-    $('.select_sample-checkbox:checked').each(function () {
-        // collect ids of checked rows
-        var sample_id = $(this).attr('sample_id');
-        checkedRows_samples.push(sample_id);
-    
-    });
+    var checkedRows_samples = JSON.parse(sessionStorage.getItem('checkedRows')) || [];
+    var remember = document.getElementById('checkBoxAll');
 
     if (checkedRows_samples.length === 0) {
         // change id-label-remove-all text
@@ -188,12 +232,8 @@ $(".kill-runs").click(function (e) {
 $("#deploypi_mapping_btn").click(function (e) {
 
     // get checked samples rows
-    var checkedRows_samples = [];
-    $('.select_sample-checkbox:checked').each(function () {
-        // collect ids of checked rows
-        var sample_id = $(this).attr('sample_id');
-        checkedRows_samples.push(sample_id);
-    });
+    var checkedRows_samples = JSON.parse(sessionStorage.getItem('checkedRows')) || [];
+    var remember = document.getElementById('checkBoxAll');
 
     $.ajax({
         url: $('#deploypi_mapping_btn').attr("deploy-url"),
@@ -204,6 +244,7 @@ $("#deploypi_mapping_btn").click(function (e) {
             'user_id': $('#deploypi_btn').attr('user-id'),
             'project_id': $('#teleflu_create-button').attr("ref_index"),
             'sample_ids': checkedRows_samples,
+            'check_box_all': remember.checked,
         },
         data_type: 'json',
         success: function (data) {
@@ -225,13 +266,8 @@ $("#deploypi_added_mapping_btn").click(function (e) {
     csrf_token = $('#teleflu_create-button').attr("csrf");
 
     // get checked samples rows
-    var checkedRows_samples = [];
-    $('.select_sample-checkbox:checked').each(function () {
-        // collect ids of checked rows
-        var sample_id = $(this).attr('sample_id');
-        checkedRows_samples.push(sample_id);
-    });
-    
+    var checkedRows_samples = JSON.parse(sessionStorage.getItem('checkedRows')) || [];
+    var remember = document.getElementById('checkBoxAll');    
     $.ajax({
         url: $('#deploypi_added_mapping_btn').attr("deploy-url"),
         type: "POST",
@@ -241,6 +277,7 @@ $("#deploypi_added_mapping_btn").click(function (e) {
             'user_id': user_id,
             'project_id': project_id,
             'sample_ids': checkedRows_samples,
+            'check_box_all': remember.checked,
         },
         data_type: 'json',
         success: function (data) {
@@ -264,12 +301,8 @@ $("#deploypi_panels_btn").click(function (e) {
     csrf_token = $('#teleflu_create-button').attr("csrf");
 
     // get checked samples rows
-    var checkedRows_samples = [];
-    $('.select_sample-checkbox:checked').each(function () {
-        // collect ids of checked rows
-        var sample_id = $(this).attr('sample_id');
-        checkedRows_samples.push(sample_id);
-    });
+    var checkedRows_samples = JSON.parse(sessionStorage.getItem('checkedRows')) || [];
+    var remember = document.getElementById('checkBoxAll');
     
     $.ajax({
         url: $('#deploypi_panels_btn').attr("deploy-url"),
@@ -280,6 +313,7 @@ $("#deploypi_panels_btn").click(function (e) {
             'user_id': user_id,
             'project_id': project_id,
             'sample_ids': checkedRows_samples,
+            'check_box_all': remember.checked,
         },
         data_type: 'json',
         success: function (data) {
@@ -304,12 +338,8 @@ $("#deploypi_btn").click(function (e) {
     csrf_token = $('#teleflu_create-button').attr("csrf");
 
     // get checked samples rows
-    var checkedRows_samples = [];
-    $('.select_sample-checkbox:checked').each(function () {
-        // collect ids of checked rows
-        var sample_id = $(this).attr('sample_id');
-        checkedRows_samples.push(sample_id);
-    });
+    var checkedRows_samples = JSON.parse(sessionStorage.getItem('checkedRows')) || [];
+    var remember = document.getElementById('checkBoxAll');
 
     $.ajax({
         url: $('#deploypi_btn').attr("deploy-url"),
@@ -320,6 +350,7 @@ $("#deploypi_btn").click(function (e) {
             'user_id': user_id,
             'project_id': project_id,
             'sample_ids': checkedRows_samples,
+            'check_box_all': remember.checked,
         },
         data_type: 'json',
         success: function (data) {

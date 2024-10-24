@@ -1,12 +1,13 @@
 import mimetypes
 import os
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import pandas as pd
 from Bio import SeqIO
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.core.files.temp import NamedTemporaryFile
 from django.http import HttpResponse, JsonResponse
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
@@ -31,6 +32,8 @@ from pathogen_identification.models import (
     ReferencePanel,
     ReferenceSourceFileMap,
     RunMain,
+    SoftwareTreeNode,
+    TelefluMapping,
     TeleFluProject,
     TeleFluSample,
 )
@@ -44,7 +47,10 @@ from pathogen_identification.utilities.reference_utils import (
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.utilities_general import get_services_dir
-from pathogen_identification.utilities.utilities_pipeline import SoftwareTreeUtils
+from pathogen_identification.utilities.utilities_pipeline import (
+    SoftwareTreeUtils,
+    Utils_Manager,
+)
 from pathogen_identification.utilities.utilities_views import (
     RawReferenceUtils,
     ReportSorter,
@@ -54,6 +60,7 @@ from pathogen_identification.utilities.utilities_views import (
 from pathogen_identification.views import inject__added_references
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
+from utils.software import Software
 from utils.utils import Utils
 
 
@@ -476,7 +483,11 @@ def submit_samples_mapping_panels(request):
         project_samples = PIProject_Sample.objects.filter(project=project)
 
         sample_ids = request.POST.getlist("sample_ids[]")
-        sample_ids = [int(sample_id) for sample_id in sample_ids]
+        check_box_all_checked = request.POST.get("check_box_all_checked", False)
+        if check_box_all_checked:
+            sample_ids = []
+        else:
+            sample_ids = [int(sample_id) for sample_id in sample_ids]
 
         if len(sample_ids) > 0:
             project_samples = project_samples.filter(pk__in=sample_ids)
@@ -598,6 +609,30 @@ def submit_project_samples_mapping_televir(request):
 
 @login_required
 @require_POST
+def get_all_samples_selected(request):
+    """
+    get all sample ids for selected samples
+    """
+    if request.is_ajax():
+        data = {"is_ok": False, "sample_ids": []}
+
+        project_id = int(request.POST["project_id"])
+        project = Projects.objects.get(id=int(project_id))
+
+        sample_ids = PIProject_Sample.objects.filter(
+            project=project, is_deleted_in_file_system=False
+        ).values_list("pk", flat=True)
+        sample_ids = [str(sample_id) for sample_id in sample_ids]
+
+        if len(sample_ids) > 0:
+            data["sample_ids"] = sample_ids
+
+        data["is_ok"] = True
+        return JsonResponse(data)
+
+
+@login_required
+@require_POST
 def deploy_ProjectPI(request):
     """
     prepare data for deployment of pathogen identification.
@@ -620,7 +655,10 @@ def deploy_ProjectPI(request):
 
         sample_ids = request.POST.getlist("sample_ids[]")
         sample_ids = [int(sample_id) for sample_id in sample_ids]
-        if len(sample_ids) > 0:
+        check_box_all_checked = request.POST.get("check_box_all_checked", False)
+        if check_box_all_checked:
+            samples = samples.filter(is_deleted_in_file_system=False)
+        elif len(sample_ids) > 0:
             samples = samples.filter(pk__in=sample_ids)
 
         software_utils = SoftwareTreeUtils(user, project)
@@ -670,7 +708,11 @@ def deploy_ProjectPI_runs(request):
         runs_to_deploy = software_utils.check_runs_to_deploy_project()
 
         sample_ids = request.POST.getlist("sample_ids[]")
-        sample_ids = [int(sample_id) for sample_id in sample_ids]
+        check_box_all_checked = request.POST.get("check_box_all_checked", False)
+        if check_box_all_checked:
+            sample_ids = []
+        else:
+            sample_ids = [int(sample_id) for sample_id in sample_ids]
 
         try:
             if len(runs_to_deploy) > 0:
@@ -719,9 +761,13 @@ def deploy_ProjectPI_combined_runs(request):
         )
 
         sample_ids = request.POST.getlist("sample_ids[]")
-        sample_ids = [int(sample_id) for sample_id in sample_ids]
-        if len(sample_ids) > 0:
-            samples = samples.filter(pk__in=sample_ids)
+        check_box_all_checked = request.POST.get("check_box_all_checked", False)
+        if check_box_all_checked:
+            samples = samples.filter(is_deleted_in_file_system=False)
+        elif len(sample_ids) > 0:
+            samples = samples.filter(
+                pk__in=[int(sample_id) for sample_id in sample_ids]
+            )
 
         try:
 
@@ -1167,6 +1213,11 @@ def kill_televir_project_all_sample(request):
         project_id = int(request.POST["project_id"])
         project = Projects.objects.get(id=int(project_id))
         sample_ids = request.POST.getlist("sample_ids[]")
+        check_box_all_checked = request.POST.get("check_box_all_checked", False)
+        if check_box_all_checked:
+            sample_ids = []
+        else:
+            sample_ids = [int(sample_id) for sample_id in sample_ids]
 
         samples = PIProject_Sample.objects.filter(project__id=int(project_id))
 
@@ -1422,7 +1473,6 @@ def create_insaflu_reference_from_filemap(request):
                 data["exists"] = True
                 return JsonResponse(data)
             # success = create_reference(ref_id, user_id)
-            print("OINOINOINONONO")
             _ = process_SGE.set_submit_file_televir_teleflu_create(user, ref_id)
 
         except Exception as e:
@@ -1505,6 +1555,7 @@ def create_teleflu_project(request):
 
         ref_ids = request.POST.getlist("ref_ids[]")
         sample_ids = request.POST.getlist("sample_ids[]")
+        check_box_all_checked = request.POST.get("check_box_all_checked", False)
 
         def teleflu_project_name_from_refs(ref_ids):
 
@@ -1530,6 +1581,10 @@ def create_teleflu_project(request):
         first_ref = RawReference.objects.get(pk=int(ref_ids[0]))
 
         project = first_ref.run.project
+        if check_box_all_checked:
+            sample_ids = PIProject_Sample.objects.filter(project=project).values_list(
+                "pk", flat=True
+            )
         date = datetime.now()
 
         try:
@@ -1689,8 +1744,6 @@ def create_insaflu_project(request):
         teleflu_project = TeleFluProject.objects.get(pk=teleflu_project_id)
         process_SGE = ProcessSGE()
 
-        print("oinoino")
-
         if teleflu_project.insaflu_project is not None:
             data["exists"] = True
             return JsonResponse(data)
@@ -1764,8 +1817,13 @@ def add_teleflu_sample(request):
 
         sample_ids = request.POST.getlist("sample_ids[]")
         ref_id = int(request.POST["teleflu_id"])
+        check_box_all_checked = request.POST.get("check_box_all_checked", False)
 
         teleflu_project = TeleFluProject.objects.get(pk=ref_id)
+        if check_box_all_checked:
+            sample_ids = PIProject_Sample.objects.filter(
+                project=teleflu_project.televir_project
+            ).values_list("pk", flat=True)
 
         if len(sample_ids) == 0:
             data["is_empty"] = True
@@ -1799,13 +1857,6 @@ def add_teleflu_sample(request):
 
         data["is_ok"] = True
         return JsonResponse(data)
-
-
-from pathogen_identification.models import SoftwareTreeNode, TelefluMapping
-from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils,
-    Utils_Manager,
-)
 
 
 @login_required
@@ -1843,6 +1894,10 @@ def add_teleflu_mapping_workflow(request):
             data["is_ok"] = False
 
         return JsonResponse(data)
+
+
+############
+# TELEFLU
 
 
 def excise_paths_leaf_last(string_with_paths: str):
@@ -2046,8 +2101,6 @@ def stack_igv_teleflu_workflow(request):
             data["is_error"] = True
             return JsonResponse(data)
 
-        print("stack_igv_teleflu_workflow")
-
         process_SGE = ProcessSGE()
         process_controler = ProcessControler()
 
@@ -2188,14 +2241,8 @@ def deploy_televir_map(request):
         return JsonResponse(data)
 
 
-from typing import Optional
-
-from django.conf import settings
-from django.core.files.temp import NamedTemporaryFile
-
-from managing_files.models import Reference
-from pathogen_identification.models import ReferenceSourceFileMetadata
-from utils.software import Software
+#######################################################################
+####################################################################### PANELS
 
 
 def check_metadata_table_clean(metadata_table_file) -> Optional[pd.DataFrame]:

@@ -1,0 +1,836 @@
+LOCUS       1                2316 bp    cRNA    linear   VRL 17-AUG-2022
+DEFINITION  Influenza A virus (A/Massachusetts/18/2022(H3N2)) segment 1
+            polymerase PB2 (PB2) gene, complete cds.
+ACCESSION   1
+VERSION     OP213679.1
+DBLINK      BioProject: PRJNA37813
+KEYWORDS    .
+SOURCE      Influenza A virus
+  ORGANISM  Influenza A virus
+            Viruses; Riboviria; Orthornavirae; Negarnaviricota;
+            Polyploviricotina; Insthoviricetes; Articulavirales;
+            Orthomyxoviridae; Alphainfluenzavirus; Alphainfluenzavirus
+            influenzae.
+REFERENCE   1  (bases 1 to 2316)
+  AUTHORS   Wentworth,D., Barnes,J. and Garten,R.
+  TITLE     Influenza Sequencing Activity group
+  JOURNAL   Unpublished
+REFERENCE   2  (bases 1 to 2316)
+  AUTHORS   Wentworth,D., Barnes,J. and Garten,R.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (11-AUG-2022) WHO Collaborating Center for Surveillance,
+            Epidemiology and Control of Influenza, Influenza Division, Centers
+            for Disease Control and Prevention, 1600 Clifton Road, N.E.,
+            Atlanta, GA 30333, USA
+COMMENT     ##FluData-START##
+            EPI_ISOLATE_ID   :: EPI_ISL_13897082
+            NAME             :: A/Massachusetts/18/2022
+            TYPE             :: H3
+            Segment_name     :: PB2
+            HOST_AGE         :: 9
+            HOST_GENDER      :: F
+            PASSAGE          :: Original
+            LOCATION         :: United States / Massachusetts
+            COLLECT_DATE     :: 04-Jun-2022
+            SPECIMEN_ID      :: 22VX34731 ORIGINAL
+            SENDER_LAB       :: Massachusetts Department of Public Health
+            SEQLAB_SAMPLE_ID :: 3030726357
+            EPI_SEQUENCE_ID  :: EPI2096145
+            ##FluData-END##
+FEATURES             Location/Qualifiers
+     source          1..2316
+                     /organism="Influenza A virus"
+                     /mol_type="viral cRNA"
+                     /strain="A/Massachusetts/18/2022"
+                     /serotype="H3N2"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:11320"
+                     /segment="1"
+                     /geo_loc_name="USA: Massachusetts"
+                     /collection_date="04-Jun-2022"
+                     /note="passage details:Original"
+     gene            16..2295
+                     /gene="PB2"
+     CDS             16..2295
+                     /gene="PB2"
+                     /codon_start=1
+                     /product="polymerase PB2"
+                     /protein_id="UUV89773.1"
+                     /translation="MERIKELRNLMSQSRTREILTKTTVDHMAIIKKYTSGRQEKNPS
+                     LRMKWMMAMKYPITADKRITEMVPERNEQGQTLWSKMSDAGSDRVMVSPLAVTWWNRN
+                     GPVTDTVHYPKVYKTYFDKVERLKHGTFGPVHFRNQVKIRRRVDINPGHADLSAKEAQ
+                     DVIMEVVFPNEVGARILTSESQLTITKEKKEELRDCKISPLMVAYMLERELVRKTRFL
+                     PVAGGTSSIYIEVLHLTQGTCWEQMYTPGGGVRNDDVDQSLIIAARNIVRRAAVSADP
+                     LASLLEMCHSTQIGGTRMVDILRQNPTEEQAVDICKAAMGLRISSSFSFGGFTFKRTS
+                     GSSVKREEEVLTGNLQTLRIRVHEGYEEFTMVGKRATAILRKATRRLVQLIVSGRDEQ
+                     SIAEAIIVAMVFSQEDCVIKAVRGDLNFVNRANQRLNPMHQLLRHFQKDAKVLFQNWG
+                     VEHIDSVMGMVGVLPDMTPSTEMSMRGIRVSKMGVDEYSSTERVVVSIDRFLRVRDQR
+                     GNVLLSPEEVSETQGTERLTITYSSSMMWEINGPESVLVNTYQWIIRNWEAVKIQWSQ
+                     NPAMLYNKMEFEPFQSLVPKATRSQYSGFVRTLFQQMRDVLGTFDTAQIIKLLPFAAA
+                     PPKQSRMQFSSLTVNVRGSGMRILVRGNSPVFNYNKTTKRLTILGKDAGTLIEDPDES
+                     TSGVESAVLRGFLIIGKEDRRYGPALSINELSNLAKGEKANVLIGQGDVVLVMKRKRD
+                     SSILTDSQTATKRIRMAIN"
+ORIGIN      
+        1 tcaattatat tcagcatgga aagaataaaa gaactacgga atctaatgtc gcagtcccgc
+       61 actcgcgaga tactgacaaa aaccacagtg gaccatatgg ccataattaa gaagtacaca
+      121 tcggggagac aggaaaagaa cccgtcactt agaatgaaat ggatgatggc aatgaaatat
+      181 ccaattactg ctgacaaaag gataacagaa atggttccgg agagaaatga acaaggacaa
+      241 actctatgga gtaaaatgag tgatgctgga tcagacagag tgatggtatc acctttggct
+      301 gtaacatggt ggaataggaa tggacccgtg acagatacgg tccattaccc aaaagtgtac
+      361 aaaacttatt tcgacaaagt cgaaaggtta aaacatggaa cctttggccc agtccatttt
+      421 agaaatcaag tcaaaatacg aagaagagta gacataaatc ctggtcatgc agacctcagt
+      481 gctaaagagg cacaagatgt aattatggaa gttgtttttc ccaatgaagt gggagccaga
+      541 atactaacat cagaatcaca gctaacaata actaaagaga aaaaagaaga actccgagat
+      601 tgcaaaattt ctcccttgat ggtcgcatac atgctagaga gagaacttgt gcggaaaaca
+      661 agatttctcc cagttgctgg cggaacaagc agcatataca ttgaagtttt acatttgact
+      721 caaggaacgt gttgggaaca aatgtacact ccaggtggag gagtgaggaa tgacgatgtt
+      781 gaccaaagcc taattattgc ggccaggaac atagtaagaa gagccgcagt gtcagcagat
+      841 ccactagcat ctttattgga gatgtgccac agcacgcaaa ttggcggaac aaggatggtg
+      901 gacattctta gacagaaccc gactgaagaa caggctgtgg atatatgcaa agctgcaatg
+      961 ggattgagaa tcagctcatc tttcagcttt ggtggcttca catttaaaag aacgagcggg
+     1021 tcgtcagtca aaagagagga agaggttctt acaggcaatc tccagacatt gagaataaga
+     1081 gtacatgagg ggtatgagga gttcacaatg gtggggaaaa gagcaacagc tatactaaga
+     1141 aaagcaacca gaagactggt tcaactcata gtgagtggaa gagacgaaca gtcaatagcc
+     1201 gaagcaataa tcgtggccat ggtgttttca caagaagatt gcgtgataaa agcagttaga
+     1261 ggtgacctga attttgtcaa cagagcaaat cagcggttga accccatgca tcagctttta
+     1321 aggcattttc agaaagatgc gaaagtactc tttcaaaatt ggggagttga acacatcgac
+     1381 agtgtgatgg gaatggttgg agtattacca gatatgactc caagcacaga gatgtcaatg
+     1441 agaggaataa gagtcagcaa gatgggtgtg gatgaatact ccagtacaga gagggtggtg
+     1501 gttagcattg atcggttttt gagagttcga gaccaacgtg ggaatgtatt attatctcct
+     1561 gaggaggtca gtgaaacaca gggaactgaa agactgacca taacttattc atcatcgatg
+     1621 atgtgggaga ttaacggccc tgagtcggtt ttggtcaata cctaccaatg gatcatcagg
+     1681 aattgggaag ctgtcaaaat tcaatggtct cagaaccctg caatgttgta caacaaaatg
+     1741 gaatttgaac catttcaatc tttagtcccc aaggccacta gaagccaata cagtgggttt
+     1801 gtcagaactc tattccaaca aatgagagac gtacttggga catttgacac tgcccagata
+     1861 ataaagcttc tcccttttgc agctgctcca ccgaagcaaa gcagaatgca gttctcttca
+     1921 ctgactgtga atgtgagggg atcagggatg agaatacttg taaggggcaa ttctcctgta
+     1981 ttcaactaca acaagaccac taaaaggcta acaattcttg gaaaagatgc cggcacttta
+     2041 attgaagacc cagatgaaag cacatccgga gtggagtccg ccgtcttgag agggttcctc
+     2101 attataggta aggaagacag aaggtacgga ccagcattaa gcatcaatga actgagtaac
+     2161 cttgcaaaag gggaaaaggc taatgtgcta attgggcaag gagacgtggt gttggtaatg
+     2221 aaacggaaac gggactctag tatacttact gacagccaga cagcgaccaa aagaattcgg
+     2281 atggccatca attaatactg aatagtttaa aaacga
+//
+LOCUS       2                2316 bp    cRNA    linear   VRL 17-AUG-2022
+DEFINITION  Influenza A virus (A/Massachusetts/18/2022(H3N2)) segment 2
+            polymerase PB1 (PB1) and PB1-F2 protein (PB1-F2) genes, complete
+            cds.
+ACCESSION   2
+VERSION     OP213680.1
+DBLINK      BioProject: PRJNA37813
+KEYWORDS    .
+SOURCE      Influenza A virus
+  ORGANISM  Influenza A virus
+            Viruses; Riboviria; Orthornavirae; Negarnaviricota;
+            Polyploviricotina; Insthoviricetes; Articulavirales;
+            Orthomyxoviridae; Alphainfluenzavirus; Alphainfluenzavirus
+            influenzae.
+REFERENCE   1  (bases 1 to 2316)
+  AUTHORS   Wentworth,D., Barnes,J. and Garten,R.
+  TITLE     Influenza Sequencing Activity group
+  JOURNAL   Unpublished
+REFERENCE   2  (bases 1 to 2316)
+  AUTHORS   Wentworth,D., Barnes,J. and Garten,R.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (11-AUG-2022) WHO Collaborating Center for Surveillance,
+            Epidemiology and Control of Influenza, Influenza Division, Centers
+            for Disease Control and Prevention, 1600 Clifton Road, N.E.,
+            Atlanta, GA 30333, USA
+COMMENT     ##FluData-START##
+            EPI_ISOLATE_ID   :: EPI_ISL_13897082
+            NAME             :: A/Massachusetts/18/2022
+            TYPE             :: H3
+            Segment_name     :: PB1
+            HOST_AGE         :: 9
+            HOST_GENDER      :: F
+            PASSAGE          :: Original
+            LOCATION         :: United States / Massachusetts
+            COLLECT_DATE     :: 04-Jun-2022
+            SPECIMEN_ID      :: 22VX34731 ORIGINAL
+            SENDER_LAB       :: Massachusetts Department of Public Health
+            SEQLAB_SAMPLE_ID :: 3030726357
+            EPI_SEQUENCE_ID  :: EPI2096146
+            ##FluData-END##
+FEATURES             Location/Qualifiers
+     source          1..2316
+                     /organism="Influenza A virus"
+                     /mol_type="viral cRNA"
+                     /strain="A/Massachusetts/18/2022"
+                     /serotype="H3N2"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:11320"
+                     /segment="2"
+                     /geo_loc_name="USA: Massachusetts"
+                     /collection_date="04-Jun-2022"
+                     /note="passage details:Original"
+     gene            13..2289
+                     /gene="PB1"
+     CDS             13..2289
+                     /gene="PB1"
+                     /codon_start=1
+                     /product="polymerase PB1"
+                     /protein_id="UUV89774.1"
+                     /translation="MDVNPTLLFLKVPAQNAISTTFPYTGDPPYSHGTGTGYTMDTVN
+                     RTHQYSERGKWTTNTETGAPQLNPIDGPLPEDNEPSGYAQTDCVLEAMAFLEESHPGI
+                     FENSCLETMEAVQQTRVDKLTQGRQTYDWTLNRNQPAATALANTIEVFRSNGLTANES
+                     GRLIDFLKDVMESMDKEEMEITTHFQRKRRVRDNMTKKMVTQRTIGKKKQRVNKRGYL
+                     IRALTLNTMTKDAERGKLKRRAIATPGMQIRGFVYFVETLARSICEKLEQSGLPVGGN
+                     EKKAKLANVVRKMMTNSQDTELSFTITGDNTKWNENQNPRMFLAMITYITKNQPEWFR
+                     NILSIAPIMFSNKMARLGKGYMFESKRMKLRTQIPAEMLASIDLKYFNESTRKKIEKI
+                     RPLLIDGTASLSPGMMMGMFNMLSTVLGVSILNLGQKKYTKTTYWWDGLQSSDDFALI
+                     VNASNHEGIQAGVDRFYRTCKLVGINMSKKKSYINKTGTFEFTSFFYRYGFVANFSME
+                     LPSFGVSGINESADMSIGVTVIKNNMINNDLGPATAQMALQLFIKDYRYTYRCHRGDT
+                     QIQTRRSFEIKKLWDQTQSKTGLLVSDGGPNLYNIRNLHIPEVCLKWELMDDNYRGRL
+                     CNPLNPFVSHKEIESVNNAVVMPAHGPAKSMEYDAVATTHSWIPKRNRSILNTSQRGI
+                     LEDEQMYQKCCNLFEKFFPSSSYRRPIGISSMVEAMVSRARIDARIDFESGRIKKEEF
+                     SEIMKICSTIEELRRQKQ"
+     gene            107..370
+                     /gene="PB1-F2"
+     CDS             107..370
+                     /gene="PB1-F2"
+                     /codon_start=1
+                     /product="PB1-F2 protein"
+                     /protein_id="UUV89775.1"
+                     /translation="MEQGLGTLWTQSTEHTNTQREGSGRQIQKLGLPSSTQLMDHYLR
+                     IMNQVDMHKQTVSWRLWPFLKNPTQVSLKTPALKQWKPFNRQG"
+ORIGIN      
+        1 caaaccattt gaatggatgt caatccgact ctattgttcc taaaagttcc agcgcaaaat
+       61 gccataagca caacattccc ttatactgga gatcctccat acagccatgg aacagggact
+      121 gggtacacta tggacacagt caacagaaca caccaatact cagagagagg gaagtggacg
+      181 acaaatacag aaactggggc tccccagctc aacccaattg atggaccact acctgaggat
+      241 aatgaaccaa gtggatatgc acaaacagac tgtgtcctgg aggctatggc ctttcttgaa
+      301 gaatcccacc caggtatctt tgaaaactcc tgccttgaaa caatggaagc cgttcaacag
+      361 acaagggtag acaaactaac ccaaggtcgc cagacttatg attggacatt aaacaggaac
+      421 caaccggcag caactgcatt agccaacacc atagaagtct ttagatcgaa cggattaaca
+      481 gctaatgaat caggaaggct aatagatttc ctcaaggatg tgatggaatc aatggataag
+      541 gaggaaatgg agataacaac acactttcaa agaaaaagga gagtaaggga caacatgacc
+      601 aagaaaatgg tcacacaaag aacaataggg aagaaaaaac aaagagtgaa taagagaggc
+      661 tacctaataa gagctctgac attgaacacg atgaccaagg atgcagagag aggcaaatta
+      721 aaaagaaggg ctattgcaac acccgggatg caaattagag gattcgtgta tttcgttgaa
+      781 actttagcta gaagcatttg cgaaaaactt gaacaatctg gacttccggt tgggggtaat
+      841 gaaaagaagg ccaaactggc aaatgttgta agaaaaatga tgactaattc acaagacaca
+      901 gagctttctt tcacaatcac tggagacaac actaagtgga atgaaaatca aaacccccga
+      961 atgtttttgg caatgattac atatatcaca aagaaccaac ctgaatggtt cagaaacatc
+     1021 ctgagcatcg caccaataat gttctcaaac aaaatggcaa gactgggaaa agggtacatg
+     1081 ttcgagagta agagaatgaa gctccggaca caaatacctg cagaaatgct agcaagcatt
+     1141 gacctgaagt atttcaatga atcaacaagg aagaaaattg agaaaataag gcctcttcta
+     1201 atagatggaa cagcatcatt gagccctgga atgatgatgg gcatgttcaa catgctaagt
+     1261 acagttttag gagtctcaat actgaatctt ggacaaaaga aatacaccaa gacaacgtac
+     1321 tggtgggatg ggctccaatc ctcagacgat tttgccctca tagtgaatgc atcaaatcat
+     1381 gagggaatac aagcaggagt ggatagattc tataggacct gcaagttagt gggaatcaac
+     1441 atgagcaaaa agaagtccta tataaataaa acagggacat ttgaattcac tagcttcttt
+     1501 tatcgatatg gatttgtggc taattttagc atggagctgc caagttttgg agtgtctgga
+     1561 ataaacgagt cagctgacat gagcattgga gtaacagtga taaagaacaa catgataaat
+     1621 aatgaccttg gaccagcaac agcccaaatg gctctccaat tgttcatcaa agattacaga
+     1681 tacacgtatc ggtgccatag aggagacaca caaatccaaa caagaagatc attcgagata
+     1741 aagaagctgt gggatcaaac ccaatcaaag acaggattat tggtatcaga tgggggacca
+     1801 aacttataca atatccgaaa tcttcacatc cctgaagtct gcttgaagtg ggagctgatg
+     1861 gacgacaatt atcggggaag actttgtaat cccctgaatc cctttgtcag ccataaagaa
+     1921 attgaatctg taaacaatgc tgtagtaatg ccagctcatg gtccggccaa aagtatggaa
+     1981 tatgatgccg ttgcgactac acactcctgg attcccaaaa ggaaccgctc tattctaaac
+     2041 acaagccaaa ggggaattct tgaggatgaa caaatgtacc agaaatgctg caacttgttc
+     2101 gagaaatttt tccctagtag ttcatatagg agaccgattg gaatttctag catggtggag
+     2161 gccatggtat ctagggcccg gattgatgcc agaattgact tcgagtctgg aaggattaag
+     2221 aaggaagagt tctctgagat catgaagatc tgttccacca ttgaagaact cagacggcaa
+     2281 aaacaatgaa tttagcttgt ccttcatgaa aaaatg
+//
+LOCUS       3                2208 bp    cRNA    linear   VRL 17-AUG-2022
+DEFINITION  Influenza A virus (A/Massachusetts/18/2022(H3N2)) segment 3
+            polymerase PA (PA) and PA-X protein (PA-X) genes, complete cds.
+ACCESSION   3
+VERSION     OP213681.1
+DBLINK      BioProject: PRJNA37813
+KEYWORDS    .
+SOURCE      Influenza A virus
+  ORGANISM  Influenza A virus
+            Viruses; Riboviria; Orthornavirae; Negarnaviricota;
+            Polyploviricotina; Insthoviricetes; Articulavirales;
+            Orthomyxoviridae; Alphainfluenzavirus; Alphainfluenzavirus
+            influenzae.
+REFERENCE   1  (bases 1 to 2208)
+  AUTHORS   Wentworth,D., Barnes,J. and Garten,R.
+  TITLE     Influenza Sequencing Activity group
+  JOURNAL   Unpublished
+REFERENCE   2  (bases 1 to 2208)
+  AUTHORS   Wentworth,D., Barnes,J. and Garten,R.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (11-AUG-2022) WHO Collaborating Center for Surveillance,
+            Epidemiology and Control of Influenza, Influenza Division, Centers
+            for Disease Control and Prevention, 1600 Clifton Road, N.E.,
+            Atlanta, GA 30333, USA
+COMMENT     ##FluData-START##
+            EPI_ISOLATE_ID   :: EPI_ISL_13897082
+            NAME             :: A/Massachusetts/18/2022
+            TYPE             :: H3
+            Segment_name     :: PA
+            HOST_AGE         :: 9
+            HOST_GENDER      :: F
+            PASSAGE          :: Original
+            LOCATION         :: United States / Massachusetts
+            COLLECT_DATE     :: 04-Jun-2022
+            SPECIMEN_ID      :: 22VX34731 ORIGINAL
+            SENDER_LAB       :: Massachusetts Department of Public Health
+            SEQLAB_SAMPLE_ID :: 3030726357
+            EPI_SEQUENCE_ID  :: EPI2096144
+            ##FluData-END##
+FEATURES             Location/Qualifiers
+     source          1..2208
+                     /organism="Influenza A virus"
+                     /mol_type="viral cRNA"
+                     /strain="A/Massachusetts/18/2022"
+                     /serotype="H3N2"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:11320"
+                     /segment="3"
+                     /geo_loc_name="USA: Massachusetts"
+                     /collection_date="04-Jun-2022"
+                     /note="passage details:Original"
+     gene            13..2163
+                     /gene="PA"
+     CDS             13..2163
+                     /gene="PA"
+                     /codon_start=1
+                     /product="polymerase PA"
+                     /protein_id="UUV89776.1"
+                     /translation="MEDFVRQCFNPMIVELAEKAMKEYGEDLKIETNKFAAICTHLEV
+                     CFMYSDFHFINEQGESIVVELDDPNALLKHRFEIIEGRDRTMAWTVVNSICNTTGAGK
+                     PKFLPDLYDYKENRFIEIGVTRREVHIYYLEKANKIKSENTHIHIFSFTGEEMATRAD
+                     YTLDEESRARIKTRLFTIRQEMANRGLWDSFRQSERGEETIEEKFEITGTMRRLADQS
+                     LPPNFSCLENFRAYVDGFEPNGCIEGKLSQMSKEVNAQIEPFLKTTPRPIKLPSGPPC
+                     YQRSKFLLMDALKLSIEDPSHEGEGIPLYDAIKCIKTFFGWKEPCIVKPHEKGINSNY
+                     LLSWKQVLSELQDIENEEKIPRTKNMKKTSQLKWALGENMAPEKVDFENCRDISDLKQ
+                     YDSEEPELRTLSSWIQSEFNKACELTDSVWIELDEIGEDVAPIEHIASMRRNYFTAEV
+                     SHCRATEYIMKGVYINTALLNASCAAMDDFQLIPMISKCRTKEGRRKTNLYGFIIKGR
+                     SHLRNDTDVVNFVSMEFSLTDPRLEPHKWEKYCVLEIGDMLLRSAIGQISRPMFLYVR
+                     TNGTSKVKMKWGMEMRRCLLQSLQQIESMIEAESSVKEKDMTKEFFENKSEAWPIGES
+                     PKGVEEGSIGKVCRTLLAKSVFNSLYASPQLEGFSAESRKLLLIVQALRDKLEPGTFD
+                     LGGLYEAIEECLINDPWVLLNASWFNSFLTHALK"
+     gene            13..772
+                     /gene="PA-X"
+     CDS             join(13..582,584..772)
+                     /gene="PA-X"
+                     /ribosomal_slippage
+                     /codon_start=1
+                     /product="PA-X protein"
+                     /protein_id="UUV89777.1"
+                     /translation="MEDFVRQCFNPMIVELAEKAMKEYGEDLKIETNKFAAICTHLEV
+                     CFMYSDFHFINEQGESIVVELDDPNALLKHRFEIIEGRDRTMAWTVVNSICNTTGAGK
+                     PKFLPDLYDYKENRFIEIGVTRREVHIYYLEKANKIKSENTHIHIFSFTGEEMATRAD
+                     YTLDEESRARIKTRLFTIRQEMANRGLWDSFVNPKEAKKQLKKNLKSQELCAGLPTKV
+                     SHRTSPALRILEPMWMDSNRTAALRASFLKCQKK"
+ORIGIN      
+        1 tactgattca aaatggaaga ttttgtgcga caatgcttca acccgatgat tgtcgaactt
+       61 gcagaaaaag caatgaaaga gtatggagag gatctgaaaa ttgaaaccaa caaatttgca
+      121 gcaatatgca ctcacttgga ggtgtgtttc atgtattcag atttccattt catcaatgaa
+      181 caaggcgaat caatagtagt agaacttgac gatccaaatg cactgttaaa acacagattt
+      241 gaaataatcg aggggagaga cagaacaatg gcctggacag tagtaaacag tatctgcaac
+      301 actactggag ctggaaaacc aaagttttta ccggatctgt atgattacaa agaaaacaga
+      361 ttcatcgaaa ttggagtgac aaggagagaa gtccacatat attaccttga aaaggccaat
+      421 aaaattaaat cagagaacac acacattcac attttttcat tcactgggga ggaaatggcc
+      481 acaagggcag actacactct cgacgaggaa agcagggcta ggattaaaac caggttattt
+      541 accataagac aagaaatggc caacagaggc ctctgggatt cctttcgtca atccgaaaga
+      601 ggcgaagaaa caattgaaga aaaatttgaa atcacaggaa ctatgcgcag gcttgccgac
+      661 caaagtctcc caccgaactt ctcctgcctt gagaatttta gagcctatgt ggatggattc
+      721 gaaccgaacg gctgcattga gggcaagctt tctcaaatgt caaaagaagt gaatgcccaa
+      781 attgaacctt ttctgaagac aacaccaaga ccaatcaaac ttcctagtgg acctccttgt
+      841 tatcagcgat ccaaattcct cctgatggat gctttgaaat tgagcattga agacccaagt
+      901 cacgaaggag aagggatccc attatatgat gcaatcaagt gcataaaaac attctttgga
+      961 tggaaagaac cttgtatagt caaaccacac gaaaagggaa taaattcaaa ttatctgctg
+     1021 tcatggaagc aagtactgtc agaattgcag gacattgaaa atgaggagaa gattccaaga
+     1081 actaaaaaca tgaagaaaac gagtcaactg aagtgggctc ttggtgaaaa catggcacca
+     1141 gagaaggtag actttgaaaa ctgcagagac ataagcgatt tgaagcaata tgacagtgaa
+     1201 gaacctgagt taaggacact ttcaagctgg atacaaagtg agttcaacaa ggcctgtgag
+     1261 ctaactgatt cagtctggat agagctcgat gaaattggag aggacgtagc cccaattgaa
+     1321 cacattgcaa gcatgagaag gaattacttc acagcagagg tgtctcattg cagagctact
+     1381 gaatacataa tgaaaggggt atacattaat actgccctgc tcaatgcatc ctgtgcggca
+     1441 atggacgatt ttcaactaat ccccatgata agcaagtgca gaactaaaga gggaaggcga
+     1501 aaaaccaatt tatatggatt catcataaag ggaagatctc atctgaggaa tgacacagac
+     1561 gtggtaaact ttgtgagcat ggagttttct ctcacagatc caagacttga accacataaa
+     1621 tgggagaaat attgtgtcct tgagatagga gatatgttac taaggagtgc cataggccaa
+     1681 atttcaaggc cgatgttctt gtatgtgagg acaaacggaa catcaaaagt caaaatgaaa
+     1741 tggggaatgg agatgagacg ttgcctcctt cagtcactcc agcagattga gagcatgatt
+     1801 gaagccgagt cctcagttaa agagaaagac atgaccaaag agttttttga gaataaatca
+     1861 gaagcatggc ccattgggga gtcccccaaa ggagtggaag aaggttccat tgggaaagtt
+     1921 tgtaggactc tattggctaa gtcagtattc aatagcctgt atgcatcacc acaattggaa
+     1981 ggattttcag cagaatcaag aaagctgctc cttattgttc aggctcttag ggacaaactc
+     2041 gaacctggga cctttgatct tgggggacta tatgaagcaa ttgaggagtg cctgattaat
+     2101 gatccctggg ttttgctcaa tgcatcttgg ttcaactcct tcctgacaca tgcattaaaa
+     2161 tagttatagc agtgctacta tttgttatcc gtactgtcca aaaaagta
+//
+LOCUS       4                1737 bp    cRNA    linear   VRL 17-AUG-2022
+DEFINITION  Influenza A virus (A/Massachusetts/18/2022(H3N2)) segment 4
+            hemagglutinin (HA) gene, complete cds.
+ACCESSION   4
+VERSION     OP213682.1
+DBLINK      BioProject: PRJNA37813
+KEYWORDS    .
+SOURCE      Influenza A virus
+  ORGANISM  Influenza A virus
+            Viruses; Riboviria; Orthornavirae; Negarnaviricota;
+            Polyploviricotina; Insthoviricetes; Articulavirales;
+            Orthomyxoviridae; Alphainfluenzavirus; Alphainfluenzavirus
+            influenzae.
+REFERENCE   1  (bases 1 to 1737)
+  AUTHORS   Wentworth,D., Barnes,J. and Garten,R.
+  TITLE     Influenza Sequencing Activity group
+  JOURNAL   Unpublished
+REFERENCE   2  (bases 1 to 1737)
+  AUTHORS   Wentworth,D., Barnes,J. and Garten,R.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (11-AUG-2022) WHO Collaborating Center for Surveillance,
+            Epidemiology and Control of Influenza, Influenza Division, Centers
+            for Disease Control and Prevention, 1600 Clifton Road, N.E.,
+            Atlanta, GA 30333, USA
+COMMENT     ##FluData-START##
+            EPI_ISOLATE_ID   :: EPI_ISL_13897082
+            NAME             :: A/Massachusetts/18/2022
+            TYPE             :: H3
+            Segment_name     :: HA
+            HOST_AGE         :: 9
+            HOST_GENDER      :: F
+            PASSAGE          :: Original
+            LOCATION         :: United States / Massachusetts
+            COLLECT_DATE     :: 04-Jun-2022
+            SPECIMEN_ID      :: 22VX34731 ORIGINAL
+            SENDER_LAB       :: Massachusetts Department of Public Health
+            SEQLAB_SAMPLE_ID :: 3030726357
+            EPI_SEQUENCE_ID  :: EPI2096148
+            ##FluData-END##
+FEATURES             Location/Qualifiers
+     source          1..1737
+                     /organism="Influenza A virus"
+                     /mol_type="viral cRNA"
+                     /strain="A/Massachusetts/18/2022"
+                     /serotype="H3N2"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:11320"
+                     /segment="4"
+                     /geo_loc_name="USA: Massachusetts"
+                     /collection_date="04-Jun-2022"
+                     /note="passage details:Original"
+     CDS             18..65
+                     /gene="HA_sp"
+                     /product="Hemagglutinin sig_peptide"
+     CDS             66..1052
+                     /gene="HA1"
+                     /product="Hemagglutinin HA1"
+     CDS             1053..1715
+                     /gene="HA2"
+                     /product="Hemagglutinin HA2"
+                     /translation="MKAIIALSNILCLVFAQKIPGNDNSTATLCLGHHAVPNGTIVKT
+                     ITNDRIEVTNATELVQNSSIGKICNSPHQILDGGNCTLIDALLGDPQCDGFQNKEWDL
+                     FVERSRANSSCYPYDVPDYASLRSLVASSGTLEFKNESFNWTGVKQNGTSSACKRGSS
+                     SSFFSRLNWLTSLNNIYPAQNVTMPNKEQFDKLYIWGVHHPDTDKNQFSLFAQSSGRI
+                     TVSTKRSQQAVIPNIGSRPRVRDIPSRISIYWTIVKPGDILLINSTGNLIAPRGYFKI
+                     RSGKSSIMRSDAPIGKCKSECITPNGSIPNDKPFQNVNRITYGACPRYVKQSTLKLAT
+                     GMRNVPEKQTRGIFGAIAGFIENGWEGMVDGWYGFRHQNSEGRGQAADLKSTQAAIDQ
+                     ISGKLNRLIGKTNEKFHQIEKEFSEVEGRVQDLEKYVEDTKIDLWSYNAELLVALENQ
+                     HTIDLTDSEMNKLFEKTKKQLRENAEDMGNGCFKIYHKCDNACIGSIRNETYDHNVYR
+                     DEALNNRFQIKGVELKSGYKDWILWISFAMSCFLLCIALLGFIMWACQKGNIRCNICI
+                     "
+ORIGIN      
+        1 ggataattct attaaccatg aaggctatca ttgctttgag caacattcta tgtcttgttt
+       61 tcgctcaaaa aatacctgga aatgacaata gcacggcaac gctgtgcctt gggcaccatg
+      121 cagtaccaaa cggaacgata gtgaaaacaa tcacaaatga ccgaattgaa gttactaatg
+      181 ctactgagtt ggttcagaat tcatcaatag gtaaaatatg caacagtcct catcagatcc
+      241 ttgatggagg gaactgcaca ctaatagatg ctctattggg ggaccctcag tgtgacggct
+      301 ttcaaaataa ggaatgggac ctttttgttg aacgaagcag agccaacagc agctgttacc
+      361 cttatgatgt gccggattat gcctccctta ggtcactagt tgcctcatcc ggaacactgg
+      421 aatttaaaaa tgaaagcttc aattggaccg gagtcaaaca aaacggaaca agttctgcgt
+      481 gcaaaagggg atctagtagt agttttttta gtagattaaa ttggttgacc agcttaaaca
+      541 acatatatcc agcacagaac gtgactatgc caaacaagga acaatttgac aaattgtaca
+      601 tttggggggt tcaccacccg gatacggaca agaaccaatt ctccctgttt gctcaatcat
+      661 caggaagaat cacagtatct accaaaagaa gccaacaagc tgtaatccca aatatcggat
+      721 ctagacccag agtaagggat atccctagca gaataagcat ctattggaca atagtaaaac
+      781 cgggagacat acttttgatt aacagcacag ggaatctaat tgctcctagg ggttacttca
+      841 aaatacgaag tgggaaaagc tcaataatga gatcagacgc acccattggc aaatgtaagt
+      901 ctgaatgcat cactccaaat ggaagcattc ccaatgacaa accgttccaa aatgtaaaca
+      961 ggatcacata cggggcctgt cccagatacg ttaagcaaag caccctgaaa ttggcaacag
+     1021 gaatgcgaaa tgtacctgag aaacaaacca gaggcatatt tggtgcaata gcgggtttca
+     1081 tagaaaatgg atgggaggga atggtggatg gttggtacgg tttcaggcat caaaattctg
+     1141 agggaagagg acaagcagca gatctcaaaa gcactcaagc agcaatcgat caaatcagtg
+     1201 ggaagctgaa tcgattgatc ggaaaaacca acgagaaatt ccatcagatt gaaaaagaat
+     1261 tctcagaagt agaaggaaga gttcaagacc tcgagaaata tgttgaggac actaaaatag
+     1321 atctctggtc atacaacgcg gagcttcttg ttgccctgga gaaccaacat acgattgacc
+     1381 taactgactc agaaatgaac aagctgtttg aaaaaacaaa gaagcaactg agggaaaatg
+     1441 ctgaggatat gggaaatggt tgtttcaaaa tataccacaa atgtgacaat gcctgcatag
+     1501 gatcaataag aaatgaaact tatgaccaca atgtgtacag ggatgaagca ttaaacaacc
+     1561 ggttccagat caagggagtt gagctgaagt cagggtacaa agattggatc ctatggattt
+     1621 cctttgccat gtcatgtttt ttgctttgta ttgctttgtt ggggttcatc atgtgggcct
+     1681 gccaaaaggg caacattaga tgcaacattt gcatttgagt gcattaatta aaaacac
+//
+LOCUS       5                1541 bp    cRNA    linear   VRL 17-AUG-2022
+DEFINITION  Influenza A virus (A/Massachusetts/18/2022(H3N2)) segment 5
+            nucleocapsid protein (NP) gene, complete cds.
+ACCESSION   5
+VERSION     OP213683.1
+DBLINK      BioProject: PRJNA37813
+KEYWORDS    .
+SOURCE      Influenza A virus
+  ORGANISM  Influenza A virus
+            Viruses; Riboviria; Orthornavirae; Negarnaviricota;
+            Polyploviricotina; Insthoviricetes; Articulavirales;
+            Orthomyxoviridae; Alphainfluenzavirus; Alphainfluenzavirus
+            influenzae.
+REFERENCE   1  (bases 1 to 1541)
+  AUTHORS   Wentworth,D., Barnes,J. and Garten,R.
+  TITLE     Influenza Sequencing Activity group
+  JOURNAL   Unpublished
+REFERENCE   2  (bases 1 to 1541)
+  AUTHORS   Wentworth,D., Barnes,J. and Garten,R.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (11-AUG-2022) WHO Collaborating Center for Surveillance,
+            Epidemiology and Control of Influenza, Influenza Division, Centers
+            for Disease Control and Prevention, 1600 Clifton Road, N.E.,
+            Atlanta, GA 30333, USA
+COMMENT     ##FluData-START##
+            EPI_ISOLATE_ID   :: EPI_ISL_13897082
+            NAME             :: A/Massachusetts/18/2022
+            TYPE             :: H3
+            Segment_name     :: NP
+            HOST_AGE         :: 9
+            HOST_GENDER      :: F
+            PASSAGE          :: Original
+            LOCATION         :: United States / Massachusetts
+            COLLECT_DATE     :: 04-Jun-2022
+            SPECIMEN_ID      :: 22VX34731 ORIGINAL
+            SENDER_LAB       :: Massachusetts Department of Public Health
+            SEQLAB_SAMPLE_ID :: 3030726357
+            EPI_SEQUENCE_ID  :: EPI2096141
+            ##FluData-END##
+FEATURES             Location/Qualifiers
+     source          1..1541
+                     /organism="Influenza A virus"
+                     /mol_type="viral cRNA"
+                     /strain="A/Massachusetts/18/2022"
+                     /serotype="H3N2"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:11320"
+                     /segment="5"
+                     /geo_loc_name="USA: Massachusetts"
+                     /collection_date="04-Jun-2022"
+                     /note="passage details:Original"
+     gene            34..1530
+                     /gene="NP"
+     CDS             34..1530
+                     /gene="NP"
+                     /codon_start=1
+                     /product="nucleocapsid protein"
+                     /protein_id="UUV89779.1"
+                     /translation="MASQGTKRSYEQMETDGDRQNATEIRASVGKMIDGIGRFYIQMC
+                     TELKLSDHEGRLIQNSLTIEKMVLSAFDERRNKYLEEHPSAGKDPKKTGGPIYRRVDG
+                     KWMRELVLYDKEEIRRIWRQANNGEDATSGLTHMMIWHSNLNDATYQRTRALVRTGMD
+                     PRMCSLMQGSTLPRRSGAAGAAVKGIGTMVMELIRMIKRGINDRNFWRGENGRKTRSA
+                     YDRMCNILKGKFQTAAQRAMVDQVRESRNPGNAEIEDLIFLARSALILRGSVAHKSCL
+                     PACAYGPAVSSGYDFEKEGYSLVGIDPFKLLQNSQIYSLIRPNENPAHKSQLVWMACH
+                     SAAFEDLRLLSFIRGTKVSPRGKLSTRGVQIASNENMDNMGSSTLELRSGYWAIRTRS
+                     GGNTNQQRASAGQTSVQPTFSVQRNIPFEKSTIMAAFTGNTEGRTSDMRAEIIRMMEG
+                     AKPEEVSFRGRGVFELSDEKAANPIVPSFDMSNEGSYFFGDNAEEYDN"
+ORIGIN      
+        1 gttgataatc actcactgag tgacatcaaa atcatggcgt cccaaggcac caaacggtct
+       61 tatgaacaga tggaaactga tggagaccgc cagaatgcaa ctgagattag ggcatccgtt
+      121 gggaagatga ttgatgggat tgggagattc tacatccaaa tgtgcactga acttaaactc
+      181 agtgatcatg aaggacggtt gatccaaaat agcttgacaa tagagaaaat ggtactctct
+      241 gcttttgatg aaagaaggaa taaatacttg gaagaacacc ccagcgcggg gaaagatccc
+      301 aagaaaactg gggggcccat atacagaaga gtcgatggaa aatggatgag ggaactcgtc
+      361 ctttatgaca aagaggaaat aaggcgaatc tggcgccaag ccaacaatgg tgaggatgct
+      421 acatctggtc taacccacat gatgatttgg cattccaatc tgaatgatgc gacataccag
+      481 aggacaagag ctcttgttcg gactggaatg gatcccagaa tgtgctctct gatgcagggg
+      541 tcgactctcc ctagaaggtc cggagctgca ggtgctgcag tcaaaggaat cggaacaatg
+      601 gtgatggaac tgatcaggat gatcaaacgg gggatcaacg atcgaaattt ttggagaggt
+      661 gagaatgggc ggaaaacaag aagtgcttat gatagaatgt gcaacattct taaaggaaaa
+      721 tttcaaacag ctgcacaaag agcaatggtg gatcaagtta gagaaagtcg gaacccagga
+      781 aacgctgaga tcgaagatct catatttttg gcaagatctg cactgatatt gagaggatca
+      841 gttgctcaca aatcttgcct acctgcctgt gcatatggac ctgcagtatc cagtggttac
+      901 gactttgaaa aagagggata ttccttggtg ggaatagacc ctttcaaact acttcaaaat
+      961 agccaaatat acagcttaat cagacctaat gagaatccag cacacaagag tcagctggtg
+     1021 tggatggcat gccattctgc tgcatttgaa gatttaagat tgttaagttt catcagaggg
+     1081 acaaaagtat ctcctcgggg gaaactgtca actagaggag tacaaattgc ctcaaatgag
+     1141 aacatggata atatgggatc aagcactctt gaactgagaa gcgggtactg ggccataagg
+     1201 accaggagcg gaggaaacac taatcaacag agggcctccg caggccaaac cagtgtgcaa
+     1261 cctacatttt ctgtacaaag aaacatccca tttgaaaagt caaccatcat ggcagcattc
+     1321 actggaaata cggagggaag aacttcagac atgagggcag aaatcataag gatgatggaa
+     1381 ggtgcaaaac cagaagaagt gtcattccgg gggaggggag ttttcgagct ctcagacgag
+     1441 aaggcagcga acccgatcgt gccctctttt gatatgagca acgaaggatc ttatttcttc
+     1501 ggagacaatg cagaagagta tgacaattaa gaaaaaaata c
+//
+LOCUS       6                1441 bp    cRNA    linear   VRL 17-AUG-2022
+DEFINITION  Influenza A virus (A/Massachusetts/18/2022(H3N2)) segment 6
+            neuraminidase (NA) gene, complete cds.
+ACCESSION   6
+VERSION     OP213684.1
+DBLINK      BioProject: PRJNA37813
+KEYWORDS    .
+SOURCE      Influenza A virus
+  ORGANISM  Influenza A virus
+            Viruses; Riboviria; Orthornavirae; Negarnaviricota;
+            Polyploviricotina; Insthoviricetes; Articulavirales;
+            Orthomyxoviridae; Alphainfluenzavirus; Alphainfluenzavirus
+            influenzae.
+REFERENCE   1  (bases 1 to 1441)
+  AUTHORS   Wentworth,D., Barnes,J. and Garten,R.
+  TITLE     Influenza Sequencing Activity group
+  JOURNAL   Unpublished
+REFERENCE   2  (bases 1 to 1441)
+  AUTHORS   Wentworth,D., Barnes,J. and Garten,R.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (11-AUG-2022) WHO Collaborating Center for Surveillance,
+            Epidemiology and Control of Influenza, Influenza Division, Centers
+            for Disease Control and Prevention, 1600 Clifton Road, N.E.,
+            Atlanta, GA 30333, USA
+COMMENT     ##FluData-START##
+            EPI_ISOLATE_ID   :: EPI_ISL_13897082
+            NAME             :: A/Massachusetts/18/2022
+            TYPE             :: H3
+            Segment_name     :: NA
+            HOST_AGE         :: 9
+            HOST_GENDER      :: F
+            PASSAGE          :: Original
+            LOCATION         :: United States / Massachusetts
+            COLLECT_DATE     :: 04-Jun-2022
+            SPECIMEN_ID      :: 22VX34731 ORIGINAL
+            SENDER_LAB       :: Massachusetts Department of Public Health
+            SEQLAB_SAMPLE_ID :: 3030726357
+            EPI_SEQUENCE_ID  :: EPI2096147
+            ##FluData-END##
+FEATURES             Location/Qualifiers
+     source          1..1441
+                     /organism="Influenza A virus"
+                     /mol_type="viral cRNA"
+                     /strain="A/Massachusetts/18/2022"
+                     /serotype="H3N2"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:11320"
+                     /segment="6"
+                     /geo_loc_name="USA: Massachusetts"
+                     /collection_date="04-Jun-2022"
+                     /note="passage details:Original"
+     gene            8..1417
+                     /gene="NA"
+     CDS             8..1417
+                     /gene="NA"
+                     /codon_start=1
+                     /product="neuraminidase"
+                     /protein_id="UUV89780.1"
+                     /translation="MNPNQKIITIGSVSLTISTICFFMQIAILITTVTLHFKQYEFNS
+                     PPNNQVMLCEPTIIERNITEIVYLTNTTIEKEICPKPAEYRNWSKPQCGITGFAPFSK
+                     DNSIRLSAGGDIWVTREPYVSCDLDKCYQFALGQGTTLNNVHSNNTVHDRTPYRTLLM
+                     NELGVPFHLGTKQVCIAWSSSSCHDGKAWLHVCITGDDKNATASFIYNGRLVDSVVSW
+                     SNDILRTQESECVCINGTCTVVMTDGNATGKADTKILFIEEGKIVHTSKLSGSAQHVE
+                     ECSCYPRYPGVRCVCRDNWKGSNRPIIDINIKDHSIVSRYVCSGLVGDTPRKSDSSSS
+                     SHCLNPNNEKGDHGVKGWAFDDGNDVWMGRTINETSRLGYETFKVVEGWSNPKSKLQI
+                     NRQVIVDRGDRSGYSGIFSVEGKSCINRCFYVELIRGRKEETEVLWTSNSIVVFCGTS
+                     GTYGTGSWPDGANLSLMHT"
+ORIGIN      
+        1 agtaaagatg aatccaaatc aaaagataat aacgattggc tctgtttctc tcacaatttc
+       61 cacaatatgc ttcttcatgc aaattgccat cctgataact actgtaacat tgcatttcaa
+      121 gcaatatgaa ttcaactccc ccccaaataa ccaagtgatg ctgtgtgaac caacaataat
+      181 agaaagaaac ataacagaga tagtgtattt gaccaacacc accatagaga aggaaatatg
+      241 ccccaaacca gcagaataca gaaattggtc aaaaccgcaa tgtggcatta caggatttgc
+      301 acctttctct aaggacaatt cgattaggct ttccgctggt ggggacatat gggtgacaag
+      361 agaaccttat gtgtcatgcg atcttgacaa gtgttatcaa tttgcccttg gacagggaac
+      421 aacactaaac aatgtgcatt caaataacac agtacatgat agaacccctt atcggactct
+      481 attgatgaat gagttgggtg ttcctttcca tctggggacc aagcaagtgt gcatagcatg
+      541 gtccagctca agttgtcacg atggaaaagc atggctgcat gtttgtataa cgggggatga
+      601 taaaaatgca actgctagct tcatttacaa tgggaggctt gtagatagtg ttgtttcatg
+      661 gtccaacgat attctcagaa cccaggagtc agaatgcgtt tgtatcaatg gaacttgtac
+      721 agtagtaatg actgatggaa atgctacagg aaaagctgat actaaaatac tattcattga
+      781 ggaggggaaa atcgttcata ctagcaaatt gtcaggaagt gctcagcatg tcgaagagtg
+      841 ctcttgctat cctcgatatc ctggtgtcag atgtgtctgc agagacaact ggaaaggatc
+      901 caaccggccc atcatagata taaacataaa ggatcatagc attgtttcca ggtatgtgtg
+      961 ttctggactt gttggagaca cacccagaaa aagcgacagc tccagcagta gccactgttt
+     1021 gaaccctaac aatgaaaaag gtgatcatgg agtgaaaggc tgggcctttg atgatggaaa
+     1081 tgacgtgtgg atggggagaa caatcaacga gacgtcacgc ttagggtatg aaaccttcaa
+     1141 agtcgttgaa ggctggtcca accctaagtc caaattgcag ataaataggc aagtcatagt
+     1201 tgacagaggc gataggtccg gttattctgg tattttctct gttgaaggca aaagctgcat
+     1261 caatcggtgc ttttatgtgg agttgattag gggaagaaaa gaggaaactg aagtcttgtg
+     1321 gacttcaaac agtattgttg tgttttgtgg cacctcaggt acatatggaa caggctcatg
+     1381 gcctgatggg gcgaacctca gtctcatgca tacataagct ttcgcaattt tagaaaaaac
+     1441 t
+//
+LOCUS       7                1002 bp    cRNA    linear   VRL 17-AUG-2022
+DEFINITION  Influenza A virus (A/Massachusetts/18/2022(H3N2)) segment 7 matrix
+            protein 2 (M2) and matrix protein 1 (M1) genes, complete cds.
+ACCESSION   7
+VERSION     OP213685.1
+DBLINK      BioProject: PRJNA37813
+KEYWORDS    .
+SOURCE      Influenza A virus
+  ORGANISM  Influenza A virus
+            Viruses; Riboviria; Orthornavirae; Negarnaviricota;
+            Polyploviricotina; Insthoviricetes; Articulavirales;
+            Orthomyxoviridae; Alphainfluenzavirus; Alphainfluenzavirus
+            influenzae.
+REFERENCE   1  (bases 1 to 1002)
+  AUTHORS   Wentworth,D., Barnes,J. and Garten,R.
+  TITLE     Influenza Sequencing Activity group
+  JOURNAL   Unpublished
+REFERENCE   2  (bases 1 to 1002)
+  AUTHORS   Wentworth,D., Barnes,J. and Garten,R.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (11-AUG-2022) WHO Collaborating Center for Surveillance,
+            Epidemiology and Control of Influenza, Influenza Division, Centers
+            for Disease Control and Prevention, 1600 Clifton Road, N.E.,
+            Atlanta, GA 30333, USA
+COMMENT     ##FluData-START##
+            EPI_ISOLATE_ID   :: EPI_ISL_13897082
+            NAME             :: A/Massachusetts/18/2022
+            TYPE             :: H3
+            Segment_name     :: M
+            HOST_AGE         :: 9
+            HOST_GENDER      :: F
+            PASSAGE          :: Original
+            LOCATION         :: United States / Massachusetts
+            COLLECT_DATE     :: 04-Jun-2022
+            SPECIMEN_ID      :: 22VX34731 ORIGINAL
+            SENDER_LAB       :: Massachusetts Department of Public Health
+            SEQLAB_SAMPLE_ID :: 3030726357
+            EPI_SEQUENCE_ID  :: EPI2096143
+            ##FluData-END##
+FEATURES             Location/Qualifiers
+     source          1..1002
+                     /organism="Influenza A virus"
+                     /mol_type="viral cRNA"
+                     /strain="A/Massachusetts/18/2022"
+                     /serotype="H3N2"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:11320"
+                     /segment="7"
+                     /geo_loc_name="USA: Massachusetts"
+                     /collection_date="04-Jun-2022"
+                     /note="passage details:Original"
+     gene            14..995
+                     /gene="M2"
+     CDS             join(14..39,728..995)
+                     /gene="M2"
+                     /codon_start=1
+                     /product="matrix protein 2"
+                     /protein_id="UUV89782.1"
+                     /translation="MSLLTEVETPIRNEWGCRCNDSSNPLVVAANIIGILHLILWILD
+                     RLFFKCVYRLFKHGLKRGPSTEGVPESMREEYRKEQQNAVDADESHFVSIELE"
+     gene            14..772
+                     /gene="M1"
+     CDS             14..772
+                     /gene="M1"
+                     /codon_start=1
+                     /product="matrix protein 1"
+                     /protein_id="UUV89781.1"
+                     /translation="MSLLTEVETYVLSIVPSGPLKAEIAQRLEDVFAGKNTDLEALME
+                     WLKTRPILSPLTKGILGFVFTLTVPSERGLQRRRFVQNALNGNGDPNNMDKAVKLYRK
+                     LKREITFHGAKEIALSYSAGALASCMGLIYNRMGAVTTEVAFGLVCATCEQIADSQHR
+                     SHRQMVATTNPLIKHENRMVLASTTAKAMEQMAGSSEQAAEAMEIASQARQMVQAMRA
+                     IGTHPSSSTGLRDDLLENLQTYQKRMGVQMQRFK"
+ORIGIN      
+        1 tagatattga aagatgagcc ttcttaccga ggtcgaaacg tatgttctct ctatcgttcc
+       61 atcaggcccc ctcaaagccg agatcgcgca gagacttgaa gatgtctttg ctgggaaaaa
+      121 cacagatctt gaggctctca tggaatggtt aaagacaaga ccaattctgt cacctttgac
+      181 taaggggatt ttagggtttg ttttcacgct caccgtgccc agtgagcgag gactgcagcg
+      241 tagacgcttt gtccaaaatg ccctcaatgg gaatggagac ccaaataaca tggacaaagc
+      301 agttaaactg tataggaaac ttaagaggga gataacgttc cacggggcca aagaaatagc
+      361 tctcagttat tctgctggtg cacttgccag ttgcatgggc ctcatataca ataggatggg
+      421 ggctgtaacc actgaagtgg catttggcct ggtgtgtgca acatgtgagc agattgctga
+      481 ttcccagcac aggtctcata ggcagatggt ggcaacaacc aatccattaa taaaacatga
+      541 gaacagaatg gttttggcca gcactacagc taaggctatg gagcaaatgg ctggctcaag
+      601 tgagcaagca gcagaggcca tggagattgc tagtcaggcc aggcagatgg tgcaggcaat
+      661 gagagccatt gggactcatc ctagttccag cactggtcta agagatgatc ttcttgaaaa
+      721 tttgcagacc tatcagaaac gaatgggggt gcagatgcaa cgattcaagt aacccgcttg
+      781 ttgttgccgc gaatatcatt gggatcttgc acttgatatt atggattctt gatcgtcttt
+      841 ttttcaaatg cgtctatcga ctcttcaaac acggccttaa aagaggccct tctacggaag
+      901 gtgtgcctga gtctatgagg gaagaatacc gaaaggaaca gcagaatgct gtggatgctg
+      961 acgaaagtca ttttgtcagc atagaattgg agtaaaaaac ta
+//
+LOCUS       8                 865 bp    cRNA    linear   VRL 17-AUG-2022
+DEFINITION  Influenza A virus (A/Massachusetts/18/2022(H3N2)) segment 8 nuclear
+            export protein (NEP) and nonstructural protein 1 (NS1) genes,
+            complete cds.
+ACCESSION   8
+VERSION     OP213686.1
+DBLINK      BioProject: PRJNA37813
+KEYWORDS    .
+SOURCE      Influenza A virus
+  ORGANISM  Influenza A virus
+            Viruses; Riboviria; Orthornavirae; Negarnaviricota;
+            Polyploviricotina; Insthoviricetes; Articulavirales;
+            Orthomyxoviridae; Alphainfluenzavirus; Alphainfluenzavirus
+            influenzae.
+REFERENCE   1  (bases 1 to 865)
+  AUTHORS   Wentworth,D., Barnes,J. and Garten,R.
+  TITLE     Influenza Sequencing Activity group
+  JOURNAL   Unpublished
+REFERENCE   2  (bases 1 to 865)
+  AUTHORS   Wentworth,D., Barnes,J. and Garten,R.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (11-AUG-2022) WHO Collaborating Center for Surveillance,
+            Epidemiology and Control of Influenza, Influenza Division, Centers
+            for Disease Control and Prevention, 1600 Clifton Road, N.E.,
+            Atlanta, GA 30333, USA
+COMMENT     ##FluData-START##
+            EPI_ISOLATE_ID   :: EPI_ISL_13897082
+            NAME             :: A/Massachusetts/18/2022
+            TYPE             :: H3
+            Segment_name     :: NS
+            HOST_AGE         :: 9
+            HOST_GENDER      :: F
+            PASSAGE          :: Original
+            LOCATION         :: United States / Massachusetts
+            COLLECT_DATE     :: 04-Jun-2022
+            SPECIMEN_ID      :: 22VX34731 ORIGINAL
+            SENDER_LAB       :: Massachusetts Department of Public Health
+            SEQLAB_SAMPLE_ID :: 3030726357
+            EPI_SEQUENCE_ID  :: EPI2096142
+            ##FluData-END##
+FEATURES             Location/Qualifiers
+     source          1..865
+                     /organism="Influenza A virus"
+                     /mol_type="viral cRNA"
+                     /strain="A/Massachusetts/18/2022"
+                     /serotype="H3N2"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:11320"
+                     /segment="8"
+                     /geo_loc_name="USA: Massachusetts"
+                     /collection_date="04-Jun-2022"
+                     /note="passage details:Original"
+     gene            15..852
+                     /gene="NEP"
+                     /gene_synonym="NS2"
+     CDS             join(15..44,517..852)
+                     /gene="NEP"
+                     /gene_synonym="NS2"
+                     /note="nonstructural protein 2"
+                     /codon_start=1
+                     /product="nuclear export protein"
+                     /protein_id="UUV89784.1"
+                     /translation="MDSNTVSSFQDILLRMSKMQLGSSSEDLNGMITQFESLKIYRDS
+                     LGEAVMRMGDLHLLQNRNGKWREQLGQKFEEIRWLIEEVRHRLRTTENSFEQITFMQA
+                     LQLLFEVEQEIRTFSFQLI"
+     gene            15..707
+                     /gene="NS1"
+     CDS             15..707
+                     /gene="NS1"
+                     /codon_start=1
+                     /product="nonstructural protein 1"
+                     /protein_id="UUV89783.1"
+                     /translation="MDSNTVSSFQVDCFLWHIRKQVVDQKLSDAPFLDRLRRDQRSLR
+                     GRGNTLGLDIKSATHVGKQIVEKILKGESDEALKMTMVSTPASRYITDMTIEELSRNW
+                     FMLMPKQKVEGPLCIRMDQAIMEKNIMLKANFNVIFGRLETIVLLRAFTEEGAIVGEI
+                     SPLPSFPGHTIEDVKNAIGVLIGGLEWNDNTVRVSKNLQRFAWRSSHENGGPPLTPKQ
+                     KREMARTARSEV"
+ORIGIN      
+        1 gtgacaaaga cataatggat tccaacactg tgtcaagttt ccaggtagat tgctttcttt
+       61 ggcatatccg gaaacaagtt gtggaccaaa aactgagtga tgccccattc ctcgatcggc
+      121 ttcgccgaga tcagaggtcc ctaaggggaa gaggcaatac tctcggtcta gacatcaaat
+      181 cagccaccca tgttggaaag caaatcgtag aaaagattct gaaaggagaa tctgatgagg
+      241 cacttaaaat gaccatggtc tcaacacctg cttcgcgata cataactgac atgactattg
+      301 aggaattgtc aagaaactgg ttcatgctaa tgcccaagca gaaggtggaa ggacctcttt
+      361 gcatcagaat ggaccaggca atcatggaga aaaacatcat gttaaaagcg aatttcaatg
+      421 tgatttttgg ccggctagag accatagtat tgctaagagc tttcaccgaa gagggagcaa
+      481 ttgttggcga aatctcacca ttgccttctt ttccaggaca tactattgag gatgtcaaaa
+      541 atgcaattgg ggtcctcatc ggaggacttg aatggaatga taacacagtt cgagtctcta
+      601 aaaatctaca gagattcgct tggagaagca gtcatgagaa tgggggacct ccacttactc
+      661 caaaacagaa acgggaaatg gcgagaacag ctaggtcaga agtttgaaga gataagatgg
+      721 ctgattgaag aggtgagaca cagattaaga acaactgaaa atagctttga acaaataaca
+      781 ttcatgcaag cattacaact actgtttgaa gtggaacagg agataagaac tttctcattt
+      841 cagcttattt aatgataaaa aacac
+//
+

@@ -109,9 +109,9 @@ class ConstantsSettings:
     #################################### Process Types
 
     PROCESS_TYPE_DEPLOYMENT = (
-        Profile.SGE_PROCESS_televir
-        if TelevirSetup.CURRENT_SETUP == TelevirSetup.SETUP_PRODUCTION
-        else Profile.SGE_PROCESS_dont_care
+        Profile.SGE_PROCESS_dont_care
+        if TelevirSetup.CURRENT_SETUP == TelevirSetup.SETUP_DEVELOP
+        else Profile.SGE_PROCESS_televir
     )
 
     ################################### Threads

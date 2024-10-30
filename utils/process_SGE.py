@@ -14,6 +14,7 @@ from django.db import transaction
 from constants.constants import Constants, FileExtensions, TypePath
 from extend_user.models import Profile
 from managing_files.models import ProcessControler
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from utils.utils import Utils
 
 # http://www.socher.org/index.php/Main/HowToInstallSunGridEngineOnUbuntu
@@ -1104,7 +1105,7 @@ class ProcessSGE(object):
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         queue_name = user.profile.queue_name_sge
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
-            Profile.SGE_PROCESS_televir, Profile.SGE_LINK
+            PICS.PROCESS_TYPE_DEPLOYMENT, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
         path_file = self.set_script_run_sge(
@@ -1778,7 +1779,7 @@ class ProcessSGE(object):
 
         processes = ProcessControler.objects.filter(
             owner__id=user_pk,
-            name__in = names_processes,
+            name__in=names_processes,
             is_error=False,
             is_finished=False,
         )

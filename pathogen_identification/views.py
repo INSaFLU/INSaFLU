@@ -1177,8 +1177,6 @@ class TelefluMappingIGV(LoginRequiredMixin, generic.TemplateView):
         teleflu_project = teleflu_mapping.teleflu_project
         televir_project_index = teleflu_project.televir_project.pk
 
-        insaflu_project = teleflu_project.insaflu_project
-
         ### get reference
         teleflu_reference = teleflu_project.raw_reference
         if teleflu_reference is None:
@@ -1208,11 +1206,9 @@ class TelefluMappingIGV(LoginRequiredMixin, generic.TemplateView):
         accid_list_simple = [simplify_name(accid) for accid in accid_list] + accid_list
 
         for sample in televir_project_samples:
-
             ref_select = filter_reference_maps_select(
-                sample, leaf_index, accid_list_simple
+                sample, teleflu_mapping.leaf.index, accid_list_simple
             )
-
             if ref_select is None:
                 continue
 
@@ -1223,6 +1219,18 @@ class TelefluMappingIGV(LoginRequiredMixin, generic.TemplateView):
                 "vcf_file": remove_pre_static(ref_select.vcf),
                 "sample": sample,
             }
+
+            if ref_select.fasta_file_path is None:
+                continue
+            if ref_select.fai_file_path is None:
+                continue
+
+            igv_genome_options["reference"] = remove_pre_static(
+                ref_select.fasta_file_path
+            )
+            igv_genome_options["reference_index"] = remove_pre_static(
+                ref_select.fai_file_path
+            )
 
         context["igv_genome"] = igv_genome_options
         context["samples"] = sample_dict

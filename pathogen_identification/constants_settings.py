@@ -3,13 +3,13 @@ Ceated on 06/05/2022
 @author: joao santos
 """
 
-import os
 from typing import Dict, List
 
 import networkx as nx
 from django.conf import settings
 
-from fluwebvirus.settings import MEDIA_ROOT, STATIC_ROOT, STATICFILES_DIRS
+from extend_user.models import Profile
+from fluwebvirus.settings import MEDIA_ROOT, STATIC_ROOT, TelevirSetup
 from pathogen_identification.utilities.mapping_flags import (
     MapFlagProbes,
     MapFlagViruses,
@@ -105,6 +105,14 @@ class ConstantsSettings:
     MAX_LENGTH_SEQUENCE_TOTAL_REFERENCE_FASTA = (
         settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA * 10
     )  # 30 * 10e6
+
+    #################################### Process Types
+
+    PROCESS_TYPE_DEPLOYMENT = (
+        Profile.SGE_PROCESS_dont_care
+        if TelevirSetup.CURRENT_SETUP == TelevirSetup.SETUP_DEVELOP
+        else Profile.SGE_PROCESS_televir
+    )
 
     ################################### Threads
 

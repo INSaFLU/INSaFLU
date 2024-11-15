@@ -1316,12 +1316,10 @@ def get_mapping_bams_zip(request, pk):
     ## zip all files in the sample_dict
     print(sample_dict)
     zip_file = televir_bioinf.zip_files(sample_dict, "mapping_bams")
-    print(zip_file)
     # zip_file = remove_pre_static(zip_file)
+    print(zip_file)
 
-    response = HttpResponse(zip_file, content_type="application/zip")
-    response["Content-Disposition"] = f'attachment; filename="mapping_bams.zip"'
-    return response
+    return zip_file
 
 
 class INSaFLUMappingIGV(LoginRequiredMixin, generic.TemplateView):

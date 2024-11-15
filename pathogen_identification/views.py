@@ -2,6 +2,7 @@ import logging
 import mimetypes
 import ntpath
 import os
+import zipfile
 from typing import Any, Dict, Optional
 
 import pandas as pd
@@ -13,13 +14,9 @@ from django.contrib import messages
 from django.core.files.temp import NamedTemporaryFile
 from django.db import transaction
 from django.db.models import Q
-from django.http import (
-    Http404,
-    HttpResponse,
-    HttpResponseNotFound,
-    HttpResponseRedirect,
-    JsonResponse,
-)
+from django.http import (FileResponse, Http404, HttpResponse,
+                         HttpResponseNotFound, HttpResponseRedirect,
+                         JsonResponse)
 from django.http.response import HttpResponse
 from django.shortcuts import render
 from django.template.defaultfilters import pluralize
@@ -33,93 +30,57 @@ from django_tables2 import RequestConfig
 from constants.constants import Constants, FileType, TypePath
 from constants.software_names import SoftwareNames
 from extend_user.models import Profile
-from fluwebvirus.settings import (
-    BASE_DIR,
-    MEDIA_ROOT,
-    MEDIA_URL,
-    STATIC_ROOT,
-    STATIC_URL,
-    STATICFILES_DIRS,
-)
+from fluwebvirus.settings import (BASE_DIR, MEDIA_ROOT, MEDIA_URL, STATIC_ROOT,
+                                  STATIC_URL, STATICFILES_DIRS)
 from managing_files.forms import AddSampleProjectForm
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
 from managing_files.models import Reference
 from managing_files.tables import SampleToProjectsTable
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
-from pathogen_identification.forms import (
-    PanelReferencesUploadForm,
-    ReferenceForm,
-    UploadFileForm,
-)
-from pathogen_identification.models import (
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReadClassification,
-    ReferenceContigs,
-    ReferenceMap_Main,
-    ReferencePanel,
-    ReferenceSourceFile,
-    ReferenceSourceFileMap,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    RunRemapMain,
-    Sample,
-    TelefluMapping,
-    TeleFluProject,
-    TeleFluSample,
-    TelevirRunQC,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
+from pathogen_identification.forms import (PanelReferencesUploadForm,
+                                           ReferenceForm, UploadFileForm)
+from pathogen_identification.models import (ContigClassification, FinalReport,
+                                            ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            ReadClassification,
+                                            ReferenceContigs,
+                                            ReferenceMap_Main, ReferencePanel,
+                                            ReferenceSourceFile,
+                                            ReferenceSourceFileMap,
+                                            RunAssembly, RunDetail, RunMain,
+                                            RunRemapMain, Sample,
+                                            TelefluMapping, TeleFluProject,
+                                            TeleFluSample, TelevirRunQC)
 from pathogen_identification.modules.object_classes import RunQC_report
-from pathogen_identification.tables import (
-    AddedReferenceTable,
-    CompoundRefereceScoreWithScreening,
-    CompoundReferenceScore,
-    ContigTable,
-    ProjectTable,
-    RawReferenceTable,
-    RawReferenceTable_Basic,
-    ReferenceSourceTable,
-    RunMainTable,
-    RunMappingTable,
-    SampleTableOne,
-    TeleFluInsaFLuProjectTable,
-    TeleFluReferenceTable,
-)
-
+from pathogen_identification.tables import (AddedReferenceTable,
+                                            CompoundRefereceScoreWithScreening,
+                                            CompoundReferenceScore,
+                                            ContigTable, ProjectTable,
+                                            RawReferenceTable,
+                                            RawReferenceTable_Basic,
+                                            ReferenceSourceTable, RunMainTable,
+                                            RunMappingTable, SampleTableOne,
+                                            TeleFluInsaFLuProjectTable,
+                                            TeleFluReferenceTable)
 ##########################################
 ########################################## MAKE THESE DISAPPEAR - MORE TABLES
 ########################################## FIND OR CREATE - LINK TO SAMPLES, RUNS.
 from pathogen_identification.utilities.reference_utils import (
-    filter_reference_maps_select,
-    generate_insaflu_reference,
-)
+    filter_reference_maps_select, generate_insaflu_reference)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
 from pathogen_identification.utilities.utilities_general import (
-    get_services_dir,
-    infer_run_media_dir,
-    simplify_name,
-)
+    get_services_dir, infer_run_media_dir, simplify_name)
 from pathogen_identification.utilities.utilities_pipeline import (  # ### KEEP THIS
-    Parameter_DB_Utility,
-    SoftwareTreeUtils,
-)
+    Parameter_DB_Utility, SoftwareTreeUtils)
 from pathogen_identification.utilities.utilities_views import (  # ############################################
-    EmptyRemapMain,
-    RawReferenceUtils,
-    ReportSorter,
-    RunMainWrapper,
-    final_report_best_cov_by_accid,
-    recover_assembly_contigs,
-)
+    EmptyRemapMain, RawReferenceUtils, ReportSorter, RunMainWrapper,
+    final_report_best_cov_by_accid, recover_assembly_contigs)
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
 from utils.software import Software
@@ -1245,6 +1206,88 @@ class TelefluMappingIGV(LoginRequiredMixin, generic.TemplateView):
         return context
 
 
+def get_mapping_bams_zip(request, pk):
+    """
+    Get the mapping bams zip
+    """
+    televir_bioinf = TelevirBioinf()
+
+    mapping_pk = int(pk)
+
+    # mapping_pk= int(request.GET.get("mapping_pk"))
+    teleflu_mapping = TelefluMapping.objects.get(pk=mapping_pk)
+    print(teleflu_mapping)
+    leaf_index = teleflu_mapping.leaf.index
+    teleflu_project = teleflu_mapping.teleflu_project
+    televir_project_index = teleflu_project.televir_project.pk
+
+    ### get reference
+    teleflu_reference = teleflu_project.raw_reference
+    if teleflu_reference is None:
+        return False
+
+    reference_file = teleflu_reference.file_path
+    reference_index = reference_file + ".fai"
+    if os.path.exists(reference_index) is False:
+        televir_bioinf.index_fasta(reference_file)
+    reference_file = remove_pre_static(reference_file)
+    reference_index = remove_pre_static(reference_index)
+    # televir_reference
+    teleflu_refs = teleflu_project.televir_references
+
+    igv_genome_options = {
+        "reference": reference_file,
+        "reference_index": reference_index,
+        "reference_name": teleflu_mapping.teleflu_project.raw_reference.description,
+    }
+
+    # samples
+    televir_project_samples = teleflu_mapping.mapped_samples
+    sample_dict = {}
+
+    ### get sample files
+    accid_list = [ref.accid for ref in teleflu_refs if ref.accid]
+    accid_list_simple = [simplify_name(accid) for accid in accid_list] + accid_list
+
+    for sample in televir_project_samples:
+        ref_select = filter_reference_maps_select(
+            sample, teleflu_mapping.leaf.index, accid_list_simple
+        )
+        if ref_select is None:
+            continue
+
+        sample_dict[sample.name] = {
+            "name": sample.name,
+            "bam_file": ref_select.bam_file_path,
+            "bam_file_index": ref_select.bai_file_path,
+            "vcf_file": ref_select.vcf,
+            "sample": sample,
+        }
+
+        if ref_select.fasta_file_path is None:
+            continue
+        if ref_select.fai_file_path is None:
+            continue
+
+        sample_dict["reference"] = {
+            "reference": ref_select.fasta_file_path,
+            "index": ref_select.fai_file_path,
+        }
+
+    ## zip all files in the sample_dict
+    print(sample_dict)
+    zip_file = televir_bioinf.zip_files(sample_dict, "mapping_bams")
+    # zip_file = remove_pre_static(zip_file)
+
+    response = FileResponse(
+        open(zip_file + ".zip", "rb"),
+        content_type="application/zip",
+    )
+    response["Content-Disposition"] = f'attachment; filename="{zip_file.split("/")[-1]}.zip"'
+    
+    return response
+
+
 class INSaFLUMappingIGV(LoginRequiredMixin, generic.TemplateView):
     """
     Teleflu Mapping IGV
@@ -1669,10 +1712,8 @@ class ReferencePanelManagement(LoginRequiredMixin, generic.CreateView):
 
 from django.views.generic import ListView, TemplateView
 
-from pathogen_identification.tables import (
-    ReferenceSourceFileTable,
-    TelevirReferencesTable,
-)
+from pathogen_identification.tables import (ReferenceSourceFileTable,
+                                            TelevirReferencesTable)
 
 
 class ReferenceManagementBase(TemplateView):
@@ -2885,9 +2926,6 @@ def download_file_ref(requestdst):
             )
             # Return the response value
             return response
-
-
-import zipfile
 
 
 def generate_zip_file(file_list: list, zip_file_path: str) -> str:

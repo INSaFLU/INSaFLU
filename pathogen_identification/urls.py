@@ -37,6 +37,11 @@ urlpatterns = [
         name="teleflu_workflow_igv",
     ),
     url(
+        r"teleflu_mapping_files/(?P<pk>\d+)$",
+        PIviews.get_mapping_bams_zip,
+        name="teleflu_mapping_files",
+    ),
+    url(
         r"add-teleflu-sample$",
         PIajax_views.add_teleflu_sample,
         name="add_teleflu_sample",

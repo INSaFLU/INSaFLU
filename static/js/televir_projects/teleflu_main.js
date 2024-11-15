@@ -123,6 +123,18 @@ var load_teleflu_workflows = function () {
                     workflowIgvButton.style.backgroundColor = 'transparent'; // Remove the background color
                     workflowIgvButton.setAttribute('aria-hidden', 'true');
                     mappingIgv.append(workflowIgvButton);
+
+                    // button to download a zip file with all mapping files 
+                    var downloadMappingButton = document.createElement('a');
+                    downloadMappingButton.href = 'teleflu_mapping_files/' + workflow.pk;
+                    downloadMappingButton.className = 'downloadMappingButton fa fa-download';
+                    downloadMappingButton.title = 'Download Mapping Files';
+                    downloadMappingButton.style.fontWeight = 'bold'; // Make the text bold
+                    //downloadMappingButton.style.fontSize = 'small'; // Make the text smaller
+                    // downloadMappingButton.textContent = 'Download';
+                    downloadMappingButton.style.backgroundColor = 'transparent'; // Remove the background color
+                    downloadMappingButton.setAttribute('aria-hidden', 'true');
+                    mappingIgv.append(downloadMappingButton);
                 }
 
                 if (workflow.stacked_html_exists) {

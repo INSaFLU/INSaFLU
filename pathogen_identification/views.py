@@ -1245,6 +1245,85 @@ class TelefluMappingIGV(LoginRequiredMixin, generic.TemplateView):
         return context
 
 
+def get_mapping_bams_zip(request, pk):
+    """
+    Get the mapping bams zip
+    """
+    televir_bioinf = TelevirBioinf()
+
+    mapping_pk = int(pk)
+
+    # mapping_pk= int(request.GET.get("mapping_pk"))
+    teleflu_mapping = TelefluMapping.objects.get(pk=mapping_pk)
+    print(teleflu_mapping)
+    leaf_index = teleflu_mapping.leaf.index
+    teleflu_project = teleflu_mapping.teleflu_project
+    televir_project_index = teleflu_project.televir_project.pk
+
+    ### get reference
+    teleflu_reference = teleflu_project.raw_reference
+    if teleflu_reference is None:
+        return False
+
+    reference_file = teleflu_reference.file_path
+    reference_index = reference_file + ".fai"
+    if os.path.exists(reference_index) is False:
+        televir_bioinf.index_fasta(reference_file)
+    reference_file = remove_pre_static(reference_file)
+    reference_index = remove_pre_static(reference_index)
+    # televir_reference
+    teleflu_refs = teleflu_project.televir_references
+
+    igv_genome_options = {
+        "reference": reference_file,
+        "reference_index": reference_index,
+        "reference_name": teleflu_mapping.teleflu_project.raw_reference.description,
+    }
+
+    # samples
+    televir_project_samples = teleflu_mapping.mapped_samples
+    sample_dict = {}
+
+    ### get sample files
+    accid_list = [ref.accid for ref in teleflu_refs if ref.accid]
+    accid_list_simple = [simplify_name(accid) for accid in accid_list] + accid_list
+
+    for sample in televir_project_samples:
+        ref_select = filter_reference_maps_select(
+            sample, teleflu_mapping.leaf.index, accid_list_simple
+        )
+        if ref_select is None:
+            continue
+
+        sample_dict[sample.name] = {
+            "name": sample.name,
+            "bam_file": remove_pre_static(ref_select.bam_file_path),
+            "bam_file_index": remove_pre_static(ref_select.bai_file_path),
+            "vcf_file": remove_pre_static(ref_select.vcf),
+            "sample": sample,
+        }
+
+        if ref_select.fasta_file_path is None:
+            continue
+        if ref_select.fai_file_path is None:
+            continue
+
+        igv_genome_options["reference"] = remove_pre_static(ref_select.fasta_file_path)
+        igv_genome_options["reference_index"] = remove_pre_static(
+            ref_select.fai_file_path
+        )
+
+    ## zip all files in the sample_dict
+    print(sample_dict)
+    zip_file = televir_bioinf.zip_files(sample_dict, "mapping_bams")
+    print(zip_file)
+    zip_file = remove_pre_static(zip_file)
+
+    response = HttpResponse(zip_file, content_type="application/zip")
+    # response["Content-Disposition"] = f'attachment; filename="mapping_bams.zip"'
+    return response
+
+
 class INSaFLUMappingIGV(LoginRequiredMixin, generic.TemplateView):
     """
     Teleflu Mapping IGV

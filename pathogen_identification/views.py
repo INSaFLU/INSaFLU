@@ -1323,7 +1323,6 @@ def get_mapping_bams_zip(request, pk):
     response = FileResponse(
         open(zip_file + ".zip", "rb"),
         content_type="application/zip",
-        as_attachment=True,
         filename="mapping_bams.zip",
     )
     return response

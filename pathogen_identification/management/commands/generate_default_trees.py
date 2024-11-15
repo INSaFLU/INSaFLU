@@ -20,4 +20,4 @@ class Command(BaseCommand):
         for user in User.objects.all():
             default_software.test_all_defaults(user)
 
-        default_software.remove_all_parameters(user_system)
+        # default_software.remove_all_parameters(user_system)

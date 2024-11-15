@@ -348,8 +348,9 @@ class TelevirBioinf:
             sample_dir = os.path.join(store_dir, sample)
             os.makedirs(sample_dir, exist_ok=True)
 
-            for file in files:
-                shutil.copy(file, sample_dir)
+            for _, file in files.items():
+                if os.path.exists(file):
+                    shutil.copy(file, sample_dir)
 
         shutil.make_archive(output_file, "zip", store_dir)
         # shutil.rmtree(store_dir)

@@ -1317,9 +1317,9 @@ def get_mapping_bams_zip(request, pk):
     print(sample_dict)
     zip_file = televir_bioinf.zip_files(sample_dict, "mapping_bams")
     # zip_file = remove_pre_static(zip_file)
-    print(zip_file)
 
-    return zip_file
+    response = FileResponse(open(zip_file, "rb"), content_type="application/zip")
+    return response
 
 
 class INSaFLUMappingIGV(LoginRequiredMixin, generic.TemplateView):

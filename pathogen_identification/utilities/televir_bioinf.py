@@ -348,7 +348,9 @@ class TelevirBioinf:
             sample_dir = os.path.join(store_dir, sample)
             os.makedirs(sample_dir, exist_ok=True)
 
-            for _, file in files.items():
+            for id_str, file in files.items():
+                if id_str in ["name", "sample"]:
+                    continue
                 if os.path.exists(file):
                     shutil.copy(file, sample_dir)
 

@@ -1267,9 +1267,10 @@ def get_mapping_bams_zip(request, pk):
         if ref_select.fai_file_path is None:
             continue
 
-        sample_dict["reference"] = ref_select.fasta_file_path
-        sample_dict["reference_index"] = ref_select.fai_file_path
-        
+        sample_dict["reference"] = {
+            "reference": ref_select.fasta_file_path,
+            "index": ref_select.fai_file_path,
+        }
 
     ## zip all files in the sample_dict
     print(sample_dict)

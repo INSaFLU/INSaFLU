@@ -1256,9 +1256,9 @@ def get_mapping_bams_zip(request, pk):
 
         sample_dict[sample.name] = {
             "name": sample.name,
-            "bam_file": remove_pre_static(ref_select.bam_file_path),
-            "bam_file_index": remove_pre_static(ref_select.bai_file_path),
-            "vcf_file": remove_pre_static(ref_select.vcf),
+            "bam_file": ref_select.bam_file_path,
+            "bam_file_index": ref_select.bai_file_path,
+            "vcf_file": ref_select.vcf,
             "sample": sample,
         }
 
@@ -1267,10 +1267,9 @@ def get_mapping_bams_zip(request, pk):
         if ref_select.fai_file_path is None:
             continue
 
-        igv_genome_options["reference"] = remove_pre_static(ref_select.fasta_file_path)
-        igv_genome_options["reference_index"] = remove_pre_static(
-            ref_select.fai_file_path
-        )
+        sample_dict["reference"] = ref_select.fasta_file_path
+        sample_dict["reference_index"] = ref_select.fai_file_path
+        
 
     ## zip all files in the sample_dict
     print(sample_dict)

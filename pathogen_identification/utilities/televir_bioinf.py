@@ -351,6 +351,7 @@ class TelevirBioinf:
             for id_str, file in files.items():
                 if id_str in ["name", "sample"]:
                     continue
+                file_complete_path = os.path
                 if os.path.exists(file):
                     shutil.copy(file, sample_dir)
 

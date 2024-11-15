@@ -1320,7 +1320,9 @@ def get_mapping_bams_zip(request, pk):
     zip_file = televir_bioinf.zip_files(sample_dict, "mapping_bams")
     # zip_file = remove_pre_static(zip_file)
 
-    response = FileResponse(open(zip_file, "rb"), content_type="application/zip")
+    response = FileResponse(
+        open(zip_file + ".zip", "rb"), content_type="application/zip"
+    )
     return response
 
 

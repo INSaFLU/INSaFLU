@@ -2,6 +2,7 @@ import logging
 import mimetypes
 import ntpath
 import os
+import zipfile
 from typing import Any, Dict, Optional
 
 import pandas as pd
@@ -14,6 +15,7 @@ from django.core.files.temp import NamedTemporaryFile
 from django.db import transaction
 from django.db.models import Q
 from django.http import (
+    FileResponse,
     Http404,
     HttpResponse,
     HttpResponseNotFound,
@@ -2962,9 +2964,6 @@ def download_file_ref(requestdst):
             )
             # Return the response value
             return response
-
-
-import zipfile
 
 
 def generate_zip_file(file_list: list, zip_file_path: str) -> str:

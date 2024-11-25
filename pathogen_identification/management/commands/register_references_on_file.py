@@ -184,9 +184,12 @@ class Command(BaseCommand):
                 if len(description) > 300:
                     description = description[:300]
 
-                files = accid_file_df[accid_file_df.acc == accid_str].file
+                files = list(accid_file_df[accid_file_df.acc == accid_str].file)
 
-                if sum(["virosaurus" in file for file in files]) > 0:
+                if (
+                    sum(["virosaurus" in file for file in files]) > 0
+                    and options["curate"] is False
+                ):
                     viros_file = [file for file in files if "virosaurus" in file][0]
 
                     simple_accid = accid_str.split(".")[0]
@@ -196,7 +199,6 @@ class Command(BaseCommand):
                         and keep_dict.get(simple_accid, None) is None
                     ):
 
-                        print("Ignoring accid", accid_str)
                         ref_source = ReferenceSource.objects.filter(accid=accid_str)
 
                         viro_maps = ReferenceSourceFileMap.objects.filter(
@@ -214,9 +216,6 @@ class Command(BaseCommand):
 
                         files = [file for file in files if file != viros_file]
 
-                if len(files) == 0:
-                    continue
-
                 ref_source = ReferenceSource.objects.filter(accid=accid_str)
 
                 if ref_source.exists() is False:
@@ -233,6 +232,20 @@ class Command(BaseCommand):
 
                 else:
                     ref_source = ref_source.first()
+
+                if options["curate"]:
+                    files_associated = ReferenceSourceFileMap.objects.filter(
+                        reference_source=ref_source
+                    )
+                    for file_associated in files_associated:
+                        if file_associated.reference_source_file.file not in files:
+                            file_associated.status = (
+                                ReferenceSourceFileMap.STATUS_DEPRECATED
+                            )
+                            file_associated.save()
+
+                if len(files) == 0:
+                    continue
 
                 # get reference source file
                 for file_str in files:

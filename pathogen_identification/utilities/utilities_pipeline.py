@@ -11,16 +11,18 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import Q, QuerySet
 
-from constants.constants import \
-    Televir_Directory_Constants as Televir_Directories
+from constants.constants import Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.host_library import HomoSapiens, Host
-from pathogen_identification.models import (ParameterSet, PIProject_Sample,
-                                            Projects, SoftwareTree,
-                                            SoftwareTreeNode)
-from pathogen_identification.utilities.utilities_televir_dbs import \
-    Utility_Repository
+from pathogen_identification.models import (
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
+from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -1212,6 +1214,37 @@ class Utility_Pipeline_Manager:
 
         return False
 
+    def set_software_list(self, software_list):
+        self.software_name_list = software_list
+
+    def get_software_list(self):
+        self.software_name_list = Software.objects.filter(
+            type_of_use__in=Software.TELEVIR_GLOBAL_TYPES,
+        ).values_list("name", flat=True)
+
+    ##############################
+    ##############################
+    # Software DBs
+    def get_software_dbs_if_exist(
+        self, software_name: str, filters: List[tuple] = []
+    ) -> pd.DataFrame:
+        fields = self.utility_repository.select_explicit_statement(
+            "software", "name", software_name.lower(), filters=filters
+        )
+
+        try:
+            fields = pd.read_sql(fields, self.utility_repository.engine)
+            fields = fields.drop_duplicates(subset=["database"])
+
+            return fields
+        except Exception as e:
+            self.logger.error(
+                f"failed to fail to pandas read_sql {self.utility_repository.engine} software table for {software_name}. Error: {e}"
+            )
+            return pd.DataFrame(
+                columns=["name", "path", "database", "installed", "env_path"]
+            )
+
     def check_software_db_available(self, software_name: str) -> bool:
         """
         Check if a software is installed
@@ -1220,14 +1253,6 @@ class Utility_Pipeline_Manager:
         return self.utility_repository.check_exists(
             "software", "name", software_name.lower()
         )
-
-    def set_software_list(self, software_list):
-        self.software_name_list = software_list
-
-    def get_software_list(self):
-        self.software_name_list = Software.objects.filter(
-            type_of_use__in=Software.TELEVIR_GLOBAL_TYPES,
-        ).values_list("name", flat=True)
 
     def get_software_db_dict(self):
         software_list = self.utility_repository.get_list_unique_field(
@@ -1240,7 +1265,6 @@ class Utility_Pipeline_Manager:
             .tolist()
             for software in software_list
         }
-
 
     def get_host_dbs(self):
 
@@ -1288,6 +1312,9 @@ class Utility_Pipeline_Manager:
 
         self.host_dbs = hosts_dbs_dict
 
+    ##################################
+    ##################################
+
     def get_from_software_db_dict(self, software_name: str, empty=[]):
         possibilities = [software_name, software_name.lower()]
         if "_" in software_name:
@@ -1327,26 +1354,6 @@ class Utility_Pipeline_Manager:
                 )
 
         return empty
-
-    def get_software_dbs_if_exist(
-        self, software_name: str, filters: List[tuple] = []
-    ) -> pd.DataFrame:
-        fields = self.utility_repository.select_explicit_statement(
-            "software", "name", software_name.lower(), filters=filters
-        )
-
-        try:
-            fields = pd.read_sql(fields, self.utility_repository.engine)
-            fields = fields.drop_duplicates(subset=["database"])
-
-            return fields
-        except Exception as e:
-            self.logger.error(
-                f"failed to fail to pandas read_sql {self.utility_repository.engine} software table for {software_name}. Error: {e}"
-            )
-            return pd.DataFrame(
-                columns=["name", "path", "database", "installed", "env_path"]
-            )
 
     def generate_argument_combinations(
         self, pipeline_software_dt: pd.DataFrame
@@ -2433,18 +2440,12 @@ class Parameter_DB_Utility:
 class Utils_Manager:
     """Combines Utility classes to create a manager for the pipeline."""
 
-    utilities_repository: Utility_Repository
     parameter_util: Parameter_DB_Utility
     utility_manager: Utility_Pipeline_Manager
 
     def __init__(self):
         ###
         self.parameter_util = Parameter_DB_Utility()
-
-        self.utility_repository = Utility_Repository(
-            db_path=Televir_Directories.docker_app_directory,
-            install_type="docker",
-        )
 
         self.utility_technologies = self.parameter_util.get_technologies_available()
         self.utility_manager = Utility_Pipeline_Manager()
@@ -2454,6 +2455,14 @@ class Utils_Manager:
             self.logger.handlers.clear()
 
         self.logger.info("Utils_Manager initialized")
+
+    def dump_tables(self, logdir):
+        utility_repository = Utility_Repository(
+            db_path=Televir_Directories.docker_app_directory,
+            install_type="docker",
+        )
+
+        utility_repository.dump_tables(logdir)
 
     def get_leaf_parameters(self, parameter_leaf: SoftwareTreeNode) -> pd.DataFrame:
         """ """

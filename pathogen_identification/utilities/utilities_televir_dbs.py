@@ -48,7 +48,7 @@ class Utility_Repository:
         self.setup_engine(install_type)
 
         # self.connection = self.engine.connect()
-        # self.metadata = MetaData()
+        self.metadata = MetaData()
         # self.create_tables()
 
     def setup_engine(self, install_type):

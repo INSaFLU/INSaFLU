@@ -723,7 +723,7 @@ class run_deSamba(Classifier_init):
 class run_kraken2(Classifier_init):
     method_name = "kraken2"
     report_suffix = ".tsv"
-    full_report_suffix = ".kraken2"
+    full_report_suffix = ".tsv"
 
     def __init__(
         self,
@@ -818,7 +818,7 @@ class run_kraken2(Classifier_init):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
         report = pd.read_csv(
-            self.report_path, sep="\t", header=None, usecols=[0, 1, 2, 3], comment="@"
+            report_path, sep="\t", header=None, usecols=[0, 1, 2, 3], comment="@"
         ).rename(columns={0: "status", 1: "qseqid", 2: "taxid", 3: "length"})
         report = report[report.status != "U"][
             ["qseqid", "taxid", "length"]

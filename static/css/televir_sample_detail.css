@@ -302,10 +302,25 @@ max-height: 500px; /* Adjust the value to the desired height */
 
 .showSecondaryRows {
     float: left;
+    background-color: transparent;
+    border: none;
+}
+
+button.showSecondaryRows:focus {
+    outline: none;
+}
+
+.toggle {
+    border: none;
+}
+
+.toggle-icon {
+    color: #007bff;
+    font-size: 21px;
 }
 
 .description-column {
-    max-width: 130px; /* Adjust this value to set the maximum width of the column */
+    max-width: 230px; /* Adjust this value to set the maximum width of the column */
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

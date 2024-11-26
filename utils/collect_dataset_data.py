@@ -122,7 +122,7 @@ class CollectExtraDatasetData(object):
         except Exception as e:
             ## finished with error
             process_SGE.set_process_controler(user, process_controler.get_name_dataset(dataset), ProcessControler.FLAG_ERROR)
-            print(e)
+            self.logger.error(e)
             return
         
         ## seal the tag        
@@ -151,8 +151,7 @@ class CollectExtraDatasetData(object):
         try:
             count = 0
             start = time.time()
-            self.logger.info("COLLECT_EXTRA_FILES: Start")
-            
+            self.logger.info("COLLECT_EXTRA_FILES: Start")  
             ## calculate the max sample label size of the samples that belong to this dataset
             ## used in MSA viewer 
             #b_calculate_again = True
@@ -161,22 +160,20 @@ class CollectExtraDatasetData(object):
             #count += 1
             #start = time.time()
 
-            ## collect all consensus files for a dataset
+            ## collect all consensus files for a dataset             
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_all_consensus, dataset)
             self.logger.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
             count += 1
-            start = time.time()
-
+            start = time.time()          
             ## collect sample table with plus type and subtype, mixed infection, equal to upload table
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_CSV, dataset)
-            self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_TSV, dataset)      
-            self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV, dataset)    
+            self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_TSV, dataset)                  
+            self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV, dataset)               
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_CSV, dataset)
             ## Important, this need to be after DATASET_FILE_NAME_RESULT_NEXTSTRAIN_CSV
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_json, dataset)
             self.logger.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
             count += 1 
-
             start = time.time()
             #self.calculate_global_files(Dataset.DATASET_FILE_NAME_nextstrain_default_build, dataset)
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_nextstrain_auspice_zip, dataset)
@@ -222,12 +219,11 @@ class CollectExtraDatasetData(object):
         parameters_list = Parameter.objects.filter(dataset=dataset)
         if len(list(parameters_list)) == 1:
             build = list(parameters_list)[0].parameter
-         
         out_file = None
         out_file_file_system = None
         if (type_file == Dataset.DATASET_FILE_NAME_RESULT_CSV):
             ## samples csv
-            out_file = self.collect_sample_table(dataset, Constants.SEPARATOR_COMMA, CollectExtraDatasetData.DATASET_LIST_list, build)
+            out_file = self.collect_sample_table(dataset, Constants.SEPARATOR_COMMA, CollectExtraDatasetData.DATASET_LIST_list, build)      
             out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, type_file)
         elif (type_file == Dataset.DATASET_FILE_NAME_RESULT_TSV):
             ## samples tsv
@@ -236,7 +232,9 @@ class CollectExtraDatasetData(object):
         elif (type_file == Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV):
             ## samples tsv
             out_file = self.collect_nextstrain_table(dataset, Constants.SEPARATOR_TAB, build)
+            print("outfile:" + str(out_file))
             out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, type_file)
+            print("outfilesystem:" + str(out_file_file_system))
         elif (type_file == Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_CSV):
             ## samples csv
             out_file = self.collect_nextstrain_table(dataset, Constants.SEPARATOR_COMMA, build)
@@ -441,8 +439,8 @@ class CollectExtraDatasetData(object):
                                 best_matches[sample] = float(entry_dic['Identity'])               
                 sample_list = best_matches.keys()
             except Exception as e:
-                print("Welp... Could not run abricate")
-                print(e)
+                self.logger.error("Welp... Could not run abricate")
+                self.logger.error(e)
 
         # Since there can be only one sequence per sample, get back sample names
         # unless there are repeated names, in which case, add extra number...
@@ -546,6 +544,16 @@ class CollectExtraDatasetData(object):
             tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_avianflu(alignments=sequences_file, metadata=metadata_file, strain='h5n1', gene='na')   
         elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2):
             tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_avianflu(alignments=sequences_file, metadata=metadata_file, strain='h5n1', gene='pb2')                           
+        elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb1):
+            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_avianflu(alignments=sequences_file, metadata=metadata_file, strain='h5n1', gene='pb1')   
+        elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pa):
+            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_avianflu(alignments=sequences_file, metadata=metadata_file, strain='h5n1', gene='pa')                                                               
+        elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_np):
+            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_avianflu(alignments=sequences_file, metadata=metadata_file, strain='h5n1', gene='np')                                       
+        elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_mp):
+            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_avianflu(alignments=sequences_file, metadata=metadata_file, strain='h5n1', gene='mp')                                       
+        elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns):
+            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_avianflu(alignments=sequences_file, metadata=metadata_file, strain='h5n1', gene='ns')                                       
         elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a):
             tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_rsv(alignments=sequences_file, metadata=metadata_file, type='a')
         elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b):
@@ -728,7 +736,7 @@ class CollectExtraDatasetData(object):
             
             ## read metadata from file
             if not dataset_consensus.project_sample is None:
-
+                #print("Need to do metadata for project-base consensus: {}".format(dataset_consensus.project_sample))
                 ## test if already processed
                 if dataset_consensus.project_sample.project.pk in dt_out_id_project:
                     row = dt_out_id_project[dataset_consensus.project_sample.project.pk].get(dataset_consensus.project_sample.sample.name, None)

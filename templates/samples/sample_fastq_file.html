@@ -40,11 +40,21 @@
 	                    	<a href="{% url 'sample-upload-fastq' %}" data-title="Load fastq.gz files to match with samples added by a (csv/tsv) sample file" 
 	                    		class="btn btn-small btn-primary dark {% if disable_upload_files %} disabled {% endif %}" >
 	                    		<span class="hidden-phone"><i class="fa fa-upload"></i> Upload fastq.gz files</span></a>
-	                    	<a href="#id_remove_all_modal" data-title=" {{message_remove_files}} " 
+							<!-- 
+							<a href="#id_remove_all_modal" data-title=" {{message_remove_files}} " 
 	                    		class="btn btn-small btn-primary dark {% if disable_remove_all_files %} disabled {% endif %}"
 	                    		data-toggle="modal">
 	                    		<span class="hidden-phone"><i class="fa fa-trash"></i> Remove all files not processed</span></a>
-	                    		
+							-->
+							{% if not disable_remove_all_files %}
+	                    		<a href="#id_remove_all_modal" data-title=" {{message_remove_files}} "
+	                    			class="btn btn-small btn-primary dark" data-toggle="modal">
+	                    			<span class="hidden-phone"><i class="fa fa-trash"></i> Remove all unattached files </span></a>								
+								<a href="#id_relink_modal" data-title=" {{message_relink}} "
+	                    			class="btn btn-small btn-primary dark" data-toggle="modal">
+	                    			<span class="hidden-phone"><i class="fa fa-trash"></i> Try to relink unattached files </span></a>											
+							{% endif %}
+
 	                        <form id="form_samples_fastq_id" method="get" class="form-inline form-search pull-right">
 	                          {% csrf_token %}
 	                           <div class="form-check">
@@ -164,6 +174,34 @@
  		</div>
 	</div>
 	
+	<!-- The Relink modal -->
+	<div class="modal fade" id="id_relink_modal" >
+		<div class="modal-dialog">
+			<div class="modal-content">
+   
+  					<!-- Modal Header -->
+  					<div class="modal-header alert alert-warning">
+    					<h4 class="modal-title-relink">Retry Linking files</h4>
+    					<button type="button" class="close" data-dismiss="modal">&times;</button>
+  					</div>
+  
+  					<!-- Modal body -->
+  					<div class="modal-body mx-auto mw-100">
+  						<div id="id-modal-body-relink" remove-single-value-url="{% url 'relink_uploaded_files' %}">
+  							<label id="id-label-relink" class="col-form-label">{{message_relink}}</label>
+   						</div>
+  					</div>
+  					<!-- Modal footer -->
+  					<div class="modal-footer" id="id-modal-footer-relink">
+    					<button id="id-relink-button" type="button" class="btn btn-primary" data-dismiss="modal">Relink</button>
+    					<button type="button" class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">Cancel</button>
+  					</div>
+			</div>
+ 		</div>
+	</div>
+
+
+
 {% endblock content %}
 
 

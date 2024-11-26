@@ -56,32 +56,40 @@ def reverse_dict_of_lists(dict_of_lists: dict) -> dict:
     return {value: key for key, values in dict_of_lists.items() for value in values}
 
 
-def readname_from_fasta(fastafile) -> list:
-    """
-    Read in fasta file and return list of read names
-    """
-    read_names = []
-    with open(fastafile) as f:
-        for line in f:
-            if line[0] == ">":
-                read_names.append(line[1:].strip())
-    return read_names
-
-
 def simplify_name(name: str):
     """simplify sample name"""
-    return name.replace(".", "_").replace(";", "_").replace(":", "_").replace("|", "_")
+
+    if not name:
+        return "NA"
+
+    chars_to_replace = [
+        ".",
+        ";",
+        ":",
+        "|",
+        "/",
+        " ",
+        "[",
+        "]",
+        "-",
+        "(",
+        ")",
+        ",",
+        "^",
+        "~",
+    ]
+    for char in chars_to_replace:
+        name = name.replace(char, "_")
+
+    return name
 
 
 def simplify_name_lower(name: str):
     """simplify sample name"""
-    return (
-        name.replace("_", "_")
-        .replace("-", "_")
-        .replace(" ", "_")
-        .replace(".", "_")
-        .lower()
-    )
+
+    name = simplify_name(name)
+
+    return name.lower()
 
 
 def simplify_accid(accid):

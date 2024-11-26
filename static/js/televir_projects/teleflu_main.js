@@ -22,8 +22,6 @@ function showParametersHover(element) {
         });    
         parametersContainer.style.display = 'none';
     }
-
-
 }
 
 function showParameters(element) {
@@ -85,17 +83,22 @@ var load_teleflu_workflows = function () {
                 // mapping summary: mapping fail / mapping success / total samples
                 var workflowMapped = $('<span>').addClass('workflow-mapped').text(workflow.mapped_fail + ' / '  + workflow.mapped_success + ' / ' + data.project_nsamples).attr('title', 'Mapping Fail / Mapping Success / Total Samples');
                 var workflowButton = $('<button>').attr('type', 'button').addClass('workflow-summary btn btn-primary').attr('node', workflow.node);
-                workflowButton.append('<i class="fa fa-list-alt" aria-hidden="true"></i>'); // Add an icon to the button
+                workflowButton.append('<i class="fa fa-list-alt large-icon" aria-hidden="true"></i>'); // Add an icon to the button
                 
 
 
                 var mapSamplesButton = $('<button>').attr('workflow', workflow.node).attr('workflow-id', workflow.pk).attr('type', 'button').addClass('mapSamplesButton btn btn-primary').attr('data-toggle', 'modal').attr('data-target', '#id_map_workflow_modal').text('Map Samples');
+                
+                mapSamplesButton.prop('disabled', true);
 
-                if (workflow.left_to_map) {
+                if (workflow.left_to_map == true) {
                     mapSamplesButton.prop('disabled', false);
-                } else {
+                }
+                
+                if (workflow.running_or_queued == true) {
                     mapSamplesButton.prop('disabled', true);
                 }
+                
                 workflowInfo.append(workflowMapped, workflowButton, mapSamplesButton);
     
                 var mappingIgv = $('<div>').addClass('mapping-igv');
@@ -120,6 +123,18 @@ var load_teleflu_workflows = function () {
                     workflowIgvButton.style.backgroundColor = 'transparent'; // Remove the background color
                     workflowIgvButton.setAttribute('aria-hidden', 'true');
                     mappingIgv.append(workflowIgvButton);
+
+                    // button to download a zip file with all mapping files 
+                    var downloadMappingButton = document.createElement('a');
+                    downloadMappingButton.href = 'teleflu_mapping_files/' + workflow.pk;
+                    downloadMappingButton.className = 'downloadMappingButton fa fa-download';
+                    downloadMappingButton.title = 'Download Mapping Files';
+                    downloadMappingButton.style.fontWeight = 'bold'; // Make the text bold
+                    //downloadMappingButton.style.fontSize = 'small'; // Make the text smaller
+                    // downloadMappingButton.textContent = 'Download';
+                    downloadMappingButton.style.backgroundColor = 'transparent'; // Remove the background color
+                    downloadMappingButton.setAttribute('aria-hidden', 'true');
+                    mappingIgv.append(downloadMappingButton);
                 }
 
                 if (workflow.stacked_html_exists) {
@@ -128,10 +143,20 @@ var load_teleflu_workflows = function () {
                     mappingIgv.append(stackSamplesVariantIgv);
                     mappingIgv.append(stackSamplesVCF);
                 }
-    
+
+
+
     
                 workflowContainerAction.append(workflowTitle, stepContainer, workflowInfo, mappingIgv);
-
+                if (workflow.running_or_queued == true) {
+                    var spinnerContainer = $('<div class="spinner-container"></div>');
+                    // Create the spinner icon
+                    var spinner = $('<i id="workflow-container-spinner" class="fa fa-spin fa-circle-o-notch"></i>');
+                    // Append the spinner to the div
+                    spinnerContainer.append(spinner);
+                    // Append the div to the workflow container
+                    workflowContainerAction.append(spinnerContainer);
+                }
                 /// Summary List
 
                 var sampleSummary = workflow.sample_summary;
@@ -144,7 +169,7 @@ var load_teleflu_workflows = function () {
 
                 // Create header row
                 var headerRow = document.createElement('tr');
-                var headers = ['Sample', 'Mapped', 'Success', 'Coverage', 'Depth', 'Mapped Reads', 'Start ::', 'Mapped ::', 'Error Rate'];
+                var headers = ['Sample', 'Mapped', 'Success', 'Coverage', 'Windows Covered', 'Depth', 'Mapped Reads', 'Start ::', 'Mapped ::', 'Error Rate'];
 
                 headers.forEach(function(header) {
                     var th = document.createElement('th');
@@ -165,13 +190,15 @@ var load_teleflu_workflows = function () {
                     var mappedIndicator = sampleSummary[sample].mapped ? '<span style="color: green;">&#x2714;</span>' : '<span style="color: red;">&#x2718;</span>';
                     var successIndicator = sampleSummary[sample].success ? '<span style="color: green;">&#x2714;</span>' : '<span style="color: red;">&#x2718;</span>';
                     var coverageIndicator = sampleSummary[sample].coverage;
+                    var windowsCoveredIndicator = sampleSummary[sample].windows_covered;
                     var depthIndicator = sampleSummary[sample].depth;
                     var mappedReadsIndicator = sampleSummary[sample].mapped_reads;
                     var start_proportion = sampleSummary[sample].start_prop;
                     var mapped_proportion = sampleSummary[sample].mapped_prop;
                     var error_rate = sampleSummary[sample].error_rate;
 
-                    var indicatorValues = [mappedIndicator, successIndicator, coverageIndicator, depthIndicator, mappedReadsIndicator, start_proportion, mapped_proportion, error_rate];
+                    var indicatorValues = [mappedIndicator, successIndicator, coverageIndicator, windowsCoveredIndicator,
+                        depthIndicator, mappedReadsIndicator, start_proportion, mapped_proportion, error_rate];
 
                     indicatorValues.forEach(function(value) {
                         var cell = document.createElement('td');
@@ -183,6 +210,19 @@ var load_teleflu_workflows = function () {
                 }
 
                 summaryList.appendChild(table);
+                
+                // Create and append the download button
+                var downloadBtn = document.createElement('button');
+                downloadBtn.innerHTML = 'Download TSV';
+                downloadBtn.className = 'download-tsv-btn';
+                downloadBtn.onclick = function() {
+                    var tsvData = generateTSVData(workflow.sample_summary);
+                    downloadTSV('summary-table.tsv', tsvData);
+                };
+
+                // Assuming 'summaryList' is the parent element where you want to append the button
+                summaryList.appendChild(downloadBtn);
+                //summaryList.style.display = 'block'; // Make sure the list (and button) is visible
                 
                 workflowContainerMain.append(workflowContainerAction);
     
@@ -214,12 +254,9 @@ var load_teleflu_workflows = function () {
             $('.stack-deploy').click(function() {
                 var project_id = $('.workflow-main').attr('project_id');
                 var workflow_id = $(this).attr('workflow-id');
-                var url = $(this).attr('url');
-                console.log(workflow);
-                console.log(project_id);
-                console.log(workflow);
-                console.log(csrf);
-    
+                var url = $('#open-modal-button').attr('url-stack');
+                var csrf = $('#open-modal-button').attr('csrf');
+
                 $.ajax({
                     url: url,
                     type: 'POST',
@@ -251,6 +288,47 @@ var load_teleflu_workflows = function () {
     });
 };
 
+// Assuming this code is added at the end of your existing script
+
+// Function to generate TSV data
+function generateTSVData(sampleSummary) {
+    var headers = ['Sample', 'Reference', 'Leaf', 'Mapped', 'Success', 'Coverage', 'Windows Covered', 'Depth', 'Mapped Reads', 'Start ::', 'Mapped ::', 'Error Rate'];
+    var tsvContent = headers.join('\t') + '\n'; // Header row
+
+    for (var sample in sampleSummary) {
+        var rowData = [
+            sample,
+            sampleSummary[sample].reference,
+            sampleSummary[sample].leaf,
+            sampleSummary[sample].mapped ? 'Yes' : 'No',
+            sampleSummary[sample].success ? 'Yes' : 'No',
+            sampleSummary[sample].coverage,
+            sampleSummary[sample].windows_covered,
+            sampleSummary[sample].depth,
+            sampleSummary[sample].mapped_reads,
+            sampleSummary[sample].start_prop,
+            sampleSummary[sample].mapped_prop,
+            sampleSummary[sample].error_rate
+        ];
+        tsvContent += rowData.join('\t') + '\n'; // Add row data
+    }
+
+    return tsvContent;
+}
+
+// Function to download TSV file
+function downloadTSV(filename, text) {
+    var element = document.createElement('a');
+    element.setAttribute('href', 'data:text/tab-separated-values;charset=utf-8,' + encodeURIComponent(text));
+    element.setAttribute('download', filename);
+
+    element.style.display = 'none';
+    document.body.appendChild(element);
+
+    element.click();
+
+    document.body.removeChild(element);
+}
 
 
 var addToProject = function (workflow, project_id) {
@@ -284,8 +362,9 @@ var buttons_background = function () {
 
     $("#id-insaflu-button").click(function () {
         var url = $(this).attr('utl');
-        var project_id = $('.workflow-main').attr('project_id');
-        var csrf = $('.workflow-main').attr('csrf');
+        var project_id = $('#id-insaflu-button').attr('project-id');
+        var csrf = $('#id-insaflu-button').attr('csrf');
+
         var data = {
             'project_id': project_id,
             'csrfmiddlewaretoken': csrf,
@@ -310,7 +389,6 @@ var buttons_background = function () {
     $("#id-map-button").click(function () {
 
         var workflow = $(this).attr('workflow');
-        console.log(workflow);
         var url = $(this).attr('utl');
         var project_id = $('.workflow-main').attr('project_id');
         var csrf = $('.workflow-main').attr('csrf');

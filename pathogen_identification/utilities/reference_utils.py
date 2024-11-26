@@ -10,20 +10,18 @@ from django.contrib.auth.models import User
 from django.core.files.temp import NamedTemporaryFile
 from django.db.models import Q
 
-from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
+from constants.constants import Constants, FileExtensions, FileType, TypePath
 from constants.software_names import SoftwareNames
 from constants.televir_directories import Televir_Directory_Constants
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
 from managing_files.models import Reference
-from pathogen_identification.models import (
-    ParameterSet,
-    PIProject_Sample,
-    RawReference,
-    ReferenceMap_Main,
-    ReferenceSourceFileMap,
-    TelefluMapping,
-)
+from pathogen_identification.models import (MetaReference, ParameterSet,
+                                            PIProject_Sample, RawReference,
+                                            RawReferenceMap, ReferenceMap_Main,
+                                            ReferenceSourceFileMap,
+                                            TelefluMapping, TeleFluProject,
+                                            TeleFluSample)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
 from pathogen_identification.utilities.utilities_general import simplify_name
 from utils.software import Software
@@ -146,12 +144,12 @@ def process_fasta(
 
 def extract_file(accid):
     """ "
-    This function takes the accid and returns the fasta file"""
+    This function takes the accid and returns the fasta file
+    Always replace accid_in_file with the accid - formats are specific to source files virosaurus and kraken2.
+    """
 
     utils = Utils()
     televir_bioinf = TelevirBioinf()
-
-    fasta_directory = Televir_Directory_Constants.ref_fasta_directory
 
     references = ReferenceSourceFileMap.objects.filter(reference_source__accid=accid)
 
@@ -160,14 +158,19 @@ def extract_file(accid):
         description_simple = description_to_name(description)
         tmp_fasta = utils.get_temp_file(description_simple, ".fasta")
 
-        print(f"Extracting {accid} to {tmp_fasta}")
-
         source_file = reference.reference_source_file.filepath
 
-        print(f"source_file: {source_file}")
+        accid_in_file = reference.accid_in_file
 
-        extracted = televir_bioinf.extract_reference(source_file, accid, tmp_fasta)
+        extracted = televir_bioinf.extract_reference(
+            source_file, accid_in_file, tmp_fasta
+        )
         if extracted:
+            ## replace accid_in_file with the accid
+            televir_bioinf.replace_in_file(
+                tmp_fasta, accid_in_file, accid, starts_with=">"
+            )
+
             return tmp_fasta
         else:
             if os.path.exists(tmp_fasta):
@@ -176,7 +179,8 @@ def extract_file(accid):
 
 def merge_multiple_refs(references: List[RawReference], output_prefix: str):
     """
-    This function takes a list of references and creates a merged fasta file
+    This function takes a list of references and creates a merged fasta file.
+
     """
     merged_fasta = NamedTemporaryFile(
         prefix=output_prefix, suffix=".fasta", delete=False
@@ -184,6 +188,8 @@ def merge_multiple_refs(references: List[RawReference], output_prefix: str):
 
     for reference in references:
         fasta_file = extract_file(reference.accid)
+        if fasta_file is None:
+            continue
         process_fasta(fasta_file)
         with open(fasta_file, "r") as reference_fasta:
             merged_fasta.write(reference_fasta.read().encode())
@@ -192,13 +198,6 @@ def merge_multiple_refs(references: List[RawReference], output_prefix: str):
     merged_fasta.close()
 
     return merged_fasta.name
-
-
-from pathogen_identification.models import (
-    MetaReference,
-    RawReferenceMap,
-    TeleFluProject,
-)
 
 
 def check_metaReference_exists(references: List[RawReference]):
@@ -395,43 +394,19 @@ def check_user_reference_exists(description, accid, user_id):
     return False
 
 
-def check_reference_exists(description, accid):
+def check_reference_exists(accid, user_id):
 
-    description_clean = description_to_name(description)
-
-    query_set = Reference.objects.filter(is_obsolete=False, is_deleted=False).order_by(
-        "-name"
-    )
+    query_set = Reference.objects.filter(
+        is_obsolete=False, is_deleted=False, owner__id=user_id
+    ).order_by("-name")
 
     if query_set.filter(
-        Q(name__icontains=description_clean)
-        | Q(reference_genbank_name__icontains=accid)
+        Q(reference_genbank_name__icontains=accid)
         | Q(reference_fasta_name__icontains=accid)
     ).exists():
         return True
 
     return False
-
-
-def delete_reference(raw_reference_id, user_id):
-    raw_ref = RawReference.objects.get(id=raw_reference_id)
-
-    description = raw_ref.description
-    description_clean = description_to_name(description)
-    accid = raw_ref.accid
-
-    query_set = Reference.objects.filter(
-        owner__id=user_id, is_obsolete=False, is_deleted=False
-    ).order_by("-name")
-
-    existing = query_set.filter(
-        Q(name__icontains=description_clean)
-        | Q(reference_genbank_name__icontains=accid)
-        | Q(reference_fasta_name__icontains=accid)
-    )
-
-    if existing.exists():
-        existing.delete()
 
 
 def check_raw_reference_submitted(ref_id, user_id):
@@ -450,11 +425,11 @@ def check_raw_reference_submitted(ref_id, user_id):
 
 
 def check_file_reference_submitted(ref_id, user_id):
-    user = User.objects.get(pk=user_id)
+    # user = User.objects.get(pk=user_id)
     process_controler = ProcessControler()
 
     process = ProcessControler.objects.filter(
-        owner__id=user.pk,
+        owner__id=user_id,
         name=process_controler.get_name_file_televir_teleflu_ref_create(
             ref_id=ref_id,
         ),
@@ -477,6 +452,8 @@ def raw_reference_to_insaflu(raw_reference_id: int, user_id: int):
     reference_fasta = extract_file(accid)
 
     name = description_to_name(raw_reference.description)
+    accid_simple = simplify_name(accid)
+    name = f"{accid_simple}_{name}"
     final_fasta_name = fasta_from_raw_reference(accid=accid, description=description)
 
     if reference_fasta is None:
@@ -501,6 +478,8 @@ def file_reference_to_insaflu(source_reference_id: int, user_id: int):
     reference_fasta = extract_file(accid)
 
     name = description_to_name(description)
+    accid_simple = simplify_name(accid)
+    name = f"{accid_simple}_{name}"
     final_fasta_name = fasta_from_raw_reference(accid=accid, description=description)
 
     if reference_fasta is None:
@@ -704,7 +683,7 @@ def create_teleflu_igv_report(teleflu_project_pk: int) -> bool:
 
     os.makedirs(teleflu_project.project_vcf_directory, exist_ok=True)
 
-    merged_success = televir_bioinf.merge_vcf_files(vcf_files, group_vcf)
+    _ = televir_bioinf.merge_vcf_files(vcf_files, group_vcf)
 
     try:
 
@@ -759,31 +738,28 @@ def filter_reference_maps_select(
     return None
 
 
-from pathogen_identification.models import TeleFluSample
-
-
 def create_televir_igv_report(teleflu_project_pk: int, leaf_index: int) -> bool:
 
     teleflu_project = TeleFluProject.objects.get(pk=teleflu_project_pk)
-    teleflu_mapping = TelefluMapping.objects.get(
-        teleflu_project=teleflu_project, leaf__index=leaf_index
-    )
-
-    print("teleflu_mapping", teleflu_mapping)
-    # reference_accid= teleflu_project.raw_reference.
-
+    try:
+        teleflu_mapping = TelefluMapping.objects.get(
+            teleflu_project=teleflu_project, leaf__index=leaf_index
+        )
+    except TelefluMapping.DoesNotExist:
+        return False
+    except TelefluMapping.MultipleObjectsReturned:
+        teleflu_mapping = TelefluMapping.objects.filter(
+            teleflu_project=teleflu_project, leaf__index=leaf_index
+        ).first()
     ### get reference
     teleflu_reference = teleflu_project.raw_reference
-    print("reference_reference", teleflu_reference)
     if teleflu_reference is None:
         return False
 
     reference_file = teleflu_reference.file_path
-    print("reference File", reference_file)
 
     # televir_reference
     teleflu_refs = teleflu_project.televir_references
-    print("teleflu_refs", teleflu_refs)
 
     if teleflu_refs is None:
         return False
@@ -819,22 +795,19 @@ def create_televir_igv_report(teleflu_project_pk: int, leaf_index: int) -> bool:
         os.makedirs(teleflu_mapping.mapping_directory, exist_ok=True)
 
     televir_bioinf = TelevirBioinf()
-    # vcf_files = [files["vcf_file"] for sample_pk, files in sample_dict.items()]
     group_vcf = teleflu_mapping.variants_mapping_vcf
     stacked_html = teleflu_mapping.mapping_igv_report
 
     os.makedirs(teleflu_project.project_vcf_directory, exist_ok=True)
 
-    # merged_success = televir_bioinf.merge_vcf_files(vcf_files, group_vcf)
-
     try:
-        merged_success = televir_bioinf.vcf_from_bam(
+        _ = televir_bioinf.vcf_from_bam(
             [files["bam_file"] for sample_pk, files in sample_dict.items()],
             reference_file,
             group_vcf,
         )
 
-        for sample_pk, sample_info in sample_dict.items():
+        for _, sample_info in sample_dict.items():
             teleflu_sample = TeleFluSample.objects.get(
                 teleflu_project=teleflu_project,
                 televir_sample=sample_info["sample"],

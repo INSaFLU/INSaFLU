@@ -3,12 +3,13 @@ Ceated on 06/05/2022
 @author: joao santos
 """
 
-import os
 from typing import Dict, List
 
 import networkx as nx
+from django.conf import settings
 
-from fluwebvirus.settings import MEDIA_ROOT, STATIC_ROOT, STATICFILES_DIRS
+from extend_user.models import Profile
+from fluwebvirus.settings import MEDIA_ROOT, STATIC_ROOT, TelevirSetup
 from pathogen_identification.utilities.mapping_flags import (
     MapFlagProbes,
     MapFlagViruses,
@@ -26,9 +27,14 @@ class ConstantsSettings:
     televir_subdirectory = "televir_projects"
     run_files_zipped = "run.zip"
     PAGINATE_NUMBER = 10
-    TELEVIR_REFERENCE_PAGINATE_NUMBER = 20
+    TELEVIR_REFERENCE_PAGINATE_NUMBER = 15
+    test_subdirectory = "temp_objects_tests"
 
     USER_TREE_INDEX = 0
+
+    ################################### Panels
+
+    MAX_REFERENCES_PANEL = 100
 
     ################################### Pipeline steps
 
@@ -73,9 +79,9 @@ class ConstantsSettings:
     ]
 
     PIPELINE_STEPS_MAPPINGS = [
-        CS.PIPELINE_NAME_metagenomics_screening,
         CS.PIPELINE_NAME_request_mapping,
         CS.PIPELINE_NAME_map_filtering,
+        CS.PIPELINE_NAME_metagenomics_screening,
     ]
 
     PIPELINE_STEPS_GLOBAL = [
@@ -96,7 +102,17 @@ class ConstantsSettings:
 
     ################################### Max Size
 
-    MAX_LENGTH_SEQUENCE_TOTAL_REFERENCE_FASTA = 30 * 10e6
+    MAX_LENGTH_SEQUENCE_TOTAL_REFERENCE_FASTA = (
+        settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA * 10
+    )  # 30 * 10e6
+
+    #################################### Process Types
+
+    PROCESS_TYPE_DEPLOYMENT = (
+        Profile.SGE_PROCESS_dont_care
+        if TelevirSetup.CURRENT_SETUP == TelevirSetup.SETUP_DEVELOP
+        else Profile.SGE_PROCESS_televir
+    )
 
     ################################### Threads
 
@@ -157,6 +173,7 @@ class ConstantsSettings:
 
     ################################## TAXONOMY
 
+    MAX_READS_INPUT = 500000
     READ_OVERLAP_THRESHOLD = 0.9
     SHARED_READS_THRESHOLD = 0.5
 

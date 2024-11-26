@@ -77,18 +77,26 @@ $('#id-kill-all-button').on('click', function(){
   url= $('#id-modal-body-kill-all-sample').attr("remove-all-value-url");
   project_id = $('#id-kill-all-button').attr('project_id');
   token = $('#id-modal-body-kill-sample').attr('csrfmiddlewaretoken');
-  console.log(project_id);
-  console.log(url);
+
+  // get checked samples rows
+  var checkedRows_samples = [];
+  $('.select_sample-checkbox:checked').each(function () {
+      // collect ids of checked rows
+      var sample_id = $(this).attr('sample_id');
+      checkedRows_samples.push(sample_id);
+  
+  });
+
   $.ajax({
         url: url,
         type: 'POST',
         data : {
-          project_id : project_id,
+          project_id: project_id,
+          'sample_ids': checkedRows_samples,
         csrfmiddlewaretoken: token,
         }, // data sent with the post request
             
     success: function (data) {
-          console.log(data);
           if (data['is_ok']) {
             if (data['is_empty']) {
               $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
@@ -96,12 +104,12 @@ $('#id-kill-all-button').on('click', function(){
                 '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
                 '</div>');
             } else {
+              location.reload();
               /// add message with informaton
               $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
-                'Project + \'' + $('#id-kill-all-button').attr('project_name') + '\' Rybs were successfully terminated.' +
+                'Project + \'' + $('#id-kill-all-button').attr('project-name') + '\' jobs were successfully terminated.' +
                 '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
                 '</div>');
-              location.reload();
             }
           }
           else{

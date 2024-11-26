@@ -8,6 +8,7 @@
     margin-right: 10px;
 }
 
+
 .tab {
     border-radius: 3px;
     background-color: #f8f9fa;
@@ -17,16 +18,11 @@
 ul li.active {
     background-color: #007bff; /* Light, desaturated blue */
     color: white; /* Font color */
-    padding: 2px; /* Padding */
 }
 
 ul li.active a {
     background-color: #007bff; /* Light, desaturated blue */
     color: white; /* Font color */
-    padding-bottom: 10px;
-    padding-top: 10px;
-    padding-left: 3px;
-    padding-right: 3px;
 }
 
 #id_remove_modal .modal-dialog {

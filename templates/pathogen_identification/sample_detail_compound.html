@@ -74,15 +74,16 @@
                         <div class="col-sm-2 link-container">
                             {% for run in runs_pipeline %}
                             <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Workflow report {{run.parameter_set.leaf.index}} </a>
-                            <br>
+
                             {% endfor %}
                             {% for run in runs_mapping %}
                             <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Mapping report {{run.parameter_set.leaf.index}}  </a>
                             {% endfor %}
                         </div>
                         {% if graph_json %}
-                        <div class="col-sm-10">
-                                <div id="{{graph_id}}" style="width:95%;height:250px;position:center;margin-left: 8%;" class="collapsibleTree html-widget"></div>
+
+                        <div class="col-sm-9">
+                                <div id="{{graph_id}}" style="width:95%;height:{{graph_height}}px;position:center;" class="collapsibleTree html-widget"></div>
                                 <script type="application/json" data-for="{{graph_id}}">{{graph_json|safe}}</script>
                         </div>
                         <div class="col-sm-12">
@@ -93,7 +94,6 @@
                         </div>
                         {% endif %}
                     </div>
-                    
                 </div>
             </div>
         </div>
@@ -136,23 +136,29 @@
         {% if sort_performed %}
         <div id="summary" class="collapsible">
             <div class="card-block collapsible-summary" style="display: none;">
-                <div style="padding: 20px">
+                <div style="padding: 20px; padding-bottom: 0px">
                     <div class="row">
                         <div class="col-sm">
                             <p> 
                             <p> 
                                 Shared read analysis recovered <strong>{{ groups_count }} groups of references</strong>.
                             </p> 
+
+                        </div>
+                    </div>
+                </div>
+                {% if clade_heatmap_json_exists %}
+                <div style="padding: 20px; padding-top: 0px">
+                    <div class="row">
+                        <div class="col-sm">
                             <p> 
-                                The shared heatmap displays below the proportion of reads of one group (column) that are shared with another group (row).
+                                The shared heatmap displays the proportion of reads of one group (column) that are shared with another group (row).
                                 Groups are sorted by maximum coverage. If the heatmap is not visible, please re-run sorting for this sample. 
                             </p>
                         </div>
                     </div>
                 </div>
-                {% if clade_heatmap_json_exists %}
                 <div id="clade-heatmap" class="plot-container">
-                
                 </div>
                 <script>
                     createHeatmapClades('{{ clade_heatmap_json|safe }}', "clade-heatmap");
@@ -224,13 +230,13 @@
                                     {% if final_report.has_multiple %}
                                     <div class="primary-row" style= "margin-top: 2px;">
                                         <button class="showSecondaryRows" type="button" group-name="{{final_report.name}}" title="Toggle Secondary Rows">
-                                            <i class="fa fa-toggle-{{final_report.toggle}} toggle-icon"></i>
+                                            <i class="fa fa-toggle-off toggle-icon"></i>
                                         </button>                                        
                                     </div>
                                      {% else %}
                                      <div class="primary-row" style="visibility: hidden; ">
                                         <button class="showSecondaryRows" type="button" style="visibility: hidden;">
-                                            <i class="fa fa-toggle-{{final_report.toggle}} toggle-icon"></i>
+                                            <i class="fa fa-toggle-off toggle-icon"></i>
                                         </button>                                        
                                     </div>
                                     {% endif %}
@@ -284,7 +290,7 @@
                             <td data-title="Description" style="text-align: left;">
                                 {% if value.first_in_group %}
                                 {% if final_report.has_multiple %}
-                                        <i class="fa fa-first-order sort-icon"  title="Best Coverage"></i>
+                                        <i class="fa fa-empty sort-icon"  title="Best Coverage"></i>
                                 {% else %}
                                         <i class="fa fa-empty sort-icon"  title="Best Coverage"></i>
                                 
@@ -297,7 +303,7 @@
                             <td data-title="accID">
                                 <a href={{value.accid|link_ncbi}}>{{value.accid}}</a>
                             </td>
-                            <td data-title="Support">{{value.found_in}}</td>
+                            <td data-title="Support" {% if value.found_in == "M" %} class="map-only-cell" {% endif %} >{{value.found_in}}</td>                                
                             <td data-title="Cov" style="{% depth_color value.coverage max_coverage %}">
                                 {{value.coverage|round}}</td>
                             <td data-title="Depth" style="{% depth_color value.depth value.run_detail.max_depth %}">
@@ -334,7 +340,7 @@
                             {% endif %}
                         </tr>
                         <tr class="collapse-report" group-name="{{final_report.name}}">
-                        <td colspan="14">
+                        <td colspan="18">
                             <div class="table__wrapper">
                             <table class="table table-inner">
                                 <tbody>
@@ -377,7 +383,7 @@
         
                                     {% if value.coverage > 0 %}
                                     <tr class="igv_tab" id="igv_display_{{value.accid}}">
-                                        <td colspan="14" align="center">
+                                        <td colspan="18" align="center">
                                             <div class="card-block">
                                                 <div class="container-fluid">
                                                     <div class="igv-loader" id="loader_igv_{{value.accid}}"><img src="{{ spinner_url }}"/></div>

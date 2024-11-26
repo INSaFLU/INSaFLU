@@ -18,6 +18,7 @@ function toggle_check_box_all(source) {
 	else{
 		$("#id_submit_checked").attr("disabled", "disabled");
 	}
+	//console.log(checkboxes);
     
 	$.ajax({
 		url: $('#table_with_check_id').attr("set-check-box-values-url"),

@@ -1,12 +1,13 @@
 import mimetypes
 import os
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import pandas as pd
 from Bio import SeqIO
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.core.files.temp import NamedTemporaryFile
 from django.http import HttpResponse, JsonResponse
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
@@ -27,6 +28,7 @@ from pathogen_identification.models import (FinalReport, ParameterSet,
                                             RawReference, ReferenceMap_Main,
                                             ReferencePanel,
                                             ReferenceSourceFileMap, RunMain,
+                                            SoftwareTreeNode, TelefluMapping,
                                             TeleFluProject, TeleFluSample)
 from pathogen_identification.tables import ReferenceSourceTable
 from pathogen_identification.utilities.reference_utils import (
@@ -37,13 +39,15 @@ from pathogen_identification.utilities.televir_parameters import \
     TelevirParameters
 from pathogen_identification.utilities.utilities_general import \
     get_services_dir
-from pathogen_identification.utilities.utilities_pipeline import \
-    SoftwareTreeUtils
+from pathogen_identification.utilities.utilities_pipeline import (
+    SoftwareTreeUtils, Utils_Manager)
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter, SampleReferenceManager, set_control_reports)
+    RawReferenceUtils, ReportSorter, SampleReferenceManager,
+    set_control_reports)
 from pathogen_identification.views import inject__added_references
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
+from utils.software import Software
 from utils.utils import Utils
 
 
@@ -61,7 +65,7 @@ def simplify_name(name: str):
 @require_POST
 def submit_sample_metagenomics_televir(request):
     if request.is_ajax():
-        data = {"is_ok": False, "is_deployed": False}
+        data = {"is_ok": False, "is_deployed": False, "no_references": False}
 
         process_SGE = ProcessSGE()
 
@@ -74,13 +78,20 @@ def submit_sample_metagenomics_televir(request):
         software_utils = SoftwareTreeUtils(user, project, sample=sample)
         runs_to_deploy = software_utils.check_runs_to_submit_metagenomics_sample(sample)
         reference_manager = SampleReferenceManager(sample)
+        reference_utils = RawReferenceUtils(sample)
+
+        count_references = reference_utils.query_sample_compound_references_regressive()
+
+        if count_references.exists() is False:
+            data["no_references"] = True
+            return JsonResponse(data)
 
         try:
             if len(runs_to_deploy) > 0:
                 for sample, leaves_to_deploy in runs_to_deploy.items():
                     for leaf in leaves_to_deploy:
                         metagenomics_run = reference_manager.mapping_run_from_leaf(leaf)
-                        taskID = process_SGE.set_submit_televir_sample_metagenomics(
+                        _ = process_SGE.set_submit_televir_sample_metagenomics(
                             user=request.user,
                             sample_pk=sample.pk,
                             leaf_pk=leaf.pk,
@@ -116,12 +127,20 @@ def submit_sample_screening_televir(request):
         software_utils = SoftwareTreeUtils(user, project, sample=sample)
         runs_to_deploy = software_utils.check_runs_to_submit_screening_sample(sample)
 
+        reference_utils = RawReferenceUtils(sample)
+
+        count_references = reference_utils.query_sample_compound_references_regressive()
+
+        if count_references.exists() is False:
+            data["no_references"] = True
+            return JsonResponse(data)
+
         try:
             if len(runs_to_deploy) > 0:
                 for sample, leaves_to_deploy in runs_to_deploy.items():
                     for leaf in leaves_to_deploy:
                         screening_run = reference_manager.screening_run_from_leaf(leaf)
-                        taskID = process_SGE.set_submit_televir_sample_metagenomics(
+                        _ = process_SGE.set_submit_televir_sample_metagenomics(
                             user=request.user,
                             sample_pk=sample.pk,
                             leaf_pk=leaf.pk,
@@ -249,6 +268,16 @@ def deploy_remap(
                 for sample in runs_to_deploy
             }
             for sample, leaves_to_deploy in runs_to_deploy.items():
+
+                reference_utils = RawReferenceUtils(sample)
+
+                count_references = (
+                    reference_utils.query_sample_compound_references_regressive()
+                )
+
+                if count_references.exists() is False:
+                    continue
+
                 for leaf in leaves_to_deploy:
 
                     references_added = []
@@ -371,20 +400,24 @@ def submit_sample_mapping_panels(request):
     if request.is_ajax():
         process_SGE = ProcessSGE()
         user = request.user
-        data = {"is_ok": True, "is_deployed": False, "is_empty": False, "message": ""}
+        data = {
+            "is_ok": True,
+            "is_deployed": False,
+            "is_empty": False,
+            "params_empty": False,
+            "message": "",
+        }
 
         sample_id = int(request.POST["sample_id"])
         sample = PIProject_Sample.objects.get(id=int(sample_id))
-        reference_manager = SampleReferenceManager(sample)
 
         project = sample.project
         software_utils = SoftwareTreeUtils(user, project, sample=sample)
-        runs_to_deploy, workflow_deployed_dict = (
-            software_utils.check_runs_to_submit_mapping_only(sample)
-        )
+        runs_to_deploy, _ = software_utils.check_runs_to_submit_mapping_only(sample)
 
         if len(runs_to_deploy) == 0:
-            return data
+            data["params_empty"] = True
+            return JsonResponse(data)
 
         sample_panels = sample.panels_added
 
@@ -399,26 +432,12 @@ def submit_sample_mapping_panels(request):
                         if panel.is_deleted:
                             continue
 
-                        references = RawReference.objects.filter(panel=panel)
-                        run_panel_copy = reference_manager.copy_panel(panel)
-
-                        panel_mapping_run = (
-                            reference_manager.mapping_request_panel_run_from_leaf(
-                                leaf, panel_pk=run_panel_copy.pk
-                            )
-                        )
-                        for reference in references:
-                            reference.pk = None
-                            reference.run = panel_mapping_run
-                            reference.panel = run_panel_copy
-                            reference.save()
-
-                        taskID = process_SGE.set_submit_televir_sample_metagenomics(
+                        taskID = process_SGE.set_submit_televir_sample_panel_map(
                             user=request.user,
                             sample_pk=sample.pk,
                             leaf_pk=leaf.pk,
                             mapping_request=True,
-                            map_run_pk=panel_mapping_run.pk,
+                            panel_pk=panel.pk,
                         )
                         data["is_deployed"] = True
 
@@ -427,6 +446,107 @@ def submit_sample_mapping_panels(request):
             print("error")
 
             data["is_ok"] = False
+        return JsonResponse(data)
+
+
+@login_required
+@require_POST
+def submit_samples_mapping_panels(request):
+    if request.is_ajax():
+        data = {
+            "is_ok": True,
+            "is_deployed": False,
+            "is_empty": False,
+            "samples_deployed": 0,
+            "message": "",
+        }
+
+        process_SGE = ProcessSGE()
+
+        project_id = int(request.POST["project_id"])
+        project = Projects.objects.get(id=int(project_id))
+        user = request.user
+
+        project_samples = PIProject_Sample.objects.filter(project=project)
+
+        sample_ids = request.POST.getlist("sample_ids[]")
+        check_box_all_checked = request.POST.get("check_box_all_checked", False)
+        if check_box_all_checked:
+            sample_ids = []
+        else:
+            sample_ids = [int(sample_id) for sample_id in sample_ids]
+
+        if len(sample_ids) > 0:
+            project_samples = project_samples.filter(pk__in=sample_ids)
+
+        try:
+            samples_submitted = 0
+            errors = ""
+
+            for sample in project_samples:
+                reference_manager = SampleReferenceManager(sample)
+
+                software_utils = SoftwareTreeUtils(user, project, sample=sample)
+                runs_to_deploy, workflow_deployed_dict = (
+                    software_utils.check_runs_to_submit_mapping_only(sample)
+                )
+
+                if len(runs_to_deploy) == 0:
+                    continue
+
+                sample_panels = sample.panels_added
+
+                if len(sample_panels) == 0:
+                    data["is_empty"] = True
+                    continue
+
+                try:
+                    for sample, leaves_to_deploy in runs_to_deploy.items():
+                        for leaf in leaves_to_deploy:
+                            for panel in sample_panels:
+                                if panel.is_deleted:
+                                    continue
+
+                                references = RawReference.objects.filter(panel=panel)
+                                run_panel_copy = reference_manager.copy_panel(panel)
+
+                                panel_mapping_run = reference_manager.mapping_request_panel_run_from_leaf(
+                                    leaf, panel_pk=run_panel_copy.pk
+                                )
+                                for reference in references:
+                                    reference.pk = None
+                                    reference.run = panel_mapping_run
+                                    reference.panel = run_panel_copy
+                                    reference.save()
+
+                                taskID = (
+                                    process_SGE.set_submit_televir_sample_metagenomics(
+                                        user=request.user,
+                                        sample_pk=sample.pk,
+                                        leaf_pk=leaf.pk,
+                                        mapping_request=True,
+                                        map_run_pk=panel_mapping_run.pk,
+                                    )
+                                )
+                                data["is_deployed"] = True
+                                samples_submitted += 1
+
+                except Exception as e:
+                    print(e)
+                    print("error")
+
+                    data["is_ok"] = False
+                    errors += f" Error deploying sample {sample.name}"
+
+        except Exception as e:
+            print(e)
+            print("error")
+
+            data["is_ok"] = False
+            data["message"] = errors
+
+        data["message"] = f"Deployed {samples_submitted} samples. {errors}"
+
         return JsonResponse(data)
 
 
@@ -454,10 +574,8 @@ def submit_project_samples_mapping_televir(request):
             project_samples = project_samples.filter(pk__in=sample_ids)
 
         try:
-            samples_map_launched = []
             data_dump = []
             for sample in project_samples:
-                sample_id = sample.pk
                 data = deploy_remap(sample, project, [])
                 data_dump.append(data)
 
@@ -473,6 +591,30 @@ def submit_project_samples_mapping_televir(request):
             print(e)
             data["is_ok"] = False
 
+        return JsonResponse(data)
+
+
+@login_required
+@require_POST
+def get_all_samples_selected(request):
+    """
+    get all sample ids for selected samples
+    """
+    if request.is_ajax():
+        data = {"is_ok": False, "sample_ids": []}
+
+        project_id = int(request.POST["project_id"])
+        project = Projects.objects.get(id=int(project_id))
+
+        sample_ids = PIProject_Sample.objects.filter(
+            project=project, is_deleted_in_file_system=False
+        ).values_list("pk", flat=True)
+        sample_ids = [str(sample_id) for sample_id in sample_ids]
+
+        if len(sample_ids) > 0:
+            data["sample_ids"] = sample_ids
+
+        data["is_ok"] = True
         return JsonResponse(data)
 
 
@@ -500,7 +642,10 @@ def deploy_ProjectPI(request):
 
         sample_ids = request.POST.getlist("sample_ids[]")
         sample_ids = [int(sample_id) for sample_id in sample_ids]
-        if len(sample_ids) > 0:
+        check_box_all_checked = request.POST.get("check_box_all_checked", False)
+        if check_box_all_checked:
+            samples = samples.filter(is_deleted_in_file_system=False)
+        elif len(sample_ids) > 0:
             samples = samples.filter(pk__in=sample_ids)
 
         software_utils = SoftwareTreeUtils(user, project)
@@ -511,7 +656,7 @@ def deploy_ProjectPI(request):
                 runs_to_deploy = software_utils.check_runs_to_deploy_sample(sample)
 
                 if len(runs_to_deploy) > 0:
-                    for sample, leafs_to_deploy in runs_to_deploy.items():
+                    for sample, _ in runs_to_deploy.items():
                         taskID = process_SGE.set_submit_televir_sample(
                             user=user,
                             project_pk=project.pk,
@@ -550,7 +695,11 @@ def deploy_ProjectPI_runs(request):
         runs_to_deploy = software_utils.check_runs_to_deploy_project()
 
         sample_ids = request.POST.getlist("sample_ids[]")
-        sample_ids = [int(sample_id) for sample_id in sample_ids]
+        check_box_all_checked = request.POST.get("check_box_all_checked", False)
+        if check_box_all_checked:
+            sample_ids = []
+        else:
+            sample_ids = [int(sample_id) for sample_id in sample_ids]
 
         try:
             if len(runs_to_deploy) > 0:
@@ -599,42 +748,50 @@ def deploy_ProjectPI_combined_runs(request):
         )
 
         sample_ids = request.POST.getlist("sample_ids[]")
-        sample_ids = [int(sample_id) for sample_id in sample_ids]
-        if len(sample_ids) > 0:
-            samples = samples.filter(pk__in=sample_ids)
-
-        first_sample = samples.first()
-        software_utils = SoftwareTreeUtils(user, project, sample=first_sample)
-        runs_to_deploy = software_utils.check_runs_to_submit_metagenomics_sample(
-            first_sample
-        )
-
-        if len(runs_to_deploy) == 0:
-            data["is_ok"] = True
-            return JsonResponse(data)
+        check_box_all_checked = request.POST.get("check_box_all_checked", False)
+        if check_box_all_checked:
+            samples = samples.filter(is_deleted_in_file_system=False)
+        elif len(sample_ids) > 0:
+            samples = samples.filter(
+                pk__in=[int(sample_id) for sample_id in sample_ids]
+            )
 
         try:
-            if len(runs_to_deploy) > 0:
-                for sample in samples:
-                    software_utils = SoftwareTreeUtils(user, project, sample=sample)
-                    runs_to_deploy = (
-                        software_utils.check_runs_to_submit_metagenomics_sample(sample)
-                    )
-                    for sample, leaves_to_deploy in runs_to_deploy.items():
-                        reference_manager = SampleReferenceManager(sample)
-                        for leaf in leaves_to_deploy:
-                            metagenomics_run = reference_manager.mapping_run_from_leaf(
-                                leaf
-                            )
 
-                            taskID = process_SGE.set_submit_televir_sample_metagenomics(
-                                user=request.user,
-                                sample_pk=sample.pk,
-                                leaf_pk=leaf.pk,
-                                combined_analysis=True,
-                                map_run_pk=metagenomics_run.pk,
-                            )
+            samples_deployed = 0
 
+            for sample in samples:
+
+                reference_utils = RawReferenceUtils(sample)
+
+                count_references = (
+                    reference_utils.query_sample_compound_references_regressive()
+                )
+
+                if count_references.exists() is False:
+                    continue
+
+                software_utils = SoftwareTreeUtils(user, project, sample=sample)
+                runs_to_deploy = (
+                    software_utils.check_runs_to_submit_metagenomics_sample(sample)
+                )
+                for sample, leaves_to_deploy in runs_to_deploy.items():
+
+                    reference_manager = SampleReferenceManager(sample)
+                    for leaf in leaves_to_deploy:
+                        metagenomics_run = reference_manager.mapping_run_from_leaf(leaf)
+
+                        taskID = process_SGE.set_submit_televir_sample_metagenomics(
+                            user=request.user,
+                            sample_pk=sample.pk,
+                            leaf_pk=leaf.pk,
+                            combined_analysis=True,
+                            map_run_pk=metagenomics_run.pk,
+                        )
+
+                samples_deployed += 1
+
+            if samples_deployed > 0:
                 data["is_deployed"] = True
 
         except Exception as e:
@@ -785,7 +942,7 @@ def Project_explify_merge(request):
             )
             televir_reports.to_csv(report_path, sep="\t", index=False)
 
-            taskID = process_SGE.set_submit_televir_explify_merge(
+            _ = process_SGE.set_submit_televir_explify_merge(
                 user=request.user,
                 project_pk=project.pk,
                 rpip_filepath=rpip_report_path,
@@ -872,6 +1029,38 @@ def Project_explify_merge_external(request):
 
 @login_required
 @require_POST
+def Update_televir_project(request):
+    """
+    update televir project
+    """
+
+    if request.is_ajax():
+        data = {"is_ok": False, "is_deployed": False}
+
+        process_SGE = ProcessSGE()
+        user = request.user
+
+        project_id = int(request.POST["project_id"])
+        project = Projects.objects.get(id=int(project_id))
+
+        try:
+            _ = process_SGE.set_submit_update_televir_project(
+                user=request.user,
+                project_id=project.pk,
+            )
+
+            data["is_deployed"] = True
+
+        except Exception as e:
+            print(e)
+            data["is_deployed"] = False
+
+        data["is_ok"] = True
+        return JsonResponse(data)
+
+
+@login_required
+@require_POST
 def Project_explify_delete_external(request):
     """
     delete external televir report
@@ -913,7 +1102,7 @@ def kill_televir_project_sample(request):
         sample = PIProject_Sample.objects.get(id=int(sample_id))
         project = Projects.objects.get(id=int(sample.project.pk))
 
-        runs = ParameterSet.objects.filter(
+        runs_params = ParameterSet.objects.filter(
             sample=sample,
             status__in=[
                 ParameterSet.STATUS_RUNNING,
@@ -921,22 +1110,23 @@ def kill_televir_project_sample(request):
             ],
         )
 
-        for run in runs:
+        for single_run_param in runs_params:
             try:  # kill process
+
+                if single_run_param.status == ParameterSet.STATUS_RUNNING:
+                    single_run_param.delete_run_data()
+
                 process_SGE.kill_televir_process_controler_runs(
-                    user.pk, project.pk, sample.pk, run.leaf.pk
+                    user.pk, project.pk, sample.pk, single_run_param.leaf.pk
                 )
+
+                single_run_param.status = ParameterSet.STATUS_KILLED
+                single_run_param.save()
 
             except ProcessControler.DoesNotExist as e:
                 print(e)
                 print("ProcessControler.DoesNotExist")
                 pass
-
-            if run.status == ParameterSet.STATUS_RUNNING:
-                run.delete_run_data()
-
-            run.status = ParameterSet.STATUS_KILLED
-            run.save()
 
         data["is_ok"] = True
         return JsonResponse(data)
@@ -959,32 +1149,36 @@ def kill_televir_project_tree_sample(request):
         sample = PIProject_Sample.objects.get(id=int(sample_id))
         project = Projects.objects.get(id=int(sample.project.pk))
 
-        try:  # kill process
-            process_SGE.kill_televir_process_controler_samples(
-                user.pk,
-                project.pk,
-                sample.pk,
-            )
-
-        except ProcessControler.DoesNotExist as e:
-            print(e)
-            print("ProcessControler.DoesNotExist")
-            pass
-
-        runs = ParameterSet.objects.filter(
+        runs_params = ParameterSet.objects.filter(
             sample=sample,
             status__in=[
                 ParameterSet.STATUS_RUNNING,
                 ParameterSet.STATUS_QUEUED,
             ],
         )
+        killed = 0
 
-        for run in runs:
-            if run.status == ParameterSet.STATUS_RUNNING:
-                run.delete_run_data()
+        for single_run_param in runs_params:
+            try:  # kill process
 
-            run.status = ParameterSet.STATUS_KILLED
-            run.save()
+                if single_run_param.status == ParameterSet.STATUS_RUNNING:
+                    single_run_param.delete_run_data()
+
+                process_SGE.kill_televir_process_controler_samples(
+                    user.pk, project.pk, sample.pk, single_run_param.leaf.pk
+                )
+                killed += 1
+
+            except ProcessControler.DoesNotExist as e:
+                print(e)
+                print("ProcessControler.DoesNotExist")
+                pass
+
+            single_run_param.status = ParameterSet.STATUS_KILLED
+            single_run_param.save()
+
+        if killed > 0:
+            data["is_deployed"] = True
 
         data["is_ok"] = True
         return JsonResponse(data)
@@ -1005,39 +1199,50 @@ def kill_televir_project_all_sample(request):
 
         project_id = int(request.POST["project_id"])
         project = Projects.objects.get(id=int(project_id))
+        sample_ids = request.POST.getlist("sample_ids[]")
+        check_box_all_checked = request.POST.get("check_box_all_checked", False)
+        if check_box_all_checked:
+            sample_ids = []
+        else:
+            sample_ids = [int(sample_id) for sample_id in sample_ids]
 
         samples = PIProject_Sample.objects.filter(project__id=int(project_id))
 
+        if len(sample_ids) > 0:
+            samples = samples.filter(pk__in=sample_ids)
+
+        killed = 0
+
         for sample in samples:
-            try:  #
-                process_SGE.kill_televir_process_controler_samples(
-                    user.pk,
-                    project.pk,
-                    sample.pk,
-                )
 
-            except ProcessControler.DoesNotExist as e:
-                print(e)
-                print("ProcessControler.DoesNotExist")
-                pass
-
-            runs = ParameterSet.objects.filter(
+            runs_params = ParameterSet.objects.filter(
                 sample=sample,
                 status__in=[
                     ParameterSet.STATUS_RUNNING,
                     ParameterSet.STATUS_QUEUED,
                 ],
             )
+            for single_run_param in runs_params:
+                try:  # kill process
 
-            if runs.exists():
-                data["is_empty"] = False
+                    if single_run_param.status == ParameterSet.STATUS_RUNNING:
+                        single_run_param.delete_run_data()
 
-            for run in runs:
-                if run.status == ParameterSet.STATUS_RUNNING:
-                    run.delete_run_data()
+                    process_SGE.kill_televir_process_controler_samples(
+                        user.pk, project.pk, sample.pk, single_run_param.leaf.pk
+                    )
+                    killed += 1
 
-                run.status = ParameterSet.STATUS_KILLED
-                run.save()
+                except ProcessControler.DoesNotExist as e:
+                    print(e)
+                    print("ProcessControler.DoesNotExist")
+                    pass
+
+                single_run_param.status = ParameterSet.STATUS_KILLED
+                single_run_param.save()
+
+        if killed > 0:
+            data["is_empty"] = False
 
         data["is_ok"] = True
         return JsonResponse(data)
@@ -1065,9 +1270,11 @@ def sort_report_projects(request):
             for sample in samples:
                 final_reports = FinalReport.objects.filter(sample=sample)
 
-                report_sorter = ReportSorter(final_reports, report_layout_params)
+                report_sorter = ReportSorter(
+                    sample, final_reports, report_layout_params
+                )
 
-                if report_sorter.run is None:
+                if report_sorter.reports_availble is False:
                     pass
                 elif report_sorter.check_analyzed():
                     pass
@@ -1096,7 +1303,6 @@ def sort_report_sample(request):
         data = {"is_ok": False, "is_deployed": False}
         process_SGE = ProcessSGE()
         sample = PIProject_Sample.objects.get(pk=int(request.POST["sample_id"]))
-        references = request.POST.getlist("references[]")
 
         project = sample.project
         report_layout_params = TelevirParameters.get_report_layout_params(
@@ -1104,9 +1310,10 @@ def sort_report_sample(request):
         )
         try:
             final_reports = FinalReport.objects.filter(sample=sample)
-            report_sorter = ReportSorter(final_reports, report_layout_params)
 
-            if report_sorter.run is None:
+            report_sorter = ReportSorter(sample, final_reports, report_layout_params)
+
+            if report_sorter.reports_availble is False:
                 pass
             elif report_sorter.check_analyzed():
                 pass
@@ -1253,7 +1460,7 @@ def create_insaflu_reference_from_filemap(request):
                 data["exists"] = True
                 return JsonResponse(data)
             # success = create_reference(ref_id, user_id)
-            taskID = process_SGE.set_submit_file_televir_teleflu_create(user, ref_id)
+            _ = process_SGE.set_submit_file_televir_teleflu_create(user, ref_id)
 
         except Exception as e:
             print(e)
@@ -1307,7 +1514,6 @@ def inject_references(references: list, request):
     data = {}
 
     context["references_table"] = ReferenceSourceTable(references)
-    context["references_count"] = len(references)
 
     template_table_html = os.path.join(
         BASE_DIR,
@@ -1320,6 +1526,7 @@ def inject_references(references: list, request):
     rendered_table = render_to_string(template_table_html, context, request=request)
     data["my_content"] = rendered_table
     data["references_count"] = len(references)
+    data["is_empty"] = len(references) == 0
 
     return data
 
@@ -1335,6 +1542,7 @@ def create_teleflu_project(request):
 
         ref_ids = request.POST.getlist("ref_ids[]")
         sample_ids = request.POST.getlist("sample_ids[]")
+        check_box_all_checked = request.POST.get("check_box_all_checked", False)
 
         def teleflu_project_name_from_refs(ref_ids):
 
@@ -1357,10 +1565,13 @@ def create_teleflu_project(request):
 
         project_name = teleflu_project_name_from_refs(ref_ids)
 
-
         first_ref = RawReference.objects.get(pk=int(ref_ids[0]))
 
         project = first_ref.run.project
+        if check_box_all_checked:
+            sample_ids = PIProject_Sample.objects.filter(project=project).values_list(
+                "pk", flat=True
+            )
         date = datetime.now()
 
         try:
@@ -1376,7 +1587,15 @@ def create_teleflu_project(request):
                     televir_project=project,
                     name=project_name,
                     raw_reference=metareference,
+                    is_deleted=False,
                 )
+
+                data["is_ok"] = True
+                data["exists"] = True
+                data["project_id"] = teleflu_project.pk
+                data["project_name"] = teleflu_project.name
+
+                return JsonResponse(data)
 
             except TeleFluProject.DoesNotExist:
 
@@ -1404,6 +1623,99 @@ def create_teleflu_project(request):
             print(e)
             data["is_error"] = True
             return JsonResponse(data)
+
+        return JsonResponse(data)
+
+
+@login_required
+@csrf_protect
+def query_teleflu_projects(request):
+    """
+    query teleflu_projects
+    """
+    if request.is_ajax():
+        data = {
+            "is_ok": False,
+            "is_error": False,
+            "is_empty": False,
+            "teleflu_data": [],
+        }
+
+        televir_project_id = int(request.GET["project_id"])
+
+        ## TeleFlu Projects
+        try:
+            teleflu_projects = TeleFluProject.objects.filter(
+                televir_project=televir_project_id, is_deleted=False
+            ).order_by("-last_change_date")
+
+            teleflu_data = []
+            for tproj in teleflu_projects:
+
+                tproject_data = {
+                    "id": tproj.pk,
+                    "samples": tproj.nsamples,
+                    "ref_description": tproj.raw_reference.description_first,
+                    "ref_accid": tproj.raw_reference.accids_str,
+                    "ref_taxid": tproj.raw_reference.taxids_str,
+                    "insaflu_project": False if tproj.insaflu_project is None else True,
+                }
+
+                insaflu_project = tproj.insaflu_project
+                if insaflu_project is None:
+                    tproject_data["insaflu_project"] = "None"
+                else:
+                    count_not_finished = InsafluProjectSample.objects.filter(
+                        project__id=insaflu_project.id,
+                        is_deleted=False,
+                        is_error=False,
+                        is_finished=False,
+                    ).count()
+
+                    if count_not_finished == 0:
+                        tproject_data["insaflu_project"] = "Finished"
+
+                    else:
+                        tproject_data["insaflu_project"] = "Processing"
+
+                teleflu_data.append(tproject_data)
+
+        except Exception as e:
+            print(e)
+            data["is_error"] = True
+            return JsonResponse(data)
+
+        if len(teleflu_data) == 0:
+            data["is_empty"] = True
+            return JsonResponse(data)
+
+        data["teleflu_projects"] = teleflu_data
+        data["is_ok"] = True
+
+        return JsonResponse(data)
+
+
+@login_required
+@csrf_protect
+def delete_teleflu_project(request):
+    """
+    delete teleflu project
+    """
+    if request.is_ajax():
+        data = {"is_ok": False, "is_error": False}
+
+        try:
+            teleflu_project_id = int(request.POST["project_id"])
+            teleflu_project = TeleFluProject.objects.get(pk=teleflu_project_id)
+
+            teleflu_project.is_deleted = True
+            teleflu_project.save()
+
+            data["is_ok"] = True
+
+        except Exception as e:
+            print(e)
+            data["is_error"] = True
 
         return JsonResponse(data)
 
@@ -1492,8 +1804,13 @@ def add_teleflu_sample(request):
 
         sample_ids = request.POST.getlist("sample_ids[]")
         ref_id = int(request.POST["teleflu_id"])
+        check_box_all_checked = request.POST.get("check_box_all_checked", False)
 
         teleflu_project = TeleFluProject.objects.get(pk=ref_id)
+        if check_box_all_checked:
+            sample_ids = PIProject_Sample.objects.filter(
+                project=teleflu_project.televir_project
+            ).values_list("pk", flat=True)
 
         if len(sample_ids) == 0:
             data["is_empty"] = True
@@ -1527,11 +1844,6 @@ def add_teleflu_sample(request):
 
         data["is_ok"] = True
         return JsonResponse(data)
-
-
-from pathogen_identification.models import SoftwareTreeNode, TelefluMapping
-from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils, Utils_Manager)
 
 
 @login_required
@@ -1569,6 +1881,10 @@ def add_teleflu_mapping_workflow(request):
             data["is_ok"] = False
 
         return JsonResponse(data)
+
+
+############
+# TELEFLU
 
 
 def excise_paths_leaf_last(string_with_paths: str):
@@ -1655,6 +1971,7 @@ def load_teleflu_workflows(request):
             samples_mapped = mapping.mapped_samples
 
             samples_stacked = mapping.stacked_samples_televir
+            node_info["running_or_queued"] = mapping.queued_or_running_mappings_exist
             node_info["pk"] = mapping.pk
             node_info["samples_stacked"] = samples_stacked.count()
             node_info["samples_to_stack"] = samples_mapped.exclude(
@@ -1764,7 +2081,7 @@ def stack_igv_teleflu_workflow(request):
 
         try:
             teleflu_mapping = TelefluMapping.objects.get(
-                leaf__pk=mapping_id, teleflu_project__pk=teleflu_project_id
+                pk=mapping_id,
             )
 
         except TelefluMapping.DoesNotExist:
@@ -1879,6 +2196,7 @@ def remove_added_reference(request):
 
         context = inject__added_references(query_set_added_manual, request)
         data["added_references"] = context["my_content"]
+        data["is_empty"] = query_set_added_manual.count() == 0
 
         data = {"is_ok": True}
         return JsonResponse(data)
@@ -1910,14 +2228,8 @@ def deploy_televir_map(request):
         return JsonResponse(data)
 
 
-from typing import Optional
-
-from django.conf import settings
-from django.core.files.temp import NamedTemporaryFile
-
-from managing_files.models import Reference
-from pathogen_identification.models import ReferenceSourceFileMetadata
-from utils.software import Software
+#######################################################################
+####################################################################### PANELS
 
 
 def check_metadata_table_clean(metadata_table_file) -> Optional[pd.DataFrame]:
@@ -1926,9 +2238,17 @@ def check_metadata_table_clean(metadata_table_file) -> Optional[pd.DataFrame]:
     """
 
     metadata_table = metadata_table_file.read().decode("utf-8")
-    metadata_table = metadata_table.split("\n")
-    sep = os.path.splitext(metadata_table_file.name)[1]
-    sep = "\t" if sep == ".tsv" else ","
+    ### determine line terminator
+    lineterminator = "\n"
+    if "\r\n" in metadata_table:
+        lineterminator = "\r\n"
+
+    metadata_table = metadata_table.split(lineterminator)
+    file_extention = os.path.splitext(metadata_table_file.name)[1]
+
+    sep = "\t" if file_extention == ".tsv" else ","
+    # check for the line terminator
+
     metadata_table = [x.split(sep) for x in metadata_table]
     metadata_table = [x for x in metadata_table if len(x) > 1]
 
@@ -1994,6 +2314,36 @@ def check_panel_upload_clean(request):
         reference_metadata_table_file = request.FILES.get("metadata", None)
         reference_fasta_file = request.FILES.get("fasta_file", None)
 
+        try:
+            ReferenceSourceFile.objects.get(
+                file=reference_fasta_file.name, owner=request.user, is_deleted=False
+            )
+
+            data["is_error"] = True
+            data["error_message"] = "Fasta file already exists."
+            return JsonResponse(data)
+        except ReferenceSourceFile.DoesNotExist:
+            pass
+        except ReferenceSourceFile.MultipleObjectsReturned:
+            data["is_error"] = True
+            data["error_message"] = "Fasta file already exists."
+            return JsonResponse(data)
+
+        if os.path.splitext(reference_metadata_table_file.name)[1] not in [
+            ".tsv",
+            ".csv",
+        ]:
+            data["is_error"] = True
+            data["error_message"] = "Metadata file must be in tsv or csv format."
+            return JsonResponse(data)
+
+        if os.path.splitext(reference_fasta_file.name)[1] not in [".fasta", ".fa"]:
+            data["is_error"] = True
+            data["error_message"] = (
+                "Fasta file must be in fasta (.fa or .fasta) format."
+            )
+            return JsonResponse(data)
+
         reference_metadata_table = pd.DataFrame(
             columns=["accid", "taxid", "description"]
         )
@@ -2034,6 +2384,7 @@ def check_panel_upload_clean(request):
             reference_fasta_temp_file_name.flush()
             reference_fasta_temp_file_name.close()
             software.dos_2_unix(reference_fasta_temp_file_name.name)
+            data["temp_file"] = reference_fasta_temp_file_name.name
         except Exception as e:
             some_error_in_files = True
             error_message = "Error in the fasta file"
@@ -2297,19 +2648,31 @@ def add_references_to_panel(request):
     add references to panel"""
     if request.is_ajax():
         panel_id = int(request.POST.get("ref_id"))
-
         panel = ReferencePanel.objects.get(pk=panel_id)
 
         reference_ids = request.POST.getlist("reference_ids[]")
+        already_added = []
         for reference_id in reference_ids:
+            if panel.references_count >= PICS.MAX_REFERENCES_PANEL:
+                return JsonResponse(
+                    {"is_full": True, "max_references": PICS.MAX_REFERENCES_PANEL}
+                )
             try:
                 reference = ReferenceSourceFileMap.objects.get(pk=int(reference_id))
                 description = reference.description
+                if RawReference.objects.filter(
+                    accid=reference.reference_source.accid, panel=panel
+                ).exists():
+                    already_added.append(reference.reference_source.accid)
+                    continue
+
                 if description is None:
                     description = ""
+
                 if len(description) > 200:
                     description = description[:200]
-                panel_reference = RawReference.objects.create(
+
+                _ = RawReference.objects.create(
                     accid=reference.reference_source.accid,
                     taxid=reference.reference_source.taxid,
                     description=description,
@@ -2334,11 +2697,27 @@ def add_file_to_panel(request):
 
         panel = ReferencePanel.objects.get(pk=panel_id)
         file = ReferenceSourceFile.objects.get(pk=file_id)
-        refs = ReferenceSourceFileMap.objects.filter(reference_source_file=file)
+        refs = ReferenceSourceFileMap.objects.filter(
+            reference_source_file=file
+        ).distinct()
 
         try:
             for reference in refs:
-                panel_reference = RawReference.objects.create(
+                if panel.references_count >= PICS.MAX_REFERENCES_PANEL:
+                    return JsonResponse(
+                        {
+                            "is_full": True,
+                            "max_references": PICS.MAX_REFERENCES_PANEL,
+                            "is_ok": True,
+                        }
+                    )
+
+                if RawReference.objects.filter(
+                    accid=reference.reference_source.accid, panel=panel
+                ).exists():
+                    continue
+
+                RawReference.objects.create(
                     accid=reference.reference_source.accid,
                     taxid=reference.reference_source.taxid,
                     description=reference.reference_source.description,
@@ -2468,10 +2847,11 @@ def add_panels_to_project(request):
         project_id = int(request.POST.get("project_id"))
         panel_ids = request.POST.getlist("panel_ids[]")
 
-        sample = PIProject_Sample.objects.get(project__pk=project_id)
+        samples = PIProject_Sample.objects.filter(project__pk=project_id)
 
         for panel_id in panel_ids:
-            sample.add_panel(int(panel_id))
+            for sample in samples:
+                sample.add_panel(int(panel_id))
 
         return JsonResponse({"is_ok": True})
 
@@ -2537,6 +2917,7 @@ def get_sample_panel_suggestions(request):
             project_sample=None,
             is_deleted=False,
             panel_type=ReferencePanel.PANEL_TYPE_MAIN,
+            owner__in=[user, None],
         ).exclude(pk__in=panels_global_names)
 
         panel_data = [
@@ -2560,10 +2941,13 @@ def get_project_panel_suggestions(request):
     get sample panel updates"""
     if request.is_ajax():
 
+        owner = request.user
+
         panels_suggest = ReferencePanel.objects.filter(
             project_sample=None,
             is_deleted=False,
             panel_type=ReferencePanel.PANEL_TYPE_MAIN,
+            owner__in=[owner, None],
         )
 
         panel_data = [

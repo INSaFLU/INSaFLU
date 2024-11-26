@@ -111,7 +111,6 @@ var load_panels = function(sample_id, load_url, target, load = false, suggest= t
     var sample_id = $('#headingsample').attr('sample-id');
     var reload_url = $('#submit-button').attr('reload_ref');
     var csrf_token = $('#headingsample').attr('data-csrf');
-
     $.ajax({
       url: reload_url,
       type: 'GET',
@@ -121,7 +120,24 @@ var load_panels = function(sample_id, load_url, target, load = false, suggest= t
       },
       success: function (data) {
 
-        $('#collapsehead2').html(data.my_content);
+        if (data["references_count"] === 0) {
+          var ul = document.createElement('ul');
+          ul.className = 'no-panels';
+
+          var li = document.createElement('li');
+          li.className = 'no-panels';
+          li.textContent = 'No refs available.';
+          ul.appendChild(li);
+          
+          var collapsehead2 = document.getElementById('reference-table-panel');
+          collapsehead2.innerHTML = '';
+
+          collapsehead2.appendChild(ul);
+
+        } else {
+
+          $('#reference-table-panel').html(data.my_content);
+        }
         $('#reference_table_div').html(data.empty_content);
         $('#add_references_title').html(
           "<strong>" + data.references_count + " Added References </strong>"

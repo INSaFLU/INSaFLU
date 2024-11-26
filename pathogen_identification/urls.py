@@ -5,6 +5,7 @@ import pathogen_identification.views as PIviews
 from managing_files import ajax_views, views
 
 urlpatterns = [
+    url("download-template/", PIviews.download_template_view, name="download_template"),
     url(
         r"services$",
         PIviews.Services.as_view(),
@@ -26,9 +27,19 @@ urlpatterns = [
         name="teleflu_project",
     ),
     url(
+        r"insaflu_project_igv/(?P<pk>\d+)$",
+        PIviews.INSaFLUMappingIGV.as_view(),
+        name="insaflu_project_igv",
+    ),
+    url(
         r"teleflu_workflow_igv/(?P<pk>\d+)$",
         PIviews.TelefluMappingIGV.as_view(),
         name="teleflu_workflow_igv",
+    ),
+    url(
+        r"teleflu_mapping_files/(?P<pk>\d+)$",
+        PIviews.get_mapping_bams_zip,
+        name="teleflu_mapping_files",
     ),
     url(
         r"add-teleflu-sample$",
@@ -102,7 +113,7 @@ urlpatterns = [
     ),
     url(
         r"televir_panel_upload",
-        PIviews.upload_reference_panel_view,
+        PIviews.UploadReferencePanel.as_view(),
         name="upload_reference_panel_view",
     ),
     url(
@@ -206,6 +217,16 @@ urlpatterns = [
         name="create_teleflu_project",
     ),
     url(
+        r"Projects/query_teleflu_project$",
+        PIajax_views.query_teleflu_projects,
+        name="query_teleflu_projects",
+    ),
+    url(
+        "Projects/teleflu_project_delete$",
+        PIajax_views.delete_teleflu_project,
+        name="delete_teleflu_project",
+    ),
+    url(
         r"deploy_mapping_request$",
         PIajax_views.submit_sample_mapping_televir,
         name="map_selected_references",
@@ -219,6 +240,11 @@ urlpatterns = [
         r"deploy_mapping_request_project_samples$",
         PIajax_views.submit_project_samples_mapping_televir,
         name="map_selected_references_project_samples",
+    ),
+    url(
+        r"deploy_panel_mapping_request_project_samples$",
+        PIajax_views.submit_samples_mapping_panels,
+        name="map_panels_project_samples",
     ),
     url(
         r"deploy_mapping_screeing$",
@@ -239,6 +265,11 @@ urlpatterns = [
         "Projects/explify_external_delete$",
         PIajax_views.Project_explify_delete_external,
         name="explify_delete_external",
+    ),
+    url(
+        "Projects/update_televir_project$",
+        PIajax_views.Update_televir_project,
+        name="update_televir_project",
     ),
     url(
         r"Projects/project_(?P<pk1>\d+)/sample_(?P<pk2>\d+)",
@@ -324,6 +355,11 @@ urlpatterns = [
         r"ajax/submit_sample_metagenomics_televir$",
         PIajax_views.submit_sample_metagenomics_televir,
         name="deploy_metagenomics_televir_project_sample",
+    ),
+    url(
+        r"ajax/select_all_samples_televir_project$",
+        PIajax_views.get_all_samples_selected,
+        name="select_all_samples_televir_project",
     ),
     url(
         r"ajax/deploy_ProjectPI$",

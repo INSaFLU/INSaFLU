@@ -1,26 +1,31 @@
 import codecs
 import datetime
 import os
-from typing import Any, List
+from typing import Any, List, Optional
 
 import networkx as nx
 import numpy as np
 import pandas as pd
 from django import forms
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from django.db import models
+from django.db.models import QuerySet
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
+from pkg_resources import packaging
 
+from constants.constants import Constants
+from constants.constants import \
+    Televir_Directory_Constants as Televir_Directories
 from managing_files.models import Project as InsaFluProject
 from managing_files.models import Reference as InsaFluReference
 from managing_files.models import Sample
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from pathogen_identification.data_classes import IntermediateFiles
-
-# Create your models here.
 
 # Create your models here.
 
@@ -74,6 +79,16 @@ class Projects(models.Model):
     )
 
     running_processes = models.IntegerField(default=0)
+
+    updated_version = models.CharField(
+        default=settings.APP_VERSION_NUMBER, max_length=10
+    )
+
+    @property
+    def is_up_to_date(self):
+        return packaging.version.parse(self.updated_version) >= packaging.version.parse(
+            "2.1.0"
+        )
 
     class Meta:
         ordering = ["name", "-creation_date"]
@@ -276,7 +291,7 @@ class PIProject_Sample(models.Model):
         panels = self.panels_pks
         return ReferencePanel.objects.filter(
             pk__in=panels, panel_type=ReferencePanel.PANEL_TYPE_MAIN
-        )
+        ).exclude(is_deleted=True)
 
     def remove_panel(self, panel_pk: int):
         panels = self.panels_pks
@@ -304,7 +319,8 @@ class PIProject_Sample(models.Model):
 
         return taxid_list
 
-    def get_media_dir(self):
+    @property
+    def media_dir(self):
         return os.path.join(
             PICS.media_directory,
             PICS.televir_subdirectory,
@@ -340,7 +356,6 @@ class ParameterSet(models.Model):
 
         if self.leaf is None:
             return []
-
         descendants = self.leaf.get_descendants(include_self=True)
 
         return descendants
@@ -358,19 +373,19 @@ class ParameterSet(models.Model):
         self.save()
 
     def delete_run_data(self):
-        if self.status in [self.STATUS_FINISHED, self.STATUS_ERROR]:
-            self.status = self.STATUS_NOT_STARTED
-            self.save()
 
-            runs = RunMain.objects.filter(parameter_set=self)
+        self.status = self.STATUS_NOT_STARTED
+        self.save()
 
-            for run in runs:
-                if run.status == RunMain.STATUS_FINISHED:
-                    continue
-                if run.status == RunMain.STATUS_RUNNING:
-                    run.status = RunMain.STATUS_KILLED
-                    run.save()
-                run.delete_data()
+        runs = RunMain.objects.filter(parameter_set=self)
+
+        for run in runs:
+            if run.status == RunMain.STATUS_FINISHED:
+                continue
+            if run.status == RunMain.STATUS_RUNNING:
+                run.status = RunMain.STATUS_KILLED
+                run.save()
+            # run.delete_data()
 
     def __str__(self):
         return self.sample.name
@@ -523,6 +538,7 @@ class ReferencePanel(models.Model):
 
     @property
     def references_count(self):
+
         return RawReference.objects.filter(panel=self).count()
 
 
@@ -746,6 +762,55 @@ class RunMain(models.Model):
 
         except Exception as e:
             print(e)
+
+    def references_sorted(self, mapping_only=False) -> QuerySet:
+
+        raw_references_mapped = RawReference.objects.filter(
+            run=self, status=RawReference.STATUS_MAPPED
+        ).exclude(accid="-")
+
+        if mapping_only is False:
+            raw_references_mapped = raw_references_mapped.exclude(
+                classification_source=None
+            )
+
+        raw_references_mapped = raw_references_mapped.order_by(
+            "taxid", "status"
+        ).distinct("taxid")
+
+        raw_references_mapped = sorted(
+            raw_references_mapped,
+            key=lambda x: float(x.read_counts if x.read_counts else 0),
+            reverse=True,
+        )
+
+        ##########################
+        ##########################
+
+        raw_references_unmapped = (
+            RawReference.objects.filter(run=self)
+            .exclude(status=RawReference.STATUS_MAPPED)
+            .exclude(accid="-")
+        )
+
+        if mapping_only is False:
+            raw_references_unmapped = raw_references_unmapped.exclude(
+                classification_source=None
+            )
+
+        raw_references_unmapped = raw_references_unmapped.order_by(
+            "taxid", "status"
+        ).distinct("taxid")
+
+        raw_references_unmapped = sorted(
+            raw_references_unmapped,
+            key=lambda x: float(x.read_counts if x.read_counts else 0),
+            reverse=True,
+        )
+
+        raw_references = raw_references_mapped + raw_references_unmapped
+
+        return raw_references
 
 
 class RunReadsRegister(models.Model):
@@ -1246,6 +1311,25 @@ class TelefluMapping(models.Model):
         return os.path.join(self.mapping_directory, "igv_report.html")
 
     @property
+    def queued_or_running_mappings_exist(self) -> bool:
+
+        samples = TeleFluSample.objects.filter(
+            teleflu_project=self.teleflu_project
+        ).values_list("televir_sample", flat=True)
+
+        refs = RawReference.objects.filter(
+            run__parameter_set__sample__in=samples,
+            accid__in=self.teleflu_project.raw_reference.accids,
+            run__parameter_set__leaf__index=self.leaf.index,
+            run__status__in=[
+                RunMain.STATUS_RUNNING,
+                RunMain.STATUS_PREP,
+            ],
+        )
+
+        return refs.exists()
+
+    @property
     def mapped_samples(self):
 
         accids = self.teleflu_project.raw_reference.accids
@@ -1294,9 +1378,12 @@ class TelefluMapping(models.Model):
             sample = PIProject_Sample.objects.get(pk=sample)
 
             sample_summary[sample.name] = {
+                "reference": self.teleflu_project.raw_reference.description,
+                "leaf": self.leaf.index,
                 "mapped": False,
                 "success": False,
                 "coverage": "N/A",
+                "windows_covered": "N/A",
                 "depth": "N/A",
                 "mapped_reads": "N/A",
                 "start_prop": "N/A",
@@ -1311,11 +1398,6 @@ class TelefluMapping(models.Model):
                 Q(accid__in=accids)
                 & Q(run__parameter_set__sample=sample)
                 & Q(run__parameter_set__leaf__index=self.leaf.index)
-                & Q(
-                    run__parameter_set__status__in=[
-                        ParameterSet.STATUS_FINISHED,
-                    ]
-                )
                 & Q(status=RawReference.STATUS_MAPPED)
             ).distinct()
 
@@ -1337,6 +1419,9 @@ class TelefluMapping(models.Model):
 
             if reports.exists():
                 sample_summary[sample.name]["coverage"] = round(reports[0].coverage, 3)
+                sample_summary[sample.name]["windows_covered"] = reports[
+                    0
+                ].windows_covered
                 sample_summary[sample.name]["depth"] = round(reports[0].depth, 3)
                 sample_summary[sample.name]["mapped_reads"] = round(
                     reports[0].mapped_reads, 3
@@ -1371,9 +1456,6 @@ class ReferenceTaxid(models.Model):
         return self.taxid
 
 
-from constants.constants import Televir_Directory_Constants as Televir_Directories
-
-
 class ReferenceSourceFile(models.Model):
 
     file = models.CharField(max_length=100, blank=True, null=True)
@@ -1393,10 +1475,9 @@ class ReferenceSourceFile(models.Model):
 
         else:
             filepath = os.path.join(
-                PICS.media_directory,
-                PICS.televir_subdirectory,
-                str(self.owner.pk),
-                "reference",
+                settings.MEDIA_ROOT,
+                Constants.DIR_TELEVIR_UPLOAD_FILES,
+                "userId_{0}".format(self.owner.pk),
                 self.file,
             )
 
@@ -1437,6 +1518,7 @@ class ReferenceSource(models.Model):
 class ReferenceSourceFileMap(models.Model):
     STATUS_GOOD = 0
     STATUS_CORRUPT = 1
+    STATUS_DEPRECATED = 2
 
     reference_source = models.ForeignKey(
         ReferenceSource, blank=True, null=True, on_delete=models.CASCADE
@@ -1453,12 +1535,30 @@ class ReferenceSourceFileMap(models.Model):
         return self.reference_source.accid
 
     @property
+    def accid_in_file(self):
+        if self.reference_source_file is None:
+            return self.accid
+
+        if "virosaurus" in self.reference_source_file.file:
+            acc_simple = self.accid.split(".")[0]
+            return f"{acc_simple}:{acc_simple};"
+
+        if "kraken2" in self.reference_source_file.file:
+            return f"kraken:taxid|{self.taxid.taxid}|{self.accid}"
+
+        return self.accid
+
+    @property
     def description(self):
         return self.reference_source.description
 
     @property
     def taxid(self):
         return self.reference_source.taxid
+
+    @property
+    def filepath(self):
+        return self.reference_source_file.filepath
 
 
 class ReferenceSourceMap(models.Model):
@@ -1647,6 +1747,12 @@ class FinalReport(models.Model):
     CONTROL_FLAG_PRESENT = 2
     CONTROL_FLAG_WARNING = 3
 
+    control_flag_options = {
+        CONTROL_FLAG_NONE: "",
+        CONTROL_FLAG_PRESENT: "Taxid found in control",
+        CONTROL_FLAG_SOURCE: "",
+    }
+
     run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)
     sample = models.ForeignKey(
         PIProject_Sample, blank=True, null=True, on_delete=models.CASCADE
@@ -1700,6 +1806,58 @@ class FinalReport(models.Model):
     def in_control(self):
         return self.control_flag in [self.CONTROL_FLAG_PRESENT]
 
+    @property
+    def control_relative_mapped(self) -> Optional[float]:
+        current_mapped_prop = self.mapped_proportion
+
+        if current_mapped_prop is None:
+            return None
+
+        if self.control_flag == FinalReport.CONTROL_FLAG_PRESENT:
+
+            control_reports = FinalReport.objects.filter(
+                sample__project=self.sample.project,
+                control_flag=FinalReport.CONTROL_FLAG_SOURCE,
+                run__parameter_set__leaf__index=self.run.parameter_set.leaf.index,
+            )
+
+            if control_reports.exists() == False:
+                return None
+
+            mapped_props = [
+                report.mapped_proportion
+                for report in control_reports
+                if report.mapped_proportion is not None
+            ]
+            if len(mapped_props) == 1:
+                mapped_prop = mapped_props[0]
+            else:
+                mapped_prop = sum(mapped_props) / len(mapped_props)
+
+            ratio = current_mapped_prop / mapped_prop
+
+            return ratio
+
+        return None
+
+    @property
+    def infer_control_flag_str(self) -> str:
+
+        return FinalReport.control_flag_options[self.control_flag]
+
+    @property
+    def control_flag_str(self) -> str:
+        """
+        function to divide mapped proportion by that of controls"""
+
+        control_flag_str = self.infer_control_flag_str
+        relative_proportion = self.control_relative_mapped
+
+        if relative_proportion is not None:
+            return f"{control_flag_str} \n (x{relative_proportion:.2f})"
+
+        return control_flag_str
+
 
 class RawReferenceCompoundModel(models.Model):
 
@@ -1723,9 +1881,11 @@ class RawReferenceCompoundModel(models.Model):
     global_ranking = models.IntegerField(blank=True, null=True)
     ensemble_ranking = models.IntegerField(blank=True, null=True)
     run_count = models.IntegerField(default=0)
+    screening_count = models.IntegerField(default=0)
 
     @property
     def mapped_html(self):
+
         if self.mapped_final_report is None and self.mapped_raw_reference is None:
             return mark_safe(
                 '<a><i class="fa fa-times" title="unmapped"></i> Unmapped</a>'

@@ -62,8 +62,6 @@ function nextTr(row) {
     return row;
 }
 
-
-
 $("tr.parent").find("A#plot_show").click(function(e) {
 
     if (e.target.tagName === "A" && e.target.id === "plot_show") {
@@ -132,13 +130,6 @@ function show_igv(item) {
     var url = item.attr('show-igv-url');
 
     $.ajax({
-        /// spin 
-        beforeSend: function() {
-            $('#igv_display_' + accid).show();
-        },
-        complete: function(){
-            $('#igv_display_' + accid).hide();
-        },
         
         data : { 
             'project_pk': project_pk,
@@ -209,8 +200,6 @@ function show_igv(item) {
     });
 }
 
-
-
 //  Download the table as a CSV file
 
 document.getElementById("report_download").addEventListener("click", function (e) {
@@ -223,7 +212,6 @@ function download_table_as_csv(table_id, separator = '\t') {
     var rows = document.querySelectorAll('table#' + table_id + ' tr');
     var sample_id = $("#igv_browse").attr("sample_name");
     // Construct csv
-    console.log(sample_id);
     var csv = [];
     for (var i = 0; i < rows.length; i++) {
         var row = [],

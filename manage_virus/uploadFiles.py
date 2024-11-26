@@ -131,7 +131,7 @@ class UploadFiles(object):
 		
 		
 	@transaction.atomic
-	def uploadIdentifyVirus(self, dict_data, database_name):
+	def uploadIdentifyVirus(self, dict_data, database_name, save=True):
 		"""
 		:in dict_data -> dictonary { 'Seq.id' : [dt_data, dt_data2, ...], 'Seq.id1' : [dt_data5, dt_data6, ...]
 		OrderedDict(sorted(dict_data_out.items(), reverse=True,
@@ -146,7 +146,7 @@ class UploadFiles(object):
 
 		vect_data_out = self.__get_type_data__(dict_data_out)
 		vect_data_type_and_lineage = self.__get_sub_type_and_lineage__(dict_data_out)
-		
+
 		vect_return = []
 		rank = 0
 		if (len(vect_data_out + vect_data_type_and_lineage) > 0):
@@ -156,15 +156,26 @@ class UploadFiles(object):
 					seqVirus = SeqVirus.objects.get(name=dt_type.get(ParseOutFiles.GENE), accession=dt_type.get(ParseOutFiles.ACCESSION),\
 									file__abricate_name=database_name)
 				except SeqVirus.DoesNotExist:
-					raise Exception(_("Gene '%s', Accession '%s' not found in database '%s'" % (dt_type.get(ParseOutFiles.GENE),\
-								dt_type.get(ParseOutFiles.ACCESSION), database_name)))
+					seqVirus = SeqVirus()
+					seqVirus.name = dt_type.get(ParseOutFiles.GENE)
+					seqVirus.accession = dt_type.get(ParseOutFiles.ACCESSION)
+					tag_type = Tags()
+					tag_type.name = dt_type.get(ParseOutFiles.TYPE)
+					if(save):
+						tag_type.save()
+					seqVirus.kind_type = tag_type
+					if(save):
+						seqVirus.save()				
+					#raise Exception(_("Gene '%s', Accession '%s' not found in database '%s'" % (dt_type.get(ParseOutFiles.GENE),\
+					#			dt_type.get(ParseOutFiles.ACCESSION), database_name)))
 				
 				identifyVirus = IdentifyVirus()
 				identifyVirus.coverage = "%.2f" % (dt_type.get(ParseOutFiles.COVERAGE))
 				identifyVirus.identity = "%.2f" % (dt_type.get(ParseOutFiles.IDENTITY))
 				identifyVirus.rank = rank
 				identifyVirus.seq_virus = seqVirus
-				identifyVirus.save()
+				if(save):
+					identifyVirus.save()
 				rank += 1
 				vect_return.append(identifyVirus)
 		

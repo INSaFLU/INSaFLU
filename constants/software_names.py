@@ -113,9 +113,13 @@ class SoftwareNames(object):
         "TruSeq3-SE.fa",
         "SARS_CoV_2_MN908947_artic_3.fa",
         "SARS_CoV_2_MN908947_artic_4.1.fa",
+        "SARS_CoV_2_MN908947_artic_5.3.2.fa",
         "MPXV_MT903345_Yale_PrimalSeq_v.1.fa",
         "MPXV_comb-ccc7sszn.fa",
-        "MPXV_xGEN_Mpox_Amplicon_panel_no_ITR.fa",
+        "RSV_A_KT992094_Wang2022.fa",
+        "RSV_B_AF013254_Wang2022.fa",
+        "RSV_A_B_KT992094_AF013254_Wang2022.fa"
+        #"MPXV_xGEN_Mpox_Amplicon_panel_no_ITR.fa",
     ]
     ### collect stat data for ILLUMINA, in form of key value
     SOFTWARE_ILLUMINA_stat = "illumina_stat"
@@ -282,9 +286,13 @@ class SoftwareNames(object):
         SOFTWARE_SNIPPY_no_primer,
         "SARS_CoV_2_MN908947_artic_3.fa",
         "SARS_CoV_2_MN908947_artic_4.1.fa",
+        "SARS_CoV_2_MN908947_artic_5.3.2.fa",        
         "MPXV_MT903345_Yale_PrimalSeq_v.1.fa",
         "MPXV_comb-ccc7sszn.fa",
-        "MPXV_xGEN_Mpox_Amplicon_panel_no_ITR.fa",
+        "RSV_A_KT992094_Wang2022.fa",
+        "RSV_B_AF013254_Wang2022.fa",
+        "RSV_A_B_KT992094_AF013254_Wang2022.fa"        
+        #"MPXV_xGEN_Mpox_Amplicon_panel_no_ITR.fa",
     ]
 
     #### VERY important, change in snippy-vcf
@@ -354,7 +362,8 @@ class SoftwareNames(object):
     SOFTWARE_PROKKA_name = "Prokka"
     SOFTWARE_PROKKA_VERSION = "1.2"
     SOFTWARE_PROKKA_PARAMETERS = (
-        "--kingdom Viruses --locustag locus --genus Influenzavirus --species Influenzavirus --strain "
+        #"--kingdom Viruses --locustag locus --genus Influenzavirus --species Influenzavirus --strain "
+        "--kingdom Viruses --genus Virus --locustag locus --strain "
         "ref_PREFIX_FILES_OUT --gcode " + str(Constants.TRANSLATE_TABLE_NUMBER)
     )
 
@@ -495,9 +504,14 @@ class SoftwareNames(object):
     SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y = "flu_vic_12y"
     SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y = "flu_yam_12y"
 
-    SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha = "avianflu_h5n1_ha"
-    SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na = "avianflu_h5n1_na"
     SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2 = "avianflu_h5n1_pb2"
+    SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb1 = "avianflu_h5n1_pb1"
+    SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pa = "avianflu_h5n1_pa"
+    SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha = "avianflu_h5n1_ha"
+    SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_np = "avianflu_h5n1_np"
+    SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na = "avianflu_h5n1_na"
+    SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_mp = "avianflu_h5n1_mp"
+    SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns = "avianflu_h5n1_ns"        
 
     SOFTWARE_NEXTSTRAIN_BUILDS_flu = [
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y,
@@ -507,9 +521,14 @@ class SoftwareNames(object):
     ]
 
     SOFTWARE_NEXTSTRAIN_BUILDS_avianflu = [
-        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha,
-        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na,
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2,
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb1,
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pa,                
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha,
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_np,        
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na,
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_mp,
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns,                                
     ]
 
     SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a = "rsv_a"
@@ -531,6 +550,11 @@ class SoftwareNames(object):
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha,
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na,
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2,
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb1,        
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pa,        
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_np,        
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_mp,        
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns,        
         SOFTWARE_NEXTSTRAIN_BUILDS_mpx,
         SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a,
         SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b,
@@ -546,6 +570,11 @@ class SoftwareNames(object):
         [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha, "Avian Influenza (H5N1 HA)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na, "Avian Influenza (H5N1 NA)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2, "Avian Influenza (H5N1 PB2)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb1, "Avian Influenza (H5N1 PB1)"],        
+        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pa, "Avian Influenza (H5N1 PA)"],        
+        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_np, "Avian Influenza (H5N1 NP)"],        
+        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_mp, "Avian Influenza (H5N1 MP)"],        
+        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns, "Avian Influenza (H5N1 NS)"],        
         [SOFTWARE_NEXTSTRAIN_BUILDS_mpx, "mpox (hMPXV)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a, "RSV (A)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b, "RSV (B)"],

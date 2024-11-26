@@ -883,6 +883,11 @@ class CollectExtraData(object):
 			if (not project_sample.get_is_ready_to_proccess()): continue
 			if not os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)): continue
 
+			infile = project_sample.get_consensus_file(TypePath.MEDIA_ROOT)
+			tmpfile = self.utils.get_temp_file('tmpfasta', FileExtensions.FILE_FASTA)
+			self.utils.clean_fasta_file(infile,tmpfile)
+			self.utils.move_file(tmpfile,infile)
+
 			## test if it has to join in all consensus files
 			if not default_software.include_consensus(project_sample): continue
 

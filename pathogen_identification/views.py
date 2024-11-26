@@ -2,6 +2,7 @@ import logging
 import mimetypes
 import ntpath
 import os
+import zipfile
 from typing import Any, Dict, Optional
 
 import pandas as pd
@@ -13,23 +14,25 @@ from django.contrib import messages
 from django.core.files.temp import NamedTemporaryFile
 from django.db import transaction
 from django.db.models import Q
-from django.forms.models import model_to_dict
-from django.http import Http404, HttpResponseNotFound, HttpResponseRedirect
+from django.http import (FileResponse, Http404, HttpResponse,
+                         HttpResponseNotFound, HttpResponseRedirect,
+                         JsonResponse)
 from django.http.response import HttpResponse
-from django.shortcuts import redirect, render
-from django.template.defaultfilters import filesizeformat, pluralize
+from django.shortcuts import render
+from django.template.defaultfilters import pluralize
+from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
 from django.utils.safestring import mark_safe
 from django.views import generic
 from django.views.generic import ListView
 from django_tables2 import RequestConfig
 
-from constants.constants import Constants, FileExtensions, TypeFile, TypePath
-from constants.meta_key_and_values import MetaKeyAndValue
+from constants.constants import Constants, FileType, TypePath
+from constants.software_names import SoftwareNames
 from extend_user.models import Profile
-from fluwebvirus.settings import MEDIA_ROOT, STATICFILES_DIRS
+from fluwebvirus.settings import (BASE_DIR, MEDIA_ROOT, MEDIA_URL, STATIC_ROOT,
+                                  STATIC_URL, STATICFILES_DIRS)
 from managing_files.forms import AddSampleProjectForm
-from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
 from managing_files.models import Reference
@@ -38,7 +41,7 @@ from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.constants_settings import \
     ConstantsSettings as PICS
 from pathogen_identification.forms import (PanelReferencesUploadForm,
-                                           ReferenceForm)
+                                           ReferenceForm, UploadFileForm)
 from pathogen_identification.models import (ContigClassification, FinalReport,
                                             ParameterSet, PIProject_Sample,
                                             Projects, RawReference,
@@ -57,23 +60,26 @@ from pathogen_identification.tables import (AddedReferenceTable,
                                             CompoundReferenceScore,
                                             ContigTable, ProjectTable,
                                             RawReferenceTable,
-                                            RawReferenceTableNoRemapping,
+                                            RawReferenceTable_Basic,
                                             ReferenceSourceTable, RunMainTable,
                                             RunMappingTable, SampleTableOne,
                                             TeleFluInsaFLuProjectTable,
                                             TeleFluReferenceTable)
+##########################################
+########################################## MAKE THESE DISAPPEAR - MORE TABLES
+########################################## FIND OR CREATE - LINK TO SAMPLES, RUNS.
 from pathogen_identification.utilities.reference_utils import (
-    generate_insaflu_reference, temp_fasta_copy)
+    filter_reference_maps_select, generate_insaflu_reference)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
 from pathogen_identification.utilities.televir_parameters import \
     TelevirParameters
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
 from pathogen_identification.utilities.utilities_general import (
-    get_services_dir, infer_run_media_dir)
-from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility, RawReferenceUtils)
-from pathogen_identification.utilities.utilities_views import (
-    EmptyRemapMain, RawReferenceCompound, ReportSorter,
+    get_services_dir, infer_run_media_dir, simplify_name)
+from pathogen_identification.utilities.utilities_pipeline import (  # ### KEEP THIS
+    Parameter_DB_Utility, SoftwareTreeUtils)
+from pathogen_identification.utilities.utilities_views import (  # ############################################
+    EmptyRemapMain, RawReferenceUtils, ReportSorter, RunMainWrapper,
     final_report_best_cov_by_accid, recover_assembly_contigs)
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
@@ -81,11 +87,16 @@ from utils.software import Software
 from utils.support_django_template import get_link_for_dropdown_item
 from utils.utils import ShowInfoMainPage, Utils
 
-from .forms import UploadFileForm
 
+def remove_pre_static(path: str) -> str:
+    cwd = os.getcwd()
+    if path.startswith(cwd):
+        path = path[len(cwd) :]
 
-class UploadPanelReferencesView:
-    pass
+    path = path.replace(STATIC_ROOT, STATIC_URL)
+    path = path.replace(MEDIA_ROOT, MEDIA_URL)
+    # path = mark_safe(path)
+    return path
 
 
 def process_query_string(query_string: Optional[str]):
@@ -95,6 +106,114 @@ def process_query_string(query_string: Optional[str]):
     query_string = query_string.strip()
 
     return query_string
+
+
+def clean_check_box_in_session(request):
+    """
+    check all check boxes on samples/references to add samples
+    """
+    utils = Utils()
+    ## clean all check unique
+    if Constants.CHECK_BOX_ALL in request.session:
+        del request.session[Constants.CHECK_BOX_ALL]
+    vect_keys_to_remove = []
+    for key in request.session.keys():
+        if (
+            key.startswith(Constants.CHECK_BOX)
+            and len(key.split("_")) == 3
+            and utils.is_integer(key.split("_")[2])
+        ):
+            vect_keys_to_remove.append(key)
+    for key in vect_keys_to_remove:
+        del request.session[key]
+
+
+def is_all_check_box_in_session(
+    vect_check_to_test, request, prefix: str = Constants.CHECK_BOX
+):
+    """
+    test if all check boxes are in session
+    If not remove the ones that are in and create the new ones all False
+    """
+    utils = Utils()
+    dt_data = {}
+
+    ## get the dictonary
+    for key in request.session.keys():
+        if (
+            key.startswith(prefix)
+            and len(key.split("_")) == 3
+            and utils.is_integer(key.split("_")[2])
+        ):
+            dt_data[key] = True
+
+    b_different = False
+    if len(vect_check_to_test) != len(dt_data):
+        b_different = True
+
+    ## test the vector
+    if not b_different:
+        for key in vect_check_to_test:
+            if key not in dt_data:
+                b_different = True
+                break
+
+    if b_different:
+        ## remove all
+        for key in dt_data:
+            del request.session[key]
+
+        ## create new
+        for key in vect_check_to_test:
+            request.session[key] = False
+        return False
+    return True
+
+
+##############################################################
+##############################################################
+
+
+# Create your views here.
+class IGVform(forms.Form):
+    sample_pk = forms.CharField(max_length=100)
+    run_pk = forms.CharField(max_length=100)
+    reference = forms.CharField(max_length=100)
+    unique_id = forms.CharField(max_length=100)
+    project_pk = forms.CharField(max_length=100)
+
+
+class download_form(forms.Form):
+    file_path = forms.CharField(max_length=300)
+
+    class Meta:
+        widgets = {
+            "myfield": forms.TextInput(
+                attrs={"style": "border-color:darkgoldenrod; border-radius: 10px;"}
+            ),
+        }
+
+
+class download_ref_form(forms.Form):
+    file = forms.CharField(max_length=300)
+    taxid = forms.CharField(max_length=50)
+    run = forms.IntegerField()
+    accid = forms.CharField(max_length=50)
+
+    class Meta:
+        widgets = {
+            "myfield": forms.TextInput(
+                attrs={"style": "border-color:darkgoldenrod; border-radius: 10px;"}
+            ),
+        }
+
+
+################################################################
+################################################################
+
+
+class UploadPanelReferencesView:
+    pass
 
 
 class UploadNewReferencesView(
@@ -245,107 +364,6 @@ class UploadNewReferencesView(
             return super(UploadNewReferencesView, self).form_invalid(form)
 
     form_valid_message = ""  ## need to have this
-
-
-def clean_check_box_in_session(request):
-    """
-    check all check boxes on samples/references to add samples
-    """
-    utils = Utils()
-    ## clean all check unique
-    if Constants.CHECK_BOX_ALL in request.session:
-        del request.session[Constants.CHECK_BOX_ALL]
-    vect_keys_to_remove = []
-    for key in request.session.keys():
-        if (
-            key.startswith(Constants.CHECK_BOX)
-            and len(key.split("_")) == 3
-            and utils.is_integer(key.split("_")[2])
-        ):
-            vect_keys_to_remove.append(key)
-    for key in vect_keys_to_remove:
-        del request.session[key]
-
-
-def is_all_check_box_in_session(
-    vect_check_to_test, request, prefix: str = Constants.CHECK_BOX
-):
-    """
-    test if all check boxes are in session
-    If not remove the ones that are in and create the new ones all False
-    """
-    utils = Utils()
-    dt_data = {}
-
-    ## get the dictonary
-    for key in request.session.keys():
-        if (
-            key.startswith(prefix)
-            and len(key.split("_")) == 3
-            and utils.is_integer(key.split("_")[2])
-        ):
-            dt_data[key] = True
-
-    b_different = False
-    if len(vect_check_to_test) != len(dt_data):
-        b_different = True
-
-    ## test the vector
-    if not b_different:
-        for key in vect_check_to_test:
-            if key not in dt_data:
-                b_different = True
-                break
-
-    if b_different:
-        ## remove all
-        for key in dt_data:
-            del request.session[key]
-
-        ## create new
-        for key in vect_check_to_test:
-            request.session[key] = False
-        return False
-    return True
-
-
-# Create your views here.
-
-
-class IGVform(forms.Form):
-    sample_pk = forms.CharField(max_length=100)
-    run_pk = forms.CharField(max_length=100)
-    reference = forms.CharField(max_length=100)
-    unique_id = forms.CharField(max_length=100)
-    project_pk = forms.CharField(max_length=100)
-
-
-class download_form(forms.Form):
-    file_path = forms.CharField(max_length=300)
-
-    class Meta:
-        widgets = {
-            "myfield": forms.TextInput(
-                attrs={"style": "border-color:darkgoldenrod; border-radius: 10px;"}
-            ),
-        }
-
-
-class download_ref_form(forms.Form):
-    file = forms.CharField(max_length=300)
-    taxid = forms.CharField(max_length=50)
-    run = forms.IntegerField()
-    accid = forms.CharField(max_length=50)
-
-    class Meta:
-        widgets = {
-            "myfield": forms.TextInput(
-                attrs={"style": "border-color:darkgoldenrod; border-radius: 10px;"}
-            ),
-        }
-
-
-################################################################
 
 
 class Services(LoginRequiredMixin, generic.CreateView):
@@ -909,58 +927,22 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
                     else:
                         self.request.session[key] = True
         ## END need to clean all the others if are reject in filter
-
-        ## TeleFlu Projects
-        teleflu_projects = TeleFluProject.objects.filter(
-            televir_project=project, is_deleted=False
-        ).order_by("-last_change_date")
-
-        teleflu_data = []
-        for tproj in teleflu_projects:
-
-            tproject_data = {
-                "id": tproj.pk,
-                "samples": tproj.nsamples,
-                "ref_description": tproj.raw_reference.description_first,
-                "ref_accid": tproj.raw_reference.accids_str,
-                "ref_taxid": tproj.raw_reference.taxids_str,
-                "insaflu_project": False if tproj.insaflu_project is None else True,
-            }
-
-            insaflu_project = tproj.insaflu_project
-            if insaflu_project is None:
-                tproject_data["insaflu_project"] = "None"
-            else:
-                count_not_finished = InsafluProjectSample.objects.filter(
-                    project__id=insaflu_project.id,
-                    is_deleted=False,
-                    is_error=False,
-                    is_finished=False,
-                ).count()
-
-                if count_not_finished == 0:
-                    tproject_data["insaflu_project"] = "Finished"
-
-                else:
-                    tproject_data["insaflu_project"] = "Processing"
-
-            teleflu_data.append(tproject_data)
-
-        context["teleflu_projects"] = teleflu_data
-        context["teleflu_table"] = None
-        context["teleflu_projects_exist"] = teleflu_projects.exists()
-
-        if teleflu_projects.exists():
-
-            context["teleflu_table"] = TeleFluInsaFLuProjectTable(teleflu_projects)
-            RequestConfig(
-                self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
-            ).configure(context["teleflu_table"])
-
         ### set the check_box
         RequestConfig(
             self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
         ).configure(samples)
+
+        project_updated = project.is_up_to_date
+
+        update_running = False
+
+        if project_updated == False:
+            process_controler = ProcessControler()
+
+            update_running = ProcessControler.objects.filter(
+                name=process_controler.get_name_update_televir_project(project.pk),
+                is_finished=False,
+            ).exists()
 
         ### type of deployment
         DEPLOY_TYPE = PICS.DEPLOYMENT_DEFAULT
@@ -976,13 +958,15 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
             "queued_processes",
         ]
 
+        context["project_not_updated"] = project_updated == False
+        context["update_running"] = update_running
         context["metagenomics"] = ConstantsSettings.METAGENOMICS
         context["table"] = samples
         context["deploy_url"] = DEPLOY_URL
         context["user_id"] = project.owner.pk
         context["project_index"] = project.pk
         context["project_name"] = project_name
-        context["nav_sample"] = True
+        context["nav_project"] = True
         context["total_items"] = query_set.count()
         context["show_paginatior"] = query_set.count() > Constants.PAGINATE_NUMBER
         context["show_info_main_page"] = ShowInfoMainPage()
@@ -990,10 +974,6 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
         context["demo"] = True if self.request.user.username == "demo" else False
 
         return context
-
-
-from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils, Utils_Manager)
 
 
 def excise_paths_leaf_last(string_with_paths):
@@ -1098,7 +1078,7 @@ class TelefluProjectView(LoginRequiredMixin, generic.CreateView):
         ####################################### get combinations to deploy
         local_tree = software_utils.generate_software_tree_safe(
             software_utils.project,
-            software_utils.sample,
+            None,
             metagenomics=False,
             mapping_only=True,
             screening=False,
@@ -1110,11 +1090,12 @@ class TelefluProjectView(LoginRequiredMixin, generic.CreateView):
         else:
             all_paths = local_tree.get_all_graph_paths()
             available_path_nodes = software_utils.get_available_pathnodes(local_tree)
-        ##########################################
+        ########################################## get workflows
         workflows = []
         for node, params_df in all_paths.items():
             if node not in available_path_nodes:
                 continue
+
             if available_path_nodes[node].pk in existing_mapping_pks:
                 continue
 
@@ -1134,27 +1115,10 @@ class TelefluProjectView(LoginRequiredMixin, generic.CreateView):
         context["focus_teleflu"] = (
             f"Focus: {this_project.raw_reference.description_first}"
         )
+        context["nav_project"] = True
         ###
 
         return context
-
-
-from fluwebvirus.settings import (BASE_DIR, MEDIA_ROOT, MEDIA_URL, STATIC_ROOT,
-                                  STATIC_URL)
-from pathogen_identification.utilities.reference_utils import \
-    filter_reference_maps_select
-from pathogen_identification.utilities.utilities_general import simplify_name
-
-
-def remove_pre_static(path: str) -> str:
-    cwd = os.getcwd()
-    if path.startswith(cwd):
-        path = path[len(cwd) :]
-
-    path = path.replace(STATIC_ROOT, STATIC_URL)
-    path = path.replace(MEDIA_ROOT, MEDIA_URL)
-    # path = mark_safe(path)
-    return path
 
 
 class TelefluMappingIGV(LoginRequiredMixin, generic.TemplateView):
@@ -1173,8 +1137,6 @@ class TelefluMappingIGV(LoginRequiredMixin, generic.TemplateView):
         leaf_index = teleflu_mapping.leaf.index
         teleflu_project = teleflu_mapping.teleflu_project
         televir_project_index = teleflu_project.televir_project.pk
-
-        insaflu_project = teleflu_project.insaflu_project
 
         ### get reference
         teleflu_reference = teleflu_project.raw_reference
@@ -1205,11 +1167,9 @@ class TelefluMappingIGV(LoginRequiredMixin, generic.TemplateView):
         accid_list_simple = [simplify_name(accid) for accid in accid_list] + accid_list
 
         for sample in televir_project_samples:
-
             ref_select = filter_reference_maps_select(
-                sample, leaf_index, accid_list_simple
+                sample, teleflu_mapping.leaf.index, accid_list_simple
             )
-
             if ref_select is None:
                 continue
 
@@ -1221,9 +1181,194 @@ class TelefluMappingIGV(LoginRequiredMixin, generic.TemplateView):
                 "sample": sample,
             }
 
+            if ref_select.fasta_file_path is None:
+                continue
+            if ref_select.fai_file_path is None:
+                continue
+
+            igv_genome_options["reference"] = remove_pre_static(
+                ref_select.fasta_file_path
+            )
+            igv_genome_options["reference_index"] = remove_pre_static(
+                ref_select.fai_file_path
+            )
+
         context["igv_genome"] = igv_genome_options
         context["samples"] = sample_dict
+        context["project"] = teleflu_mapping.teleflu_project.name
         context["project_index"] = televir_project_index
+        context["teleflu_project_index"] = teleflu_project.pk
+        context["teleflu_project_name"] = (
+            f"Focus: {teleflu_project.raw_reference.description_first}"
+        )
+        context["mapping_id"] = f"IGV Mapping Workflow {teleflu_mapping.leaf.index}"
+
+        return context
+
+
+def get_mapping_bams_zip(request, pk):
+    """
+    Get the mapping bams zip
+    """
+    televir_bioinf = TelevirBioinf()
+
+    mapping_pk = int(pk)
+
+    # mapping_pk= int(request.GET.get("mapping_pk"))
+    teleflu_mapping = TelefluMapping.objects.get(pk=mapping_pk)
+    print(teleflu_mapping)
+    leaf_index = teleflu_mapping.leaf.index
+    teleflu_project = teleflu_mapping.teleflu_project
+    televir_project_index = teleflu_project.televir_project.pk
+
+    ### get reference
+    teleflu_reference = teleflu_project.raw_reference
+    if teleflu_reference is None:
+        return False
+
+    reference_file = teleflu_reference.file_path
+    reference_index = reference_file + ".fai"
+    if os.path.exists(reference_index) is False:
+        televir_bioinf.index_fasta(reference_file)
+    reference_file = remove_pre_static(reference_file)
+    reference_index = remove_pre_static(reference_index)
+    # televir_reference
+    teleflu_refs = teleflu_project.televir_references
+
+    igv_genome_options = {
+        "reference": reference_file,
+        "reference_index": reference_index,
+        "reference_name": teleflu_mapping.teleflu_project.raw_reference.description,
+    }
+
+    # samples
+    televir_project_samples = teleflu_mapping.mapped_samples
+    sample_dict = {}
+
+    ### get sample files
+    accid_list = [ref.accid for ref in teleflu_refs if ref.accid]
+    accid_list_simple = [simplify_name(accid) for accid in accid_list] + accid_list
+
+    for sample in televir_project_samples:
+        ref_select = filter_reference_maps_select(
+            sample, teleflu_mapping.leaf.index, accid_list_simple
+        )
+        if ref_select is None:
+            continue
+
+        sample_dict[sample.name] = {
+            "name": sample.name,
+            "bam_file": ref_select.bam_file_path,
+            "bam_file_index": ref_select.bai_file_path,
+            "vcf_file": ref_select.vcf,
+            "sample": sample,
+        }
+
+        if ref_select.fasta_file_path is None:
+            continue
+        if ref_select.fai_file_path is None:
+            continue
+
+        sample_dict["reference"] = {
+            "reference": ref_select.fasta_file_path,
+            "index": ref_select.fai_file_path,
+        }
+
+    ## zip all files in the sample_dict
+    print(sample_dict)
+    zip_file = televir_bioinf.zip_files(sample_dict, "mapping_bams")
+    # zip_file = remove_pre_static(zip_file)
+
+    response = FileResponse(
+        open(zip_file + ".zip", "rb"),
+        content_type="application/zip",
+    )
+    response["Content-Disposition"] = f'attachment; filename="{zip_file.split("/")[-1]}.zip"'
+    
+    return response
+
+
+class INSaFLUMappingIGV(LoginRequiredMixin, generic.TemplateView):
+    """
+    Teleflu Mapping IGV
+    """
+
+    template_name = "pathogen_identification/teleflu_mapping_igv.html"
+
+    def get_context_data(self, **kwargs):
+        context = super(INSaFLUMappingIGV, self).get_context_data(**kwargs)
+        televir_bioinf = TelevirBioinf()
+
+        teleflu_pk = int(self.kwargs["pk"])
+
+        teleflu_project = TeleFluProject.objects.get(pk=teleflu_pk)
+        televir_project_index = teleflu_project.televir_project.pk
+
+        insaflu_project = teleflu_project.insaflu_project
+
+        ### get reference
+        teleflu_reference = teleflu_project.raw_reference
+        if teleflu_reference is None:
+            return False
+
+        reference_file = teleflu_reference.file_path
+        reference_index = reference_file + ".fai"
+        if os.path.exists(reference_index) is False:
+            televir_bioinf.index_fasta(reference_file)
+        reference_file = remove_pre_static(reference_file)
+        reference_index = remove_pre_static(reference_index)
+        # televir_reference
+        teleflu_refs = teleflu_project.televir_references
+
+        igv_genome_options = {
+            "reference": reference_file,
+            "reference_index": reference_index,
+            "reference_name": teleflu_project.raw_reference.description,
+        }
+
+        # samples
+        samples = InsafluProjectSample.objects.filter(project=insaflu_project)
+        sample_dict = {}
+
+        ### get sample files
+        software_names = SoftwareNames()
+
+        for sample in samples:
+
+            if sample.sample.type_of_fastq == 0:
+                filename = software_names.get_snippy_name()
+            else:
+                filename = software_names.get_medaka_name()
+
+            bam_file = sample.get_file_output(
+                TypePath.MEDIA_ROOT, FileType.FILE_BAM, filename
+            )
+            bam_file_index = sample.get_file_output(
+                TypePath.MEDIA_ROOT,
+                FileType.FILE_BAM_BAI,
+                filename,
+            )
+            vcf_file = sample.get_file_output(
+                TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, filename
+            )
+
+            if bam_file and bam_file_index and os.path.exists(vcf_file):
+                sample_dict[sample.sample.pk] = {
+                    "name": sample.sample.name,
+                    "bam_file": remove_pre_static(bam_file),
+                    "bam_file_index": remove_pre_static(bam_file_index),
+                    "vcf_file": vcf_file,
+                }
+
+        context["igv_genome"] = igv_genome_options
+        context["samples"] = sample_dict
+        context["project"] = teleflu_project.name
+        context["project_index"] = televir_project_index
+        context["teleflu_project_index"] = teleflu_project.pk
+        context["teleflu_project_name"] = (
+            f"Focus: {teleflu_project.raw_reference.description_first}"
+        )
+        context["mapping_id"] = f"IGV Mapping Workflow {teleflu_project.pk}"
 
         return context
 
@@ -1304,11 +1449,18 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
             sample_name = "sample"
             project_name = "project"
 
-        runs_table = RunMainTable(runs, exclude=("created", "nmapped", "mapping"))
+        wrapped_runs = [RunMainWrapper(run) for run in runs]
+        runs_table = RunMainTable(
+            wrapped_runs, exclude=("created", "nmapped", "mapping")
+        )
         rendered_table = ""
 
         if run_mapping.exists():
-            run_mappings_table = RunMappingTable(run_mapping, order_by=("created",))
+            wrapped_mapping_runs = [RunMainWrapper(run) for run in run_mapping]
+
+            run_mappings_table = RunMappingTable(
+                wrapped_mapping_runs, order_by=("created",)
+            )
             small_context = {
                 "nav_sample": True,
                 "total_items": run_mapping.count(),
@@ -1329,7 +1481,7 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
         ).configure(runs_table)
 
         context = {
-            "nav_sample": True,
+            "nav_project": True,
             "total_items": runs.count(),
             "show_paginatior": runs.count() > ConstantsSettings.PAGINATE_NUMBER,
             "show_info_main_page": ShowInfoMainPage(),
@@ -1347,12 +1499,6 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
         return context
 
 
-from django.http import JsonResponse
-from django.template.loader import render_to_string
-
-from fluwebvirus.settings import BASE_DIR
-
-
 def inject_references_filter(request, max_references: int = 30):
     ###
     tag_add_reference = "search_add_project_reference"
@@ -1363,6 +1509,7 @@ def inject_references_filter(request, max_references: int = 30):
     panel_id = None
     project_id = None
     project = None
+    user = request.user
 
     if request.GET.get("max_references") and request.GET.get("max_references") != "":
         max_references = int(request.GET.get("max_references"))
@@ -1378,6 +1525,7 @@ def inject_references_filter(request, max_references: int = 30):
         panel = ReferencePanel.objects.get(pk=panel_id)
 
     references = []
+
     if request.GET.get(tag_add_reference) is not None:
         if table_type == "teleflu_reference":
             request_tag = request.GET.get(tag_add_reference)
@@ -1432,7 +1580,11 @@ def inject_references_filter(request, max_references: int = 30):
                         | Q(
                             reference_source_file__file__icontains=request.GET.get(
                                 tag_add_reference
-                            )
+                            ),
+                            reference_source_file__owner__in=[
+                                None,
+                                user,
+                            ],  # allow public references only
                         )
                     )
                     .exclude(
@@ -1539,7 +1691,6 @@ class ReferencePanelManagement(LoginRequiredMixin, generic.CreateView):
 
     def get_context_data(self, **kwargs) -> Dict[str, Any]:
         context = super().get_context_data(**kwargs)
-        context["nav_project"] = True
         user = self.request.user
 
         panels = (
@@ -1554,6 +1705,7 @@ class ReferencePanelManagement(LoginRequiredMixin, generic.CreateView):
         )
         context["panels"] = panels
         context["user_id"] = user.pk
+        context["nav_reference"] = True
 
         return context
 
@@ -1574,7 +1726,7 @@ class ReferenceManagementBase(TemplateView):
     def get_context_data(self, **kwargs) -> Dict[str, Any]:
 
         context = super().get_context_data(**kwargs)
-        context["nav_project"] = True
+        context["nav_reference"] = True
         return context
 
 
@@ -1599,7 +1751,6 @@ class ReferenceFileManagement(LoginRequiredMixin, generic.CreateView):
 
     def get_context_data(self, **kwargs) -> Dict[str, Any]:
         context = super().get_context_data(**kwargs)
-        context["nav_project"] = True
         user = self.request.user
 
         files = (
@@ -1612,7 +1763,7 @@ class ReferenceFileManagement(LoginRequiredMixin, generic.CreateView):
         RequestConfig(self.request, paginate={"per_page": 15}).configure(files_table)
 
         context["files_table"] = files_table
-        context["nav_sample"] = True
+        context["nav_reference"] = True
         context["show_paginatior"] = files.count() > 15
         context["query_set_count"] = files.count()
         context["user_id"] = user.pk
@@ -1640,21 +1791,33 @@ class ReferenceManagement(LoginRequiredMixin, generic.CreateView):
 
     def get_context_data(self, **kwargs) -> Dict[str, Any]:
         context = super().get_context_data(**kwargs)
-        context["nav_project"] = True
         user = self.request.user
 
         tag_search = "search_references"
 
-        references = ReferenceSourceFileMap.objects.filter(
-            Q(reference_source_file__owner=None)
-            | Q(reference_source_file__owner__id=user.pk)
-        ).order_by("reference_source__description")
+        references = (
+            ReferenceSourceFileMap.objects.filter(
+                Q(reference_source_file__owner__id=user.pk)
+                # | Q(reference_source_file__owner=None)
+            )
+            .order_by("reference_source__description", "reference_source__accid")
+            .distinct("reference_source__description", "reference_source__accid")
+        )
 
         if self.request.GET.get(tag_search) != None and self.request.GET.get(
             tag_search
         ):
             query_string = self.request.GET.get(tag_search)
             query_string = process_query_string(query_string)
+
+            references = (
+                ReferenceSourceFileMap.objects.filter(
+                    Q(reference_source_file__owner__id=user.pk)
+                    | Q(reference_source_file__owner=None)
+                )
+                .order_by("reference_source__description", "reference_source__accid")
+                .distinct("reference_source__description", "reference_source__accid")
+            )
 
             references = references.filter(
                 Q(
@@ -1677,13 +1840,13 @@ class ReferenceManagement(LoginRequiredMixin, generic.CreateView):
 
         summary = {
             "total": references.count(),
-            "Accession ID": references.values_list("reference_source__accid", flat=True)
+            "accession_id": references.values_list("reference_source__accid", flat=True)
             .distinct()
             .count(),
-            "TaxID": references.values_list("reference_source__taxid__taxid", flat=True)
+            "taxID": references.values_list("reference_source__taxid__taxid", flat=True)
             .distinct()
             .count(),
-            "Description": references.values_list(
+            "description": references.values_list(
                 "reference_source__description", flat=True
             )
             .distinct()
@@ -1693,15 +1856,15 @@ class ReferenceManagement(LoginRequiredMixin, generic.CreateView):
             .count(),
         }
 
-        files_table = TelevirReferencesTable(references)
+        files_table = TelevirReferencesTable(references, user_id=user.id)
         RequestConfig(
             self.request,
             paginate={"per_page": ConstantsSettings.TELEVIR_REFERENCE_PAGINATE_NUMBER},
         ).configure(files_table)
 
-        context["table_summary"] = summary
+        context["summary"] = summary
         context["files_table"] = files_table
-        context["nav_sample"] = True
+        context["nav_reference"] = True
         context["show_paginatior"] = references.count() > Constants.PAGINATE_NUMBER
         context["query_set_count"] = references.count()
         context["user_id"] = user.pk
@@ -1733,90 +1896,153 @@ def check_metadata_table_clean(metadata_table_file) -> Optional[pd.DataFrame]:
     return metadata_table
 
 
-def upload_reference_panel_view(request):
-    if request.method == "POST":
-        form = UploadFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            data = {"is_error": False, "is_ok": False, "error_message": ""}
-            # Handle the uploaded files here
-
-            # name = form.cleaned_data["name"]
-            description = form.cleaned_data["description"]
-            reference_fasta_file = form.cleaned_data["fasta_file"]
-            metadata_file = form.cleaned_data["metadata"]
-
-            ###
-            software = Software()
-            utils = Utils()
-
-            reference_metadata_table = check_metadata_table_clean(metadata_file)
-            reference_fasta_temp_file_name = NamedTemporaryFile(
-                prefix="flu_fa_", delete=False
-            )
-            reference_metadata_temp_file_name = NamedTemporaryFile(
-                prefix="flu_fa_", delete=False, suffix=".tsv"
-            )
-
-            try:
-                file_data = reference_fasta_file.read()
-                reference_fasta_temp_file_name.write(file_data)
-                reference_fasta_temp_file_name.flush()
-                reference_fasta_temp_file_name.close()
-                software.dos_2_unix(reference_fasta_temp_file_name.name)
-            except Exception as e:
-                print(e)
-                some_error_in_files = True
-                error_message = "Error in the fasta file"
-                data["is_error"] = True
-                return JsonResponse(data)
-
-            try:
-                reference_metadata_table.to_csv(
-                    reference_metadata_temp_file_name.name, sep="\t", index=False
-                )
-            except Exception as e:
-                print(e)
-                some_error_in_files = True
-                error_message = "Error in the metadata file"
-                data["is_error"] = True
-                return JsonResponse(data)
-
-            process_SGE = ProcessSGE()
-
-            try:
-                # create reference source file
-                reference_source_file = ReferenceSourceFile()
-                reference_source_file.owner = request.user
-                reference_source_file.file = reference_fasta_file
-                reference_source_file.description = description
-                reference_source_file.save()
-
-                taskID = process_SGE.set_submit_upload_reference_televir(
-                    user=request.user,
-                    file_id=reference_source_file.pk,
-                    fasta=reference_fasta_temp_file_name.name,
-                    metadata=reference_metadata_temp_file_name.name,
-                )
-
-            except Exception as e:
-                print(e)
-                some_error_in_files = True
-                error_message = "Error in the metadata file"
-                data["is_error"] = True
-                render(
-                    request,
-                    "pathogen_identification/televir_upload_panels.html",
-                    {"form": form},
-                )
-
-            return redirect("televir_reference_files")
-
-    else:
-        form = UploadFileForm()
-
-    return render(
-        request, "pathogen_identification/televir_upload_panels.html", {"form": form}
+def download_template_view(request):
+    file_path = os.path.join(
+        BASE_DIR, "templates", "televir_reference_metadata_template.tsv"
     )
+    with open(file_path, "rb") as fh:
+        response = HttpResponse(fh.read(), content_type="application/vnd.ms-excel")
+        response["Content-Disposition"] = "inline; filename=" + os.path.basename(
+            file_path
+        )
+        return response
+
+
+class UploadReferencePanel(LoginRequiredMixin, FormValidMessageMixin, generic.FormView):
+    """
+    page to manage and create insaflu references files.
+
+    """
+
+    template_name = "pathogen_identification/televir_upload_panels.html"
+    success_url = reverse_lazy("televir_reference_files")
+    form_class = UploadFileForm
+
+    def get_form_kwargs(self):
+        """ """
+
+        kw = super(UploadReferencePanel, self).get_form_kwargs()
+        kw["request"] = self.request
+        return kw
+
+    def get_context_data(self, **kwargs):
+        context = super(UploadReferencePanel, self).get_context_data(
+            **kwargs
+        )  # Call the base implementation first to get a context
+        if "form" in kwargs and hasattr(kwargs["form"], "error_in_file"):
+            context["error_in_file"] = mark_safe(
+                kwargs["form"].error_in_file.replace("\n", "<br>")
+            )  ## pass a list
+        context["nav_reference"] = True
+        context["nav_modal"] = True  ## short the size of modal window
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
+        return context
+
+    def form_valid(self, form):
+        try:
+            profile = Profile.objects.get(user=self.request.user)
+            if profile.only_view_project:
+                messages.warning(
+                    self.request,
+                    "'{}' account can not add file with samples.".format(
+                        self.request.user.username
+                    ),
+                    fail_silently=True,
+                )
+                return super(UploadReferencePanel, self).form_invalid(form)
+        except Profile.DoesNotExist:
+            pass
+
+        data = {"is_error": False, "is_ok": False, "error_message": ""}
+        # Handle the uploaded files here
+
+        # name = form.cleaned_data["name"]
+        description = form.cleaned_data["description"]
+        reference_fasta_file = form.cleaned_data["fasta_file"]
+        metadata_file = form.cleaned_data["metadata"]
+        ###
+        software = Software()
+        utils = Utils()
+
+        reference_metadata_table = check_metadata_table_clean(metadata_file)
+        user_televir_ref_dir = utils.get_path_to_user_televir_references(
+            self.request.user.id
+        )
+
+        reference_fasta_temp_file_name = utils.get_temp_file_from_dir(
+            user_televir_ref_dir, "televir_ref_upload", ".fasta"
+        )
+        reference_metadata_temp_file_name = utils.get_temp_file_from_dir(
+            user_televir_ref_dir, "televir_metadata_upload", ".tsv"
+        )
+
+        try:
+            file_data = reference_fasta_file.read()
+
+            with open(reference_fasta_temp_file_name, "wb") as fw:
+
+                fw.write(file_data)
+                fw.flush()
+                fw.close()
+
+            software.dos_2_unix(reference_fasta_temp_file_name)
+
+        except Exception as e:
+
+            data["is_error"] = True
+            messages.error(
+                self.request,
+                "Error in the fasta file",
+            )
+            return super(UploadReferencePanel, self).form_invalid(form)
+
+        try:
+            reference_metadata_table.to_csv(
+                reference_metadata_temp_file_name, sep="\t", index=False
+            )
+        except Exception as e:
+            print(e)
+
+            messages.error(
+                self.request,
+                "Error in the metadata file",
+            )
+            return super(UploadReferencePanel, self).form_invalid(form)
+
+        process_SGE = ProcessSGE()
+
+        try:
+            # create reference source file
+            reference_source_file = ReferenceSourceFile()
+            reference_source_file.owner = self.request.user
+            reference_source_file.file = reference_fasta_file
+            reference_source_file.description = description
+            reference_source_file.save()
+
+            taskID = process_SGE.set_submit_upload_reference_televir(
+                user=self.request.user,
+                file_id=reference_source_file.pk,
+                fasta=reference_fasta_temp_file_name,
+                metadata=reference_metadata_temp_file_name,
+            )
+
+        except Exception as e:
+            data["is_error"] = True
+            messages.error(
+                self.request,
+                "Error saving file",
+            )
+            return super(UploadReferencePanel, self).form_invalid(form)
+
+        messages.success(
+            self.request,
+            "Reference file '{}' uploaded successfully".format(description),
+        )
+        return super(UploadReferencePanel, self).form_valid(form)
+
+    form_valid_message = ""  ## need to have this
 
 
 class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
@@ -1905,7 +2131,9 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
 
         ##### check Screening performed
         screening_performed = RunMain.objects.filter(
-            sample=sample_main, run_type=RunMain.RUN_TYPE_SCREENING
+            sample=sample_main,
+            run_type=RunMain.RUN_TYPE_SCREENING,
+            parameter_set__status=ParameterSet.STATUS_FINISHED,
         ).exists()
 
         reference_table_class = CompoundReferenceScore
@@ -1923,8 +2151,6 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
         context["added_references_count"] = added_references_context["references_count"]
 
         ##### search add reference bar
-
-        # raw_references = raw_references
         tag_search = "search_add_project_sample"
         query_string = None
 
@@ -2013,13 +2239,13 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
             + 'title="Run combined metagenomics"'
             + f"pk={sample_pk} "
             + f"ref_name={sample_name} style='color: #fff;'"
-            + f'><i class="padding-button-table fa fa-paw padding-button-table" {color}></i> Map Combined </a>'
+            + f">Map Combined </a>"
         )
         metagenomics_parameters = (
             "<a href="
-            + reverse("pathogenID_sample_settings", kwargs={"sample": sample_pk})
-            + ' data-toggle="tooltip" data-toggle="modal" title="Manage combine settings" style="color: #fff;">'
-            + f'<i class="padding-button-table fa fa-pencil-square padding-button-table" {color}></i> Parameters </a>'
+            + reverse("pathogenID_pipeline", kwargs={"level": sample_main.project.pk})
+            + ' data-toggle="tooltip" data-toggle="modal" title="Project settings" style="color: #fff;">'
+            + f'<i class="padding-button-table fa fa-cog padding-button-table" {color}></i> Settings </a>'
         )
 
         context["runs"] = classification_runs
@@ -2028,11 +2254,13 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
         context["graph_id"] = graph_id
         context["meta_parameters"] = mark_safe(metagenomics_parameters)
         context["deploy_metagenomics"] = mark_safe(deploy_metagenomics)
-        context["nav_sample"] = True
-        context["show_paginatior"] = query_set.count() > Constants.PAGINATE_NUMBER
-        context["query_set_count"] = query_set.count()
+        context["show_paginatior"] = (
+            raw_reference_compound.count() > Constants.PAGINATE_NUMBER
+        )
+        context["query_set_count"] = raw_reference_compound.count()
         context["show_info_main_page"] = ShowInfoMainPage()
         context["nav_modal"] = True  ## short the size of modal window
+        context["nav_project"] = True
 
         context["owner"] = True
         context["references"] = raw_reference_compound
@@ -2182,18 +2410,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         #
         is_classification = run_main_pipeline.run_type == RunMain.RUN_TYPE_PIPELINE
         #
-
-        raw_references = (
-            RawReference.objects.filter(run=run_main_pipeline)
-            .order_by("taxid", "status")
-            .distinct("taxid")
-            .exclude(accid="-")
-        )
-        raw_references = sorted(
-            raw_references,
-            key=lambda x: float(x.read_counts if x.read_counts else 0),
-            reverse=True,
-        )
+        ########
 
         ########
         remapping_performed = True
@@ -2203,12 +2420,15 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
                 run_main_pipeline.parameter_set.leaf, CS.PIPELINE_NAME_remapping
             )
 
-        if remapping_performed is True:
+        if is_classification is True:
+            raw_references = run_main_pipeline.references_sorted()
             raw_reference_table = RawReferenceTable(raw_references)
-        else:
-            raw_reference_table = RawReferenceTableNoRemapping(raw_references)
 
-        #
+        else:
+            raw_references = run_main_pipeline.references_sorted(mapping_only=True)
+            raw_reference_table = RawReferenceTable_Basic(raw_references)
+
+        #####
         run_detail = RunDetail.objects.get(sample=sample_main, run=run_main_pipeline)
 
         #
@@ -2238,10 +2458,8 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
                 sample=sample_main, run=run_main_pipeline
             )
             recover_assembly_contigs(run_main_pipeline, run_assembly)
-            assembly_available = run_assembly.performed
         except RunAssembly.DoesNotExist:
             run_assembly = None
-            assembly_available = False
 
         #
         try:
@@ -2265,7 +2483,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         ).order_by("-coverage")
         #
         report_layout_params = TelevirParameters.get_report_layout_params(run_pk=run_pk)
-        report_sorter = ReportSorter(final_report, report_layout_params)
+        report_sorter = ReportSorter(sample_main, final_report, report_layout_params)
 
         sorted_reports = report_sorter.get_reports()
         excluded_reports_exist = report_sorter.check_excluded_exist()
@@ -2337,7 +2555,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "error_rate_available": report_sorter.error_rate_available,
             "max_error_rate": report_sorter.max_error_rate,
             "quality_avg_available": report_sorter.quality_avg_available,
-            "max_quality_avg": report_sorter.max_quality_avg,
+            "max_qualit y_avg": report_sorter.max_quality_avg,
             "max_mapped_prop": report_sorter.max_mapped_prop,
             "max_coverage": report_sorter.max_coverage,
             "max_windows_covered": report_sorter.max_windows_covered,
@@ -2346,6 +2564,8 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "overlap_pca_exists": report_sorter.overlap_pca_exists,
             "overlap_pca_path": report_sorter.overlap_pca_path,
             "private_reads_available": private_reads_available,
+            "no_mapping": run_main_pipeline.remap == "None",
+            "nav_project": True,
         }
 
         ### downloadable files
@@ -2435,7 +2655,7 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
             project_pk=project_main.pk
         )
 
-        report_sorter = ReportSorter(unique_reports, report_layout_params)
+        report_sorter = ReportSorter(sample, unique_reports, report_layout_params)
         sort_tree_exists = False
         sort_tree_plot_path = None
         if report_sorter.overlap_manager is not None:
@@ -2467,10 +2687,12 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         runs_mapping = RunMain.objects.filter(pk__in=runs).exclude(
             run_type=RunMain.RUN_TYPE_PIPELINE
         )
-        runs_number = len(runs) > 0
+        runs_number = len(runs)
+        runs_exist = runs_number > 0
 
         context = {
             "project": project_name,
+            "nav_project": True,
             "graph_json": graph_json,
             "sort_performed": sort_performed,
             "groups_count": len(sorted_reports),
@@ -2488,7 +2710,8 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
             "report_list": sorted_reports,
             "runs_pipeline": runs_pipeline,
             "runs_mapping": runs_mapping,
-            "runs_number": runs_number,
+            "runs_number": runs_exist,
+            "graph_height": runs_number * 22 + 100,
             "owner": True,
             "in_control": has_controlled_flag,
             "error_rate_available": report_sorter.error_rate_available,
@@ -2564,7 +2787,7 @@ class Scaffold_Remap(LoginRequiredMixin, generic.CreateView):
             )
 
         context = {
-            "nav_sample": True,
+            "nav_project": True,
             "total_items": map_db.count(),
             "show_paginatior": map_db.count() > ConstantsSettings.PAGINATE_NUMBER,
             "show_info_main_page": ShowInfoMainPage(),
@@ -2703,9 +2926,6 @@ def download_file_ref(requestdst):
             )
             # Return the response value
             return response
-
-
-import zipfile
 
 
 def generate_zip_file(file_list: list, zip_file_path: str) -> str:

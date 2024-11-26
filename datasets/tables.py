@@ -307,7 +307,7 @@ class DatasetConsensusTable(tables.Table):
 	name = tables.Column('Name', empty_values=())
 	project_name = tables.Column('Project Name', orderable=False, empty_values=())		## when came from projects
 	source = tables.Column('Source', orderable=False, empty_values=())
-	type_and_subtype = tables.LinkColumn('Classification', orderable=False, empty_values=())
+	type_and_subtype = tables.Column('Classification', orderable=False, empty_values=())
 	alerts = tables.Column('Alerts', empty_values=())
 	technology = tables.Column('Technology', orderable=False, empty_values=())
 	consensus_file = tables.LinkColumn('Consensus File', orderable=False, empty_values=())
@@ -375,10 +375,10 @@ class DatasetConsensusTable(tables.Table):
 		return number
 		"""
 		if  not record.project_sample is None: 
-			return record.project_sample.sample.type_subtype
+			if(record.project_sample.classification is None):
+				return record.project_sample.sample.type_subtype
+			return record.project_sample.classification
 		return self.EMPTY
-	
-		return record.sample.type_subtype
 	
 	def render_consensus_file(self, record):
 		"""

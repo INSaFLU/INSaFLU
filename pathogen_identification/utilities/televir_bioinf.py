@@ -9,8 +9,8 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 
 from constants.constants import Televir_Metadata_Constants
-from pathogen_identification.models import RawReference
 from pathogen_identification.modules.object_classes import MappingStats
+from utils.utils import Utils
 
 
 class DustMasker:
@@ -68,10 +68,14 @@ class DustMasker:
         """
         Run dustmasker on a fasta file
         """
+
         self.mask_sequence_hard(fasta_file)
         os.remove(self.fasta_soft_mask)
 
         return self.fasta_hard_mask
+
+
+from pathogen_identification.modules.object_classes import Temp_File
 
 
 class TelevirBioinf:
@@ -80,6 +84,38 @@ class TelevirBioinf:
         self.metadata_constants = Televir_Metadata_Constants()
         self.samtools_binary = self.metadata_constants.get_software_binary("samtools")
         self.bcf_tools_binary = self.metadata_constants.get_software_binary("bcftools")
+        self.bgzip_binary = self.metadata_constants.get_software_binary("bgzip")
+
+    def bgzip(self, file_path):
+        command = f"{self.bgzip_binary} {file_path}"
+        subprocess.call(command, shell=True)
+        return f"{file_path}.gz"
+
+    def tabix(self, file_path):
+        command = f"{self.bgzip_binary} -f {file_path}"
+        subprocess.call(command, shell=True)
+
+    def get_mapped_reads(self, bam_file, outfile=None):
+        command = f"{self.samtools_binary} view -F 0x4 {bam_file} | cut -f 1 | sort | uniq > {outfile}"
+        subprocess.call(command, shell=True)
+        return os.path.exists(outfile)
+
+    def get_mapped_reads_list(self, bam_file, outfile: str) -> List[str]:
+
+        deployed = self.get_mapped_reads(bam_file, outfile)
+
+        if deployed is False:
+            return []
+
+        with open(outfile, "r") as f:
+            reads = f.readlines()
+
+        processed_reads = []
+        for read in reads:
+            read = read.strip()
+            if read:
+                processed_reads.append(read)
+        return processed_reads
 
     @staticmethod
     def virosaurus_formatting(accid):
@@ -103,14 +139,30 @@ class TelevirBioinf:
 
         return accid
 
-    def check_file_exists_not_empty(self, file_path):
-        return os.path.exists(file_path) and os.path.getsize(file_path) > 100
+    def replace_in_file(self, file_path, old, new, starts_with=None):
+        """
+        Replace a string in a file, use sed, if starts_with is not None, only replace lines that start with starts_with
 
-    def extract_reference(self, source_file, accid, output_file):
-        accid_code = self.process_accid(accid, source_file)
+        """
+
+        if not os.path.exists(file_path):
+            return False
+
+        if starts_with is not None:
+            command = f"sed -i '/^{starts_with}/s/{old}/{new}/g' {file_path}"
+        else:
+            command = f"sed -i 's/{old}/{new}/g' {file_path}"
+
+        subprocess.call(command, shell=True)
+
+        return True
+
+    def extract_reference(self, source_file, accid_code, output_file):
+        # accid_code = self.process_accid(accid, source_file)
         command = (
             f'{self.samtools_binary} faidx {source_file} "{accid_code}" > {output_file}'
         )
+
         subprocess.call(command, shell=True)
 
         return self.check_file_exists_not_empty(output_file)
@@ -159,7 +211,6 @@ class TelevirBioinf:
 
         command += f"--output {output_html}"
 
-        print(command)
         subprocess.call(command, shell=True)
 
     @staticmethod
@@ -278,3 +329,33 @@ class TelevirBioinf:
         agg_df = alignment_df.groupby("target_name").agg({"query_name": "count"})
 
         return agg_df
+
+    def zip_files(self, dict_files: Dict[str, dict], output_file_name: str):
+        """
+        receives dictionary of sample files. each entry key is the sample name, the value is a dictionary of the files
+
+        for each sample, create a directory with the sample name, and copy the files to the directory
+        then zip the directories
+        """
+        utils = Utils()
+        temp_dir = utils.get_temp_dir()
+        output_file = os.path.join(temp_dir, output_file_name)
+        store_dir = os.path.join(temp_dir, output_file_name)
+
+        os.makedirs(store_dir, exist_ok=True)
+
+        for sample, files in dict_files.items():
+            sample_dir = os.path.join(store_dir, sample)
+            os.makedirs(sample_dir, exist_ok=True)
+
+            for id_str, file in files.items():
+                if id_str in ["name", "sample", "vcf_file"]:
+                    continue
+
+                if os.path.exists(file):
+                    shutil.copy(file, sample_dir)
+
+        shutil.make_archive(output_file, "zip", store_dir)
+        # shutil.rmtree(store_dir)
+
+        return output_file

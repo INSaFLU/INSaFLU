@@ -75,7 +75,8 @@ var reload_panels = function(userId) {
                     button.className = "select-file-button btn btn-primary";
                     button.setAttribute("data-toggle", "modal");
                     button.setAttribute("data-target", "#panelSelectModal");
-                    button.title = "Select Panel";
+                    button.setAttribute
+                    button.title = "Add from File";
                     
                     // Create the SVG
                     var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -244,6 +245,41 @@ var loadThisContent = function (event) {
   };
 
 
+  var loadPanelSuggestions = function (event) {
+    event.preventDefault();
+    var btn = $(this);
+    var csrf = btn.attr("csrf");
+    var panel_id = btn.attr("panel-id");
+    $.ajax({
+        url: btn.attr("href"),
+        type: 'GET',
+        data: {
+            search_add_project_reference: $('#search-input').val(),
+            max_references: 10,
+            panel_id: panel_id,
+            csrfmiddlewaretoken: csrf,
+        },
+        success: function (data) {
+
+          $('#reference_table_div').html(data.my_content);
+          
+          if (data["references_count"] > 0){
+
+          var selectAllCheckbox = document.getElementById('Select-All-Checkbox-Modal');
+
+          var referenceCheckboxes = document.getElementsByClassName('reference-checkbox');
+     
+          selectAllCheckbox.addEventListener('change', function() {
+            for (var i = 0; i < referenceCheckboxes.length; i++) {
+              referenceCheckboxes[i].checked = this.checked;
+            }
+          });
+          }
+        }
+    }
+    )
+  };
+
 var reload_connects = function () {
 
 
@@ -267,76 +303,72 @@ var reload_connects = function () {
         $('#submit-button').attr('ref_index', panel_id);
     });
 
-    $(document).ready(function(){
-        $(".select-file-button").click(function(){
-            var user_id = $("#new-panel-button").attr('user_id');
-            var panel_id = $(this).closest('.panel-container').attr('data-panel-id');
-            console.log(panel_id);
-            var url_user_files= $(this).attr('url-user-files');
-            $.ajax({
-                url: url_user_files,
-                method: 'POST',
-                data : {
-                    'user_id': user_id,
-                    'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                },
+    $(".select-file-button").click(function(){
+        var user_id = $("#new-panel-button").attr('user_id');
+        var panel_id = $(this).closest('.panel-container').attr('data-panel-id');
+        var url_user_files = $(".panel-list").attr('url-user-files');
 
-                success: function(data) {
-                    console.log(data)
-                    var html = '';
-                    for(var index in data.files) {
-                        html += '<input type="radio" file-id="'+index+'" panel-id="'+panel_id+'" name="file" value="'+data.files[index]+'">';
-                        html += '<label for="file'+index+'">'+data.files[index]+'</label><br>';
-                    }
-                    $("#file-select").html(html);
+        $.ajax({
+            url: url_user_files,
+            method: 'POST',
+            data : {
+                'user_id': user_id,
+                'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+
+            success: function(data) {
+                var html = '';
+                for(var index in data.files) {
+                    html += '<input type="radio" file-id="'+index+'" panel-id="'+panel_id+'" name="file" value="'+data.files[index]+'">';
+                    html += '<label for="file'+index+'">'+data.files[index]+'</label><br>';
                 }
-            });
-        });
-
-        $("#submit-file").click(function(){
-            console.log("OIHOI")
-            var user_id = $("#new-panel-button").attr('user_id');
-            var selected_file_id= $('input[name="file"]:checked').attr('file-id');
-            var panel_id = $('input[name="file"]:checked').attr('panel-id');
-            var url_register_file_panel = $(this).attr('url-register-file-panel');
-            console.log(panel_id);
-            console.log(selected_file_id);
-            if (selected_file_id) {
-                // Submit the selected file
-                $.ajax({
-                    url: url_register_file_panel,
-                    type: 'post',
-                    data: {
-                        'file_id': selected_file_id,
-                        'panel_id': panel_id,
-                        'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                    },
-                    success: function(response) {
-                        // Handle the success response
-                        // For example, you can close the modal and show a success message
-                        $('#panelSelectModal').modal('hide');
-                        load_panel_refs(panel_id);
-                        $('.modal-backdrop').remove();
-                        reload_panels(user_id);
-                        alert('File registered successfully');
-                    },
-                    error: function(response) {
-                        // Handle the error response
-                        // For example, you can show an error message
-                        alert('Error registering file');
-                    }
-                });
-            } else {
-                alert("Please select a file");
+                $("#file-select").html(html);
             }
         });
-
     });
 
 }
 
 
 var ready_document = function (user_id, reload_url) {
+
+    $("#submit-file").click(function(){
+        var user_id = $("#new-panel-button").attr('user_id');
+        var selected_file_id= $('input[name="file"]:checked').attr('file-id');
+        var panel_id = $('input[name="file"]:checked').attr('panel-id');
+        var url_register_file_panel = $(this).attr('url-register-file-panel');
+
+        console.log("selecting file");
+
+        if (selected_file_id) {
+            // Submit the selected file
+            $.ajax({
+                url: url_register_file_panel,
+                type: 'post',
+                data: {
+                    'file_id': selected_file_id,
+                    'panel_id': panel_id,
+                    'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                success: function(response) {
+                    // Handle the success response
+                    // For example, you can close the modal and show a success message
+                    $('#panelSelectModal').modal('hide');
+                    load_panel_refs(panel_id);
+                    $('.modal-backdrop').remove();
+                    reload_panels(user_id);
+                    alert('File registered successfully');
+                },
+                error: function(response) {
+                    // Handle the error response
+                    // For example, you can show an error message
+                    alert('Error registering file');
+                }
+            });
+        } else {
+            alert("Please select a file");
+        }
+    });
 
     $('.remove-panel-button').click(function () {
 
@@ -404,6 +436,14 @@ var ready_document = function (user_id, reload_url) {
 
         checkedRows.push(ref_id);
       });
+        
+        if (checkedRows.length == 0) {
+            $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+                'No references were selected.' +
+                '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                '</div>');
+            return;
+        }
   
       // Process the checked rows
       // Add your processing logic here
@@ -417,49 +457,62 @@ var ready_document = function (user_id, reload_url) {
           'reference_ids': checkedRows,
         },
         success: function(data) {
-          if (data['is_ok']) {
-            $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
-              'References successfully added' +
-              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-              '</div>');
-              // reload table
-              $('#reference_table_div').html(data.empty_content);
-              // empty #search-input
-              $('#search-input').val('');
-              // clear selection 
-              $('.reference-checkbox').prop('checked', false);
-              
-              
-              // drop modal
-              load_panel_refs(panel_index);
-              reload_panels(user_id);
-              // close modal 
-              $('#myModal').modal('hide');
-              $('body').removeClass('modal-open');
-              $('.modal-backdrop').remove();
-              // unblock the UI
-              $.unblockUI();
+            if (data['is_ok']) {
+                $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
+                    'References successfully added' +
+                    '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                    '</div>');
+                // reload table
+                $('#reference_table_div').html(data.empty_content);
+                // empty #search-input
+                $('#search-input').val('');
+                // clear selection 
+                $('.reference-checkbox').prop('checked', false);
+                
+                // drop modal
+                load_panel_refs(panel_index);
+                reload_panels(user_id);
 
+                // close modal 
+                $('#myModal').modal('hide');
+                $('body').removeClass('modal-open');
+                $('.modal-backdrop').remove();
+                // unblock the UI
+                $.unblockUI();
 
-          } else if (data['is_error']) {
-            $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-              'The references were not added.' +
-              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-              '</div>');
+            } else if (data['is_full']) {
+                $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+                    'Some references were not added. The panel is full. The maximum number of references per panel is ' + data["max_references"] +
+                    '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                    '</div>');
+                // drop modal
+                $('#myModal').modal('hide');
+                $('body').removeClass('modal-open');
+                $('.modal-backdrop').remove();
+                // unblock the UI
+                $.unblockUI();
 
-              // drop modal
-              $('#myModal').modal('hide');
-            
-          } else if (data['is_empty']) {
-            $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-              'No references were selected.' +
-              '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-              '</div>');
+            } else if (data['is_error']) {
+                $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+                'The references were not added.' +
+                '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                '</div>');
 
-              // drop modal
-              
-          }
-          $.unblockUI();
+                // drop modal
+                $('#myModal').modal('hide');
+                $('body').removeClass('modal-open');
+                $('.modal-backdrop').remove();
+                // unblock the UI
+                $.unblockUI();
+                
+            } else if (data['is_empty']) {
+                $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+                'No references were selected.' +
+                '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                '</div>');
+
+                // drop modal
+            }
         }
       })
 

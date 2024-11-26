@@ -10,7 +10,7 @@ from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import MEDIA_ROOT, ConstantsSettings
 from pathogen_identification.install_registry import Params_Illumina, Params_Nanopore
-from pathogen_identification.models import FinalReport, RawReference, RunMain
+from pathogen_identification.models import FinalReport, Projects, RawReference
 from pathogen_identification.modules.metadata_handler import RunMetadataHandler
 from pathogen_identification.modules.object_classes import (
     Read_class,
@@ -21,10 +21,7 @@ from pathogen_identification.modules.remap_class import (
     Mapping_Instance,
     Mapping_Manager,
 )
-from pathogen_identification.utilities.televir_parameters import (
-    RemapParams,
-    TelevirParameters,
-)
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.update_DBs import (
     Update_FinalReport,
     Update_ReferenceMap,
@@ -62,13 +59,11 @@ class RunMain:
     dir_plots: str = f"plots"
     igv_dir: str = f"igv"
 
-    def __init__(
-        self, config: dict, method_args: pd.DataFrame, username: str, project_name: str
-    ):
+    def __init__(self, config: dict, method_args: pd.DataFrame, project: Projects):
         self.sample_name = config["sample_name"]
         self.type = config["type"]
-        self.project_name = project_name
-        self.username = username
+        self.project_name = project.name
+        self.username = project.owner.username
         self.prefix = "none"
         self.config = config
         self.taxid = config["taxid"]
@@ -76,6 +71,7 @@ class RunMain:
         self.threads = config["threads"]
         self.house_cleaning = False
         self.clean = config["clean"]
+        self.project_pk = project.pk
 
         self.full_report = os.path.join(
             self.config["directories"][CS.PIPELINE_NAME_remapping], "full_report.csv"
@@ -303,7 +299,7 @@ class Input_Generator:
     def __init__(self, reference: RawReference, output_dir: str, threads: int = 4):
         self.utils = Utils_Manager()
         self.reference = reference
-        self.install_registry = Televir_Metadata
+        self.install_registry = Televir_Metadata()
 
         self.dir_branch = os.path.join(
             ConstantsSettings.televir_subdirectory,
@@ -361,7 +357,7 @@ class Input_Generator:
                 f"no remapping parameters found for {self.reference.accid} in leaf {parameter_leaf}"
             )
 
-    def generate_config(self):
+    def generate_config_file(self):
         self.config = {
             "sample_name": simplify_name_lower(
                 os.path.basename(self.r1_path).replace(".fastq.gz", "")
@@ -374,10 +370,7 @@ class Input_Generator:
             "threads": self.threads,
             "prefix": self.prefix,
             "project_name": self.project,
-            "metadata": {
-                x: os.path.join(self.install_registry.METADATA["ROOT"], g)
-                for x, g in self.install_registry.METADATA.items()
-            },
+            "metadata": self.install_registry.metadata_full_path,
             "bin": self.install_registry.BINARIES,
             "taxid": self.taxid,
             "accid": self.accid,
@@ -421,8 +414,10 @@ class Input_Generator:
             "-coverage"
         )
         #
+        if sample is None:
+            return
         report_layout_params = TelevirParameters.get_report_layout_params(run_pk=run.pk)
-        report_sorter = ReportSorter(final_report, report_layout_params)
+        report_sorter = ReportSorter(sample, final_report, report_layout_params)
         report_sorter.sort_reports_save()
 
 
@@ -451,6 +446,19 @@ class Command(BaseCommand):
         raw_reference_id = int(options["ref_id"])
 
         reference = RawReference.objects.get(pk=raw_reference_id)
+
+        if reference is None:
+            print("reference not found")
+            return
+
+        if reference.run is None:
+            print("run not found")
+            return
+
+        if reference.run.project is None:
+            print("project not found")
+            return
+
         project_name = reference.run.project.name
         user = reference.run.project.owner
         project_name = reference.run.project.name
@@ -470,14 +478,13 @@ class Command(BaseCommand):
 
         try:
             input_generator.generate_method_args()
-            input_generator.generate_config()
+            input_generator.generate_config_file()
             print("config generated")
 
             run_engine = RunMain(
                 input_generator.config,
                 input_generator.method_args,
-                username=user.username,
-                project_name=project_name,
+                reference.run.project,
             )
             run_engine.generate_targets()
             run_engine.run()

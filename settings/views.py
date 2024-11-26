@@ -11,12 +11,12 @@ from datasets.models import Dataset, DatasetConsensus
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project, ProjectSample, Sample
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from pathogen_identification.models import PIProject_Sample
 from pathogen_identification.models import Projects as Televir_Project
-from pathogen_identification.utilities.utilities_views import (
-    duplicate_metagenomics_software,
-)
+from pathogen_identification.utilities.utilities_views import \
+    duplicate_metagenomics_software
 from settings.constants_settings import ConstantsSettings
 from settings.default_software import DefaultSoftware
 from settings.forms import SoftwareForm
@@ -40,6 +40,7 @@ class index(TemplateView):
         context["show_info_main_page"] = (
             ShowInfoMainPage()
         )  ## show main information about the institute
+        context["nav_settings"] = True
         return context
 
 
@@ -180,21 +181,22 @@ class PISettingsView(LoginRequiredMixin, ListView):
             parameter__televir_project_sample=None,
         )
         project = Televir_Project.objects.get(pk=project.pk)
+        type_of_use_conversion = {
+            Software.TYPE_OF_USE_televir_global: Software.TYPE_OF_USE_televir_project,
+            Software.TYPE_OF_USE_televir_settings: Software.TYPE_OF_USE_televir_project_settings,
+        }
         for software in query_set:
             software_parameters = Parameter.objects.filter(
                 software=software,
             )
 
-            software.pk = None
-            if software.type_of_use == Software.TYPE_OF_USE_televir_global:
-                software.type_of_use = Software.TYPE_OF_USE_televir_project
-            else:
-                software.type_of_use = Software.TYPE_OF_USE_televir_project_settings
+            type_of_use = type_of_use_conversion[software.type_of_use]
 
             try:
                 Software.objects.get(
                     name=software.name,
-                    type_of_use=software.type_of_use,
+                    name_extended=software.name_extended,
+                    type_of_use=type_of_use,
                     parameter__televir_project=project,
                     parameter__televir_project_sample=None,
                     pipeline_step=software.pipeline_step,
@@ -204,6 +206,8 @@ class PISettingsView(LoginRequiredMixin, ListView):
                 pass
 
             except Software.DoesNotExist:
+                software.pk = None
+                software.type_of_use = type_of_use
                 software.save()
                 for parameter in software_parameters:
                     parameter.pk = None
@@ -272,7 +276,8 @@ class PISettingsView(LoginRequiredMixin, ListView):
                     parameter.televir_project = project
                     parameter.save()
 
-    def check_project_params_exist(self, project):
+    @staticmethod
+    def check_project_params_exist(project):
         """
         check if project parameters exist
         """
@@ -293,9 +298,6 @@ class PISettingsView(LoginRequiredMixin, ListView):
                 ConstantsSettings.PIPELINE_NAME_read_classification
             ]
         }
-
-        if PICS.METAGENOMICS is True:
-            return True
 
         if software.name in filter_dict:
             if pipeline_step in filter_dict[software.name]:
@@ -329,11 +331,12 @@ class PISettingsView(LoginRequiredMixin, ListView):
             televir_project = Televir_Project.objects.get(pk=int(self.kwargs["level"]))
 
         ### test all defaults first, if exist in database
+        print("############## 1.")
         default_software = DefaultSoftware()
         default_software.test_all_defaults_once(
             self.request.user
         )  ## the user can have defaults yet
-
+        print("############## done.")
         ### project parameters
         if televir_project:
             # if not self.check_project_params_exist(televir_project):
@@ -355,6 +358,7 @@ class PISettingsView(LoginRequiredMixin, ListView):
         ### IMPORTANT, must have technology__name, because old versions don't
         constant_settings = PICS()
         condensed_pipeline_names = constant_settings.vect_pipeline_names_condensed
+        print("###################")
 
         for technology in technologies:  ## run over all technology
             vect_pipeline_step = []
@@ -409,7 +413,11 @@ class PISettingsView(LoginRequiredMixin, ListView):
                                 technology.replace(" ", "").replace("/", ""),
                             ),
                             pipeline_step_name,
-                            SoftwaresTable(query_set, televir_project=televir_project),
+                            SoftwaresTable(
+                                query_set,
+                                televir_project=televir_project,
+                                default_software=default_software,
+                            ),
                         ]
                     )
             ## if there is software for the pipeline step
@@ -451,6 +459,7 @@ class PISettingsGroupsView(PISettingsView):
         if level > 0:
             televir_project = Televir_Project.objects.get(pk=int(self.kwargs["level"]))
         ### test all defaults first, if exist in database
+
         default_software = DefaultSoftware()
         default_software.test_all_defaults_once(
             self.request.user
@@ -476,19 +485,19 @@ class PISettingsGroupsView(PISettingsView):
         ### IMPORTANT, must have technology__name, because old versions don't
         constant_settings = PICS()
         condensed_pipeline_groups = constant_settings.vect_pipeline_groups
-
         for technology in technologies:  ## run over all technology
             groups_tables = []
             for (
                 group_name,
                 condensed_pipeline_names,
             ) in condensed_pipeline_groups.items():
+
                 vect_pipeline_step = []
                 for (
                     pipeline_step_name,
                     pipeline_steps,
                 ) in condensed_pipeline_names.items():
-                    # for pipeline_step in ConstantsSettings.vect_pipeline_names:
+                    #
 
                     if televir_project is None:
                         query_set = Software.objects.filter(
@@ -545,7 +554,9 @@ class PISettingsGroupsView(PISettingsView):
                                 ),
                                 pipeline_step_name,
                                 SoftwaresTable(
-                                    query_set, televir_project=televir_project
+                                    query_set,
+                                    televir_project=televir_project,
+                                    default_software=default_software,
                                 ),
                             ]
                         )
@@ -637,7 +648,9 @@ class QCSettingsView(LoginRequiredMixin, ListView):
                                 technology.replace(" ", "").replace("/", ""),
                             ),
                             pipeline_step,
-                            SoftwaresTable(query_set),
+                            SoftwaresTable(
+                                query_set, default_software=default_software
+                            ),
                         ]
                     )
             ## if there is software for the pipeline step
@@ -711,7 +724,9 @@ class SettingsView(LoginRequiredMixin, ListView):
                                 technology.replace(" ", "").replace("/", ""),
                             ),
                             pipeline_step,
-                            SoftwaresTable(query_set),
+                            SoftwaresTable(
+                                query_set, default_software=default_software
+                            ),
                         ]
                     )
             ## if there is software for the pipeline step

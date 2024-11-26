@@ -39,9 +39,11 @@ class UploadFileForm(forms.Form):
         + "The sequences must be in FASTA format. "
         + "<br>Sequence IDs must be unique. Text after space will be ignored."
         + "<br>Max total sequence length: {} bp.<br>".format(
-            settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA
+            settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA * 10
         )
-        + "Max FASTA file size: {} kb".format(settings.MAX_REF_FASTA_FILE)
+        + "Max FASTA file size: {}".format(
+            filesizeformat(settings.MAX_FASTQ_FILE_UPLOAD)
+        )
     )
     description_metadata = (
         "Upload a metadata file. The metadata file must be in CSV or TSV format with appropriate extentions."
@@ -55,6 +57,35 @@ class UploadFileForm(forms.Form):
     description = forms.CharField(widget=forms.Textarea, help_text=description_help)
     fasta_file = forms.FileField(help_text=description_fasta)
     metadata = forms.FileField(help_text=description_metadata)
+
+    def __init__(self, *args, **kwargs):
+        ## add ids to filefields
+        self.request = kwargs.pop("request")
+        super(UploadFileForm, self).__init__(*args, **kwargs)
+
+        self.fields["fasta_file"].widget.attrs["id"] = "fasta_file"
+        self.fields["metadata"].widget.attrs["id"] = "metadata"
+
+    def is_valid1(self) -> bool:
+        """
+        Check if the form is valid
+        """
+        valid = super(UploadFileForm, self).is_valid()
+        if not valid:
+            return valid
+
+        fasta_file = self.cleaned_data.get("fasta_file")
+        metadata = self.cleaned_data.get("metadata")
+
+        if fasta_file is None:
+            self.add_error("fasta_file", "Please upload a FASTA file.")
+            return False
+
+        if metadata is None:
+            self.add_error("metadata", "Please upload a metadata file.")
+            return False
+
+        return True
 
 
 ## https://kuanyui.github.io/2015/04/13/django-crispy-inline-form-layout-with-bootstrap/
@@ -101,11 +132,11 @@ class PanelReferencesUploadForm(forms.ModelForm):
                 "reference_fasta",
                 "Reference (Fasta/Multi-Fasta)",
                 "Reference file in fasta format.<br>"
-                + "Max total sequence length: {}<br>".format(
-                    filesizeformat(settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA)
+                + "Max total sequence length: {} bp<br>".format(
+                    settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA * 10
                 )
                 + "Max FASTA file size: {}".format(
-                    filesizeformat(settings.MAX_REF_FASTA_FILE)
+                    filesizeformat(settings.MAX_FASTQ_FILE_UPLOAD)
                 ),
                 True,
             ),
@@ -161,8 +192,8 @@ class PanelReferencesUploadForm(forms.ModelForm):
             if len(self.cleaned_data.get("display_name", "").strip()) > 0
             else []
         )
-        dict_names = dict(zip(vect_names_to_upload, [0] * len(vect_names_to_upload)))
 
+        dict_names = dict(zip(vect_names_to_upload, [0] * len(vect_names_to_upload)))
         ## test reference_fasta
         if "reference_fasta" not in cleaned_data:
             self.add_error(
@@ -201,13 +232,27 @@ class PanelReferencesUploadForm(forms.ModelForm):
             )
             if (
                 not some_error_in_files
-                and total_length_fasta > settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA
+                and total_length_fasta
+                > settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA * 10
             ):
                 some_error_in_files = True
                 self.add_error(
                     "reference_fasta",
                     "The max sum length of the sequences in fasta: {}".format(
-                        settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA
+                        settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA * 10
+                    ),
+                )
+
+            fasta_file_size = os.path.getsize(reference_fasta_temp_file_name.name)
+            if (
+                not some_error_in_files
+                and fasta_file_size > settings.MAX_FASTQ_FILE_UPLOAD
+            ):
+                some_error_in_files = True
+                self.add_error(
+                    "reference_fasta",
+                    "The max size of the fasta file: {}".format(
+                        filesizeformat(settings.MAX_FASTQ_FILE_UPLOAD)
                     ),
                 )
 
@@ -216,6 +261,7 @@ class PanelReferencesUploadForm(forms.ModelForm):
                 Constants.MAX_LENGTH_CONTIGS_SEQ_NAME,
                 len(name),
             )
+
             if not some_error_in_files and n_seq_name_bigger_than > 0:
                 some_error_in_files = True
                 if n_seq_name_bigger_than == 1:

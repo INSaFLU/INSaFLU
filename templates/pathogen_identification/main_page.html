@@ -25,27 +25,17 @@
 
 {% block content %}
 
-<style>
-    .btn-warning {
-        border: 2px solid #b3b3b3;
-        background-color: #FFC000; 
-        color: white; /*
-    }
-    .dropdown-item {
-        cursor: pointer;
-    }
-</style>
-
 {% block extra_head %}
-    <link rel="stylesheet" href="{% static 'css/televir_main_page.css' %}">
-    <link rel="stylesheet" href="{% static 'css/televir_reference_management_panels.css' %}">
+<link rel="stylesheet" href="{% static 'css/televir_main_page.css' %}">
+<link rel="stylesheet" href="{% static 'css/televir_reference_management_panels.css' %}">
+
 {% endblock %}
 
-<div class="table-container">
+<div class="metagenomics-table-container">
     {% block table %}
     <div class="table-responsive">
 
-        <h4 class="table-title"> Metagenomics Management. </h4>
+        <h4 class="table-title"> Metagenomics Management </h4>
         <p class="table-description"> 
             <i class="fa fa-flask"></i> 
             Run Metagenomics workflows, and validation by mapping.
@@ -71,9 +61,10 @@
                                 <a><span class="hidden-phone"> Run </span></a> 
                             </button>
                             <div class="dropdown-menu pull-right">
-                                <a href="#" id="deploypi_btn" class="dropdown-item" style="text-align:center;" deploy-url="{% url deploy_url %}" user-id="{{ user_id }}" project-id= "{{ project_index }}"><span class="hidden-phone" >  Classic Workflows </span></a>
-                                <a href="#" id="deploypi_mapping_btn" class="dropdown-item" style="text-align:center;" deploy-url="{% url 'deploy_Project_PIMapping' %}" ><span class="hidden-phone"> Map Combined </span></a>
-                                <a href="#" id="deploypi_added_mapping_btn" class="dropdown-item" style="text-align:center;" deploy-url="{% url 'map_selected_references_project_samples' %}" ><span class="hidden-phone"> Map Added </span></a>
+                                <a href="#" id="deploypi_btn" class="dropdown-item" style="text-align:left;" deploy-url="{% url deploy_url %}" user-id="{{ user_id }}" project-id= "{{ project_index }}"><span class="hidden-phone" >  Classic Workflows </span></a>
+                                <a href="#" id="deploypi_mapping_btn" class="dropdown-item" style="text-align:left;" deploy-url="{% url 'deploy_Project_PIMapping' %}" ><span class="hidden-phone"> Map Combined </span></a>
+                                <a href="#" id="deploypi_added_mapping_btn" class="dropdown-item" style="text-align:left;" deploy-url="{% url 'map_selected_references_project_samples' %}" ><span class="hidden-phone"> Map Added </span></a>
+                                <a href="#" id="deploypi_panels_btn" class="dropdown-item" style="text-align:left;" deploy-url="{% url 'map_panels_project_samples' %}" ><span class="hidden-phone"> Map Panels </span></a>
                             </div>
                             {% else %}
                             <button type="button" class="btn btn-primary dark" id="deploypi_btn" deploy-url="{% url deploy_url %}" aria-haspopup="true" aria-expanded="false">
@@ -100,34 +91,45 @@
                                 <a href="{% url "pathogenID_pipeline" level=project_index %}"><span class="hidden-phone" style="color:white"><i>Project Settings</i></span></a>
                                     </button>
                         </div>
+                        {% if project_not_updated %}
+                            <div class="btn-group">
+                                <button type="button" id="update-project" class="btn btn-primary dark" aria-haspopup="true" aria-expanded="false" update-url="{% url "update_televir_project" %}" project-id="{{ project_index }}" {% if update_running %} disabled {% endif %}>
+                                    {% if update_running %}
+                                    <i class="fa fa-spinner fa-spin" style= "color: white;"></i>
+                                    <a href="#"><span class="hidden-phone" style="color:white"><i>Updating</i></span></a>
+                                    {% else %}
+                                    <a href="#"><span class="hidden-phone" style="color:white"><i>Update</i></span></a>
+                                    {% endif %}
+                                        </button>
+                            </div>
+                        {% endif %}
 
-                        <div class="btn-group float-right">
+                        <div class="btn-group" style="float: right;">
                             <button type="button" class="kill-runs btn btn-warning btn-primary" data-toggle="modal" data-target="#id_remove_all_modal">
                                 <i class="fa fa-power-off" aria-hidden="true" ></i>
                               </button>
                         </div>
 
                     </th>
-                    <th colspan="1" style="border-left: 5px solid #f2f2f2;">
+                    <th colspan="1">
                         <div class="btn-group d-flex justify-content-center">
                             <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fa fa-database"></i> Actions
+                                <i class="fa fa-database" style="margin-right: 5px;"></i> Actions
                             </button>
                             <div class="dropdown-menu">
                                 <button class="dropdown-item" data-toggle="modal" data-target="#myModal">Add Targets</button>
                                 <button class="dropdown-item add-panels" data-toggle="modal" data-target="#addPanelModal" href="{% url 'get_project_panel_suggestions' %}">Add Panels</button>
+                                <button id="teleflu_open" class="dropdown-item" data-toggle="modal" data-target="#teleflu_ref_modal">
+                                    <i class="fa fa-crosshairs fa-lg" aria-hidden="true" style="margin-right: 5px;">‌</i>  Focus
+                                </button>
                             </div>
                         </div>
                     </th>
-                    <th colspan="1" style="border-left: 5px solid #f2f2f2;">
-                        <div class="btn-group d-flex justify-content-center">
-                            <button type="button" id="teleflu_open" class="btn btn-primary" data-toggle="modal" data-target="#teleflu_ref_modal">
-                                <i class="fa fa-crosshairs fa-lg" aria-hidden="true">‌</i>  Focus
-                              </button>
-                        </div>
 
+                    <th colspan="1" style="text-align: center;">
+                        Sample Select
                     </th>
-                    <th colspan="4" style="border-left: 5px solid #f2f2f2;">
+                    <th colspan="4" style="">
 
                         <form method="get" class="form-inline form-search pull-right">
                             {% csrf_token %}
@@ -147,7 +149,7 @@
                         <th {{ column.attrs.th.as_html }}><a href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header|title }}</a></th>
                     {% else %}
                         <th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
-                    {% endif %}                    
+                    {% endif %}
                     {% endfor %}
                 </tr>
             </thead>
@@ -178,6 +180,14 @@
     </div>
     {% endblock table %}
 
+    <p class="insa-description bg-insa-fixed-top" style=""><strong>
+        <i class="fa fa-info-circle"></i> 
+        <span class="hidden-phone">
+            Note: You can change parameters to run new workflows. Results will be integrated to the Combined Report cumulatively.
+            </span>
+        </strong>
+    </p>
+
     {% if table.page and show_paginatior %}
 	{% block pagination %}
 	<label id="id-total-list" class="pull-right">Total samples: {{ query_set_count }}</label>
@@ -186,116 +196,13 @@
     </div>
     {% else %}
     <label id="id-total-list" class="pull-right">Total samples: {{ query_set_count }}</label>
-    {% endif %}
-    <p class="insa-description bg-insa-fixed-top" style=""><strong>
-        <i class="fa fa-info-circle"></i> 
-        <span class="hidden-phone">
-            Note: You can change parameters to run new workflows. Results will be integrated to the Combined Report cumulatively.
-            </span>
-        </strong>
-    </p>
     <br>
-    {% if teleflu_projects_exist %}
-
-    <h4 class="table-title"> Reference Analysis </h4>
-    <p class="table-description">
-        <i class="fa fa-crosshairs fa-lg" aria-hidden="true">‌</i>
-        Focus on selected targets for validation. 
-        Coordinate processing and mapping workflows against selected references across multiple samples. 
-    </p>
-
-    <div>
-    <ul id="teleflu-list">
-        {% for project in teleflu_projects %}
-        <li>
-            <div class="teleflu-panel-container">
-
-                <div class="teleflu-manage clearfix">
-                    <div class="reference-samples">
-
-                        <span class="reference-note " > 
-                            <a teleflu-id="{{project.id}}" class="request-add-teleflu-sample btn btn-primary btn-sm" data-toggle="modal" data-target="#add_teleflu_sample_modal">
-                                <i class="fa fa-plus" aria-hidden="true"></i>
-                            </a>    
-                            Samples: {{ project.samples }} 
-                        </span>
-                
-                    </div>
-                    
-
-                    <div class="reference-item">
-                        <p class="reference-description">{{ project.ref_description }}</p>
-                        <p class="reference-id">Taxid: {{ project.ref_taxid }}</p>
-                        <p class="reference-id">Accid: {{ project.ref_accid }}</p>
-                    </div>
-
-
-                    <a href="{% url 'teleflu_project' project.id %}" class="teleflu-details btn btn-primary">View Details</a>
-
-                </div>
-
-                <div class="teleflu-results ">
-                    {% if project.insaflu_project == "Finished" %}
-                    <span class="insaflu-exists">
-                        <a>
-                            <i class="fa fa-check" aria-hidden="true"></i>
-                            INSaFLU Project
-                        </a>
-                    </span>
-                    {% elif project.insaflu_project == "Processing" %}
-                    <span class="insaflu-processing">
-                        <a>
-                            <i class="fa fa-spinner fa-spin" aria-hidden="true"></i>
-                            INSaFLU Project
-                        </a>
-                    </span>
-                    {% endif %}
-                </div>
-
-            </div>
-        </li>
-        {% endfor %}
-    </ul>
-    </div>
 
     {% endif %}
-    {% if show_insaflu_tables %}
     
-    <div class="table-responsive">
-        <table class="table table-hover table-bordered table-striped" {% if teleflu_table.attrs %}z
-            {{ teleflu_table.attrs.as_html }}{% endif %}>
-            <thead>
-                <tr>
-                    {% for column in teleflu_table.columns %}
-                    {% if column.orderable %}
-                        <th {{ column.attrs.th.as_html }}><a href="{% querystring teleflu_table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header|title }}</a></th>
-                    {% else %}
-                        <th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
-                    {% endif %}
-                    {% endfor %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in teleflu_table.page.object_list|default:teleflu_table.rows %} {# support pagination #}
-                  {% block teleflu_table.tbody.row %}
-                  <tr id="row_{{ row.record.id }}" class="{% cycle "odd" "even" %}">
-                    {% for column, cell in row.items %}
-                      <td {{ column.attrs.td.as_html }}>{{ cell }}</td>
-                    {% endfor %}
-                  </tr>
-                  {% endblock teleflu_table.tbody.row %}
-                {% empty %}
-                  {% if teleflu_table.empty_text %}
-                  {% block teleflu_table.tbody.empty_text %}
-                      <tr><td colspan="{{ teleflu_table.columns|length }}">{{ teleflu_table.empty_text }}</td></tr>
-                  {% endblock teleflu_table.tbody.empty_text %}
-                  {% endif %}
-                {% endfor %}
-            </tbody>
-            <tfoot></tfoot>
-        </table>
+    <div id="teleflu-projects-info" teleflu-projects-url="{% url 'query_teleflu_projects' %}">
+
     </div>
-    {% endif %}
 
     <a href="javascript:history.go(0)" class="btn btn-small btn-primary dark"><i class="fa fa-refresh"></i> Refresh</a>
 
@@ -349,7 +256,7 @@
             </div>
             <!-- Modal footer -->
             <div class="modal-footer" id="id-modal-footer-remove">
-                <button id="id-kill-all-button" type="button" class="btn btn-primary" project_id="{{project_index}}" data-dismiss="modal">Terminate All</button>
+                <button id="id-kill-all-button" type="button" class="btn btn-primary" project_id="{{project_index}}" project-name="{{project_name}}" data-dismiss="modal">Terminate All</button>
                 <button id="id-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal"
                     aria-hidden="true">Cancel</button>
             </div>
@@ -498,13 +405,13 @@
 <!-- The teleflu refrence search -->
 <div class="modal fade" id="teleflu_ref_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel_teleflu" data-backdrop="static">
     <div class="modal-dialog modal-lg" role="document">
-      <div class="modal-content">
+      <div class="modal-content" style="position: relative;">
         <div class="modal-header">
         <div>
             <h4 class="modal-title" id="myModalLabel_teleflu">Reference Targeted Analysis</h4>
-            <p class="modal-title-description">Map selected samples and connect to an INSaFLU project. Select Televir hit below to use as reference.</p>
+            <p class="modal-title-description">Map selected samples and connect to an INSaFLU project. Select Televir hits below to use as reference.</p>
         </div>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="position: absolute; top: 15px; right: 15px;">
             <span aria-hidden="true">&times;</span>
           </button>
         </div>
@@ -558,6 +465,33 @@
         </div>
     </div>
 </div>
+
+<!-- Delete Teleflu Project Modal -->
+<div class="modal fade" id="delete_teleflu_project_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel_delete_teleflu_project" data-backdrop="static">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <!-- Modal Header -->
+            <div class="modal-header alert alert-danger">
+                <h4 class="modal-title">Delete Teleflu Project</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="modal-body mx-auto mw-100">
+                <p>Are you sure you want to delete this Teleflu project?</p>
+                <!-- Additional details can be added here if needed -->
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="modal-footer">
+                <button id="confirm-delete-teleflu-project-button" type="button" class="btn btn-danger" delete-url="{% url 'delete_teleflu_project' %}" data-dismiss="modal">Delete</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock content %}
 
 {% block js %}
@@ -604,61 +538,24 @@
 		$('.close').click(function () {
 			$.unblockUI();
 		});
-
-
+        $('#id-add-teleflu-sample-button').click(function () {
+            $.unblockUI();
+        });
+        $('#id-cancel-add-teleflu-sample-button').click(function () {
+            $.unblockUI();
+        });
         $('.add-panels').click(function() {
-        var url= $(this).attr('href');
-        load_panels_main(url, '.panel-list-modal ul', false, true);
-        });
-    });
-
-	/// set wait screen
-    $(".request-add-teleflu-sample").on("click", function () {
-        var teleflu_id = $(this).attr('teleflu-id');
-        $("#id-add-teleflu-sample-button").attr('teleflu-id', teleflu_id);
-        // change text
-        $("#id-label-add-teleflu-sample").text("Add selected samples ?");
-        console.log(teleflu_id);
-    });
-
-    $("#id-add-teleflu-sample-button").on("click", function () {
-
-        var teleflu_id = $(this).attr('teleflu-id');
-        var url = $('#id-modal-body-add-teleflu-sample').attr('add-teleflu-single-value-url');
-        var csrf = $('#teleflu_create-button').attr('csrf');
-
-        // get checked samples rows
-        var checkedRows_samples = [];
-        $('.select_sample-checkbox:checked').each(function () {
-            // collect ids of checked rows
-            var sample_id = $(this).attr('sample_id');
-            checkedRows_samples.push(sample_id);
-        });
-        $.ajax({
-            url: url,
-            type: 'POST',
-            data: {
-                'teleflu_id': teleflu_id,
-                'sample_ids': checkedRows_samples,
-                'csrfmiddlewaretoken': csrf
-            },
-            success: function (data) {
-                if (data['not_added'] == true) {
-                    alert('No samples added. They may already be in the project.');
-                } else if (data['is_empty'] == true) {
-                    alert('No samples selected.');
-                } else {
-                    alert('Samples added.');
-                    location.reload();
-                }
-            }
+            var url= $(this).attr('href');
+            var user_id = $(".deploypi_btn").attr('user-id');
+            load_panels_main(url, user_id, '.panel-list-modal ul', false, true);
         });
 
+        teleflu_projects_load();
+
     });
+
+
 
 </script>
-
-
-
 
 {% endblock js %}

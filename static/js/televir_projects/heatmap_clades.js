@@ -187,7 +187,6 @@ function createHeatmapClades(data, divId) {
         var x_label = data.points[0].x;
         var y_label = data.points[0].y;
         var rowIdX = "info_" + x_label;
-        console.log(rowIdX);
 
         var rowElement = document.getElementById(rowIdX);
         if (rowElement) {

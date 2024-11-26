@@ -1,4 +1,12 @@
-.panel-list {
+
+
+ul {
+    list-style-type: none;
+    padding-left: 7px;
+    padding-right: 7px;
+}
+
+.panel-list, .reference-list {
     margin-bottom: 10px;
     border-radius: 8px;
     padding: 10px;
@@ -7,11 +15,6 @@
     padding-right: 0;
 }
 
-ul {
-    list-style-type: none;
-    padding-left: 7px;
-    padding-right: 7px;
-}
 
 .panel-list-modal {
     margin-bottom: 10px;
@@ -58,6 +61,16 @@ li.no-panels {
     border: 1px solid #ddd;
     border-radius: 5px;
     background-color: #f9f9f9;
+}
+
+.screen-header-style {
+    text-align: center;
+    background-color: #d2e6fc; /* Light blue background */
+}
+
+.screen-cell-style {
+    text-align: center;
+    background-color: #d2e6fc; /* Light blue background */
 }
 
 .clearfix::after {
@@ -109,4 +122,22 @@ li.no-panels {
     left: 50%;
     transform: translate(-50%, -50%);
     border-radius: 50%;
+}
+
+.workflow-link-panel {
+    margin-bottom: 10px; /* Adds margin around the div */
+    margin-left: 20px; /* Adds margin around the div */
+    padding-top: 10px; /* Adds padding to the bottom of the div */
+    padding-bottom: 10px; /* Adds padding to the bottom of the div */
+    border-radius: 5px; /* Optional: Adds rounded corners */
+    background-color: #f2f2f2; /* Light gray background */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Optional: Adds a subtle shadow for depth */
+    justify-content: center;
+}
+
+.centered-links {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }

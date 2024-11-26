@@ -18,25 +18,23 @@
 
 {% block breadcrumbs %}
 {{ block.super }}
-{% breadcrumb "Project Index" "project-index" %}
-{% breadcrumb "TELEVIR Projects" "PIprojects_main" %}
+{% breadcrumb "References Index" "references-index" %}
 {% breadcrumb "Manage References" "" %}
 {% endblock %}
+
 
 
 {% block extra_nav %}
 <nav class="nav-style">
     <ul style="list-style-type: none; margin: 0; padding: 0; overflow: hidden;">
-        <li style="float: left; margin-right: 10px;" class="tab active" ><a href="{% url 'televir_reference_files' %}">Files</a></li>
-        <li style="float: left; margin-right: 10px;" class="tab" ><a href="{% url 'televir_references' %}">References</a></li>
-        <li style="float: left; margin-right: 10px;" class="tab" ><a href="{% url 'reference_panels' %}">Panels</a></li>
+        <li style="float: left; margin-right: 20px; padding: 10px 20px;" class="tab header active" ><a href="{% url 'televir_reference_files' %}" style="font-size: 18px;">Files</a></li>
+        <li style="float: left; margin-right: 20px; padding: 10px 0;" class="tab" ><a href="{% url 'televir_references' %}" style="font-size: 18px;">References</a></li>
+        <li style="float: left; margin-right: 20px; padding: 10px 0;" class="tab" ><a href="{% url 'reference_panels' %}" style="font-size: 18px;">Panels</a></li>
     </ul>
 </nav>
 {% endblock %}
 
-
 {% block content %}
-
 
 {% block extra_head %}
 
@@ -98,7 +96,7 @@
 			</div>
 			<!-- Modal footer -->
 			<div class="modal-footer" id="id-modal-footer-remove">
-				<button id="id-remove-button" type="button" class="btn btn-primary" data-dismiss="modal">Remove</button>
+				<button id="id-remove-button" type="button" class="btn btn-primary" csrf-token="{{ csrf_token }}" data-dismiss="modal">Remove</button>
 				<button id="id-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal"
 					aria-hidden="true">Cancel</button>
 			</div>
@@ -109,45 +107,12 @@
 {% endblock content %}
 
 
+
 {% block js %}
-    {% load static from staticfiles %}
-    <script type="text/javascript">
+{% load static from staticfiles %}
 
-        $(".remove_file").on('click', function(){
-            console.log('remove file');
-            var file_name = $(this).attr('file-name');
-            var file_pk = $(this).attr('pk');
-            console.log(file_name);
-            var remove_single_value_url = $(this).attr('remove-single-value-url');
-            $("#id-modal-body-remove-sample").html('<label id="id-label-remove" class="col-form-label">Remove file: '+file_name+'?</label>');
-            $("#id-modal-body-remove-sample").attr('file_pk', file_pk);
-            $("#id-remove-button").attr('remove-single-value-url', remove_single_value_url);
-            $("#id_remove_modal").modal('show');
-        });
+{% load static from staticfiles %}
 
-        $("#id-remove-button").on('click', function(){
-            var remove_single_value_url = $(this).attr('remove-single-value-url');
-            var file_pk = $("#id-modal-body-remove-sample").attr('file_pk');
-            console.log('remove file');
-            console.log(file_pk);
-            console.log(remove_single_value_url);
-            $.ajax({
-                url: remove_single_value_url,
-                type: 'POST',
-                data: {
-                    'file_id': file_pk,
-                    'csrfmiddlewaretoken': '{{ csrf_token }}'
-                },
-                success: function(data){
-                    if (data["is_ok"] == true){
-                        location.reload();
-                    } else {
-                        alert(data["message"]);
-                    }
-                }
-            });
-        });
-
-    </script>
+<script type="text/javascript" src="{% static 'js/televir_projects/reference_files.js' %}"></script>
 
 {% endblock js %}

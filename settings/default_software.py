@@ -27,11 +27,11 @@ class DefaultSoftware(object):
 
     software_names = SoftwareNames()
 
-    def __init__(self):
+    def __init__(self, test: int = 1):
         """change values"""
         self.default_parameters = DefaultParameters()
         self.televir_utiltity = Utility_Pipeline_Manager()
-        self.televir_utiltity.get_software_db_dict()
+        # self.televir_utiltity.get_software_db_dict()
 
         self.change_values_software = {}  ### the key is the name of the software
 
@@ -66,7 +66,7 @@ class DefaultSoftware(object):
         """test if televir software is available"""
         user_system = User.objects.get(username="system")
 
-        self.test_all_defaults_pathogen_identification_once(user_system)
+        # self.test_all_defaults_pathogen_identification_once(user_system)
 
         televir_available = self.test_televir_pipelines_available_once(user_system)
 
@@ -505,17 +505,6 @@ class DefaultSoftware(object):
         )
 
         self.test_default_db(
-            SoftwareNames.SOFTWARE_BWA_name,
-            self.default_parameters.get_bwa_default(
-                user,
-                Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_illumina,
-                pipeline_step=ConstantsSettings.PIPELINE_NAME_read_classification,
-            ),
-            user,
-        )
-
-        self.test_default_db(
             SoftwareNames.SOFTWARE_KRAKEN2_name,
             self.default_parameters.get_kraken2_default(
                 user,
@@ -644,6 +633,17 @@ class DefaultSoftware(object):
                 user,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_SNIPPY_PI_name,
+            self.default_parameters.get_snippy_pi_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_request_mapping,
             ),
             user,
         )
@@ -781,6 +781,16 @@ class DefaultSoftware(object):
         #            user,
         #        )
 
+        # self.test_default_db(
+        #    SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ILLU_name,
+        #    self.default_parameters.get_minimap2_depletion_illumina_default(
+        #        user,
+        #        Software.TYPE_OF_USE_televir_global,
+        #        ConstantsSettings.TECHNOLOGY_illumina,
+        #    ),
+        #    user,
+        # )
+
         self.test_default_db(
             SoftwareNames.SOFTWARE_KRAKEN2_name,
             self.default_parameters.get_kraken2_default(
@@ -788,6 +798,7 @@ class DefaultSoftware(object):
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
                 pipeline_step=ConstantsSettings.PIPELINE_NAME_contig_classification,
+                is_to_run=False,
             ),
             user,
         )
@@ -799,6 +810,7 @@ class DefaultSoftware(object):
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_minion,
                 pipeline_step=ConstantsSettings.PIPELINE_NAME_read_classification,
+                is_to_run=False,
             ),
             user,
         )
@@ -810,6 +822,7 @@ class DefaultSoftware(object):
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_minion,
                 pipeline_step=ConstantsSettings.PIPELINE_NAME_contig_classification,
+                is_to_run=False,
             ),
             user,
         )
@@ -821,6 +834,7 @@ class DefaultSoftware(object):
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
                 pipeline_step=ConstantsSettings.PIPELINE_NAME_viral_enrichment,
+                is_to_run=False,
             ),
             user,
         )
@@ -828,16 +842,6 @@ class DefaultSoftware(object):
         self.test_default_db(
             SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name,
             self.default_parameters.get_bowtie2_remap_default(
-                user,
-                Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_illumina,
-            ),
-            user,
-        )
-
-        self.test_default_db(
-            SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ILLU_name,
-            self.default_parameters.get_minimap2_depletion_illumina_default(
                 user,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
@@ -878,7 +882,8 @@ class DefaultSoftware(object):
         except:
             pass
         try:
-            Software.objects.get(
+
+            software_queried = Software.objects.get(
                 name=software_name,
                 owner=user,
                 type_of_use=vect_parameters[0].software.type_of_use,

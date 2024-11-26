@@ -1,11 +1,6 @@
 
 
 
-.sidebar-header {
-    padding: 10px;
-    background-color: #ccc; /* Set the background color for the header */
-    text-align: center;
-  }
 
 .table-container {
     width: 100%;
@@ -16,7 +11,7 @@
 
 .container {
   width: 2000px;
-  max-width: 1500px;
+  max-width: 1400px;
 }
 
 .table-references-added {
@@ -37,13 +32,18 @@
 }
 
 .sidebar-header {
-  padding: 10px;
-  background-color: #ccc; /* Set the background color for the header */
+  color: #090909; /* Set text color to white for contrast */
+  padding: 15px 20px; /* Increased padding for better spacing */
+  background-color: #ccc; /* A fresh, modern blue */
+  border-radius: 5px; /* Rounded corners for a softer look */
+  text-align: center;
 }
 
 .sidebar-header h3 {
   margin: 0;
-  color: #fff; /* Set the text color for the header */
+  color: #3d3d3d; /* Keep text color white for contrast */
+  font-size: 18px; /* Slightly larger font size */
+  font-weight: 800; /* Medium font weight for better readability */
 }
 
 .sidebar-actions {
@@ -100,4 +100,42 @@
 
 .info-icon:hover img {
   display: block;
+}
+
+.clear-selections-btn {
+  border: 1px solid #a05f5f; /* Add a border */
+  color: #666; 
+  cursor: pointer; /* Cursor changes to pointer to indicate it's clickable */
+  padding: 2px 8px;
+  border-radius: 5px; /* Rounded corners */
+  transition: background-color 0.3s; /* Smooth transition for background color */
+}
+
+.clear-selections-btn:hover {
+  color: white;
+  background-color: #9b3131; /* Darker shade of red on hover */
+}
+
+.clear-selections-btn:focus {
+  outline: none; /* Removes the outline to keep the design clean */
+}
+
+td.ensemble_ranking, th.ensemble_ranking {
+  text-align: center; /* Horizontally centers the content */
+  vertical-align: middle; /* Vertically centers the content */
+}
+
+td.global_ranking, th.global_ranking {
+  text-align: center; /* Horizontally centers the content */
+  vertical-align: middle; /* Vertically centers the content */
+}
+
+td.runs, th.runs {
+  text-align: center; /* Horizontally centers the content */
+  vertical-align: middle; /* Vertically centers the content */
+}
+
+td.mapped, th.mapped {
+  vertical-align: middle; /* Vertically centers the content */
+  min-width: 200px;
 }

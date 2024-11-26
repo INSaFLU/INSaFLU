@@ -352,6 +352,7 @@ def Update_Remap(run_class: RunEngine_class, parameter_set: ParameterSet):
     try:
         with transaction.atomic():
             Update_FinalReport(run_class, runmain, sample)
+            Update_Targets(run_class, runmain)
             Update_RefMap_DB(run_class, parameter_set)
             Update_Run_Detail_noCheck(run_class, parameter_set)
             Update_RunMain_noCheck(run_class, parameter_set, tag="finished")
@@ -823,8 +824,8 @@ def Update_Run_QC(run_class: RunEngine_class, parameter_set: ParameterSet):
     run_qc_exists = TelevirRunQC.objects.filter(run=runmain).exists()
 
     if run_qc_exists:
-        run_qc = TelevirRunQC.objects.get(run=runmain)
 
+        run_qc = TelevirRunQC.objects.get(run=runmain)
         run_qc.run = runmain
         run_qc.performed = run_class.qc_report.performed
         run_qc.method = run_class.qc_report.method
@@ -1039,7 +1040,7 @@ def Update_Run_Classification(run_class: RunEngine_class, parameter_set: Paramet
                 taxid=row.taxid,
                 accid=row.accid,
                 status=status,
-                description=row.description,
+                description=summarize_description(row.description, max_length=200),
                 counts=row.counts,
                 classification_source=row.source,
             )
@@ -1230,6 +1231,40 @@ def translate_classification_success(success):
         return "0"
 
 
+def summarize_description(description, max_length=100):
+
+    if len(description) > max_length:
+        return description[:max_length]
+
+    return description
+
+
+def Update_Targets(run_class: RunEngine_class, runmain):
+
+    for target in run_class.metadata_tool.remap_targets:
+        print(target.taxid, target.accid)
+
+        try:
+            raw_reference = RawReference.objects.get(
+                run=runmain,
+                taxid=target.taxid,
+                accid=target.accid,
+            )
+            raw_reference.status = RawReference.STATUS_MAPPED
+            raw_reference.save()
+
+        except RawReference.DoesNotExist:
+            raw_reference = RawReference(
+                run=runmain,
+                taxid=target.taxid,
+                accid=target.accid,
+                status=RawReference.STATUS_MAPPED,
+                description=summarize_description(target.description, 200),
+            )
+
+            raw_reference.save()
+
+
 def Update_FinalReport(run_class: RunEngine_class, runmain, sample):
 
     for i, row in run_class.report.iterrows():
@@ -1240,11 +1275,17 @@ def Update_FinalReport(run_class: RunEngine_class, runmain, sample):
             run=runmain,
             taxid=row["taxid"],
         )
+
         counts = row["mapped"]
 
         if remap_targets.exists():
             for target in remap_targets:
-                counts = target.counts
+                if target.counts is not None:
+                    counts = target.counts
+
+        classification_success = translate_classification_success(
+            row["classification_success"]
+        )
 
         try:
             report_row = FinalReport.objects.get(
@@ -1252,6 +1293,7 @@ def Update_FinalReport(run_class: RunEngine_class, runmain, sample):
                 sample=sample,
                 unique_id=row["unique_id"],
             )
+
         except FinalReport.DoesNotExist:
             report_row = FinalReport(
                 run=runmain,
@@ -1308,9 +1350,7 @@ def Update_FinalReport(run_class: RunEngine_class, runmain, sample):
                 status=RawReference.STATUS_MAPPED,
                 description=row["description"],
                 counts=counts,
-                classification_source=translate_classification_success(
-                    row["classification_success"]
-                ),
+                classification_source=classification_success,
             )
 
             raw_reference.save()

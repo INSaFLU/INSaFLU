@@ -21,9 +21,6 @@ $('#main_tab a').on('click', function (e) {
 	e.preventDefault()
 	var index_main = $(this).attr('index_main');
 	var number_indexes = $(this).attr('number_indexes');
-	console.log("########## index_main: " + index_main);
-	console.log("number_indexes: " + number_indexes);
-	console.log("insalfu_nav_index_main_old: " + insalfu_nav_index_main_old);
 
 	if (insalfu_nav_index_main_old !== index_main) {
 		for (let step = 0; step < number_indexes; step++) {
@@ -34,33 +31,25 @@ $('#main_tab a').on('click', function (e) {
 				$(href_main_active).removeClass('active');
 				tech_tab.removeClass('active');
 
-				console.log($(href_main_active).attr('id'));
 				
 				/// second
 				let number_groups = parseInt($('#second_tab_' + step).attr('number_groups'));
-				console.log("step: " + step);
-				console.log("number_groups: " + number_groups);
+
 				$('#second_tab_' + step).removeClass('active');
 
 				for (let step_li = 1; step_li <= number_groups; step_li++) {
 					let group_tab = $('#second_tab_' + step + ' li:nth-child(' + step_li + ') a');
-					console.log("step_li: " + step_li);
-					console.log(group_tab.hasClass('active'));
 
 					if (group_tab.hasClass('active')) {
 						let index_group = group_tab.attr('index_group');
 						let href_group_active = group_tab.attr('href');
 						$(href_group_active).removeClass('active');
 						group_tab.removeClass('active');
-						
-						console.log("index_group: " + index_group);
-						
+
 						let number_pipelines = parseInt($('#third_tab_' + step + '_' + index_group).attr('number_pipelines'));
-						console.log("number_pipelines: " + number_pipelines);
 						for (let step_li_third = 1; step_li_third <= number_pipelines; step_li_third++) {
 							let pipeline_tab = $('#third_tab_' + step + '_' + (step_li - 1) + ' li:nth-child(' + step_li_third + ') a');
-							console.log("step_li_third: " + step_li_third);
-							console.log(pipeline_tab.hasClass('active'));
+
 							
 							if (pipeline_tab.hasClass('active')) {
 								let href_active_third = pipeline_tab.attr('href');
@@ -77,10 +66,7 @@ $('#main_tab a').on('click', function (e) {
 		}
 		insalfu_nav_index_main_old = index_main;
 		index_group_old = "0";
-		console.log("index_main: " + index_main);
-		console.log($('#main_tab li:nth-child(' + (parseInt(index_main) + 1) + ')'));
-		console.log(index_group_old);
-		console.log($('#second_tab_' + index_main + ' li:first-child a').attr('href'));
+
 		$('#main_tab li:nth-child(' + (parseInt(index_main) + 1) + ') a').tab('show');
 		$('#second_tab_' + index_main + ' li:first-child a').tab('show');
 		$('#third_tab_' + index_main + '_0 li:first-child a').tab('show');

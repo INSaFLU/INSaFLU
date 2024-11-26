@@ -87,7 +87,7 @@
                                     {% if files.intermediate_reports_zip %} {{ files.intermediate_reports_zip }} {% endif %}
                                     {% if files.final_reports_csv %} {{ files.final_reports_csv }} {% endif %}
                                 </div>
-                            </div>     
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -319,13 +319,16 @@
                 <div style="padding: 20px">
                     <div class="row">
                         <div class= "col-sm">
+                            
                             <p> Remapping was performed using the software <strong>{{run_remap.method}}</strong>. </p>
+                            {% if is_classification %}
                             <p> Of the references identified, {{run_detail.merged_number}} corresponding accession id(s) were found in
                                 our
                                 databases. References tagged as phages in local databases were excluded. </p>
                             <p style=padding-left:4em> Of these, {{number_validated}} successful alignments were produced.
                             </p>
                             <p> The following <strong>Pathogen identification</strong> table shows the results of the remapping onto identified references. Below, in the <strong>Raw Classification and Mapping Summary</strong> table, you can select extra hits for remapping. </p>
+                            {% endif %}
                             <p> Results are shown for a minimum coverage of {{run_remap.coverage_minimum}}X and a maximum coverage
                                 of
                                 {{run_remap.coverage_maximum}}X. </p>                    
@@ -355,7 +358,7 @@
                 <div class="col-sm" >
                     <h5 class="mb-0" >
                         <a class="collapsed"   data-toggle="collapse" data-parent="#accordion" href="#collapseReport" aria-expanded="false" aria-controls="collapseReport">
-                            <strong>Validation Mapping Results</strong>
+                            <strong> {% if is_classification %} Validation {% endif %} Mapping Results</strong>
                         </a>
                         <a href="https://insaflu.readthedocs.io/en/latest/metagenomics_virus_detection.html#televir-output-visualization-and-download" target="_blank">
                             <i class="fa fa-info-circle" aria-hidden="true"></i>
@@ -371,7 +374,7 @@
                     {% if sort_performed %}
                     <div class="float-right overlap-button">
                         <a href="#" class="summary-header btn btn-primary dark"> 
-                            <span>Read Overlap Summary</span>
+                            <span><i class="fa fa-exclamation-circle"></i> Read Overlap Summary</span>
                         </a>
                     </div> 
 
@@ -379,16 +382,24 @@
                 </div>
             </div>
         </div>
+        
         {% if sort_performed %}
         <div id="summary" class="collapsible">
             <div class="card-block collapsible-summary" style="display: none;">
-                <div style="padding: 20px">
+                <div style="padding: 20px; padding-bottom: 0px;">
                     <div class="row">
                         <div class="col-sm">
                             <p> 
                             <p> 
                                 Shared read analysis recovered <strong>{{ groups_count }} groups of references</strong>.
                             </p> 
+                        </div>
+                    </div>
+                </div>
+                {% if clade_heatmap_json_exists %}
+                <div style="padding: 20px; padding-top: 0px;">
+                    <div class="row">
+                        <div class="col-sm">
                             <p> 
                                 The shared heatmap displays the proportion of reads of one group (column) that are shared with another group (row). 
                                 Groups are sorted by maximum coverage. 
@@ -396,7 +407,6 @@
                         </div>
                     </div>
                 </div>
-                {% if clade_heatmap_json_exists %}
                 <div id="clade-heatmap" class="plot-container">
                 
                 </div>
@@ -428,10 +438,23 @@
             </div>
         </div>
         {% endif %}
+        {% if no_mapping %}
+        <div id="collapseReport" class="collapse show" role="tabpanel" aria-labelledby="headingReport">
+            <div class="card-block">
+                <div style="padding: 20px">
+                    <div class="row">
+                        <div class="col-sm" style="padding: 20px; background-color: #e9ecef; border-radius: 5px; text-align: center;">
+                            <p> No mapping requested for this run (check settings). Request mapping utilities in Sample Reference Management or below. </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
         <div id="collapseReport" class="collapse show" role="tabpanel" aria-labelledby="headingReport">
             <div class="card-block">
                 <div style="padding: 2px; overflow-x:auto;">    
-                    <table class="table" width="100%" id="report_table">
+                <table class="table table-fixed" width="100%" id="report_table">
                     <thead>
                         <tr class="header">
                             <th class="description-column">Description</th>
@@ -461,9 +484,10 @@
                             {% endif %}
                         </tr>
                     </thead>
+
                     <tbody>
 
-                        {% for final_report in report_list %}
+                    {% for final_report in report_list %}
                         {% if sort_performed %}
                         <tr>
                             <td colspan="100%">
@@ -479,7 +503,7 @@
                                        <button class="showSecondaryRows" type="button" style="visibility: hidden;">
                                            <i class="fa fa-toggle-off toggle-icon"></i>
                                        </button>                                        
-                                   </div>
+                                    </div>
                                     {% endif %}
                                     <!-- First section -->
                                     <div class="custom-section" id="info_{{ final_report.name }}">
@@ -538,9 +562,13 @@
 
                             <td data-title="Description" style="text-align: left;">
                                 {% if value.first_in_group %}
-                                {% if final_report.has_multiple %}                                        
-                                        <i class="fa fa-first-order sort-icon"  title="Best Coverage"></i>
+                                {% if final_report.has_multiple %}
+                                        <i class="fa fa-empty sort-icon"  title="Best Coverage"></i>
+                                {% else %}
+                                        <i class="fa fa-empty sort-icon"  title="Best Coverage"></i>
+                                
                                 {% endif %}
+                                
                                 {% endif %}
                                 <a href="#" id="plot_show" >{{value.description}}</a>
                             </td>
@@ -587,7 +615,7 @@
 
                         </tr>
                         <tr class="collapse-report" group-name="{{final_report.name}}">
-                        <td colspan="16">
+                        <td colspan="18">
                             <div class="table__wrapper">
                             <table class="table table-inner">
                                 <tbody>
@@ -630,7 +658,7 @@
         
                                     {% if value.coverage > 0 %}
                                     <tr class="igv_tab" id="igv_display_{{value.accid}}">
-                                        <td colspan="16" align="center">
+                                        <td colspan="18" align="center">
                                             <div class="card-block">
                                                 <div class="container-fluid">
                                                     <div class="igv-loader" id="loader_igv_{{value.accid}}"><img src="{{ spinner_url }}"/></div>
@@ -759,16 +787,17 @@
                     </tr>
                     {% endfor %}
                     </tbody>
-                    </table>
+                </table>
                 </div>
             </div>
         </div>
+        {% endif %}
     </div>
     <div class="card">
         <div class="card-header" role="tab" id="headingMapExtra" url-remap="{% url 'deploy_televir_map' %}" csrf-token= '{{csrf_token}}'>
             <h5 class="mb-0">
                 <a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseMapExtra" aria-expanded="false" aria-controls="collapseMapExtra">
-                    <strong>Raw Classification and Mapping Summary</strong>
+                    <strong> {% if is_classification %} Raw Classification and {% endif %} Mapping Summary</strong>
                 </a>
                 </h5>
         </div>

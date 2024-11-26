@@ -190,6 +190,27 @@ border-top: 1px;
 .select option.hidden_option{
     display: none;
 }
+
+.showSecondaryRows {
+    float: left;
+    background-color: transparent;
+    border: none;
+}
+
+button.showSecondaryRows:focus {
+    outline: none;
+}
+
+
+.toggle {
+    border: none;
+}
+
+.toggle-icon {
+    color: #007bff;
+    font-size: 21px;
+}
+
 .expand-button {
     display: block;
     width: 100%;
@@ -204,10 +225,14 @@ border-top: 1px;
     justify-content: center;
   }
   .link-container {
-    border: 8px solid #d3d3d3; /* Make the border thicker and blue */
+    max-width: 100%;
+    background-color: #f2f2f2; /* Light gray background */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Optional: Adds a subtle shadow for depth */
+    justify-content: center;
     padding: 20px 20px; /* Add more padding */
     border-radius: 10px; /* Round the edges */
     text-align: center; /* Center the text */
+    margin-left: 20px; /* Add margin to the left */
     margin: 20px auto; /* Center the div */
     width: 40%; /* Set the width */
     display: flex;
@@ -307,4 +332,9 @@ z-index: 9999; /* Set a higher z-index value */
 
 .info-icon:hover img {
 display: block;
+}
+
+.map-only-cell  {
+    background-color: #3498db;
+    color: white;
 }

@@ -17,12 +17,11 @@ from pathogen_identification.models import (
 )
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
 from pathogen_identification.utilities.utilities_pipeline import (
-    RawReferenceUtils,
     SoftwareTreeUtils,
     Utils_Manager,
 )
 from pathogen_identification.utilities.utilities_views import (
-    calculate_reports_overlaps,
+    RawReferenceUtils,
     set_control_reports,
 )
 from utils.process_SGE import ProcessSGE
@@ -140,8 +139,7 @@ class Command(BaseCommand):
             screening=screening,
             mapping_only=mapping_only,
         )
-        # tree_makeup = local_tree.makeup
-        # pipeline_tree= utils.generate_software_tree_extend(local_tree, user)
+
         pipeline_tree_index = local_tree.software_tree_pk
         pipeline_tree_query = SoftwareTree.objects.get(pk=pipeline_tree_index)
 
@@ -154,8 +152,6 @@ class Command(BaseCommand):
             sample=target_sample, leaf=matched_path_node, project=project
         )
 
-        ### draw graph
-        graph_progress = TreeProgressGraph(target_sample)
         #### Deployment RUn
 
         mapping_run = RunMain.objects.get(pk=mapping_run_pk)
@@ -173,7 +169,7 @@ class Command(BaseCommand):
             ### to remove condition for production
             elif mapping_run.status not in [
                 RunMain.STATUS_FINISHED,
-                RunMain.STATUS_ERROR,
+                # RunMain.STATUS_ERROR,
             ]:
                 run = Run_Main_from_Leaf(
                     user=user,
@@ -189,7 +185,7 @@ class Command(BaseCommand):
                 )
 
                 run.is_available = True
-                run.get_in_line()
+                run.set_to_queued()
 
                 submission_dict[target_sample].append(run)
 
@@ -202,7 +198,12 @@ class Command(BaseCommand):
 
             reference_utils = RawReferenceUtils(target_sample)
             _ = reference_utils.create_compound_references()
-            calculate_reports_overlaps(target_sample, force=True)
+
+            _ = process_SGE.set_submit_televir_sort_pisample_reports(
+                user=user,
+                pisample_pk=target_sample.pk,
+            )
+            # calculate_reports_overlaps(target_sample, force=True)
 
             process_SGE.set_process_controler(
                 user,

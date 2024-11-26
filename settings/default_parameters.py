@@ -14,8 +14,8 @@ from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
 from pathogen_identification.constants_settings import \
     ConstantsSettings as PI_ConstantsSettings
-from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility, Utility_Pipeline_Manager)
+from pathogen_identification.utilities.utilities_pipeline import \
+    Utility_Pipeline_Manager
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -55,18 +55,21 @@ class DefaultParameters(object):
     ### MINIMUN of MAX of NanoFilt
     NANOFILT_MINIMUN_MAX = 100
 
-    def __init__(self):
+    def __init__(self, prep_televir_dbs: bool = True):
         """
         Constructor
         """
-        televir_util = Parameter_DB_Utility()
-        software_list = televir_util.get_software_list()
+        #televir_util = Parameter_DB_Utility()
+        #software_list = televir_util.get_software_list()
 
         self.televir_db_manager = Utility_Pipeline_Manager()
 
         # self.televir_db_manager.set_software_list(software_list)
 
-        self.televir_db_manager.get_software_db_dict()
+        if prep_televir_dbs:
+            self.televir_db_manager.get_software_db_dict()
+            self.televir_db_manager.get_host_dbs()
+
 
     def get_software_parameters_version(self, software_name):
         """
@@ -149,7 +152,7 @@ class DefaultParameters(object):
             ## set sequential number
 
     def persist_parameters_update(
-        self, vect_parameters: List[Parameter], software: Software
+        self, vect_parameters: List[Parameter], software: Software, range_update=False
     ):
         """
         persist a specific software by default
@@ -161,11 +164,41 @@ class DefaultParameters(object):
             assert parameter.sequence_out not in dt_out_sequential
 
             try:
-                Parameter.objects.get(
+                parameter_existing = Parameter.objects.get(
                     software=software,
                     name=parameter.name,
                     sequence_out=parameter.sequence_out,
                 )
+
+                if range_update:
+                    if parameter.type_data == Parameter.PARAMETER_int:
+
+                        if (
+                            parameter.range_available
+                            != parameter_existing.range_available
+                        ):
+                            parameter_existing.range_available = (
+                                parameter.range_available
+                            )
+                            parameter_existing.save()
+
+                        if parameter.range_max != parameter_existing.range_max:
+                            parameter_existing.range_max = parameter.range_max
+                            parameter_existing.save()
+
+                        if parameter.range_min != parameter_existing.range_min:
+                            parameter_existing.range_min = parameter.range_min
+                            parameter_existing.save()
+
+                        if parameter.parameter is not None:
+
+                            if int(parameter_existing.parameter) > int(
+                                parameter_existing.range_max
+                            ):
+                                parameter_existing.parameter = (
+                                    parameter_existing.range_max
+                                )
+                                parameter_existing.save()
 
             except Parameter.DoesNotExist:
 
@@ -272,8 +305,7 @@ class DefaultParameters(object):
         """
         # logger = logging.getLogger("fluWebVirus.debug")
         # logger.debug("Get parameters: software-{} user-{} typeofuse-{} project-{} psample-{} sample-{} tec-{} dataset-{}",software_name, user, type_of_use, project, project_sample, sample, technology_name, dataset)
-        
-        
+
         if self.check_software_is_polyvalent(software_name):
             if pipeline_step is None:
                 prefered_pipeline = self.get_polyvalent_software_pipeline(software_name)
@@ -321,7 +353,6 @@ class DefaultParameters(object):
             DefaultParameters.MASK_DONT_care,
         ]:
             return DefaultParameters.MASK_not_applicable
-
 
         ### parse them
         dict_out = {}
@@ -792,6 +823,7 @@ class DefaultParameters(object):
         ####
         #### PATHOGEN IDENTIFICATION
         ####
+
         elif software.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_name:
             return self.get_remap_defaults(
                 software.owner,
@@ -916,6 +948,7 @@ class DefaultParameters(object):
                 software.owner,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=software.pipeline_step.name,
             )
 
         elif software.name == SoftwareNames.SOFTWARE_BOWTIE2_DEPLETE_name:
@@ -933,6 +966,18 @@ class DefaultParameters(object):
             )
 
         elif software.name == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ILLU_name:
+
+            if (
+                software.name_extended
+                == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ILLU_name_extended_screening
+            ):
+                return self.get_minimap2_remap_illumina_default(
+                    software.owner,
+                    Software.TYPE_OF_USE_televir_global,
+                    ConstantsSettings.TECHNOLOGY_illumina,
+                    pipeline_step=ConstantsSettings.PIPELINE_NAME_metagenomics_screening,
+                )
+
             return self.get_minimap2_remap_illumina_default(
                 software.owner,
                 Software.TYPE_OF_USE_televir_global,
@@ -953,11 +998,36 @@ class DefaultParameters(object):
             )
 
         elif software.name == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name:
-            return self.get_minimap2_remap_ONT_default(
-                software.owner,
-                Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_minion,
-            )
+
+            if (
+                software.name_extended
+                == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name_extended_screening
+            ):
+                return self.get_minimap2_remap_ONT_default(
+                    software.owner,
+                    Software.TYPE_OF_USE_televir_global,
+                    ConstantsSettings.TECHNOLOGY_minion,
+                    pipeline_step=ConstantsSettings.PIPELINE_NAME_metagenomics_screening,
+                    job="screening",
+                )
+            elif (
+                software.name_extended
+                == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name_extended_request_mapping
+            ):
+                return self.get_minimap2_remap_ONT_default(
+                    software.owner,
+                    Software.TYPE_OF_USE_televir_global,
+                    ConstantsSettings.TECHNOLOGY_minion,
+                    pipeline_step=ConstantsSettings.PIPELINE_NAME_request_mapping,
+                    job="request_mapping",
+                )
+            else:
+                return self.get_minimap2_remap_ONT_default(
+                    software.owner,
+                    Software.TYPE_OF_USE_televir_global,
+                    ConstantsSettings.TECHNOLOGY_minion,
+                )
+
         elif software.name == SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ONT_name:
             return self.get_minimap2_depletion_ONT_default(
                 software.owner,
@@ -1965,7 +2035,7 @@ class DefaultParameters(object):
 
         parameter = Parameter()
         parameter.name = SoftwareNames.SOFTWARE_REMAP_PARAMS_max_accids
-        parameter.parameter = "12"
+        parameter.parameter = "4"
         parameter.type_data = Parameter.PARAMETER_int
         parameter.software = software
         parameter.sample = sample
@@ -2668,15 +2738,14 @@ class DefaultParameters(object):
         software.owner = user
 
         ### software db
-        dbs_available = self.televir_db_manager.software_dbs_dict.get(
+        dbs_available = self.televir_db_manager.get_from_host_db(
             software.name.lower(), ["None"]
         )
-
         vect_parameters = []
 
         parameter = Parameter()
         parameter.name = "--db"
-        parameter.parameter = dbs_available[0]
+        parameter.parameter = dbs_available[0][0]
         parameter.type_data = Parameter.PARAMETER_char_list
         parameter.software = software
         parameter.sample = sample
@@ -2732,9 +2801,9 @@ class DefaultParameters(object):
 
         software.is_to_run = False  ## set to True if it is going to run, for example Trimmomatic can run or not
 
-        if job == "request_mapping":
-            software.can_be_on_off_in_pipeline = False
-            software.is_to_run = True
+        # if job == "request_mapping":
+        #    software.can_be_on_off_in_pipeline = False
+        #    software.is_to_run = True
         ###  small description of software
         software.help_text = ""
 
@@ -2994,13 +3063,14 @@ class DefaultParameters(object):
 
         vect_parameters = []
 
-        dbs_available = self.televir_db_manager.get_from_software_db_dict(
-            software_name=software.name, empty=["None"]
+        ### software db
+        dbs_available = self.televir_db_manager.get_from_host_db(
+            software.name.lower(), [["None", "None"]]
         )
 
         parameter = Parameter()
         parameter.name = "--db"
-        parameter.parameter = dbs_available[0]
+        parameter.parameter = dbs_available[0][0]
         parameter.type_data = Parameter.PARAMETER_char_list
         parameter.software = software
         parameter.sample = sample
@@ -3083,13 +3153,14 @@ class DefaultParameters(object):
 
         vect_parameters = []
 
-        dbs_available = self.televir_db_manager.get_from_software_db_dict(
-            software_name=software.name, empty=["None"]
+        ### software db
+        dbs_available = self.televir_db_manager.get_from_host_db(
+            software.name.lower(), ["None"]
         )
 
         parameter = Parameter()
         parameter.name = "--db"
-        parameter.parameter = dbs_available[0]
+        parameter.parameter = dbs_available[0][0]
         parameter.type_data = Parameter.PARAMETER_char_list
         parameter.software = software
         parameter.sample = sample
@@ -3247,7 +3318,7 @@ class DefaultParameters(object):
         return vect_parameters
 
     def get_kraken2_default(
-        self, user, type_of_use, technology_name, sample=None, pipeline_step=""
+        self, user, type_of_use, technology_name, sample=None, pipeline_step="", is_to_run=True
     ):
         """
         kraken2 default
@@ -3269,7 +3340,7 @@ class DefaultParameters(object):
         software.can_be_on_off_in_pipeline = (
             True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
         )
-        software.is_to_run = True
+        software.is_to_run = is_to_run
 
         ###  small description of software
         software.help_text = ""
@@ -3665,14 +3736,16 @@ class DefaultParameters(object):
 
         software.owner = user
 
-        dbs_available = self.televir_db_manager.software_dbs_dict.get(
+        ### software db
+        dbs_available = self.televir_db_manager.get_from_host_db(
             software.name.lower(), ["None"]
         )
+
         vect_parameters = []
 
         parameter = Parameter()
         parameter.name = "--db"
-        parameter.parameter = dbs_available[0]
+        parameter.parameter = dbs_available[0][0]
         parameter.type_data = Parameter.PARAMETER_char_list
         parameter.software = software
         parameter.sample = sample
@@ -4158,13 +4231,21 @@ class DefaultParameters(object):
 
         return vect_parameters
 
-    def get_snippy_pi_default(self, user, type_of_use, technology_name, sample=None):
+    def get_snippy_pi_default(
+        self, user, type_of_use, technology_name, sample=None, pipeline_step=None
+    ):
         """
         snippy for televir mapping
         –mapqual: minimum mapping quality to allow (–mapqual 20)
         —mincov: minimum coverage of variant site (–mincov 10)
         –minfrac: minumum proportion for variant evidence (–minfrac 0.51)
         """
+        if not pipeline_step:
+            pipeline_step = ConstantsSettings.PIPELINE_NAME_remapping
+
+        else:
+            pipeline_step = pipeline_step
+
         software = Software()
         software.name = SoftwareNames.SOFTWARE_SNIPPY_PI_name
         software.name_extended = SoftwareNames.SOFTWARE_SNIPPY_PI_name_extended
@@ -4184,9 +4265,7 @@ class DefaultParameters(object):
         software.help_text = ""
 
         ###  which part of pipeline is going to run; NEED TO CHECK
-        software.pipeline_step = self._get_pipeline(
-            ConstantsSettings.PIPELINE_NAME_remapping
-        )
+        software.pipeline_step = self._get_pipeline(pipeline_step)
 
         software.owner = user
 

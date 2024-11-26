@@ -1,22 +1,25 @@
 import json
 import logging
 import os
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 import pandas as pd
-from braces.views import FormValidMessageMixin, LoginRequiredMixin
 from django.db import transaction
+from django.db.models import Q
 from django.db.models.query import QuerySet
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-from django.views import generic
 
+from constants.constants import Constants
+from fluwebvirus.settings import STATIC_ROOT
 from pathogen_identification.constants_settings import \
     ConstantsSettings as PIConstantsSettings
-from pathogen_identification.models import (FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RawReference, ReferenceMap_Main,
-                                            ReferencePanel,
+from pathogen_identification.models import (ContigClassification, FinalReport,
+                                            ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            RawReferenceCompoundModel,
+                                            ReadClassification,
+                                            ReferenceMap_Main, ReferencePanel,
                                             ReferenceSourceFileMap,
                                             RunAssembly, RunDetail, RunMain,
                                             SoftwareTree, SoftwareTreeNode)
@@ -26,7 +29,8 @@ from pathogen_identification.utilities.overlap_manager import \
 from pathogen_identification.utilities.televir_parameters import (
     LayoutParams, TelevirParameters)
 from pathogen_identification.utilities.utilities_general import (
-    infer_run_media_dir, simplify_name)
+    infer_run_media_dir, merge_classes, simplify_name)
+from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
 
@@ -35,7 +39,9 @@ class SampleReferenceManager:
     def __init__(self, sample: PIProject_Sample):
         self.sample = sample
         self.software_tree: SoftwareTree = self.proxy_tree_prepare()
-        self.software_tree_node_storage: SoftwareTreeNode = self.proxy_leaf_prepare()
+        self.software_tree_node_storage: Optional[SoftwareTreeNode] = (
+            self.proxy_leaf_prepare()
+        )
         self.prep_storage()
 
     def add_reference(self, reference: ReferenceSourceFileMap):
@@ -179,8 +185,6 @@ class SampleReferenceManager:
             sample=self.sample,
         )
 
-    #################################################
-
     def anchor_parameter_set_leaf(self, leaf: SoftwareTreeNode):
         """
         mapping run from leaf
@@ -253,6 +257,158 @@ class SampleReferenceManager:
         return self.create_mapping_run(leaf, RunMain.RUN_TYPE_SCREENING)
 
 
+class RunMainWrapper:
+
+    def __init__(self, run: RunMain):
+
+        self.name = f"run {run.parameter_set.leaf.index}"
+
+        self.record = run
+        self.user = run.project.owner
+        self.project = run.project
+        self.sample = run.sample
+        self.parameter_set = run.parameter_set
+        self.pk = run.pk
+
+        if run.parameter_set is None:
+            self.params_df = pd.DataFrame()
+
+        else:
+            utils_manager = Utils_Manager()
+            self.params_df = utils_manager.get_leaf_parameters(run.parameter_set.leaf)
+
+            self.params_df.drop_duplicates(["module", "software"], inplace=True)
+            self.params_df.set_index("module", inplace=True)
+
+        self.run_type = run.run_type
+        self.panel = run.panel
+        self.created_in = run.created_in
+        self.runtime = run.runtime
+
+    @staticmethod
+    def capitalize_software(software_name: str) -> str:
+
+        software_name_list = software_name.split(" ")
+        software_name_list = [word.capitalize() for word in software_name_list]
+
+        return " ".join(software_name_list)
+
+    def get_pipeline_software(self, pipeline_name: str):
+
+        software_name = "None"
+
+        if pipeline_name in self.params_df.index:
+
+            software_name = self.params_df.loc[pipeline_name, "software"]
+            software_name = str(software_name)
+
+        if "(" in software_name:
+            software_name = software_name.split("(")[0]
+
+        if "_" in software_name:
+            software_name = software_name.split("_")[0]
+
+        return self.capitalize_software(software_name)
+
+    def progress_display(self) -> str:
+
+        if self.user.username == Constants.USER_ANONYMOUS:
+            return mark_safe("report")
+
+        run_log = self.run_progess_tracker()
+
+        return mark_safe(run_log)
+
+    def run_progess_tracker(self) -> str:
+
+        finished_preprocessing = self.record.report != "initial"
+        finished_assembly = RunAssembly.objects.filter(run=self.record).count() > 0
+        finished_classification = (
+            ContigClassification.objects.filter(run=self.record).exists()
+            and ReadClassification.objects.filter(run=self.record).exists()
+        )
+
+        finished_processing = (
+            self.record.parameter_set.status == ParameterSet.STATUS_FINISHED
+        )
+        #
+
+        finished_remapping = self.record.report == "finished"
+
+        report_link = (
+            '<a href="'
+            + reverse(
+                "sample_detail",
+                args=[
+                    self.record.project.pk,
+                    self.record.sample.pk,
+                    self.record.pk,
+                ],
+            )
+            + '">'
+            + "<i class='fa fa-bar-chart'></i>"
+            + "</a>"
+        )
+
+        if finished_processing or finished_remapping:
+
+            return report_link
+
+        else:
+            runlog = " <a " + 'href="#" >'
+            if finished_preprocessing:
+                runlog += '<i class="fa fa-check"'
+                runlog += 'title="Preprocessing finished"></i>'
+            else:
+                runlog += '<i class="fa fa-cog"'
+                runlog += 'title="Preprocessing running."></i>'
+
+            runlog += "</a>"
+
+            ###
+
+            runlog += " <a " + 'href="#" >'
+
+            if finished_assembly:
+                runlog += '<i class="fa fa-check"'
+                runlog += 'title="Assembly finished"></i>'
+            else:
+                runlog += '<i class="fa fa-cog"'
+                if finished_preprocessing:
+                    runlog += 'title="Assembly running."></i>'
+                else:
+                    runlog += 'title="Assembly." style="color: gray;"></i>'
+            runlog += "</a>"
+
+            ###
+
+            runlog += " <a " + 'href="#" >'
+
+            if finished_classification:
+                runlog += '<i class="fa fa-check"'
+                runlog += 'title="Classification finished"></i>'
+            else:
+                runlog += '<i class="fa fa-cog"'
+                if finished_assembly:
+                    runlog += 'title="Classification running."></i>'
+                else:
+                    runlog += 'title="Classification." style="color: gray;"></i>'
+            runlog += "</a>"
+
+            runlog += " <a " + 'href="#" >'
+
+            runlog += '<i class="fa fa-cog"'
+            if finished_classification:
+                runlog += 'title="Mapping to references."></i>'
+            else:
+                runlog += 'title="Validation mapping" style="color: gray;"></i>'
+            runlog += "</a>"
+
+            return runlog
+
+        return ""
+
+
 class EmptyRemapMain:
     run = None
     sample = None
@@ -263,47 +419,6 @@ class EmptyRemapMain:
     coverage_maximum = 0
     success = False
     coverage_mean = ""
-
-
-def infer_control_flag_str(report: FinalReport) -> str:
-    control_flag_options = {
-        FinalReport.CONTROL_FLAG_NONE: "",
-        FinalReport.CONTROL_FLAG_PRESENT: "Taxid found in control",
-        FinalReport.CONTROL_FLAG_SOURCE: "",
-    }
-
-    return control_flag_options[report.control_flag]
-
-
-def inform_control_flag(report: FinalReport, control_flag_str: str):
-    if report.control_flag == FinalReport.CONTROL_FLAG_PRESENT:
-        current_mapped_prop = report.mapped_proportion
-        control_reports = FinalReport.objects.filter(
-            sample__project=report.sample.project,
-            control_flag=FinalReport.CONTROL_FLAG_SOURCE,
-            run__parameter_set__leaf__index=report.run.parameter_set.leaf.index,
-        )
-
-        if control_reports.exists() == False:
-            return control_flag_str
-        mapped_props = [
-            report.mapped_proportion
-            for report in control_reports
-            if report.mapped_proportion is not None
-        ]
-        if len(mapped_props) == 1:
-            mapped_prop = mapped_props[0]
-        else:
-            mapped_prop = sum(mapped_props) / len(mapped_props)
-
-        ratio = current_mapped_prop / mapped_prop
-
-        return f"{control_flag_str} \n (x{ratio:.2f})"
-    else:
-        return control_flag_str
-
-
-from fluwebvirus.settings import STATIC_ROOT
 
 
 class FinalReportWrapper:
@@ -336,8 +451,7 @@ class FinalReportWrapper:
 
         self.private_reads = 0
         self.control_flag = report.control_flag
-        self.control_flag_str = infer_control_flag_str(report)
-        self.control_flag_str = inform_control_flag(report, self.control_flag_str)
+        self.control_flag_str = report.control_flag_str
         self.first_in_group = False
         self.row_class_name = "secondary-row"
         self.display = "none"
@@ -354,7 +468,7 @@ class FinalReportWrapper:
         self.private_reads = private_reads
 
 
-class FinalReportCompound(LoginRequiredMixin, generic.TemplateView):
+class FinalReportCompound:
     def __init__(self, report: FinalReport):
         """
         copy all attributes from report
@@ -375,8 +489,8 @@ class FinalReportCompound(LoginRequiredMixin, generic.TemplateView):
         self.run_index = self.run_main.pk
         self.data_exists = self.check_data_exists(report)
         self.control_flag = report.control_flag
-        self.control_flag_str = infer_control_flag_str(report)
-        self.control_flag_str = inform_control_flag(report, self.control_flag_str)
+        self.control_flag_str = report.control_flag_str
+        # self.control_flag_str = inform_control_flag(report, self.control_flag_str)
         self.private_reads = 0
 
         self.row_class_name = report.row_class_name
@@ -386,7 +500,7 @@ class FinalReportCompound(LoginRequiredMixin, generic.TemplateView):
     def update_private_reads(self, private_reads: int):
         self.private_reads = private_reads
 
-    def get_identical_reports_ps(self, report: FinalReport) -> list:
+    def get_identical_reports_ps(self, report: FinalReport) -> str:
         references_found_in = RawReference.objects.filter(
             run__project__pk=report.run.project.pk,
             run__run_type=RunMain.RUN_TYPE_PIPELINE,
@@ -394,22 +508,22 @@ class FinalReportCompound(LoginRequiredMixin, generic.TemplateView):
             taxid=report.taxid,
         )
 
-        reports_unique = FinalReport.objects.filter(
-            run__project__pk=report.run.project.pk,
-            sample__pk=report.sample.pk,
-            accid=report.accid,
-        )
-
         sets = set([r.run.parameter_set.leaf.index for r in references_found_in])
+
+        if len(sets) == 0:
+            return "M"
+
         return ", ".join([str(s) for s in sets])
 
     def check_data_exists(self, report: FinalReport) -> bool:
+        if report.run is None:
+            return False
         return report.run.data_deleted == False
 
     def get_report_rundetail(self, report: FinalReport) -> RunDetail:
         return RunDetail.objects.get(sample=report.sample, run=report.run)
 
-    def get_report_runmain(self, report: FinalReport) -> RunMain:
+    def get_report_runmain(self, report: FinalReport) -> Optional[RunMain]:
         return report.run
 
 
@@ -447,7 +561,6 @@ class FinalReportGroup:
         self.max_private_reads = 0
         self.max_coverage = 0
         self.private_counts_exist = private_counts_exist
-        self.update_max_coverage()
         self.js_heatmap_ready = False
         self.js_heatmap_data = None
         self.analysis_empty = analysis_empty
@@ -458,6 +571,8 @@ class FinalReportGroup:
             > PIConstantsSettings.SORT_GROUP_DISPLAY_DEFAULT_THRESHOLD_SHARED
             else "on"
         )
+
+        self.update_max_coverage()
 
     def reports_have_private_reads(self) -> bool:
         for report in self.group_list:
@@ -481,19 +596,6 @@ class FinalReportGroup:
             report.row_class_name = "unsorted-row"
             report.first_in_group = False
             report.display = "table-row"
-
-
-def check_sample_software_exists(sample: PIProject_Sample) -> bool:
-    """
-    Return True if sample software exists
-    """
-
-    parameters_exist = Parameter.objects.filter(
-        televir_project=sample.project,
-        televir_project_sample=sample,
-    ).exists()
-
-    return parameters_exist
 
 
 def check_project_params_exist(project: Projects) -> bool:
@@ -639,18 +741,20 @@ def recover_assembly_contigs(run_main: RunMain, run_assembly: RunAssembly):
 class ReportSorter:
     analysis_filename = "overlap_analysis_{}.tsv"
     all_clade_filename = "all_clades_{}.tsv"
-    report_dict: Dict[str, List[FinalReport]]
-    excluded_dict: Dict[str, List[FinalReport]]
+    report_dict: Dict[str, FinalReport]
+    excluded_dict: Dict[str, FinalReport]
     error_rate_available: bool
 
     def __init__(
         self,
+        sample: PIProject_Sample,
         reports: List[FinalReport],
         report_layout_params: LayoutParams,
         force=False,
         level=0,
     ):
         self.reports: List[FinalReport] = reports
+        self.sample = sample
         self.analysis_empty = False
         self.max_error_rate = 0
         self.max_quality_avg = 1
@@ -662,114 +766,74 @@ class ReportSorter:
         self.assess_max_mapped_prop()
         self.assess_max_coverage()
         self.reference_clade = self.generate_reference_clade(report_layout_params)
-        self.report_dict = {
-            report.accid: report
-            for report in reports
-            if self.retrieved_mapped_subset(report)
-        }
-        self.excluded_dict = {
-            report.accid: report
-            for report in reports
-            if not self.retrieved_mapped_subset(report)
-        }
-        self.metadata_df = self.prep_metadata_df()
 
-        self.fasta_files = self.metadata_df.file.tolist()
+        self.report_dict = {}
+        self.excluded_dict = {}
+
+        for report in reports:
+            if report.accid is None:
+                continue
+            if self.retrieved_mapped_subset(report):
+                self.report_dict[report.accid] = report
+            else:
+                self.excluded_dict[report.accid] = report
+
         self.level = level
 
-        self.model = self.set_level(reports, level)
-        self.run = self.infer_run()
+        self.reports_availble = len(reports) > 0
 
+        self.media_dir = sample.media_dir
+
+        self.metadata_df = self.prep_metadata_df()
+        self.fasta_files = self.metadata_df.file.tolist()
+
+        self.overlap_manager = ReadOverlapManager(
+            self.metadata_df,
+            self.reference_clade,
+            self.media_dir,
+            str(self.sample.pk),
+            force_tree_rebuild=force,
+            max_reads=PIConstantsSettings.MAX_READS_INPUT,
+        )
+
+        self.all_clades_df_path = os.path.join(self.media_dir, self.all_clade_filename)
+
+        self.analysis_df_path = os.path.join(
+            self.media_dir,
+            self.analysis_filename.format(
+                report_layout_params.shared_proportion_threshold
+            ),
+        )
+
+        self.tree_plot_path = self.overlap_manager.tree_plot_path
+        #
+        self.tree_plot_exists = os.path.exists(self.tree_plot_path)
+        self.tree_plot_path = "/media/" + self.tree_plot_path.split("media/")[-1]
+
+        self.overlap_heatmap_exists = os.path.exists(
+            self.overlap_manager.overlap_matrix_plot_path
+        )
+        self.overlap_heatmap_path = (
+            "/media/"
+            + self.overlap_manager.overlap_matrix_plot_path.split("media/")[-1]
+        )
+        self.overlap_pca_exists = os.path.exists(
+            self.overlap_manager.overlap_pca_plot_path
+        )
+        self.overlap_pca_path = (
+            "/media/" + self.overlap_manager.overlap_pca_plot_path.split("media/")[-1]
+        )
+
+        #####################################
+        #####################################
         self.logger = logging.getLogger(__name__)
-        self.logger.info("ReportSorter: {}".format(self.run))
-        # set logger level
-        self.logger.setLevel(logging.INFO)
+        self.logger.info("ReportSorter: {}".format(self.media_dir))
+        self.logger.setLevel(logging.DEBUG)
 
-        if self.model is not None and self.run is not None:
-            self.media_dir = self.infer_media_dir()
+    def build_tree(self):
 
-            self.all_clades_df_path = os.path.join(
-                self.media_dir, self.all_clade_filename
-            )
-
-            self.analysis_df_path = os.path.join(
-                self.media_dir,
-                self.analysis_filename.format(
-                    report_layout_params.shared_proportion_threshold
-                ),
-            )
-            self.force = force
-            self.overlap_manager = ReadOverlapManager(
-                self.metadata_df,
-                self.reference_clade,
-                self.media_dir,
-                str(self.model.pk),
-                force_tree_rebuild=force,
-            )
-            self.tree_plot_path = self.overlap_manager.tree_plot_path
-            # remove everything before media dir
-            self.tree_plot_exists = os.path.exists(self.tree_plot_path)
-            self.tree_plot_path = "/media/" + self.tree_plot_path.split("media/")[-1]
-
-            self.overlap_heatmap_exists = os.path.exists(
-                self.overlap_manager.overlap_matrix_plot_path
-            )
-            self.overlap_heatmap_path = (
-                "/media/"
-                + self.overlap_manager.overlap_matrix_plot_path.split("media/")[-1]
-            )
-            self.overlap_pca_exists = os.path.exists(
-                self.overlap_manager.overlap_pca_plot_path
-            )
-            self.overlap_pca_path = (
-                "/media/"
-                + self.overlap_manager.overlap_pca_plot_path.split("media/")[-1]
-            )
-
-        else:
-            self.overlap_manager = None
-            self.media_dir = None
-            self.analysis_df_path = None
-            self.all_clades_df_path = None
-            self.force = False
-            self.tree_plot_exists = False
-            self.tree_plot_path = None
-            self.overlap_heatmap_exists = False
-            self.overlap_heatmap_path = None
-            self.overlap_pca_exists = False
-            self.overlap_pca_path = None
-
-    def read_shared_matrix(self):
-        """
-        read accession shared reads matrix
-        """
-        try:
-            distance_matrix = pd.read_csv(
-                self.overlap_manager.shared_prop_matrix_path, index_col=0
-            )
-            return distance_matrix
-        except Exception as e:
-            print(e)
-            return None
-
-    def read_clade_shared_matrix(self):
-        """
-        read clade shared matrix
-        """
-        try:
-            clade_shared_matrix = pd.read_csv(
-                self.overlap_manager.clade_shared_prop_matrix_path, index_col=0
-            )
-
-            # fill diagonal with 0
-            for i in range(clade_shared_matrix.shape[0]):
-                clade_shared_matrix.iloc[i, i] = 1
-
-            return clade_shared_matrix
-
-        except Exception as e:
-            print(e)
-            return None
+        if self.reports_availble:
+            self.overlap_manager.build_tree()
 
     def update_max_error_rate(self, report: FinalReport):
         """
@@ -856,26 +920,6 @@ class ReportSorter:
 
         return True
 
-    def set_level(self, final_report_list: List[FinalReport], level):
-        if len(final_report_list) == 0:
-            return None
-        final_report = final_report_list[0]
-        if level == 0:
-            return final_report.sample
-        elif level == 1:
-            return final_report.run
-
-        return None
-
-    def infer_media_dir(self):
-        """
-        Return media directory
-        """
-        if self.level == 0:
-            return self.inferred_sample_media_dir()
-        elif self.level == 1:
-            return self.inferred_run_media_dir()
-
     @staticmethod
     def generate_reference_clade(layout_params: LayoutParams):
         """
@@ -895,57 +939,6 @@ class ReportSorter:
         )
 
         return ref_clade
-
-    def infer_run(self):
-        """
-        Return run
-        """
-        if not self.reports:
-            return None
-
-        for report in self.reports:
-            if report.run is None:
-                print("report with missing run: ", report, report.pk)
-
-            elif infer_run_media_dir(report.run) is None:
-                print(f"run with missing media dir: {report.run} {report.run.pk}")
-
-        run_with_media_dir = [
-            report.run for report in self.reports if report.run is not None
-        ]
-        run_with_media_dir = [
-            run for run in run_with_media_dir if infer_run_media_dir(run)
-        ]
-
-        if len(run_with_media_dir) == 0:
-            return None
-
-        return self.reports[0].run
-
-    def inferred_run_media_dir(self):
-        """
-        Return run media directory
-        """
-        if not self.model:
-            raise Exception("No run found")
-
-        return infer_run_media_dir(self.run)
-
-    def inferred_sample_media_dir(self):
-        """
-        Return run media directory
-        """
-        if not self.model:
-            raise Exception("No model found")
-
-        rundir = infer_run_media_dir(self.run)
-
-        if rundir is None:
-            return None
-
-        sample_dir = os.path.dirname(rundir)
-
-        return sample_dir
 
     def retrieved_mapped_subset(self, report: FinalReport):
         """
@@ -970,6 +963,37 @@ class ReportSorter:
         except ReferenceMap_Main.DoesNotExist:
             return None
 
+        except Exception as e:
+            print(e)
+            return None
+
+    def retrieved_mapped_bam(self, report: FinalReport):
+        """
+        Return subset of retrieved and mapped reads
+        """
+        if report.depth == 0:
+            return None
+
+        try:
+            simple_accid = simplify_name(report.accid)
+
+            mapped_ref = ReferenceMap_Main.objects.get(
+                reference=simple_accid, run=report.run
+            )
+
+            if not mapped_ref.bam_file_path:
+                return None
+
+            if os.path.exists(mapped_ref.bam_file_path):
+                return mapped_ref.bam_file_path
+
+        except ReferenceMap_Main.DoesNotExist:
+            return None
+
+        except Exception as e:
+            print(e)
+            return None
+
     def prep_metadata_df(self):
         """
         Return metadata dataframe
@@ -981,33 +1005,26 @@ class ReportSorter:
             accid = report.accid
             description = report.description
             mapped_subset_r1 = self.retrieved_mapped_subset(report)
+            mapped_bam = self.retrieved_mapped_bam(report)
+            # f"samtools view -F 0x4 {self.read_map_sorted_bam} | cut -f 1 | sort | uniq > {self.mapped_reads_file}"
             if not mapped_subset_r1:
                 continue
             filename = mapped_subset_r1
             metadata_dict.append(
-                {"file": filename, "description": description, "accid": accid}
+                {
+                    "file": filename,
+                    "description": description,
+                    "accid": accid,
+                    "bam": mapped_bam,
+                }
             )
 
         metadata_df = pd.DataFrame(metadata_dict)
 
         if metadata_df.empty:
-            metadata_df = pd.DataFrame(columns=["file", "description", "accid"])
+            metadata_df = pd.DataFrame(columns=["file", "description", "accid", "bam"])
 
         return metadata_df
-
-    def read_overlap_analysis(self, force: bool = False):
-        """
-        Return read overlap analysis as dataframe
-        columns: leaf (accid), clade, read_count, group_count
-        """
-        ### time operations
-        self.logger.info("generating tree")
-
-        clades = self.overlap_manager.get_leaf_clades(force=force)
-
-        self.update_report_excluded_dicts(self.overlap_manager)
-
-        return clades
 
     def update_report_excluded_dicts(self, overlap_manager: ReadOverlapManager):
         new_report_dict = {}
@@ -1035,7 +1052,8 @@ class ReportSorter:
             self.metadata_df,
             self.reference_clade,
             self.media_dir,
-            str(self.model.pk),
+            str(self.sample.pk),
+            max_reads=PIConstantsSettings.MAX_READS_INPUT,
         )
 
         if not os.path.exists(overlap_manager.distance_matrix_path):
@@ -1076,11 +1094,79 @@ class ReportSorter:
 
         return True
 
+    def wrap_report(self, report: FinalReport) -> FinalReportWrapper:
+        return FinalReportWrapper(report)
+
+    def wrap_group_reports(self, report_group: FinalReportGroup) -> FinalReportGroup:
+        report_group.group_list = [
+            self.wrap_report(report) for report in report_group.group_list
+        ]
+        return report_group
+
+    def wrap_group_list_reports(
+        self, report_groups: List[FinalReportGroup]
+    ) -> List[FinalReportGroup]:
+        return [self.wrap_group_reports(report_group) for report_group in report_groups]
+
+    def sort_group_by_private_reads(self, group: FinalReportGroup) -> FinalReportGroup:
+        """
+        sort group by private reads
+        """
+        group.group_list.sort(key=lambda x: x.private_reads, reverse=True)
+
+        if len(group.group_list) == 0:
+            return group
+
+        group.group_list[0].first_in_group = True
+        group.group_list[0].row_class_name = "primary-row"
+        group.group_list[0].display = "table-row"
+
+        return group
+
+    def sort_group_by_coverage(self, group: FinalReportGroup) -> FinalReportGroup:
+        """
+        sort group by private reads
+        """
+        group.group_list.sort(key=lambda x: x.coverage, reverse=True)
+
+        if len(group.group_list) == 0:
+            return group
+
+        group.group_list[0].first_in_group = True
+        group.group_list[0].row_class_name = "primary-row"
+        group.group_list[0].display = "table-row"
+
+        return group
+
+    def sort_group_list_reports(
+        self, report_groups: List[FinalReportGroup]
+    ) -> List[FinalReportGroup]:
+        """
+        sort group list reports
+        """
+        return [
+            self.sort_group_by_coverage(report_group) for report_group in report_groups
+        ]
+
+    def read_overlap_analysis(self, force: bool = False):
+        """
+        Return read overlap analysis as dataframe
+        columns: leaf (accid), clade, read_count, group_count
+        """
+        ### time operations
+        self.logger.info("generating tree")
+
+        clades = self.overlap_manager.get_leaf_clades(force=force)
+
+        self.update_report_excluded_dicts(self.overlap_manager)
+
+        return clades
+
     def sort_reports_save(self, force=False):
         """
         Return sorted reports
         """
-        if self.model is None:
+        if self.reports_availble is False:
             return self.return_no_analysis()
 
         try:
@@ -1129,20 +1215,6 @@ class ReportSorter:
             pairwise_shared_among_clade
         )
 
-    def wrap_report(self, report: FinalReport) -> FinalReportWrapper:
-        return FinalReportWrapper(report)
-
-    def wrap_group_reports(self, report_group: FinalReportGroup) -> FinalReportGroup:
-        report_group.group_list = [
-            self.wrap_report(report) for report in report_group.group_list
-        ]
-        return report_group
-
-    def wrap_group_list_reports(
-        self, report_groups: List[FinalReportGroup]
-    ) -> List[FinalReportGroup]:
-        return [self.wrap_group_reports(report_group) for report_group in report_groups]
-
     def get_reports_private_reads(
         self, report_groups: List[FinalReportGroup]
     ) -> List[FinalReportGroup]:
@@ -1150,6 +1222,7 @@ class ReportSorter:
         Update reports with private reads
         """
         accid_df = pd.read_csv(self.overlap_manager.accid_statistics_path, sep="\t")
+
         if "private_reads" not in accid_df.columns:
             report_groups = self.wrap_group_list_reports(report_groups)
             return report_groups
@@ -1170,32 +1243,6 @@ class ReportSorter:
             report_group.update_max_private_reads()
 
         return report_groups
-
-    def sort_group_by_private_reads(self, group: FinalReportGroup) -> FinalReportGroup:
-        """
-        sort group by private reads
-        """
-        group.group_list.sort(key=lambda x: x.private_reads, reverse=True)
-
-        if len(group.group_list) == 0:
-            return group
-
-        group.group_list[0].first_in_group = True
-        group.group_list[0].row_class_name = "primary-row"
-        group.group_list[0].display = "table-row"
-
-        return group
-
-    def sort_group_list_reports(
-        self, report_groups: List[FinalReportGroup]
-    ) -> List[FinalReportGroup]:
-        """
-        sort group list reports
-        """
-        return [
-            self.sort_group_by_private_reads(report_group)
-            for report_group in report_groups
-        ]
 
     def get_sorted_reports(self) -> List[FinalReportGroup]:
 
@@ -1263,6 +1310,36 @@ class ReportSorter:
 
         return sorted_groups
 
+    def read_shared_matrix(self) -> pd.DataFrame:
+        """
+        read accession shared reads matrix
+        """
+        try:
+            distance_matrix = pd.read_csv(
+                self.overlap_manager.shared_prop_matrix_path, index_col=0
+            )
+            return distance_matrix
+        except Exception as e:
+            return pd.DataFrame()
+
+    def read_clade_shared_matrix(self):
+        """
+        read clade shared matrix
+        """
+        try:
+            clade_shared_matrix = pd.read_csv(
+                self.overlap_manager.clade_shared_prop_matrix_path, index_col=0
+            )
+
+            # fill diagonal with 1s
+            for i in range(clade_shared_matrix.shape[0]):
+                clade_shared_matrix.iloc[i, i] = 1
+
+            return clade_shared_matrix
+
+        except Exception as e:
+            return None
+
     def prep_heatmap_data_within_clade(
         self, report_group: FinalReportGroup, distance_matrix: pd.DataFrame
     ):
@@ -1314,7 +1391,7 @@ class ReportSorter:
         """
         distance_matrix = self.read_shared_matrix()
 
-        if distance_matrix is None:
+        if distance_matrix.empty is True:
             return report_groups
 
         for report_group in report_groups:
@@ -1360,7 +1437,7 @@ class ReportSorter:
         """
         Return sorted reports
         """
-        if self.model is None:
+        if self.reports_availble is False:
             return self.return_no_analysis()
 
         if self.metadata_df.empty:
@@ -1437,7 +1514,11 @@ def calculate_reports_overlaps(sample: PIProject_Sample, force=False):
     report_layout_params = TelevirParameters.get_report_layout_params(
         project_pk=sample.project.pk
     )
-    report_sorter = ReportSorter(final_reports, report_layout_params, force=force)
+    report_sorter = ReportSorter(
+        sample, final_reports, report_layout_params, force=force
+    )
+
+    report_sorter.build_tree()
     report_sorter.sort_reports_save()
 
 
@@ -1461,8 +1542,7 @@ class ReferenceManager:
 
 class RawReferenceCompound:
     def __init__(self, raw_reference: RawReference):
-        # self.pk = raw_reference.pk
-        # self.project_id = raw_reference.run.project.pk
+
         self.sample_id = raw_reference.run.sample.pk
         self.selected_mapped_pk = raw_reference.id
         self.taxid = raw_reference.taxid
@@ -1471,7 +1551,6 @@ class RawReferenceCompound:
         self.family = []
         self.runs = []
         self.manual_insert = False
-        # self.mapped: Optional[FinalReport] = None
         self.mapped_final_report: Optional[FinalReport] = None
         self.mapped_raw_reference: Optional[RawReference] = None
         self.standard_score = 0
@@ -1529,21 +1608,29 @@ class RawReferenceCompound:
         self.mapped_final_report = (
             FinalReport.objects.filter(
                 taxid=self.taxid,
+                accid=self.accid,
                 sample=sample,
             )
             .order_by("-coverage")
             .first()
         )
 
-        self.mapped_raw_reference = RawReference.objects.filter(
-            taxid=self.taxid,
-            accid=self.accid,
-            run__sample=sample,
-            status=RawReference.STATUS_MAPPED,
-        ).first()
+        self.mapped_raw_reference = (
+            RawReference.objects.filter(
+                taxid=self.taxid,
+                accid=self.accid,
+                run__sample=sample,
+                status=RawReference.STATUS_MAPPED,
+            )
+            .exclude(
+                run__run_type__in=[RunMain.RUN_TYPE_SCREENING, RunMain.RUN_TYPE_STORAGE]
+            )
+            .first()
+        )
 
     @property
     def mapped_html(self):
+
         if self.mapped_final_report is None and self.mapped_raw_reference is None:
             return mark_safe(
                 '<a><i class="fa fa-times" title="unmapped"></i> Unmapped</a>'
@@ -1585,3 +1672,677 @@ class RawReferenceCompound:
     @property
     def runs_str(self):
         return ", ".join([str(r.parameter_set.leaf.index) for r in self.runs])
+
+
+class RawReferenceUtils:
+    def __init__(
+        self,
+        sample: Optional[PIProject_Sample] = None,
+        project: Optional[Projects] = None,
+    ):
+        self.sample_registered = sample
+        self.project_registered = project
+        self.runs_found = 0
+        self.list_tables: List[pd.DataFrame] = []
+        self.merged_table: pd.DataFrame = pd.DataFrame(
+            columns=["read_counts", "contig_counts", "taxid", "accid", "description"]
+        )
+
+    def references_table_from_query(
+        self, references: Union[QuerySet, List[RawReference]]
+    ) -> pd.DataFrame:
+        table = []
+        for ref in references:
+            table.append(
+                {
+                    "taxid": ref.taxid,
+                    "accid": ref.accid,
+                    "description": ref.description,
+                    "counts_str": ref.counts,
+                    "read_counts": ref.read_counts,
+                    "contig_counts": ref.contig_counts,
+                }
+            )
+
+        if len(table) == 0:
+            return pd.DataFrame(
+                columns=[
+                    "taxid",
+                    "accid",
+                    "description",
+                    "counts_str",
+                    "read_counts",
+                    "contig_counts",
+                ]
+            )
+
+        references_table = pd.DataFrame(table)
+
+        references_table["read_counts"] = references_table["read_counts"].astype(float)
+        references_table["contig_counts"] = references_table["contig_counts"].astype(
+            float
+        )
+
+        # references_table = references_table[references_table["read_counts"] > 1]
+        references_table = references_table[references_table["accid"] != "-"]
+        references_table = references_table[references_table["accid"] != ""]
+        references_table = references_table.sort_values(
+            ["contig_counts", "read_counts"], ascending=[False, False]
+        )
+
+        references_table["sort_rank"] = range(1, references_table.shape[0] + 1)
+
+        return references_table
+
+    def run_references_standard_score_reads(
+        self,
+        references_table: pd.DataFrame,
+    ) -> pd.DataFrame:
+
+        if references_table.shape[0] == 0:
+            return pd.DataFrame(
+                columns=list(references_table.columns) + ["read_counts_standard_score"]
+            )
+
+        if max(references_table["read_counts"]) == 0:
+            references_table["read_counts_standard_score"] = 1
+            return references_table
+
+        references_table["read_counts"] = references_table["read_counts"].astype(float)
+
+        references_table["read_counts_standard_score"] = (
+            references_table["read_counts"] - references_table["read_counts"].mean()
+        ) / references_table["read_counts"].std()
+
+        references_table["read_counts_standard_score"] = (
+            references_table["read_counts_standard_score"]
+            - references_table["read_counts_standard_score"].min()
+        ) / (
+            references_table["read_counts_standard_score"].max()
+            - references_table["read_counts_standard_score"].min()
+        )
+
+        return references_table
+
+    def run_references_standard_score_contigs(
+        self,
+        references_table: pd.DataFrame,
+    ) -> pd.DataFrame:
+        # references = RawReference.objects.filter(run=run)
+
+        # references_table = references_table_from_query(references)
+
+        if references_table.shape[0] == 0:
+            return pd.DataFrame(
+                columns=list(references_table.columns)
+                + ["contig_counts_standard_score"]
+            )
+
+        references_table["contig_counts"] = references_table["contig_counts"].astype(
+            float
+        )
+        if max(references_table["contig_counts"]) == 0:
+            references_table["contig_counts_standard_score"] = 1
+            return references_table
+
+        references_table["contig_counts_standard_score"] = (
+            references_table["contig_counts"] - references_table["contig_counts"].mean()
+        ) / references_table["contig_counts"].std()
+
+        references_table["contig_counts_standard_score"] = (
+            references_table["contig_counts_standard_score"]
+            - references_table["contig_counts_standard_score"].min()
+        ) / (
+            references_table["contig_counts_standard_score"].max()
+            - references_table["contig_counts_standard_score"].min()
+        )
+
+        return references_table
+
+    def merge_standard_scores(self, table: pd.DataFrame):
+        if table.shape[0] == 0:
+            return pd.DataFrame(columns=list(table.columns) + ["standard_score"])
+        table["standard_score"] = table[
+            "read_counts_standard_score"
+        ]  # + table["contig_counts_standard_score"]
+        return table
+
+    def run_references_standard_scores(self, table):
+        table = self.run_references_standard_score_reads(table)
+
+        table = self.run_references_standard_score_contigs(table)
+        table = self.merge_standard_scores(table)
+        return table
+
+    def merge_ref_tables_use_standard_score(
+        self,
+        list_tables: List[pd.DataFrame],
+    ) -> pd.DataFrame:
+        joint_tables = [
+            self.run_references_standard_scores(table) for table in list_tables
+        ]
+
+        joint_tables = pd.concat(joint_tables)
+        # group tables: average read_counts_standard_score, sum counts, read_counts, contig_counts
+        if joint_tables.shape[0] == 0:
+            return pd.DataFrame(columns=list(joint_tables.columns))
+
+        joint_tables["standard_score"] = joint_tables["standard_score"].astype(float)
+        joint_tables["contig_counts"] = joint_tables["contig_counts"].astype(float)
+        joint_tables["read_counts"] = joint_tables["read_counts"].astype(float)
+        joint_tables["contig_counts_standard_score"] = joint_tables[
+            "contig_counts_standard_score"
+        ].astype(float)
+        joint_tables["sort_rank"] = joint_tables["sort_rank"].astype(float)
+
+        joint_tables = joint_tables.groupby(["taxid"]).agg(
+            {
+                "taxid": "first",
+                "accid": "first",
+                "description": "first",
+                "counts_str": "first",
+                "standard_score": "mean",
+                "contig_counts_standard_score": "mean",
+                "read_counts": "sum",
+                "contig_counts": "sum",
+                "sort_rank": "mean",
+            }
+        )
+
+        joint_tables = joint_tables.rename(columns={"sort_rank": "ensemble_ranking"})
+
+        #############################################
+        proxy_rclass = self.reference_table_renamed(
+            joint_tables, {"read_counts": "counts"}
+        ).reset_index(drop=True)
+        proxy_aclass = self.reference_table_renamed(
+            joint_tables, {"contig_counts": "counts"}
+        ).reset_index(drop=True)
+
+        targets, _ = merge_classes(
+            proxy_rclass, proxy_aclass, maxt=joint_tables.shape[0]
+        )
+
+        targets["global_ranking"] = range(1, targets.shape[0] + 1)
+
+        def set_global_ranking_repeat_ranks(
+            targets, rank_column="global_ranking", counts_column="counts"
+        ):
+            """
+            Set the global ranking for repeated ranks
+            """
+            current_counts = None
+            current_rank = 0
+            for row in targets.iterrows():
+                if current_counts != row[1][counts_column]:
+                    current_rank += 1
+                    current_counts = row[1][counts_column]
+
+                targets.at[row[0], rank_column] = current_rank
+
+            return targets
+
+        targets = set_global_ranking_repeat_ranks(targets, rank_column="global_ranking")
+
+        ####
+        joint_tables = joint_tables.reset_index(drop=True)
+        targets = targets.reset_index(drop=True)
+        joint_tables["taxid"] = joint_tables["taxid"].astype(int)
+        targets["taxid"] = targets["taxid"].astype(int)
+
+        joint_tables = joint_tables.merge(
+            targets[["taxid", "global_ranking"]], on=["taxid"], how="left"
+        )
+        ############################################# Reset the index
+        joint_tables = joint_tables.reset_index(drop=True)
+
+        joint_tables = joint_tables.sort_values("ensemble_ranking", ascending=True)
+
+        joint_tables = joint_tables.reset_index(drop=True)
+
+        return joint_tables
+
+    def merge_ref_tables_use_ranking(
+        self,
+        list_tables: List[pd.DataFrame],
+    ) -> pd.DataFrame:
+
+        joint_tables = pd.concat(list_tables)
+        # group tables: average read_counts_standard_score, sum counts, read_counts, contig_counts
+        if joint_tables.shape[0] == 0:
+            return pd.DataFrame(columns=list(joint_tables.columns))
+
+        joint_tables["contig_counts"] = joint_tables["contig_counts"].astype(float)
+        joint_tables["read_counts"] = joint_tables["read_counts"].astype(float)
+
+        joint_tables = joint_tables.groupby(["taxid", "accid", "description"]).agg(
+            {
+                "taxid": "first",
+                "accid": "first",
+                "description": "first",
+                "counts_str": "first",
+                "read_counts": "sum",
+                "contig_counts": "sum",
+                "sort_rank": "mean",
+            }
+        )
+        joint_tables["standard_score"] = 0
+        joint_tables = joint_tables.rename(columns={"sort_rank": "ensemble_ranking"})
+
+        proxy_rclass = self.reference_table_renamed(
+            joint_tables, {"read_counts": "counts"}
+        ).reset_index(drop=True)
+        proxy_aclass = self.reference_table_renamed(
+            joint_tables, {"contig_counts": "counts"}
+        ).reset_index(drop=True)
+
+        targets, _ = merge_classes(
+            proxy_rclass, proxy_aclass, maxt=joint_tables.shape[0]
+        )
+
+        targets["global_ranking"] = range(1, targets.shape[0] + 1)
+
+        def set_global_ranking_repeat_ranks(
+            targets, rank_column="global_ranking", counts_column="counts"
+        ):
+            """
+            Set the global ranking for repeated ranks
+            """
+            current_counts = None
+            current_rank = 0
+            for row in targets.iterrows():
+                if current_counts != row[1][counts_column]:
+                    current_rank += 1
+                    current_counts = row[1][counts_column]
+
+                targets.at[row[0], rank_column] = current_rank
+
+            return targets
+
+        targets = set_global_ranking_repeat_ranks(targets, rank_column="global_ranking")
+
+        ####
+        joint_tables = joint_tables.reset_index(drop=True)
+        targets = targets.reset_index(drop=True)
+        joint_tables["taxid"] = joint_tables["taxid"].astype(int)
+        targets["taxid"] = targets["taxid"].astype(int)
+
+        joint_tables = joint_tables.merge(
+            targets[["taxid", "global_ranking"]], on=["taxid"], how="left"
+        )
+        ############################################# Reset the index
+
+        joint_tables = joint_tables.sort_values("ensemble_ranking", ascending=True)
+
+        joint_tables = joint_tables.reset_index(drop=True)
+
+        return joint_tables
+
+    def run_references_table(self, run: RunMain) -> pd.DataFrame:
+        references = RawReference.objects.filter(run=run)
+
+        references_table = self.references_table_from_query(references)
+
+        return references_table
+
+    def filter_runs(self):
+        if self.sample_registered is None and self.project_registered is None:
+            raise Exception("No sample or project registered")
+
+        if self.sample_registered is None:
+            sample_runs = RunMain.objects.filter(
+                sample__project=self.project_registered
+            )
+        else:
+            sample_runs = RunMain.objects.filter(sample=self.sample_registered)
+
+        return sample_runs.exclude(
+            run_type__in=[RunMain.RUN_TYPE_SCREENING, RunMain.RUN_TYPE_STORAGE]
+        )
+
+    def collect_references_all(self) -> QuerySet:
+        sample_runs = self.filter_runs()
+
+        references = RawReference.objects.filter(run__in=sample_runs)
+
+        return references
+
+    def sample_compound_refs_table(self) -> pd.DataFrame:
+
+        compound_refs = RawReferenceCompoundModel.objects.filter(
+            sample=self.sample_registered
+        )
+
+        compound_refs_table = pd.DataFrame(
+            list(
+                compound_refs.values(
+                    "taxid",
+                    "accid",
+                    "description",
+                    "ensemble_ranking",
+                    "standard_score",
+                )
+            )
+        )
+
+        return compound_refs_table
+
+    def sample_reference_tables(self, pipeline_only=False) -> pd.DataFrame:
+
+        sample_runs = self.filter_runs()
+
+        if pipeline_only:
+            sample_runs = sample_runs.filter(run_type=RunMain.RUN_TYPE_PIPELINE)
+
+        self.runs_found = sample_runs.count()
+
+        run_references_tables = [self.run_references_table(run) for run in sample_runs]
+
+        # register tables
+        self.list_tables.extend(run_references_tables)
+        #
+        if len(self.list_tables):
+            run_references_tables = self.merge_ref_tables()
+            # replace nan with 0
+            run_references_tables = run_references_tables.fillna(0)
+            self.merged_table = run_references_tables
+        else:
+            return pd.DataFrame(
+                columns=[
+                    "read_counts",
+                    "contig_counts",
+                    "taxid",
+                    "accid",
+                    "description",
+                    "standard_score",
+                    "global_ranking",
+                    "ensemble_ranking",
+                ]
+            )
+
+    def compound_reference_update_ranks(self, compound_ref: RawReferenceCompound):
+        """
+        Update the standard score for a compound reference based on accid"""
+
+        score = self.merged_table[self.merged_table.accid == compound_ref.accid]
+
+        if score.shape[0] > 0:
+            # compound_ref.standard_score = score.iloc[0]["standard_score"]
+            compound_ref.standard_score = max(score["standard_score"])
+            compound_ref.global_ranking = min(score["global_ranking"])
+            compound_ref.ensemble_ranking = min(score["ensemble_ranking"])
+
+    def update_scores_compound_references(
+        self, compount_refs: List[RawReferenceCompound]
+    ):
+        """
+        Update the standard score for a list of compound references based on accid"""
+        for compound_ref in compount_refs:
+            self.compound_reference_update_ranks(compound_ref)
+
+    def filter_reference_query_set(
+        self, references: QuerySet, query_string: Optional[str] = ""
+    ):
+        """
+        Filter a query set of references by a query string
+        """
+        if not query_string:
+            return references.exclude(accid="-")
+
+        references_select = references.filter(
+            Q(description__icontains=query_string)
+            | Q(accid__icontains=query_string)
+            | Q(taxid__icontains=query_string)
+        ).exclude(accid="-")
+
+        return references_select
+
+    def filter_reference_query_set_compound(
+        self, references: QuerySet, query_string: Optional[str] = ""
+    ):
+        """
+        Filter a query set of references by a query string
+        """
+        references_select = self.filter_reference_query_set(references, query_string)
+
+        exclude_refs = []
+
+        for ref in references_select:
+            if RawReference.objects.filter(pk=ref.selected_mapped_pk).exists() is False:
+                exclude_refs.append(ref.pk)
+
+        references_select = references_select.exclude(pk__in=exclude_refs)
+
+        return references_select
+
+    def query_sample_compound_references_regressive(
+        self, query_string: Optional[str] = None
+    ) -> List[RawReferenceCompoundModel]:
+        """
+        Query compound references using sample, project or none, in that order. Filter by query string
+        """
+
+        if self.sample_registered is not None:
+            query_set = RawReferenceCompoundModel.objects.filter(
+                sample=self.sample_registered
+            ).order_by("ensemble_ranking")
+        elif self.project_registered is not None:
+            query_set = RawReferenceCompoundModel.objects.filter(
+                sample__project=self.project_registered
+            ).order_by("ensemble_ranking")
+        else:
+            query_set = RawReferenceCompoundModel.objects.none()
+
+        return self.filter_reference_query_set_compound(query_set, query_string)
+
+    def query_sample_references(self, query_string: Optional[str] = "") -> QuerySet:
+
+        if self.sample_registered is not None:
+
+            query_set = (
+                RawReference.objects.filter(
+                    run__sample__pk=self.sample_registered.pk,
+                )
+                .exclude(
+                    run__run_type__in=[
+                        RunMain.RUN_TYPE_STORAGE,
+                        RunMain.RUN_TYPE_SCREENING,
+                    ],
+                    accid="-",
+                )
+                .distinct("accid")
+            )
+        elif self.project_registered is not None:
+            query_set = (
+                RawReference.objects.filter(
+                    run__sample__project__pk=self.project_registered.pk,
+                )
+                .exclude(
+                    run__run_type__in=[
+                        RunMain.RUN_TYPE_STORAGE,
+                        RunMain.RUN_TYPE_SCREENING,
+                    ],
+                    accid="-",
+                )
+                .distinct("accid")
+            )
+        else:
+            query_set = RawReference.objects.none()
+
+        return self.filter_reference_query_set(query_set, query_string)
+
+    def register_compound_references(self, compound_refs: List[RawReferenceCompound]):
+        """
+        Register a list of compound references in the database
+        """
+
+        for compound_ref in compound_refs:
+            self.register_compound_reference(compound_ref)
+
+    def register_compound_reference(self, compound_ref: RawReferenceCompound):
+        """
+        Register a compound reference in the database
+        """
+
+        try:
+            compound_ref_model = RawReferenceCompoundModel.objects.get(
+                accid=compound_ref.accid, sample__id=compound_ref.sample_id
+            )
+
+            compound_ref_model.standard_score = compound_ref.standard_score
+            compound_ref_model.global_ranking = compound_ref.global_ranking
+            compound_ref_model.ensemble_ranking = compound_ref.ensemble_ranking
+            compound_ref_model.manual_insert = compound_ref.manual_insert
+            compound_ref_model.mapped_final_report = compound_ref.mapped_final_report
+            compound_ref_model.mapped_raw_reference = compound_ref.mapped_raw_reference
+            compound_ref_model.selected_mapped_pk = compound_ref.selected_mapped_pk
+            compound_ref_model.run_count = compound_ref.run_count
+            compound_ref_model.save()
+
+        except RawReferenceCompoundModel.DoesNotExist:
+            sample = PIProject_Sample.objects.get(pk=compound_ref.sample_id)
+
+            description_short = compound_ref.description[:200]
+            compound_ref_model = RawReferenceCompoundModel(
+                taxid=compound_ref.taxid,
+                description=description_short,
+                accid=compound_ref.accid,
+                sample=sample,
+                standard_score=compound_ref.standard_score,
+                global_ranking=compound_ref.global_ranking,
+                ensemble_ranking=compound_ref.ensemble_ranking,
+                manual_insert=compound_ref.manual_insert,
+                mapped_final_report=compound_ref.mapped_final_report,
+                mapped_raw_reference=compound_ref.mapped_raw_reference,
+                selected_mapped_pk=compound_ref.selected_mapped_pk,
+                run_count=compound_ref.run_count,
+            )
+            compound_ref_model.save()
+
+            # for run in compound_ref.runs:
+            #    compound_ref_model.runs.add(run)
+            compound_ref_model.runs.add(*compound_ref.runs)
+
+            refs = RawReference.objects.filter(pk__in=compound_ref.family)
+
+            ## add family
+            compound_ref_model.family.add(*refs)
+
+            # for ref_pk in compound_ref.family:
+            #    ref = RawReference.objects.get(pk=ref_pk)
+            #    compound_ref_model.family.add(ref)
+
+    def get_classification_runs(self):
+
+        if self.sample_registered is not None:
+            classification_runs = RunMain.objects.filter(
+                sample=self.sample_registered, run_type=RunMain.RUN_TYPE_PIPELINE
+            )
+
+        elif self.project_registered is not None:
+
+            classification_runs = RunMain.objects.filter(
+                sample__project=self.project_registered,
+                run_type=RunMain.RUN_TYPE_PIPELINE,
+            )
+
+        else:
+            classification_runs = RunMain.objects.none()
+
+        return classification_runs
+
+    def create_compound(self, raw_references: List[RawReference]):
+
+        raw_reference_compound = [
+            RawReferenceCompound(raw_reference) for raw_reference in raw_references
+        ]
+
+        _ = self.sample_reference_tables(pipeline_only=True)
+
+        self.update_scores_compound_references(raw_reference_compound)
+        self.register_compound_references(raw_reference_compound)
+
+    def retrieve_compound_references(
+        self, query_string: Optional[str] = None
+    ) -> QuerySet:
+        """
+        Retrieve compound references for a sample, query, or create them if they do not exist
+        """
+        compound_refs = self.query_sample_compound_references_regressive(query_string)
+
+        if compound_refs.exists():
+
+            return compound_refs
+
+        compound_refs = self.create_compound_references(query_string=query_string)
+
+        return compound_refs
+
+    def create_compound_references(self, query_string: Optional[str] = None):
+        """
+        Create compound references for a sample_name, query_string):
+
+        Returns a list of references that match the query string.
+        :param query_string:
+        :return:
+
+        """
+        try:
+            references = self.query_sample_references(query_string)
+        except Exception as e:
+            print(e)
+
+        if references.exists():
+            self.create_compound(references)
+
+            compound_refs = self.query_sample_compound_references_regressive(
+                query_string
+            )
+
+        else:
+            compound_refs = RawReferenceCompoundModel.objects.none()
+
+        return compound_refs
+
+    def reference_table_renamed(self, merged_table, rename_dict: dict):
+        proxy_ref = merged_table.copy()
+
+        for key, value in rename_dict.items():
+            if key in proxy_ref.columns:
+                if value in proxy_ref.columns:
+                    # remove the column if it exists
+                    proxy_ref = proxy_ref.drop(columns=[value])
+
+                proxy_ref = proxy_ref.rename(columns={key: value})
+
+        # proxy_ref = proxy_ref.rename(columns=rename_dict)
+
+        proxy_ref["taxid"] = proxy_ref["taxid"].astype(int)
+        proxy_ref["counts"] = proxy_ref["counts"].astype(float).astype(int)
+        proxy_ref = proxy_ref[proxy_ref["counts"] > 0]
+        proxy_ref = proxy_ref[proxy_ref["taxid"] > 0]
+        proxy_ref = proxy_ref[proxy_ref["description"] != "-"]
+        proxy_ref = proxy_ref[proxy_ref["accid"] != "-"]
+
+        return proxy_ref
+
+    def merge_ref_tables(self):
+        run_references_tables = self.merge_ref_tables_use_ranking(self.list_tables)
+
+        run_references_tables = run_references_tables[run_references_tables.taxid != 0]
+
+        return run_references_tables
+
+    @staticmethod
+    def simplify_by_description(df: pd.DataFrame):
+        if "description" not in df.columns:
+            return df
+
+        df["description_first"] = df["description"].str.split(" ").str[0]
+
+        df = df.sort_values("standard_score", ascending=False)
+        df = df.drop_duplicates(subset=["description_first"], keep="first")
+
+        df.drop(columns=["description_first"], inplace=True)
+
+        return df

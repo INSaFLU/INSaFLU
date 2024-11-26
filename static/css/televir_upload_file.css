@@ -2,6 +2,10 @@
 .alert {
     margin-top: 10px;
 }
+.help-text {
+    color: gray;
+    font-style: italic;
+}
 
 body {
     display: flex;

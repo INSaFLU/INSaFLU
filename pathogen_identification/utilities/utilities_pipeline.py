@@ -8,25 +8,21 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 from django.contrib.auth.models import User
+from django.db import transaction
 from django.db.models import Q, QuerySet
 
 from constants.constants import Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.host_library import Host
+from pathogen_identification.host_library import HomoSapiens, Host
 from pathogen_identification.models import (
     ParameterSet,
     PIProject_Sample,
     Projects,
-    RawReference,
-    RawReferenceCompoundModel,
-    RunMain,
     SoftwareTree,
     SoftwareTreeNode,
 )
-from pathogen_identification.utilities.utilities_general import merge_classes
 from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
-from pathogen_identification.utilities.utilities_views import RawReferenceCompound
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -34,7 +30,7 @@ from utils.lock_atomic_transaction import LockedAtomicTransaction
 tree = lambda: defaultdict(tree)
 
 
-def exclued_steps_decorator(function):
+def excluded_steps_decorator(function):
     """
     create excluded steps given project"""
 
@@ -89,6 +85,7 @@ class PipelineTreeBase:
     ROOT = "root"
     ASSEMBLY_SPECIAL_STEP = "ASSEMBLY_SPECIAL"
     VIRAL_ENRICHMENT_SPECIAL_STEP = "VIRAL_ENRICHMENT"
+    MAP_FILTERING_SPECIAL_STEP = "MAP_FILTERING"
     SINK = "sink"
     dependencies_graph_root = SINK
     dependencies_graph_sink = ROOT
@@ -184,22 +181,31 @@ class Pipeline_Graph_Metagenomics(PipelineTreeBase):
                 self.VIRAL_ENRICHMENT_SPECIAL_STEP,
             ],
             CS.PIPELINE_NAME_map_filtering: [
+                self.ROOT,
                 CS.PIPELINE_NAME_extra_qc,
                 self.ASSEMBLY_SPECIAL_STEP,
+                CS.PIPELINE_NAME_host_depletion,
+                self.VIRAL_ENRICHMENT_SPECIAL_STEP,
+            ],
+            self.MAP_FILTERING_SPECIAL_STEP: [
+                self.ROOT,
+                CS.PIPELINE_NAME_extra_qc,
                 CS.PIPELINE_NAME_host_depletion,
                 self.VIRAL_ENRICHMENT_SPECIAL_STEP,
             ],
             CS.PIPELINE_NAME_request_mapping: [
                 self.ROOT,
                 CS.PIPELINE_NAME_extra_qc,
-                CS.PIPELINE_NAME_map_filtering,
-                self.ASSEMBLY_SPECIAL_STEP,
+                # self.ASSEMBLY_SPECIAL_STEP,
+                self.MAP_FILTERING_SPECIAL_STEP,
                 CS.PIPELINE_NAME_host_depletion,
                 self.VIRAL_ENRICHMENT_SPECIAL_STEP,
             ],
             CS.PIPELINE_NAME_metagenomics_screening: [
-                CS.PIPELINE_NAME_map_filtering,
-                self.ASSEMBLY_SPECIAL_STEP,
+                self.ROOT,
+                CS.PIPELINE_NAME_extra_qc,
+                self.MAP_FILTERING_SPECIAL_STEP,
+                # self.ASSEMBLY_SPECIAL_STEP,
                 CS.PIPELINE_NAME_host_depletion,
                 self.VIRAL_ENRICHMENT_SPECIAL_STEP,
             ],
@@ -246,9 +252,11 @@ class Pipeline_Makeup(PipelineTreeBase):
         Processes the path to remove the root node
         """
         dpath = [
-            x.replace(self.ASSEMBLY_SPECIAL_STEP, CS.PIPELINE_NAME_assembly).replace(
+            x.replace(self.ASSEMBLY_SPECIAL_STEP, CS.PIPELINE_NAME_assembly)
+            .replace(
                 self.VIRAL_ENRICHMENT_SPECIAL_STEP, CS.PIPELINE_NAME_viral_enrichment
             )
+            .replace(self.MAP_FILTERING_SPECIAL_STEP, CS.PIPELINE_NAME_map_filtering)
             for x in dpath
             if x not in [self.ROOT, self.SINK]
         ]
@@ -331,7 +339,7 @@ class Pipeline_Makeup(PipelineTreeBase):
     def makeup_available(self, makeup: int) -> bool:
         return makeup in self.MAKEUP
 
-    @exclued_steps_decorator
+    @excluded_steps_decorator
     def get_software_pipeline_list_including(
         self,
         software: Software,
@@ -364,7 +372,7 @@ class Pipeline_Makeup(PipelineTreeBase):
 
         return pipeline_steps_project
 
-    @exclued_steps_decorator
+    @excluded_steps_decorator
     def get_software_pipeline_list_excluding(
         self,
         software: Software,
@@ -447,6 +455,7 @@ class PipelineTree:
         #
         self.edges = edges
         self.leaves = leaves
+        self.sorted = sorted
         self.edge_dict = [(x[0], x[1]) for x in self.edges]
         self.makeup = makeup
         self.software_tree_pk = software_tree_pk
@@ -1072,8 +1081,7 @@ class Utility_Pipeline_Manager:
 
     def __init__(self):
         self.utility_repository = Utility_Repository(
-            db_path=Televir_Directories.docker_app_directory,
-            install_type="docker",
+            db_path=Televir_Directories.docker_app_directory, install_type="docker"
         )
 
         self.steps_db_dependant = ConstantsSettings.PIPELINE_STEPS_DB_DEPENDENT
@@ -1108,7 +1116,6 @@ class Utility_Pipeline_Manager:
         pipe_makeup_manager = Pipeline_Makeup()
 
         pipelines_available = combined_table.pipeline_step.unique().tolist()
-        print("pipelines available", pipelines_available)
 
         self.pipeline_makeup = pipe_makeup_manager.match_makeup_name_from_list(
             pipelines_available
@@ -1207,6 +1214,37 @@ class Utility_Pipeline_Manager:
 
         return False
 
+    def set_software_list(self, software_list):
+        self.software_name_list = software_list
+
+    def get_software_list(self):
+        self.software_name_list = Software.objects.filter(
+            type_of_use__in=Software.TELEVIR_GLOBAL_TYPES,
+        ).values_list("name", flat=True)
+
+    ##############################
+    ##############################
+    # Software DBs
+    def get_software_dbs_if_exist(
+        self, software_name: str, filters: List[tuple] = []
+    ) -> pd.DataFrame:
+        fields = self.utility_repository.select_explicit_statement(
+            "software", "name", software_name.lower(), filters=filters
+        )
+
+        try:
+            fields = pd.read_sql(fields, self.utility_repository.engine)
+            fields = fields.drop_duplicates(subset=["database"])
+
+            return fields
+        except Exception as e:
+            self.logger.error(
+                f"failed to fail to pandas read_sql {self.utility_repository.engine} software table for {software_name}. Error: {e}"
+            )
+            return pd.DataFrame(
+                columns=["name", "path", "database", "installed", "env_path"]
+            )
+
     def check_software_db_available(self, software_name: str) -> bool:
         """
         Check if a software is installed
@@ -1215,14 +1253,6 @@ class Utility_Pipeline_Manager:
         return self.utility_repository.check_exists(
             "software", "name", software_name.lower()
         )
-
-    def set_software_list(self, software_list):
-        self.software_name_list = software_list
-
-    def get_software_list(self):
-        self.software_name_list = Software.objects.filter(
-            type_of_use__in=Software.TELEVIR_GLOBAL_TYPES,
-        ).values_list("name", flat=True)
 
     def get_software_db_dict(self):
         software_list = self.utility_repository.get_list_unique_field(
@@ -1237,6 +1267,7 @@ class Utility_Pipeline_Manager:
         }
 
     def get_host_dbs(self):
+
         software_list = self.utility_repository.get_list_unique_field(
             "software", "name"
         )
@@ -1281,6 +1312,9 @@ class Utility_Pipeline_Manager:
 
         self.host_dbs = hosts_dbs_dict
 
+    ##################################
+    ##################################
+
     def get_from_software_db_dict(self, software_name: str, empty=[]):
         possibilities = [software_name, software_name.lower()]
         if "_" in software_name:
@@ -1306,31 +1340,20 @@ class Utility_Pipeline_Manager:
         for possibility in possibilities:
             if possibility in self.host_dbs.keys():
                 host_df = self.host_dbs[possibility]
+                human_reference = HomoSapiens()
+                if (
+                    human_reference.host_name in host_df.host_name.unique()
+                ):  # place human dbs first
+
+                    host_df = host_df[
+                        host_df.host_name == human_reference.host_name
+                    ].append(host_df[host_df.host_name != human_reference.host_name])
+
                 return list(
                     host_df[["path", "file_str"]].itertuples(index=False, name=None)
                 )
 
         return empty
-
-    def get_software_dbs_if_exist(
-        self, software_name: str, filters: List[tuple] = []
-    ) -> pd.DataFrame:
-        fields = self.utility_repository.select_explicit_statement(
-            "software", "name", software_name.lower(), filters=filters
-        )
-
-        try:
-            fields = pd.read_sql(fields, self.utility_repository.engine)
-            fields = fields.drop_duplicates(subset=["database"])
-
-            return fields
-        except Exception as e:
-            self.logger.error(
-                f"failed to fail to pandas read_sql {self.utility_repository.engine} software table for {software_name}. Error: {e}"
-            )
-            return pd.DataFrame(
-                columns=["name", "path", "database", "installed", "env_path"]
-            )
 
     def generate_argument_combinations(
         self, pipeline_software_dt: pd.DataFrame
@@ -2018,6 +2041,7 @@ class Parameter_DB_Utility:
         elif project is not None:
             software_available = software_available.filter(
                 parameter__televir_project=project,
+                parameter__televir_project_sample=None,
                 type_of_use__in=Software.TELEVIR_PROJECT_TYPES,
             )
 
@@ -2280,7 +2304,7 @@ class Parameter_DB_Utility:
         if not self.check_ParameterSet_exists(sample, leaf, project):
             return True
 
-        parameter_set = ParameterSet.objects.get(
+        parameter_set = self.retrieve_parameterset(
             sample=sample, leaf=leaf, project=project
         )
 
@@ -2293,6 +2317,22 @@ class Parameter_DB_Utility:
 
         return True
 
+    def retrieve_parameterset(
+        self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
+    ):
+
+        try:
+
+            return ParameterSet.objects.get(sample=sample, leaf=leaf, project=project)
+        except ParameterSet.DoesNotExist:
+            return None
+
+        except ParameterSet.MultipleObjectsReturned:
+
+            return ParameterSet.objects.filter(
+                sample=sample, leaf=leaf, project=project
+            ).first()
+
     def parameterset_update_status(
         self,
         sample: PIProject_Sample,
@@ -2303,7 +2343,7 @@ class Parameter_DB_Utility:
         if not self.check_ParameterSet_exists(sample, leaf, project):
             return False
 
-        parameter_set = ParameterSet.objects.get(
+        parameter_set = self.retrieve_parameterset(
             sample=sample, leaf=leaf, project=project
         )
 
@@ -2333,7 +2373,7 @@ class Parameter_DB_Utility:
         if not self.check_ParameterSet_exists(sample, leaf, project):
             return True
 
-        parameter_set = ParameterSet.objects.get(
+        parameter_set = self.retrieve_parameterset(
             sample=sample, leaf=leaf, project=project
         )
 
@@ -2351,10 +2391,15 @@ class Parameter_DB_Utility:
         """
         Create a ParameterSet for a sample and leaf
         """
+
         self.logger.info("Creating ParameterSet")
-        parameter_set = ParameterSet.objects.create(
-            sample=sample, leaf=leaf, project=project
-        )
+
+        with transaction.atomic():
+            parameter_set = ParameterSet.objects.create(
+                sample=sample, leaf=leaf, project=project
+            )
+
+        return parameter_set
 
     def check_ParameterSet_processed(
         self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
@@ -2366,7 +2411,7 @@ class Parameter_DB_Utility:
         if not self.check_ParameterSet_exists(sample, leaf, project):
             return False
 
-        parameter_set = ParameterSet.objects.get(
+        parameter_set = self.retrieve_parameterset(
             sample=sample, leaf=leaf, project=project
         )
 
@@ -2379,44 +2424,28 @@ class Parameter_DB_Utility:
         else:
             return False
 
-    def set_parameterset_to_queue(
-        self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
-    ):
+    def set_parameterset_to_queue(self, parameter_set: ParameterSet):
         """
         Set ParameterSet to queue if it exists and is not finished or running.
         """
 
-        try:
-            parameter_set = ParameterSet.objects.get(
-                sample=sample, leaf=leaf, project=project
-            )
-
-            if parameter_set.status not in [
-                ParameterSet.STATUS_FINISHED,
-                ParameterSet.STATUS_RUNNING,
-            ]:
-                parameter_set.status = ParameterSet.STATUS_QUEUED
-                parameter_set.save()
-
-        except ParameterSet.DoesNotExist:
-            pass
+        if parameter_set.status not in [
+            ParameterSet.STATUS_FINISHED,
+            ParameterSet.STATUS_RUNNING,
+        ]:
+            parameter_set.status = ParameterSet.STATUS_QUEUED
+            parameter_set.save()
 
 
 class Utils_Manager:
     """Combines Utility classes to create a manager for the pipeline."""
 
-    utilities_repository: Utility_Repository
     parameter_util: Parameter_DB_Utility
     utility_manager: Utility_Pipeline_Manager
 
     def __init__(self):
         ###
         self.parameter_util = Parameter_DB_Utility()
-
-        self.utility_repository = Utility_Repository(
-            db_path=Televir_Directories.docker_app_directory,
-            install_type="docker",
-        )
 
         self.utility_technologies = self.parameter_util.get_technologies_available()
         self.utility_manager = Utility_Pipeline_Manager()
@@ -2426,6 +2455,14 @@ class Utils_Manager:
             self.logger.handlers.clear()
 
         self.logger.info("Utils_Manager initialized")
+
+    def dump_tables(self, logdir):
+        utility_repository = Utility_Repository(
+            db_path=Televir_Directories.docker_app_directory,
+            install_type="docker",
+        )
+
+        utility_repository.dump_tables(logdir)
 
     def get_leaf_parameters(self, parameter_leaf: SoftwareTreeNode) -> pd.DataFrame:
         """ """
@@ -2492,22 +2529,19 @@ class Utils_Manager:
                     available = utils.parameter_util.check_ParameterSet_available(
                         sample=sample, leaf=matched_path_node, project=project
                     )
-                    if (
-                        utils.parameter_util.check_ParameterSet_available(
-                            sample=sample, leaf=matched_path_node, project=project
-                        )
-                        is False
-                    ):
+                    if available is False:
                         continue
 
-                else:
-                    self.parameter_util.create_parameter_set(
+                    parameter_set = utils.parameter_util.retrieve_parameterset(
                         sample=sample, leaf=matched_path_node, project=project
                     )
 
-                utils.parameter_util.set_parameterset_to_queue(
-                    sample=sample, leaf=matched_path_node, project=project
-                )
+                else:
+                    parameter_set = self.parameter_util.create_parameter_set(
+                        sample=sample, leaf=matched_path_node, project=project
+                    )
+
+                utils.parameter_util.set_parameterset_to_queue(parameter_set)
                 runs_to_deploy += 1
                 samples_available.append(sample)
                 samples_leaf_dict[sample].append(matched_path_node)
@@ -2546,9 +2580,11 @@ class Utils_Manager:
                     else False
                 )
 
-                utils.parameter_util.set_parameterset_to_queue(
+                parameter_set = utils.parameter_util.retrieve_parameterset(
                     sample=sample, leaf=matched_path_node, project=project
                 )
+
+                utils.parameter_util.set_parameterset_to_queue(parameter_set)
                 runs_to_deploy += 1
                 samples_available.append(sample)
                 samples_leaf_dict[sample].append(matched_path_node)
@@ -2657,6 +2693,8 @@ class Utils_Manager:
             return False
 
         for technology in self.utility_technologies:
+            print(technology)
+            print(self.check_any_pipeline_possible(technology, user_system))
             if self.check_any_pipeline_possible(technology, user_system):
                 return True
 
@@ -2931,7 +2969,6 @@ class SoftwareTreeUtils:
         """
         Generate a project tree
         """
-
         return self.generate_software_tree_safe(self.project)
 
     def generate_tree_from_combined_table(
@@ -3138,6 +3175,7 @@ class SoftwareTreeUtils:
             screening=True,
             mapping_only=False,
         )
+
         clean_samples_leaf_dict, workflow_deployed_dict = (
             self.utils_manager.sample_nodes_check_repeat_allowed(
                 submission_dict, available_path_nodes, self.project
@@ -3241,620 +3279,3 @@ class SoftwareTreeUtils:
             tree.makeup,
         )
         return tree
-
-
-class RawReferenceUtils:
-    def __init__(
-        self,
-        sample: Optional[PIProject_Sample] = None,
-        project: Optional[Projects] = None,
-    ):
-        self.sample_registered = sample
-        self.project_registered = project
-        self.runs_found = 0
-        self.list_tables: List[pd.DataFrame] = []
-        self.merged_table: pd.DataFrame = pd.DataFrame(
-            columns=["read_counts", "contig_counts", "taxid", "accid", "description"]
-        )
-
-    def references_table_from_query(
-        self, references: Union[QuerySet, List[RawReference]]
-    ) -> pd.DataFrame:
-        table = []
-        for ref in references:
-            table.append(
-                {
-                    "taxid": ref.taxid,
-                    "accid": ref.accid,
-                    "description": ref.description,
-                    "counts_str": ref.counts,
-                    "read_counts": ref.read_counts,
-                    "contig_counts": ref.contig_counts,
-                }
-            )
-
-        if len(table) == 0:
-            return pd.DataFrame(
-                columns=[
-                    "taxid",
-                    "accid",
-                    "description",
-                    "counts_str",
-                    "read_counts",
-                    "contig_counts",
-                ]
-            )
-
-        references_table = pd.DataFrame(table)
-
-        references_table["read_counts"] = references_table["read_counts"].astype(float)
-        references_table["contig_counts"] = references_table["contig_counts"].astype(
-            float
-        )
-
-        references_table = references_table[references_table["read_counts"] > 1]
-        references_table = references_table[references_table["accid"] != "-"]
-        references_table = references_table[references_table["accid"] != ""]
-        references_table = references_table.sort_values(
-            ["contig_counts", "read_counts"], ascending=[False, False]
-        )
-        references_table["sort_rank"] = range(1, references_table.shape[0] + 1)
-
-        return references_table
-
-    def run_references_standard_score_reads(
-        self,
-        references_table: pd.DataFrame,
-    ) -> pd.DataFrame:
-        # references = RawReference.objects.filter(run=run)
-
-        # references_table = references_table_from_query(references)
-
-        if references_table.shape[0] == 0:
-            return pd.DataFrame(
-                columns=list(references_table.columns) + ["read_counts_standard_score"]
-            )
-
-        if max(references_table["read_counts"]) == 0:
-            references_table["read_counts_standard_score"] = 1
-            return references_table
-
-        references_table["read_counts"] = references_table["read_counts"].astype(float)
-
-        references_table["read_counts_standard_score"] = (
-            references_table["read_counts"] - references_table["read_counts"].mean()
-        ) / references_table["read_counts"].std()
-
-        references_table["read_counts_standard_score"] = (
-            references_table["read_counts_standard_score"]
-            - references_table["read_counts_standard_score"].min()
-        ) / (
-            references_table["read_counts_standard_score"].max()
-            - references_table["read_counts_standard_score"].min()
-        )
-
-        return references_table
-
-    def run_references_standard_score_contigs(
-        self,
-        references_table: pd.DataFrame,
-    ) -> pd.DataFrame:
-        # references = RawReference.objects.filter(run=run)
-
-        # references_table = references_table_from_query(references)
-
-        if references_table.shape[0] == 0:
-            return pd.DataFrame(
-                columns=list(references_table.columns)
-                + ["contig_counts_standard_score"]
-            )
-
-        references_table["contig_counts"] = references_table["contig_counts"].astype(
-            float
-        )
-        if max(references_table["contig_counts"]) == 0:
-            references_table["contig_counts_standard_score"] = 1
-            return references_table
-
-        references_table["contig_counts_standard_score"] = (
-            references_table["contig_counts"] - references_table["contig_counts"].mean()
-        ) / references_table["contig_counts"].std()
-
-        references_table["contig_counts_standard_score"] = (
-            references_table["contig_counts_standard_score"]
-            - references_table["contig_counts_standard_score"].min()
-        ) / (
-            references_table["contig_counts_standard_score"].max()
-            - references_table["contig_counts_standard_score"].min()
-        )
-
-        return references_table
-
-    def merge_standard_scores(self, table: pd.DataFrame):
-        if table.shape[0] == 0:
-            return pd.DataFrame(columns=list(table.columns) + ["standard_score"])
-        table["standard_score"] = table[
-            "read_counts_standard_score"
-        ]  # + table["contig_counts_standard_score"]
-        return table
-
-    def run_references_standard_scores(self, table):
-        table = self.run_references_standard_score_reads(table)
-
-        table = self.run_references_standard_score_contigs(table)
-        table = self.merge_standard_scores(table)
-        return table
-
-    def merge_ref_tables_use_standard_score(
-        self,
-        list_tables: List[pd.DataFrame],
-    ) -> pd.DataFrame:
-        joint_tables = [
-            self.run_references_standard_scores(table) for table in list_tables
-        ]
-
-        joint_tables = pd.concat(joint_tables)
-        # group tables: average read_counts_standard_score, sum counts, read_counts, contig_counts
-        if joint_tables.shape[0] == 0:
-            return pd.DataFrame(columns=list(joint_tables.columns))
-
-        joint_tables["standard_score"] = joint_tables["standard_score"].astype(float)
-        joint_tables["contig_counts"] = joint_tables["contig_counts"].astype(float)
-        joint_tables["read_counts"] = joint_tables["read_counts"].astype(float)
-        joint_tables["contig_counts_standard_score"] = joint_tables[
-            "contig_counts_standard_score"
-        ].astype(float)
-        joint_tables["sort_rank"] = joint_tables["sort_rank"].astype(float)
-
-        joint_tables = joint_tables.groupby(["taxid", "accid", "description"]).agg(
-            {
-                "taxid": "first",
-                "accid": "first",
-                "description": "first",
-                "counts_str": "first",
-                "standard_score": "mean",
-                "contig_counts_standard_score": "mean",
-                "read_counts": "sum",
-                "contig_counts": "sum",
-                "sort_rank": "mean",
-            }
-        )
-
-        joint_tables = joint_tables.rename(columns={"sort_rank": "ensemble_ranking"})
-
-        #############################################
-        proxy_rclass = self.reference_table_renamed(
-            joint_tables, {"read_counts": "counts"}
-        )
-        proxy_aclass = self.reference_table_renamed(
-            joint_tables, {"contig_counts": "counts"}
-        )
-
-        targets, raw_targets = merge_classes(
-            proxy_rclass, proxy_aclass, maxt=joint_tables.shape[0]
-        )
-
-        targets["global_ranking"] = range(1, targets.shape[0] + 1)
-
-        def set_global_ranking_repeat_ranks(targets):
-            """
-            Set the global ranking for repeated ranks
-            """
-            current_counts = None
-            current_rank = 0
-            for row in targets.iterrows():
-                if current_counts != row[1]["counts"]:
-                    current_rank += 1
-                    current_counts = row[1]["counts"]
-
-                targets.at[row[0], "global_ranking"] = current_rank
-
-            return targets
-
-        targets = set_global_ranking_repeat_ranks(targets)
-
-        ####
-        joint_tables = joint_tables.reset_index(drop=True)
-        targets = targets.reset_index(drop=True)
-        joint_tables["taxid"] = joint_tables["taxid"].astype(int)
-        targets["taxid"] = targets["taxid"].astype(int)
-        print(targets.head())
-        print("&")
-        print(joint_tables.head())
-        joint_tables = joint_tables.merge(
-            targets[["taxid", "global_ranking"]], on=["taxid"], how="left"
-        )
-        ############################################# Reset the index
-        joint_tables = joint_tables.reset_index(drop=True)
-
-        joint_tables = joint_tables.sort_values("global_ranking", ascending=True)
-        joint_tables = joint_tables.reset_index(drop=True)
-
-        return joint_tables
-
-    def merge_ref_tables_use_ranking(
-        self,
-        list_tables: List[pd.DataFrame],
-    ) -> pd.DataFrame:
-        joint_tables = [
-            self.run_references_standard_scores(table) for table in list_tables
-        ]
-
-        joint_tables = pd.concat(joint_tables)
-        # group tables: average read_counts_standard_score, sum counts, read_counts, contig_counts
-        if joint_tables.shape[0] == 0:
-            return pd.DataFrame(columns=list(joint_tables.columns))
-
-        joint_tables["standard_score"] = joint_tables["standard_score"].astype(float)
-        joint_tables["contig_counts"] = joint_tables["contig_counts"].astype(float)
-        joint_tables["read_counts"] = joint_tables["read_counts"].astype(float)
-        joint_tables["contig_counts_standard_score"] = joint_tables[
-            "contig_counts_standard_score"
-        ].astype(float)
-
-        joint_tables = joint_tables.groupby(["taxid", "accid", "description"]).agg(
-            {
-                "taxid": "first",
-                "accid": "first",
-                "description": "first",
-                "counts_str": "first",
-                "standard_score": "mean",
-                "contig_counts_standard_score": "mean",
-                "read_counts": "sum",
-                "contig_counts": "sum",
-                "sort_rank": "mean",
-            }
-        )
-
-        # Define a function to calculate the final score
-        def calculate_final_score(row):
-            boost = 0
-            if row["contig_counts"] > 0:
-                boost = 1  # Define the boost value according to your needs
-            return (
-                row["standard_score"]
-                + boost * row["contig_counts_standard_score"]
-                + boost
-            )
-
-        # Apply the function to each row
-        joint_tables["final_score"] = joint_tables.apply(calculate_final_score, axis=1)
-
-        # Sort the table by the final score
-        joint_tables = joint_tables.sort_values("final_score", ascending=False)
-
-        # Reset the index
-        joint_tables = joint_tables.reset_index(drop=True)
-
-        joint_tables = joint_tables.sort_values(
-            ["contig_counts", "standard_score"], ascending=[False, False]
-        )
-        joint_tables = joint_tables.reset_index(drop=True)
-
-        return joint_tables
-
-    def run_references_table(self, run: RunMain) -> pd.DataFrame:
-        references = RawReference.objects.filter(run=run)
-
-        references_table = self.references_table_from_query(references)
-
-        return references_table
-
-    def filter_runs(self):
-        if self.sample_registered is None and self.project_registered is None:
-            raise Exception("No sample or project registered")
-
-        if self.sample_registered is None:
-            sample_runs = RunMain.objects.filter(
-                sample__project=self.project_registered
-            )
-        else:
-            sample_runs = RunMain.objects.filter(sample=self.sample_registered)
-
-        return sample_runs
-
-    def collect_references_all(self) -> QuerySet:
-        sample_runs = self.filter_runs()
-
-        references = RawReference.objects.filter(run__in=sample_runs)
-
-        return references
-
-    def sample_reference_tables(
-        self, run_pks: Optional[List[int]] = None
-    ) -> pd.DataFrame:
-        sample_runs = self.filter_runs()
-        if run_pks is not None:
-            sample_runs = sample_runs.filter(pk__in=run_pks)
-        self.runs_found = sample_runs.count()
-
-        run_references_tables = [self.run_references_table(run) for run in sample_runs]
-
-        # register tables
-        self.list_tables.extend(run_references_tables)
-        #
-        run_references_tables = self.merge_ref_tables()
-        # replace nan with 0
-        run_references_tables = run_references_tables.fillna(0)
-        self.merged_table = run_references_tables
-
-        return run_references_tables
-
-    def sample_reference_tables_filter(self, runs_filter: Optional[List[int]] = None):
-        """
-        Filter the sample reference tables to only include runs in the list
-        """
-        if runs_filter == []:
-            runs_filter = None
-
-        _ = self.sample_reference_tables(runs_filter)
-
-    def compound_reference_update_standard_score(
-        self, compound_ref: RawReferenceCompound
-    ):
-        """
-        Update the standard score for a compound reference based on accid"""
-
-        score = self.merged_table[self.merged_table.accid == compound_ref.accid]
-
-        if score.shape[0] > 0:
-            # compound_ref.standard_score = score.iloc[0]["standard_score"]
-            compound_ref.standard_score = max(score["standard_score"])
-            compound_ref.global_ranking = min(score["global_ranking"])
-            compound_ref.ensemble_ranking = min(score["ensemble_ranking"])
-
-    def update_scores_compound_references(
-        self, compount_refs: List[RawReferenceCompound]
-    ):
-        """
-        Update the standard score for a list of compound references based on accid"""
-        for compound_ref in compount_refs:
-            self.compound_reference_update_standard_score(compound_ref)
-
-    def filter_reference_query_set(
-        self, references: QuerySet, query_string: Optional[str] = ""
-    ):
-        """
-        Filter a query set of references by a query string
-        """
-        if not query_string:
-            return references.exclude(accid="-")
-
-        references_select = references.filter(
-            Q(description__icontains=query_string)
-            | Q(accid__icontains=query_string)
-            | Q(taxid__icontains=query_string)
-        ).exclude(accid="-")
-        exclude_refs = []
-        for ref in references_select:
-            if RawReference.objects.filter(pk=ref.selected_mapped_pk).exists() is False:
-                exclude_refs.append(ref.pk)
-
-        references_select = references_select.exclude(pk__in=exclude_refs)
-
-        return references_select
-
-    def query_sample_compound_references(
-        self, query_string: Optional[str] = None
-    ) -> QuerySet:
-
-        if self.sample_registered is not None:
-            query_set = RawReferenceCompoundModel.objects.filter(
-                sample=self.sample_registered
-            ).order_by("global_ranking")
-        elif self.project_registered is not None:
-            query_set = RawReferenceCompoundModel.objects.filter(
-                sample__project=self.project_registered
-            ).order_by("global_ranking")
-        else:
-            query_set = RawReferenceCompoundModel.objects.none()
-
-        return self.filter_reference_query_set(query_set, query_string)
-
-    def query_sample_references(self, query_string: Optional[str] = "") -> QuerySet:
-
-        if self.sample_registered is not None:
-
-            query_set = (
-                RawReference.objects.filter(
-                    run__sample__pk=self.sample_registered.pk,
-                )
-                .exclude(run__run_type=RunMain.RUN_TYPE_STORAGE, accid="-")
-                .distinct("accid")
-            )
-        elif self.project_registered is not None:
-            query_set = (
-                RawReference.objects.filter(
-                    run__sample__project__pk=self.project_registered.pk,
-                )
-                .exclude(run__run_type=RunMain.RUN_TYPE_STORAGE, accid="-")
-                .distinct("accid")
-            )
-        else:
-            query_set = RawReference.objects.none()
-
-        return self.filter_reference_query_set(query_set, query_string)
-
-    def register_compound_references(self, compound_refs: List[RawReferenceCompound]):
-        """
-        Register a list of compound references in the database
-        """
-
-        for compound_ref in compound_refs:
-            self.register_compound_reference(compound_ref)
-
-    def register_compound_reference(self, compound_ref: RawReferenceCompound):
-        """
-        Register a compound reference in the database
-        """
-
-        try:
-            compound_ref_model = RawReferenceCompoundModel.objects.get(
-                accid=compound_ref.accid, sample__id=compound_ref.sample_id
-            )
-
-            compound_ref_model.standard_score = compound_ref.standard_score
-            compound_ref_model.global_ranking = compound_ref.global_ranking
-            compound_ref_model.ensemble_ranking = compound_ref.ensemble_ranking
-            compound_ref_model.manual_insert = compound_ref.manual_insert
-            compound_ref_model.mapped_final_report = compound_ref.mapped_final_report
-            compound_ref_model.mapped_raw_reference = compound_ref.mapped_raw_reference
-            compound_ref_model.selected_mapped_pk = compound_ref.selected_mapped_pk
-            compound_ref_model.run_count = compound_ref.run_count
-            compound_ref_model.save()
-
-        except RawReferenceCompoundModel.DoesNotExist:
-            sample = PIProject_Sample.objects.get(pk=compound_ref.sample_id)
-
-            description_short = compound_ref.description[:200]
-            compound_ref_model = RawReferenceCompoundModel(
-                taxid=compound_ref.taxid,
-                description=description_short,
-                accid=compound_ref.accid,
-                sample=sample,
-                standard_score=compound_ref.standard_score,
-                global_ranking=compound_ref.global_ranking,
-                ensemble_ranking=compound_ref.ensemble_ranking,
-                manual_insert=compound_ref.manual_insert,
-                mapped_final_report=compound_ref.mapped_final_report,
-                mapped_raw_reference=compound_ref.mapped_raw_reference,
-                selected_mapped_pk=compound_ref.selected_mapped_pk,
-                run_count=compound_ref.run_count,
-            )
-            compound_ref_model.save()
-
-            for run in compound_ref.runs:
-                compound_ref_model.runs.add(run)
-
-            for ref_pk in compound_ref.family:
-                ref = RawReference.objects.get(pk=ref_pk)
-                compound_ref_model.family.add(ref)
-
-    def get_classification_runs(self):
-
-        if self.sample_registered is not None:
-            classification_runs = RunMain.objects.filter(
-                sample=self.sample_registered, run_type=RunMain.RUN_TYPE_PIPELINE
-            )
-
-        elif self.project_registered is not None:
-
-            classification_runs = RunMain.objects.filter(
-                sample__project=self.project_registered,
-                run_type=RunMain.RUN_TYPE_PIPELINE,
-            )
-
-        else:
-            classification_runs = RunMain.objects.none()
-
-        return classification_runs
-
-    def create_compound(self, raw_references: List[RawReference]):
-
-        raw_reference_compound = [
-            RawReferenceCompound(raw_reference) for raw_reference in raw_references
-        ]
-
-        classification_runs = self.get_classification_runs()
-
-        # pks of classification runs as integer list
-        runs_pks = [run.pk for run in classification_runs]
-
-        if classification_runs.exists():
-            self.sample_reference_tables_filter(runs_filter=runs_pks)
-
-            self.update_scores_compound_references(raw_reference_compound)
-            self.register_compound_references(raw_reference_compound)
-
-    def retrieve_compound_references(
-        self, query_string: Optional[str] = None
-    ) -> QuerySet:
-        """
-        Retrieve compound references for a sample
-        """
-        compound_refs = self.query_sample_compound_references(query_string)
-        if compound_refs.exists():
-
-            return compound_refs
-
-        compound_refs = self.create_compound_references(query_string=query_string)
-
-        return compound_refs
-
-    def create_compound_references(self, query_string: Optional[str] = None):
-        """
-        Create compound references for a sample_name, query_string):
-
-        Returns a list of references that match the query string.
-        :param query_string:
-        :return:
-
-        """
-        try:
-            references = self.query_sample_references(query_string)
-        except Exception as e:
-            print(e)
-
-        if references.exists():
-            self.create_compound(references)
-
-            compound_refs = self.query_sample_compound_references(query_string)
-
-        else:
-            compound_refs = RawReferenceCompoundModel.objects.none()
-
-        return compound_refs
-
-    def reference_table_renamed(self, merged_table, rename_dict: dict):
-        proxy_ref = merged_table.copy()
-
-        for key, value in rename_dict.items():
-            if key in proxy_ref.columns:
-                if value in proxy_ref.columns:
-                    # remove the column if it exists
-                    proxy_ref = proxy_ref.drop(columns=[value])
-
-                proxy_ref = proxy_ref.rename(columns={key: value})
-
-        # proxy_ref = proxy_ref.rename(columns=rename_dict)
-
-        proxy_ref["taxid"] = proxy_ref["taxid"].astype(int)
-        proxy_ref["counts"] = proxy_ref["counts"].astype(float).astype(int)
-        proxy_ref = proxy_ref[proxy_ref["counts"] > 0]
-        proxy_ref = proxy_ref[proxy_ref["taxid"] > 0]
-        proxy_ref = proxy_ref[proxy_ref["description"] != "-"]
-        proxy_ref = proxy_ref[proxy_ref["accid"] != "-"]
-
-        return proxy_ref
-
-    def merge_ref_tables(self):
-        run_references_tables = self.merge_ref_tables_use_standard_score(
-            self.list_tables
-        )
-
-        run_references_tables = run_references_tables[run_references_tables.taxid != 0]
-
-        return run_references_tables
-
-    @staticmethod
-    def simplify_by_description(df: pd.DataFrame):
-        if "description" not in df.columns:
-            return df
-
-        df["description_first"] = df["description"].str.split(" ").str[0]
-
-        df = df.sort_values("standard_score", ascending=False)
-        df = df.drop_duplicates(subset=["description_first"], keep="first")
-
-        df.drop(columns=["description_first"], inplace=True)
-
-        return df
-
-    # def collect_references_table_all(
-    #    self,
-    # ) -> pd.DataFrame:
-    #    references = self.collect_references_all()
-    #
-    #    references_table = self.references_table_from_query(references)
-    #    # references_table= sample_reference_tables()
-    #    return references_table

@@ -70,18 +70,21 @@
               <div style="padding: 20px">
                   
                   <div class="row">
-                      <div class="col-sm-2">
-                          {% for run in runs %}
-                          <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Workflow report {{run.parameter_set.leaf.index}} </a>
-                          <br>
-                          <br>
-                          {% endfor %}
+                      <div class="col-sm-2 workflow-link-panel centered-links">
+                        <ul>
+                            {% for run in runs %}
+                            <li><a href="{% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}">Workflow report {{run.parameter_set.leaf.index}}</a></li>
+                            {% endfor %}
+                        </ul>
                       </div>
                       {% if graph_json %}
-                      <div class="col-sm-10">
-                              <div id="{{graph_id}}" style="width:95%;height:250px;position:center;" class="collapsibleTree html-widget"></div>
+                      <div class="col-sm-9">
+                              <div id="{{graph_id}}" style="width:95%;height:250px;position:center;margin-left: 100px;margin-top: 50px;" class="collapsibleTree html-widget"></div>
                               <script type="application/json" data-for="{{graph_id}}">{{graph_json|safe}}</script>
                       </div>
+                  </div>
+                  <div>
+                      <br>
                       <div class="col-sm-2">
                         <div class="info-icon">
                           <img src="{% static "img/pipeline_steps_classification.jpg" %}" alt="Graph Information">
@@ -121,7 +124,8 @@
           </div>
       </div>
       <div id="collapsehead2" class="collapse" role="tabpanel" aria-labelledby="headingsample2">
-        {{ added_references_table }}
+        <div class="reference-list" id="reference-table-panel">
+        </div>
       </div>
 
   </div>
@@ -192,18 +196,21 @@
 
           <button class="btn btn-primary">
             <a id="request_map_selected" href="#id_map_selected_modal" data-toggle="modal" data-target="#id_map_selected_modal" style="color: #fff;">
-              <i class="fa fa-map-marker" aria-hidden="true"></i> Map Selected
+              Map Selected
             </a>
           </button>
           <button class="btn btn-primary">
             <a id="request-map-panels" sample-name="{{ sample_name }}" sample-id="{{ sample_index}}" href="#MapPanelModal" data-toggle="modal" data-target="#MapPanelModal" style="color: #fff;">
-              <i class="fa fa-tags" aria-hidden="true"></i> Map Panels
-            </a>
-          <button class="btn btn-primary">
-            <a id="request_screening" href="#id_screening_modal" data-toggle="modal" data-target="#id_screening_modal" style="color: #fff;">
-              <i class="fa fa-rocket" aria-hidden="true"></i> Deploy Screening
+              Map Panels
             </a>
           </button>
+          <!--
+          <button class="btn btn-primary">
+            <a id="request_screening" href="#id_screening_modal" data-toggle="modal" data-target="#id_screening_modal" style="color: #fff;">
+              Deploy Screening
+            </a>
+          </button>
+          -->
           <button class="btn btn-primary parameters-button">
             {{ meta_parameters  }}  
           </button>
@@ -231,14 +238,16 @@
                         </form>
                     </th>                  
                 </tr>
-            
               <tr>
                 {% for column in table.columns %}
-                  {% if column.orderable %}
+                  {% if column.name == "select_ref" %}
+                    <th>
+                      <button id="clearSelections" class="clear-selections-btn" title="Clear selection">x</button>                    </th>
+                  {% elif column.orderable %}
                       <th {{ column.attrs.th.as_html }}><a href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header|title }}</a></th>
-                    {% else %}
-                      <th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
-                    {% endif %}
+                  {% else %}
+                    <th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
+                  {% endif %}
                 {% endfor %}
               </tr>
             </thead>
@@ -524,6 +533,8 @@
     // load panels
     load_panels('{{ sample_index }}', '{% url "get_sample_panels" %}', '.panel-list ul', true, false);
     prep_loads();
+
+    update_ref_table();
 
     $('.add-panels').click(function() {
       var url= $(this).attr('href');

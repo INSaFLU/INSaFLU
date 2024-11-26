@@ -7,7 +7,8 @@ Created on 04/05/2020
 import os
 
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Button, ButtonHolder, Div, Fieldset, Layout, Submit
+from crispy_forms.layout import (Button, ButtonHolder, Div, Fieldset, Layout,
+                                 Submit)
 from django import forms
 from django.urls import reverse
 from django.utils.html import escape
@@ -16,12 +17,12 @@ from django.utils.translation import ugettext_lazy as _
 from constants.software_names import SoftwareNames
 from datasets.models import Dataset
 from managing_files.models import Project, ProjectSample
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from pathogen_identification.models import Projects as TelevirProject
 from pathogen_identification.modules.remap_class import Remap_Bowtie2
-from pathogen_identification.utilities.utilities_pipeline import (
-    Utility_Pipeline_Manager,
-)
+from pathogen_identification.utilities.utilities_pipeline import \
+    Utility_Pipeline_Manager
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.models import Parameter, Sample, Software

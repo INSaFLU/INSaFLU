@@ -34,6 +34,11 @@ def get_constext_nextclade(media_url_path, context, current_site, specie_identif
 				settings.WEB_SITE_HTTP_NAME,
 				current_site,
 				media_url_path)
+		context['nextclade_link_mpxv_cladeI'] = "{}{}://{}{}".format(
+				Constants.NEXTCLADE_LINK_MPXV_CladeI,
+				settings.WEB_SITE_HTTP_NAME,
+				current_site,
+				media_url_path)				
 	elif (specie_identification == Reference.SPECIES_INFLUENZA):
 		context['nextclade_link_a_h3n2'] = "{}{}://{}{}".format(
 				Constants.NEXTCLADE_LINK_A_H3N2,
@@ -55,6 +60,21 @@ def get_constext_nextclade(media_url_path, context, current_site, specie_identif
 				settings.WEB_SITE_HTTP_NAME,
 				current_site,
 				media_url_path)
+		context['nextclade_link_a_h5nx'] = "{}{}://{}{}".format(
+				Constants.NEXTCLADE_LINK_A_H5Nx,
+				settings.WEB_SITE_HTTP_NAME,
+				current_site,
+				media_url_path)	
+		context['nextclade_link_a_h5nx_2344'] = "{}{}://{}{}".format(
+				Constants.NEXTCLADE_LINK_A_H5Nx_2344,
+				settings.WEB_SITE_HTTP_NAME,
+				current_site,
+				media_url_path)	
+		context['nextclade_link_a_h5nx_2321'] = "{}{}://{}{}".format(
+				Constants.NEXTCLADE_LINK_A_H5Nx_2321,
+				settings.WEB_SITE_HTTP_NAME,
+				current_site,
+				media_url_path)						
 	elif (specie_identification == Reference.SPECIES_RSV):
 		context['nextclade_link_rsv_a'] = "{}{}://{}{}".format(
 				Constants.NEXTCLADE_LINK_RSV_A,

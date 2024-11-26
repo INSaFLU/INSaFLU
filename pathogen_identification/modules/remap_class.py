@@ -1,3 +1,4 @@
+import copy
 import logging
 import os
 import re
@@ -1037,6 +1038,7 @@ class Remapping:
                 self.filter_mapping_bamutil(filter)
 
             if filter.name == SoftwareNames.SOFTWARE_MSAMTOOLS_name:
+                print("############# FILTERING BAM FILE : msamtools")
                 self.filter_mapping_msamtools(filter)
 
         self.filter_bam_unmapped()
@@ -1118,6 +1120,8 @@ class Remapping:
             ">",
             temp_file,
         ]
+
+        print("".join(cmd))
 
         try:
             self.cmd.run_script_software(cmd)
@@ -2024,7 +2028,6 @@ class Mapping_Manager(Tandem_Remap):
             temp_dir=self.remapping_methods.output_dir,
             id=id,
         )
-
         dustmasker.run_mask_hard(fasta_file)
 
         os.remove(fasta_file)
@@ -2042,7 +2045,6 @@ class Mapping_Manager(Tandem_Remap):
 
         if os.path.exists(self.combined_fasta_gz_path):
             os.remove(self.combined_fasta_gz_path)
-
         for target in self.remap_targets:
             for accid in target.accid_in_file:
                 accid_clean = (
@@ -2179,14 +2181,30 @@ class Mapping_Manager(Tandem_Remap):
             return False
 
     def validate_mapped_instance_taxid(self, mapped_instance: Mapping_Instance):
-        if str(mapped_instance.reference.target.taxid) in self.target_taxids:
-            return True
-        else:
-            return False
+        # if str(mapped_instance.reference.target.taxid) in self.target_taxids:
+        #    return True
+        # else:
+        #    return False
+
+        for target in self.remap_targets:
+            if target.taxid == mapped_instance.reference.target.taxid:
+                return True
+
+        return False
 
     def update_mapped_instance_safe(self, mapped_instance: Mapping_Instance):
         if self.verify_mapped_instance(mapped_instance):
             if self.validate_mapped_instance_taxid(mapped_instance):
+
+                mapping_instance_copy = copy.deepcopy(mapped_instance)
+
+                for target in self.remap_targets:
+                    if target.taxid == mapped_instance.reference.target.taxid:
+                        mapping_instance_copy.apres = target.contigs
+                        mapping_instance_copy.rpres = target.reads
+                        mapping_instance_copy.assert_classification_success()
+                        mapping_instance_copy.produce_mapping_report()
+
                 self.mapped_instances.append(mapped_instance)
 
     def update_mapped_instance(self, mapped_instance: Mapping_Instance):

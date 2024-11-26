@@ -16,15 +16,8 @@ class Command(BaseCommand):
         ###
         user_system = User.objects.get(username="system")
         default_software = DefaultSoftware()
-        # default_software.test_all_defaults_pathogen_identification(user_system)
-
-        # utils = Utils_Manager()
-        # utils.generate_default_trees(user_system)
 
         for user in User.objects.all():
             default_software.test_all_defaults(user)
 
-        default_software.remove_all_parameters(user_system)
-
-        # users = User.objects.all()
-        # default_software.reset_user_software(users)
+        # default_software.remove_all_parameters(user_system)

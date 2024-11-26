@@ -818,7 +818,7 @@ class run_kraken2(Classifier_init):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
         report = pd.read_csv(
-            report_path, sep="\t", header=None, usecols=[0, 1, 2, 3], comment="@"
+            self.report_path, sep="\t", header=None, usecols=[0, 1, 2, 3], comment="@"
         ).rename(columns={0: "status", 1: "qseqid", 2: "taxid", 3: "length"})
         report = report[report.status != "U"][
             ["qseqid", "taxid", "length"]

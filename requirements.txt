@@ -12,7 +12,7 @@ django-bootstrap4==0.0.8
 portalocker==1.4.0
 python-decouple==3.1
 bcbio-gff==0.6.6
-python-dateutil>==2.8.2
+python-dateutil>=2.8.2
 nanostat==1.4.0
 nanofilt==2.6.0
 chardet==3.0.4

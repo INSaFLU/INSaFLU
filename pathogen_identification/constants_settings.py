@@ -5,7 +5,6 @@ Ceated on 06/05/2022
 
 from typing import Dict, List
 
-import networkx as nx
 from django.conf import settings
 
 from extend_user.models import Profile

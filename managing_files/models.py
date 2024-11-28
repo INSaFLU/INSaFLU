@@ -7,7 +7,7 @@ from django.conf import settings
 # from django.db.models import Manager as GeoManager
 from django.contrib.auth.models import User
 # Create your models here.
-from django.contrib.gis.db.models import GeoManager  # #  change to django  2.x
+#from django.contrib.gis.db.models import GeoManager  # #  change to django  2.x
 from django.contrib.gis.db.models import PointField
 from django.db import models
 from django.utils.safestring import mark_safe
@@ -523,7 +523,7 @@ class Sample(models.Model):
     )
     geo_local = PointField(null=True, blank=True, srid=4326)
     ## 4326 which means latitude and longitude
-    geo_manager = GeoManager()
+    # geo_manager = GeoManager()
 
     ### Type/Subtype Virus
     identify_virus = models.ManyToManyField(IdentifyVirus)
@@ -1831,7 +1831,7 @@ class ProcessControler(models.Model):
         return "{}_combined_metagen_{}_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, sample_pk, leaf_pk
         )
-    
+
     def get_name_televir_project_sample_panel_map(self, sample_pk, leaf_pk):
         return "{}_televir_panel_map_{}_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, sample_pk, leaf_pk
@@ -1851,7 +1851,7 @@ class ProcessControler(models.Model):
         return "{}_teleflu_ref_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, ref_id
         )
-    
+
     def get_name_file_televir_teleflu_ref_create(self, ref_id):
         return "{}_teleflu_file_ref_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, ref_id
@@ -1889,7 +1889,7 @@ class ProcessControler(models.Model):
         return "{}_add_references_to_sample_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, sample_pk
         )
-    
+
     def get_name_update_televir_project(self, project_id):
         return "{}_update_project_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, project_id

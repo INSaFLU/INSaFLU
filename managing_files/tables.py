@@ -9,11 +9,12 @@ from constants.constants import Constants, TypePath
 from constants.meta_key_and_values import MetaKeyAndValue
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project, ProjectSample, Reference, Sample
+from pathogen_identification.models import PIProject_Sample
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software_project_sample import DefaultProjectSoftware
 from utils.result import DecodeObjects
-from pathogen_identification.models import PIProject_Sample
+
 
 class CheckBoxColumnWithName(tables.CheckBoxColumn):
     @property
@@ -239,9 +240,11 @@ class SampleTable(tables.Table):
         if not manageDatabase.is_sample_processing_step(record):
             list_meta = manageDatabase.get_sample_metakey(
                 record,
-                MetaKeyAndValue.META_KEY_Fastq_Trimmomatic
-                if record.is_type_fastq_gz_sequencing()
-                else MetaKeyAndValue.META_KEY_NanoStat_NanoFilt,
+                (
+                    MetaKeyAndValue.META_KEY_Fastq_Trimmomatic
+                    if record.is_type_fastq_gz_sequencing()
+                    else MetaKeyAndValue.META_KEY_NanoStat_NanoFilt
+                ),
                 None,
             )
             if (
@@ -278,9 +281,12 @@ class SampleTable(tables.Table):
                     and not project_samples.project.is_deleted
                 ):
                     return mark_safe(sample_name)
-            
-            #Assume that when project is deleted all project_samples are also deleted...
-            if(PIProject_Sample.objects.filter(sample=record, is_deleted=False).count()>0):
+
+            # Assume that when project is deleted all project_samples are also deleted...
+            if (
+                PIProject_Sample.objects.filter(sample=record, is_deleted=False).count()
+                > 0
+            ):
                 return mark_safe(sample_name)
 
             return mark_safe(
@@ -299,28 +305,31 @@ class SampleTable(tables.Table):
         ### is not processed yet
         if record.type_of_fastq == Sample.TYPE_OF_FASTQ_not_defined:
             return "Undefined"
-        if( 
-                record.exist_file_2()
-                and
-                (record.get_type_technology() == ConstantsSettings.TECHNOLOGY_illumina)
-            ): return(ConstantsSettings.TECHNOLOGY_illumina)
-        
+        if record.exist_file_2() and (
+            record.get_type_technology() == ConstantsSettings.TECHNOLOGY_illumina
+        ):
+            return ConstantsSettings.TECHNOLOGY_illumina
+
         # If sample is ready for projects we'll assume it is ok
         # Can only swap if there are files associated with the sample
-        if(record.is_ready_for_projects or not(record.has_files)):
+        if record.is_ready_for_projects or not (record.has_files):
             if record.is_type_fastq_gz_sequencing():
                 return ConstantsSettings.TECHNOLOGY_illumina
             else:
                 return ConstantsSettings.TECHNOLOGY_minion
 
         return mark_safe(
-                '<a href="#id_swap_modal" id="id_swap_technology_modal" data-toggle="modal"'
-                + ' ref_name="'
-                + record.name
-                + '" pk="'
-                + str(record.pk)
-                + '"><i class="fa fa-recycle"></i></span> </a>'              
-                + (ConstantsSettings.TECHNOLOGY_illumina if record.is_type_fastq_gz_sequencing() else ConstantsSettings.TECHNOLOGY_minion)
+            '<a href="#id_swap_modal" id="id_swap_technology_modal" data-toggle="modal"'
+            + ' ref_name="'
+            + record.name
+            + '" pk="'
+            + str(record.pk)
+            + '"><i class="fa fa-recycle"></i></span> </a>'
+            + (
+                ConstantsSettings.TECHNOLOGY_illumina
+                if record.is_type_fastq_gz_sequencing()
+                else ConstantsSettings.TECHNOLOGY_minion
+            )
         )
 
     def render_creation_date(self, **kwargs):
@@ -436,9 +445,11 @@ class SampleTable(tables.Table):
 
         list_meta = manageDatabase.get_sample_metakey(
             record,
-            MetaKeyAndValue.META_KEY_Fastq_Trimmomatic
-            if record.is_type_fastq_gz_sequencing()
-            else MetaKeyAndValue.META_KEY_NanoStat_NanoFilt,
+            (
+                MetaKeyAndValue.META_KEY_Fastq_Trimmomatic
+                if record.is_type_fastq_gz_sequencing()
+                else MetaKeyAndValue.META_KEY_NanoStat_NanoFilt
+            ),
             None,
         )
 
@@ -705,9 +716,7 @@ class ShowProjectSamplesResults(tables.Table):
     technology = tables.Column("Technology", empty_values=())
     dataset = tables.Column("Dataset", empty_values=())
     results = tables.Column("Options", orderable=False, empty_values=())
-    consensus_file = tables.Column(
-        "Consensus File", orderable=False, empty_values=()
-    )
+    consensus_file = tables.Column("Consensus File", orderable=False, empty_values=())
 
     class Meta:
         model = ProjectSample
@@ -775,9 +784,11 @@ class ShowProjectSamplesResults(tables.Table):
             default_software.get_mask_consensus_single_parameter(
                 record,
                 DefaultParameters.MASK_CONSENSUS_threshold,
-                ConstantsSettings.TECHNOLOGY_illumina
-                if record.is_sample_illumina()
-                else ConstantsSettings.TECHNOLOGY_minion,
+                (
+                    ConstantsSettings.TECHNOLOGY_illumina
+                    if record.is_sample_illumina()
+                    else ConstantsSettings.TECHNOLOGY_minion
+                ),
             )
         )
         return_html = ""
@@ -809,7 +820,7 @@ class ShowProjectSamplesResults(tables.Table):
         """
         return number
         """
-        if(record.classification is None):
+        if record.classification is None:
             return record.sample.type_subtype
         return record.classification
 

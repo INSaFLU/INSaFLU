@@ -1376,9 +1376,12 @@ class TelefluMapping(models.Model):
             sample = PIProject_Sample.objects.get(pk=sample)
 
             sample_summary[sample.name] = {
+                "reference": self.teleflu_project.raw_reference.description,
+                "leaf": self.leaf.index,
                 "mapped": False,
                 "success": False,
                 "coverage": "N/A",
+                "windows_covered": "N/A",
                 "depth": "N/A",
                 "mapped_reads": "N/A",
                 "start_prop": "N/A",
@@ -1414,6 +1417,9 @@ class TelefluMapping(models.Model):
 
             if reports.exists():
                 sample_summary[sample.name]["coverage"] = round(reports[0].coverage, 3)
+                sample_summary[sample.name]["windows_covered"] = reports[
+                    0
+                ].windows_covered
                 sample_summary[sample.name]["depth"] = round(reports[0].depth, 3)
                 sample_summary[sample.name]["mapped_reads"] = round(
                     reports[0].mapped_reads, 3

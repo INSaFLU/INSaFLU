@@ -16,6 +16,7 @@ from pathogen_identification.models import (
     ReferenceTaxid,
 )
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
+from utils.utils import Utils
 
 
 def return_zgrep(file, pattern, filter=None):
@@ -70,7 +71,7 @@ class Command(BaseCommand):
             "--user_id",
             type=int,
             help="user id",
-            default=None,
+            default=1,
         )
 
         parser.add_argument(
@@ -90,7 +91,8 @@ class Command(BaseCommand):
         ###
         # get user
         user = User.objects.get(pk=options["user_id"])
-        outdir = options["outdir"]
+        utils: Utils = Utils()
+        outdir = utils.get_temp_dir()
         os.makedirs(outdir, exist_ok=True)
         metadadata_constants = Televir_Metadata_Constants()
 

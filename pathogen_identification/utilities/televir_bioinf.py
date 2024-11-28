@@ -10,6 +10,7 @@ from Bio.Seq import Seq
 
 from constants.constants import Televir_Metadata_Constants
 from pathogen_identification.modules.object_classes import MappingStats
+from utils.utils import Utils
 
 
 class DustMasker:
@@ -328,3 +329,33 @@ class TelevirBioinf:
         agg_df = alignment_df.groupby("target_name").agg({"query_name": "count"})
 
         return agg_df
+
+    def zip_files(self, dict_files: Dict[str, dict], output_file_name: str):
+        """
+        receives dictionary of sample files. each entry key is the sample name, the value is a dictionary of the files
+
+        for each sample, create a directory with the sample name, and copy the files to the directory
+        then zip the directories
+        """
+        utils = Utils()
+        temp_dir = utils.get_temp_dir()
+        output_file = os.path.join(temp_dir, output_file_name)
+        store_dir = os.path.join(temp_dir, output_file_name)
+
+        os.makedirs(store_dir, exist_ok=True)
+
+        for sample, files in dict_files.items():
+            sample_dir = os.path.join(store_dir, sample)
+            os.makedirs(sample_dir, exist_ok=True)
+
+            for id_str, file in files.items():
+                if id_str in ["name", "sample", "vcf_file"]:
+                    continue
+
+                if os.path.exists(file):
+                    shutil.copy(file, sample_dir)
+
+        shutil.make_archive(output_file, "zip", store_dir)
+        # shutil.rmtree(store_dir)
+
+        return output_file

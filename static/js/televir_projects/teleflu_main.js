@@ -123,6 +123,18 @@ var load_teleflu_workflows = function () {
                     workflowIgvButton.style.backgroundColor = 'transparent'; // Remove the background color
                     workflowIgvButton.setAttribute('aria-hidden', 'true');
                     mappingIgv.append(workflowIgvButton);
+
+                    // button to download a zip file with all mapping files 
+                    var downloadMappingButton = document.createElement('a');
+                    downloadMappingButton.href = 'teleflu_mapping_files/' + workflow.pk;
+                    downloadMappingButton.className = 'downloadMappingButton fa fa-download';
+                    downloadMappingButton.title = 'Download Mapping Files';
+                    downloadMappingButton.style.fontWeight = 'bold'; // Make the text bold
+                    //downloadMappingButton.style.fontSize = 'small'; // Make the text smaller
+                    // downloadMappingButton.textContent = 'Download';
+                    downloadMappingButton.style.backgroundColor = 'transparent'; // Remove the background color
+                    downloadMappingButton.setAttribute('aria-hidden', 'true');
+                    mappingIgv.append(downloadMappingButton);
                 }
 
                 if (workflow.stacked_html_exists) {
@@ -157,7 +169,7 @@ var load_teleflu_workflows = function () {
 
                 // Create header row
                 var headerRow = document.createElement('tr');
-                var headers = ['Sample', 'Mapped', 'Success', 'Coverage', 'Depth', 'Mapped Reads', 'Start ::', 'Mapped ::', 'Error Rate'];
+                var headers = ['Sample', 'Mapped', 'Success', 'Coverage', 'Windows Covered', 'Depth', 'Mapped Reads', 'Start ::', 'Mapped ::', 'Error Rate'];
 
                 headers.forEach(function(header) {
                     var th = document.createElement('th');
@@ -178,13 +190,15 @@ var load_teleflu_workflows = function () {
                     var mappedIndicator = sampleSummary[sample].mapped ? '<span style="color: green;">&#x2714;</span>' : '<span style="color: red;">&#x2718;</span>';
                     var successIndicator = sampleSummary[sample].success ? '<span style="color: green;">&#x2714;</span>' : '<span style="color: red;">&#x2718;</span>';
                     var coverageIndicator = sampleSummary[sample].coverage;
+                    var windowsCoveredIndicator = sampleSummary[sample].windows_covered;
                     var depthIndicator = sampleSummary[sample].depth;
                     var mappedReadsIndicator = sampleSummary[sample].mapped_reads;
                     var start_proportion = sampleSummary[sample].start_prop;
                     var mapped_proportion = sampleSummary[sample].mapped_prop;
                     var error_rate = sampleSummary[sample].error_rate;
 
-                    var indicatorValues = [mappedIndicator, successIndicator, coverageIndicator, depthIndicator, mappedReadsIndicator, start_proportion, mapped_proportion, error_rate];
+                    var indicatorValues = [mappedIndicator, successIndicator, coverageIndicator, windowsCoveredIndicator,
+                        depthIndicator, mappedReadsIndicator, start_proportion, mapped_proportion, error_rate];
 
                     indicatorValues.forEach(function(value) {
                         var cell = document.createElement('td');
@@ -278,15 +292,18 @@ var load_teleflu_workflows = function () {
 
 // Function to generate TSV data
 function generateTSVData(sampleSummary) {
-    var headers = ['Sample', 'Mapped', 'Success', 'Coverage', 'Depth', 'Mapped Reads', 'Start ::', 'Mapped ::', 'Error Rate'];
+    var headers = ['Sample', 'Reference', 'Leaf', 'Mapped', 'Success', 'Coverage', 'Windows Covered', 'Depth', 'Mapped Reads', 'Start ::', 'Mapped ::', 'Error Rate'];
     var tsvContent = headers.join('\t') + '\n'; // Header row
 
     for (var sample in sampleSummary) {
         var rowData = [
             sample,
+            sampleSummary[sample].reference,
+            sampleSummary[sample].leaf,
             sampleSummary[sample].mapped ? 'Yes' : 'No',
             sampleSummary[sample].success ? 'Yes' : 'No',
             sampleSummary[sample].coverage,
+            sampleSummary[sample].windows_covered,
             sampleSummary[sample].depth,
             sampleSummary[sample].mapped_reads,
             sampleSummary[sample].start_prop,

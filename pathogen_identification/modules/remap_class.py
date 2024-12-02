@@ -1131,7 +1131,7 @@ class Remapping:
 
         cmd = [
             "msamtools",
-            "filter",
+            "filter -b ",
             software.args,
             self.read_map_filtered_bam,
             ">",

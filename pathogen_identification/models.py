@@ -1516,6 +1516,7 @@ class ReferenceSource(models.Model):
 class ReferenceSourceFileMap(models.Model):
     STATUS_GOOD = 0
     STATUS_CORRUPT = 1
+    STATUS_DEPRECATED = 2
 
     reference_source = models.ForeignKey(
         ReferenceSource, blank=True, null=True, on_delete=models.CASCADE

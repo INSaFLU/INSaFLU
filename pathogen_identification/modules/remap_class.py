@@ -14,21 +14,17 @@ from scipy.stats import kstest
 from constants.software_names import SoftwareNames
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.modules.object_classes import (
-    Bedgraph,
-    MappingStats,
-    Read_class,
-    Remap_Target,
-    RunCMD,
-    SoftwareDetail,
-    SoftwareRemap,
-)
+from pathogen_identification.modules.object_classes import (Bedgraph,
+                                                            MappingStats,
+                                                            Read_class,
+                                                            Remap_Target,
+                                                            RunCMD,
+                                                            SoftwareDetail,
+                                                            SoftwareRemap)
 from pathogen_identification.utilities.televir_bioinf import DustMasker
 from pathogen_identification.utilities.televir_parameters import RemapParams
 from pathogen_identification.utilities.utilities_general import (
-    plot_dotplot,
-    read_paf_coordinates,
-)
+    plot_dotplot, read_paf_coordinates)
 
 pd.options.mode.chained_assignment = None
 np.warnings.filterwarnings("ignore")
@@ -1112,9 +1108,30 @@ class Remapping:
             os.path.splitext(self.read_map_bam)[0] + f"{np.random.randint(1000000)}.bam"
         )
 
+        def process_parameter_floats(args_txt: str):
+            """
+            parameters that were saved in db as floats between 0 and 1 need to convert to integers between 0 and 100 for msamtools
+            """
+            split_args = args_txt.split(" ")
+            new_args = []
+            for arg in split_args:
+                try:
+                    arg = float(arg)
+                    if arg <= 1:
+                        arg = int(arg * 100)
+                    else:
+                        arg = int(arg)
+                except:
+                    pass
+                new_args.append(str(arg))
+
+            return " ".join(new_args)
+
+        software.args = process_parameter_floats(software.args)
+
         cmd = [
             "msamtools",
-            "filter",
+            "filter -b ",
             software.args,
             self.read_map_filtered_bam,
             ">",

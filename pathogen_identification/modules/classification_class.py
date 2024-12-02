@@ -723,7 +723,7 @@ class run_deSamba(Classifier_init):
 class run_kraken2(Classifier_init):
     method_name = "kraken2"
     report_suffix = ".tsv"
-    full_report_suffix = ".kraken2"
+    full_report_suffix = ".tsv"
 
     def __init__(
         self,

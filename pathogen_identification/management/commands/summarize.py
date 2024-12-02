@@ -11,7 +11,6 @@ from pathogen_identification.models import (
     RunMain,
 )
 from pathogen_identification.utilities.utilities_pipeline import (
-    PipelineTree,
     SoftwareTreeUtils,
     Utils_Manager,
 )

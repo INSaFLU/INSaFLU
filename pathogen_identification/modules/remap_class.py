@@ -1112,6 +1112,25 @@ class Remapping:
             os.path.splitext(self.read_map_bam)[0] + f"{np.random.randint(1000000)}.bam"
         )
 
+        def process_parameter_floats(args_txt: str):
+            """
+            parameters that were saved in db as floats between 0 and 1 need to convert to integers between 0 and 100 for msamtools
+            """
+            split_args = args_txt.split(" ")
+            new_args = []
+            for arg in split_args:
+                try:
+                    arg = float(arg)
+                    if arg < 1:
+                        arg = int(arg * 100)
+                except:
+                    pass
+                new_args.append(str(arg))
+
+            return " ".join(new_args)
+
+        software.args = process_parameter_floats(software.args)
+
         cmd = [
             "msamtools",
             "filter",

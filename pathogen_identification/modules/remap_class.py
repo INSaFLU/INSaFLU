@@ -14,17 +14,21 @@ from scipy.stats import kstest
 from constants.software_names import SoftwareNames
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.modules.object_classes import (Bedgraph,
-                                                            MappingStats,
-                                                            Read_class,
-                                                            Remap_Target,
-                                                            RunCMD,
-                                                            SoftwareDetail,
-                                                            SoftwareRemap)
+from pathogen_identification.modules.object_classes import (
+    Bedgraph,
+    MappingStats,
+    Read_class,
+    Remap_Target,
+    RunCMD,
+    SoftwareDetail,
+    SoftwareRemap,
+)
 from pathogen_identification.utilities.televir_bioinf import DustMasker
 from pathogen_identification.utilities.televir_parameters import RemapParams
 from pathogen_identification.utilities.utilities_general import (
-    plot_dotplot, read_paf_coordinates)
+    plot_dotplot,
+    read_paf_coordinates,
+)
 
 pd.options.mode.chained_assignment = None
 np.warnings.filterwarnings("ignore")
@@ -1111,6 +1115,7 @@ class Remapping:
         def process_parameter_floats(args_txt: str):
             """
             parameters that were saved in db as floats between 0 and 1 need to convert to integers between 0 and 100 for msamtools
+
             """
             split_args = args_txt.split(" ")
             new_args = []
@@ -1750,7 +1755,7 @@ class Mapping_Instance:
         print("mapping success", self.mapping_success)
         print("destination", destination)
 
-        if self.mapping_success is not "none":
+        if self.mapping_success != "none":
             # self.reference.move_igv_files(destination)
             self.reference = self.reference.relocate_mapping_files(destination)
 

@@ -1232,7 +1232,7 @@ class Utility_Pipeline_Manager:
 
         try:
             with self.utility_repository.engine.connect() as conn:
-                r= conn.execute(f"SELECT * FROM software WHERE name = '{software_name.lower()}'")
+                r= conn.execute(fields)
                 rows= r.fetchall()
                 fields= pd.DataFrame(rows, columns=r.keys())
                 fields = fields.drop_duplicates(subset=["database"])

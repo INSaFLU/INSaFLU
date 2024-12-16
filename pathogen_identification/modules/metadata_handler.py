@@ -541,6 +541,9 @@ class RunMetadataHandler:
                 else:
                     counts_df = df.groupby(["acc"]).size().reset_index(name="counts")
 
+                ### if acc in format ACC:ACC; get first acc
+                counts_df["acc"] = counts_df["acc"].apply(lambda x: x.split(":")[0])
+
                 df = self.merge_check_column_types(
                     counts_df,
                     self.accession_to_taxid,

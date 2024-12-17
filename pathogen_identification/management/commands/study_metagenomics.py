@@ -146,7 +146,7 @@ def merge_classes(r1: pd.DataFrame, r2: pd.DataFrame, maxt=6, exclude="phage"):
     full_descriptor = descriptor_description_remove(full_descriptor)
     full_descriptor = descriptor_sources(full_descriptor, r1_raw, r2_raw)
     full_descriptor = descriptor_counts(full_descriptor, r1_raw, r2_raw)
-    r1["taxid"] = r1.taxid.astype(int)
+
     merged_final = full_descriptor[full_descriptor.taxid.isin(r1.taxid.to_list())]
     # get taxid index in r1
     merged_final["taxid_index"] = merged_final.apply(

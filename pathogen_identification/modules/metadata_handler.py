@@ -552,6 +552,9 @@ class RunMetadataHandler:
 
         df = df[(df.taxid != "0") | (df.taxid != 0)]
 
+        df["taxid"] = df["taxid"].astype(str)
+        # remove decimals from taxid
+        df["taxid"] = df["taxid"].apply(lambda x: x.split(".")[0])
 
         return df
 

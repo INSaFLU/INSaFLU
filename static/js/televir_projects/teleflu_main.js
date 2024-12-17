@@ -143,9 +143,6 @@ var load_teleflu_workflows = function () {
                     mappingIgv.append(stackSamplesVariantIgv);
                     mappingIgv.append(stackSamplesVCF);
                 }
-
-
-
     
                 workflowContainerAction.append(workflowTitle, stepContainer, workflowInfo, mappingIgv);
                 if (workflow.running_or_queued == true) {

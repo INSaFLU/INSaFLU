@@ -335,7 +335,7 @@ class PathogenIdentification_SingleDeployment(PathogenIdentificationDeploymentCo
         self.run_main_prep_check_first()
 
         utils = Utils_Manager()
-        utils.utility_repository.dump_tables(self.run_engine.log_dir)
+        utils.dump_tables(self.run_engine.log_dir)
 
         self.prepped = True
 

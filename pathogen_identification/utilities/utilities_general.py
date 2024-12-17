@@ -316,6 +316,7 @@ def merge_classes(r1: pd.DataFrame, r2: pd.DataFrame, maxt=6, exclude="phage"):
     r1_raw = r1.copy()
     r2_raw = r2.copy()
 
+    ### convert taxid to int
     r1["taxid"] = r1["taxid"].astype(str)
     # remove decimals from taxid
     r1["taxid"] = r1["taxid"].str.split(".").str[0]

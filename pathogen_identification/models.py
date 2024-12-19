@@ -772,9 +772,10 @@ class RunMain(models.Model):
                 classification_source=None
             )
 
-        raw_references_mapped = raw_references_mapped.order_by(
-            "taxid", "status"
-        ).distinct("taxid")
+        raw_references_mapped = raw_references_mapped.order_by("taxid", "status")
+
+        if mapping_only is False:
+            raw_references_mapped = raw_references_mapped.distinct("taxid")
 
         raw_references_mapped = sorted(
             raw_references_mapped,

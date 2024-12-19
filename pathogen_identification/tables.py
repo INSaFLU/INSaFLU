@@ -1382,8 +1382,8 @@ class CompoundRefereceScoreWithScreening(CompoundReferenceScore):
 
 class RawReferenceTable_Basic(tables.Table):
     taxid = tables.Column(verbose_name="Taxid")
-    accid = tables.Column(verbose_name="Taxid representativde Accession id")
-    description = tables.Column(verbose_name="Taxid representative Description")
+    accid = tables.Column(verbose_name="Accession id")
+    description = tables.Column(verbose_name="Description")
     status = tables.Column(
         verbose_name="Status",
     )

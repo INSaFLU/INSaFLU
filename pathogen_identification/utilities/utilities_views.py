@@ -503,17 +503,33 @@ class FinalReportCompound:
     def get_identical_reports_ps(self, report: FinalReport) -> str:
         references_found_in = RawReference.objects.filter(
             run__project__pk=report.run.project.pk,
-            run__run_type=RunMain.RUN_TYPE_PIPELINE,
+            # run__run_type=RunMain.RUN_TYPE_PIPELINE,
             run__sample__pk=report.sample.pk,
             taxid=report.taxid,
-        )
+        ).distinct("run")
 
         sets = set([r.run.parameter_set.leaf.index for r in references_found_in])
+
+        strings_return = []
+
+        for ref in references_found_in:
+            print(ref)
+            index_string = f"{ref.run.parameter_set.leaf.software_tree.global_index}.{ref.run.parameter_set.leaf.index}"
+
+            if ref.run.run_type in [
+                RunMain.RUN_TYPE_MAP_REQUEST,
+                RunMain.RUN_TYPE_PANEL_MAPPING,
+            ]:
+                index_string = "r" + index_string
+
+            if ref.run == report.run:
+                index_string = f"<b>{index_string}</b>"
+            strings_return.append(index_string)
 
         if len(sets) == 0:
             return "M"
 
-        return ", ".join([str(s) for s in sets])
+        return ", ".join([str(s) for s in strings_return])
 
     def check_data_exists(self, report: FinalReport) -> bool:
         if report.run is None:

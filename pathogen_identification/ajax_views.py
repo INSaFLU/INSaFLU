@@ -1904,10 +1904,12 @@ def excise_paths_leaf_last(string_with_paths: str):
         return string_with_paths
 
 
-def teleflu_node_info(node, params_df, node_pk):
+def teleflu_node_info(params_df, leaf: SoftwareTreeNode):
+
     node_info = {
-        "pk": node_pk,
-        "node": node,
+        "pk": leaf.pk,
+        "node": f"{leaf.software_tree.global_index}.{leaf.index}",
+        "tree": leaf.software_tree.global_index,
         "modules": [],
     }
 
@@ -1965,7 +1967,7 @@ def load_teleflu_workflows(request):
 
             params_df = utils_manager.get_leaf_parameters(mapping.leaf)
             node_info = node_info = teleflu_node_info(
-                mapping.leaf.index, params_df, mapping.leaf.pk
+                params_df, mapping.leaf
             )
 
             samples_mapped = mapping.mapped_samples

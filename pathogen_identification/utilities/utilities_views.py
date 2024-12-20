@@ -506,7 +506,7 @@ class FinalReportCompound:
             # run__run_type=RunMain.RUN_TYPE_PIPELINE,
             run__sample__pk=report.sample.pk,
             taxid=report.taxid,
-        ).distinct("run")
+        ).exclude(run__run_type= RunMain.RUN_TYPE_STORAGE).distinct("run")
 
         sets = set([r.run.parameter_set.leaf.index for r in references_found_in])
 
@@ -1411,11 +1411,16 @@ class ReportSorter:
             return report_groups
 
         for report_group in report_groups:
-            json_data = self.prep_heatmap_data_within_clade(
-                report_group, distance_matrix
-            )
-            report_group.js_heatmap_data = json_data
-            report_group.js_heatmap_ready = True
+            try:
+                json_data = self.prep_heatmap_data_within_clade(
+                    report_group, distance_matrix
+                )
+                report_group.js_heatmap_data = json_data
+                report_group.js_heatmap_ready = True
+            except Exception as e:
+
+                report_group.js_heatmap_ready = False
+                report_group.js_heatmap_data = None
 
         return report_groups
 

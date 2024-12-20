@@ -73,7 +73,7 @@
                       <div class="col-sm-2 workflow-link-panel centered-links">
                         <ul>
                             {% for run in runs %}
-                            <li><a href="{% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}">Workflow report {{run.parameter_set.leaf.index}}</a></li>
+                            <li><a href="{% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}">Workflow report {{run.parameter_set.leaf.software_tree.global_index}}.{{run.parameter_set.leaf.index}}</a></li>
                             {% endfor %}
                         </ul>
                       </div>

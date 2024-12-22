@@ -230,7 +230,7 @@ var load_teleflu_workflows = function () {
 
 
             $(".workflow-summary").click(function () {
-                var node= $(this).attr('node');
+                var node = $(this).attr('node');
                 var summaryList = $('.summary-list.workfow-' + node)[0];
                 // Toggle list visibility on click
                 if (summaryList.style.display === 'none') {

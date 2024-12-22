@@ -73,11 +73,11 @@
                     <div class="row">
                         <div class="col-sm-2 link-container">
                             {% for run in runs_pipeline %}
-                            <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Workflow report {{run.parameter_set.leaf.software_tree.global_index}}.{{run.parameter_set.leaf.index}} </a>
+                            <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Workflow report {{run.parameter_set.leaf.software_tree.global_index}}-{{run.parameter_set.leaf.index}} </a>
 
                             {% endfor %}
                             {% for run in runs_mapping %}
-                            <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Mapping report r{{run.parameter_set.leaf.software_tree.global_index}}.{{run.parameter_set.leaf.index}}  </a>
+                            <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Mapping report r{{run.parameter_set.leaf.software_tree.global_index}}-{{run.parameter_set.leaf.index}}  </a>
                             {% endfor %}
                         </div>
                         {% if graph_json %}

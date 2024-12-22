@@ -1908,7 +1908,7 @@ def teleflu_node_info(params_df, leaf: SoftwareTreeNode):
 
     node_info = {
         "pk": leaf.pk,
-        "node": f"{leaf.software_tree.global_index}.{leaf.index}",
+        "node": f"{leaf.software_tree.global_index}-{leaf.index}",
         "tree": leaf.software_tree.global_index,
         "modules": [],
     }

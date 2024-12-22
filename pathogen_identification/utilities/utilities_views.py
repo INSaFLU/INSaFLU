@@ -12,24 +12,38 @@ from django.utils.safestring import mark_safe
 
 from constants.constants import Constants
 from fluwebvirus.settings import STATIC_ROOT
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PIConstantsSettings
-from pathogen_identification.models import (ContigClassification, FinalReport,
-                                            ParameterSet, PIProject_Sample,
-                                            Projects, RawReference,
-                                            RawReferenceCompoundModel,
-                                            ReadClassification,
-                                            ReferenceMap_Main, ReferencePanel,
-                                            ReferenceSourceFileMap,
-                                            RunAssembly, RunDetail, RunMain,
-                                            SoftwareTree, SoftwareTreeNode)
+from pathogen_identification.constants_settings import (
+    ConstantsSettings as PIConstantsSettings,
+)
+from pathogen_identification.models import (
+    ContigClassification,
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    RawReferenceCompoundModel,
+    ReadClassification,
+    ReferenceMap_Main,
+    ReferencePanel,
+    ReferenceSourceFileMap,
+    RunAssembly,
+    RunDetail,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
 from pathogen_identification.utilities.clade_objects import Clade
-from pathogen_identification.utilities.overlap_manager import \
-    ReadOverlapManager
+from pathogen_identification.utilities.overlap_manager import ReadOverlapManager
 from pathogen_identification.utilities.televir_parameters import (
-    LayoutParams, TelevirParameters)
+    LayoutParams,
+    TelevirParameters,
+)
 from pathogen_identification.utilities.utilities_general import (
-    infer_run_media_dir, merge_classes, simplify_name)
+    infer_run_media_dir,
+    merge_classes,
+    simplify_name,
+)
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
@@ -501,20 +515,24 @@ class FinalReportCompound:
         self.private_reads = private_reads
 
     def get_identical_reports_ps(self, report: FinalReport) -> str:
-        references_found_in = RawReference.objects.filter(
-            run__project__pk=report.run.project.pk,
-            # run__run_type=RunMain.RUN_TYPE_PIPELINE,
-            run__sample__pk=report.sample.pk,
-            taxid=report.taxid,
-        ).exclude(run__run_type= RunMain.RUN_TYPE_STORAGE).distinct("run")
+        references_found_in = (
+            RawReference.objects.filter(
+                run__project__pk=report.run.project.pk,
+                # run__run_type=RunMain.RUN_TYPE_PIPELINE,
+                run__sample__pk=report.sample.pk,
+                taxid=report.taxid,
+            )
+            .exclude(run__run_type=RunMain.RUN_TYPE_STORAGE)
+            .distinct("run")
+        )
 
         sets = set([r.run.parameter_set.leaf.index for r in references_found_in])
 
         strings_return = []
 
         for ref in references_found_in:
-            print(ref)
-            index_string = f"{ref.run.parameter_set.leaf.software_tree.global_index}.{ref.run.parameter_set.leaf.index}"
+
+            index_string = f"{ref.run.parameter_set.leaf.software_tree.global_index}-{ref.run.parameter_set.leaf.index}"
 
             if ref.run.run_type in [
                 RunMain.RUN_TYPE_MAP_REQUEST,

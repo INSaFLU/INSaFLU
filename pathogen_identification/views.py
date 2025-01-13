@@ -1257,10 +1257,7 @@ def get_mapping_bams_zip(request, pk):
 
     # mapping_pk= int(request.GET.get("mapping_pk"))
     teleflu_mapping = TelefluMapping.objects.get(pk=mapping_pk)
-    print(teleflu_mapping)
-    leaf_index = teleflu_mapping.leaf.index
     teleflu_project = teleflu_mapping.teleflu_project
-    televir_project_index = teleflu_project.televir_project.pk
 
     ### get reference
     teleflu_reference = teleflu_project.raw_reference
@@ -1275,12 +1272,6 @@ def get_mapping_bams_zip(request, pk):
     reference_index = remove_pre_static(reference_index)
     # televir_reference
     teleflu_refs = teleflu_project.televir_references
-
-    igv_genome_options = {
-        "reference": reference_file,
-        "reference_index": reference_index,
-        "reference_name": teleflu_mapping.teleflu_project.raw_reference.description,
-    }
 
     # samples
     televir_project_samples = teleflu_mapping.mapped_samples
@@ -1316,9 +1307,7 @@ def get_mapping_bams_zip(request, pk):
         }
 
     ## zip all files in the sample_dict
-    print(sample_dict)
     zip_file = televir_bioinf.zip_files(sample_dict, "mapping_bams")
-    # zip_file = remove_pre_static(zip_file)
 
     response = FileResponse(
         open(zip_file + ".zip", "rb"),
@@ -1360,8 +1349,6 @@ class INSaFLUMappingIGV(LoginRequiredMixin, generic.TemplateView):
             televir_bioinf.index_fasta(reference_file)
         reference_file = remove_pre_static(reference_file)
         reference_index = remove_pre_static(reference_index)
-        # televir_reference
-        teleflu_refs = teleflu_project.televir_references
 
         igv_genome_options = {
             "reference": reference_file,

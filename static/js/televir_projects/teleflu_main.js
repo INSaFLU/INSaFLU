@@ -19,7 +19,7 @@ function showParametersHover(element) {
     } else {
         allParametersContainers.forEach(function(container) {
             container.style.display = 'none';
-        });    
+        });
         parametersContainer.style.display = 'none';
     }
 }
@@ -143,9 +143,6 @@ var load_teleflu_workflows = function () {
                     mappingIgv.append(stackSamplesVariantIgv);
                     mappingIgv.append(stackSamplesVCF);
                 }
-
-
-
     
                 workflowContainerAction.append(workflowTitle, stepContainer, workflowInfo, mappingIgv);
                 if (workflow.running_or_queued == true) {
@@ -233,7 +230,7 @@ var load_teleflu_workflows = function () {
 
 
             $(".workflow-summary").click(function () {
-                var node= $(this).attr('node');
+                var node = $(this).attr('node');
                 var summaryList = $('.summary-list.workfow-' + node)[0];
                 // Toggle list visibility on click
                 if (summaryList.style.display === 'none') {

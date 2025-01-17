@@ -6,20 +6,14 @@ from typing import List, Optional
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (
-    PIProject_Sample,
-    RawReference,
-    RawReferenceCompoundModel,
-    ReferenceSource,
-    ReferenceSourceFileMap,
-    RunMain,
-)
+from pathogen_identification.models import (PIProject_Sample, RawReference,
+                                            RawReferenceCompoundModel,
+                                            ReferenceSource,
+                                            ReferenceSourceFileMap, RunMain)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
-from pathogen_identification.utilities.utilities_general import (
-    merge_classes,
-    simplify_name,
-)
+from pathogen_identification.utilities.utilities_general import (merge_classes,
+                                                                 simplify_name)
 from pathogen_identification.utilities.utilities_views import RawReferenceUtils
 
 
@@ -381,13 +375,16 @@ class RunMetadataHandler:
     def filter_taxids_not_in_db(df) -> pd.DataFrame:
 
         def get_refs_existing(taxid):
-            return (
-                ReferenceSourceFileMap.objects.filter(
-                    reference_source__taxid__taxid=taxid,
+            try:
+                return (
+                    ReferenceSourceFileMap.objects.filter(
+                        reference_source__taxid__taxid=str(int(taxid)),
+                    )
+                    .distinct("reference_source__accid")
+                    .exists()
                 )
-                .distinct("reference_source__accid")
-                .exists()
-            )
+            except:
+                return False
 
         df["has_refs"] = df["taxid"].apply(get_refs_existing)
         df = df[df["has_refs"] == True]
@@ -558,6 +555,10 @@ class RunMetadataHandler:
 
         df = df[(df.taxid != "0") | (df.taxid != 0)]
 
+        df["taxid"] = df["taxid"].astype(str)
+        # remove decimals from taxid
+        df["taxid"] = df["taxid"].apply(lambda x: x.split(".")[0])
+
         return df
 
     def db_get_taxid_descriptions(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -568,7 +569,7 @@ class RunMetadataHandler:
         def get_description(taxid: str):
             try:
                 return (
-                    ReferenceSource.objects.filter(taxid__taxid=taxid)
+                    ReferenceSource.objects.filter(taxid__taxid=str(int(taxid)))
                     .first()
                     .description
                 )

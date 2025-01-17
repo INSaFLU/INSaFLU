@@ -236,7 +236,7 @@
 }
 
 .workflow-name {
-    font-size: 1.2em;
+    font-size: 1.1em;
     font-weight: bold;
     width: 120px;
 
@@ -386,7 +386,11 @@
     background-color: #b3b3b3; /* Darker green background when hovering */
 }
 
+.downloadMappingButton {
+    margin-right: 10px;
+    padding: 10px; /* Space around the icon */
 
+}
 
 .stackSamplesVCF {
     justify-content: center;

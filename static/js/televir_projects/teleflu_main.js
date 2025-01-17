@@ -19,7 +19,7 @@ function showParametersHover(element) {
     } else {
         allParametersContainers.forEach(function(container) {
             container.style.display = 'none';
-        });    
+        });
         parametersContainer.style.display = 'none';
     }
 }

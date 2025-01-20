@@ -16,12 +16,18 @@ from constants.televir_directories import Televir_Directory_Constants
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
 from managing_files.models import Reference
-from pathogen_identification.models import (MetaReference, ParameterSet,
-                                            PIProject_Sample, RawReference,
-                                            RawReferenceMap, ReferenceMap_Main,
-                                            ReferenceSourceFileMap,
-                                            TelefluMapping, TeleFluProject,
-                                            TeleFluSample)
+from pathogen_identification.models import (
+    MetaReference,
+    ParameterSet,
+    PIProject_Sample,
+    RawReference,
+    RawReferenceMap,
+    ReferenceMap_Main,
+    ReferenceSourceFileMap,
+    TelefluMapping,
+    TeleFluProject,
+    TeleFluSample,
+)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
 from pathogen_identification.utilities.utilities_general import simplify_name
 from utils.software import Software
@@ -714,7 +720,7 @@ def filter_reference_maps_select(
         run__parameter_set__sample=sample,
         accid__in=reference,
         run__parameter_set__leaf__index=leaf_id,
-        run__parameter_set__status=ParameterSet.STATUS_FINISHED,
+        status=RawReference.STATUS_MAPPED,
     )
 
     for ref in ref_maps:

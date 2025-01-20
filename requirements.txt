@@ -4,8 +4,8 @@ django-crequest==2018.5.11
 django-embed-video==1.2.0
 django-bootstrap-breadcrumbs==0.9.1
 django-user-agents==0.3.2
-django-crispy-forms==1.7.2
-django-braces==1.13.0
+django-crispy-forms==2.3
+django-braces==1.16.0
 django-tables2==2.7.5
 django-nose==1.4.6
 django-bootstrap4==0.0.8

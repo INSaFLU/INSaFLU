@@ -13,7 +13,7 @@ from django.contrib.auth.models import User
 from django.contrib.gis.db.models import PointField
 from django.db import models
 from django.utils.safestring import mark_safe
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 from constants.constants import Constants, FileExtensions, FileType, TypePath
 from constants.constants_mixed_infection import ConstantsMixedInfection

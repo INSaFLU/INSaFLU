@@ -3,7 +3,7 @@ from django.conf import settings
 from django.db.models import F
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 from constants.constants import Constants, TypePath
 from constants.meta_key_and_values import MetaKeyAndValue

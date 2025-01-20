@@ -6,7 +6,7 @@ from crequest.middleware import CrequestMiddleware
 from django.conf import settings
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 from constants.constants import Constants
 from managing_files.manage_database import ManageDatabase

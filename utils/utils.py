@@ -28,6 +28,7 @@ from constants.software_names import SoftwareNames
 from datasets.models import DatasetConsensus
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProjectSample
+
 ## from Bio.Alphabet import IUPAC    version 1.78 doesn't have Bio.Alphabet
 from utils.result import FeatureLocationSimple, Gene, GeneticElement
 
@@ -40,7 +41,7 @@ from statistics import mean
 from django.conf import settings
 from django.core.mail import send_mail
 from django.db import transaction
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from pysam import pysam
 
 from utils.result import CountHits, DecodeObjects, MaskingConsensus

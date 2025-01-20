@@ -11,7 +11,7 @@ from django.core.files.temp import NamedTemporaryFile
 from django.http import HttpResponse, JsonResponse
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_POST
 
@@ -21,29 +21,42 @@ from constants.software_names import SoftwareNames
 from fluwebvirus.settings import BASE_DIR, STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
-from pathogen_identification.models import (FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RawReference, ReferenceMap_Main,
-                                            ReferencePanel,
-                                            ReferenceSourceFileMap, RunMain,
-                                            SoftwareTreeNode, TelefluMapping,
-                                            TeleFluProject, TeleFluSample)
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.models import (
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReferenceMap_Main,
+    ReferencePanel,
+    ReferenceSourceFileMap,
+    RunMain,
+    SoftwareTreeNode,
+    TelefluMapping,
+    TeleFluProject,
+    TeleFluSample,
+)
 from pathogen_identification.tables import ReferenceSourceTable
 from pathogen_identification.utilities.reference_utils import (
-    check_file_reference_submitted, check_raw_reference_submitted,
-    check_user_reference_exists, create_combined_reference)
+    check_file_reference_submitted,
+    check_raw_reference_submitted,
+    check_user_reference_exists,
+    create_combined_reference,
+)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
-from pathogen_identification.utilities.utilities_general import \
-    get_services_dir
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.utilities_general import get_services_dir
 from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils, Utils_Manager)
+    SoftwareTreeUtils,
+    Utils_Manager,
+)
 from pathogen_identification.utilities.utilities_views import (
-    RawReferenceUtils, ReportSorter, SampleReferenceManager,
-    set_control_reports)
+    RawReferenceUtils,
+    ReportSorter,
+    SampleReferenceManager,
+    set_control_reports,
+)
 from pathogen_identification.views import inject__added_references
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
@@ -1966,9 +1979,7 @@ def load_teleflu_workflows(request):
                 continue
 
             params_df = utils_manager.get_leaf_parameters(mapping.leaf)
-            node_info = node_info = teleflu_node_info(
-                params_df, mapping.leaf
-            )
+            node_info = node_info = teleflu_node_info(params_df, mapping.leaf)
 
             samples_mapped = mapping.mapped_samples
 

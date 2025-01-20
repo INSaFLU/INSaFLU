@@ -14,18 +14,25 @@ from django.conf import settings
 from django.db import transaction
 from django.http import JsonResponse
 from django.utils.safestring import mark_safe
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.views.decorators.csrf import csrf_protect
 
-from constants.constants import (Constants, FileExtensions, FileType, TypeFile,
-                                 TypePath)
+from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import (DataSet, MetaKey, ProcessControler, Project,
-                                   ProjectSample, Reference, Sample,
-                                   UploadFiles, VaccineStatus)
+from managing_files.models import (
+    DataSet,
+    MetaKey,
+    ProcessControler,
+    Project,
+    ProjectSample,
+    Reference,
+    Sample,
+    UploadFiles,
+    VaccineStatus,
+)
 from pathogen_identification.models import ParameterSet, PIProject_Sample
 from pathogen_identification.models import Projects as Televir_Project
 from settings.constants_settings import ConstantsSettings

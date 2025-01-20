@@ -34,8 +34,8 @@ from extend_user.models import Profile
 from manage_virus.constants_virus import ConstantsVirus
 from managing_files.forms import (
     AddSampleProjectForm,
-    ReferenceForm,
     PrimerForm,
+    ReferenceForm,
     ReferenceProjectFormSet,
     SampleForm,
     SamplesUploadDescriptionForm,
@@ -45,10 +45,10 @@ from managing_files.forms import (
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import (
     MetaKey,
+    Primer,
     Project,
     ProjectSample,
     Reference,
-    Primer,
     Sample,
     UploadFiles,
 )
@@ -56,10 +56,10 @@ from managing_files.tables import (
     AddSamplesFromCvsFileTable,
     AddSamplesFromCvsFileTableMetadata,
     AddSamplesFromFastqFileTable,
+    PrimerTable,
     ProjectTable,
     ReferenceProjectTable,
     ReferenceTable,
-    PrimerTable,
     SampleTable,
     SampleToProjectsTable,
     ShowProjectSamplesResults,
@@ -133,6 +133,7 @@ class ReferencesIndex(BaseBreadcrumbMixin, TemplateView):
         )  ## show main information about the institute
         context["nav_reference"] = True
         return context
+
 
 # class ReferencesView(LoginRequiredMixin, GroupRequiredMixin, ListView):
 class ReferenceView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
@@ -422,11 +423,20 @@ class ReferenceAddView(
     ## static method, not need for now.
     form_valid_message = ""  ## need to have this
 
+
 class PrimerView(LoginRequiredMixin, ListView):
     model = Primer
     template_name = "primer/primer.html"
     context_object_name = "primer"
     ordering = ["id"]
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Primer", reverse("primer")),
+        ]
 
     def get_context_data(self, **kwargs):
         context = super(PrimerView, self).get_context_data(**kwargs)
@@ -483,6 +493,15 @@ class PrimerAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView)
     success_url = reverse_lazy("primer")
     template_name = "primer/primer_add.html"
 
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Primer", reverse("primer")),
+            ("Add Primer Set", reverse("primer-add")),
+        ]
+
     ## Other solution to get the reference
     ## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1
     def get_form_kwargs(self):
@@ -535,13 +554,16 @@ class PrimerAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView)
         primer.display_name = primer.name
         primer.owner = self.request.user
         primer.primer_fasta_name = utils.clean_name(
-            name + ".fa"
-            #ntpath.basename(primer_fasta.name)
+            name
+            + ".fa"
+            # ntpath.basename(primer_fasta.name)
         )
         primer.primer_pairs_name = utils.clean_name(
-                name + ".fa" + Constants.EXTENSION_PRIMER_PAIR
-                #ntpath.basename(primer_pairs.name)
-            )
+            name
+            + ".fa"
+            + Constants.EXTENSION_PRIMER_PAIR
+            # ntpath.basename(primer_pairs.name)
+        )
         primer.save()
 
         ## move the files to the right place
@@ -550,9 +572,7 @@ class PrimerAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView)
             utils.get_path_to_primer_file(self.request.user.id, primer.id),
             primer.primer_fasta_name,
         )
-        software.dos_2_unix(
-            os.path.join(settings.MEDIA_ROOT, primer.primer_fasta.name)
-        )
+        software.dos_2_unix(os.path.join(settings.MEDIA_ROOT, primer.primer_fasta.name))
         ## test if bases all lower
         software.fasta_2_upper(
             os.path.join(settings.MEDIA_ROOT, primer.primer_fasta.name)
@@ -595,7 +615,6 @@ class PrimerAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView)
 
     ## static method, not need for now.
     form_valid_message = ""  ## need to have this
-
 
 
 class SamplesView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):

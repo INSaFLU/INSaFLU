@@ -29,6 +29,11 @@ def reference_directory_path(instance, filename):
     return "uploads/generic_data/user_{0}/{1}".format(instance.owner.id, filename)
 
 
+def primer_directory_path(instance, filename):
+    # file will be uploaded to MEDIA_ROOT/<filename>
+    return "uploads/generic_data/user_{0}/{1}".format(instance.owner.id, filename)
+
+
 def user_directory_path(instance, filename):
     # file will be uploaded to MEDIA_ROOT/<filename>
     return "uploads/generic_data/user_{0}/{1}".format(instance.owner.id, filename)
@@ -73,6 +78,141 @@ class MetaKey(models.Model):
     class Meta:
         ordering = [
             "name",
+        ]
+
+
+class Primer(models.Model):
+    constants = Constants()
+
+    name = models.CharField(
+        max_length=200, db_index=True, verbose_name="Primer set name"
+    )
+    creation_date = models.DateTimeField(
+        auto_now_add=True, verbose_name="Uploaded Date"
+    )
+
+    ## Size 100K
+    primer_fasta = ContentTypeRestrictedFileField(
+        upload_to=primer_directory_path,
+        content_types=["application/octet-stream"],
+        max_upload_size=settings.MAX_REF_FASTA_FILE,
+        blank=True,
+        null=True,
+        max_length=500,
+    )
+    primer_fasta_name = models.CharField(
+        max_length=200, default="", verbose_name="Fasta file"
+    )
+    hash_primer_fasta = models.CharField(max_length=50, blank=True, null=True)
+
+    ## Size 100K
+    primer_pairs = ContentTypeRestrictedFileField(
+        upload_to=primer_directory_path,
+        content_types=["application/octet-stream"],
+        max_upload_size=settings.MAX_REF_FASTA_FILE,
+        blank=True,
+        null=True,
+        max_length=500,
+    )
+    primer_pairs_name = models.CharField(
+        max_length=200, default="", verbose_name="Tabular file with primer pairs"
+    )
+    hash_primer_pairs = models.CharField(max_length=50, blank=True, null=True)
+
+    owner = models.ForeignKey(
+        User, related_name="primer", blank=True, null=True, on_delete=models.CASCADE
+    )
+    is_deleted = models.BooleanField(default=False, verbose_name="Deleted")
+
+    description = models.CharField(
+        max_length=500, default="", blank=True, null=True, verbose_name="Description"
+    )
+
+    ### if is deleted in file system
+    is_deleted_in_file_system = models.BooleanField(
+        default=False
+    )  ## if this file was removed in file system
+    date_deleted = models.DateTimeField(
+        blank=True, null=True, verbose_name="Date attached"
+    )  ## this date has the time of deleted by web page
+
+    def __str__(self):
+        return self.name
+
+    def get_primer_fasta(self, type_path):
+        """
+        get a path, type_path, from MEDIA_URL or MEDIA_ROOT
+        """
+        path_to_find = self.primer_fasta.name
+        if type_path == TypePath.MEDIA_ROOT:
+            if not path_to_find.startswith("/"):
+                path_to_find = os.path.join(
+                    getattr(settings, "MEDIA_ROOT", None), path_to_find
+                )
+        else:
+            path_to_find = os.path.join(
+                getattr(settings, "MEDIA_URL", None), path_to_find
+            )
+        return path_to_find
+
+    def get_primer_fasta_web(self):
+        """
+        return web link for reference
+        """
+        out_file = self.get_primer_fasta(TypePath.MEDIA_ROOT)
+        if os.path.exists(out_file):
+            return mark_safe(
+                '<a href="{}" download="{}"> {}</a>'.format(
+                    self.get_primer_fasta(TypePath.MEDIA_URL),
+                    os.path.basename(self.get_primer_fasta(TypePath.MEDIA_ROOT)),
+                    self.constants.short_name(
+                        self.primer_fasta_name, Constants.SHORT_NAME_LENGTH
+                    ),
+                )
+            )
+        return _("File not available.")
+
+    def get_primer_pairs(self, type_path):
+        """
+        get a path, type_path, from MEDIA_URL or MEDIA_ROOT
+        """
+        path_to_find = self.primer_pairs.name
+        if type_path == TypePath.MEDIA_ROOT:
+            if not path_to_find.startswith("/"):
+                path_to_find = os.path.join(
+                    getattr(settings, "MEDIA_ROOT", None), path_to_find
+                )
+        else:
+            path_to_find = os.path.join(
+                getattr(settings, "MEDIA_URL", None), path_to_find
+            )
+        return path_to_find
+
+    def get_primer_pairs_web(self):
+        """
+        return web link for reference
+        """
+        out_file = self.get_primer_pairs(TypePath.MEDIA_ROOT)
+        if os.path.exists(out_file):
+            return mark_safe(
+                '<a href="{}" download="{}"> {}</a>'.format(
+                    self.get_primer_pairs(TypePath.MEDIA_URL),
+                    os.path.basename(self.get_primer_pairs(TypePath.MEDIA_ROOT)),
+                    self.constants.short_name(
+                        self.primer_pairs_name, Constants.SHORT_NAME_LENGTH
+                    ),
+                )
+            )
+        return _("File not available.")
+
+    class Meta:
+        verbose_name = "Primer"
+        verbose_name_plural = "Primers"
+        ordering = [
+            "-creation_date",
+        ]
+        indexes = [
+            models.Index(fields=["name"], name="primer_name_idx"),
         ]
 
 

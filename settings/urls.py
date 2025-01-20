@@ -3,80 +3,80 @@ Created on Jan 7, 2018
 
 @author: mmp
 """
-from django.conf.urls import url
+from django.urls import path, re_path
 
 from settings import ajax_views, views
 
 urlpatterns = [
-    url(
-        r"pathogenID-pipeline/(?P<level>\d+)$",
+    path(
+        "pathogenID-pipeline/<int:level>",
         views.PISettingsGroupsView.as_view(),
         name="pathogenID_pipeline",
     ),
-    url(
-        r"pathogenID-pipeline-sample/(?P<sample>\d+)$",
+    path(
+        "pathogenID-pipeline-sample/<int:sample>",
         views.PIMetagenSampleView.as_view(),
         name="pathogenID_sample_settings",
     ),
-    url(
-        r"pathogenID-pipeline-reset$",
+    path(
+        "pathogenID-pipeline-reset",
         ajax_views.reset_project_settings,
         name="reset_project_parameters",
     ),
-    url(
-        r"software_dataset_update/soft_(?P<pk>\d+)/dataset_(?P<pk_dataset>\d+)$",
+    path(
+        "software_dataset_update/soft_<int:pk>/dataset_<int:pk_dataset>",
         views.UpdateParametersDatasetView.as_view(),
         name="software-dataset-update",
     ),
-    url(
-        r"software_televir_project_update/soft_(?P<pk>\d+)/televir_project_(?P<pk_televir_project>\d+)$",
+    path(
+        "software_televir_project_update/soft_<int:pk>/televir_project_<int:pk_televir_project>",
         views.UpdateParametersTelevirProjView.as_view(),
         name="software-televir-project-update",
     ),
-    url(r"^$", views.index.as_view(), name="settings-index"),
-    url(r"set_quality", views.QCSettingsView.as_view(), name="settings_qc"),
-    url(r"403/$", views.Maintenance.as_view(), name="under_construction"),
-    url(r"settings", views.SettingsView.as_view(), name="settings"),
-    url(
-        r"software_update/(?P<pk>\d+)$",
+    path("", views.index.as_view(), name="settings-index"),
+    re_path(r"set_quality", views.QCSettingsView.as_view(), name="settings_qc"),
+    path("403/", views.Maintenance.as_view(), name="under_construction"),
+    re_path(r"settings", views.SettingsView.as_view(), name="settings"),
+    path(
+        "software_update/<int:pk>",
         views.UpdateParametersView.as_view(),
         name="software-update",
     ),
-    url(
-        r"software_project_update/soft_(?P<pk>\d+)/proj_(?P<pk_proj>\d+)$",
+    path(
+        "software_project_update/soft_<int:pk>/proj_<int:pk_proj>",
         views.UpdateParametersProjView.as_view(),
         name="software-project-update",
     ),
-    url(
-        r"software_project_sample_update/soft_(?P<pk>\d+)/proj_sample_(?P<pk_proj_sample>\d+)$",
+    path(
+        "software_project_sample_update/soft_<int:pk>/proj_sample_<int:pk_proj_sample>",
         views.UpdateParametersProjSampleView.as_view(),
         name="software-project-sample-update",
     ),
-    url(
-        r"software_sample_update/soft_(?P<pk>\d+)/sample_(?P<pk_sample>\d+)$",
+    path(
+        "software_sample_update/soft_<int:pk>/sample_<int:pk_sample>",
         views.UpdateParametersSampleView.as_view(),
         name="software-sample-update",
     ),
-    url(
-        r"^ajax/default_parameters$",
+    path(
+        "ajax/default_parameters",
         ajax_views.set_default_parameters,
         name="default_parameters",
     ),
-    url(
-        r"^ajax/turn_on_off_software$",
+    path(
+        "ajax/turn_on_off_software",
         ajax_views.turn_on_off_software,
         name="turn_on_off_software",
     ),
-    url(
-        r"^ajax/mask_consensus$", ajax_views.mask_consensus, name="mask_consensus"
+    path(
+        "ajax/mask_consensus", ajax_views.mask_consensus, name="mask_consensus"
     ),  ## set positions to mask consensus
-    url(
-        r"^ajax/mask_consensus_actual_values$",
+    path(
+        "ajax/mask_consensus_actual_values",
         ajax_views.get_mask_consensus_actual_values,
         name="mask_consensus_actual_values",
     ),  ## get positions to mask consensus
-    url(
-        r"^ajax/get_software_name_to_turn_on_off$",
+    path(
+        "ajax/get_software_name_to_turn_on_off",
         ajax_views.get_software_name_to_turn_on_off,
         name="get_software_name_to_turn_on_off",
     ),  ## message to toggle on/off software

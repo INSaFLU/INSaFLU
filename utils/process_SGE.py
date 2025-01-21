@@ -14,8 +14,7 @@ from django.db import transaction
 from constants.constants import Constants, FileExtensions, TypePath
 from extend_user.models import Profile
 from managing_files.models import ProcessControler
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from utils.utils import Utils
 
 # http://www.socher.org/index.php/Main/HowToInstallSunGridEngineOnUbuntu

@@ -45,7 +45,7 @@ SITE_KEY = config("SITE_KEY")
 
 ### crispy template
 CRISPY_TEMPLATE_PACK = "bootstrap4"
-BREADCRUMBS_TEMPLATE = "django_bootstrap_breadcrumbs/bootstrap4.html"
+BREADCRUMBS_TEMPLATE = "view_breadcrumbs/bootstrap4.html"
 
 CSRF_COOKIE_AGE = None
 CSRF_COOKIE_DOMAIN = ".min-saude.pt"
@@ -122,7 +122,7 @@ INSTALLED_APPS = [
     "django_tables2",
     "bootstrap4",
     "django_user_agents",
-    "django_bootstrap_breadcrumbs",
+    "view_breadcrumbs",
     "managing_files.apps.ManagingFilesConfig",
     "manage_virus.apps.ManageVirusConfig",
     "datasets.apps.DatasetsConfig",

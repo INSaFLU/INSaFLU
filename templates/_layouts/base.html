@@ -176,7 +176,7 @@
 
 			{% if nav_modal %} <div class="container"> {% endif %}
 				{% if not not_show_breadcrumbs %}
-				{% load django_bootstrap_breadcrumbs %}
+				{% load view_breadcrumbs %}
 				{% block breadcrumbs %}
 				{% clear_breadcrumbs %}
 				{% breadcrumb "Home" "/" %}

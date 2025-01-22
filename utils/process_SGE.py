@@ -14,7 +14,8 @@ from django.db import transaction
 from constants.constants import Constants, FileExtensions, TypePath
 from extend_user.models import Profile
 from managing_files.models import ProcessControler
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from utils.utils import Utils
 
 # http://www.socher.org/index.php/Main/HowToInstallSunGridEngineOnUbuntu
@@ -70,7 +71,7 @@ class ProcessSGE(object):
         """
         temp_file = self.utils.get_temp_file("qsub_out", FileExtensions.FILE_TXT)
 
-        cmd = "export SGE_ROOT={}; sbatch {} > {}".format(
+        cmd = "export SGE_ROOT={}; qsub {} > {}".format(
             settings.SGE_ROOT, file_name, temp_file
         )
         exist_status = os.system(cmd)
@@ -117,38 +118,38 @@ class ProcessSGE(object):
             return None
 
         file_name_out = os.path.join(out_dir, ProcessSGE.FILE_NAME_SCRIPT_SGE)
-        with open(file_name_out, "w") as handleSLURM:
-            handleSLURM.write("#!/bin/bash\n")
-            handleSLURM.write(
-                "#SBATCH --export=ALL\n"
+        with open(file_name_out, "w") as handleSGE:
+            handleSGE.write("#!/bin/bash\n")
+            handleSGE.write(
+                "#$ -V\n"
             )  # Specifies  that  all  environment  variables active
             # within the qsub utility be exported to the context of the job.
-            # handleSLURM.write("#$ -S /bin/bash\n")  # interpreting shell
+            handleSGE.write("#$ -S /bin/bash\n")  # interpreting shell
             ## hold_jid <comma separated list of job-ids, can also be a job id pattern such as 2722*> :
             ## will start the current job/job -array only after completion of all jobs in the comma separated list
             if isinstance(job_name_wait, str):
                 job_name_wait = [job_name_wait]
             if len(job_name_wait) > 0:
-                handleSLURM.write(
-                    "#$ --dependency=afteany:{}\n".format(":".join(job_name_wait))
+                handleSGE.write(
+                    "#$ -hold_jid {}\n".format(",".join(job_name_wait))
                 )  # need to wait until all this jobs names finished
-            # handleSLURM.write(
-            #    "#$ -j y\n"
-            # )  # merge the standard error with standard output
-            handleSLURM.write("#$ --job-name={}\n".format(job_name))  # job name
-            handleSLURM.write(
+            handleSGE.write(
+                "#$ -j y\n"
+            )  # merge the standard error with standard output
+            handleSGE.write("#$ -N {}\n".format(job_name))  # job name
+            handleSGE.write(
                 "#$ -cwd\n"
             )  # execute the job for the current work directory
-            handleSLURM.write("#$ --partition={}\n".format(queue_name))  # queue name
-            handleSLURM.write("#$ --output={}\n".format(out_dir))  # out path file
+            handleSGE.write("#$ -q {}\n".format(queue_name))  # queue name
+            handleSGE.write("#$ -o {}\n".format(out_dir))  # out path file
             for cline in vect_cmd:
-                handleSLURM.write("\n" + cline)
+                handleSGE.write("\n" + cline)
             if b_remove_out_dir and not settings.RUN_TEST_IN_COMMAND_LINE:
-                handleSLURM.write(
+                handleSGE.write(
                     "\nif [ $? -eq 0 ]\nthen\n  rm -r {}\nfi\n".format(out_dir)
                 )
                 if alternative_temp_dir is not None:
-                    handleSLURM.write(
+                    handleSGE.write(
                         "\nif [ $? -eq 0 ]\nthen\n  rm -r {}\nfi\n".format(
                             alternative_temp_dir
                         )
@@ -179,9 +180,9 @@ class ProcessSGE(object):
         """
         tagsSGERunning = ("r", "t")
         tagsSGEWaiting = ("hqw", "qw", "w")
-        # test with squeue
+        # test with qstat
         file_result = self.utils.get_temp_file("sge_stat", ".txt")
-        cline = "export SGE_ROOT={}; squeue > {}".format(settings.SGE_ROOT, file_result)
+        cline = "export SGE_ROOT={}; qstat > {}".format(settings.SGE_ROOT, file_result)
         os.system(cline)
 
         ## read the FILE
@@ -223,7 +224,7 @@ class ProcessSGE(object):
         test if there any tasks running...
         """
         file_result = self.utils.get_temp_file("sge_stat", ".txt")
-        cline = "export SGE_ROOT={}; squeue > {}".format(settings.SGE_ROOT, file_result)
+        cline = "export SGE_ROOT={}; qstat > {}".format(settings.SGE_ROOT, file_result)
         os.system(cline)
         ## read the FILE
         with open(file_result) as handle_result:
@@ -246,7 +247,7 @@ class ProcessSGE(object):
 
         """
         file_result = self.utils.get_temp_file("sge_stat", ".txt")
-        cline = "export SGE_ROOT={}; squeue -j {}* > {}".format(
+        cline = "export SGE_ROOT={}; qstat -j {}* > {}".format(
             settings.SGE_ROOT, prefix_id, file_result
         )
         os.system(cline)

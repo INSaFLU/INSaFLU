@@ -140,7 +140,7 @@ INSTALLED_APPS = [
     "django_tables2",
     "bootstrap4",
     "django_user_agents",
-    "view_breadcrumbs",
+    "django_bootstrap_breadcrumbs",
     "managing_files.apps.ManagingFilesConfig",
     "manage_virus.apps.ManageVirusConfig",
     "datasets.apps.DatasetsConfig",

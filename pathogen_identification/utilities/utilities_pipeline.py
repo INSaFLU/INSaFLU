@@ -2918,25 +2918,20 @@ class SoftwareTreeUtils:
                             value=parent_value,
                             node_type=parent_type,
                         )
-<<<<<<< HEAD
                         if parent_node.exists():
                             parent_node = parent_node.first()
 
-                    tree_node = SoftwareTreeNode(
-                        software_tree=software_tree,
-                        index=index,
-                        name=node[0],
-                        value=node[1],
-                        node_type=node[2],
-                        parent=parent_node,
-                        node_place=is_leaf,
-                    )
-                    with transaction.atomic():
-                        tree_node.save()
-=======
+                        tree_node = SoftwareTreeNode(
+                            software_tree=software_tree,
+                            index=index,
+                            name=node[0],
+                            value=node[1],
+                            node_type=node[2],
+                            parent=parent_node,
+                            node_place=is_leaf,
+                        )
                         with transaction.atomic():
                             tree_node.save()
->>>>>>> e1973531 (replace all LockedAtomicTransactions with transaction.atomic)
                 except Exception as e:
                     print(e)
 

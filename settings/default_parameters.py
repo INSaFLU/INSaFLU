@@ -13,7 +13,6 @@ from django.db import DatabaseError, transaction
 
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
-from managing_files.models import Project, ProjectSample
 from pathogen_identification.constants_settings import (
     ConstantsSettings as PI_ConstantsSettings,
 )

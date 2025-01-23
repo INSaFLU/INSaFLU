@@ -1,7 +1,7 @@
 django==4.2.16
 django-ipware==2.1.0
 django-crequest==2018.5.11
-django-embed-video==0.3
+django-embed-video==1.4.10
 django-view-breadcrumbs==2.5.1
 django-user-agents==0.3.2
 django-crispy-forms==2.3

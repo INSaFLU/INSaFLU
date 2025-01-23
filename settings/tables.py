@@ -68,7 +68,7 @@ class SoftwaresTable(tables.Table):
         self.televir_project = televir_project
         self.televir_project_sample = televir_project_sample
         if default_software is None:
-            self.default_software = DefaultSoftware(test= 1)
+            self.default_software = DefaultSoftware(test=1)
         else:
             self.default_software = default_software
 
@@ -80,7 +80,7 @@ class SoftwaresTable(tables.Table):
             ).count()
 
     class Meta:
-        model = Software()
+        model = Software
         fields = (
             "select_to_run",
             "software",
@@ -758,7 +758,7 @@ class INSaFLUParametersTable(tables.Table):
             ).count()
 
     class Meta:
-        model = Software()
+        model = Software
         fields = ("select_to_run", "software", "technology", "parameters", "options")
         attrs = {"class": "table-striped table-bordered"}
         empty_text = "There are no INSaFLU parameters to show..."

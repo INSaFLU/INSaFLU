@@ -71,6 +71,7 @@ class SoftwaresTable(tables.Table):
         self.televir_project_sample = televir_project_sample
         if default_software is None:
             self.default_software = DefaultSoftware(test=1)
+            self.default_software = DefaultSoftware(test=1)
         else:
             self.default_software = default_software
 

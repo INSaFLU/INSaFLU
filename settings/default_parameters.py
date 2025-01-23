@@ -9,15 +9,18 @@ import os
 from typing import List
 
 from django.conf import settings
+from django.db import DatabaseError, transaction
 
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PI_ConstantsSettings
-from pathogen_identification.utilities.utilities_pipeline import \
-    Utility_Pipeline_Manager
+from pathogen_identification.constants_settings import (
+    ConstantsSettings as PI_ConstantsSettings,
+)
+from pathogen_identification.utilities.utilities_pipeline import (
+    Utility_Pipeline_Manager,
+)
 from settings.constants_settings import ConstantsSettings
-from settings.models import Parameter, PipelineStep, Software, Technology
+from settings.models import Parameter, PipelineStep, Project, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
 
 
@@ -59,8 +62,8 @@ class DefaultParameters(object):
         """
         Constructor
         """
-        #televir_util = Parameter_DB_Utility()
-        #software_list = televir_util.get_software_list()
+        # televir_util = Parameter_DB_Utility()
+        # software_list = televir_util.get_software_list()
 
         self.televir_db_manager = Utility_Pipeline_Manager()
 
@@ -69,7 +72,6 @@ class DefaultParameters(object):
         if prep_televir_dbs:
             self.televir_db_manager.get_software_db_dict()
             self.televir_db_manager.get_host_dbs()
-
 
     def get_software_parameters_version(self, software_name):
         """
@@ -93,21 +95,26 @@ class DefaultParameters(object):
         vect_return.append([SoftwareNames.SOFTWARE_FREEBAYES_name, 0])
         return vect_return
 
+    @transaction.atomic
     def set_software_obsolete(self):
         """
         set software obsolete
         """
         vect_to_obsolete = self._get_software_obsolete()
-        with LockedAtomicTransaction(Software):
-            for data_obsolete in vect_to_obsolete:
-                query_set = Software.objects.filter(
-                    name=data_obsolete[0],
-                    version_parameters=data_obsolete[1],
-                    is_obsolete=False,
-                )
-                for software in query_set:
+
+        for data_obsolete in vect_to_obsolete:
+            query_set = Software.objects.filter(
+                name=data_obsolete[0],
+                version_parameters=data_obsolete[1],
+                is_obsolete=False,
+            )
+            for software in query_set:
+                try:
+                    with transaction.atomic():
+                        software.is_obsolete = True
+                except DatabaseError:
                     software.is_obsolete = True
-                    software.save()
+                software.save()
 
     def persist_parameters(self, vect_parameters: List[Parameter], type_of_use: int):
         """
@@ -637,7 +644,7 @@ class DefaultParameters(object):
 
     def set_software_to_run_by_software(
         self,
-        software,
+        software: Software,
         project,
         televir_project,
         project_sample,
@@ -648,50 +655,19 @@ class DefaultParameters(object):
         """set software to run ON/OFF
         :output True if the is_to_run is changed"""
 
-        with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
-            ## get parameters for a specific sample, project or project_sample
-            parameters = Parameter.objects.filter(
-                software=software,
-                project=project,
-                project_sample=project_sample,
-                televir_project=televir_project,
-                sample=sample,
-                dataset=dataset,
-            )
+        # with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
+        ## get parameters for a specific sample, project or project_sample
+        parameters = Parameter.objects.filter(
+            software=software,
+            project=project,
+            project_sample=project_sample,
+            televir_project=televir_project,
+            sample=sample,
+            dataset=dataset,
+        )
 
-            ## if None need to take the value from database
-            if is_to_run is None:
-                if software.type_of_use in [
-                    Software.TYPE_OF_USE_qc,
-                    Software.TYPE_OF_USE_global,
-                    Software.TYPE_OF_USE_televir_global,
-                    Software.TYPE_OF_USE_televir_project,
-                    Software.TYPE_OF_USE_televir_settings,
-                    Software.TYPE_OF_USE_televir_project_settings,
-                ]:
-                    is_to_run = not software.is_to_run
-                elif len(parameters) > 0:
-                    is_to_run = not parameters[0].is_to_run
-                else:
-                    is_to_run = not software.is_to_run
-
-            ## if the software can not be change return False
-            if not software.can_be_on_off_in_pipeline:
-                if software.type_of_use in [
-                    Software.TYPE_OF_USE_qc,
-                    Software.TYPE_OF_USE_global,
-                    Software.TYPE_OF_USE_televir_global,
-                    Software.TYPE_OF_USE_televir_project,
-                    Software.TYPE_OF_USE_televir_settings,
-                    Software.TYPE_OF_USE_televir_project_settings,
-                ]:
-                    return software.is_to_run
-                elif len(parameters) > 0:
-                    return parameters[0].is_to_run
-                return True
-
-            ### if it is Global it is software that is mandatory
-            ### only can change if TYPE_OF_USE_global, other type_of_use is not be tested
+        ## if None need to take the value from database
+        if is_to_run is None:
             if software.type_of_use in [
                 Software.TYPE_OF_USE_qc,
                 Software.TYPE_OF_USE_global,
@@ -700,25 +676,62 @@ class DefaultParameters(object):
                 Software.TYPE_OF_USE_televir_settings,
                 Software.TYPE_OF_USE_televir_project_settings,
             ]:
+                is_to_run = not software.is_to_run
+            elif len(parameters) > 0:
+                is_to_run = not parameters[0].is_to_run
+            else:
+                is_to_run = not software.is_to_run
+
+        ## if the software can not be change return False
+        if not software.can_be_on_off_in_pipeline:
+            if software.type_of_use in [
+                Software.TYPE_OF_USE_qc,
+                Software.TYPE_OF_USE_global,
+                Software.TYPE_OF_USE_televir_global,
+                Software.TYPE_OF_USE_televir_project,
+                Software.TYPE_OF_USE_televir_settings,
+                Software.TYPE_OF_USE_televir_project_settings,
+            ]:
+                return software.is_to_run
+            elif len(parameters) > 0:
+                return parameters[0].is_to_run
+            return True
+
+        ### if it is Global it is software that is mandatory
+        ### only can change if TYPE_OF_USE_global, other type_of_use is not be tested
+        if software.type_of_use in [
+            Software.TYPE_OF_USE_qc,
+            Software.TYPE_OF_USE_global,
+            Software.TYPE_OF_USE_televir_global,
+            Software.TYPE_OF_USE_televir_project,
+            Software.TYPE_OF_USE_televir_settings,
+            Software.TYPE_OF_USE_televir_project_settings,
+        ]:
+            try:
+                with transaction.atomic():
+                    software.is_to_run = is_to_run
+                    software.save()
+            except DatabaseError:
                 software.is_to_run = is_to_run
                 software.save()
 
-            ## get parameters for a specific sample, project or project_sample
-            parameters = Parameter.objects.filter(
-                software=software,
-                project=project,
-                televir_project=televir_project,
-                project_sample=project_sample,
-                sample=sample,
-                dataset=dataset,
-            )
+        ## get parameters for a specific sample, project or project_sample
+        parameters = Parameter.objects.select_for_update().filter(
+            software=software,
+            project=project,
+            televir_project=televir_project,
+            project_sample=project_sample,
+            sample=sample,
+            dataset=dataset,
+        )
 
-            ### Try to find the parameter of sequence_out == 1. It is the one that has the flag to run or not.
-            for parameter in parameters:
+        ### Try to find the parameter of sequence_out == 1. It is the one that has the flag to run or not.
+        for parameter in parameters:
+            with transaction.atomic():
                 parameter.is_to_run = is_to_run
                 parameter.save()
 
-            return is_to_run
+        return is_to_run
 
     def get_vect_parameters(self, software: Software):
         """return all parameters, by software instance"""
@@ -3318,7 +3331,13 @@ class DefaultParameters(object):
         return vect_parameters
 
     def get_kraken2_default(
-        self, user, type_of_use, technology_name, sample=None, pipeline_step="", is_to_run=True
+        self,
+        user,
+        type_of_use,
+        technology_name,
+        sample=None,
+        pipeline_step="",
+        is_to_run=True,
     ):
         """
         kraken2 default

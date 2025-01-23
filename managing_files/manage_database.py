@@ -19,8 +19,7 @@ from managing_files.models import (
     Statistics,
     TagName,
 )
-from utils.lock_atomic_transaction import LockedAtomicTransaction
-
+from django.db import DatabaseError, transaction
 
 class ManageDatabase(object):
     """
@@ -37,13 +36,12 @@ class ManageDatabase(object):
         """
         get metakey with lobk table
         """
-        with LockedAtomicTransaction(MetaKey):
-            try:
-                metaKey = MetaKey.objects.get(name=meta_key_name)
-            except MetaKey.DoesNotExist:
-                metaKey = MetaKey()
-                metaKey.name = meta_key_name
-                metaKey.save()
+        # with LockedAtomicTransaction(MetaKey):
+        try:
+            with transaction.atomic():
+            metaKey = MetaKey.objects.get_or_create(name=meta_key_name)
+        except DatabaseError:
+            metaKey = MetaKey.objects.get_or_create(name=meta_key_name)
         return metaKey
 
     def set_reference_metakey(
@@ -507,19 +505,20 @@ class ManageDatabase(object):
                 statistics = Statistics.objects.get(tag__name=percentil_tag)
             except Statistics.DoesNotExist:
 
-                with LockedAtomicTransaction(TagName):
-                    try:
-                        tag_name = TagName.objects.get(
-                            name=percentil_tag, owner__id=user.id
-                        )
-                    except TagName.DoesNotExist:
-                        tag_name = TagName()
-                        tag_name.name = percentil_tag
-                        tag_name.owner = user
-                        tag_name.is_meta_data = tagNamesConstants.is_meta_tag_name(
-                            percentil_tag
-                        )
-                        tag_name.save()
+                # with LockedAtomicTransaction(TagName):
+                try:
+                    with transaction.atomic():
+                    tag_name = TagName.objects.get_or_create(
+                        name=percentil_tag, 
+                        owner__id=user.id,
+                        is_meta_data=tagNamesConstants.is_meta_tag_name(percentil_tag)
+                    )
+                except DatabaseError:
+                    tag_name = TagName.objects.get_or_create(
+                        name=percentil_tag, 
+                        owner__id=user.id,
+                        is_meta_data=tagNamesConstants.is_meta_tag_name(percentil_tag)
+                    )
 
                 statistics = Statistics()
                 statistics.tag = tag_name

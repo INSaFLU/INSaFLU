@@ -2896,6 +2896,7 @@ class SoftwareTreeUtils:
                 )
 
             except SoftwareTreeNode.DoesNotExist:
+
                 try:
                     with LockedAtomicTransaction(SoftwareTreeNode):
                         parent_node_index = parent_dict.get(index, None)
@@ -2925,14 +2926,10 @@ class SoftwareTreeUtils:
                             parent=parent_node,
                             node_place=is_leaf,
                         )
-                        tree_node.save()
-
+                        with transaction.atomic():
+                            tree_node.save()
                 except Exception as e:
                     print(e)
-                    print(index, name, value)
-
-            except Exception as e:
-                print(e)
 
     def generate_software_tree_safe(
         self,

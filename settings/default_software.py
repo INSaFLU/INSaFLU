@@ -7,6 +7,7 @@ Created on 03/05/2020
 from curses.ascii import SO
 
 from django.contrib.auth.models import User
+from django.db import DatabaseError, transaction
 
 from constants.software_names import SoftwareNames
 from pathogen_identification.constants_settings import ConstantsSettings as PICS
@@ -17,7 +18,6 @@ from pathogen_identification.utilities.utilities_pipeline import (
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.models import Parameter, Software, SoftwareDefaultTest
-from utils.lock_atomic_transaction import LockedAtomicTransaction
 
 
 class DefaultSoftware(object):
@@ -76,26 +76,29 @@ class DefaultSoftware(object):
 
     def remove_all_parameters(self, user):
         """remove all parameters"""
-        user_software = Software.objects.filter(owner=user)
-        user_parameter = Parameter.objects.filter(software__in=user_software)
-        with LockedAtomicTransaction(Parameter):
+        user_software = Software.objects.select_for_update().filter(owner=user)
+        user_parameter = Parameter.objects.select_for_update().filter(
+            software__in=user_software
+        )
+
+        with transaction.atomic():
             user_parameter.delete()
 
-        with LockedAtomicTransaction(Software):
+        with transaction.atomic():
             user_software.delete()
 
     def remove_all_software(self, user):
         """remove all software"""
-        user_software = Software.objects.filter(owner=user)
-        with LockedAtomicTransaction(Software):
+        user_software = Software.objects.select_for_update().filter(owner=user)
+        with transaction.atomic():
             user_software.delete()
 
     def remove_all_televir_global_software(self, user):
         """remove all software"""
-        user_software = Software.objects.filter(
+        user_software = Software.objects.select_for_update().filter(
             owner=user, type_of_use=Software.TYPE_OF_USE_televir_global
         )
-        with LockedAtomicTransaction(Software):
+        with transaction.atomic():
             user_software.delete()
 
     def remove_all_televir_global_Parameters(self, user):
@@ -104,23 +107,23 @@ class DefaultSoftware(object):
             software__type_of_use=Software.TYPE_OF_USE_televir_global,
             software__owner=user,
         )
-        with LockedAtomicTransaction(Parameter):
+        with transaction.atomic():
             user_parameter.delete()
 
     def remove_all_televir_project_Parameters(self, user):
-        user_project_parameter = Parameter.objects.filter(
+        user_project_parameter = Parameter.objects.select_for_update().filter(
             software__type_of_use=Software.TYPE_OF_USE_televir_project,
             software__owner=user,
         )
-        with LockedAtomicTransaction(Parameter):
+        with transaction.atomic():
             user_project_parameter.delete()
 
     def remove_all_televir_project_software(self, user):
         """remove all software"""
-        user_software = Software.objects.filter(
+        user_software = Software.objects.select_for_update().filter(
             owner=user, type_of_use=Software.TYPE_OF_USE_televir_project
         )
-        with LockedAtomicTransaction(Software):
+        with transaction.atomic():
             user_software.delete()
 
     def remove_all_televir_global(self, user):
@@ -896,26 +899,32 @@ class DefaultSoftware(object):
 
         except Software.MultipleObjectsReturned:
             ## keep the first one, delete the rest
-            software_query = Software.objects.filter(
-                name=software_name,
-                owner=user,
-                type_of_use=vect_parameters[0].software.type_of_use,
-                technology__name=vect_parameters[0].software.technology.name,
-                version_parameters=self.default_parameters.get_software_parameters_version(
-                    software_name
-                ),
-                pipeline_step__name=vect_parameters[0].software.pipeline_step,
-                parameter__televir_project=None,
-                parameter__televir_project_sample=None,
-            ).order_by("id")
+            software_query = (
+                Software.objects.select_for_update()
+                .filter(
+                    name=software_name,
+                    owner=user,
+                    type_of_use=vect_parameters[0].software.type_of_use,
+                    technology__name=vect_parameters[0].software.technology.name,
+                    version_parameters=self.default_parameters.get_software_parameters_version(
+                        software_name
+                    ),
+                    pipeline_step__name=vect_parameters[0].software.pipeline_step,
+                    parameter__televir_project=None,
+                    parameter__televir_project_sample=None,
+                )
+                .order_by("id")
+            )
 
             if software_query.count() > 1:
                 software = software_query.exclude(pk=software_query.last().pk)
 
-                parameters = Parameter.objects.filter(software__in=software)
-                with LockedAtomicTransaction(Parameter):
+                parameters = Parameter.objects.select_for_update().filter(
+                    software__in=software
+                )
+                with transaction.atomic():
                     parameters.delete()
-                with LockedAtomicTransaction(Software):
+                with transaction.atomic():
                     software.delete()
 
         except Software.DoesNotExist:  ### if not exist save it

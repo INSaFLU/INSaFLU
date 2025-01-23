@@ -14,7 +14,7 @@ from managing_files.manage_database import ManageDatabase
 from managing_files.models import MixedInfections, MixedInfectionsTag, ProjectSample
 from utils.lock_atomic_transaction import LockedAtomicTransaction
 from utils.result import DecodeObjects, MixedInfectionMainVector
-from django.db import transaction, DatabaseError
+
 
 class MixedInfectionsManagement(object):
     """
@@ -103,12 +103,14 @@ class MixedInfectionsManagement(object):
 
         ### get tag
 
-		try:
+        try:
             with transaction.atomic():
-                mixed_infections_tag = MixedInfectionsTag.objects.get_or_create(name=tag)
-		except DatabaseError:
-			mixed_infections_tag = MixedInfectionsTag.objects.get_or_create(name=tag)
-                
+                mixed_infections_tag = MixedInfectionsTag.objects.get_or_create(
+                    name=tag
+                )
+        except DatabaseError:
+            mixed_infections_tag = MixedInfectionsTag.objects.get_or_create(name=tag)
+
         mixed_infections = MixedInfections()
         mixed_infections.tag = mixed_infections_tag
         mixed_infections.average_value = value
@@ -129,9 +131,9 @@ class MixedInfectionsManagement(object):
             project_sample_.alert_first_level += 1
             project_sample_.save()
 
-            # 			manage_database.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_COSINE_DISTANCE,\
-            # 									MetaKeyAndValue.META_VALUE_Success, "Warning, this sample has an average cosine distance " +\
-            # 									"of '{}'.\nSuggest mixed infection.".format(value))
+            #             manage_database.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_COSINE_DISTANCE,\
+            #                                     MetaKeyAndValue.META_VALUE_Success, "Warning, this sample has an average cosine distance " +\
+            #                                     "of '{}'.\nSuggest mixed infection.".format(value))
 
             ## test mixed infection by empirical values
             if count_hits.is_mixed_infection_ratio_test():
@@ -190,8 +192,8 @@ class MixedInfectionsManagement(object):
             return 0.0
 
         for vect_data in mixed_infections_main_vector.get_vector():
-            # 			print("[{}-{}] - [{}-{}] {}".format(vect_data[0], vect_data[1], vect_data_to_test[0], vect_data_to_test[1],\
-            # 								1 - spatial.distance.cosine(vect_data, vect_data_to_test)))
+            #             print("[{}-{}] - [{}-{}] {}".format(vect_data[0], vect_data[1], vect_data_to_test[0], vect_data_to_test[1],\
+            #                                 1 - spatial.distance.cosine(vect_data, vect_data_to_test)))
             f_total += 1 - spatial.distance.cosine(vect_data, vect_data_to_test)
 
         if len(mixed_infections_main_vector.get_vector()) == 0:

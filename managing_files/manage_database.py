@@ -4,7 +4,7 @@ Created on Nov 1, 2017
 @author: mmp
 """
 
-from django.db import connection
+from django.db import DatabaseError, connection, transaction
 
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.tag_names_constants import TagNamesConstants
@@ -19,7 +19,7 @@ from managing_files.models import (
     Statistics,
     TagName,
 )
-from django.db import DatabaseError, transaction
+
 
 class ManageDatabase(object):
     """
@@ -39,7 +39,7 @@ class ManageDatabase(object):
         # with LockedAtomicTransaction(MetaKey):
         try:
             with transaction.atomic():
-            metaKey = MetaKey.objects.get_or_create(name=meta_key_name)
+                metaKey = MetaKey.objects.get_or_create(name=meta_key_name)
         except DatabaseError:
             metaKey = MetaKey.objects.get_or_create(name=meta_key_name)
         return metaKey
@@ -509,15 +509,17 @@ class ManageDatabase(object):
                 try:
                     with transaction.atomic():
                         tag_name = TagName.objects.get_or_create(
-                            name=percentil_tag, 
+                            name=percentil_tag,
                             owner__id=user.id,
-                            is_meta_data=tagNamesConstants.is_meta_tag_name(percentil_tag)
+                            is_meta_data=tagNamesConstants.is_meta_tag_name(
+                                percentil_tag
+                            ),
                         )
                 except DatabaseError:
                     tag_name = TagName.objects.get_or_create(
-                        name=percentil_tag, 
+                        name=percentil_tag,
                         owner__id=user.id,
-                        is_meta_data=tagNamesConstants.is_meta_tag_name(percentil_tag)
+                        is_meta_data=tagNamesConstants.is_meta_tag_name(percentil_tag),
                     )
 
                 statistics = Statistics()

@@ -508,11 +508,11 @@ class ManageDatabase(object):
                 # with LockedAtomicTransaction(TagName):
                 try:
                     with transaction.atomic():
-                    tag_name = TagName.objects.get_or_create(
-                        name=percentil_tag, 
-                        owner__id=user.id,
-                        is_meta_data=tagNamesConstants.is_meta_tag_name(percentil_tag)
-                    )
+                        tag_name = TagName.objects.get_or_create(
+                            name=percentil_tag, 
+                            owner__id=user.id,
+                            is_meta_data=tagNamesConstants.is_meta_tag_name(percentil_tag)
+                        )
                 except DatabaseError:
                     tag_name = TagName.objects.get_or_create(
                         name=percentil_tag, 

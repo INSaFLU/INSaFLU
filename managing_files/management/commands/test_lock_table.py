@@ -29,9 +29,9 @@ class Command(BaseCommand):
         """ """
         try:
             with transaction.atomic():
-                metaKey = MetaKey.objects.get_or_create(name=meta_key_name_)
+                metaKey, _ = MetaKey.objects.get_or_create(name=meta_key_name_)
         except DatabaseError:
-            metaKey = MetaKey.objects.get_or_create(name=meta_key_name_)
+            metaKey, _ = MetaKey.objects.get_or_create(name=meta_key_name_)
         return metaKey
 
     def get_meta_key_without(self, meta_key_name_):

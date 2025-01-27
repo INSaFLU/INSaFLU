@@ -39,9 +39,9 @@ class ManageDatabase(object):
         # with LockedAtomicTransaction(MetaKey):
         try:
             with transaction.atomic():
-                metaKey = MetaKey.objects.get_or_create(name=meta_key_name)
+                metaKey, _ = MetaKey.objects.get_or_create(name=meta_key_name)
         except DatabaseError:
-            metaKey = MetaKey.objects.get_or_create(name=meta_key_name)
+            metaKey, _ = MetaKey.objects.get_or_create(name=meta_key_name)
         return metaKey
 
     def set_reference_metakey(
@@ -508,7 +508,7 @@ class ManageDatabase(object):
                 # with LockedAtomicTransaction(TagName):
                 try:
                     with transaction.atomic():
-                        tag_name = TagName.objects.get_or_create(
+                        tag_name, _ = TagName.objects.get_or_create(
                             name=percentil_tag,
                             owner__id=user.id,
                             is_meta_data=tagNamesConstants.is_meta_tag_name(
@@ -516,7 +516,7 @@ class ManageDatabase(object):
                             ),
                         )
                 except DatabaseError:
-                    tag_name = TagName.objects.get_or_create(
+                    tag_name, _ = TagName.objects.get_or_create(
                         name=percentil_tag,
                         owner__id=user.id,
                         is_meta_data=tagNamesConstants.is_meta_tag_name(percentil_tag),

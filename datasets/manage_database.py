@@ -31,9 +31,9 @@ class ManageDatabase(object):
 
         try:
             with transaction.atomic():
-                metaKey = MetaKey.objects.get_or_create(name=meta_key_name)
+                metaKey, _ = MetaKey.objects.get_or_create(name=meta_key_name)
         except DatabaseError:
-            metaKey = MetaKey.objects.get_or_create(name=meta_key_name)
+            metaKey, _ = MetaKey.objects.get_or_create(name=meta_key_name)
 
         return metaKey
 

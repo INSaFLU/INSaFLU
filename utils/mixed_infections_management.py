@@ -35,11 +35,11 @@ class MixedInfectionsManagement(object):
 
         try:
             with transaction.atomic():
-                mixed_infections_tag = MixedInfectionsTag.objects.get_or_create(
+                mixed_infections_tag, _ = MixedInfectionsTag.objects.get_or_create(
                     name=tag
                 )
         except DatabaseError:
-            mixed_infections_tag = MixedInfectionsTag.objects.get_or_create(name=tag)
+            mixed_infections_tag, _ = MixedInfectionsTag.objects.get_or_create(name=tag)
 
         lst_mixed_infections = MixedInfections.objects.filter(
             tag=mixed_infections_tag,
@@ -105,11 +105,11 @@ class MixedInfectionsManagement(object):
 
         try:
             with transaction.atomic():
-                mixed_infections_tag = MixedInfectionsTag.objects.get_or_create(
+                mixed_infections_tag, _ = MixedInfectionsTag.objects.get_or_create(
                     name=tag
                 )
         except DatabaseError:
-            mixed_infections_tag = MixedInfectionsTag.objects.get_or_create(name=tag)
+            mixed_infections_tag, _ = MixedInfectionsTag.objects.get_or_create(name=tag)
 
         mixed_infections = MixedInfections()
         mixed_infections.tag = mixed_infections_tag

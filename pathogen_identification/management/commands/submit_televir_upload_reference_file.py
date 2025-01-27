@@ -125,9 +125,14 @@ class Command(BaseCommand):
                         metadata_table["Accession ID"] == record.id
                     ]["Description"].values[0]
 
-                    taxid = ReferenceTaxid.objects.get_or_create(
-                        taxid=taxid,
-                    )[0]
+                    try:
+                        taxid = ReferenceTaxid.objects.get_or_create(
+                            taxid=taxid,
+                        )
+                    except ReferenceTaxid.MultipleObjectsReturned:
+                        taxid = ReferenceTaxid.objects.filter(
+                            taxid=taxid,
+                        ).first()
 
                     reference_source = ReferenceSource.objects.create(
                         accid=record.id,

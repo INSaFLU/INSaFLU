@@ -123,7 +123,7 @@ class SoftwareNames(object):
         "HCoV_OC43_KF530084.1_McClure2024.fa",
         "HCoV_HKU1_DQ415913.1_McClure2024.fa",
         "HCoV_229E_KF293666.1_McClure2024.fa",
-        #"MPXV_xGEN_Mpox_Amplicon_panel_no_ITR.fa",
+        # "MPXV_xGEN_Mpox_Amplicon_panel_no_ITR.fa",
     ]
     ### collect stat data for ILLUMINA, in form of key value
     SOFTWARE_ILLUMINA_stat = "illumina_stat"
@@ -278,6 +278,7 @@ class SoftwareNames(object):
     )
     SOFTWARE_Alignment2phenotype_parameters = "-g S"  ## Alignment2phenotype
 
+    ########### Snippy
     SOFTWARE_SNIPPY = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/snippy")
     SOFTWARE_SNIPPY_name = "Snippy"
     SOFTWARE_SNIPPY_name_extended = (
@@ -290,7 +291,7 @@ class SoftwareNames(object):
         SOFTWARE_SNIPPY_no_primer,
         "SARS_CoV_2_MN908947_artic_3.fa",
         "SARS_CoV_2_MN908947_artic_4.1.fa",
-        "SARS_CoV_2_MN908947_artic_5.3.2.fa",        
+        "SARS_CoV_2_MN908947_artic_5.3.2.fa",
         "MPXV_MT903345_Yale_PrimalSeq_v.1.fa",
         "MPXV_comb-ccc7sszn.fa",
         "RSV_A_KT992094_Wang2022.fa",
@@ -299,9 +300,15 @@ class SoftwareNames(object):
         "HCoV_NL63_KF530113.1_McClure2024.fa",
         "HCoV_OC43_KF530084.1_McClure2024.fa",
         "HCoV_HKU1_DQ415913.1_McClure2024.fa",
-        "HCoV_229E_KF293666.1_McClure2024.fa",                
-        #"MPXV_xGEN_Mpox_Amplicon_panel_no_ITR.fa",
+        "HCoV_229E_KF293666.1_McClure2024.fa",
+        # "MPXV_xGEN_Mpox_Amplicon_panel_no_ITR.fa",
     ]
+
+    SOFTWARE_IVAR = os.path.join(DIR_SOFTWARE_SNIPPY, "binaries/ivar")
+    SOFTWARE_IVAR_name = "iVar"
+    SOFTWARE_IVAR_name_extended = "iVar Full Pipeline"
+    SOFTWARE_IVAR_VERSION = "1.4.2"
+    SOFTWARE_IVAR_PARAMETERS = ""
 
     #### VERY important, change in snippy-vcf
     #     mmp@california:/usr/local/software/insaflu/snippy/bin$ diff snippy-vcf_to_tab_add_freq snippy-vcf_to_tab_add_freq~
@@ -370,7 +377,7 @@ class SoftwareNames(object):
     SOFTWARE_PROKKA_name = "Prokka"
     SOFTWARE_PROKKA_VERSION = "1.2"
     SOFTWARE_PROKKA_PARAMETERS = (
-        #"--kingdom Viruses --locustag locus --genus Influenzavirus --species Influenzavirus --strain "
+        # "--kingdom Viruses --locustag locus --genus Influenzavirus --species Influenzavirus --strain "
         "--kingdom Viruses --genus Virus --locustag locus --strain "
         "ref_PREFIX_FILES_OUT --gcode " + str(Constants.TRANSLATE_TABLE_NUMBER)
     )
@@ -513,7 +520,7 @@ class SoftwareNames(object):
 
     SOFTWARE_NEXTSTRAIN_BUILDS_mpox = [
         SOFTWARE_NEXTSTRAIN_BUILDS_mpx,
-        SOFTWARE_NEXTSTRAIN_BUILDS_mpox_clade_i
+        SOFTWARE_NEXTSTRAIN_BUILDS_mpox_clade_i,
     ]
 
     SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y = "flu_h3n2_12y"
@@ -528,7 +535,7 @@ class SoftwareNames(object):
     SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_np = "avianflu_h5n1_np"
     SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na = "avianflu_h5n1_na"
     SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_mp = "avianflu_h5n1_mp"
-    SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns = "avianflu_h5n1_ns"  
+    SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns = "avianflu_h5n1_ns"
 
     SOFTWARE_NEXTSTRAIN_BUILDS_flu = [
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y,
@@ -540,12 +547,12 @@ class SoftwareNames(object):
     SOFTWARE_NEXTSTRAIN_BUILDS_avianflu = [
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2,
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb1,
-        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pa,                
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pa,
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha,
-        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_np,        
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_np,
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na,
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_mp,
-        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns,                                
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns,
     ]
 
     SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a = "rsv_a"
@@ -556,18 +563,18 @@ class SoftwareNames(object):
         SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b,
     ]
 
-    SOFTWARE_NEXTSTRAIN_BUILDS_dengue_all = "dengue_all_genome"       
-    SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv1 = "dengue_denv1_genome"       
-    SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv2 = "dengue_denv2_genome"       
-    SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv3 = "dengue_denv3_genome"       
-    SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4 = "dengue_denv4_genome"         
+    SOFTWARE_NEXTSTRAIN_BUILDS_dengue_all = "dengue_all_genome"
+    SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv1 = "dengue_denv1_genome"
+    SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv2 = "dengue_denv2_genome"
+    SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv3 = "dengue_denv3_genome"
+    SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4 = "dengue_denv4_genome"
 
     SOFTWARE_NEXTSTRAIN_BUILDS_dengue = [
         SOFTWARE_NEXTSTRAIN_BUILDS_dengue_all,
         SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv1,
         SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv2,
         SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv3,
-        SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4
+        SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4,
     ]
 
     SOFTWARE_NEXTSTRAIN_BUILDS = [
@@ -581,11 +588,11 @@ class SoftwareNames(object):
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha,
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na,
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2,
-        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb1,        
-        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pa,        
-        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_np,        
-        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_mp,        
-        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns,        
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb1,
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pa,
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_np,
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_mp,
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns,
         SOFTWARE_NEXTSTRAIN_BUILDS_mpx,
         SOFTWARE_NEXTSTRAIN_BUILDS_mpox_clade_i,
         SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a,
@@ -594,7 +601,7 @@ class SoftwareNames(object):
         SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv1,
         SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv2,
         SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv3,
-        SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4
+        SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4,
     ]
     SOFTWARE_NEXTSTRAIN_BUILDS_DESC = [
         [SOFTWARE_NEXTSTRAIN_BUILDS_generic, "Generic"],
@@ -607,11 +614,11 @@ class SoftwareNames(object):
         [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha, "Avian Influenza (H5N1 HA)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na, "Avian Influenza (H5N1 NA)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2, "Avian Influenza (H5N1 PB2)"],
-        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb1, "Avian Influenza (H5N1 PB1)"],        
-        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pa, "Avian Influenza (H5N1 PA)"],        
-        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_np, "Avian Influenza (H5N1 NP)"],        
-        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_mp, "Avian Influenza (H5N1 MP)"],        
-        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns, "Avian Influenza (H5N1 NS)"],        
+        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb1, "Avian Influenza (H5N1 PB1)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pa, "Avian Influenza (H5N1 PA)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_np, "Avian Influenza (H5N1 NP)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_mp, "Avian Influenza (H5N1 MP)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns, "Avian Influenza (H5N1 NS)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_mpx, "mpox (hMPXV)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_mpox_clade_i, "mpox (clade I)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a, "RSV (A)"],
@@ -620,7 +627,7 @@ class SoftwareNames(object):
         [SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv1, "Dengue (DENV1)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv2, "Dengue (DENV2)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv3, "Dengue (DENV3)"],
-        [SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4, "Dengue (DENV4)"],        
+        [SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4, "Dengue (DENV4)"],
     ]
 
     # default build
@@ -688,7 +695,7 @@ class SoftwareNames(object):
     SOFTWARE_DUSTMASKER = "/usr/bin/dustmasker"
     SOFTWARE_DUSTMASKER_VERSION = "2.7.1"
 
-    SOFTWARE_DUSTMASKER_PARAM_MASK_name= "-masking"
+    SOFTWARE_DUSTMASKER_PARAM_MASK_name = "-masking"
     SOFTWARE_DUSTMASKER_PARAM_MASK_SOFT = "soft_masking"
     SOFTWARE_DUSTMASKER_PARAM_MASK_HARD = "hard_masking"
     SOFTWARE_DUSTMASKER_PARAM_MASK_NONE = "no_masking"
@@ -1225,6 +1232,25 @@ class SoftwareNames(object):
 
     def get_snippy_parameters(self):
         return self.SOFTWARE_SNIPPY_PARAMETERS
+
+    """
+    return iVar software
+    """
+
+    def get_ivar(self):
+        return self.SOFTWARE_IVAR
+
+    def get_ivar_name(self):
+        return self.SOFTWARE_IVAR_name
+
+    def get_ivar_name_extended(self):
+        return self.SOFTWARE_IVAR_name_extended
+
+    def get_ivar_version(self):
+        return self.SOFTWARE_IVAR_VERSION
+
+    def get_ivar_parameters(self):
+        return self.SOFTWARE_IVAR_PARAMETERS
 
     """
     return snippy-vcf_to_tab software. Add FRED

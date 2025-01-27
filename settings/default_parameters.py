@@ -6,16 +6,18 @@ Created on 10/04/2021
 
 import logging
 import os
-from typing import List
+from typing import List, Optional
 
 from django.conf import settings
 
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PI_ConstantsSettings
-from pathogen_identification.utilities.utilities_pipeline import \
-    Utility_Pipeline_Manager
+from pathogen_identification.constants_settings import (
+    ConstantsSettings as PI_ConstantsSettings,
+)
+from pathogen_identification.utilities.utilities_pipeline import (
+    Utility_Pipeline_Manager,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -59,8 +61,8 @@ class DefaultParameters(object):
         """
         Constructor
         """
-        #televir_util = Parameter_DB_Utility()
-        #software_list = televir_util.get_software_list()
+        # televir_util = Parameter_DB_Utility()
+        # software_list = televir_util.get_software_list()
 
         self.televir_db_manager = Utility_Pipeline_Manager()
 
@@ -69,7 +71,6 @@ class DefaultParameters(object):
         if prep_televir_dbs:
             self.televir_db_manager.get_software_db_dict()
             self.televir_db_manager.get_host_dbs()
-
 
     def get_software_parameters_version(self, software_name):
         """
@@ -122,6 +123,7 @@ class DefaultParameters(object):
                 try:
                     software = Software.objects.get(
                         name=parameter.software.name,
+                        name_extended=parameter.software.name_extended,
                         owner=parameter.software.owner,
                         type_of_use=parameter.software.type_of_use,
                         technology=parameter.software.technology,
@@ -254,8 +256,14 @@ class DefaultParameters(object):
         return software_list[0]
 
     def get_software_global(
-        self, user, software_name, technology_name, type_of_use, televir_project=None
-    ):
+        self,
+        user,
+        software_name,
+        technology_name,
+        type_of_use,
+        televir_project=None,
+        is_to_run=True,
+    ) -> Optional[Software]:
         """
         Get software global
         """
@@ -276,6 +284,9 @@ class DefaultParameters(object):
                 version_parameters=self.get_software_parameters_version(software_name),
                 parameter__televir_project=televir_project,
             )
+
+        if is_to_run == True:
+            software_list = software_list.filter(is_to_run=True)
 
         if len(software_list) == 0:
             return None
@@ -299,6 +310,8 @@ class DefaultParameters(object):
         dataset=None,
         televir_project=None,
         pipeline_step=None,
+        software_name_extended=None,
+        is_to_run=False,
     ):
         """
         get software_name parameters, if it saved in database...
@@ -328,6 +341,7 @@ class DefaultParameters(object):
                 technology_name,
                 type_of_use,
                 televir_project=televir_project,
+                is_to_run=is_to_run,
             )
 
         if software is None:
@@ -724,11 +738,18 @@ class DefaultParameters(object):
         """return all parameters, by software instance"""
 
         if software.name == SoftwareNames.SOFTWARE_SNIPPY_name:
-            return self.get_snippy_default(
-                software.owner,
-                Software.TYPE_OF_USE_global,
-                ConstantsSettings.TECHNOLOGY_illumina,
-            )
+            if software.name_extended == SoftwareNames.SOFTWARE_IVAR_name_extended:
+                return self.get_ivar_default(
+                    software.owner,
+                    Software.TYPE_OF_USE_global,
+                    ConstantsSettings.TECHNOLOGY_illumina,
+                )
+            else:
+                return self.get_snippy_default(
+                    software.owner,
+                    Software.TYPE_OF_USE_global,
+                    ConstantsSettings.TECHNOLOGY_illumina,
+                )
         elif software.name == SoftwareNames.SOFTWARE_TRIMMOMATIC_name:
             return self.get_trimmomatic_default(
                 software.owner,
@@ -1191,6 +1212,128 @@ class DefaultParameters(object):
         parameter.can_change = True
         parameter.sequence_out = 4
         parameter.description = "PRIMER: fasta of primers used for amplicon sequencing"
+        vect_parameters.append(parameter)
+
+        return vect_parameters
+
+    def get_ivar_default(
+        self,
+        user,
+        type_of_use,
+        technology_name,
+        project=None,
+        project_sample=None,
+        pipeline_step=None,
+    ):
+        """
+        –mapqual: minimum mapping quality to allow (–mapqual 20)
+        —mincov: minimum coverage of variant site (–mincov 10)
+        –minfrac: minumum proportion for variant evidence (–minfrac 0.51)
+        primer: Fasta of amplicon scheme primers for filtering ("")
+        """
+        if not pipeline_step:
+            pipeline_step = ConstantsSettings.PIPELINE_NAME_variant_detection
+
+        software = Software()
+        software.name = SoftwareNames.SOFTWARE_SNIPPY_name
+        software.name_extended = SoftwareNames.SOFTWARE_IVAR_name_extended
+        software.version = SoftwareNames.SOFTWARE_IVAR_VERSION
+        software.type_of_use = type_of_use
+        software.type_of_software = Software.TYPE_SOFTWARE
+        software.version_parameters = self.get_software_parameters_version(
+            software.name
+        )
+        software.technology = self.get_technology(technology_name)
+        software.can_be_on_off_in_pipeline = (
+            False  ## set to True if can be ON/OFF in pipeline, otherwise always ON
+        )
+        software.is_to_run = True  ## set to True if it is going to run, for example Trimmomatic can run or not
+
+        ###  small description of software
+        software.help_text = ""
+
+        ###  which part of pipeline is going to run
+        software.pipeline_step = self._get_pipeline(pipeline_step)
+        software.owner = user
+
+        vect_parameters = []
+
+        parameter = Parameter()
+        parameter.name = DefaultParameters.SNIPPY_MAPQUAL_NAME
+        parameter.parameter = "20"
+        parameter.type_data = Parameter.PARAMETER_int
+        parameter.software = software
+        parameter.project = project
+        parameter.project_sample = project_sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True  ### by default it's True
+        parameter.sequence_out = 1
+        parameter.range_available = "[0:100]"
+        parameter.range_max = "100"
+        parameter.range_min = "0"
+        parameter.description = "MAPQUAL: is the minimum mapping quality to accept in variant calling (–mapqual 20)."
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = DefaultParameters.SNIPPY_COVERAGE_NAME
+        parameter.parameter = "10"
+        parameter.type_data = Parameter.PARAMETER_int
+        parameter.software = software
+        parameter.project = project
+        parameter.project_sample = project_sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.sequence_out = 2
+        parameter.range_available = "[4:100]"
+        parameter.range_max = "100"
+        parameter.range_min = "4"
+        parameter.description = "MINCOV: the minimum number of reads covering a site to be considered (–mincov 10)."
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "--minfrac"
+        parameter.parameter = "0.51"
+        parameter.type_data = Parameter.PARAMETER_float
+        parameter.software = software
+        parameter.project = project
+        parameter.project_sample = project_sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.sequence_out = 3
+        parameter.range_available = "[0.5:1.0]"
+        parameter.range_max = "1.0"
+        parameter.range_min = "0.5"
+        parameter.description = (
+            "MINFRAC: minimum proportion for variant evidence (–minfrac 0.51)"
+        )
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = DefaultParameters.SNIPPY_PRIMER_NAME
+        parameter.parameter = SoftwareNames.SOFTWARE_SNIPPY_no_primer
+        # parameter.not_set_value = SoftwareNames.SOFTWARE_SNIPPY_no_primer
+        parameter.not_set_value = "NA"
+        parameter.type_data = Parameter.PARAMETER_char_list
+        parameter.software = software
+        parameter.project = project
+        parameter.project_sample = project_sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.sequence_out = 4
+        parameter.description = "PRIMER: fasta of primers used for amplicon sequencing"
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "--ivar"
+        parameter.parameter = ""
+        parameter.type_data = Parameter.PARAMETER_char
+        parameter.software = software
+        parameter.project_sample = project_sample
+        parameter.union_char = " "
+        parameter.can_change = False
+        parameter.sequence_out = 5
+        parameter.description = "ivar"
         vect_parameters.append(parameter)
 
         return vect_parameters
@@ -3318,7 +3461,13 @@ class DefaultParameters(object):
         return vect_parameters
 
     def get_kraken2_default(
-        self, user, type_of_use, technology_name, sample=None, pipeline_step="", is_to_run=True
+        self,
+        user,
+        type_of_use,
+        technology_name,
+        sample=None,
+        pipeline_step="",
+        is_to_run=True,
     ):
         """
         kraken2 default

@@ -68,7 +68,7 @@ class SoftwaresTable(tables.Table):
         self.televir_project = televir_project
         self.televir_project_sample = televir_project_sample
         if default_software is None:
-            self.default_software = DefaultSoftware(test= 1)
+            self.default_software = DefaultSoftware(test=1)
         else:
             self.default_software = default_software
 
@@ -178,7 +178,11 @@ class SoftwaresTable(tables.Table):
         ):
 
             return self.default_software.get_parameters(
-                record.name, user, technology_name, pipeline_step=record.pipeline_step
+                record.name,
+                user,
+                technology_name,
+                pipeline_step=record.pipeline_step,
+                name_extended=record.name_extended,
             )
         elif self.dataset is not None:
             # default_software_projects = DefaultProjectSoftware()
@@ -812,7 +816,11 @@ class INSaFLUParametersTable(tables.Table):
         if self.project is None and self.project_sample is None:
             # default_software = DefaultSoftware()
             return self.default_software.get_parameters(
-                record.name, user, technology_name, pipeline_step=pipeline_step
+                record.name,
+                user,
+                technology_name,
+                pipeline_step=pipeline_step,
+                name_extended=record.name_extended,
             )
         elif self.project_sample is None:
             default_software_projects = DefaultProjectSoftware()

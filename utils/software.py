@@ -36,6 +36,7 @@ from managing_files.models import (
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software_project_sample import DefaultProjectSoftware
+from settings.models import Software as SoftwareSettings
 from utils.coverage import DrawAllCoverage
 from utils.mixed_infections_management import MixedInfectionsManagement
 from utils.parse_coverage_file import GetCoverage
@@ -3095,15 +3096,28 @@ class Software(object):
 
             ## process snippy
             try:
+                ### get software
+                software = (
+                    default_project_software.default_parameters.get_software_global(
+                        user,
+                        SoftwareNames.SOFTWARE_SNIPPY_name,
+                        ConstantsSettings.TECHNOLOGY_illumina,
+                        project_sample,
+                        SoftwareSettings.TYPE_OF_USE_project_sample,
+                    )
+                )
+                if software is None:
+                    raise Exception("Snippy software not found.")
                 ### get snippy parameters
                 snippy_parameters = (
                     default_project_software.get_snippy_parameters_all_possibilities(
-                        user, project_sample
+                        user, project_sample, is_to_run=True
                     )
                 )
                 snippy_parameters = default_project_software.edit_primerNone_parameters(
                     snippy_parameters
                 )
+
                 out_put_path = self.run_snippy(
                     project_sample.sample.get_fastq_available(
                         TypePath.MEDIA_ROOT, True
@@ -3122,8 +3136,8 @@ class Software(object):
                 )
                 result_all.add_software(
                     SoftwareDesc(
-                        self.software_names.get_snippy_name(),
-                        self.software_names.get_snippy_version(),
+                        software.first().name,
+                        software.first().version,
                         snippy_parameters,
                     )
                 )
@@ -4551,7 +4565,9 @@ class Software(object):
             + " --configfile "
             + temp_dir
             + "/config/config.yaml"
-            + " > "+temp_dir+"/stdout.txt"
+            + " > "
+            + temp_dir
+            + "/stdout.txt"
         )
 
         exit_status = os.system(cmd)
@@ -4597,7 +4613,7 @@ class Software(object):
 
         cmd = "mv {} {}".format(
             os.path.join(temp_dir, "stdout.txt"),
-            os.path.join(temp_dir, "auspice", "log")
+            os.path.join(temp_dir, "auspice", "log"),
         )
         exit_status = os.system(cmd)
 
@@ -4720,7 +4736,9 @@ class Software(object):
             + temp_dir
             + " --cores "
             + str(cores)
-            + " > " + temp_dir +"/stdout.txt"
+            + " > "
+            + temp_dir
+            + "/stdout.txt"
         )
         exit_status = os.system(cmd)
         if exit_status != 0:
@@ -4762,13 +4780,12 @@ class Software(object):
                 cmd=cmd,
                 output_path=temp_dir,
             )
-        
+
         cmd = "mv {} {}".format(
             os.path.join(temp_dir, "stdout.txt"),
-            os.path.join(temp_dir, "auspice", "log")
+            os.path.join(temp_dir, "auspice", "log"),
         )
         exit_status = os.system(cmd)
-
 
         # Collect results
         zip_out = self.zip_files_in_path(os.path.join(temp_dir, "auspice"))
@@ -4837,7 +4854,12 @@ class Software(object):
 
         # Now run Nextstrain
         cmd = "{} build --native {} targets/flu_{}_ha_{} --cores {} > {}/stdout.txt".format(
-            SoftwareNames.SOFTWARE_NEXTSTRAIN, temp_dir, strain, period, str(cores), temp_dir
+            SoftwareNames.SOFTWARE_NEXTSTRAIN,
+            temp_dir,
+            strain,
+            period,
+            str(cores),
+            temp_dir,
         )
         exit_status = os.system(cmd)
         if exit_status != 0:
@@ -4884,7 +4906,7 @@ class Software(object):
 
         cmd = "mv {} {}".format(
             os.path.join(temp_dir, "stdout.txt"),
-            os.path.join(temp_dir, "auspice", "log")
+            os.path.join(temp_dir, "auspice", "log"),
         )
         exit_status = os.system(cmd)
 
@@ -4973,7 +4995,7 @@ class Software(object):
                 SoftwareNames.SOFTWARE_NEXTSTRAIN_snakemake,
                 str(cores),
                 SoftwareNames.SOFTWARE_NEXTSTRAIN_LABEL,
-                temp_dir
+                temp_dir,
             )
             exit_status = os.system(cmd)
             if exit_status != 0:
@@ -5041,10 +5063,9 @@ class Software(object):
                 output_path=temp_dir,
             )
 
-
         cmd = "mv {} {}".format(
             os.path.join(temp_dir, "stdout.txt"),
-            os.path.join(temp_dir, "auspice", "log")
+            os.path.join(temp_dir, "auspice", "log"),
         )
         exit_status = os.system(cmd)
 
@@ -5115,11 +5136,7 @@ class Software(object):
         # Now run Nextstrain
         # cmd = "{} -j {} {}/auspice/rsv_{}_genome.json {}/auspice/rsv_{}_G.json {}/auspice/rsv_{}_F.json --configfile {}/config/configfile.yaml".format(
         cmd = "cd {} && {} -j {} auspice/rsv_{}_genome.json --configfile config/configfile.yaml > {}/stdout.txt".format(
-            temp_dir,
-            SoftwareNames.SOFTWARE_NEXTSTRAIN_RSV,
-            str(cores),
-            type,
-            temp_dir
+            temp_dir, SoftwareNames.SOFTWARE_NEXTSTRAIN_RSV, str(cores), type, temp_dir
         )
         exit_status = os.system(cmd)
         if exit_status != 0:
@@ -5163,7 +5180,7 @@ class Software(object):
 
         cmd = "mv {} {}".format(
             os.path.join(temp_dir, "stdout.txt"),
-            os.path.join(temp_dir, "auspice", "log")
+            os.path.join(temp_dir, "auspice", "log"),
         )
         exit_status = os.system(cmd)
 
@@ -5240,7 +5257,10 @@ class Software(object):
 
         # Now run Nextstrain
         cmd = "{} build --native {} --cores {}  --configfile config/config_hmpxv1_big.yaml > {}".format(
-            SoftwareNames.SOFTWARE_NEXTSTRAIN_MPX, temp_dir, str(cores), os.path.join(temp_dir, "stdout.txt")
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_MPX,
+            temp_dir,
+            str(cores),
+            os.path.join(temp_dir, "stdout.txt"),
         )
         exit_status = os.system(cmd)
         if exit_status != 0:
@@ -5285,7 +5305,7 @@ class Software(object):
 
         cmd = "mv {} {}".format(
             os.path.join(temp_dir, "stdout.txt"),
-            os.path.join(temp_dir, "auspice", "log")
+            os.path.join(temp_dir, "auspice", "log"),
         )
         exit_status = os.system(cmd)
 

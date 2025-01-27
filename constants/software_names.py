@@ -118,7 +118,11 @@ class SoftwareNames(object):
         "MPXV_comb-ccc7sszn.fa",
         "RSV_A_KT992094_Wang2022.fa",
         "RSV_B_AF013254_Wang2022.fa",
-        "RSV_A_B_KT992094_AF013254_Wang2022.fa"
+        "RSV_A_B_KT992094_AF013254_Wang2022.fa",
+        "HCoV_NL63_KF530113.1_McClure2024.fa",
+        "HCoV_OC43_KF530084.1_McClure2024.fa",
+        "HCoV_HKU1_DQ415913.1_McClure2024.fa",
+        "HCoV_229E_KF293666.1_McClure2024.fa",
         #"MPXV_xGEN_Mpox_Amplicon_panel_no_ITR.fa",
     ]
     ### collect stat data for ILLUMINA, in form of key value
@@ -291,7 +295,11 @@ class SoftwareNames(object):
         "MPXV_comb-ccc7sszn.fa",
         "RSV_A_KT992094_Wang2022.fa",
         "RSV_B_AF013254_Wang2022.fa",
-        "RSV_A_B_KT992094_AF013254_Wang2022.fa"        
+        "RSV_A_B_KT992094_AF013254_Wang2022.fa",
+        "HCoV_NL63_KF530113.1_McClure2024.fa",
+        "HCoV_OC43_KF530084.1_McClure2024.fa",
+        "HCoV_HKU1_DQ415913.1_McClure2024.fa",
+        "HCoV_229E_KF293666.1_McClure2024.fa",                
         #"MPXV_xGEN_Mpox_Amplicon_panel_no_ITR.fa",
     ]
 
@@ -489,6 +497,9 @@ class SoftwareNames(object):
     SOFTWARE_NEXTSTRAIN_LABEL = os.path.join(
         settings.DIR_SOFTWARE, "nextstrain/flu-amd/LABEL"
     )
+    SOFTWARE_NEXTSTRAIN_DENGUE = os.path.join(
+        settings.DIR_SOFTWARE, "nextstrain/nextstrain_dengue.sh"
+    )
 
     ### Several types of builds for NEXTSTRAIN
     SOFTWARE_NEXTSTRAIN_BUILDS_BASE = os.path.join(
@@ -498,6 +509,12 @@ class SoftwareNames(object):
     SOFTWARE_NEXTSTRAIN_BUILDS_generic_time = "generic_time"
     SOFTWARE_NEXTSTRAIN_BUILDS_ncov = "ncov"
     SOFTWARE_NEXTSTRAIN_BUILDS_mpx = "mpx"
+    SOFTWARE_NEXTSTRAIN_BUILDS_mpox_clade_i = "mpox_clade-i"
+
+    SOFTWARE_NEXTSTRAIN_BUILDS_mpox = [
+        SOFTWARE_NEXTSTRAIN_BUILDS_mpx,
+        SOFTWARE_NEXTSTRAIN_BUILDS_mpox_clade_i
+    ]
 
     SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y = "flu_h3n2_12y"
     SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y = "flu_h1n1pdm_12y"
@@ -511,7 +528,7 @@ class SoftwareNames(object):
     SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_np = "avianflu_h5n1_np"
     SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na = "avianflu_h5n1_na"
     SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_mp = "avianflu_h5n1_mp"
-    SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns = "avianflu_h5n1_ns"        
+    SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns = "avianflu_h5n1_ns"  
 
     SOFTWARE_NEXTSTRAIN_BUILDS_flu = [
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y,
@@ -539,6 +556,20 @@ class SoftwareNames(object):
         SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b,
     ]
 
+    SOFTWARE_NEXTSTRAIN_BUILDS_dengue_all = "dengue_all_genome"       
+    SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv1 = "dengue_denv1_genome"       
+    SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv2 = "dengue_denv2_genome"       
+    SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv3 = "dengue_denv3_genome"       
+    SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4 = "dengue_denv4_genome"         
+
+    SOFTWARE_NEXTSTRAIN_BUILDS_dengue = [
+        SOFTWARE_NEXTSTRAIN_BUILDS_dengue_all,
+        SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv1,
+        SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv2,
+        SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv3,
+        SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4
+    ]
+
     SOFTWARE_NEXTSTRAIN_BUILDS = [
         SOFTWARE_NEXTSTRAIN_BUILDS_generic,
         SOFTWARE_NEXTSTRAIN_BUILDS_generic_time,
@@ -556,8 +587,14 @@ class SoftwareNames(object):
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_mp,        
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns,        
         SOFTWARE_NEXTSTRAIN_BUILDS_mpx,
+        SOFTWARE_NEXTSTRAIN_BUILDS_mpox_clade_i,
         SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a,
         SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b,
+        SOFTWARE_NEXTSTRAIN_BUILDS_dengue_all,
+        SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv1,
+        SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv2,
+        SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv3,
+        SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4
     ]
     SOFTWARE_NEXTSTRAIN_BUILDS_DESC = [
         [SOFTWARE_NEXTSTRAIN_BUILDS_generic, "Generic"],
@@ -576,8 +613,14 @@ class SoftwareNames(object):
         [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_mp, "Avian Influenza (H5N1 MP)"],        
         [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns, "Avian Influenza (H5N1 NS)"],        
         [SOFTWARE_NEXTSTRAIN_BUILDS_mpx, "mpox (hMPXV)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_mpox_clade_i, "mpox (clade I)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a, "RSV (A)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b, "RSV (B)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_dengue_all, "Dengue (all)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv1, "Dengue (DENV1)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv2, "Dengue (DENV2)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv3, "Dengue (DENV3)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4, "Dengue (DENV4)"],        
     ]
 
     # default build

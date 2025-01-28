@@ -7,7 +7,7 @@
 {% load view_breadcrumbs %}
 
 {% block css %}
-	{% load static %}
+	{% load static from staticfiles %}
 		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
 {% endblock css %}
 
@@ -159,7 +159,7 @@
 	
 </script>
  		
-{% load static %}
+{% load static from staticfiles %}
 <!-- Custom scripts for all pages-->
 <script type="text/javascript" src="{% static 'js/check-box-general.js' %}"></script>
 	

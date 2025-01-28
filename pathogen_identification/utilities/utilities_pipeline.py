@@ -2921,17 +2921,17 @@ class SoftwareTreeUtils:
                         if parent_node.exists():
                             parent_node = parent_node.first()
 
-                        tree_node = SoftwareTreeNode(
-                            software_tree=software_tree,
-                            index=index,
-                            name=node[0],
-                            value=node[1],
-                            node_type=node[2],
-                            parent=parent_node,
-                            node_place=is_leaf,
-                        )
-                        with transaction.atomic():
-                            tree_node.save()
+                    tree_node = SoftwareTreeNode(
+                        software_tree=software_tree,
+                        index=index,
+                        name=node[0],
+                        value=node[1],
+                        node_type=node[2],
+                        parent=parent_node,
+                        node_place=is_leaf,
+                    )
+                    with transaction.atomic():
+                        tree_node.save()
                 except Exception as e:
                     print(e)
 

@@ -7,7 +7,7 @@
 {% load view_breadcrumbs %}
 
 {% block css %}
-	{% load static %}
+	{% load static from staticfiles %}
 		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
 {% endblock css %}
 
@@ -124,7 +124,7 @@
 {% endblock content %}
 
 {% block js %}
-	{% load static %}
+	{% load static from staticfiles %}
 	    <script type="text/javascript" src="{% static 'js/remove_references.js' %}"></script>
 	    
 	<script>

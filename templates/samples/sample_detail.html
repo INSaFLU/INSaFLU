@@ -6,7 +6,7 @@
 {% load custom_filters %}
 
 {% block css %}
-	{% load static %}
+	{% load static from staticfiles %}
 		<!-- pre-define in-house css for main page-->
 		<link rel="stylesheet" href="{% static 'css/main-page.css' %}" type="text/css" />
 {% endblock css %}

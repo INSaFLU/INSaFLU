@@ -576,6 +576,7 @@ class DefaultProjectSoftware(object):
             project_sample,
             None,
             ConstantsSettings.TECHNOLOGY_illumina,
+            software_name_extended=SoftwareNames.SOFTWARE_IVAR_name_extended,
         )
 
     @staticmethod
@@ -617,6 +618,7 @@ class DefaultProjectSoftware(object):
             None,
             ConstantsSettings.TECHNOLOGY_illumina,
             is_to_run=is_to_run,
+            software_name_extended=SoftwareNames.SOFTWARE_SNIPPY_name_extended,
         )
         if not parameters is None:
             return parameters
@@ -2401,6 +2403,7 @@ class DefaultProjectSoftware(object):
         dataset=None,
         televir_project=None,
         pipeline_step=None,
+        name_extended=None,
     ):
         """ """
         self.test_default_db(

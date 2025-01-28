@@ -157,8 +157,9 @@ class DefaultSoftware(object):
 
         try:
             SoftwareDefaultTest.objects.get(user=user, is_tested_all_defaults=True)
-
+            print("TESTED")
         except SoftwareDefaultTest.DoesNotExist:
+            print("TESTINGGG")
             self.test_all_defaults(user)
             if not SoftwareDefaultTest.objects.filter(user=user).exists():
                 SoftwareDefaultTest.objects.create(
@@ -200,6 +201,7 @@ class DefaultSoftware(object):
                 user, Software.TYPE_OF_USE_global, ConstantsSettings.TECHNOLOGY_illumina
             ),
             user,
+            SoftwareNames.SOFTWARE_SNIPPY_name_extended,
         )
         self.test_default_db(
             SoftwareNames.SOFTWARE_SNIPPY_name,
@@ -946,7 +948,6 @@ class DefaultSoftware(object):
     def test_default_persist_specific(
         self, software_name, vect_parameters, user, name_extended, type_of_use
     ):
-        print("software_name", software_name, "name_extended", name_extended)
         try:
 
             software_queried = Software.objects.get(
@@ -960,7 +961,6 @@ class DefaultSoftware(object):
                 pipeline_step__name=vect_parameters[0].software.pipeline_step,
                 name_extended=name_extended,
             )
-            print("software_queried", software_queried)
 
         except Software.MultipleObjectsReturned:
             ## keep the first one, delete the rest
@@ -1012,19 +1012,22 @@ class DefaultSoftware(object):
             None,
             ConstantsSettings.TECHNOLOGY_illumina,
             is_to_run=is_to_run,
+            software_name_extended=SoftwareNames.SOFTWARE_SNIPPY_name_extended,
         )
         return "" if result is None else result
 
     def get_ivar_parameters(self, user):
         result = self.default_parameters.get_parameters(
-            SoftwareNames.SOFTWARE_IVAR_name,
+            SoftwareNames.SOFTWARE_SNIPPY_name,
             user,
             Software.TYPE_OF_USE_global,
             None,
             None,
             None,
             ConstantsSettings.TECHNOLOGY_illumina,
+            software_name_extended=SoftwareNames.SOFTWARE_IVAR_name_extended,
         )
+        return "" if result is None else result
 
     def get_freebayes_parameters(self, user):
         result = self.default_parameters.get_parameters(
@@ -1522,6 +1525,7 @@ class DefaultSoftware(object):
                 user,
             )
             return self.get_trimmomatic_parameters(user)
+
         if software_name == SoftwareNames.SOFTWARE_SNIPPY_name:
             if name_extended == SoftwareNames.SOFTWARE_IVAR_name_extended:
                 self.test_default_db(
@@ -1533,9 +1537,10 @@ class DefaultSoftware(object):
                         pipeline_step=ConstantsSettings.PIPELINE_NAME_variant_detection,
                     ),
                     user,
+                    SoftwareNames.SOFTWARE_IVAR_name_extended,
                 )
+                return self.get_ivar_parameters(user)
 
-                return self.get_snippy_parameters(user)
             else:
                 self.test_default_db(
                     SoftwareNames.SOFTWARE_SNIPPY_name,
@@ -1546,6 +1551,7 @@ class DefaultSoftware(object):
                         pipeline_step=ConstantsSettings.PIPELINE_NAME_variant_detection,
                     ),
                     user,
+                    SoftwareNames.SOFTWARE_SNIPPY_name_extended,
                 )
 
                 return self.get_snippy_parameters(user)

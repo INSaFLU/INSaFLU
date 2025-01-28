@@ -263,6 +263,7 @@ class DefaultParameters(object):
         type_of_use,
         televir_project=None,
         is_to_run=True,
+        name_extended=None,
     ) -> Optional[Software]:
         """
         Get software global
@@ -287,6 +288,9 @@ class DefaultParameters(object):
 
         if is_to_run == True:
             software_list = software_list.filter(is_to_run=True)
+
+        if name_extended is not None:
+            software_list = software_list.filter(name_extended=name_extended)
 
         if len(software_list) == 0:
             return None
@@ -335,6 +339,7 @@ class DefaultParameters(object):
             )
 
         else:
+
             software = self.get_software_global(
                 user,
                 software_name,
@@ -342,13 +347,13 @@ class DefaultParameters(object):
                 type_of_use,
                 televir_project=televir_project,
                 is_to_run=is_to_run,
+                name_extended=software_name_extended,
             )
 
         if software is None:
             return software
 
         # logger.debug("Get parameters: software-{} user-{} typeofuse-{} project-{} psample-{} sample-{} tec-{} dataset-{}",software, user, type_of_use, project, project_sample, sample, technology_name, dataset)
-
         ## get parameters for a specific user
         parameters = Parameter.objects.filter(
             software=software,
@@ -360,7 +365,6 @@ class DefaultParameters(object):
         )
 
         # logger.debug("Get parameters: {}".format(parameters))
-
         ### if only one parameter and it is don't care, return dont_care
         if len(list(parameters)) == 1 and list(parameters)[0].name in [
             DefaultParameters.MASK_not_applicable,
@@ -1135,7 +1139,7 @@ class DefaultParameters(object):
         )
         software.technology = self.get_technology(technology_name)
         software.can_be_on_off_in_pipeline = (
-            False  ## set to True if can be ON/OFF in pipeline, otherwise always ON
+            True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
         )
         software.is_to_run = True  ## set to True if it is going to run, for example Trimmomatic can run or not
 
@@ -1245,7 +1249,7 @@ class DefaultParameters(object):
         )
         software.technology = self.get_technology(technology_name)
         software.can_be_on_off_in_pipeline = (
-            False  ## set to True if can be ON/OFF in pipeline, otherwise always ON
+            True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
         )
         software.is_to_run = True  ## set to True if it is going to run, for example Trimmomatic can run or not
 

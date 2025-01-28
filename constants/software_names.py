@@ -1040,7 +1040,6 @@ class SoftwareNames(object):
     ### software with application in multiple pipeline_steps:
     polyvalent_software = [
         SOFTWARE_CENTRIFUGE_name,
-        SOFTWARE_SNIPPY_name,
         SOFTWARE_BWA_name,
         SOFTWARE_BOWTIE2_REMAP_name,
         SOFTWARE_KRAKEN2_name,

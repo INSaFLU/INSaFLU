@@ -8,7 +8,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 from django.contrib.auth.models import User
-from django.db import transaction
+from django.db import DatabaseError, transaction
 from django.db.models import Q, QuerySet
 
 from constants.constants import Televir_Directory_Constants as Televir_Directories
@@ -25,7 +25,6 @@ from pathogen_identification.models import (
 from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
-from utils.lock_atomic_transaction import LockedAtomicTransaction
 
 tree = lambda: defaultdict(tree)
 
@@ -2898,36 +2897,37 @@ class SoftwareTreeUtils:
             except SoftwareTreeNode.DoesNotExist:
 
                 try:
-                    with LockedAtomicTransaction(SoftwareTreeNode):
-                        parent_node_index = parent_dict.get(index, None)
-                        parent_node = None
+                    # with LockedAtomicTransaction(SoftwareTreeNode):
 
-                        if parent_node_index != None:
-                            parent_node = tree.nodes[parent_node_index]
-                            parent_name = parent_node[0]
-                            parent_value = parent_node[1]
-                            parent_type = parent_node[2]
-                            parent_node = SoftwareTreeNode.objects.filter(
-                                software_tree=software_tree,
-                                index=parent_dict[index],
-                                name=parent_name,
-                                value=parent_value,
-                                node_type=parent_type,
-                            )
-                            if parent_node.exists():
-                                parent_node = parent_node.first()
+                    parent_node_index = parent_dict.get(index, None)
+                    parent_node = None
 
-                        tree_node = SoftwareTreeNode(
+                    if parent_node_index != None:
+                        parent_node = tree.nodes[parent_node_index]
+                        parent_name = parent_node[0]
+                        parent_value = parent_node[1]
+                        parent_type = parent_node[2]
+                        parent_node = SoftwareTreeNode.objects.filter(
                             software_tree=software_tree,
-                            index=index,
-                            name=node[0],
-                            value=node[1],
-                            node_type=node[2],
-                            parent=parent_node,
-                            node_place=is_leaf,
+                            index=parent_dict[index],
+                            name=parent_name,
+                            value=parent_value,
+                            node_type=parent_type,
                         )
-                        with transaction.atomic():
-                            tree_node.save()
+                        if parent_node.exists():
+                            parent_node = parent_node.first()
+
+                    tree_node = SoftwareTreeNode(
+                        software_tree=software_tree,
+                        index=index,
+                        name=node[0],
+                        value=node[1],
+                        node_type=node[2],
+                        parent=parent_node,
+                        node_place=is_leaf,
+                    )
+                    with transaction.atomic():
+                        tree_node.save()
                 except Exception as e:
                     print(e)
 

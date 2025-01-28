@@ -13,7 +13,7 @@
 {%load report_colors %}
 
 {% block css %}
-	{% load static %}
+	{% load static from staticfiles %}
         <link rel="stylesheet" href="{% static 'css/result_table.css' %}" />
         <link rel="stylesheet" href="{% static 'css/result_detail.css' %}" />
         <link rel="stylesheet" href="{% static 'css/result_detail_buttons.css' %}" />

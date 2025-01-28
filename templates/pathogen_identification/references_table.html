@@ -18,7 +18,7 @@
 
 
 {% block css %}
-	{% load static %}
+	{% load static from staticfiles %}
 		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
     <link rel="stylesheet" href="{% static 'css/televir_software_graph/collapsibleTree-0.1.6/collapsibleTree.css' %}" />
     <link rel="stylesheet" href="{% static 'css/reference_management.css' %}">
@@ -514,7 +514,7 @@
 
 {% block js %}
 
-{% load static %}
+{% load static from staticfiles %}
 <!-- Custom scripts for all pages-->
 <script type="text/javascript" src="{% static 'js/check-box-general.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/graph_televir/htmlwidgets-1.6.2/htmlwidgets.js' %}"></script>

@@ -78,7 +78,7 @@
 {% endblock %}
 
  {% block js %}
- 	 {% load static %}
+ 	 {% load static from staticfiles %}
  	 	<script type="text/javascript" src="{% static 'jQuery_File_Upload/js/vendor/jquery.ui.widget.js' %}"></script>
 		<script type="text/javascript" src="{% static 'jQuery_File_Upload/js/jquery.iframe-transport.js' %}"></script>
 		<script type="text/javascript" src="{% static 'jQuery_File_Upload/js/jquery.fileupload.js' %}"></script>

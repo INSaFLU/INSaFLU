@@ -176,10 +176,16 @@ class SoftwaresTable(tables.Table):
             and self.dataset is None
             and self.televir_project is None
         ):
-
-            return self.default_software.get_parameters(
-                record.name, user, technology_name, pipeline_step=record.pipeline_step
+            print("RENDER PARAMETERS")
+            print(record.name)
+            parameters = self.default_software.get_parameters(
+                record.name,
+                user,
+                technology_name,
+                pipeline_step=record.pipeline_step,
+                name_extended=record.name_extended,
             )
+            return parameters
         elif self.dataset is not None:
             # default_software_projects = DefaultProjectSoftware()
             # logger.debug("Dataset parameters for {}".format(self.dataset))
@@ -206,6 +212,7 @@ class SoftwaresTable(tables.Table):
                 None,
                 technology_name=technology_name,
                 pipeline_step=record.pipeline_step.name,
+                name_extended=record.name_extended,
             )
             if parameters == DefaultParameters.MASK_DONT_care:
                 if record.name == SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name:
@@ -221,6 +228,7 @@ class SoftwaresTable(tables.Table):
                 self.project_sample,
                 None,
                 technology_name,
+                name_extended=record.name_extended,
             )
             if parameters == DefaultParameters.MASK_DONT_care:
                 if record.name == SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name:
@@ -236,6 +244,7 @@ class SoftwaresTable(tables.Table):
                 None,
                 self.sample,
                 technology_name,
+                name_extended=record.name_extended,
             )
         elif not self.televir_project is None:
             default_software_projects = DefaultProjectSoftware()
@@ -249,6 +258,7 @@ class SoftwaresTable(tables.Table):
                 technology_name,
                 televir_project=self.televir_project,
                 pipeline_step=record.pipeline_step.name,
+                name_extended=record.name_extended,
             )
         return ""
 
@@ -812,7 +822,11 @@ class INSaFLUParametersTable(tables.Table):
         if self.project is None and self.project_sample is None:
             # default_software = DefaultSoftware()
             return self.default_software.get_parameters(
-                record.name, user, technology_name, pipeline_step=pipeline_step
+                record.name,
+                user,
+                technology_name,
+                pipeline_step=pipeline_step,
+                name_extended=record.name_extended,
             )
         elif self.project_sample is None:
             default_software_projects = DefaultProjectSoftware()

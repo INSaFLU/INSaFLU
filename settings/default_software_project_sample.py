@@ -12,7 +12,6 @@ from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software import DefaultSoftware
 from settings.models import Parameter, Software
-from utils.lock_atomic_transaction import LockedAtomicTransaction
 
 
 class DefaultProjectSoftware(object):
@@ -293,27 +292,43 @@ class DefaultProjectSoftware(object):
         technology_name,
         dataset=None,
         televir_project=None,
+        name_extended=None,
     ):
         """
         test if exist, if not persist in database
         """
         ## lock because more than one process can duplicate software names
-
-        list_software = Software.objects.filter(
-            name=software_name,
-            owner=user,
-            type_of_use=type_of_use,
-            parameter__project=project,
-            parameter__project_sample=project_sample,
-            parameter__sample=sample,
-            parameter__dataset=dataset,
-            parameter__televir_project=televir_project,
-            version_parameters=self.default_parameters.get_software_parameters_version(
-                software_name
-            ),
-            technology__name=technology_name,
-        ).distinct("name")
-
+        if name_extended is not None:
+            list_software = Software.objects.filter(
+                name=software_name,
+                name_extended=name_extended,
+                owner=user,
+                type_of_use=type_of_use,
+                parameter__project=project,
+                parameter__project_sample=project_sample,
+                parameter__sample=sample,
+                parameter__dataset=dataset,
+                parameter__televir_project=televir_project,
+                version_parameters=self.default_parameters.get_software_parameters_version(
+                    software_name
+                ),
+                technology__name=technology_name,
+            ).distinct("name", "name_extended")
+        else:
+            list_software = Software.objects.filter(
+                name=software_name,
+                owner=user,
+                type_of_use=type_of_use,
+                parameter__project=project,
+                parameter__project_sample=project_sample,
+                parameter__sample=sample,
+                parameter__dataset=dataset,
+                parameter__televir_project=televir_project,
+                version_parameters=self.default_parameters.get_software_parameters_version(
+                    software_name
+                ),
+                technology__name=technology_name,
+            ).distinct("name")
         # logger = logging.getLogger("fluWebVirus.debug")
         # logger.debug("Test default db: {} ({})".format(list_software, len(list_software)))
 
@@ -328,6 +343,7 @@ class DefaultProjectSoftware(object):
                 sample,
                 technology_name,
                 dataset,
+                name_extended=name_extended,
             )
             if len(vect_parameters) > 0:  ### persist
                 self.default_parameters.persist_parameters(vect_parameters, type_of_use)
@@ -342,11 +358,17 @@ class DefaultProjectSoftware(object):
         sample,
         technology_name,
         dataset=None,
+        name_extended=None,
     ):
         if software_name == SoftwareNames.SOFTWARE_SNIPPY_name:
-            vect_parameters = self.default_parameters.get_snippy_default(
-                user, type_of_use, technology_name, project, project_sample
-            )  ### base values
+            if name_extended == SoftwareNames.SOFTWARE_IVAR_name_extended:
+                vect_parameters = self.default_parameters.get_ivar_default(
+                    user, type_of_use, technology_name, project, project_sample
+                )
+            else:
+                vect_parameters = self.default_parameters.get_snippy_default(
+                    user, type_of_use, technology_name, project, project_sample
+                )  ### base values
             if not project is None:
                 vect_parameters = self._get_default_project(
                     user,
@@ -354,6 +376,7 @@ class DefaultProjectSoftware(object):
                     None,
                     vect_parameters,
                     technology_name,
+                    name_extended=name_extended,
                 )  ### base values
             if not project_sample is None:
                 vect_parameters = self._get_default_project(
@@ -362,8 +385,10 @@ class DefaultProjectSoftware(object):
                     project_sample.project,
                     vect_parameters,
                     technology_name,
+                    name_extended=name_extended,
                 )  ### base values
             return vect_parameters
+
         elif software_name == SoftwareNames.SOFTWARE_FREEBAYES_name:
             vect_parameters = self.default_parameters.get_freebayes_default(
                 user, type_of_use, technology_name, project, project_sample
@@ -551,6 +576,7 @@ class DefaultProjectSoftware(object):
             project_sample,
             None,
             ConstantsSettings.TECHNOLOGY_illumina,
+            software_name_extended=SoftwareNames.SOFTWARE_IVAR_name_extended,
         )
 
     @staticmethod
@@ -561,7 +587,9 @@ class DefaultProjectSoftware(object):
 
         return parameter_string
 
-    def get_snippy_parameters_all_possibilities(self, user, project_sample):
+    def get_snippy_parameters_all_possibilities(
+        self, user, project_sample, is_to_run=True
+    ):
         """
         get snippy parameters for project_sample, project and default
         """
@@ -575,6 +603,7 @@ class DefaultProjectSoftware(object):
             project_sample,
             None,
             ConstantsSettings.TECHNOLOGY_illumina,
+            is_to_run=is_to_run,
         )
         if not parameters is None:
             return parameters
@@ -588,6 +617,8 @@ class DefaultProjectSoftware(object):
             None,
             None,
             ConstantsSettings.TECHNOLOGY_illumina,
+            is_to_run=is_to_run,
+            software_name_extended=SoftwareNames.SOFTWARE_SNIPPY_name_extended,
         )
         if not parameters is None:
             return parameters
@@ -2310,6 +2341,7 @@ class DefaultProjectSoftware(object):
             project_sample,
             sample,
             software.technology.name,
+            name_extended=software.name_extended,
         )
         parameters = Parameter.objects.filter(
             software=software,
@@ -2371,6 +2403,7 @@ class DefaultProjectSoftware(object):
         dataset=None,
         televir_project=None,
         pipeline_step=None,
+        name_extended=None,
     ):
         """ """
         self.test_default_db(
@@ -2419,7 +2452,13 @@ class DefaultProjectSoftware(object):
         return vect_software
 
     def _get_default_project(
-        self, user, software_name, project, vect_parameters, technology_name
+        self,
+        user,
+        software_name,
+        project,
+        vect_parameters,
+        technology_name,
+        name_extended=None,
     ):
         """
         :param software_name name of the software
@@ -2443,15 +2482,27 @@ class DefaultProjectSoftware(object):
             type_of_use = Software.TYPE_OF_USE_sample
 
         try:
-            software = Software.objects.get(
-                name=software_name,
-                owner=user,
-                type_of_use=type_of_use,
-                technology__name=technology_name,
-                version_parameters=self.default_parameters.get_software_parameters_version(
-                    software_name
-                ),
-            )
+            if name_extended is not None:
+                software = Software.objects.get(
+                    name=software_name,
+                    owner=user,
+                    type_of_use=type_of_use,
+                    technology__name=technology_name,
+                    version_parameters=self.default_parameters.get_software_parameters_version(
+                        software_name
+                    ),
+                    name_extended=name_extended,
+                )
+            else:
+                software = Software.objects.get(
+                    name=software_name,
+                    owner=user,
+                    type_of_use=type_of_use,
+                    technology__name=technology_name,
+                    version_parameters=self.default_parameters.get_software_parameters_version(
+                        software_name
+                    ),
+                )
         except Software.DoesNotExist:
             return vect_parameters
 

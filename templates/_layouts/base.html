@@ -10,7 +10,7 @@
 	<title>INSaFLU - Instituto Nacional de Saúde Doutor Ricardo Jorge</title>
 	<!-- Bootstrap core CSS-->
 
-	{% load static %}
+	{% load static from staticfiles %}
 	<link rel="stylesheet" href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet"
 		type="text/css">
 	<!-- Custom fonts for this template-->
@@ -247,7 +247,7 @@
 
 
 	<!-- Bootstrap core JavaScript-->
-	{% load static %}
+	{% load static from staticfiles %}
 	<script type="text/javascript" src="{% static 'vendor/jquery/jquery.min.js' %}"></script>
 	<script type="text/javascript" src="{% static 'vendor/popper/popper.min.js' %}"></script>
 	<script type="text/javascript" src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>

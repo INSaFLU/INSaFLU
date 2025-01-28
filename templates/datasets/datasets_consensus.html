@@ -7,7 +7,7 @@
 {% load view_breadcrumbs %}
 
 {% block css %}
-	{% load static from staticfiles %}
+	{% load static %}
 		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
 {% endblock css %}
 
@@ -229,7 +229,7 @@
 		
 	</script>
  		
- 	 {% load static from staticfiles %}
+ 	 {% load static %}
  	 		<!-- Custom scripts for all pages -->
 	    	<script type="text/javascript" src="{% static 'js/dataset/remove_consensus.js' %}"></script>
 	    	<script type="text/javascript" src="{% static 'js/check-box-general.js' %}"></script>

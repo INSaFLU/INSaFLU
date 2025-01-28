@@ -18,11 +18,14 @@ from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponseRedirect, JsonResponse
 from django.template.defaultfilters import filesizeformat, pluralize
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
+from django.utils.functional import cached_property
 from django.utils.safestring import mark_safe
+from django.utils.translation import gettext_lazy as _
 from django.views import generic
 from django.views.generic import DetailView, ListView, TemplateView
 from django_tables2 import RequestConfig
+from view_breadcrumbs import BaseBreadcrumbMixin, DetailBreadcrumbMixin
 
 from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
 from constants.meta_key_and_values import MetaKeyAndValue
@@ -97,8 +100,16 @@ class ProjectIndex(TemplateView):
         return context
 
 
-class ReferencesIndex(TemplateView):
+class ReferencesIndex(BaseBreadcrumbMixin, TemplateView):
     template_name = "references/index.html"
+    # crumbs = [("References Index", "settings-index")]
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("References Index", reverse("references-index")),
+        ]
 
     def get_context_data(self, **kwargs):
         context = super(ReferencesIndex, self).get_context_data(**kwargs)

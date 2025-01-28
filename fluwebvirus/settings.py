@@ -44,8 +44,8 @@ GOOGLE_RECAPTCHA_SECRET_KEY = config("GOOGLE_RECAPTCHA_SECRET_KEY", default="")
 SITE_KEY = config("SITE_KEY")
 
 ### crispy template
-CRISPY_TEMPLATE_PACK = "bootstrap4"
-BREADCRUMBS_TEMPLATE = "view_breadcrumbs/bootstrap4.html"
+CRISPY_TEMPLATE_PACK = "bootstrap5"
+BREADCRUMBS_TEMPLATE = "view_breadcrumbs/bootstrap5.html"
 
 CSRF_COOKIE_AGE = None
 CSRF_COOKIE_DOMAIN = ".min-saude.pt"

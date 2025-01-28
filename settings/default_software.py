@@ -991,10 +991,12 @@ class DefaultSoftware(object):
                 software = software_query.exclude(pk=software_query.last().pk)
 
                 parameters = Parameter.objects.filter(software__in=software)
-                with LockedAtomicTransaction(Parameter):
-                    parameters.delete()
-                with LockedAtomicTransaction(Software):
-                    software.delete()
+                try:
+                    with transaction.atomic():
+                        parameters.delete()
+                        software.delete()
+                except:
+                    pass
 
         except Software.DoesNotExist:
             self.default_parameters.persist_parameters(vect_parameters, type_of_use)

@@ -1,42 +1,45 @@
 from __future__ import absolute_import
 
-from django.views import generic
-from django.contrib.auth import authenticate, login, logout
+import json
+import urllib
 
-# from django.core.urlresolvers import reverse_lazy
-from django.urls import reverse_lazy
 from braces.views import (
     AnonymousRequiredMixin,
     FormValidMessageMixin,
     LoginRequiredMixin,
     MessageMixin,
 )
-from ipware.ip import get_ip
-from log_login.models import LoginHistory
-from managing_files.models import DataSet
-from constants.constants import Constants
+from django.conf import settings
 from django.contrib import messages
-from fluwebvirus.forms import (
-    RegistrationForm,
-    LoginForm,
-    ResetPasswordForm,
-    ChangePasswordForm,
-    GetMessageConfirmEmailForm,
-)
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from django.shortcuts import redirect
-from django.utils.encoding import force_bytes
-from django.utils.http import urlsafe_base64_encode
 from django.template.loader import render_to_string
-from fluwebvirus.tokens import account_activation_token
-from django.utils.encoding import force_str
-from django.utils.http import urlsafe_base64_decode
-from django.conf import settings
+
+# from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse_lazy
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.views import generic
 from embed_video.backends import detect_backend
-from utils.utils import ShowInfoMainPage
-import urllib, json
+from ipware.ip import get_ip
+from view_breadcrumbs import BaseBreadcrumbMixin
+
+from constants.constants import Constants
+from fluwebvirus.forms import (
+    ChangePasswordForm,
+    GetMessageConfirmEmailForm,
+    LoginForm,
+    RegistrationForm,
+    ResetPasswordForm,
+)
+from fluwebvirus.tokens import account_activation_token
+from log_login.models import LoginHistory
+from managing_files.models import DataSet
 from settings.default_software import DefaultSoftware
+from utils.utils import ShowInfoMainPage
+
 
 class HomePageView(generic.TemplateView):
     """
@@ -44,12 +47,17 @@ class HomePageView(generic.TemplateView):
     """
 
     template_name = "home.html"
+    crumbs = [
+        ("Home", reverse_lazy("home")),
+    ]
 
     def get_context_data(self, **kwargs):
         context = super(HomePageView, self).get_context_data(**kwargs)
 
         default_software = DefaultSoftware()
-        context["televir_available"] = default_software.test_televir_software_available()
+        context["televir_available"] = (
+            default_software.test_televir_software_available()
+        )
         context["version"] = settings.APP_VERSION_NUMBER
         context["nav_dashboard"] = True
         context["add_google_analytis"] = settings.ADD_GOOGLE_ANALYTICS
@@ -59,9 +67,9 @@ class HomePageView(generic.TemplateView):
             context["video_tutorial"] = detect_backend(
                 "https://www.youtube.com/watch?v=8AGaNrCGmtI"
             )
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
 
         return context
 
@@ -82,9 +90,9 @@ class SignUpView(AnonymousRequiredMixin, FormValidMessageMixin, generic.CreateVi
         context["use_recaptcha"] = (
             True if len(settings.GOOGLE_RECAPTCHA_SECRET_KEY) > 0 else False
         )
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
     def form_valid(self, form):
@@ -174,9 +182,9 @@ class ResetPasswordView(AnonymousRequiredMixin, generic.CreateView):
         context["use_recaptcha"] = (
             True if len(settings.GOOGLE_RECAPTCHA_SECRET_KEY) > 0 else False
         )
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
     def form_valid(self, form):
@@ -287,9 +295,9 @@ class GetMessageConfirmEmailView(AnonymousRequiredMixin, generic.CreateView):
         context["use_recaptcha"] = (
             True if len(settings.GOOGLE_RECAPTCHA_SECRET_KEY) > 0 else False
         )
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
     def form_valid(self, form):
@@ -405,9 +413,9 @@ class ChangePasswordView(
         context = super(ChangePasswordView, self).get_context_data(**kwargs)
         context["nav_modal"] = True  ## short the size of modal window
         context["not_show_breadcrumbs"] = True  ## to not show breadcrumbs
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
     def form_valid(self, form):
@@ -456,9 +464,9 @@ class LoginView(AnonymousRequiredMixin, FormValidMessageMixin, generic.FormView)
         context = super(LoginView, self).get_context_data(**kwargs)
         context["nav_modal"] = True  ## short the size of modal window
         context["not_show_breadcrumbs"] = True  ## to not show breadcrumbs
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
     def form_valid(self, form):

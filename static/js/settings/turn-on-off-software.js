@@ -33,10 +33,11 @@ $('#id-set-turn-on-off-button').on('click', function(){
 	    	if (data['is_ok']) {
 				var element = document.getElementById('check_box_' + software_id);
 				element.checked = data['is_to_run'];
-				
+				console.log(data['other_kills']);
+				console.log(data['is_to_run']);
 				for (const new_id of data['other_kills']) {
 					var new_element = document.getElementById('check_box_' + new_id);
-					new_element.checked = data['is_to_run'];
+					new_element.checked = false;
 				}
 	        	
 	        	/// add message with informaton

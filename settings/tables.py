@@ -176,8 +176,7 @@ class SoftwaresTable(tables.Table):
             and self.dataset is None
             and self.televir_project is None
         ):
-            print("RENDER PARAMETERS")
-            print(record.name)
+
             parameters = self.default_software.get_parameters(
                 record.name,
                 user,

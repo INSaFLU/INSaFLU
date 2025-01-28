@@ -157,9 +157,7 @@ class DefaultSoftware(object):
 
         try:
             SoftwareDefaultTest.objects.get(user=user, is_tested_all_defaults=True)
-            print("TESTED")
         except SoftwareDefaultTest.DoesNotExist:
-            print("TESTINGGG")
             self.test_all_defaults(user)
             if not SoftwareDefaultTest.objects.filter(user=user).exists():
                 SoftwareDefaultTest.objects.create(

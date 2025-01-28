@@ -978,11 +978,62 @@ def turn_on_off_software(request):
                         process_SGE.set_create_sample_list_by_user(
                             request.user, [job_name]
                         )
+                if (
+                    software.pipeline_step.name
+                    == ConstantsSettings.PIPELINE_NAME_variant_detection
+                    and software.is_to_run == True
+                ):
+                    if (
+                        Software.objects.filter(
+                            owner=software.owner,
+                            type_of_use=software.type_of_use,
+                            parameter__televir_project=televir_project,
+                            parameter__televir_project_sample=televir_project_sample,
+                            pipeline_step__name=ConstantsSettings.PIPELINE_NAME_variant_detection,
+                            technology=software.technology,
+                            is_to_run=True,
+                        )
+                        .distinct()
+                        .exclude(pk=software.pk)
+                    ).exists() is False:
+                        data["message"] = (
+                            "At least one {} software must be active.".format(
+                                ConstantsSettings.PIPELINE_NAME_variant_detection
+                            )
+                        )
+                        return JsonResponse(data)
 
                 ## set ON|OFF software
                 is_to_run = default_parameters.set_software_to_run_by_software(
                     software, project, televir_project, project_sample, sample
                 )
+                if (
+                    software.pipeline_step.name
+                    == ConstantsSettings.PIPELINE_NAME_variant_detection
+                    and is_to_run
+                ):
+                    ## need to turn off the other software
+                    active_filters = (
+                        Software.objects.filter(
+                            owner=software.owner,
+                            type_of_use=software.type_of_use,
+                            parameter__televir_project=televir_project,
+                            parameter__televir_project_sample=televir_project_sample,
+                            pipeline_step__name=ConstantsSettings.PIPELINE_NAME_variant_detection,
+                            technology=software.technology,
+                            is_to_run=True,
+                        )
+                        .distinct()
+                        .exclude(pk=software.pk)
+                    )
+
+                    for filter in active_filters:
+
+                        output = default_parameters.set_software_to_run_by_software(
+                            filter, project, televir_project, project_sample, sample
+                        )
+
+                        data["other_kills"] += [filter.pk]
 
                 if (
                     software.pipeline_step.name
@@ -1024,7 +1075,7 @@ def turn_on_off_software(request):
                 if (
                     software.pipeline_step.name
                     == ConstantsSettings.PIPELINE_NAME_request_mapping
-                    and not is_to_run
+                    and is_to_run == True
                 ):
                     if (
                         Software.objects.filter(
@@ -1064,6 +1115,7 @@ def turn_on_off_software(request):
                     software.technology.name,
                     "ON" if is_to_run else "OFF",
                 )
+                print(data)
 
             except Software.DoesNotExist:
                 return JsonResponse(data)

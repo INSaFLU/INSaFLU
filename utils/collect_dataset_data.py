@@ -104,15 +104,17 @@ class CollectExtraDatasetData(object):
         metaKeyAndValue = MetaKeyAndValue()
         
         try:
-
+            
             manage_database.get_max_length_label(dataset, user, True)
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_all_consensus, dataset)
 
             ## collect sample table with plus type and subtype, mixed infection, equal to upload table
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_CSV, dataset)
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_TSV, dataset)
+            
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV, dataset)       
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_CSV, dataset)
+
             ## Important, this need to be after DATASET_FILE_NAME_RESULT_NEXTSTRAIN_CSV
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_json, dataset)
 
@@ -232,9 +234,7 @@ class CollectExtraDatasetData(object):
         elif (type_file == Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV):
             ## samples tsv
             out_file = self.collect_nextstrain_table(dataset, Constants.SEPARATOR_TAB, build)
-            print("outfile:" + str(out_file))
             out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, type_file)
-            print("outfilesystem:" + str(out_file_file_system))
         elif (type_file == Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_CSV):
             ## samples csv
             out_file = self.collect_nextstrain_table(dataset, Constants.SEPARATOR_COMMA, build)
@@ -381,9 +381,15 @@ class CollectExtraDatasetData(object):
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic_time,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpx,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpox_clade_i,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_ncov,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a,
-            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_all,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv1,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv2,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv3,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4,
         ]
 
         build_to_ignore = False
@@ -529,6 +535,8 @@ class CollectExtraDatasetData(object):
             tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_ncov(alignments=sequences_file, metadata=metadata_file)
         elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpx):
             tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_mpx(alignments=sequences_file, metadata=metadata_file)             
+        elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpox_clade_i):
+            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_mpox(alignments=sequences_file, metadata=metadata_file, type="clade-i")              
         elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y):
             # This one can have extra parameters such as strain (default: h3n2, h1n1, etc...) and time period (default: 12y)
             tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_flu(alignments=sequences_file, metadata=metadata_file, strain='h3n2') 
@@ -557,7 +565,17 @@ class CollectExtraDatasetData(object):
         elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a):
             tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_rsv(alignments=sequences_file, metadata=metadata_file, type='a')
         elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b):
-            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_rsv(alignments=sequences_file, metadata=metadata_file, type='b')            
+            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_rsv(alignments=sequences_file, metadata=metadata_file, type='b')    
+        elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_all):
+            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_dengue(alignments=sequences_file, metadata=metadata_file, type='all')                      
+        elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv1):
+            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_dengue(alignments=sequences_file, metadata=metadata_file, type='denv1') 
+        elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv2):
+            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_dengue(alignments=sequences_file, metadata=metadata_file, type='denv2')  
+        elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv3):
+            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_dengue(alignments=sequences_file, metadata=metadata_file, type='denv3')  
+        elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4):
+            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_dengue(alignments=sequences_file, metadata=metadata_file, type='denv4')                                                    
         elif (build in [SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic, SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic_time]):
             # Need to get the reference fasta and genbank (if there is more than one reference, get the first one??)
             time = False
@@ -784,7 +802,7 @@ class CollectExtraDatasetData(object):
 
         if not os.path.exists(reference_tsv):
             reference_tsv = None
-    
+
         ## read last metadata nextstrain file, can exist from external upload
         upload_metadata_file = UploadFiles.objects.filter(owner__id=dataset.owner.id, is_deleted=False,\
             type_file__name=TypeFile.TYPE_FILE_dataset_file_metadata, is_valid=True,
@@ -804,7 +822,7 @@ class CollectExtraDatasetData(object):
                         quoting=csv.QUOTE_MINIMAL if column_separator == Constants.SEPARATOR_COMMA else csv.QUOTE_ALL)
             
             ### save metadata
-            n_count = data_columns.save_rows_nextstrain(csv_writer, reference_tsv, parse_in_files)
+            n_count = data_columns.save_rows_nextstrain(csv_writer, reference_tsv, parse_in_files)            
 
         if (n_count == 0):
             os.unlink(out_file)

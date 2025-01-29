@@ -82,6 +82,7 @@ class Reference(models.Model):
     ### species
     SPECIES_SARS_COV_2 = "SARS_COV_2"
     SPECIES_MPXV = "MPXV"
+    SPECIES_DENGUE = "DENGUE"
     SPECIES_INFLUENZA = "INFLUENZA"
     SPECIES_RSV = "RSV"
     SPECIES_NOT_SET = "NOT_SET"

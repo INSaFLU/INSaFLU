@@ -7,7 +7,7 @@
 {% load view_breadcrumbs %}
 
 {% block css %}
-	{% load static from staticfiles %}
+	{% load static %}
 		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
 		<link rel="stylesheet" href="{% static 'css/insaphylogeo.css' %}" type="text/css" />
 		<link rel="stylesheet" href="{% static 'css/project_sample_show.css' %}" type="text/css" />
@@ -588,7 +588,7 @@
 
  {% block js %}
  
- 	 {% load static from staticfiles %}
+ 	 {% load static %}
  	 		<!-- Custom scripts for all pages-->
 	    	
 	    	<!-- <script type="text/javascript" src="https://cdn.rawgit.com/phylocanvas/phylocanvas-quickstart/v2.8.1/phylocanvas-quickstart.js"></script> -->

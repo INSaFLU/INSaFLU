@@ -4,7 +4,7 @@
 {% load view_breadcrumbs %}
 
 {% block css %}
-	{% load static from staticfiles %}
+	{% load static %}
 		<link rel="stylesheet" href="{% static 'css/gijgo_1.6.1.css' %}" type="text/css" />
 		<link rel="stylesheet" href="{% static 'css/error_add_html.css' %}" type="text/css" />
 		<link rel="stylesheet" href="{% static 'css/sample-add.css' %}" type="text/css" />
@@ -83,7 +83,7 @@
 
  {% block js %}
  
- 	 {% load static from staticfiles %}
+ 	 {% load static %}
  	 		<!-- Custom scripts for all pages-->
 	    	<script type="text/javascript" src="{% static 'js/gijgo_1.6.1.js' %}"></script>
 	    	<script type="text/javascript" src="{% static 'js/sample_add.js' %}"></script>

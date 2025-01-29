@@ -485,6 +485,9 @@ class SoftwareNames(object):
         settings.DIR_SOFTWARE, "aln2pheno/algn2pheno_readme.txt"
     )
 
+    ### flumut
+    SOFTWARE_FLUMUT = os.path.join(settings.DIR_SOFTWARE, "flumut/flumut.sh")
+
     ### Nextstrain
     SOFTWARE_NEXTSTRAIN_DIR = os.path.join(settings.DIR_SOFTWARE, "nextstrain/")
     SOFTWARE_NEXTSTRAIN_VERSION = "0.1"

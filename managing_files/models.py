@@ -4,8 +4,10 @@ from datetime import datetime
 from operator import itemgetter
 
 from django.conf import settings
+
 # from django.db.models import Manager as GeoManager
 from django.contrib.auth.models import User
+
 # Create your models here.
 from django.contrib.gis.db.models import GeoManager  # #  change to django  2.x
 from django.contrib.gis.db.models import PointField
@@ -1001,6 +1003,16 @@ class Project(models.Model):
     PROJECT_FILE_NAME_Aln2pheno_flagged_carabelli = "aln2pheno_flagged_mutation_report_EpitopeResidues_Carabelli_2023.tsv"  ### has results of aln2pheno
     PROJECT_FILE_NAME_Aln2pheno_zip = "aln2pheno.zip"  ### has results of aln2pheno
 
+    PROJECT_FILE_NAME_Flumut_mutation_report = (
+        "flumut_mutation_report.tsv"  ### has results of flumut
+    )
+    PROJECT_FILE_NAME_Flumut_markers_report = (
+        "flumut_markers_report.tsv"  ### has results of flumut
+    )
+    PROJECT_FILE_NAME_flumut_excel = (
+        "flumut_full_report.xlsx"  ### has results of flumut
+    )
+
     PROJECT_FILE_NAME_all_files_zipped = "AllFiles.zip"  ### Several files zipped
 
     ## put the type file here to clean if there isn't enough sequences to create the trees and alignments
@@ -1831,7 +1843,7 @@ class ProcessControler(models.Model):
         return "{}_combined_metagen_{}_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, sample_pk, leaf_pk
         )
-    
+
     def get_name_televir_project_sample_panel_map(self, sample_pk, leaf_pk):
         return "{}_televir_panel_map_{}_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, sample_pk, leaf_pk
@@ -1851,7 +1863,7 @@ class ProcessControler(models.Model):
         return "{}_teleflu_ref_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, ref_id
         )
-    
+
     def get_name_file_televir_teleflu_ref_create(self, ref_id):
         return "{}_teleflu_file_ref_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, ref_id
@@ -1889,7 +1901,7 @@ class ProcessControler(models.Model):
         return "{}_add_references_to_sample_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, sample_pk
         )
-    
+
     def get_name_update_televir_project(self, project_id):
         return "{}_update_project_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, project_id

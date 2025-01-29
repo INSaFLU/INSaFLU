@@ -13,6 +13,7 @@ import os
 import random
 import re
 import stat
+from typing import Optional
 
 import pandas
 from Bio import SeqIO
@@ -28,6 +29,7 @@ from constants.software_names import SoftwareNames
 from datasets.models import DatasetConsensus
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProjectSample
+
 ## from Bio.Alphabet import IUPAC    version 1.78 doesn't have Bio.Alphabet
 from utils.result import FeatureLocationSimple, Gene, GeneticElement
 
@@ -629,7 +631,7 @@ class Utils(object):
                 return n_number_locus
         raise IOError(_("Error: the file is not in GenBank format."))
 
-    def get_elements_and_genes(self, genbank_name):
+    def get_elements_and_genes(self, genbank_name) -> GeneticElement:
         """
         return a dictonary with elements and vect genes
         vect_genes = [[pos_start, pos_end, name, strand 1|-1], [...], ...]
@@ -721,7 +723,7 @@ class Utils(object):
         return vect_elements
 
     @transaction.atomic
-    def get_elements_and_cds_from_db(self, reference, user):
+    def get_elements_and_cds_from_db(self, reference, user) -> Optional[GeneticElement]:
         """
         return geneticElement
         """

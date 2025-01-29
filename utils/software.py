@@ -38,6 +38,7 @@ from settings.default_parameters import DefaultParameters
 from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.models import Software as SoftwareSettings
 from utils.coverage import DrawAllCoverage
+from utils.exceptions import CmdException
 from utils.mixed_infections_management import MixedInfectionsManagement
 from utils.parse_coverage_file import GetCoverage
 from utils.parse_out_files import ParseOutFiles
@@ -5324,6 +5325,38 @@ class Software(object):
         self.utils.remove_dir(temp_dir)
 
         return [tree_file, alignment_file, auspice_zip]
+
+    def run_flumut(
+        self,
+        sequences,
+        markers_report,
+        mutations_report,
+        litterature_report,
+    ):
+        """
+        run flumut
+        :param sequences: sequence file with nucleotides from the influenza virus
+        :param reference: name of the reference (must be one of the sequences)
+        :param report: output file with final report
+        """
+
+        # Run flumut
+        cmd = "{} -m {} -M {} -l {} {}".format(
+            SoftwareNames.SOFTWARE_FLUMUT,
+            markers_report,
+            mutations_report,
+            litterature_report,
+            sequences,
+        )
+
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise Exception("Fail to run flumut")
+
+        # copy results to output
+        return exit_status
 
     def run_aln2pheno(
         self,

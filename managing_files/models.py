@@ -82,6 +82,7 @@ class Reference(models.Model):
     ### species
     SPECIES_SARS_COV_2 = "SARS_COV_2"
     SPECIES_MPXV = "MPXV"
+    SPECIES_DENGUE = "DENGUE"
     SPECIES_INFLUENZA = "INFLUENZA"
     SPECIES_RSV = "RSV"
     SPECIES_NOT_SET = "NOT_SET"
@@ -1002,6 +1003,19 @@ class Project(models.Model):
     PROJECT_FILE_NAME_Aln2pheno_report_carabelli = "aln2pheno_final_report_EpitopeResidues_Carabelli_2023.tsv"  ### has results of aln2pheno
     PROJECT_FILE_NAME_Aln2pheno_flagged_carabelli = "aln2pheno_flagged_mutation_report_EpitopeResidues_Carabelli_2023.tsv"  ### has results of aln2pheno
     PROJECT_FILE_NAME_Aln2pheno_zip = "aln2pheno.zip"  ### has results of aln2pheno
+
+    PROJECT_FILE_NAME_Flumut_mutation_report = (
+        "flumut_mutation_report.tsv"  ### has results of flumut
+    )
+    PROJECT_FILE_NAME_Flumut_markers_report = (
+        "flumut_markers_report.tsv"  ### has results of flumut
+    )
+    PROJECT_FILE_NAME_Flumut_litterature_report = (
+        "flumut_litterature_report.tsv"  ### has results of flumut
+    )
+    PROJECT_FILE_NAME_flumut_excel = (
+        "flumut_full_report.xlsx"  ### has results of flumut
+    )
 
     PROJECT_FILE_NAME_all_files_zipped = "AllFiles.zip"  ### Several files zipped
 

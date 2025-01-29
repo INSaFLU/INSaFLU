@@ -38,6 +38,7 @@ from settings.default_parameters import DefaultParameters
 from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.models import Software as SoftwareSettings
 from utils.coverage import DrawAllCoverage
+from utils.exceptions import CmdException
 from utils.mixed_infections_management import MixedInfectionsManagement
 from utils.parse_coverage_file import GetCoverage
 from utils.parse_out_files import ParseOutFiles
@@ -5317,6 +5318,287 @@ class Software(object):
         alignment_file = self.utils.get_temp_file("aligned.fasta", sz_type="fasta")
         self.utils.move_file(
             os.path.join(temp_dir, "results", "hmpxv1_big", "aligned.fasta"),
+            alignment_file,
+        )
+
+        self.utils.remove_dir(temp_dir)
+
+        return [tree_file, alignment_file, auspice_zip]
+
+    def run_flumut(
+        self,
+        sequences,
+        markers_report,
+        mutations_report,
+        litterature_report,
+        excel_report,
+    ):
+        """
+        run flumut
+        :param sequences: sequence file with nucleotides from the influenza virus
+        :param reference: name of the reference (must be one of the sequences)
+        :param report: output file with final report
+        """
+
+        # Run flumut
+        cmd = "{} -m {} -M {} -l {} -x {} {}".format(
+            SoftwareNames.SOFTWARE_FLUMUT,
+            markers_report,
+            mutations_report,
+            litterature_report,
+            excel_report,
+            sequences,
+        )
+
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise Exception("Fail to run flumut")
+
+        # copy results to output
+        return exit_status
+
+    def run_nextstrain_dengue(self, alignments, metadata, cores=1, type="all"):
+        """
+        run nextstrain
+        :param  alignments: sequence file with nucleotides
+        :param  metadata: tabbed table file with properties
+        :param  cores: the number of cores to be used in nextstrain (defaults to 1)
+        :out temp folder with all data (including results)
+        """
+
+        # Create a temp folder
+        temp_dir = self.utils.get_temp_dir()
+
+        # copy the base nexstrain folder to a temp folder
+        # TODO Make a function copy_folder in utils
+        build = "dengue"
+        cmd = (
+            "cp -r "
+            + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE
+            + "/"
+            + build
+            + "/phylogenetic"
+            + "/* "
+            + temp_dir
+        )
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise Exception(
+                "Fail to copy nexstrain folder "
+                + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE
+                + "/"
+                + build
+                + "/phylogenetic"
+                + "/* "
+                + temp_dir
+            )
+
+        # add sequences.fasta and metadata.tsv to data folder
+        # self.utils.copy_file(alignments,os.path.join(temp_dir, 'data', "sequences.fasta"))
+        self.utils.copy_file(
+            metadata, os.path.join(temp_dir, "data", "metadata_" + type + ".tsv")
+        )
+
+        self.utils.copy_file(
+            alignments, os.path.join(temp_dir, "data", "sequences_" + type + ".fasta")
+        )
+
+        self.utils.copy_file(
+            os.path.join(temp_dir, "Snakefile_" + type),
+            os.path.join(temp_dir, "Snakefile"),
+        )
+
+        # Now run Nextstrain
+        cmd = "{} build --native {} --cores {} > {}".format(
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_DENGUE,
+            temp_dir,
+            str(cores),
+            os.path.join(temp_dir, "stdout.txt"),
+        )
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise CmdException(
+                message="Fail to run nextstrain.", cmd=cmd, output_path=temp_dir
+            )
+
+        tree_file = self.utils.get_temp_file("treefile.nwk", sz_type="nwk")
+        # Convert json to tree
+        cmd = "{} --tree {} --output-tree {}".format(
+            os.path.join(settings.DIR_SOFTWARE, "nextstrain/auspice_tree_to_table.sh"),
+            os.path.join(temp_dir, "auspice", "dengue_" + type + "_genome.json"),
+            tree_file,
+        )
+
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise CmdException(
+                message="Fail to run conversion of json to tree.",
+                cmd=cmd,
+                output_path=temp_dir,
+            )
+
+        # Copy log folder to auspice to be included in the zip
+        cmd = "cp -r {} {}".format(
+            os.path.join(temp_dir, ".snakemake", "log"),
+            os.path.join(temp_dir, "auspice"),
+        )
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise CmdException(
+                message="Fail to copy log to output folder.",
+                cmd=cmd,
+                output_path=temp_dir,
+            )
+
+        cmd = "mv {} {}".format(
+            os.path.join(temp_dir, "stdout.txt"),
+            os.path.join(temp_dir, "auspice", "log"),
+        )
+        exit_status = os.system(cmd)
+
+        # Collect results
+        zip_out = self.zip_files_in_path(os.path.join(temp_dir, "auspice"))
+        auspice_zip = self.utils.get_temp_file("tempfile.zip", sz_type="zip")
+        self.utils.move_file(zip_out, auspice_zip)
+
+        # results/hmpxv1_big/aligned.fasta
+        alignment_file = self.utils.get_temp_file("aligned.fasta", sz_type="fasta")
+        self.utils.move_file(
+            os.path.join(temp_dir, "results", "genome", "aligned_" + type + ".fasta"),
+            alignment_file,
+        )
+
+        self.utils.remove_dir(temp_dir)
+
+        return [tree_file, alignment_file, auspice_zip]
+
+    def run_nextstrain_mpox(self, alignments, metadata, cores=1, type="all"):
+        """
+        run nextstrain
+        :param  alignments: sequence file with nucleotides
+        :param  metadata: tabbed table file with properties
+        :param  cores: the number of cores to be used in nextstrain (defaults to 1)
+        :out temp folder with all data (including results)
+        """
+
+        # Create a temp folder
+        temp_dir = self.utils.get_temp_dir()
+
+        # copy the base nexstrain folder to a temp folder
+        # TODO Make a function copy_folder in utils
+        build = "mpox"
+        cmd = (
+            "cp -r "
+            + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE
+            + "/"
+            + build
+            + "/phylogenetic"
+            + "/* "
+            + temp_dir
+        )
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise Exception(
+                "Fail to copy nexstrain folder "
+                + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE
+                + "/"
+                + build
+                + "/phylogenetic"
+                + "/* "
+                + temp_dir
+            )
+
+        # add sequences.fasta and metadata.tsv to data folder
+        # self.utils.copy_file(alignments,os.path.join(temp_dir, 'data', "sequences.fasta"))
+        self.utils.copy_file(metadata, os.path.join(temp_dir, "data", "metadata.tsv"))
+
+        self.utils.copy_file(
+            alignments, os.path.join(temp_dir, "data", "sequences.fasta")
+        )
+
+        self.utils.copy_file(
+            os.path.join(temp_dir, "Snakefile_" + type),
+            os.path.join(temp_dir, "Snakefile"),
+        )
+
+        # Now run Nextstrain
+        cmd = "{} build --native {} --cores {} > {}".format(
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_DENGUE,
+            temp_dir,
+            str(cores),
+            os.path.join(temp_dir, "stdout.txt"),
+        )
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise CmdException(
+                message="Fail to run nextstrain.", cmd=cmd, output_path=temp_dir
+            )
+
+        tree_file = self.utils.get_temp_file("treefile.nwk", sz_type="nwk")
+        # Convert json to tree
+        postfix = type
+        if type == "clade-i":
+            postfix = "clade-I"
+        cmd = "{} --tree {} --output-tree {}".format(
+            os.path.join(settings.DIR_SOFTWARE, "nextstrain/auspice_tree_to_table.sh"),
+            os.path.join(temp_dir, "auspice", "mpox_" + postfix + ".json"),
+            tree_file,
+        )
+
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise CmdException(
+                message="Fail to run conversion of json to tree.",
+                cmd=cmd,
+                output_path=temp_dir,
+            )
+
+        # Copy log folder to auspice to be included in the zip
+        cmd = "cp -r {} {}".format(
+            os.path.join(temp_dir, ".snakemake", "log"),
+            os.path.join(temp_dir, "auspice"),
+        )
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise CmdException(
+                message="Fail to copy log to output folder.",
+                cmd=cmd,
+                output_path=temp_dir,
+            )
+
+        cmd = "mv {} {}".format(
+            os.path.join(temp_dir, "stdout.txt"),
+            os.path.join(temp_dir, "auspice", "log"),
+        )
+        exit_status = os.system(cmd)
+
+        # Collect results
+        zip_out = self.zip_files_in_path(os.path.join(temp_dir, "auspice"))
+        auspice_zip = self.utils.get_temp_file("tempfile.zip", sz_type="zip")
+        self.utils.move_file(zip_out, auspice_zip)
+
+        # results/hmpxv1_big/aligned.fasta
+        alignment_file = self.utils.get_temp_file("aligned.fasta", sz_type="fasta")
+        self.utils.move_file(
+            os.path.join(temp_dir, "results", type, "aligned.fasta"),
             alignment_file,
         )
 

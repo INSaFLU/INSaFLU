@@ -1263,7 +1263,7 @@ class DefaultParameters(object):
         software.can_be_on_off_in_pipeline = (
             True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
         )
-        software.is_to_run = True  ## set to True if it is going to run, for example Trimmomatic can run or not
+        software.is_to_run = False  ## set to True if it is going to run, for example Trimmomatic can run or not
 
         ###  small description of software
         software.help_text = ""

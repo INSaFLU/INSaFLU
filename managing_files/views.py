@@ -91,7 +91,7 @@ class ProjectIndex(BaseBreadcrumbMixin, TemplateView):
     @cached_property
     def crumbs(self):
         return [
-            ("Projects Index", reverse("projects-index")),
+            ("Projects Index", reverse("project-index")),
         ]
 
     def get_context_data(self, **kwargs):

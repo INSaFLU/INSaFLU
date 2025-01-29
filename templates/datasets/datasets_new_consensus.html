@@ -4,7 +4,7 @@
 {% load view_breadcrumbs %}
 
 {% block css %}
-	{% load static from staticfiles %}
+	{% load static %}
 		<!-- pre-define in-house css for main page-->
 		<link rel="stylesheet" href="{% static 'css/main-page.css' %}" type="text/css" />
 		<link rel="stylesheet" href="{% static 'css/error_add_html.css' %}" type="text/css" />
@@ -48,7 +48,7 @@
 		});
 	</script>
 	
-	{% load static from staticfiles %}
+	{% load static %}
 		<!-- Custom scripts for all pages-->
 		<script type="text/javascript" src="{% static 'js/dataset/new_consensus_add.js' %}"></script>
 

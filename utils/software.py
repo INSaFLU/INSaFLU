@@ -5332,6 +5332,7 @@ class Software(object):
         markers_report,
         mutations_report,
         litterature_report,
+        excel_report,
     ):
         """
         run flumut
@@ -5341,11 +5342,12 @@ class Software(object):
         """
 
         # Run flumut
-        cmd = "{} -m {} -M {} -l {} {}".format(
+        cmd = "{} -m {} -M {} -l {} -x {} {}".format(
             SoftwareNames.SOFTWARE_FLUMUT,
             markers_report,
             mutations_report,
             litterature_report,
+            excel_report,
             sequences,
         )
 

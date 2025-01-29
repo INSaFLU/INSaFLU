@@ -1009,6 +1009,9 @@ class Project(models.Model):
     PROJECT_FILE_NAME_Flumut_markers_report = (
         "flumut_markers_report.tsv"  ### has results of flumut
     )
+    PROJECT_FILE_NAME_Flumut_litterature_report = (
+        "flumut_litterature_report.tsv"  ### has results of flumut
+    )
     PROJECT_FILE_NAME_flumut_excel = (
         "flumut_full_report.xlsx"  ### has results of flumut
     )

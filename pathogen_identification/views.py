@@ -27,10 +27,12 @@ from django.shortcuts import render
 from django.template.defaultfilters import pluralize
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
+from django.utils.functional import cached_property
 from django.utils.safestring import mark_safe
 from django.views import generic
 from django.views.generic import ListView
 from django_tables2 import RequestConfig
+from view_breadcrumbs import BaseBreadcrumbMixin, DetailBreadcrumbMixin
 
 from constants.constants import Constants, FileType, TypePath
 from constants.software_names import SoftwareNames
@@ -449,11 +451,20 @@ class Services(LoginRequiredMixin, generic.CreateView):
         return context
 
 
-class PathId_ProjectsView(LoginRequiredMixin, ListView):
+class PathId_ProjectsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
     model = Projects
     template_name = "pathogen_identification/projects.html"
     context_object_name = "projects"
     ##	group_required = u'company-user' security related with GroupRequiredMixin
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Projects Index", reverse("projects-index")),
+            ("TELEVIR Projects", reverse("PIprojects_main")),
+        ]
 
     def get_context_data(self, **kwargs):
         context = super(PathId_ProjectsView, self).get_context_data(**kwargs)
@@ -1071,7 +1082,7 @@ def teleflu_node_info(node, params_df, node_pk):
     return node_info
 
 
-class TelefluProjectView(LoginRequiredMixin, generic.CreateView):
+class TelefluProjectView(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView):
     """
     Teleflu Project
     """
@@ -1079,6 +1090,40 @@ class TelefluProjectView(LoginRequiredMixin, generic.CreateView):
     template_name = "pathogen_identification/teleflu.html"
     model = TeleFluProject
     fields = ["name"]
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Projects Index", reverse("projects-index")),
+            ("TELEVIR Projects", reverse("PIprojects_main")),
+            (
+                self.kwargs["project_name"],
+                reverse("teleflu_project", args=[self.kwargs["pk"]]),
+            ),
+            (
+                self.kwargs["teleflu_project_name"],
+                reverse("teleflu_project", args=[self.kwargs["pk"]]),
+            ),
+            (
+                self.kwargs["mapping_id"],
+                reverse("teleflu_mapping_igv", args=[self.kwargs["pk"]]),
+            ),
+        ]
+
+    def setup(self, request, *args, **kwargs):
+        super(TelefluMappingIGV, self).setup(request, *args, **kwargs)
+
+        teleflu_mapping_pk = int(self.kwargs["pk"])
+        teleflu_mapping = TelefluMapping.objects.get(pk=teleflu_mapping_pk)
+        project_name = teleflu_mapping.teleflu_project.name
+        self.kwargs["project_name"] = project_name
+        self.kwargs["project_index"] = (
+            teleflu_mapping.teleflu_project.televir_project.pk
+        )
+        self.kwargs["teleflu_project_name"] = (
+            f"Focus: {teleflu_mapping.teleflu_project.raw_reference.description_first}"
+        )
 
     def get_context_data(self, **kwargs):
         context = super(TelefluProjectView, self).get_context_data(**kwargs)
@@ -1162,12 +1207,48 @@ class TelefluProjectView(LoginRequiredMixin, generic.CreateView):
         return context
 
 
-class TelefluMappingIGV(LoginRequiredMixin, generic.TemplateView):
+class TelefluMappingIGV(BaseBreadcrumbMixin, LoginRequiredMixin, generic.TemplateView):
     """
     Teleflu Mapping IGV
     """
 
     template_name = "pathogen_identification/teleflu_mapping_igv.html"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Projects Index", reverse("projects-index")),
+            ("TELEVIR Projects", reverse("PIprojects_main")),
+            (
+                self.kwargs["project_name"],
+                reverse("teleflu_project", args=[self.kwargs["pk"]]),
+            ),
+            (
+                self.kwargs["teleflu_project_name"],
+                reverse("teleflu_project", args=[self.kwargs["pk"]]),
+            ),
+            (
+                self.kwargs["mapping_id"],
+                reverse("teleflu_mapping_igv", args=[self.kwargs["pk"]]),
+            ),
+        ]
+
+    def setup(self, request, *args, **kwargs):
+        super(TelefluMappingIGV, self).setup(request, *args, **kwargs)
+
+        teleflu_mapping_pk = int(self.kwargs["pk"])
+        teleflu_mapping = TelefluMapping.objects.get(pk=teleflu_mapping_pk)
+        project_name = teleflu_mapping.teleflu_project.name
+        self.kwargs["project_name"] = project_name
+        self.kwargs["project_index"] = (
+            teleflu_mapping.teleflu_project.televir_project.pk
+        )
+        self.kwargs["teleflu_project_name"] = (
+            f"Focus: {teleflu_mapping.teleflu_project.raw_reference.description_first}"
+        )
+        self.kwargs["mapping_id"] = f"IGV Mapping Workflow {teleflu_mapping.leaf.index}"
 
     def get_context_data(self, **kwargs):
         context = super(TelefluMappingIGV, self).get_context_data(**kwargs)
@@ -1403,7 +1484,7 @@ class INSaFLUMappingIGV(LoginRequiredMixin, generic.TemplateView):
         return context
 
 
-class Sample_main(LoginRequiredMixin, generic.CreateView):
+class Sample_main(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView):
     """
     sample main page with list runs per sample
     """
@@ -1411,6 +1492,37 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
     template_name = "pathogen_identification/sample_main.html"
     model = RunMain
     fields = ["name"]
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            (
+                ("Project Index", reverse("project-index")),
+                ("TELEVIR Projects", reverse("PIprojects_main")),
+                (
+                    self.kwargs["project_name"],
+                    reverse("PIproject_samples", kwargs={"pk": project_index}),
+                ),
+                (self.kwargs["sample_name"], ""),
+            )
+        ]
+
+    def setup(self, request, *args, **kwargs):
+        super(Sample_main, self).setup(request, *args, **kwargs)
+        project = Projects.objects.get(pk=self.kwargs["pk1"])
+        sample = PIProject_Sample.objects.get(pk=self.kwargs["pk2"])
+        if project.owner != self.request.user:
+            messages.error(
+                self.request,
+                "You do not have permission to access this project.",
+                fail_silently=True,
+            )
+            raise Http404
+
+        self.kwargs["project_name"] = project.name
+        self.kwargs["sample_name"] = sample.sample.name
 
     def get_context_data(self, **kwargs):
         context = super(Sample_main, self).get_context_data(**kwargs)
@@ -1700,7 +1812,9 @@ def inject__added_references(references: list, request):
 
 
 # class TeleFluProjectCreate(LoginRequiredMixin, generic.CreateView):
-class ReferencePanelManagement(LoginRequiredMixin, generic.CreateView):
+class ReferencePanelManagement(
+    BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView
+):
     """
     page to manage and create insaflu references.
 
@@ -1709,6 +1823,15 @@ class ReferencePanelManagement(LoginRequiredMixin, generic.CreateView):
     template_name = "pathogen_identification/reference_panel_management.html"
     fields = "__all__"
     utils = Utils()
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("References Index", reverse("references-index")),
+            ("Manage References", ""),
+        ]
 
     def get_queryset(self, **kwargs):
         user_pk = self.request.user.pk
@@ -1748,12 +1871,21 @@ from pathogen_identification.tables import (
 )
 
 
-class ReferenceManagementBase(TemplateView):
+class ReferenceManagementBase(BaseBreadcrumbMixin, TemplateView):
     """
     page to manage and create insaflu references files, generate panels.
     """
 
     template_name = "pathogen_identification/televir_references_base.html"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("References Index", reverse("references-index")),
+            ("Manage References", ""),
+        ]
 
     def get_context_data(self, **kwargs) -> Dict[str, Any]:
 
@@ -1762,7 +1894,9 @@ class ReferenceManagementBase(TemplateView):
         return context
 
 
-class ReferenceFileManagement(LoginRequiredMixin, generic.CreateView):
+class ReferenceFileManagement(
+    BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView
+):
     """
     page to manage and create insaflu references files.
 
@@ -1771,6 +1905,15 @@ class ReferenceFileManagement(LoginRequiredMixin, generic.CreateView):
     template_name = "pathogen_identification/televir_files_management.html"
     fields = "__all__"
     utils = Utils()
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("References Index", reverse("references-index")),
+            ("Manage Files", ""),
+        ]
 
     def get_queryset(self, **kwargs):
         user_pk = self.request.user.pk
@@ -1803,7 +1946,7 @@ class ReferenceFileManagement(LoginRequiredMixin, generic.CreateView):
         return context
 
 
-class ReferenceManagement(LoginRequiredMixin, generic.CreateView):
+class ReferenceManagement(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView):
     """
     page to manage and create insaflu references files.
 
@@ -1812,6 +1955,15 @@ class ReferenceManagement(LoginRequiredMixin, generic.CreateView):
     template_name = "pathogen_identification/televir_references_view.html"
     fields = "__all__"
     utils = Utils()
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("References Index", reverse("references-index")),
+            ("Manage References", ""),
+        ]
 
     def get_queryset(self, **kwargs):
         user_pk = self.request.user.pk
@@ -1940,7 +2092,9 @@ def download_template_view(request):
         return response
 
 
-class UploadReferencePanel(LoginRequiredMixin, FormValidMessageMixin, generic.FormView):
+class UploadReferencePanel(
+    BaseBreadcrumbMixin, LoginRequiredMixin, FormValidMessageMixin, generic.FormView
+):
     """
     page to manage and create insaflu references files.
 
@@ -1949,6 +2103,16 @@ class UploadReferencePanel(LoginRequiredMixin, FormValidMessageMixin, generic.Fo
     template_name = "pathogen_identification/televir_upload_panels.html"
     success_url = reverse_lazy("televir_reference_files")
     form_class = UploadFileForm
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("References Index", reverse("references-index")),
+            ("Manage Project References", "televir_reference_files"),
+            ("Upload Reference Panel", ""),
+        ]
 
     def get_form_kwargs(self):
         """ """
@@ -2077,7 +2241,9 @@ class UploadReferencePanel(LoginRequiredMixin, FormValidMessageMixin, generic.Fo
     form_valid_message = ""  ## need to have this
 
 
-class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
+class ReferencesManagementSample(
+    BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView
+):
     """
     page with raw references table for single sample. used to add references and select for remap
     """
@@ -2085,6 +2251,39 @@ class ReferencesManagementSample(LoginRequiredMixin, generic.CreateView):
     template_name = "pathogen_identification/references_table.html"
     fields = "__all__"
     utils = Utils()
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Project Index", reverse("project-index")),
+            ("TELEVIR Projects", reverse("PIprojects_main")),
+            (
+                self.kwargs["project_name"],
+                reverse("PIproject_samples", kwargs={"pk": self.kwargs["pk1"]}),
+            ),
+            (
+                self.kwargs["sample_name"],
+                reverse(
+                    "sample_main",
+                    kwargs={"pk1": self.kwargs["pk1"], "pk2": self.kwargs["pk2"]},
+                ),
+            ),
+            (
+                "References Management",
+                reverse(
+                    "sample_references_management", kwargs={"pk1": self.kwargs["pk2"]}
+                ),
+            ),
+        ]
+
+    def setup(self, request, *args, **kwargs):
+        super().setup(request, *args, **kwargs)
+        self.kwargs["pk1"] = int(self.kwargs["pk1"])
+        sample = PIProject_Sample.objects.get(pk=self.kwargs["pk1"])
+        self.kwargs["project_name"] = sample.project.name
+        self.kwargs["sample_name"] = sample.sample.name
 
     def get_queryset(self, **kwargs):
         sample_pk = int(self.kwargs["pk1"])
@@ -2393,13 +2592,69 @@ def Sample_reports(requesdst, pk1, pk2):
     )
 
 
-class Sample_detail(LoginRequiredMixin, generic.CreateView):
+class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView):
     """
     home page
     """
 
     template_name = "pathogen_identification/sample_detail.html"
     utils = Utils()
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            (
+                ("Project Index", reverse("project-index")),
+                ("TELEVIR Projects", reverse("PIprojects_main")),
+                (
+                    self.kwargs["project_name"],
+                    reverse("PIproject_samples", kwargs={"pk": self.kwargs["pk1"]}),
+                ),
+                (
+                    self.kwargs["sample_name"],
+                    reverse(
+                        "sample_main",
+                        kwargs={"pk1": self.kwargs["pk1"], "pk2": self.kwargs["pk2"]},
+                    ),
+                ),
+                (
+                    self.kwargs["run_name"],
+                    reverse(
+                        "sample_detail",
+                        kwargs={
+                            "pk1": self.kwargs["pk1"],
+                            "pk2": self.kwargs["pk2"],
+                            "pk3": self.kwargs["pk3"],
+                        },
+                    ),
+                ),
+            )
+        ]
+
+    def setup(self, request, *args, **kwargs):
+        super().setup(request, *args, **kwargs)
+        try:
+            sample = PIProject_Sample.objects.get(pk=self.kwargs["pk2"])
+        except PIProject_Sample.DoesNotExist:
+            messages.error(
+                request,
+                "Sample does not exist",
+                fail_silently=True,
+            )
+            raise Http404
+
+        try:
+            run_main_pipeline = RunMain.objects.get(pk=self.kwargs["pk3"])
+
+        except Exception as e:
+            messages.error(self.request, "Run does not exist")
+            raise Http404
+
+        self.kwargs["sample_name"] = sample.sample.name
+        self.kwargs["project_name"] = sample.project.name
+        self.kwargs["run_name"] = run_main_pipeline.parameter_set.leaf.index
 
     def get_context_data(self, **kwargs):
         project_pk = int(self.kwargs["pk1"])
@@ -2652,6 +2907,33 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
     template_name = "pathogen_identification/sample_detail_compound.html"
     utils = Utils()
 
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Project Index", reverse("project-index")),
+            ("TELEVIR Projects", reverse("PIprojects_main")),
+            (
+                self.kwargs["project"],
+                reverse("PIproject_samples", kwargs={"pk": self.kwargs["pk1"]}),
+            ),
+            (
+                self.kwargs["sample"],
+                reverse(
+                    "sample_main",
+                    kwargs={
+                        "pk1": self.kwargs["pk1"],
+                        "pk2": self.kwargs["pk2"],
+                    },
+                ),
+            ),
+        ]
+
+    def setup(self, request, *args, **kwargs):
+        super().setup(request, *args, **kwargs)
+        sample = PIProject_Sample.objects.get(pk=self.kwargs["pk2"])
+        self.kwargs["project_name"] = sample.project.name
+        self.kwargs["sample_name"] = sample.sample.name
+
     def get_context_data(self, **kwargs):
         project_pk = int(self.kwargs["pk1"])
         sample_pk = int(self.kwargs["pk2"])
@@ -2761,12 +3043,64 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         return context
 
 
-class Scaffold_Remap(LoginRequiredMixin, generic.CreateView):
+class Scaffold_Remap(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView):
     """
     scaffold remap
     """
 
     template_name = "pathogen_identification/scaffold_remap.html"
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Project Index", reverse("project-index")),
+            ("TELEVIR Projects", reverse("PIprojects_main")),
+            (
+                self.kwargs["project_name"],
+                reverse("PIproject_samples", kwargs={"pk": self.kwargs["pk1"]}),
+            ),
+            (
+                self.kwargs["sample_name"],
+                reverse(
+                    "sample_main",
+                    kwargs={"pk1": self.kwargs["pk1"], "pk2": self.kwargs["pk2"]},
+                ),
+            ),
+            (
+                self.kwargs["run_name"],
+                reverse(
+                    "sample_detail",
+                    kwargs={
+                        "pk1": self.kwargs["pk1"],
+                        "pk2": self.kwargs["pk2"],
+                        "pk3": self.kwargs["pk3"],
+                    },
+                ),
+            ),
+        ]
+
+    def setup(self, request, *args, **kwargs):
+        super().setup(request, *args, **kwargs)
+        try:
+            sample = PIProject_Sample.objects.get(pk=self.kwargs["pk2"])
+        except PIProject_Sample.DoesNotExist:
+            messages.error(
+                request,
+                "Sample does not exist",
+                fail_silently=True,
+            )
+            raise Http404
+
+        try:
+            run_main_pipeline = RunMain.objects.get(pk=self.kwargs["pk3"])
+
+        except Exception as e:
+            messages.error(self.request, "Run does not exist")
+            raise Http404
+
+        self.kwargs["sample_name"] = sample.sample.name
+        self.kwargs["project_name"] = sample.project.name
+        self.kwargs["run_name"] = run_main_pipeline.parameter_set.leaf.index
 
     def get_context_data(self, **kwargs):
         """"""

@@ -83,8 +83,16 @@ from utils.utils import ShowInfoMainPage, Utils
 # http://www.craigderington.me/generic-list-view-with-django-tables/
 
 
-class ProjectIndex(TemplateView):
+class ProjectIndex(BaseBreadcrumbMixin, TemplateView):
     template_name = "project/project_index.html"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Projects Index", reverse("projects-index")),
+        ]
 
     def get_context_data(self, **kwargs):
         context = super(ProjectIndex, self).get_context_data(**kwargs)
@@ -2009,7 +2017,9 @@ class ProjectsView(LoginRequiredMixin, ListView):
         return context
 
 
-class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.CreateView):
+class ProjectCreateView(
+    BaseBreadcrumbMixin, LoginRequiredMixin, FormValidMessageMixin, generic.CreateView
+):
     """
     Create a new reference
     """
@@ -2019,6 +2029,15 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
     fields = ["name"]
     success_url = reverse_lazy("projects")
     template_name = "project/project_add.html"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("TELEVIR Projects", reverse("PIprojects_main")),
+            ("Create Project", reverse("project-add")),
+        ]
 
     def get_form_kwargs(self):
         """

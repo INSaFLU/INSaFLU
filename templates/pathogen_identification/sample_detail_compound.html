@@ -22,21 +22,6 @@
         <link rel="stylesheet" href="{% static 'css/televir_software_graph/collapsibleTree-0.1.6/collapsibleTree.css' %}" />
 {% endblock css %}
 
-
-{% block breadcrumbs %}
-{{block.super}}
-{% if owner %}
-{% breadcrumb "Project Index" "project-index" %}
-{% breadcrumb "TELEVIR Projects" "PIprojects_main"  %}
-{% breadcrumb project "PIproject_samples"  pk=project_index  %}
-{% breadcrumb sample "sample_main" pk1=project_index pk2=sample_index  %}
-{% else %}
-{% breadcrumb "Project Index" "project-index" %}
-
-{% endif %}
-{% endblock %}
-
-
 {% block content %}
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script type="text/javascript" src="{% static 'js/televir_projects/heatmap_clades.js' %}"></script>

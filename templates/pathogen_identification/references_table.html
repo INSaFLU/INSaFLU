@@ -26,19 +26,6 @@
 
 {% endblock css %}
 
-{% block breadcrumbs %}
-{{block.super}}
-{% if owner %}
-{% breadcrumb "Project Index" "project-index" %}
-{% breadcrumb "TELEVIR Projects" "PIprojects_main"  %}
-{% breadcrumb project_name "PIproject_samples" pk=project_index %}
-{% breadcrumb sample_name "sample_main" pk1=project_index pk2=sample_index  %}
-{% breadcrumb "References Management" "sample_references_management" pk1=sample_index %}
-{% else %}
-{% breadcrumb "Project Index" "project-index" %}
-
-{% endif %}
-{% endblock %}
 
 {% block content %}
 

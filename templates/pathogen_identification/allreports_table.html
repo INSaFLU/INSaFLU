@@ -19,17 +19,6 @@
         <link rel="stylesheet" href="{% static 'css/result_detail_buttons.css' %}" />
 {% endblock css %}
 
-{% block breadcrumbs %}
-{{block.super}}
-{% breadcrumb "TELEVIR Projects" "PIprojects_main"  %}
-{% breadcrumb project "PIproject_samples"  pk=project_index  %}
-{% if sample %}
-{% breadcrumb sample "sample_main" pk1=project_index pk2=sample_index  %}
-{% breadcrumb "Sample Results All" "" %}
-{% else %}
-{% breadcrumb "Project Results All" "" %}
-{% endif %}
-{% endblock %}
 
 {% block content %}
 

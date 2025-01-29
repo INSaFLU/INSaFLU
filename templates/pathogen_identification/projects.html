@@ -13,12 +13,6 @@
 </div>
 {% endblock %}
 
-{% block breadcrumbs %}
-{{ block.super }}
-{% breadcrumb "Project Index" "project-index" %}
-{% breadcrumb "TELEVIR Projects" "PIprojects_main" %}
-{% endblock %}
-
 {% block content %}
 
 {% if table.page or show_paginatior %}

@@ -462,7 +462,7 @@ class PathId_ProjectsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
     @cached_property
     def crumbs(self):
         return [
-            ("Projects Index", reverse("projects-index")),
+            ("Projects Index", reverse("project-index")),
             ("TELEVIR Projects", reverse("PIprojects_main")),
         ]
 
@@ -1095,7 +1095,7 @@ class TelefluProjectView(BaseBreadcrumbMixin, LoginRequiredMixin, generic.Create
     @cached_property
     def crumbs(self):
         return [
-            ("Projects Index", reverse("projects-index")),
+            ("Projects Index", reverse("project-index")),
             ("TELEVIR Projects", reverse("PIprojects_main")),
             (
                 self.kwargs["project_name"],
@@ -1219,7 +1219,7 @@ class TelefluMappingIGV(BaseBreadcrumbMixin, LoginRequiredMixin, generic.Templat
     @cached_property
     def crumbs(self):
         return [
-            ("Projects Index", reverse("projects-index")),
+            ("Projects Index", reverse("project-index")),
             ("TELEVIR Projects", reverse("PIprojects_main")),
             (
                 self.kwargs["project_name"],

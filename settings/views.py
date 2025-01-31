@@ -1340,22 +1340,32 @@ class UpdateParametersDatasetView(BaseBreadcrumbMixin, LoginRequiredMixin, Updat
     form_valid_message = ""  ## need to have this
 
 
-class UpdateParametersProjSampleView(BaseBreadcrumbMixin, LoginRequiredMixin, UpdateView):
+class UpdateParametersProjSampleView(
+    BaseBreadcrumbMixin, LoginRequiredMixin, UpdateView
+):
     model = Software
     form_class = SoftwareForm
-    template_name = "settings/software_update.html
+    template_name = "settings/software_update.html"
 
     add_home = True
 
     @cached_property
     def crumbs(self):
-        return [
-            ("Project Index", reverse("project-index")),
-            ("Projects", reverse("projects")),
-            ("Show project results", reverse("show-sample-project-results", kwargs= {"pk": self.kwargs["pk_proj_sample"]})),
-            ("Project sample settings", reverse("sample-project-settings")),
-            ("Update parameters", reverse("software-update"))    
-        ], 
+        return (
+            [
+                ("Project Index", reverse("project-index")),
+                ("Projects", reverse("projects")),
+                (
+                    "Show project results",
+                    reverse(
+                        "show-sample-project-results",
+                        kwargs={"pk": self.kwargs["pk_proj_sample"]},
+                    ),
+                ),
+                ("Project sample settings", reverse("sample-project-settings")),
+                ("Update parameters", reverse("software-update")),
+            ],
+        )
 
     ## Other solution to get the reference
     ## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1
@@ -1522,13 +1532,21 @@ class UpdateParametersSampleView(BaseBreadcrumbMixin, LoginRequiredMixin, Update
 
     @cached_property
     def crumbs(self):
-        return [
-            ("Project Index", reverse("project-index")),
-            ("Projects", reverse("projects")),
-            ("Show project results", reverse("show-sample-project-results", kwargs= {"pk": self.kwargs["pk_proj_sample"]})),
-            ("Project sample settings", reverse("sample-project-settings")),
-            ("Update parameters", reverse("software-update"))    
-        ],
+        return (
+            [
+                ("Project Index", reverse("project-index")),
+                ("Projects", reverse("projects")),
+                (
+                    "Show project results",
+                    reverse(
+                        "show-sample-project-results",
+                        kwargs={"pk": self.kwargs["pk_proj_sample"]},
+                    ),
+                ),
+                ("Project sample settings", reverse("sample-project-settings")),
+                ("Update parameters", reverse("software-update")),
+            ],
+        )
 
     ## Other solution to get the reference
     ## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1

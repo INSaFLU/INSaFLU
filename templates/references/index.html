@@ -1,12 +1,15 @@
 {% extends '_layouts/base.html' %}
 
-{% load view_breadcrumbs %}
+{% load django_bootstrap_breadcrumbs %}
 {% load static %}
 
 {% block css %}
-	{% load static %}
+	{% load static from staticfiles %}
 		<link rel="stylesheet" href="{% static 'css/settings-index.css' %}" type="text/css" />
 {% endblock css %}
+
+{% block content %}
+
 
 <style>
 

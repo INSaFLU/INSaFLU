@@ -32,7 +32,7 @@ from django.utils.safestring import mark_safe
 from django.views import generic
 from django.views.generic import ListView
 from django_tables2 import RequestConfig
-from view_breadcrumbs import BaseBreadcrumbMixin, DetailBreadcrumbMixin
+from view_breadcrumbs import BaseBreadcrumbMixin
 
 from constants.constants import Constants, FileType, TypePath
 from constants.software_names import SoftwareNames
@@ -631,7 +631,7 @@ class PathID_ProjectCreateView(LoginRequiredMixin, generic.CreateView):
 
 
 class AddSamples_PIProjectsView(
-    LoginRequiredMixin, FormValidMessageMixin, generic.CreateView
+    BaseBreadcrumbMixin, LoginRequiredMixin, FormValidMessageMixin, generic.CreateView
 ):
     """
     Create a new reference
@@ -645,6 +645,19 @@ class AddSamples_PIProjectsView(
 
     logger_debug = logging.getLogger("fluWebVirus.debug")
     logger_production = logging.getLogger("fluWebVirus.production")
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Projects Index", reverse("project-index")),
+            ("TELEVIR Projects", reverse("PIprojects_main")),
+            (
+                "Add samples to project",
+                reverse("add-sample-project"),
+            ),
+        ]
 
     def get_context_data(self, **kwargs):
         context = super(AddSamples_PIProjectsView, self).get_context_data(**kwargs)

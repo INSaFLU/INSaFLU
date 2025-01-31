@@ -6,13 +6,6 @@
 {% block css %}
 {% endblock css %}
 
-{% block breadcrumbs %}
-	{{ block.super }}
-	{% breadcrumb "Samples" "samples" %}
-	{% breadcrumb "Add fastq files" "sample-add-fastq" %}
-	{% breadcrumb "Upload 'fastq' files" "sample-upload-fastq" %}
-{% endblock %}
-
 {% block content %}
 
     <div class="well text-muted text-center" style="padding-top: 2rem; padding-bottom: 2rem;">

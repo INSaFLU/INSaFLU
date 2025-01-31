@@ -21,12 +21,6 @@
 	</div>
 {% endblock %}
 
-{% block breadcrumbs %}
-	{{ block.super }}
-	{% breadcrumb "Projects" "projects" %}
-	{% breadcrumb "Show project results" "show-sample-project-results" %}
-{% endblock %}
-
 {% block content %}
 
 	{% if error_cant_see %}

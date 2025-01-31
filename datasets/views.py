@@ -1701,7 +1701,7 @@ class AddSingleMetadataDatasetFile(
     form_valid_message = ""  ## need to have this
 
 
-class DatasetsSettingsView(LoginRequiredMixin, ListView):
+class DatasetsSettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
     """
     To change settings in the datasetd
     """
@@ -1709,6 +1709,18 @@ class DatasetsSettingsView(LoginRequiredMixin, ListView):
     model = Dataset
     template_name = "settings/settings.html"
     context_object_name = "dataset"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            (
+                "Settings",
+                reverse("settings"),
+            ),
+            ("Update parameters", reverse("software-update")),
+        ]
 
     def get_context_data(self, **kwargs):
 

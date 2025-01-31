@@ -10,13 +10,6 @@
 		<link rel="stylesheet" href="{% static 'css/main-page.css' %}" type="text/css" />
 {% endblock css %}
 
-<!-- Breadcrumbs-->
-{% block breadcrumbs %}
-	{{ block.super }}
-	{% breadcrumb "Samples" "samples" %}
-	{% breadcrumb "Sample details" "sample-description" %}
-{% endblock %}
-
 <!-- https://developer.mozilla.org/en-US/docs/Learn/Server-side/Django/Generic_views -->
 {% block content %}
 	{% if error_cant_see %}

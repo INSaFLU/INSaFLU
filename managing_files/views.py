@@ -4,7 +4,6 @@ import logging
 import ntpath
 import os
 import sys
-from datetime import datetime
 from itertools import chain
 from operator import attrgetter
 
@@ -25,14 +24,13 @@ from django.utils.translation import gettext_lazy as _
 from django.views import generic
 from django.views.generic import DetailView, ListView, TemplateView
 from django_tables2 import RequestConfig
-from view_breadcrumbs import BaseBreadcrumbMixin, DetailBreadcrumbMixin
+from view_breadcrumbs import BaseBreadcrumbMixin
 
 from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.nextclade_links import get_constext_nextclade
 from constants.software_names import SoftwareNames
 from extend_user.models import Profile
-from manage_virus.constants_virus import ConstantsVirus
 from managing_files.forms import (
     AddSampleProjectForm,
     ReferenceForm,
@@ -134,11 +132,20 @@ class ReferencesIndex(BaseBreadcrumbMixin, TemplateView):
 
 
 # class ReferencesView(LoginRequiredMixin, GroupRequiredMixin, ListView):
-class ReferenceView(LoginRequiredMixin, ListView):
+class ReferenceView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
     model = Reference
     template_name = "references/references.html"
     context_object_name = "reference"
     ordering = ["id"]
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("References Index", reverse("references-index")),
+            ("References", reverse("references")),
+        ]
 
     def get_context_data(self, **kwargs):
         context = super(ReferenceView, self).get_context_data(**kwargs)
@@ -190,7 +197,9 @@ class ReferenceView(LoginRequiredMixin, ListView):
         return context
 
 
-class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView):
+class ReferenceAddView(
+    BaseBreadcrumbMixin, LoginRequiredMixin, FormValidMessageMixin, generic.FormView
+):
     """
     Create a new reference
     """
@@ -198,6 +207,16 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
     form_class = ReferenceForm
     success_url = reverse_lazy("references")
     template_name = "references/reference_add.html"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("References Index", reverse("references-index")),
+            ("References", reverse("references")),
+            ("Add Reference", reverse("reference-add")),
+        ]
 
     ## Other solution to get the reference
     ## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1
@@ -401,11 +420,17 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
     form_valid_message = ""  ## need to have this
 
 
-class SamplesView(LoginRequiredMixin, ListView):
+class SamplesView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
     model = Sample
     utils = Utils()
     template_name = "samples/samples.html"
     context_object_name = "samples"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [("Samples", reverse("samples"))]
 
     def get_context_data(self, **kwargs):
         context = super(SamplesView, self).get_context_data(**kwargs)
@@ -501,7 +526,9 @@ class SamplesView(LoginRequiredMixin, ListView):
         return context
 
 
-class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView):
+class SamplesAddView(
+    BaseBreadcrumbMixin, LoginRequiredMixin, FormValidMessageMixin, generic.FormView
+):
     """
     Create a new reference
     """
@@ -509,6 +536,15 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
     form_class = SampleForm
     success_url = reverse_lazy("samples")
     template_name = "samples/sample_add.html"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Samples", reverse("samples")),
+            ("Add a single Sample", reverse("sample-add")),
+        ]
 
     if settings.DEBUG:
         logger = logging.getLogger("fluWebVirus.debug")
@@ -694,7 +730,7 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 
 
 class SamplesAddDescriptionFileView(
-    LoginRequiredMixin, FormValidMessageMixin, generic.CreateView
+    BaseBreadcrumbMixin, LoginRequiredMixin, FormValidMessageMixin, generic.CreateView
 ):
     """
     Create a new reference
@@ -705,6 +741,15 @@ class SamplesAddDescriptionFileView(
     template_name = "samples/sample_description_file.html"
     model = UploadFiles
     fields = ["file_name"]
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Samples", reverse("samples")),
+            ("Add Samples from a (csv/tsv) file", reverse("sample-add-file")),
+        ]
 
     def get_form_kwargs(self):
         """
@@ -819,7 +864,7 @@ class SamplesAddDescriptionFileView(
 
 
 class SamplesUpdateMetadata(
-    LoginRequiredMixin, FormValidMessageMixin, generic.CreateView
+    BaseBreadcrumbMixin, LoginRequiredMixin, FormValidMessageMixin, generic.CreateView
 ):
     """
     Update metadata
@@ -830,6 +875,15 @@ class SamplesUpdateMetadata(
     template_name = "samples/sample_update_metadata.html"
     model = UploadFiles
     fields = ["file_name"]
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Samples", reverse("samples")),
+            ("Update metadata", reverse("sample-update-metadata")),
+        ]
 
     def get_form_kwargs(self):
         """
@@ -929,7 +983,7 @@ class SamplesUpdateMetadata(
 
 
 class SamplesUploadDescriptionFileView(
-    LoginRequiredMixin, FormValidMessageMixin, generic.FormView
+    BaseBreadcrumbMixin, LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 ):
     """
     Set new samples
@@ -938,6 +992,16 @@ class SamplesUploadDescriptionFileView(
     form_class = SamplesUploadDescriptionForm
     success_url = reverse_lazy("sample-add-file")
     template_name = "samples/samples_upload_description_file.html"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Samples", reverse("samples")),
+            ("Add Samples from a (csv/tsv) file", reverse("sample-add-file")),
+            ("Upload (csv/tsv) file", reverse("sample_add_single_csv_file")),
+        ]
 
     def get_form_kwargs(self):
         """
@@ -1066,7 +1130,7 @@ class SamplesUploadDescriptionFileView(
 
 
 class SamplesUploadDescriptionFileViewMetadata(
-    LoginRequiredMixin, FormValidMessageMixin, generic.FormView
+    BaseBreadcrumbMixin, LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 ):
     """
     Create a new reference
@@ -1075,6 +1139,19 @@ class SamplesUploadDescriptionFileViewMetadata(
     form_class = SamplesUploadDescriptionMetadataForm
     success_url = reverse_lazy("sample-update-metadata")
     template_name = "samples/samples_upload_description_file_metadata.html"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Samples", reverse("samples")),
+            ("Update metadata", reverse("sample-update-metadata")),
+            (
+                "Upload metadata (csv/tsv) file",
+                reverse("sample_add_single_csv_file_metadata"),
+            ),
+        ]
 
     def get_form_kwargs(self):
         """
@@ -1208,7 +1285,9 @@ class SamplesUploadDescriptionFileViewMetadata(
     form_valid_message = ""  ## need to have this
 
 
-class SamplesAddFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView):
+class SamplesAddFastQView(
+    BaseBreadcrumbMixin, LoginRequiredMixin, FormValidMessageMixin, generic.FormView
+):
     """
     Add fastq files to system
     """
@@ -1216,6 +1295,15 @@ class SamplesAddFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.For
     form_class = SampleForm
     success_url = reverse_lazy("samples")
     template_name = "samples/sample_fastq_file.html"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Samples", reverse("samples")),
+            ("Add fastq files", reverse("sample-add-fastq")),
+        ]
 
     def get_form_kwargs(self):
         """
@@ -1329,7 +1417,7 @@ class SamplesAddFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.For
 
 
 class SamplesUploadFastQView(
-    LoginRequiredMixin, FormValidMessageMixin, generic.FormView
+    BaseBreadcrumbMixin, LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 ):
     """
     Create a new reference
@@ -1339,6 +1427,16 @@ class SamplesUploadFastQView(
     success_url = reverse_lazy("sample-add-fastq")
     template_name = "samples/samples_upload_fastq_files.html"
     utils = Utils()
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Samples", reverse("samples")),
+            ("Add fastq files", reverse("sample-add-fastq")),
+            ("Upload 'fastq' files", reverse("sample-upload-fastq")),
+        ]
 
     if settings.DEBUG:
         logger = logging.getLogger("fluWebVirus.debug")
@@ -1509,7 +1607,7 @@ class SamplesUploadFastQView(
     form_valid_message = ""  ## need to have this, even empty
 
 
-class SamplesDetailView(LoginRequiredMixin, DetailView):
+class SamplesDetailView(BaseBreadcrumbMixin, LoginRequiredMixin, DetailView):
     """
     Sample detail view
     """
@@ -1518,6 +1616,15 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
     software = Software()
     model = Sample
     template_name = "samples/sample_detail.html"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Samples", reverse("samples")),
+            ("Sample details", reverse("sample-description")),
+        ]
 
     def get_context_data(self, **kwargs):
         context = super(SamplesDetailView, self).get_context_data(**kwargs)
@@ -1933,12 +2040,21 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
-class ProjectsView(LoginRequiredMixin, ListView):
+class ProjectsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
     utils = Utils()
     model = Project
     template_name = "project/projects.html"
     context_object_name = "projects"
     ##	group_required = u'company-user' security related with GroupRequiredMixin
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Project Index", reverse("project-index")),
+            ("Projects", reverse("projects")),
+        ]
 
     def get_context_data(self, **kwargs):
         context = super(ProjectsView, self).get_context_data(**kwargs)
@@ -2264,6 +2380,17 @@ class AddSamplesProjectsView(
     success_url = reverse_lazy("projects")
     template_name = "project_sample/project_sample_add.html"
 
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Projects Index", reverse("project-index")),
+            ("Projects", reverse("projects")),
+            (
+                "Add samples to project",
+                reverse("add-sample-project"),
+            ),
+        ]
+
     if settings.DEBUG:
         logger = logging.getLogger("fluWebVirus.debug")
     else:
@@ -2574,10 +2701,23 @@ class AddSamplesProjectsView(
     form_valid_message = ""  ## need to have this, even empty
 
 
-class ShowSampleProjectsView(LoginRequiredMixin, ListView):
+class ShowSampleProjectsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
     model = Project
     template_name = "project_sample/project_sample_show.html"
     context_object_name = "project_sample"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Projects Index", reverse("project-index")),
+            ("Projects", reverse("projects")),
+            (
+                "Show samples in project",
+                reverse("show-sample-project-results"),
+            ),
+        ]
 
     def get_context_data(self, **kwargs):
         context = super(ShowSampleProjectsView, self).get_context_data(**kwargs)
@@ -2884,7 +3024,7 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
         return context
 
 
-class ProjectsSettingsView(LoginRequiredMixin, ListView):
+class ProjectsSettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
     """
     can change settings in the projects
     """
@@ -2892,6 +3032,19 @@ class ProjectsSettingsView(LoginRequiredMixin, ListView):
     model = Project
     template_name = "settings/settings.html"
     context_object_name = "project"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Projects Index", reverse("project-index")),
+            ("Projects", reverse("projects")),
+            (
+                "Settings in project",
+                reverse("project-settings", kwargs={"pk": self.kwargs["pk"]}),
+            ),
+        ]
 
     def get_context_data(self, **kwargs):
         context = super(ProjectsSettingsView, self).get_context_data(**kwargs)
@@ -2976,7 +3129,7 @@ class ProjectsSettingsView(LoginRequiredMixin, ListView):
         return context
 
 
-class SampleProjectsSettingsView(LoginRequiredMixin, ListView):
+class SampleProjectsSettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
     """
     can change settings in the projects
     """
@@ -2984,6 +3137,25 @@ class SampleProjectsSettingsView(LoginRequiredMixin, ListView):
     model = ProjectSample
     template_name = "settings/settings.html"
     context_object_name = "project_sample"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Projects Index", reverse("project-index")),
+            ("Projects", reverse("projects")),
+            (
+                "Show project results",
+                reverse(
+                    "show-sample-project-results", kwargs={"pk": self.kwargs["pk"]}
+                ),
+            ),
+            (
+                "Project sample settings",
+                reverse("sample-project-settings"),
+            ),
+        ]
 
     def get_context_data(self, **kwargs):
         context = super(SampleProjectsSettingsView, self).get_context_data(**kwargs)
@@ -3062,7 +3234,7 @@ class SampleProjectsSettingsView(LoginRequiredMixin, ListView):
         return context
 
 
-class SampleSettingsView(LoginRequiredMixin, ListView):
+class SampleSettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
     """
     can change settings in the projects
     """
@@ -3070,6 +3242,18 @@ class SampleSettingsView(LoginRequiredMixin, ListView):
     model = Sample
     template_name = "settings/settings.html"
     context_object_name = "sample"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Samples", reverse("samples")),
+            (
+                "Samples settings",
+                reverse("sample-settings", kwargs={"pk": self.kwargs["pk"]}),
+            ),
+        ]
 
     def get_context_data(self, **kwargs):
         context = super(SampleSettingsView, self).get_context_data(**kwargs)
@@ -3149,7 +3333,7 @@ class SampleSettingsView(LoginRequiredMixin, ListView):
         return context
 
 
-class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
+class ShowSampleProjectsDetailsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
     """ """
 
     utils = Utils()
@@ -3157,6 +3341,33 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
     model = ProjectSample
     template_name = "project_sample/project_sample_single_detail.html"
     context_object_name = "project_sample"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Projects Index", reverse("project-index")),
+            ("Projects", reverse("projects")),
+            (
+                "Show samples in project",
+                reverse(
+                    "show-sample-project-results",
+                    kwargs={"pk": self.kwargs["project_id"]},
+                ),
+            ),
+            ("Show sample detail results", "show-sample-project-single-detail"),
+        ]
+
+    def setup(self, request, *args, **kwargs):
+        super(ShowSampleProjectsDetailsView, self).setup(request, *args, **kwargs)
+        self.request = request
+
+        try:
+            project_sample = ProjectSample.objects.get(pk=self.kwargs["pk"])
+            self.kwargs["project_id"] = project_sample.project.pk
+        except ProjectSample.DoesNotExist:
+            self.kwargs["project_id"] = -1
 
     def get_context_data(self, **kwargs):
         context = super(ShowSampleProjectsDetailsView, self).get_context_data(**kwargs)

@@ -1,8 +1,10 @@
 from braces.views import LoginRequiredMixin
 from django.contrib import messages
 from django.db import transaction
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
+from django.utils.functional import cached_property
 from django.views.generic import ListView, TemplateView, UpdateView
+from view_breadcrumbs import BaseBreadcrumbMixin
 
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
@@ -28,8 +30,15 @@ from utils.utils import ShowInfoMainPage
 # Create your views here.
 
 
-class index(TemplateView):
+class index(BaseBreadcrumbMixin, TemplateView):
     template_name = "settings/index.html"
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Home", reverse("home")),
+            ("Settings Index", reverse("settings-index")),
+        ]
 
     def get_context_data(self, **kwargs):
         context = super(index, self).get_context_data(**kwargs)
@@ -48,7 +57,7 @@ class Maintenance(TemplateView):
     template_name = "settings/maintenance.html"
 
 
-class PIMetagenSampleView(LoginRequiredMixin, ListView):
+class PIMetagenSampleView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
     """
     Home page
     """
@@ -56,6 +65,46 @@ class PIMetagenSampleView(LoginRequiredMixin, ListView):
     #     model = Software
     #     context_object_name = 'software'
     template_name = "settings/settings.html"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            (
+                "Project Index",
+                reverse("project-index"),
+            ),
+            (
+                "TELEVIR Projects",
+                reverse("PIproject_samples", kwargs={"pk": self.kwargs["project_id"]}),
+            ),
+            (
+                self.kwargs["project_name"],
+                reverse("PIproject_samples", kwargs={"pk": self.kwargs["project_id"]}),
+            ),
+            (
+                self.kwargs["sample_name"],
+                reverse("PIproject_sample", kwargs={"pk": self.kwargs["sample_id"]}),
+            ),
+            (
+                "References Management",
+                reverse(
+                    "sample_references_management",
+                    kwargs={"pk": self.kwargs["sample_id"]},
+                ),
+            ),
+        ]
+
+    def setup(self, request, *args, **kwargs):
+        super(PIMetagenSampleView, self).setup(request, *args, **kwargs)
+        sample_id = int(self.kwargs.get("sample", 0))
+        sample = PIProject_Sample.objects.get(pk=sample_id)
+        project_id = sample.project.pk
+        self.kwargs["project_id"] = project_id
+        self.kwargs["project_name"] = sample.project.name
+        self.kwargs["sample_id"] = sample_id
+        self.kwargs["sample_name"] = sample.name
 
     def get_queryset(self):
         """overwrite queryset to not get all software itens available in Software table"""
@@ -150,7 +199,7 @@ class PIMetagenSampleView(LoginRequiredMixin, ListView):
         return context
 
 
-class PISettingsView(LoginRequiredMixin, ListView):
+class PISettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
     """
     Home page
     """
@@ -158,6 +207,18 @@ class PISettingsView(LoginRequiredMixin, ListView):
     #     model = Software
     #     context_object_name = 'software'
     template_name = "settings/settings.html"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Settings Index", reverse("settings-index")),
+            (
+                "Settings Pathogen Identification",
+                reverse("pathogenID_pipeline", args=(0,)),
+            ),
+        ]
 
     def get_queryset(self):
         """overwrite queryset to not get all software itens available in Software table"""
@@ -593,7 +654,7 @@ class PISettingsGroupsView(PISettingsView):
         return context
 
 
-class QCSettingsView(LoginRequiredMixin, ListView):
+class QCSettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
     """
     Home page
     """
@@ -601,6 +662,18 @@ class QCSettingsView(LoginRequiredMixin, ListView):
     #     model = Software
     #     context_object_name = 'software'
     template_name = "settings/settings.html"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Settings Index", reverse("settings-index")),
+            (
+                "Settings Pathogen Identification",
+                reverse("pathogenID_pipeline", args=(0,)),
+            ),
+        ]
 
     def get_queryset(self):
         """overwrite queryset to not get all software itens available in Software table"""
@@ -669,10 +742,19 @@ class QCSettingsView(LoginRequiredMixin, ListView):
         return context
 
 
-class SettingsView(LoginRequiredMixin, ListView):
+class SettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
     """
     Home page
     """
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Settings Index", reverse("settings-index")),
+            ("Settings RefMap", reverse("settings")),
+        ]
 
     #     model = Software
     #     context_object_name = 'software'
@@ -780,11 +862,21 @@ def post_process_args(form, software: Software):
     return form
 
 
-class UpdateParametersView(LoginRequiredMixin, UpdateView):
+class UpdateParametersView(BaseBreadcrumbMixin, LoginRequiredMixin, UpdateView):
     model = Software
     form_class = SoftwareForm
     success_url = reverse_lazy("settings-index")
     template_name = "settings/software_update.html"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Settings Index", reverse("settings-index")),
+            ("Settings", reverse("settings")),
+            ("Update parameters", reverse("software-update")),
+        ]
 
     ## Other solution to get the reference
     ## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1
@@ -871,10 +963,18 @@ class UpdateParametersView(LoginRequiredMixin, UpdateView):
     form_valid_message = ""  ## need to have this
 
 
-class UpdateParametersTelevirProjView(LoginRequiredMixin, UpdateView):
+class UpdateParametersTelevirProjView(
+    BaseBreadcrumbMixin, LoginRequiredMixin, UpdateView
+):
     model = Software
     form_class = SoftwareForm
     template_name = "settings/software_update.html"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [()]
 
     ## Other solution to get the reference
     ## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1

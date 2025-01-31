@@ -8,13 +8,6 @@
 		<link rel="stylesheet" href="{% static 'css/gijgo_1.6.1.css' %}" type="text/css" />
 {% endblock css %}
 
-{% block breadcrumbs %}
-	{{ block.super }}
-	{% breadcrumb "Samples" "samples" %}
-	{% breadcrumb "Add samples from a (csv/tsv) file" "sample-add-file" %}
-	{% breadcrumb "Upload (csv/tsv) file" "sample_add_single_csv_file" %}
-{% endblock %}
-
 {% block content %}
 
 	{% if error_in_file %}

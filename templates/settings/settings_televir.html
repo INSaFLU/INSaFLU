@@ -21,43 +21,6 @@
 	</div>
 {% endblock extra_messages %}
 
-{% block breadcrumbs %}
-	{{ block.super }}
-	
-	<!-- can edit settings in project sample or to overall projects -->
-	{% if project_settings %}
-		{% breadcrumb "Projects" "projects" %}
-		{% breadcrumb "Project settings" "project-settings" %}
-	{% elif project_sample_settings %}
-		{% breadcrumb "Projects" "projects" %}
-		{% breadcrumb "Show project results" "show-sample-project-results" project_sample.project.pk %}
-		{% breadcrumb "Project sample settings" "sample-project-settings" %}
-	{% elif sample_settings %}
-		{% breadcrumb "Samples" "samples" %}
-		{% breadcrumb "Samples settings" "sample-settings" sample.pk %}
-	{% elif qc_settings %}	<!-- Default settings QC -->
-		{% breadcrumb "Settings Index" "settings-index" %}
-		{% breadcrumb "Settings QC" "settings_qc" %}
-	{% elif settings_pathogenid %}	<!-- Default settings QC -->
-		{% breadcrumb "Settings Index" "settings-index" %}
-		{% breadcrumb "Settings Pathogen Identification" "pathogenID_pipeline" %}	
-    {% elif settings_pathid_project %}	<!-- Default settings QC -->
-        {% breadcrumb "Project Index" "project-index" %}
-        {% breadcrumb "TELEVIR Projects" "PIprojects_main" %}
-		{% breadcrumb project_name "PIproject_samples" project_id %}	
-		{% if settings_pathid_sample %}
-			{% breadcrumb sample_name "PIproject_sample_settings" sample_id %}
-			{% breadcrumb "References Management" "sample_references_management" sample_id %}
-		{% endif %}
-		{% breadcrumb "Settings" "pathogenID_pipeline" project_id %}
-    {% else %}	<!-- Default settings -->
-		{% breadcrumb "Settings Index" "settings-index" %}
-		{% breadcrumb "Settings RefMap" "settings" %}
-	{% endif %}
-{% endblock %}
-
-{% block content %}
-
 <style>
 	.second_tab .nav-link {
 	}

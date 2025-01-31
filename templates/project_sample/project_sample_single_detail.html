@@ -12,14 +12,6 @@
 		<link rel="stylesheet" type="text/css" href="https://igv.org/web/release/2.0.0-beta1/dist/igv-all.css">
 {% endblock css %}
 
-<!-- Breadcrumbs-->
-{% block breadcrumbs %}
-	{{ block.super }}
-	{% breadcrumb "Projects" "projects" %}
-	{% breadcrumb "Show project results" "show-sample-project-results" project_sample.project.id %}
-	{% breadcrumb "Show sample detail results" "show-sample-project-single-detail" %}
-{% endblock %}
-
 {% block content %}
 	{% if error_cant_see %}
 		<hr>

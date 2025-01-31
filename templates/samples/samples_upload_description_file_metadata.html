@@ -8,13 +8,6 @@ s{% extends '_layouts/base.html' %}
 		<link rel="stylesheet" href="{% static 'css/gijgo_1.6.1.css' %}" type="text/css" />
 {% endblock css %}
 
-{% block breadcrumbs %}
-	{{ block.super }}
-	{% breadcrumb "Samples" "samples" %}
-	{% breadcrumb "Update metadata" "sample_update_metadata" %}
-	{% breadcrumb "Upload metadata (csv/tsv) file" "sample_add_single_csv_file_metadata" %}
-{% endblock %}
-
 {% block content %}
 
 	{% if error_in_file %}

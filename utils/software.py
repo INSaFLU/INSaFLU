@@ -3103,8 +3103,8 @@ class Software(object):
                         user,
                         SoftwareNames.SOFTWARE_SNIPPY_name,
                         ConstantsSettings.TECHNOLOGY_illumina,
-                        project_sample,
                         SoftwareSettings.TYPE_OF_USE_project_sample,
+                        is_to_run=True,
                     )
                 )
                 if software is None:

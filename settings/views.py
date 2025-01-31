@@ -974,7 +974,13 @@ class UpdateParametersTelevirProjView(
 
     @cached_property
     def crumbs(self):
-        return [()]
+        return [
+            ("Project Index", reverse("project-index")),
+            (
+                "Settings Pathogen Identification",
+                reverse("pathogenID_pipeline", self.kwargs["pk_televir_project"]),
+            ),
+        ]
 
     ## Other solution to get the reference
     ## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1
@@ -1076,10 +1082,21 @@ class UpdateParametersTelevirProjView(
     form_valid_message = ""  ## need to have this
 
 
-class UpdateParametersProjView(LoginRequiredMixin, UpdateView):
+class UpdateParametersProjView(BaseBreadcrumbMixin, LoginRequiredMixin, UpdateView):
     model = Software
     form_class = SoftwareForm
     template_name = "settings/software_update.html"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Project Index", reverse("project-index")),
+            ("Projects", reverse("projects")),
+            ("Project settings", reverse("project-settings", self.kwargs["pk_proj"])),
+            ("Update parameters", reverse("software-update")),
+        ]
 
     ## Other solution to get the reference
     ## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1
@@ -1173,10 +1190,23 @@ class UpdateParametersProjView(LoginRequiredMixin, UpdateView):
     form_valid_message = ""  ## need to have this
 
 
-class UpdateParametersDatasetView(LoginRequiredMixin, UpdateView):
+class UpdateParametersDatasetView(BaseBreadcrumbMixin, LoginRequiredMixin, UpdateView):
     model = Software
     form_class = SoftwareForm
     template_name = "settings/software_update.html"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Project Index", reverse("project-index")),
+            ("Projects", reverse("projects")),
+            (
+                "Datasets",
+                reverse("dataset-settings", self.kwargs["pk_dataset"]),
+            ),
+        ]
 
     ## Other solution to get the reference
     ## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1
@@ -1310,10 +1340,22 @@ class UpdateParametersDatasetView(LoginRequiredMixin, UpdateView):
     form_valid_message = ""  ## need to have this
 
 
-class UpdateParametersProjSampleView(LoginRequiredMixin, UpdateView):
+class UpdateParametersProjSampleView(BaseBreadcrumbMixin, LoginRequiredMixin, UpdateView):
     model = Software
     form_class = SoftwareForm
-    template_name = "settings/software_update.html"
+    template_name = "settings/software_update.html
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Project Index", reverse("project-index")),
+            ("Projects", reverse("projects")),
+            ("Show project results", reverse("show-sample-project-results", kwargs= {"pk": self.kwargs["pk_proj_sample"]})),
+            ("Project sample settings", reverse("sample-project-settings")),
+            ("Update parameters", reverse("software-update"))    
+        ], 
 
     ## Other solution to get the reference
     ## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1
@@ -1471,10 +1513,22 @@ class UpdateParametersProjSampleView(LoginRequiredMixin, UpdateView):
     form_valid_message = ""  ## need to have this
 
 
-class UpdateParametersSampleView(LoginRequiredMixin, UpdateView):
+class UpdateParametersSampleView(BaseBreadcrumbMixin, LoginRequiredMixin, UpdateView):
     model = Software
     form_class = SoftwareForm
     template_name = "settings/software_update.html"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Project Index", reverse("project-index")),
+            ("Projects", reverse("projects")),
+            ("Show project results", reverse("show-sample-project-results", kwargs= {"pk": self.kwargs["pk_proj_sample"]})),
+            ("Project sample settings", reverse("sample-project-settings")),
+            ("Update parameters", reverse("software-update"))    
+        ],
 
     ## Other solution to get the reference
     ## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1

@@ -15,44 +15,6 @@
 	</div>
 {% endblock extra_messages %}
 
-{% block breadcrumbs %}
-	{{ block.super }}
-	{% if project_settings %}
-        {% breadcrumb "Project Index" "project-index" %}
-		{% breadcrumb "Projects" "projects" %}
-		{% breadcrumb "Project settings" "project-settings" pk_project %}
-		{% breadcrumb "Update parameters" "software-update" %}
-	{% elif dataset_settings %}
-        {% breadcrumb "Project Index" "project-index" %}
-		{% breadcrumb "Datasets" "datasets" %}
-		{% breadcrumb "Dataset settings" "dataset-settings" pk_dataset %}
-		{% breadcrumb "Update parameters" "software-update" %}		
-	{% elif sample_project_settings %}
-		{% breadcrumb "Projects" "projects" %}
-		{% breadcrumb "Show project results" "show-sample-project-results" pk_proj_sample %}
-		{% breadcrumb "Project sample settings" "sample-project-settings" %}
-		{% breadcrumb "Update parameters" "software-update" %}
-	{% elif sample %}
-		{% breadcrumb "Samples" "samples" %}
-		{% breadcrumb "Samples settings" "sample-settings" sample.pk %}
-		{% breadcrumb "Update parameters" "software-update" %}
-    {% elif type_of_use == 5 %}
-        {% breadcrumb "Settings Index" "settings-index" %}
-        {% breadcrumb "Settings Pathogen Identification" "pathogenID_pipeline" 0 %}	
-		{% breadcrumb "Update parameters" "software-update" %}
-	{% elif type_of_use == 8 %}
-        {% breadcrumb "Settings Index" "settings-index" %}
-        {% breadcrumb "Settings Pathogen Identification" "pathogenID_pipeline" 0 %}	
-		{% breadcrumb "Update parameters" "software-update" %}
-    {% elif pk_televir_project %}
-        {% breadcrumb "Project Index" "project-index" %}
-        {% breadcrumb "Settings Pathogen Identification" "pathogenID_pipeline" pk_televir_project %}	
-		{% breadcrumb "Update parameters" "software-update" %}
-    {% else %}
-		{% breadcrumb "Settings" "settings" %}
-		{% breadcrumb "Update parameters" "software-update" %}
-	{% endif %}
-{% endblock %}
 
 {% block content %}
 	

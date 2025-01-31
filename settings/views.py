@@ -1344,7 +1344,27 @@ class UpdateParametersProjSampleView(
 ):
     model = Software
     form_class = SoftwareForm
-    template_name = "settings/software_update.html"
+    template_name = "settings/software_update.html
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return (
+            [
+                ("Project Index", reverse("project-index")),
+                ("Projects", reverse("projects")),
+                (
+                    "Show project results",
+                    reverse(
+                        "show-sample-project-results",
+                        kwargs={"pk": self.kwargs["pk_proj_sample"]},
+                    ),
+                ),
+                ("Project sample settings", reverse("sample-project-settings")),
+                ("Update parameters", reverse("software-update")),
+            ],
+        )
 
     add_home = True
 

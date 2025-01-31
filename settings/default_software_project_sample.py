@@ -696,7 +696,7 @@ class DefaultProjectSoftware(object):
         """
 
         parameters_string = self.get_snippy_parameters_all_possibilities(
-            project_sample.project.owner, project_sample
+            project_sample.project.owner, project_sample, is_to_run=True
         )
         if parameters_string is None:
             return None

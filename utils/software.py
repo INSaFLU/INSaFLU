@@ -3147,8 +3147,8 @@ class Software(object):
                 result.set_error(e.args[0])
                 result.add_software(
                     SoftwareDesc(
-                        self.software_names.get_snippy_name(),
-                        self.software_names.get_snippy_version(),
+                        software.first().name,
+                        software.first().version,
                         snippy_parameters,
                     )
                 )
@@ -3187,7 +3187,7 @@ class Software(object):
 
             ## copy the files to the project sample directories
             self.copy_files_to_project(
-                project_sample, self.software_names.get_snippy_name(), out_put_path
+                project_sample, software.first().name, out_put_path
             )
             self.utils.remove_dir(out_put_path)
 
@@ -3195,13 +3195,13 @@ class Software(object):
             path_snippy_tab = project_sample.get_file_output(
                 TypePath.MEDIA_ROOT,
                 FileType.FILE_TAB,
-                self.software_names.get_snippy_name(),
+                software.first().name,
             )
             if os.path.exists(path_snippy_tab):
                 sz_file_to = project_sample.get_file_output_human(
                     TypePath.MEDIA_ROOT,
                     FileType.FILE_TAB,
-                    self.software_names.get_snippy_name(),
+                    software.first().name,
                 )
                 self.utils.link_file(path_snippy_tab, sz_file_to)
 
@@ -3209,7 +3209,7 @@ class Software(object):
             bam_file = project_sample.get_file_output(
                 TypePath.MEDIA_ROOT,
                 FileType.FILE_BAM,
-                self.software_names.get_snippy_name(),
+                software.first().name,
             )
             result = Result()
             if os.path.exists(bam_file):
@@ -3242,7 +3242,7 @@ class Software(object):
                         project_sample.get_file_output(
                             TypePath.MEDIA_ROOT,
                             FileType.FILE_DEPTH_GZ,
-                            self.software_names.get_snippy_name(),
+                            software.first().name,
                         ),
                         project_sample.project.reference.get_reference_fasta(
                             TypePath.MEDIA_ROOT
@@ -3261,7 +3261,7 @@ class Software(object):
                         project_sample.get_file_output(
                             TypePath.MEDIA_ROOT,
                             FileType.FILE_DEPTH_GZ,
-                            self.software_names.get_snippy_name(),
+                            software.first().name,
                         ),
                         project_sample.project.reference.get_reference_fasta(
                             TypePath.MEDIA_ROOT

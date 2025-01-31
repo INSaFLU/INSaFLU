@@ -31,7 +31,6 @@ from constants.meta_key_and_values import MetaKeyAndValue
 from constants.nextclade_links import get_constext_nextclade
 from constants.software_names import SoftwareNames
 from extend_user.models import Profile
-from manage_virus.constants_virus import ConstantsVirus
 from managing_files.forms import (
     AddSampleProjectForm,
     PrimerForm,
@@ -3304,7 +3303,7 @@ class ShowSampleProjectsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
         return context
 
 
-class ProjectSelectView(LoginRequiredMixin, ListView):
+class ProjectsSettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
     """
     choose one of Mutation Detecion and Consensus Generation software
     """
@@ -3312,6 +3311,19 @@ class ProjectSelectView(LoginRequiredMixin, ListView):
     model = Project
     template_name = "project/project_select_software.html"
     context_object_name = "project"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Projects Index", reverse("project-index")),
+            ("Projects", reverse("projects")),
+            (
+                "Settings in project",
+                reverse("project-settings", kwargs={"pk": self.kwargs["pk"]}),
+            ),
+        ]
 
     def get_context_data(self, **kwargs):
         context = super(ProjectSelectView, self).get_context_data(**kwargs)

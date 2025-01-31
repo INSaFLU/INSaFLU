@@ -1344,7 +1344,7 @@ class UpdateParametersProjSampleView(
 ):
     model = Software
     form_class = SoftwareForm
-    template_name = "settings/software_update.html
+    template_name = "settings/software_update.html"
 
     add_home = True
 
@@ -1365,6 +1365,7 @@ class UpdateParametersProjSampleView(
                 ("Update parameters", reverse("software-update")),
             ],
         )
+<<<<<<< HEAD
 
     add_home = True
 
@@ -1385,6 +1386,8 @@ class UpdateParametersProjSampleView(
                 ("Update parameters", reverse("software-update")),
             ],
         )
+=======
+>>>>>>> 451991c3 (breadcrumbs samples & settings finished)
 
     ## Other solution to get the reference
     ## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1

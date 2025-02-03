@@ -8,14 +8,6 @@
 		<link rel="stylesheet" href="{% static 'css/gijgo_1.6.1.css' %}" type="text/css" />
 {% endblock css %}
 
-{% block breadcrumbs %}
-	{{ block.super }}
-	{% breadcrumb "Datasets" "datasets" %}
-	{% breadcrumb "Show consensus in Dataset" "show-dataset-consensus" dataset.pk %}
-	{% breadcrumb "Upload metadata" "dataset-update-metadata" dataset.pk %}
-	{% breadcrumb "Upload single metadata" "dataset-add-single-file-metadata" dataset.pk %}
-{% endblock %}
-
 {% block content %}
 
 	{% if error_in_file %}

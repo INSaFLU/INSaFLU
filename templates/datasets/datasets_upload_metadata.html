@@ -9,14 +9,6 @@
 {% block css %}
 {% endblock css %}
 
-<!-- Breadcrumbs-->
-{% block breadcrumbs %}
-	{{ block.super }}
-	{% breadcrumb "Datasets" "datasets" %}
-	{% breadcrumb "Show consensus in Dataset" "show-dataset-consensus" dataset.pk %}
-	{% breadcrumb "Upload metadata" "dataset-update-metadata" dataset.pk %}
-{% endblock %}
-
 <!-- Main content-->
 {% block content %}
 	

@@ -11,12 +11,6 @@
 		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
 {% endblock css %}
 
-{% block breadcrumbs %}
-	{{ block.super }}
-	{% breadcrumb "Datasets" "datasets" %}
-	{% breadcrumb "Add Consensus to dataset" "add-consensus-dataset" %}
-{% endblock %}
-
 {% block extra_messages %}
 	<!-- set the messages -->
 	<div class="container">

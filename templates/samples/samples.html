@@ -16,11 +16,6 @@
 	</div>
 {% endblock extra_messages %}
 
-{% block breadcrumbs %}
-	{{ block.super }}
-	{% breadcrumb "Samples" "samples" %}
-{% endblock %}
-
 {% block content %}
 	
 	{% if table.page and show_paginatior %}

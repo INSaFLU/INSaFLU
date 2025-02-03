@@ -986,11 +986,24 @@ class AddDatasetsProjectsView(
 
 
 class UploadNewConsensusView(
-    LoginRequiredMixin, FormValidMessageMixin, generic.FormView
+    BaseBreadcrumbMixin, LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 ):
 
     form_class = ConsensusForm
     template_name = "datasets/datasets_new_consensus.html"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Datasets", reverse("datasets")),
+            (
+                "Add Consensus to dataset",
+                reverse("add-consensus-dataset", kwargs={"pk": self.kwargs.get("pk")}),
+            ),
+            ("Upload new consensus", "upload-new-consensus"),
+        ]
 
     ## Other solution to get the Consensus
     ## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1
@@ -1153,12 +1166,24 @@ class UploadNewConsensusView(
     form_valid_message = ""  ## need to have this
 
 
-class ShowDatasetsConsensusView(LoginRequiredMixin, ListView):
+class ShowDatasetsConsensusView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
 
     model = Project
     template_name = "datasets/datasets_consensus_show.html"
     context_object_name = "dataset_consensus"
     software = Software()
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Datasets", reverse("datasets")),
+            (
+                "Show consensus in Dataset",
+                reverse("show-dataset-consensus", kwargs={"pk": self.kwargs["pk"]}),
+            ),
+        ]
 
     def get_context_data(self, **kwargs):
         context = super(ShowDatasetsConsensusView, self).get_context_data(**kwargs)
@@ -1351,7 +1376,7 @@ class ShowDatasetsConsensusView(LoginRequiredMixin, ListView):
 
 
 class UpdateMetadataDataset(
-    LoginRequiredMixin, FormValidMessageMixin, generic.CreateView
+    BaseBreadcrumbMixin, LoginRequiredMixin, FormValidMessageMixin, generic.CreateView
 ):
     """
     Update metadata
@@ -1367,28 +1392,9 @@ class UpdateMetadataDataset(
     @cached_property
     def crumbs(self):
         return [
-            (
-                ("Datasets", reverse("datasets")),
-                (
-                    "Add references to dataset",
-                    reverse(
-                        "show-dataset-consensus", kwargs={"pk": self.kwargs.get("pk")}
-                    ),
-                ),
-                (
-                    "Update metadata",
-                    reverse(
-                        "dataset-update-metadata", kwargs={"pk": self.kwargs.get("pk")}
-                    ),
-                ),
-                (
-                    "Upload single metadata",
-                    reverse(
-                        "dataset-add-single-file-metadata",
-                        kwargs={"pk": self.kwargs.get("pk")},
-                    ),
-                ),
-            )
+            ("Datasets", reverse("datasets")),
+            ("Show consensus in Dataset", reverse("show-dataset-consensus", kwargs= {"pk": self.kwargs.get("pk")})),
+            ("Upload metadata", "upload-metadata", kwargs= {"pk": self.kwargs.get("pk")}),
         ]
 
     def get_success_url(self):
@@ -1492,7 +1498,7 @@ class UpdateMetadataDataset(
 
 
 class AddSingleMetadataDatasetFile(
-    LoginRequiredMixin, FormValidMessageMixin, generic.FormView
+    BaseBreadcrumbMixin, LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 ):
     """
     Create a new reference

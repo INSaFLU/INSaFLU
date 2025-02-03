@@ -10,13 +10,7 @@
 		<link rel="stylesheet" href="{% static 'css/error_add_html.css' %}" type="text/css" />
 {% endblock css %}
 
-<!-- Breadcrumbs-->
-{% block breadcrumbs %}
-	{{ block.super }}
-	{% breadcrumb "Datasets" "datasets" %}
-	{% breadcrumb "Add Consensus to dataset" "add-consensus-dataset" pk %}
-	{% breadcrumb "Upload new Consensus" "upload-new-consensus" %}
-{% endblock %}
+
 
 <!-- Main content-->
 {% block content %}

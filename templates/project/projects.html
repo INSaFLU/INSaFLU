@@ -16,13 +16,6 @@
 </div>
 {% endblock %}
 
-{% block breadcrumbs %}
-{{ block.super }}
-{% breadcrumb "Project Index" "project-index" %}
-{% breadcrumb "Projects" "projects" %}
-
-{% endblock %}
-
 {% block content %}
 
 {% if table.page and show_paginatior %}

@@ -20,11 +20,6 @@
 	</div>
 {% endblock %}
 
-{% block breadcrumbs %}
-	{{ block.super }}
-	{% breadcrumb "Datasets" "datasets" %}
-	{% breadcrumb "Show consensus in Dataset" "show-dataset-consensus" dataset.pk %}
-{% endblock %}
 
 {% block content %}
 

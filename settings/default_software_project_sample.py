@@ -377,6 +377,7 @@ class DefaultProjectSoftware(object):
                     vect_parameters,
                     technology_name,
                     name_extended=name_extended,
+                    is_to_run=True,
                 )  ### base values
             if not project_sample is None:
                 vect_parameters = self._get_default_project(
@@ -386,6 +387,7 @@ class DefaultProjectSoftware(object):
                     vect_parameters,
                     technology_name,
                     name_extended=name_extended,
+                    is_to_run=True,
                 )  ### base values
             return vect_parameters
 
@@ -2459,6 +2461,7 @@ class DefaultProjectSoftware(object):
         vect_parameters,
         technology_name,
         name_extended=None,
+        is_to_run=True,
     ):
         """
         :param software_name name of the software
@@ -2483,7 +2486,7 @@ class DefaultProjectSoftware(object):
 
         try:
             if name_extended is not None:
-                software = Software.objects.get(
+                software = Software.objects.filter(
                     name=software_name,
                     owner=user,
                     type_of_use=type_of_use,
@@ -2494,7 +2497,7 @@ class DefaultProjectSoftware(object):
                     name_extended=name_extended,
                 )
             else:
-                software = Software.objects.get(
+                software = Software.objects.filter(
                     name=software_name,
                     owner=user,
                     type_of_use=type_of_use,
@@ -2505,6 +2508,17 @@ class DefaultProjectSoftware(object):
                 )
         except Software.DoesNotExist:
             return vect_parameters
+
+        if is_to_run == True:
+            software = software.filter(is_to_run=True)
+
+        if len(software) == 0:
+            raise Software.DoesNotExist
+
+        if len(software) > 1:
+            raise Software.MultipleObjectsReturned
+
+        software = software.first()
 
         ## get parameters for a specific user and software
         if project is None:

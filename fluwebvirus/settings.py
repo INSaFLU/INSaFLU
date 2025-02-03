@@ -45,6 +45,7 @@ SITE_KEY = config("SITE_KEY")
 
 ### crispy template
 CRISPY_TEMPLATE_PACK = "bootstrap5"
+CRISPY_ALLOWED_TEMPLATE_PACKS = ("bootstrap5", "bootstrap4")
 BREADCRUMBS_TEMPLATE = "view_breadcrumbs/bootstrap5.html"
 
 CSRF_COOKIE_AGE = None
@@ -136,6 +137,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.gis",
     "crispy_forms",
+    "crispy_bootstrap4",
+    "crispy_bootstrap5",
     "crispy_forms_foundation",
     "django_tables2",
     "bootstrap4",

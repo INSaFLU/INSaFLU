@@ -5,6 +5,8 @@ django-embed-video==1.4.10
 django-view-breadcrumbs==2.5.1
 django-user-agents==0.3.2
 django-crispy-forms==2.3
+crispy_bootstrap4==2024.10
+crispy-bootstrap5==2024.10
 django-braces==1.16.0
 django-tables2==2.7.5
 django-nose==1.4.6

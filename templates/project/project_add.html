@@ -2,7 +2,7 @@
 
 {% load bootstrap4 %}
 {% load querystring from django_tables2 %}
-{% load title from django_tables2 %}
+
 {% load trans blocktrans from i18n %}
 {% load view_breadcrumbs %}
 
@@ -76,10 +76,10 @@
 						{% for column in table.columns %}
 						{% if column.orderable %}
 						<th {{ column.attrs.th.as_html }}><a
-								href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header|title }}</a>
+								href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header }}</a>
 						</th>
 						{% else %}
-						<th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
+						<th {{ column.attrs.th.as_html }}>{{ column.header }}</th>
 						{% endif %}
 						{% endfor %}
 					</tr>

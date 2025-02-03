@@ -2,7 +2,7 @@
 
 {% load bootstrap4 %}
 {% load querystring from django_tables2 %}
-{% load title from django_tables2 %}
+
 {% load trans blocktrans from i18n %}
 {% load view_breadcrumbs %}
 {% load define_action %}
@@ -105,7 +105,7 @@
 																	
 																		<tr>
 																			{% for column in table.columns %}
-																				<th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
+																				<th {{ column.attrs.th.as_html }}>{{ column.header }}</th>
 																			{% endfor %}
 																		</tr>
 																	</thead>

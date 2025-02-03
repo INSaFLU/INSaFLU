@@ -1393,8 +1393,14 @@ class UpdateMetadataDataset(
     def crumbs(self):
         return [
             ("Datasets", reverse("datasets")),
-            ("Show consensus in Dataset", reverse("show-dataset-consensus", kwargs= {"pk": self.kwargs.get("pk")})),
-            ("Upload metadata", "upload-metadata", kwargs= {"pk": self.kwargs.get("pk")}),
+            (
+                "Show consensus in Dataset",
+                reverse("show-dataset-consensus", kwargs={"pk": self.kwargs.get("pk")}),
+            ),
+            (
+                "Upload metadata",
+                reverse("upload-metadata", kwargs={"pk": self.kwargs.get("pk")}),
+            ),
         ]
 
     def get_success_url(self):

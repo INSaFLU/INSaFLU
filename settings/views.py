@@ -36,7 +36,6 @@ class index(BaseBreadcrumbMixin, TemplateView):
     @cached_property
     def crumbs(self):
         return [
-            ("Home", reverse("home")),
             ("Settings Index", reverse("settings-index")),
         ]
 

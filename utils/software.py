@@ -368,6 +368,7 @@ class Software(object):
         to
         #!/usr/bin/env python3
         """
+
         if not os.path.exists(fastq_1):
             self.logger_production.error("Fastq 1 not found: " + fastq_1)
             self.logger_debug.error("Fastq 1 not found: " + fastq_1)
@@ -391,6 +392,7 @@ class Software(object):
                 out_dir,
             )
 
+        print(cmd)
         exist_status = os.system(cmd)
         if exist_status != 0:
             self.logger_production.error("Fail to run: " + cmd)
@@ -587,7 +589,6 @@ class Software(object):
         if not fastq1_2 is None and not os.path.exists(fastq1_2):
             return False
 
-        print("identify_type_and_sub_type")
         if sample.is_type_fastq_gz_sequencing():  ## illumina
             try:
                 cmd = self.run_spades(fastq1_1, fastq1_2, out_dir_result)

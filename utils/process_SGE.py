@@ -317,7 +317,7 @@ class ProcessSGE(object):
         """
         process_controler = ProcessControler()
         vect_command = [
-            "python3 {} collect_global_files --project_id {} --user_id {}".format(
+            "/usr/bin/python3 {} collect_global_files --project_id {} --user_id {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"), project.pk, user.pk
             )
         ]
@@ -353,7 +353,7 @@ class ProcessSGE(object):
         """
         process_controler = ProcessControler()
         vect_command = [
-            "python3 {} collect_global_files_for_update_metadata --project_id {} --user_id {}".format(
+            "/usr/bin/python3 {} collect_global_files_for_update_metadata --project_id {} --user_id {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"), project.pk, user.pk
             )
         ]
@@ -388,7 +388,7 @@ class ProcessSGE(object):
         """
         process_controler = ProcessControler()
         vect_command = [
-            "python3 {} collect_update_pangolin_lineage --project_id {} --user_id {}".format(
+            "/usr/bin/python3 {} collect_update_pangolin_lineage --project_id {} --user_id {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"), project.pk, user.pk
             )
         ]
@@ -423,7 +423,7 @@ class ProcessSGE(object):
         """
         process_controler = ProcessControler()
         vect_command = [
-            "python3 {} second_stage_snippy --project_sample_id {} --user_id {}".format(
+            "/usr/bin/python3 {} second_stage_snippy --project_sample_id {} --user_id {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 project_sample.pk,
                 user.pk,
@@ -463,7 +463,7 @@ class ProcessSGE(object):
         """
         process_controler = ProcessControler()
         vect_command = [
-            "python3 {} second_stage_medaka --project_sample_id {} --user_id {}".format(
+            "/usr/bin/python3 {} second_stage_medaka --project_sample_id {} --user_id {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 project_sample.pk,
                 user.pk,
@@ -531,7 +531,7 @@ class ProcessSGE(object):
         """
         process_controler = ProcessControler()
         vect_command = [
-            "python3 {} run_trimmomatic_species --sample_id {} --user_id {} {}".format(
+            "/usr/bin/python3 {} run_trimmomatic_species --sample_id {} --user_id {} {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 sample.pk,
                 user.pk,
@@ -572,7 +572,7 @@ class ProcessSGE(object):
         """
         process_controler = ProcessControler()
         vect_command = [
-            "python3 {} run_clean_minion --sample_id {} --user_id {} {}".format(
+            "/usr/bin/python3 {} run_clean_minion --sample_id {} --user_id {} {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 sample.pk,
                 user.pk,
@@ -612,7 +612,7 @@ class ProcessSGE(object):
         """
         process_controler = ProcessControler()
         vect_command = [
-            "python3 {} link_files --user_id {} {}".format(
+            "/usr/bin/python3 {} link_files --user_id {} {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user.pk,
                 "--settings fluwebvirus.settings_test" if b_test else "",
@@ -656,7 +656,7 @@ class ProcessSGE(object):
         """
         process_controler = ProcessControler()
         vect_command = [
-            "python3 {} create_sample_list_by_user --user_id {} {}".format(
+            "/usr/bin/python3 {} create_sample_list_by_user --user_id {} {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user.pk,
                 "--settings fluwebvirus.settings_test" if b_test else "",
@@ -702,7 +702,7 @@ class ProcessSGE(object):
         """
         process_controler = ProcessControler()
         vect_command = [
-            "python3 {} create_projects_list_by_user --user_id {} {}".format(
+            "/usr/bin/python3 {} create_projects_list_by_user --user_id {} {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user.pk,
                 "--settings fluwebvirus.settings_test" if b_test else "",
@@ -747,7 +747,7 @@ class ProcessSGE(object):
         """
         process_controler = ProcessControler()
         vect_command = [
-            "python3 {} read_sample_file --upload_files_id {} --user_id {} {}".format(
+            "/usr/bin/python3 {} read_sample_file --upload_files_id {} --user_id {} {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 upload_files.pk,
                 user.pk,
@@ -788,7 +788,7 @@ class ProcessSGE(object):
         """
         process_controler = ProcessControler()
         vect_command = [
-            "python3 {} update_metadata_sample_file --upload_files_id {} --user_id {}".format(
+            "/usr/bin/python3 {} update_metadata_sample_file --upload_files_id {} --user_id {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"), upload_files.pk, user.pk
             )
         ]
@@ -823,7 +823,7 @@ class ProcessSGE(object):
         process_controler = ProcessControler()
 
         vect_command = [
-            "python3 {} submit_add_references_metagenomics --sample_id {} --reference {} -o {}".format(
+            "/usr/bin/python3 {} submit_add_references_metagenomics --sample_id {} --reference {} -o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 sample_pk,
                 reference_filepath,
@@ -873,7 +873,7 @@ class ProcessSGE(object):
         process_controler = ProcessControler()
 
         vect_command = [
-            "python3 {} update_project_references --project_id {}".format(
+            "/usr/bin/python3 {} update_project_references --project_id {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 project_id,
             )
@@ -930,7 +930,7 @@ class ProcessSGE(object):
         process_controler = ProcessControler()
 
         vect_command = [
-            "python3 {} submit_televir_explify_merge --project_id {} --televir {} --rpip {} --upip {} -o {}".format(
+            "/usr/bin/python3 {} submit_televir_explify_merge --project_id {} --televir {} --rpip {} --upip {} -o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 project_pk,
                 televir_report_filepath,
@@ -987,7 +987,7 @@ class ProcessSGE(object):
         process_controler = ProcessControler()
 
         vect_command = [
-            "python3 {} submit_televir_explify_merge_ext --user_id {} --televir {} --rpip {} --upip {} -o {}".format(
+            "/usr/bin/python3 {} submit_televir_explify_merge_ext --user_id {} --televir {} --rpip {} --upip {} -o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user_pk,
                 televir_report_filepath,
@@ -1043,7 +1043,7 @@ class ProcessSGE(object):
         out_dir = self.utils.get_temp_dir()
 
         vect_command = [
-            "python3 {} submit_televir_run --user_id {} --project_id {} --sample_id {} --leaf_id {} -o {}".format(
+            "/usr/bin/python3 {} submit_televir_run --user_id {} --project_id {} --sample_id {} --leaf_id {} -o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user_pk,
                 project_pk,
@@ -1094,7 +1094,7 @@ class ProcessSGE(object):
         out_dir = self.utils.get_temp_dir()
 
         vect_command = [
-            "python3 {} submit_televir_job_tree_sample --user_id {} --project_id {} --sample_id {} -o {}".format(
+            "/usr/bin/python3 {} submit_televir_job_tree_sample --user_id {} --project_id {} --sample_id {} -o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user_pk,
                 project_pk,
@@ -1150,7 +1150,7 @@ class ProcessSGE(object):
         out_dir = self.utils.get_temp_dir()
 
         vect_command = [
-            "python3 {} submit_televir_sample_metagenomics_run --user_id {} --sample_id {} --leaf_id {} {} {} {}-o {}".format(
+            "/usr/bin/python3 {} submit_televir_sample_metagenomics_run --user_id {} --sample_id {} --leaf_id {} {} {} {}-o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user_pk,
                 sample_pk,
@@ -1210,7 +1210,7 @@ class ProcessSGE(object):
         out_dir = self.utils.get_temp_dir()
 
         vect_command = [
-            "python3 {} submit_televir_sample_panel_run --user_id {} --sample_id {} --leaf_id {} {} {} {}-o {}".format(
+            "/usr/bin/python3 {} submit_televir_sample_panel_run --user_id {} --sample_id {} --leaf_id {} {} {} {}-o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user_pk,
                 sample_pk,
@@ -1268,7 +1268,7 @@ class ProcessSGE(object):
         out_dir = self.utils.get_temp_dir()
 
         vect_command = [
-            "python3 {} submit_televir_upload_reference_file --user_id {} --file_id {} --fasta {} --metadata {}".format(
+            "/usr/bin/python3 {} submit_televir_upload_reference_file --user_id {} --file_id {} --fasta {} --metadata {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user_pk,
                 file_id,
@@ -1316,7 +1316,7 @@ class ProcessSGE(object):
         out_dir = self.utils.get_temp_dir()
 
         vect_command = [
-            "python3 {} submit_televir_job --user_id {} --project_id {} -o {}".format(
+            "/usr/bin/python3 {} submit_televir_job --user_id {} --project_id {} -o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user_pk,
                 project_pk,
@@ -1359,7 +1359,7 @@ class ProcessSGE(object):
         out_dir = self.utils.get_temp_dir()
 
         vect_command = [
-            "python3 {} submit_televir_job_sort_sample_reports --user_id {} --pisample_id {} -o {}".format(
+            "/usr/bin/python3 {} submit_televir_job_sort_sample_reports --user_id {} --pisample_id {} -o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user_pk,
                 pisample_pk,
@@ -1404,7 +1404,7 @@ class ProcessSGE(object):
         out_dir = self.utils.get_temp_dir()
 
         vect_command = [
-            "python3 {} submit_televir_job_teleflu_ref_create --user_id {} --ref_id {} -o {}".format(
+            "/usr/bin/python3 {} submit_televir_job_teleflu_ref_create --user_id {} --ref_id {} -o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user_pk,
                 ref_id,
@@ -1449,7 +1449,7 @@ class ProcessSGE(object):
         out_dir = self.utils.get_temp_dir()
 
         vect_command = [
-            "python3 {} submit_televir_job_file_teleflu_ref_create --user_id {} --ref_id {} -o {}".format(
+            "/usr/bin/python3 {} submit_televir_job_file_teleflu_ref_create --user_id {} --ref_id {} -o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user_pk,
                 ref_id,
@@ -1494,7 +1494,7 @@ class ProcessSGE(object):
         out_dir = self.utils.get_temp_dir()
 
         vect_command = [
-            "python3 {} submit_televir_job_teleflu_project_create --user_id {} --project_id {} -o {}".format(
+            "/usr/bin/python3 {} submit_televir_job_teleflu_project_create --user_id {} --project_id {} -o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user_pk,
                 project_pk,
@@ -1541,7 +1541,7 @@ class ProcessSGE(object):
         out_dir = self.utils.get_temp_dir()
 
         vect_command = [
-            "python3 {} submit_televir_job_teleflu_reference_create --user_id {} --project_id {} -o {}".format(
+            "/usr/bin/python3 {} submit_televir_job_teleflu_reference_create --user_id {} --project_id {} -o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user_pk,
                 project_pk,
@@ -1588,7 +1588,7 @@ class ProcessSGE(object):
         out_dir = self.utils.get_temp_dir()
 
         vect_command = [
-            "python3 {} submit_televir_map_specific --ref_id {} --project_id {} -o {}".format(
+            "/usr/bin/python3 {} submit_televir_map_specific --ref_id {} --project_id {} -o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 reference_pk,
                 project_pk,
@@ -1631,7 +1631,7 @@ class ProcessSGE(object):
         out_dir = self.utils.get_temp_dir()
 
         vect_command = [
-            "python3 {} submit_televir_job_teleflu_stacked_igv --leaf_id {} --project_id {} -o {}".format(
+            "/usr/bin/python3 {} submit_televir_job_teleflu_stacked_igv --leaf_id {} --project_id {} -o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 leaf_pk,
                 project_pk,
@@ -1893,7 +1893,7 @@ class ProcessSGE(object):
 
         process_controler = ProcessControler()
         vect_command = [
-            "python3 {} collect_global_dataset_files --dataset_id {} --user_id {}".format(
+            "/usr/bin/python3 {} collect_global_dataset_files --dataset_id {} --user_id {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"), dataset.pk, user.pk
             )
         ]
@@ -1933,7 +1933,7 @@ class ProcessSGE(object):
 
         process_controler = ProcessControler()
         vect_command = [
-            "python3 {} collect_global_dataset_files_for_update_metadata --dataset_id {} --user_id {}".format(
+            "/usr/bin/python3 {} collect_global_dataset_files_for_update_metadata --dataset_id {} --user_id {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"), dataset.pk, user.pk
             )
         ]

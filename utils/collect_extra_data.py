@@ -282,9 +282,72 @@ class CollectExtraData(object):
         ### get the taskID and seal it
         process_controler = ProcessControler()
         process_SGE = ProcessSGE()
+        print("OIOIJ")
         try:
 
             ## test SARS cov
+            print("## Collecting mutation report")
+            print(
+                self.software.get_species_tag(project.reference),
+                Reference.SPECIES_SARS_COV_2,
+            )
+            if (
+                self.software.get_species_tag(project.reference)
+                == Reference.SPECIES_INFLUENZA
+            ):
+                file_alignments = project.get_global_file_by_project(
+                    TypePath.MEDIA_ROOT,
+                    Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus,
+                )
+
+                print(file_alignments)
+                temp_out_abricate = self.utils.get_temp_file(
+                    "temp_abricate", FileExtensions.FILE_TXT
+                )
+                print("HELLO")
+                cmd = self.software.run_abricate(
+                    "sequences_v13",  # Need to change this
+                    file_alignments,
+                    SoftwareNames.SOFTWARE_ABRICATE_PARAMETERS,
+                    temp_out_abricate,
+                )
+                print("done")
+                parseOutFiles = ParseOutFiles()
+                dict_data_out = parseOutFiles.parse_abricate_file_simple(
+                    temp_out_abricate
+                )
+                # This doesn't really matter
+                # self.utils.remove_temp_file(temp_out_abricate)
+                print(temp_out_abricate)
+
+                keep_segment = {}
+                influenza_keys = ["HA", "NA", "MP", "NP", "NS", "PA", "PB1", "PB2"]
+                for segname, result_list in dict_data_out.items():
+                    if result_list == []:
+                        continue
+                    seg_abr_result = result_list[0]
+                    if "Gene" not in seg_abr_result:
+                        continue
+                    gene = seg_abr_result["Gene"].split("_")[-1]
+                    if gene not in influenza_keys:
+                        continue
+                    keep_segment[segname] = gene
+
+                print(keep_segment)
+
+                temp_file = self.utils.get_temp_file(
+                    "abricate_fasta", FileExtensions.FILE_FASTA
+                )
+
+                flumut_name_dict = {x: f"{x}_{keep_segment[x]}" for x in keep_segment}
+
+                self.utils.clean_fasta_file_new_name(
+                    file_alignments, temp_file, keep_segs=list(keep_segment.keys())
+                )
+
+                # add suffix to names of sequences
+                print(flumut_name_dict)
+
             if (
                 self.software.get_species_tag(project.reference)
                 == Reference.SPECIES_SARS_COV_2
@@ -320,6 +383,7 @@ class CollectExtraData(object):
                         break
 
                 if os.path.exists(file_alignments):
+
                     self.__collect_aln2pheno(
                         project, project, file_alignments, sequence_name, GENE_NAME
                     )
@@ -921,6 +985,7 @@ class CollectExtraData(object):
             start = time.time()
         except Exception as e:
             ## finished with error
+            print("ERROR", e)
             process_SGE.set_process_controler(
                 user,
                 process_controler.get_name_project(project),

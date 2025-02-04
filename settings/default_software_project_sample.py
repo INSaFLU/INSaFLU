@@ -360,6 +360,8 @@ class DefaultProjectSoftware(object):
         dataset=None,
         name_extended=None,
     ):
+        print(project)
+        print(software_name, name_extended)
         if software_name == SoftwareNames.SOFTWARE_SNIPPY_name:
             if name_extended == SoftwareNames.SOFTWARE_IVAR_name_extended:
                 vect_parameters = self.default_parameters.get_ivar_default(
@@ -373,7 +375,7 @@ class DefaultProjectSoftware(object):
                 vect_parameters = self._get_default_project(
                     user,
                     SoftwareNames.SOFTWARE_SNIPPY_name,
-                    None,
+                    project,
                     vect_parameters,
                     technology_name,
                     name_extended=name_extended,
@@ -383,7 +385,7 @@ class DefaultProjectSoftware(object):
                 vect_parameters = self._get_default_project(
                     user,
                     SoftwareNames.SOFTWARE_SNIPPY_name,
-                    project_sample.project,
+                    project_sample,
                     vect_parameters,
                     technology_name,
                     name_extended=name_extended,
@@ -399,7 +401,7 @@ class DefaultProjectSoftware(object):
                 vect_parameters = self._get_default_project(
                     user,
                     SoftwareNames.SOFTWARE_FREEBAYES_name,
-                    None,
+                    project,
                     vect_parameters,
                     technology_name,
                 )  ### base values
@@ -407,7 +409,7 @@ class DefaultProjectSoftware(object):
                 vect_parameters = self._get_default_project(
                     user,
                     SoftwareNames.SOFTWARE_FREEBAYES_name,
-                    project_sample.project,
+                    project_sample,
                     vect_parameters,
                     technology_name,
                 )  ### base values
@@ -420,13 +422,13 @@ class DefaultProjectSoftware(object):
             )
             if not project is None:
                 vect_parameters = self._get_default_project(
-                    user, software_name, None, vect_parameters, technology_name
+                    user, software_name, project, vect_parameters, technology_name
                 )  ### base values
             if not project_sample is None:
                 vect_parameters = self._get_default_project(
                     user,
                     software_name,
-                    project_sample.project,
+                    project_sample,
                     vect_parameters,
                     technology_name,
                 )  ### base values
@@ -439,13 +441,13 @@ class DefaultProjectSoftware(object):
             )
             if not project is None:
                 vect_parameters = self._get_default_project(
-                    user, software_name, None, vect_parameters, technology_name
+                    user, software_name, project, vect_parameters, technology_name
                 )  ### base values
             if not project_sample is None:
                 vect_parameters = self._get_default_project(
                     user,
                     software_name,
-                    project_sample.project,
+                    project_sample,
                     vect_parameters,
                     technology_name,
                 )  ### base values
@@ -463,13 +465,13 @@ class DefaultProjectSoftware(object):
             )
             if not project is None:
                 vect_parameters = self._get_default_project(
-                    user, software_name, None, vect_parameters, technology_name
+                    user, software_name, project, vect_parameters, technology_name
                 )  ### base values
             if not project_sample is None:
                 vect_parameters = self._get_default_project(
                     user,
                     software_name,
-                    project_sample.project,
+                    project_sample,
                     vect_parameters,
                     technology_name,
                 )  ### base values
@@ -482,13 +484,13 @@ class DefaultProjectSoftware(object):
             )
             if not project is None:
                 vect_parameters = self._get_default_project(
-                    user, software_name, None, vect_parameters, technology_name
+                    user, software_name, project, vect_parameters, technology_name
                 )  ### base values
             if not project_sample is None:
                 vect_parameters = self._get_default_project(
                     user,
                     software_name,
-                    project_sample.project,
+                    project_sample,
                     vect_parameters,
                     technology_name,
                 )  ### base values
@@ -499,13 +501,13 @@ class DefaultProjectSoftware(object):
             )
             if not project is None:
                 vect_parameters = self._get_default_project(
-                    user, software_name, None, vect_parameters, technology_name
+                    user, software_name, project, vect_parameters, technology_name
                 )  ### base values
             if not project_sample is None:
                 vect_parameters = self._get_default_project(
                     user,
                     software_name,
-                    project_sample.project,
+                    project_sample,
                     vect_parameters,
                     technology_name,
                 )  ### base values
@@ -516,13 +518,13 @@ class DefaultProjectSoftware(object):
             )
             if not project is None:
                 vect_parameters = self._get_default_project(
-                    user, software_name, None, vect_parameters, technology_name
+                    user, software_name, project, vect_parameters, technology_name
                 )  ### base values
             if not project_sample is None:
                 vect_parameters = self._get_default_project(
                     user,
                     software_name,
-                    project_sample.project,
+                    project_sample,
                     vect_parameters,
                     technology_name,
                 )  ### base values
@@ -533,7 +535,7 @@ class DefaultProjectSoftware(object):
             )
             if not sample is None:
                 vect_parameters = self._get_default_project(
-                    user, software_name, None, vect_parameters, technology_name
+                    user, software_name, sample, vect_parameters, technology_name
                 )  ### base values
             return vect_parameters
         elif software_name == SoftwareNames.SOFTWARE_TRIMMOMATIC_name:
@@ -542,7 +544,7 @@ class DefaultProjectSoftware(object):
             )
             if not sample is None:
                 vect_parameters = self._get_default_project(
-                    user, software_name, None, vect_parameters, technology_name
+                    user, software_name, sample, vect_parameters, technology_name
                 )  ### base values
             return vect_parameters
         elif software_name == SoftwareNames.SOFTWARE_ABRICATE_name:
@@ -551,7 +553,7 @@ class DefaultProjectSoftware(object):
             )
             if not sample is None:
                 vect_parameters = self._get_default_project(
-                    user, software_name, None, vect_parameters, technology_name
+                    user, software_name, sample, vect_parameters, technology_name
                 )  ### base values
             return vect_parameters
         elif software_name == SoftwareNames.SOFTWARE_NEXTSTRAIN_name:
@@ -2461,7 +2463,7 @@ class DefaultProjectSoftware(object):
         vect_parameters,
         technology_name,
         name_extended=None,
-        is_to_run=True,
+        is_to_run=False,
     ):
         """
         :param software_name name of the software

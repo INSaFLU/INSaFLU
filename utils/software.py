@@ -3072,6 +3072,7 @@ class Software(object):
         ### metakey for this process
         metaKeyAndValue = MetaKeyAndValue()
         os.chdir("/tmp/insaFlu/")
+
         try:
             meta_key_project_sample = (
                 metaKeyAndValue.get_meta_key_queue_by_project_sample_id(
@@ -3137,8 +3138,8 @@ class Software(object):
                 )
                 result_all.add_software(
                     SoftwareDesc(
-                        software.first().name,
-                        software.first().version,
+                        software.name,
+                        software.version,
                         snippy_parameters,
                     )
                 )
@@ -3147,8 +3148,8 @@ class Software(object):
                 result.set_error(e.args[0])
                 result.add_software(
                     SoftwareDesc(
-                        software.first().name,
-                        software.first().version,
+                        software.name,
+                        software.version,
                         snippy_parameters,
                     )
                 )
@@ -3186,22 +3187,20 @@ class Software(object):
                 return False
 
             ## copy the files to the project sample directories
-            self.copy_files_to_project(
-                project_sample, software.first().name, out_put_path
-            )
+            self.copy_files_to_project(project_sample, software.name, out_put_path)
             self.utils.remove_dir(out_put_path)
 
             ### make the link for the new tab file name
             path_snippy_tab = project_sample.get_file_output(
                 TypePath.MEDIA_ROOT,
                 FileType.FILE_TAB,
-                software.first().name,
+                software.name,
             )
             if os.path.exists(path_snippy_tab):
                 sz_file_to = project_sample.get_file_output_human(
                     TypePath.MEDIA_ROOT,
                     FileType.FILE_TAB,
-                    software.first().name,
+                    software.name,
                 )
                 self.utils.link_file(path_snippy_tab, sz_file_to)
 
@@ -3209,7 +3208,7 @@ class Software(object):
             bam_file = project_sample.get_file_output(
                 TypePath.MEDIA_ROOT,
                 FileType.FILE_BAM,
-                software.first().name,
+                software.name,
             )
             result = Result()
             if os.path.exists(bam_file):
@@ -3242,7 +3241,7 @@ class Software(object):
                         project_sample.get_file_output(
                             TypePath.MEDIA_ROOT,
                             FileType.FILE_DEPTH_GZ,
-                            software.first().name,
+                            software.name,
                         ),
                         project_sample.project.reference.get_reference_fasta(
                             TypePath.MEDIA_ROOT
@@ -3261,7 +3260,7 @@ class Software(object):
                         project_sample.get_file_output(
                             TypePath.MEDIA_ROOT,
                             FileType.FILE_DEPTH_GZ,
-                            software.first().name,
+                            software.name,
                         ),
                         project_sample.project.reference.get_reference_fasta(
                             TypePath.MEDIA_ROOT
@@ -3467,7 +3466,7 @@ class Software(object):
                             project_sample.get_file_output(
                                 TypePath.MEDIA_ROOT,
                                 FileType.FILE_BAM,
-                                self.software_names.get_snippy_name(),
+                                software.name,
                             ),
                             project_sample.project.reference.get_reference_fasta(
                                 TypePath.MEDIA_ROOT
@@ -3616,6 +3615,7 @@ class Software(object):
                         project_sample, user, count_hits
                     )
                 except:
+
                     result = Result()
                     result.set_error("Fail to calculate mixed infextion")
                     result.add_software(SoftwareDesc("In house software", "1.0", ""))

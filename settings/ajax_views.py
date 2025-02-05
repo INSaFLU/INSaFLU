@@ -89,6 +89,7 @@ def set_default_parameters(request):
                             None,
                             None,
                             software.technology.name,
+                            name_extended=software.name_extended,
                         )
 
                         b_change = (
@@ -135,6 +136,7 @@ def set_default_parameters(request):
                             project_sample,
                             None,
                             software.technology.name,
+                            name_extended=software.name_extended,
                         )
 
                         ### need to re-run this sample with snippy if the values change
@@ -241,6 +243,7 @@ def set_default_parameters(request):
                         None,
                         sample,
                         software.technology.name,
+                        name_extended=software.name_extended,
                     )
 
                     ### need to re-run this sample with NanoFilt if the values change
@@ -781,6 +784,9 @@ def turn_on_off_software(request):
                 )
                 software = Software.objects.get(pk=software_id)
                 current_is_to_run = software.is_to_run
+                print(software_id)
+                print("current_is_to_run", current_is_to_run)
+                ###########################################################
                 if (
                     not televir_project_sample_id is None
                     and not televir_project_id is None
@@ -828,7 +834,7 @@ def turn_on_off_software(request):
                         )
 
                         return JsonResponse(data)
-
+                ###########################################################
                 if not type_of_use_id is None:
                     if type_of_use_id in Software.TELEVIR_GLOBAL_TYPES:
                         pipeline_steps_televir_global = (
@@ -848,7 +854,7 @@ def turn_on_off_software(request):
                             )
 
                             return JsonResponse(data)
-
+                ############################################################################
                 if not project_id is None:  ##    project
                     project = Project.objects.get(pk=project_id)
                 elif not project_sample_id is None:  ##    project sample
@@ -925,7 +931,7 @@ def turn_on_off_software(request):
                         )
                     except:
                         pass
-
+                ##########################################################
                 elif not sample_id is None:  ## for Sample
                     sample = Sample.objects.get(pk=sample_id)
 
@@ -978,31 +984,50 @@ def turn_on_off_software(request):
                         process_SGE.set_create_sample_list_by_user(
                             request.user, [job_name]
                         )
-                if (
-                    software.pipeline_step.name
-                    == ConstantsSettings.PIPELINE_NAME_variant_detection
-                    and software.is_to_run == True
-                ):
-                    if (
-                        Software.objects.filter(
-                            owner=software.owner,
-                            type_of_use=software.type_of_use,
-                            parameter__televir_project=televir_project,
-                            parameter__televir_project_sample=televir_project_sample,
-                            pipeline_step__name=ConstantsSettings.PIPELINE_NAME_variant_detection,
-                            technology=software.technology,
-                            is_to_run=True,
-                        )
-                        .distinct()
-                        .exclude(pk=software.pk)
-                    ).exists() is False:
-                        data["message"] = (
-                            "At least one {} software must be active.".format(
-                                ConstantsSettings.PIPELINE_NAME_variant_detection
-                            )
-                        )
-                        return JsonResponse(data)
+                print("################################")
 
+                print(software.pipeline_step.name, current_is_to_run)
+                try:
+                    if (
+                        software.pipeline_step.name
+                        == ConstantsSettings.PIPELINE_NAME_variant_detection
+                        and software.is_to_run == True
+                    ):
+                        print(
+                            software.owner,
+                            software.type_of_use,
+                            sample,
+                            project,
+                            televir_project,
+                            televir_project_sample,
+                        )
+                        existing_software = (
+                            Software.objects.filter(
+                                owner=software.owner,
+                                type_of_use=software.type_of_use,
+                                parameter__project_sample=sample,
+                                parameter__project=project,
+                                parameter__televir_project=televir_project,
+                                parameter__televir_project_sample=televir_project_sample,
+                                pipeline_step__name=ConstantsSettings.PIPELINE_NAME_variant_detection,
+                                technology=software.technology,
+                                is_to_run=True,
+                            )
+                            .distinct()
+                            .exclude(pk=software.pk)
+                        )
+
+                        print(existing_software)
+                        if (existing_software).exists() is False:
+                            data["message"] = (
+                                "At least one {} software must be active.".format(
+                                    ConstantsSettings.PIPELINE_NAME_variant_detection
+                                )
+                            )
+                            return JsonResponse(data)
+                except Exception as e:
+                    print(e)
+                print("software", software)
                 ## set ON|OFF software
                 is_to_run = default_parameters.set_software_to_run_by_software(
                     software, project, televir_project, project_sample, sample
@@ -1017,6 +1042,8 @@ def turn_on_off_software(request):
                         Software.objects.filter(
                             owner=software.owner,
                             type_of_use=software.type_of_use,
+                            parameter__project_sample=sample,
+                            parameter__project=project,
                             parameter__televir_project=televir_project,
                             parameter__televir_project_sample=televir_project_sample,
                             pipeline_step__name=ConstantsSettings.PIPELINE_NAME_variant_detection,
@@ -1155,12 +1182,9 @@ def get_software_name_to_turn_on_off(request):
         sample_id = None
         project_id = None
         project_sample_id = None
-        type_of_use_id = None
         televir_project_id = None
         televir_project_sample_id = None
 
-        if type_of_use_id_a in request.GET:
-            type_of_use_id = request.GET[type_of_use_id_a]
         if televir_project_id_a in request.GET:
             televir_project_id = int(request.GET[televir_project_id_a])
         if televir_project_sample_id_a in request.GET:

@@ -352,7 +352,6 @@ class DefaultParameters(object):
 
         if software is None:
             return software
-
         # logger.debug("Get parameters: software-{} user-{} typeofuse-{} project-{} psample-{} sample-{} tec-{} dataset-{}",software, user, type_of_use, project, project_sample, sample, technology_name, dataset)
         ## get parameters for a specific user
         parameters = Parameter.objects.filter(
@@ -377,6 +376,7 @@ class DefaultParameters(object):
         vect_order_ouput = []
         for parameter in parameters:
             ### don't set the not set parameters
+
             if (
                 not parameter.not_set_value is None
                 and parameter.parameter == parameter.not_set_value
@@ -395,7 +395,6 @@ class DefaultParameters(object):
                 ]
 
         return_parameter = ""
-        # print(software_name, vect_order_ouput, dict_out)
         for par_name in vect_order_ouput:
             if self.hide_parameter_name_check(par_name) is False:
                 return_parameter += " {}".format(par_name)
@@ -655,7 +654,7 @@ class DefaultParameters(object):
 
     def set_software_to_run_by_software(
         self,
-        software,
+        software: Software,
         project,
         televir_project,
         project_sample,
@@ -710,16 +709,17 @@ class DefaultParameters(object):
 
             ### if it is Global it is software that is mandatory
             ### only can change if TYPE_OF_USE_global, other type_of_use is not be tested
-            if software.type_of_use in [
-                Software.TYPE_OF_USE_qc,
-                Software.TYPE_OF_USE_global,
-                Software.TYPE_OF_USE_televir_global,
-                Software.TYPE_OF_USE_televir_project,
-                Software.TYPE_OF_USE_televir_settings,
-                Software.TYPE_OF_USE_televir_project_settings,
-            ]:
-                software.is_to_run = is_to_run
-                software.save()
+            # if software.type_of_use in [
+            #    Software.TYPE_OF_USE_qc,
+            #    Software.TYPE_OF_USE_project,
+            #    Software.TYPE_OF_USE_global,
+            #    Software.TYPE_OF_USE_televir_global,
+            #    Software.TYPE_OF_USE_televir_project,
+            #    Software.TYPE_OF_USE_televir_settings,
+            #    Software.TYPE_OF_USE_televir_project_settings,
+            # ]:
+            software.is_to_run = is_to_run
+            software.save()
 
             ## get parameters for a specific sample, project or project_sample
             parameters = Parameter.objects.filter(
@@ -1334,6 +1334,7 @@ class DefaultParameters(object):
         parameter.type_data = Parameter.PARAMETER_char
         parameter.software = software
         parameter.project_sample = project_sample
+        parameter.project = project
         parameter.union_char = " "
         parameter.can_change = False
         parameter.sequence_out = 5

@@ -95,7 +95,7 @@ class SoftwaresTable(tables.Table):
     def render_software(self, record):
         return record.name if record.name_extended is None else record.name_extended
 
-    def render_select_to_run(self, value, record):
+    def render_select_to_run(self, value, record: Software):
         ## test if its to run and get IDs from others
         is_to_run, sz_ids = self._is_to_run(record)
 
@@ -667,7 +667,7 @@ class SoftwaresTable(tables.Table):
                 televir_project=self.televir_project,
             )
             if len(parameters) > 0:
-                is_to_run = parameters[0].is_to_run
+                is_to_run = parameters[0].software.is_to_run
         return is_to_run, sz_ids
 
     def get_info_about_mask_consensus_by_sites(self):
@@ -838,6 +838,7 @@ class INSaFLUParametersTable(tables.Table):
                 None,
                 technology_name=technology_name,
                 pipeline_step=pipeline_step,
+                name_extended=record.name_extended,
             )
         elif self.project is None:
             default_software_projects = DefaultProjectSoftware()
@@ -850,6 +851,7 @@ class INSaFLUParametersTable(tables.Table):
                 None,
                 technology_name=technology_name,
                 pipeline_step=pipeline_step,
+                name_extended=record.name_extended,
             )
         return ""
 

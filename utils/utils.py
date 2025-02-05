@@ -176,7 +176,7 @@ class Utils(object):
             temp_file_name = os.path.join(path_added, ntpath.basename(file_name))
         return os.path.join(main_path, temp_file_name.replace(" ", "_")), path_added
 
-    def get_temp_file(self, file_name, sz_type):
+    def get_temp_file(self, file_name, sz_type) -> str:
         """
         return a temp file name
         """
@@ -1573,7 +1573,7 @@ class Utils(object):
             raise ValueError("Incorrect data format, should be " + text_format)
         return date_
 
-    def clean_fasta_file(self, in_file, out_file, keep_segs=[]):
+    def clean_fasta_file(self, in_file, out_file):
         """
         clean fasta file from '-'
         """
@@ -1584,8 +1584,6 @@ class Utils(object):
             vect_sequences = []
             with open(in_file) as file_handle:
                 for seq_record in SeqIO.parse(file_handle, "fasta"):
-                    if seq_record.id not in keep_segs:
-                        continue
                     # Take the current sequence
                     # vect_sequences.append(SeqRecord(Seq(str(seq_record.seq).upper().replace('-', ''), IUPAC.ambiguous_dna), id=seq_record.id, description="", name=""))
                     vect_sequences.append(
@@ -1607,9 +1605,9 @@ class Utils(object):
 
         with open(out_file, "w+") as output_file_handle:
             vect_sequences = []
-            with open(in_file) as file_handle:
+            with open(in_file, "r") as file_handle:
                 for seq_record in SeqIO.parse(file_handle, "fasta"):
-                    if seq_record.id not in keep_segs:
+                    if seq_record.id not in keep_segs.keys():
                         continue
                     # Take the current sequence
                     # vect_sequences.append(SeqRecord(Seq(str(seq_record.seq).upper().replace('-', ''), IUPAC.ambiguous_dna), id=seq_record.id, description="", name=""))

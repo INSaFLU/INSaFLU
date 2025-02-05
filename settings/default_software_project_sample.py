@@ -5,6 +5,7 @@ Created on 03/05/2020
 """
 
 import logging
+from typing import List
 
 from constants.software_names import SoftwareNames
 from managing_files.models import Project, ProjectSample, Sample
@@ -41,7 +42,20 @@ class DefaultProjectSoftware(object):
                 None,
                 None,
                 ConstantsSettings.TECHNOLOGY_illumina,
+                name_extended=SoftwareNames.SOFTWARE_SNIPPY_name_extended,
             )
+
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_SNIPPY_name,
+                user,
+                Software.TYPE_OF_USE_project,
+                project,
+                None,
+                None,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                name_extended=SoftwareNames.SOFTWARE_IVAR_name_extended,
+            )
+
             self.test_default_db(
                 SoftwareNames.SOFTWARE_FREEBAYES_name,
                 user,
@@ -173,6 +187,16 @@ class DefaultProjectSoftware(object):
                     project_sample,
                     None,
                     ConstantsSettings.TECHNOLOGY_illumina,
+                )
+                self.test_default_db(
+                    SoftwareNames.SOFTWARE_SNIPPY_name,
+                    user,
+                    Software.TYPE_OF_USE_project_sample,
+                    None,
+                    project_sample,
+                    None,
+                    ConstantsSettings.TECHNOLOGY_illumina,
+                    name_extended=SoftwareNames.SOFTWARE_IVAR_name_extended,
                 )
                 self.test_default_db(
                     SoftwareNames.SOFTWARE_FREEBAYES_name,
@@ -360,8 +384,7 @@ class DefaultProjectSoftware(object):
         dataset=None,
         name_extended=None,
     ):
-        print(project)
-        print(software_name, name_extended)
+
         if software_name == SoftwareNames.SOFTWARE_SNIPPY_name:
             if name_extended == SoftwareNames.SOFTWARE_IVAR_name_extended:
                 vect_parameters = self.default_parameters.get_ivar_default(
@@ -379,7 +402,6 @@ class DefaultProjectSoftware(object):
                     vect_parameters,
                     technology_name,
                     name_extended=name_extended,
-                    is_to_run=True,
                 )  ### base values
             if not project_sample is None:
                 vect_parameters = self._get_default_project(
@@ -389,8 +411,8 @@ class DefaultProjectSoftware(object):
                     vect_parameters,
                     technology_name,
                     name_extended=name_extended,
-                    is_to_run=True,
                 )  ### base values
+
             return vect_parameters
 
         elif software_name == SoftwareNames.SOFTWARE_FREEBAYES_name:
@@ -2419,6 +2441,7 @@ class DefaultProjectSoftware(object):
             sample,
             technology_name,
             dataset,
+            name_extended=name_extended,
         )
 
         return self.default_parameters.get_parameters(
@@ -2432,6 +2455,7 @@ class DefaultProjectSoftware(object):
             dataset,
             televir_project=televir_project,
             pipeline_step=pipeline_step,
+            software_name_extended=name_extended,
         )
 
     def get_all_software(self):
@@ -2460,7 +2484,7 @@ class DefaultProjectSoftware(object):
         user,
         software_name,
         project,
-        vect_parameters,
+        vect_parameters: List[Parameter],
         technology_name,
         name_extended=None,
         is_to_run=False,
@@ -2508,6 +2532,7 @@ class DefaultProjectSoftware(object):
                         software_name
                     ),
                 )
+
         except Software.DoesNotExist:
             return vect_parameters
 
@@ -2515,7 +2540,7 @@ class DefaultProjectSoftware(object):
             software = software.filter(is_to_run=True)
 
         if len(software) == 0:
-            raise Software.DoesNotExist
+            return vect_parameters
 
         if len(software) > 1:
             raise Software.MultipleObjectsReturned
@@ -2536,7 +2561,9 @@ class DefaultProjectSoftware(object):
 
         ### parse them
         for parameter in parameters:
+
             for previous_parameter in vect_parameters:
+
                 if previous_parameter.sequence_out == parameter.sequence_out:
                     previous_parameter.is_to_run = parameter.is_to_run
                     previous_parameter.software.is_to_run = parameter.is_to_run
@@ -2549,4 +2576,5 @@ class DefaultProjectSoftware(object):
                         break
                     previous_parameter.parameter = parameter.parameter
                     break
+
         return vect_parameters

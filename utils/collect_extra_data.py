@@ -25,9 +25,9 @@ from managing_files.models import (
     ProjectSample,
     Reference,
     Sample,
+    TagNames,
 )
 from managing_files.models import Software as SoftwareModel
-from managing_files.models import TagNames
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software_project_sample import DefaultProjectSoftware
@@ -282,9 +282,7 @@ class CollectExtraData(object):
         ### get the taskID and seal it
         process_controler = ProcessControler()
         process_SGE = ProcessSGE()
-        print("OIOIJ")
         try:
-
             ## test SARS cov
             print("## Collecting mutation report")
             print(
@@ -293,7 +291,7 @@ class CollectExtraData(object):
             )
             if (
                 self.software.get_species_tag(project.reference)
-                == Reference.SPECIES_INFLUENZA
+                == 2,  # Reference.SPECIES_INFLUENZA
             ):
                 file_alignments = project.get_global_file_by_project(
                     TypePath.MEDIA_ROOT,
@@ -342,17 +340,18 @@ class CollectExtraData(object):
                 flumut_name_dict = {x: f"{x}_{keep_segment[x]}" for x in keep_segment}
 
                 self.utils.clean_fasta_file_new_name(
-                    file_alignments, temp_file, keep_segs=list(keep_segment.keys())
+                    file_alignments, temp_file, keep_segs=keep_segment
                 )
 
                 # add suffix to names of sequences
                 print(flumut_name_dict)
 
+                self.__collect_flumut_report(project, temp_file)
+
             if (
                 self.software.get_species_tag(project.reference)
                 == Reference.SPECIES_SARS_COV_2
             ):
-
                 geneticElement = self.utils.get_elements_and_cds_from_db(
                     project.reference, user
                 )
@@ -383,12 +382,16 @@ class CollectExtraData(object):
                         break
 
                 if os.path.exists(file_alignments):
-
                     self.__collect_aln2pheno(
                         project, project, file_alignments, sequence_name, GENE_NAME
                     )
 
         except Exception as e:
+            print(e)
+            # print traceback
+            import traceback
+
+            traceback.print_exc()
             ## finished with error
             self.logger_debug.info("Aln2pheno Gave an error {}".format(e))
             process_SGE.set_process_controler(
@@ -422,6 +425,7 @@ class CollectExtraData(object):
         file_flumut_excel = project.get_global_file_by_project(
             TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_flumut_excel
         )
+        print("Running flumut")
 
         self.software.run_flumut(
             file_alignments,
@@ -436,7 +440,6 @@ class CollectExtraData(object):
     def __collect_aln2pheno(
         self, project: Project, file_alignments, sequence_name, GENE_NAME="S"
     ):
-
         file_aln2pheno_zip = project.get_global_file_by_project(
             TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_zip
         )
@@ -1237,6 +1240,7 @@ class CollectExtraData(object):
             out_file = self.utils.get_temp_file(
                 "json_sample_file", FileExtensions.FILE_JSON
             )
+
             with open(out_file, "w", encoding="utf-8") as handle_write, open(
                 file_name_root_sample
             ) as handle_in_csv:
@@ -1536,7 +1540,6 @@ class CollectExtraData(object):
         return out_file
 
     def zip_several_files(self, project):
-
         temp_dir = self.utils.get_temp_dir()
 
         ## coverage
@@ -1953,7 +1956,6 @@ class CollectExtraData(object):
                     CollectExtraData.SAMPLE_LIST_simple,
                     CollectExtraData.SAMPLE_LIST_list,
                 ]:
-
                     ## file names
                     if type_list == CollectExtraData.SAMPLE_LIST_list:
                         ### fastq1
@@ -2104,7 +2106,6 @@ class CollectExtraData(object):
 
                     ###  BEGIN info about software versions  ####
                     if project_sample.id in dict_all_results:
-
                         ### trimmomatic stats
                         if b_trimmomatic_stats:
                             self._get_info_from_trimmomatic_stats(
@@ -2201,7 +2202,6 @@ class CollectExtraData(object):
 
         ## it is not available yet
         if meta_value is None:
-
             ### get mapped stast reads
             if project_sample.is_sample_illumina():
                 bam_file = project_sample.get_file_output(
@@ -2916,7 +2916,6 @@ class CollectExtraData(object):
 
                 ###  BEGIN info about software versions  ####
                 if sample.id in dict_all_results:
-
                     ### trimmomatic stats
                     if b_trimmomatic_stats:
                         self._get_info_from_trimmomatic_stats(
@@ -3113,7 +3112,6 @@ class CollectExtraData(object):
 
 
 class ParsePangolinResult(object):
-
     utils = Utils()
     HEADER_PANGOLIN_file = "taxon,lineage"
     KEY_LINEAGE = "lineage"

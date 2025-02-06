@@ -43,6 +43,7 @@ class DefaultProjectSoftware(object):
                 None,
                 ConstantsSettings.TECHNOLOGY_illumina,
                 name_extended=SoftwareNames.SOFTWARE_SNIPPY_name_extended,
+                create=True,
             )
 
             self.test_default_db(
@@ -54,6 +55,7 @@ class DefaultProjectSoftware(object):
                 None,
                 ConstantsSettings.TECHNOLOGY_illumina,
                 name_extended=SoftwareNames.SOFTWARE_IVAR_name_extended,
+                create=True,
             )
 
             self.test_default_db(
@@ -187,6 +189,8 @@ class DefaultProjectSoftware(object):
                     project_sample,
                     None,
                     ConstantsSettings.TECHNOLOGY_illumina,
+                    name_extended=SoftwareNames.SOFTWARE_SNIPPY_name_extended,
+                    create=True,
                 )
                 self.test_default_db(
                     SoftwareNames.SOFTWARE_SNIPPY_name,
@@ -197,6 +201,7 @@ class DefaultProjectSoftware(object):
                     None,
                     ConstantsSettings.TECHNOLOGY_illumina,
                     name_extended=SoftwareNames.SOFTWARE_IVAR_name_extended,
+                    create=True,
                 )
                 self.test_default_db(
                     SoftwareNames.SOFTWARE_FREEBAYES_name,
@@ -317,6 +322,7 @@ class DefaultProjectSoftware(object):
         dataset=None,
         televir_project=None,
         name_extended=None,
+        create=False,
     ):
         """
         test if exist, if not persist in database
@@ -358,6 +364,7 @@ class DefaultProjectSoftware(object):
 
         ### if not exist need to save
         if len(list_software) == 0:
+            print("Test default db: {} ({})".format(list_software, len(list_software)))
             vect_parameters = self._get_default_parameters(
                 software_name,
                 user,
@@ -370,7 +377,13 @@ class DefaultProjectSoftware(object):
                 name_extended=name_extended,
             )
             if len(vect_parameters) > 0:  ### persist
-                self.default_parameters.persist_parameters(vect_parameters, type_of_use)
+
+                if create:
+                    self.default_parameters.persist_parameters_create(vect_parameters)
+                else:
+                    self.default_parameters.persist_parameters(
+                        vect_parameters, type_of_use
+                    )
 
     def _get_default_parameters(
         self,
@@ -2521,6 +2534,7 @@ class DefaultProjectSoftware(object):
                         software_name
                     ),
                     name_extended=name_extended,
+                    parameter__project=project,
                 )
             else:
                 software = Software.objects.filter(
@@ -2531,6 +2545,7 @@ class DefaultProjectSoftware(object):
                     version_parameters=self.default_parameters.get_software_parameters_version(
                         software_name
                     ),
+                    parameter__project=project,
                 )
 
         except Software.DoesNotExist:
@@ -2538,11 +2553,13 @@ class DefaultProjectSoftware(object):
 
         if is_to_run == True:
             software = software.filter(is_to_run=True)
-
+        print("software", software)
         if len(software) == 0:
             return vect_parameters
 
         if len(software) > 1:
+            print("software", software)
+            print("project", project.pk)
             raise Software.MultipleObjectsReturned
 
         software = software.first()

@@ -940,7 +940,6 @@ class DefaultSoftware(object):
                     software.delete()
 
         except Software.DoesNotExist:  ### if not exist save it
-
             self.default_parameters.persist_parameters(vect_parameters, type_of_use)
 
     def test_default_persist_specific(

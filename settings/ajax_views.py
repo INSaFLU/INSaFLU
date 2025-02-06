@@ -1054,9 +1054,15 @@ def turn_on_off_software(request):
                     )
 
                     for filter in active_filters:
+                        print("filter", filter)
 
                         output = default_parameters.set_software_to_run_by_software(
-                            filter, project, televir_project, project_sample, sample
+                            filter,
+                            project,
+                            televir_project,
+                            project_sample,
+                            sample,
+                            is_to_run=False,
                         )
 
                         data["other_kills"] += [filter.pk]

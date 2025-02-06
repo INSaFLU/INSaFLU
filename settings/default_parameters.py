@@ -110,6 +110,32 @@ class DefaultParameters(object):
                     software.is_obsolete = True
                     software.save()
 
+    def persist_parameters_create(self, vect_parameters: List[Parameter]):
+        software = None
+        dt_out_sequential = {}
+        for parameter in vect_parameters:
+            assert parameter.sequence_out not in dt_out_sequential
+            if software is None:
+                try:
+                    software = parameter.software
+
+                    software.save()
+
+                except Exception as e:
+                    logging.error("Error persisting software: {}".format(e))
+                    continue
+
+            parameter.software = software
+
+            try:
+
+                parameter.save()
+                dt_out_sequential[parameter.sequence_out] = 1
+
+            except Exception as e:
+                logging.error("Error persisting parameter: {}".format(e))
+                continue
+
     def persist_parameters(self, vect_parameters: List[Parameter], type_of_use: int):
         """
         persist a specific software by default
@@ -130,7 +156,9 @@ class DefaultParameters(object):
                         version_parameters=parameter.software.version_parameters,
                         pipeline_step=parameter.software.pipeline_step,
                     )
+                    print("SOFTWARE EXISTS")
                 except Software.DoesNotExist:
+                    print("SOFTWARE DOES NOT EXISTS")
                     software = parameter.software
                     try:
                         software.save()

@@ -365,7 +365,7 @@ class CollectExtraData(object):
     def __collect_flumut_report(self, project: Project):
         """
         Runs flumut
-        influenza_keys = ["HA", "NA", "MP", "NP", "NS", "PA", "PB1", "PB2"]
+        influenza_keys = ["HA", "NA", "MP", "NP", "NS", "PA", "PB1", "PB2"] # this stays here for now since flumut is specific to influenza A and hence these segment names.
 
         """
 
@@ -391,6 +391,8 @@ class CollectExtraData(object):
         # This doesn't really matter
         self.utils.remove_temp_file(temp_out_abricate)
 
+        ###### FILTER AND RENAME
+
         keep_segment = {}
 
         for segname, result_list in dict_data_out.items():
@@ -404,17 +406,19 @@ class CollectExtraData(object):
                 continue
             keep_segment[segname] = gene
 
+        flumut_name_dict = {x: f"{x}_{keep_segment[x]}" for x in keep_segment}
+
+        ####### CLEAN FASTA FILE
+
         file_alignments = self.utils.get_temp_file(
             "abricate_fasta", FileExtensions.FILE_FASTA
         )
-
-        flumut_name_dict = {x: f"{x}_{keep_segment[x]}" for x in keep_segment}
 
         self.utils.clean_fasta_file_new_name(
             project_all_consensus, file_alignments, keep_segs=flumut_name_dict
         )
 
-        ############################
+        ############################ RUN FLUMUT
 
         file_flumut_mutation_report = project.get_global_file_by_project(
             TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Flumut_mutation_report

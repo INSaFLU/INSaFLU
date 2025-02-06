@@ -112,6 +112,7 @@ urlpatterns = [
         name="show-variants-as-a-table",
     ),
     url(r"^ajax/show_aln2pheno$", ajax_views.show_aln2pheno, name="show-aln2pheno"),
+    url(r"^ajax/show_flumut$", ajax_views.show_flumut, name="show-flumut"),
     url(
         r"^ajax/show_coverage_as_a_table$",
         ajax_views.show_coverage_as_a_table,
@@ -167,7 +168,7 @@ urlpatterns = [
     ),  ## remove a sample
     url(
         r"^ajax/swap_technology$", ajax_views.swap_technology, name="swap_technology"
-    ),  ## swap technology in sample    
+    ),  ## swap technology in sample
     url(
         r"^ajax/remove_project$", ajax_views.remove_project, name="remove_project"
     ),  ## remove a project
@@ -205,7 +206,7 @@ urlpatterns = [
         r"^ajax/relink_uploaded_file$",
         ajax_views.relink_uploaded_files,
         name="relink_uploaded_files",
-    ),  ## remove remove_uploaded_file    
+    ),  ## remove remove_uploaded_file
     url(
         r"^ajax/unlock_sample_file$",
         ajax_views.unlock_sample_file,

@@ -5343,13 +5343,15 @@ class Software(object):
         """
 
         # Run flumut
-        cmd = "{} -m {} -M {} -l {} -x {} {}".format(
-            SoftwareNames.SOFTWARE_FLUMUT,
-            markers_report,
-            mutations_report,
-            litterature_report,
-            excel_report,
-            sequences,
+        cmd = (
+            "{} -n '(?P<sample>.+)_(?P<segment>.+)$' -m {} -M {} -l {} -x {} {}".format(
+                SoftwareNames.SOFTWARE_FLUMUT,
+                markers_report,
+                mutations_report,
+                litterature_report,
+                excel_report,
+                sequences,
+            )
         )
 
         exit_status = os.system(cmd)

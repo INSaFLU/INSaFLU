@@ -2565,6 +2565,7 @@ class DefaultProjectSoftware(object):
             for previous_parameter in vect_parameters:
 
                 if previous_parameter.sequence_out == parameter.sequence_out:
+
                     previous_parameter.is_to_run = parameter.is_to_run
                     previous_parameter.software.is_to_run = parameter.is_to_run
 

@@ -25,9 +25,9 @@ from managing_files.models import (
     ProjectSample,
     Reference,
     Sample,
-    TagNames,
 )
 from managing_files.models import Software as SoftwareModel
+from managing_files.models import TagNames
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software_project_sample import DefaultProjectSoftware
@@ -275,7 +275,9 @@ class CollectExtraData(object):
                 ProcessControler.FLAG_FINISHED,
             )
 
-    def __collect_mutation_report(self, project, user, b_mark_sge_success=True):
+    def __collect_mutation_report(
+        self, project: Project, user, b_mark_sge_success=True
+    ):
         """
         Runs aln2pheno
         """
@@ -293,60 +295,8 @@ class CollectExtraData(object):
                 self.software.get_species_tag(project.reference)
                 == 2,  # Reference.SPECIES_INFLUENZA
             ):
-                file_alignments = project.get_global_file_by_project(
-                    TypePath.MEDIA_ROOT,
-                    Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus,
-                )
 
-                print(file_alignments)
-                temp_out_abricate = self.utils.get_temp_file(
-                    "temp_abricate", FileExtensions.FILE_TXT
-                )
-                print("HELLO")
-                cmd = self.software.run_abricate(
-                    "sequences_v13",  # Need to change this
-                    file_alignments,
-                    SoftwareNames.SOFTWARE_ABRICATE_PARAMETERS,
-                    temp_out_abricate,
-                )
-                print("done")
-                parseOutFiles = ParseOutFiles()
-                dict_data_out = parseOutFiles.parse_abricate_file_simple(
-                    temp_out_abricate
-                )
-                # This doesn't really matter
-                # self.utils.remove_temp_file(temp_out_abricate)
-                print(temp_out_abricate)
-
-                keep_segment = {}
-                influenza_keys = ["HA", "NA", "MP", "NP", "NS", "PA", "PB1", "PB2"]
-                for segname, result_list in dict_data_out.items():
-                    if result_list == []:
-                        continue
-                    seg_abr_result = result_list[0]
-                    if "Gene" not in seg_abr_result:
-                        continue
-                    gene = seg_abr_result["Gene"].split("_")[-1]
-                    if gene not in influenza_keys:
-                        continue
-                    keep_segment[segname] = gene
-
-                print(keep_segment)
-
-                temp_file = self.utils.get_temp_file(
-                    "abricate_fasta", FileExtensions.FILE_FASTA
-                )
-
-                flumut_name_dict = {x: f"{x}_{keep_segment[x]}" for x in keep_segment}
-
-                self.utils.clean_fasta_file_new_name(
-                    file_alignments, temp_file, keep_segs=keep_segment
-                )
-
-                # add suffix to names of sequences
-                print(flumut_name_dict)
-
-                self.__collect_flumut_report(project, temp_file)
+                self.__collect_flumut_report(project)
 
             if (
                 self.software.get_species_tag(project.reference)
@@ -370,20 +320,24 @@ class CollectExtraData(object):
 
                 ### create for single sequences
                 GENE_NAME = "S"
-                file_alignments = ""
+                project_all_consensus = ""
                 for sequence_name in geneticElement.get_sorted_elements():
-                    file_alignments = project.get_global_file_by_element_and_cds(
+                    project_all_consensus = project.get_global_file_by_element_and_cds(
                         TypePath.MEDIA_ROOT,
                         sequence_name,
                         GENE_NAME,
                         Project.PROJECT_FILE_NAME_MAFFT,
                     )
-                    if os.path.exists(file_alignments):
+                    if os.path.exists(project_all_consensus):
                         break
 
-                if os.path.exists(file_alignments):
+                if os.path.exists(project_all_consensus):
                     self.__collect_aln2pheno(
-                        project, project, file_alignments, sequence_name, GENE_NAME
+                        project,
+                        project,
+                        project_all_consensus,
+                        sequence_name,
+                        GENE_NAME,
                     )
 
         except Exception as e:
@@ -408,10 +362,59 @@ class CollectExtraData(object):
                 ProcessControler.FLAG_FINISHED,
             )
 
-    def __collect_flumut_report(self, project: Project, file_alignments: str):
+    def __collect_flumut_report(self, project: Project):
         """
         Runs flumut
+        influenza_keys = ["HA", "NA", "MP", "NP", "NS", "PA", "PB1", "PB2"]
+
         """
+
+        influenza_keys = ["HA", "NA", "MP", "NP", "NS", "PA", "PB1", "PB2"]
+
+        project_all_consensus = project.get_global_file_by_project(
+            TypePath.MEDIA_ROOT,
+            Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus,
+        )
+
+        #### RUN ABRICATE, GET GENES, FILTER, RENAME, RUN FLUMUT
+        temp_out_abricate = self.utils.get_temp_file(
+            "temp_abricate", FileExtensions.FILE_TXT
+        )
+        _ = self.software.run_abricate(
+            "sequences_v13",  # Need to change this
+            project_all_consensus,
+            SoftwareNames.SOFTWARE_ABRICATE_PARAMETERS,
+            temp_out_abricate,
+        )
+        parseOutFiles = ParseOutFiles()
+        dict_data_out = parseOutFiles.parse_abricate_file_simple(temp_out_abricate)
+        # This doesn't really matter
+        self.utils.remove_temp_file(temp_out_abricate)
+
+        keep_segment = {}
+
+        for segname, result_list in dict_data_out.items():
+            if result_list == []:
+                continue
+            seg_abr_result = result_list[0]
+            if "Gene" not in seg_abr_result:
+                continue
+            gene = seg_abr_result["Gene"].split("_")[-1]
+            if gene not in influenza_keys:
+                continue
+            keep_segment[segname] = gene
+
+        file_alignments = self.utils.get_temp_file(
+            "abricate_fasta", FileExtensions.FILE_FASTA
+        )
+
+        flumut_name_dict = {x: f"{x}_{keep_segment[x]}" for x in keep_segment}
+
+        self.utils.clean_fasta_file_new_name(
+            project_all_consensus, file_alignments, keep_segs=flumut_name_dict
+        )
+
+        ############################
 
         file_flumut_mutation_report = project.get_global_file_by_project(
             TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Flumut_mutation_report
@@ -425,7 +428,6 @@ class CollectExtraData(object):
         file_flumut_excel = project.get_global_file_by_project(
             TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_flumut_excel
         )
-        print("Running flumut")
 
         self.software.run_flumut(
             file_alignments,

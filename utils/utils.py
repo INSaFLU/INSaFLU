@@ -1611,6 +1611,7 @@ class Utils(object):
                         continue
                     # Take the current sequence
                     # vect_sequences.append(SeqRecord(Seq(str(seq_record.seq).upper().replace('-', ''), IUPAC.ambiguous_dna), id=seq_record.id, description="", name=""))
+                    print("new_id", keep_segs[seq_record.id])
                     vect_sequences.append(
                         SeqRecord(
                             Seq(str(seq_record.seq).upper().replace("-", "")),

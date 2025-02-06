@@ -2670,6 +2670,29 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
                     Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK,
                 )
             )
+        if os.path.exists(
+            project.get_global_file_by_project(
+                TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Flumut_markers_report
+            )
+        ):
+            context["flumut_report"] = get_link_for_dropdown_item(
+                project.get_global_file_by_project(
+                    TypePath.MEDIA_URL,
+                    Project.PROJECT_FILE_NAME_Flumut_markers_report,
+                )
+            )
+
+        if os.path.exists(
+            project.get_global_file_by_project(
+                TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_flumut_excel
+            )
+        ):
+            context["flumut_excel"] = get_link_for_dropdown_item(
+                project.get_global_file_by_project(
+                    TypePath.MEDIA_URL,
+                    Project.PROJECT_FILE_NAME_flumut_excel,
+                )
+            )
         # if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_pokay)):
         # 	context['aln2pheno_report_pokay'] = get_link_for_dropdown_item(
         # 		project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_Aln2pheno_report_pokay))

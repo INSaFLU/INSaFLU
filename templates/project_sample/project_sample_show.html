@@ -244,6 +244,28 @@
 			
 			{% endif %}
 
+			{% if flumut_report %}
+
+			<!-- Card Show flumut report -->
+			  <div class="card">
+				<div class="card-header" role="tab" id="headingFlumut">
+					<h5 class="mb-0">
+						<a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseFlumut" aria-expanded="false" aria-controls="collapseFlumut">
+							<strong>Flumut</strong> report
+	        			</a>
+	      			</h5>
+	    		</div>
+	
+	    		<div id="collapseFlumut" class="collapse" role="tabpanel" aria-labelledby="headingFlumut">
+	      			<div class="card-block">
+	        			<div id='loader_showflumut'><img src="{{ spinner_url }}"/></div>
+	        			<div id="showflumut" class="show_variants_table" project_id="{{ project_id }}" show-flumut-url="{% url 'show-flumut' %}"></div>
+	      			</div>
+	    		</div>
+			</div>
+
+			{% endif %}
+
 	   		<!-- Card Minor variants overview-->
 	   		{% if variations_statistics_file %}
 		   		<div class="card">
@@ -337,6 +359,7 @@
 			    									{% if samples_file_variants %} {{ samples_file_variants }} {% endif %}
 			    									{% if samples_file_minor_intra_host %} {{ samples_file_minor_intra_host }} {% endif %}
 													{% if aln2pheno_zip %} {{ aln2pheno_zip }} {% endif %}
+													{% if flumut_excel %} {{ flumut_excel }} {% endif %}
 			    								{% endif %}
 			    								
 			    								{% if pangolin_lineage %}
@@ -546,6 +569,7 @@
 	    	<script type="text/javascript" src="{% static 'vendor/phylocanvas/v2.8.1/phylocanvas-quickstart.js' %}"></script>
 	    	<script type="text/javascript" src="{% static 'js/sample-project/show-sample-project.js' %}"></script>
 			<script type="text/javascript" src="{% static 'js/sample-project/show-aln2pheno.js' %}"></script>
+			<script type="text/javascript" src="{% static 'js/sample-project/show-flumut.js' %}"></script>
 	    	<script type="text/javascript" src="{% static 'js/sample-project/gff-parser.js' %}"></script>
 	    	<script type="text/javascript" src="{% static 'vendor/msa/msa.min.1.0.js' %}"></script>
 	    	<!-- <script type="text/javascript" src="{% static 'vendor/msa/msa.min.js' %}"></script> -->

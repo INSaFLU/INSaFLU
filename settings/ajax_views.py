@@ -985,7 +985,6 @@ def turn_on_off_software(request):
                             request.user, [job_name]
                         )
                 print("################################")
-
                 print(software.pipeline_step.name, current_is_to_run)
                 try:
                     if (

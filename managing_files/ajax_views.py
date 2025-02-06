@@ -17,15 +17,22 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_protect
 
-from constants.constants import (Constants, FileExtensions, FileType, TypeFile,
-                                 TypePath)
+from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import (DataSet, MetaKey, ProcessControler, Project,
-                                   ProjectSample, Reference, Sample,
-                                   UploadFiles, VaccineStatus)
+from managing_files.models import (
+    DataSet,
+    MetaKey,
+    ProcessControler,
+    Project,
+    ProjectSample,
+    Reference,
+    Sample,
+    UploadFiles,
+    VaccineStatus,
+)
 from pathogen_identification.models import ParameterSet, PIProject_Sample
 from pathogen_identification.models import Projects as Televir_Project
 from settings.constants_settings import ConstantsSettings
@@ -340,6 +347,42 @@ def show_aln2pheno(request):
                                 TypePath.MEDIA_URL,
                                 # Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK,
                                 Project.PROJECT_FILE_NAME_Aln2pheno_report_carabelli,
+                            )
+                        )
+                    )
+                    data["static_table_filter"] = mark_safe(
+                        request.build_absolute_uri(
+                            os.path.join(settings.STATIC_URL, "vendor/tablefilter")
+                        )
+                    )
+            except Project.DoesNotExist:
+                pass
+        return JsonResponse(data)
+
+
+@csrf_protect
+def show_flumut(request):
+    """
+    return table with variants
+    """
+    if request.is_ajax():
+        data = {"is_ok": False}
+        key_with_project_id = "project_id"
+        if key_with_project_id in request.GET:
+            project_id = int(request.GET.get(key_with_project_id))
+            try:
+                project = Project.objects.get(id=project_id)
+                out_file = project.get_global_file_by_project(
+                    TypePath.MEDIA_ROOT,
+                    Project.PROJECT_FILE_NAME_Flumut_markers_report,
+                )
+                if os.path.exists(out_file) and os.stat(out_file).st_size > 0:
+                    data["is_ok"] = True
+                    data["url_path_flumut"] = mark_safe(
+                        request.build_absolute_uri(
+                            project.get_global_file_by_project(
+                                TypePath.MEDIA_URL,
+                                Project.PROJECT_FILE_NAME_Flumut_markers_report,
                             )
                         )
                     )

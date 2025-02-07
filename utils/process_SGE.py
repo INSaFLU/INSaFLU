@@ -113,7 +113,7 @@ class ProcessSGE(object):
         """
         create the script to run SGE
         """
-        b_remove_out_dir = False
+        # b_remove_out_dir = False
 
         if len(vect_cmd) == 0:
             return None

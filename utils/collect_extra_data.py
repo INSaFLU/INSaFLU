@@ -376,6 +376,13 @@ class CollectExtraData(object):
             Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus,
         )
 
+        ### check if empty file
+        if (
+            not os.path.exists(project_all_consensus)
+            or os.stat(project_all_consensus).st_size == 0
+        ):
+            return
+
         #### RUN ABRICATE, GET GENES, FILTER, RENAME, RUN FLUMUT
         temp_out_abricate = self.utils.get_temp_file(
             "temp_abricate", FileExtensions.FILE_TXT

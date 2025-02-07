@@ -3142,6 +3142,7 @@ class Software(object):
                     )
                 )
             except Exception as e:
+                print(e)
                 result = Result()
                 result.set_error(e.args[0])
                 result.add_software(
@@ -3332,6 +3333,8 @@ class Software(object):
                     coverage.to_json(),
                 )
             except Exception as e:
+                print(e)
+
                 result = Result()
                 result.set_error("Fail to get coverage: " + e.args[0])
                 result.add_software(
@@ -3458,6 +3461,8 @@ class Software(object):
                         )
                     )
                 except Exception as e:
+                    print(e)
+
                     ### can fail the freebayes parallel and try the regular one
                     try:
                         out_put_path = self.run_freebayes(
@@ -3482,6 +3487,8 @@ class Software(object):
                             )
                         )
                     except Exception as e:
+                        print(e)
+
                         result = Result()
                         result.set_error(e.args[0])
                         result.add_software(

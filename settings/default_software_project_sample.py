@@ -756,7 +756,7 @@ class DefaultProjectSoftware(object):
         if value_default_parameter is None:
             return False
 
-        parameter_defined = self.get_snippy_single_parameter_for_project(
+        parameter_defined = self.get_mdcg_single_parameter_for_project(
             project, parameter_name
         )
         if (
@@ -766,7 +766,7 @@ class DefaultProjectSoftware(object):
             return True
         return False
 
-    def get_snippy_single_parameter_for_project(self, project, parameter_name):
+    def get_mdcg_single_parameter_for_project(self, project, parameter_name):
         """
         get snippy single parameters
         :param parameter_name -> Only these two possibilities available SNIPPY_COVERAGE_NAME; SNIPPY_MAPQUAL_NAME

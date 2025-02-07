@@ -1026,10 +1026,15 @@ def turn_on_off_software(request):
                             return JsonResponse(data)
                 except Exception as e:
                     print(e)
-                print("software", software)
+
                 ## set ON|OFF software
                 is_to_run = default_parameters.set_software_to_run_by_software(
-                    software, project, televir_project, project_sample, sample
+                    software,
+                    project,
+                    televir_project,
+                    project_sample,
+                    sample,
+                    is_to_run=not current_is_to_run,
                 )
                 if (
                     software.pipeline_step.name

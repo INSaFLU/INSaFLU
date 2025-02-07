@@ -709,6 +709,7 @@ class DefaultParameters(object):
                 if software.type_of_use in [
                     Software.TYPE_OF_USE_qc,
                     Software.TYPE_OF_USE_global,
+                    Software.TYPE_OF_USE_televir_project,
                     Software.TYPE_OF_USE_televir_global,
                     Software.TYPE_OF_USE_televir_project,
                     Software.TYPE_OF_USE_televir_settings,

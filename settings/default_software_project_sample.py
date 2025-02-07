@@ -364,6 +364,7 @@ class DefaultProjectSoftware(object):
 
         ### if not exist need to save
         if len(list_software) == 0:
+            print(software_name, name_extended)
             print("Test default db: {} ({})".format(list_software, len(list_software)))
             vect_parameters = self._get_default_parameters(
                 software_name,

@@ -114,7 +114,6 @@ class SoftwaresTable(tables.Table):
             )
 
         ## need to remove # in href, otherwise still active
-
         sz_href = (
             '<a href="{}id_turn_software_on_off" {} '.format(
                 "#" if record.can_be_on_off_in_pipeline and b_enable_options else "",
@@ -201,8 +200,7 @@ class SoftwaresTable(tables.Table):
             else:
                 return "None"
         elif not self.project is None:
-            print("####### GETTING PARAMETERS FOR PROJECT")
-            print(record.name, record.name_extended)
+
             default_software_projects = DefaultProjectSoftware()
             parameters = default_software_projects.get_parameters(
                 record.name,
@@ -215,11 +213,12 @@ class SoftwaresTable(tables.Table):
                 pipeline_step=record.pipeline_step.name,
                 name_extended=record.name_extended,
             )
-            print(parameters)
+
             if parameters == DefaultParameters.MASK_DONT_care:
                 if record.name == SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name:
                     return self.get_info_about_mask_consensus_by_sites()
             return parameters
+
         elif not self.project_sample is None:
             default_software_projects = DefaultProjectSoftware()
             parameters = default_software_projects.get_parameters(

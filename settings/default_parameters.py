@@ -156,9 +156,7 @@ class DefaultParameters(object):
                         version_parameters=parameter.software.version_parameters,
                         pipeline_step=parameter.software.pipeline_step,
                     )
-                    print("SOFTWARE EXISTS")
                 except Software.DoesNotExist:
-                    print("SOFTWARE DOES NOT EXISTS")
                     software = parameter.software
                     try:
                         software.save()
@@ -289,6 +287,7 @@ class DefaultParameters(object):
         software_name,
         technology_name,
         type_of_use,
+        project=None,
         televir_project=None,
         is_to_run=True,
         name_extended=None,
@@ -303,7 +302,8 @@ class DefaultParameters(object):
             technology__name=technology_name,
             version_parameters=self.get_software_parameters_version(software_name),
             parameter__televir_project=televir_project,
-        )
+            parameter__project=project,
+        ).distinct()
 
         if len(software_list) == 0:
             software_list = Software.objects.filter(
@@ -312,7 +312,7 @@ class DefaultParameters(object):
                 type_of_use=type_of_use,
                 version_parameters=self.get_software_parameters_version(software_name),
                 parameter__televir_project=televir_project,
-            )
+            ).distinct()
 
         if is_to_run == True:
             software_list = software_list.filter(is_to_run=True)
@@ -376,12 +376,12 @@ class DefaultParameters(object):
                 televir_project=televir_project,
                 is_to_run=is_to_run,
                 name_extended=software_name_extended,
+                project=project,
             )
-        print("SOFTWARE: ", software, software_name_extended, software.pk)
         if software is None:
             return software
-        # logger.debug("Get parameters: software-{} user-{} typeofuse-{} project-{} psample-{} sample-{} tec-{} dataset-{}",software, user, type_of_use, project, project_sample, sample, technology_name, dataset)
-        ## get parameters for a specific user
+        ## logger.debug("Get parameters: software-{} user-{} typeofuse-{} project-{} psample-{} sample-{} tec-{} dataset-{}",software, user, type_of_use, project, project_sample, sample, technology_name, dataset)
+        ## get parameters for a specific user  #
         parameters = Parameter.objects.filter(
             software=software,
             project=project,
@@ -390,16 +390,19 @@ class DefaultParameters(object):
             dataset=dataset,
             televir_project=televir_project,
         )
-        print("PARAMETERS: ", parameters)
 
         # logger.debug("Get parameters: {}".format(parameters))
         ### if only one parameter and it is don't care, return dont_care
+
         if len(list(parameters)) == 1 and list(parameters)[0].name in [
             DefaultParameters.MASK_not_applicable,
             DefaultParameters.MASK_DONT_care,
         ]:
             return DefaultParameters.MASK_not_applicable
 
+        return self.parse_parameters(parameters, software_name)
+
+    def parse_parameters(self, parameters: List[Parameter], software_name):
         ### parse them
         dict_out = {}
         vect_order_ouput = []

@@ -1656,8 +1656,8 @@ class DefaultSoftware(object):
             )
             return self.get_nextstrain_parameters(user)
 
-        ##########################################
-        ############### TELEVIR SOFTWARE #########
+        ################################################
+        ############### TELEVIR SOFTWARE ###############
 
         if software_name == SoftwareNames.SOFTWARE_REMAP_PARAMS_name:
 

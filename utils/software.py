@@ -1715,7 +1715,6 @@ class Software(object):
                 file_name_1,
                 file_name_2,
             )
-        print("SNIPPY: ", cmd)
         exist_status = os.system(cmd)
         if exist_status != 0:
             self.logger_production.error("Fail to run: " + cmd)
@@ -2891,11 +2890,8 @@ class Software(object):
         sample.save()
 
         try:
-            print("Start run_fastq_and_trimmomatic")
             ### run trimmomatics
             b_has_data, b_it_ran = self.run_fastq_and_trimmomatic(sample, user)
-
-            print("Result run_fastq_and_trimmomatic: " + str(b_has_data))
 
             ### test Abricate ON/OFF
             default_software_project = DefaultProjectSoftware()
@@ -3106,6 +3102,7 @@ class Software(object):
                         SoftwareNames.SOFTWARE_SNIPPY_name,
                         ConstantsSettings.TECHNOLOGY_illumina,
                         SoftwareSettings.TYPE_OF_USE_project_sample,
+                        project=project_sample.project,
                         is_to_run=True,
                     )
                 )
@@ -3227,7 +3224,7 @@ class Software(object):
             try:
                 ### limit of the coverage for a project, can be None, if not exist
                 coverage_for_project = (
-                    default_project_software.get_snippy_single_parameter_for_project(
+                    default_project_software.get_mdcg_single_parameter_for_project(
                         project_sample.project, DefaultParameters.SNIPPY_COVERAGE_NAME
                     )
                 )

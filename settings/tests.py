@@ -1342,7 +1342,7 @@ class testsDefaultSoftwares(TestCase):
         )
         self.assertEqual(
             "20",
-            default_software.get_snippy_single_parameter_for_project(
+            default_software.get_mdcg_single_parameter_for_project(
                 project, DefaultParameters.SNIPPY_MAPQUAL_NAME
             ),
         )

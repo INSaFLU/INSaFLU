@@ -784,8 +784,6 @@ def turn_on_off_software(request):
                 )
                 software = Software.objects.get(pk=software_id)
                 current_is_to_run = software.is_to_run
-                print(software_id)
-                print("current_is_to_run", current_is_to_run)
                 ###########################################################
                 if (
                     not televir_project_sample_id is None
@@ -984,8 +982,7 @@ def turn_on_off_software(request):
                         process_SGE.set_create_sample_list_by_user(
                             request.user, [job_name]
                         )
-                print("################################")
-                print(software.pipeline_step.name, current_is_to_run)
+
                 try:
                     if (
                         software.pipeline_step.name
@@ -1015,8 +1012,6 @@ def turn_on_off_software(request):
                             .distinct()
                             .exclude(pk=software.pk)
                         )
-
-                        print(existing_software)
                         if (existing_software).exists() is False:
                             data["message"] = (
                                 "At least one {} software must be active.".format(
@@ -1059,8 +1054,6 @@ def turn_on_off_software(request):
                     )
 
                     for filter in active_filters:
-                        print("filter", filter)
-
                         output = default_parameters.set_software_to_run_by_software(
                             filter,
                             project,
@@ -1069,6 +1062,8 @@ def turn_on_off_software(request):
                             sample,
                             is_to_run=False,
                         )
+
+                        print(output)
 
                         data["other_kills"] += [filter.pk]
 

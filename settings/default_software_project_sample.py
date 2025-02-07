@@ -361,11 +361,9 @@ class DefaultProjectSoftware(object):
             ).distinct("name")
         # logger = logging.getLogger("fluWebVirus.debug")
         # logger.debug("Test default db: {} ({})".format(list_software, len(list_software)))
-
+        print(list_software.count())
         ### if not exist need to save
         if len(list_software) == 0:
-            print(software_name, name_extended)
-            print("Test default db: {} ({})".format(list_software, len(list_software)))
             vect_parameters = self._get_default_parameters(
                 software_name,
                 user,
@@ -616,7 +614,7 @@ class DefaultProjectSoftware(object):
             project_sample,
             None,
             ConstantsSettings.TECHNOLOGY_illumina,
-            software_name_extended=SoftwareNames.SOFTWARE_IVAR_name_extended,
+            software_name_extended=SoftwareNames.SOFTWARE_SNIPPY_name_extended,
         )
 
     @staticmethod
@@ -644,6 +642,7 @@ class DefaultProjectSoftware(object):
             None,
             ConstantsSettings.TECHNOLOGY_illumina,
             is_to_run=is_to_run,
+            software_name_extended=SoftwareNames.SOFTWARE_SNIPPY_name_extended,
         )
         if not parameters is None:
             return parameters
@@ -672,7 +671,7 @@ class DefaultProjectSoftware(object):
         software_names = SoftwareNames()
         return software_names.get_snippy_parameters()
 
-    def get_snippy_parameters_for_project(self, user, project):
+    def get_mdcg_parameters_for_project(self, user, project):
         """
         get snippy parameters only for project or default
         """
@@ -686,6 +685,7 @@ class DefaultProjectSoftware(object):
             None,
             None,
             ConstantsSettings.TECHNOLOGY_illumina,
+            is_to_run=True,
         )
         if not parameters is None:
             return parameters
@@ -772,9 +772,7 @@ class DefaultProjectSoftware(object):
         :param parameter_name -> Only these two possibilities available SNIPPY_COVERAGE_NAME; SNIPPY_MAPQUAL_NAME
         """
 
-        parameters_string = self.get_snippy_parameters_for_project(
-            project.owner, project
-        )
+        parameters_string = self.get_mdcg_parameters_for_project(project.owner, project)
         if parameters_string is None:
             return None
         lst_data = parameters_string.split(parameter_name)
@@ -2554,15 +2552,11 @@ class DefaultProjectSoftware(object):
 
         if is_to_run == True:
             software = software.filter(is_to_run=True)
-        print("software", software)
-        for sof in software:
-            print("sof", sof, sof.name_extended)
+
         if len(software) == 0:
             return vect_parameters
 
         if len(software) > 1:
-            print("software", software)
-            print("project", project.pk)
             raise Software.MultipleObjectsReturned
 
         software = software.first()

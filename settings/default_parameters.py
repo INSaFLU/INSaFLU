@@ -377,7 +377,7 @@ class DefaultParameters(object):
                 is_to_run=is_to_run,
                 name_extended=software_name_extended,
             )
-
+        print("SOFTWARE: ", software, software_name_extended, software.pk)
         if software is None:
             return software
         # logger.debug("Get parameters: software-{} user-{} typeofuse-{} project-{} psample-{} sample-{} tec-{} dataset-{}",software, user, type_of_use, project, project_sample, sample, technology_name, dataset)
@@ -390,6 +390,7 @@ class DefaultParameters(object):
             dataset=dataset,
             televir_project=televir_project,
         )
+        print("PARAMETERS: ", parameters)
 
         # logger.debug("Get parameters: {}".format(parameters))
         ### if only one parameter and it is don't care, return dont_care

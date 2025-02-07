@@ -201,6 +201,8 @@ class SoftwaresTable(tables.Table):
             else:
                 return "None"
         elif not self.project is None:
+            print("####### GETTING PARAMETERS FOR PROJECT")
+            print(record.name, record.name_extended)
             default_software_projects = DefaultProjectSoftware()
             parameters = default_software_projects.get_parameters(
                 record.name,
@@ -213,6 +215,7 @@ class SoftwaresTable(tables.Table):
                 pipeline_step=record.pipeline_step.name,
                 name_extended=record.name_extended,
             )
+            print(parameters)
             if parameters == DefaultParameters.MASK_DONT_care:
                 if record.name == SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name:
                     return self.get_info_about_mask_consensus_by_sites()

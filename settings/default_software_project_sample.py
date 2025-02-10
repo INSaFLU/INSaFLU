@@ -361,7 +361,6 @@ class DefaultProjectSoftware(object):
             ).distinct("name")
         # logger = logging.getLogger("fluWebVirus.debug")
         # logger.debug("Test default db: {} ({})".format(list_software, len(list_software)))
-        print(list_software.count())
         ### if not exist need to save
         if len(list_software) == 0:
             vect_parameters = self._get_default_parameters(

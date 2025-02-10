@@ -989,14 +989,7 @@ def turn_on_off_software(request):
                         == ConstantsSettings.PIPELINE_NAME_variant_detection
                         and software.is_to_run == True
                     ):
-                        print(
-                            software.owner,
-                            software.type_of_use,
-                            sample,
-                            project,
-                            televir_project,
-                            televir_project_sample,
-                        )
+
                         existing_software = (
                             Software.objects.filter(
                                 owner=software.owner,
@@ -1062,8 +1055,6 @@ def turn_on_off_software(request):
                             sample,
                             is_to_run=False,
                         )
-
-                        print(output)
 
                         data["other_kills"] += [filter.pk]
 
@@ -1147,7 +1138,6 @@ def turn_on_off_software(request):
                     software.technology.name,
                     "ON" if is_to_run else "OFF",
                 )
-                print(data)
 
             except Software.DoesNotExist:
                 return JsonResponse(data)

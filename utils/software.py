@@ -1654,6 +1654,25 @@ class Software(object):
         ### dt_info has the information
         return (temp_dir, result, parameters)
 
+    def run_mdcg(software: SoftwareSettings, project_sample: ProjectSample, parameters):
+        """
+        run mdcg
+        out: output_file
+        """
+        if software.name in SoftwareNames.SOFTWARE_SNIPPY_name:
+            out_put_path = self.run_snippy(
+                project_sample.sample.get_fastq_available(TypePath.MEDIA_ROOT, True),
+                project_sample.sample.get_fastq_available(TypePath.MEDIA_ROOT, False),
+                project_sample.project.reference.get_reference_fasta(
+                    TypePath.MEDIA_ROOT
+                ),
+                project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),
+                project_sample.sample.name,
+                parameters,
+            )
+
+        return out_put_path
+
     def run_snippy(
         self,
         file_name_1,
@@ -3097,26 +3116,28 @@ class Software(object):
             try:
                 ### get software
                 software = (
-                    default_project_software.default_parameters.get_software_global(
+                    default_project_software.default_parameters.get_software_mdcg(
                         user,
                         SoftwareNames.SOFTWARE_SNIPPY_name,
                         ConstantsSettings.TECHNOLOGY_illumina,
-                        SoftwareSettings.TYPE_OF_USE_project_sample,
                         project=project_sample.project,
-                        is_to_run=True,
+                        project_sample=project_sample,
                     )
                 )
                 if software is None:
                     raise Exception("Snippy software not found.")
+                print("SOFTWARE", software.pk)
                 ### get snippy parameters
-                snippy_parameters = (
-                    default_project_software.get_snippy_parameters_all_possibilities(
+                mdcg_parameters = (
+                    default_project_software.get_mdcg_parameters_all_possibilities(
                         user, project_sample, is_to_run=True
                     )
                 )
-                snippy_parameters = default_project_software.edit_primerNone_parameters(
-                    snippy_parameters
+                mdcg_parameters = default_project_software.edit_primerNone_parameters(
+                    mdcg_parameters
                 )
+
+                print("### parameters: ", mdcg_parameters)
 
                 out_put_path = self.run_snippy(
                     project_sample.sample.get_fastq_available(
@@ -3132,13 +3153,13 @@ class Software(object):
                         TypePath.MEDIA_ROOT
                     ),
                     project_sample.sample.name,
-                    snippy_parameters,
+                    mdcg_parameters,
                 )
                 result_all.add_software(
                     SoftwareDesc(
                         software.name,
                         software.version,
-                        snippy_parameters,
+                        mdcg_parameters,
                     )
                 )
             except Exception as e:
@@ -3149,7 +3170,7 @@ class Software(object):
                     SoftwareDesc(
                         software.name,
                         software.version,
-                        snippy_parameters,
+                        mdcg_parameters,
                     )
                 )
                 manageDatabase.set_project_sample_metakey(

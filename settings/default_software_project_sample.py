@@ -624,7 +624,7 @@ class DefaultProjectSoftware(object):
 
         return parameter_string
 
-    def get_snippy_parameters_all_possibilities(
+    def get_mdcg_parameters_all_possibilities(
         self, user, project_sample, is_to_run=True
     ):
         """
@@ -641,8 +641,9 @@ class DefaultProjectSoftware(object):
             None,
             ConstantsSettings.TECHNOLOGY_illumina,
             is_to_run=is_to_run,
-            software_name_extended=SoftwareNames.SOFTWARE_SNIPPY_name_extended,
+            # software_name_extended=SoftwareNames.SOFTWARE_SNIPPY_name_extended,
         )
+
         if not parameters is None:
             return parameters
 
@@ -656,7 +657,7 @@ class DefaultProjectSoftware(object):
             None,
             ConstantsSettings.TECHNOLOGY_illumina,
             is_to_run=is_to_run,
-            software_name_extended=SoftwareNames.SOFTWARE_SNIPPY_name_extended,
+            # software_name_extended=SoftwareNames.SOFTWARE_SNIPPY_name_extended,
         )
         if not parameters is None:
             return parameters
@@ -734,7 +735,7 @@ class DefaultProjectSoftware(object):
         :param parameter_name -> Only these two possibilities available SNIPPY_COVERAGE_NAME; SNIPPY_MAPQUAL_NAME
         """
 
-        parameters_string = self.get_snippy_parameters_all_possibilities(
+        parameters_string = self.get_mdcg_parameters_all_possibilities(
             project_sample.project.owner, project_sample, is_to_run=True
         )
         if parameters_string is None:

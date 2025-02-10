@@ -34,7 +34,7 @@ from settings.default_software_project_sample import DefaultProjectSoftware
 from utils.parse_out_files import ParseOutFiles
 from utils.process_SGE import ProcessSGE
 from utils.result import Coverage, DecodeObjects, Result, SoftwareDesc
-from utils.software import Software
+from utils.software import Contigs2Sequences, Software
 from utils.software_pangolin import SoftwarePangolin
 from utils.tree import CreateTree
 from utils.utils import Utils
@@ -286,17 +286,13 @@ class CollectExtraData(object):
         process_SGE = ProcessSGE()
         try:
             ## test SARS cov
-            print("## Collecting mutation report")
-            print(
-                self.software.get_species_tag(project.reference),
-                Reference.SPECIES_SARS_COV_2,
-            )
+
             if (
                 self.software.get_species_tag(project.reference)
                 == 2,  # Reference.SPECIES_INFLUENZA
             ):
 
-                self.__collect_flumut_report(project)
+                self.__collect_project_flumut_report(project)
 
             if (
                 self.software.get_species_tag(project.reference)
@@ -362,7 +358,7 @@ class CollectExtraData(object):
                 ProcessControler.FLAG_FINISHED,
             )
 
-    def __collect_flumut_report(self, project: Project):
+    def __collect_project_flumut_report(self, project: Project):
         """
         Runs flumut
         influenza_keys = ["HA", "NA", "MP", "NP", "NS", "PA", "PB1", "PB2"] # this stays here for now since flumut is specific to influenza A and hence these segment names.
@@ -384,11 +380,22 @@ class CollectExtraData(object):
             return
 
         #### RUN ABRICATE, GET GENES, FILTER, RENAME, RUN FLUMUT
+
+        software = Software()
+        contigs2sequences = Contigs2Sequences(False)
+        ### get database file name, if it is not passed
+        (_, database_file_name) = contigs2sequences.get_most_recent_database()
+        database_name = contigs2sequences.get_database_name()
+
+        ### first create database
+        if not software.is_exist_database_abricate(database_name):
+            software.create_database_abricate(database_name, database_file_name)
+
         temp_out_abricate = self.utils.get_temp_file(
             "temp_abricate", FileExtensions.FILE_TXT
         )
         _ = self.software.run_abricate(
-            "sequences_v13",  # Need to change this
+            database_name,  # "sequences_v13",  # Need to change this
             project_all_consensus,
             SoftwareNames.SOFTWARE_ABRICATE_PARAMETERS,
             temp_out_abricate,
@@ -399,7 +406,6 @@ class CollectExtraData(object):
         self.utils.remove_temp_file(temp_out_abricate)
 
         ###### FILTER AND RENAME
-
         keep_segment = {}
 
         for segname, result_list in dict_data_out.items():

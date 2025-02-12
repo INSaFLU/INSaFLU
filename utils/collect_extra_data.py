@@ -286,18 +286,12 @@ class CollectExtraData(object):
         process_SGE = ProcessSGE()
         try:
             ## test SARS cov
+            species_tag = self.software.get_species_tag(project.reference)
 
-            if (
-                self.software.get_species_tag(project.reference)
-                == 2,  # Reference.SPECIES_INFLUENZA
-            ):
-
+            if (species_tag == Reference.SPECIES_INFLUENZA):
                 self.__collect_project_flumut_report(project)
 
-            if (
-                self.software.get_species_tag(project.reference)
-                == Reference.SPECIES_SARS_COV_2
-            ):
+            if (species_tag == Reference.SPECIES_SARS_COV_2):
                 geneticElement = self.utils.get_elements_and_cds_from_db(
                     project.reference, user
                 )
@@ -329,7 +323,6 @@ class CollectExtraData(object):
 
                 if os.path.exists(project_all_consensus):
                     self.__collect_aln2pheno(
-                        project,
                         project,
                         project_all_consensus,
                         sequence_name,

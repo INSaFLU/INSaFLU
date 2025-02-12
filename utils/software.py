@@ -1705,15 +1705,16 @@ class Software(object):
         run mdcg
         out: output_file
         """
-        self.run_irma_and_snpEff(
-            project_sample.sample.get_fastq(TypePath.MEDIA_ROOT, True),
-            project_sample.sample.get_fastq(TypePath.MEDIA_ROOT, False),
-            "FLU",
-            project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),
-            project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),
-            project_sample.sample.name,
-        )
-        raise Exception("Not implemented")
+        # print("### ", project_sample.sample.name)
+        # self.run_irma_and_snpEff(
+        #    project_sample.sample.get_fastq(TypePath.MEDIA_ROOT, True),
+        #    project_sample.sample.get_fastq(TypePath.MEDIA_ROOT, False),
+        #    "FLU",
+        #    project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),
+        #    project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),
+        #    project_sample.sample.name,
+        # )
+        # return
 
         if software.name in SoftwareNames.SOFTWARE_SNIPPY_name:
             out_put_path = self.run_snippy(
@@ -1746,13 +1747,14 @@ class Software(object):
         os.system(cmd)
 
         output_fastas = [x for x in os.listdir(temp_dir) if x.endswith(".fasta")]
+        print(output_fastas)
 
         ## if there is no output, raise an exception
         if len(output_fastas) == 0:
             raise Exception("IRMA did not generate any output")
 
         # concatenate all fasta files into one
-        concatenated_consensus = os.path.join(temp_dir, sample_name, ".fasta")
+        concatenated_consensus = os.path.join(temp_dir, sample_name + ".fasta")
         with open(concatenated_consensus, "w") as outfile:
             for fasta in output_fastas:
                 with open(os.path.join(temp_dir, fasta), "r") as infile:
@@ -3356,6 +3358,10 @@ class Software(object):
                 )
             except Exception as e:
                 print("Error in snippy")
+                # print stacktrace
+                import traceback
+
+                traceback.print_exc()
                 print(e)
 
                 result = Result()

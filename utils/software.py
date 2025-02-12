@@ -4774,7 +4774,8 @@ class Software(object):
             "cat "
             + metadata
             + " | cut -f 1 | sed 's/\"//g' | tail -n +2 > "
-            + os.path.join(temp_dir, "data", "include.txt")
+            #+ os.path.join(temp_dir, "data", "include.txt")
+            + os.path.join(temp_dir, "defaults", "include.txt")
         )
         exit_status = os.system(cmd)
         if exit_status != 0:
@@ -4783,7 +4784,8 @@ class Software(object):
             raise Exception("Fail to generate include file in temp folder " + temp_dir)
 
         cmd = (
-            SoftwareNames.SOFTWARE_NEXTSTRAIN
+            #SoftwareNames.SOFTWARE_NEXTSTRAIN
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_DENGUE
             + " build --native "
             + temp_dir
             + " --cores "
@@ -4808,7 +4810,8 @@ class Software(object):
         # Convert json to tree
         cmd = "{} --tree {} --output-tree {}".format(
             os.path.join(settings.DIR_SOFTWARE, "nextstrain/auspice_tree_to_table.sh"),
-            os.path.join(temp_dir, "auspice", "ncov_current.json"),
+            #os.path.join(temp_dir, "auspice", "ncov_current.json"),
+            os.path.join(temp_dir, "auspice", "ncov_default-build.json"),
             tree_file,
         )
 

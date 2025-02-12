@@ -313,13 +313,23 @@ class DefaultParameters(object):
                 is_to_run=True,
             ).distinct()
 
+        if len(software_list) == 0:
+            software_list = Software.objects.filter(
+                name=software_name,
+                owner=user,
+                technology__name=technology_name,
+                version_parameters=self.get_software_parameters_version(software_name),
+                parameter__project_sample=project_sample,
+                is_to_run=True,
+            ).distinct()
+
         if name_extended is not None:
             software_list = software_list.filter(name_extended=name_extended)
 
         if len(software_list) == 0:
             return None
 
-        return software_list[0]
+        return software_list.first()
 
     def get_software_global(
         self,

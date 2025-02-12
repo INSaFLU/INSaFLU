@@ -303,8 +303,6 @@ class DefaultParameters(object):
             is_to_run=True,
         ).distinct()
 
-        print(software_list)
-
         if len(software_list) == 0:
             software_list = Software.objects.filter(
                 name=software_name,
@@ -317,8 +315,6 @@ class DefaultParameters(object):
 
         if name_extended is not None:
             software_list = software_list.filter(name_extended=name_extended)
-
-        print(software_list)
 
         if len(software_list) == 0:
             return None

@@ -645,7 +645,7 @@ class SoftwaresTable(tables.Table):
                 return True
         return False
 
-    def _is_to_run(self, record):
+    def _is_to_run(self, record: Software):
         """test if a software is to run and return the ids"""
         sz_ids = ""
         if not self.project is None:
@@ -669,7 +669,13 @@ class SoftwaresTable(tables.Table):
                 televir_project=self.televir_project,
             )
             if len(parameters) > 0:
-                is_to_run = parameters[0].software.is_to_run
+                if (
+                    record.pipeline_step.name
+                    == ConstantsSettings.PIPELINE_NAME_variant_detection
+                ):
+                    is_to_run = parameters[0].software.is_to_run
+                else:
+                    is_to_run = parameters[0].is_to_run
         return is_to_run, sz_ids
 
     def get_info_about_mask_consensus_by_sites(self):

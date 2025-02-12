@@ -362,6 +362,10 @@ class DefaultProjectSoftware(object):
         # logger = logging.getLogger("fluWebVirus.debug")
         # logger.debug("Test default db: {} ({})".format(list_software, len(list_software)))
         ### if not exist need to save
+        print("#############3 test_default_db", software_name, name_extended)
+        print(list_software)
+        if len(list_software) > 0:
+            print(list_software[0].is_to_run)
         if len(list_software) == 0:
             vect_parameters = self._get_default_parameters(
                 software_name,
@@ -374,6 +378,8 @@ class DefaultProjectSoftware(object):
                 dataset,
                 name_extended=name_extended,
             )
+            print(vect_parameters[0].software.is_to_run)
+
             if len(vect_parameters) > 0:  ### persist
 
                 if create:
@@ -394,7 +400,7 @@ class DefaultProjectSoftware(object):
         technology_name,
         dataset=None,
         name_extended=None,
-    ):
+    ) -> List[Parameter]:
 
         if software_name == SoftwareNames.SOFTWARE_SNIPPY_name:
             if name_extended == SoftwareNames.SOFTWARE_IVAR_name_extended:
@@ -405,6 +411,7 @@ class DefaultProjectSoftware(object):
                 vect_parameters = self.default_parameters.get_snippy_default(
                     user, type_of_use, technology_name, project, project_sample
                 )  ### base values
+
             if not project is None:
                 vect_parameters = self._get_default_project(
                     user,
@@ -2560,6 +2567,7 @@ class DefaultProjectSoftware(object):
             raise Software.MultipleObjectsReturned
 
         software = software.first()
+        print(software.pk, software.is_to_run)
 
         ## get parameters for a specific user and software
         if project is None:
@@ -2581,7 +2589,17 @@ class DefaultProjectSoftware(object):
                 if previous_parameter.sequence_out == parameter.sequence_out:
 
                     previous_parameter.is_to_run = parameter.is_to_run
-                    previous_parameter.software.is_to_run = parameter.is_to_run
+
+                    if (
+                        parameter.software.pipeline_step.name
+                        == ConstantsSettings.PIPELINE_NAME_variant_detection
+                    ):
+                        previous_parameter.software.is_to_run = (
+                            parameter.software.is_to_run
+                        )
+
+                    else:
+                        previous_parameter.software.is_to_run = parameter.is_to_run
 
                     ### don't set the not set parameters
                     if (

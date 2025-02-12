@@ -281,6 +281,50 @@ class DefaultParameters(object):
 
         return software_list[0]
 
+    def get_software_mdcg(
+        self,
+        user,
+        software_name,
+        technology_name,
+        project=None,
+        project_sample=None,
+        name_extended=None,
+    ) -> Optional[Software]:
+        """
+        Get software global
+        """
+        software_list = Software.objects.filter(
+            name=software_name,
+            owner=user,
+            technology__name=technology_name,
+            version_parameters=self.get_software_parameters_version(software_name),
+            parameter__project=project,
+            parameter__project_sample=project_sample,
+            is_to_run=True,
+        ).distinct()
+
+        print(software_list)
+
+        if len(software_list) == 0:
+            software_list = Software.objects.filter(
+                name=software_name,
+                owner=user,
+                technology__name=technology_name,
+                version_parameters=self.get_software_parameters_version(software_name),
+                parameter__project=project,
+                is_to_run=True,
+            ).distinct()
+
+        if name_extended is not None:
+            software_list = software_list.filter(name_extended=name_extended)
+
+        print(software_list)
+
+        if len(software_list) == 0:
+            return None
+
+        return software_list[0]
+
     def get_software_global(
         self,
         user,

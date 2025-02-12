@@ -382,42 +382,8 @@ class CollectExtraData(object):
         #### RUN ABRICATE, GET GENES, FILTER, RENAME, RUN FLUMUT
 
         software = Software()
-        contigs2sequences = Contigs2Sequences(False)
-        ### get database file name, if it is not passed
-        (_, database_file_name) = contigs2sequences.get_most_recent_database()
-        database_name = contigs2sequences.get_database_name()
-
-        ### first create database
-        if not software.is_exist_database_abricate(database_name):
-            software.create_database_abricate(database_name, database_file_name)
-
-        temp_out_abricate = self.utils.get_temp_file(
-            "temp_abricate", FileExtensions.FILE_TXT
-        )
-        _ = self.software.run_abricate(
-            database_name,  # "sequences_v13",  # Need to change this
-            project_all_consensus,
-            SoftwareNames.SOFTWARE_ABRICATE_PARAMETERS,
-            temp_out_abricate,
-        )
-        parseOutFiles = ParseOutFiles()
-        dict_data_out = parseOutFiles.parse_abricate_file_simple(temp_out_abricate)
-        # This doesn't really matter
-        self.utils.remove_temp_file(temp_out_abricate)
-
-        ###### FILTER AND RENAME
-        keep_segment = {}
-
-        for segname, result_list in dict_data_out.items():
-            if result_list == []:
-                continue
-            seg_abr_result = result_list[0]
-            if "Gene" not in seg_abr_result:
-                continue
-            gene = seg_abr_result["Gene"].split("_")[-1]
-            if gene not in influenza_keys:
-                continue
-            keep_segment[segname] = gene
+        keep_segment = software.match_segments_to_genes_abricate(project_all_consensus)
+        keep_segment = {k: v for k, v in keep_segment.items() if v in influenza_keys}
 
         flumut_name_dict = {x: f"{x}_{keep_segment[x]}" for x in keep_segment}
 

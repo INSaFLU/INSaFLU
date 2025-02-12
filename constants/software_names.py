@@ -488,6 +488,9 @@ class SoftwareNames(object):
     ### flumut
     SOFTWARE_FLUMUT = os.path.join(settings.DIR_SOFTWARE, "flumut/flumut.sh")
 
+    ### IRMA
+    SOFTWARE_IRMA = os.path.join(settings.DIR_SOFTWARE, "irma/irma.sh")
+
     ### Nextstrain
     SOFTWARE_NEXTSTRAIN_DIR = os.path.join(settings.DIR_SOFTWARE, "nextstrain/")
     SOFTWARE_NEXTSTRAIN_VERSION = "0.1"

@@ -112,7 +112,7 @@ class Software(object):
                 FileType.FILE_VCF_GZ_TBI,
             ]
 
-    def copy_files_to_project(self, project_sample, software, path_from):
+    def copy_files_to_project(self, project_sample: ProjectSample, software, path_from):
         """
         copy temp files to the project_sample software names
         software : SOFTWARE_SNIPPY_name, SOFTWARE_FREEBAYES_name
@@ -564,6 +564,50 @@ class Software(object):
             self.logger_debug.error("Fail to run: " + cmd)
             raise Exception("Fail to run abricate")
         return cmd
+
+    def match_segments_to_genes_abricate(self, reference_fasta):
+        """
+        RUN ABRICATE, GET GENES, FILTER, RENAME, RUN FLUMUT
+        """
+
+        # software = Software()
+        contigs2sequences = Contigs2Sequences(False)
+        ### get database file name, if it is not passed
+        (_, database_file_name) = contigs2sequences.get_most_recent_database()
+        database_name = contigs2sequences.get_database_name()
+
+        ### first create database
+        if not self.is_exist_database_abricate(database_name):
+            self.create_database_abricate(database_name, database_file_name)
+
+        temp_out_abricate = self.utils.get_temp_file(
+            "temp_abricate", FileExtensions.FILE_TXT
+        )
+        _ = self.run_abricate(
+            database_name,  # "sequences_v13",  # Need to change this
+            reference_fasta,
+            SoftwareNames.SOFTWARE_ABRICATE_PARAMETERS,
+            temp_out_abricate,
+        )
+        parseOutFiles = ParseOutFiles()
+        dict_data_out = parseOutFiles.parse_abricate_file_simple(temp_out_abricate)
+        # This doesn't really matter
+        self.utils.remove_temp_file(temp_out_abricate)
+
+        ###### FILTER AND RENAME
+        keep_segment = {}
+
+        for segname, result_list in dict_data_out.items():
+            if result_list == []:
+                continue
+            seg_abr_result = result_list[0]
+            if "Gene" not in seg_abr_result:
+                continue
+            gene = seg_abr_result["Gene"].split("_")[-1]
+
+            keep_segment[segname] = gene
+
+        return keep_segment
 
     """
     Global processing
@@ -1654,11 +1698,23 @@ class Software(object):
         ### dt_info has the information
         return (temp_dir, result, parameters)
 
-    def run_mdcg(software: SoftwareSettings, project_sample: ProjectSample, parameters):
+    def run_mdcg(
+        self, software: SoftwareSettings, project_sample: ProjectSample, parameters
+    ):
         """
         run mdcg
         out: output_file
         """
+        self.run_irma_and_snpEff(
+            project_sample.sample.get_fastq(TypePath.MEDIA_ROOT, True),
+            project_sample.sample.get_fastq(TypePath.MEDIA_ROOT, False),
+            "FLU",
+            project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),
+            project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),
+            project_sample.sample.name,
+        )
+        raise Exception("Not implemented")
+
         if software.name in SoftwareNames.SOFTWARE_SNIPPY_name:
             out_put_path = self.run_snippy(
                 project_sample.sample.get_fastq_available(TypePath.MEDIA_ROOT, True),
@@ -1672,6 +1728,155 @@ class Software(object):
             )
 
         return out_put_path
+
+    def run_irma(self, file_name_1, file_name_2, module, sample_name):
+
+        temp_dir = os.path.join(self.utils.get_temp_dir(), sample_name)
+
+        cmd = "{} {} {} {} {}".format(
+            SoftwareNames.SOFTWARE_IRMA,
+            module,
+            file_name_1,
+            file_name_2 if file_name_2 else "",
+            temp_dir,
+        )
+
+        print(cmd)
+
+        os.system(cmd)
+
+        output_fastas = [x for x in os.listdir(temp_dir) if x.endswith(".fasta")]
+
+        ## if there is no output, raise an exception
+        if len(output_fastas) == 0:
+            raise Exception("IRMA did not generate any output")
+
+        # concatenate all fasta files into one
+        concatenated_consensus = os.path.join(temp_dir, sample_name, ".fasta")
+        with open(concatenated_consensus, "w") as outfile:
+            for fasta in output_fastas:
+                with open(os.path.join(temp_dir, fasta), "r") as infile:
+                    outfile.write(infile.read())
+
+        ## concatenate all vcf files into one
+
+        return temp_dir
+
+    def fetch_vcf_file(self, reference_fasta, irma_output_dir):
+        """
+        fetch consenssu from irma output. Match each to reference segments.
+        """
+        print("####### fetching vcf file")
+
+        fasta_files = [f for f in os.listdir(irma_output_dir) if f.endswith(".fasta")]
+        fasta_segs = {f.split("_")[1]: f for f in fasta_files}
+
+        keep_segment = self.match_segments_to_genes_abricate(reference_fasta)
+
+        matched_segments = {
+            segname: fasta_segs[gene] for segname, gene in keep_segment.items()
+        }
+        print("matched segments: ", matched_segments)
+
+        ## split reference into segment fastas and align to respective consensus.
+
+        with open(reference_fasta, "r") as ref:
+            ref_seqs = SeqIO.to_dict(SeqIO.parse(ref, "fasta"))
+
+        print(ref_seqs)
+
+        for segname, fasta in matched_segments.items():
+            tmp_comb = os.path.join(irma_output_dir, segname + "_comb.fasta")
+            tmp_ref = os.path.join(irma_output_dir, segname + "_ref.fasta")
+
+            with open(tmp_comb, "w") as ref:
+                SeqIO.write(ref_seqs[segname], ref, "fasta")
+                SeqIO.write(fasta, ref, "fasta")
+
+            with open(tmp_ref, "w") as ref:
+                SeqIO.write(ref_seqs[segname], ref, "fasta")
+
+            msa_output = os.path.join(irma_output_dir, segname + "_aligned.msa")
+
+            ## align
+            self.run_mafft(
+                tmp_comb,
+                msa_output,
+                "--auto",
+            )
+
+            ## make vcf
+            from utils.vcfalgn import VcfAlgn
+
+            vcf_algn = VcfAlgn(
+                msa_output, tmp_ref, odir=irma_output_dir, output=segname + ".vcf"
+            )
+
+            vcf_algn.read_input()
+            vcf_algn.read_ref()
+            vcf_algn = vcf_algn.msa2snp()
+            vcf_algn = vcf_algn.write_vcf()
+
+        return irma_output_dir
+
+    def run_irma_and_snpEff(
+        self,
+        file_name_1,
+        file_name_2,
+        module,
+        reference_fasta,
+        genbank_file,
+        sample_name,
+    ):
+        """
+        run irma and snpEff
+        """
+
+        temp_dir = self.run_irma(file_name_1, file_name_2, module, sample_name)
+
+        ## get the vcf file
+
+        temp_dir = self.fetch_vcf_file(reference_fasta, temp_dir)
+        temp_file = os.path.join(temp_dir, sample_name + ".vcf")
+
+        ## check if the vcf file is empty
+        if os.path.getsize(temp_file) > 0:
+            ### run snpEff
+            temp_file_2 = self.utils.get_temp_file("vcf_file", ".vcf")
+            output_file = self.run_snpEff(
+                reference_fasta,
+                genbank_file,
+                temp_file,
+                os.path.join(temp_dir, os.path.basename(temp_file_2)),
+            )
+
+            if output_file is None:  ## sometimes the gff does not have amino sequences
+                self.utils.copy_file(
+                    temp_file, os.path.join(temp_dir, os.path.basename(temp_file_2))
+                )
+
+            self.test_bgzip_and_tbi_in_vcf(
+                os.path.join(temp_dir, os.path.basename(temp_file_2))
+            )
+
+        ### add FREQ to vcf file
+        vcf_file_out_temp = self.utils.add_freq_to_vcf(
+            os.path.join(temp_dir, os.path.basename(temp_file_2)),
+            os.path.join(temp_dir, sample_name + ".vcf"),
+        )
+        os.unlink(temp_file)
+        if os.path.exists(temp_file_2):
+            os.unlink(temp_file_2)
+
+        ### pass vcf to tab
+        self.run_snippy_vcf_to_tab(
+            reference_fasta,
+            genbank_file,
+            vcf_file_out_temp,
+            "{}.tab".format(os.path.join(temp_dir, sample_name)),
+        )
+
+        return temp_dir
 
     def run_snippy(
         self,
@@ -3126,7 +3331,6 @@ class Software(object):
                 )
                 if software is None:
                     raise Exception("Snippy software not found.")
-                print("SOFTWARE", software.pk)
                 ### get snippy parameters
                 mdcg_parameters = (
                     default_project_software.get_mdcg_parameters_all_possibilities(
@@ -3137,24 +3341,12 @@ class Software(object):
                     mdcg_parameters
                 )
 
-                print("### parameters: ", mdcg_parameters)
-
-                out_put_path = self.run_snippy(
-                    project_sample.sample.get_fastq_available(
-                        TypePath.MEDIA_ROOT, True
-                    ),
-                    project_sample.sample.get_fastq_available(
-                        TypePath.MEDIA_ROOT, False
-                    ),
-                    project_sample.project.reference.get_reference_fasta(
-                        TypePath.MEDIA_ROOT
-                    ),
-                    project_sample.project.reference.get_reference_gbk(
-                        TypePath.MEDIA_ROOT
-                    ),
-                    project_sample.sample.name,
+                self.run_mdcg(
+                    software,
+                    project_sample,
                     mdcg_parameters,
                 )
+
                 result_all.add_software(
                     SoftwareDesc(
                         software.name,
@@ -3163,7 +3355,9 @@ class Software(object):
                     )
                 )
             except Exception as e:
+                print("Error in snippy")
                 print(e)
+
                 result = Result()
                 result.set_error(e.args[0])
                 result.add_software(

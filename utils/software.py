@@ -3359,10 +3359,9 @@ class Software(object):
             except Exception as e:
                 print("Error in snippy")
                 # print stacktrace
-                import traceback
-
-                traceback.print_exc()
-                print(e)
+                # import traceback
+                # traceback.print_exc()
+                # print(e)
 
                 result = Result()
                 result.set_error(e.args[0])

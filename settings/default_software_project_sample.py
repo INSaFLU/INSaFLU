@@ -34,6 +34,7 @@ class DefaultProjectSoftware(object):
 
         ## only for project and for all technology
         if not project is None:
+
             self.test_default_db(
                 SoftwareNames.SOFTWARE_SNIPPY_name,
                 user,
@@ -362,10 +363,7 @@ class DefaultProjectSoftware(object):
         # logger = logging.getLogger("fluWebVirus.debug")
         # logger.debug("Test default db: {} ({})".format(list_software, len(list_software)))
         ### if not exist need to save
-        print("#############3 test_default_db", software_name, name_extended)
-        print(list_software)
-        if len(list_software) > 0:
-            print(list_software[0].is_to_run)
+
         if len(list_software) == 0:
             vect_parameters = self._get_default_parameters(
                 software_name,
@@ -378,7 +376,6 @@ class DefaultProjectSoftware(object):
                 dataset,
                 name_extended=name_extended,
             )
-            print(vect_parameters[0].software.is_to_run)
 
             if len(vect_parameters) > 0:  ### persist
 
@@ -2514,6 +2511,7 @@ class DefaultProjectSoftware(object):
         try to get project parameters
         """
         type_of_use = Software.TYPE_OF_USE_global
+        actual_project = project
         if project is None:
             type_of_use = Software.TYPE_OF_USE_global
             if software_name == self.software_names.get_abricate_name():
@@ -2526,36 +2524,31 @@ class DefaultProjectSoftware(object):
             type_of_use = Software.TYPE_OF_USE_project
         elif type(project) is ProjectSample:
             type_of_use = Software.TYPE_OF_USE_project
+            actual_project = project.project
         elif type(project) is Sample:
             type_of_use = Software.TYPE_OF_USE_sample
 
         try:
-            if name_extended is not None:
-                software = Software.objects.filter(
-                    name=software_name,
-                    owner=user,
-                    type_of_use=type_of_use,
-                    technology__name=technology_name,
-                    version_parameters=self.default_parameters.get_software_parameters_version(
-                        software_name
-                    ),
-                    name_extended=name_extended,
-                    parameter__project=project,
-                ).distinct()
-            else:
-                software = Software.objects.filter(
-                    name=software_name,
-                    owner=user,
-                    type_of_use=type_of_use,
-                    technology__name=technology_name,
-                    version_parameters=self.default_parameters.get_software_parameters_version(
-                        software_name
-                    ),
-                    parameter__project=project,
-                ).distinct()
+
+            software = Software.objects.filter(
+                name=software_name,
+                owner=user,
+                type_of_use=type_of_use,
+                technology__name=technology_name,
+                version_parameters=self.default_parameters.get_software_parameters_version(
+                    software_name
+                ),
+                parameter__project=actual_project,
+            ).distinct()
 
         except Software.DoesNotExist:
             return vect_parameters
+
+        if type(project) is ProjectSample:
+            software = software.filter(parameter__project_sample=project)
+
+        if name_extended is not None:
+            software = software.filter(name_extended=name_extended)
 
         if is_to_run == True:
             software = software.filter(is_to_run=True)
@@ -2567,7 +2560,6 @@ class DefaultProjectSoftware(object):
             raise Software.MultipleObjectsReturned
 
         software = software.first()
-        print(software.pk, software.is_to_run)
 
         ## get parameters for a specific user and software
         if project is None:
@@ -2594,9 +2586,26 @@ class DefaultProjectSoftware(object):
                         parameter.software.pipeline_step.name
                         == ConstantsSettings.PIPELINE_NAME_variant_detection
                     ):
-                        previous_parameter.software.is_to_run = (
-                            parameter.software.is_to_run
+                        active_software = Software.objects.filter(
+                            parameter__project=actual_project,
+                            pipeline_step__name=ConstantsSettings.PIPELINE_NAME_variant_detection,
                         )
+                        if type(project) is ProjectSample:
+                            active_software = active_software.filter(
+                                parameter__project_sample=project
+                            )
+
+                        active_software = active_software.filter(is_to_run=True)
+
+                        if (
+                            active_software.exists() is False
+                            and previous_parameter.is_to_run is True
+                        ):
+                            previous_parameter.software.is_to_run = (
+                                parameter.software.is_to_run
+                            )
+
+                        # is_to_run = parameter.software.is_to_run
 
                     else:
                         previous_parameter.software.is_to_run = parameter.is_to_run

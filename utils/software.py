@@ -516,6 +516,7 @@ class Software(object):
         """
         create a database on abricate
         """
+        print(database, file_name)
         if not os.path.isfile(file_name):
             raise IOError("File not found: " + file_name)
         cmd = "mkdir -p %s/%s" % (self.software_names.SOFTWARE_ABRICATE_DB, database)
@@ -3427,21 +3428,18 @@ class Software(object):
                     ProcessControler.FLAG_ERROR,
                 )
                 return False
-            print("copyingG")
             ## copy the files to the project sample directories
             try:
                 self.copy_files_to_project(project_sample, software.name, out_put_path)
             except Exception as e:
                 print(e)
             self.utils.remove_dir(out_put_path)
-            print("oi")
             ### make the link for the new tab file name
             path_snippy_tab = project_sample.get_file_output(
                 TypePath.MEDIA_ROOT,
                 FileType.FILE_TAB,
                 software.name,
             )
-            print("path_snippy_tab")
             if os.path.exists(path_snippy_tab):
                 sz_file_to = project_sample.get_file_output_human(
                     TypePath.MEDIA_ROOT,
@@ -3457,7 +3455,6 @@ class Software(object):
                 software.name,
             )
             result = Result()
-            print("bam_file")
             if os.path.exists(bam_file):
                 result = self.get_statistics_bam(bam_file)
             manageDatabase.set_project_sample_metakey(
@@ -3470,7 +3467,6 @@ class Software(object):
 
             ## get coverage from deep file
             get_coverage = GetCoverage()
-            print("get_coverage")
             try:
                 ### limit of the coverage for a project, can be None, if not exist
                 coverage_for_project = (
@@ -3629,7 +3625,6 @@ class Software(object):
             #####################
             ###
             ### make mask the consensus SoftwareNames.SOFTWARE_MSA_MASKER
-            print("mask_consensus")
             limit_to_mask_consensus = int(
                 default_project_software.get_mask_consensus_single_parameter(
                     project_sample,
@@ -3688,8 +3683,6 @@ class Software(object):
             ## run freebayes if at least one segment has some coverage
             ## test if it is necessary to run freebayes
             count_hits = CountHits()
-            print("run_freebayes")
-            print(default_project_software.is_to_run_freebayes(user, project_sample))
             if default_project_software.is_to_run_freebayes(user, project_sample):
                 try:
                     out_put_path = self.run_freebayes_parallel(
@@ -4002,7 +3995,6 @@ class Software(object):
                 return False
 
             ### get again
-            print("get again")
             manage_database = ManageDatabase()
             project_sample = ProjectSample.objects.get(pk=project_sample.id)
             project_sample.is_finished = True
@@ -4809,7 +4801,7 @@ class Software(object):
             "cat "
             + metadata
             + " | cut -f 1 | sed 's/\"//g' | tail -n +2 > "
-            #+ os.path.join(temp_dir, "data", "include.txt")
+            # + os.path.join(temp_dir, "data", "include.txt")
             + os.path.join(temp_dir, "defaults", "include.txt")
         )
         exit_status = os.system(cmd)
@@ -4819,7 +4811,7 @@ class Software(object):
             raise Exception("Fail to generate include file in temp folder " + temp_dir)
 
         cmd = (
-            #SoftwareNames.SOFTWARE_NEXTSTRAIN
+            # SoftwareNames.SOFTWARE_NEXTSTRAIN
             SoftwareNames.SOFTWARE_NEXTSTRAIN_DENGUE
             + " build --native "
             + temp_dir
@@ -4845,7 +4837,7 @@ class Software(object):
         # Convert json to tree
         cmd = "{} --tree {} --output-tree {}".format(
             os.path.join(settings.DIR_SOFTWARE, "nextstrain/auspice_tree_to_table.sh"),
-            #os.path.join(temp_dir, "auspice", "ncov_current.json"),
+            # os.path.join(temp_dir, "auspice", "ncov_current.json"),
             os.path.join(temp_dir, "auspice", "ncov_default-build.json"),
             tree_file,
         )

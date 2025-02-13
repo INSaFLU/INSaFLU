@@ -288,10 +288,20 @@ class CollectExtraData(object):
             ## test SARS cov
             species_tag = self.software.get_species_tag(project.reference)
 
-            if (species_tag == Reference.SPECIES_INFLUENZA):
+            if species_tag == Reference.SPECIES_INFLUENZA:
+
+                software = Software()
+
+                subtype_list = software.identify_project_reference_type_and_subtype(
+                    project
+                )
+
+                if subtype_list[0] != "H5":
+                    return
+
                 self.__collect_project_flumut_report(project)
 
-            if (species_tag == Reference.SPECIES_SARS_COV_2):
+            if species_tag == Reference.SPECIES_SARS_COV_2:
                 geneticElement = self.utils.get_elements_and_cds_from_db(
                     project.reference, user
                 )

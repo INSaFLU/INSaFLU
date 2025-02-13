@@ -76,6 +76,7 @@ class Command(BaseCommand):
 
             self.stdout.write("End")
         except ProjectSample.DoesNotExist as e:
+
             self.stdout.write(
                 "Error: ProjectSample id '{}' does not exist.".format(project_sample_id)
             )

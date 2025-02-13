@@ -29,6 +29,7 @@ from managing_files.manage_database import ManageDatabase
 from managing_files.models import (
     MixedInfectionsTag,
     ProcessControler,
+    Project,
     ProjectSample,
     Reference,
     Sample,
@@ -612,6 +613,48 @@ class Software(object):
     Global processing
     """
 
+    def identify_project_reference_type_and_subtype(self, project: Project):
+
+        reference_fasta = project.get_global_file_by_project(
+            TypePath.MEDIA_ROOT,
+            Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus,
+        )
+        ### type
+
+        return self.identify_fasta_type_and_subtype(reference_fasta)
+
+    def identify_fasta_type_and_subtype(self, reference_fasta):
+        """ """
+
+        upload_file = self.get_abricate_uploadfile_create()
+
+        temp_out_abricate = self.utils.get_temp_file(
+            "temp_abricate", FileExtensions.FILE_TXT
+        )
+        _ = self.run_abricate(
+            upload_file.abricate_name,  # "db_influenza_typing_v11",  # "sequences_v13",  # Need to change this
+            reference_fasta,
+            SoftwareNames.SOFTWARE_ABRICATE_PARAMETERS,
+            temp_out_abricate,
+        )
+        parseOutFiles = ParseOutFiles()
+        dict_data_out = parseOutFiles.parse_abricate_file_simple(temp_out_abricate)
+        subtype = [None, None]
+
+        for _, result_list in dict_data_out.items():
+            if result_list == []:
+                continue
+            seg_abr_result = result_list[0]
+            if "Gene" not in seg_abr_result:
+                continue
+            gene: str = seg_abr_result["Gene"].split("_")[-1]
+            if gene.startswith("H"):
+                subtype[0] = gene
+            elif gene.startswith("N"):
+                subtype[1] = gene
+
+        return subtype
+
     #     @transaction.atomic
     def identify_type_and_sub_type(
         self, sample, fastq1_1, fastq1_2, owner, b_run_tests=False
@@ -753,7 +796,7 @@ class Software(object):
 
         ### test id abricate has the database
         try:
-            uploadFile = UploadFile.objects.order_by("-version")[0]
+            uploadFile = self.get_abricate_uploadfile_create()
         except UploadFile.DoesNotExist:
             ## save error in MetaKeySample
             result = Result()
@@ -777,32 +820,6 @@ class Software(object):
             )
             self.utils.remove_dir(out_dir_result)
             return False
-
-        if not self.is_exist_database_abricate(uploadFile.abricate_name):
-            try:
-                self.create_database_abricate(uploadFile.abricate_name, uploadFile.path)
-            except Exception:
-                result = Result()
-                result.set_error(
-                    "Abricate (%s) fail to run --setupdb"
-                    % (self.software_names.get_abricate_version())
-                )
-                result.add_software(
-                    SoftwareDesc(
-                        self.software_names.get_abricate_name(),
-                        self.software_names.get_abricate_version(),
-                        self.software_names.get_abricate_parameters(),
-                    )
-                )
-                manageDatabase.set_sample_metakey(
-                    sample,
-                    owner,
-                    MetaKeyAndValue.META_KEY_Identify_Sample,
-                    MetaKeyAndValue.META_VALUE_Error,
-                    result.to_json(),
-                )
-                self.utils.remove_dir(out_dir_result)
-                return False
 
         ## run abricate
         out_file_abricate = self.utils.get_temp_file("temp_abricate", ".txt")
@@ -1259,18 +1276,7 @@ class Software(object):
         self.utils.remove_file(clean_abricate_file)
         return True
 
-    def get_species_tag(self, reference):
-        """
-        :param reference instance, database
-        :return specie TAGs: Reference.SPECIES_SARS_COV_2; Reference.SPECIES_MPXV; Reference.SPECIES_INFLUENZA, ...
-        """
-
-        ### Done
-        if (
-            len(reference.specie_tag) > 0
-            and reference.specie_tag != Reference.SPECIES_NOT_SET
-        ):
-            return reference.specie_tag
+    def get_abricate_uploadfile_create(self):
 
         ### test id abricate has the database
         try:
@@ -1284,6 +1290,23 @@ class Software(object):
                 self.create_database_abricate(uploadFile.abricate_name, uploadFile.path)
             except Exception:
                 return Reference.SPECIES_NOT_SET
+
+        return uploadFile
+
+    def get_species_tag(self, reference):
+        """
+        :param reference instance, database
+        :return specie TAGs: Reference.SPECIES_SARS_COV_2; Reference.SPECIES_MPXV; Reference.SPECIES_INFLUENZA, ...
+        """
+
+        ### Done
+        if (
+            len(reference.specie_tag) > 0
+            and reference.specie_tag != Reference.SPECIES_NOT_SET
+        ):
+            return reference.specie_tag
+
+        uploadFile = self.get_abricate_uploadfile_create()
 
         ## run abricate
         out_file_abricate = self.utils.get_temp_file("temp_abricate", ".txt")
@@ -1704,7 +1727,7 @@ class Software(object):
         run mdcg
         out: output_file
         """
-        # print("### ", project_sample.sample.name)
+        print("### ", project_sample.sample.name)
         # self.run_irma_and_snpEff(
         #    project_sample.sample.get_fastq(TypePath.MEDIA_ROOT, True),
         #    project_sample.sample.get_fastq(TypePath.MEDIA_ROOT, False),
@@ -3342,7 +3365,7 @@ class Software(object):
                     mdcg_parameters
                 )
 
-                self.run_mdcg(
+                out_put_path = self.run_mdcg(
                     software,
                     project_sample,
                     mdcg_parameters,
@@ -3404,17 +3427,21 @@ class Software(object):
                     ProcessControler.FLAG_ERROR,
                 )
                 return False
-
+            print("copyingG")
             ## copy the files to the project sample directories
-            self.copy_files_to_project(project_sample, software.name, out_put_path)
+            try:
+                self.copy_files_to_project(project_sample, software.name, out_put_path)
+            except Exception as e:
+                print(e)
             self.utils.remove_dir(out_put_path)
-
+            print("oi")
             ### make the link for the new tab file name
             path_snippy_tab = project_sample.get_file_output(
                 TypePath.MEDIA_ROOT,
                 FileType.FILE_TAB,
                 software.name,
             )
+            print("path_snippy_tab")
             if os.path.exists(path_snippy_tab):
                 sz_file_to = project_sample.get_file_output_human(
                     TypePath.MEDIA_ROOT,
@@ -3430,6 +3457,7 @@ class Software(object):
                 software.name,
             )
             result = Result()
+            print("bam_file")
             if os.path.exists(bam_file):
                 result = self.get_statistics_bam(bam_file)
             manageDatabase.set_project_sample_metakey(
@@ -3442,6 +3470,7 @@ class Software(object):
 
             ## get coverage from deep file
             get_coverage = GetCoverage()
+            print("get_coverage")
             try:
                 ### limit of the coverage for a project, can be None, if not exist
                 coverage_for_project = (
@@ -3600,6 +3629,7 @@ class Software(object):
             #####################
             ###
             ### make mask the consensus SoftwareNames.SOFTWARE_MSA_MASKER
+            print("mask_consensus")
             limit_to_mask_consensus = int(
                 default_project_software.get_mask_consensus_single_parameter(
                     project_sample,
@@ -3642,6 +3672,7 @@ class Software(object):
 
             ## identify VARIANTS IN INCOMPLETE LOCUS in all locus, set yes in variants if are in areas with coverage problems
             ## transform 'synonymous_variant c.981A>G p.Glu327Glu' to ["synonymous_variant", "c.981A>G", "p.Glu327Glu"]
+
             parse_out_files = ParseOutFiles()
             parse_out_files.add_variants_in_incomplete_locus(
                 project_sample.get_file_output(
@@ -3657,6 +3688,8 @@ class Software(object):
             ## run freebayes if at least one segment has some coverage
             ## test if it is necessary to run freebayes
             count_hits = CountHits()
+            print("run_freebayes")
+            print(default_project_software.is_to_run_freebayes(user, project_sample))
             if default_project_software.is_to_run_freebayes(user, project_sample):
                 try:
                     out_put_path = self.run_freebayes_parallel(
@@ -3840,7 +3873,7 @@ class Software(object):
                         project_sample, user, count_hits
                     )
                 except:
-
+                    print("Error in mixed infection")
                     result = Result()
                     result.set_error("Fail to calculate mixed infextion")
                     result.add_software(SoftwareDesc("In house software", "1.0", ""))
@@ -3931,6 +3964,7 @@ class Software(object):
                 draw_all_coverage = DrawAllCoverage()
                 draw_all_coverage.draw_all_coverages(project_sample)
             except:
+                print("Error in draw coverage")
                 result = Result()
                 result.set_error("Fail to draw coverage images")
                 result.add_software(SoftwareDesc("In house software", "1.0", ""))
@@ -3968,6 +4002,7 @@ class Software(object):
                 return False
 
             ### get again
+            print("get again")
             manage_database = ManageDatabase()
             project_sample = ProjectSample.objects.get(pk=project_sample.id)
             project_sample.is_finished = True
@@ -5928,6 +5963,7 @@ class Contigs2Sequences(object):
                 if temp > version:
                     version = temp
                     path_to_return = path
+
         return (str(version), path_to_return)
 
     def get_database_name(self):

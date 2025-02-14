@@ -68,9 +68,9 @@ class VcfAlgn:
         ref_seq = self.reference
         # compares the full refseq identifier/description in the alnmt, to the ref_seq provided in argument.
         # This is a fix to deal with identifiers that (1) include spaces, (2) might consist of separate words of which the first is not unique.
-        self.ref_seq_index = [
-            i for i, s in enumerate(self.Alnmt) if s.description == ref_seq
-        ]
+        print([s.id for s in self.Alnmt])
+
+        self.ref_seq_index = [i for i, s in enumerate(self.Alnmt) if s.id == ref_seq]
         if len(self.ref_seq_index) == 0:
             raise ValueError(
                 "Reference sequence not found in alignment. Please check alignment and reference sequence."
@@ -86,11 +86,9 @@ class VcfAlgn:
         :return: self with reference sequence
 
         """
-        samples = [s.description for _, s in enumerate(self.Alnmt)]
+        samples = [s.id for _, s in enumerate(self.Alnmt)]
 
-        refseq = [
-            s.seq for _, s in enumerate(self.Alnmt) if s.description == self.reference
-        ]
+        refseq = [s.seq for _, s in enumerate(self.Alnmt) if s.id == self.reference]
         if len(refseq) == 0:
             logging.info("Reference sequence not found in alignment")
             self.refseq = None
@@ -109,8 +107,8 @@ class VcfAlgn:
         generate dataframe with (1) positions that vary, (2) aa at these positions in the refseq, (3) any alternatives in the dataset (sep by /), (4-end) for each sequence the aa at these positions
         :return: self with allele overview dataframe
         """
-        fasta = {s.description: s.seq for _, s in enumerate(self.Alnmt)}
-        seqnames = [s.description for _, s in enumerate(self.Alnmt)]
+        fasta = {s.id: s.seq for _, s in enumerate(self.Alnmt)}
+        seqnames = [s.id for _, s in enumerate(self.Alnmt)]
         refid = self.reference
         refseq = str(fasta[refid])
         self.refseq = refseq

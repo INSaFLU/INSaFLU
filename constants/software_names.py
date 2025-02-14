@@ -1239,6 +1239,15 @@ class SoftwareNames(object):
         return self.SOFTWARE_SNIPPY_PARAMETERS
 
     """
+    get bwa mem software"""
+
+    def get_bwa(self):
+        return self.SOFTWARE_BWA
+
+    def get_bwa_mem_name(self):
+        return self.SOFTWARE_BWA_name
+
+    """
     return iVar software
     """
 

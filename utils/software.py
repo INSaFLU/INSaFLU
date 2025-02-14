@@ -616,11 +616,10 @@ class Software(object):
 
     def identify_project_reference_type_and_subtype(self, project: Project):
 
-        reference_fasta = project.get_global_file_by_project(
-            TypePath.MEDIA_ROOT,
-            Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus,
-        )
+        reference_fasta = project.reference.get_reference_fasta(TypePath.MEDIA_ROOT)
         ### type
+        print("Identifying type and subtype")
+        print(reference_fasta)
 
         return self.identify_fasta_type_and_subtype(reference_fasta)
 
@@ -1729,15 +1728,15 @@ class Software(object):
         out: output_file
         """
         print("### ", project_sample.sample.name)
-        # self.run_irma_and_snpEff(
-        #    project_sample.sample.get_fastq(TypePath.MEDIA_ROOT, True),
-        #    project_sample.sample.get_fastq(TypePath.MEDIA_ROOT, False),
-        #    "FLU",
-        #    project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),
-        #    project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),
-        #    project_sample.sample.name,
-        # )
-        # return
+        out_put_path = self.run_irma_and_snpEff(
+            project_sample.sample.get_fastq(TypePath.MEDIA_ROOT, True),
+            project_sample.sample.get_fastq(TypePath.MEDIA_ROOT, False),
+            "FLU",
+            project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),
+            project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),
+            project_sample.sample.name,
+        )
+        return out_put_path
 
         if software.name in SoftwareNames.SOFTWARE_SNIPPY_name:
             out_put_path = self.run_snippy(
@@ -1787,19 +1786,26 @@ class Software(object):
 
         return temp_dir
 
-    def fetch_vcf_file(self, reference_fasta, irma_output_dir):
+    def fetch_vcf_file(self, reference_fasta, irma_output_dir, sample_name):
         """
         fetch consenssu from irma output. Match each to reference segments.
         """
         print("####### fetching vcf file")
 
         fasta_files = [f for f in os.listdir(irma_output_dir) if f.endswith(".fasta")]
-        fasta_segs = {f.split("_")[1]: f for f in fasta_files}
+        fasta_segs = {f.split(".")[0].split("_")[1]: f for f in fasta_files}
 
         keep_segment = self.match_segments_to_genes_abricate(reference_fasta)
+        # keep_segment = {v: g for g, v in keep_segment.items()}
+        print(keep_segment)
+        print(fasta_segs)
 
         matched_segments = {
-            segname: fasta_segs[gene] for segname, gene in keep_segment.items()
+            segname: SeqIO.read(
+                os.path.join(irma_output_dir, fasta_segs[gene]), "fasta"
+            )
+            for segname, gene in keep_segment.items()
+            # fasta_segs[gene] for segname, gene in keep_segment.items()
         }
         print("matched segments: ", matched_segments)
 
@@ -1811,6 +1817,8 @@ class Software(object):
         print(ref_seqs)
 
         for segname, fasta in matched_segments.items():
+            fasta_seq = fasta
+            fasta_seq.id = sample_name
             tmp_comb = os.path.join(irma_output_dir, segname + "_comb.fasta")
             tmp_ref = os.path.join(irma_output_dir, segname + "_ref.fasta")
 
@@ -1833,14 +1841,29 @@ class Software(object):
             ## make vcf
             from utils.vcfalgn import VcfAlgn
 
+            print(segname, msa_output)
+
             vcf_algn = VcfAlgn(
-                msa_output, tmp_ref, odir=irma_output_dir, output=segname + ".vcf"
+                msa_output, segname, odir=irma_output_dir, output=segname + ".vcf"
             )
+            output_vcf = os.path.join(irma_output_dir, segname + ".vcf")
 
             vcf_algn.read_input()
             vcf_algn.read_ref()
             vcf_algn = vcf_algn.msa2snp()
             vcf_algn = vcf_algn.write_vcf()
+
+            ## bgzip and tabix
+            cmd = "{} view -Oz -o {}.gz {}".format(
+                self.software_names.get_bcftools(), output_vcf, output_vcf
+            )
+
+            os.system(cmd)
+
+            cmd = "{} index {}.gz".format(
+                self.software_names.get_bcftools(), output_vcf
+            )
+            os.system(cmd)
 
         return irma_output_dir
 
@@ -1857,51 +1880,142 @@ class Software(object):
         run irma and snpEff
         """
 
-        temp_dir = self.run_irma(file_name_1, file_name_2, module, sample_name)
+        irma_output_dir = self.run_irma(file_name_1, file_name_2, module, sample_name)
+
+        ## copy reference fasta and genbank file to irma output dir as ref.fa and ref.gbk
+        refdir = os.path.join(irma_output_dir, "ref")
+        os.makedirs(refdir, exist_ok=True)
+        self.utils.copy_file(reference_fasta, os.path.join(refdir, "ref.fa"))
+        self.utils.copy_file(genbank_file, os.path.join(refdir, "ref.gbk"))
+
+        ## generate depth file
+        full_consensus_irma = os.path.join(
+            irma_output_dir, sample_name + ".consensus.fa"
+        )
+        with open(full_consensus_irma, "w") as f:
+            cmd = "zcat {}/*fa > {}".format(
+                os.path.join(irma_output_dir, "amended_consensus"), full_consensus_irma
+            )
+            os.system(cmd)
+
+        print("# full consensus irma: ", full_consensus_irma)
+
+        ### Generate depth file sequences against reference
+        ## map against reference
+        cmd = "{} index {}".format(self.software_names.get_bwa(), reference_fasta)
+        os.system(cmd)
+        ## map fastqs against reference
+        mapped_sam = os.path.join(irma_output_dir, sample_name + ".sam")
+        cmd = "{} mem -t 4 {} {} {} > {}".format(
+            self.software_names.get_bwa(),
+            reference_fasta,
+            file_name_1,
+            file_name_2,
+            mapped_sam,
+        )
+        os.system(cmd)
+
+        ## convert sam to bam
+        mapped_bam = os.path.join(irma_output_dir, sample_name + ".bam")
+        cmd = "{} view -S -b {} > {}".format(
+            self.software_names.get_samtools(), mapped_sam, mapped_bam
+        )
+        os.system(cmd)
+
+        ## sort bam
+        sorted_bam = os.path.join(irma_output_dir, sample_name + "_sorted.bam")
+        cmd = "{} sort {} -o {}".format(
+            self.software_names.get_samtools(), mapped_bam, sorted_bam
+        )
+
+        os.system(cmd)
+
+        ## index bam
+        cmd = "{} index {}".format(self.software_names.get_samtools(), sorted_bam)
+        os.system(cmd)
+
+        ## generate depth file and compress
+        depth_file = os.path.join(irma_output_dir, sample_name + ".depth.gz")
+        cmd = "{} depth {} | {} > {}".format(
+            self.software_names.get_samtools(),
+            sorted_bam,
+            self.software_names.get_bgzip(),
+            depth_file,
+        )
+        os.system(cmd)
 
         ## get the vcf file
+        irma_output_dir = self.fetch_vcf_file(
+            reference_fasta, irma_output_dir, sample_name=sample_name
+        )
+        temp_file = os.path.join(irma_output_dir, sample_name + ".vcf")
 
-        temp_dir = self.fetch_vcf_file(reference_fasta, temp_dir)
-        temp_file = os.path.join(temp_dir, sample_name + ".vcf")
+        # merge vcf files
+        vcf_files = [f for f in os.listdir(irma_output_dir) if f.endswith(".vcf.gz")]
+
+        vcf_combined = os.path.join(irma_output_dir, sample_name + ".vcf")
+        vcf_combined_compressed = os.path.join(irma_output_dir, sample_name + ".vcf.gz")
+
+        cmd = "{} concat -o {} {}".format(
+            self.software_names.get_bcftools(),
+            vcf_combined,
+            " ".join([os.path.join(irma_output_dir, f) for f in vcf_files]),
+        )
+
+        system_output = os.system(cmd)
+
+        ### uncompress
+
+        cmd = "{} view -Ov -o {} {}".format(
+            self.software_names.get_bcftools(), temp_file, vcf_combined_compressed
+        )
+
+        if system_output != 0:
+            raise Exception("Failed to merge vcf files")
 
         ## check if the vcf file is empty
-        if os.path.getsize(temp_file) > 0:
+        if os.path.exists(temp_file):
             ### run snpEff
             temp_file_2 = self.utils.get_temp_file("vcf_file", ".vcf")
             output_file = self.run_snpEff(
                 reference_fasta,
                 genbank_file,
                 temp_file,
-                os.path.join(temp_dir, os.path.basename(temp_file_2)),
+                os.path.join(irma_output_dir, os.path.basename(temp_file_2)),
             )
 
             if output_file is None:  ## sometimes the gff does not have amino sequences
                 self.utils.copy_file(
-                    temp_file, os.path.join(temp_dir, os.path.basename(temp_file_2))
+                    temp_file,
+                    os.path.join(irma_output_dir, os.path.basename(temp_file_2)),
                 )
 
             self.test_bgzip_and_tbi_in_vcf(
-                os.path.join(temp_dir, os.path.basename(temp_file_2))
+                os.path.join(irma_output_dir, os.path.basename(temp_file_2))
             )
 
         ### add FREQ to vcf file
         vcf_file_out_temp = self.utils.add_freq_to_vcf(
-            os.path.join(temp_dir, os.path.basename(temp_file_2)),
-            os.path.join(temp_dir, sample_name + ".vcf"),
+            os.path.join(irma_output_dir, os.path.basename(temp_file_2)),
+            os.path.join(irma_output_dir, sample_name + ".vcf"),
         )
-        os.unlink(temp_file)
-        if os.path.exists(temp_file_2):
-            os.unlink(temp_file_2)
+
+        # os.unlink(temp_file)
+        # if os.path.exists(temp_file_2):
+        #    os.unlink(temp_file_2)
 
         ### pass vcf to tab
         self.run_snippy_vcf_to_tab(
             reference_fasta,
             genbank_file,
             vcf_file_out_temp,
-            "{}.tab".format(os.path.join(temp_dir, sample_name)),
+            "{}.tab".format(os.path.join(irma_output_dir, sample_name)),
         )
 
-        return temp_dir
+        print("### irma output dir: ", irma_output_dir)
+        print("{}.tab".format(os.path.join(irma_output_dir, sample_name)))
+
+        return irma_output_dir
 
     def run_snippy(
         self,
@@ -3371,6 +3485,7 @@ class Software(object):
                     project_sample,
                     mdcg_parameters,
                 )
+                print("End Snippy")
 
                 result_all.add_software(
                     SoftwareDesc(
@@ -3380,7 +3495,7 @@ class Software(object):
                     )
                 )
             except Exception as e:
-                print("Error in snippy")
+                print("############ Error in snippy")
 
                 import traceback
 
@@ -3433,7 +3548,9 @@ class Software(object):
                 self.copy_files_to_project(project_sample, software.name, out_put_path)
             except Exception as e:
                 print(e)
-            self.utils.remove_dir(out_put_path)
+
+            print("Start Freebayes")
+            # self.utils.remove_dir(out_put_path)
             ### make the link for the new tab file name
             path_snippy_tab = project_sample.get_file_output(
                 TypePath.MEDIA_ROOT,
@@ -3464,6 +3581,7 @@ class Software(object):
                 MetaKeyAndValue.META_VALUE_Success,
                 result.to_json(),
             )
+            print("End Snippy")
 
             ## get coverage from deep file
             get_coverage = GetCoverage()
@@ -3578,6 +3696,7 @@ class Software(object):
                     coverage.to_json(),
                 )
             except Exception as e:
+                print("############ Error in coverage")
                 print(e)
 
                 result = Result()
@@ -3625,31 +3744,37 @@ class Software(object):
             #####################
             ###
             ### make mask the consensus SoftwareNames.SOFTWARE_MSA_MASKER
-            limit_to_mask_consensus = int(
-                default_project_software.get_mask_consensus_single_parameter(
-                    project_sample,
-                    DefaultParameters.MASK_CONSENSUS_threshold,
-                    ConstantsSettings.TECHNOLOGY_illumina,
+            print("Start Mask Consensus")
+            try:
+                limit_to_mask_consensus = int(
+                    default_project_software.get_mask_consensus_single_parameter(
+                        project_sample,
+                        DefaultParameters.MASK_CONSENSUS_threshold,
+                        ConstantsSettings.TECHNOLOGY_illumina,
+                    )
                 )
-            )
-            msa_parameters = self.make_mask_consensus_by_deep(
-                project_sample.get_file_output(
-                    TypePath.MEDIA_ROOT,
-                    FileType.FILE_CONSENSUS_FASTA,
-                    self.software_names.get_snippy_name(),
-                ),
-                project_sample.project.reference.get_reference_fasta(
-                    TypePath.MEDIA_ROOT
-                ),
-                project_sample.get_file_output(
-                    TypePath.MEDIA_ROOT,
-                    FileType.FILE_DEPTH_GZ,
-                    self.software_names.get_snippy_name(),
-                ),
-                coverage,
-                project_sample.sample.name,
-                limit_to_mask_consensus,
-            )
+                msa_parameters = self.make_mask_consensus_by_deep(
+                    project_sample.get_file_output(
+                        TypePath.MEDIA_ROOT,
+                        FileType.FILE_CONSENSUS_FASTA,
+                        self.software_names.get_snippy_name(),
+                    ),
+                    project_sample.project.reference.get_reference_fasta(
+                        TypePath.MEDIA_ROOT
+                    ),
+                    project_sample.get_file_output(
+                        TypePath.MEDIA_ROOT,
+                        FileType.FILE_DEPTH_GZ,
+                        self.software_names.get_snippy_name(),
+                    ),
+                    coverage,
+                    project_sample.sample.name,
+                    limit_to_mask_consensus,
+                )
+            except Exception as e:
+                print("############ Error in mask consensus")
+                print(e)
+            print("End Mask Consensus")
             ### add version of mask
             result_all.add_software(
                 SoftwareDesc(
@@ -3677,6 +3802,7 @@ class Software(object):
                 ),
                 coverage,
             )
+            print("End Mask Consensus")
 
             ################
             ################
@@ -3776,7 +3902,7 @@ class Software(object):
                             ProcessControler.FLAG_ERROR,
                         )
                         return False
-
+                print("End Freebayes")
                 ## count hits from tab file
                 count_hits = CountHits()
                 if not out_put_path is None:
@@ -3797,6 +3923,7 @@ class Software(object):
                             count_hits.to_json(),
                         )
                     else:
+                        print("Fail to collect tab file from freebayes")
                         result = Result()
                         result.set_error("Fail to collect tab file from freebayes")
                         result.add_software(
@@ -3857,6 +3984,7 @@ class Software(object):
                     )
 
                     ### mixed infection
+                print("Start Mixed Infection")
                 try:
                     ## get instances
                     mixed_infections_management = MixedInfectionsManagement()
@@ -5616,6 +5744,35 @@ class Software(object):
 
         # copy results to output
         return exit_status
+
+    def get_flumut_version(self):
+        """
+        get flumut full version string - software and DB."""
+        cmd = "{} -V".format(SoftwareNames.SOFTWARE_FLUMUT)
+
+        import subprocess
+
+        process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+        process.wait()
+        output = process.stdout.read().decode("utf-8")
+        exit_status = process.returncode
+
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise Exception("Fail to get flumut version")
+
+        return output
+
+    def get_flumut_db_version(self):
+        """
+        parse flumut -V output to get the database version"""
+
+        output = self.get_flumut_version()
+
+        db = output.split("\n")[1].split(",")[0].split(" ")[1]
+
+        return db
 
     def run_nextstrain_dengue(self, alignments, metadata, cores=1, type="all"):
         """

@@ -1042,6 +1042,16 @@ class RawReference(models.Model):
     )
 
     @property
+    def classification_source_safe(self):
+        if self.classification_source is None:
+            return "0"
+
+        if self.classification_source == "none":
+            return "0"
+
+        return self.classification_source
+
+    @property
     def classification_source_str(self):
         if self.classification_source == "1":
             return "reads"

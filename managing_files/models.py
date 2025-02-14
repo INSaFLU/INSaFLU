@@ -1017,6 +1017,8 @@ class Project(models.Model):
         "flumut_full_report.xlsx"  ### has results of flumut
     )
 
+    PROJECT_FILE_NAME_flumut_version = "flumut_version.txt"  ### has results of flumut
+
     PROJECT_FILE_NAME_all_files_zipped = "AllFiles.zip"  ### Several files zipped
 
     ## put the type file here to clean if there isn't enough sequences to create the trees and alignments

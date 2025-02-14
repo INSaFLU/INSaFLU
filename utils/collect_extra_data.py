@@ -414,6 +414,9 @@ class CollectExtraData(object):
         file_flumut_excel = project.get_global_file_by_project(
             TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_flumut_excel
         )
+        file_flumut_version = project.get_global_file_by_project(
+            TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_flumut_version
+        )
 
         self.software.run_flumut(
             file_alignments,
@@ -422,6 +425,10 @@ class CollectExtraData(object):
             file_flumut_litterature_report,
             file_flumut_excel,
         )
+
+        version_string = self.software.get_flumut_version()
+        with open(file_flumut_version, "w") as f:
+            f.write(version_string)
 
         return
 

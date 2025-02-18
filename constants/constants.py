@@ -285,9 +285,7 @@ class Constants(object):
     NEXTCLADE_LINK_MPXV_All_clades = (
         "https://clades.nextstrain.org/?dataset-name=MPXV&input-fasta="
     )
-    NEXTCLADE_LINK_MPXV_CladeI = (
-        "https://clades.nextstrain.org/?dataset-name=nextstrain/mpox/clade-i&input-fasta="
-    )    
+    NEXTCLADE_LINK_MPXV_CladeI = "https://clades.nextstrain.org/?dataset-name=nextstrain/mpox/clade-i&input-fasta="
     NEXTCLADE_LINK_RSV_A = (
         "https://clades.nextstrain.org/?dataset-name=rsv_a&input-fasta="
     )
@@ -482,7 +480,7 @@ class FileType(Enum):
     [06:29:16] * /tmp/insafli/xpto/xpto.vcf
     [06:29:16] * /tmp/insafli/xpto/xpto.vcf.gz
     [06:29:16] * /tmp/insafli/xpto/xpto.vcf.gz.tbi
-                            /tmp/insafli/xpto/ref/ref.fa
+                            /tmp/insafli/xpto/reference/ref.fa
     """
 
     FILE_BAM = 0

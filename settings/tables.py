@@ -220,6 +220,8 @@ class SoftwaresTable(tables.Table):
             return parameters
 
         elif not self.project_sample is None:
+            print("##########3")
+            print(self.project_sample.sample.name)
             default_software_projects = DefaultProjectSoftware()
             parameters = default_software_projects.get_parameters(
                 record.name,
@@ -229,6 +231,7 @@ class SoftwaresTable(tables.Table):
                 self.project_sample,
                 None,
                 technology_name,
+                pipeline_step=record.pipeline_step.name,
                 name_extended=record.name_extended,
             )
             if parameters == DefaultParameters.MASK_DONT_care:

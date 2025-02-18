@@ -315,9 +315,9 @@ class DefaultProjectSoftware(object):
         self,
         software_name,
         user,
-        type_of_use,
-        project,
-        project_sample,
+        type_of_use: int,
+        project: Project,
+        project_sample: ProjectSample,
         sample,
         technology_name,
         dataset=None,
@@ -329,6 +329,8 @@ class DefaultProjectSoftware(object):
         test if exist, if not persist in database
         """
         ## lock because more than one process can duplicate software names
+        if not project_sample is None:
+            project = project_sample.project
         if name_extended is not None:
             list_software = Software.objects.filter(
                 name=software_name,
@@ -712,7 +714,9 @@ class DefaultProjectSoftware(object):
                 return parameters.parameter
         return None
 
-    def is_snippy_single_parameter_default(self, project_sample, parameter_name):
+    def is_snippy_single_parameter_default(
+        self, project_sample, parameter_name
+    ) -> bool:
         """
         test if a specific parameter is default SNIPPY_COVERAGE_NAME; SNIPPY_MAPQUAL_NAME
         """

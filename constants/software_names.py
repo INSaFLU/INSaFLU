@@ -9,6 +9,7 @@ import os
 from django.conf import settings
 
 from constants.constants import Constants
+from constants.televir_directories import Televir_Directory_Constants
 from settings.constants_settings import ConstantsSettings
 
 
@@ -669,7 +670,7 @@ class SoftwareNames(object):
 
     ### QC SOFTWARE
     SOFTWARE_PRINSEQ = os.path.join(
-        settings.DIR_SOFTWARE,
+        Televir_Directory_Constants.environments_directory,
         "preprocess/prinseq/bin/prinseq++",
     )
     SOFTWARE_PRINSEQ_name = "Prinseq++"
@@ -683,7 +684,7 @@ class SoftwareNames(object):
     SOFTWARE_BAMUTIL_name = "BamUtil"
     SOFTWARE_BAMUTIL_name_extended = "BamUtil - Mapping Stringency"
     SOFTWARE_BAMUTIL = os.path.join(
-        settings.DIR_SOFTWARE,
+        Televir_Directory_Constants.environments_directory,
         "preprocess/bamUtil/bin/bam",
     )
     SOFTWARE_BAMUTIL_VERSION = "1.0.15"
@@ -691,7 +692,7 @@ class SoftwareNames(object):
     SOFTWARE_MSAMTOOLS_name = "msamtools"
     SOFTWARE_MSAMTOOLS_name_extended = "msamtools - Mapping Filtering"
     SOFTWARE_MSAMTOOLS = os.path.join(
-        settings.DIR_SOFTWARE,
+        Televir_Directory_Constants.environments_directory,
         "preprocess/msamtools/bin/msamtools",
     )
     SOFTWARE_MSAMTOOLS_VERSION = "1.1.3"
@@ -723,7 +724,7 @@ class SoftwareNames(object):
 
     ### CENTRIFUGE
     SOFTWARE_CENTRIFUGE = os.path.join(
-        settings.DIR_SOFTWARE,
+        Televir_Directory_Constants.environments_directory,
         "host_depletion/hostdep_env/bin/centrifuge",
     )
     SOFTWARE_CENTRIFUGE_name = "Centrifuge"
@@ -735,8 +736,8 @@ class SoftwareNames(object):
 
     ### BWA
     SOFTWARE_BWA = os.path.join(
-        settings.DIR_SOFTWARE,
-        "preprocess/preproc/bin/bwa",
+        Televir_Directory_Constants.environments_directory,
+        "remap/remap/bin/bwa",
     )
 
     SOFTWARE_BWA_name = "BWA"
@@ -749,7 +750,8 @@ class SoftwareNames(object):
 
     ### KRAKEN2
     SOFTWARE_KRAKEN2 = os.path.join(
-        settings.DIR_SOFTWARE, "kraken2/kraken_env/bin/kraken2"
+        Televir_Directory_Constants.environments_directory,
+        "kraken2/kraken_env/bin/kraken2",
     )
     SOFTWARE_KRAKEN2_name = "Kraken2"
     SOFTWARE_KRAKEN2_name_extended = "Kraken2"
@@ -762,7 +764,7 @@ class SoftwareNames(object):
 
     ### KRAKENUNIQ
     SOFTARE_KRAKENUNIQ = os.path.join(
-        settings.DIR_SOFTWARE,
+        Televir_Directory_Constants.environments_directory,
         "host_depletion/hostdep_env/bin/krakenuniq",
     )
     SOFTWARE_KRAKENUNIQ_name = "Krakenuniq"
@@ -1043,6 +1045,12 @@ class SoftwareNames(object):
     ###
     ###################################
 
+    ### software with duplicates in project and sample
+    duplicate_softwares = [
+        SOFTWARE_SNIPPY_name,
+    ]
+    ###
+
     ### software with application in multiple pipeline_steps:
     polyvalent_software = [
         SOFTWARE_CENTRIFUGE_name,
@@ -1052,6 +1060,7 @@ class SoftwareNames(object):
         SOFTWARE_MINIMAP2_REMAP_ONT_name,
         SOFTWARE_MSAMTOOLS_name,
     ]
+
     # pipeline_steps per software, for software with multiple pipeline_steps.
 
     polyvalent_software_pipelines = {
@@ -1451,10 +1460,10 @@ class SoftwareNames(object):
     """
     return Coverage software
     """
-    #     def get_coverage(self): return self.SOFTWARE_COVERAGE
-    #     def get_coverage_name(self): return self.SOFTWARE_COVERAGE_name
-    #     def get_coverage_version(self): return self.SOFTWARE_COVERAGEVERSION
-    #     def get_coverage_parameters(self): return self.SOFTWARE_COVERAGE_PARAMETERS
+    # def get_coverage(self): return self.SOFTWARE_COVERAGE
+    # def get_coverage_name(self): return self.SOFTWARE_COVERAGE_name
+    # def get_coverage_version(self): return self.SOFTWARE_COVERAGEVERSION
+    # def get_coverage_parameters(self): return self.SOFTWARE_COVERAGE_PARAMETERS
 
     """
     return Prokka software

@@ -1368,7 +1368,7 @@ class CollectExtraData(object):
             return None
         return out_file
 
-    def collect_variations_snippy(self, project):
+    def collect_variations_snippy(self, project: Project):
         """
         collect snippy variations
 
@@ -1407,6 +1407,9 @@ class CollectExtraData(object):
                     )
                 else:
                     continue
+
+                print("TAB_FILE_TO_PROCESS", tab_file_to_process)
+                print(out_file)
                 if not os.path.exists(tab_file_to_process):
                     continue
                 parse_out_files.parse_tab_files_snippy(

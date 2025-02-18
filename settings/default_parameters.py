@@ -12,6 +12,7 @@ from django.conf import settings
 
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
+from managing_files.models import Project, ProjectSample
 from pathogen_identification.constants_settings import (
     ConstantsSettings as PI_ConstantsSettings,
 )
@@ -341,6 +342,7 @@ class DefaultParameters(object):
         televir_project=None,
         is_to_run=True,
         name_extended=None,
+        project_sample=None,
     ) -> Optional[Software]:
         """
         Get software global
@@ -364,6 +366,11 @@ class DefaultParameters(object):
                 parameter__televir_project=televir_project,
             ).distinct()
 
+        if project_sample is not None:
+            software_list = software_list.filter(
+                parameter__project_sample=project_sample
+            )
+
         if is_to_run == True:
             software_list = software_list.filter(is_to_run=True)
 
@@ -381,6 +388,134 @@ class DefaultParameters(object):
         return False
 
     def get_parameters(
+        self,
+        software_name,
+        user,
+        type_of_use,
+        project,
+        project_sample,
+        sample,
+        technology_name=ConstantsSettings.TECHNOLOGY_illumina,
+        dataset=None,
+        televir_project=None,
+        pipeline_step=None,
+        software_name_extended=None,
+        is_to_run=False,
+    ):
+
+        if self.check_software_is_polyvalent(
+            software_name
+        ) or self.check_software_with_duplicates(software_name):
+            return self.get_parameters_specific(
+                software_name,
+                user,
+                type_of_use,
+                project,
+                project_sample,
+                sample,
+                technology_name=technology_name,
+                dataset=dataset,
+                televir_project=televir_project,
+                pipeline_step=pipeline_step,
+                software_name_extended=software_name_extended,
+                is_to_run=is_to_run,
+            )
+
+        return self.get_parameters_classic(
+            software_name,
+            user,
+            type_of_use,
+            project,
+            project_sample,
+            sample,
+            technology_name=technology_name,
+            dataset=dataset,
+            televir_project=televir_project,
+            pipeline_step=pipeline_step,
+            software_name_extended=software_name_extended,
+            is_to_run=is_to_run,
+        )
+
+    def get_parameters_specific(
+        self,
+        software_name,
+        user,
+        type_of_use,
+        project: Project,
+        project_sample: ProjectSample,
+        sample,
+        technology_name=ConstantsSettings.TECHNOLOGY_illumina,
+        dataset=None,
+        televir_project=None,
+        pipeline_step=None,
+        software_name_extended=None,
+        is_to_run=False,
+    ):
+        """
+        get software_name parameters, if it saved in database...
+        """
+        # logger = logging.getLogger("fluWebVirus.debug")
+        # logger.debug("Get parameters: software-{} user-{} typeofuse-{} project-{} psample-{} sample-{} tec-{} dataset-{}",software_name, user, type_of_use, project, project_sample, sample, technology_name, dataset)
+        if not project_sample is None:
+            project = project_sample.project
+
+        if self.check_software_is_polyvalent(software_name):
+            if pipeline_step is None:
+                prefered_pipeline = self.get_polyvalent_software_pipeline(software_name)
+            else:
+                prefered_pipeline = pipeline_step
+
+            software = self.get_software_global_with_step(
+                user,
+                software_name,
+                technology_name,
+                type_of_use,
+                prefered_pipeline,
+                televir_project=televir_project,
+            )
+
+        else:
+
+            software = self.get_software_global(
+                user,
+                software_name,
+                technology_name,
+                type_of_use,
+                televir_project=televir_project,
+                is_to_run=is_to_run,
+                name_extended=software_name_extended,
+                project=project,
+                project_sample=project_sample,
+            )
+
+        if software is None:
+            return software
+
+        if not project_sample is None:
+            project = None
+        ## logger.debug("Get parameters: software-{} user-{} typeofuse-{} project-{} psample-{} sample-{} tec-{} dataset-{}",software, user, type_of_use, project, project_sample, sample, technology_name, dataset)
+        ## get parameters for a specific user  #
+        parameters = Parameter.objects.filter(
+            software=software,
+            # project=project,
+            project_sample=project_sample,
+            sample=sample,
+            dataset=dataset,
+            televir_project=televir_project,
+        )
+
+        # logger.debug("Get parameters: {}".format(parameters))
+        ### if only one parameter and it is don't care, return dont_care
+
+        if len(list(parameters)) == 1 and list(parameters)[0].name in [
+            DefaultParameters.MASK_not_applicable,
+            DefaultParameters.MASK_DONT_care,
+        ]:
+            return DefaultParameters.MASK_not_applicable
+
+        return self.parse_parameters(parameters, software_name)
+
+    def get_parameters_classic(
         self,
         software_name,
         user,
@@ -1152,6 +1287,10 @@ class DefaultParameters(object):
 
         else:
             return None
+
+    def check_software_with_duplicates(self, software_name):
+        """return true if software is in duplocate_list"""
+        return software_name in SoftwareNames.duplicate_softwares
 
     def check_software_is_polyvalent(self, software_name):
         """return True if the software is polyvalent"""
@@ -4718,6 +4857,9 @@ class DefaultParameters(object):
         parameter.description = ""
         vect_parameters.append(parameter)
         return vect_parameters
+
+
+### "Generate consensus" -> it is used for set ON/OFF consensus in the AllConsensus File
 
 
 ### "Generate consensus" -> it is used for set ON/OFF consensus in the AllConsensus File

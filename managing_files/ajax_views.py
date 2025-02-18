@@ -312,6 +312,7 @@ def show_variants_as_a_table(request):
                             )
                         )
                     )
+
                     data["static_table_filter"] = mark_safe(
                         request.build_absolute_uri(
                             os.path.join(settings.STATIC_URL, "vendor/tablefilter")

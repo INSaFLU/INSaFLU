@@ -11,6 +11,7 @@ import logging
 import os
 import re
 import subprocess
+from typing import Optional
 
 from BCBio import GFF
 from Bio import SeqIO
@@ -97,7 +98,7 @@ class ProjectSampleCoverage(object):
                 software.name,
             ),
             project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),
-            int(self.default_coverage_value),
+            self.default_coverage_value,
             coverage_for_project,
         )
 
@@ -182,6 +183,19 @@ class ProjectSampleCoverage(object):
                     self.get_fault_message_0(element),
                 )
         project_sample.save()
+
+
+class IrmaRun(object):
+
+    def __init__(self) -> None:
+
+        self.utils = Utils()
+        self.software_names = SoftwareNames()
+        self.logger_debug = logging.getLogger("fluWebVirus.debug")
+        self.logger_production = logging.getLogger("fluWebVirus.production")
+
+    def run_irma(self, fastq1, fastq2, out_dir, database_name, software):
+        pass
 
 
 class RunFreebayesException(Exception):
@@ -1865,7 +1879,6 @@ class Software(object):
         """
         manageDatabase = ManageDatabase()
 
-        print("### ", project_sample.sample.name)
         out_put_path = self.run_irma_and_snpEff(
             project_sample.sample.get_fastq(TypePath.MEDIA_ROOT, True),
             project_sample.sample.get_fastq(TypePath.MEDIA_ROOT, False),
@@ -1958,38 +1971,63 @@ class Software(object):
             for x in os.listdir(os.path.join(temp_dir, "amended_consensus"))
             if x.endswith(".fa")
         ]
-        print(output_fastas)
 
         ## if there is no output, raise an exception
         if len(output_fastas) == 0:
             raise Exception("IRMA did not generate any output")
 
-        # concatenate all fasta files into one
-        concatenated_consensus = os.path.join(temp_dir, sample_name + ".fasta")
-        with open(concatenated_consensus, "w") as outfile:
-            for fasta in output_fastas:
-                with open(
-                    os.path.join(temp_dir, "amended_consensus", fasta), "r"
-                ) as infile:
-                    outfile.write(infile.read())
-
         ## concatenate all vcf files into one
 
         return temp_dir
 
-    def fetch_vcf_file(self, reference_fasta, irma_output_dir, sample_name):
+    def vcfalign_from_combined_fasta(
+        self, irma_output_dir, segname, combined_vcf, output_vcf
+    ):
+        """
+        Create a vcf file from a combined fasta file
+        gereate multiple sequence alignment and vcf file
+        """
+        msa_output = os.path.join(irma_output_dir, segname + "_aligned.msa")
+
+        ## align
+        self.run_mafft(
+            combined_vcf,
+            msa_output,
+            "--auto",
+        )
+
+        ## make vcf
+        from utils.vcfalgn import VcfAlgn
+
+        vcf_algn = VcfAlgn(
+            msa_output, segname, odir=irma_output_dir, output=segname + ".vcf"
+        )
+        output_vcf = os.path.join(irma_output_dir, segname + ".vcf")
+
+        vcf_algn.read_input()
+        vcf_algn.read_ref()
+        vcf_algn = vcf_algn.msa2snp()
+        vcf_algn = vcf_algn.write_vcf()
+
+        ## bgzip and tabix
+        cmd = "{} view -Oz -o {}.gz {}".format(
+            self.software_names.get_bcftools(), output_vcf, output_vcf
+        )
+
+        os.system(cmd)
+
+        cmd = "{} index {}.gz".format(self.software_names.get_bcftools(), output_vcf)
+        os.system(cmd)
+
+    def irma_align_get_vcfs(self, reference_fasta, irma_output_dir, sample_name):
         """
         fetch consenssu from irma output. Match each to reference segments.
+        Align each segment to reference and generate vcf files.
         """
-        print("####### fetching vcf file")
-
         fasta_files = [f for f in os.listdir(irma_output_dir) if f.endswith(".fasta")]
         fasta_segs = {f.split(".")[0].split("_")[1]: f for f in fasta_files}
 
         keep_segment = self.match_segments_to_genes_abricate(reference_fasta)
-        # keep_segment = {v: g for g, v in keep_segment.items()}
-        print(keep_segment)
-        print(fasta_segs)
 
         matched_segments = {
             segname: SeqIO.read(
@@ -1998,150 +2036,86 @@ class Software(object):
             for segname, gene in keep_segment.items()
             # fasta_segs[gene] for segname, gene in keep_segment.items()
         }
-        print("matched segments: ", matched_segments)
 
         ## split reference into segment fastas and align to respective consensus.
-
         with open(reference_fasta, "r") as ref:
             ref_seqs = SeqIO.to_dict(SeqIO.parse(ref, "fasta"))
-
-        print(ref_seqs)
 
         for segname, fasta in matched_segments.items():
             fasta_seq = fasta
             fasta_seq.id = sample_name
-            tmp_comb = os.path.join(irma_output_dir, segname + "_comb.fasta")
-            tmp_ref = os.path.join(irma_output_dir, segname + "_ref.fasta")
 
+            # tmp_ref = os.path.join(irma_output_dir, segname + "_ref.fasta")
+            # with open(tmp_ref, "w") as ref:
+            #    SeqIO.write(ref_seqs[segname], ref, "fasta")
+
+            tmp_comb = os.path.join(irma_output_dir, segname + "_comb.fasta")
             with open(tmp_comb, "w") as ref:
                 SeqIO.write(ref_seqs[segname], ref, "fasta")
                 SeqIO.write(fasta, ref, "fasta")
 
-            with open(tmp_ref, "w") as ref:
-                SeqIO.write(ref_seqs[segname], ref, "fasta")
-
-            msa_output = os.path.join(irma_output_dir, segname + "_aligned.msa")
-
-            ## align
-            self.run_mafft(
+            self.vcfalign_from_combined_fasta(
+                irma_output_dir,
+                segname,
                 tmp_comb,
-                msa_output,
-                "--auto",
+                os.path.join(irma_output_dir, segname + ".vcf"),
             )
-
-            ## make vcf
-            from utils.vcfalgn import VcfAlgn
-
-            print(segname, msa_output)
-
-            vcf_algn = VcfAlgn(
-                msa_output, segname, odir=irma_output_dir, output=segname + ".vcf"
-            )
-            output_vcf = os.path.join(irma_output_dir, segname + ".vcf")
-
-            vcf_algn.read_input()
-            vcf_algn.read_ref()
-            vcf_algn = vcf_algn.msa2snp()
-            print("###############################3")
-            vcf_algn.report()
-            print(vcf_algn.output)
-            vcf_algn = vcf_algn.write_vcf()
-
-            ## bgzip and tabix
-            cmd = "{} view -Oz -o {}.gz {}".format(
-                self.software_names.get_bcftools(), output_vcf, output_vcf
-            )
-
-            os.system(cmd)
-
-            cmd = "{} index {}.gz".format(
-                self.software_names.get_bcftools(), output_vcf
-            )
-            os.system(cmd)
 
         return irma_output_dir
 
-    def run_irma_and_snpEff(
+    def generate_depth_file(
         self,
-        file_name_1,
-        file_name_2,
-        module,
-        path_reference_fasta,
-        path_reference_genbank,
-        sample_name,
+        file_name_1: str,
+        file_name_2: Optional[str],
+        reference_fasta: str,
+        output_dir: str,
+        sample_name: str,
     ):
         """
-        run irma and snpEff
+        Generate depth file
+        generates:
+        - mapped sam
+        - mapped bam
+        - sorted bam
+        - depth file
+        - depth file gzipped
         """
 
-        irma_output_dir = self.run_irma(file_name_1, file_name_2, module, sample_name)
-
-        self.utils.copy_file(file_name_1, os.path.join(irma_output_dir, "R1.fastq"))
-        if file_name_2:
-            self.utils.copy_file(file_name_2, os.path.join(irma_output_dir, "R2.fastq"))
-
-        ## copy reference fasta and genbank file to irma output dir as ref.fa and ref.gbk
-        refdir = os.path.join(irma_output_dir, "reference")
-        os.makedirs(refdir, exist_ok=True)
-        self.utils.copy_file(path_reference_fasta, os.path.join(refdir, "ref.fa"))
-        self.utils.copy_file(path_reference_genbank, os.path.join(refdir, "ref.gbk"))
-
-        # index reference
-        self.create_fai_fasta(os.path.join(refdir, "ref.fa"))
-        ## generate depth file
-        full_consensus_irma = os.path.join(
-            irma_output_dir, sample_name + ".consensus.fa"
-        )
-        # with open(full_consensus_irma, "w") as f:
-        cmd = "zcat {}/*fa > {}".format(
-            os.path.join(irma_output_dir, "amended_consensus"), full_consensus_irma
-        )
-        os.system(cmd)
-
-        print("# full consensus irma: ", full_consensus_irma)
-
-        ### Generate depth file sequences against reference
         ## map against reference using bwa
-        print("#################################################")
-        cmd = "{} index {}".format(self.software_names.get_bwa(), path_reference_fasta)
-        print(cmd)
+        cmd = "{} index {}".format(self.software_names.get_bwa(), reference_fasta)
         os.system(cmd)
         ## map fastqs against reference
-        mapped_sam = os.path.join(irma_output_dir, sample_name + ".sam")
+        mapped_sam = os.path.join(output_dir, sample_name + ".sam")
         cmd = "{} mem -t 4 {} {} {} > {}".format(
             self.software_names.get_bwa(),
-            path_reference_fasta,
+            reference_fasta,
             file_name_1,
             file_name_2,
             mapped_sam,
         )
-        print(cmd)
         os.system(cmd)
 
         ## convert sam to bam
-        mapped_bam = os.path.join(irma_output_dir, sample_name + ".bam")
+        mapped_bam = os.path.join(output_dir, sample_name + ".bam")
         cmd = "{} view -b -F 4 {} > {}".format(
             self.software_names.get_samtools(), mapped_sam, mapped_bam
         )
         os.system(cmd)
-        print(cmd)
 
         ## sort bam
-        sorted_bam = os.path.join(irma_output_dir, sample_name + "_sorted.bam")
+        sorted_bam = os.path.join(output_dir, sample_name + "_sorted.bam")
         cmd = "{} sort {} -o {}".format(
             self.software_names.get_samtools(), mapped_bam, sorted_bam
         )
 
         os.system(cmd)
-        print(cmd)
 
         ## index bam
         cmd = "{} index {}".format(self.software_names.get_samtools(), sorted_bam)
         os.system(cmd)
-        print(cmd)
 
         ## generate depth file and compress
-        depth_file = os.path.join(irma_output_dir, sample_name + ".depth.gz")
+        depth_file = os.path.join(output_dir, sample_name + ".depth.gz")
         cmd = "{} depth {} | {} > {}".format(
             self.software_names.get_samtools(),
             sorted_bam,
@@ -2149,23 +2123,31 @@ class Software(object):
             depth_file,
         )
         os.system(cmd)
-        print(cmd)
 
         # copy bam
         cmd = "cp {} {}".format(
-            sorted_bam, os.path.join(irma_output_dir, sample_name + ".bam")
+            sorted_bam, os.path.join(output_dir, sample_name + ".bam")
         )
 
         os.system(cmd)
         cmd = "cp {}.bai {}".format(
-            sorted_bam, os.path.join(irma_output_dir, sample_name + ".bam.bai")
+            sorted_bam, os.path.join(output_dir, sample_name + ".bam.bai")
         )
         os.system(cmd)
 
+        return depth_file
+
+    def irma_generate_full_vcf(
+        self, irma_output_dir, sample_name, path_reference_fasta
+    ):
+        """
+        Merge vcf files and generate full vcf
+        """
         ## get the vcf file
-        irma_output_dir = self.fetch_vcf_file(
+        irma_output_dir = self.irma_align_get_vcfs(
             path_reference_fasta, irma_output_dir, sample_name=sample_name
         )
+
         temp_file = os.path.join(irma_output_dir, sample_name + ".vcf")
 
         # merge vcf files
@@ -2191,36 +2173,86 @@ class Software(object):
         if system_output != 0:
             raise Exception("Failed to merge vcf files")
 
-        ## check if the vcf file is empty
-        if os.path.exists(temp_file):
-            ### run snpEff
-            temp_file_2 = self.utils.get_temp_file("vcf_file", ".vcf")
-            output_file = self.run_snpEff(
-                path_reference_fasta,
-                path_reference_genbank,
-                temp_file,
-                os.path.join(irma_output_dir, os.path.basename(temp_file_2)),
-            )
+        return vcf_combined
 
-            if output_file is None:  ## sometimes the gff does not have amino sequences
-                self.utils.copy_file(
-                    temp_file,
-                    os.path.join(irma_output_dir, os.path.basename(temp_file_2)),
-                )
+    def run_irma_and_snpEff(
+        self,
+        file_name_1,
+        file_name_2,
+        module,
+        path_reference_fasta,
+        path_reference_genbank,
+        sample_name,
+    ):
+        """
+        run irma and snpEff
+        """
 
-            self.test_bgzip_and_tbi_in_vcf(
-                os.path.join(irma_output_dir, os.path.basename(temp_file_2))
-            )
+        ############# RUN IRMA ################
+        irma_output_dir = self.run_irma(file_name_1, file_name_2, module, sample_name)
 
-        ### add FREQ to vcf file
-        vcf_file_out_temp = self.utils.add_freq_to_vcf(
-            os.path.join(irma_output_dir, os.path.basename(temp_file_2)),
-            os.path.join(irma_output_dir, sample_name + "_2.vcf"),
+        ############# Collect output files ################
+        ## copy fastqs to irma output
+        self.utils.copy_file(file_name_1, os.path.join(irma_output_dir, "R1.fastq"))
+        if file_name_2:
+            self.utils.copy_file(file_name_2, os.path.join(irma_output_dir, "R2.fastq"))
+
+        ## copy reference fasta and genbank file to irma output dir as ref.fa and ref.gbk
+        refdir = os.path.join(irma_output_dir, "reference")
+        os.makedirs(refdir, exist_ok=True)
+        self.utils.copy_file(path_reference_fasta, os.path.join(refdir, "ref.fa"))
+        self.utils.copy_file(path_reference_genbank, os.path.join(refdir, "ref.gbk"))
+
+        # index reference
+        self.create_fai_fasta(os.path.join(refdir, "ref.fa"))
+
+        # concatenate all fasta files into one
+        # concatenated_consensus = os.path.join(temp_dir, sample_name + ".fasta")
+        # with open(concatenated_consensus, "w") as outfile:
+        #    for fasta in output_fastas:
+        #        with open(
+        #            os.path.join(temp_dir, "amended_consensus", fasta), "r"
+        #        ) as infile:
+        #            outfile.write(infile.read())
+        #
+
+        full_consensus_irma = os.path.join(
+            irma_output_dir, sample_name + ".consensus.fa"
+        )
+        # with open(full_consensus_irma, "w") as f:
+        cmd = "zcat {}/*fa > {}".format(
+            os.path.join(irma_output_dir, "amended_consensus"), full_consensus_irma
+        )
+        os.system(cmd)
+
+        _ = self.generate_depth_file(
+            os.path.join(irma_output_dir, "R1.fastq"),
+            os.path.join(irma_output_dir, "R2.fastq"),
+            os.path.join(refdir, "ref.fa"),
+            irma_output_dir,
+            sample_name,
         )
 
-        # os.unlink(temp_file)
-        # if os.path.exists(temp_file_2):
-        #    os.unlink(temp_file_2)
+        ## generate full vcf
+        vcf_combined = self.irma_generate_full_vcf(
+            irma_output_dir, sample_name, path_reference_fasta
+        )
+
+        if os.path.exists(vcf_combined) is False:
+            raise Exception("Failed to generate full vcf")
+
+        ############# RUN SNPEFF ################
+        ### run snpEff
+
+        vcf_file_out_temp = self.run_snpEff_add_freq(
+            vcf_combined,
+            path_reference_fasta,
+            path_reference_genbank,
+            irma_output_dir,
+            sample_name + "_2.vcf",
+        )
+
+        os.unlink(vcf_combined)
 
         ### pass vcf to tab
         self.run_snippy_vcf_to_tab_freq_and_evidence(
@@ -2229,15 +2261,6 @@ class Software(object):
             vcf_file_out_temp,
             os.path.join(irma_output_dir, sample_name + ".tab"),
         )
-        # self.run_snippy_vcf_to_tab(
-        #    reference_fasta,
-        #    genbank_file,
-        #    vcf_file_out_temp,
-        #    "{}.tab".format(os.path.join(irma_output_dir, sample_name)),
-        # )
-
-        print("### irma output dir: ", irma_output_dir)
-        print("{}.tab".format(os.path.join(irma_output_dir, sample_name)))
 
         return irma_output_dir
 
@@ -2588,6 +2611,46 @@ class Software(object):
         handle.close()
         return (base_file_name, temp_file)
 
+    def run_snpEff_add_freq(
+        self,
+        vcf_file,
+        path_reference_fasta,
+        path_reference_genbank,
+        output_directory,
+        output_file,
+    ):
+        ### run snpEff
+        temp_file_2 = self.utils.get_temp_file("vcf_file", ".vcf")
+        output_snpEff_file = self.run_snpEff(
+            path_reference_fasta,
+            path_reference_genbank,
+            vcf_file,
+            os.path.join(output_directory, os.path.basename(temp_file_2)),
+        )
+
+        if (
+            output_snpEff_file is None
+        ):  ## sometimes the gff does not have amino sequences
+            self.utils.copy_file(
+                vcf_file,
+                os.path.join(output_directory, os.path.basename(temp_file_2)),
+            )
+
+        self.test_bgzip_and_tbi_in_vcf(
+            os.path.join(output_directory, os.path.basename(temp_file_2))
+        )
+
+        ### add FREQ to vcf file
+        vcf_file_out_temp = self.utils.add_freq_to_vcf(
+            os.path.join(output_directory, os.path.basename(temp_file_2)),
+            os.path.join(output_directory, output_file),
+        )
+
+        if os.path.exists(temp_file_2):
+            os.unlink(temp_file_2)
+
+        return vcf_file_out_temp
+
     def run_snpEff(self, fasta_file, genbank, vcf_file, out_file):
         """
         ./snpEff ann -no-downstream -no-upstream -no-intergenic -no-utr -c ../path_to/reference/snpeff.config -dataDir . -noStats ref sample.vcf > sample_annot.vcf
@@ -2720,6 +2783,8 @@ class Software(object):
         """
         run freebayes and count the number of SNPs
         """
+        count_hits = CountHits()
+        out_put_path = None
         try:
             out_put_path = self.run_freebayes_stratified(project_sample, software)
         except RunFreebayesException as e:
@@ -2739,6 +2804,16 @@ class Software(object):
                         project_sample.sample.name
                     )
                 )
+
+            self.copy_files_to_project(
+                project_sample,
+                self.software_names.get_freebayes_name(),
+                out_put_path,
+            )
+            ## remove path dir if exist
+            self.utils.remove_dir(out_put_path)
+
+        return out_put_path, count_hits
 
     def run_freebayes_stratified(
         self, project_sample: ProjectSample, software: SoftwareSettings
@@ -2775,6 +2850,9 @@ class Software(object):
                 )
 
             except Exception as e:
+                import traceback
+
+                traceback.print_exc()
 
                 raise RunFreebayesException(
                     "Fail to run freebayes for sample: {}".format(
@@ -2845,39 +2923,20 @@ class Software(object):
             temp_file,
         )
         exist_status = os.system(cmd)
-        if exist_status != 0:
+        if exist_status != 0 or os.path.getsize(temp_file) == 0:
             self.logger_production.error("Fail to run: " + cmd)
             self.logger_debug.error("Fail to run: " + cmd)
             raise Exception("Fail to run freebayes")
 
+        ### run snpEff
         if os.path.getsize(temp_file) > 0:
-            ### run snpEff
-            temp_file_2 = self.utils.get_temp_file("vcf_file", ".vcf")
-            output_file = self.run_snpEff(
+            vcf_file_out_temp = self.run_snpEff_add_freq(
+                temp_file,
                 reference_fasta,
                 genbank_file,
-                temp_file,
-                os.path.join(temp_dir, os.path.basename(temp_file_2)),
+                temp_dir,
+                "{}.vcf".format(sample_name),
             )
-
-            if output_file is None:  ## sometimes the gff does not have amino sequences
-                self.utils.copy_file(
-                    temp_file, os.path.join(temp_dir, os.path.basename(temp_file_2))
-                )
-
-            self.test_bgzip_and_tbi_in_vcf(
-                os.path.join(temp_dir, os.path.basename(temp_file_2))
-            )
-
-            ### add FREQ to vcf file
-            vcf_file_out_temp = self.utils.add_freq_to_vcf(
-                os.path.join(temp_dir, os.path.basename(temp_file_2)),
-                os.path.join(temp_dir, sample_name + ".vcf"),
-            )
-            os.unlink(temp_file)
-            if os.path.exists(temp_file_2):
-                os.unlink(temp_file_2)
-
             ### pass vcf to tab
             self.run_snippy_vcf_to_tab(
                 reference_fasta,
@@ -2885,6 +2944,8 @@ class Software(object):
                 vcf_file_out_temp,
                 "{}.tab".format(os.path.join(temp_dir, sample_name)),
             )
+
+        os.unlink(temp_file)
         return temp_dir
 
     def run_freebayes_parallel(
@@ -2989,7 +3050,7 @@ class Software(object):
             temp_file,
         )
         exist_status = os.system(cmd)
-        if exist_status != 0:
+        if exist_status != 0 or os.path.getsize(temp_file) == 0:
             os.unlink(temp_file_regions)
             os.unlink(temp_file_bam_coverage)
             os.unlink(temp_file)
@@ -2998,28 +3059,11 @@ class Software(object):
             raise Exception("Fail to run freebayes parallel")
 
         ### run snpEff
-        if os.path.exists(temp_file):
-            temp_file_2 = self.utils.get_temp_file("vcf_file", ".vcf")
-            output_file = self.run_snpEff(
-                reference_fasta,
-                genbank_file,
-                temp_file,
-                os.path.join(temp_dir, os.path.basename(temp_file_2)),
-            )
-            if output_file is None:  ## sometimes the gff does not have amino sequences
-                self.utils.copy_file(
-                    temp_file, os.path.join(temp_dir, os.path.basename(temp_file_2))
-                )
-
-            self.test_bgzip_and_tbi_in_vcf(
-                os.path.join(temp_dir, os.path.basename(temp_file_2))
+        if os.path.getsize(temp_file) > 0:
+            vcf_file_out_temp = self.run_snpEff_add_freq(
+                temp_file, reference_fasta, genbank_file, temp_dir, sample_name + ".vcf"
             )
 
-            ### add FREQ to vcf file
-            vcf_file_out_temp = self.utils.add_freq_to_vcf(
-                os.path.join(temp_dir, os.path.basename(temp_file_2)),
-                os.path.join(temp_dir, sample_name + ".vcf"),
-            )
             ### pass vcf to tab
             self.run_snippy_vcf_to_tab(
                 reference_fasta,
@@ -3029,8 +3073,7 @@ class Software(object):
             )
         if os.path.exists(temp_file):
             os.unlink(temp_file)
-        if os.path.exists(temp_file_2):
-            os.unlink(temp_file_2)
+
         if os.path.exists(temp_file_regions):
             os.unlink(temp_file_regions)
         if os.path.exists(temp_file_bam_coverage):
@@ -3864,9 +3907,15 @@ class Software(object):
 
             print("End Snippy")
 
-            sample_coverage = ProjectSampleCoverage(project_sample, software)
+            try:
+                sample_coverage = ProjectSampleCoverage(project_sample, software)
+            except Exception as e:
+                import traceback
 
+                traceback.print_exc()
+                print(e)
             ## get coverage from deep file
+
             try:
                 ### limit of the coverage for a project, can be None, if not exist
 
@@ -3894,6 +3943,9 @@ class Software(object):
             except Exception as e:
                 print("############ Error in coverage")
                 print(e)
+                import traceback
+
+                traceback.print_exc()
 
                 result = Result()
                 result.set_error("Fail to get coverage: " + e.args[0])
@@ -3977,9 +4029,11 @@ class Software(object):
             count_hits = CountHits()
             if default_project_software.is_to_run_freebayes(user, project_sample):
                 try:
-                    out_put_path = self.run_freebayes_stratified(
+
+                    out_put_path, count_hits = self.run_freebayes_and_count(
                         project_sample, software
                     )
+
                     result_all.add_software(
                         SoftwareDesc(
                             self.software_names.get_freebayes_name(),
@@ -3987,6 +4041,15 @@ class Software(object):
                             self.software_names.get_freebayes_parameters(),
                         )
                     )
+
+                    manageDatabase.set_project_sample_metakey(
+                        project_sample,
+                        user,
+                        MetaKeyAndValue.META_KEY_Count_Hits,
+                        MetaKeyAndValue.META_VALUE_Success,
+                        count_hits.to_json(),
+                    )
+
                 except Exception as e:
                     print(e)
 
@@ -4008,63 +4071,6 @@ class Software(object):
 
                     return False
 
-                print("End Freebayes")
-                ## count hits from tab file
-                count_hits = CountHits()
-                if not out_put_path is None:
-                    file_tab = os.path.join(
-                        out_put_path, project_sample.sample.name + ".tab"
-                    )
-                    if os.path.exists(file_tab):
-                        vect_count_type = ["snp"]  ## only detects snp
-                        count_hits = self.utils.count_hits_from_tab(
-                            file_tab, vect_count_type
-                        )
-                        ### set flag that is finished
-                        manageDatabase.set_project_sample_metakey(
-                            project_sample,
-                            user,
-                            MetaKeyAndValue.META_KEY_Count_Hits,
-                            MetaKeyAndValue.META_VALUE_Success,
-                            count_hits.to_json(),
-                        )
-                    else:
-                        print("Fail to collect tab file from freebayes")
-                        result = Result()
-                        result.set_error("Fail to collect tab file from freebayes")
-                        result.add_software(
-                            SoftwareDesc(
-                                self.software_names.get_freebayes_name(),
-                                self.software_names.get_freebayes_version(),
-                                self.software_names.get_freebayes_parameters(),
-                            )
-                        )
-
-                        self.__set_process_error(
-                            result,
-                            project_sample,
-                            metakey=MetaKeyAndValue.META_KEY_Freebayes,
-                        )
-
-                        return False
-
-                    self.copy_files_to_project(
-                        project_sample,
-                        self.software_names.get_freebayes_name(),
-                        out_put_path,
-                    )
-                    ## remove path dir if exist
-                    self.utils.remove_dir(out_put_path)
-                else:
-                    ### set count hits to zero
-                    manageDatabase.set_project_sample_metakey(
-                        project_sample,
-                        user,
-                        MetaKeyAndValue.META_KEY_Count_Hits,
-                        MetaKeyAndValue.META_VALUE_Success,
-                        count_hits.to_json(),
-                    )
-
                     ### mixed infection
                 try:
                     ## get instances
@@ -4079,37 +4085,13 @@ class Software(object):
                     result = Result()
                     result.set_error("Fail to calculate mixed infextion")
                     result.add_software(SoftwareDesc("In house software", "1.0", ""))
-                    manageDatabase.set_project_sample_metakey(
+
+                    self.__set_process_error(
+                        result,
                         project_sample,
-                        user,
-                        MetaKeyAndValue.META_KEY_Mixed_Infection,
-                        MetaKeyAndValue.META_VALUE_Error,
-                        result.to_json(),
+                        metakey=MetaKeyAndValue.META_KEY_Mixed_Infection,
                     )
 
-                    ### get again and set error
-                    project_sample = ProjectSample.objects.get(pk=project_sample.id)
-                    project_sample.is_error = True
-                    project_sample.save()
-
-                    meta_sample = manageDatabase.get_project_sample_metakey_last(
-                        project_sample,
-                        meta_key_project_sample,
-                        MetaKeyAndValue.META_VALUE_Queue,
-                    )
-                    if meta_sample != None:
-                        manageDatabase.set_project_sample_metakey(
-                            project_sample,
-                            user,
-                            meta_key_project_sample,
-                            MetaKeyAndValue.META_VALUE_Error,
-                            meta_sample.description,
-                        )
-                    process_SGE.set_process_controler(
-                        user,
-                        process_controler.get_name_project_sample(project_sample),
-                        ProcessControler.FLAG_ERROR,
-                    )
                     return False
             else:
                 ### set count hits to zero
@@ -4165,7 +4147,7 @@ class Software(object):
                 ### make the coverage images
                 draw_all_coverage = DrawAllCoverage()
                 draw_all_coverage.draw_all_coverages(project_sample)
-            except:
+            except Exception as e:
                 print("Error in draw coverage")
                 import traceback
 
@@ -4174,37 +4156,13 @@ class Software(object):
                 result = Result()
                 result.set_error("Fail to draw coverage images")
                 result.add_software(SoftwareDesc("In house software", "1.0", ""))
-                manageDatabase.set_project_sample_metakey(
+
+                self.__set_process_error(
+                    result,
                     project_sample,
-                    user,
-                    MetaKeyAndValue.META_KEY_Coverage,
-                    MetaKeyAndValue.META_VALUE_Error,
-                    result.to_json(),
+                    metakey=MetaKeyAndValue.META_KEY_Coverage,
                 )
 
-                ### get again and set error
-                project_sample = ProjectSample.objects.get(pk=project_sample.id)
-                project_sample.is_error = True
-                project_sample.save()
-
-                meta_sample = manageDatabase.get_project_sample_metakey_last(
-                    project_sample,
-                    meta_key_project_sample,
-                    MetaKeyAndValue.META_VALUE_Queue,
-                )
-                if meta_sample != None:
-                    manageDatabase.set_project_sample_metakey(
-                        project_sample,
-                        user,
-                        meta_key_project_sample,
-                        MetaKeyAndValue.META_VALUE_Error,
-                        meta_sample.description,
-                    )
-                process_SGE.set_process_controler(
-                    user,
-                    process_controler.get_name_project_sample(project_sample),
-                    ProcessControler.FLAG_ERROR,
-                )
                 return False
 
             ### get again
@@ -4541,17 +4499,11 @@ class Software(object):
         temp_mafft_align = self.utils.get_temp_file("mafft_to_align", ".fasta")
         temp_new_consensus = self.utils.get_temp_file("new_consensus", ".fasta")
         vect_out_fasta = []
-        print("limit_make_mask", limit_make_mask)
         msa_parameters = ""
         with open(reference_fasta, "rU") as handle_fasta:
             dt_consensus = SeqIO.to_dict(SeqIO.parse(consensus_file, "fasta"))
             for record in SeqIO.parse(handle_fasta, "fasta"):
-                print(record.id)
-                print(
-                    coverage.ratio_value_coverage_bigger_limit(
-                        record.id, limit_make_mask
-                    )
-                )
+
                 if (
                     record.id in dt_consensus
                     and coverage.ratio_value_coverage_bigger_limit(

@@ -70,7 +70,6 @@ class VcfAlgn:
         ref_seq = self.reference
         # compares the full refseq identifier/description in the alnmt, to the ref_seq provided in argument.
         # This is a fix to deal with identifiers that (1) include spaces, (2) might consist of separate words of which the first is not unique.
-        print([s.id for s in self.Alnmt])
 
         self.ref_seq_index = [i for i, s in enumerate(self.Alnmt) if s.id == ref_seq]
         if len(self.ref_seq_index) == 0:
@@ -111,7 +110,6 @@ class VcfAlgn:
         """
         fasta: Dict[str, str] = {s.id: s.seq for _, s in enumerate(self.Alnmt)}
         seqnames = [s.id for _, s in enumerate(self.Alnmt)]
-        print(seqnames)
         refid = self.reference
         refseq = str(fasta[refid]).upper()
         self.refseq = refseq
@@ -138,7 +136,6 @@ class VcfAlgn:
         # output
         outlist = []
 
-        print(refseq_nogap)
         for k in range(len(refseq_nogap)):
             seq: List[str] = [
                 w[0] + w[1:].replace("-", "").upper() if len(w) > 1 else w.upper()
@@ -261,13 +258,11 @@ class VcfAlgn:
         """
 
         vcf = self.vcf.reset_index(drop=True)
-        print(vcf)
         vcf = vcf[vcf.alt.str.contains("[ATCG]", regex=True)]
         # explode where alt contains /: split into separate rows
         vcf = vcf.assign(alt=vcf.alt.str.split("/")).explode("alt")
         vcf = vcf[vcf.alt.str.contains("[ATCG]", regex=True)]
         vcf = vcf.reset_index(drop=True)
-        print(vcf)
 
         with open(self.output, "w") as f:
             f.write("##fileformat=VCFv4.2\n")

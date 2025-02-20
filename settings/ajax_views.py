@@ -994,7 +994,7 @@ def turn_on_off_software(request):
                             Software.objects.filter(
                                 owner=software.owner,
                                 type_of_use=software.type_of_use,
-                                parameter__project_sample=sample,
+                                parameter__project_sample=project_sample,
                                 parameter__project=project,
                                 parameter__televir_project=televir_project,
                                 parameter__televir_project_sample=televir_project_sample,
@@ -1005,6 +1005,7 @@ def turn_on_off_software(request):
                             .distinct()
                             .exclude(pk=software.pk)
                         )
+
                         if (existing_software).exists() is False:
                             data["message"] = (
                                 "At least one {} software must be active.".format(
@@ -1034,7 +1035,7 @@ def turn_on_off_software(request):
                         Software.objects.filter(
                             owner=software.owner,
                             type_of_use=software.type_of_use,
-                            parameter__project_sample=sample,
+                            parameter__project_sample=project_sample,
                             parameter__project=project,
                             parameter__televir_project=televir_project,
                             parameter__televir_project_sample=televir_project_sample,

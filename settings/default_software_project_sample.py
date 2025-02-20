@@ -391,9 +391,7 @@ class DefaultProjectSoftware(object):
         # logger = logging.getLogger("fluWebVirus.debug")
         # logger.debug("Test default db: {} ({})".format(list_software, len(list_software)))
         ### if not exist need to save
-        print("##################")
-        print(type_of_use)
-        print(list_software)
+
         if len(list_software) == 0:
             vect_parameters = self._get_default_parameters(
                 software_name,
@@ -428,10 +426,7 @@ class DefaultProjectSoftware(object):
         dataset=None,
         name_extended=None,
     ) -> List[Parameter]:
-        print(project)
-        print(project_sample)
-        print(software_name)
-        print(name_extended)
+
         if software_name == SoftwareNames.SOFTWARE_SNIPPY_name:
 
             if name_extended == SoftwareNames.SOFTWARE_IVAR_name_extended:
@@ -2554,7 +2549,6 @@ class DefaultProjectSoftware(object):
         """
         type_of_use = Software.TYPE_OF_USE_global
         actual_project = project
-        print(type(project))
         if project is None:
             type_of_use = Software.TYPE_OF_USE_global
             if software_name == self.software_names.get_abricate_name():
@@ -2583,7 +2577,6 @@ class DefaultProjectSoftware(object):
                 ),
                 parameter__project=actual_project,
             ).distinct()
-            print("software", software)
 
         except Software.DoesNotExist:
             return vect_parameters
@@ -2604,7 +2597,6 @@ class DefaultProjectSoftware(object):
             raise Software.MultipleObjectsReturned
 
         software = software.first()
-        print(software)
 
         ## get parameters for a specific user and software
         if project is None:
@@ -2641,13 +2633,6 @@ class DefaultProjectSoftware(object):
                             )
 
                         active_software = active_software.filter(is_to_run=True)
-                        print("###")
-                        print("active_software", active_software)
-                        print(software.name_extended)
-                        print("previous_parameter", previous_parameter.parameter)
-                        print("parameter", parameter.parameter)
-                        print(active_software)
-                        print(parameter.software.pipeline_step.name)
 
                         if (
                             active_software.exists() is False

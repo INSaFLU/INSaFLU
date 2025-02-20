@@ -2991,7 +2991,6 @@ class SampleProjectsSettingsView(LoginRequiredMixin, ListView):
         default_software.test_all_defaults(
             self.request.user, None, project_sample, None
         )  ## the user can have defaults yet
-
         all_tables = []  ## order by Technology, PipelineStep, table
         ## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],
         ##	[unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...], etc
@@ -3002,7 +3001,6 @@ class SampleProjectsSettingsView(LoginRequiredMixin, ListView):
         for technology in ConstantsSettings.vect_technology:  ## run over all technology
             vect_pipeline_step = []
             for pipeline_step in ConstantsSettings.vect_pipeline_names:
-                print(pipeline_step)
                 query_set = SoftwareSettings.objects.filter(
                     owner=self.request.user,
                     type_of_use=SoftwareSettings.TYPE_OF_USE_project_sample,
@@ -3016,7 +3014,6 @@ class SampleProjectsSettingsView(LoginRequiredMixin, ListView):
                     pipeline_step__name=pipeline_step,
                     is_obsolete=False,
                 ).distinct()
-                print(query_set)
 
                 ### if there are software
                 if query_set.count() > 0:

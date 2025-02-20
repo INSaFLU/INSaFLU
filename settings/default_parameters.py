@@ -304,6 +304,8 @@ class DefaultParameters(object):
             is_to_run=True,
         ).distinct()
 
+        print(software_list)
+
         if len(software_list) == 0:
             software_list = Software.objects.filter(
                 name=software_name,
@@ -314,6 +316,7 @@ class DefaultParameters(object):
                 is_to_run=True,
             ).distinct()
 
+        print(software_list)
         if len(software_list) == 0:
             software_list = Software.objects.filter(
                 name=software_name,
@@ -329,6 +332,8 @@ class DefaultParameters(object):
 
         if len(software_list) == 0:
             return None
+
+        print(software_list)
 
         return software_list.first()
 
@@ -497,7 +502,6 @@ class DefaultParameters(object):
         ## get parameters for a specific user  #
         parameters = Parameter.objects.filter(
             software=software,
-            # project=project,
             project_sample=project_sample,
             sample=sample,
             dataset=dataset,
@@ -962,6 +966,12 @@ class DefaultParameters(object):
         if software.name == SoftwareNames.SOFTWARE_SNIPPY_name:
             if software.name_extended == SoftwareNames.SOFTWARE_IVAR_name_extended:
                 return self.get_ivar_default(
+                    software.owner,
+                    Software.TYPE_OF_USE_global,
+                    ConstantsSettings.TECHNOLOGY_illumina,
+                )
+            elif software.name_extended == SoftwareNames.SOFTWARE_IRMA_name_extended:
+                return self.get_irma_default(
                     software.owner,
                     Software.TYPE_OF_USE_global,
                     ConstantsSettings.TECHNOLOGY_illumina,
@@ -1561,6 +1571,57 @@ class DefaultParameters(object):
         parameter.can_change = False
         parameter.sequence_out = 5
         parameter.description = "ivar"
+        vect_parameters.append(parameter)
+
+        return vect_parameters
+
+    def get_irma_default(
+        self, user, type_of_use, technology_name, project=None, project_sample=None
+    ):
+        """
+        –mapqual: minimum mapping quality to allow (–mapqual 20)
+        —mincov: minimum coverage of variant site (–mincov 10)
+        –minfrac: minumum proportion for variant evidence (–minfrac 0.51)
+        primer: Fasta of amplicon scheme primers for filtering ("")
+        """
+        software = Software()
+        software.name = SoftwareNames.SOFTWARE_SNIPPY_name
+        software.name_extended = SoftwareNames.SOFTWARE_IRMA_name_extended
+        software.version = SoftwareNames.SOFTWARE_IRMA_VERSION
+        software.type_of_use = type_of_use
+        software.type_of_software = Software.TYPE_SOFTWARE
+        software.version_parameters = self.get_software_parameters_version(
+            software.name
+        )
+        software.technology = self.get_technology(technology_name)
+        software.can_be_on_off_in_pipeline = (
+            True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
+        )
+        software.is_to_run = False
+
+        ###  small description of software
+        software.help_text = "iterative refinement meta-assembler"
+
+        ###  which part of pipeline is going to run
+        software.pipeline_step = self._get_pipeline(
+            ConstantsSettings.PIPELINE_NAME_variant_detection
+        )
+
+        software.owner = user
+
+        vect_parameters = []
+
+        parameter = Parameter()
+        parameter.name = "--module"
+        parameter.parameter = SoftwareNames.SOFTWARE_IRMA_PARAMETER_model_options[0]
+        parameter.type_data = Parameter.PARAMETER_char_list
+        parameter.software = software
+        parameter.project = project
+        parameter.project_sample = project_sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.sequence_out = 1
+        parameter.description = "Organism specific assembly configuration"
         vect_parameters.append(parameter)
 
         return vect_parameters

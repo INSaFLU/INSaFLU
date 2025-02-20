@@ -305,11 +305,21 @@ class SoftwareNames(object):
         # "MPXV_xGEN_Mpox_Amplicon_panel_no_ITR.fa",
     ]
 
+    ########### iVar
+
     SOFTWARE_IVAR = os.path.join(DIR_SOFTWARE_SNIPPY, "binaries/ivar")
     SOFTWARE_IVAR_name = "iVar"
     SOFTWARE_IVAR_name_extended = "iVar Full Pipeline"
     SOFTWARE_IVAR_VERSION = "1.4.2"
     SOFTWARE_IVAR_PARAMETERS = ""
+
+    ########### IRMA
+
+    SOFTWARE_IRMA = os.path.join(settings.DIR_SOFTWARE, "irma/irma.sh")
+    SOFTWARE_IRMA_name = "IRMA"
+    SOFTWARE_IRMA_name_extended = "IRMA Full Pipeline"
+    SOFTWARE_IRMA_VERSION = "v1.2.0"
+    SOFTWARE_IRMA_PARAMETER_model_options = ["FLU"]
 
     #### VERY important, change in snippy-vcf
     #     mmp@california:/usr/local/software/insaflu/snippy/bin$ diff snippy-vcf_to_tab_add_freq snippy-vcf_to_tab_add_freq~

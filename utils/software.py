@@ -185,19 +185,6 @@ class ProjectSampleCoverage(object):
         project_sample.save()
 
 
-class IrmaRun(object):
-
-    def __init__(self) -> None:
-
-        self.utils = Utils()
-        self.software_names = SoftwareNames()
-        self.logger_debug = logging.getLogger("fluWebVirus.debug")
-        self.logger_production = logging.getLogger("fluWebVirus.production")
-
-    def run_irma(self, fastq1, fastq2, out_dir, database_name, software):
-        pass
-
-
 class RunFreebayesException(Exception):
     pass
 
@@ -1877,50 +1864,8 @@ class Software(object):
         run mdcg
         out: output_file
         """
-        manageDatabase = ManageDatabase()
 
-        out_put_path = self.run_irma_and_snpEff(
-            project_sample.sample.get_fastq(TypePath.MEDIA_ROOT, True),
-            project_sample.sample.get_fastq(TypePath.MEDIA_ROOT, False),
-            "FLU",
-            project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),
-            project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),
-            project_sample.sample.name,
-        )
-
-        ### get mapped stast reads
-        bam_file = project_sample.get_file_output(
-            TypePath.MEDIA_ROOT,
-            FileType.FILE_BAM,
-            software.name,
-        )
-        result = Result()
-        if os.path.exists(bam_file):
-            result = self.get_statistics_bam(bam_file)
-        manageDatabase.set_project_sample_metakey(
-            project_sample,
-            project_sample.project.owner,
-            MetaKeyAndValue.META_KEY_bam_stats,
-            MetaKeyAndValue.META_VALUE_Success,
-            result.to_json(),
-        )
-
-        # self.utils.remove_dir(out_put_path)
-        ### make the link for the new tab file name
-        path_snippy_tab = project_sample.get_file_output(
-            TypePath.MEDIA_ROOT,
-            FileType.FILE_TAB,
-            software.name,
-        )
-        if os.path.exists(path_snippy_tab):
-            sz_file_to = project_sample.get_file_output_human(
-                TypePath.MEDIA_ROOT,
-                FileType.FILE_TAB,
-                software.name,
-            )
-            self.utils.link_file(path_snippy_tab, sz_file_to)
-
-        return out_put_path
+        print(software.name_extended)
 
         if software.name_extended == SoftwareNames.SOFTWARE_SNIPPY_name_extended:
             out_put_path = self.run_snippy(
@@ -1934,8 +1879,20 @@ class Software(object):
                 parameters,
             )
 
-        else:
-            print("### ", project_sample.sample.name)
+        elif software.name_extended == SoftwareNames.SOFTWARE_IVAR_name_extended:
+            out_put_path = self.run_snippy(
+                project_sample.sample.get_fastq_available(TypePath.MEDIA_ROOT, True),
+                project_sample.sample.get_fastq_available(TypePath.MEDIA_ROOT, False),
+                project_sample.project.reference.get_reference_fasta(
+                    TypePath.MEDIA_ROOT
+                ),
+                project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),
+                project_sample.sample.name,
+                parameters,
+            )
+
+        elif software.name_extended == SoftwareNames.SOFTWARE_IRMA_name_extended:
+
             out_put_path = self.run_irma_and_snpEff(
                 project_sample.sample.get_fastq(TypePath.MEDIA_ROOT, True),
                 project_sample.sample.get_fastq(TypePath.MEDIA_ROOT, False),
@@ -1947,6 +1904,9 @@ class Software(object):
                 project_sample.sample.name,
             )
             return out_put_path
+
+        else:
+            raise Exception("Software not implemented")
 
         return out_put_path
 
@@ -1961,8 +1921,6 @@ class Software(object):
             file_name_2 if file_name_2 else "",
             temp_dir,
         )
-
-        print(cmd)
 
         os.system(cmd)
 
@@ -1979,6 +1937,49 @@ class Software(object):
         ## concatenate all vcf files into one
 
         return temp_dir
+
+    def irma_replicate_snippy_output(
+        self,
+        file_name_1,
+        file_name_2,
+        sample_name,
+        irma_output_dir,
+        path_reference_fasta,
+        path_reference_genbank,
+    ):
+
+        ############# Collect output files ################
+        ## copy fastqs to irma output
+        self.utils.copy_file(file_name_1, os.path.join(irma_output_dir, "R1.fastq"))
+        if file_name_2:
+            self.utils.copy_file(file_name_2, os.path.join(irma_output_dir, "R2.fastq"))
+
+        ## copy reference fasta and genbank file to irma output dir as ref.fa and ref.gbk
+        refdir = os.path.join(irma_output_dir, "reference")
+        os.makedirs(refdir, exist_ok=True)
+        self.utils.copy_file(path_reference_fasta, os.path.join(refdir, "ref.fa"))
+        self.utils.copy_file(path_reference_genbank, os.path.join(refdir, "ref.gbk"))
+
+        # index reference
+        self.create_fai_fasta(os.path.join(refdir, "ref.fa"))
+
+        # concatenated consensus fasta
+        full_consensus_irma = os.path.join(
+            irma_output_dir, sample_name + ".consensus.fa"
+        )
+        # with open(full_consensus_irma, "w") as f:
+        cmd = "zcat {}/*fa > {}".format(
+            os.path.join(irma_output_dir, "amended_consensus"), full_consensus_irma
+        )
+        os.system(cmd)
+
+        _ = self.generate_depth_file(
+            os.path.join(irma_output_dir, "R1.fastq"),
+            os.path.join(irma_output_dir, "R2.fastq"),
+            os.path.join(refdir, "ref.fa"),
+            irma_output_dir,
+            sample_name,
+        )
 
     def vcfalign_from_combined_fasta(
         self, irma_output_dir, segname, combined_vcf, output_vcf
@@ -2191,47 +2192,15 @@ class Software(object):
         ############# RUN IRMA ################
         irma_output_dir = self.run_irma(file_name_1, file_name_2, module, sample_name)
 
-        ############# Collect output files ################
-        ## copy fastqs to irma output
-        self.utils.copy_file(file_name_1, os.path.join(irma_output_dir, "R1.fastq"))
-        if file_name_2:
-            self.utils.copy_file(file_name_2, os.path.join(irma_output_dir, "R2.fastq"))
-
-        ## copy reference fasta and genbank file to irma output dir as ref.fa and ref.gbk
-        refdir = os.path.join(irma_output_dir, "reference")
-        os.makedirs(refdir, exist_ok=True)
-        self.utils.copy_file(path_reference_fasta, os.path.join(refdir, "ref.fa"))
-        self.utils.copy_file(path_reference_genbank, os.path.join(refdir, "ref.gbk"))
-
-        # index reference
-        self.create_fai_fasta(os.path.join(refdir, "ref.fa"))
-
-        # concatenate all fasta files into one
-        # concatenated_consensus = os.path.join(temp_dir, sample_name + ".fasta")
-        # with open(concatenated_consensus, "w") as outfile:
-        #    for fasta in output_fastas:
-        #        with open(
-        #            os.path.join(temp_dir, "amended_consensus", fasta), "r"
-        #        ) as infile:
-        #            outfile.write(infile.read())
-        #
-
-        full_consensus_irma = os.path.join(
-            irma_output_dir, sample_name + ".consensus.fa"
-        )
-        # with open(full_consensus_irma, "w") as f:
-        cmd = "zcat {}/*fa > {}".format(
-            os.path.join(irma_output_dir, "amended_consensus"), full_consensus_irma
-        )
-        os.system(cmd)
-
-        _ = self.generate_depth_file(
-            os.path.join(irma_output_dir, "R1.fastq"),
-            os.path.join(irma_output_dir, "R2.fastq"),
-            os.path.join(refdir, "ref.fa"),
-            irma_output_dir,
-            sample_name,
-        )
+        ############# COLLECT OUTPUT ################
+        # self.irma_replicate_snippy_output(
+        #    file_name_1,
+        #    file_name_2,
+        #    sample_name,
+        #    irma_output_dir,
+        #    path_reference_fasta,
+        #    path_reference_genbank,
+        # )
 
         ## generate full vcf
         vcf_combined = self.irma_generate_full_vcf(
@@ -2776,6 +2745,41 @@ class Software(object):
             raise Exception("Fail to run snippy-vcf-to-tab. Add freq and evidence")
         os.unlink(temp_file)
         return out_file
+
+    def clean_freebayes_output(self, project_sample: ProjectSample):
+        tab_freebayes_file = project_sample.get_file_output(
+            TypePath.MEDIA_ROOT,
+            FileType.FILE_TAB,
+            SoftwareNames.SOFTWARE_FREEBAYES_name,
+        )
+        self.utils.remove_file(tab_freebayes_file)
+        file_out = project_sample.get_file_output_human(
+            TypePath.MEDIA_ROOT,
+            FileType.FILE_TAB,
+            SoftwareNames.SOFTWARE_FREEBAYES_name,
+        )
+        self.utils.remove_file(file_out)
+        b_second_choice = True
+        file_out = project_sample.get_file_output_human(
+            TypePath.MEDIA_ROOT,
+            FileType.FILE_TAB,
+            SoftwareNames.SOFTWARE_FREEBAYES_name,
+            b_second_choice,
+        )
+        self.utils.remove_file(file_out)
+
+        file_out = project_sample.get_file_output(
+            TypePath.MEDIA_ROOT,
+            FileType.FILE_VCF,
+            SoftwareNames.SOFTWARE_FREEBAYES_name,
+        )
+        self.utils.remove_file(file_out)
+        file_out = project_sample.get_file_output(
+            TypePath.MEDIA_ROOT,
+            FileType.FILE_VCF_GZ,
+            SoftwareNames.SOFTWARE_FREEBAYES_name,
+        )
+        self.utils.remove_file(file_out)
 
     def run_freebayes_and_count(
         self, project_sample: ProjectSample, software: SoftwareSettings
@@ -3842,14 +3846,13 @@ class Software(object):
             user,
             SoftwareNames.SOFTWARE_SNIPPY_name,
             ConstantsSettings.TECHNOLOGY_illumina,
-            project=project_sample.project,
+            project=None,
             project_sample=project_sample,
         )
         if software is None:
-            raise Exception("Snippy software not found.")
+            raise Exception("MDCG software not found.")
 
         ######## BEGIN
-
         os.chdir("/tmp/insaFlu/")
 
         try:
@@ -3902,20 +3905,46 @@ class Software(object):
             ## copy the files to the project sample directories
             try:
                 self.copy_files_to_project(project_sample, software.name, out_put_path)
+
+                ### get mapped stast reads
+                bam_file = project_sample.get_file_output(
+                    TypePath.MEDIA_ROOT,
+                    FileType.FILE_BAM,
+                    software.name,
+                )
+                result = Result()
+                if os.path.exists(bam_file):
+                    result = self.get_statistics_bam(bam_file)
+                manageDatabase.set_project_sample_metakey(
+                    project_sample,
+                    project_sample.project.owner,
+                    MetaKeyAndValue.META_KEY_bam_stats,
+                    MetaKeyAndValue.META_VALUE_Success,
+                    result.to_json(),
+                )
+
+                # self.utils.remove_dir(out_put_path)
+                ### make the link for the new tab file name
+                path_snippy_tab = project_sample.get_file_output(
+                    TypePath.MEDIA_ROOT,
+                    FileType.FILE_TAB,
+                    software.name,
+                )
+                if os.path.exists(path_snippy_tab):
+                    sz_file_to = project_sample.get_file_output_human(
+                        TypePath.MEDIA_ROOT,
+                        FileType.FILE_TAB,
+                        software.name,
+                    )
+                    self.utils.link_file(path_snippy_tab, sz_file_to)
+
             except Exception as e:
                 print(e)
-
-            print("End Snippy")
-
-            try:
-                sample_coverage = ProjectSampleCoverage(project_sample, software)
-            except Exception as e:
                 import traceback
 
                 traceback.print_exc()
-                print(e)
-            ## get coverage from deep file
 
+            ## get coverage from depth file
             try:
                 ### limit of the coverage for a project, can be None, if not exist
 
@@ -3928,6 +3957,7 @@ class Software(object):
                         project_sample, keys_to_remove
                     )
 
+                sample_coverage = ProjectSampleCoverage(project_sample, software)
                 sample_coverage.parse_sample_results()
                 coverage = sample_coverage.coverage
 
@@ -3941,11 +3971,6 @@ class Software(object):
                 )
 
             except Exception as e:
-                print("############ Error in coverage")
-                print(e)
-                import traceback
-
-                traceback.print_exc()
 
                 result = Result()
                 result.set_error("Fail to get coverage: " + e.args[0])
@@ -3961,7 +3986,6 @@ class Software(object):
             #####################
             ###
             ### make mask the consensus SoftwareNames.SOFTWARE_MSA_MASKER
-            print("Start Mask Consensus")
             try:
                 limit_to_mask_consensus = int(
                     default_project_software.get_mask_consensus_single_parameter(
@@ -3988,24 +4012,26 @@ class Software(object):
                     project_sample.sample.name,
                     limit_to_mask_consensus,
                 )
+
+                result_all.add_software(
+                    SoftwareDesc(
+                        self.software_names.get_msa_masker_name(),
+                        self.software_names.get_msa_masker_version(),
+                        "{}; for coverages less than {} in {}% of the regions.".format(
+                            msa_parameters,
+                            default_project_software.get_snippy_single_parameter(
+                                project_sample, DefaultParameters.SNIPPY_COVERAGE_NAME
+                            ),
+                            100 - limit_to_mask_consensus,
+                        ),
+                    )
+                )
+
             except Exception as e:
                 print("############ Error in mask consensus")
                 print(e)
-            print("End Mask Consensus")
+
             ### add version of mask
-            result_all.add_software(
-                SoftwareDesc(
-                    self.software_names.get_msa_masker_name(),
-                    self.software_names.get_msa_masker_version(),
-                    "{}; for coverages less than {} in {}% of the regions.".format(
-                        msa_parameters,
-                        default_project_software.get_snippy_single_parameter(
-                            project_sample, DefaultParameters.SNIPPY_COVERAGE_NAME
-                        ),
-                        100 - limit_to_mask_consensus,
-                    ),
-                )
-            )
 
             ## identify VARIANTS IN INCOMPLETE LOCUS in all locus, set yes in variants if are in areas with coverage problems
             ## transform 'synonymous_variant c.981A>G p.Glu327Glu' to ["synonymous_variant", "c.981A>G", "p.Glu327Glu"]
@@ -4080,8 +4106,9 @@ class Software(object):
                     mixed_infection = mixed_infections_management.get_mixed_infections(
                         project_sample, user, count_hits
                     )
+
                 except:
-                    print("Error in mixed infection")
+
                     result = Result()
                     result.set_error("Fail to calculate mixed infextion")
                     result.add_software(SoftwareDesc("In house software", "1.0", ""))
@@ -4107,40 +4134,8 @@ class Software(object):
                     count_hits.to_json(),
                 )
 
+                self.clean_freebayes_output(project_sample)
                 ### remove several files that can exist form previous interactions
-                tab_freebayes_file = project_sample.get_file_output(
-                    TypePath.MEDIA_ROOT,
-                    FileType.FILE_TAB,
-                    SoftwareNames.SOFTWARE_FREEBAYES_name,
-                )
-                self.utils.remove_file(tab_freebayes_file)
-                file_out = project_sample.get_file_output_human(
-                    TypePath.MEDIA_ROOT,
-                    FileType.FILE_TAB,
-                    SoftwareNames.SOFTWARE_FREEBAYES_name,
-                )
-                self.utils.remove_file(file_out)
-                b_second_choice = True
-                file_out = project_sample.get_file_output_human(
-                    TypePath.MEDIA_ROOT,
-                    FileType.FILE_TAB,
-                    SoftwareNames.SOFTWARE_FREEBAYES_name,
-                    b_second_choice,
-                )
-                self.utils.remove_file(file_out)
-
-                file_out = project_sample.get_file_output(
-                    TypePath.MEDIA_ROOT,
-                    FileType.FILE_VCF,
-                    SoftwareNames.SOFTWARE_FREEBAYES_name,
-                )
-                self.utils.remove_file(file_out)
-                file_out = project_sample.get_file_output(
-                    TypePath.MEDIA_ROOT,
-                    FileType.FILE_VCF_GZ,
-                    SoftwareNames.SOFTWARE_FREEBAYES_name,
-                )
-                self.utils.remove_file(file_out)
 
             ### draw coverage
             try:

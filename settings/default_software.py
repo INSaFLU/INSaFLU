@@ -209,6 +209,18 @@ class DefaultSoftware(object):
             user,
             SoftwareNames.SOFTWARE_IVAR_name_extended,
         )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_IRMA_name,
+            self.default_parameters.get_irma_default(
+                user,
+                Software.TYPE_OF_USE_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            ),
+            user,
+            SoftwareNames.SOFTWARE_IRMA_name_extended,
+        )
+
         self.test_default_db(
             SoftwareNames.SOFTWARE_FREEBAYES_name,
             self.default_parameters.get_freebayes_default(
@@ -1026,6 +1038,19 @@ class DefaultSoftware(object):
         )
         return "" if result is None else result
 
+    def get_irma_parameters(self, user):
+        result = self.default_parameters.get_parameters(
+            SoftwareNames.SOFTWARE_IRMA_name,
+            user,
+            Software.TYPE_OF_USE_global,
+            None,
+            None,
+            None,
+            ConstantsSettings.TECHNOLOGY_illumina,
+            software_name_extended=SoftwareNames.SOFTWARE_IRMA_name_extended,
+        )
+        return "" if result is None else result
+
     def get_freebayes_parameters(self, user):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_FREEBAYES_name,
@@ -1537,6 +1562,19 @@ class DefaultSoftware(object):
                     SoftwareNames.SOFTWARE_IVAR_name_extended,
                 )
                 return self.get_ivar_parameters(user)
+
+            elif name_extended == SoftwareNames.SOFTWARE_IRMA_name_extended:
+                self.test_default_db(
+                    SoftwareNames.SOFTWARE_IRMA_name,
+                    self.default_parameters.get_irma_default(
+                        user,
+                        Software.TYPE_OF_USE_global,
+                        ConstantsSettings.TECHNOLOGY_illumina,
+                    ),
+                    user,
+                    SoftwareNames.SOFTWARE_IRMA_name_extended,
+                )
+                return self.get_irma_parameters(user)
 
             else:
                 self.test_default_db(

@@ -5,7 +5,7 @@ Created on 03/05/2020
 """
 
 import logging
-from typing import List
+from typing import List, Optional
 
 from constants.software_names import SoftwareNames
 from managing_files.models import Project, ProjectSample, Sample
@@ -44,6 +44,18 @@ class DefaultProjectSoftware(object):
                 None,
                 ConstantsSettings.TECHNOLOGY_illumina,
                 name_extended=SoftwareNames.SOFTWARE_SNIPPY_name_extended,
+                create=True,
+            )
+
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_SNIPPY_name,
+                user,
+                Software.TYPE_OF_USE_project,
+                project,
+                None,
+                None,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                name_extended=SoftwareNames.SOFTWARE_IRMA_name_extended,
                 create=True,
             )
 
@@ -201,9 +213,21 @@ class DefaultProjectSoftware(object):
                     project_sample,
                     None,
                     ConstantsSettings.TECHNOLOGY_illumina,
+                    name_extended=SoftwareNames.SOFTWARE_IRMA_name_extended,
+                    create=True,
+                )
+                self.test_default_db(
+                    SoftwareNames.SOFTWARE_SNIPPY_name,
+                    user,
+                    Software.TYPE_OF_USE_project_sample,
+                    None,
+                    project_sample,
+                    None,
+                    ConstantsSettings.TECHNOLOGY_illumina,
                     name_extended=SoftwareNames.SOFTWARE_IVAR_name_extended,
                     create=True,
                 )
+
                 self.test_default_db(
                     SoftwareNames.SOFTWARE_FREEBAYES_name,
                     user,
@@ -316,8 +340,8 @@ class DefaultProjectSoftware(object):
         software_name,
         user,
         type_of_use: int,
-        project: Project,
-        project_sample: ProjectSample,
+        project: Optional[Project],
+        project_sample: Optional[ProjectSample],
         sample,
         technology_name,
         dataset=None,
@@ -329,8 +353,9 @@ class DefaultProjectSoftware(object):
         test if exist, if not persist in database
         """
         ## lock because more than one process can duplicate software names
-        if not project_sample is None:
-            project = project_sample.project
+        # if not project_sample is None:
+        #    project = project_sample.project
+
         if name_extended is not None:
             list_software = Software.objects.filter(
                 name=software_name,
@@ -347,6 +372,7 @@ class DefaultProjectSoftware(object):
                 ),
                 technology__name=technology_name,
             ).distinct("name", "name_extended")
+
         else:
             list_software = Software.objects.filter(
                 name=software_name,
@@ -365,7 +391,9 @@ class DefaultProjectSoftware(object):
         # logger = logging.getLogger("fluWebVirus.debug")
         # logger.debug("Test default db: {} ({})".format(list_software, len(list_software)))
         ### if not exist need to save
-
+        print("##################")
+        print(type_of_use)
+        print(list_software)
         if len(list_software) == 0:
             vect_parameters = self._get_default_parameters(
                 software_name,
@@ -400,12 +428,22 @@ class DefaultProjectSoftware(object):
         dataset=None,
         name_extended=None,
     ) -> List[Parameter]:
-
+        print(project)
+        print(project_sample)
+        print(software_name)
+        print(name_extended)
         if software_name == SoftwareNames.SOFTWARE_SNIPPY_name:
+
             if name_extended == SoftwareNames.SOFTWARE_IVAR_name_extended:
                 vect_parameters = self.default_parameters.get_ivar_default(
                     user, type_of_use, technology_name, project, project_sample
                 )
+
+            elif name_extended == SoftwareNames.SOFTWARE_IRMA_name_extended:
+                vect_parameters = self.default_parameters.get_irma_default(
+                    user, type_of_use, technology_name, project, project_sample
+                )
+
             else:
                 vect_parameters = self.default_parameters.get_snippy_default(
                     user, type_of_use, technology_name, project, project_sample
@@ -2516,6 +2554,7 @@ class DefaultProjectSoftware(object):
         """
         type_of_use = Software.TYPE_OF_USE_global
         actual_project = project
+        print(type(project))
         if project is None:
             type_of_use = Software.TYPE_OF_USE_global
             if software_name == self.software_names.get_abricate_name():
@@ -2544,6 +2583,7 @@ class DefaultProjectSoftware(object):
                 ),
                 parameter__project=actual_project,
             ).distinct()
+            print("software", software)
 
         except Software.DoesNotExist:
             return vect_parameters
@@ -2564,6 +2604,7 @@ class DefaultProjectSoftware(object):
             raise Software.MultipleObjectsReturned
 
         software = software.first()
+        print(software)
 
         ## get parameters for a specific user and software
         if project is None:
@@ -2600,6 +2641,13 @@ class DefaultProjectSoftware(object):
                             )
 
                         active_software = active_software.filter(is_to_run=True)
+                        print("###")
+                        print("active_software", active_software)
+                        print(software.name_extended)
+                        print("previous_parameter", previous_parameter.parameter)
+                        print("parameter", parameter.parameter)
+                        print(active_software)
+                        print(parameter.software.pipeline_step.name)
 
                         if (
                             active_software.exists() is False

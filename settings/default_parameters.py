@@ -304,8 +304,6 @@ class DefaultParameters(object):
             is_to_run=True,
         ).distinct()
 
-        print(software_list)
-
         if len(software_list) == 0:
             software_list = Software.objects.filter(
                 name=software_name,
@@ -316,7 +314,6 @@ class DefaultParameters(object):
                 is_to_run=True,
             ).distinct()
 
-        print(software_list)
         if len(software_list) == 0:
             software_list = Software.objects.filter(
                 name=software_name,
@@ -332,8 +329,6 @@ class DefaultParameters(object):
 
         if len(software_list) == 0:
             return None
-
-        print(software_list)
 
         return software_list.first()
 

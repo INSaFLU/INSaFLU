@@ -40,10 +40,6 @@ class DrawAllCoverage(object):
         .vect_coverage, vect_genes, var_more_50, var_less_50, output_image,
                                 average_coverage, ratio_more_zero, ratio_more_nine, sample_name, sequence_name):
         """
-        utils = Utils()
-
-        ### get coverage vectors from deep file
-        get_coverage = GetCoverage()
         coverage_file = project_sample.get_file_output(
             TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ, software_name
         )
@@ -51,12 +47,28 @@ class DrawAllCoverage(object):
             self.logger_production.error("File doesn't exist: " + coverage_file)
             self.logger_debug.error("File doesn't exist: " + coverage_file)
             raise IOError("File doesn't exist: " + coverage_file)
+
+        genbank_file = project_sample.project.reference.get_reference_gbk(
+            TypePath.MEDIA_ROOT
+        )
+
+        return self.draw_all_coverages_explicit_input(
+            project_sample, coverage_file, genbank_file
+        )
+
+    def draw_all_coverages_explicit_input(
+        self, project_sample, coverage_file, genbank_file
+    ):
+        utils = Utils()
+
+        ### get coverage vectors from deep file
+        get_coverage = GetCoverage()
+
+        print(coverage_file)
         dict_coverage = get_coverage.get_dict_with_coverage(coverage_file)
 
         ### get all elements and gene names
-        geneticElement = utils.get_elements_and_genes(
-            project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT)
-        )
+        geneticElement = utils.get_elements_and_genes(genbank_file)
 
         ### get positions of variations
         (dict_less_50, dict_more_50, dict_more_90) = ({}, {}, {})
@@ -95,6 +107,7 @@ class DrawAllCoverage(object):
         coverage = decode_coverage.decode_result(meta_value.description)
 
         draw_coverage = DrawCoverage(coverage.limit_defined_by_user)
+        print(dict_coverage)
 
         for sequence_name in geneticElement.get_sorted_elements():
             draw_coverage.create_coverage(

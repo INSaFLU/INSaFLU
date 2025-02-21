@@ -779,6 +779,7 @@ class DefaultProjectSoftware(object):
         parameters_string = self.get_mdcg_parameters_all_possibilities(
             project_sample.project.owner, project_sample, is_to_run=True
         )
+        print(parameters_string)
         if parameters_string is None:
             return None
         lst_data = parameters_string.split(parameter_name)
@@ -2575,7 +2576,6 @@ class DefaultProjectSoftware(object):
                 version_parameters=self.default_parameters.get_software_parameters_version(
                     software_name
                 ),
-                parameter__project=actual_project,
             ).distinct()
 
         except Software.DoesNotExist:
@@ -2584,13 +2584,22 @@ class DefaultProjectSoftware(object):
         if type(project) is ProjectSample:
             software = software.filter(parameter__project_sample=project)
 
+        if type(project) is Project:
+            software = software.filter(parameter__project=project)
+
+        if type(project) is Sample:
+            software = software.filter(parameter__sample=project)
+
         if name_extended is not None:
             software = software.filter(name_extended=name_extended)
 
         if is_to_run == True:
             software = software.filter(is_to_run=True)
 
-        if len(software) == 0:
+        print("software", [software.name_extended for software in software])
+        print(type(project))
+
+        if software.exists() is False:
             return vect_parameters
 
         if len(software) > 1:
@@ -2623,24 +2632,10 @@ class DefaultProjectSoftware(object):
                         parameter.software.pipeline_step.name
                         == ConstantsSettings.PIPELINE_NAME_variant_detection
                     ):
-                        active_software = Software.objects.filter(
-                            parameter__project=actual_project,
-                            pipeline_step__name=ConstantsSettings.PIPELINE_NAME_variant_detection,
+
+                        previous_parameter.software.is_to_run = (
+                            parameter.software.is_to_run
                         )
-                        if type(project) is ProjectSample:
-                            active_software = active_software.filter(
-                                parameter__project_sample=project
-                            )
-
-                        active_software = active_software.filter(is_to_run=True)
-
-                        if (
-                            active_software.exists() is False
-                            and previous_parameter.is_to_run is True
-                        ):
-                            previous_parameter.software.is_to_run = (
-                                parameter.software.is_to_run
-                            )
 
                         # is_to_run = parameter.software.is_to_run
 

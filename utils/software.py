@@ -24,7 +24,7 @@ from ete3 import Tree
 from constants.constants import Constants, FileExtensions, FileType, TypePath
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
-from manage_virus.models import IdentifyVirus, UploadFile
+from manage_virus.models import UploadFile
 from manage_virus.uploadFiles import UploadFiles
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import (
@@ -59,7 +59,9 @@ from utils.utils import Utils
 
 class ProjectSampleCoverage(object):
 
-    def __init__(self, project_sample: ProjectSample, software: SoftwareSettings):
+    def __init__(
+        self, project_sample: ProjectSample, software: SoftwareSettings, reference
+    ):
 
         self.project_sample = project_sample
         self.b_coverage_default = True
@@ -85,19 +87,18 @@ class ProjectSampleCoverage(object):
             is False
         ):
             self.b_coverage_default = False
-            self.default_coverage_value = int(
+            self.default_coverage_value = (
                 default_project_software.get_snippy_single_parameter(
                     project_sample, DefaultParameters.SNIPPY_COVERAGE_NAME
                 )
             )
-
         self.coverage = get_coverage.get_coverage(
             project_sample.get_file_output(
                 TypePath.MEDIA_ROOT,
                 FileType.FILE_DEPTH_GZ,
                 software.name,
             ),
-            project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),
+            reference,
             self.default_coverage_value,
             coverage_for_project,
         )
@@ -755,8 +756,6 @@ class Software(object):
 
         reference_fasta = project.reference.get_reference_fasta(TypePath.MEDIA_ROOT)
         ### type
-        print("Identifying type and subtype")
-        print(reference_fasta)
 
         return self.identify_fasta_type_and_subtype(reference_fasta)
 
@@ -1430,7 +1429,7 @@ class Software(object):
 
         return uploadFile
 
-    def get_species_tag(self, reference):
+    def get_species_tag(self, reference: Reference):
         """
         :param reference instance, database
         :return specie TAGs: Reference.SPECIES_SARS_COV_2; Reference.SPECIES_MPXV; Reference.SPECIES_INFLUENZA, ...
@@ -1865,16 +1864,12 @@ class Software(object):
         out: output_file
         """
 
-        print(software.name_extended)
-
         if software.name_extended == SoftwareNames.SOFTWARE_SNIPPY_name_extended:
             out_put_path = self.run_snippy(
                 project_sample.sample.get_fastq_available(TypePath.MEDIA_ROOT, True),
                 project_sample.sample.get_fastq_available(TypePath.MEDIA_ROOT, False),
-                project_sample.project.reference.get_reference_fasta(
-                    TypePath.MEDIA_ROOT
-                ),
-                project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),
+                project_sample.reference_fasta,
+                project_sample.reference_gbk,
                 project_sample.sample.name,
                 parameters,
             )
@@ -1883,10 +1878,8 @@ class Software(object):
             out_put_path = self.run_snippy(
                 project_sample.sample.get_fastq_available(TypePath.MEDIA_ROOT, True),
                 project_sample.sample.get_fastq_available(TypePath.MEDIA_ROOT, False),
-                project_sample.project.reference.get_reference_fasta(
-                    TypePath.MEDIA_ROOT
-                ),
-                project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),
+                project_sample.reference_fasta,
+                project_sample.reference_gbk,
                 project_sample.sample.name,
                 parameters,
             )
@@ -1897,10 +1890,8 @@ class Software(object):
                 project_sample.sample.get_fastq(TypePath.MEDIA_ROOT, True),
                 project_sample.sample.get_fastq(TypePath.MEDIA_ROOT, False),
                 "FLU",
-                project_sample.project.reference.get_reference_fasta(
-                    TypePath.MEDIA_ROOT
-                ),
-                project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),
+                project_sample.reference_fasta,
+                project_sample.reference_gbk,
                 project_sample.sample.name,
             )
             return out_put_path
@@ -1967,16 +1958,24 @@ class Software(object):
         full_consensus_irma = os.path.join(
             irma_output_dir, sample_name + ".consensus.fa"
         )
-        # with open(full_consensus_irma, "w") as f:
-        cmd = "zcat {}/*fa > {}".format(
-            os.path.join(irma_output_dir, "amended_consensus"), full_consensus_irma
+        amended_consensus_files = os.listdir(
+            os.path.join(irma_output_dir, "amended_consensus")
         )
-        os.system(cmd)
+        amended_consensus_files = [
+            os.path.join(irma_output_dir, "amended_consensus", f)
+            for f in amended_consensus_files
+            if f.endswith(".fa")
+        ]
+        with open(full_consensus_irma, "w") as f:
+            for file in amended_consensus_files:
+                with open(file, "r") as g:
+                    f.write(g.read())
 
         _ = self.generate_depth_file(
             os.path.join(irma_output_dir, "R1.fastq"),
             os.path.join(irma_output_dir, "R2.fastq"),
             os.path.join(refdir, "ref.fa"),
+            # full_consensus_irma,
             irma_output_dir,
             sample_name,
         )
@@ -2193,14 +2192,14 @@ class Software(object):
         irma_output_dir = self.run_irma(file_name_1, file_name_2, module, sample_name)
 
         ############# COLLECT OUTPUT ################
-        # self.irma_replicate_snippy_output(
-        #    file_name_1,
-        #    file_name_2,
-        #    sample_name,
-        #    irma_output_dir,
-        #    path_reference_fasta,
-        #    path_reference_genbank,
-        # )
+        self.irma_replicate_snippy_output(
+            file_name_1,
+            file_name_2,
+            sample_name,
+            irma_output_dir,
+            path_reference_fasta,
+            path_reference_genbank,
+        )
 
         ## generate full vcf
         vcf_combined = self.irma_generate_full_vcf(
@@ -2830,10 +2829,8 @@ class Software(object):
                     FileType.FILE_BAM,
                     self.software_names.get_snippy_name(),
                 ),
-                project_sample.project.reference.get_reference_fasta(
-                    TypePath.MEDIA_ROOT
-                ),
-                project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),
+                project_sample.reference_fasta,
+                project_sample.reference_gbk,
                 project_sample.sample.name,
             )
         except Exception as e:
@@ -2844,12 +2841,8 @@ class Software(object):
                         FileType.FILE_BAM,
                         software.name,
                     ),
-                    project_sample.project.reference.get_reference_fasta(
-                        TypePath.MEDIA_ROOT
-                    ),
-                    project_sample.project.reference.get_reference_gbk(
-                        TypePath.MEDIA_ROOT
-                    ),
+                    project_sample.reference_fasta,
+                    project_sample.reference_gbk,
                     project_sample.sample.name,
                 )
 
@@ -3849,6 +3842,7 @@ class Software(object):
             project=None,
             project_sample=project_sample,
         )
+
         if software is None:
             raise Exception("MDCG software not found.")
 
@@ -3866,6 +3860,7 @@ class Software(object):
                         user, project_sample, is_to_run=True
                     )
                 )
+
                 mdcg_parameters = default_project_software.edit_primerNone_parameters(
                     mdcg_parameters
                 )
@@ -3885,6 +3880,10 @@ class Software(object):
                 )
             except Exception as e:
 
+                import traceback
+
+                traceback.print_exc()
+
                 result = Result()
                 result.set_error(e.args[0])
                 result.add_software(
@@ -3903,6 +3902,7 @@ class Software(object):
 
                 return False
             ## copy the files to the project sample directories
+            print("Start Copy Files")
             try:
                 self.copy_files_to_project(project_sample, software.name, out_put_path)
 
@@ -3945,6 +3945,7 @@ class Software(object):
                 traceback.print_exc()
 
             ## get coverage from depth file
+            print("Start Coverage")
             try:
                 ### limit of the coverage for a project, can be None, if not exist
 
@@ -3957,7 +3958,14 @@ class Software(object):
                         project_sample, keys_to_remove
                     )
 
-                sample_coverage = ProjectSampleCoverage(project_sample, software)
+                sample_coverage = ProjectSampleCoverage(
+                    project_sample,
+                    software,
+                    # os.path.join(
+                    #    out_put_path, project_sample.sample.name + ".consensus.fa"
+                    # ),
+                    project_sample.reference_fasta,
+                )
                 sample_coverage.parse_sample_results()
                 coverage = sample_coverage.coverage
 
@@ -3971,6 +3979,10 @@ class Software(object):
                 )
 
             except Exception as e:
+                import traceback
+
+                traceback.print_exc()
+                print(e)
 
                 result = Result()
                 result.set_error("Fail to get coverage: " + e.args[0])
@@ -3986,6 +3998,7 @@ class Software(object):
             #####################
             ###
             ### make mask the consensus SoftwareNames.SOFTWARE_MSA_MASKER
+            print("Start Mask Consensus")
             try:
                 limit_to_mask_consensus = int(
                     default_project_software.get_mask_consensus_single_parameter(
@@ -4000,9 +4013,7 @@ class Software(object):
                         FileType.FILE_CONSENSUS_FASTA,
                         self.software_names.get_snippy_name(),
                     ),
-                    project_sample.project.reference.get_reference_fasta(
-                        TypePath.MEDIA_ROOT
-                    ),
+                    project_sample.reference_fasta,
                     project_sample.get_file_output(
                         TypePath.MEDIA_ROOT,
                         FileType.FILE_DEPTH_GZ,
@@ -4030,6 +4041,8 @@ class Software(object):
             except Exception as e:
                 print("############ Error in mask consensus")
                 print(e)
+
+            print("End Mask Consensus")
 
             ### add version of mask
 
@@ -4141,7 +4154,9 @@ class Software(object):
             try:
                 ### make the coverage images
                 draw_all_coverage = DrawAllCoverage()
-                draw_all_coverage.draw_all_coverages(project_sample)
+                draw_all_coverage.draw_all_coverages(
+                    project_sample,
+                )
             except Exception as e:
                 print("Error in draw coverage")
                 import traceback

@@ -1049,6 +1049,8 @@ class DefaultSoftware(object):
             ConstantsSettings.TECHNOLOGY_illumina,
             software_name_extended=SoftwareNames.SOFTWARE_IRMA_name_extended,
         )
+        print("## PARAMETERES IRMA")
+        print(result)
         return "" if result is None else result
 
     def get_freebayes_parameters(self, user):
@@ -1564,6 +1566,7 @@ class DefaultSoftware(object):
                 return self.get_ivar_parameters(user)
 
             elif name_extended == SoftwareNames.SOFTWARE_IRMA_name_extended:
+                print("H###")
                 self.test_default_db(
                     SoftwareNames.SOFTWARE_IRMA_name,
                     self.default_parameters.get_irma_default(

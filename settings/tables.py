@@ -17,13 +17,14 @@ from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import ProjectSample
+from managing_files.models import ProjectSample, Reference
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software import DefaultSoftware
 from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.models import Parameter, Software
 from utils.result import DecodeObjects
+from utils.software import Software as SoftwareUtils
 
 
 class CheckBoxColumnWithName(tables.CheckBoxColumn):
@@ -79,6 +80,8 @@ class SoftwaresTable(tables.Table):
                 project=project, is_deleted=False
             ).count()
 
+        self.software_utils = SoftwareUtils()
+
     class Meta:
         model = Software()
         fields = (
@@ -112,6 +115,17 @@ class SoftwaresTable(tables.Table):
             b_enable_options = os.path.exists(
                 self.project_sample.get_consensus_file(TypePath.MEDIA_ROOT)
             )
+
+        if record.name_extended == SoftwareNames.SOFTWARE_IRMA_name_extended:
+            if self.project is None:
+
+                b_enable_options = False
+            else:
+                species_tag = self.software_utils.get_species_tag(
+                    self.project.reference
+                )
+                if species_tag != Reference.SPECIES_INFLUENZA:
+                    b_enable_options = False
 
         ## need to remove # in href, otherwise still active
         sz_href = (
@@ -747,234 +761,3 @@ class SoftwaresTable(tables.Table):
                     masking_consensus_original.get_message_mask_to_show_in_web_site(),
                 )
         return (False, "Edit parameters")
-
-
-class INSaFLUParametersTable(tables.Table):
-    #   Renders a normal value as an internal hyperlink to another page.
-    #   account_number = tables.LinkColumn('customer-detail', args=[A('pk')])
-    select_to_run = CheckBoxColumnWithName(
-        verbose_name=("To Run"), accessor="pk", orderable=False
-    )
-    software = tables.Column("Software", orderable=False, empty_values=())
-    parameters = tables.Column("Parameters", orderable=False, empty_values=())
-    options = tables.Column("Options", orderable=False, empty_values=())
-    technology = tables.Column("Technology", orderable=False, empty_values=())
-    constants = Constants()
-
-    def __init__(
-        self, query_set, project=None, project_sample=None, b_enable_options=True
-    ):
-        tables.Table.__init__(self, query_set)
-        self.project = project
-        self.project_sample = project_sample
-        self.b_enable_options = b_enable_options
-        self.default_software = DefaultSoftware()
-
-        self.count_project_sample = 0
-        ### get number of samples inside of this project, if project exist
-        if not project is None:
-            self.count_project_sample = ProjectSample.objects.filter(
-                project=project, is_deleted=False
-            ).count()
-
-    class Meta:
-        model = Software()
-        fields = ("select_to_run", "software", "technology", "parameters", "options")
-        attrs = {"class": "table-striped table-bordered"}
-        empty_text = "There are no INSaFLU parameters to show..."
-
-    def render_software(self, record):
-        return record.name if record.name_extended is None else record.name_extended
-
-    def render_select_to_run(self, value, record):
-        sz_ids = ""
-        if not self.project is None:
-            sz_ids += 'project_id="{}"'.format(self.project)
-        # if (not self.project is None): sz_ids += 'project_id="{}"'.format(self.project)
-        if not self.project_sample is None:
-            sz_ids += ' project_sample_id="{}"'.format(self.project_sample)
-
-        return mark_safe(
-            '<input name="select_to_run" id="{}_{}" type="checkbox" value="{}" {} {} {}/>'.format(
-                Constants.CHECK_BOX,
-                record.id,
-                record.id,
-                "checked" if record.is_to_run else "",
-                "" if record.can_be_on_off_in_pipeline else "disabled",
-                sz_ids,
-            )
-        )
-
-    def render_technology(self, record):
-        """return technology names"""
-        return (
-            ConstantsSettings.TECHNOLOGY_illumina
-            if record.technology is None
-            else record.technology.name
-        )
-
-    def render_parameters(self, record: Software, **kwargs):
-        """
-        render parameters for the software
-        """
-        from crequest.middleware import CrequestMiddleware
-
-        current_request = CrequestMiddleware.get_request()
-        user = current_request.user
-
-        pipeline_step = record.pipeline_step.name
-        technology_name = (
-            ConstantsSettings.TECHNOLOGY_illumina
-            if record.technology is None
-            else record.technology.name
-        )
-
-        if self.project is None and self.project_sample is None:
-            # default_software = DefaultSoftware()
-            return self.default_software.get_parameters(
-                record.name,
-                user,
-                technology_name,
-                pipeline_step=pipeline_step,
-                name_extended=record.name_extended,
-            )
-        elif self.project_sample is None:
-            default_software_projects = DefaultProjectSoftware()
-            return default_software_projects.get_parameters(
-                record.name,
-                user,
-                Software.TYPE_OF_USE_project,
-                self.project,
-                None,
-                None,
-                technology_name=technology_name,
-                pipeline_step=pipeline_step,
-                name_extended=record.name_extended,
-            )
-        elif self.project is None:
-            default_software_projects = DefaultProjectSoftware()
-            return default_software_projects.get_parameters(
-                record.name,
-                user,
-                Software.TYPE_OF_USE_project_sample,
-                None,
-                self.project_sample,
-                None,
-                technology_name=technology_name,
-                pipeline_step=pipeline_step,
-                name_extended=record.name_extended,
-            )
-        return ""
-
-    def render_options(self, record):
-        ### if project
-        ## Edit
-        from crequest.middleware import CrequestMiddleware
-
-        current_request = CrequestMiddleware.get_request()
-        try:
-            profile = Profile.objects.get(user=current_request.user)
-            if profile.only_view_project:
-                return "Options not available"
-        except Profile.DoesNotExist:
-            pass
-
-        if not self.project is None:
-            str_links = (
-                "<a href="
-                + reverse("software-project-update", args=[record.pk, self.project.pk])
-                + ' data-toggle="tooltip" title="Edit parameters" '
-                + "{}".format(
-                    "" if self.b_enable_options else "onclick='return false;' disable"
-                )
-                + '><span><i class="fa fa-2x fa-pencil padding-button-table '
-                + "{}".format("" if self.b_enable_options else "disable_fa_icon")
-                + '"></i></span></a>'
-            )
-            str_links += (
-                '<a href="{}"'.format(
-                    "#id_set_default_modal" if self.b_enable_options else ""
-                )
-                + ' id="id_default_parameter" data-toggle="modal" data-toggle="tooltip" title="Set default parameters"'
-                + "{}".format(
-                    "" if self.b_enable_options else "onclick='return false;' disable"
-                )
-                + ' ref_name="'
-                + record.name
-                + '" pk="'
-                + str(record.pk)
-                + '" pk_proj="'
-                + str(self.project.pk)
-                + '" type_software="{}'.format(
-                    "software" if record.is_software() else "INSaFLU"
-                )
-                + '" proj_name="'
-                + str(self.project.name)
-                + '"><span ><i class="fa fa-2x fa-power-off padding-button-table '
-                + "{}".format("" if self.b_enable_options else "disable_fa_icon")
-                + '"></i></span></a>'
-            )
-        elif not self.project_sample is None:
-            str_links = (
-                "<a href="
-                + reverse(
-                    "software-project-sample-update",
-                    args=[record.pk, self.project_sample.pk],
-                )
-                + ' data-toggle="tooltip" title="Edit parameters" '
-                + "{}".format(
-                    "" if self.b_enable_options else "onclick='return false;' disable"
-                )
-                + '><span><i class="fa fa-2x fa-pencil padding-button-table '
-                + "{}".format("" if self.b_enable_options else "disable_fa_icon")
-                + '"></i></span></a>'
-            )
-
-            str_links += (
-                '<a href="{}"'.format(
-                    "#id_set_default_modal" if self.b_enable_options else ""
-                )
-                + ' id="id_default_parameter" data-toggle="modal" data-toggle="tooltip" title="Set default parameters"'
-                + "{}".format(
-                    "" if self.b_enable_options else "onclick='return false;' disable"
-                )
-                + ' ref_name="'
-                + record.name
-                + '" pk="'
-                + str(record.pk)
-                + '" pk_proj_sample="'
-                + str(self.project_sample.pk)
-                + '" type_software="{}'.format(
-                    "software" if record.is_software() else "INSaFLU"
-                )
-                + '" proj_name="'
-                + str(self.project_sample.project.name)
-                + '"><span ><i class="fa fa-2x fa-power-off padding-button-table '
-                + "{}".format("" if self.b_enable_options else "disable_fa_icon")
-                + '"></i></span></a>'
-            )
-        else:
-            str_links = (
-                "<a href="
-                + reverse("software-update", args=[record.pk])
-                + ' data-toggle="tooltip" title="Edit parameters" '
-                + '><span><i class="fa fa-2x fa-pencil padding-button-table '
-                + '"></i></span></a>'
-            )
-            ## Remove
-            str_links += (
-                '<a href="{}"'.format(
-                    "#id_set_default_modal" if self.b_enable_options else ""
-                )
-                + ' id="id_default_parameter" data-toggle="modal" data-toggle="tooltip" title="Set default parameters"'
-                + ' ref_name="'
-                + record.name
-                + '" type_software="{}'.format(
-                    "software" if record.is_software() else "INSaFLU"
-                )
-                + '" pk="'
-                + str(record.pk)
-                + '"><span ><i class="fa fa-2x fa-power-off padding-button-table '
-                + '"></i></span></a>'
-            )
-        return mark_safe(str_links)

@@ -1723,6 +1723,7 @@ class ReferencePanelManagement(LoginRequiredMixin, generic.CreateView):
         context = super().get_context_data(**kwargs)
         user = self.request.user
 
+        is_user_demo = True if user.username == Constants.USER_ANONYMOUS else False
         panels = (
             ReferencePanel.objects.filter(
                 project_sample=None,
@@ -1736,6 +1737,7 @@ class ReferencePanelManagement(LoginRequiredMixin, generic.CreateView):
         context["panels"] = panels
         context["user_id"] = user.pk
         context["nav_reference"] = True
+        context["demo_account"] = is_user_demo
 
         return context
 

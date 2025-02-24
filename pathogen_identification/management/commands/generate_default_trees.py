@@ -9,7 +9,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         ###
-        user_system = User.objects.get(username="system")
         default_software = DefaultSoftware()
 
         for user in User.objects.all():

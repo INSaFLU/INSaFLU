@@ -9,8 +9,10 @@ from django.conf import settings
 from django.contrib.auth.models import User
 
 # Create your models here.
-from django.contrib.gis.db.models import GeoManager  # #  change to django  2.x
-from django.contrib.gis.db.models import PointField
+from django.contrib.gis.db.models import (
+    GeoManager,  # #  change to django  2.x
+    PointField,
+)
 from django.db import models
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
@@ -1346,6 +1348,18 @@ class ProjectSample(models.Model):
 
     def __str__(self):
         return self.project.name
+
+    @property
+    def name(self):
+        return self.sample.name
+
+    @property
+    def reference_fasta(self):
+        return self.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT)
+
+    @property
+    def reference_gbk(self):
+        return self.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT)
 
     def get_global_file_by_element(
         self, type_path, prefix_file_name, sequence_name, extension

@@ -654,7 +654,7 @@ class Software(object):
         """
         create a database on abricate
         """
-        print(database, file_name)
+
         if not os.path.isfile(file_name):
             raise IOError("File not found: " + file_name)
         cmd = "mkdir -p %s/%s" % (self.software_names.SOFTWARE_ABRICATE_DB, database)
@@ -4041,9 +4041,6 @@ class Software(object):
             except Exception as e:
                 print("############ Error in mask consensus")
                 print(e)
-
-            print("End Mask Consensus")
-
             ### add version of mask
 
             ## identify VARIANTS IN INCOMPLETE LOCUS in all locus, set yes in variants if are in areas with coverage problems

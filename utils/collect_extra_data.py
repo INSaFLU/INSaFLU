@@ -1670,6 +1670,7 @@ class CollectExtraData(object):
         file_aln2pheno_result = project.get_global_file_by_project(
             TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_zip
         )
+
         ## aln2pheno files
         if project.number_passed_sequences > 0 and os.path.exists(
             file_aln2pheno_result
@@ -1679,6 +1680,15 @@ class CollectExtraData(object):
                     TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_zip
                 ),
                 os.path.join(temp_dir, Project.PROJECT_FILE_NAME_Aln2pheno_zip),
+            )
+
+        file_flumut_result = project.get_global_file_by_project(
+            TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_flumut_excel
+        )
+        if os.path.exists(file_flumut_result):
+            self.utils.link_filke(
+                file_flumut_result,
+                os.path.join(temp_dir, Project.PROJECT_FILE_NAME_flumut_excel),
             )
 
         # 	self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK),

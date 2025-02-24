@@ -64,7 +64,6 @@ class DrawAllCoverage(object):
         ### get coverage vectors from deep file
         get_coverage = GetCoverage()
 
-        print(coverage_file)
         dict_coverage = get_coverage.get_dict_with_coverage(coverage_file)
 
         ### get all elements and gene names
@@ -107,7 +106,6 @@ class DrawAllCoverage(object):
         coverage = decode_coverage.decode_result(meta_value.description)
 
         draw_coverage = DrawCoverage(coverage.limit_defined_by_user)
-        print(dict_coverage)
 
         for sequence_name in geneticElement.get_sorted_elements():
             draw_coverage.create_coverage(

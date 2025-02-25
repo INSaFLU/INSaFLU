@@ -147,6 +147,11 @@ urlpatterns = [
         name="update_project_pangolin",
     ),
     url(
+        r"^ajax/update_project_mutation_report",
+        ajax_views.update_project_mutation_report,
+        name="update_project_mutation_report",
+    ),
+    url(
         r"^ajax/add_single_value_database$",
         ajax_views.add_single_value_database,
         name="add_single_value_database",

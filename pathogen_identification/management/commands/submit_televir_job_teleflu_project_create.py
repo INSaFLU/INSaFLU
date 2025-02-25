@@ -9,9 +9,8 @@ from django.core.management.base import BaseCommand
 from constants.meta_key_and_values import MetaKeyAndValue
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import ProcessControler
+from managing_files.models import ProcessControler, ProjectSample
 from managing_files.models import Project as InsafluProject
-from managing_files.models import ProjectSample
 from pathogen_identification.models import TeleFluProject, TeleFluSample
 from pathogen_identification.utilities.reference_utils import (
     teleflu_to_insaflu_reference,

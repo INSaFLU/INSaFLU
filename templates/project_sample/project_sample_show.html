@@ -253,8 +253,11 @@
 						<a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseFlumut" aria-expanded="false" aria-controls="collapseFlumut">
 							<strong>Flumut</strong> report
 	        			</a>
+						{% if update_flumut %}
+						<a href="#id_update_mutation_report" id="id-button-update-mutation-report" class="btn btn-small btn-primary" style="float:right" data-toggle="modal"><i class="fa fa-refresh"></i> Update Flumut</a>
+						{% endif %}
 	      			</h5>
-	    		</div>
+				</div>
 	
 	    		<div id="collapseFlumut" class="collapse" role="tabpanel" aria-labelledby="headingFlumut">
 	      			<div class="card-block">
@@ -527,6 +530,32 @@
 		  					<!-- Modal footer -->
 		  					<div class="modal-footer" id="id-modal-footer-update">
 		    					<button id="id-update-pangolin-button" type="button" class="btn btn-primary" data-dismiss="modal">Run</button>
+		    					<button type="button" class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">Cancel</button>
+		  					</div>
+						</div>
+	   				</div>
+	 			</div>
+
+				<!-- Update Flumut -->
+				<div class="modal fade" id="id_update_mutation_report">
+					<div class="modal-dialog modal-lg">
+						<div class="modal-content">
+	       					<!-- Modal Header -->
+	       					<div class="modal-header alert alert-primary">
+	         					<h4 class="modal-title">Flumut</h4>
+	         					<button type="button" class="close" data-dismiss="modal">&times;</button>
+	       					</div>
+	       
+	       					<!-- Modal body -->
+		  					<div class="modal-body mx-auto mw-100">
+		  						<div id="id-modal-body-update-mutation-report" pk="{{project_id}}" update-mutation-report-value-url="{% url 'update_project_mutation_report' %}"
+		  								ref_project="{{project_name}}">
+		  							<label id="id-label-update-mutation-report" class="col-form-label">{{update_mutation_report_message}}</label>
+		   						</div>
+		  					</div>
+		  					<!-- Modal footer -->
+		  					<div class="modal-footer" id="id-modal-footer-update">
+		    					<button id="id-update-mutation-report-button" type="button" class="btn btn-primary" data-dismiss="modal">Run</button>
 		    					<button type="button" class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">Cancel</button>
 		  					</div>
 						</div>

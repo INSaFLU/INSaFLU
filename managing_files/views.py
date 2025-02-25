@@ -72,7 +72,7 @@ from utils.session_variables import (
     clean_check_box_in_session,
     is_all_check_box_in_session,
 )
-from utils.software import Software
+from utils.software import Software, SoftwareFlumut
 from utils.software_pangolin import SoftwarePangolin
 from utils.support_django_template import get_link_for_dropdown_item
 from utils.utils import ShowInfoMainPage, Utils
@@ -2670,17 +2670,35 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
                     Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK,
                 )
             )
+
         if os.path.exists(
             project.get_global_file_by_project(
                 TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Flumut_markers_report
             )
         ):
+
+            software_flumut = SoftwareFlumut()
+
             context["flumut_report"] = get_link_for_dropdown_item(
                 project.get_global_file_by_project(
                     TypePath.MEDIA_URL,
                     Project.PROJECT_FILE_NAME_Flumut_markers_report,
                 )
             )
+
+            file_flumut_version = project.get_global_file_by_project(
+                TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_flumut_version
+            )
+
+            if software_flumut.flumut_results_out_date(project):
+                context["update_flumut"] = True
+                context["update_mutation_report_message"] = mark_safe(
+                    software_flumut.get_update_message(project)
+                )
+                print(context["update_mutation_report_message"])
+
+            with open(file_flumut_version, "r") as f:
+                context["flumut_version"] = software.flumut_version_extract(f.read())
 
         if os.path.exists(
             project.get_global_file_by_project(

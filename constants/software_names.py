@@ -498,6 +498,7 @@ class SoftwareNames(object):
 
     ### flumut
     SOFTWARE_FLUMUT = os.path.join(settings.DIR_SOFTWARE, "flumut/flumut.sh")
+    SOFTWARE_FLUMUT_name = "Flumut"
 
     ### IRMA
     SOFTWARE_IRMA = os.path.join(settings.DIR_SOFTWARE, "irma/irma.sh")

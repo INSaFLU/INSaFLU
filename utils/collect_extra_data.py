@@ -25,9 +25,9 @@ from managing_files.models import (
     ProjectSample,
     Reference,
     Sample,
+    TagNames,
 )
 from managing_files.models import Software as SoftwareModel
-from managing_files.models import TagNames
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software_project_sample import DefaultProjectSoftware
@@ -414,9 +414,9 @@ class CollectExtraData(object):
         file_flumut_excel = project.get_global_file_by_project(
             TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_flumut_excel
         )
-        file_flumut_version = project.get_global_file_by_project(
-            TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_flumut_version
-        )
+        # file_flumut_version = project.get_global_file_by_project(
+        #    TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_flumut_version
+        # )
 
         self.software.run_flumut(
             file_alignments,
@@ -426,9 +426,35 @@ class CollectExtraData(object):
             file_flumut_excel,
         )
 
-        version_string = self.software.get_flumut_version()
-        with open(file_flumut_version, "w") as f:
-            f.write(version_string)
+        try:
+            software = SoftwareModel.objects.get(
+                name=SoftwareNames.SOFTWARE_FLUMUT_name
+            )
+            ### set last version
+            dt_result_version = software.get_version_long()
+            result_all = Result()
+            for soft_name in dt_result_version:
+                result_all.add_software(
+                    SoftwareDesc(soft_name, dt_result_version.get(soft_name, ""), "")
+                )
+
+            ###
+            manage_database = ManageDatabase()
+            manage_database.set_project_metakey(
+                project,
+                project.owner,
+                MetaKeyAndValue.META_KEY_Flumut,
+                MetaKeyAndValue.META_VALUE_Success,
+                result_all.to_json(),
+            )
+        except SoftwareModel.DoesNotExist:  ## need to create with last version
+            self.logger_production.error(
+                "ProjectID: {} Fail to detect software model".format(project.id)
+            )
+
+        # version_string = self.software.get_flumut_version()
+        # with open(file_flumut_version, "w") as f:
+        #    f.write(version_string)
 
         return
 

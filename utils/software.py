@@ -4,7 +4,6 @@ Created on Oct 28, 2017
 @author: mmp
 """
 
-import cmd
 import datetime
 import gzip
 import logging
@@ -35,12 +34,14 @@ from managing_files.models import (
     Reference,
     Sample,
 )
+from managing_files.models import Software as SoftwareModel
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.models import Software as SoftwareSettings
 from utils.coverage import DrawAllCoverage
 from utils.exceptions import CmdException
+from utils.lock_atomic_transaction import LockedAtomicTransaction
 from utils.mixed_infections_management import MixedInfectionsManagement
 from utils.parse_coverage_file import GetCoverage
 from utils.parse_out_files import ParseOutFiles
@@ -192,6 +193,271 @@ class RunFreebayesException(Exception):
 
 class ParseFreebayesException(Exception):
     pass
+
+
+class SoftwareFlumut(object):
+
+    def __init__(self):
+        self.utils = Utils()
+
+    def run_flumut(
+        self,
+        sequences,
+        markers_report,
+        mutations_report,
+        litterature_report,
+        excel_report,
+    ):
+        """run flumnut, update first"""
+
+        self.run_flumut_update()
+        return self._run_flumut(
+            sequences,
+            markers_report,
+            mutations_report,
+            litterature_report,
+            excel_report,
+        )
+
+    @staticmethod
+    def _run_flumut(
+        sequences,
+        markers_report,
+        mutations_report,
+        litterature_report,
+        excel_report,
+    ):
+        """
+        run flumut
+        :param sequences: sequence file with nucleotides from the influenza virus
+        :param reference: name of the reference (must be one of the sequences)
+        :param report: output file with final report
+        """
+
+        # update flumut if necessary
+
+        # Run flumut
+        cmd = (
+            "{} -n '(?P<sample>.+)_(?P<segment>.+)$' -m {} -M {} -l {} -x {} {}".format(
+                SoftwareNames.SOFTWARE_FLUMUT,
+                markers_report,
+                mutations_report,
+                litterature_report,
+                excel_report,
+                sequences,
+            )
+        )
+
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            raise Exception("Fail to run flumut")
+
+        # copy results to output
+        return exit_status
+
+    def _run_flumut_update(self):
+        """
+        update flumut version
+        """
+
+        dt_result_version = {}
+
+        if not settings.DEBUG:
+
+            cmd = "{} --update".format(SoftwareNames.SOFTWARE_FLUMUT)
+            exit_status = os.system(cmd)
+
+            if exit_status != 0:
+                raise Exception("Fail to update flumut version")
+
+            ## get version
+            version_tag = self.get_flumut_db_version()
+            dt_result_version[SoftwareNames.SOFTWARE_FLUMUT_name.lower()] = version_tag
+
+        return dt_result_version
+
+    def _flumut_dt_versions(self):
+
+        version_tag = self.get_flumut_db_version()
+        dt_result_version = {}
+        dt_result_version[SoftwareNames.SOFTWARE_FLUMUT_name.lower()] = version_tag
+
+        return dt_result_version
+
+    def run_flumut_update(self):
+        """
+        Run flumut update
+        """
+
+        with LockedAtomicTransaction(SoftwareModel):
+            try:
+                software = SoftwareModel.objects.get(
+                    name=SoftwareNames.SOFTWARE_FLUMUT_name
+                )
+            except SoftwareModel.DoesNotExist:
+
+                dt_result_version = self._run_flumut_update()
+
+                software = SoftwareModel(name=SoftwareNames.SOFTWARE_FLUMUT_name)
+                software.set_version(
+                    dt_result_version.get(
+                        SoftwareNames.SOFTWARE_FLUMUT_name.lower(), ""
+                    )
+                )
+                software.set_version_long(dt_result_version)
+                software.save()
+                return dt_result_version
+
+                ## return if the software was updated today
+            if software.is_updated_today():
+                return software.get_version_long()
+
+            dt_result_version = self._run_flumut_update()
+            if len(dt_result_version) > 0:
+                software.set_version_long(dt_result_version)
+                software.set_version(
+                    dt_result_version.get(
+                        SoftwareNames.SOFTWARE_FLUMUT_name.lower(), ""
+                    )
+                )
+                software.set_last_update_today()
+                software.save()
+            else:
+                dt_result_version = software.get_version_long()
+
+        return dt_result_version
+
+    @staticmethod
+    def get_flumut_version():
+        """
+        get flumut full version string - software and DB."""
+        cmd = "{} -V".format(SoftwareNames.SOFTWARE_FLUMUT)
+
+        import subprocess
+
+        process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+        process.wait()
+        output = process.stdout.read().decode("utf-8")
+        exit_status = process.returncode
+
+        if exit_status != 0:
+            raise Exception("Fail to get flumut version")
+
+        return output
+
+    @staticmethod
+    def flumut_version_extract(version_string: str):
+
+        return version_string.split("\n")[0].split(" ")[1]
+
+    def get_flumut_db_version(self):
+        """
+        parse flumut -V output to get the database version"""
+
+        output = self.get_flumut_version()
+
+        db = self.flumut_version_extract(output)
+
+        return db
+
+    def flumut_results_out_date(self, project):
+        """ """
+        ### test if there any collect data running
+        decode_result = DecodeObjects()
+        manage_database = ManageDatabase()
+        metaKeyAndValue = MetaKeyAndValue()
+        meta_project_queue = manage_database.get_project_metakey_last(
+            project,
+            metaKeyAndValue.get_meta_key(
+                MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id
+            ),
+            MetaKeyAndValue.META_VALUE_Queue,
+        )
+
+        if not meta_project_queue is None:
+            meta_project_success = manage_database.get_project_metakey_last(
+                project,
+                metaKeyAndValue.get_meta_key(
+                    MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id
+                ),
+                MetaKeyAndValue.META_VALUE_Success,
+            )
+            if (
+                not meta_project_success is None
+                and meta_project_success.creation_date
+                < meta_project_queue.creation_date
+            ):
+                return False  ## can't run because there are at least one in queue
+
+        ## run always this to get last version
+        dt_flumut_versions = self.run_flumut_update()
+
+        ## get version
+        meta_sample = manage_database.get_project_metakey_last(
+            project,
+            MetaKeyAndValue.META_KEY_Flumut,
+            MetaKeyAndValue.META_VALUE_Success,
+        )
+        if not meta_sample is None:
+            result_flumut = decode_result.decode_result(meta_sample.description)
+            for soft_name in dt_flumut_versions:
+                ## if actual version does not have this software it is because out of date
+                version_run_before = result_flumut.get_software_version(soft_name)
+                if version_run_before is None:
+                    return True
+                if version_run_before != dt_flumut_versions[soft_name]:
+                    return True
+            return False
+        return True
+
+    def get_update_message(self, project):
+        """ """
+        decode_result = DecodeObjects()
+        manage_database = ManageDatabase()
+
+        ## run always this to get last version
+        dt_flumut_versions = self.run_flumut_update()
+
+        # get version
+        meta_sample = manage_database.get_project_metakey_last(
+            project,
+            MetaKeyAndValue.META_KEY_Flumut,
+            MetaKeyAndValue.META_VALUE_Success,
+        )
+
+        sz_out = ""
+        print(meta_sample)
+        print(dt_flumut_versions)
+        if not meta_sample is None:
+            result_flumut = decode_result.decode_result(meta_sample.description)
+            for soft_name in dt_flumut_versions:
+                version_run_before = result_flumut.get_software_version(soft_name)
+
+                if version_run_before is None:
+                    if len(sz_out) > 0:
+                        sz_out += "<br> /><br />"
+                    sz_out += "Do you want to run {} version ({})?".format(
+                        soft_name, dt_flumut_versions.get(soft_name)
+                    )
+                elif version_run_before != dt_flumut_versions.get(soft_name):
+                    if len(sz_out) > 0:
+                        sz_out += "<br> /><br />"
+                    sz_out += (
+                        "Do you want to run {} version ({}) from version ({})?".format(
+                            soft_name,
+                            dt_flumut_versions.get(soft_name),
+                            version_run_before,
+                        )
+                    )
+        else:
+            for soft_name in dt_flumut_versions:
+                if len(sz_out) > 0:
+                    sz_out += "<br> /><br />"
+                sz_out += "Do you want to run {} version ({})?".format(
+                    soft_name, dt_flumut_versions.get(soft_name)
+                )
+
+        return sz_out
 
 
 class Software(object):
@@ -5763,8 +6029,8 @@ class Software(object):
 
         return [tree_file, alignment_file, auspice_zip]
 
+    @staticmethod
     def run_flumut(
-        self,
         sequences,
         markers_report,
         mutations_report,
@@ -5792,14 +6058,13 @@ class Software(object):
 
         exit_status = os.system(cmd)
         if exit_status != 0:
-            self.logger_production.error("Fail to run: " + cmd)
-            self.logger_debug.error("Fail to run: " + cmd)
             raise Exception("Fail to run flumut")
 
         # copy results to output
         return exit_status
 
-    def get_flumut_version(self):
+    @staticmethod
+    def get_flumut_version():
         """
         get flumut full version string - software and DB."""
         cmd = "{} -V".format(SoftwareNames.SOFTWARE_FLUMUT)
@@ -5812,11 +6077,14 @@ class Software(object):
         exit_status = process.returncode
 
         if exit_status != 0:
-            self.logger_production.error("Fail to run: " + cmd)
-            self.logger_debug.error("Fail to run: " + cmd)
             raise Exception("Fail to get flumut version")
 
         return output
+
+    @staticmethod
+    def flumut_version_extract(version_string):
+
+        return version_string.split("\n")[0].split(" ")[1]
 
     def get_flumut_db_version(self):
         """
@@ -5824,7 +6092,7 @@ class Software(object):
 
         output = self.get_flumut_version()
 
-        db = output.split("\n")[1].split(",")[0].split(" ")[1]
+        db = self.flumut_version_extract(output)
 
         return db
 

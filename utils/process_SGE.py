@@ -416,6 +416,40 @@ class ProcessSGE(object):
             raise Exception("Fail to submit the job.")
         return sge_id
 
+    def set_collect_update_mutation_report(self, project, user):
+        """
+        job_name = "job_name_<user_id>_<seq_id>"
+        only run this task after all second_stage_snippy
+        """
+        process_controler = ProcessControler()
+        vect_command = [
+            "python3 {} collect_update_flumut_markers --project_id {} --user_id {}".format(
+                os.path.join(settings.BASE_DIR, "manage.py"), project.pk, user.pk
+            )
+        ]
+        self.logger_production.info("Processing: " + ";".join(vect_command))
+        self.logger_debug.info("Processing: " + ";".join(vect_command))
+        out_dir = self.utils.get_temp_dir()
+
+        queue_name = user.profile.queue_name_sge
+        if queue_name == None:
+            queue_name = Constants.QUEUE_SGE_NAME_GLOBAL
+        (job_name_wait, job_name) = user.profile.get_name_sge_seq(
+            Profile.SGE_PROCESS_dont_care, Profile.SGE_GLOBAL
+        )
+        path_file = self.set_script_run_sge(
+            out_dir, queue_name, vect_command, job_name, True, [job_name_wait]
+        )
+        try:
+            sge_id = self.submitte_job(path_file)
+            if sge_id != None:
+                self.set_process_controlers(
+                    user, process_controler.get_name_project(project), sge_id
+                )
+        except:
+            raise Exception("Fail to submit the job.")
+        return sge_id
+
     def set_second_stage_snippy(
         self, project_sample, user, job_name, vect_job_name_wait
     ):

@@ -224,6 +224,7 @@ class ManageDatabase(object):
         save a meta key
         """
         metaKey = self._get_metakey(meta_key_name)
+        print(metaKey, description)
 
         metaKeyProject = MetaKeyProject()
         metaKeyProject.project = project
@@ -232,7 +233,8 @@ class ManageDatabase(object):
         metaKeyProject.value = value
         metaKeyProject.description = description
         metaKeyProject.save()
-        return MetaKeyProject
+        print("saved")
+        return metaKey
 
     def update_project_metakey(self, project, owner, meta_key_name, value, description):
         """

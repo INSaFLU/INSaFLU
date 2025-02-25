@@ -904,6 +904,57 @@ def update_project_pangolin(request):
 
 
 @csrf_protect
+def update_project_mutation_report(request):
+    """
+    get image coverage
+    """
+    if request.is_ajax():
+        data = {"is_ok": False}
+        key_with_project_id = "project_id"
+        if key_with_project_id in request.GET:
+
+            project_id = request.GET[key_with_project_id]
+            try:
+                project = Project.objects.get(pk=int(project_id))
+            except Project.DoesNotExist:
+                import traceback
+
+                traceback.print_exc()
+                return JsonResponse(data)
+
+            try:
+                ### need to send a message to recalculate the global files
+                metaKeyAndValue = MetaKeyAndValue()
+                manageDatabase = ManageDatabase()
+                try:
+                    process_SGE = ProcessSGE()
+                    project = Project.objects.get(id=project_id)
+                    taskID = process_SGE.set_collect_update_mutation_report(
+                        project, request.user
+                    )
+
+                    manageDatabase.set_project_metakey(
+                        project,
+                        request.user,
+                        metaKeyAndValue.get_meta_key(
+                            MetaKeyAndValue.META_KEY_Queue_TaskID_Project,
+                            project.id,
+                        ),
+                        MetaKeyAndValue.META_VALUE_Queue,
+                        taskID,
+                    )
+
+                    data = {"is_ok": True}
+                except Exception as e:
+
+                    data = {"is_ok": False}
+            except ProjectSample.DoesNotExist as e:
+
+                pass
+        return JsonResponse(data)
+
+
+@csrf_protect
 def show_igv(request):
     """
     get data for IGV

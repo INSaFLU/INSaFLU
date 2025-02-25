@@ -574,6 +574,7 @@ $('#id-remove-button').on('click', function(){
 	});
 });
 
+
 $('#id-update-pangolin-button').on('click', function(){
 
 	$.ajax({
@@ -612,4 +613,40 @@ $('#id-update-pangolin-button').on('click', function(){
 	});
 });
 
+$('#id-update-mutation-report-button').on('click', function () {
+	
+	console.log($('#id-modal-body-update-mutation-report').attr("update-mutation-report-value-url"));
+	$.ajax({
+		url: $('#id-modal-body-update-mutation-report').attr("update-mutation-report-value-url"),
+		data : { 
+			project_id : $('#id-modal-body-update-mutation-report').attr('pk'),
+			csrfmiddlewaretoken: '{{ csrf_token }}'
+		}, // data sent with the post request
+		success: function (data) {
+			if (data['is_ok']) {
+				/// hide button of Pangolin refresh
+				document.getElementById('id-button-update-mutation-report').style.display = "none";
+				
+				/// add message with informaton
+				$('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
+					'The project \'' + $('#id-modal-body-update-mutation-report').attr('ref_project') + '\' was successfully applied to mutation report.' +
+					'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+					'</div>');
+			}
+			else{
+				/// add message with informaton
+				$('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+					'The project \'' + $('#id-modal-body-update-mutation-report').attr('ref_project') + '\' was NOT applied to mutation report.' +
+					'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+					'</div>');
+			}
+		},
 
+		// handle a non-successful response
+		error : function(xhr,errmsg,err) {
+			alert(errmsg);
+			console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
+		}
+		});
+	}	
+);

@@ -2695,7 +2695,6 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
                 context["update_mutation_report_message"] = mark_safe(
                     software_flumut.get_update_message(project)
                 )
-                print(context["update_mutation_report_message"])
 
             with open(file_flumut_version, "r") as f:
                 context["flumut_version"] = software.flumut_version_extract(f.read())

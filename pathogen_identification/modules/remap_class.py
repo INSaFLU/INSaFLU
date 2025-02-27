@@ -694,7 +694,6 @@ class Remapping:
         self.logdir = log_dir
 
         self.cmd = RunCMD(bin, logdir=log_dir, prefix=prefix, task="remapping_instance")
-        print("REMMAP DIR", self.rdir)
         os.makedirs(self.rdir, exist_ok=True)
 
         self.reference_file = f"{self.rdir}/{self.prefix}_{target.acc_simple}_ref.fa"
@@ -1038,7 +1037,6 @@ class Remapping:
                 self.filter_mapping_bamutil(filter)
 
             if filter.name == SoftwareNames.SOFTWARE_MSAMTOOLS_name:
-                print("############# FILTERING BAM FILE : msamtools")
                 self.filter_mapping_msamtools(filter)
 
         self.filter_bam_unmapped()
@@ -1135,15 +1133,13 @@ class Remapping:
         software.args = process_parameter_floats(software.args)
 
         cmd = [
-            "msamtools",
+            os.path.join(self.cmd.bin, "msamtools"),
             "filter -b ",
             software.args,
             self.read_map_filtered_bam,
             ">",
             temp_file,
         ]
-
-        print("".join(cmd))
 
         try:
             self.cmd.run_script_software(cmd)
@@ -1750,10 +1746,6 @@ class Mapping_Instance:
 
     def export_mapping_files(self, destination):
         """move files to media directory"""
-        print("exporting mapping files")
-        print("class. success_", self.classification_success)
-        print("mapping success", self.mapping_success)
-        print("destination", destination)
 
         if self.mapping_success != "none":
             # self.reference.move_igv_files(destination)

@@ -363,6 +363,12 @@ LOGGING = {
             "filename": "/var/log/insaFlu/update_pangolin.log",
             "formatter": "verbose",
         },
+        "update_flumut": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": "/var/log/insaFlu/update_flumut.log",
+            "formatter": "verbose",
+        },
         "console": {
             "level": "DEBUG",
             "class": "logging.StreamHandler",

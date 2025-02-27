@@ -780,7 +780,7 @@ class RunMain(models.Model):
         raw_references_mapped = sorted(
             raw_references_mapped,
             key=lambda x: (
-                float(x.classification_source if x.classification_source else 0),
+                float(x.classification_source_safe if x.classification_source else 0),
                 float(x.read_counts if x.read_counts else 0),
             ),
             reverse=True,

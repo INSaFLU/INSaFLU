@@ -59,6 +59,7 @@ class SoftwaresTable(tables.Table):
         b_enable_options=True,
         dataset=None,
         default_software: Optional[DefaultSoftware] = None,
+        project_setup=False,
     ):
         tables.Table.__init__(self, query_set)
         self.project = project
@@ -72,6 +73,8 @@ class SoftwaresTable(tables.Table):
             self.default_software = DefaultSoftware(test=1)
         else:
             self.default_software = default_software
+
+        self.project_setup = project_setup
 
         self.count_project_sample = 0
         ### get number of samples inside of this project, if project exist
@@ -103,8 +106,7 @@ class SoftwaresTable(tables.Table):
         is_to_run, sz_ids = self._is_to_run(record)
 
         ### When in sample you can not turn ON|OFF the software
-        b_enable_options = self.b_enable_options
-        if not self.sample is None:
+        if not self.sample:
             b_enable_options = True
 
         ### check if can ON/OFF SOFTWARE_GENERATE_CONSENSUS_name (consensus make exist)
@@ -116,16 +118,24 @@ class SoftwaresTable(tables.Table):
                 self.project_sample.get_consensus_file(TypePath.MEDIA_ROOT)
             )
 
-        if record.name_extended == SoftwareNames.SOFTWARE_IRMA_name_extended:
-            if self.project is None:
+        if (
+            record.pipeline_step.name
+            == ConstantsSettings.PIPELINE_NAME_variant_detection
+        ):
 
+            if record.name_extended == SoftwareNames.SOFTWARE_IRMA_name_extended:
+                if not self.project is None:
+                    species_tag = self.software_utils.get_species_tag(
+                        self.project.reference
+                    )
+                    if species_tag != Reference.SPECIES_INFLUENZA:
+                        b_enable_options = False
+
+            if not self.project_sample is None:
                 b_enable_options = False
-            else:
-                species_tag = self.software_utils.get_species_tag(
-                    self.project.reference
-                )
-                if species_tag != Reference.SPECIES_INFLUENZA:
-                    b_enable_options = False
+
+            if not self.project is None:
+                b_enable_options = self.project_setup
 
         ## need to remove # in href, otherwise still active
         sz_href = (

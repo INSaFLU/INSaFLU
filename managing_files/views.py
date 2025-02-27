@@ -18,7 +18,7 @@ from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponseRedirect, JsonResponse
 from django.template.defaultfilters import filesizeformat, pluralize
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.utils.safestring import mark_safe
 from django.views import generic
 from django.views.generic import DetailView, ListView, TemplateView
@@ -2004,8 +2004,11 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
     utils = Utils()
     model = Project
     fields = ["name"]
-    success_url = reverse_lazy("projects")
+    # success_url = reverse_lazy("projects")
     template_name = "project/project_add.html"
+
+    def get_success_url(self):
+        return reverse("project-settings-setup", kwargs={"pk": self.object.id})
 
     def get_form_kwargs(self):
         """
@@ -2901,6 +2904,16 @@ class ProjectsSettingsView(LoginRequiredMixin, ListView):
     template_name = "settings/settings.html"
     context_object_name = "project"
 
+    def __init__(self):
+        self.is_setup = False
+        self.setup_note = ""
+
+    def setup(self, request, *args, **kwargs):
+        super(ProjectsSettingsView, self).setup(request, *args, **kwargs)
+        self.request = request
+        self.is_setup = False
+        self.setup_note = ""
+
     def get_context_data(self, **kwargs):
         context = super(ProjectsSettingsView, self).get_context_data(**kwargs)
         project = Project.objects.get(pk=self.kwargs["pk"])
@@ -2960,6 +2973,7 @@ class ProjectsSettingsView(LoginRequiredMixin, ListView):
                                 project_sample=None,
                                 sample=None,
                                 b_enable_options=count_project_sample == 0,
+                                project_setup=self.is_setup,
                             ),
                         ]
                     )
@@ -2981,6 +2995,22 @@ class ProjectsSettingsView(LoginRequiredMixin, ListView):
         context["project"] = project
         context["main_settings"] = False
         context["project_settings"] = True
+        context["setup_note"] = self.setup_note
+        context["is_setup"] = self.is_setup
+        return context
+
+
+class ProjectsSettingsSetupView(ProjectsSettingsView):
+
+    def setup(self, request, *args, **kwargs):
+        super(ProjectsSettingsSetupView, self).setup(request, *args, **kwargs)
+        self.is_setup = True
+        self.setup_note = "Software selection will be blocked after this"
+
+    def get_context_data(self, **kwargs):
+        self.is_setup = True
+        self.setup_note = "Software selection will be blocked after this"
+        context = super(ProjectsSettingsSetupView, self).get_context_data(**kwargs)
         return context
 
 

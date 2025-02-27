@@ -58,7 +58,7 @@ from utils.result import (
 from utils.utils import Utils
 
 
-class ProjectSampleCoverage(object):
+class ProjectSampleDepthCoverage(object):
 
     def __init__(
         self, project_sample: ProjectSample, software: SoftwareSettings, reference
@@ -488,6 +488,13 @@ class Software(object):
         """
         get type of files to copy
         """
+        if software == SoftwareNames.SOFTWARE_IRMA_name:
+            return [
+                FileType.FILE_CONSENSUS_FA,
+                FileType.FILE_TAB,
+                FileType.FILE_VCF_GZ,
+                FileType.FILE_REF_FASTA,
+            ]
         if software == SoftwareNames.SOFTWARE_SNIPPY_name:
             return [
                 FileType.FILE_BAM,
@@ -4010,9 +4017,25 @@ class Software(object):
             ProcessControler.FLAG_RUNNING,
         )
 
+        ## test software parameters for project_sample
+        default_project_software = DefaultProjectSoftware()
+        default_project_software.test_all_defaults(user, None, project_sample, None)
+
+        ### get software
+        software = default_project_software.default_parameters.get_software_mdcg(
+            user,
+            SoftwareNames.SOFTWARE_SNIPPY_name,
+            ConstantsSettings.TECHNOLOGY_illumina,
+            project=None,
+            project_sample=project_sample,
+        )
+
+        if software.name_extended == SoftwareNames.SOFTWARE_IRMA_name_extended:
+            return self.__process_second_stage_irma(project_sample, user, software)
+
         ## run collect data
         return self.__process_second_stage_snippy_coverage_freebayes(
-            project_sample, user
+            project_sample, user, software
         )
 
     """
@@ -4063,9 +4086,208 @@ class Software(object):
             ProcessControler.FLAG_ERROR,
         )
 
+    def __process_second_stage_irma(
+        self, project_sample: ProjectSample, user, software
+    ):
+        """
+        Global processing, IRMA
+        """
+        process_controler = ProcessControler()
+        process_SGE = ProcessSGE()
+        manageDatabase = ManageDatabase()
+        result_all = Result()
+        ### metakey for this process
+        metaKeyAndValue = MetaKeyAndValue()
+
+        #### PREP
+
+        meta_key_project_sample = (
+            metaKeyAndValue.get_meta_key_queue_by_project_sample_id(project_sample.id)
+        )
+
+        ### Test if this sample already run
+        meta_sample = manageDatabase.get_project_sample_metakey_last(
+            project_sample,
+            meta_key_project_sample,
+            MetaKeyAndValue.META_VALUE_Queue,
+        )
+        if (
+            meta_sample != None
+            and meta_sample.value == MetaKeyAndValue.META_VALUE_Success
+        ):
+            return
+
+        ## test software parameters for project_sample
+        default_project_software = DefaultProjectSoftware()
+
+        if software is None:
+            raise Exception("MDCG software not found.")
+
+        ######## BEGIN
+        os.chdir("/tmp/insaFlu/")
+
+        try:
+
+            ## process snippy
+            try:
+
+                ### get snippy parameters
+                mdcg_parameters = (
+                    default_project_software.get_mdcg_parameters_all_possibilities(
+                        user, project_sample, is_to_run=True
+                    )
+                )
+
+                mdcg_parameters = default_project_software.edit_primerNone_parameters(
+                    mdcg_parameters
+                )
+
+                out_put_path = self.run_mdcg(
+                    software,
+                    project_sample,
+                    mdcg_parameters,
+                )
+
+                software_description = SoftwareDesc(
+                    software.name,
+                    software.version,
+                    mdcg_parameters,
+                )
+
+                metakey = MetaKeyAndValue.META_KEY_Snippy
+
+                result_all.add_software(software_description)
+
+            except Exception as e:
+
+                import traceback
+
+                traceback.print_exc()
+
+                result = Result()
+                result.set_error(e.args[0])
+                result.add_software(
+                    SoftwareDesc(
+                        software.name,
+                        software.version,
+                        mdcg_parameters,
+                    )
+                )
+
+                self.__set_process_error(
+                    result,
+                    project_sample,
+                    MetaKeyAndValue.META_KEY_Snippy,
+                )
+
+                return False
+            ## copy the files to the project sample directories
+            try:
+                self.copy_files_to_project(project_sample, software.name, out_put_path)
+
+                # self.utils.remove_dir(out_put_path)
+                ### make the link for the new tab file name
+                path_snippy_tab = project_sample.get_file_output(
+                    TypePath.MEDIA_ROOT,
+                    FileType.FILE_TAB,
+                    software.name,
+                )
+                if os.path.exists(path_snippy_tab):
+                    sz_file_to = project_sample.get_file_output_human(
+                        TypePath.MEDIA_ROOT,
+                        FileType.FILE_TAB,
+                        software.name,
+                    )
+                    self.utils.link_file(path_snippy_tab, sz_file_to)
+
+            except Exception as e:
+                print(e)
+                import traceback
+
+                traceback.print_exc()
+
+            ### get again
+            manage_database = ManageDatabase()
+            project_sample = ProjectSample.objects.get(pk=project_sample.id)
+            project_sample.is_finished = True
+            project_sample.is_deleted = False
+            project_sample.is_deleted_in_file_system = False
+            project_sample.date_deleted = None
+            project_sample.is_error = False
+            project_sample.is_mask_consensus_sequences = True
+            # project_sample.count_variations = manage_database.get_variation_count(
+            #    count_hits
+            # )
+            # project_sample.mixed_infections = mixed_infection
+            project_sample.save()
+            ### add today date, last change
+            project = project_sample.project
+            project.last_change_date = datetime.datetime.now()
+            project.save()
+
+            ### get clean consensus file
+            # consensus_fasta = project_sample.get_file_output(
+            #    TypePath.MEDIA_ROOT,
+            #    FileType.FILE_CONSENSUS_FASTA,
+            #    SoftwareNames.SOFTWARE_SNIPPY_name,
+            # )
+            # if os.path.exists(consensus_fasta):
+            #    file_out = project_sample.get_consensus_file(TypePath.MEDIA_ROOT)
+            #    self.utils.filter_fasta_all_sequences_file(
+            #        consensus_fasta,
+            #        coverage,
+            #        file_out,
+            #        limit_to_mask_consensus,
+            #        False,
+            #    )
+            #    ## make a backup of this file to use has a starter of second stage analysis
+            #    self.utils.copy_file(
+            #        project_sample.get_consensus_file(TypePath.MEDIA_ROOT),
+            #        project_sample.get_backup_consensus_file(),
+            #    )
+
+            ### set the tag of result OK
+            manageDatabase.set_project_sample_metakey(
+                project_sample,
+                user,
+                MetaKeyAndValue.META_KEY_Snippy_Freebayes,
+                MetaKeyAndValue.META_VALUE_Success,
+                result_all.to_json(),
+            )
+            ### set the flag of the end of the task
+            meta_sample = manageDatabase.get_project_sample_metakey_last(
+                project_sample,
+                meta_key_project_sample,
+                MetaKeyAndValue.META_VALUE_Queue,
+            )
+            if not meta_sample is None:
+                manageDatabase.set_project_sample_metakey(
+                    project_sample,
+                    user,
+                    meta_key_project_sample,
+                    MetaKeyAndValue.META_VALUE_Success,
+                    meta_sample.description,
+                )
+        except Exception as e:
+            ## finished with error
+            process_SGE.set_process_controler(
+                user,
+                process_controler.get_name_project_sample(project_sample),
+                ProcessControler.FLAG_ERROR,
+            )
+            return False
+
+        ### finished
+        process_SGE.set_process_controler(
+            user,
+            process_controler.get_name_project_sample(project_sample),
+            ProcessControler.FLAG_FINISHED,
+        )
+        return True
+
     #     @transaction.atomic
     def __process_second_stage_snippy_coverage_freebayes(
-        self, project_sample: ProjectSample, user
+        self, project_sample: ProjectSample, user, software
     ):
         """
         Global processing, snippy, coverage,
@@ -4137,13 +4359,15 @@ class Software(object):
                     mdcg_parameters,
                 )
 
-                result_all.add_software(
-                    SoftwareDesc(
-                        software.name,
-                        software.version,
-                        mdcg_parameters,
-                    )
+                software_description = SoftwareDesc(
+                    software.name,
+                    software.version,
+                    mdcg_parameters,
                 )
+
+                metakey = MetaKeyAndValue.META_KEY_Snippy
+
+                result_all.add_software(software_description)
             except Exception as e:
 
                 import traceback
@@ -4168,7 +4392,6 @@ class Software(object):
 
                 return False
             ## copy the files to the project sample directories
-            print("Start Copy Files")
             try:
                 self.copy_files_to_project(project_sample, software.name, out_put_path)
 
@@ -4211,11 +4434,8 @@ class Software(object):
                 traceback.print_exc()
 
             ## get coverage from depth file
-            print("Start Coverage")
             try:
                 ### limit of the coverage for a project, can be None, if not exist
-
-                ################################
                 ##################################
                 ### set the alerts in the coverage
                 ### remove possible previous alerts from others run
@@ -4224,12 +4444,9 @@ class Software(object):
                         project_sample, keys_to_remove
                     )
 
-                sample_coverage = ProjectSampleCoverage(
+                sample_coverage = ProjectSampleDepthCoverage(
                     project_sample,
                     software,
-                    # os.path.join(
-                    #    out_put_path, project_sample.sample.name + ".consensus.fa"
-                    # ),
                     project_sample.reference_fasta,
                 )
                 sample_coverage.parse_sample_results()
@@ -4383,7 +4600,7 @@ class Software(object):
                         project_sample, user, count_hits
                     )
 
-                except:
+                except Exception as e:
 
                     result = Result()
                     result.set_error("Fail to calculate mixed infextion")
@@ -4396,6 +4613,39 @@ class Software(object):
                     )
 
                     return False
+
+                from utils.collect_extra_data import CollectExtraData
+
+                collect_extra_data = CollectExtraData()
+
+                ### get a clean freebayes file
+                tab_freebayes_file = project_sample.get_file_output(
+                    TypePath.MEDIA_ROOT,
+                    FileType.FILE_TAB,
+                    SoftwareNames.SOFTWARE_FREEBAYES_name,
+                )
+                if os.path.exists(tab_freebayes_file):
+                    file_out = project_sample.get_file_output_human(
+                        TypePath.MEDIA_ROOT,
+                        FileType.FILE_TAB,
+                        SoftwareNames.SOFTWARE_FREEBAYES_name,
+                    )
+                    vect_type_remove = ["ins", "del"]
+                    collect_extra_data.collect_variations_freebayes_only_one_file(
+                        tab_freebayes_file, file_out, vect_type_remove
+                    )
+                    vect_type_remove = []
+                    b_second_choice = True
+                    file_out = project_sample.get_file_output_human(
+                        TypePath.MEDIA_ROOT,
+                        FileType.FILE_TAB,
+                        SoftwareNames.SOFTWARE_FREEBAYES_name,
+                        b_second_choice,
+                    )
+                    collect_extra_data.collect_variations_freebayes_only_one_file(
+                        tab_freebayes_file, file_out, vect_type_remove
+                    )
+
             else:
                 ### set count hits to zero
                 mixed_infections_management = MixedInfectionsManagement()
@@ -4456,38 +4706,6 @@ class Software(object):
             project = project_sample.project
             project.last_change_date = datetime.datetime.now()
             project.save()
-
-            from utils.collect_extra_data import CollectExtraData
-
-            collect_extra_data = CollectExtraData()
-
-            ### get a clean freebayes file
-            tab_freebayes_file = project_sample.get_file_output(
-                TypePath.MEDIA_ROOT,
-                FileType.FILE_TAB,
-                SoftwareNames.SOFTWARE_FREEBAYES_name,
-            )
-            if os.path.exists(tab_freebayes_file):
-                file_out = project_sample.get_file_output_human(
-                    TypePath.MEDIA_ROOT,
-                    FileType.FILE_TAB,
-                    SoftwareNames.SOFTWARE_FREEBAYES_name,
-                )
-                vect_type_remove = ["ins", "del"]
-                collect_extra_data.collect_variations_freebayes_only_one_file(
-                    tab_freebayes_file, file_out, vect_type_remove
-                )
-                vect_type_remove = []
-                b_second_choice = True
-                file_out = project_sample.get_file_output_human(
-                    TypePath.MEDIA_ROOT,
-                    FileType.FILE_TAB,
-                    SoftwareNames.SOFTWARE_FREEBAYES_name,
-                    b_second_choice,
-                )
-                collect_extra_data.collect_variations_freebayes_only_one_file(
-                    tab_freebayes_file, file_out, vect_type_remove
-                )
 
             ### get clean consensus file
             consensus_fasta = project_sample.get_file_output(

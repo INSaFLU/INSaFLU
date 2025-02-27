@@ -9,10 +9,8 @@ from django.conf import settings
 from django.contrib.auth.models import User
 
 # Create your models here.
-from django.contrib.gis.db.models import (
-    GeoManager,  # #  change to django  2.x
-    PointField,
-)
+from django.contrib.gis.db.models import GeoManager  # #  change to django  2.x
+from django.contrib.gis.db.models import PointField
 from django.db import models
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
@@ -21,7 +19,6 @@ from constants.constants import Constants, FileExtensions, FileType, TypePath
 from constants.constants_mixed_infection import ConstantsMixedInfection
 from constants.software_names import SoftwareNames
 from fluwebvirus.formatChecker import ContentTypeRestrictedFileField
-from manage_virus.constants_virus import ConstantsVirus
 from manage_virus.models import IdentifyVirus
 from settings.constants_settings import ConstantsSettings
 
@@ -1940,6 +1937,11 @@ class ProcessControler(models.Model):
     def get_name_televir_map(self, reference_pk):
         return "{}{}".format(
             ProcessControler.PREFIX_TELEVIR_REFERENCE_MAP, reference_pk
+        )
+
+    def __str__(self):
+        return "PK:{} name:{}  is_finished:{}  is_running:{}  is_error:{}".format(
+            self.pk, self.name, self.is_finished, self.is_running, self.is_error
         )
 
     def __str__(self):

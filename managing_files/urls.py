@@ -61,6 +61,11 @@ urlpatterns = [
         name="project-settings",
     ),
     url(
+        r"project/(?P<pk>\d+)/show_project_settings_setup$",
+        views.ProjectsSettingsSetupView.as_view(),
+        name="project-settings-setup",
+    ),
+    url(
         r"project_samples/(?P<pk>\d+)/(?P<tf>\d+)/add_sample_project$",
         views.AddSamplesProjectsView.as_view(),
         name="add-sample-project",

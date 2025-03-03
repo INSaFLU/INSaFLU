@@ -142,7 +142,12 @@ class ProjectSampleDepthCoverage(object):
         project_sample.alert_second_level = 0
         project_sample.alert_first_level = 0
 
+        print("self.b_coverage_default")
+        print(self.b_coverage_default)
+
         for element in self.get_dict_data():
+            print(self.is_100_more_9(element))
+            print(self.is_100_more_defined_by_user(element))
             if not self.is_100_more_9(element) and self.b_coverage_default:
                 project_sample.alert_second_level += 1
                 meta_key = metaKeyAndValue.get_meta_key(
@@ -489,18 +494,7 @@ class Software(object):
         """
         get type of files to copy
         """
-        if software == SoftwareNames.SOFTWARE_IRMA_name:
-            return [
-                FileType.FILE_CONSENSUS_FA,
-                FileType.FILE_DEPTH_GZ,
-                FileType.FILE_DEPTH_GZ_TBI,
-                FileType.FILE_TAB,
-                FileType.FILE_VCF_GZ,
-                FileType.FILE_VCF,
-                FileType.FILE_VCF_GZ_TBI,
-                FileType.FILE_CSV,
-                FileType.FILE_REF_FASTA,
-            ]
+
         if software == SoftwareNames.SOFTWARE_SNIPPY_name:
             return [
                 FileType.FILE_BAM,

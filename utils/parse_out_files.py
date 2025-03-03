@@ -343,8 +343,6 @@ class ParseOutFiles(object):
 
         if b_add_header:
             csv_writer.writerow(self.HEADER_TAB_FILE_WRITE_snippy_expanded.split("\t"))
-        print("parse_tab_files_snippy")
-        print(file_to_parse)
         with open(file_to_parse) as handle_to_process:
             b_header = False
             b_header_old_1 = False

@@ -58,7 +58,6 @@ from pathogen_identification.utilities.utilities_views import (
     set_control_reports,
 )
 from pathogen_identification.views import inject__added_references
-from settings.constants_settings import ConstantsSettings
 from settings.constants_settings import ConstantsSettings as CS
 from settings.default_software_project_sample import DefaultProjectSoftware
 from utils.process_SGE import ProcessSGE

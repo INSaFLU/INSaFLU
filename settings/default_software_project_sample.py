@@ -428,7 +428,6 @@ class DefaultProjectSoftware(object):
     ) -> List[Parameter]:
 
         if software_name in SoftwareNames.SOFTWARE_MDCG_list:
-            print("software_name", software_name)
 
             if name_extended == SoftwareNames.SOFTWARE_IVAR_name_extended:
                 vect_parameters = self.default_parameters.get_ivar_default(
@@ -668,12 +667,21 @@ class DefaultProjectSoftware(object):
         self, user, project_sample, is_to_run=True
     ):
         """
-        get snippy parameters for project_sample, project and default
+        get mdf parameters for project_sample, project and default
         """
 
         ### Test project_sample first
+        default_project_software = DefaultProjectSoftware()
+        software_mdcg = default_project_software.default_parameters.get_software_mdcg(
+            project_sample.project.owner,
+            project_sample.get_type_technology(),
+            project=None,
+            project_sample=project_sample,
+        )
+
+        ### Test project_sample first
         parameters = self.default_parameters.get_parameters(
-            SoftwareNames.SOFTWARE_SNIPPY_name,
+            software_mdcg.name,
             user,
             Software.TYPE_OF_USE_project_sample,
             None,
@@ -689,7 +697,7 @@ class DefaultProjectSoftware(object):
 
         ### Test project
         parameters = self.default_parameters.get_parameters(
-            SoftwareNames.SOFTWARE_SNIPPY_name,
+            software_mdcg.name,
             user,
             Software.TYPE_OF_USE_project,
             project_sample.project,
@@ -769,8 +777,11 @@ class DefaultProjectSoftware(object):
         value_default_parameter = self.get_snippy_single_parameter_default(
             parameter_name
         )
+        print(value_default_parameter)
         if value_default_parameter is None:
             return False
+
+        print(self.get_snippy_single_parameter(project_sample, parameter_name))
 
         parameter_defined = self.get_snippy_single_parameter(
             project_sample, parameter_name
@@ -791,7 +802,7 @@ class DefaultProjectSoftware(object):
         parameters_string = self.get_mdcg_parameters_all_possibilities(
             project_sample.project.owner, project_sample, is_to_run=True
         )
-        print(parameters_string)
+
         if parameters_string is None:
             return None
         lst_data = parameters_string.split(parameter_name)
@@ -2628,9 +2639,6 @@ class DefaultProjectSoftware(object):
 
         if is_to_run == True:
             software = software.filter(is_to_run=True)
-
-        print("software", [software.name_extended for software in software])
-        print(type(project))
 
         if software.exists() is False:
             return vect_parameters

@@ -402,8 +402,6 @@ class DefaultParameters(object):
         software_name_extended=None,
         is_to_run=False,
     ):
-        print("HI", software_name_extended, software_name)
-        print(self.check_software_with_duplicates(software_name))
 
         if self.check_software_is_polyvalent(
             software_name
@@ -489,9 +487,6 @@ class DefaultParameters(object):
                 project=project,
                 project_sample=project_sample,
             )
-
-        print(software_name_extended)
-        print(software)
 
         if software is None:
             return software

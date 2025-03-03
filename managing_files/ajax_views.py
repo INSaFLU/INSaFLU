@@ -967,21 +967,32 @@ def show_igv(request):
                 project_sample = ProjectSample.objects.get(
                     id=request.GET.get(key_with_project_sample_id)
                 )
+                default_project_software = DefaultProjectSoftware()
+
+                software_mdcg = (
+                    default_project_software.default_parameters.get_software_mdcg(
+                        project_sample.project.owner,
+                        ConstantsSettings.TECHNOLOGY_illumina,
+                        project=None,
+                        project_sample=project_sample,
+                    )
+                )
+
                 if project_sample.is_sample_illumina():
                     path_name_bam = project_sample.get_file_output(
                         TypePath.MEDIA_URL,
                         FileType.FILE_BAM,
-                        SoftwareNames.SOFTWARE_SNIPPY_name,
+                        software_mdcg.name,
                     )
                     path_name_bai = project_sample.get_file_output(
                         TypePath.MEDIA_URL,
                         FileType.FILE_BAM_BAI,
-                        SoftwareNames.SOFTWARE_SNIPPY_name,
+                        software_mdcg.name,
                     )
                     path_name_vcf = project_sample.get_file_output(
                         TypePath.MEDIA_URL,
                         FileType.FILE_VCF,
-                        SoftwareNames.SOFTWARE_SNIPPY_name,
+                        software_mdcg.name,
                     )
                 else:
                     path_name_bam = project_sample.get_file_output(

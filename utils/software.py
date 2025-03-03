@@ -510,6 +510,34 @@ class Software(object):
                 FileType.FILE_CSV,
                 FileType.FILE_REF_FASTA,
             ]
+        elif software == SoftwareNames.SOFTWARE_IVAR_name:
+            return [
+                FileType.FILE_BAM,
+                FileType.FILE_BAM_BAI,
+                FileType.FILE_CONSENSUS_FA,
+                FileType.FILE_DEPTH_GZ,
+                FileType.FILE_DEPTH_GZ_TBI,
+                FileType.FILE_TAB,
+                FileType.FILE_VCF_GZ,
+                FileType.FILE_VCF,
+                FileType.FILE_VCF_GZ_TBI,
+                FileType.FILE_CSV,
+                FileType.FILE_REF_FASTA,
+            ]
+        elif software == SoftwareNames.SOFTWARE_IRMA_name:
+            return [
+                # FileType.FILE_BAM,
+                # FileType.FILE_BAM_BAI,
+                FileType.FILE_CONSENSUS_FA,
+                FileType.FILE_DEPTH_GZ,
+                FileType.FILE_DEPTH_GZ_TBI,
+                FileType.FILE_TAB,
+                FileType.FILE_VCF_GZ,
+                FileType.FILE_VCF,
+                FileType.FILE_VCF_GZ_TBI,
+                FileType.FILE_CSV,
+                FileType.FILE_REF_FASTA,
+            ]
         elif software == SoftwareNames.SOFTWARE_FREEBAYES_name:
             return [FileType.FILE_VCF, FileType.FILE_TAB]
         elif software == SoftwareNames.SOFTWARE_Medaka_name:
@@ -4106,7 +4134,6 @@ class Software(object):
         ### get software
         software = default_project_software.default_parameters.get_software_mdcg(
             user,
-            SoftwareNames.SOFTWARE_SNIPPY_name,
             ConstantsSettings.TECHNOLOGY_illumina,
             project=None,
             project_sample=project_sample,
@@ -4407,7 +4434,6 @@ class Software(object):
         ### get software
         software = default_project_software.default_parameters.get_software_mdcg(
             user,
-            SoftwareNames.SOFTWARE_SNIPPY_name,
             ConstantsSettings.TECHNOLOGY_illumina,
             project=None,
             project_sample=project_sample,
@@ -4794,7 +4820,7 @@ class Software(object):
             consensus_fasta = project_sample.get_file_output(
                 TypePath.MEDIA_ROOT,
                 FileType.FILE_CONSENSUS_FASTA,
-                SoftwareNames.SOFTWARE_SNIPPY_name,
+                software_name,
             )
             if os.path.exists(consensus_fasta):
                 file_out = project_sample.get_consensus_file(TypePath.MEDIA_ROOT)

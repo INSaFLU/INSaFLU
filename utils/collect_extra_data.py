@@ -1407,6 +1407,15 @@ class CollectExtraData(object):
         parse_out_files = ParseOutFiles()
         n_count = 0
         vect_type_out = []
+
+        default_project_software = DefaultProjectSoftware()
+        software = default_project_software.default_parameters.get_software_mdcg(
+            project.owner,
+            ConstantsSettings.TECHNOLOGY_illumina,
+            project=project,
+            project_sample=None,
+        )
+
         with open(out_file, "w", newline="") as handle_out:
             csv_writer = csv.writer(
                 handle_out,
@@ -1423,7 +1432,7 @@ class CollectExtraData(object):
                     tab_file_to_process = project_sample.get_file_output(
                         TypePath.MEDIA_ROOT,
                         FileType.FILE_TAB,
-                        SoftwareNames.SOFTWARE_SNIPPY_name,
+                        software.name,
                     )
                 elif project_sample.is_sample_ont():
                     tab_file_to_process = project_sample.get_file_output(
@@ -2222,7 +2231,7 @@ class CollectExtraData(object):
             return None
         return out_file
 
-    def _get_mapped_stats_info(self, project_sample):
+    def _get_mapped_stats_info(self, project_sample: ProjectSample):
         """return mapped stats about this project_sample"""
 
         manage_database = ManageDatabase()
@@ -2232,6 +2241,14 @@ class CollectExtraData(object):
             MetaKeyAndValue.META_VALUE_Success,
         )
 
+        default_project_software = DefaultProjectSoftware()
+        software_mdcg = default_project_software.default_parameters.get_software_mdcg(
+            project_sample.sample.owner,
+            project_sample.get_type_technology(),
+            project=project_sample.project,
+            project_sample=project_sample,
+        )
+
         ## it is not available yet
         if meta_value is None:
             ### get mapped stast reads
@@ -2239,7 +2256,7 @@ class CollectExtraData(object):
                 bam_file = project_sample.get_file_output(
                     TypePath.MEDIA_ROOT,
                     FileType.FILE_BAM,
-                    SoftwareNames.SOFTWARE_SNIPPY_name,
+                    software_mdcg.name,
                 )
             else:
                 bam_file = project_sample.get_file_output(

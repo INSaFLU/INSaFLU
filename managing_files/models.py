@@ -1280,7 +1280,7 @@ class ProjectSample(models.Model):
     PATH_MAIN_RESULT = "main_result"
     PREFIX_FILE_COVERAGE = "coverage"
     FILE_CONSENSUS_FILE = "Consensus_"
-    FILE_SNIPPY_TAB = "validated_variants_sample_"
+    FILE_VARIANTS_TAB = "validated_variants_sample_"
     FILE_FREEBAYES_TAB = "validated_minor_iSNVs_sample_"
     FILE_FREEBAYES_TAB_with_indels = "validated_minor_inc_indels_sample_"
 
@@ -1413,11 +1413,11 @@ class ProjectSample(models.Model):
         get human file name
         """
         if (
-            software == SoftwareNames.SOFTWARE_SNIPPY_name
+            software in SoftwareNames.SOFTWARE_MDCG_list
             or software == SoftwareNames.SOFTWARE_Medaka_name
         ):
             if file_type == FileType.FILE_TAB:
-                return "{}{}".format(ProjectSample.FILE_SNIPPY_TAB, self.sample.name)
+                return "{}{}".format(ProjectSample.FILE_VARIANTS_TAB, self.sample.name)
         if software == SoftwareNames.SOFTWARE_FREEBAYES_name and not b_second_choice:
             if file_type == FileType.FILE_TAB:
                 return "{}{}".format(ProjectSample.FILE_FREEBAYES_TAB, self.sample.name)

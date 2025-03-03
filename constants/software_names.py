@@ -1055,6 +1055,11 @@ class SoftwareNames(object):
     }
     ###
     ###################################
+    SOFTWARE_MDCG_list = [
+        SOFTWARE_SNIPPY_name,
+        SOFTWARE_IVAR_name,
+        SOFTWARE_IRMA_name,
+    ]
 
     ### software with duplicates in project and sample
     duplicate_softwares = [

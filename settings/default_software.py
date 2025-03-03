@@ -202,7 +202,7 @@ class DefaultSoftware(object):
             SoftwareNames.SOFTWARE_SNIPPY_name_extended,
         )
         self.test_default_db(
-            SoftwareNames.SOFTWARE_SNIPPY_name,
+            SoftwareNames.SOFTWARE_IVAR_name,
             self.default_parameters.get_ivar_default(
                 user, Software.TYPE_OF_USE_global, ConstantsSettings.TECHNOLOGY_illumina
             ),
@@ -211,7 +211,7 @@ class DefaultSoftware(object):
         )
 
         self.test_default_db(
-            SoftwareNames.SOFTWARE_SNIPPY_name,
+            SoftwareNames.SOFTWARE_IRMA_name,
             self.default_parameters.get_irma_default(
                 user,
                 Software.TYPE_OF_USE_global,
@@ -1027,7 +1027,7 @@ class DefaultSoftware(object):
 
     def get_ivar_parameters(self, user):
         result = self.default_parameters.get_parameters(
-            SoftwareNames.SOFTWARE_SNIPPY_name,
+            SoftwareNames.SOFTWARE_IVAR_name,
             user,
             Software.TYPE_OF_USE_global,
             None,
@@ -1040,7 +1040,7 @@ class DefaultSoftware(object):
 
     def get_irma_parameters(self, user):
         result = self.default_parameters.get_parameters(
-            SoftwareNames.SOFTWARE_SNIPPY_name,
+            SoftwareNames.SOFTWARE_IRMA_name,
             user,
             Software.TYPE_OF_USE_global,
             None,
@@ -1049,8 +1049,7 @@ class DefaultSoftware(object):
             ConstantsSettings.TECHNOLOGY_illumina,
             software_name_extended=SoftwareNames.SOFTWARE_IRMA_name_extended,
         )
-        print("## PARAMETERES IRMA")
-        print(result)
+
         return "" if result is None else result
 
     def get_freebayes_parameters(self, user):
@@ -1553,7 +1552,7 @@ class DefaultSoftware(object):
         if software_name == SoftwareNames.SOFTWARE_SNIPPY_name:
             if name_extended == SoftwareNames.SOFTWARE_IVAR_name_extended:
                 self.test_default_db(
-                    SoftwareNames.SOFTWARE_SNIPPY_name,
+                    SoftwareNames.SOFTWARE_IVAR_name,
                     self.default_parameters.get_ivar_default(
                         user,
                         Software.TYPE_OF_USE_global,
@@ -1566,9 +1565,8 @@ class DefaultSoftware(object):
                 return self.get_ivar_parameters(user)
 
             elif name_extended == SoftwareNames.SOFTWARE_IRMA_name_extended:
-                print("H###")
                 self.test_default_db(
-                    SoftwareNames.SOFTWARE_SNIPPY_name,
+                    SoftwareNames.SOFTWARE_IRMA_name,
                     self.default_parameters.get_irma_default(
                         user,
                         Software.TYPE_OF_USE_global,

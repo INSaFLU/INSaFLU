@@ -285,7 +285,6 @@ class DefaultParameters(object):
     def get_software_mdcg(
         self,
         user,
-        software_name,
         technology_name,
         project=None,
         project_sample=None,
@@ -295,32 +294,29 @@ class DefaultParameters(object):
         Get software global
         """
         software_list = Software.objects.filter(
-            name=software_name,
             owner=user,
             technology__name=technology_name,
-            version_parameters=self.get_software_parameters_version(software_name),
             parameter__project=project,
             parameter__project_sample=project_sample,
+            pipeline_step__name=ConstantsSettings.PIPELINE_NAME_variant_detection,
             is_to_run=True,
         ).distinct()
 
         if len(software_list) == 0:
             software_list = Software.objects.filter(
-                name=software_name,
                 owner=user,
                 technology__name=technology_name,
-                version_parameters=self.get_software_parameters_version(software_name),
                 parameter__project=project,
+                pipeline_step__name=ConstantsSettings.PIPELINE_NAME_variant_detection,
                 is_to_run=True,
             ).distinct()
 
         if len(software_list) == 0:
             software_list = Software.objects.filter(
-                name=software_name,
                 owner=user,
                 technology__name=technology_name,
-                version_parameters=self.get_software_parameters_version(software_name),
                 parameter__project_sample=project_sample,
+                pipeline_step__name=ConstantsSettings.PIPELINE_NAME_variant_detection,
                 is_to_run=True,
             ).distinct()
 
@@ -1466,7 +1462,7 @@ class DefaultParameters(object):
             pipeline_step = ConstantsSettings.PIPELINE_NAME_variant_detection
 
         software = Software()
-        software.name = SoftwareNames.SOFTWARE_SNIPPY_name
+        software.name = SoftwareNames.SOFTWARE_IVAR_name
         software.name_extended = SoftwareNames.SOFTWARE_IVAR_name_extended
         software.version = SoftwareNames.SOFTWARE_IVAR_VERSION
         software.type_of_use = type_of_use
@@ -1580,7 +1576,7 @@ class DefaultParameters(object):
         primer: Fasta of amplicon scheme primers for filtering ("")
         """
         software = Software()
-        software.name = SoftwareNames.SOFTWARE_SNIPPY_name
+        software.name = SoftwareNames.SOFTWARE_IRMA_name
         software.name_extended = SoftwareNames.SOFTWARE_IRMA_name_extended
         software.version = SoftwareNames.SOFTWARE_IRMA_VERSION
         software.type_of_use = type_of_use

@@ -3256,6 +3256,12 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
             context["consensus_file"] = project_sample.get_consensus_file_web(
                 not default_software.include_consensus(project_sample)
             )
+            software_mdcg = default_software.default_parameters.get_software_mdcg(
+                project_sample.project.owner,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                project=None,
+                project_sample=project_sample,
+            )
             software_used = (
                 []
             )  ### has a list with all software used... [name, parameters]
@@ -3263,7 +3269,7 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
             decode_result = DecodeObjects()
             if project_sample.is_sample_illumina():
                 context["snippy_variants_file"] = project_sample.get_file_web(
-                    FileType.FILE_TAB, SoftwareNames.SOFTWARE_SNIPPY_name
+                    FileType.FILE_TAB, software_mdcg.name
                 )
                 context["freebayes_variants_file"] = project_sample.get_file_web(
                     FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name
@@ -3277,14 +3283,14 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
                     )
                 )
                 context["depth_file"] = project_sample.get_file_web(
-                    FileType.FILE_DEPTH_GZ, SoftwareNames.SOFTWARE_SNIPPY_name
+                    FileType.FILE_DEPTH_GZ, software_mdcg.name
                 )
                 context["depth_tbi_file"] = project_sample.get_file_web(
-                    FileType.FILE_DEPTH_GZ_TBI, SoftwareNames.SOFTWARE_SNIPPY_name
+                    FileType.FILE_DEPTH_GZ_TBI, software_mdcg.name
                 )
 
                 #### software versions...
-                software_used.append([SoftwareNames.SOFTWARE_SNIPPY_name, "Fail"])
+                software_used.append([software_mdcg.name, "Fail"])
                 software_used.append([SoftwareNames.SOFTWARE_FREEBAYES_name, "Fail"])
                 list_meta = manageDatabase.get_project_sample_metakey(
                     project_sample, MetaKeyAndValue.META_KEY_Snippy_Freebayes, None
@@ -3296,9 +3302,7 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
                 ):
                     result = decode_result.decode_result(list_meta[0].description)
                     if not result is None:
-                        software_used[0][1] = result.get_software(
-                            SoftwareNames.SOFTWARE_SNIPPY_name
-                        )
+                        software_used[0][1] = result.get_software(software_mdcg.name)
                         software_used[1][1] = result.get_software(
                             SoftwareNames.SOFTWARE_FREEBAYES_name
                         )

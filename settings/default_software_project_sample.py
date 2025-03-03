@@ -48,7 +48,7 @@ class DefaultProjectSoftware(object):
             )
 
             self.test_default_db(
-                SoftwareNames.SOFTWARE_SNIPPY_name,
+                SoftwareNames.SOFTWARE_IRMA_name,
                 user,
                 Software.TYPE_OF_USE_project,
                 project,
@@ -60,7 +60,7 @@ class DefaultProjectSoftware(object):
             )
 
             self.test_default_db(
-                SoftwareNames.SOFTWARE_SNIPPY_name,
+                SoftwareNames.SOFTWARE_IVAR_name,
                 user,
                 Software.TYPE_OF_USE_project,
                 project,
@@ -206,7 +206,7 @@ class DefaultProjectSoftware(object):
                     create=True,
                 )
                 self.test_default_db(
-                    SoftwareNames.SOFTWARE_SNIPPY_name,
+                    SoftwareNames.SOFTWARE_IRMA_name,
                     user,
                     Software.TYPE_OF_USE_project_sample,
                     None,
@@ -217,7 +217,7 @@ class DefaultProjectSoftware(object):
                     create=True,
                 )
                 self.test_default_db(
-                    SoftwareNames.SOFTWARE_SNIPPY_name,
+                    SoftwareNames.SOFTWARE_IVAR_name,
                     user,
                     Software.TYPE_OF_USE_project_sample,
                     None,
@@ -447,7 +447,7 @@ class DefaultProjectSoftware(object):
             if not project is None:
                 vect_parameters = self._get_default_project(
                     user,
-                    SoftwareNames.SOFTWARE_SNIPPY_name,
+                    software_name,
                     None,
                     vect_parameters,
                     technology_name,
@@ -456,7 +456,7 @@ class DefaultProjectSoftware(object):
             if not project_sample is None:
                 vect_parameters = self._get_default_project(
                     user,
-                    SoftwareNames.SOFTWARE_SNIPPY_name,
+                    software_name,
                     project_sample.project,
                     vect_parameters,
                     technology_name,
@@ -714,10 +714,21 @@ class DefaultProjectSoftware(object):
         """
         get snippy parameters only for project or default
         """
+        ### Test project
+        software = (
+            Software.objects.filter(
+                owner=user,
+                parameter__project=project,
+                pipeline_step__name=ConstantsSettings.PIPELINE_NAME_variant_detection,
+                is_to_run=True,
+            )
+            .distinct()
+            .first()
+        )
 
         ### Test project
         parameters = self.default_parameters.get_parameters(
-            SoftwareNames.SOFTWARE_SNIPPY_name,
+            software.name,
             user,
             Software.TYPE_OF_USE_project,
             project,

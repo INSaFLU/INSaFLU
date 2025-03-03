@@ -1624,6 +1624,22 @@ class DefaultParameters(object):
         parameter.description = "Organism specific assembly configuration"
         vect_parameters.append(parameter)
 
+        parameter = Parameter()
+        parameter.name = DefaultParameters.SNIPPY_COVERAGE_NAME
+        parameter.parameter = "1"
+        parameter.type_data = Parameter.PARAMETER_int
+        parameter.software = software
+        parameter.project = project
+        parameter.project_sample = project_sample
+        parameter.union_char = " "
+        parameter.can_change = False
+        parameter.sequence_out = 2
+        parameter.range_available = "[1:1]"
+        parameter.range_max = "1"
+        parameter.range_min = "1"
+        parameter.description = "MINCOV: the minimum number of reads covering a site to be considered (–mincov 10)."
+        vect_parameters.append(parameter)
+
         return vect_parameters
 
     def get_freebayes_default(

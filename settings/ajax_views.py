@@ -1025,6 +1025,8 @@ def turn_on_off_software(request):
                     sample,
                     is_to_run=not current_is_to_run,
                 )
+                active_filters = None
+                additional_filter = None
                 if (
                     software.pipeline_step.name
                     == ConstantsSettings.PIPELINE_NAME_variant_detection
@@ -1058,6 +1060,34 @@ def turn_on_off_software(request):
                         )
 
                         data["other_kills"] += [filter.pk]
+
+                    if (
+                        software.name_extended
+                        == SoftwareNames.SOFTWARE_IRMA_name_extended
+                    ):
+                        additional_filter = Software.objects.filter(
+                            owner=software.owner,
+                            type_of_use=software.type_of_use,
+                            parameter__project_sample=project_sample,
+                            parameter__project=project,
+                            parameter__televir_project=televir_project,
+                            parameter__televir_project_sample=televir_project_sample,
+                            pipeline_step__name=ConstantsSettings.PIPELINE_NAME_intra_host_minor_variant_detection,
+                            technology=software.technology,
+                            is_to_run=True,
+                        ).distinct()
+
+                        for filter in additional_filter:
+                            output = default_parameters.set_software_to_run_by_software(
+                                filter,
+                                project,
+                                televir_project,
+                                project_sample,
+                                sample,
+                                is_to_run=False,
+                            )
+
+                            data["other_kills"] += [filter.pk]
 
                 if (
                     software.pipeline_step.name
@@ -1139,6 +1169,20 @@ def turn_on_off_software(request):
                     software.technology.name,
                     "ON" if is_to_run else "OFF",
                 )
+                if active_filters is not None:
+                    for sof in active_filters:
+                        data[
+                            "message"
+                        ] += " The '{}' in '{}' technology was turned 'OFF'.".format(
+                            sof.name_extended, sof.technology.name
+                        )
+                if additional_filter is not None:
+                    for sof in additional_filter:
+                        data[
+                            "message"
+                        ] += " The '{}' in '{}' technology was turned 'OFF'.".format(
+                            sof.name_extended, sof.technology.name
+                        )
 
             except Software.DoesNotExist:
                 return JsonResponse(data)

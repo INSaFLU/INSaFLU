@@ -88,11 +88,12 @@ class ProjectSampleDepthCoverage(object):
             is False
         ):
             self.b_coverage_default = False
-            self.default_coverage_value = (
+            self.default_coverage_value = int(
                 default_project_software.get_snippy_single_parameter(
                     project_sample, DefaultParameters.SNIPPY_COVERAGE_NAME
                 )
             )
+
         self.coverage = get_coverage.get_coverage(
             project_sample.get_file_output(
                 TypePath.MEDIA_ROOT,
@@ -766,7 +767,7 @@ class Software(object):
             FileType.FILE_REF_FASTA,
             self.software_names.get_snippy_name(),
         )
-        #         print("Copy {} to {}".format(temp_file, path_dest))
+
         self.utils.copy_file(temp_file, path_dest)
         self.create_fai_fasta(path_dest)
         if os.path.exists(temp_file):
@@ -2244,18 +2245,16 @@ class Software(object):
                 with open(file, "r") as g:
                     f.write(g.read())
 
-        _ = self.generate_depth_file(
-            os.path.join(irma_output_dir, "R1.fastq"),
-            os.path.join(irma_output_dir, "R2.fastq"),
-            os.path.join(refdir, "ref.fa"),
-            # full_consensus_irma,
-            irma_output_dir,
-            sample_name,
-        )
+        # _ = self.generate_depth_file(
+        #    os.path.join(irma_output_dir, "R1.fastq"),
+        #    os.path.join(irma_output_dir, "R2.fastq"),
+        #    os.path.join(refdir, "ref.fa"),
+        #    # full_consensus_irma,
+        #    irma_output_dir,
+        #    sample_name,
+        # )
 
-    def vcfalign_from_combined_fasta(
-        self, irma_output_dir, segname, combined_vcf, output_vcf
-    ):
+    def align_combined_fasta(self, irma_output_dir, segname, combined_vcf, output_vcf):
         """
         Create a vcf file from a combined fasta file
         gereate multiple sequence alignment and vcf file
@@ -2269,13 +2268,18 @@ class Software(object):
             "--auto",
         )
 
+    def vcfalign_from_msa(self, msa_file, vcf_filename, output_dir):
+        """
+        Create a vcf file from a msa file
+        """
+
         ## make vcf
         from utils.vcfalgn import VcfAlgn
 
         vcf_algn = VcfAlgn(
-            msa_output, segname, odir=irma_output_dir, output=segname + ".vcf"
+            msa_file, vcf_filename, odir=output_dir, output=vcf_filename + ".vcf"
         )
-        output_vcf = os.path.join(irma_output_dir, segname + ".vcf")
+        output_vcf = os.path.join(output_dir, vcf_filename + ".vcf")
 
         vcf_algn.read_input()
         vcf_algn.read_ref()
@@ -2292,7 +2296,9 @@ class Software(object):
         cmd = "{} index {}.gz".format(self.software_names.get_bcftools(), output_vcf)
         os.system(cmd)
 
-    def irma_align_get_vcfs(self, reference_fasta, irma_output_dir, sample_name):
+    def irma_align_get_msas(
+        self, reference_fasta, irma_output_dir, sample_name
+    ) -> dict:
         """
         fetch consenssu from irma output. Match each to reference segments.
         Align each segment to reference and generate vcf files.
@@ -2314,27 +2320,33 @@ class Software(object):
         with open(reference_fasta, "r") as ref:
             ref_seqs = SeqIO.to_dict(SeqIO.parse(ref, "fasta"))
 
+        msa_output = {}
+
         for segname, fasta in matched_segments.items():
             fasta_seq = fasta
             fasta_seq.id = sample_name
 
-            # tmp_ref = os.path.join(irma_output_dir, segname + "_ref.fasta")
-            # with open(tmp_ref, "w") as ref:
-            #    SeqIO.write(ref_seqs[segname], ref, "fasta")
+            tmp_ref = os.path.join(irma_output_dir, segname + ".fasta")
+            with open(tmp_ref, "w") as ref:
+                SeqIO.write(ref_seqs[segname], ref, "fasta")
 
             tmp_comb = os.path.join(irma_output_dir, segname + "_comb.fasta")
             with open(tmp_comb, "w") as ref:
                 SeqIO.write(ref_seqs[segname], ref, "fasta")
                 SeqIO.write(fasta, ref, "fasta")
 
-            self.vcfalign_from_combined_fasta(
+            self.align_combined_fasta(
                 irma_output_dir,
                 segname,
                 tmp_comb,
                 os.path.join(irma_output_dir, segname + ".vcf"),
             )
 
-        return irma_output_dir
+            msa_output[segname] = os.path.join(
+                irma_output_dir, segname + "_aligned.msa"
+            )
+
+        return msa_output
 
     def generate_depth_file(
         self,
@@ -2410,16 +2422,44 @@ class Software(object):
 
         return depth_file
 
-    def irma_generate_full_vcf(
-        self, irma_output_dir, sample_name, path_reference_fasta
+    def generate_depth_from_msa(
+        self, msa_file, reference_fasta, output_dir, sample_name
     ):
+        """
+        Generate depth file from msa file, format:
+        >sample_name    position    depth
+        """
+
+        ## get reference sequence
+        with open(reference_fasta, "r") as ref:
+            ref_seq = SeqIO.read(ref, "fasta")
+
+        ## get msa
+        with open(msa_file, "r") as msa:
+            msa_seqs = SeqIO.to_dict(SeqIO.parse(msa, "fasta"))
+
+        ## get depth
+        depth_file = os.path.join(output_dir, sample_name + ".depth")
+        with open(depth_file, "w") as depth:
+            for i, _ in enumerate(ref_seq):
+                depth.write(
+                    "{}\t{}\t{}\n".format(
+                        sample_name,
+                        i + 1,
+                        sum([1 for seq in msa_seqs.values() if seq[i] != "-"])
+                        - 1,  # take into account the reference
+                    )
+                )
+
+        return depth_file
+
+    def irma_generate_full_vcf_compress(self, irma_output_dir, sample_name):
         """
         Merge vcf files and generate full vcf
         """
         ## get the vcf file
-        irma_output_dir = self.irma_align_get_vcfs(
-            path_reference_fasta, irma_output_dir, sample_name=sample_name
-        )
+
+        #### merge vcf files
 
         temp_file = os.path.join(irma_output_dir, sample_name + ".vcf")
 
@@ -2448,6 +2488,30 @@ class Software(object):
 
         return vcf_combined
 
+    def irma_collect_depth_files_compress(self, irma_output_dir: str, sample_name: str):
+        #### merge depth files
+        depth_files = sorted(
+            [f for f in os.listdir(irma_output_dir) if f.endswith(".depth")]
+        )
+        depth_combined = os.path.join(irma_output_dir, sample_name + ".depth")
+
+        with open(depth_combined, "w") as depth:
+            for file in depth_files:
+                with open(os.path.join(irma_output_dir, file), "r") as f:
+                    depth.write(f.read())
+
+        ## compress
+        if os.path.exists(depth_combined + ".gz") is True:
+            os.unlink(depth_combined + ".gz")
+
+        cmd = "{} {}".format(self.software_names.get_bgzip(), depth_combined)
+
+        cmd_output = os.system(cmd)
+        if cmd_output != 0:
+            raise Exception("Failed to compress depth file")
+
+        return depth_combined + ".gz"
+
     def run_irma_and_snpEff(
         self,
         file_name_1,
@@ -2474,9 +2538,28 @@ class Software(object):
             path_reference_genbank,
         )
 
-        ## generate full vcf
-        vcf_combined = self.irma_generate_full_vcf(
-            irma_output_dir, sample_name, path_reference_fasta
+        ## generate additional_files
+
+        ## generate individual segment alignments
+        seqname_msa_dict = self.irma_align_get_msas(
+            path_reference_fasta, irma_output_dir, sample_name=sample_name
+        )
+
+        ## generate individual segment vcf and depth files
+        for seqname, msa_file in seqname_msa_dict.items():
+            seq_ref = os.path.join(irma_output_dir, seqname + ".fasta")
+            self.vcfalign_from_msa(msa_file, seqname, irma_output_dir)
+            self.generate_depth_from_msa(msa_file, seq_ref, irma_output_dir, seqname)
+
+        ## generate ful depth file
+        depth_exists = os.path.exists(
+            os.path.join(irma_output_dir, sample_name + ".depth.gz")
+        )
+        _ = self.irma_collect_depth_files_compress(irma_output_dir, sample_name)
+
+        ## generate_full_vcf from all segments
+        vcf_combined = self.irma_generate_full_vcf_compress(
+            irma_output_dir, sample_name
         )
 
         if os.path.exists(vcf_combined) is False:
@@ -3829,7 +3912,6 @@ class Software(object):
     """
 
     def run_fastq_and_trimmomatic_and_identify_species(self, sample, user):
-        print("Start ProcessControler")
         process_controler = ProcessControler()
         process_SGE = ProcessSGE()
         process_SGE.set_process_controler(
@@ -4030,8 +4112,8 @@ class Software(object):
             project_sample=project_sample,
         )
 
-        if software.name_extended == SoftwareNames.SOFTWARE_IRMA_name_extended:
-            return self.__process_second_stage_irma(project_sample, user, software)
+        # if software.name_extended == SoftwareNames.SOFTWARE_IRMA_name_extended:
+        #    return self.__process_second_stage_irma(project_sample, user, software)
 
         ## run collect data
         return self.__process_second_stage_snippy_coverage_freebayes(
@@ -4481,7 +4563,6 @@ class Software(object):
             #####################
             ###
             ### make mask the consensus SoftwareNames.SOFTWARE_MSA_MASKER
-            print("Start Mask Consensus")
             try:
                 limit_to_mask_consensus = int(
                     default_project_software.get_mask_consensus_single_parameter(
@@ -4522,7 +4603,6 @@ class Software(object):
                 )
 
             except Exception as e:
-                print("############ Error in mask consensus")
                 print(e)
             ### add version of mask
 
@@ -4539,7 +4619,6 @@ class Software(object):
                 ),
                 coverage,
             )
-            print("End Mask Consensus")
 
             ################
             ################
@@ -4671,10 +4750,6 @@ class Software(object):
                     project_sample,
                 )
             except Exception as e:
-                print("Error in draw coverage")
-                import traceback
-
-                traceback.print_exc()
 
                 result = Result()
                 result.set_error("Fail to draw coverage images")

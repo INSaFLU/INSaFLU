@@ -1712,7 +1712,7 @@ class CollectExtraData(object):
             TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_flumut_excel
         )
         if os.path.exists(file_flumut_result):
-            self.utils.link_filke(
+            self.utils.link_file(
                 file_flumut_result,
                 os.path.join(temp_dir, Project.PROJECT_FILE_NAME_flumut_excel),
             )

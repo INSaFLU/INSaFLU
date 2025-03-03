@@ -4447,6 +4447,14 @@ class Software(object):
                     mdcg_parameters,
                 )
 
+                software_name = software.name
+                if software.name_extended == SoftwareNames.SOFTWARE_IRMA_name_extended:
+                    software_name = SoftwareNames.SOFTWARE_IRMA_name
+                elif (
+                    software.name_extended == SoftwareNames.SOFTWARE_IVAR_name_extended
+                ):
+                    software_name = SoftwareNames.SOFTWARE_IVAR_name
+
                 metakey = MetaKeyAndValue.META_KEY_Snippy
 
                 result_all.add_software(software_description)
@@ -4460,7 +4468,7 @@ class Software(object):
                 result.set_error(e.args[0])
                 result.add_software(
                     SoftwareDesc(
-                        software.name,
+                        software_name,
                         software.version,
                         mdcg_parameters,
                     )

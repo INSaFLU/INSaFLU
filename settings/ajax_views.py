@@ -1013,6 +1013,34 @@ def turn_on_off_software(request):
                                 )
                             )
                             return JsonResponse(data)
+                    if (
+                        software.name == SoftwareNames.SOFTWARE_FREEBAYES_name
+                        and software.is_to_run is False
+                    ):
+                        variant_detection_on = Software.objects.filter(
+                            owner=software.owner,
+                            type_of_use=software.type_of_use,
+                            name_extended=SoftwareNames.SOFTWARE_IRMA_name_extended,
+                            parameter__project_sample=project_sample,
+                            parameter__project=project,
+                            parameter__televir_project=televir_project,
+                            parameter__televir_project_sample=televir_project_sample,
+                            pipeline_step__name=ConstantsSettings.PIPELINE_NAME_variant_detection,
+                            technology=software.technology,
+                            is_to_run=True,
+                        ).distinct()
+
+                        if variant_detection_on.exists():
+                            data["message"] = (
+                                "Software {} for {} is incompatible with software {} in pipeline step {}.".format(
+                                    SoftwareNames.SOFTWARE_FREEBAYES_name,
+                                    ConstantsSettings.PIPELINE_NAME_variant_detection,
+                                    SoftwareNames.SOFTWARE_IRMA_name_extended,
+                                    ConstantsSettings.PIPELINE_NAME_variant_detection,
+                                )
+                            )
+                            return JsonResponse(data)
+
                 except Exception as e:
                     print(e)
 

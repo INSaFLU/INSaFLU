@@ -211,7 +211,7 @@ class DefaultSoftware(object):
         )
 
         self.test_default_db(
-            SoftwareNames.SOFTWARE_IRMA_name,
+            SoftwareNames.SOFTWARE_SNIPPY_name,
             self.default_parameters.get_irma_default(
                 user,
                 Software.TYPE_OF_USE_global,

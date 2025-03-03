@@ -957,6 +957,7 @@ class DefaultSoftware(object):
     def test_default_persist_specific(
         self, software_name, vect_parameters, user, name_extended, type_of_use
     ):
+
         try:
 
             software_queried = Software.objects.get(
@@ -1549,48 +1550,48 @@ class DefaultSoftware(object):
             )
             return self.get_trimmomatic_parameters(user)
 
+        if software_name == SoftwareNames.SOFTWARE_IVAR_name:
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_IVAR_name,
+                self.default_parameters.get_ivar_default(
+                    user,
+                    Software.TYPE_OF_USE_global,
+                    ConstantsSettings.TECHNOLOGY_illumina,
+                    pipeline_step=ConstantsSettings.PIPELINE_NAME_variant_detection,
+                ),
+                user,
+                SoftwareNames.SOFTWARE_IVAR_name_extended,
+            )
+            return self.get_ivar_parameters(user)
+
+        if software_name == SoftwareNames.SOFTWARE_IRMA_name:
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_IRMA_name,
+                self.default_parameters.get_irma_default(
+                    user,
+                    Software.TYPE_OF_USE_global,
+                    ConstantsSettings.TECHNOLOGY_illumina,
+                ),
+                user,
+                SoftwareNames.SOFTWARE_IRMA_name_extended,
+            )
+            return self.get_irma_parameters(user)
+
         if software_name == SoftwareNames.SOFTWARE_SNIPPY_name:
-            if name_extended == SoftwareNames.SOFTWARE_IVAR_name_extended:
-                self.test_default_db(
-                    SoftwareNames.SOFTWARE_IVAR_name,
-                    self.default_parameters.get_ivar_default(
-                        user,
-                        Software.TYPE_OF_USE_global,
-                        ConstantsSettings.TECHNOLOGY_illumina,
-                        pipeline_step=ConstantsSettings.PIPELINE_NAME_variant_detection,
-                    ),
-                    user,
-                    SoftwareNames.SOFTWARE_IVAR_name_extended,
-                )
-                return self.get_ivar_parameters(user)
 
-            elif name_extended == SoftwareNames.SOFTWARE_IRMA_name_extended:
-                self.test_default_db(
-                    SoftwareNames.SOFTWARE_IRMA_name,
-                    self.default_parameters.get_irma_default(
-                        user,
-                        Software.TYPE_OF_USE_global,
-                        ConstantsSettings.TECHNOLOGY_illumina,
-                    ),
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_SNIPPY_name,
+                self.default_parameters.get_snippy_default(
                     user,
-                    SoftwareNames.SOFTWARE_IRMA_name_extended,
-                )
-                return self.get_irma_parameters(user)
+                    Software.TYPE_OF_USE_global,
+                    ConstantsSettings.TECHNOLOGY_illumina,
+                    pipeline_step=ConstantsSettings.PIPELINE_NAME_variant_detection,
+                ),
+                user,
+                SoftwareNames.SOFTWARE_SNIPPY_name_extended,
+            )
 
-            else:
-                self.test_default_db(
-                    SoftwareNames.SOFTWARE_SNIPPY_name,
-                    self.default_parameters.get_snippy_default(
-                        user,
-                        Software.TYPE_OF_USE_global,
-                        ConstantsSettings.TECHNOLOGY_illumina,
-                        pipeline_step=ConstantsSettings.PIPELINE_NAME_variant_detection,
-                    ),
-                    user,
-                    SoftwareNames.SOFTWARE_SNIPPY_name_extended,
-                )
-
-                return self.get_snippy_parameters(user)
+            return self.get_snippy_parameters(user)
 
         if software_name == SoftwareNames.SOFTWARE_FREEBAYES_name:
             self.test_default_db(
@@ -1827,6 +1828,8 @@ class DefaultSoftware(object):
         vect_software = []
         vect_software.append(self.software_names.get_trimmomatic_name())
         vect_software.append(self.software_names.get_snippy_name())
+        vect_software.append(self.software_names.get_ivar_name())
+        vect_software.append(self.software_names.get_irma_name())
         vect_software.append(self.software_names.get_freebayes_name())
         vect_software.append(self.software_names.get_NanoFilt_name())
         vect_software.append(

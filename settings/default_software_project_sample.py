@@ -427,7 +427,8 @@ class DefaultProjectSoftware(object):
         name_extended=None,
     ) -> List[Parameter]:
 
-        if software_name == SoftwareNames.SOFTWARE_SNIPPY_name:
+        if software_name in SoftwareNames.SOFTWARE_MDCG_list:
+            print("software_name", software_name)
 
             if name_extended == SoftwareNames.SOFTWARE_IVAR_name_extended:
                 vect_parameters = self.default_parameters.get_ivar_default(
@@ -2522,6 +2523,27 @@ class DefaultProjectSoftware(object):
             pipeline_step=pipeline_step,
             software_name_extended=name_extended,
         )
+
+    def get_project_sample_mdcg_software_name(
+        self, project_sample: ProjectSample
+    ) -> str:
+        software_names = SoftwareNames()
+        software_mdcg = software_names.get_snippy_name()
+
+        if (
+            project_sample.get_type_technology()
+            == ConstantsSettings.TECHNOLOGY_illumina
+        ):
+            software_mdcg = self.default_parameters.get_software_mdcg(
+                project_sample.project.owner,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                project=None,
+                project_sample=project_sample,
+            ).name.lower()
+        else:
+            software_mdcg = software_names.get_medaka_name()
+
+        return software_mdcg
 
     def get_all_software(self):
         """

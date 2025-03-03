@@ -1292,6 +1292,21 @@ class SoftwareNames(object):
         return self.SOFTWARE_IVAR_PARAMETERS
 
     """
+    return IRMA software"""
+
+    def get_irma(self):
+        return self.SOFTWARE_IRMA
+
+    def get_irma_name(self):
+        return self.SOFTWARE_IRMA_name
+
+    def get_irma_name_extended(self):
+        return self.SOFTWARE_IRMA_name_extended
+
+    def get_irma_version(self):
+        return self.SOFTWARE_IRMA_VERSION
+
+    """
     return snippy-vcf_to_tab software. Add FRED
     """
 

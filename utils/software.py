@@ -777,6 +777,7 @@ class Software(object):
     def creat_new_reference_to_snippy(self, project_sample):
         ### get temp file
         temp_file = self.utils.get_temp_file("new_reference", FileExtensions.FILE_FASTA)
+
         cmd = "perl %s %s %s" % (
             self.software_names.get_create_new_reference_to_snippy(),
             project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),
@@ -790,10 +791,16 @@ class Software(object):
             self.logger_production.error("Fail to run: " + cmd)
             self.logger_debug.error("Fail to run: " + cmd)
             raise Exception("Fail to run create_new_reference_to_snippy")
+
+        ##
+        default_project_software = DefaultProjectSoftware()
+        software_mdcg = default_project_software.get_project_sample_mdcg_software_name(
+            project_sample
+        )
         path_dest = project_sample.get_file_output(
             TypePath.MEDIA_ROOT,
             FileType.FILE_REF_FASTA,
-            self.software_names.get_snippy_name(),
+            software_mdcg,
         )
 
         self.utils.copy_file(temp_file, path_dest)

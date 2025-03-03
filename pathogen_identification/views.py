@@ -123,6 +123,7 @@ from pathogen_identification.utilities.utilities_views import (  # #############
     recover_assembly_contigs,
 )
 from settings.constants_settings import ConstantsSettings as CS
+from settings.default_software_project_sample import DefaultProjectSoftware
 from utils.process_SGE import ProcessSGE
 from utils.software import Software
 from utils.support_django_template import get_link_for_dropdown_item
@@ -1361,14 +1362,12 @@ class INSaFLUMappingIGV(LoginRequiredMixin, generic.TemplateView):
         sample_dict = {}
 
         ### get sample files
-        software_names = SoftwareNames()
+        default_project_software = DefaultProjectSoftware()
 
         for sample in samples:
-
-            if sample.sample.type_of_fastq == 0:
-                filename = software_names.get_snippy_name()
-            else:
-                filename = software_names.get_medaka_name()
+            filename = default_project_software.get_project_sample_mdcg_software_name(
+                sample
+            )
 
             bam_file = sample.get_file_output(
                 TypePath.MEDIA_ROOT, FileType.FILE_BAM, filename

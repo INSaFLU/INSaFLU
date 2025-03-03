@@ -3,11 +3,15 @@ Created on Jan 5, 2018
 
 @author: mmp
 '''
-from django.core.management import BaseCommand
-from managing_files.models import Project
-from utils.coverage import DrawAllCoverage
-from django.contrib.auth.models import User
 import logging
+
+from django.contrib.auth.models import User
+from django.core.management import BaseCommand
+
+from managing_files.models import Project
+from settings.default_software_project_sample import DefaultProjectSoftware
+from utils.coverage import DrawAllCoverage
+
 
 class Command(BaseCommand):
 	'''
@@ -36,11 +40,16 @@ class Command(BaseCommand):
 		self.logger_debug.info("Starting for project_id: " + str(project_id))
 		try:
 			project = Project.objects.get(pk=project_id)
+			default_project_software = DefaultProjectSoftware()
 			for project_sample in project.project_samples.all():
+				software_mdcg_name= default_project_software.default_parameters.get_software_mdcg(project_sample)
 				if (not project_sample.get_is_ready_to_proccess()): continue
 				self.stdout.write("Processing sample: {}".format(project_sample.sample.name))
-				draw_all_coverage.draw_all_coverages(project_sample)
+				draw_all_coverage.draw_all_coverages(project_sample, software_name = software_mdcg_name)
 			self.stdout.write("End")
+		except Project.DoesNotExist as e:
+			self.stdout.write("Project id '{}' does not exist.".format(project_id))
+		self.stdout.write("Finished")			self.stdout.write("End")
 		except Project.DoesNotExist as e:
 			self.stdout.write("Project id '{}' does not exist.".format(project_id))
 		self.stdout.write("Finished")

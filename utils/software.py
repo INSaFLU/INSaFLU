@@ -492,8 +492,13 @@ class Software(object):
         if software == SoftwareNames.SOFTWARE_IRMA_name:
             return [
                 FileType.FILE_CONSENSUS_FA,
+                FileType.FILE_DEPTH_GZ,
+                FileType.FILE_DEPTH_GZ_TBI,
                 FileType.FILE_TAB,
                 FileType.FILE_VCF_GZ,
+                FileType.FILE_VCF,
+                FileType.FILE_VCF_GZ_TBI,
+                FileType.FILE_CSV,
                 FileType.FILE_REF_FASTA,
             ]
         if software == SoftwareNames.SOFTWARE_SNIPPY_name:
@@ -2587,9 +2592,7 @@ class Software(object):
             self.generate_depth_from_msa(msa_file, seq_ref, irma_output_dir, seqname)
 
         ## generate ful depth file
-        depth_exists = os.path.exists(
-            os.path.join(irma_output_dir, sample_name + ".depth.gz")
-        )
+        _ = os.path.exists(os.path.join(irma_output_dir, sample_name + ".depth.gz"))
         _ = self.irma_collect_depth_files_compress(irma_output_dir, sample_name)
 
         ## generate_full_vcf from all segments
@@ -3218,7 +3221,7 @@ class Software(object):
                 project_sample.get_file_output(
                     TypePath.MEDIA_ROOT,
                     FileType.FILE_BAM,
-                    self.software_names.get_snippy_name(),
+                    software.name,
                 ),
                 project_sample.reference_fasta,
                 project_sample.reference_gbk,
@@ -4299,6 +4302,7 @@ class Software(object):
                 return False
             ## copy the files to the project sample directories
             try:
+                print(software.name)
                 self.copy_files_to_project(project_sample, software.name, out_put_path)
 
                 # self.utils.remove_dir(out_put_path)
@@ -4616,13 +4620,13 @@ class Software(object):
                     project_sample.get_file_output(
                         TypePath.MEDIA_ROOT,
                         FileType.FILE_CONSENSUS_FASTA,
-                        self.software_names.get_snippy_name(),
+                        software_name,
                     ),
                     project_sample.reference_fasta,
                     project_sample.get_file_output(
                         TypePath.MEDIA_ROOT,
                         FileType.FILE_DEPTH_GZ,
-                        self.software_names.get_snippy_name(),
+                        software_name,
                     ),
                     coverage,
                     project_sample.sample.name,
@@ -4656,7 +4660,7 @@ class Software(object):
                 project_sample.get_file_output(
                     TypePath.MEDIA_ROOT,
                     FileType.FILE_TAB,
-                    self.software_names.get_snippy_name(),
+                    software_name,
                 ),
                 coverage,
             )
@@ -4721,7 +4725,10 @@ class Software(object):
                     )
 
                 except Exception as e:
+                    import traceback
 
+                    traceback.print_exc()
+                    print(e)
                     result = Result()
                     result.set_error("Fail to calculate mixed infextion")
                     result.add_software(SoftwareDesc("In house software", "1.0", ""))
@@ -4789,9 +4796,13 @@ class Software(object):
                 draw_all_coverage = DrawAllCoverage()
                 draw_all_coverage.draw_all_coverages(
                     project_sample,
+                    software_name=software_name,
                 )
             except Exception as e:
+                import traceback
 
+                traceback.print_exc()
+                print(e)
                 result = Result()
                 result.set_error("Fail to draw coverage images")
                 result.add_software(SoftwareDesc("In house software", "1.0", ""))

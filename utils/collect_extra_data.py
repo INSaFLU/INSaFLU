@@ -1409,11 +1409,8 @@ class CollectExtraData(object):
         vect_type_out = []
 
         default_project_software = DefaultProjectSoftware()
-        software = default_project_software.default_parameters.get_software_mdcg(
-            project.owner,
-            ConstantsSettings.TECHNOLOGY_illumina,
+        software = default_project_software.get_software_project_mdcg_illumina(
             project=project,
-            project_sample=None,
         )
 
         with open(out_file, "w", newline="") as handle_out:
@@ -2242,11 +2239,10 @@ class CollectExtraData(object):
         )
 
         default_project_software = DefaultProjectSoftware()
-        software_mdcg = default_project_software.default_parameters.get_software_mdcg(
-            project_sample.sample.owner,
-            project_sample.get_type_technology(),
-            project=project_sample.project,
-            project_sample=project_sample,
+        software_mdcg = (
+            default_project_software.get_software_project_sample_mdcg_illumina(
+                project_sample=project_sample,
+            )
         )
 
         ## it is not available yet

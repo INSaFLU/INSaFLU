@@ -282,10 +282,10 @@ class DefaultParameters(object):
 
         return software_list[0]
 
-    def get_software_mdcg(
+    def get_software_project_sample_mdcg_illumina(
         self,
         user,
-        technology_name,
+        # technology_name,
         project=None,
         project_sample=None,
         name_extended=None,
@@ -295,7 +295,7 @@ class DefaultParameters(object):
         """
         software_list = Software.objects.filter(
             owner=user,
-            technology__name=technology_name,
+            technology__name=ConstantsSettings.TECHNOLOGY_illumina,
             parameter__project=project,
             parameter__project_sample=project_sample,
             pipeline_step__name=ConstantsSettings.PIPELINE_NAME_variant_detection,
@@ -305,7 +305,7 @@ class DefaultParameters(object):
         if len(software_list) == 0:
             software_list = Software.objects.filter(
                 owner=user,
-                technology__name=technology_name,
+                technology__name=ConstantsSettings.TECHNOLOGY_illumina,
                 parameter__project=project,
                 pipeline_step__name=ConstantsSettings.PIPELINE_NAME_variant_detection,
                 is_to_run=True,
@@ -314,7 +314,7 @@ class DefaultParameters(object):
         if len(software_list) == 0:
             software_list = Software.objects.filter(
                 owner=user,
-                technology__name=technology_name,
+                technology__name=ConstantsSettings.TECHNOLOGY_illumina,
                 parameter__project_sample=project_sample,
                 pipeline_step__name=ConstantsSettings.PIPELINE_NAME_variant_detection,
                 is_to_run=True,

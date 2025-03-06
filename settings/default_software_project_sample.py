@@ -664,7 +664,7 @@ class DefaultProjectSoftware(object):
         return parameter_string
 
     def get_mdcg_parameters_all_possibilities(
-        self, user, project_sample, is_to_run=True
+        self, user, project_sample: ProjectSample, is_to_run=True
     ):
         """
         get mdf parameters for project_sample, project and default
@@ -672,11 +672,10 @@ class DefaultProjectSoftware(object):
 
         ### Test project_sample first
         default_project_software = DefaultProjectSoftware()
-        software_mdcg = default_project_software.default_parameters.get_software_mdcg(
-            project_sample.project.owner,
-            project_sample.get_type_technology(),
-            project=None,
-            project_sample=project_sample,
+        software_mdcg = (
+            default_project_software.get_software_project_sample_mdcg_illumina(
+                project_sample=project_sample,
+            )
         )
 
         ### Test project_sample first
@@ -777,11 +776,9 @@ class DefaultProjectSoftware(object):
         value_default_parameter = self.get_snippy_single_parameter_default(
             parameter_name
         )
-        print(value_default_parameter)
+
         if value_default_parameter is None:
             return False
-
-        print(self.get_snippy_single_parameter(project_sample, parameter_name))
 
         parameter_defined = self.get_snippy_single_parameter(
             project_sample, parameter_name
@@ -2545,16 +2542,39 @@ class DefaultProjectSoftware(object):
             project_sample.get_type_technology()
             == ConstantsSettings.TECHNOLOGY_illumina
         ):
-            software_mdcg = self.default_parameters.get_software_mdcg(
-                project_sample.project.owner,
-                ConstantsSettings.TECHNOLOGY_illumina,
-                project=None,
+            software_mdcg = self.get_software_project_sample_mdcg_illumina(
                 project_sample=project_sample,
             ).name.lower()
         else:
             software_mdcg = software_names.get_medaka_name()
 
         return software_mdcg
+
+    def get_software_project_sample_mdcg_illumina(
+        self, project_sample: ProjectSample
+    ) -> Optional[Software]:
+        return self.default_parameters.get_software_project_sample_mdcg_illumina(
+            project_sample.project.owner, project=None, project_sample=project_sample
+        )
+
+    def get_software_project_mdcg_illumina(self, project: Project):
+        return self.default_parameters.get_software_project_sample_mdcg_illumina(
+            project.owner, project=project
+        )
+
+    def possible_sample_technologyes(self, project: Project):
+        """
+        Return True if project mdcg illumina technology is SNIPPY otherwise no"""
+
+        software_mdcg = self.get_software_project_mdcg_illumina(project)
+
+        if software_mdcg is None:
+            return f"{ConstantsSettings.TECHNOLOGY_illumina} - {ConstantsSettings.TECHNOLOGY_minion}"
+
+        if software_mdcg.name == SoftwareNames.SOFTWARE_SNIPPY_name:
+            return f"{ConstantsSettings.TECHNOLOGY_illumina} - {ConstantsSettings.TECHNOLOGY_minion}"
+        else:
+            return f"{ConstantsSettings.TECHNOLOGY_illumina}"
 
     def get_all_software(self):
         """

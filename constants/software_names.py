@@ -1064,6 +1064,8 @@ class SoftwareNames(object):
     ### software with duplicates in project and sample
     duplicate_softwares = [
         SOFTWARE_SNIPPY_name,
+        SOFTWARE_IRMA_name,
+        SOFTWARE_IVAR_name,
     ]
     ###
 

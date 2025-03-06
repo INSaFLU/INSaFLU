@@ -142,12 +142,8 @@ class ProjectSampleDepthCoverage(object):
         project_sample.alert_second_level = 0
         project_sample.alert_first_level = 0
 
-        print("self.b_coverage_default")
-        print(self.b_coverage_default)
-
         for element in self.get_dict_data():
-            print(self.is_100_more_9(element))
-            print(self.is_100_more_defined_by_user(element))
+
             if not self.is_100_more_9(element) and self.b_coverage_default:
                 project_sample.alert_second_level += 1
                 meta_key = metaKeyAndValue.get_meta_key(
@@ -432,8 +428,7 @@ class SoftwareFlumut(object):
         )
 
         sz_out = ""
-        print(meta_sample)
-        print(dt_flumut_versions)
+
         if not meta_sample is None:
             result_flumut = decode_result.decode_result(meta_sample.description)
             for soft_name in dt_flumut_versions:
@@ -4136,10 +4131,7 @@ class Software(object):
         default_project_software.test_all_defaults(user, None, project_sample, None)
 
         ### get software
-        software = default_project_software.default_parameters.get_software_mdcg(
-            user,
-            ConstantsSettings.TECHNOLOGY_illumina,
-            project=None,
+        software = default_project_software.get_software_project_sample_mdcg_illumina(
             project_sample=project_sample,
         )
 
@@ -4296,7 +4288,6 @@ class Software(object):
                 return False
             ## copy the files to the project sample directories
             try:
-                print(software.name)
                 self.copy_files_to_project(project_sample, software.name, out_put_path)
 
                 # self.utils.remove_dir(out_put_path)
@@ -4437,10 +4428,7 @@ class Software(object):
         default_project_software.test_all_defaults(user, None, project_sample, None)
 
         ### get software
-        software = default_project_software.default_parameters.get_software_mdcg(
-            user,
-            ConstantsSettings.TECHNOLOGY_illumina,
-            project=None,
+        software = default_project_software.get_software_project_sample_mdcg_illumina(
             project_sample=project_sample,
         )
 

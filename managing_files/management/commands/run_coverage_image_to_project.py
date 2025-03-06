@@ -42,7 +42,9 @@ class Command(BaseCommand):
 			project = Project.objects.get(pk=project_id)
 			default_project_software = DefaultProjectSoftware()
 			for project_sample in project.project_samples.all():
-				software_mdcg_name= default_project_software.default_parameters.get_software_mdcg(project_sample)
+				software_mdcg_name= default_project_software.get_software_project_sample_mdcg_illumina(
+					project_sample,
+					)
 				if (not project_sample.get_is_ready_to_proccess()): continue
 				self.stdout.write("Processing sample: {}".format(project_sample.sample.name))
 				draw_all_coverage.draw_all_coverages(project_sample, software_name = software_mdcg_name)

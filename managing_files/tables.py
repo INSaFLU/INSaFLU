@@ -564,6 +564,7 @@ class ProjectTable(tables.Table):
     #   account_number = tables.LinkColumn('customer-detail', args=[A('pk')])
     reference = tables.Column("Reference", empty_values=())
     samples = tables.Column("#Samples (P/W/E)", orderable=False, empty_values=())
+    technology = tables.Column("Technology", empty_values=())
     last_change_date = tables.Column("Last Change date", empty_values=())
     creation_date = tables.Column("Creation date", empty_values=())
     results = tables.LinkColumn("Options", orderable=False, empty_values=())
@@ -581,7 +582,16 @@ class ProjectTable(tables.Table):
         attrs = {"class": "table-striped table-bordered"}
         empty_text = "There are no Projects to show..."
 
-    def render_name(self, record):
+    def render_technology(self, record):
+        default_project_software = DefaultProjectSoftware()
+
+        possible_technologies = default_project_software.possible_sample_technologyes(
+            record
+        )
+
+        return mark_safe(possible_technologies)
+
+    def render_name(self, record: Project):
         from crequest.middleware import CrequestMiddleware
 
         current_request = CrequestMiddleware.get_request()

@@ -244,8 +244,7 @@ class SoftwaresTable(tables.Table):
             return parameters
 
         elif not self.project_sample is None:
-            print("##########3")
-            print(self.project_sample.sample.name)
+
             default_software_projects = DefaultProjectSoftware()
             parameters = default_software_projects.get_parameters(
                 record.name,

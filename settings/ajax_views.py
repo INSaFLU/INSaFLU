@@ -1017,6 +1017,7 @@ def turn_on_off_software(request):
                         software.name == SoftwareNames.SOFTWARE_FREEBAYES_name
                         and software.is_to_run is False
                     ):
+                        print(software.is_to_run)
                         variant_detection_on = Software.objects.filter(
                             owner=software.owner,
                             type_of_use=software.type_of_use,
@@ -1029,6 +1030,9 @@ def turn_on_off_software(request):
                             technology=software.technology,
                             is_to_run=True,
                         ).distinct()
+
+                        print(variant_detection_on)
+                        print([_.pk for _ in variant_detection_on])
 
                         if variant_detection_on.exists():
                             data["message"] = (
@@ -1055,6 +1059,7 @@ def turn_on_off_software(request):
                 )
                 active_filters = None
                 additional_filter = None
+
                 if (
                     software.pipeline_step.name
                     == ConstantsSettings.PIPELINE_NAME_variant_detection

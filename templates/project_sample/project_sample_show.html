@@ -70,7 +70,6 @@
 	      			</div>
 	    		</div>
 	  		</div>
-	
 	  
 			<!-- Card Phylogenetic trees by PhyloCanvas -->
 			<div class="card">
@@ -270,7 +269,7 @@
 			{% endif %}
 
 	   		<!-- Card Minor variants overview-->
-	   		{% if variations_statistics_file %}
+	   		{% if variations_statistics_file and project_not_irma %}
 		   		<div class="card">
 					<div class="card-header" role="tab" id="headingFifth">
 						<h5 class="mb-0">

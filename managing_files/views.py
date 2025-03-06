@@ -2250,6 +2250,12 @@ class AddSamplesProjectsView(
             insaflu_project=project
         ).exists()
 
+        default_project_software = DefaultProjectSoftware()
+        software_mdcg = default_project_software.get_software_project_mdcg_illumina(
+            project=project,
+        )
+        is_project_snippy = software_mdcg.name == SoftwareNames.SOFTWARE_SNIPPY_name
+
         context["nav_project"] = True
 
         if project.owner.id != self.request.user.id:
@@ -2284,6 +2290,10 @@ class AddSamplesProjectsView(
                 is_deleted_processed_fastq=False,
                 is_ready_for_projects=True,
             ).exclude(pk__in=samples_out)
+
+        # if project illumina mdcg software is not sippy then only show samples with the same technology
+        if is_project_snippy is False:
+            query_set = query_set.filter(type_of_fastq=Sample.TYPE_OF_FASTQ_illumina)
 
         tag_search = "search_add_project_sample"
         if self.request.GET.get(tag_search) != None and self.request.GET.get(
@@ -2555,6 +2565,14 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
         project = Project.objects.get(pk=self.kwargs["pk"])
         software_pangolin = SoftwarePangolin()
         software = Software()
+
+        project_defaullt_software = DefaultProjectSoftware()
+        software_mdcg = project_defaullt_software.get_software_project_mdcg_illumina(
+            project,
+        )
+        project_not_irma = not software_mdcg.name == SoftwareNames.SOFTWARE_IRMA_name
+
+        context["project_not_irma"] = project_not_irma
 
         ### can't see this project
         context["nav_project"] = True
@@ -3256,10 +3274,7 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
             context["consensus_file"] = project_sample.get_consensus_file_web(
                 not default_software.include_consensus(project_sample)
             )
-            software_mdcg = default_software.default_parameters.get_software_mdcg(
-                project_sample.project.owner,
-                ConstantsSettings.TECHNOLOGY_illumina,
-                project=None,
+            software_mdcg = default_software.get_software_project_sample_mdcg_illumina(
                 project_sample=project_sample,
             )
             software_used = (

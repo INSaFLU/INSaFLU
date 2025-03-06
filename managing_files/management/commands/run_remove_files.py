@@ -983,10 +983,7 @@ class Command(BaseCommand):
                 == ConstantsSettings.TECHNOLOGY_illumina
             ):
                 software_illumina_mdcg = (
-                    default_project_software.default_parameters.get_software_mdcg(
-                        project_sample.project.owner,
-                        ConstantsSettings.TECHNOLOGY_illumina,
-                        project=None,
+                    default_project_software.get_software_project_sample_mdcg_illumina(
                         project_sample=project_sample,
                     ).name
                 )

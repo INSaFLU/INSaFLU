@@ -280,7 +280,7 @@ class DefaultParameters(object):
         if len(software_list) == 0:
             return None
 
-        return software_list[0]
+        return software_list.first()
 
     def get_software_project_sample_mdcg_illumina(
         self,
@@ -497,7 +497,10 @@ class DefaultParameters(object):
             sample=sample,
             dataset=dataset,
             televir_project=televir_project,
-        )
+        ).distinct()
+
+        if not project is None:
+            parameters = parameters.filter(project=project)
 
         # logger.debug("Get parameters: {}".format(parameters))
         ### if only one parameter and it is don't care, return dont_care

@@ -2700,6 +2700,7 @@ class Software(object):
             os.path.join(temp_dir, sample_name + "_2.vcf"),
             os.path.join(temp_dir, sample_name + ".tab"),
         )
+        print(temp_dir, sample_name + ".tab")
         return temp_dir
 
     def run_nextalign(

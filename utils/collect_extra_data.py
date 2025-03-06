@@ -1155,6 +1155,8 @@ class CollectExtraData(object):
             out_file_file_system = project.get_global_file_by_project(
                 TypePath.MEDIA_ROOT, type_file
             )
+            print("###")
+            print(out_file_file_system)
 
         elif type_file == Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES:
             ## freebayes remove >50%

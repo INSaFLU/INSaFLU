@@ -959,6 +959,7 @@ class Utils(object):
         vcf_hanlder = pysam.VariantFile(vcf_file, "r")
         if FREQ in vcf_hanlder.header.info:
             vcf_hanlder.close()
+            os.system("cp {} {}".format(vcf_file, vcf_file_out))
             return
 
         vcf_hanlder_write = pysam.VariantFile(vcf_file_out, "w")
@@ -1611,7 +1612,6 @@ class Utils(object):
                         continue
                     # Take the current sequence
                     # vect_sequences.append(SeqRecord(Seq(str(seq_record.seq).upper().replace('-', ''), IUPAC.ambiguous_dna), id=seq_record.id, description="", name=""))
-                    print("new_id", keep_segs[seq_record.id])
                     vect_sequences.append(
                         SeqRecord(
                             Seq(str(seq_record.seq).upper().replace("-", "")),

@@ -2688,14 +2688,11 @@ class Software(object):
         out_file_transformed_amino = parse_out_files.add_amino_single_letter_code(
             os.path.join(temp_dir, sample_name + ".vcf")
         )
-        print(out_file_transformed_amino)
         self.utils.add_freq_to_vcf(
             out_file_transformed_amino, os.path.join(temp_dir, sample_name + "_2.vcf")
         )
         # self.utils.remove_file(out_file_transformed_amino)
 
-        print(os.path.exists(os.path.join(temp_dir, sample_name + "_2.vcf")))
-        print(os.path.join(temp_dir, sample_name + ".tab"))
         ### add FREQ and other things to TAB file
         self.run_snippy_vcf_to_tab_freq_and_evidence(
             path_reference_fasta,
@@ -2703,7 +2700,6 @@ class Software(object):
             os.path.join(temp_dir, sample_name + "_2.vcf"),
             os.path.join(temp_dir, sample_name + ".tab"),
         )
-        print(temp_dir, sample_name + ".tab")
         return temp_dir
 
     def run_nextalign(

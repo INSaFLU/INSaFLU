@@ -704,7 +704,7 @@ class Command(BaseCommand):
             try:
                 ## Do not remove Quality Control outputs
                 files_to_remove.append(sample.get_fastq(TypePath.MEDIA_ROOT, True))
-                # if (sample.is_type_fastq_gz_sequencing()): files_to_remove.append(sample.get_fastqc_output(TypePath.MEDIA_ROOT, True))		## illumina default reads
+                # if (sample.is_type_fastq_gz_sequencing()): files_to_remove.append(sample.get_fastqc_output(TypePath.MEDIA_ROOT, True))        ## illumina default reads
                 # else: files_to_remove.append(sample.get_rabbitQC_output(TypePath.MEDIA_ROOT))
 
                 if sample.is_valid_2:

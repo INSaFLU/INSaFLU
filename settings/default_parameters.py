@@ -923,19 +923,26 @@ class DefaultParameters(object):
                     return parameters[0].is_to_run
                 return True
 
-            ### if it is Global it is software that is mandatory
-            ### only can change if TYPE_OF_USE_global, other type_of_use is not be tested
-            # if software.type_of_use in [
-            #    Software.TYPE_OF_USE_qc,
-            #    Software.TYPE_OF_USE_project,
-            #    Software.TYPE_OF_USE_global,
-            #    Software.TYPE_OF_USE_televir_global,
-            #    Software.TYPE_OF_USE_televir_project,
-            #    Software.TYPE_OF_USE_televir_settings,
-            #    Software.TYPE_OF_USE_televir_project_settings,
-            # ]:
-            software.is_to_run = is_to_run
-            software.save()
+            # if it is Global it is software that is mandatory
+            # only can change if TYPE_OF_USE_global, other type_of_use is not be tested
+            if software.type_of_use in [
+                Software.TYPE_OF_USE_qc,
+                Software.TYPE_OF_USE_project,
+                Software.TYPE_OF_USE_global,
+                Software.TYPE_OF_USE_televir_global,
+                Software.TYPE_OF_USE_televir_project,
+                Software.TYPE_OF_USE_televir_settings,
+                Software.TYPE_OF_USE_televir_project_settings,
+            ]:
+                software.is_to_run = is_to_run
+                software.save()
+
+            if (
+                software.pipeline_step.name
+                == ConstantsSettings.PIPELINE_NAME_variant_detection
+            ):
+                software.is_to_run = is_to_run
+                software.save()
 
             ## get parameters for a specific sample, project or project_sample
             parameters = Parameter.objects.filter(

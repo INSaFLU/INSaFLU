@@ -945,6 +945,7 @@ class DefaultParameters(object):
                 software.save()
 
             ## get parameters for a specific sample, project or project_sample
+
             parameters = Parameter.objects.filter(
                 software=software,
                 project=project,

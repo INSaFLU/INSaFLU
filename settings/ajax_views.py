@@ -1079,7 +1079,7 @@ def turn_on_off_software(request):
                     )
 
                     for filter in active_filters:
-                        output = default_parameters.set_software_to_run_by_software(
+                        _ = default_parameters.set_software_to_run_by_software(
                             filter,
                             project,
                             televir_project,
@@ -1103,7 +1103,8 @@ def turn_on_off_software(request):
                             parameter__televir_project_sample=televir_project_sample,
                             pipeline_step__name=ConstantsSettings.PIPELINE_NAME_intra_host_minor_variant_detection,
                             technology=software.technology,
-                            is_to_run=True,
+                            name=SoftwareNames.SOFTWARE_FREEBAYES_name,
+                            parameter__is_to_run=True,
                         ).distinct()
 
                         for filter in additional_filter:

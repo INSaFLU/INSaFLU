@@ -748,7 +748,7 @@ class Read_class:
         """
         Clean fastq header using python.
         """
-
+        print(self.exists)
         if not self.exists:
             return
 
@@ -786,14 +786,15 @@ class Read_class:
         temp_fq_gz = final_temp + ".gz"
 
         cmd_unzip = "gunzip -c %s > %s" % (self.current, temp_fq)
-        cmd_zip = "gzip %s" % final_temp
+        cmd_zip = "bgzip %s" % final_temp
 
         self.cmd.run_bash(cmd_unzip)
         self.clean_fastq_headers_python(temp_fq, final_temp)
         self.cmd.run(cmd_zip)
-        os.remove(temp_fq)
+        # os.remove(temp_fq)
 
         if os.path.isfile(temp_fq_gz) and os.path.getsize(temp_fq_gz) > 100:
+
             os.remove(self.current)
             os.rename(temp_fq_gz, self.current)
 

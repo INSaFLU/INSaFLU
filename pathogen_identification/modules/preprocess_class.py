@@ -4,11 +4,9 @@ import logging
 import os
 import shutil
 import subprocess
-import sys
-from typing import Tuple, Type
+from typing import Tuple
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import ParameterSet, RunDetail, RunMain
 from pathogen_identification.modules.object_classes import (
     Read_class,
     RunCMD,
@@ -200,12 +198,10 @@ class Preprocess:
         self.fastqc_input()
 
         if self.check_processed_exist():
-            print("Processed reads found")
             exo_r1, exo_r2 = self.retrieve_processed_reads()
             # os.symlink(exo_r1, self.preprocess_name_fastq_gz)
             shutil.copy(exo_r1, self.preprocess_name_fastq_gz)
             if self.preprocess_type == CS.PAIR_END:
-                print("Pair end reads found")
                 # os.symlink(exo_r2, self.preprocess_name_r2_fastq_gz)
                 shutil.copy(exo_r2, self.preprocess_name_r2_fastq_gz)
 

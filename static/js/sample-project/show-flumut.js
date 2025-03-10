@@ -30,7 +30,7 @@ function show_flumut() {
 
                     var showflumut = document.getElementById('showflumut');
                     
-                    var content = '<table id="table_with_flumut_id">\n<thead>\n';
+                    var content = '<table id="table_with_flumut_id" style="width: 100%;">\n<thead>\n';
                     var count = 0;
                     var number_cells = 0;
                     var number_cells_processed = 0;
@@ -76,30 +76,22 @@ function show_flumut() {
                             width: '100%'
                         },
                         col_types: [
-                            'string', // Sequence
-                            'string', // lineage
-                            'string', // RBD1
-                            'string', // RDB2
-                            'string', // NTD
-                            'string', // RDB3
-                            'string', // RDB4
-                            'string', // Flagged mutations
-                            'string', // All mutations
-                            'number', // Nflagged
-                            'number', // Nmutations
+                            'string', // Sample
+                            'string', // Marker
+                            'string', // Mutations
+                            'string', // Effect
+                            'string', // Subtype
+                            'string', // Litterature
+
                         ],
                         col_widths: [
-                            "10%", // Sequence
-                            "8%",  // lineage
-                            "8%",  // RBD1
-                            "8%",  // RDB2
-                            "8%",  // NTD
-                            "8%",  // RDB3
-                            "8%",  // RDB4
-                            "8%",  // Flagged mutations
-                            "8%",  // All mutations
-                            "8%",  // Nflagged
-                            null,  // Nmutations
+                            '15%',
+                            '15%',
+                            '15%',
+                            '20%',
+                            '15%',
+                            '20%',
+
                         ],
                         col_1: 'select',
                         extensions: [{ name: 'sort' }],

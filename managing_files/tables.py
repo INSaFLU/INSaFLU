@@ -773,7 +773,7 @@ class ShowProjectSamplesResults(tables.Table):
             )
         return record.sample.name
 
-    def render_coverage(self, record):
+    def render_coverage(self, record: ProjectSample):
         """
         return icons about coverage
         """
@@ -783,6 +783,13 @@ class ShowProjectSamplesResults(tables.Table):
             MetaKeyAndValue.META_KEY_Coverage,
             MetaKeyAndValue.META_VALUE_Success,
         )
+
+        show_coverage = 'href="#coverageModal"'
+        default_software = DefaultProjectSoftware()
+        if not record.project is None:
+
+            if not default_software.is_software_mdcg_illumina_snippy(record.project):
+                show_coverage = ""
 
         ### coverage
         decode_coverage = DecodeObjects()
@@ -803,8 +810,8 @@ class ShowProjectSamplesResults(tables.Table):
         )
         return_html = ""
         for key in coverage.get_sorted_elements_name():
-            return_html += '<a href="#coverageModal" id="showImageCoverage" data-toggle="modal" project_sample_id="{}" '.format(
-                record.id
+            return_html += '<a {} id="showImageCoverage" data-toggle="modal" project_sample_id="{}" '.format(
+                show_coverage, record.id
             ) + 'sequence="{}"><img title="{}" class="tip" src="{}"></a>'.format(
                 key,
                 coverage.get_message_to_show_in_web_site(record.sample.name, key),

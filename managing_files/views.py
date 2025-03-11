@@ -2203,12 +2203,6 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
             project.owner = self.request.user
             project.save()
 
-        ### test all defaults first, if exist in database
-        default_software = DefaultProjectSoftware()
-        default_software.test_all_defaults(
-            self.request.user, project, None, None
-        )  ## the user can have defaults yet
-
         process_SGE = ProcessSGE()
         process_SGE.set_create_project_list_by_user(self.request.user)
 
@@ -2937,6 +2931,10 @@ class ProjectsSettingsView(LoginRequiredMixin, ListView):
 
         ### test all defaults first, if exist in database
         default_software = DefaultProjectSoftware()
+        default_project_exists = default_software.project_parameters_exist(project)
+        if default_project_exists:
+            self.is_setup = False
+
         default_software.test_all_defaults(
             self.request.user, project, None, None, None
         )  ## the user can have defaults yet

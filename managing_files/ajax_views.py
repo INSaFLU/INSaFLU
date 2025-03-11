@@ -415,6 +415,14 @@ def show_coverage_as_a_table(request):
                 default_software = DefaultProjectSoftware()
                 utils = Utils()
                 project = Project.objects.get(id=project_id)
+                project_mdcg = default_software.get_software_project_mdcg_illumina(
+                    project
+                )
+                show_coverage_modal = (
+                    'href="#coverageModal"'
+                    if project_mdcg.name == SoftwareNames.SOFTWARE_SNIPPY_name
+                    else ""
+                )
 
                 ### get all elements and gene names
                 geneticElement = utils.get_elements_and_genes(
@@ -489,7 +497,8 @@ def show_coverage_as_a_table(request):
                                 sequence_name, Coverage.COVERAGE_MORE_9
                             )
                         )
-                        href_sample = '<a href="#coverageModal" id="id_table-coverage_{}_{}" data-toggle="modal" class="tip" project_sample_id="{}" sequence="{}" title="{}"></a>'.format(
+                        href_sample = '<a {} id="id_table-coverage_{}_{}" data-toggle="modal" class="tip" project_sample_id="{}" sequence="{}" title="{}"></a>'.format(
+                            show_coverage_modal,
                             count_projects,
                             count_sequences,
                             project_sample.id,

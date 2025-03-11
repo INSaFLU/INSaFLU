@@ -611,6 +611,13 @@ class DefaultParameters(object):
 
         return_parameter = ""
         for par_name in vect_order_ouput:
+
+            if (
+                software_name == SoftwareNames.SOFTWARE_IRMA_name
+                and par_name == self.SNIPPY_COVERAGE_NAME
+            ):
+                continue
+
             if self.hide_parameter_name_check(par_name) is False:
                 return_parameter += " {}".format(par_name)
 
@@ -687,6 +694,8 @@ class DefaultParameters(object):
                         )
         # logger.debug("Get parameters return output: {}".format(return_parameter))
         #### This is the case where all the options can be "not to set"
+        print(software_name)
+        print("return_parameter: ", return_parameter)
         if len(return_parameter.strip()) == 0 and len(parameters) == 0:
             return None
         return return_parameter.strip()

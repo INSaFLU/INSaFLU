@@ -2532,6 +2532,12 @@ class DefaultProjectSoftware(object):
             software_name_extended=name_extended,
         )
 
+    def project_parameters_exist(self, project: Project) -> bool:
+        """
+        Return True if project has parameters
+        """
+        return Parameter.objects.filter(project=project).exists()
+
     def get_project_sample_mdcg_software_name(
         self, project_sample: ProjectSample
     ) -> str:
@@ -2561,6 +2567,12 @@ class DefaultProjectSoftware(object):
         return self.default_parameters.get_software_project_sample_mdcg_illumina(
             project.owner, project=project
         )
+
+    def is_software_mdcg_illumina_snippy(self, project: Project):
+        software = self.get_software_project_mdcg_illumina(project)
+        if software is None:
+            return False
+        return software.name == SoftwareNames.SOFTWARE_SNIPPY_name
 
     def possible_sample_technologyes(self, project: Project):
         """

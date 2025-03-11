@@ -1007,9 +1007,39 @@ class Software(object):
             raise Exception("Fail to run abricate")
         return cmd
 
+    def match_segments_to_numbers(self, reference_fasta):
+        """
+        RUN ABRICATE, GET GENES, FILTER, RENAME,
+        """
+        return self.match_segments_to_numbers_influenza(reference_fasta)
+
+    def match_segments_to_numbers_influenza(self, reference_fasta):
+        """
+        MATCH GENE NAMES TO SEGMENT NUMBER"""
+        gene_to_number_str_dict = {
+            "PB2": "1",
+            "PB1": "2",
+            "PA": "3",
+            "HA": "4",
+            "NP": "5",
+            "NA": "6",
+            "MP": "7",
+            "NS": "8",
+        }
+        matched_segments_to_genes = self.match_segments_to_genes_abricate(
+            reference_fasta
+        )
+
+        matched_segments_to_numbers = {
+            segment: gene_to_number_str_dict[gene]
+            for segment, gene in matched_segments_to_genes.items()
+        }
+
+        return matched_segments_to_numbers
+
     def match_segments_to_genes_abricate(self, reference_fasta):
         """
-        RUN ABRICATE, GET GENES, FILTER, RENAME, RUN FLUMUT
+        RUN ABRICATE, GET GENES, FILTER, RENAME,
         """
 
         # software = Software()
@@ -2236,7 +2266,6 @@ class Software(object):
         self,
         file_name_1,
         file_name_2,
-        sample_name,
         irma_output_dir,
         path_reference_fasta,
         path_reference_genbank,
@@ -2256,32 +2285,6 @@ class Software(object):
 
         # index reference
         self.create_fai_fasta(os.path.join(refdir, "ref.fa"))
-
-        # concatenated consensus fasta
-        full_consensus_irma = os.path.join(
-            irma_output_dir, sample_name + ".consensus.fa"
-        )
-        amended_consensus_files = os.listdir(
-            os.path.join(irma_output_dir, "amended_consensus")
-        )
-        amended_consensus_files = [
-            os.path.join(irma_output_dir, "amended_consensus", f)
-            for f in amended_consensus_files
-            if f.endswith(".fa")
-        ]
-        with open(full_consensus_irma, "w") as f:
-            for file in amended_consensus_files:
-                with open(file, "r") as g:
-                    f.write(g.read())
-
-        # _ = self.generate_depth_file(
-        #    os.path.join(irma_output_dir, "R1.fastq"),
-        #    os.path.join(irma_output_dir, "R2.fastq"),
-        #    os.path.join(refdir, "ref.fa"),
-        #    # full_consensus_irma,
-        #    irma_output_dir,
-        #    sample_name,
-        # )
 
     def align_combined_fasta(self, irma_output_dir, segname, combined_vcf, output_vcf):
         """
@@ -2326,22 +2329,38 @@ class Software(object):
         os.system(cmd)
 
     def irma_align_get_msas(
-        self, reference_fasta, irma_output_dir, sample_name
+        self, keep_segment, reference_fasta, irma_output_dir, sample_name
     ) -> dict:
         """
         fetch consenssu from irma output. Match each to reference segments.
         Align each segment to reference and generate vcf files.
         """
-        fasta_files = [f for f in os.listdir(irma_output_dir) if f.endswith(".fasta")]
-        fasta_segs = {f.split(".")[0].split("_")[1]: f for f in fasta_files}
+        print(keep_segment)
+        segments_in_reference = {v: g for g, v in keep_segment.items()}
 
-        keep_segment = self.match_segments_to_genes_abricate(reference_fasta)
+        # fasta_files = [
+        #    f for f in os.listdir(os.path.join(irma_output_dir, "amended_consensus"))
+        # ]
+        # fasta_segs = {f.split(".")[0].split("_")[-1]: f for f in fasta_files}
+        # print(fasta_segs)
+
+        segments_generated = {
+            segname: os.path.join(
+                irma_output_dir, "amended_consensus", f"{sample_name}_{segname}.fa"
+            )
+            for segname in segments_in_reference.keys()  # if there are more than in the reference get ignored.
+        }
+
+        segments_generated = {
+            s: f for s, f in segments_generated.items() if os.path.exists(f)
+        }
 
         matched_segments = {
             segname: SeqIO.read(
-                os.path.join(irma_output_dir, fasta_segs[gene]), "fasta"
+                consensus,
+                "fasta",
             )
-            for segname, gene in keep_segment.items()
+            for segname, consensus in segments_generated.items()
             # fasta_segs[gene] for segname, gene in keep_segment.items()
         }
 
@@ -2355,9 +2374,19 @@ class Software(object):
             fasta_seq = fasta
             fasta_seq.id = sample_name
 
-            tmp_ref = os.path.join(irma_output_dir, segname + ".fasta")
-            with open(tmp_ref, "w") as ref:
+            tmp_cons = os.path.join(irma_output_dir, segname + ".fasta")
+            fasta_id = fasta.id
+            corrected_record = fasta
+            corrected_record.id = segname
+            with open(tmp_cons, "w") as ref:
+                SeqIO.write(corrected_record, ref, "fasta")
+
+            tmp__ref = os.path.join(irma_output_dir, segname + "_ref.fasta")
+            with open(tmp__ref, "w") as ref:
                 SeqIO.write(ref_seqs[segname], ref, "fasta")
+
+            print(fasta_id)
+            fasta.id = fasta_id
 
             tmp_comb = os.path.join(irma_output_dir, segname + "_comb.fasta")
             with open(tmp_comb, "w") as ref:
@@ -2561,27 +2590,42 @@ class Software(object):
         self.irma_replicate_snippy_output(
             file_name_1,
             file_name_2,
-            sample_name,
             irma_output_dir,
             path_reference_fasta,
             path_reference_genbank,
         )
 
         ## generate additional_files
-
+        keep_segment = self.match_segments_to_numbers(path_reference_fasta)
         ## generate individual segment alignments
         seqname_msa_dict = self.irma_align_get_msas(
-            path_reference_fasta, irma_output_dir, sample_name=sample_name
+            keep_segment, path_reference_fasta, irma_output_dir, sample_name=sample_name
         )
+
+        # concatenated consensus fasta
+        full_consensus_irma = os.path.join(
+            irma_output_dir, sample_name + ".consensus.fa"
+        )
+        print("full_consensus_irma", full_consensus_irma)
+        # fasta_files = os.listdir(os.path.join(irma_output_dir, "amended_consensus"))
+        fasta_files = [x + ".fasta" for x in seqname_msa_dict.keys()]
+
+        fasta_files = [os.path.join(irma_output_dir, f) for f in fasta_files]
+        # fasta_files = [f for f in os.listdir(irma_output_dir) if f.endswith(".fasta")]
+        # fasta_files = [os.path.join(irma_output_dir, f) for f in fasta_files]
+        with open(full_consensus_irma, "w") as f:
+            for file in fasta_files:
+                with open(file, "r") as g:
+                    f.write(g.read())
 
         ## generate individual segment vcf and depth files
         for seqname, msa_file in seqname_msa_dict.items():
-            seq_ref = os.path.join(irma_output_dir, seqname + ".fasta")
+            print(msa_file)
+            seq_ref = os.path.join(irma_output_dir, seqname + "_ref.fasta")
             self.vcfalign_from_msa(msa_file, seqname, irma_output_dir)
             self.generate_depth_from_msa(msa_file, seq_ref, irma_output_dir, seqname)
 
         ## generate ful depth file
-        _ = os.path.exists(os.path.join(irma_output_dir, sample_name + ".depth.gz"))
         _ = self.irma_collect_depth_files_compress(irma_output_dir, sample_name)
 
         ## generate_full_vcf from all segments
@@ -2604,7 +2648,6 @@ class Software(object):
         )
 
         os.unlink(vcf_combined)
-
         ### pass vcf to tab
         self.run_snippy_vcf_to_tab_freq_and_evidence(
             path_reference_fasta,
@@ -4312,7 +4355,7 @@ class Software(object):
                 traceback.print_exc()
 
             ### get again
-            manage_database = ManageDatabase()
+            # manage_database = ManageDatabase()
             project_sample = ProjectSample.objects.get(pk=project_sample.id)
             project_sample.is_finished = True
             project_sample.is_deleted = False

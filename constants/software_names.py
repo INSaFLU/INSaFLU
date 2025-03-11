@@ -283,7 +283,7 @@ class SoftwareNames(object):
     SOFTWARE_SNIPPY = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/snippy")
     SOFTWARE_SNIPPY_name = "Snippy"
     SOFTWARE_SNIPPY_name_extended = (
-        "Mapping (Snippy) and Optional Primer Clipping (iVar)"
+        "INSaFLU Full Pipeline (with optional iVar primmer clipping)"
     )
     SOFTWARE_SNIPPY_VERSION = "3.2-dev"
     SOFTWARE_SNIPPY_PARAMETERS = "--mapqual 20 --mincov 10 --minfrac 0.51"

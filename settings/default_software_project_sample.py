@@ -644,7 +644,7 @@ class DefaultProjectSoftware(object):
         """
         get snippy parameters
         """
-        return self.default_parameters.get_parameters(
+        return self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_SNIPPY_name,
             user,
             type_of_use,
@@ -666,11 +666,7 @@ class DefaultProjectSoftware(object):
     def get_mdcg_parameters_all_possibilities(
         self, user, project_sample: ProjectSample, is_to_run=True
     ):
-        """
-        get mdf parameters for project_sample, project and default
-        """
-
-        ### Test project_sample first
+        ###
         default_project_software = DefaultProjectSoftware()
         software_mdcg = (
             default_project_software.get_software_project_sample_mdcg_illumina(
@@ -706,17 +702,46 @@ class DefaultProjectSoftware(object):
             is_to_run=is_to_run,
             # software_name_extended=SoftwareNames.SOFTWARE_SNIPPY_name_extended,
         )
-        if not parameters is None:
-            return parameters
 
-        ### can be a default one
-        default_software = DefaultSoftware()
-        parameters = default_software.get_snippy_parameters(user)
-        if len(parameters) > 0:
-            return parameters
+        return parameters
 
-        software_names = SoftwareNames()
-        return software_names.get_snippy_parameters()
+    def get_mdcg_parameters_parsed_all_possibilities(
+        self, user, project_sample: ProjectSample, is_to_run=True
+    ) -> Optional[str]:
+        """
+        get mdf parameters for project_sample, project and default
+        """
+        default_project_software = DefaultProjectSoftware()
+        software_mdcg = (
+            default_project_software.get_software_project_sample_mdcg_illumina(
+                project_sample=project_sample,
+            )
+        )
+
+        print(software_mdcg)
+        parameters = self.get_mdcg_parameters_all_possibilities(
+            user, project_sample, is_to_run
+        )
+
+        print(parameters)
+
+        if parameters is None:
+            return None
+
+        return self.default_parameters.parse_parameters(parameters, software_mdcg.name)
+
+        # if not parameters is None:
+        #    return parameters
+
+        #### can be a default one
+        # default_software = DefaultSoftware()
+        # parameters = default_software.get_snippy_parameters(user)
+        # if len(parameters) > 0:
+        #    return parameters
+        #
+        # software_names = SoftwareNames()
+        # return software_names.get_snippy_parameters()
+        # return parameters
 
     def get_mdcg_parameters_for_project(self, user, project):
         """
@@ -735,7 +760,7 @@ class DefaultProjectSoftware(object):
         )
 
         ### Test project
-        parameters = self.default_parameters.get_parameters(
+        parameters = self.default_parameters.get_parameters_parsed(
             software.name,
             user,
             Software.TYPE_OF_USE_project,
@@ -780,7 +805,7 @@ class DefaultProjectSoftware(object):
         if value_default_parameter is None:
             return False
 
-        parameter_defined = self.get_snippy_single_parameter(
+        parameter_defined = self.get_mdcg_single_parameter(
             project_sample, parameter_name
         )
         if (
@@ -790,13 +815,13 @@ class DefaultProjectSoftware(object):
             return True
         return False
 
-    def get_snippy_single_parameter(self, project_sample, parameter_name):
+    def get_mdcg_single_parameter(self, project_sample, parameter_name):
         """
         get snippy single parameters
         :param parameter_name -> Only these two possibilities available SNIPPY_COVERAGE_NAME; SNIPPY_MAPQUAL_NAME
         """
 
-        parameters_string = self.get_mdcg_parameters_all_possibilities(
+        parameters_string = self.get_mdcg_parameters_parsed_all_possibilities(
             project_sample.project.owner, project_sample, is_to_run=True
         )
 
@@ -857,7 +882,7 @@ class DefaultProjectSoftware(object):
         get freebayes parameters
         Add extra -V to the end
         """
-        return self.default_parameters.get_parameters(
+        return self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_FREEBAYES_name,
             user,
             type_of_use,
@@ -912,7 +937,7 @@ class DefaultProjectSoftware(object):
         """
         get nanofilt parameters
         """
-        return self.default_parameters.get_parameters(
+        return self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_NanoFilt_name,
             user,
             type_of_use,
@@ -928,7 +953,7 @@ class DefaultProjectSoftware(object):
         """
 
         ### Test project_sample first
-        parameters = self.default_parameters.get_parameters(
+        parameters = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_NanoFilt_name,
             user,
             Software.TYPE_OF_USE_sample,
@@ -986,7 +1011,7 @@ class DefaultProjectSoftware(object):
         """
 
         ### Test project
-        parameters = self.default_parameters.get_parameters(
+        parameters = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_NanoFilt_name,
             user,
             Software.TYPE_OF_USE_sample,
@@ -1102,7 +1127,7 @@ class DefaultProjectSoftware(object):
         """
         get trimmomatic parameters
         """
-        return self.default_parameters.get_parameters(
+        return self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_TRIMMOMATIC_name,
             user,
             type_of_use,
@@ -1118,7 +1143,7 @@ class DefaultProjectSoftware(object):
         """
 
         ### Test project_sample first
-        parameters = self.default_parameters.get_parameters(
+        parameters = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_TRIMMOMATIC_name,
             user,
             Software.TYPE_OF_USE_sample,
@@ -1176,7 +1201,7 @@ class DefaultProjectSoftware(object):
         """
 
         ### Test project
-        parameters = self.default_parameters.get_parameters(
+        parameters = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_TRIMMOMATIC_name,
             user,
             Software.TYPE_OF_USE_sample,
@@ -1298,7 +1323,7 @@ class DefaultProjectSoftware(object):
         """
         get abricate parameters
         """
-        return self.default_parameters.get_parameters(
+        return self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_ABRICATE_name,
             user,
             type_of_use,
@@ -1347,7 +1372,7 @@ class DefaultProjectSoftware(object):
         """
 
         ### Test project_sample first
-        parameters = self.default_parameters.get_parameters(
+        parameters = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_ABRICATE_name,
             user,
             Software.TYPE_OF_USE_sample,
@@ -1374,7 +1399,7 @@ class DefaultProjectSoftware(object):
         """
 
         ### Test project
-        parameters = self.default_parameters.get_parameters(
+        parameters = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_ABRICATE_name,
             user,
             Software.TYPE_OF_USE_sample,
@@ -1495,7 +1520,7 @@ class DefaultProjectSoftware(object):
         """
         get medaka parameters
         """
-        return self.default_parameters.get_parameters(
+        return self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_Medaka_name_consensus,
             user,
             type_of_use,
@@ -1512,7 +1537,7 @@ class DefaultProjectSoftware(object):
         """
 
         ### Test project_sample first
-        parameters = self.default_parameters.get_parameters(
+        parameters = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_Medaka_name_consensus,
             user,
             Software.TYPE_OF_USE_project_sample,
@@ -1525,7 +1550,7 @@ class DefaultProjectSoftware(object):
             return parameters
 
         ### Test project
-        parameters = self.default_parameters.get_parameters(
+        parameters = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_Medaka_name_consensus,
             user,
             Software.TYPE_OF_USE_project,
@@ -1552,7 +1577,7 @@ class DefaultProjectSoftware(object):
         """
 
         ### Test project
-        parameters = self.default_parameters.get_parameters(
+        parameters = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_Medaka_name_consensus,
             user,
             Software.TYPE_OF_USE_project,
@@ -1672,7 +1697,7 @@ class DefaultProjectSoftware(object):
         """
         get samtools parameters
         """
-        return self.default_parameters.get_parameters(
+        return self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT,
             user,
             type_of_use,
@@ -1689,7 +1714,7 @@ class DefaultProjectSoftware(object):
         """
 
         ### Test project_sample first
-        parameters = self.default_parameters.get_parameters(
+        parameters = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT,
             user,
             Software.TYPE_OF_USE_project_sample,
@@ -1702,7 +1727,7 @@ class DefaultProjectSoftware(object):
             return parameters
 
         ### Test project
-        parameters = self.default_parameters.get_parameters(
+        parameters = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT,
             user,
             Software.TYPE_OF_USE_project,
@@ -1729,7 +1754,7 @@ class DefaultProjectSoftware(object):
         """
 
         ### Test project
-        parameters = self.default_parameters.get_parameters(
+        parameters = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT,
             user,
             Software.TYPE_OF_USE_project,
@@ -1853,7 +1878,7 @@ class DefaultProjectSoftware(object):
         """
         get mask_consensus parameters
         """
-        return self.default_parameters.get_parameters(
+        return self.default_parameters.get_parameters_parsed(
             SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name,
             user,
             type_of_use,
@@ -1871,7 +1896,7 @@ class DefaultProjectSoftware(object):
         """
 
         ### Test project_sample first
-        parameters = self.default_parameters.get_parameters(
+        parameters = self.default_parameters.get_parameters_parsed(
             SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name,
             user,
             Software.TYPE_OF_USE_project_sample,
@@ -1884,7 +1909,7 @@ class DefaultProjectSoftware(object):
             return parameters
 
         ### Test project
-        parameters = self.default_parameters.get_parameters(
+        parameters = self.default_parameters.get_parameters_parsed(
             SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name,
             user,
             Software.TYPE_OF_USE_project,
@@ -1913,7 +1938,7 @@ class DefaultProjectSoftware(object):
         """
 
         ### Test project
-        parameters = self.default_parameters.get_parameters(
+        parameters = self.default_parameters.get_parameters_parsed(
             SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name,
             user,
             Software.TYPE_OF_USE_project,
@@ -2074,7 +2099,7 @@ class DefaultProjectSoftware(object):
         """
         get limit_coverage_ONT parameters
         """
-        return self.default_parameters.get_parameters(
+        return self.default_parameters.get_parameters_parsed(
             SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name,
             user,
             type_of_use,
@@ -2090,7 +2115,7 @@ class DefaultProjectSoftware(object):
         """
 
         ### Test project_sample first
-        parameters = self.default_parameters.get_parameters(
+        parameters = self.default_parameters.get_parameters_parsed(
             SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name,
             user,
             Software.TYPE_OF_USE_project_sample,
@@ -2103,7 +2128,7 @@ class DefaultProjectSoftware(object):
             return parameters
 
         ### Test project
-        parameters = self.default_parameters.get_parameters(
+        parameters = self.default_parameters.get_parameters_parsed(
             SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name,
             user,
             Software.TYPE_OF_USE_project,
@@ -2130,7 +2155,7 @@ class DefaultProjectSoftware(object):
         """
 
         ### Test project
-        parameters = self.default_parameters.get_parameters(
+        parameters = self.default_parameters.get_parameters_parsed(
             SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name,
             user,
             Software.TYPE_OF_USE_project,
@@ -2258,7 +2283,7 @@ class DefaultProjectSoftware(object):
         """
         get freq_vcf_ONT parameters
         """
-        return self.default_parameters.get_parameters(
+        return self.default_parameters.get_parameters_parsed(
             SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name,
             user,
             type_of_use,
@@ -2274,7 +2299,7 @@ class DefaultProjectSoftware(object):
         """
 
         ### Test project_sample first
-        parameters = self.default_parameters.get_parameters(
+        parameters = self.default_parameters.get_parameters_parsed(
             SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name,
             user,
             Software.TYPE_OF_USE_project_sample,
@@ -2287,7 +2312,7 @@ class DefaultProjectSoftware(object):
             return parameters
 
         ### Test project
-        parameters = self.default_parameters.get_parameters(
+        parameters = self.default_parameters.get_parameters_parsed(
             SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name,
             user,
             Software.TYPE_OF_USE_project,
@@ -2314,7 +2339,7 @@ class DefaultProjectSoftware(object):
         """
 
         ### Test project
-        parameters = self.default_parameters.get_parameters(
+        parameters = self.default_parameters.get_parameters_parsed(
             SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name,
             user,
             Software.TYPE_OF_USE_project,
@@ -2518,7 +2543,7 @@ class DefaultProjectSoftware(object):
             name_extended=name_extended,
         )
 
-        return self.default_parameters.get_parameters(
+        return self.default_parameters.get_parameters_parsed(
             software_name,
             user,
             type_of_use,

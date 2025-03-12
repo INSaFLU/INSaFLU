@@ -205,9 +205,13 @@ class SoftwaresTable(tables.Table):
                 user,
                 technology_name,
                 pipeline_step=record.pipeline_step,
-                name_extended=record.name_extended,
+            )
+
+            parameters = self.default_software.default_parameters.edit_paramaters_show(
+                parameters, record.name
             )
             return parameters
+
         elif self.dataset is not None:
             # default_software_projects = DefaultProjectSoftware()
             # logger.debug("Dataset parameters for {}".format(self.dataset))
@@ -238,6 +242,10 @@ class SoftwaresTable(tables.Table):
                 name_extended=record.name_extended,
             )
 
+            parameters = self.default_software.default_parameters.edit_paramaters_show(
+                parameters, record.name
+            )
+
             if parameters == DefaultParameters.MASK_DONT_care:
                 if record.name == SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name:
                     return self.get_info_about_mask_consensus_by_sites()
@@ -257,13 +265,18 @@ class SoftwaresTable(tables.Table):
                 pipeline_step=record.pipeline_step.name,
                 name_extended=record.name_extended,
             )
+
+            parameters = self.default_software.default_parameters.edit_paramaters_show(
+                parameters, record.name
+            )
+
             if parameters == DefaultParameters.MASK_DONT_care:
                 if record.name == SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name:
                     return self.get_info_about_mask_consensus_by_sites()
             return parameters
         elif not self.sample is None:
             default_software_projects = DefaultProjectSoftware()
-            return default_software_projects.get_parameters(
+            parameters = default_software_projects.get_parameters(
                 record.name,
                 user,
                 Software.TYPE_OF_USE_sample,
@@ -273,6 +286,11 @@ class SoftwaresTable(tables.Table):
                 technology_name,
                 name_extended=record.name_extended,
             )
+
+            parameters = self.default_software.default_parameters.edit_paramaters_show(
+                parameters, record.name
+            )
+
         elif not self.televir_project is None:
             default_software_projects = DefaultProjectSoftware()
             return default_software_projects.get_parameters(

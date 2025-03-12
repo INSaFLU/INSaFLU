@@ -383,6 +383,96 @@ class DefaultParameters(object):
             return True
         return False
 
+    def get_software(
+        self,
+        software_name,
+        user,
+        type_of_use,
+        project,
+        project_sample,
+        technology_name=ConstantsSettings.TECHNOLOGY_illumina,
+        televir_project=None,
+        pipeline_step=None,
+        software_name_extended=None,
+        is_to_run=False,
+    ) -> Optional[Software]:
+        if self.check_software_is_polyvalent(software_name):
+            if pipeline_step is None:
+                prefered_pipeline = self.get_polyvalent_software_pipeline(software_name)
+            else:
+                prefered_pipeline = pipeline_step
+
+            software = self.get_software_global_with_step(
+                user,
+                software_name,
+                technology_name,
+                type_of_use,
+                prefered_pipeline,
+                televir_project=televir_project,
+            )
+
+        elif self.check_software_with_duplicates(software_name):
+            software = self.get_software_global(
+                user,
+                software_name,
+                technology_name,
+                type_of_use,
+                televir_project=televir_project,
+                is_to_run=is_to_run,
+                name_extended=software_name_extended,
+                project=project,
+                project_sample=project_sample,
+            )
+        else:
+            software = self.get_software_global(
+                user,
+                software_name,
+                technology_name,
+                type_of_use,
+                televir_project=televir_project,
+                is_to_run=is_to_run,
+                name_extended=software_name_extended,
+                project=project,
+            )
+
+        return software
+
+    def get_parameters_parsed(
+        self,
+        software_name,
+        user,
+        type_of_use,
+        project,
+        project_sample,
+        sample,
+        technology_name=ConstantsSettings.TECHNOLOGY_illumina,
+        dataset=None,
+        televir_project=None,
+        pipeline_step=None,
+        software_name_extended=None,
+        is_to_run=False,
+    ):
+
+        parameters = self.get_parameters(
+            software_name,
+            user,
+            type_of_use,
+            project,
+            project_sample,
+            sample,
+            technology_name,
+            dataset,
+            televir_project,
+            pipeline_step,
+            software_name_extended,
+            is_to_run,
+        )
+
+        if parameters is None:
+            return None
+
+        return self.parse_parameters(parameters, software_name)
+
     def get_parameters(
         self,
         software_name,
@@ -399,38 +489,42 @@ class DefaultParameters(object):
         is_to_run=False,
     ):
 
-        if self.check_software_is_polyvalent(
-            software_name
-        ) or self.check_software_with_duplicates(software_name):
-            return self.get_parameters_specific(
-                software_name,
-                user,
-                type_of_use,
-                project,
-                project_sample,
-                sample,
-                technology_name=technology_name,
-                dataset=dataset,
-                televir_project=televir_project,
-                pipeline_step=pipeline_step,
-                software_name_extended=software_name_extended,
-                is_to_run=is_to_run,
-            )
-
-        return self.get_parameters_classic(
+        software = self.get_software(
             software_name,
             user,
             type_of_use,
             project,
             project_sample,
-            sample,
-            technology_name=technology_name,
+            technology_name,
+            televir_project,
+            pipeline_step,
+            software_name_extended,
+            is_to_run,
+        )
+
+        if software is None:
+            return software
+
+        if not project_sample is None:
+            project = None
+
+        ## logger.debug("Get parameters: software-{} user-{} typeofuse-{} project-{} psample-{} sample-{} tec-{} dataset-{}",software, user, type_of_use, project, project_sample, sample, technology_name, dataset)
+        ## get parameters for a specific user  #
+        parameters = Parameter.objects.filter(
+            software=software,
+            project_sample=project_sample,
+            sample=sample,
             dataset=dataset,
             televir_project=televir_project,
-            pipeline_step=pipeline_step,
-            software_name_extended=software_name_extended,
-            is_to_run=is_to_run,
-        )
+        ).distinct()
+
+        if not project is None:
+            parameters = parameters.filter(project=project)
+
+        # logger.debug("Get parameters: {}".format(parameters))
+        ### if only one parameter and it is don't care, return dont_care
+
+        return parameters
 
     def get_parameters_specific(
         self,
@@ -471,7 +565,6 @@ class DefaultParameters(object):
             )
 
         else:
-
             software = self.get_software_global(
                 user,
                 software_name,
@@ -489,6 +582,7 @@ class DefaultParameters(object):
 
         if not project_sample is None:
             project = None
+
         ## logger.debug("Get parameters: software-{} user-{} typeofuse-{} project-{} psample-{} sample-{} tec-{} dataset-{}",software, user, type_of_use, project, project_sample, sample, technology_name, dataset)
         ## get parameters for a specific user  #
         parameters = Parameter.objects.filter(
@@ -561,8 +655,13 @@ class DefaultParameters(object):
                 name_extended=software_name_extended,
                 project=project,
             )
+
         if software is None:
             return software
+
+        if not project_sample is None:
+            project = None
+
         ## logger.debug("Get parameters: software-{} user-{} typeofuse-{} project-{} psample-{} sample-{} tec-{} dataset-{}",software, user, type_of_use, project, project_sample, sample, technology_name, dataset)
         ## get parameters for a specific user  #
         parameters = Parameter.objects.filter(
@@ -573,6 +672,9 @@ class DefaultParameters(object):
             dataset=dataset,
             televir_project=televir_project,
         )
+
+        if not project is None:
+            parameters = parameters.filter(project=project)
 
         # logger.debug("Get parameters: {}".format(parameters))
         ### if only one parameter and it is don't care, return dont_care
@@ -585,7 +687,30 @@ class DefaultParameters(object):
 
         return self.parse_parameters(parameters, software_name)
 
-    def parse_parameters(self, parameters: List[Parameter], software_name):
+    def edit_paramaters_show(self, parameters: str, software_name) -> str:
+        """
+        edits for frontend"""
+
+        parameters = str(parameters).strip()
+
+        if software_name == SoftwareNames.SOFTWARE_IRMA_name:
+            # find and remove --mincov and value
+            parameter_list = parameters.split(" ")
+            if "--mincov" in parameter_list:
+                index = parameter_list.index("--mincov")
+                parameter_list.pop(index)
+                parameter_list.pop(index)
+            parameters = " ".join(parameter_list)
+        return parameters
+
+    def parse_parameters(self, parameters: List[Parameter], software_name) -> str:
+
+        if len(list(parameters)) == 1 and list(parameters)[0].name in [
+            DefaultParameters.MASK_not_applicable,
+            DefaultParameters.MASK_DONT_care,
+        ]:
+            return DefaultParameters.MASK_not_applicable
+
         ### parse them
         dict_out = {}
         vect_order_ouput = []
@@ -611,12 +736,6 @@ class DefaultParameters(object):
 
         return_parameter = ""
         for par_name in vect_order_ouput:
-
-            if (
-                software_name == SoftwareNames.SOFTWARE_IRMA_name
-                and par_name == self.SNIPPY_COVERAGE_NAME
-            ):
-                continue
 
             if self.hide_parameter_name_check(par_name) is False:
                 return_parameter += " {}".format(par_name)
@@ -694,8 +813,7 @@ class DefaultParameters(object):
                         )
         # logger.debug("Get parameters return output: {}".format(return_parameter))
         #### This is the case where all the options can be "not to set"
-        print(software_name)
-        print("return_parameter: ", return_parameter)
+
         if len(return_parameter.strip()) == 0 and len(parameters) == 0:
             return None
         return return_parameter.strip()

@@ -89,7 +89,7 @@ class ProjectSampleDepthCoverage(object):
         ):
             self.b_coverage_default = False
             self.default_coverage_value = int(
-                default_project_software.get_snippy_single_parameter(
+                default_project_software.get_mdcg_single_parameter(
                     project_sample, DefaultParameters.SNIPPY_COVERAGE_NAME
                 )
             )
@@ -4280,10 +4280,8 @@ class Software(object):
             try:
 
                 ### get snippy parameters
-                mdcg_parameters = (
-                    default_project_software.get_mdcg_parameters_all_possibilities(
-                        user, project_sample, is_to_run=True
-                    )
+                mdcg_parameters = default_project_software.get_mdcg_parameters_parsed_all_possibilities(
+                    user, project_sample, is_to_run=True
                 )
 
                 mdcg_parameters = default_project_software.edit_primerNone_parameters(
@@ -4487,10 +4485,8 @@ class Software(object):
             try:
 
                 ### get snippy parameters
-                mdcg_parameters = (
-                    default_project_software.get_mdcg_parameters_all_possibilities(
-                        user, project_sample, is_to_run=True
-                    )
+                mdcg_parameters = default_project_software.get_mdcg_parameters_parsed_all_possibilities(
+                    user, project_sample, is_to_run=True
                 )
 
                 mdcg_parameters = default_project_software.edit_primerNone_parameters(
@@ -4664,7 +4660,7 @@ class Software(object):
                         self.software_names.get_msa_masker_version(),
                         "{}; for coverages less than {} in {}% of the regions.".format(
                             msa_parameters,
-                            default_project_software.get_snippy_single_parameter(
+                            default_project_software.get_mdcg_single_parameter(
                                 project_sample, DefaultParameters.SNIPPY_COVERAGE_NAME
                             ),
                             100 - limit_to_mask_consensus,

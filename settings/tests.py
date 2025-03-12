@@ -659,7 +659,7 @@ class testsDefaultSoftwares(TestCase):
         default_software.test_all_defaults(user, None, None, sample)
         self.assertEqual(
             "--mapqual 20 --mincov 10 --minfrac 0.51",
-            default_software.get_mdcg_parameters_all_possibilities(
+            default_software.get_mdcg_parameters_parsed_all_possibilities(
                 user, project_sample
             ),
         )
@@ -1110,7 +1110,7 @@ class testsDefaultSoftwares(TestCase):
         default_software.test_all_defaults(user, project, None, None)
         self.assertEqual(
             "--mapqual 20 --mincov 10 --minfrac 42334",
-            default_software.get_mdcg_parameters_all_possibilities(
+            default_software.get_mdcg_parameters_parsed_all_possibilities(
                 user, project_sample
             ),
         )
@@ -1248,7 +1248,7 @@ class testsDefaultSoftwares(TestCase):
         default_software = DefaultProjectSoftware()
         self.assertEqual(
             "--mapqual 20 --mincov 10 --minfrac 0.51",
-            default_software.get_mdcg_parameters_all_possibilities(
+            default_software.get_mdcg_parameters_parsed_all_possibilities(
                 user, project_sample
             ),
         )
@@ -1313,7 +1313,7 @@ class testsDefaultSoftwares(TestCase):
         ####
         self.assertEqual(
             "--mapqual 20 --mincov 30 --minfrac 0.222",
-            default_software.get_mdcg_parameters_all_possibilities(
+            default_software.get_mdcg_parameters_parsed_all_possibilities(
                 user, project_sample
             ),
         )
@@ -1330,13 +1330,13 @@ class testsDefaultSoftwares(TestCase):
         )
         self.assertEqual(
             "30",
-            default_software.get_snippy_single_parameter(
+            default_software.get_mdcg_single_parameter(
                 project_sample, DefaultParameters.SNIPPY_COVERAGE_NAME
             ),
         )
         self.assertEqual(
             "20",
-            default_software.get_snippy_single_parameter(
+            default_software.get_mdcg_single_parameter(
                 project_sample, DefaultParameters.SNIPPY_MAPQUAL_NAME
             ),
         )
@@ -1369,7 +1369,7 @@ class testsDefaultSoftwares(TestCase):
         default_software.test_all_defaults(user, None, project_sample, None)
         self.assertEqual(
             "--mapqual 20 --mincov 30 --minfrac 0.222",
-            default_software.get_mdcg_parameters_all_possibilities(
+            default_software.get_mdcg_parameters_parsed_all_possibilities(
                 user, project_sample
             ),
         )
@@ -1403,7 +1403,7 @@ class testsDefaultSoftwares(TestCase):
         #### save a project_sample
         self.assertEqual(
             "--mapqual 20 --mincov 30 --minfrac 0.222",
-            default_software.get_mdcg_parameters_all_possibilities(
+            default_software.get_mdcg_parameters_parsed_all_possibilities(
                 user, project_sample
             ),
         )
@@ -1727,7 +1727,7 @@ class testsDefaultSoftwares(TestCase):
         default_software = DefaultProjectSoftware()
         self.assertEqual(
             "--mapqual 20 --mincov 10 --minfrac 0.51",
-            default_software.get_mdcg_parameters_all_possibilities(
+            default_software.get_mdcg_parameters_parsed_all_possibilities(
                 user, project_sample
             ),
         )
@@ -1804,7 +1804,7 @@ class testsDefaultSoftwares(TestCase):
         self.assertEqual("0.222", parameters[2].parameter)
         self.assertEqual(
             "--mapqual 20 --mincov 10 --minfrac 0.222",
-            default_software.get_mdcg_parameters_all_possibilities(
+            default_software.get_mdcg_parameters_parsed_all_possibilities(
                 user, project_sample
             ),
         )
@@ -1821,13 +1821,13 @@ class testsDefaultSoftwares(TestCase):
         )
         self.assertEqual(
             "10",
-            default_software.get_snippy_single_parameter(
+            default_software.get_mdcg_single_parameter(
                 project_sample, DefaultParameters.SNIPPY_COVERAGE_NAME
             ),
         )
         self.assertEqual(
             "20",
-            default_software.get_snippy_single_parameter(
+            default_software.get_mdcg_single_parameter(
                 project_sample, DefaultParameters.SNIPPY_MAPQUAL_NAME
             ),
         )

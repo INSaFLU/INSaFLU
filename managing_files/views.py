@@ -2923,9 +2923,6 @@ class ProjectSelectView(LoginRequiredMixin, ListView):
         default_software = DefaultProjectSoftware()
         default_project_exists = default_software.project_parameters_exist(project)
 
-        context["software_snippy_index"] = "Snippy"
-        context["software_irma_index"] = "IRMA"
-        context["software_ivar_index"] = "IVAR"
         context["software_exist"] = default_project_exists
         context["show_info_main_page"] = (
             ShowInfoMainPage()

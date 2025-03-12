@@ -727,14 +727,7 @@ def get_mdcg_project_software(request):
         project_id = request.GET["project_id"]
         software_name = request.GET["software_name"]
         project = Project.objects.get(pk=project_id)
-        software = Software.objects.filter(
-            name=software_name,
-            owner=request.user,
-            type_of_use=Software.TYPE_OF_USE_project,
-            parameter__project=project,
-            parameter__project_sample=None,
-            is_obsolete=False,
-        ).distinct()
+        print(software_name)
         default_software = DefaultProjectSoftware()
         default_software.test_all_defaults(
             request.user, project, None, None, None

@@ -114,28 +114,31 @@ class DefaultParameters(object):
     def persist_parameters_create(self, vect_parameters: List[Parameter]):
         software = None
         dt_out_sequential = {}
-        for parameter in vect_parameters:
-            assert parameter.sequence_out not in dt_out_sequential
-            if software is None:
-                try:
-                    software = parameter.software
+        print("vect_parameters", vect_parameters)
+        with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
+            for parameter in vect_parameters:
+                assert parameter.sequence_out not in dt_out_sequential
+                if software is None:
+                    try:
+                        software = parameter.software
 
-                    software.save()
+                        software.save()
+                        print(software.pk)
+
+                    except Exception as e:
+                        logging.error("Error persisting software: {}".format(e))
+                        continue
+
+                parameter.software = software
+
+                try:
+
+                    parameter.save()
+                    dt_out_sequential[parameter.sequence_out] = 1
 
                 except Exception as e:
-                    logging.error("Error persisting software: {}".format(e))
+                    logging.error("Error persisting parameter: {}".format(e))
                     continue
-
-            parameter.software = software
-
-            try:
-
-                parameter.save()
-                dt_out_sequential[parameter.sequence_out] = 1
-
-            except Exception as e:
-                logging.error("Error persisting parameter: {}".format(e))
-                continue
 
     def persist_parameters(self, vect_parameters: List[Parameter], type_of_use: int):
         """

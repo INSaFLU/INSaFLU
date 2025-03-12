@@ -2008,7 +2008,7 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
     template_name = "project/project_add.html"
 
     def get_success_url(self):
-        return reverse("project-settings-setup", kwargs={"pk": self.object.id})
+        return reverse("PIproject-select-software", kwargs={"pk": self.object.id})
 
     def get_form_kwargs(self):
         """
@@ -2900,6 +2900,42 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
         return context
 
 
+class ProjectSelectView(LoginRequiredMixin, ListView):
+    """
+    choose one of Mutation Detecion and Consensus Generation software
+    """
+
+    model = Project
+    template_name = "project/project_select_software.html"
+    context_object_name = "project"
+
+    def get_context_data(self, **kwargs):
+        context = super(ProjectSelectView, self).get_context_data(**kwargs)
+        project = Project.objects.get(pk=self.kwargs["pk"])
+
+        ### can't see this project
+        context["nav_project"] = True
+        if project.owner.id != self.request.user.id:
+            context["error_cant_see"] = "1"
+            return context
+
+        ### test all defaults first, if exist in database
+        default_software = DefaultProjectSoftware()
+        default_project_exists = default_software.project_parameters_exist(project)
+
+        context["software_snippy_index"] = "Snippy"
+        context["software_irma_index"] = "IRMA"
+        context["software_ivar_index"] = "IVAR"
+        context["software_exist"] = default_project_exists
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
+        context["project"] = project
+        context["project_index"] = project.id
+        context["type_of_use_id"] = SoftwareSettings.TYPE_OF_USE_project
+        return context
+
+
 class ProjectsSettingsView(LoginRequiredMixin, ListView):
     """
     can change settings in the projects
@@ -2928,16 +2964,6 @@ class ProjectsSettingsView(LoginRequiredMixin, ListView):
         if project.owner.id != self.request.user.id:
             context["error_cant_see"] = "1"
             return context
-
-        ### test all defaults first, if exist in database
-        default_software = DefaultProjectSoftware()
-        default_project_exists = default_software.project_parameters_exist(project)
-        if default_project_exists:
-            self.is_setup = False
-
-        default_software.test_all_defaults(
-            self.request.user, project, None, None, None
-        )  ## the user can have defaults yet
 
         all_tables = []  ## order by Technology, PipelineStep, table
         ## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],

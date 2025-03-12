@@ -717,6 +717,62 @@ def get_mask_consensus_actual_values(request):
 
 
 @csrf_protect
+def get_mdcg_project_software(request):
+    """
+    test all defaults for project software, return project pk for selected project software
+    """
+
+    if request.is_ajax():
+        data = {"is_ok": False}
+        project_id = request.GET["project_id"]
+        software_name = request.GET["software_name"]
+        project = Project.objects.get(pk=project_id)
+        software = Software.objects.filter(
+            name=software_name,
+            owner=request.user,
+            type_of_use=Software.TYPE_OF_USE_project,
+            parameter__project=project,
+            parameter__project_sample=None,
+            is_obsolete=False,
+        ).distinct()
+        default_software = DefaultProjectSoftware()
+        default_software.test_all_defaults(
+            request.user, project, None, None, None
+        )  ## the user can have defaults yet
+
+        if software_name == "IRMA":
+            software_name = SoftwareNames.SOFTWARE_IRMA_name
+        elif software_name == "IVAR":
+            software_name = SoftwareNames.SOFTWARE_IVAR_name
+        elif software_name == "Snippy":
+            software_name = SoftwareNames.SOFTWARE_SNIPPY_name
+
+        else:
+            data["is_ok"] = False
+            return JsonResponse(data)
+
+        software = Software.objects.filter(
+            name=software_name,
+            owner=request.user,
+            type_of_use=Software.TYPE_OF_USE_project,
+            parameter__project=project,
+            parameter__project_sample=None,
+            is_obsolete=False,
+        ).distinct()
+
+        software = software.first()
+
+        if software is None:
+            data["is_ok"] = False
+            return JsonResponse(data)
+
+        data["is_ok"] = True
+        data["project_id"] = project_id
+        data["software_id"] = software.id
+        return JsonResponse(data)
+
+
+@csrf_protect
 def turn_on_off_software(request):
     """
     Denies is_to_run in main software description.
@@ -765,6 +821,7 @@ def turn_on_off_software(request):
             televir_project_sample_id = request.GET[televir_project_sample_id_a]
 
         default_parameters = DefaultParameters(prep_televir_dbs=False)
+
         if software_id_a in request.GET:
             software_id = request.GET[software_id_a]
 
@@ -1235,7 +1292,6 @@ def get_software_name_to_turn_on_off(request):
         sample_id_a = "sample_id"
         project_id_a = "project_id"
         project_sample_id_a = "project_sample_id"
-        type_of_use_id_a = "type_of_use_id"
         televir_project_id_a = "televir_project_id"
         televir_project_sample_id_a = "televir_project_sample_id"
 

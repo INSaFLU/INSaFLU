@@ -1,0 +1,189 @@
+{% extends '_layouts/base.html' %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% load static %}
+
+{% block css %}
+{% load static from staticfiles %}
+<link rel="stylesheet" href="{% static 'css/settings-index.css' %}" type="text/css" />
+{% endblock css %}
+
+{% block breadcrumbs %}
+{{ block.super }}
+{% breadcrumb "Project Index" "project-index"%}
+{% endblock %}
+
+{% block content %}
+<style>
+
+    .img-index {
+        width: 100%;
+        object-fit: cover;
+        border: 1px solid #ddd;
+    }
+
+    .col-md {
+        max-width : 250px;
+    }
+
+    .card {
+        height: 100%;
+    }
+
+    .card-footer {
+        text-align: center;
+    }
+    .card-title {
+        text-align: center;
+    }
+    .card-text {
+        text-align: center;
+    }
+    
+
+    .page-container {
+        margin-top: 70px;
+    }
+
+</style>
+
+<div class="page-container">
+    <div class="row justify-content-center">
+        <div class="col-md">
+            <div class="card mb-2">
+                <div class="card-body">
+                    <h5 class="card-title"><strong>{{ 'INSaFLU Full Pipeline' }}</strong></h5>
+                    <p class="card-text">
+                        Classical INSaFLU pipeline 
+                        <a href="https://insaflu.readthedocs.io/en/latest/bioinformatics_pipeline.html#reference-based-genomic-surveillance" title="https://insaflu.readthedocs.io/en/latest/bioinformatics_pipeline.html#reference-based-genomic-surveillance" target="_blank">
+                            (Read more)
+                        </a>. Suitable for Illumina/Ion Torrent and Oxford Nanopore Technologies (ONT) data.
+                    </p>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'project-settings-setup' pk=project_index %}" type_of_use_id={{type_of_use_id}} project_id={{project_index}} value={{software_snippy_index}} class="btn btn-primary data-software" {% if software_exist %}disabled{% endif %}>
+                        Settings
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md">
+            <div class="card mb-2">
+                <div class="card-body">
+                    <h5 class="card-title"><strong>{{ 'iVar Full Pipeline' }}</strong></h5>
+                    <p class="card-text">
+                        Obtain the classical INSaFLU outputs applying the iVar consensus-generation pipeline 
+                        <a href="https://github.com/andersen-lab/ivar" title="https://github.com/andersen-lab/ivar" target="_blank">
+                            (Read more)
+                        </a>. Suitable for Illumina sequencing data only.
+                    </p>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'project-settings-setup' pk=project_index %}" type_of_use_id={{type_of_use_id}} project_id={{project_index}} value={{software_ivar_index}} class="btn btn-primary data-software" {% if software_exist %}disabled{% endif %}>
+                        Settings
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md">
+            <div class="card mb-2">
+                <div class="card-body">
+                    <h5 class="card-title"><strong>{{ 'IRMA Full Pipeline' }}</strong></h5>
+                    <p class="card-text">
+                        Analysis of influenza virus sequencing data using the IRMA pipeline 
+                        <a href="https://wonder.cdc.gov/amd/flu/irma/" title="https://wonder.cdc.gov/amd/flu/irma/" target="_blank">
+                            (Read more)
+                        </a>. Influenza virus-specific and suitable only for Illumina sequencing data.
+                    </p>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'project-settings-setup' pk=project_index %}" type_of_use_id={{type_of_use_id}} project_id={{project_index}} value={{software_ivar_index}} class="btn btn-primary data-software"  {% if software_exist %}disabled{% endif %}>
+                        Settings
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% if services %}
+        <div class="col-md">
+        <div class="card mb-2">
+            <img class="img-index" src="{% static "img/dwemer.png" %}">
+            <div class="card-body">
+                <h5 class="card-title">{{ 'Services' }}</h5>
+                <p class="card-text">{{ 'General Purpose Tools' }}</p>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'PIservices_main' %}"  class="btn btn-primary data-software">
+                    Services
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+
+{% load static from staticfiles %}
+
+<script type="text/javascript">
+    $(document).ready(function() {
+        // Remove any existing click event handlers for the anchor tags
+        $(document).off("click", ".data-software");
+
+        // Attach a new click event handler
+        $(document).on("click", ".data-software", function(e) {
+
+            if ($(this).attr('disabled')) {
+                return;
+            }
+
+            e.preventDefault(); // Prevent the default action of the anchor tag
+
+            var software_name = $(this).attr('value');
+            var project_id = $(this).attr('project_id');
+            var type_of_use_id = $(this).attr('type_of_use_id');
+            var href = $(this).attr('href');
+
+            $.ajax({
+                url: '/settings/ajax/get_mdcg_project_software',
+                data: {
+                    project_id: project_id,
+                    software_name: software_name,
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                success: function(data) {
+                    console.log(data);
+                    var software_id = data['software_id'];
+                    wait_screen();
+
+                    $.ajax({
+                        url: '/settings/ajax/turn_on_off_software',
+                        data: {
+                            software_id: software_id,
+                            type_of_use_id: type_of_use_id,
+                            project_id: project_id,
+                            csrfmiddlewaretoken: '{{ csrf_token }}'
+                        },
+                        success: function(data) {
+                            // $.unblockUI();
+                            window.location.href = href;
+                        },
+                        error: function(xhr, errmsg, err) {
+                            alert(errmsg);
+                            console.log(xhr.status + ": " + xhr.responseText);
+                            $.unblockUI();
+                        }
+                    });
+                },
+                error: function(xhr, errmsg, err) {
+                    alert(errmsg);
+                    console.log(xhr.status + ": " + xhr.responseText);
+                    $.unblockUI();
+                }
+            });
+        });
+    });
+</script>
+
+{% endblock js %}

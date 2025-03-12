@@ -2965,6 +2965,11 @@ class ProjectsSettingsView(LoginRequiredMixin, ListView):
             context["error_cant_see"] = "1"
             return context
 
+        default_software = DefaultProjectSoftware()
+        software_mdcg = default_software.get_software_project_mdcg_illumina(
+            project=project,
+        )
+
         all_tables = []  ## order by Technology, PipelineStep, table
         ## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],
         ##	[unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...], etc
@@ -2976,7 +2981,11 @@ class ProjectsSettingsView(LoginRequiredMixin, ListView):
             project=project, is_deleted=False
         ).count()
         ### IMPORTANT, must have technology__name, because old versions don't
-        for technology in ConstantsSettings.vect_technology:  ## run over all technology
+        technologies = ConstantsSettings.vect_technology
+        if not software_mdcg.name == SoftwareNames.SOFTWARE_SNIPPY_name:
+            technologies = ConstantsSettings.vect_technology_illumina_projects
+
+        for technology in technologies:  ## run over all technology
             vect_pipeline_step = []
             for pipeline_step in ConstantsSettings.vect_pipeline_names:
                 query_set = SoftwareSettings.objects.filter(
@@ -2992,6 +3001,12 @@ class ProjectsSettingsView(LoginRequiredMixin, ListView):
                     pipeline_step__name=pipeline_step,
                     is_obsolete=False,
                 ).distinct()
+
+                if (
+                    pipeline_step == ConstantsSettings.PIPELINE_NAME_variant_detection
+                    and technology == ConstantsSettings.TECHNOLOGY_illumina
+                ):
+                    query_set = query_set.filter(name=software_mdcg.name)
 
                 ### if there are software
                 if query_set.count() > 0:

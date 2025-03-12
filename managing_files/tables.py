@@ -565,6 +565,14 @@ class ProjectTable(tables.Table):
     reference = tables.Column("Reference", empty_values=())
     samples = tables.Column("#Samples (P/W/E)", orderable=False, empty_values=())
     technology = tables.Column("Technology", empty_values=())
+    project_type = tables.Column(
+        "Project Type",
+        empty_values=(),
+        attrs={
+            "th": {"style": "text-align: center;"},
+            "td": {"style": "text-align: center;"},
+        },
+    )
     last_change_date = tables.Column("Last Change date", empty_values=())
     creation_date = tables.Column("Creation date", empty_values=())
     results = tables.LinkColumn("Options", orderable=False, empty_values=())
@@ -590,6 +598,16 @@ class ProjectTable(tables.Table):
         )
 
         return mark_safe(possible_technologies)
+
+    def render_project_type(self, record: Project):
+        """return project type"""
+        default_software = DefaultProjectSoftware()
+        software_mdcg = default_software.get_software_project_mdcg_illumina(record)
+
+        if not software_mdcg is None:
+            return software_mdcg.name_extended.split()[0]
+
+        return "Not defined"
 
     def render_name(self, record: Project):
         from crequest.middleware import CrequestMiddleware

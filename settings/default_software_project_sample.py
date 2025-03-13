@@ -718,12 +718,9 @@ class DefaultProjectSoftware(object):
             )
         )
 
-        print(software_mdcg)
         parameters = self.get_mdcg_parameters_all_possibilities(
             user, project_sample, is_to_run
         )
-
-        print(parameters)
 
         if parameters is None:
             return None

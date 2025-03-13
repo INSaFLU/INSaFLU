@@ -727,7 +727,6 @@ def get_mdcg_project_software(request):
         project_id = request.GET["project_id"]
         software_name = request.GET["software_name"]
         project = Project.objects.get(pk=project_id)
-        print(software_name)
         default_software = DefaultProjectSoftware()
         default_software.test_all_defaults(
             request.user, project, None, None, None

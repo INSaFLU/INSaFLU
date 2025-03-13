@@ -2338,7 +2338,6 @@ class Software(object):
         fetch consenssu from irma output. Match each to reference segments.
         Align each segment to reference and generate vcf files.
         """
-        print(keep_segment)
         segments_in_reference = {v: g for g, v in keep_segment.items()}
 
         # fasta_files = [
@@ -4294,6 +4293,7 @@ class Software(object):
         software = default_project_software.get_software_project_sample_mdcg_illumina(
             project_sample=project_sample,
         )
+        software_name = software.name
 
         if software is None:
             raise Exception("MDCG software not found.")
@@ -4327,7 +4327,6 @@ class Software(object):
                     mdcg_parameters,
                 )
 
-                software_name = software.name
                 if software.name_extended == SoftwareNames.SOFTWARE_IRMA_name_extended:
                     software_name = SoftwareNames.SOFTWARE_IRMA_name
                 elif (

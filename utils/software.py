@@ -12,6 +12,7 @@ import re
 import subprocess
 from typing import Optional
 
+import pandas as pd
 from BCBio import GFF
 from Bio import SeqIO
 from Bio.Seq import MutableSeq, Seq
@@ -531,6 +532,7 @@ class Software(object):
                 FileType.FILE_VCF_GZ_TBI,
                 FileType.FILE_CSV,
                 FileType.FILE_REF_FASTA,
+                FileType.FILE_MIXED_VARIANTS,
             ]
         elif software == SoftwareNames.SOFTWARE_FREEBAYES_name:
             return [FileType.FILE_VCF, FileType.FILE_TAB]
@@ -553,6 +555,7 @@ class Software(object):
         software : SOFTWARE_SNIPPY_name, SOFTWARE_FREEBAYES_name
         """
         for type_file in self.get_vect_type_files_to_copy(software):
+
             if type_file == FileType.FILE_CONSENSUS_FA:  ## if .fa file pass to .fasta
                 self.utils.copy_file(
                     os.path.join(
@@ -2581,8 +2584,15 @@ class Software(object):
     ):
         """
         run irma and snpEff
+        ## outputs
+        - .vcf
+        - .mixed.variants.tsv
+        - .consensus.fa
+        - .tab
+        - .depth.gz
+        - .depth.gz.tbi
+        - .vcf.gz
         """
-
         ############# RUN IRMA ################
         irma_output_dir = self.run_irma(file_name_1, file_name_2, module, sample_name)
 
@@ -2593,6 +2603,16 @@ class Software(object):
             irma_output_dir,
             path_reference_fasta,
             path_reference_genbank,
+        )
+
+        ## Collect variants file
+        files = os.listdir(os.path.join(irma_output_dir, "tables"))
+        files = [f for f in files if f.endswith("variants.txt")]
+        files = [os.path.join(irma_output_dir, "tables", f) for f in files]
+        variant_tables = [pd.read_csv(f, sep="\t") for f in files]
+        variant_table = pd.concat(variant_tables)
+        variant_table.to_csv(
+            os.path.join(irma_output_dir, sample_name + ".mixed.variants.tsv"), sep="\t"
         )
 
         ## generate additional_files
@@ -2606,7 +2626,6 @@ class Software(object):
         full_consensus_irma = os.path.join(
             irma_output_dir, sample_name + ".consensus.fa"
         )
-        print("full_consensus_irma", full_consensus_irma)
         # fasta_files = os.listdir(os.path.join(irma_output_dir, "amended_consensus"))
         fasta_files = [x + ".fasta" for x in seqname_msa_dict.keys()]
 
@@ -4234,203 +4253,6 @@ class Software(object):
             ProcessControler.FLAG_ERROR,
         )
 
-    def __process_second_stage_irma(
-        self, project_sample: ProjectSample, user, software
-    ):
-        """
-        Global processing, IRMA
-        """
-        process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
-        manageDatabase = ManageDatabase()
-        result_all = Result()
-        ### metakey for this process
-        metaKeyAndValue = MetaKeyAndValue()
-
-        #### PREP
-
-        meta_key_project_sample = (
-            metaKeyAndValue.get_meta_key_queue_by_project_sample_id(project_sample.id)
-        )
-
-        ### Test if this sample already run
-        meta_sample = manageDatabase.get_project_sample_metakey_last(
-            project_sample,
-            meta_key_project_sample,
-            MetaKeyAndValue.META_VALUE_Queue,
-        )
-        if (
-            meta_sample != None
-            and meta_sample.value == MetaKeyAndValue.META_VALUE_Success
-        ):
-            return
-
-        ## test software parameters for project_sample
-        default_project_software = DefaultProjectSoftware()
-
-        if software is None:
-            raise Exception("MDCG software not found.")
-
-        ######## BEGIN
-        os.chdir("/tmp/insaFlu/")
-
-        try:
-
-            ## process snippy
-            try:
-
-                ### get snippy parameters
-                mdcg_parameters = default_project_software.get_mdcg_parameters_parsed_all_possibilities(
-                    user, project_sample, is_to_run=True
-                )
-
-                mdcg_parameters = default_project_software.edit_primerNone_parameters(
-                    mdcg_parameters
-                )
-
-                out_put_path = self.run_mdcg(
-                    software,
-                    project_sample,
-                    mdcg_parameters,
-                )
-
-                software_description = SoftwareDesc(
-                    software.name,
-                    software.version,
-                    mdcg_parameters,
-                )
-
-                metakey = MetaKeyAndValue.META_KEY_Snippy
-
-                result_all.add_software(software_description)
-
-            except Exception as e:
-
-                import traceback
-
-                traceback.print_exc()
-
-                result = Result()
-                result.set_error(e.args[0])
-                result.add_software(
-                    SoftwareDesc(
-                        software.name,
-                        software.version,
-                        mdcg_parameters,
-                    )
-                )
-
-                self.__set_process_error(
-                    result,
-                    project_sample,
-                    MetaKeyAndValue.META_KEY_Snippy,
-                )
-
-                return False
-            ## copy the files to the project sample directories
-            try:
-                self.copy_files_to_project(project_sample, software.name, out_put_path)
-
-                # self.utils.remove_dir(out_put_path)
-                ### make the link for the new tab file name
-                path_snippy_tab = project_sample.get_file_output(
-                    TypePath.MEDIA_ROOT,
-                    FileType.FILE_TAB,
-                    software.name,
-                )
-                if os.path.exists(path_snippy_tab):
-                    sz_file_to = project_sample.get_file_output_human(
-                        TypePath.MEDIA_ROOT,
-                        FileType.FILE_TAB,
-                        software.name,
-                    )
-                    self.utils.link_file(path_snippy_tab, sz_file_to)
-
-            except Exception as e:
-                print(e)
-                import traceback
-
-                traceback.print_exc()
-
-            ### get again
-            # manage_database = ManageDatabase()
-            project_sample = ProjectSample.objects.get(pk=project_sample.id)
-            project_sample.is_finished = True
-            project_sample.is_deleted = False
-            project_sample.is_deleted_in_file_system = False
-            project_sample.date_deleted = None
-            project_sample.is_error = False
-            project_sample.is_mask_consensus_sequences = True
-            # project_sample.count_variations = manage_database.get_variation_count(
-            #    count_hits
-            # )
-            # project_sample.mixed_infections = mixed_infection
-            project_sample.save()
-            ### add today date, last change
-            project = project_sample.project
-            project.last_change_date = datetime.datetime.now()
-            project.save()
-
-            ### get clean consensus file
-            # consensus_fasta = project_sample.get_file_output(
-            #    TypePath.MEDIA_ROOT,
-            #    FileType.FILE_CONSENSUS_FASTA,
-            #    SoftwareNames.SOFTWARE_SNIPPY_name,
-            # )
-            # if os.path.exists(consensus_fasta):
-            #    file_out = project_sample.get_consensus_file(TypePath.MEDIA_ROOT)
-            #    self.utils.filter_fasta_all_sequences_file(
-            #        consensus_fasta,
-            #        coverage,
-            #        file_out,
-            #        limit_to_mask_consensus,
-            #        False,
-            #    )
-            #    ## make a backup of this file to use has a starter of second stage analysis
-            #    self.utils.copy_file(
-            #        project_sample.get_consensus_file(TypePath.MEDIA_ROOT),
-            #        project_sample.get_backup_consensus_file(),
-            #    )
-
-            ### set the tag of result OK
-            manageDatabase.set_project_sample_metakey(
-                project_sample,
-                user,
-                MetaKeyAndValue.META_KEY_Snippy_Freebayes,
-                MetaKeyAndValue.META_VALUE_Success,
-                result_all.to_json(),
-            )
-            ### set the flag of the end of the task
-            meta_sample = manageDatabase.get_project_sample_metakey_last(
-                project_sample,
-                meta_key_project_sample,
-                MetaKeyAndValue.META_VALUE_Queue,
-            )
-            if not meta_sample is None:
-                manageDatabase.set_project_sample_metakey(
-                    project_sample,
-                    user,
-                    meta_key_project_sample,
-                    MetaKeyAndValue.META_VALUE_Success,
-                    meta_sample.description,
-                )
-        except Exception as e:
-            ## finished with error
-            process_SGE.set_process_controler(
-                user,
-                process_controler.get_name_project_sample(project_sample),
-                ProcessControler.FLAG_ERROR,
-            )
-            return False
-
-        ### finished
-        process_SGE.set_process_controler(
-            user,
-            process_controler.get_name_project_sample(project_sample),
-            ProcessControler.FLAG_FINISHED,
-        )
-        return True
-
     #     @transaction.atomic
     def __process_second_stage_snippy_coverage_freebayes(
         self, project_sample: ProjectSample, user, software
@@ -4512,8 +4334,6 @@ class Software(object):
                     software.name_extended == SoftwareNames.SOFTWARE_IVAR_name_extended
                 ):
                     software_name = SoftwareNames.SOFTWARE_IVAR_name
-
-                metakey = MetaKeyAndValue.META_KEY_Snippy
 
                 result_all.add_software(software_description)
             except Exception as e:

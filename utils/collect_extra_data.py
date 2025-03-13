@@ -25,9 +25,9 @@ from managing_files.models import (
     ProjectSample,
     Reference,
     Sample,
+    TagNames,
 )
 from managing_files.models import Software as SoftwareModel
-from managing_files.models import TagNames
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software_project_sample import DefaultProjectSoftware
@@ -854,6 +854,9 @@ class CollectExtraData(object):
 
             ## collect sample table with plus type and subtype, mixed infection, equal to upload table
             self.calculate_global_files(
+                Project.PROJECT_FILE_NAME_IRMA_OUTPUT_zipped, project, user
+            )
+            self.calculate_global_files(
                 Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV, project, user
             )
             self.calculate_global_files(
@@ -1142,6 +1145,7 @@ class CollectExtraData(object):
         """
         out_file = None
         out_file_file_system = None
+
         if type_file == Project.PROJECT_FILE_NAME_COVERAGE:
             ## collect coverage file for all samples
             out_file = self.create_coverage_file(project, user)
@@ -1155,8 +1159,6 @@ class CollectExtraData(object):
             out_file_file_system = project.get_global_file_by_project(
                 TypePath.MEDIA_ROOT, type_file
             )
-            print("###")
-            print(out_file_file_system)
 
         elif type_file == Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES:
             ## freebayes remove >50%
@@ -1245,11 +1247,40 @@ class CollectExtraData(object):
                 project
             )  ## mask all consensus for all projects, defined by user
 
+        elif type_file == Project.PROJECT_FILE_NAME_IRMA_OUTPUT_zipped:
+            self.zip_irma_variants(project)
+
         if not out_file is None:
             self.utils.copy_file(out_file, out_file_file_system)
             self.utils.remove_file(out_file)
         elif not out_file_file_system is None and os.path.exists(out_file_file_system):
             self.utils.remove_file(out_file_file_system)
+
+    def zip_irma_variants(self, project: Project):
+
+        default_software = DefaultProjectSoftware()
+        software_mdcg = default_software.get_software_project_mdcg_illumina(project)
+        if not software_mdcg.name == SoftwareNames.SOFTWARE_IRMA_name:
+            return
+
+        out_file = project.get_global_file_by_project(
+            TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_IRMA_OUTPUT_zipped
+        )
+
+        temp_dir = self.utils.get_temp_dir()
+        for project_sample in project.project_samples.all():
+            if not project_sample.get_is_ready_to_proccess():
+                continue
+            file_irma = project_sample.get_file_output(
+                TypePath.MEDIA_ROOT,
+                FileType.FILE_MIXED_VARIANTS,
+                SoftwareNames.SOFTWARE_IRMA_name,
+            )
+            if file_irma is not None:
+                self.utils.copy_file(file_irma, temp_dir)
+        file_name_zip = self.software.zip_files_in_path(temp_dir)
+        self.utils.move_file(file_name_zip, out_file)
+        self.utils.remove_dir(temp_dir)
 
     def create_json_file_from_sample_csv(self, project):
         """

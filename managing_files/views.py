@@ -2685,6 +2685,18 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
                     Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK,
                 )
             )
+        ## irma output
+        if os.path.exists(
+            project.get_global_file_by_project(
+                TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_IRMA_OUTPUT_zipped
+            )
+        ):
+            context["irma_output"] = get_link_for_dropdown_item(
+                project.get_global_file_by_project(
+                    TypePath.MEDIA_URL,
+                    Project.PROJECT_FILE_NAME_IRMA_OUTPUT_zipped,
+                )
+            )
 
         if os.path.exists(
             project.get_global_file_by_project(

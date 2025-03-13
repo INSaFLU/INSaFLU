@@ -391,6 +391,8 @@ class Constants(object):
             return "ref.fa"
         if file_type == FileType.FILE_REF_FASTA_FAI:
             return "ref.fa.fai"
+        if file_type == FileType.FILE_MIXED_VARIANTS:
+            return "{}.mixed.variants.tsv".format(file_name)
         return ""
 
     ### complement
@@ -497,6 +499,7 @@ class FileType(Enum):
     FILE_CSV = 11
     FILE_REF_FASTA = 12  ## ref/ref.fa
     FILE_REF_FASTA_FAI = 13  ## ref/ref.fa.fai
+    FILE_MIXED_VARIANTS = 14
 
 
 class TypeFile(object):

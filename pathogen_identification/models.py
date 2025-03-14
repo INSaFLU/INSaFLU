@@ -1276,6 +1276,19 @@ class TeleFluProject(models.Model):
 
         return TeleFluSample.objects.filter(teleflu_project=self).count()
 
+    @property
+    def nworkflows(self):
+
+        return TelefluMapping.objects.filter(teleflu_project=self).count()
+
+    @property
+    def mapping_or_queued(self):
+        mappings = TelefluMapping.objects.filter(teleflu_project=self)
+        for mapping in mappings:
+            if mapping.queued_or_running_mappings_exist:
+                return True
+        return False
+
 
 class TeleFluSample(models.Model):
     televir_sample = models.ForeignKey(PIProject_Sample, on_delete=models.CASCADE)
@@ -1403,15 +1416,26 @@ class TelefluMapping(models.Model):
                 "error_rate": "N/A",
             }
 
-            mapped = False
             success = False
 
-            refs = RawReference.objects.filter(
+            mapping_status = "Not started"
+
+            refs_all = RawReference.objects.filter(
                 Q(accid__in=accids)
                 & Q(run__parameter_set__sample=sample)
                 & Q(run__parameter_set__leaf__index=self.leaf.index)
                 & Q(status=RawReference.STATUS_MAPPED)
             ).distinct()
+
+            refs = refs_all.filter(run__status=RunMain.STATUS_FINISHED)
+            refs_queued = refs_all.filter(
+                Q(run__status__in=[RunMain.STATUS_PREP, RunMain.STATUS_PREP])
+                | Q(run__parameter_set__status=ParameterSet.STATUS_QUEUED)
+            )
+            refs_running = refs_all.filter(
+                Q(run__status=RunMain.STATUS_RUNNING)
+                | Q(run__parameter_set__status=ParameterSet.STATUS_RUNNING)
+            )
 
             reports = FinalReport.objects.filter(
                 run__parameter_set__sample=sample,
@@ -1420,13 +1444,19 @@ class TelefluMapping(models.Model):
             )
 
             if refs.exists():
+                mapping_status = "Finished"
+            elif refs_queued.exists():
+                mapping_status = "Queued"
+            elif refs_running.exists():
+                mapping_status = "Running"
+
+            if refs.exists():
                 mapped_samples += 1
-                mapped = True
                 if reports.exists():
                     success = True
                     success_samples += 1
 
-            sample_summary[sample.name]["mapped"] = mapped
+            sample_summary[sample.name]["mapped"] = mapping_status
             sample_summary[sample.name]["success"] = success
 
             if reports.exists():

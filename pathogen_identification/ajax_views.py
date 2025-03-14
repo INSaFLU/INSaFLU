@@ -1678,7 +1678,10 @@ def query_teleflu_projects(request):
                     "ref_accid": tproj.raw_reference.accids_str,
                     "ref_taxid": tproj.raw_reference.taxids_str,
                     "insaflu_project": False if tproj.insaflu_project is None else True,
+                    "nworkflows": tproj.nworkflows,
+                    "mapping_or_queued": tproj.mapping_or_queued,
                 }
+                print(tproj.mapping_or_queued)
 
                 insaflu_project = tproj.insaflu_project
                 if insaflu_project is None:

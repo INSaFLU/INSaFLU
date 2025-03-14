@@ -183,8 +183,9 @@ var load_teleflu_workflows = function () {
                     var sampleNameCell = document.createElement('td');
                     sampleNameCell.innerHTML = sample;
                     row.appendChild(sampleNameCell);
-
-                    var mappedIndicator = sampleSummary[sample].mapped ? '<span style="color: green;">&#x2714;</span>' : '<span style="color: red;">&#x2718;</span>';
+                    
+                    var mappedIndicator = sampleSummary[sample].mapped
+                    //var mappedIndicator = sampleSummary[sample].mapped ? '<span style="color: green;">&#x2714;</span>' : '<span style="color: red;">&#x2718;</span>';
                     var successIndicator = sampleSummary[sample].success ? '<span style="color: green;">&#x2714;</span>' : '<span style="color: red;">&#x2718;</span>';
                     var coverageIndicator = sampleSummary[sample].coverage;
                     var windowsCoveredIndicator = sampleSummary[sample].windows_covered;

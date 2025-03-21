@@ -748,7 +748,6 @@ class Read_class:
         """
         Clean fastq header using python.
         """
-        print(self.exists)
         if not self.exists:
             return
 

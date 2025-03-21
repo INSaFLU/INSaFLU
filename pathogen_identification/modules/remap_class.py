@@ -1142,18 +1142,20 @@ class Remapping:
         ]
 
         try:
-            self.cmd.run_script_software(cmd)
+            self.cmd.run_script(cmd)
 
         except Exception as e:
+
             self.logger.error("Bam filtering failed.")
             self.logger.error(e)
             if os.path.isfile(temp_file):
                 os.remove(temp_file)
             return
 
-        if os.path.isfile(temp_file) and os.path.getsize(temp_file) > 100:
+        if os.path.isfile(temp_file):
             os.remove(self.read_map_filtered_bam)
-            shutil.move(temp_file, self.read_map_filtered_bam)
+
+            shutil.copy(temp_file, self.read_map_filtered_bam)
 
         return
 

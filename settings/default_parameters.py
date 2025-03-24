@@ -171,7 +171,7 @@ class DefaultParameters(object):
                             continue
 
                     except Software.MultipleObjectsReturned:
-                        for sof in Software.objects.filter(
+                        sof = Software.objects.filter(
                             name=parameter.software.name,
                             name_extended=parameter.software.name_extended,
                             owner=parameter.software.owner,
@@ -179,9 +179,16 @@ class DefaultParameters(object):
                             technology=parameter.software.technology,
                             version_parameters=parameter.software.version_parameters,
                             pipeline_step=parameter.software.pipeline_step,
-                        ):
-                            print(sof.pk)
-                        raise Exception("MultipleObjectsReturned")
+                        )
+
+                        # keep last one
+                        software = sof.last()
+
+                        print("MULTIPLE SOFTWARES: ", sof.count(), software.name)
+                        if sof.count() > 1:
+                            sof.exclude(pk=software.pk).delete()
+
+                        # raise Exception("MultipleObjectsReturned")
 
             parameter.software = software
             try:

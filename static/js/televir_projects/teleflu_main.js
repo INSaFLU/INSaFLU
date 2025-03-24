@@ -154,8 +154,8 @@ var load_teleflu_workflows = function () {
                     // Append the div to the workflow container
                     workflowContainerAction.append(spinnerContainer);
                 }
+                
                 /// Summary List
-
                 var sampleSummary = workflow.sample_summary;
                 var summaryList = document.createElement('div');
                 summaryList.className = 'summary-list workfow-' + workflow.node;

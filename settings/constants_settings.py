@@ -166,6 +166,16 @@ class ConstantsSettings(object):
         TECHNOLOGY_Undefined,
     ]
 
+    ### technologies_
+    vect_technology_samples = [
+        TECHNOLOGY_illumina,
+        TECHNOLOGY_minion,
+    ]
+    ###
+    vect_technology_configs = [
+        TECHNOLOGY_generic,
+        TECHNOLOGY_Undefined,
+    ]
     ### technology names illumina projects
     vect_technology_illumina_projects = [
         TECHNOLOGY_illumina,

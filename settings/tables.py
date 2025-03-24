@@ -105,6 +105,8 @@ class SoftwaresTable(tables.Table):
         ## test if its to run and get IDs from others
         is_to_run, sz_ids = self._is_to_run(record)
 
+        b_enable_options = is_to_run
+
         ### When in sample you can not turn ON|OFF the software
         if not self.sample:
             b_enable_options = True
@@ -121,6 +123,7 @@ class SoftwaresTable(tables.Table):
         if (
             record.pipeline_step.name
             == ConstantsSettings.PIPELINE_NAME_variant_detection
+            and record.technology.name in ConstantsSettings.vect_technology_samples
         ):
 
             if record.name_extended == SoftwareNames.SOFTWARE_IRMA_name_extended:
@@ -138,6 +141,7 @@ class SoftwaresTable(tables.Table):
                 b_enable_options = self.project_setup
 
         ## need to remove # in href, otherwise still active
+        print(is_to_run, b_enable_options)
         sz_href = (
             '<a href="{}id_turn_software_on_off" {} '.format(
                 "#" if record.can_be_on_off_in_pipeline and b_enable_options else "",

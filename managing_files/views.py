@@ -2933,9 +2933,19 @@ class ProjectSelectView(LoginRequiredMixin, ListView):
 
         ### test all defaults first, if exist in database
         default_software = DefaultProjectSoftware()
-        default_project_exists = default_software.project_parameters_exist(project)
+        ### current global softwares
+        software_global = default_software.user_global_mdcg_illumina_software(
+            self.request.user
+        )
 
-        context["software_exist"] = default_project_exists
+        if software_global.name == SoftwareNames.SOFTWARE_SNIPPY_name:
+            context["snippy_global"] = True
+        elif software_global.name == SoftwareNames.SOFTWARE_IRMA_name:
+            context["irma_global"] = True
+        elif software_global.name == SoftwareNames.SOFTWARE_IVAR_name:
+            context["ivar_global"] = True
+
+        context["software_global"] = software_global
         context["show_info_main_page"] = (
             ShowInfoMainPage()
         )  ## show main information about the institute

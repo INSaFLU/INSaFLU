@@ -272,8 +272,6 @@ class Tree_Node:
             )
             arguments_list.append(node_metadata)
 
-            # ps_track.append(ps_visited)
-
         arguments_df = pd.DataFrame(
             arguments_list, columns=["parameter", "value", "flag", "leaves"]
         )
@@ -285,10 +283,18 @@ class Tree_Node:
 
         module_df = arguments_df[arguments_df.flag == "module"]
         module = module_df.parameter.values[0]
-        software = module_df.value.values[0]
+        software = module_df.value.values
         parameters_df = arguments_df[arguments_df.flag == "param"]
 
-        parameters_df["software"] = software
+        software_lower_case_dict = {software.lower(): software for software in software}
+
+        def match_to_software(param_name):
+            lower_case_name = "_".join(param_name.split("_")[:-1]).lower()
+            if lower_case_name in software_lower_case_dict.keys():
+                return software_lower_case_dict[lower_case_name]
+            return lower_case_name
+
+        parameters_df["software"] = parameters_df["parameter"].apply(match_to_software)
         parameters_df["module"] = module
 
         return parameters_df

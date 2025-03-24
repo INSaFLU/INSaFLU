@@ -1559,7 +1559,7 @@ class SoftwareDetailCompound:
     def fill_software_list(self):
         module_df = self.args_df[self.args_df.module == self.module]
 
-        for _, software_df in module_df.groupby("software"):
+        for software_name, software_df in module_df.groupby("software"):
             software = SoftwareDetail(
                 self.module, software_df, self.config, self.prefix
             )

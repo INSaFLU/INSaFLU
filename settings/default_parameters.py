@@ -186,7 +186,9 @@ class DefaultParameters(object):
 
                         print("MULTIPLE SOFTWARES: ", sof.count(), software.name)
                         if sof.count() > 1:
-                            sof.exclude(pk=software.pk).delete()
+                            sof_delete = sof.exclude(pk=software.pk)
+                            Parameter.objects.filter(software__in=sof_delete).delete()
+                            sof_delete.delete()
 
                         # raise Exception("MultipleObjectsReturned")
 

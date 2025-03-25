@@ -1723,7 +1723,7 @@ class DefaultParameters(object):
         parameter.union_char = " "
         parameter.can_change = False
         parameter.sequence_out = 5
-        parameter.description = "ivar"
+        parameter.description = "iVar software"
         vect_parameters.append(parameter)
 
         return vect_parameters

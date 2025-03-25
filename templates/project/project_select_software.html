@@ -27,7 +27,7 @@
     }
 
     .col-md {
-        max-width : 250px;
+        max-width: 250px;
     }
 
     .card {
@@ -37,29 +37,38 @@
     .card-footer {
         text-align: center;
     }
+
     .card-title {
         text-align: center;
     }
+
     .card-text {
         text-align: center;
     }
-    
 
     .page-container {
         margin-top: 70px;
     }
 
+    .mt-4 {
+        margin-top: 1.5rem !important;
+    }
+
+    .mb-4 {
+        margin-bottom: 1.5rem !important;
+    }
 </style>
 
 <div class="page-container">
     <div class="row justify-content-center">
         <div class="col-md">
-            <div class="card mb-2  {% if snippy_global %}highlight{% endif %}">
+            <div class="card mb-2 {% if snippy_global %}highlight{% endif %}">
+                <img class="img-index" src="{% static "img/Logo_TELEVIR_INSaFlu.png" %}">
                 <div class="card-body">
                     <h5 class="card-title"><strong>{{ 'INSaFLU Full Pipeline' }}</strong></h5>
                     <p class="card-text">
                         Classical INSaFLU pipeline 
-                        <a href="https://insaflu.readthedocs.io/en/latest/bioinformatics_pipeline.html#reference-based-genomic-surveillance" title="https://insaflu.readthedocs.io/en/latest/bioinformatics_pipeline.html#reference-based-genomic-surveillance" target="_blank">
+                        <a href="https://insaflu.readthedocs.io/en/latest/bioinformatics_pipeline.html#reference-based-genomic-surveillance" title="Read more about INSaFLU Full Pipeline" target="_blank">
                             (Read more)
                         </a>. Suitable for Illumina/Ion Torrent and Oxford Nanopore Technologies (ONT) data.
                     </p>
@@ -71,13 +80,27 @@
                 </div>
             </div>
         </div>
-        <div class="col-md">
+    </div>
+
+    <!-- Separator for Alternative Pipelines -->
+    <div class="row justify-content-center mt-4 mb-4">
+        <div class="col-md-12 text-center">
+            <hr>
+            <p class="card-text">
+                <strong>Alternative Pipelines</strong>
+            </p>
+            <hr>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md mb-4">
             <div class="card mb-2 {% if ivar_global %}highlight{% endif %}">
                 <div class="card-body">
                     <h5 class="card-title"><strong>{{ 'iVar Full Pipeline' }}</strong></h5>
                     <p class="card-text">
                         Obtain the classical INSaFLU outputs applying the iVar consensus-generation pipeline 
-                        <a href="https://github.com/andersen-lab/ivar" title="https://github.com/andersen-lab/ivar" target="_blank">
+                        <a href="https://github.com/andersen-lab/ivar" title="Read more about iVar Full Pipeline" target="_blank">
                             (Read more)
                         </a>. Suitable for Illumina sequencing data only.
                     </p>
@@ -89,39 +112,24 @@
                 </div>
             </div>
         </div>
-        <div class="col-md">
+        <div class="col-md mb-4">
             <div class="card mb-2 {% if irma_global %}highlight{% endif %}">
                 <div class="card-body">
                     <h5 class="card-title"><strong>{{ 'IRMA Full Pipeline' }}</strong></h5>
                     <p class="card-text">
                         Analysis of influenza virus sequencing data using the IRMA pipeline 
-                        <a href="https://wonder.cdc.gov/amd/flu/irma/" title="https://wonder.cdc.gov/amd/flu/irma/" target="_blank">
+                        <a href="https://wonder.cdc.gov/amd/flu/irma/" title="Read more about IRMA Full Pipeline" target="_blank">
                             (Read more)
                         </a>. Influenza virus-specific and suitable only for Illumina sequencing data.
                     </p>
                 </div>
                 <div class="card-footer">
-                    <a href="{% url 'project-settings-setup' pk=project_index %}" type_of_use_id={{type_of_use_id}} project_id={{project_index}} value="IRMA" class="btn btn-primary data-software"  {% if software_exist %}disabled{% endif %}>
+                    <a href="{% url 'project-settings-setup' pk=project_index %}" type_of_use_id={{type_of_use_id}} project_id={{project_index}} value="IRMA" class="btn btn-primary data-software" {% if software_exist %}disabled{% endif %}>
                         Select
                     </a>
                 </div>
             </div>
         </div>
-        {% if services %}
-        <div class="col-md">
-        <div class="card mb-2">
-            <img class="img-index" src="{% static "img/dwemer.png" %}">
-            <div class="card-body">
-                <h5 class="card-title">{{ 'Services' }}</h5>
-                <p class="card-text">{{ 'General Purpose Tools' }}</p>
-            </div>
-            <div class="card-footer">
-                <a href="{% url 'PIservices_main' %}"  class="btn btn-primary data-software">
-                    Services
-                </a>
-            </div>
-        </div>
-        {% endif %}
     </div>
 </div>
 {% endblock %}

@@ -168,7 +168,6 @@ class SoftwareForm(forms.ModelForm):
                     ]
                 elif (
                     parameter.name == DefaultParameters.SNIPPY_PRIMER_NAME
-                    and parameter.software.name == SoftwareNames.SOFTWARE_SNIPPY_name
                 ):
                     list_data = [
                         [data_, data_]

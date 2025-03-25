@@ -145,29 +145,43 @@ class DefaultParameters(object):
         """
         software = None
         dt_out_sequential = {}
+
         for parameter in vect_parameters:
             assert parameter.sequence_out not in dt_out_sequential
             if software is None:
-                try:
-                    software = Software.objects.get(
-                        name=parameter.software.name,
-                        name_extended=parameter.software.name_extended,
-                        owner=parameter.software.owner,
-                        type_of_use=parameter.software.type_of_use,
-                        technology=parameter.software.technology,
-                        version_parameters=parameter.software.version_parameters,
-                        pipeline_step=parameter.software.pipeline_step,
-                    )
-                except Software.DoesNotExist:
-                    software = parameter.software
+                with LockedAtomicTransaction(Software), LockedAtomicTransaction(
+                    Parameter
+                ):
                     try:
-                        software.save()
-                    except Exception as e:
-                        logging.error("Error persisting software: {}".format(e))
-                        continue
+                        software = Software.objects.get(
+                            name=parameter.software.name,
+                            name_extended=parameter.software.name_extended,
+                            owner=parameter.software.owner,
+                            type_of_use=parameter.software.type_of_use,
+                            technology=parameter.software.technology,
+                            version_parameters=parameter.software.version_parameters,
+                            pipeline_step=parameter.software.pipeline_step,
+                        )
+                    except Software.DoesNotExist:
+                        software = parameter.software
+                        try:
+                            software.save()
+                        except Exception as e:
+                            logging.error("Error persisting software: {}".format(e))
+                            continue
 
-                except Software.MultipleObjectsReturned:
-                    raise Exception("MultipleObjectsReturned")
+                    except Software.MultipleObjectsReturned:
+                        for sof in Software.objects.filter(
+                            name=parameter.software.name,
+                            name_extended=parameter.software.name_extended,
+                            owner=parameter.software.owner,
+                            type_of_use=parameter.software.type_of_use,
+                            technology=parameter.software.technology,
+                            version_parameters=parameter.software.version_parameters,
+                            pipeline_step=parameter.software.pipeline_step,
+                        ):
+                            print(sof.pk)
+                        raise Exception("MultipleObjectsReturned")
 
             parameter.software = software
             try:

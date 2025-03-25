@@ -2693,8 +2693,7 @@ class Utils_Manager:
             return False
 
         for technology in self.utility_technologies:
-            print(technology)
-            print(self.check_any_pipeline_possible(technology, user_system))
+
             if self.check_any_pipeline_possible(technology, user_system):
                 return True
 

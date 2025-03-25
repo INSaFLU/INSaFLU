@@ -113,6 +113,7 @@ class ProcessSGE(object):
         """
         create the script to run SGE
         """
+
         if len(vect_cmd) == 0:
             return None
 

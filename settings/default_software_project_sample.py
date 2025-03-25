@@ -355,7 +355,8 @@ class DefaultProjectSoftware(object):
         ## lock because more than one process can duplicate software names
         # if not project_sample is None:
         #    project = project_sample.project
-
+        print("###")
+        print(software_name)
         if name_extended is not None:
             list_software = Software.objects.filter(
                 name=software_name,
@@ -2553,6 +2554,16 @@ class DefaultProjectSoftware(object):
             pipeline_step=pipeline_step,
             software_name_extended=name_extended,
         )
+
+    def user_global_mdcg_illumina_software(self, user) -> Optional[Software]:
+
+        return Software.objects.filter(
+            owner=user,
+            type_of_use=Software.TYPE_OF_USE_global,
+            pipeline_step__name=ConstantsSettings.PIPELINE_NAME_variant_detection,
+            technology__name=ConstantsSettings.TECHNOLOGY_illumina,
+            is_to_run=True,
+        ).first()
 
     def project_parameters_exist(self, project: Project) -> bool:
         """

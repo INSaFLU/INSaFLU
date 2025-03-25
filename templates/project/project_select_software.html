@@ -15,6 +15,10 @@
 
 {% block content %}
 <style>
+    .highlight {
+        border: 2px solid #007bff; /* Add a border color to highlight */
+        box-shadow: 0 0 10px rgba(0, 123, 255, 0.5); /* Add a shadow for better visibility */
+    }
 
     .img-index {
         width: 100%;
@@ -50,7 +54,7 @@
 <div class="page-container">
     <div class="row justify-content-center">
         <div class="col-md">
-            <div class="card mb-2">
+            <div class="card mb-2  {% if snippy_global %}highlight{% endif %}">
                 <div class="card-body">
                     <h5 class="card-title"><strong>{{ 'INSaFLU Full Pipeline' }}</strong></h5>
                     <p class="card-text">
@@ -68,7 +72,7 @@
             </div>
         </div>
         <div class="col-md">
-            <div class="card mb-2">
+            <div class="card mb-2 {% if ivar_global %}highlight{% endif %}">
                 <div class="card-body">
                     <h5 class="card-title"><strong>{{ 'iVar Full Pipeline' }}</strong></h5>
                     <p class="card-text">
@@ -86,7 +90,7 @@
             </div>
         </div>
         <div class="col-md">
-            <div class="card mb-2">
+            <div class="card mb-2 {% if irma_global %}highlight{% endif %}">
                 <div class="card-body">
                     <h5 class="card-title"><strong>{{ 'IRMA Full Pipeline' }}</strong></h5>
                     <p class="card-text">

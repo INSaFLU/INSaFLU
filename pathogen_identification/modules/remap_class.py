@@ -892,21 +892,30 @@ class Remapping:
 
         return rnumber
 
+    def summarize_reads_map(self):
+        self.report = self.calculate_mapping_statistics()
+        self.get_mapped_reads_number()
+        self.plot_coverage()
+
+    def summarize_contigs_map(self):
+        self.plot_dotplot_from_paf()
+        self.get_mapped_contig_names()
+        self.generate_mapped_contigs_fasta()
+        self.index_mapped_contigs_fasta()
+
     def summarize(self):
         """
         Summarizes remapping results.
         generate report on read mapping to reference file.
         get number and name and length of mapped contigs.
         """
-        self.report = self.calculate_mapping_statistics()
-        self.get_mapped_contig_names()
-        self.get_mapped_reads_number()
+        if self.check_remap_status_bam():
+            self.summarize_reads_map()
 
-        self.plot_coverage()
-        self.plot_dotplot_from_paf()
+        if self.check_remap_status_paf():
+            self.summarize_contigs_map()
+
         self.remapping_successful = True
-        self.generate_mapped_contigs_fasta()
-        self.index_mapped_contigs_fasta()
 
     def get_reference_contig_name(self):
         contig_names = []
@@ -987,22 +996,24 @@ class Remapping:
 
         if not self.check_mapping_output_exists():
             self.remap_deploy()
-
-        if self.check_mapping_output_exists():
-            try:
-                self.remap_reads_post_process()
+            self.process_bam()
+        try:
+            if self.check_remap_status_paf():
                 self.assembly_to_reference_map()
-                self.summarize()
-            except Exception as e:
-                self.logger.error(e)
-                self.logger.error("Remapping failed.")
-                return self
+            if self.check_remap_status_bam():
+                self.remap_reads_post_process()
+
+            self.summarize()
+        except Exception as e:
+            self.logger.error(e)
+            self.logger.error("Remapping failed.")
+            return self
 
         else:
-            # self.logger.error(
-            #    f"Mapping output not found or unsuccesful after deploying on \
-            #        target(s): {self.target.accid_in_file}, file: {self.r1}, reference: {self.target.file}"
-            # )
+            self.logger.error(
+                f"Mapping output not found or unsuccesful after deploying on \
+                   target(s): {self.target.accid_in_file}, file: {self.r1}, reference: {self.target.file}"
+            )
             return
 
     def remap_reads_post_process(self):
@@ -1013,21 +1024,24 @@ class Remapping:
         3) index bam file.
         4) get number of mapped reads."""
         try:
-            self.process_bam()
-            self.generate_vcf()
-            self.get_genomecoverage()
-            self.get_mapped_reads_unique_no_header()
-            self.filter_sam_file_mapped()
-            self.subset_mapped_reads()
-            self.mapped_reads_to_fasta()
+            # self.process_bam()
+            if self.check_remap_status_bam():
+                self.generate_vcf()
+                self.get_genomecoverage()
+                self.get_mapped_reads_unique_no_header()
+                self.filter_sam_file_mapped()
+                self.subset_mapped_reads()
+                self.mapped_reads_to_fasta()
+
         except Exception as e:
             self.logger.error(e)
 
     def process_bam(self):
         self.filter_bamfile_read_names()
         self.filter_bamfile()
-        self.sort_bam()
-        self.index_sorted_bam()
+        if self.check_remap_status_bam():
+            self.sort_bam()
+            self.index_sorted_bam()
 
     def filter_bamfile(self):
         self.read_map_filtered_bam = self.read_map_bam
@@ -1142,18 +1156,20 @@ class Remapping:
         ]
 
         try:
-            self.cmd.run_script_software(cmd)
+            self.cmd.run_script(cmd)
 
         except Exception as e:
+
             self.logger.error("Bam filtering failed.")
             self.logger.error(e)
             if os.path.isfile(temp_file):
                 os.remove(temp_file)
             return
 
-        if os.path.isfile(temp_file) and os.path.getsize(temp_file) > 100:
+        if os.path.isfile(temp_file):
             os.remove(self.read_map_filtered_bam)
-            shutil.move(temp_file, self.read_map_filtered_bam)
+
+            shutil.copy(temp_file, self.read_map_filtered_bam)
 
         return
 
@@ -1163,7 +1179,7 @@ class Remapping:
         """
 
         if not self.check_remap_status_bam():
-            self.logger.error("Bam file not found.")
+            self.logger.error("Bam file not found or Empty.")
             return
 
         if self.check_vcf_exists():
@@ -1210,7 +1226,7 @@ class Remapping:
     def check_mapping_output_exists(self):
         if (
             self.check_remap_status_bam()
-            or self.check_remap_status_sam()
+            # or self.check_remap_status_sam()
             or self.check_remap_status_paf()
         ):
             return True
@@ -1480,7 +1496,7 @@ class Remapping:
             cmd = f"samtools sort {self.read_map_filtered_bam} -o {self.read_map_sorted_bam}"
             self.cmd.run(cmd)
         else:
-            self.logger.error("BAM file not found")
+            self.logger.error("BAM file not found or empty.")
             raise FileNotFoundError
 
     def index_sorted_bam(self):

@@ -789,15 +789,13 @@ class DefaultParameters(object):
                 ):
                     return_parameter += " {}".format(dict_out[par_name][1][0])
                 elif (
-                    software_name == SoftwareNames.SOFTWARE_SNIPPY_name
-                    and par_name == DefaultParameters.SNIPPY_PRIMER_NAME
+                    par_name == DefaultParameters.SNIPPY_PRIMER_NAME
                     and dict_out[par_name][1][0]
                     == SoftwareNames.SOFTWARE_SNIPPY_no_primer
                 ):
                     return_parameter += " {}".format(dict_out[par_name][1][0])
                 elif (
-                    software_name == SoftwareNames.SOFTWARE_SNIPPY_name
-                    and par_name == DefaultParameters.SNIPPY_PRIMER_NAME
+                    par_name == DefaultParameters.SNIPPY_PRIMER_NAME
                 ):
                     return_parameter += " {}".format(
                         os.path.join(
@@ -814,8 +812,6 @@ class DefaultParameters(object):
                     return_parameter += " {}".format(dict_out[par_name][1][0])
                 elif (
                     par_name == DefaultParameters.MEDAKA_PRIMER_NAME
-                    and dict_out[par_name][1][0]
-                    == SoftwareNames.SOFTWARE_SNIPPY_no_primer
                 ):
                     return_parameter += " {}".format(
                         os.path.join(

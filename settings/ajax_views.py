@@ -763,6 +763,9 @@ def get_mdcg_project_software(request):
         data["is_ok"] = True
         data["project_id"] = project_id
         data["software_id"] = software.id
+        data["has_samples"] = ProjectSample.objects.filter(
+            project=project, is_deleted=False
+        ).exists()
         return JsonResponse(data)
 
 

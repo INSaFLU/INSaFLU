@@ -2933,6 +2933,9 @@ class ProjectSelectView(LoginRequiredMixin, ListView):
 
         ### test all defaults first, if exist in database
         default_software = DefaultProjectSoftware()
+        default_software.test_all_defaults(
+            self.request.user, project, None, None
+        )  ## the user can have defaults yet
         ### current global softwares
         software_global = default_software.user_global_mdcg_illumina_software(
             self.request.user

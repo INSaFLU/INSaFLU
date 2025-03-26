@@ -165,9 +165,14 @@
                     csrfmiddlewaretoken: '{{ csrf_token }}'
                 },
                 success: function(data) {
-                    console.log(data);
                     var software_id = data['software_id'];
                     wait_screen();
+
+                    if (data["has_samples"] == true) {
+                        $.unblockUI();
+                        alert("This software has samples associated with it. Please remove the samples before turning off the software.");
+                        return;
+                    }
 
                     $.ajax({
                         url: '/settings/ajax/turn_on_off_software',

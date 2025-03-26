@@ -355,8 +355,7 @@ class DefaultProjectSoftware(object):
         ## lock because more than one process can duplicate software names
         # if not project_sample is None:
         #    project = project_sample.project
-        print("###")
-        print(software_name)
+
         if name_extended is not None:
             list_software = Software.objects.filter(
                 name=software_name,

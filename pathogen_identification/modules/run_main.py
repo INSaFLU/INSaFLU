@@ -1500,9 +1500,6 @@ class RunMainTree_class(Run_Deployment_Methods):
 
         ### ############################################################# ###
         # reference_table = reference_utils.sample_reference_tables()
-        reference_table = reference_utils.sample_compound_refs_table()
-        print("REFERENCE TABLE: ", reference_table)
-        print("#### REFERENCE TABLE SHAPE: ", reference_table.shape)
 
         self.metadata_tool.merge_sample_references_ensemble(
             self.sample_registered, max_remap=1

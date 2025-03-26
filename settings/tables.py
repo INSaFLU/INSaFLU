@@ -141,7 +141,6 @@ class SoftwaresTable(tables.Table):
                 b_enable_options = self.project_setup
 
         ## need to remove # in href, otherwise still active
-        print(is_to_run, b_enable_options)
         sz_href = (
             '<a href="{}id_turn_software_on_off" {} '.format(
                 "#" if record.can_be_on_off_in_pipeline and b_enable_options else "",

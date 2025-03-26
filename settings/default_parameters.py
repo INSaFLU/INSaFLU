@@ -1106,6 +1106,9 @@ class DefaultParameters(object):
                 dataset=dataset,
             )
 
+            print(is_to_run)
+            print(parameters)
+
             ### Try to find the parameter of sequence_out == 1. It is the one that has the flag to run or not.
             for parameter in parameters:
                 parameter.is_to_run = is_to_run

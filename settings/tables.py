@@ -103,6 +103,7 @@ class SoftwaresTable(tables.Table):
 
     def render_select_to_run(self, value, record: Software):
         ## test if its to run and get IDs from others
+
         is_to_run, sz_ids = self._is_to_run(record)
 
         b_enable_options = is_to_run
@@ -715,10 +716,13 @@ class SoftwaresTable(tables.Table):
                 sample=self.sample,
                 televir_project=self.televir_project,
             )
+
             if len(parameters) > 0:
                 if (
                     record.pipeline_step.name
                     == ConstantsSettings.PIPELINE_NAME_variant_detection
+                    and record.technology.name
+                    in ConstantsSettings.vect_technology_samples
                 ):
                     is_to_run = parameters[0].software.is_to_run
                 else:

@@ -9,10 +9,8 @@ from django.conf import settings
 from django.contrib.auth.models import User
 
 # Create your models here.
-from django.contrib.gis.db.models import (
-    GeoManager,  # #  change to django  2.x
-    PointField,
-)
+from django.contrib.gis.db.models import GeoManager  # #  change to django  2.x
+from django.contrib.gis.db.models import PointField
 from django.db import models
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
@@ -1020,7 +1018,7 @@ class Project(models.Model):
 
     PROJECT_FILE_NAME_flumut_version = "flumut_version.txt"  ### has results of flumut
 
-    PROJECT_FILE_NAME_IRMA_OUTPUT_zipped = "irma_mixed_variants"
+    PROJECT_FILE_NAME_IRMA_OUTPUT_zipped = "irma_output.zip"  ### has results of irma
     PROJECT_FILE_NAME_IRMA_MIXED_POSITIONS_folder = "irma_mixed_variants"
 
     PROJECT_FILE_NAME_all_files_zipped = "AllFiles.zip"  ### Several files zipped

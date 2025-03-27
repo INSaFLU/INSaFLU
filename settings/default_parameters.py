@@ -765,6 +765,16 @@ class DefaultParameters(object):
 
         return_parameter = ""
         for par_name in vect_order_ouput:
+            print(
+                par_name == DefaultParameters.MEDAKA_PRIMER_NAME
+                and software_name == SoftwareNames.SOFTWARE_Medaka_name
+            )
+            print(
+                par_name,
+                software_name,
+                DefaultParameters.MEDAKA_PRIMER_NAME,
+                SoftwareNames.SOFTWARE_Medaka_name_consensus,
+            )
 
             if self.hide_parameter_name_check(par_name) is False:
                 return_parameter += " {}".format(par_name)
@@ -800,6 +810,7 @@ class DefaultParameters(object):
                 ):
                     return_parameter += " {}".format(dict_out[par_name][1][0])
                 elif par_name == DefaultParameters.SNIPPY_PRIMER_NAME:
+
                     return_parameter += " {}".format(
                         os.path.join(
                             settings.DIR_SOFTWARE,
@@ -809,18 +820,23 @@ class DefaultParameters(object):
                     )
                 elif (
                     par_name == DefaultParameters.MEDAKA_PRIMER_NAME
-                    and dict_out[par_name][1][0]
-                    == SoftwareNames.SOFTWARE_SNIPPY_no_primer
+                    and software_name == SoftwareNames.SOFTWARE_Medaka_name_consensus
                 ):
-                    return_parameter += " {}".format(dict_out[par_name][1][0])
-                elif par_name == DefaultParameters.MEDAKA_PRIMER_NAME:
-                    return_parameter += " {}".format(
-                        os.path.join(
-                            settings.DIR_SOFTWARE,
-                            "trimmomatic/adapters",
-                            dict_out[par_name][1][0],
+                    print("MEDAKA_PRIMER_NAME", dict_out[par_name][1][0])
+                    print(par_name, software_name)
+                    if (
+                        dict_out[par_name][1][0]
+                        == SoftwareNames.SOFTWARE_SNIPPY_no_primer
+                    ):
+                        return_parameter += " {}".format(dict_out[par_name][1][0])
+                    else:
+                        return_parameter += " {}".format(
+                            os.path.join(
+                                settings.DIR_SOFTWARE,
+                                "trimmomatic/adapters",
+                                dict_out[par_name][1][0],
+                            )
                         )
-                    )
 
                 elif par_name == "--db":
                     return_parameter += "{}{}".format(

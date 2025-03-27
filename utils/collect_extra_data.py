@@ -25,9 +25,9 @@ from managing_files.models import (
     ProjectSample,
     Reference,
     Sample,
-    TagNames,
 )
 from managing_files.models import Software as SoftwareModel
+from managing_files.models import TagNames
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software_project_sample import DefaultProjectSoftware
@@ -1248,7 +1248,7 @@ class CollectExtraData(object):
             )  ## mask all consensus for all projects, defined by user
 
         elif type_file == Project.PROJECT_FILE_NAME_IRMA_OUTPUT_zipped:
-            self.zip_irma_variants(project)
+            self.zip_irma_files(project)
 
         if not out_file is None:
             self.utils.copy_file(out_file, out_file_file_system)
@@ -1256,7 +1256,7 @@ class CollectExtraData(object):
         elif not out_file_file_system is None and os.path.exists(out_file_file_system):
             self.utils.remove_file(out_file_file_system)
 
-    def zip_irma_variants(self, project: Project):
+    def zip_irma_files(self, project: Project):
 
         default_software = DefaultProjectSoftware()
         software_mdcg = default_software.get_software_project_mdcg_illumina(project)
@@ -1271,13 +1271,22 @@ class CollectExtraData(object):
         for project_sample in project.project_samples.all():
             if not project_sample.get_is_ready_to_proccess():
                 continue
-            file_irma = project_sample.get_file_output(
+            file_variants_irma = project_sample.get_file_output(
                 TypePath.MEDIA_ROOT,
                 FileType.FILE_MIXED_VARIANTS,
                 SoftwareNames.SOFTWARE_IRMA_name,
             )
-            if file_irma is not None:
-                self.utils.copy_file(file_irma, temp_dir)
+            if file_variants_irma is not None:
+                self.utils.copy_file(file_variants_irma, temp_dir)
+
+            file_consensus_original = project_sample.get_file_output(
+                TypePath.MEDIA_ROOT,
+                FileType.FILE_CONSENSUS_ORIGINAL_FA,
+                SoftwareNames.SOFTWARE_IRMA_name,
+            )
+            if file_consensus_original is not None:
+                self.utils.copy_file(file_consensus_original, temp_dir)
+
         file_name_zip = self.software.zip_files_in_path(temp_dir)
         self.utils.move_file(file_name_zip, out_file)
         self.utils.remove_dir(temp_dir)

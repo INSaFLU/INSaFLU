@@ -521,9 +521,8 @@ class Software(object):
             ]
         elif software == SoftwareNames.SOFTWARE_IRMA_name:
             return [
-                # FileType.FILE_BAM,
-                # FileType.FILE_BAM_BAI,
                 FileType.FILE_CONSENSUS_FA,
+                FileType.FILE_CONSENSUS_ORIGINAL_FA,
                 FileType.FILE_DEPTH_GZ,
                 FileType.FILE_DEPTH_GZ_TBI,
                 FileType.FILE_TAB,
@@ -2620,16 +2619,29 @@ class Software(object):
             keep_segment, path_reference_fasta, irma_output_dir, sample_name=sample_name
         )
 
-        # concatenated consensus fasta
+        # concatenated original consensus fasta
+        full_consensus_irma_original = os.path.join(
+            irma_output_dir, sample_name + ".consensus.original.fa"
+        )
+        fasta_files_original = os.listdir(
+            os.path.join(irma_output_dir, "amended_consensus")
+        )
+        fasta_files_original = [
+            os.path.join(irma_output_dir, "amended_consensus", f)
+            for f in fasta_files_original
+        ]
+        #
+        with open(full_consensus_irma_original, "w") as f:
+            for file in fasta_files_original:
+                with open(file, "r") as g:
+                    f.write(g.read())
+
+        ## concatenate all fasta files to keep (matched to reference sequence).
         full_consensus_irma = os.path.join(
             irma_output_dir, sample_name + ".consensus.fa"
         )
-        # fasta_files = os.listdir(os.path.join(irma_output_dir, "amended_consensus"))
         fasta_files = [x + ".fasta" for x in seqname_msa_dict.keys()]
-
         fasta_files = [os.path.join(irma_output_dir, f) for f in fasta_files]
-        # fasta_files = [f for f in os.listdir(irma_output_dir) if f.endswith(".fasta")]
-        # fasta_files = [os.path.join(irma_output_dir, f) for f in fasta_files]
         with open(full_consensus_irma, "w") as f:
             for file in fasta_files:
                 with open(file, "r") as g:
@@ -2637,7 +2649,6 @@ class Software(object):
 
         ## generate individual segment vcf and depth files
         for seqname, msa_file in seqname_msa_dict.items():
-            print(msa_file)
             seq_ref = os.path.join(irma_output_dir, seqname + "_ref.fasta")
             self.vcfalign_from_msa(msa_file, seqname, irma_output_dir)
             self.generate_depth_from_msa(msa_file, seq_ref, irma_output_dir, seqname)

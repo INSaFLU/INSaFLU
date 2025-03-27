@@ -4201,7 +4201,7 @@ class Software(object):
         default_project_software = DefaultProjectSoftware()
         default_project_software.test_all_defaults(user, None, project_sample, None)
 
-        ### get software
+        ### get software ###
         software = default_project_software.get_software_project_sample_mdcg_illumina(
             project_sample=project_sample,
         )

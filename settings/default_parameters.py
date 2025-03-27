@@ -121,7 +121,8 @@ class DefaultParameters(object):
                 try:
                     software = parameter.software
 
-                    software.save()
+                    with LockedAtomicTransaction(Software):
+                        software.save()
 
                 except Exception as e:
                     logging.error("Error persisting software: {}".format(e))
@@ -165,7 +166,8 @@ class DefaultParameters(object):
                 except Software.DoesNotExist:
                     software = parameter.software
                     try:
-                        software.save()
+                        with LockedAtomicTransaction(Software):
+                            software.save()
                     except Exception as e:
                         logging.error("Error persisting software: {}".format(e))
                         continue
@@ -187,8 +189,11 @@ class DefaultParameters(object):
                     print("MULTIPLE SOFTWARES: ", sof.count(), software.name)
                     if sof.count() > 1:
                         sof_delete = sof.exclude(pk=software.pk)
-                        Parameter.objects.filter(software__in=sof_delete).delete()
-                        sof_delete.delete()
+                        with LockedAtomicTransaction(Software), LockedAtomicTransaction(
+                            Parameter
+                        ):
+                            Parameter.objects.filter(software__in=sof_delete).delete()
+                            sof_delete.delete()
 
                         # raise Exception("MultipleObjectsReturned")
 

@@ -564,6 +564,15 @@ class ProjectTable(tables.Table):
     #   account_number = tables.LinkColumn('customer-detail', args=[A('pk')])
     reference = tables.Column("Reference", empty_values=())
     samples = tables.Column("#Samples (P/W/E)", orderable=False, empty_values=())
+    technology = tables.Column("Technology", empty_values=())
+    project_type = tables.Column(
+        "Project Type",
+        empty_values=(),
+        attrs={
+            "th": {"style": "text-align: center;"},
+            "td": {"style": "text-align: center;"},
+        },
+    )
     last_change_date = tables.Column("Last Change date", empty_values=())
     creation_date = tables.Column("Creation date", empty_values=())
     results = tables.LinkColumn("Options", orderable=False, empty_values=())
@@ -581,7 +590,26 @@ class ProjectTable(tables.Table):
         attrs = {"class": "table-striped table-bordered"}
         empty_text = "There are no Projects to show..."
 
-    def render_name(self, record):
+    def render_technology(self, record):
+        default_project_software = DefaultProjectSoftware()
+
+        possible_technologies = default_project_software.possible_sample_technologyes(
+            record
+        )
+
+        return mark_safe(possible_technologies)
+
+    def render_project_type(self, record: Project):
+        """return project type"""
+        default_software = DefaultProjectSoftware()
+        software_mdcg = default_software.get_software_project_mdcg_illumina(record)
+
+        if not software_mdcg is None:
+            return software_mdcg.name_extended.split()[0]
+
+        return "Not defined"
+
+    def render_name(self, record: Project):
         from crequest.middleware import CrequestMiddleware
 
         current_request = CrequestMiddleware.get_request()
@@ -763,7 +791,7 @@ class ShowProjectSamplesResults(tables.Table):
             )
         return record.sample.name
 
-    def render_coverage(self, record):
+    def render_coverage(self, record: ProjectSample):
         """
         return icons about coverage
         """
@@ -773,6 +801,13 @@ class ShowProjectSamplesResults(tables.Table):
             MetaKeyAndValue.META_KEY_Coverage,
             MetaKeyAndValue.META_VALUE_Success,
         )
+
+        show_coverage = 'href="#coverageModal"'
+        default_software = DefaultProjectSoftware()
+        if not record.project is None:
+
+            if not default_software.is_software_mdcg_illumina_snippy(record.project):
+                show_coverage = ""
 
         ### coverage
         decode_coverage = DecodeObjects()
@@ -793,8 +828,8 @@ class ShowProjectSamplesResults(tables.Table):
         )
         return_html = ""
         for key in coverage.get_sorted_elements_name():
-            return_html += '<a href="#coverageModal" id="showImageCoverage" data-toggle="modal" project_sample_id="{}" '.format(
-                record.id
+            return_html += '<a {} id="showImageCoverage" data-toggle="modal" project_sample_id="{}" '.format(
+                show_coverage, record.id
             ) + 'sequence="{}"><img title="{}" class="tip" src="{}"></a>'.format(
                 key,
                 coverage.get_message_to_show_in_web_site(record.sample.name, key),

@@ -1190,8 +1190,14 @@ class ShowDatasetsConsensusView(LoginRequiredMixin, ListView):
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_mp: Reference.SPECIES_INFLUENZA,            
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns: Reference.SPECIES_INFLUENZA,            
 			SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpx: Reference.SPECIES_MPXV,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpox_clade_i: Reference.SPECIES_MPXV,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a: Reference.SPECIES_RSV,
-            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b: Reference.SPECIES_RSV
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b: Reference.SPECIES_RSV,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_all: Reference.SPECIES_DENGUE,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv1: Reference.SPECIES_DENGUE,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv2: Reference.SPECIES_DENGUE,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv3: Reference.SPECIES_DENGUE,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4: Reference.SPECIES_DENGUE,
 		}
 
 		build = 'NA'

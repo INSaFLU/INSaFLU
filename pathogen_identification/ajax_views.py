@@ -21,31 +21,45 @@ from constants.software_names import SoftwareNames
 from fluwebvirus.settings import BASE_DIR, STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
-from pathogen_identification.models import (FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RawReference, ReferenceMap_Main,
-                                            ReferencePanel,
-                                            ReferenceSourceFileMap, RunMain,
-                                            SoftwareTreeNode, TelefluMapping,
-                                            TeleFluProject, TeleFluSample)
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.models import (
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReferenceMap_Main,
+    ReferencePanel,
+    ReferenceSourceFileMap,
+    RunMain,
+    SoftwareTreeNode,
+    TelefluMapping,
+    TeleFluProject,
+    TeleFluSample,
+)
 from pathogen_identification.tables import ReferenceSourceTable
 from pathogen_identification.utilities.reference_utils import (
-    check_file_reference_submitted, check_raw_reference_submitted,
-    check_user_reference_exists, create_combined_reference)
+    check_file_reference_submitted,
+    check_raw_reference_submitted,
+    check_user_reference_exists,
+    create_combined_reference,
+)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
-from pathogen_identification.utilities.utilities_general import \
-    get_services_dir
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.utilities_general import get_services_dir
 from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils, Utils_Manager)
+    SoftwareTreeUtils,
+    Utils_Manager,
+)
 from pathogen_identification.utilities.utilities_views import (
-    RawReferenceUtils, ReportSorter, SampleReferenceManager,
-    set_control_reports)
+    RawReferenceUtils,
+    ReportSorter,
+    SampleReferenceManager,
+    set_control_reports,
+)
 from pathogen_identification.views import inject__added_references
 from settings.constants_settings import ConstantsSettings as CS
+from settings.default_software_project_sample import DefaultProjectSoftware
 from utils.process_SGE import ProcessSGE
 from utils.software import Software
 from utils.utils import Utils
@@ -1354,19 +1368,24 @@ def teleflu_igv_create(request):
         sample_dict = {}
 
         ### get sample files
-        software_names = SoftwareNames()
+        default_project_software = DefaultProjectSoftware()
 
         for sample in samples:
+
+            software_mdcg = (
+                default_project_software.get_project_sample_mdcg_software_name(sample)
+            )
+
             bam_file = sample.get_file_output(
-                TypePath.MEDIA_ROOT, FileType.FILE_BAM, software_names.get_snippy_name()
+                TypePath.MEDIA_ROOT, FileType.FILE_BAM, software_mdcg
             )
             bam_file_index = sample.get_file_output(
                 TypePath.MEDIA_ROOT,
                 FileType.FILE_BAM_BAI,
-                software_names.get_snippy_name(),
+                software_mdcg,
             )
             vcf_file = sample.get_file_output(
-                TypePath.MEDIA_ROOT, FileType.FILE_VCF, software_names.get_snippy_name()
+                TypePath.MEDIA_ROOT, FileType.FILE_VCF, software_mdcg
             )
 
             if bam_file and bam_file_index and vcf_file:
@@ -1659,7 +1678,10 @@ def query_teleflu_projects(request):
                     "ref_accid": tproj.raw_reference.accids_str,
                     "ref_taxid": tproj.raw_reference.taxids_str,
                     "insaflu_project": False if tproj.insaflu_project is None else True,
+                    "nworkflows": tproj.nworkflows,
+                    "mapping_or_queued": tproj.mapping_or_queued,
                 }
+                print(tproj.mapping_or_queued)
 
                 insaflu_project = tproj.insaflu_project
                 if insaflu_project is None:
@@ -1904,10 +1926,12 @@ def excise_paths_leaf_last(string_with_paths: str):
         return string_with_paths
 
 
-def teleflu_node_info(node, params_df, node_pk):
+def teleflu_node_info(params_df, leaf: SoftwareTreeNode):
+
     node_info = {
-        "pk": node_pk,
-        "node": node,
+        "pk": leaf.pk,
+        "node": f"{leaf.software_tree.global_index}-{leaf.index}",
+        "tree": leaf.software_tree.global_index,
         "modules": [],
     }
 
@@ -1964,9 +1988,7 @@ def load_teleflu_workflows(request):
                 continue
 
             params_df = utils_manager.get_leaf_parameters(mapping.leaf)
-            node_info = node_info = teleflu_node_info(
-                mapping.leaf.index, params_df, mapping.leaf.pk
-            )
+            node_info = node_info = teleflu_node_info(params_df, mapping.leaf)
 
             samples_mapped = mapping.mapped_samples
 

@@ -4,14 +4,15 @@ Created on Oct 28, 2017
 @author: mmp
 """
 
-import cmd
 import datetime
 import gzip
 import logging
 import os
 import re
 import subprocess
+from typing import Optional
 
+import pandas as pd
 from BCBio import GFF
 from Bio import SeqIO
 from Bio.Seq import MutableSeq, Seq
@@ -23,20 +24,25 @@ from ete3 import Tree
 from constants.constants import Constants, FileExtensions, FileType, TypePath
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
-from manage_virus.models import IdentifyVirus, UploadFile
+from manage_virus.models import UploadFile
 from manage_virus.uploadFiles import UploadFiles
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import (
     MixedInfectionsTag,
     ProcessControler,
+    Project,
     ProjectSample,
     Reference,
     Sample,
 )
+from managing_files.models import Software as SoftwareModel
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software_project_sample import DefaultProjectSoftware
+from settings.models import Software as SoftwareSettings
 from utils.coverage import DrawAllCoverage
+from utils.exceptions import CmdException
+from utils.lock_atomic_transaction import LockedAtomicTransaction
 from utils.mixed_infections_management import MixedInfectionsManagement
 from utils.parse_coverage_file import GetCoverage
 from utils.parse_out_files import ParseOutFiles
@@ -51,6 +57,409 @@ from utils.result import (
     SoftwareDesc,
 )
 from utils.utils import Utils
+
+
+class ProjectSampleDepthCoverage(object):
+
+    def __init__(
+        self, project_sample: ProjectSample, software: SoftwareSettings, reference
+    ):
+
+        self.project_sample = project_sample
+        self.b_coverage_default = True
+        self.default_coverage_value = None
+
+        get_coverage = GetCoverage()
+        default_project_software = DefaultProjectSoftware()
+
+        ### limit of the coverage for a project, can be None, if not exist
+
+        coverage_for_project = (
+            default_project_software.get_mdcg_single_parameter_for_project(
+                project_sample.project, DefaultParameters.SNIPPY_COVERAGE_NAME
+            )
+        )
+        if not coverage_for_project is None:
+            coverage_for_project = int(coverage_for_project)
+
+        if (
+            default_project_software.is_snippy_single_parameter_default(
+                project_sample, DefaultParameters.SNIPPY_COVERAGE_NAME
+            )
+            is False
+        ):
+            self.b_coverage_default = False
+            self.default_coverage_value = int(
+                default_project_software.get_mdcg_single_parameter(
+                    project_sample, DefaultParameters.SNIPPY_COVERAGE_NAME
+                )
+            )
+
+        self.coverage = get_coverage.get_coverage(
+            project_sample.get_file_output(
+                TypePath.MEDIA_ROOT,
+                FileType.FILE_DEPTH_GZ,
+                software.name,
+            ),
+            reference,
+            self.default_coverage_value,
+            coverage_for_project,
+        )
+
+    def to_json(self):
+        return self.coverage.to_json()
+
+    def get_dict_data(self):
+        return self.coverage.get_dict_data()
+
+    def is_100_more_9(self, element, b_only_project=False):
+        return self.coverage.is_100_more_9(element, b_only_project)
+
+    def get_fault_message_9(self, element_name):
+
+        return self.coverage.get_fault_message_9(element_name)
+
+    def is_100_more_defined_by_user(self, element):
+        return self.coverage.is_100_more_defined_by_user(element)
+
+    def get_fault_message_0(self, element_name):
+        return self.coverage.get_fault_message_0(element_name)
+
+    def get_fault_message_defined_by_user(self, element_name, default_coverage_value):
+        return self.coverage.get_fault_message_defined_by_user(
+            element_name, default_coverage_value
+        )
+
+    def is_100_more_0(self, element):
+        return self.coverage.is_100_more_0(element)
+
+    def parse_sample_results(self):
+        """
+        get elements, coverage and return a dict
+        """
+        manageDatabase = ManageDatabase()
+        metaKeyAndValue = MetaKeyAndValue()
+        project_sample = ProjectSample.objects.get(pk=self.project_sample.id)
+        project_sample.alert_second_level = 0
+        project_sample.alert_first_level = 0
+
+        for element in self.get_dict_data():
+
+            if not self.is_100_more_9(element) and self.b_coverage_default:
+                project_sample.alert_second_level += 1
+                meta_key = metaKeyAndValue.get_meta_key(
+                    MetaKeyAndValue.META_KEY_ALERT_COVERAGE_9, element
+                )
+                manageDatabase.set_project_sample_metakey(
+                    project_sample,
+                    project_sample.project.owner,
+                    meta_key,
+                    MetaKeyAndValue.META_VALUE_Success,
+                    self.get_fault_message_9(element),
+                )
+            elif (
+                not self.is_100_more_defined_by_user(element)
+                and not self.b_coverage_default
+            ):
+                project_sample.alert_second_level += 1
+                meta_key = metaKeyAndValue.get_meta_key(
+                    MetaKeyAndValue.META_KEY_ALERT_COVERAGE_value_defined_by_user,
+                    element,
+                )
+                manageDatabase.set_project_sample_metakey(
+                    project_sample,
+                    project_sample.project.owner,
+                    meta_key,
+                    MetaKeyAndValue.META_VALUE_Success,
+                    self.get_fault_message_defined_by_user(
+                        element, self.default_coverage_value
+                    ),
+                )
+            elif not self.is_100_more_0(element):
+                project_sample.alert_first_level += 1
+                meta_key = metaKeyAndValue.get_meta_key(
+                    MetaKeyAndValue.META_KEY_ALERT_COVERAGE_0, element
+                )
+                manageDatabase.set_project_sample_metakey(
+                    project_sample,
+                    project_sample.project.owner,
+                    meta_key,
+                    MetaKeyAndValue.META_VALUE_Success,
+                    self.get_fault_message_0(element),
+                )
+        project_sample.save()
+
+
+class RunFreebayesException(Exception):
+    pass
+
+
+class ParseFreebayesException(Exception):
+    pass
+
+
+class SoftwareFlumut(object):
+
+    def __init__(self):
+        self.utils = Utils()
+
+    def run_flumut(
+        self,
+        sequences,
+        markers_report,
+        mutations_report,
+        litterature_report,
+        excel_report,
+    ):
+        """run flumnut, update first"""
+
+        self.run_flumut_update()
+        return self._run_flumut(
+            sequences,
+            markers_report,
+            mutations_report,
+            litterature_report,
+            excel_report,
+        )
+
+    @staticmethod
+    def _run_flumut(
+        sequences,
+        markers_report,
+        mutations_report,
+        litterature_report,
+        excel_report,
+    ):
+        """
+        run flumut
+        :param sequences: sequence file with nucleotides from the influenza virus
+        :param reference: name of the reference (must be one of the sequences)
+        :param report: output file with final report
+        """
+
+        # update flumut if necessary
+
+        # Run flumut
+        cmd = (
+            "{} -n '(?P<sample>.+)_(?P<segment>.+)$' -m {} -M {} -l {} -x {} {}".format(
+                SoftwareNames.SOFTWARE_FLUMUT,
+                markers_report,
+                mutations_report,
+                litterature_report,
+                excel_report,
+                sequences,
+            )
+        )
+
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            raise Exception("Fail to run flumut")
+
+        # copy results to output
+        return exit_status
+
+    def _run_flumut_update(self):
+        """
+        update flumut version
+        """
+
+        dt_result_version = {}
+
+        if not settings.DEBUG:
+
+            cmd = "{} --update".format(SoftwareNames.SOFTWARE_FLUMUT)
+            exit_status = os.system(cmd)
+
+            if exit_status != 0:
+                raise Exception("Fail to update flumut version")
+
+            ## get version
+            version_tag = self.get_flumut_db_version()
+            dt_result_version[SoftwareNames.SOFTWARE_FLUMUT_name.lower()] = version_tag
+
+        return dt_result_version
+
+    def _flumut_dt_versions(self):
+
+        version_tag = self.get_flumut_db_version()
+        dt_result_version = {}
+        dt_result_version[SoftwareNames.SOFTWARE_FLUMUT_name.lower()] = version_tag
+
+        return dt_result_version
+
+    def run_flumut_update(self):
+        """
+        Run flumut update
+        """
+
+        with LockedAtomicTransaction(SoftwareModel):
+            try:
+                software = SoftwareModel.objects.get(
+                    name=SoftwareNames.SOFTWARE_FLUMUT_name
+                )
+            except SoftwareModel.DoesNotExist:
+
+                dt_result_version = self._run_flumut_update()
+
+                software = SoftwareModel(name=SoftwareNames.SOFTWARE_FLUMUT_name)
+                software.set_version(
+                    dt_result_version.get(
+                        SoftwareNames.SOFTWARE_FLUMUT_name.lower(), ""
+                    )
+                )
+                software.set_version_long(dt_result_version)
+                software.save()
+                return dt_result_version
+
+                ## return if the software was updated today
+            if software.is_updated_today():
+                return software.get_version_long()
+
+            dt_result_version = self._run_flumut_update()
+            if len(dt_result_version) > 0:
+                software.set_version_long(dt_result_version)
+                software.set_version(
+                    dt_result_version.get(
+                        SoftwareNames.SOFTWARE_FLUMUT_name.lower(), ""
+                    )
+                )
+                software.set_last_update_today()
+                software.save()
+            else:
+                dt_result_version = software.get_version_long()
+
+        return dt_result_version
+
+    @staticmethod
+    def get_flumut_version():
+        """
+        get flumut full version string - software and DB."""
+        cmd = "{} -V".format(SoftwareNames.SOFTWARE_FLUMUT)
+
+        import subprocess
+
+        process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+        process.wait()
+        output = process.stdout.read().decode("utf-8")
+        exit_status = process.returncode
+
+        if exit_status != 0:
+            raise Exception("Fail to get flumut version")
+
+        return output
+
+    @staticmethod
+    def flumut_version_extract(version_string: str):
+
+        return version_string.split("\n")[0].split(" ")[1]
+
+    def get_flumut_db_version(self):
+        """
+        parse flumut -V output to get the database version"""
+
+        output = self.get_flumut_version()
+
+        db = self.flumut_version_extract(output)
+
+        return db
+
+    def flumut_results_out_date(self, project):
+        """ """
+        ### test if there any collect data running
+        decode_result = DecodeObjects()
+        manage_database = ManageDatabase()
+        metaKeyAndValue = MetaKeyAndValue()
+        meta_project_queue = manage_database.get_project_metakey_last(
+            project,
+            metaKeyAndValue.get_meta_key(
+                MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id
+            ),
+            MetaKeyAndValue.META_VALUE_Queue,
+        )
+
+        if not meta_project_queue is None:
+            meta_project_success = manage_database.get_project_metakey_last(
+                project,
+                metaKeyAndValue.get_meta_key(
+                    MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id
+                ),
+                MetaKeyAndValue.META_VALUE_Success,
+            )
+            if (
+                not meta_project_success is None
+                and meta_project_success.creation_date
+                < meta_project_queue.creation_date
+            ):
+                return False  ## can't run because there are at least one in queue
+
+        ## run always this to get last version
+        dt_flumut_versions = self.run_flumut_update()
+
+        ## get version
+        meta_sample = manage_database.get_project_metakey_last(
+            project,
+            MetaKeyAndValue.META_KEY_Flumut,
+            MetaKeyAndValue.META_VALUE_Success,
+        )
+        if not meta_sample is None:
+            result_flumut = decode_result.decode_result(meta_sample.description)
+            for soft_name in dt_flumut_versions:
+                ## if actual version does not have this software it is because out of date
+                version_run_before = result_flumut.get_software_version(soft_name)
+                if version_run_before is None:
+                    return True
+                if version_run_before != dt_flumut_versions[soft_name]:
+                    return True
+            return False
+        return True
+
+    def get_update_message(self, project):
+        """ """
+        decode_result = DecodeObjects()
+        manage_database = ManageDatabase()
+
+        ## run always this to get last version
+        dt_flumut_versions = self.run_flumut_update()
+
+        # get version
+        meta_sample = manage_database.get_project_metakey_last(
+            project,
+            MetaKeyAndValue.META_KEY_Flumut,
+            MetaKeyAndValue.META_VALUE_Success,
+        )
+
+        sz_out = ""
+
+        if not meta_sample is None:
+            result_flumut = decode_result.decode_result(meta_sample.description)
+            for soft_name in dt_flumut_versions:
+                version_run_before = result_flumut.get_software_version(soft_name)
+
+                if version_run_before is None:
+                    if len(sz_out) > 0:
+                        sz_out += "<br> /><br />"
+                    sz_out += "Do you want to run {} version ({})?".format(
+                        soft_name, dt_flumut_versions.get(soft_name)
+                    )
+                elif version_run_before != dt_flumut_versions.get(soft_name):
+                    if len(sz_out) > 0:
+                        sz_out += "<br> /><br />"
+                    sz_out += (
+                        "Do you want to run {} version ({}) from version ({})?".format(
+                            soft_name,
+                            dt_flumut_versions.get(soft_name),
+                            version_run_before,
+                        )
+                    )
+        else:
+            for soft_name in dt_flumut_versions:
+                if len(sz_out) > 0:
+                    sz_out += "<br> /><br />"
+                sz_out += "Do you want to run {} version ({})?".format(
+                    soft_name, dt_flumut_versions.get(soft_name)
+                )
+
+        return sz_out
 
 
 class Software(object):
@@ -81,6 +490,7 @@ class Software(object):
         """
         get type of files to copy
         """
+
         if software == SoftwareNames.SOFTWARE_SNIPPY_name:
             return [
                 FileType.FILE_BAM,
@@ -94,6 +504,34 @@ class Software(object):
                 FileType.FILE_VCF_GZ_TBI,
                 FileType.FILE_CSV,
                 FileType.FILE_REF_FASTA,
+            ]
+        elif software == SoftwareNames.SOFTWARE_IVAR_name:
+            return [
+                FileType.FILE_BAM,
+                FileType.FILE_BAM_BAI,
+                FileType.FILE_CONSENSUS_FA,
+                FileType.FILE_DEPTH_GZ,
+                FileType.FILE_DEPTH_GZ_TBI,
+                FileType.FILE_TAB,
+                FileType.FILE_VCF_GZ,
+                FileType.FILE_VCF,
+                FileType.FILE_VCF_GZ_TBI,
+                FileType.FILE_CSV,
+                FileType.FILE_REF_FASTA,
+            ]
+        elif software == SoftwareNames.SOFTWARE_IRMA_name:
+            return [
+                FileType.FILE_CONSENSUS_FA,
+                FileType.FILE_CONSENSUS_ORIGINAL_FA,
+                FileType.FILE_DEPTH_GZ,
+                FileType.FILE_DEPTH_GZ_TBI,
+                FileType.FILE_TAB,
+                FileType.FILE_VCF_GZ,
+                FileType.FILE_VCF,
+                FileType.FILE_VCF_GZ_TBI,
+                FileType.FILE_CSV,
+                FileType.FILE_REF_FASTA,
+                FileType.FILE_MIXED_VARIANTS,
             ]
         elif software == SoftwareNames.SOFTWARE_FREEBAYES_name:
             return [FileType.FILE_VCF, FileType.FILE_TAB]
@@ -110,12 +548,13 @@ class Software(object):
                 FileType.FILE_VCF_GZ_TBI,
             ]
 
-    def copy_files_to_project(self, project_sample, software, path_from):
+    def copy_files_to_project(self, project_sample: ProjectSample, software, path_from):
         """
         copy temp files to the project_sample software names
         software : SOFTWARE_SNIPPY_name, SOFTWARE_FREEBAYES_name
         """
         for type_file in self.get_vect_type_files_to_copy(software):
+
             if type_file == FileType.FILE_CONSENSUS_FA:  ## if .fa file pass to .fasta
                 self.utils.copy_file(
                     os.path.join(
@@ -334,6 +773,7 @@ class Software(object):
     def creat_new_reference_to_snippy(self, project_sample):
         ### get temp file
         temp_file = self.utils.get_temp_file("new_reference", FileExtensions.FILE_FASTA)
+
         cmd = "perl %s %s %s" % (
             self.software_names.get_create_new_reference_to_snippy(),
             project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),
@@ -347,12 +787,18 @@ class Software(object):
             self.logger_production.error("Fail to run: " + cmd)
             self.logger_debug.error("Fail to run: " + cmd)
             raise Exception("Fail to run create_new_reference_to_snippy")
+
+        ##
+        default_project_software = DefaultProjectSoftware()
+        software_mdcg = default_project_software.get_project_sample_mdcg_software_name(
+            project_sample
+        )
         path_dest = project_sample.get_file_output(
             TypePath.MEDIA_ROOT,
             FileType.FILE_REF_FASTA,
-            self.software_names.get_snippy_name(),
+            software_mdcg,
         )
-        #         print("Copy {} to {}".format(temp_file, path_dest))
+
         self.utils.copy_file(temp_file, path_dest)
         self.create_fai_fasta(path_dest)
         if os.path.exists(temp_file):
@@ -366,6 +812,7 @@ class Software(object):
         to
         #!/usr/bin/env python3
         """
+
         if not os.path.exists(fastq_1):
             self.logger_production.error("Fastq 1 not found: " + fastq_1)
             self.logger_debug.error("Fastq 1 not found: " + fastq_1)
@@ -512,6 +959,7 @@ class Software(object):
         """
         create a database on abricate
         """
+
         if not os.path.isfile(file_name):
             raise IOError("File not found: " + file_name)
         cmd = "mkdir -p %s/%s" % (self.software_names.SOFTWARE_ABRICATE_DB, database)
@@ -561,9 +1009,122 @@ class Software(object):
             raise Exception("Fail to run abricate")
         return cmd
 
+    def match_segments_to_numbers(self, reference_fasta):
+        """
+        RUN ABRICATE, GET GENES, FILTER, RENAME,
+        """
+        return self.match_segments_to_numbers_influenza(reference_fasta)
+
+    def match_segments_to_numbers_influenza(self, reference_fasta):
+        """
+        MATCH GENE NAMES TO SEGMENT NUMBER"""
+        gene_to_number_str_dict = {
+            "PB2": "1",
+            "PB1": "2",
+            "PA": "3",
+            "HA": "4",
+            "NP": "5",
+            "NA": "6",
+            "MP": "7",
+            "NS": "8",
+        }
+        matched_segments_to_genes = self.match_segments_to_genes_abricate(
+            reference_fasta
+        )
+
+        matched_segments_to_numbers = {
+            segment: gene_to_number_str_dict[gene]
+            for segment, gene in matched_segments_to_genes.items()
+        }
+
+        return matched_segments_to_numbers
+
+    def match_segments_to_genes_abricate(self, reference_fasta):
+        """
+        RUN ABRICATE, GET GENES, FILTER, RENAME,
+        """
+
+        # software = Software()
+        contigs2sequences = Contigs2Sequences(False)
+        ### get database file name, if it is not passed
+        (_, database_file_name) = contigs2sequences.get_most_recent_database()
+        database_name = contigs2sequences.get_database_name()
+
+        ### first create database
+        if not self.is_exist_database_abricate(database_name):
+            self.create_database_abricate(database_name, database_file_name)
+
+        temp_out_abricate = self.utils.get_temp_file(
+            "temp_abricate", FileExtensions.FILE_TXT
+        )
+        _ = self.run_abricate(
+            database_name,  # "sequences_v13",  # Need to change this
+            reference_fasta,
+            SoftwareNames.SOFTWARE_ABRICATE_PARAMETERS,
+            temp_out_abricate,
+        )
+        parseOutFiles = ParseOutFiles()
+        dict_data_out = parseOutFiles.parse_abricate_file_simple(temp_out_abricate)
+        # This doesn't really matter
+        self.utils.remove_temp_file(temp_out_abricate)
+
+        ###### FILTER AND RENAME
+        keep_segment = {}
+
+        for segname, result_list in dict_data_out.items():
+            if result_list == []:
+                continue
+            seg_abr_result = result_list[0]
+            if "Gene" not in seg_abr_result:
+                continue
+            gene = seg_abr_result["Gene"].split("_")[-1]
+
+            keep_segment[segname] = gene
+
+        return keep_segment
+
     """
     Global processing
     """
+
+    def identify_project_reference_type_and_subtype(self, project: Project):
+
+        reference_fasta = project.reference.get_reference_fasta(TypePath.MEDIA_ROOT)
+        ### type
+
+        return self.identify_fasta_type_and_subtype(reference_fasta)
+
+    def identify_fasta_type_and_subtype(self, reference_fasta):
+        """ """
+
+        upload_file = self.get_abricate_uploadfile_create()
+
+        temp_out_abricate = self.utils.get_temp_file(
+            "temp_abricate", FileExtensions.FILE_TXT
+        )
+        _ = self.run_abricate(
+            upload_file.abricate_name,  # "db_influenza_typing_v11",  # "sequences_v13",  # Need to change this
+            reference_fasta,
+            SoftwareNames.SOFTWARE_ABRICATE_PARAMETERS,
+            temp_out_abricate,
+        )
+        parseOutFiles = ParseOutFiles()
+        dict_data_out = parseOutFiles.parse_abricate_file_simple(temp_out_abricate)
+        subtype = [None, None]
+
+        for _, result_list in dict_data_out.items():
+            if result_list == []:
+                continue
+            seg_abr_result = result_list[0]
+            if "Gene" not in seg_abr_result:
+                continue
+            gene: str = seg_abr_result["Gene"].split("_")[-1]
+            if gene.startswith("H"):
+                subtype[0] = gene
+            elif gene.startswith("N"):
+                subtype[1] = gene
+
+        return subtype
 
     #     @transaction.atomic
     def identify_type_and_sub_type(
@@ -585,7 +1146,6 @@ class Software(object):
         if not fastq1_2 is None and not os.path.exists(fastq1_2):
             return False
 
-        print("identify_type_and_sub_type")
         if sample.is_type_fastq_gz_sequencing():  ## illumina
             try:
                 cmd = self.run_spades(fastq1_1, fastq1_2, out_dir_result)
@@ -707,7 +1267,7 @@ class Software(object):
 
         ### test id abricate has the database
         try:
-            uploadFile = UploadFile.objects.order_by("-version")[0]
+            uploadFile = self.get_abricate_uploadfile_create()
         except UploadFile.DoesNotExist:
             ## save error in MetaKeySample
             result = Result()
@@ -731,32 +1291,6 @@ class Software(object):
             )
             self.utils.remove_dir(out_dir_result)
             return False
-
-        if not self.is_exist_database_abricate(uploadFile.abricate_name):
-            try:
-                self.create_database_abricate(uploadFile.abricate_name, uploadFile.path)
-            except Exception:
-                result = Result()
-                result.set_error(
-                    "Abricate (%s) fail to run --setupdb"
-                    % (self.software_names.get_abricate_version())
-                )
-                result.add_software(
-                    SoftwareDesc(
-                        self.software_names.get_abricate_name(),
-                        self.software_names.get_abricate_version(),
-                        self.software_names.get_abricate_parameters(),
-                    )
-                )
-                manageDatabase.set_sample_metakey(
-                    sample,
-                    owner,
-                    MetaKeyAndValue.META_KEY_Identify_Sample,
-                    MetaKeyAndValue.META_VALUE_Error,
-                    result.to_json(),
-                )
-                self.utils.remove_dir(out_dir_result)
-                return False
 
         ## run abricate
         out_file_abricate = self.utils.get_temp_file("temp_abricate", ".txt")
@@ -1213,18 +1747,7 @@ class Software(object):
         self.utils.remove_file(clean_abricate_file)
         return True
 
-    def get_species_tag(self, reference):
-        """
-        :param reference instance, database
-        :return specie TAGs: Reference.SPECIES_SARS_COV_2; Reference.SPECIES_MPXV; Reference.SPECIES_INFLUENZA, ...
-        """
-
-        ### Done
-        if (
-            len(reference.specie_tag) > 0
-            and reference.specie_tag != Reference.SPECIES_NOT_SET
-        ):
-            return reference.specie_tag
+    def get_abricate_uploadfile_create(self):
 
         ### test id abricate has the database
         try:
@@ -1238,6 +1761,23 @@ class Software(object):
                 self.create_database_abricate(uploadFile.abricate_name, uploadFile.path)
             except Exception:
                 return Reference.SPECIES_NOT_SET
+
+        return uploadFile
+
+    def get_species_tag(self, reference: Reference):
+        """
+        :param reference instance, database
+        :return specie TAGs: Reference.SPECIES_SARS_COV_2; Reference.SPECIES_MPXV; Reference.SPECIES_INFLUENZA, ...
+        """
+
+        ### Done
+        if (
+            len(reference.specie_tag) > 0
+            and reference.specie_tag != Reference.SPECIES_NOT_SET
+        ):
+            return reference.specie_tag
+
+        uploadFile = self.get_abricate_uploadfile_create()
 
         ## run abricate
         out_file_abricate = self.utils.get_temp_file("temp_abricate", ".txt")
@@ -1651,6 +2191,501 @@ class Software(object):
         ### dt_info has the information
         return (temp_dir, result, parameters)
 
+    def run_mdcg(
+        self, software: SoftwareSettings, project_sample: ProjectSample, parameters
+    ):
+        """
+        run mdcg
+        out: output_file
+        """
+
+        if software.name_extended == SoftwareNames.SOFTWARE_SNIPPY_name_extended:
+            out_put_path = self.run_snippy(
+                project_sample.sample.get_fastq_available(TypePath.MEDIA_ROOT, True),
+                project_sample.sample.get_fastq_available(TypePath.MEDIA_ROOT, False),
+                project_sample.reference_fasta,
+                project_sample.reference_gbk,
+                project_sample.sample.name,
+                parameters,
+            )
+
+        elif software.name_extended == SoftwareNames.SOFTWARE_IVAR_name_extended:
+            out_put_path = self.run_snippy(
+                project_sample.sample.get_fastq_available(TypePath.MEDIA_ROOT, True),
+                project_sample.sample.get_fastq_available(TypePath.MEDIA_ROOT, False),
+                project_sample.reference_fasta,
+                project_sample.reference_gbk,
+                project_sample.sample.name,
+                parameters,
+            )
+
+        elif software.name_extended == SoftwareNames.SOFTWARE_IRMA_name_extended:
+
+            out_put_path = self.run_irma_and_snpEff(
+                project_sample.sample.get_fastq(TypePath.MEDIA_ROOT, True),
+                project_sample.sample.get_fastq(TypePath.MEDIA_ROOT, False),
+                "FLU",
+                project_sample.reference_fasta,
+                project_sample.reference_gbk,
+                project_sample.sample.name,
+            )
+            return out_put_path
+
+        else:
+            raise Exception("Software not implemented")
+
+        return out_put_path
+
+    def run_irma(self, file_name_1, file_name_2, module, sample_name):
+
+        temp_dir = os.path.join(self.utils.get_temp_dir(), sample_name)
+
+        cmd = "{} {} {} {} {}".format(
+            SoftwareNames.SOFTWARE_IRMA,
+            module,
+            file_name_1,
+            file_name_2 if file_name_2 else "",
+            temp_dir,
+        )
+
+        os.system(cmd)
+
+        output_fastas = [
+            x
+            for x in os.listdir(os.path.join(temp_dir, "amended_consensus"))
+            if x.endswith(".fa")
+        ]
+
+        ## if there is no output, raise an exception
+        if len(output_fastas) == 0:
+            raise Exception("IRMA did not generate any output")
+
+        ## concatenate all vcf files into one
+
+        return temp_dir
+
+    def irma_replicate_snippy_output(
+        self,
+        file_name_1,
+        file_name_2,
+        irma_output_dir,
+        path_reference_fasta,
+        path_reference_genbank,
+    ):
+
+        ############# Collect output files ################
+        ## copy fastqs to irma output
+        self.utils.copy_file(file_name_1, os.path.join(irma_output_dir, "R1.fastq"))
+        if file_name_2:
+            self.utils.copy_file(file_name_2, os.path.join(irma_output_dir, "R2.fastq"))
+
+        ## copy reference fasta and genbank file to irma output dir as ref.fa and ref.gbk
+        refdir = os.path.join(irma_output_dir, "reference")
+        os.makedirs(refdir, exist_ok=True)
+        self.utils.copy_file(path_reference_fasta, os.path.join(refdir, "ref.fa"))
+        self.utils.copy_file(path_reference_genbank, os.path.join(refdir, "ref.gbk"))
+
+        # index reference
+        self.create_fai_fasta(os.path.join(refdir, "ref.fa"))
+
+    def align_combined_fasta(self, irma_output_dir, segname, combined_vcf, output_vcf):
+        """
+        Create a vcf file from a combined fasta file
+        gereate multiple sequence alignment and vcf file
+        """
+        msa_output = os.path.join(irma_output_dir, segname + "_aligned.msa")
+
+        ## align
+        self.run_mafft(
+            combined_vcf,
+            msa_output,
+            "--auto",
+        )
+
+    def vcfalign_from_msa(self, msa_file, vcf_filename, output_dir):
+        """
+        Create a vcf file from a msa file
+        """
+
+        ## make vcf
+        from utils.vcfalgn import VcfAlgn
+
+        vcf_algn = VcfAlgn(
+            msa_file, vcf_filename, odir=output_dir, output=vcf_filename + ".vcf"
+        )
+        output_vcf = os.path.join(output_dir, vcf_filename + ".vcf")
+
+        vcf_algn.read_input()
+        vcf_algn.read_ref()
+        vcf_algn = vcf_algn.msa2snp()
+        vcf_algn = vcf_algn.write_vcf()
+
+        ## bgzip and tabix
+        cmd = "{} view -Oz -o {}.gz {}".format(
+            self.software_names.get_bcftools(), output_vcf, output_vcf
+        )
+
+        os.system(cmd)
+
+        cmd = "{} index {}.gz".format(self.software_names.get_bcftools(), output_vcf)
+        os.system(cmd)
+
+    def irma_align_get_msas(
+        self, keep_segment, reference_fasta, irma_output_dir, sample_name
+    ) -> dict:
+        """
+        fetch consenssu from irma output. Match each to reference segments.
+        Align each segment to reference and generate vcf files.
+        """
+        segments_in_reference = {v: g for g, v in keep_segment.items()}
+
+        # fasta_files = [
+        #    f for f in os.listdir(os.path.join(irma_output_dir, "amended_consensus"))
+        # ]
+        # fasta_segs = {f.split(".")[0].split("_")[-1]: f for f in fasta_files}
+        # print(fasta_segs)
+
+        segments_generated = {
+            segname: os.path.join(
+                irma_output_dir, "amended_consensus", f"{sample_name}_{segname}.fa"
+            )
+            for segname in segments_in_reference.keys()  # if there are more than in the reference get ignored.
+        }
+
+        segments_generated = {
+            s: f for s, f in segments_generated.items() if os.path.exists(f)
+        }
+
+        matched_segments = {
+            segname: SeqIO.read(
+                consensus,
+                "fasta",
+            )
+            for segname, consensus in segments_generated.items()
+            # fasta_segs[gene] for segname, gene in keep_segment.items()
+        }
+
+        ## split reference into segment fastas and align to respective consensus.
+        with open(reference_fasta, "r") as ref:
+            ref_seqs = SeqIO.to_dict(SeqIO.parse(ref, "fasta"))
+
+        msa_output = {}
+
+        for segname, fasta in matched_segments.items():
+            fasta_seq = fasta
+            fasta_seq.id = sample_name
+
+            tmp_cons = os.path.join(irma_output_dir, segname + ".fasta")
+            fasta_id = fasta.id
+            corrected_record = fasta
+            corrected_record.id = segname
+            with open(tmp_cons, "w") as ref:
+                SeqIO.write(corrected_record, ref, "fasta")
+
+            tmp__ref = os.path.join(irma_output_dir, segname + "_ref.fasta")
+            with open(tmp__ref, "w") as ref:
+                SeqIO.write(ref_seqs[segname], ref, "fasta")
+
+            fasta.id = fasta_id
+
+            tmp_comb = os.path.join(irma_output_dir, segname + "_comb.fasta")
+            with open(tmp_comb, "w") as ref:
+                SeqIO.write(ref_seqs[segname], ref, "fasta")
+                SeqIO.write(fasta, ref, "fasta")
+
+            self.align_combined_fasta(
+                irma_output_dir,
+                segname,
+                tmp_comb,
+                os.path.join(irma_output_dir, segname + ".vcf"),
+            )
+
+            msa_output[segname] = os.path.join(
+                irma_output_dir, segname + "_aligned.msa"
+            )
+
+        return msa_output
+
+    def generate_depth_file(
+        self,
+        file_name_1: str,
+        file_name_2: Optional[str],
+        reference_fasta: str,
+        output_dir: str,
+        sample_name: str,
+    ):
+        """
+        Generate depth file
+        generates:
+        - mapped sam
+        - mapped bam
+        - sorted bam
+        - depth file
+        - depth file gzipped
+        """
+
+        ## map against reference using bwa
+        cmd = "{} index {}".format(self.software_names.get_bwa(), reference_fasta)
+        os.system(cmd)
+        ## map fastqs against reference
+        mapped_sam = os.path.join(output_dir, sample_name + ".sam")
+        cmd = "{} mem -t 4 {} {} {} > {}".format(
+            self.software_names.get_bwa(),
+            reference_fasta,
+            file_name_1,
+            file_name_2,
+            mapped_sam,
+        )
+        os.system(cmd)
+
+        ## convert sam to bam
+        mapped_bam = os.path.join(output_dir, sample_name + ".bam")
+        cmd = "{} view -b -F 4 {} > {}".format(
+            self.software_names.get_samtools(), mapped_sam, mapped_bam
+        )
+        os.system(cmd)
+
+        ## sort bam
+        sorted_bam = os.path.join(output_dir, sample_name + "_sorted.bam")
+        cmd = "{} sort {} -o {}".format(
+            self.software_names.get_samtools(), mapped_bam, sorted_bam
+        )
+
+        os.system(cmd)
+
+        ## index bam
+        cmd = "{} index {}".format(self.software_names.get_samtools(), sorted_bam)
+        os.system(cmd)
+
+        ## generate depth file and compress
+        depth_file = os.path.join(output_dir, sample_name + ".depth.gz")
+        cmd = "{} depth {} | {} > {}".format(
+            self.software_names.get_samtools(),
+            sorted_bam,
+            self.software_names.get_bgzip(),
+            depth_file,
+        )
+        os.system(cmd)
+
+        # copy bam
+        cmd = "cp {} {}".format(
+            sorted_bam, os.path.join(output_dir, sample_name + ".bam")
+        )
+
+        os.system(cmd)
+        cmd = "cp {}.bai {}".format(
+            sorted_bam, os.path.join(output_dir, sample_name + ".bam.bai")
+        )
+        os.system(cmd)
+
+        return depth_file
+
+    def generate_depth_from_msa(
+        self, msa_file, reference_fasta, output_dir, sample_name
+    ):
+        """
+        Generate depth file from msa file, format:
+        >sample_name    position    depth
+        """
+
+        ## get reference sequence
+        with open(reference_fasta, "r") as ref:
+            ref_seq = SeqIO.read(ref, "fasta")
+
+        ## get msa
+        with open(msa_file, "r") as msa:
+            msa_seqs = SeqIO.to_dict(SeqIO.parse(msa, "fasta"))
+
+        ## get depth
+        depth_file = os.path.join(output_dir, sample_name + ".depth")
+        with open(depth_file, "w") as depth:
+            for i, _ in enumerate(ref_seq):
+                depth.write(
+                    "{}\t{}\t{}\n".format(
+                        sample_name,
+                        i + 1,
+                        sum([1 for seq in msa_seqs.values() if seq[i] != "-"])
+                        - 1,  # take into account the reference
+                    )
+                )
+
+        return depth_file
+
+    def irma_generate_full_vcf_compress(self, irma_output_dir, sample_name):
+        """
+        Merge vcf files and generate full vcf
+        """
+        ## get the vcf file
+
+        #### merge vcf files
+
+        temp_file = os.path.join(irma_output_dir, sample_name + ".vcf")
+
+        # merge vcf files
+        vcf_files = [f for f in os.listdir(irma_output_dir) if f.endswith(".vcf.gz")]
+
+        vcf_combined = os.path.join(irma_output_dir, sample_name + ".vcf")
+        vcf_combined_compressed = os.path.join(irma_output_dir, sample_name + ".vcf.gz")
+
+        cmd = "{} concat -o {} {}".format(
+            self.software_names.get_bcftools(),
+            vcf_combined,
+            " ".join([os.path.join(irma_output_dir, f) for f in vcf_files]),
+        )
+
+        system_output = os.system(cmd)
+
+        ### uncompress
+
+        cmd = "{} view -Ov -o {} {}".format(
+            self.software_names.get_bcftools(), temp_file, vcf_combined_compressed
+        )
+
+        if system_output != 0:
+            raise Exception("Failed to merge vcf files")
+
+        return vcf_combined
+
+    def irma_collect_depth_files_compress(self, irma_output_dir: str, sample_name: str):
+        #### merge depth files
+        depth_files = sorted(
+            [f for f in os.listdir(irma_output_dir) if f.endswith(".depth")]
+        )
+        depth_combined = os.path.join(irma_output_dir, sample_name + ".depth")
+
+        with open(depth_combined, "w") as depth:
+            for file in depth_files:
+                with open(os.path.join(irma_output_dir, file), "r") as f:
+                    depth.write(f.read())
+
+        ## compress
+        if os.path.exists(depth_combined + ".gz") is True:
+            os.unlink(depth_combined + ".gz")
+
+        cmd = "{} {}".format(self.software_names.get_bgzip(), depth_combined)
+
+        cmd_output = os.system(cmd)
+        if cmd_output != 0:
+            raise Exception("Failed to compress depth file")
+
+        return depth_combined + ".gz"
+
+    def run_irma_and_snpEff(
+        self,
+        file_name_1,
+        file_name_2,
+        module,
+        path_reference_fasta,
+        path_reference_genbank,
+        sample_name,
+    ):
+        """
+        run irma and snpEff
+        ## outputs
+        - .vcf
+        - .mixed.variants.tsv
+        - .consensus.fa
+        - .tab
+        - .depth.gz
+        - .depth.gz.tbi
+        - .vcf.gz
+        """
+        ############# RUN IRMA ################
+        irma_output_dir = self.run_irma(file_name_1, file_name_2, module, sample_name)
+
+        ############# COLLECT OUTPUT ################
+        self.irma_replicate_snippy_output(
+            file_name_1,
+            file_name_2,
+            irma_output_dir,
+            path_reference_fasta,
+            path_reference_genbank,
+        )
+
+        ## Collect variants file
+        files = os.listdir(os.path.join(irma_output_dir, "tables"))
+        files = [f for f in files if f.endswith("variants.txt")]
+        files = [os.path.join(irma_output_dir, "tables", f) for f in files]
+        variant_tables = [pd.read_csv(f, sep="\t") for f in files]
+        variant_table = pd.concat(variant_tables)
+        variant_table.to_csv(
+            os.path.join(irma_output_dir, sample_name + ".mixed.variants.tsv"), sep="\t"
+        )
+
+        ## generate additional_files
+        keep_segment = self.match_segments_to_numbers(path_reference_fasta)
+        ## generate individual segment alignments
+        seqname_msa_dict = self.irma_align_get_msas(
+            keep_segment, path_reference_fasta, irma_output_dir, sample_name=sample_name
+        )
+
+        # concatenated original consensus fasta
+        full_consensus_irma_original = os.path.join(
+            irma_output_dir, sample_name + ".consensus.original.fa"
+        )
+        fasta_files_original = os.listdir(
+            os.path.join(irma_output_dir, "amended_consensus")
+        )
+        fasta_files_original = [
+            os.path.join(irma_output_dir, "amended_consensus", f)
+            for f in fasta_files_original
+        ]
+        #
+        with open(full_consensus_irma_original, "w") as f:
+            for file in fasta_files_original:
+                with open(file, "r") as g:
+                    f.write(g.read())
+
+        ## concatenate all fasta files to keep (matched to reference sequence).
+        full_consensus_irma = os.path.join(
+            irma_output_dir, sample_name + ".consensus.fa"
+        )
+        fasta_files = [x + ".fasta" for x in seqname_msa_dict.keys()]
+        fasta_files = [os.path.join(irma_output_dir, f) for f in fasta_files]
+        with open(full_consensus_irma, "w") as f:
+            for file in fasta_files:
+                with open(file, "r") as g:
+                    f.write(g.read())
+
+        ## generate individual segment vcf and depth files
+        for seqname, msa_file in seqname_msa_dict.items():
+            seq_ref = os.path.join(irma_output_dir, seqname + "_ref.fasta")
+            self.vcfalign_from_msa(msa_file, seqname, irma_output_dir)
+            self.generate_depth_from_msa(msa_file, seq_ref, irma_output_dir, seqname)
+
+        ## generate ful depth file
+        _ = self.irma_collect_depth_files_compress(irma_output_dir, sample_name)
+
+        ## generate_full_vcf from all segments
+        vcf_combined = self.irma_generate_full_vcf_compress(
+            irma_output_dir, sample_name
+        )
+
+        if os.path.exists(vcf_combined) is False:
+            raise Exception("Failed to generate full vcf")
+
+        ############# RUN SNPEFF ################
+        ### run snpEff
+
+        vcf_file_out_temp = self.run_snpEff_add_freq(
+            vcf_combined,
+            path_reference_fasta,
+            path_reference_genbank,
+            irma_output_dir,
+            sample_name + "_2.vcf",
+        )
+
+        os.unlink(vcf_combined)
+        ### pass vcf to tab
+        self.run_snippy_vcf_to_tab_freq_and_evidence(
+            path_reference_fasta,
+            path_reference_genbank,
+            vcf_file_out_temp,
+            os.path.join(irma_output_dir, sample_name + ".tab"),
+        )
+
+        return irma_output_dir
+
     def run_snippy(
         self,
         file_name_1,
@@ -1712,7 +2747,6 @@ class Software(object):
                 file_name_1,
                 file_name_2,
             )
-        print("SNIPPY: ", cmd)
         exist_status = os.system(cmd)
         if exist_status != 0:
             self.logger_production.error("Fail to run: " + cmd)
@@ -1728,7 +2762,7 @@ class Software(object):
         self.utils.add_freq_to_vcf(
             out_file_transformed_amino, os.path.join(temp_dir, sample_name + "_2.vcf")
         )
-        self.utils.remove_file(out_file_transformed_amino)
+        # self.utils.remove_file(out_file_transformed_amino)
 
         ### add FREQ and other things to TAB file
         self.run_snippy_vcf_to_tab_freq_and_evidence(
@@ -1809,7 +2843,6 @@ class Software(object):
         exist_status = os.system(cmd)
 
         if exist_status != 0:
-            # os.unlink(out_file_gb)
             self.logger_production.error("Fail to run: " + cmd)
             self.logger_debug.error("Fail to run: " + cmd)
             raise Exception("Fail to run genbank2gff3")
@@ -1999,6 +3032,46 @@ class Software(object):
         handle.close()
         return (base_file_name, temp_file)
 
+    def run_snpEff_add_freq(
+        self,
+        vcf_file,
+        path_reference_fasta,
+        path_reference_genbank,
+        output_directory,
+        output_file,
+    ):
+        ### run snpEff
+        temp_file_2 = self.utils.get_temp_file("vcf_file", ".vcf")
+        output_snpEff_file = self.run_snpEff(
+            path_reference_fasta,
+            path_reference_genbank,
+            vcf_file,
+            os.path.join(output_directory, os.path.basename(temp_file_2)),
+        )
+
+        if (
+            output_snpEff_file is None
+        ):  ## sometimes the gff does not have amino sequences
+            self.utils.copy_file(
+                vcf_file,
+                os.path.join(output_directory, os.path.basename(temp_file_2)),
+            )
+
+        self.test_bgzip_and_tbi_in_vcf(
+            os.path.join(output_directory, os.path.basename(temp_file_2))
+        )
+
+        ### add FREQ to vcf file
+        vcf_file_out_temp = self.utils.add_freq_to_vcf(
+            os.path.join(output_directory, os.path.basename(temp_file_2)),
+            os.path.join(output_directory, output_file),
+        )
+
+        if os.path.exists(temp_file_2):
+            os.unlink(temp_file_2)
+
+        return vcf_file_out_temp
+
     def run_snpEff(self, fasta_file, genbank, vcf_file, out_file):
         """
         ./snpEff ann -no-downstream -no-upstream -no-intergenic -no-utr -c ../path_to/reference/snpeff.config -dataDir . -noStats ref sample.vcf > sample_annot.vcf
@@ -2117,6 +3190,7 @@ class Software(object):
             out_file,
         )
         exist_status = os.system(cmd)
+
         if exist_status != 0:
             os.unlink(temp_file)
             self.logger_production.error("Fail to run: " + cmd)
@@ -2125,7 +3199,123 @@ class Software(object):
         os.unlink(temp_file)
         return out_file
 
-    def run_freebayes(self, bam_file, reference_fasta, genbank_file, sample_name):
+    def clean_freebayes_output(self, project_sample: ProjectSample):
+        tab_freebayes_file = project_sample.get_file_output(
+            TypePath.MEDIA_ROOT,
+            FileType.FILE_TAB,
+            SoftwareNames.SOFTWARE_FREEBAYES_name,
+        )
+        self.utils.remove_file(tab_freebayes_file)
+        file_out = project_sample.get_file_output_human(
+            TypePath.MEDIA_ROOT,
+            FileType.FILE_TAB,
+            SoftwareNames.SOFTWARE_FREEBAYES_name,
+        )
+        self.utils.remove_file(file_out)
+        b_second_choice = True
+        file_out = project_sample.get_file_output_human(
+            TypePath.MEDIA_ROOT,
+            FileType.FILE_TAB,
+            SoftwareNames.SOFTWARE_FREEBAYES_name,
+            b_second_choice,
+        )
+        self.utils.remove_file(file_out)
+
+        file_out = project_sample.get_file_output(
+            TypePath.MEDIA_ROOT,
+            FileType.FILE_VCF,
+            SoftwareNames.SOFTWARE_FREEBAYES_name,
+        )
+        self.utils.remove_file(file_out)
+        file_out = project_sample.get_file_output(
+            TypePath.MEDIA_ROOT,
+            FileType.FILE_VCF_GZ,
+            SoftwareNames.SOFTWARE_FREEBAYES_name,
+        )
+        self.utils.remove_file(file_out)
+
+    def run_freebayes_and_count(
+        self, project_sample: ProjectSample, software: SoftwareSettings
+    ):
+        """
+        run freebayes and count the number of SNPs
+        """
+        count_hits = CountHits()
+        out_put_path = None
+        try:
+            out_put_path = self.run_freebayes_stratified(project_sample, software)
+        except RunFreebayesException as e:
+            raise e
+
+        ## count number of SNPs
+
+        if not out_put_path is None:
+            file_tab = os.path.join(out_put_path, project_sample.sample.name + ".tab")
+            if os.path.exists(file_tab):
+                vect_count_type = ["snp"]  ## only detects snp
+                count_hits = self.utils.count_hits_from_tab(file_tab, vect_count_type)
+
+            else:
+                raise ParseFreebayesException(
+                    "Fail to parse freebayes for sample: {}".format(
+                        project_sample.sample.name
+                    )
+                )
+
+            self.copy_files_to_project(
+                project_sample,
+                self.software_names.get_freebayes_name(),
+                out_put_path,
+            )
+            ## remove path dir if exist
+            self.utils.remove_dir(out_put_path)
+
+        return out_put_path, count_hits
+
+    def run_freebayes_stratified(
+        self, project_sample: ProjectSample, software: SoftwareSettings
+    ):
+
+        try:
+            out_put_path = self.run_freebayes_parallel(
+                project_sample.get_file_output(
+                    TypePath.MEDIA_ROOT,
+                    FileType.FILE_BAM,
+                    software.name,
+                ),
+                project_sample.reference_fasta,
+                project_sample.reference_gbk,
+                project_sample.sample.name,
+            )
+        except Exception as e:
+            try:
+                out_put_path = self.run_freebayes_normal(
+                    project_sample.get_file_output(
+                        TypePath.MEDIA_ROOT,
+                        FileType.FILE_BAM,
+                        software.name,
+                    ),
+                    project_sample.reference_fasta,
+                    project_sample.reference_gbk,
+                    project_sample.sample.name,
+                )
+
+            except Exception as e:
+                import traceback
+
+                traceback.print_exc()
+
+                raise RunFreebayesException(
+                    "Fail to run freebayes for sample: {}".format(
+                        project_sample.sample.name
+                    )
+                )
+
+        return out_put_path
+
+    def run_freebayes_normal(
+        self, bam_file, reference_fasta, genbank_file, sample_name
+    ):
         """
         run freebayes
         return output directory
@@ -2184,39 +3374,20 @@ class Software(object):
             temp_file,
         )
         exist_status = os.system(cmd)
-        if exist_status != 0:
+        if exist_status != 0 or os.path.getsize(temp_file) == 0:
             self.logger_production.error("Fail to run: " + cmd)
             self.logger_debug.error("Fail to run: " + cmd)
             raise Exception("Fail to run freebayes")
 
+        ### run snpEff
         if os.path.getsize(temp_file) > 0:
-            ### run snpEff
-            temp_file_2 = self.utils.get_temp_file("vcf_file", ".vcf")
-            output_file = self.run_snpEff(
+            vcf_file_out_temp = self.run_snpEff_add_freq(
+                temp_file,
                 reference_fasta,
                 genbank_file,
-                temp_file,
-                os.path.join(temp_dir, os.path.basename(temp_file_2)),
+                temp_dir,
+                "{}.vcf".format(sample_name),
             )
-
-            if output_file is None:  ## sometimes the gff does not have amino sequences
-                self.utils.copy_file(
-                    temp_file, os.path.join(temp_dir, os.path.basename(temp_file_2))
-                )
-
-            self.test_bgzip_and_tbi_in_vcf(
-                os.path.join(temp_dir, os.path.basename(temp_file_2))
-            )
-
-            ### add FREQ to vcf file
-            vcf_file_out_temp = self.utils.add_freq_to_vcf(
-                os.path.join(temp_dir, os.path.basename(temp_file_2)),
-                os.path.join(temp_dir, sample_name + ".vcf"),
-            )
-            os.unlink(temp_file)
-            if os.path.exists(temp_file_2):
-                os.unlink(temp_file_2)
-
             ### pass vcf to tab
             self.run_snippy_vcf_to_tab(
                 reference_fasta,
@@ -2224,6 +3395,8 @@ class Software(object):
                 vcf_file_out_temp,
                 "{}.tab".format(os.path.join(temp_dir, sample_name)),
             )
+
+        os.unlink(temp_file)
         return temp_dir
 
     def run_freebayes_parallel(
@@ -2328,7 +3501,7 @@ class Software(object):
             temp_file,
         )
         exist_status = os.system(cmd)
-        if exist_status != 0:
+        if exist_status != 0 or os.path.getsize(temp_file) == 0:
             os.unlink(temp_file_regions)
             os.unlink(temp_file_bam_coverage)
             os.unlink(temp_file)
@@ -2337,28 +3510,11 @@ class Software(object):
             raise Exception("Fail to run freebayes parallel")
 
         ### run snpEff
-        if os.path.exists(temp_file):
-            temp_file_2 = self.utils.get_temp_file("vcf_file", ".vcf")
-            output_file = self.run_snpEff(
-                reference_fasta,
-                genbank_file,
-                temp_file,
-                os.path.join(temp_dir, os.path.basename(temp_file_2)),
-            )
-            if output_file is None:  ## sometimes the gff does not have amino sequences
-                self.utils.copy_file(
-                    temp_file, os.path.join(temp_dir, os.path.basename(temp_file_2))
-                )
-
-            self.test_bgzip_and_tbi_in_vcf(
-                os.path.join(temp_dir, os.path.basename(temp_file_2))
+        if os.path.getsize(temp_file) > 0:
+            vcf_file_out_temp = self.run_snpEff_add_freq(
+                temp_file, reference_fasta, genbank_file, temp_dir, sample_name + ".vcf"
             )
 
-            ### add FREQ to vcf file
-            vcf_file_out_temp = self.utils.add_freq_to_vcf(
-                os.path.join(temp_dir, os.path.basename(temp_file_2)),
-                os.path.join(temp_dir, sample_name + ".vcf"),
-            )
             ### pass vcf to tab
             self.run_snippy_vcf_to_tab(
                 reference_fasta,
@@ -2368,8 +3524,7 @@ class Software(object):
             )
         if os.path.exists(temp_file):
             os.unlink(temp_file)
-        if os.path.exists(temp_file_2):
-            os.unlink(temp_file_2)
+
         if os.path.exists(temp_file_regions):
             os.unlink(temp_file_regions)
         if os.path.exists(temp_file_bam_coverage):
@@ -2855,7 +4010,6 @@ class Software(object):
     """
 
     def run_fastq_and_trimmomatic_and_identify_species(self, sample, user):
-        print("Start ProcessControler")
         process_controler = ProcessControler()
         process_SGE = ProcessSGE()
         process_SGE.set_process_controler(
@@ -2888,11 +4042,8 @@ class Software(object):
         sample.save()
 
         try:
-            print("Start run_fastq_and_trimmomatic")
             ### run trimmomatics
             b_has_data, b_it_ran = self.run_fastq_and_trimmomatic(sample, user)
-
-            print("Result run_fastq_and_trimmomatic: " + str(b_has_data))
 
             ### test Abricate ON/OFF
             default_software_project = DefaultProjectSoftware()
@@ -3046,18 +4197,74 @@ class Software(object):
             ProcessControler.FLAG_RUNNING,
         )
 
+        ## test software parameters for project_sample
+        default_project_software = DefaultProjectSoftware()
+        default_project_software.test_all_defaults(user, None, project_sample, None)
+
+        ### get software ###
+        software = default_project_software.get_software_project_sample_mdcg_illumina(
+            project_sample=project_sample,
+        )
+
+        # if software.name_extended == SoftwareNames.SOFTWARE_IRMA_name_extended:
+        #    return self.__process_second_stage_irma(project_sample, user, software)
+
         ## run collect data
         return self.__process_second_stage_snippy_coverage_freebayes(
-            project_sample, user
+            project_sample, user, software
         )
 
     """
     Global processing, Snippy, Coverage, Freebayes and MixedInfections
     """
 
+    def __set_process_error(
+        self, result: Result, project_sample: ProjectSample, metakey: str
+    ):
+        manageDatabase = ManageDatabase()
+        user = project_sample.project.owner
+        metaKeyAndValue = MetaKeyAndValue()
+        meta_key_project_sample = (
+            metaKeyAndValue.get_meta_key_queue_by_project_sample_id(project_sample.id)
+        )
+        process_SGE = ProcessSGE()
+        process_controler = ProcessControler()
+
+        manageDatabase.set_project_sample_metakey(
+            project_sample,
+            user,
+            metakey,
+            MetaKeyAndValue.META_VALUE_Error,
+            result.to_json(),
+        )
+
+        ### get again and set error
+        project_sample = ProjectSample.objects.get(pk=project_sample.id)
+        project_sample.is_error = True
+        project_sample.save()
+
+        meta_sample = manageDatabase.get_project_sample_metakey_last(
+            project_sample,
+            meta_key_project_sample,
+            MetaKeyAndValue.META_VALUE_Queue,
+        )
+        if meta_sample != None:
+            manageDatabase.set_project_sample_metakey(
+                project_sample,
+                user,
+                meta_key_project_sample,
+                MetaKeyAndValue.META_VALUE_Error,
+                meta_sample.description,
+            )
+        process_SGE.set_process_controler(
+            user,
+            process_controler.get_name_project_sample(project_sample),
+            ProcessControler.FLAG_ERROR,
+        )
+
     #     @transaction.atomic
     def __process_second_stage_snippy_coverage_freebayes(
-        self, project_sample: ProjectSample, user
+        self, project_sample: ProjectSample, user, software
     ):
         """
         Global processing, snippy, coverage,
@@ -3069,192 +4276,143 @@ class Software(object):
         result_all = Result()
         ### metakey for this process
         metaKeyAndValue = MetaKeyAndValue()
+
+        #### PREP
+
+        meta_key_project_sample = (
+            metaKeyAndValue.get_meta_key_queue_by_project_sample_id(project_sample.id)
+        )
+
+        ### Test if this sample already run
+        meta_sample = manageDatabase.get_project_sample_metakey_last(
+            project_sample,
+            meta_key_project_sample,
+            MetaKeyAndValue.META_VALUE_Queue,
+        )
+        if (
+            meta_sample != None
+            and meta_sample.value == MetaKeyAndValue.META_VALUE_Success
+        ):
+            return
+
+        ## test software parameters for project_sample
+        default_project_software = DefaultProjectSoftware()
+        default_project_software.test_all_defaults(user, None, project_sample, None)
+
+        ### get software
+        software = default_project_software.get_software_project_sample_mdcg_illumina(
+            project_sample=project_sample,
+        )
+        software_name = software.name
+
+        if software is None:
+            raise Exception("MDCG software not found.")
+
+        ######## BEGIN
         os.chdir("/tmp/insaFlu/")
+
         try:
-            meta_key_project_sample = (
-                metaKeyAndValue.get_meta_key_queue_by_project_sample_id(
-                    project_sample.id
-                )
-            )
-
-            ### Test if this sample already run
-            meta_sample = manageDatabase.get_project_sample_metakey_last(
-                project_sample,
-                meta_key_project_sample,
-                MetaKeyAndValue.META_VALUE_Queue,
-            )
-            if (
-                meta_sample != None
-                and meta_sample.value == MetaKeyAndValue.META_VALUE_Success
-            ):
-                return
-
-            ## test software parameters for project_sample
-            default_project_software = DefaultProjectSoftware()
-            default_project_software.test_all_defaults(user, None, project_sample, None)
 
             ## process snippy
             try:
+
                 ### get snippy parameters
-                snippy_parameters = (
-                    default_project_software.get_snippy_parameters_all_possibilities(
-                        user, project_sample
-                    )
+                mdcg_parameters = default_project_software.get_mdcg_parameters_parsed_all_possibilities(
+                    user, project_sample, is_to_run=True
                 )
-                snippy_parameters = default_project_software.edit_primerNone_parameters(
-                    snippy_parameters
+
+                mdcg_parameters = default_project_software.edit_primerNone_parameters(
+                    mdcg_parameters
                 )
-                out_put_path = self.run_snippy(
-                    project_sample.sample.get_fastq_available(
-                        TypePath.MEDIA_ROOT, True
-                    ),
-                    project_sample.sample.get_fastq_available(
-                        TypePath.MEDIA_ROOT, False
-                    ),
-                    project_sample.project.reference.get_reference_fasta(
-                        TypePath.MEDIA_ROOT
-                    ),
-                    project_sample.project.reference.get_reference_gbk(
-                        TypePath.MEDIA_ROOT
-                    ),
-                    project_sample.sample.name,
-                    snippy_parameters,
+
+                out_put_path = self.run_mdcg(
+                    software,
+                    project_sample,
+                    mdcg_parameters,
                 )
-                result_all.add_software(
-                    SoftwareDesc(
-                        self.software_names.get_snippy_name(),
-                        self.software_names.get_snippy_version(),
-                        snippy_parameters,
-                    )
+
+                software_description = SoftwareDesc(
+                    software.name,
+                    software.version,
+                    mdcg_parameters,
                 )
+
+                if software.name_extended == SoftwareNames.SOFTWARE_IRMA_name_extended:
+                    software_name = SoftwareNames.SOFTWARE_IRMA_name
+                elif (
+                    software.name_extended == SoftwareNames.SOFTWARE_IVAR_name_extended
+                ):
+                    software_name = SoftwareNames.SOFTWARE_IVAR_name
+
+                result_all.add_software(software_description)
             except Exception as e:
+
+                import traceback
+
+                traceback.print_exc()
+
                 result = Result()
                 result.set_error(e.args[0])
                 result.add_software(
                     SoftwareDesc(
-                        self.software_names.get_snippy_name(),
-                        self.software_names.get_snippy_version(),
-                        snippy_parameters,
+                        software_name,
+                        software.version,
+                        mdcg_parameters,
                     )
                 )
+
+                self.__set_process_error(
+                    result,
+                    project_sample,
+                    MetaKeyAndValue.META_KEY_Snippy,
+                )
+
+                return False
+            ## copy the files to the project sample directories
+            try:
+                self.copy_files_to_project(project_sample, software.name, out_put_path)
+
+                ### get mapped stast reads
+                bam_file = project_sample.get_file_output(
+                    TypePath.MEDIA_ROOT,
+                    FileType.FILE_BAM,
+                    software.name,
+                )
+                result = Result()
+                if os.path.exists(bam_file):
+                    result = self.get_statistics_bam(bam_file)
                 manageDatabase.set_project_sample_metakey(
                     project_sample,
-                    user,
-                    MetaKeyAndValue.META_KEY_Snippy,
-                    MetaKeyAndValue.META_VALUE_Error,
+                    project_sample.project.owner,
+                    MetaKeyAndValue.META_KEY_bam_stats,
+                    MetaKeyAndValue.META_VALUE_Success,
                     result.to_json(),
                 )
 
-                ### get again and set error
-                project_sample = ProjectSample.objects.get(pk=project_sample.id)
-                project_sample.is_error = True
-                project_sample.save()
-
-                meta_sample = manageDatabase.get_project_sample_metakey_last(
-                    project_sample,
-                    meta_key_project_sample,
-                    MetaKeyAndValue.META_VALUE_Queue,
-                )
-                if meta_sample != None:
-                    manageDatabase.set_project_sample_metakey(
-                        project_sample,
-                        user,
-                        meta_key_project_sample,
-                        MetaKeyAndValue.META_VALUE_Error,
-                        meta_sample.description,
-                    )
-                process_SGE.set_process_controler(
-                    user,
-                    process_controler.get_name_project_sample(project_sample),
-                    ProcessControler.FLAG_ERROR,
-                )
-                return False
-
-            ## copy the files to the project sample directories
-            self.copy_files_to_project(
-                project_sample, self.software_names.get_snippy_name(), out_put_path
-            )
-            self.utils.remove_dir(out_put_path)
-
-            ### make the link for the new tab file name
-            path_snippy_tab = project_sample.get_file_output(
-                TypePath.MEDIA_ROOT,
-                FileType.FILE_TAB,
-                self.software_names.get_snippy_name(),
-            )
-            if os.path.exists(path_snippy_tab):
-                sz_file_to = project_sample.get_file_output_human(
+                # self.utils.remove_dir(out_put_path)
+                ### make the link for the new tab file name
+                path_snippy_tab = project_sample.get_file_output(
                     TypePath.MEDIA_ROOT,
                     FileType.FILE_TAB,
-                    self.software_names.get_snippy_name(),
+                    software.name,
                 )
-                self.utils.link_file(path_snippy_tab, sz_file_to)
+                if os.path.exists(path_snippy_tab):
+                    sz_file_to = project_sample.get_file_output_human(
+                        TypePath.MEDIA_ROOT,
+                        FileType.FILE_TAB,
+                        software.name,
+                    )
+                    self.utils.link_file(path_snippy_tab, sz_file_to)
 
-            ### get mapped stast reads
-            bam_file = project_sample.get_file_output(
-                TypePath.MEDIA_ROOT,
-                FileType.FILE_BAM,
-                self.software_names.get_snippy_name(),
-            )
-            result = Result()
-            if os.path.exists(bam_file):
-                result = self.get_statistics_bam(bam_file)
-            manageDatabase.set_project_sample_metakey(
-                project_sample,
-                user,
-                MetaKeyAndValue.META_KEY_bam_stats,
-                MetaKeyAndValue.META_VALUE_Success,
-                result.to_json(),
-            )
+            except Exception as e:
+                print(e)
+                import traceback
 
-            ## get coverage from deep file
-            get_coverage = GetCoverage()
+                traceback.print_exc()
+
+            ## get coverage from depth file
             try:
                 ### limit of the coverage for a project, can be None, if not exist
-                coverage_for_project = (
-                    default_project_software.get_snippy_single_parameter_for_project(
-                        project_sample.project, DefaultParameters.SNIPPY_COVERAGE_NAME
-                    )
-                )
-                if not coverage_for_project is None:
-                    coverage_for_project = int(coverage_for_project)
-
-                b_coverage_default = True
-                if default_project_software.is_snippy_single_parameter_default(
-                    project_sample, DefaultParameters.SNIPPY_COVERAGE_NAME
-                ):
-                    coverage = get_coverage.get_coverage(
-                        project_sample.get_file_output(
-                            TypePath.MEDIA_ROOT,
-                            FileType.FILE_DEPTH_GZ,
-                            self.software_names.get_snippy_name(),
-                        ),
-                        project_sample.project.reference.get_reference_fasta(
-                            TypePath.MEDIA_ROOT
-                        ),
-                        None,
-                        coverage_for_project,
-                    )
-                else:
-                    b_coverage_default = False
-                    default_coverage_value = (
-                        default_project_software.get_snippy_single_parameter(
-                            project_sample, DefaultParameters.SNIPPY_COVERAGE_NAME
-                        )
-                    )
-                    coverage = get_coverage.get_coverage(
-                        project_sample.get_file_output(
-                            TypePath.MEDIA_ROOT,
-                            FileType.FILE_DEPTH_GZ,
-                            self.software_names.get_snippy_name(),
-                        ),
-                        project_sample.project.reference.get_reference_fasta(
-                            TypePath.MEDIA_ROOT
-                        ),
-                        int(default_coverage_value),
-                        coverage_for_project,
-                    )
-                ################################
                 ##################################
                 ### set the alerts in the coverage
                 ### remove possible previous alerts from others run
@@ -3263,53 +4421,13 @@ class Software(object):
                         project_sample, keys_to_remove
                     )
 
-                project_sample = ProjectSample.objects.get(pk=project_sample.id)
-                project_sample.alert_second_level = 0
-                project_sample.alert_first_level = 0
-                for element in coverage.get_dict_data():
-                    if not coverage.is_100_more_9(element) and b_coverage_default:
-                        project_sample.alert_second_level += 1
-                        meta_key = metaKeyAndValue.get_meta_key(
-                            MetaKeyAndValue.META_KEY_ALERT_COVERAGE_9, element
-                        )
-                        manageDatabase.set_project_sample_metakey(
-                            project_sample,
-                            user,
-                            meta_key,
-                            MetaKeyAndValue.META_VALUE_Success,
-                            coverage.get_fault_message_9(element),
-                        )
-                    elif (
-                        not coverage.is_100_more_defined_by_user(element)
-                        and not b_coverage_default
-                    ):
-                        project_sample.alert_second_level += 1
-                        meta_key = metaKeyAndValue.get_meta_key(
-                            MetaKeyAndValue.META_KEY_ALERT_COVERAGE_value_defined_by_user,
-                            element,
-                        )
-                        manageDatabase.set_project_sample_metakey(
-                            project_sample,
-                            user,
-                            meta_key,
-                            MetaKeyAndValue.META_VALUE_Success,
-                            coverage.get_fault_message_defined_by_user(
-                                element, default_coverage_value
-                            ),
-                        )
-                    elif not coverage.is_100_more_0(element):
-                        project_sample.alert_first_level += 1
-                        meta_key = metaKeyAndValue.get_meta_key(
-                            MetaKeyAndValue.META_KEY_ALERT_COVERAGE_0, element
-                        )
-                        manageDatabase.set_project_sample_metakey(
-                            project_sample,
-                            user,
-                            meta_key,
-                            MetaKeyAndValue.META_VALUE_Success,
-                            coverage.get_fault_message_0(element),
-                        )
-                project_sample.save()
+                sample_coverage = ProjectSampleDepthCoverage(
+                    project_sample,
+                    software,
+                    project_sample.reference_fasta,
+                )
+                sample_coverage.parse_sample_results()
+                coverage = sample_coverage.coverage
 
                 ## set the coverage in database
                 meta_sample = manageDatabase.set_project_sample_metakey(
@@ -3317,102 +4435,82 @@ class Software(object):
                     user,
                     MetaKeyAndValue.META_KEY_Coverage,
                     MetaKeyAndValue.META_VALUE_Success,
-                    coverage.to_json(),
+                    sample_coverage.to_json(),
                 )
+
             except Exception as e:
+                import traceback
+
+                traceback.print_exc()
+                print(e)
+
                 result = Result()
                 result.set_error("Fail to get coverage: " + e.args[0])
-                result.add_software(
-                    SoftwareDesc(
-                        self.software_names.get_coverage_name(),
-                        self.software_names.get_coverage_version(),
-                        self.software_names.get_coverage_parameters(),
-                    )
-                )
-                manageDatabase.set_project_sample_metakey(
+
+                self.__set_process_error(
+                    result,
                     project_sample,
-                    user,
                     MetaKeyAndValue.META_KEY_Coverage,
-                    MetaKeyAndValue.META_VALUE_Error,
-                    result.to_json(),
                 )
 
-                ### get again and set error
-                project_sample = ProjectSample.objects.get(pk=project_sample.id)
-                project_sample.is_error = True
-                project_sample.save()
-
-                meta_sample = manageDatabase.get_project_sample_metakey_last(
-                    project_sample,
-                    meta_key_project_sample,
-                    MetaKeyAndValue.META_VALUE_Queue,
-                )
-                if meta_sample != None:
-                    manageDatabase.set_project_sample_metakey(
-                        project_sample,
-                        user,
-                        meta_key_project_sample,
-                        MetaKeyAndValue.META_VALUE_Error,
-                        meta_sample.description,
-                    )
-                process_SGE.set_process_controler(
-                    user,
-                    process_controler.get_name_project_sample(project_sample),
-                    ProcessControler.FLAG_ERROR,
-                )
                 return False
 
             #####################
             ###
             ### make mask the consensus SoftwareNames.SOFTWARE_MSA_MASKER
-            limit_to_mask_consensus = int(
-                default_project_software.get_mask_consensus_single_parameter(
-                    project_sample,
-                    DefaultParameters.MASK_CONSENSUS_threshold,
-                    ConstantsSettings.TECHNOLOGY_illumina,
+            try:
+                limit_to_mask_consensus = int(
+                    default_project_software.get_mask_consensus_single_parameter(
+                        project_sample,
+                        DefaultParameters.MASK_CONSENSUS_threshold,
+                        ConstantsSettings.TECHNOLOGY_illumina,
+                    )
                 )
-            )
-            msa_parameters = self.make_mask_consensus_by_deep(
-                project_sample.get_file_output(
-                    TypePath.MEDIA_ROOT,
-                    FileType.FILE_CONSENSUS_FASTA,
-                    self.software_names.get_snippy_name(),
-                ),
-                project_sample.project.reference.get_reference_fasta(
-                    TypePath.MEDIA_ROOT
-                ),
-                project_sample.get_file_output(
-                    TypePath.MEDIA_ROOT,
-                    FileType.FILE_DEPTH_GZ,
-                    self.software_names.get_snippy_name(),
-                ),
-                coverage,
-                project_sample.sample.name,
-                limit_to_mask_consensus,
-            )
-            ### add version of mask
-            result_all.add_software(
-                SoftwareDesc(
-                    self.software_names.get_msa_masker_name(),
-                    self.software_names.get_msa_masker_version(),
-                    "{}; for coverages less than {} in {}% of the regions.".format(
-                        msa_parameters,
-                        default_project_software.get_snippy_single_parameter(
-                            project_sample, DefaultParameters.SNIPPY_COVERAGE_NAME
-                        ),
-                        100 - limit_to_mask_consensus,
+                msa_parameters = self.make_mask_consensus_by_deep(
+                    project_sample.get_file_output(
+                        TypePath.MEDIA_ROOT,
+                        FileType.FILE_CONSENSUS_FASTA,
+                        software_name,
                     ),
+                    project_sample.reference_fasta,
+                    project_sample.get_file_output(
+                        TypePath.MEDIA_ROOT,
+                        FileType.FILE_DEPTH_GZ,
+                        software_name,
+                    ),
+                    coverage,
+                    project_sample.sample.name,
+                    limit_to_mask_consensus,
                 )
-            )
+
+                result_all.add_software(
+                    SoftwareDesc(
+                        self.software_names.get_msa_masker_name(),
+                        self.software_names.get_msa_masker_version(),
+                        "{}; for coverages less than {} in {}% of the regions.".format(
+                            msa_parameters,
+                            default_project_software.get_mdcg_single_parameter(
+                                project_sample, DefaultParameters.SNIPPY_COVERAGE_NAME
+                            ),
+                            100 - limit_to_mask_consensus,
+                        ),
+                    )
+                )
+
+            except Exception as e:
+                print(e)
+            ### add version of mask
 
             ## identify VARIANTS IN INCOMPLETE LOCUS in all locus, set yes in variants if are in areas with coverage problems
             ## transform 'synonymous_variant c.981A>G p.Glu327Glu' to ["synonymous_variant", "c.981A>G", "p.Glu327Glu"]
+
             parse_out_files = ParseOutFiles()
+
             parse_out_files.add_variants_in_incomplete_locus(
                 project_sample.get_file_output(
                     TypePath.MEDIA_ROOT,
                     FileType.FILE_TAB,
-                    self.software_names.get_snippy_name(),
+                    software_name,
                 ),
                 coverage,
             )
@@ -3424,20 +4522,11 @@ class Software(object):
             count_hits = CountHits()
             if default_project_software.is_to_run_freebayes(user, project_sample):
                 try:
-                    out_put_path = self.run_freebayes_parallel(
-                        project_sample.get_file_output(
-                            TypePath.MEDIA_ROOT,
-                            FileType.FILE_BAM,
-                            self.software_names.get_snippy_name(),
-                        ),
-                        project_sample.project.reference.get_reference_fasta(
-                            TypePath.MEDIA_ROOT
-                        ),
-                        project_sample.project.reference.get_reference_gbk(
-                            TypePath.MEDIA_ROOT
-                        ),
-                        project_sample.sample.name,
+
+                    out_put_path, count_hits = self.run_freebayes_and_count(
+                        project_sample, software
                     )
+
                     result_all.add_software(
                         SoftwareDesc(
                             self.software_names.get_freebayes_name(),
@@ -3445,144 +4534,7 @@ class Software(object):
                             self.software_names.get_freebayes_parameters(),
                         )
                     )
-                except Exception as e:
-                    ### can fail the freebayes parallel and try the regular one
-                    try:
-                        out_put_path = self.run_freebayes(
-                            project_sample.get_file_output(
-                                TypePath.MEDIA_ROOT,
-                                FileType.FILE_BAM,
-                                self.software_names.get_snippy_name(),
-                            ),
-                            project_sample.project.reference.get_reference_fasta(
-                                TypePath.MEDIA_ROOT
-                            ),
-                            project_sample.project.reference.get_reference_gbk(
-                                TypePath.MEDIA_ROOT
-                            ),
-                            project_sample.sample.name,
-                        )
-                        result_all.add_software(
-                            SoftwareDesc(
-                                self.software_names.get_freebayes_name(),
-                                self.software_names.get_freebayes_version(),
-                                self.software_names.get_freebayes_parameters(),
-                            )
-                        )
-                    except Exception as e:
-                        result = Result()
-                        result.set_error(e.args[0])
-                        result.add_software(
-                            SoftwareDesc(
-                                self.software_names.get_freebayes_name(),
-                                self.software_names.get_freebayes_version(),
-                                self.software_names.get_freebayes_parameters(),
-                            )
-                        )
-                        manageDatabase.set_project_sample_metakey(
-                            project_sample,
-                            user,
-                            MetaKeyAndValue.META_KEY_Freebayes,
-                            MetaKeyAndValue.META_VALUE_Error,
-                            result.to_json(),
-                        )
 
-                        ### get again and set error
-                        project_sample = ProjectSample.objects.get(pk=project_sample.id)
-                        project_sample.is_error = True
-                        project_sample.save()
-
-                        meta_sample = manageDatabase.get_project_sample_metakey_last(
-                            project_sample,
-                            meta_key_project_sample,
-                            MetaKeyAndValue.META_VALUE_Queue,
-                        )
-                        if meta_sample != None:
-                            manageDatabase.set_project_sample_metakey(
-                                project_sample,
-                                user,
-                                meta_key_project_sample,
-                                MetaKeyAndValue.META_VALUE_Error,
-                                meta_sample.description,
-                            )
-                        process_SGE.set_process_controler(
-                            user,
-                            process_controler.get_name_project_sample(project_sample),
-                            ProcessControler.FLAG_ERROR,
-                        )
-                        return False
-
-                ## count hits from tab file
-                count_hits = CountHits()
-                if not out_put_path is None:
-                    file_tab = os.path.join(
-                        out_put_path, project_sample.sample.name + ".tab"
-                    )
-                    if os.path.exists(file_tab):
-                        vect_count_type = ["snp"]  ## only detects snp
-                        count_hits = self.utils.count_hits_from_tab(
-                            file_tab, vect_count_type
-                        )
-                        ### set flag that is finished
-                        manageDatabase.set_project_sample_metakey(
-                            project_sample,
-                            user,
-                            MetaKeyAndValue.META_KEY_Count_Hits,
-                            MetaKeyAndValue.META_VALUE_Success,
-                            count_hits.to_json(),
-                        )
-                    else:
-                        result = Result()
-                        result.set_error("Fail to collect tab file from freebayes")
-                        result.add_software(
-                            SoftwareDesc(
-                                self.software_names.get_freebayes_name(),
-                                self.software_names.get_freebayes_version(),
-                                self.software_names.get_freebayes_parameters(),
-                            )
-                        )
-                        manageDatabase.set_project_sample_metakey(
-                            project_sample,
-                            user,
-                            MetaKeyAndValue.META_KEY_Freebayes,
-                            MetaKeyAndValue.META_VALUE_Error,
-                            result.to_json(),
-                        )
-
-                        ### get again and set error
-                        project_sample = ProjectSample.objects.get(pk=project_sample.id)
-                        project_sample.is_error = True
-                        project_sample.save()
-
-                        meta_sample = manageDatabase.get_project_sample_metakey_last(
-                            project_sample,
-                            meta_key_project_sample,
-                            MetaKeyAndValue.META_VALUE_Queue,
-                        )
-                        if meta_sample != None:
-                            manageDatabase.set_project_sample_metakey(
-                                project_sample,
-                                user,
-                                meta_key_project_sample,
-                                MetaKeyAndValue.META_VALUE_Error,
-                                meta_sample.description,
-                            )
-                        process_SGE.set_process_controler(
-                            user,
-                            process_controler.get_name_project_sample(project_sample),
-                            ProcessControler.FLAG_ERROR,
-                        )
-                        return False
-
-                    self.copy_files_to_project(
-                        project_sample,
-                        self.software_names.get_freebayes_name(),
-                        out_put_path,
-                    )
-                    ## remove path dir if exist
-                    self.utils.remove_dir(out_put_path)
-                else:
-                    ### set count hits to zero
                     manageDatabase.set_project_sample_metakey(
                         project_sample,
                         user,
@@ -3590,6 +4542,27 @@ class Software(object):
                         MetaKeyAndValue.META_VALUE_Success,
                         count_hits.to_json(),
                     )
+
+                except Exception as e:
+                    print(e)
+
+                    result = Result()
+                    result.set_error(e.args[0])
+                    result.add_software(
+                        SoftwareDesc(
+                            self.software_names.get_freebayes_name(),
+                            self.software_names.get_freebayes_version(),
+                            self.software_names.get_freebayes_parameters(),
+                        )
+                    )
+
+                    self.__set_process_error(
+                        result,
+                        project_sample,
+                        metakey=MetaKeyAndValue.META_KEY_Freebayes,
+                    )
+
+                    return False
 
                     ### mixed infection
                 try:
@@ -3600,42 +4573,56 @@ class Software(object):
                     mixed_infection = mixed_infections_management.get_mixed_infections(
                         project_sample, user, count_hits
                     )
-                except:
+
+                except Exception as e:
+                    import traceback
+
+                    traceback.print_exc()
+                    print(e)
                     result = Result()
                     result.set_error("Fail to calculate mixed infextion")
                     result.add_software(SoftwareDesc("In house software", "1.0", ""))
-                    manageDatabase.set_project_sample_metakey(
+
+                    self.__set_process_error(
+                        result,
                         project_sample,
-                        user,
-                        MetaKeyAndValue.META_KEY_Mixed_Infection,
-                        MetaKeyAndValue.META_VALUE_Error,
-                        result.to_json(),
+                        metakey=MetaKeyAndValue.META_KEY_Mixed_Infection,
                     )
 
-                    ### get again and set error
-                    project_sample = ProjectSample.objects.get(pk=project_sample.id)
-                    project_sample.is_error = True
-                    project_sample.save()
-
-                    meta_sample = manageDatabase.get_project_sample_metakey_last(
-                        project_sample,
-                        meta_key_project_sample,
-                        MetaKeyAndValue.META_VALUE_Queue,
-                    )
-                    if meta_sample != None:
-                        manageDatabase.set_project_sample_metakey(
-                            project_sample,
-                            user,
-                            meta_key_project_sample,
-                            MetaKeyAndValue.META_VALUE_Error,
-                            meta_sample.description,
-                        )
-                    process_SGE.set_process_controler(
-                        user,
-                        process_controler.get_name_project_sample(project_sample),
-                        ProcessControler.FLAG_ERROR,
-                    )
                     return False
+
+                from utils.collect_extra_data import CollectExtraData
+
+                collect_extra_data = CollectExtraData()
+
+                ### get a clean freebayes file
+                tab_freebayes_file = project_sample.get_file_output(
+                    TypePath.MEDIA_ROOT,
+                    FileType.FILE_TAB,
+                    SoftwareNames.SOFTWARE_FREEBAYES_name,
+                )
+                if os.path.exists(tab_freebayes_file):
+                    file_out = project_sample.get_file_output_human(
+                        TypePath.MEDIA_ROOT,
+                        FileType.FILE_TAB,
+                        SoftwareNames.SOFTWARE_FREEBAYES_name,
+                    )
+                    vect_type_remove = ["ins", "del"]
+                    collect_extra_data.collect_variations_freebayes_only_one_file(
+                        tab_freebayes_file, file_out, vect_type_remove
+                    )
+                    vect_type_remove = []
+                    b_second_choice = True
+                    file_out = project_sample.get_file_output_human(
+                        TypePath.MEDIA_ROOT,
+                        FileType.FILE_TAB,
+                        SoftwareNames.SOFTWARE_FREEBAYES_name,
+                        b_second_choice,
+                    )
+                    collect_extra_data.collect_variations_freebayes_only_one_file(
+                        tab_freebayes_file, file_out, vect_type_remove
+                    )
+
             else:
                 ### set count hits to zero
                 mixed_infections_management = MixedInfectionsManagement()
@@ -3650,81 +4637,32 @@ class Software(object):
                     count_hits.to_json(),
                 )
 
+                self.clean_freebayes_output(project_sample)
                 ### remove several files that can exist form previous interactions
-                tab_freebayes_file = project_sample.get_file_output(
-                    TypePath.MEDIA_ROOT,
-                    FileType.FILE_TAB,
-                    SoftwareNames.SOFTWARE_FREEBAYES_name,
-                )
-                self.utils.remove_file(tab_freebayes_file)
-                file_out = project_sample.get_file_output_human(
-                    TypePath.MEDIA_ROOT,
-                    FileType.FILE_TAB,
-                    SoftwareNames.SOFTWARE_FREEBAYES_name,
-                )
-                self.utils.remove_file(file_out)
-                b_second_choice = True
-                file_out = project_sample.get_file_output_human(
-                    TypePath.MEDIA_ROOT,
-                    FileType.FILE_TAB,
-                    SoftwareNames.SOFTWARE_FREEBAYES_name,
-                    b_second_choice,
-                )
-                self.utils.remove_file(file_out)
-
-                file_out = project_sample.get_file_output(
-                    TypePath.MEDIA_ROOT,
-                    FileType.FILE_VCF,
-                    SoftwareNames.SOFTWARE_FREEBAYES_name,
-                )
-                self.utils.remove_file(file_out)
-                file_out = project_sample.get_file_output(
-                    TypePath.MEDIA_ROOT,
-                    FileType.FILE_VCF_GZ,
-                    SoftwareNames.SOFTWARE_FREEBAYES_name,
-                )
-                self.utils.remove_file(file_out)
 
             ### draw coverage
             try:
                 ### make the coverage images
                 draw_all_coverage = DrawAllCoverage()
-                draw_all_coverage.draw_all_coverages(project_sample)
-            except:
+                draw_all_coverage.draw_all_coverages(
+                    project_sample,
+                    software_name=software_name,
+                )
+            except Exception as e:
+                import traceback
+
+                traceback.print_exc()
+                print(e)
                 result = Result()
                 result.set_error("Fail to draw coverage images")
                 result.add_software(SoftwareDesc("In house software", "1.0", ""))
-                manageDatabase.set_project_sample_metakey(
+
+                self.__set_process_error(
+                    result,
                     project_sample,
-                    user,
-                    MetaKeyAndValue.META_KEY_Coverage,
-                    MetaKeyAndValue.META_VALUE_Error,
-                    result.to_json(),
+                    metakey=MetaKeyAndValue.META_KEY_Coverage,
                 )
 
-                ### get again and set error
-                project_sample = ProjectSample.objects.get(pk=project_sample.id)
-                project_sample.is_error = True
-                project_sample.save()
-
-                meta_sample = manageDatabase.get_project_sample_metakey_last(
-                    project_sample,
-                    meta_key_project_sample,
-                    MetaKeyAndValue.META_VALUE_Queue,
-                )
-                if meta_sample != None:
-                    manageDatabase.set_project_sample_metakey(
-                        project_sample,
-                        user,
-                        meta_key_project_sample,
-                        MetaKeyAndValue.META_VALUE_Error,
-                        meta_sample.description,
-                    )
-                process_SGE.set_process_controler(
-                    user,
-                    process_controler.get_name_project_sample(project_sample),
-                    ProcessControler.FLAG_ERROR,
-                )
                 return False
 
             ### get again
@@ -3746,48 +4684,20 @@ class Software(object):
             project.last_change_date = datetime.datetime.now()
             project.save()
 
-            from utils.collect_extra_data import CollectExtraData
-
-            collect_extra_data = CollectExtraData()
-
-            ### get a clean freebayes file
-            tab_freebayes_file = project_sample.get_file_output(
-                TypePath.MEDIA_ROOT,
-                FileType.FILE_TAB,
-                SoftwareNames.SOFTWARE_FREEBAYES_name,
-            )
-            if os.path.exists(tab_freebayes_file):
-                file_out = project_sample.get_file_output_human(
-                    TypePath.MEDIA_ROOT,
-                    FileType.FILE_TAB,
-                    SoftwareNames.SOFTWARE_FREEBAYES_name,
-                )
-                vect_type_remove = ["ins", "del"]
-                collect_extra_data.collect_variations_freebayes_only_one_file(
-                    tab_freebayes_file, file_out, vect_type_remove
-                )
-                vect_type_remove = []
-                b_second_choice = True
-                file_out = project_sample.get_file_output_human(
-                    TypePath.MEDIA_ROOT,
-                    FileType.FILE_TAB,
-                    SoftwareNames.SOFTWARE_FREEBAYES_name,
-                    b_second_choice,
-                )
-                collect_extra_data.collect_variations_freebayes_only_one_file(
-                    tab_freebayes_file, file_out, vect_type_remove
-                )
-
             ### get clean consensus file
             consensus_fasta = project_sample.get_file_output(
                 TypePath.MEDIA_ROOT,
                 FileType.FILE_CONSENSUS_FASTA,
-                SoftwareNames.SOFTWARE_SNIPPY_name,
+                software_name,
             )
             if os.path.exists(consensus_fasta):
                 file_out = project_sample.get_consensus_file(TypePath.MEDIA_ROOT)
                 self.utils.filter_fasta_all_sequences_file(
-                    consensus_fasta, coverage, file_out, limit_to_mask_consensus, False
+                    consensus_fasta,
+                    coverage,
+                    file_out,
+                    limit_to_mask_consensus,
+                    False,
                 )
 
                 ## make a backup of this file to use has a starter of second stage analysis
@@ -4057,11 +4967,11 @@ class Software(object):
         temp_mafft_align = self.utils.get_temp_file("mafft_to_align", ".fasta")
         temp_new_consensus = self.utils.get_temp_file("new_consensus", ".fasta")
         vect_out_fasta = []
-
         msa_parameters = ""
         with open(reference_fasta, "rU") as handle_fasta:
             dt_consensus = SeqIO.to_dict(SeqIO.parse(consensus_file, "fasta"))
             for record in SeqIO.parse(handle_fasta, "fasta"):
+
                 if (
                     record.id in dt_consensus
                     and coverage.ratio_value_coverage_bigger_limit(
@@ -4534,7 +5444,8 @@ class Software(object):
             "cat "
             + metadata
             + " | cut -f 1 | sed 's/\"//g' | tail -n +2 > "
-            + os.path.join(temp_dir, "data", "include.txt")
+            # + os.path.join(temp_dir, "data", "include.txt")
+            + os.path.join(temp_dir, "defaults", "include.txt")
         )
         exit_status = os.system(cmd)
         if exit_status != 0:
@@ -4543,7 +5454,8 @@ class Software(object):
             raise Exception("Fail to generate include file in temp folder " + temp_dir)
 
         cmd = (
-            SoftwareNames.SOFTWARE_NEXTSTRAIN
+            # SoftwareNames.SOFTWARE_NEXTSTRAIN
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_DENGUE
             + " build --native "
             + temp_dir
             + " --cores "
@@ -4551,7 +5463,9 @@ class Software(object):
             + " --configfile "
             + temp_dir
             + "/config/config.yaml"
-            + " > "+temp_dir+"/stdout.txt"
+            + " > "
+            + temp_dir
+            + "/stdout.txt"
         )
 
         exit_status = os.system(cmd)
@@ -4566,7 +5480,8 @@ class Software(object):
         # Convert json to tree
         cmd = "{} --tree {} --output-tree {}".format(
             os.path.join(settings.DIR_SOFTWARE, "nextstrain/auspice_tree_to_table.sh"),
-            os.path.join(temp_dir, "auspice", "ncov_current.json"),
+            # os.path.join(temp_dir, "auspice", "ncov_current.json"),
+            os.path.join(temp_dir, "auspice", "ncov_default-build.json"),
             tree_file,
         )
 
@@ -4597,7 +5512,7 @@ class Software(object):
 
         cmd = "mv {} {}".format(
             os.path.join(temp_dir, "stdout.txt"),
-            os.path.join(temp_dir, "auspice", "log")
+            os.path.join(temp_dir, "auspice", "log"),
         )
         exit_status = os.system(cmd)
 
@@ -4720,7 +5635,9 @@ class Software(object):
             + temp_dir
             + " --cores "
             + str(cores)
-            + " > " + temp_dir +"/stdout.txt"
+            + " > "
+            + temp_dir
+            + "/stdout.txt"
         )
         exit_status = os.system(cmd)
         if exit_status != 0:
@@ -4762,13 +5679,12 @@ class Software(object):
                 cmd=cmd,
                 output_path=temp_dir,
             )
-        
+
         cmd = "mv {} {}".format(
             os.path.join(temp_dir, "stdout.txt"),
-            os.path.join(temp_dir, "auspice", "log")
+            os.path.join(temp_dir, "auspice", "log"),
         )
         exit_status = os.system(cmd)
-
 
         # Collect results
         zip_out = self.zip_files_in_path(os.path.join(temp_dir, "auspice"))
@@ -4837,7 +5753,12 @@ class Software(object):
 
         # Now run Nextstrain
         cmd = "{} build --native {} targets/flu_{}_ha_{} --cores {} > {}/stdout.txt".format(
-            SoftwareNames.SOFTWARE_NEXTSTRAIN, temp_dir, strain, period, str(cores), temp_dir
+            SoftwareNames.SOFTWARE_NEXTSTRAIN,
+            temp_dir,
+            strain,
+            period,
+            str(cores),
+            temp_dir,
         )
         exit_status = os.system(cmd)
         if exit_status != 0:
@@ -4884,7 +5805,7 @@ class Software(object):
 
         cmd = "mv {} {}".format(
             os.path.join(temp_dir, "stdout.txt"),
-            os.path.join(temp_dir, "auspice", "log")
+            os.path.join(temp_dir, "auspice", "log"),
         )
         exit_status = os.system(cmd)
 
@@ -4973,7 +5894,7 @@ class Software(object):
                 SoftwareNames.SOFTWARE_NEXTSTRAIN_snakemake,
                 str(cores),
                 SoftwareNames.SOFTWARE_NEXTSTRAIN_LABEL,
-                temp_dir
+                temp_dir,
             )
             exit_status = os.system(cmd)
             if exit_status != 0:
@@ -5041,10 +5962,9 @@ class Software(object):
                 output_path=temp_dir,
             )
 
-
         cmd = "mv {} {}".format(
             os.path.join(temp_dir, "stdout.txt"),
-            os.path.join(temp_dir, "auspice", "log")
+            os.path.join(temp_dir, "auspice", "log"),
         )
         exit_status = os.system(cmd)
 
@@ -5115,11 +6035,7 @@ class Software(object):
         # Now run Nextstrain
         # cmd = "{} -j {} {}/auspice/rsv_{}_genome.json {}/auspice/rsv_{}_G.json {}/auspice/rsv_{}_F.json --configfile {}/config/configfile.yaml".format(
         cmd = "cd {} && {} -j {} auspice/rsv_{}_genome.json --configfile config/configfile.yaml > {}/stdout.txt".format(
-            temp_dir,
-            SoftwareNames.SOFTWARE_NEXTSTRAIN_RSV,
-            str(cores),
-            type,
-            temp_dir
+            temp_dir, SoftwareNames.SOFTWARE_NEXTSTRAIN_RSV, str(cores), type, temp_dir
         )
         exit_status = os.system(cmd)
         if exit_status != 0:
@@ -5163,7 +6079,7 @@ class Software(object):
 
         cmd = "mv {} {}".format(
             os.path.join(temp_dir, "stdout.txt"),
-            os.path.join(temp_dir, "auspice", "log")
+            os.path.join(temp_dir, "auspice", "log"),
         )
         exit_status = os.system(cmd)
 
@@ -5240,7 +6156,10 @@ class Software(object):
 
         # Now run Nextstrain
         cmd = "{} build --native {} --cores {}  --configfile config/config_hmpxv1_big.yaml > {}".format(
-            SoftwareNames.SOFTWARE_NEXTSTRAIN_MPX, temp_dir, str(cores), os.path.join(temp_dir, "stdout.txt")
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_MPX,
+            temp_dir,
+            str(cores),
+            os.path.join(temp_dir, "stdout.txt"),
         )
         exit_status = os.system(cmd)
         if exit_status != 0:
@@ -5285,7 +6204,7 @@ class Software(object):
 
         cmd = "mv {} {}".format(
             os.path.join(temp_dir, "stdout.txt"),
-            os.path.join(temp_dir, "auspice", "log")
+            os.path.join(temp_dir, "auspice", "log"),
         )
         exit_status = os.system(cmd)
 
@@ -5298,6 +6217,320 @@ class Software(object):
         alignment_file = self.utils.get_temp_file("aligned.fasta", sz_type="fasta")
         self.utils.move_file(
             os.path.join(temp_dir, "results", "hmpxv1_big", "aligned.fasta"),
+            alignment_file,
+        )
+
+        self.utils.remove_dir(temp_dir)
+
+        return [tree_file, alignment_file, auspice_zip]
+
+    @staticmethod
+    def run_flumut(
+        sequences,
+        markers_report,
+        mutations_report,
+        litterature_report,
+        excel_report,
+    ):
+        """
+        run flumut
+        :param sequences: sequence file with nucleotides from the influenza virus
+        :param reference: name of the reference (must be one of the sequences)
+        :param report: output file with final report
+        """
+
+        # Run flumut
+        cmd = (
+            "{} -n '(?P<sample>.+)_(?P<segment>.+)$' -m {} -M {} -l {} -x {} {}".format(
+                SoftwareNames.SOFTWARE_FLUMUT,
+                markers_report,
+                mutations_report,
+                litterature_report,
+                excel_report,
+                sequences,
+            )
+        )
+
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            raise Exception("Fail to run flumut")
+
+        # copy results to output
+        return exit_status
+
+    @staticmethod
+    def get_flumut_version():
+        """
+        get flumut full version string - software and DB."""
+        cmd = "{} -V".format(SoftwareNames.SOFTWARE_FLUMUT)
+
+        import subprocess
+
+        process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+        process.wait()
+        output = process.stdout.read().decode("utf-8")
+        exit_status = process.returncode
+
+        if exit_status != 0:
+            raise Exception("Fail to get flumut version")
+
+        return output
+
+    @staticmethod
+    def flumut_version_extract(version_string):
+
+        return version_string.split("\n")[0].split(" ")[1]
+
+    def get_flumut_db_version(self):
+        """
+        parse flumut -V output to get the database version"""
+
+        output = self.get_flumut_version()
+
+        db = self.flumut_version_extract(output)
+
+        return db
+
+    def run_nextstrain_dengue(self, alignments, metadata, cores=1, type="all"):
+        """
+        run nextstrain
+        :param  alignments: sequence file with nucleotides
+        :param  metadata: tabbed table file with properties
+        :param  cores: the number of cores to be used in nextstrain (defaults to 1)
+        :out temp folder with all data (including results)
+        """
+
+        # Create a temp folder
+        temp_dir = self.utils.get_temp_dir()
+
+        # copy the base nexstrain folder to a temp folder
+        # TODO Make a function copy_folder in utils
+        build = "dengue"
+        cmd = (
+            "cp -r "
+            + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE
+            + "/"
+            + build
+            + "/phylogenetic"
+            + "/* "
+            + temp_dir
+        )
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise Exception(
+                "Fail to copy nexstrain folder "
+                + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE
+                + "/"
+                + build
+                + "/phylogenetic"
+                + "/* "
+                + temp_dir
+            )
+
+        # add sequences.fasta and metadata.tsv to data folder
+        # self.utils.copy_file(alignments,os.path.join(temp_dir, 'data', "sequences.fasta"))
+        self.utils.copy_file(
+            metadata, os.path.join(temp_dir, "data", "metadata_" + type + ".tsv")
+        )
+
+        self.utils.copy_file(
+            alignments, os.path.join(temp_dir, "data", "sequences_" + type + ".fasta")
+        )
+
+        self.utils.copy_file(
+            os.path.join(temp_dir, "Snakefile_" + type),
+            os.path.join(temp_dir, "Snakefile"),
+        )
+
+        # Now run Nextstrain
+        cmd = "{} build --native {} --cores {} > {}".format(
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_DENGUE,
+            temp_dir,
+            str(cores),
+            os.path.join(temp_dir, "stdout.txt"),
+        )
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise CmdException(
+                message="Fail to run nextstrain.", cmd=cmd, output_path=temp_dir
+            )
+
+        tree_file = self.utils.get_temp_file("treefile.nwk", sz_type="nwk")
+        # Convert json to tree
+        cmd = "{} --tree {} --output-tree {}".format(
+            os.path.join(settings.DIR_SOFTWARE, "nextstrain/auspice_tree_to_table.sh"),
+            os.path.join(temp_dir, "auspice", "dengue_" + type + "_genome.json"),
+            tree_file,
+        )
+
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise CmdException(
+                message="Fail to run conversion of json to tree.",
+                cmd=cmd,
+                output_path=temp_dir,
+            )
+
+        # Copy log folder to auspice to be included in the zip
+        cmd = "cp -r {} {}".format(
+            os.path.join(temp_dir, ".snakemake", "log"),
+            os.path.join(temp_dir, "auspice"),
+        )
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise CmdException(
+                message="Fail to copy log to output folder.",
+                cmd=cmd,
+                output_path=temp_dir,
+            )
+
+        cmd = "mv {} {}".format(
+            os.path.join(temp_dir, "stdout.txt"),
+            os.path.join(temp_dir, "auspice", "log"),
+        )
+        exit_status = os.system(cmd)
+
+        # Collect results
+        zip_out = self.zip_files_in_path(os.path.join(temp_dir, "auspice"))
+        auspice_zip = self.utils.get_temp_file("tempfile.zip", sz_type="zip")
+        self.utils.move_file(zip_out, auspice_zip)
+
+        # results/hmpxv1_big/aligned.fasta
+        alignment_file = self.utils.get_temp_file("aligned.fasta", sz_type="fasta")
+        self.utils.move_file(
+            os.path.join(temp_dir, "results", "genome", "aligned_" + type + ".fasta"),
+            alignment_file,
+        )
+
+        self.utils.remove_dir(temp_dir)
+
+        return [tree_file, alignment_file, auspice_zip]
+
+    def run_nextstrain_mpox(self, alignments, metadata, cores=1, type="all"):
+        """
+        run nextstrain
+        :param  alignments: sequence file with nucleotides
+        :param  metadata: tabbed table file with properties
+        :param  cores: the number of cores to be used in nextstrain (defaults to 1)
+        :out temp folder with all data (including results)
+        """
+
+        # Create a temp folder
+        temp_dir = self.utils.get_temp_dir()
+
+        # copy the base nexstrain folder to a temp folder
+        # TODO Make a function copy_folder in utils
+        build = "mpox"
+        cmd = (
+            "cp -r "
+            + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE
+            + "/"
+            + build
+            + "/phylogenetic"
+            + "/* "
+            + temp_dir
+        )
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise Exception(
+                "Fail to copy nexstrain folder "
+                + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE
+                + "/"
+                + build
+                + "/phylogenetic"
+                + "/* "
+                + temp_dir
+            )
+
+        # add sequences.fasta and metadata.tsv to data folder
+        # self.utils.copy_file(alignments,os.path.join(temp_dir, 'data', "sequences.fasta"))
+        self.utils.copy_file(metadata, os.path.join(temp_dir, "data", "metadata.tsv"))
+
+        self.utils.copy_file(
+            alignments, os.path.join(temp_dir, "data", "sequences.fasta")
+        )
+
+        self.utils.copy_file(
+            os.path.join(temp_dir, "Snakefile_" + type),
+            os.path.join(temp_dir, "Snakefile"),
+        )
+
+        # Now run Nextstrain
+        cmd = "{} build --native {} --cores {} > {}".format(
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_DENGUE,
+            temp_dir,
+            str(cores),
+            os.path.join(temp_dir, "stdout.txt"),
+        )
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise CmdException(
+                message="Fail to run nextstrain.", cmd=cmd, output_path=temp_dir
+            )
+
+        tree_file = self.utils.get_temp_file("treefile.nwk", sz_type="nwk")
+        # Convert json to tree
+        postfix = type
+        if type == "clade-i":
+            postfix = "clade-I"
+        cmd = "{} --tree {} --output-tree {}".format(
+            os.path.join(settings.DIR_SOFTWARE, "nextstrain/auspice_tree_to_table.sh"),
+            os.path.join(temp_dir, "auspice", "mpox_" + postfix + ".json"),
+            tree_file,
+        )
+
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise CmdException(
+                message="Fail to run conversion of json to tree.",
+                cmd=cmd,
+                output_path=temp_dir,
+            )
+
+        # Copy log folder to auspice to be included in the zip
+        cmd = "cp -r {} {}".format(
+            os.path.join(temp_dir, ".snakemake", "log"),
+            os.path.join(temp_dir, "auspice"),
+        )
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise CmdException(
+                message="Fail to copy log to output folder.",
+                cmd=cmd,
+                output_path=temp_dir,
+            )
+
+        cmd = "mv {} {}".format(
+            os.path.join(temp_dir, "stdout.txt"),
+            os.path.join(temp_dir, "auspice", "log"),
+        )
+        exit_status = os.system(cmd)
+
+        # Collect results
+        zip_out = self.zip_files_in_path(os.path.join(temp_dir, "auspice"))
+        auspice_zip = self.utils.get_temp_file("tempfile.zip", sz_type="zip")
+        self.utils.move_file(zip_out, auspice_zip)
+
+        # results/hmpxv1_big/aligned.fasta
+        alignment_file = self.utils.get_temp_file("aligned.fasta", sz_type="fasta")
+        self.utils.move_file(
+            os.path.join(temp_dir, "results", type, "aligned.fasta"),
             alignment_file,
         )
 
@@ -5399,6 +6632,7 @@ class Contigs2Sequences(object):
                 if temp > version:
                     version = temp
                     path_to_return = path
+
         return (str(version), path_to_return)
 
     def get_database_name(self):

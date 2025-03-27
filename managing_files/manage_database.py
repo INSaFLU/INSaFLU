@@ -232,7 +232,7 @@ class ManageDatabase(object):
         metaKeyProject.value = value
         metaKeyProject.description = description
         metaKeyProject.save()
-        return MetaKeyProject
+        return metaKey
 
     def update_project_metakey(self, project, owner, meta_key_name, value, description):
         """

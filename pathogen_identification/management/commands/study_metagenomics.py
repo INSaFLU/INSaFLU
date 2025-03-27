@@ -106,6 +106,20 @@ def merge_classes(r1: pd.DataFrame, r2: pd.DataFrame, maxt=6, exclude="phage"):
     r2 = r2.sort_values("counts", ascending=False)
     r1_raw = r1.copy()
     r2_raw = r2.copy()
+
+    ### convert taxid to int
+    r1["taxid"] = r1["taxid"].astype(str)
+    # remove decimals from taxid
+    r1["taxid"] = r1["taxid"].str.split(".").str[0]
+    # convert to int
+    r1["taxid"] = r1["taxid"].astype(int)
+
+    r2["taxid"] = r2["taxid"].astype(str)
+    # remove decimals from taxid
+    r2["taxid"] = r2["taxid"].str.split(".").str[0]
+    # convert to int
+    r2["taxid"] = r2["taxid"].astype(int)
+
     ###
     if len(r2) > 0 and len(r1) > 0:
         full_descriptor = pd.merge(r1, r2, on="taxid", how="outer")

@@ -86,7 +86,6 @@ class Operation_Temp_Files:
         self.temp_dir = temp_dir
         self.prefix = prefix
         seed = randint(1000000, 9999999)
-        print("Operation temp dir: " + self.temp_dir)
 
         self.script = os.path.join(self.temp_dir, f"{self.prefix}_{seed}.sh")
 
@@ -150,8 +149,6 @@ class Operation_Temp_Files:
 
         found_flag = False
         time_delay = 0
-
-        print(f"timeout: {ConstantsSettings.TIMEOUT} seconds")
 
         while not found_flag:
             time.sleep(1)
@@ -495,11 +492,12 @@ class Read_class:
             bin: path to bin directory.
 
         """
-        print("Initializing Read_class")
-        print("clean_dir", clean_dir)
+
         self.logger = logging.getLogger("Read_class")
         self.logger.setLevel(logging.ERROR)
 
+        self.logger.info(f"Initializing Read_class: {filepath}")
+        self.logger.info(f"clean_dir: {clean_dir}")
         self.cmd = RunCMD(bin, prefix="read", task="housekeeping", logdir=clean_dir)
 
         self.exists = os.path.isfile(filepath)
@@ -537,7 +535,6 @@ class Read_class:
         self.logger.info(f"Read_class initialized: {self.depleted}")
 
     def create_link(self, file_path, new_path):
-        print("moving file", file_path, new_path)
         if os.path.isfile(file_path):
             if os.path.isfile(new_path) is False:
                 # os.remove(new_path)
@@ -545,15 +542,10 @@ class Read_class:
                 shutil.copy(file_path, new_path)
 
     def update(self, new_prefix, clean_dir: str, enriched_dir: str, depleted_dir: str):
-        print("UPDATING READ CLASS")
-        print(self.current_status)
-        print(self.prefix, new_prefix)
-        print(self.base_filename)
+
         self.base_filename = self.base_filename.replace(self.prefix, new_prefix)
-        print(self.base_filename)
         self.prefix = new_prefix
         new_clean = os.path.join(clean_dir, self.base_filename + ".clean.fastq.gz")
-        print("new_clean", new_clean)
 
         if os.path.isfile(self.clean):
             if new_clean != self.clean:
@@ -756,7 +748,6 @@ class Read_class:
         """
         Clean fastq header using python.
         """
-
         if not self.exists:
             return
 
@@ -794,14 +785,15 @@ class Read_class:
         temp_fq_gz = final_temp + ".gz"
 
         cmd_unzip = "gunzip -c %s > %s" % (self.current, temp_fq)
-        cmd_zip = "gzip %s" % final_temp
+        cmd_zip = "bgzip %s" % final_temp
 
         self.cmd.run_bash(cmd_unzip)
         self.clean_fastq_headers_python(temp_fq, final_temp)
         self.cmd.run(cmd_zip)
-        os.remove(temp_fq)
+        # os.remove(temp_fq)
 
         if os.path.isfile(temp_fq_gz) and os.path.getsize(temp_fq_gz) > 100:
+
             os.remove(self.current)
             os.rename(temp_fq_gz, self.current)
 
@@ -882,11 +874,7 @@ class Read_class:
         if not os.path.isdir(directory):
             os.makedirs(directory)
 
-        print("#### EXPORTING READS")
-        print("current", self.current)
-
         final_current_file = os.path.join(directory, os.path.basename(self.current))
-        print(final_current_file)
 
         if os.path.exists(self.current):
             if os.path.exists(final_current_file) is False:
@@ -905,8 +893,6 @@ class Read_class:
             self.depleted = os.path.join(directory, os.path.basename(self.depleted))
 
         self.filepath = self.current
-        print(self.current)
-        print("#### EXPORTING READS DONE")
 
     def __str__(self):
         return self.filepath
@@ -968,9 +954,7 @@ class Sample_runClass:
         )
 
     def current_total_read_number(self):
-        print("current total")
-        print(self.r1.get_current_fastq_read_number())
-        print(self.r2.get_current_fastq_read_number())
+
         return (
             self.r1.get_current_fastq_read_number()
             + self.r2.get_current_fastq_read_number()
@@ -1062,9 +1046,7 @@ class Sample_runClass:
 
         self.cmd.run_bash(cmd)
         if not os.path.exists(unique_reads) or os.path.getsize(unique_reads) == 0:
-            print(
-                f"No unique reads found in {self.r1.current}, skipping unique read cleaning"
-            )
+
             return
 
         self.r1.read_filter_inplace(unique_reads)
@@ -1360,14 +1342,10 @@ class SoftwareUnit:
         """
         Check if processed reads exist
         """
-        print("CHECKING PROCESSED READS")
 
         for leaf_pk in self.leaves:
-            print("LEAF PK", leaf_pk)
 
             processed_r1, processed_r2 = self.find_qc_reads(leaf_pk)
-            print(processed_r1, processed_r2)
-            print(self.check_return_reads(processed_r1, processed_r2))
 
             if self.check_return_reads(processed_r1, processed_r2):
                 return True
@@ -1378,8 +1356,6 @@ class SoftwareUnit:
         """
         Check if enriched reads exist
         """
-
-        print("CHECKING ENRICHED READS", self.leaves)
 
         for leaf_pk in self.leaves:
             enriched_r1, enriched_r2 = self.find_enriched_reads(leaf_pk)
@@ -1452,8 +1428,7 @@ class SoftwareDetail(SoftwareUnit):
         super().__init__()
 
         if module in args_df.module.unique():
-            print(f"Module: {module}")
-            print("Args_df", args_df)
+
             method_details = args_df[(args_df.module == module)]
             self.module = module
             self.name = method_details.software.values[0]
@@ -1481,12 +1456,9 @@ class SoftwareDetail(SoftwareUnit):
             return []
 
         leaves = method_details["leaves"].values
-        print("leaves", leaves)
         # flatten leaves
         leaves = [item for sublist in leaves for item in sublist]
-        print("leaves", leaves)
         leaves = list(set(leaves))
-        print("leaves", leaves)
         return leaves
 
     def get_dir_from_config(self, config: dict):
@@ -1587,7 +1559,7 @@ class SoftwareDetailCompound:
     def fill_software_list(self):
         module_df = self.args_df[self.args_df.module == self.module]
 
-        for _, software_df in module_df.groupby("software"):
+        for software_name, software_df in module_df.groupby("software"):
             software = SoftwareDetail(
                 self.module, software_df, self.config, self.prefix
             )

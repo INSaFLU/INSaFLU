@@ -37,6 +37,7 @@ NEXTSTRAIN_strain = "strain"	##	Sample ID (Characters “()[]{}|#><” are disal
 NEXTSTRAIN_date = "date"		##	YEAR-MONTH-DAY ex: 2021-02-19
 NEXTSTRAIN_virus = "virus"	  ## ncov
 NEXTSTRAIN_region = "region"	##   Africa, Asia, Europe, North America, Oceania or South America
+NEXTSTRAIN_country = "country"	##   Lisbon, Paris, New York, ...
 NEXTSTRAIN_gisaid_epi_isl = "gisaid_epi_isl" #	GISAID ID; if not available needs to be “?” 
 NEXTSTRAIN_genbank_accession = "genbank_accession"  #  Genbank accession #; if not available needs to be “?” 
 NEXTSTRAIN_accession = "accession"  #  Genbank accession #; if not available needs to be “?” 
@@ -47,6 +48,8 @@ NEXTSTRAIN_age = "age"		  ## host age; if not available needs to be “?”
 NEXTSTRAIN_host = "host"		## host; if not available needs to be “?”  - from ncov apparently it is not mandatory??
 NEXTSTRAIN_clade = "clade"		## host; if not available needs to be “?”  - from ncov apparently it is not mandatory??
 NEXTSTRAIN_genome_coverage = "genome_coverage"
+NEXTSTRAIN_is_reverse_complement = "is_reverse_complement"
+NEXTSTRAIN_QC_rare_mutations = "QC_rare_mutations"
 
 
 DATASET_LIST_INSAFLU_project_name = "project_name"	## project name or empty, if not from project
@@ -75,6 +78,19 @@ VECT_NEXTSTRAIN_mandatory_mpx = [
 		NEXTSTRAIN_clade,
 	]	
 
+VECT_NEXTSTRAIN_mandatory_mpox = [
+		NEXTSTRAIN_accession,
+		NEXTSTRAIN_genbank_accession,
+		NEXTSTRAIN_strain,
+		NEXTSTRAIN_date,
+		NEXTSTRAIN_region,
+		NEXTSTRAIN_host, 
+		NEXTSTRAIN_clade,
+		NEXTSTRAIN_is_reverse_complement,
+		NEXTSTRAIN_QC_rare_mutations,
+	]	
+
+
 VECT_NEXTSTRAIN_mandatory_rsv = [
 		NEXTSTRAIN_accession,
 		NEXTSTRAIN_genbank_accession,
@@ -93,9 +109,19 @@ VECT_NEXTSTRAIN_mandatory_generic = [
 		NEXTSTRAIN_host,
 	]
 
+VECT_NEXTSTRAIN_mandatory_dengue = [
+		NEXTSTRAIN_accession,
+		NEXTSTRAIN_genbank_accession,
+		NEXTSTRAIN_strain,
+		NEXTSTRAIN_date,
+		NEXTSTRAIN_region,
+		NEXTSTRAIN_host, 
+	]	
+
 DICT_MANDATORY_FIELDS = {
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_ncov : VECT_NEXTSTRAIN_mandatory_ncov,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpx : VECT_NEXTSTRAIN_mandatory_mpx,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpox_clade_i : VECT_NEXTSTRAIN_mandatory_mpox,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic : VECT_NEXTSTRAIN_mandatory_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic_time : VECT_NEXTSTRAIN_mandatory_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y : VECT_NEXTSTRAIN_mandatory_generic,
@@ -111,7 +137,12 @@ DICT_MANDATORY_FIELDS = {
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_mp : VECT_NEXTSTRAIN_mandatory_generic,					
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns : VECT_NEXTSTRAIN_mandatory_generic,						
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a : VECT_NEXTSTRAIN_mandatory_rsv,
-	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b : VECT_NEXTSTRAIN_mandatory_rsv
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b : VECT_NEXTSTRAIN_mandatory_rsv,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_all : VECT_NEXTSTRAIN_mandatory_dengue,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv1 : VECT_NEXTSTRAIN_mandatory_dengue,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv2 : VECT_NEXTSTRAIN_mandatory_dengue,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv3 : VECT_NEXTSTRAIN_mandatory_dengue,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4 : VECT_NEXTSTRAIN_mandatory_dengue,
 }
 
 
@@ -133,6 +164,15 @@ DICT_NEXTSTRAIN_default_mpx = {
 		NEXTSTRAIN_clade : "hMPXV-1",
 	}
 
+DICT_NEXTSTRAIN_default_mpox_clade_i = {
+		NEXTSTRAIN_region : "Europe",
+		NEXTSTRAIN_genbank_accession : "?",
+		NEXTSTRAIN_host : "Homo sapiens",
+		NEXTSTRAIN_clade : "I",
+		NEXTSTRAIN_is_reverse_complement : 'false',
+		NEXTSTRAIN_QC_rare_mutations : 'good',
+	}
+
 DICT_NEXTSTRAIN_default_rsv = {
 		NEXTSTRAIN_region : "Europe",
 		NEXTSTRAIN_genbank_accession : "?",
@@ -147,9 +187,17 @@ DICT_NEXTSTRAIN_default_generic = {
 		NEXTSTRAIN_host : "?",
 	}
 
+DICT_NEXTSTRAIN_default_dengue = {
+		NEXTSTRAIN_region : "Europe",
+		NEXTSTRAIN_accession : "?",		
+		NEXTSTRAIN_genbank_accession : "?",
+		NEXTSTRAIN_host : "?",
+	}
+
 DICT_MANDATORY_FIELDS_DEFAULTS = {
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_ncov : DICT_NEXTSTRAIN_default_ncov,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpx : DICT_NEXTSTRAIN_default_mpx,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpox_clade_i : DICT_NEXTSTRAIN_default_mpox_clade_i,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y : DICT_NEXTSTRAIN_default_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y : DICT_NEXTSTRAIN_default_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y : DICT_NEXTSTRAIN_default_generic,
@@ -166,10 +214,18 @@ DICT_MANDATORY_FIELDS_DEFAULTS = {
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic_time : DICT_NEXTSTRAIN_default_generic,	
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a : DICT_NEXTSTRAIN_default_rsv,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b : DICT_NEXTSTRAIN_default_rsv,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_all : DICT_NEXTSTRAIN_default_dengue,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv1 : DICT_NEXTSTRAIN_default_dengue,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv2 : DICT_NEXTSTRAIN_default_dengue,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv3 : DICT_NEXTSTRAIN_default_dengue,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4 : DICT_NEXTSTRAIN_default_dengue,
+
 }
 
 ### if None pass
 DICT_INSAFLU_to_NEXTSTRAIN = {
+		'name' : NEXTSTRAIN_strain,
+		'sample name' : NEXTSTRAIN_strain,
 		'id' : NEXTSTRAIN_strain,
 		'collection date': NEXTSTRAIN_date,
 		'onset date': NEXTSTRAIN_date,
@@ -192,6 +248,7 @@ NEXTSTRAIN_exception_nextstrain_file = [
 	'Wuhan/Hu-1/2019',
 	'MK783032',
 	'MK783030',
+	"21L",
 ]
 
 class MetaRow(object):
@@ -300,7 +357,7 @@ class Metadata(object):
 						for column_insaflu in DICT_NEXTSTRAIN_to_INSAFLU[column]: dt_out_header[column_insaflu] = 1
 						b_found = True
 						break
-				
+
 				## found synonymous before
 				if b_found: continue
 				if (column == NEXTSTRAIN_date):	 ## need to add default date
@@ -308,7 +365,7 @@ class Metadata(object):
 					continue
 				
 				## test default NEXTstrain columns names
-				if column in DICT_MANDATORY_FIELDS[build]:
+				if column in DICT_MANDATORY_FIELDS[build]:					
 					if self.dt_header.get(column, -1) > 0 and \
 						len(self.dt_rows_id[project_sample_pk].row[self.dt_header[column]]) > 0:
 						vect_out.append(self.dt_rows_id[project_sample_pk].row[self.dt_header[column]])
@@ -316,7 +373,7 @@ class Metadata(object):
 						vect_out.append(DICT_MANDATORY_FIELDS_DEFAULTS[build][column])
 					dt_out_header[column] = 1
 					continue
-				
+
 				### regular INSAFLU
 				if column in self.dt_header: vect_out.append(self.dt_rows_id[project_sample_pk].row[self.dt_header[column]])
 				else: vect_out.append("?")
@@ -350,7 +407,6 @@ class Reference(object):
 	def save_out_nextstrain(self, csv_writer, vect_header_out, build, parse_in_files):
 		"""
 		"""
-		
 		count = 0
 		for ref_id in self.dt_out_rows:
 			vect_out = []
@@ -526,22 +582,17 @@ class DataColumns(object):
 		create file for nextstrain
 		"""
 		count = 0 ## number of rows saved
-		
 		## save header
 		csv_writer.writerow(self._get_header_nextstrain(parse_in_files))
-
 		# read NextStrain reference (obsolete)
 		if(not reference_tsv is None):
 			reference = Reference(reference_tsv)
 			### save reference
 			count += reference.save_out_nextstrain(csv_writer, self.vect_header_out, self.build, parse_in_files)
-
 		## save data
 		for key_metadata in self.dt_project:
-			
 			count += self.dt_project[key_metadata].get_vect_out_nextstrain(
 					self.vect_header_out, self.dt_header_normal_out, csv_writer, self.build, parse_in_files)			
-
 		return count
 		
 			

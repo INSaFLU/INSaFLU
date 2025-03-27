@@ -16,14 +16,21 @@ from constants.televir_directories import Televir_Directory_Constants
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
 from managing_files.models import Reference
-from pathogen_identification.models import (MetaReference, ParameterSet,
-                                            PIProject_Sample, RawReference,
-                                            RawReferenceMap, ReferenceMap_Main,
-                                            ReferenceSourceFileMap,
-                                            TelefluMapping, TeleFluProject,
-                                            TeleFluSample)
+from pathogen_identification.models import (
+    MetaReference,
+    ParameterSet,
+    PIProject_Sample,
+    RawReference,
+    RawReferenceMap,
+    ReferenceMap_Main,
+    ReferenceSourceFileMap,
+    TelefluMapping,
+    TeleFluProject,
+    TeleFluSample,
+)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
 from pathogen_identification.utilities.utilities_general import simplify_name
+from settings.default_software_project_sample import DefaultProjectSoftware
 from utils.software import Software
 from utils.utils import Utils
 
@@ -646,14 +653,18 @@ def create_teleflu_igv_report(teleflu_project_pk: int) -> bool:
     sample_dict = {}
 
     ### get sample files
-    software_names = SoftwareNames()
+    # software_names = SoftwareNames()
+    default_project_software = DefaultProjectSoftware()
 
     for sample in samples:
+        filename = default_project_software.get_project_sample_mdcg_software_name(
+            sample
+        )
 
-        if sample.sample.type_of_fastq == 0:
-            filename = software_names.get_snippy_name()
-        else:
-            filename = software_names.get_medaka_name()
+        # if sample.sample.type_of_fastq == 0:
+        #    filename = software_names.get_snippy_name()
+        # else:
+        #    filename = software_names.get_medaka_name()
 
         bam_file = sample.get_file_output(
             TypePath.MEDIA_ROOT, FileType.FILE_BAM, filename
@@ -828,6 +839,11 @@ def create_televir_igv_report(teleflu_project_pk: int, leaf_index: int) -> bool:
             tracks=sample_dict,
             output_html=stacked_html,
         )
+
+        return True
+    except Exception as e:
+        print(e)
+        return False
 
         return True
     except Exception as e:

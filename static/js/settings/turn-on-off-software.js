@@ -15,6 +15,7 @@ $('#id-set-turn-on-off-button').on('click', function(){
 	var type_of_use_id = $('#id-set-turn-on-off-button').attr('type_of_use_id');
 	//block all page
 	wait_screen();
+	console.log(project_sample_id);
 	
 	$.ajax({
         url: '/settings/ajax/turn_on_off_software',
@@ -33,10 +34,11 @@ $('#id-set-turn-on-off-button').on('click', function(){
 	    	if (data['is_ok']) {
 				var element = document.getElementById('check_box_' + software_id);
 				element.checked = data['is_to_run'];
-				
+				console.log(data['other_kills']);
+				console.log(data['is_to_run']);
 				for (const new_id of data['other_kills']) {
 					var new_element = document.getElementById('check_box_' + new_id);
-					new_element.checked = data['is_to_run'];
+					new_element.checked = false;
 				}
 	        	
 	        	/// add message with informaton

@@ -11,12 +11,12 @@ from datasets.models import Dataset, DatasetConsensus
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project, ProjectSample, Sample
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PICS
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.models import PIProject_Sample
 from pathogen_identification.models import Projects as Televir_Project
-from pathogen_identification.utilities.utilities_views import \
-    duplicate_metagenomics_software
+from pathogen_identification.utilities.utilities_views import (
+    duplicate_metagenomics_software,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.default_software import DefaultSoftware
 from settings.forms import SoftwareForm
@@ -331,12 +331,10 @@ class PISettingsView(LoginRequiredMixin, ListView):
             televir_project = Televir_Project.objects.get(pk=int(self.kwargs["level"]))
 
         ### test all defaults first, if exist in database
-        print("############## 1.")
         default_software = DefaultSoftware()
         default_software.test_all_defaults_once(
             self.request.user
         )  ## the user can have defaults yet
-        print("############## done.")
         ### project parameters
         if televir_project:
             # if not self.check_project_params_exist(televir_project):
@@ -358,7 +356,6 @@ class PISettingsView(LoginRequiredMixin, ListView):
         ### IMPORTANT, must have technology__name, because old versions don't
         constant_settings = PICS()
         condensed_pipeline_names = constant_settings.vect_pipeline_names_condensed
-        print("###################")
 
         for technology in technologies:  ## run over all technology
             vect_pipeline_step = []

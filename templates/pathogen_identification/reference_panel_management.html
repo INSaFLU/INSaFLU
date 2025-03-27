@@ -208,7 +208,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-          <button type="button" class="btn btn-primary" id="create-panel-button" reload-url= "{% url 'panel_list' %}">Create</button>
+          <button type="button" class="btn btn-primary" id="create-panel-button" reload-url= "{% url 'panel_list' %}" {% if demo_account %} disabled {% endif %}>Create</button>
         </div>
       </div>
     </div>

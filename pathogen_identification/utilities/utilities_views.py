@@ -12,24 +12,38 @@ from django.utils.safestring import mark_safe
 
 from constants.constants import Constants
 from fluwebvirus.settings import STATIC_ROOT
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PIConstantsSettings
-from pathogen_identification.models import (ContigClassification, FinalReport,
-                                            ParameterSet, PIProject_Sample,
-                                            Projects, RawReference,
-                                            RawReferenceCompoundModel,
-                                            ReadClassification,
-                                            ReferenceMap_Main, ReferencePanel,
-                                            ReferenceSourceFileMap,
-                                            RunAssembly, RunDetail, RunMain,
-                                            SoftwareTree, SoftwareTreeNode)
+from pathogen_identification.constants_settings import (
+    ConstantsSettings as PIConstantsSettings,
+)
+from pathogen_identification.models import (
+    ContigClassification,
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    RawReferenceCompoundModel,
+    ReadClassification,
+    ReferenceMap_Main,
+    ReferencePanel,
+    ReferenceSourceFileMap,
+    RunAssembly,
+    RunDetail,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
 from pathogen_identification.utilities.clade_objects import Clade
-from pathogen_identification.utilities.overlap_manager import \
-    ReadOverlapManager
+from pathogen_identification.utilities.overlap_manager import ReadOverlapManager
 from pathogen_identification.utilities.televir_parameters import (
-    LayoutParams, TelevirParameters)
+    LayoutParams,
+    TelevirParameters,
+)
 from pathogen_identification.utilities.utilities_general import (
-    infer_run_media_dir, merge_classes, simplify_name)
+    infer_run_media_dir,
+    merge_classes,
+    simplify_name,
+)
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
@@ -501,19 +515,39 @@ class FinalReportCompound:
         self.private_reads = private_reads
 
     def get_identical_reports_ps(self, report: FinalReport) -> str:
-        references_found_in = RawReference.objects.filter(
-            run__project__pk=report.run.project.pk,
-            run__run_type=RunMain.RUN_TYPE_PIPELINE,
-            run__sample__pk=report.sample.pk,
-            taxid=report.taxid,
+        references_found_in = (
+            RawReference.objects.filter(
+                run__project__pk=report.run.project.pk,
+                # run__run_type=RunMain.RUN_TYPE_PIPELINE,
+                run__sample__pk=report.sample.pk,
+                taxid=report.taxid,
+            )
+            .exclude(run__run_type=RunMain.RUN_TYPE_STORAGE)
+            .distinct("run")
         )
 
         sets = set([r.run.parameter_set.leaf.index for r in references_found_in])
 
+        strings_return = []
+
+        for ref in references_found_in:
+
+            index_string = f"{ref.run.parameter_set.leaf.software_tree.global_index}-{ref.run.parameter_set.leaf.index}"
+
+            if ref.run.run_type in [
+                RunMain.RUN_TYPE_MAP_REQUEST,
+                RunMain.RUN_TYPE_PANEL_MAPPING,
+            ]:
+                index_string = "r" + index_string
+
+            if ref.run == report.run:
+                index_string = f"<b>{index_string}</b>"
+            strings_return.append(index_string)
+
         if len(sets) == 0:
             return "M"
 
-        return ", ".join([str(s) for s in sets])
+        return ", ".join([str(s) for s in strings_return])
 
     def check_data_exists(self, report: FinalReport) -> bool:
         if report.run is None:
@@ -1395,11 +1429,16 @@ class ReportSorter:
             return report_groups
 
         for report_group in report_groups:
-            json_data = self.prep_heatmap_data_within_clade(
-                report_group, distance_matrix
-            )
-            report_group.js_heatmap_data = json_data
-            report_group.js_heatmap_ready = True
+            try:
+                json_data = self.prep_heatmap_data_within_clade(
+                    report_group, distance_matrix
+                )
+                report_group.js_heatmap_data = json_data
+                report_group.js_heatmap_ready = True
+            except Exception as e:
+
+                report_group.js_heatmap_ready = False
+                report_group.js_heatmap_data = None
 
         return report_groups
 

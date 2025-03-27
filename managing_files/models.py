@@ -4,8 +4,10 @@ from datetime import datetime
 from operator import itemgetter
 
 from django.conf import settings
+
 # from django.db.models import Manager as GeoManager
 from django.contrib.auth.models import User
+
 # Create your models here.
 from django.contrib.gis.db.models import GeoManager  # #  change to django  2.x
 from django.contrib.gis.db.models import PointField
@@ -17,7 +19,6 @@ from constants.constants import Constants, FileExtensions, FileType, TypePath
 from constants.constants_mixed_infection import ConstantsMixedInfection
 from constants.software_names import SoftwareNames
 from fluwebvirus.formatChecker import ContentTypeRestrictedFileField
-from manage_virus.constants_virus import ConstantsVirus
 from manage_virus.models import IdentifyVirus
 from settings.constants_settings import ConstantsSettings
 
@@ -80,6 +81,7 @@ class Reference(models.Model):
     ### species
     SPECIES_SARS_COV_2 = "SARS_COV_2"
     SPECIES_MPXV = "MPXV"
+    SPECIES_DENGUE = "DENGUE"
     SPECIES_INFLUENZA = "INFLUENZA"
     SPECIES_RSV = "RSV"
     SPECIES_NOT_SET = "NOT_SET"
@@ -1001,6 +1003,24 @@ class Project(models.Model):
     PROJECT_FILE_NAME_Aln2pheno_flagged_carabelli = "aln2pheno_flagged_mutation_report_EpitopeResidues_Carabelli_2023.tsv"  ### has results of aln2pheno
     PROJECT_FILE_NAME_Aln2pheno_zip = "aln2pheno.zip"  ### has results of aln2pheno
 
+    PROJECT_FILE_NAME_Flumut_mutation_report = (
+        "flumut_mutation_report.tsv"  ### has results of flumut
+    )
+    PROJECT_FILE_NAME_Flumut_markers_report = (
+        "flumut_markers_report.tsv"  ### has results of flumut
+    )
+    PROJECT_FILE_NAME_Flumut_litterature_report = (
+        "flumut_litterature_report.tsv"  ### has results of flumut
+    )
+    PROJECT_FILE_NAME_flumut_excel = (
+        "flumut_full_report.xlsx"  ### has results of flumut
+    )
+
+    PROJECT_FILE_NAME_flumut_version = "flumut_version.txt"  ### has results of flumut
+
+    PROJECT_FILE_NAME_IRMA_OUTPUT_zipped = "irma_output.zip"  ### has results of irma
+    PROJECT_FILE_NAME_IRMA_MIXED_POSITIONS_folder = "irma_mixed_variants"
+
     PROJECT_FILE_NAME_all_files_zipped = "AllFiles.zip"  ### Several files zipped
 
     ## put the type file here to clean if there isn't enough sequences to create the trees and alignments
@@ -1263,7 +1283,7 @@ class ProjectSample(models.Model):
     PATH_MAIN_RESULT = "main_result"
     PREFIX_FILE_COVERAGE = "coverage"
     FILE_CONSENSUS_FILE = "Consensus_"
-    FILE_SNIPPY_TAB = "validated_variants_sample_"
+    FILE_VARIANTS_TAB = "validated_variants_sample_"
     FILE_FREEBAYES_TAB = "validated_minor_iSNVs_sample_"
     FILE_FREEBAYES_TAB_with_indels = "validated_minor_inc_indels_sample_"
 
@@ -1329,6 +1349,18 @@ class ProjectSample(models.Model):
     def __str__(self):
         return self.project.name
 
+    @property
+    def name(self):
+        return self.sample.name
+
+    @property
+    def reference_fasta(self):
+        return self.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT)
+
+    @property
+    def reference_gbk(self):
+        return self.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT)
+
     def get_global_file_by_element(
         self, type_path, prefix_file_name, sequence_name, extension
     ):
@@ -1384,11 +1416,11 @@ class ProjectSample(models.Model):
         get human file name
         """
         if (
-            software == SoftwareNames.SOFTWARE_SNIPPY_name
+            software in SoftwareNames.SOFTWARE_MDCG_list
             or software == SoftwareNames.SOFTWARE_Medaka_name
         ):
             if file_type == FileType.FILE_TAB:
-                return "{}{}".format(ProjectSample.FILE_SNIPPY_TAB, self.sample.name)
+                return "{}{}".format(ProjectSample.FILE_VARIANTS_TAB, self.sample.name)
         if software == SoftwareNames.SOFTWARE_FREEBAYES_name and not b_second_choice:
             if file_type == FileType.FILE_TAB:
                 return "{}{}".format(ProjectSample.FILE_FREEBAYES_TAB, self.sample.name)
@@ -1831,7 +1863,7 @@ class ProcessControler(models.Model):
         return "{}_combined_metagen_{}_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, sample_pk, leaf_pk
         )
-    
+
     def get_name_televir_project_sample_panel_map(self, sample_pk, leaf_pk):
         return "{}_televir_panel_map_{}_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, sample_pk, leaf_pk
@@ -1851,7 +1883,7 @@ class ProcessControler(models.Model):
         return "{}_teleflu_ref_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, ref_id
         )
-    
+
     def get_name_file_televir_teleflu_ref_create(self, ref_id):
         return "{}_teleflu_file_ref_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, ref_id
@@ -1889,7 +1921,7 @@ class ProcessControler(models.Model):
         return "{}_add_references_to_sample_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, sample_pk
         )
-    
+
     def get_name_update_televir_project(self, project_id):
         return "{}_update_project_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, project_id
@@ -1908,6 +1940,11 @@ class ProcessControler(models.Model):
     def get_name_televir_map(self, reference_pk):
         return "{}{}".format(
             ProcessControler.PREFIX_TELEVIR_REFERENCE_MAP, reference_pk
+        )
+
+    def __str__(self):
+        return "PK:{} name:{}  is_finished:{}  is_running:{}  is_error:{}".format(
+            self.pk, self.name, self.is_finished, self.is_running, self.is_error
         )
 
     def __str__(self):

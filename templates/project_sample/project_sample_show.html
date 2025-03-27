@@ -70,7 +70,6 @@
 	      			</div>
 	    		</div>
 	  		</div>
-	
 	  
 			<!-- Card Phylogenetic trees by PhyloCanvas -->
 			<div class="card">
@@ -244,8 +243,33 @@
 			
 			{% endif %}
 
+			{% if flumut_report %}
+
+			<!-- Card Show flumut report -->
+			  <div class="card">
+				<div class="card-header" role="tab" id="headingFlumut">
+					<h5 class="mb-0">
+						<a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseFlumut" aria-expanded="false" aria-controls="collapseFlumut">
+							<strong>Flumut</strong> report
+	        			</a>
+						{% if update_flumut %}
+						<a href="#id_update_mutation_report" id="id-button-update-mutation-report" class="btn btn-small btn-primary" style="float:right" data-toggle="modal"><i class="fa fa-refresh"></i> Update Flumut</a>
+						{% endif %}
+	      			</h5>
+				</div>
+	
+	    		<div id="collapseFlumut" class="collapse" role="tabpanel" aria-labelledby="headingFlumut">
+	      			<div class="card-block">
+	        			<div id='loader_showflumut'><img src="{{ spinner_url }}"/></div>
+	        			<div id="showflumut" class="show_variants_table" project_id="{{ project_id }}" show-flumut-url="{% url 'show-flumut' %}"></div>
+	      			</div>
+	    		</div>
+			</div>
+
+			{% endif %}
+
 	   		<!-- Card Minor variants overview-->
-	   		{% if variations_statistics_file %}
+	   		{% if variations_statistics_file and project_not_irma %}
 		   		<div class="card">
 					<div class="card-header" role="tab" id="headingFifth">
 						<h5 class="mb-0">
@@ -337,6 +361,8 @@
 			    									{% if samples_file_variants %} {{ samples_file_variants }} {% endif %}
 			    									{% if samples_file_minor_intra_host %} {{ samples_file_minor_intra_host }} {% endif %}
 													{% if aln2pheno_zip %} {{ aln2pheno_zip }} {% endif %}
+													{% if flumut_excel %} {{ flumut_excel }} {% endif %}
+													{% if irma_output %} {{ irma_output }} {% endif %}
 			    								{% endif %}
 			    								
 			    								{% if pangolin_lineage %}
@@ -509,6 +535,32 @@
 						</div>
 	   				</div>
 	 			</div>
+
+				<!-- Update Flumut -->
+				<div class="modal fade" id="id_update_mutation_report">
+					<div class="modal-dialog modal-lg">
+						<div class="modal-content">
+	       					<!-- Modal Header -->
+	       					<div class="modal-header alert alert-primary">
+	         					<h4 class="modal-title">Flumut</h4>
+	         					<button type="button" class="close" data-dismiss="modal">&times;</button>
+	       					</div>
+	       
+	       					<!-- Modal body -->
+		  					<div class="modal-body mx-auto mw-100">
+		  						<div id="id-modal-body-update-mutation-report" pk="{{project_id}}" update-mutation-report-value-url="{% url 'update_project_mutation_report' %}"
+		  								ref_project="{{project_name}}">
+		  							<label id="id-label-update-mutation-report" class="col-form-label">{{update_mutation_report_message}}</label>
+		   						</div>
+		  					</div>
+		  					<!-- Modal footer -->
+		  					<div class="modal-footer" id="id-modal-footer-update">
+		    					<button id="id-update-mutation-report-button" type="button" class="btn btn-primary" data-dismiss="modal">Run</button>
+		    					<button type="button" class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">Cancel</button>
+		  					</div>
+						</div>
+	   				</div>
+	 			</div>
 	 			
 				<!-- The remove Modal -->
 				<div class="modal fade" id="id_remove_modal">
@@ -546,6 +598,7 @@
 	    	<script type="text/javascript" src="{% static 'vendor/phylocanvas/v2.8.1/phylocanvas-quickstart.js' %}"></script>
 	    	<script type="text/javascript" src="{% static 'js/sample-project/show-sample-project.js' %}"></script>
 			<script type="text/javascript" src="{% static 'js/sample-project/show-aln2pheno.js' %}"></script>
+			<script type="text/javascript" src="{% static 'js/sample-project/show-flumut.js' %}"></script>
 	    	<script type="text/javascript" src="{% static 'js/sample-project/gff-parser.js' %}"></script>
 	    	<script type="text/javascript" src="{% static 'vendor/msa/msa.min.1.0.js' %}"></script>
 	    	<!-- <script type="text/javascript" src="{% static 'vendor/msa/msa.min.js' %}"></script> -->

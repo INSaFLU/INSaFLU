@@ -2387,7 +2387,6 @@ class Software(object):
             with open(tmp__ref, "w") as ref:
                 SeqIO.write(ref_seqs[segname], ref, "fasta")
 
-            print(fasta_id)
             fasta.id = fasta_id
 
             tmp_comb = os.path.join(irma_output_dir, segname + "_comb.fasta")

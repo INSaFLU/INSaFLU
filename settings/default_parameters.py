@@ -114,29 +114,29 @@ class DefaultParameters(object):
     def persist_parameters_create(self, vect_parameters: List[Parameter]):
         software = None
         dt_out_sequential = {}
-        with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
-            for parameter in vect_parameters:
-                assert parameter.sequence_out not in dt_out_sequential
-                if software is None:
-                    try:
-                        software = parameter.software
-
-                        software.save()
-
-                    except Exception as e:
-                        logging.error("Error persisting software: {}".format(e))
-                        continue
-
-                parameter.software = software
-
+        # with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
+        for parameter in vect_parameters:
+            assert parameter.sequence_out not in dt_out_sequential
+            if software is None:
                 try:
+                    software = parameter.software
 
-                    parameter.save()
-                    dt_out_sequential[parameter.sequence_out] = 1
+                    software.save()
 
                 except Exception as e:
-                    logging.error("Error persisting parameter: {}".format(e))
+                    logging.error("Error persisting software: {}".format(e))
                     continue
+
+            parameter.software = software
+
+            try:
+
+                parameter.save()
+                dt_out_sequential[parameter.sequence_out] = 1
+
+            except Exception as e:
+                logging.error("Error persisting parameter: {}".format(e))
+                continue
 
     def persist_parameters(self, vect_parameters: List[Parameter], type_of_use: int):
         """
@@ -149,46 +149,46 @@ class DefaultParameters(object):
         for parameter in vect_parameters:
             assert parameter.sequence_out not in dt_out_sequential
             if software is None:
-                with LockedAtomicTransaction(Software), LockedAtomicTransaction(
-                    Parameter
-                ):
+                # with LockedAtomicTransaction(Software), LockedAtomicTransaction(
+                #    Parameter
+                # ):
+                try:
+                    software = Software.objects.get(
+                        name=parameter.software.name,
+                        name_extended=parameter.software.name_extended,
+                        owner=parameter.software.owner,
+                        type_of_use=parameter.software.type_of_use,
+                        technology=parameter.software.technology,
+                        version_parameters=parameter.software.version_parameters,
+                        pipeline_step=parameter.software.pipeline_step,
+                    )
+                except Software.DoesNotExist:
+                    software = parameter.software
                     try:
-                        software = Software.objects.get(
-                            name=parameter.software.name,
-                            name_extended=parameter.software.name_extended,
-                            owner=parameter.software.owner,
-                            type_of_use=parameter.software.type_of_use,
-                            technology=parameter.software.technology,
-                            version_parameters=parameter.software.version_parameters,
-                            pipeline_step=parameter.software.pipeline_step,
-                        )
-                    except Software.DoesNotExist:
-                        software = parameter.software
-                        try:
-                            software.save()
-                        except Exception as e:
-                            logging.error("Error persisting software: {}".format(e))
-                            continue
+                        software.save()
+                    except Exception as e:
+                        logging.error("Error persisting software: {}".format(e))
+                        continue
 
-                    except Software.MultipleObjectsReturned:
-                        sof = Software.objects.filter(
-                            name=parameter.software.name,
-                            name_extended=parameter.software.name_extended,
-                            owner=parameter.software.owner,
-                            type_of_use=parameter.software.type_of_use,
-                            technology=parameter.software.technology,
-                            version_parameters=parameter.software.version_parameters,
-                            pipeline_step=parameter.software.pipeline_step,
-                        )
+                except Software.MultipleObjectsReturned:
+                    sof = Software.objects.filter(
+                        name=parameter.software.name,
+                        name_extended=parameter.software.name_extended,
+                        owner=parameter.software.owner,
+                        type_of_use=parameter.software.type_of_use,
+                        technology=parameter.software.technology,
+                        version_parameters=parameter.software.version_parameters,
+                        pipeline_step=parameter.software.pipeline_step,
+                    )
 
-                        # keep last one
-                        software = sof.last()
+                    # keep last one
+                    software = sof.last()
 
-                        print("MULTIPLE SOFTWARES: ", sof.count(), software.name)
-                        if sof.count() > 1:
-                            sof_delete = sof.exclude(pk=software.pk)
-                            Parameter.objects.filter(software__in=sof_delete).delete()
-                            sof_delete.delete()
+                    print("MULTIPLE SOFTWARES: ", sof.count(), software.name)
+                    if sof.count() > 1:
+                        sof_delete = sof.exclude(pk=software.pk)
+                        Parameter.objects.filter(software__in=sof_delete).delete()
+                        sof_delete.delete()
 
                         # raise Exception("MultipleObjectsReturned")
 
@@ -794,9 +794,7 @@ class DefaultParameters(object):
                     == SoftwareNames.SOFTWARE_SNIPPY_no_primer
                 ):
                     return_parameter += " {}".format(dict_out[par_name][1][0])
-                elif (
-                    par_name == DefaultParameters.SNIPPY_PRIMER_NAME
-                ):
+                elif par_name == DefaultParameters.SNIPPY_PRIMER_NAME:
                     return_parameter += " {}".format(
                         os.path.join(
                             settings.DIR_SOFTWARE,
@@ -810,9 +808,7 @@ class DefaultParameters(object):
                     == SoftwareNames.SOFTWARE_SNIPPY_no_primer
                 ):
                     return_parameter += " {}".format(dict_out[par_name][1][0])
-                elif (
-                    par_name == DefaultParameters.MEDAKA_PRIMER_NAME
-                ):
+                elif par_name == DefaultParameters.MEDAKA_PRIMER_NAME:
                     return_parameter += " {}".format(
                         os.path.join(
                             settings.DIR_SOFTWARE,

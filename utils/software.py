@@ -264,7 +264,6 @@ class SoftwareFlumut(object):
         """
 
         dt_result_version = {}
-
         if not settings.DEBUG:
 
             cmd = "{} --update".format(SoftwareNames.SOFTWARE_FLUMUT)

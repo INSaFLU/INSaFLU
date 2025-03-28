@@ -421,7 +421,7 @@ class ProcessSGE(object):
         """
         process_controler = ProcessControler()
         vect_command = [
-            "python3 {} collect_update_flumut_markers --project_id {} --user_id {}".format(
+            "python3 {} collect_update_mutation_report --project_id {} --user_id {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"), project.pk, user.pk
             )
         ]

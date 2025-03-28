@@ -117,6 +117,7 @@ class DefaultParameters(object):
                     software.is_obsolete = True
                 software.save()
 
+    @transaction.atomic
     def persist_parameters_create(self, vect_parameters: List[Parameter]):
         software = None
         dt_out_sequential = {}
@@ -127,8 +128,7 @@ class DefaultParameters(object):
                 try:
                     software = parameter.software
 
-                    with LockedAtomicTransaction(Software):
-                        software.save()
+                    software.save()
 
                 except Exception as e:
                     logging.error("Error persisting software: {}".format(e))
@@ -145,6 +145,7 @@ class DefaultParameters(object):
                 logging.error("Error persisting parameter: {}".format(e))
                 continue
 
+    @transaction.atomic
     def persist_parameters(self, vect_parameters: List[Parameter], type_of_use: int):
         """
         persist a specific software by default
@@ -1049,87 +1050,87 @@ class DefaultParameters(object):
         """set software to run ON/OFF
         :output True if the is_to_run is changed"""
 
-        with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
-            ## get parameters for a specific sample, project or project_sample
-            parameters = Parameter.objects.filter(
-                software=software,
-                project=project,
-                project_sample=project_sample,
-                televir_project=televir_project,
-                sample=sample,
-                dataset=dataset,
-            )
+        # with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
+        ## get parameters for a specific sample, project or project_sample
+        parameters = Parameter.objects.filter(
+            software=software,
+            project=project,
+            project_sample=project_sample,
+            televir_project=televir_project,
+            sample=sample,
+            dataset=dataset,
+        )
 
-            ## if None need to take the value from database
-            if is_to_run is None:
-                if software.type_of_use in [
-                    Software.TYPE_OF_USE_qc,
-                    Software.TYPE_OF_USE_global,
-                    Software.TYPE_OF_USE_televir_project,
-                    Software.TYPE_OF_USE_televir_global,
-                    Software.TYPE_OF_USE_televir_project,
-                    Software.TYPE_OF_USE_televir_settings,
-                    Software.TYPE_OF_USE_televir_project_settings,
-                ]:
-                    is_to_run = not software.is_to_run
-                elif len(parameters) > 0:
-                    is_to_run = not parameters[0].is_to_run
-                else:
-                    is_to_run = not software.is_to_run
-
-            ## if the software can not be change return False
-            if not software.can_be_on_off_in_pipeline:
-                if software.type_of_use in [
-                    Software.TYPE_OF_USE_qc,
-                    Software.TYPE_OF_USE_global,
-                    Software.TYPE_OF_USE_televir_global,
-                    Software.TYPE_OF_USE_televir_project,
-                    Software.TYPE_OF_USE_televir_settings,
-                    Software.TYPE_OF_USE_televir_project_settings,
-                ]:
-                    return software.is_to_run
-                elif len(parameters) > 0:
-                    return parameters[0].is_to_run
-                return True
-
-            # if it is Global it is software that is mandatory
-            # only can change if TYPE_OF_USE_global, other type_of_use is not be tested
+        ## if None need to take the value from database
+        if is_to_run is None:
             if software.type_of_use in [
                 Software.TYPE_OF_USE_qc,
-                Software.TYPE_OF_USE_project,
+                Software.TYPE_OF_USE_global,
+                Software.TYPE_OF_USE_televir_project,
+                Software.TYPE_OF_USE_televir_global,
+                Software.TYPE_OF_USE_televir_project,
+                Software.TYPE_OF_USE_televir_settings,
+                Software.TYPE_OF_USE_televir_project_settings,
+            ]:
+                is_to_run = not software.is_to_run
+            elif len(parameters) > 0:
+                is_to_run = not parameters[0].is_to_run
+            else:
+                is_to_run = not software.is_to_run
+
+        ## if the software can not be change return False
+        if not software.can_be_on_off_in_pipeline:
+            if software.type_of_use in [
+                Software.TYPE_OF_USE_qc,
                 Software.TYPE_OF_USE_global,
                 Software.TYPE_OF_USE_televir_global,
                 Software.TYPE_OF_USE_televir_project,
                 Software.TYPE_OF_USE_televir_settings,
                 Software.TYPE_OF_USE_televir_project_settings,
             ]:
-                software.is_to_run = is_to_run
-                software.save()
+                return software.is_to_run
+            elif len(parameters) > 0:
+                return parameters[0].is_to_run
+            return True
 
-            if (
-                software.pipeline_step.name
-                == ConstantsSettings.PIPELINE_NAME_variant_detection
-            ):
-                software.is_to_run = is_to_run
-                software.save()
+        # if it is Global it is software that is mandatory
+        # only can change if TYPE_OF_USE_global, other type_of_use is not be tested
+        if software.type_of_use in [
+            Software.TYPE_OF_USE_qc,
+            Software.TYPE_OF_USE_project,
+            Software.TYPE_OF_USE_global,
+            Software.TYPE_OF_USE_televir_global,
+            Software.TYPE_OF_USE_televir_project,
+            Software.TYPE_OF_USE_televir_settings,
+            Software.TYPE_OF_USE_televir_project_settings,
+        ]:
+            software.is_to_run = is_to_run
+            software.save()
 
-            ## get parameters for a specific sample, project or project_sample
+        if (
+            software.pipeline_step.name
+            == ConstantsSettings.PIPELINE_NAME_variant_detection
+        ):
+            software.is_to_run = is_to_run
+            software.save()
 
-            parameters = Parameter.objects.filter(
-                software=software,
-                project=project,
-                televir_project=televir_project,
-                project_sample=project_sample,
-                sample=sample,
-                dataset=dataset,
-            )
+        ## get parameters for a specific sample, project or project_sample
 
-            ### Try to find the parameter of sequence_out == 1. It is the one that has the flag to run or not.
-            for parameter in parameters:
-                parameter.is_to_run = is_to_run
-                parameter.save()
+        parameters = Parameter.objects.filter(
+            software=software,
+            project=project,
+            televir_project=televir_project,
+            project_sample=project_sample,
+            sample=sample,
+            dataset=dataset,
+        )
 
-            return is_to_run
+        ### Try to find the parameter of sequence_out == 1. It is the one that has the flag to run or not.
+        for parameter in parameters:
+            parameter.is_to_run = is_to_run
+            parameter.save()
+
+        return is_to_run
 
     def get_vect_parameters(self, software: Software):
         """return all parameters, by software instance"""

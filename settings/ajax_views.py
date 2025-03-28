@@ -819,298 +819,372 @@ def turn_on_off_software(request):
     Denies is_to_run in main software description.
     Don't do this if the software already run
     """
-    if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        data = {"is_ok": False, "other_kills": []}
-        software_id_a = "software_id"
-        sample_id_a = "sample_id"
-        project_id_a = "project_id"
-        project_sample_id_a = "project_sample_id"
-        type_of_use_id_a = "type_of_use_id"
-        televir_project_id_a = "televir_project_id"
-        televir_project_sample_id_a = "televir_project_sample_id"
+    try:
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            data = {"is_ok": False, "other_kills": []}
+            software_id_a = "software_id"
+            sample_id_a = "sample_id"
+            project_id_a = "project_id"
+            project_sample_id_a = "project_sample_id"
+            type_of_use_id_a = "type_of_use_id"
+            televir_project_id_a = "televir_project_id"
+            televir_project_sample_id_a = "televir_project_sample_id"
 
-        ## some pre-requisites
-        if not request.user.is_active or not request.user.is_authenticated:
-            return JsonResponse(data)
-        try:
-            profile = Profile.objects.get(user__pk=request.user.pk)
-        except Profile.DoesNotExist:
-            return JsonResponse(data)
-        if profile.only_view_project:
-            return JsonResponse(data)
-
-        pipeline_makeup = Pipeline_Makeup()
-
-        sample_id = None
-        project_id = None
-        televir_project_id = None
-        televir_project_sample_id = None
-        project_sample_id = None
-        type_of_use_id = None
-
-        if type_of_use_id_a in request.GET:
-            type_of_use_id = int(request.GET[type_of_use_id_a])
-        if televir_project_id_a in request.GET:
-            televir_project_id = int(request.GET[televir_project_id_a])
-        elif sample_id_a in request.GET:
-            sample_id = request.GET[sample_id_a]
-        elif project_id_a in request.GET:
-            project_id = request.GET[project_id_a]
-        elif project_sample_id_a in request.GET:
-            project_sample_id = request.GET[project_sample_id_a]
-        if televir_project_sample_id_a in request.GET:
-            televir_project_sample_id = request.GET[televir_project_sample_id_a]
-
-        default_parameters = DefaultParameters(prep_televir_dbs=False)
-
-        if software_id_a in request.GET:
-            software_id = request.GET[software_id_a]
-
+            ## some pre-requisites
+            if not request.user.is_active or not request.user.is_authenticated:
+                return JsonResponse(data)
             try:
-                (
-                    project,
-                    televir_project,
-                    televir_project_sample,
-                    project_sample,
-                    sample,
-                ) = (
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                )
-                software = Software.objects.get(pk=software_id)
+                profile = Profile.objects.get(user__pk=request.user.pk)
+            except Profile.DoesNotExist:
+                return JsonResponse(data)
+            if profile.only_view_project:
+                return JsonResponse(data)
 
-                if not televir_project_id is None:
-                    televir_project = PIProjects.objects.get(pk=televir_project_id)
-                if not televir_project_sample_id is None:
-                    televir_project_sample = PIProject_Sample.objects.get(
-                        pk=televir_project_sample_id
+            pipeline_makeup = Pipeline_Makeup()
+
+            sample_id = None
+            project_id = None
+            televir_project_id = None
+            televir_project_sample_id = None
+            project_sample_id = None
+            type_of_use_id = None
+
+            if type_of_use_id_a in request.GET:
+                type_of_use_id = int(request.GET[type_of_use_id_a])
+            if televir_project_id_a in request.GET:
+                televir_project_id = int(request.GET[televir_project_id_a])
+            elif sample_id_a in request.GET:
+                sample_id = request.GET[sample_id_a]
+            elif project_id_a in request.GET:
+                project_id = request.GET[project_id_a]
+            elif project_sample_id_a in request.GET:
+                project_sample_id = request.GET[project_sample_id_a]
+            if televir_project_sample_id_a in request.GET:
+                televir_project_sample_id = request.GET[televir_project_sample_id_a]
+
+            default_parameters = DefaultParameters(prep_televir_dbs=False)
+
+            if software_id_a in request.GET:
+                software_id = request.GET[software_id_a]
+
+                try:
+                    (
+                        project,
+                        televir_project,
+                        televir_project_sample,
+                        project_sample,
+                        sample,
+                    ) = (
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
                     )
-                if not project_id is None:
-                    project = Project.objects.get(pk=project_id)
-                if not project_sample_id is None:
-                    project_sample = ProjectSample.objects.get(pk=project_sample_id)
-                if not sample_id is None:
-                    sample = Sample.objects.get(pk=sample_id)
+                    software = Software.objects.get(pk=software_id)
 
-                current_is_to_run = _is_to_run(
-                    software,
-                    project,
-                    project_sample,
-                    sample,
-                    televir_project,
-                    televir_project_sample,
-                )
-
-                ###########################################################
-                if (
-                    not televir_project_sample_id is None
-                    and not televir_project_id is None
-                ):
-                    televir_project_sample = PIProject_Sample.objects.get(
-                        pk=televir_project_sample_id
-                    )
-
-                    pipeline_steps_project_sample = (
-                        pipeline_makeup.get_pipeline_makeup_result_of_operation(
-                            software,
-                            turn_off=current_is_to_run,
-                            televir_project=televir_project_sample.project,
-                            project_sample=televir_project_sample,
+                    if not televir_project_id is None:
+                        televir_project = PIProjects.objects.get(pk=televir_project_id)
+                    if not televir_project_sample_id is None:
+                        televir_project_sample = PIProject_Sample.objects.get(
+                            pk=televir_project_sample_id
                         )
+                    if not project_id is None:
+                        project = Project.objects.get(pk=project_id)
+                    if not project_sample_id is None:
+                        project_sample = ProjectSample.objects.get(pk=project_sample_id)
+                    if not sample_id is None:
+                        sample = Sample.objects.get(pk=sample_id)
+
+                    current_is_to_run = _is_to_run(
+                        software,
+                        project,
+                        project_sample,
+                        sample,
+                        televir_project,
+                        televir_project_sample,
                     )
 
-                    makeup = pipeline_makeup.match_makeup_name_from_list(
-                        pipeline_steps_project_sample
-                    )
-                    if makeup is None:
-                        data["message"] = (
-                            f"You cannot perform this operation. Project '{televir_project_sample.project.name}' with sample '{televir_project_sample.sample.name}' would not meet minimum pipeline step requirements."
-                        )
-
-                        return JsonResponse(data)
-
-                elif not televir_project_id is None:
-                    televir_project = PIProjects.objects.get(pk=televir_project_id)
-
-                    pipeline_steps_televir_project = (
-                        pipeline_makeup.get_pipeline_makeup_result_of_operation(
-                            software,
-                            turn_off=current_is_to_run,
-                            televir_project=televir_project,
-                        )
-                    )
-
-                    makeup = pipeline_makeup.match_makeup_name_from_list_classification(
-                        pipeline_steps_televir_project
-                    )
-                    if makeup is None:
-                        data["message"] = (
-                            f"You cannot perform this operation. Project '{televir_project}' would not meet minimum pipeline step requirements."
+                    ###########################################################
+                    if (
+                        not televir_project_sample_id is None
+                        and not televir_project_id is None
+                    ):
+                        televir_project_sample = PIProject_Sample.objects.get(
+                            pk=televir_project_sample_id
                         )
 
-                        return JsonResponse(data)
-                ###########################################################
-                if not type_of_use_id is None:
-                    if type_of_use_id in Software.TELEVIR_GLOBAL_TYPES:
-                        pipeline_steps_televir_global = (
+                        pipeline_steps_project_sample = (
                             pipeline_makeup.get_pipeline_makeup_result_of_operation(
-                                software, turn_off=current_is_to_run
+                                software,
+                                turn_off=current_is_to_run,
+                                televir_project=televir_project_sample.project,
+                                project_sample=televir_project_sample,
+                            )
+                        )
+
+                        makeup = pipeline_makeup.match_makeup_name_from_list(
+                            pipeline_steps_project_sample
+                        )
+                        if makeup is None:
+                            data["message"] = (
+                                f"You cannot perform this operation. Project '{televir_project_sample.project.name}' with sample '{televir_project_sample.sample.name}' would not meet minimum pipeline step requirements."
+                            )
+
+                            return JsonResponse(data)
+
+                    elif not televir_project_id is None:
+                        televir_project = PIProjects.objects.get(pk=televir_project_id)
+
+                        pipeline_steps_televir_project = (
+                            pipeline_makeup.get_pipeline_makeup_result_of_operation(
+                                software,
+                                turn_off=current_is_to_run,
+                                televir_project=televir_project,
                             )
                         )
 
                         makeup = (
                             pipeline_makeup.match_makeup_name_from_list_classification(
-                                pipeline_steps_televir_global
+                                pipeline_steps_televir_project
                             )
                         )
                         if makeup is None:
                             data["message"] = (
-                                "You cannot perform this operation. Deployment would not meet minimum pipeline step requirements."
+                                f"You cannot perform this operation. Project '{televir_project}' would not meet minimum pipeline step requirements."
                             )
 
                             return JsonResponse(data)
-                ############################################################################
-                if not project_id is None:  ##    project
-                    project = Project.objects.get(pk=project_id)
-                elif not project_sample_id is None:  ##    project sample
-                    project_sample = ProjectSample.objects.get(pk=project_sample_id)
-
-                    ## sample is not ready for run again, To prevent to many ON|OFF
-                    if not project_sample.is_finished:
-                        data["message"] = (
-                            "You cannot do this operation. The project '{}' with sample '{}' is in pipeline to run.".format(
-                                project_sample.project.name, project_sample.sample.name
-                            )
-                        )
-                        return JsonResponse(data)
-
-                    ### create a task to perform the analysis of snippy and freebayes
-                    manageDatabase = ManageDatabase()
-                    process_SGE = ProcessSGE()
-                    metaKeyAndValue = MetaKeyAndValue()
-
-                    try:
-                        ### the unique can be ON|OFF
-                        if software.name == SoftwareNames.SOFTWARE_FREEBAYES_name:
-                            ### change flag to not finished
-                            project_sample.is_finished = False
-                            project_sample.save()
-
-                            (
-                                job_name_wait,
-                                job_name,
-                            ) = request.user.profile.get_name_sge_seq(
-                                Profile.SGE_PROCESS_dont_care, Profile.SGE_GLOBAL
+                    ###########################################################
+                    if not type_of_use_id is None:
+                        if type_of_use_id in Software.TELEVIR_GLOBAL_TYPES:
+                            pipeline_steps_televir_global = (
+                                pipeline_makeup.get_pipeline_makeup_result_of_operation(
+                                    software, turn_off=current_is_to_run
+                                )
                             )
 
-                            if project_sample.is_sample_illumina():
-                                taskID = process_SGE.set_second_stage_snippy(
-                                    project_sample,
-                                    request.user,
-                                    job_name,
-                                    [job_name_wait],
-                                )
-                            else:
-                                taskID = process_SGE.set_second_stage_medaka(
-                                    project_sample,
-                                    request.user,
-                                    job_name,
-                                    [job_name_wait],
+                            makeup = pipeline_makeup.match_makeup_name_from_list_classification(
+                                pipeline_steps_televir_global
+                            )
+                            if makeup is None:
+                                data["message"] = (
+                                    "You cannot perform this operation. Deployment would not meet minimum pipeline step requirements."
                                 )
 
-                            ### set project sample queue ID
-                            manageDatabase.set_project_sample_metakey(
-                                project_sample,
+                                return JsonResponse(data)
+                    ############################################################################
+                    if not project_id is None:  ##    project
+                        project = Project.objects.get(pk=project_id)
+                    elif not project_sample_id is None:  ##    project sample
+                        project_sample = ProjectSample.objects.get(pk=project_sample_id)
+
+                        ## sample is not ready for run again, To prevent to many ON|OFF
+                        if not project_sample.is_finished:
+                            data["message"] = (
+                                "You cannot do this operation. The project '{}' with sample '{}' is in pipeline to run.".format(
+                                    project_sample.project.name,
+                                    project_sample.sample.name,
+                                )
+                            )
+                            return JsonResponse(data)
+
+                        ### create a task to perform the analysis of snippy and freebayes
+                        manageDatabase = ManageDatabase()
+                        process_SGE = ProcessSGE()
+                        metaKeyAndValue = MetaKeyAndValue()
+
+                        try:
+                            ### the unique can be ON|OFF
+                            if software.name == SoftwareNames.SOFTWARE_FREEBAYES_name:
+                                ### change flag to not finished
+                                project_sample.is_finished = False
+                                project_sample.save()
+
+                                (
+                                    job_name_wait,
+                                    job_name,
+                                ) = request.user.profile.get_name_sge_seq(
+                                    Profile.SGE_PROCESS_dont_care, Profile.SGE_GLOBAL
+                                )
+
+                                if project_sample.is_sample_illumina():
+                                    taskID = process_SGE.set_second_stage_snippy(
+                                        project_sample,
+                                        request.user,
+                                        job_name,
+                                        [job_name_wait],
+                                    )
+                                else:
+                                    taskID = process_SGE.set_second_stage_medaka(
+                                        project_sample,
+                                        request.user,
+                                        job_name,
+                                        [job_name_wait],
+                                    )
+
+                                ### set project sample queue ID
+                                manageDatabase.set_project_sample_metakey(
+                                    project_sample,
+                                    request.user,
+                                    metaKeyAndValue.get_meta_key_queue_by_project_sample_id(
+                                        project_sample.id
+                                    ),
+                                    MetaKeyAndValue.META_VALUE_Queue,
+                                    taskID,
+                                )
+
+                            ## Generate Consensus
+                            ### need to collect global files again
+                            taskID = process_SGE.set_collect_global_files(
+                                project_sample.project, request.user
+                            )
+                            manageDatabase.set_project_metakey(
+                                project,
                                 request.user,
-                                metaKeyAndValue.get_meta_key_queue_by_project_sample_id(
-                                    project_sample.id
+                                metaKeyAndValue.get_meta_key(
+                                    MetaKeyAndValue.META_KEY_Queue_TaskID_Project,
+                                    project.id,
                                 ),
                                 MetaKeyAndValue.META_VALUE_Queue,
                                 taskID,
                             )
+                        except:
+                            pass
+                    ##########################################################
+                    elif not sample_id is None:  ## for Sample
+                        sample = Sample.objects.get(pk=sample_id)
 
-                        ## Generate Consensus
-                        ### need to collect global files again
-                        taskID = process_SGE.set_collect_global_files(
-                            project_sample.project, request.user
-                        )
-                        manageDatabase.set_project_metakey(
-                            project,
-                            request.user,
-                            metaKeyAndValue.get_meta_key(
-                                MetaKeyAndValue.META_KEY_Queue_TaskID_Project,
-                                project.id,
-                            ),
-                            MetaKeyAndValue.META_VALUE_Queue,
-                            taskID,
-                        )
-                    except:
-                        pass
-                ##########################################################
-                elif not sample_id is None:  ## for Sample
-                    sample = Sample.objects.get(pk=sample_id)
-
-                    ## sample is not ready for run again
-                    if sample.is_sample_in_the_queue:
-                        data["message"] = (
-                            "You cannot do this operation. The sample '{}' is in pipeline to run.".format(
-                                sample.name
+                        ## sample is not ready for run again
+                        if sample.is_sample_in_the_queue:
+                            data["message"] = (
+                                "You cannot do this operation. The sample '{}' is in pipeline to run.".format(
+                                    sample.name
+                                )
                             )
-                        )
-                        return JsonResponse(data)
+                            return JsonResponse(data)
 
-                    ### re-run data
-                    manageDatabase = ManageDatabase()
-                    process_SGE = ProcessSGE()
+                        ### re-run data
+                        manageDatabase = ManageDatabase()
+                        process_SGE = ProcessSGE()
 
-                    ### create a task to perform the analysis again
+                        ### create a task to perform the analysis again
+                        try:
+                            (
+                                job_name_wait,
+                                job_name,
+                            ) = request.user.profile.get_name_sge_seq(
+                                Profile.SGE_PROCESS_clean_sample, Profile.SGE_SAMPLE
+                            )
+                            if sample.is_type_fastq_gz_sequencing():
+                                taskID = process_SGE.set_run_trimmomatic_species(
+                                    sample, request.user, job_name
+                                )
+                            else:
+                                taskID = process_SGE.set_run_clean_minion(
+                                    sample, request.user, job_name
+                                )
+
+                            ### set sample queue ID
+                            manageDatabase.set_sample_metakey(
+                                sample,
+                                sample.owner,
+                                MetaKeyAndValue.META_KEY_Queue_TaskID,
+                                MetaKeyAndValue.META_VALUE_Queue,
+                                taskID,
+                            )
+                        except:
+                            sample.is_sample_in_the_queue = False
+                            sample.save()
+                            data["message"] = "Error in the queue system."
+                            return JsonResponse(data)
+
+                        ## refresh sample list for this user
+                        if not job_name is None:
+                            process_SGE.set_create_sample_list_by_user(
+                                request.user, [job_name]
+                            )
+
                     try:
-                        (
-                            job_name_wait,
-                            job_name,
-                        ) = request.user.profile.get_name_sge_seq(
-                            Profile.SGE_PROCESS_clean_sample, Profile.SGE_SAMPLE
-                        )
-                        if sample.is_type_fastq_gz_sequencing():
-                            taskID = process_SGE.set_run_trimmomatic_species(
-                                sample, request.user, job_name
+                        if (
+                            software.pipeline_step.name
+                            == ConstantsSettings.PIPELINE_NAME_variant_detection
+                            and current_is_to_run == True
+                        ):
+
+                            existing_software = (
+                                Software.objects.filter(
+                                    owner=software.owner,
+                                    type_of_use=software.type_of_use,
+                                    parameter__project_sample=project_sample,
+                                    parameter__project=project,
+                                    parameter__televir_project=televir_project,
+                                    parameter__televir_project_sample=televir_project_sample,
+                                    pipeline_step__name=ConstantsSettings.PIPELINE_NAME_variant_detection,
+                                    technology=software.technology,
+                                    is_to_run=True,
+                                )
+                                .distinct()
+                                .exclude(pk=software.pk)
                             )
-                        else:
-                            taskID = process_SGE.set_run_clean_minion(
-                                sample, request.user, job_name
-                            )
 
-                        ### set sample queue ID
-                        manageDatabase.set_sample_metakey(
-                            sample,
-                            sample.owner,
-                            MetaKeyAndValue.META_KEY_Queue_TaskID,
-                            MetaKeyAndValue.META_VALUE_Queue,
-                            taskID,
-                        )
-                    except:
-                        sample.is_sample_in_the_queue = False
-                        sample.save()
-                        data["message"] = "Error in the queue system."
-                        return JsonResponse(data)
+                            if (existing_software).exists() is False:
+                                data["message"] = (
+                                    "At least one {} software must be active.".format(
+                                        ConstantsSettings.PIPELINE_NAME_variant_detection
+                                    )
+                                )
+                                return JsonResponse(data)
+                        if (
+                            software.name == SoftwareNames.SOFTWARE_FREEBAYES_name
+                            and current_is_to_run is False
+                        ):
+                            variant_detection_on = Software.objects.filter(
+                                owner=software.owner,
+                                type_of_use=software.type_of_use,
+                                name_extended=SoftwareNames.SOFTWARE_IRMA_name_extended,
+                                parameter__project_sample=project_sample,
+                                parameter__project=project,
+                                parameter__televir_project=televir_project,
+                                parameter__televir_project_sample=televir_project_sample,
+                                pipeline_step__name=ConstantsSettings.PIPELINE_NAME_variant_detection,
+                                technology=software.technology,
+                                is_to_run=True,
+                            ).distinct()
 
-                    ## refresh sample list for this user
-                    if not job_name is None:
-                        process_SGE.set_create_sample_list_by_user(
-                            request.user, [job_name]
-                        )
+                            if variant_detection_on.exists():
+                                data["message"] = (
+                                    "Software {} for {} is incompatible with software {} in pipeline step {}.".format(
+                                        SoftwareNames.SOFTWARE_FREEBAYES_name,
+                                        ConstantsSettings.PIPELINE_NAME_variant_detection,
+                                        SoftwareNames.SOFTWARE_IRMA_name_extended,
+                                        ConstantsSettings.PIPELINE_NAME_variant_detection,
+                                    )
+                                )
+                                return JsonResponse(data)
 
-                try:
+                    except Exception as e:
+                        print(e)
+
+                    ## set ON|OFF software
+                    is_to_run = default_parameters.set_software_to_run_by_software(
+                        software,
+                        project,
+                        televir_project,
+                        project_sample,
+                        sample,
+                        is_to_run=not current_is_to_run,
+                    )
+                    active_filters = None
+                    additional_filter = None
+
                     if (
                         software.pipeline_step.name
                         == ConstantsSettings.PIPELINE_NAME_variant_detection
-                        and current_is_to_run == True
+                        and is_to_run
                     ):
-
-                        existing_software = (
+                        ## need to turn off the other software
+                        active_filters = (
                             Software.objects.filter(
                                 owner=software.owner,
                                 type_of_use=software.type_of_use,
@@ -1126,108 +1200,7 @@ def turn_on_off_software(request):
                             .exclude(pk=software.pk)
                         )
 
-                        if (existing_software).exists() is False:
-                            data["message"] = (
-                                "At least one {} software must be active.".format(
-                                    ConstantsSettings.PIPELINE_NAME_variant_detection
-                                )
-                            )
-                            return JsonResponse(data)
-                    if (
-                        software.name == SoftwareNames.SOFTWARE_FREEBAYES_name
-                        and current_is_to_run is False
-                    ):
-                        variant_detection_on = Software.objects.filter(
-                            owner=software.owner,
-                            type_of_use=software.type_of_use,
-                            name_extended=SoftwareNames.SOFTWARE_IRMA_name_extended,
-                            parameter__project_sample=project_sample,
-                            parameter__project=project,
-                            parameter__televir_project=televir_project,
-                            parameter__televir_project_sample=televir_project_sample,
-                            pipeline_step__name=ConstantsSettings.PIPELINE_NAME_variant_detection,
-                            technology=software.technology,
-                            is_to_run=True,
-                        ).distinct()
-
-                        if variant_detection_on.exists():
-                            data["message"] = (
-                                "Software {} for {} is incompatible with software {} in pipeline step {}.".format(
-                                    SoftwareNames.SOFTWARE_FREEBAYES_name,
-                                    ConstantsSettings.PIPELINE_NAME_variant_detection,
-                                    SoftwareNames.SOFTWARE_IRMA_name_extended,
-                                    ConstantsSettings.PIPELINE_NAME_variant_detection,
-                                )
-                            )
-                            return JsonResponse(data)
-
-                except Exception as e:
-                    print(e)
-
-                ## set ON|OFF software
-                is_to_run = default_parameters.set_software_to_run_by_software(
-                    software,
-                    project,
-                    televir_project,
-                    project_sample,
-                    sample,
-                    is_to_run=not current_is_to_run,
-                )
-                active_filters = None
-                additional_filter = None
-
-                if (
-                    software.pipeline_step.name
-                    == ConstantsSettings.PIPELINE_NAME_variant_detection
-                    and is_to_run
-                ):
-                    ## need to turn off the other software
-                    active_filters = (
-                        Software.objects.filter(
-                            owner=software.owner,
-                            type_of_use=software.type_of_use,
-                            parameter__project_sample=project_sample,
-                            parameter__project=project,
-                            parameter__televir_project=televir_project,
-                            parameter__televir_project_sample=televir_project_sample,
-                            pipeline_step__name=ConstantsSettings.PIPELINE_NAME_variant_detection,
-                            technology=software.technology,
-                            is_to_run=True,
-                        )
-                        .distinct()
-                        .exclude(pk=software.pk)
-                    )
-
-                    for filter in active_filters:
-                        _ = default_parameters.set_software_to_run_by_software(
-                            filter,
-                            project,
-                            televir_project,
-                            project_sample,
-                            sample,
-                            is_to_run=False,
-                        )
-
-                        data["other_kills"] += [filter.pk]
-
-                    if (
-                        software.name_extended
-                        == SoftwareNames.SOFTWARE_IRMA_name_extended
-                    ):
-                        additional_filter = Software.objects.filter(
-                            owner=software.owner,
-                            type_of_use=software.type_of_use,
-                            parameter__project_sample=project_sample,
-                            parameter__project=project,
-                            parameter__televir_project=televir_project,
-                            parameter__televir_project_sample=televir_project_sample,
-                            pipeline_step__name=ConstantsSettings.PIPELINE_NAME_intra_host_minor_variant_detection,
-                            technology=software.technology,
-                            name=SoftwareNames.SOFTWARE_FREEBAYES_name,
-                            parameter__is_to_run=True,
-                        ).distinct()
-
-                        for filter in additional_filter:
+                        for filter in active_filters:
                             _ = default_parameters.set_software_to_run_by_software(
                                 filter,
                                 project,
@@ -1239,110 +1212,156 @@ def turn_on_off_software(request):
 
                             data["other_kills"] += [filter.pk]
 
-                if (
-                    software.pipeline_step.name
-                    == ConstantsSettings.PIPELINE_NAME_remapping
-                    and not is_to_run
-                ):
+                        if (
+                            software.name_extended
+                            == SoftwareNames.SOFTWARE_IRMA_name_extended
+                        ):
+                            additional_filter = Software.objects.filter(
+                                owner=software.owner,
+                                type_of_use=software.type_of_use,
+                                parameter__project_sample=project_sample,
+                                parameter__project=project,
+                                parameter__televir_project=televir_project,
+                                parameter__televir_project_sample=televir_project_sample,
+                                pipeline_step__name=ConstantsSettings.PIPELINE_NAME_intra_host_minor_variant_detection,
+                                technology=software.technology,
+                                name=SoftwareNames.SOFTWARE_FREEBAYES_name,
+                                parameter__is_to_run=True,
+                            ).distinct()
+
+                            for filter in additional_filter:
+                                _ = default_parameters.set_software_to_run_by_software(
+                                    filter,
+                                    project,
+                                    televir_project,
+                                    project_sample,
+                                    sample,
+                                    is_to_run=False,
+                                )
+
+                                data["other_kills"] += [filter.pk]
 
                     if (
-                        Software.objects.filter(
-                            owner=software.owner,
-                            type_of_use=software.type_of_use,
-                            parameter__televir_project=televir_project,
-                            parameter__televir_project_sample=televir_project_sample,
-                            pipeline_step=software.pipeline_step,
-                            technology=software.technology,
-                            is_to_run=True,
-                        ).exists()
-                        == False
+                        software.pipeline_step.name
+                        == ConstantsSettings.PIPELINE_NAME_remapping
+                        and not is_to_run
                     ):
 
-                        active_filters = Software.objects.filter(
-                            owner=software.owner,
-                            type_of_use=software.type_of_use,
-                            parameter__televir_project=televir_project,
-                            parameter__televir_project_sample=televir_project_sample,
-                            pipeline_step__name=ConstantsSettings.PIPELINE_NAME_remap_filtering,
-                            technology=software.technology,
-                            is_to_run=True,
-                        ).distinct()
+                        if (
+                            Software.objects.filter(
+                                owner=software.owner,
+                                type_of_use=software.type_of_use,
+                                parameter__televir_project=televir_project,
+                                parameter__televir_project_sample=televir_project_sample,
+                                pipeline_step=software.pipeline_step,
+                                technology=software.technology,
+                                is_to_run=True,
+                            ).exists()
+                            == False
+                        ):
 
-                        for filter in active_filters:
+                            active_filters = Software.objects.filter(
+                                owner=software.owner,
+                                type_of_use=software.type_of_use,
+                                parameter__televir_project=televir_project,
+                                parameter__televir_project_sample=televir_project_sample,
+                                pipeline_step__name=ConstantsSettings.PIPELINE_NAME_remap_filtering,
+                                technology=software.technology,
+                                is_to_run=True,
+                            ).distinct()
 
-                            _ = default_parameters.set_software_to_run_by_software(
-                                filter, project, televir_project, project_sample, sample
-                            )
+                            for filter in active_filters:
 
-                            data["other_kills"] += [filter.pk]
+                                _ = default_parameters.set_software_to_run_by_software(
+                                    filter,
+                                    project,
+                                    televir_project,
+                                    project_sample,
+                                    sample,
+                                )
 
-                if (
-                    software.pipeline_step.name
-                    == ConstantsSettings.PIPELINE_NAME_request_mapping
-                    and is_to_run == True
-                ):
+                                data["other_kills"] += [filter.pk]
+
                     if (
-                        Software.objects.filter(
-                            owner=software.owner,
-                            type_of_use=software.type_of_use,
-                            parameter__televir_project=televir_project,
-                            parameter__televir_project_sample=televir_project_sample,
-                            pipeline_step=software.pipeline_step,
-                            technology=software.technology,
-                            is_to_run=True,
-                        ).exists()
-                        == False
+                        software.pipeline_step.name
+                        == ConstantsSettings.PIPELINE_NAME_request_mapping
+                        and is_to_run == True
                     ):
+                        if (
+                            Software.objects.filter(
+                                owner=software.owner,
+                                type_of_use=software.type_of_use,
+                                parameter__televir_project=televir_project,
+                                parameter__televir_project_sample=televir_project_sample,
+                                pipeline_step=software.pipeline_step,
+                                technology=software.technology,
+                                is_to_run=True,
+                            ).exists()
+                            == False
+                        ):
 
-                        active_filters = Software.objects.filter(
-                            owner=software.owner,
-                            type_of_use=software.type_of_use,
-                            parameter__televir_project=televir_project,
-                            parameter__televir_project_sample=televir_project_sample,
-                            pipeline_step__name=ConstantsSettings.PIPELINE_NAME_map_filtering,
-                            technology=software.technology,
-                            is_to_run=True,
-                        ).distinct()
+                            active_filters = Software.objects.filter(
+                                owner=software.owner,
+                                type_of_use=software.type_of_use,
+                                parameter__televir_project=televir_project,
+                                parameter__televir_project_sample=televir_project_sample,
+                                pipeline_step__name=ConstantsSettings.PIPELINE_NAME_map_filtering,
+                                technology=software.technology,
+                                is_to_run=True,
+                            ).distinct()
 
-                        for filter in active_filters:
+                            for filter in active_filters:
 
-                            _ = default_parameters.set_software_to_run_by_software(
-                                filter, project, televir_project, project_sample, sample
+                                _ = default_parameters.set_software_to_run_by_software(
+                                    filter,
+                                    project,
+                                    televir_project,
+                                    project_sample,
+                                    sample,
+                                )
+
+                                data["other_kills"] += [filter.pk]
+
+                    ## set a new default
+                    data["is_to_run"] = is_to_run
+                    data["message"] = (
+                        "The '{}' in '{}' technology was turned '{}'.".format(
+                            software.name_extended,
+                            software.technology.name,
+                            "ON" if is_to_run else "OFF",
+                        )
+                    )
+                    if active_filters is not None:
+                        for sof in active_filters:
+                            data[
+                                "message"
+                            ] += " The '{}' in '{}' technology was turned 'OFF'.".format(
+                                sof.name_extended, sof.technology.name
+                            )
+                    if additional_filter is not None:
+                        for sof in additional_filter:
+                            data[
+                                "message"
+                            ] += " The '{}' in '{}' technology was turned 'OFF'.".format(
+                                sof.name_extended, sof.technology.name
                             )
 
-                            data["other_kills"] += [filter.pk]
+                except Software.DoesNotExist:
+                    return JsonResponse(data)
+                except Project.DoesNotExist:
+                    return JsonResponse(data)
+                except ProjectSample.DoesNotExist:
+                    return JsonResponse(data)
+                except Sample.DoesNotExist:
+                    return JsonResponse(data)
+                data["is_ok"] = True
+            return JsonResponse(data)
+    except Exception as e:
+        print(e)
+        import traceback
 
-                ## set a new default
-                data["is_to_run"] = is_to_run
-                data["message"] = "The '{}' in '{}' technology was turned '{}'.".format(
-                    software.name_extended,
-                    software.technology.name,
-                    "ON" if is_to_run else "OFF",
-                )
-                if active_filters is not None:
-                    for sof in active_filters:
-                        data[
-                            "message"
-                        ] += " The '{}' in '{}' technology was turned 'OFF'.".format(
-                            sof.name_extended, sof.technology.name
-                        )
-                if additional_filter is not None:
-                    for sof in additional_filter:
-                        data[
-                            "message"
-                        ] += " The '{}' in '{}' technology was turned 'OFF'.".format(
-                            sof.name_extended, sof.technology.name
-                        )
-
-            except Software.DoesNotExist:
-                return JsonResponse(data)
-            except Project.DoesNotExist:
-                return JsonResponse(data)
-            except ProjectSample.DoesNotExist:
-                return JsonResponse(data)
-            except Sample.DoesNotExist:
-                return JsonResponse(data)
-            data["is_ok"] = True
+        traceback.print_exc()
+        data = {"is_ok": False, "message": "Error in the database."}
         return JsonResponse(data)
 
 

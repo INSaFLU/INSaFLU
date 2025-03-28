@@ -1028,7 +1028,7 @@ class DefaultParameters(object):
 
     def set_software_to_run_by_software(
         self,
-        software: Software: Software,
+        software: Software,
         project,
         televir_project,
         project_sample,
@@ -1039,16 +1039,16 @@ class DefaultParameters(object):
         """set software to run ON/OFF
         :output True if the is_to_run is changed"""
 
-        # with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
-        ## get parameters for a specific sample, project or project_sample
-        parameters = Parameter.objects.filter(
-            software=software,
-            project=project,
-            project_sample=project_sample,
-            televir_project=televir_project,
-            sample=sample,
-            dataset=dataset,
-        )
+        with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
+            ## get parameters for a specific sample, project or project_sample
+            parameters = Parameter.objects.filter(
+                software=software,
+                project=project,
+                project_sample=project_sample,
+                televir_project=televir_project,
+                sample=sample,
+                dataset=dataset,
+            )
 
             ## if None need to take the value from database
             if is_to_run is None:
@@ -1067,20 +1067,20 @@ class DefaultParameters(object):
                 else:
                     is_to_run = not software.is_to_run
 
-        ## if the software can not be change return False
-        if not software.can_be_on_off_in_pipeline:
-            if software.type_of_use in [
-                Software.TYPE_OF_USE_qc,
-                Software.TYPE_OF_USE_global,
-                Software.TYPE_OF_USE_televir_global,
-                Software.TYPE_OF_USE_televir_project,
-                Software.TYPE_OF_USE_televir_settings,
-                Software.TYPE_OF_USE_televir_project_settings,
-            ]:
-                return software.is_to_run
-            elif len(parameters) > 0:
-                return parameters[0].is_to_run
-            return True
+            ## if the software can not be change return False
+            if not software.can_be_on_off_in_pipeline:
+                if software.type_of_use in [
+                    Software.TYPE_OF_USE_qc,
+                    Software.TYPE_OF_USE_global,
+                    Software.TYPE_OF_USE_televir_global,
+                    Software.TYPE_OF_USE_televir_project,
+                    Software.TYPE_OF_USE_televir_settings,
+                    Software.TYPE_OF_USE_televir_project_settings,
+                ]:
+                    return software.is_to_run
+                elif len(parameters) > 0:
+                    return parameters[0].is_to_run
+                return True
 
             # if it is Global it is software that is mandatory
             # only can change if TYPE_OF_USE_global, other type_of_use is not be tested
@@ -1114,13 +1114,12 @@ class DefaultParameters(object):
                 dataset=dataset,
             )
 
-        ### Try to find the parameter of sequence_out == 1. It is the one that has the flag to run or not.
-        for parameter in parameters:
-            with transaction.atomic():
+            ### Try to find the parameter of sequence_out == 1. It is the one that has the flag to run or not.
+            for parameter in parameters:
                 parameter.is_to_run = is_to_run
                 parameter.save()
 
-        return is_to_run
+            return is_to_run
 
     def get_vect_parameters(self, software: Software):
         """return all parameters, by software instance"""

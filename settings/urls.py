@@ -4,7 +4,7 @@ Created on Jan 7, 2018
 @author: mmp
 """
 
-from django.conf.urls import url
+from django.urls import path, re_path
 
 from settings import ajax_views, views
 
@@ -63,15 +63,15 @@ urlpatterns = [
         ajax_views.set_default_parameters,
         name="default_parameters",
     ),
-    url(
+    path(
+        "ajax/turn_on_off_software",
+        ajax_views.turn_on_off_software,
+        name="turn_on_off_software",
+    ),
+    path(
         r"^ajax/get_mdcg_project_software$",
         ajax_views.get_mdcg_project_software,
         name="get_mdcg_project_software",
-    ),
-    url(
-        r"^ajax/turn_on_off_software$",
-        ajax_views.turn_on_off_software,
-        name="turn_on_off_software",
     ),
     path(
         "ajax/mask_consensus", ajax_views.mask_consensus, name="mask_consensus"

@@ -164,16 +164,26 @@ class DefaultParameters(object):
                         name=parameter.software.name,
                         name_extended=parameter.software.name_extended,
                         owner=parameter.software.owner,
+                        version=parameter.software.version,
+                        type_of_software=parameter.software.type_of_software,
                         type_of_use=parameter.software.type_of_use,
                         technology=parameter.software.technology,
-                        version_parameters=parameter.software.version_parameters,
-                        pipeline_step=parameter.software.pipeline_step,
                     )
                 except Software.DoesNotExist:
                     software = parameter.software
                     try:
-                        with LockedAtomicTransaction(Software):
-                            software.save()
+                        # with LockedAtomicTransaction(Software):
+                        software = Software.objects.create(
+                            name=parameter.software.name,
+                            name_extended=parameter.software.name_extended,
+                            owner=parameter.software.owner,
+                            version=parameter.software.version,
+                            type_of_use=parameter.software.type_of_use,
+                            technology=parameter.software.technology,
+                            version_parameters=parameter.software.version_parameters,
+                            pipeline_step=parameter.software.pipeline_step,
+                            can_be_on_off_in_pipeline=parameter.software.can_be_on_off_in_pipeline,
+                        )
                     except Exception as e:
                         logging.error("Error persisting software: {}".format(e))
                         continue

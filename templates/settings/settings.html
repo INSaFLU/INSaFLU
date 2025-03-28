@@ -43,7 +43,8 @@
 		
 			<!-- NAV tabs -->
 			<div >
-				<ul id="main_tab" class="nav nav-tabs p-0 justify-content-end justify-content-md-center" role="tablist">
+				<ul id="main_tab" class="nav nav-tabs p-0 justify-content-end justify-content-md-center" role="tablist" csrf-token ="{{ csrf_token }}">
+					
 					{% for unique_software_id, software, vect_pipeline in all_softwares %}
 						<li class="nav-item"><a class="nav-link fa fa-align-justify"
 							href="#{{unique_software_id}}" role="tab" data-toggle="tab"

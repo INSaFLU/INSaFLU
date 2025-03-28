@@ -21,7 +21,7 @@ from datasets.manage_database import ManageDatabase
 from datasets.models import Consensus, Dataset, DatasetConsensus
 from extend_user.models import Profile
 from settings.default_parameters import DefaultParameters
-from settings.models import Software, Parameter
+from settings.models import Parameter, Software
 from utils.process_SGE import ProcessSGE
 from utils.utils import Utils
 
@@ -43,7 +43,7 @@ def remove_dataset(request):
     """
     remove a dataset.
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False}
         dataset_id_a = "dataset_id"
 
@@ -90,7 +90,7 @@ def add_dataset_name(request):
     """
     add new dataset
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False}
         dataset_name = "dataset_name"
 
@@ -167,7 +167,7 @@ def test_dataset_name(request):
     """
     test dataset name, Return True if exits
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_taken": False}
         dataset_name = "dataset_name"
 
@@ -208,7 +208,7 @@ def test_consensus_name(request):
     """
     test dataset name, Return True if exits
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_taken": False}
         consensus_name = "consensus_name"
 
@@ -249,7 +249,7 @@ def add_consensus_name(request):
     """
     add new dataset
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False}
         consensus_name = "consensus_name"
 
@@ -302,7 +302,7 @@ def remove_consensus(request):
     """
     remove a consensus in a dataset.
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False}
         consensus_id_a = "consensus_id"
 
@@ -344,7 +344,7 @@ def remove_consensus_in_dataset(request):
     """
     remove a dataset.
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "message": "Something went wrong. Fail to remove."}
         consensus_id_a = "consensus_id"
 
@@ -371,27 +371,29 @@ def remove_consensus_in_dataset(request):
             ## different owner or belong to a project not deleted
             if dataset_consensus.dataset.owner.pk != request.user.pk:
                 return JsonResponse(data)
-            
-                    # check what is the build that is configured, otherwise use the default
+
+                # check what is the build that is configured, otherwise use the default
             build = SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_parameter
 
             # See if there is a build parameter specific for this dataset, in which case use it
-            parameters_list = Parameter.objects.filter(dataset=dataset_consensus.dataset)
+            parameters_list = Parameter.objects.filter(
+                dataset=dataset_consensus.dataset
+            )
             if len(list(parameters_list)) == 1:
                 build = list(parameters_list)[0].parameter
 
             ### test how many references exist in this dataset
             if (
-                (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic) and
-                (not dataset_consensus.reference is None)
-                and (DatasetConsensus.objects.filter(
-                    is_deleted=False, is_error=False, reference__isnull=False
-                ).count()
-                < 2)
-            ):
-                data["message"] = (
-                    "At least one must be present for the generic build."
+                (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic)
+                and (not dataset_consensus.reference is None)
+                and (
+                    DatasetConsensus.objects.filter(
+                        is_deleted=False, is_error=False, reference__isnull=False
+                    ).count()
+                    < 2
                 )
+            ):
+                data["message"] = "At least one must be present for the generic build."
                 return JsonResponse(data)
 
             ### now you can remove
@@ -439,7 +441,7 @@ def validate_consensus_name(request):
     """
     test if exist this reference name
     """
-    if request.is_ajax():
+    if request.accepts():
         consensus_name = request.GET.get("consensus_name")
 
         data = {
@@ -457,7 +459,7 @@ def dataset_rebuild(request):
     """
     Rebuild results
     """
-    if request.is_ajax():
+    if request.accepts():
 
         data = {"is_ok": False, "message": "Something went wrong."}
         key_with_dataset_id = "dataset_id"
@@ -486,7 +488,7 @@ def show_msa_nucleotide(request):
     """
     manage msa nucleotide alignments
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False}
         key_with_dataset_id = "dataset_id"
         if key_with_dataset_id in request.GET:
@@ -553,7 +555,7 @@ def show_phylo_canvas(request):
     manage check boxes through ajax
     """
 
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False}
         utils = Utils()
         key_with_dataset_id = "dataset_id"

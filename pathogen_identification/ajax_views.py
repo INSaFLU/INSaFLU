@@ -78,7 +78,7 @@ def simplify_name(name: str):
 @login_required
 @require_POST
 def submit_sample_metagenomics_televir(request):
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "is_deployed": False, "no_references": False}
 
         process_SGE = ProcessSGE()
@@ -126,7 +126,7 @@ def submit_sample_metagenomics_televir(request):
 @login_required
 @require_POST
 def submit_sample_screening_televir(request):
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "is_deployed": False}
 
         process_SGE = ProcessSGE()
@@ -374,7 +374,7 @@ def deploy_remap(
 @login_required
 @require_POST
 def submit_sample_mapping_televir(request):
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": True, "is_deployed": False, "is_empty": False, "message": ""}
 
         sample_id = int(request.POST["sample_id"])
@@ -393,7 +393,7 @@ def submit_sample_mapping_televir(request):
 @require_POST
 def available_televir_files(request):
 
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "is_deployed": False, "files": []}
 
         user_id = int(request.POST["user_id"])
@@ -411,7 +411,7 @@ def available_televir_files(request):
 @login_required
 @require_POST
 def submit_sample_mapping_panels(request):
-    if request.is_ajax():
+    if request.accepts():
         process_SGE = ProcessSGE()
         user = request.user
         data = {
@@ -466,7 +466,7 @@ def submit_sample_mapping_panels(request):
 @login_required
 @require_POST
 def submit_samples_mapping_panels(request):
-    if request.is_ajax():
+    if request.accepts():
         data = {
             "is_ok": True,
             "is_deployed": False,
@@ -567,7 +567,7 @@ def submit_samples_mapping_panels(request):
 @login_required
 @require_POST
 def submit_project_samples_mapping_televir(request):
-    if request.is_ajax():
+    if request.accepts():
         data = {
             "is_ok": True,
             "is_deployed": False,
@@ -614,7 +614,7 @@ def get_all_samples_selected(request):
     """
     get all sample ids for selected samples
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "sample_ids": []}
 
         project_id = int(request.POST["project_id"])
@@ -639,7 +639,7 @@ def deploy_ProjectPI(request):
     prepare data for deployment of pathogen identification.
     """
 
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "is_deployed": False}
 
         process_SGE = ProcessSGE()
@@ -694,7 +694,7 @@ def deploy_ProjectPI_runs(request):
     prepare data for deployment of pathogen identification.
     """
 
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "is_deployed": False}
 
         process_SGE = ProcessSGE()
@@ -746,7 +746,7 @@ def deploy_ProjectPI_combined_runs(request):
     prepare data for deployment of pathogen identification.
     """
 
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "is_deployed": False}
 
         process_SGE = ProcessSGE()
@@ -823,7 +823,7 @@ def submit_televir_project_sample_runs(request):
     submit a new sample to televir project
     """
 
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "is_deployed": False}
 
         process_SGE = ProcessSGE()
@@ -863,7 +863,7 @@ def submit_televir_project_sample(request):
     """
     submit a new sample to televir project
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "is_deployed": False}
         process_SGE = ProcessSGE()
         user = request.user
@@ -900,7 +900,7 @@ def Project_explify_merge(request):
     """
     submit a new sample to televir project
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "is_deployed": False}
 
         process_SGE = ProcessSGE()
@@ -977,7 +977,7 @@ def Project_explify_merge_external(request):
     """
     merge explify rpip and upip reports to televir report, all provided by user.
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "is_deployed": False}
 
         process_SGE = ProcessSGE()
@@ -1048,7 +1048,7 @@ def Update_televir_project(request):
     update televir project
     """
 
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "is_deployed": False}
 
         process_SGE = ProcessSGE()
@@ -1080,7 +1080,7 @@ def Project_explify_delete_external(request):
     delete external televir report
     """
 
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "is_deployed": False}
 
         process_SGE = ProcessSGE()
@@ -1106,7 +1106,7 @@ def kill_televir_project_sample(request):
     kill all processes a sample, set queued to false
     """
 
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "is_deployed": False}
 
         process_SGE = ProcessSGE()
@@ -1153,7 +1153,7 @@ def kill_televir_project_tree_sample(request):
     kill all processes a sample, set queued to false
     """
 
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "is_deployed": False}
 
         process_SGE = ProcessSGE()
@@ -1205,7 +1205,7 @@ def kill_televir_project_all_sample(request):
     kill all processes a sample, set queued to false
     """
 
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "is_deployed": False, "is_empty": True}
 
         process_SGE = ProcessSGE()
@@ -1268,7 +1268,7 @@ def sort_report_projects(request):
     """
     sort report projects
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "is_deployed": False}
         process_SGE = ProcessSGE()
         samples = PIProject_Sample.objects.filter(
@@ -1313,7 +1313,7 @@ def sort_report_sample(request):
     """
     sort report projects
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "is_deployed": False}
         process_SGE = ProcessSGE()
         sample = PIProject_Sample.objects.get(pk=int(request.POST["sample_id"]))
@@ -1349,7 +1349,7 @@ def sort_report_sample(request):
 @login_required
 @require_POST
 def teleflu_igv_create(request):
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "is_deployed": False}
 
         teleflu_project_pk = int(request.POST["pk"])
@@ -1425,7 +1425,7 @@ def teleflu_igv_create(request):
 @login_required
 @require_POST
 def create_insaflu_reference_from_raw(request):
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "exists": False}
 
         ref_id = int(request.POST["ref_id"])
@@ -1459,7 +1459,7 @@ def create_insaflu_reference_from_raw(request):
 @login_required
 @require_POST
 def create_insaflu_reference_from_filemap(request):
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "exists": False}
 
         ref_id = int(request.POST["ref_id"])
@@ -1495,7 +1495,7 @@ def add_references_to_sample(request):
     """
     add references to sample
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "is_error": False, "is_empty": False}
         sample_id = int(request.POST["sample_id"])
         sample = PIProject_Sample.objects.get(pk=sample_id)
@@ -1556,7 +1556,7 @@ def create_teleflu_project(request):
     """
     create teleflu project
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "is_error": False, "exists": False, "is_empty": False}
 
         ref_ids = request.POST.getlist("ref_ids[]")
@@ -1652,7 +1652,7 @@ def query_teleflu_projects(request):
     """
     query teleflu_projects
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {
             "is_ok": False,
             "is_error": False,
@@ -1723,7 +1723,7 @@ def delete_teleflu_project(request):
     """
     delete teleflu project
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "is_error": False}
 
         try:
@@ -1747,7 +1747,7 @@ def delete_teleflu_project(request):
 def create_insaflu_project(request):
     """
     create insaflu project associated with teleflu map project"""
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "is_error": False, "exists": False}
         teleflu_project_id = int(request.POST["project_id"])
         teleflu_project = TeleFluProject.objects.get(pk=teleflu_project_id)
@@ -1775,7 +1775,7 @@ def set_teleflu_check_box_values(request):
     """
     manage check boxes through ajax
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False}
         utils = Utils()
         if Constants.GET_CHECK_BOX_SINGLE in request.GET:
@@ -1816,7 +1816,7 @@ def set_teleflu_check_box_values(request):
 def add_teleflu_sample(request):
     """add samples to teleflu_project"""
 
-    if request.is_ajax():
+    if request.accepts():
         data = {
             "is_ok": False,
             "is_error": False,
@@ -1875,7 +1875,7 @@ def add_teleflu_mapping_workflow(request):
     create mapping workflow for teleflu project
     """
 
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False}
         project_id = int(request.POST["project_id"])
         leaf_id = int(request.POST["leaf_id"])
@@ -1972,7 +1972,7 @@ def load_teleflu_workflows(request):
     """
     data = {"is_ok": False, "mapping_workflows": []}
 
-    if request.is_ajax():
+    if request.accepts():
 
         teleflu_project_pk = int(request.GET["project_id"])
 
@@ -2038,7 +2038,7 @@ def load_teleflu_workflows(request):
 @require_POST
 def map_teleflu_workflow_samples(request):
 
-    if request.is_ajax():
+    if request.accepts():
 
         data = {"is_ok": False, "is_error": False, "is_empty": False}
         project_id = int(request.POST["project_id"])
@@ -2096,7 +2096,7 @@ def map_teleflu_workflow_samples(request):
 def stack_igv_teleflu_workflow(request):
     """
     create insaflu project associated with teleflu map project"""
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "is_error": False, "exists": False, "running": False}
         teleflu_project_id = int(request.POST["project_id"])
         mapping_id = int(request.POST["workflow_id"])
@@ -2145,7 +2145,7 @@ def add_references_all_samples(request):
     """
     add references to sample
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "is_error": False, "is_empty": False}
         project_id = int(request.POST["ref_id"])
         project = Projects.objects.get(pk=project_id)
@@ -2198,7 +2198,7 @@ def remove_added_reference(request):
     remove added reference
     """
 
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "is_error": False}
 
         reference_id = int(request.POST["reference_id"])
@@ -2233,7 +2233,7 @@ def deploy_televir_map(request):
     prepare data for deployment of pathogen identification.
     """
 
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "is_deployed": False}
 
         process_SGE = ProcessSGE()
@@ -2304,7 +2304,7 @@ def check_panel_upload_clean(request):
     check if fasta and metadata coherent.
     """
 
-    if request.is_ajax():
+    if request.accepts():
 
         data = {
             "is_ok": False,
@@ -2583,7 +2583,7 @@ def delete_reference_file(request):
     """
     delete reference panel
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "is_error": False, "message": ""}
         panel_id = int(request.POST["file_id"])
         try:
@@ -2605,7 +2605,7 @@ def set_sample_reports_control(request):
     """
     set sample reports control
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False}
         data["set_control"] = False
         sample_id = int(request.POST["sample_id"])
@@ -2639,7 +2639,7 @@ def set_sample_reports_control(request):
 def create_reference_panel(request):
     """
     create a reference panel"""
-    if request.is_ajax():
+    if request.accepts():
         user = request.user
         name = request.POST.get("name")
         icon = request.POST.get("icon", "")
@@ -2668,7 +2668,7 @@ def create_reference_panel(request):
 def add_references_to_panel(request):
     """
     add references to panel"""
-    if request.is_ajax():
+    if request.accepts():
         panel_id = int(request.POST.get("ref_id"))
         panel = ReferencePanel.objects.get(pk=panel_id)
 
@@ -2713,7 +2713,7 @@ def add_references_to_panel(request):
 def add_file_to_panel(request):
     """
     add references to panel"""
-    if request.is_ajax():
+    if request.accepts():
         panel_id = int(request.POST.get("panel_id"))
         file_id = int(request.POST.get("file_id"))
 
@@ -2756,7 +2756,7 @@ def add_file_to_panel(request):
 
 @csrf_protect
 def get_panels(request):
-    if request.is_ajax():
+    if request.accepts():
         user = request.user
         panels = ReferencePanel.objects.filter(
             owner=user,
@@ -2786,7 +2786,7 @@ def get_panels(request):
 
 @csrf_protect
 def remove_panel_reference(request):
-    if request.is_ajax():
+    if request.accepts():
         panel_id = int(request.POST.get("panel_id"))
         reference_id = int(request.POST.get("reference_id"))
 
@@ -2805,7 +2805,7 @@ def delete_reference_panel(request):
     """
     delete a panel"""
 
-    if request.is_ajax():
+    if request.accepts():
 
         panel_id = int(request.POST.get("panel_id"))
         panel = ReferencePanel.objects.get(pk=panel_id)
@@ -2821,7 +2821,7 @@ def delete_reference_panel(request):
 def get_panel_references(request):
     """
     get panel references"""
-    if request.is_ajax():
+    if request.accepts():
         user = request.user
         name = request.GET.get("name")
         panel_id = request.GET.get("panel_id")
@@ -2847,7 +2847,7 @@ def get_panel_references(request):
 def add_panels_to_sample(request):
     """
     add panels to sample"""
-    if request.is_ajax():
+    if request.accepts():
         sample_id = int(request.POST.get("sample_id"))
         panel_ids = request.POST.getlist("panel_ids[]")
 
@@ -2865,7 +2865,7 @@ def add_panels_to_sample(request):
 def add_panels_to_project(request):
     """
     add panels to sample"""
-    if request.is_ajax():
+    if request.accepts():
         project_id = int(request.POST.get("project_id"))
         panel_ids = request.POST.getlist("panel_ids[]")
 
@@ -2885,7 +2885,7 @@ def remove_sample_panel(request):
     """
     remove sample panel"""
 
-    if request.is_ajax():
+    if request.accepts():
         panel_id = int(request.POST.get("panel_id"))
         sample_id = int(request.POST.get("sample_id"))
         sample = PIProject_Sample.objects.get(pk=sample_id)
@@ -2900,7 +2900,7 @@ def remove_sample_panel(request):
 def get_sample_panels(request):
     """
     get sample panels"""
-    if request.is_ajax():
+    if request.accepts():
         sample_id = request.GET.get("sample_id")
 
         sample = PIProject_Sample.objects.get(pk=sample_id)
@@ -2926,7 +2926,7 @@ def get_sample_panels(request):
 def get_sample_panel_suggestions(request):
     """
     get sample panel updates"""
-    if request.is_ajax():
+    if request.accepts():
         user = request.user
         sample_id = request.GET.get("sample_id")
 
@@ -2961,7 +2961,7 @@ def get_sample_panel_suggestions(request):
 def get_project_panel_suggestions(request):
     """
     get sample panel updates"""
-    if request.is_ajax():
+    if request.accepts():
 
         owner = request.user
 
@@ -2993,7 +2993,7 @@ def validate_project_name(request):
     """
     test if exist this project name
     """
-    if request.is_ajax():
+    if request.accepts():
         project_name = request.GET.get("project_name")
 
         data = {
@@ -3026,7 +3026,7 @@ def validate_project_name(request):
 def IGV_display(request):
     """display python plotly app"""
 
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False}
         if request.method == "GET":
             sample_pk = request.GET.get("sample_pk")

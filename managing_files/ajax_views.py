@@ -61,7 +61,7 @@ def set_check_box_values(request):
     """
     manage check boxes through ajax
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False}
         utils = Utils()
 
@@ -164,7 +164,7 @@ def show_phylo_canvas(request):
     manage check boxes through ajax
     """
 
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False}
         utils = Utils()
         key_with_project_id = "project_id"
@@ -292,7 +292,7 @@ def show_variants_as_a_table(request):
     """
     return table with variants
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False}
         key_with_project_id = "project_id"
         if key_with_project_id in request.GET:
@@ -328,7 +328,7 @@ def show_aln2pheno(request):
     """
     return table with variants
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False}
         key_with_project_id = "project_id"
         if key_with_project_id in request.GET:
@@ -366,7 +366,7 @@ def show_flumut(request):
     """
     return table with variants
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False}
         key_with_project_id = "project_id"
         if key_with_project_id in request.GET:
@@ -403,7 +403,7 @@ def show_coverage_as_a_table(request):
     return table with coverage
     """
 
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False}
         key_with_project_id = "project_id"
         key_client_width = "client_width"
@@ -539,7 +539,7 @@ def show_msa_nucleotide(request):
     """
     manage msa nucleotide alignments
     """
-    if request.is_ajax():
+    if request.accepts():
         software = Software()
         utils = Utils()
         data = {"is_ok": False}
@@ -669,7 +669,7 @@ def show_msa_protein(request):
     """
     manage check boxes through ajax
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False}
         key_with_project_id = "project_id"
         if key_with_project_id in request.GET:
@@ -751,7 +751,7 @@ def show_count_variations(request):
     """
     get chart information
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False}
         key_with_project_id = "project_id"
         if key_with_project_id in request.GET:
@@ -809,7 +809,7 @@ def get_cds_from_element(request):
     """
     return the cds's for a specific element, can be more than one
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False}
         key_with_project_id = "project_id"
         if key_with_project_id in request.GET:
@@ -838,7 +838,7 @@ def get_image_coverage(request):
     """
     get image coverage
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False}
         key_with_project_sample_id = "project_sample_id"
         key_element = "element"
@@ -874,7 +874,7 @@ def update_project_pangolin(request):
     """
     get image coverage
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False}
         key_with_project_id = "project_id"
         if key_with_project_id in request.GET:
@@ -917,7 +917,7 @@ def update_project_mutation_report(request):
     """
     get image coverage
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False}
         key_with_project_id = "project_id"
         if key_with_project_id in request.GET:
@@ -968,7 +968,7 @@ def show_igv(request):
     """
     get data for IGV
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False}
         key_with_project_sample_id = "project_sample_id"
         if key_with_project_sample_id in request.GET:
@@ -1095,7 +1095,7 @@ def validate_project_reference_name(request):
     """
     test if exist this project name
     """
-    if request.is_ajax():
+    if request.accepts():
         project_name = request.GET.get("project_name")
         request.session[Constants.PROJECT_NAME_SESSION] = project_name
 
@@ -1116,7 +1116,7 @@ def validate_reference_name(request):
     """
     test if exist this reference name
     """
-    if request.is_ajax():
+    if request.accepts():
         reference_name = request.GET.get("reference_name")
 
         data = {
@@ -1137,7 +1137,7 @@ def add_single_value_database(request):
     add a single value to a table in database
     possible tables to add: TagName, DataSet, VaccineStatus
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "message": "Fail in the system..."}
         key_type_data = "type_data"
         key_value = "value"
@@ -1198,7 +1198,7 @@ def remove_single_value_database(request):
     """
     test if is prossible to remove
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "message": "Fail in the system..."}
         key_type_data = "type_data"
         key_value = "value"
@@ -1316,7 +1316,7 @@ def remove_reference(request):
     """
     remove a reference. It can only be removed if not belongs to any deleted project
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False}
         reference_id_a = "reference_id"
 
@@ -1361,7 +1361,7 @@ def remove_sample(request):
     """
     remove a sample, It can only be removed if not belongs to any deleted project
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "present_in_televir_project": False}
 
         sample_id_a = "sample_id"
@@ -1447,7 +1447,7 @@ def swap_technology(request):
     Swaps technology of a sample, and rerun the preprocessing step.
     It can only be performed if not belongs to any non-deleted project
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False, "present_in_televir_project": False, "message": "Start"}
 
         sample_id_a = "sample_id"
@@ -1564,7 +1564,7 @@ def remove_project(request):
     """
     remove a project.
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False}
         project_id_a = "project_id"
 
@@ -1618,7 +1618,7 @@ def remove_televir_project(request):
     """
     remove a project.
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False}
         project_id_a = "project_id"
 
@@ -1675,7 +1675,7 @@ def remove_televir_project_sample(request):
     """
     remove a project sample.
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False}
         project_sample_id_a = "project_sample_id"
 
@@ -1717,7 +1717,7 @@ def remove_project_sample(request):
     """
     remove a project sample.
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False}
         project_sample_id_a = "project_sample_id"
 
@@ -1784,7 +1784,7 @@ def remove_uploaded_file(request):
     """
     remove a project.
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False}
         uploaded_file_id_a = "uploaded_file_id"
 
@@ -1832,7 +1832,7 @@ def remove_uploaded_files(request):
     """
     remove fastq files, all not processed
     """
-    if request.is_ajax():
+    if request.accepts():
         number_files_removed = 0
         data = {"is_ok": False}
         data["number_files_removed"] = number_files_removed
@@ -1883,7 +1883,7 @@ def remove_unattached_samples(request):
     """
     remove unattached samples
     """
-    if request.is_ajax():
+    if request.accepts():
         number_samples_removed = 0
         data = {"is_ok": False}
         data["number_samples_removed"] = number_samples_removed
@@ -1940,7 +1940,7 @@ def relink_uploaded_files(request):
     """
     relink fastq files that are not yet linked
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False}
         data["message_number_files_relinked"] = "No files were linked."
 
@@ -1983,7 +1983,7 @@ def unlock_sample_file(request):
     """
     unlock sample list files, drop all samples not processed yet
     """
-    if request.is_ajax():
+    if request.accepts():
         number_of_changes = 0
         data = {"is_ok": False}
         data["number_of_changes"] = number_of_changes
@@ -2035,7 +2035,7 @@ def get_process_running(request):
     """
     get process running and to run for a specific user
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False}
 
         ## some pre-requisites
@@ -2071,7 +2071,7 @@ def submit_sge(request):
     """
     get process running and to run for a specific user
     """
-    if request.is_ajax():
+    if request.accepts():
         data = {"is_ok": False}
         process_SGE = ProcessSGE()
         process_SGE.submit_dummy_sge()

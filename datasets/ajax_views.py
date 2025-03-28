@@ -80,11 +80,11 @@ def remove_dataset(request):
             for dataset_consensus in dataset.dataset_consensus.all():
                 dataset_consensus.is_deleted = True
                 dataset_consensus.save()
-            
+
             # Kill any process associated to this dataset...
             process_SGE = ProcessSGE()
             process_SGE.kill_dataset(request.user.pk, dataset)
-            
+
             data = {"is_ok": True}
         return JsonResponse(data)
 

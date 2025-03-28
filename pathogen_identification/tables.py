@@ -783,9 +783,18 @@ class SampleTableOne(tables.Table):
 
         mapping_runs = RunMain.objects.filter(
             sample=record,
-            run_type=RunMain.RUN_TYPE_MAP_REQUEST,
-            status=RunMain.STATUS_PREP,
-            parameter_set__status=ParameterSet.STATUS_PROXIED,
+            run_type__in=[
+                RunMain.RUN_TYPE_MAP_REQUEST,
+                RunMain.RUN_TYPE_COMBINED_MAPPING,
+                RunMain.RUN_TYPE_MAP_REQUEST,
+                RunMain.RUN_TYPE_PANEL_MAPPING,
+            ],
+            # status=RunMain.STATUS_PREP,
+            parameter_set__status__in=[
+                ParameterSet.STATUS_PROXIED,
+                ParameterSet.STATUS_QUEUED,
+                ParameterSet.STATUS_NOT_STARTED,
+            ],
         ).count()
 
         queued += mapping_runs

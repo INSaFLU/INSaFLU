@@ -248,6 +248,7 @@ NEXTSTRAIN_exception_nextstrain_file = [
 	'Wuhan/Hu-1/2019',
 	'MK783032',
 	'MK783030',
+	"21L",
 ]
 
 class MetaRow(object):

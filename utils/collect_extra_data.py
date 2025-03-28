@@ -25,16 +25,16 @@ from managing_files.models import (
     ProjectSample,
     Reference,
     Sample,
+    TagNames,
 )
 from managing_files.models import Software as SoftwareModel
-from managing_files.models import TagNames
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software_project_sample import DefaultProjectSoftware
 from utils.parse_out_files import ParseOutFiles
 from utils.process_SGE import ProcessSGE
 from utils.result import Coverage, DecodeObjects, Result, SoftwareDesc
-from utils.software import Software
+from utils.software import Contigs2Sequences, Software
 from utils.software_pangolin import SoftwarePangolin
 from utils.tree import CreateTree
 from utils.utils import Utils
@@ -275,7 +275,9 @@ class CollectExtraData(object):
                 ProcessControler.FLAG_FINISHED,
             )
 
-    def __collect_mutation_report(self, project, user, b_mark_sge_success=True):
+    def __collect_mutation_report(
+        self, project: Project, user, b_mark_sge_success=True
+    ):
         """
         Runs aln2pheno
         """
@@ -283,13 +285,23 @@ class CollectExtraData(object):
         process_controler = ProcessControler()
         process_SGE = ProcessSGE()
         try:
-
             ## test SARS cov
-            if (
-                self.software.get_species_tag(project.reference)
-                == Reference.SPECIES_SARS_COV_2
-            ):
+            species_tag = self.software.get_species_tag(project.reference)
 
+            if species_tag == Reference.SPECIES_INFLUENZA:
+
+                software = Software()
+
+                subtype_list = software.identify_project_reference_type_and_subtype(
+                    project
+                )
+
+                if subtype_list[0] != "H5":
+                    return
+
+                self.__collect_project_flumut_report(project)
+
+            if species_tag == Reference.SPECIES_SARS_COV_2:
                 geneticElement = self.utils.get_elements_and_cds_from_db(
                     project.reference, user
                 )
@@ -308,23 +320,31 @@ class CollectExtraData(object):
 
                 ### create for single sequences
                 GENE_NAME = "S"
-                file_alignments = ""
+                project_all_consensus = ""
                 for sequence_name in geneticElement.get_sorted_elements():
-                    file_alignments = project.get_global_file_by_element_and_cds(
+                    project_all_consensus = project.get_global_file_by_element_and_cds(
                         TypePath.MEDIA_ROOT,
                         sequence_name,
                         GENE_NAME,
                         Project.PROJECT_FILE_NAME_MAFFT,
                     )
-                    if os.path.exists(file_alignments):
+                    if os.path.exists(project_all_consensus):
                         break
 
-                if os.path.exists(file_alignments):
+                if os.path.exists(project_all_consensus):
                     self.__collect_aln2pheno(
-                        project, project, file_alignments, sequence_name, GENE_NAME
+                        project,
+                        project_all_consensus,
+                        sequence_name,
+                        GENE_NAME,
                     )
 
         except Exception as e:
+            print(e)
+            # print traceback
+            import traceback
+
+            traceback.print_exc()
             ## finished with error
             self.logger_debug.info("Aln2pheno Gave an error {}".format(e))
             process_SGE.set_process_controler(
@@ -341,10 +361,46 @@ class CollectExtraData(object):
                 ProcessControler.FLAG_FINISHED,
             )
 
-    def __collect_flumut_report(self, project: Project, file_alignments: str):
+    def __collect_project_flumut_report(self, project: Project):
         """
         Runs flumut
+        influenza_keys = ["HA", "NA", "MP", "NP", "NS", "PA", "PB1", "PB2"] # this stays here for now since flumut is specific to influenza A and hence these segment names.
+
         """
+
+        influenza_keys = ["HA", "NA", "MP", "NP", "NS", "PA", "PB1", "PB2"]
+
+        project_all_consensus = project.get_global_file_by_project(
+            TypePath.MEDIA_ROOT,
+            Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus,
+        )
+
+        ### check if empty file
+        if (
+            not os.path.exists(project_all_consensus)
+            or os.stat(project_all_consensus).st_size == 0
+        ):
+            return
+
+        #### RUN ABRICATE, GET GENES, FILTER, RENAME, RUN FLUMUT
+
+        software = Software()
+        keep_segment = software.match_segments_to_genes_abricate(project_all_consensus)
+        keep_segment = {k: v for k, v in keep_segment.items() if v in influenza_keys}
+
+        flumut_name_dict = {x: f"{x}_{keep_segment[x]}" for x in keep_segment}
+
+        ####### CLEAN FASTA FILE
+
+        file_alignments = self.utils.get_temp_file(
+            "abricate_fasta", FileExtensions.FILE_FASTA
+        )
+
+        self.utils.clean_fasta_file_new_name(
+            project_all_consensus, file_alignments, keep_segs=flumut_name_dict
+        )
+
+        ############################ RUN FLUMUT
 
         file_flumut_mutation_report = project.get_global_file_by_project(
             TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Flumut_mutation_report
@@ -358,6 +414,9 @@ class CollectExtraData(object):
         file_flumut_excel = project.get_global_file_by_project(
             TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_flumut_excel
         )
+        file_flumut_version = project.get_global_file_by_project(
+            TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_flumut_version
+        )
 
         self.software.run_flumut(
             file_alignments,
@@ -367,12 +426,46 @@ class CollectExtraData(object):
             file_flumut_excel,
         )
 
+        flumut_version = self.software.get_flumut_version()
+
+        with open(file_flumut_version, "w") as f:
+            f.write(flumut_version)
+
+        try:
+            software = SoftwareModel.objects.get(
+                name=SoftwareNames.SOFTWARE_FLUMUT_name
+            )
+            ### set last version
+            dt_result_version = software.get_version_long()
+            result_all = Result()
+            for soft_name in dt_result_version:
+                result_all.add_software(
+                    SoftwareDesc(soft_name, dt_result_version.get(soft_name, ""), "")
+                )
+
+            ###
+            manage_database = ManageDatabase()
+            manage_database.set_project_metakey(
+                project,
+                project.owner,
+                MetaKeyAndValue.META_KEY_Flumut,
+                MetaKeyAndValue.META_VALUE_Success,
+                result_all.to_json(),
+            )
+        except SoftwareModel.DoesNotExist:  ## need to create with last version
+            self.logger_production.error(
+                "ProjectID: {} Fail to detect software model".format(project.id)
+            )
+
+        # version_string = self.software.get_flumut_version()
+        # with open(file_flumut_version, "w") as f:
+        #    f.write(version_string)
+
         return
 
     def __collect_aln2pheno(
         self, project: Project, file_alignments, sequence_name, GENE_NAME="S"
     ):
-
         file_aln2pheno_zip = project.get_global_file_by_project(
             TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_zip
         )
@@ -766,6 +859,9 @@ class CollectExtraData(object):
 
             ## collect sample table with plus type and subtype, mixed infection, equal to upload table
             self.calculate_global_files(
+                Project.PROJECT_FILE_NAME_IRMA_OUTPUT_zipped, project, user
+            )
+            self.calculate_global_files(
                 Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV, project, user
             )
             self.calculate_global_files(
@@ -921,6 +1017,7 @@ class CollectExtraData(object):
             start = time.time()
         except Exception as e:
             ## finished with error
+            print("ERROR", e)
             process_SGE.set_process_controler(
                 user,
                 process_controler.get_name_project(project),
@@ -1053,6 +1150,7 @@ class CollectExtraData(object):
         """
         out_file = None
         out_file_file_system = None
+
         if type_file == Project.PROJECT_FILE_NAME_COVERAGE:
             ## collect coverage file for all samples
             out_file = self.create_coverage_file(project, user)
@@ -1154,11 +1252,49 @@ class CollectExtraData(object):
                 project
             )  ## mask all consensus for all projects, defined by user
 
+        elif type_file == Project.PROJECT_FILE_NAME_IRMA_OUTPUT_zipped:
+            self.zip_irma_files(project)
+
         if not out_file is None:
             self.utils.copy_file(out_file, out_file_file_system)
             self.utils.remove_file(out_file)
         elif not out_file_file_system is None and os.path.exists(out_file_file_system):
             self.utils.remove_file(out_file_file_system)
+
+    def zip_irma_files(self, project: Project):
+
+        default_software = DefaultProjectSoftware()
+        software_mdcg = default_software.get_software_project_mdcg_illumina(project)
+        if not software_mdcg.name == SoftwareNames.SOFTWARE_IRMA_name:
+            return
+
+        out_file = project.get_global_file_by_project(
+            TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_IRMA_OUTPUT_zipped
+        )
+
+        temp_dir = self.utils.get_temp_dir()
+        for project_sample in project.project_samples.all():
+            if not project_sample.get_is_ready_to_proccess():
+                continue
+            file_variants_irma = project_sample.get_file_output(
+                TypePath.MEDIA_ROOT,
+                FileType.FILE_MIXED_VARIANTS,
+                SoftwareNames.SOFTWARE_IRMA_name,
+            )
+            if file_variants_irma is not None:
+                self.utils.copy_file(file_variants_irma, temp_dir)
+
+            file_consensus_original = project_sample.get_file_output(
+                TypePath.MEDIA_ROOT,
+                FileType.FILE_CONSENSUS_ORIGINAL_FA,
+                SoftwareNames.SOFTWARE_IRMA_name,
+            )
+            if file_consensus_original is not None:
+                self.utils.copy_file(file_consensus_original, temp_dir)
+
+        file_name_zip = self.software.zip_files_in_path(temp_dir)
+        self.utils.move_file(file_name_zip, out_file)
+        self.utils.remove_dir(temp_dir)
 
     def create_json_file_from_sample_csv(self, project):
         """
@@ -1172,6 +1308,7 @@ class CollectExtraData(object):
             out_file = self.utils.get_temp_file(
                 "json_sample_file", FileExtensions.FILE_JSON
             )
+
             with open(out_file, "w", encoding="utf-8") as handle_write, open(
                 file_name_root_sample
             ) as handle_in_csv:
@@ -1304,7 +1441,7 @@ class CollectExtraData(object):
             return None
         return out_file
 
-    def collect_variations_snippy(self, project):
+    def collect_variations_snippy(self, project: Project):
         """
         collect snippy variations
 
@@ -1317,6 +1454,12 @@ class CollectExtraData(object):
         parse_out_files = ParseOutFiles()
         n_count = 0
         vect_type_out = []
+
+        default_project_software = DefaultProjectSoftware()
+        software = default_project_software.get_software_project_mdcg_illumina(
+            project=project,
+        )
+
         with open(out_file, "w", newline="") as handle_out:
             csv_writer = csv.writer(
                 handle_out,
@@ -1333,7 +1476,7 @@ class CollectExtraData(object):
                     tab_file_to_process = project_sample.get_file_output(
                         TypePath.MEDIA_ROOT,
                         FileType.FILE_TAB,
-                        SoftwareNames.SOFTWARE_SNIPPY_name,
+                        software.name,
                     )
                 elif project_sample.is_sample_ont():
                     tab_file_to_process = project_sample.get_file_output(
@@ -1343,6 +1486,7 @@ class CollectExtraData(object):
                     )
                 else:
                     continue
+
                 if not os.path.exists(tab_file_to_process):
                     continue
                 parse_out_files.parse_tab_files_snippy(
@@ -1471,7 +1615,6 @@ class CollectExtraData(object):
         return out_file
 
     def zip_several_files(self, project):
-
         temp_dir = self.utils.get_temp_dir()
 
         ## coverage
@@ -1604,6 +1747,7 @@ class CollectExtraData(object):
         file_aln2pheno_result = project.get_global_file_by_project(
             TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_zip
         )
+
         ## aln2pheno files
         if project.number_passed_sequences > 0 and os.path.exists(
             file_aln2pheno_result
@@ -1613,6 +1757,15 @@ class CollectExtraData(object):
                     TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_zip
                 ),
                 os.path.join(temp_dir, Project.PROJECT_FILE_NAME_Aln2pheno_zip),
+            )
+
+        file_flumut_result = project.get_global_file_by_project(
+            TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_flumut_excel
+        )
+        if os.path.exists(file_flumut_result):
+            self.utils.link_file(
+                file_flumut_result,
+                os.path.join(temp_dir, Project.PROJECT_FILE_NAME_flumut_excel),
             )
 
         # 	self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK),
@@ -1888,7 +2041,6 @@ class CollectExtraData(object):
                     CollectExtraData.SAMPLE_LIST_simple,
                     CollectExtraData.SAMPLE_LIST_list,
                 ]:
-
                     ## file names
                     if type_list == CollectExtraData.SAMPLE_LIST_list:
                         ### fastq1
@@ -2039,7 +2191,6 @@ class CollectExtraData(object):
 
                     ###  BEGIN info about software versions  ####
                     if project_sample.id in dict_all_results:
-
                         ### trimmomatic stats
                         if b_trimmomatic_stats:
                             self._get_info_from_trimmomatic_stats(
@@ -2124,7 +2275,7 @@ class CollectExtraData(object):
             return None
         return out_file
 
-    def _get_mapped_stats_info(self, project_sample):
+    def _get_mapped_stats_info(self, project_sample: ProjectSample):
         """return mapped stats about this project_sample"""
 
         manage_database = ManageDatabase()
@@ -2134,15 +2285,21 @@ class CollectExtraData(object):
             MetaKeyAndValue.META_VALUE_Success,
         )
 
+        default_project_software = DefaultProjectSoftware()
+        software_mdcg = (
+            default_project_software.get_software_project_sample_mdcg_illumina(
+                project_sample=project_sample,
+            )
+        )
+
         ## it is not available yet
         if meta_value is None:
-
             ### get mapped stast reads
             if project_sample.is_sample_illumina():
                 bam_file = project_sample.get_file_output(
                     TypePath.MEDIA_ROOT,
                     FileType.FILE_BAM,
-                    SoftwareNames.SOFTWARE_SNIPPY_name,
+                    software_mdcg.name,
                 )
             else:
                 bam_file = project_sample.get_file_output(
@@ -2851,7 +3008,6 @@ class CollectExtraData(object):
 
                 ###  BEGIN info about software versions  ####
                 if sample.id in dict_all_results:
-
                     ### trimmomatic stats
                     if b_trimmomatic_stats:
                         self._get_info_from_trimmomatic_stats(
@@ -3048,7 +3204,6 @@ class CollectExtraData(object):
 
 
 class ParsePangolinResult(object):
-
     utils = Utils()
     HEADER_PANGOLIN_file = "taxon,lineage"
     KEY_LINEAGE = "lineage"

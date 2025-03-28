@@ -45,7 +45,7 @@ function show_variants_as_a_table() {
 	    			    //.text(function(d){return d;});
 	    			    //.style("font-size", "12px");
 	    			
-	    			var content = '<table id="table_with_variants_id">\n<thead>\n';
+	    			var content = '<table id="table_with_variants_id" style="width: 100%;">\n<thead>\n';
 	    			var count = 0;
 	    			var number_cells = 0;
 	    			var number_cells_processed = 0;

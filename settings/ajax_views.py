@@ -4,6 +4,8 @@ Created on Dec 6, 2017
 @author: mmp
 """
 
+from typing import Optional
+
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 
@@ -89,6 +91,7 @@ def set_default_parameters(request):
                             None,
                             None,
                             software.technology.name,
+                            name_extended=software.name_extended,
                         )
 
                         b_change = (
@@ -135,6 +138,7 @@ def set_default_parameters(request):
                             project_sample,
                             None,
                             software.technology.name,
+                            name_extended=software.name_extended,
                         )
 
                         ### need to re-run this sample with snippy if the values change
@@ -241,6 +245,7 @@ def set_default_parameters(request):
                         None,
                         sample,
                         software.technology.name,
+                        name_extended=software.name_extended,
                     )
 
                     ### need to re-run this sample with NanoFilt if the values change
@@ -714,6 +719,101 @@ def get_mask_consensus_actual_values(request):
 
 
 @csrf_protect
+def get_mdcg_project_software(request):
+    """
+    test all defaults for project software, return project pk for selected project software
+    """
+
+    if request.is_ajax():
+        data = {"is_ok": False}
+        project_id = request.GET["project_id"]
+        software_name = request.GET["software_name"]
+        project = Project.objects.get(pk=project_id)
+        default_software = DefaultProjectSoftware()
+        default_software.test_all_defaults(
+            request.user, project, None, None, None
+        )  ## the user can have defaults yet
+
+        if software_name == "IRMA":
+            software_name = SoftwareNames.SOFTWARE_IRMA_name
+        elif software_name == "IVAR":
+            software_name = SoftwareNames.SOFTWARE_IVAR_name
+        elif software_name == "Snippy":
+            software_name = SoftwareNames.SOFTWARE_SNIPPY_name
+
+        else:
+            data["is_ok"] = False
+            return JsonResponse(data)
+
+        software = Software.objects.filter(
+            name=software_name,
+            owner=request.user,
+            type_of_use=Software.TYPE_OF_USE_project,
+            parameter__project=project,
+            parameter__project_sample=None,
+            is_obsolete=False,
+        ).distinct()
+
+        software = software.first()
+
+        if software is None:
+            data["is_ok"] = False
+            return JsonResponse(data)
+
+        data["is_ok"] = True
+        data["project_id"] = project_id
+        data["software_id"] = software.id
+        data["has_samples"] = ProjectSample.objects.filter(
+            project=project, is_deleted=False
+        ).exists()
+        return JsonResponse(data)
+
+
+def _is_to_run(
+    record: Software,
+    project: Optional[Project],
+    project_sample: Optional[ProjectSample],
+    sample: Optional[Sample],
+    televir_project: Optional[PIProjects],
+    televir_project_sample: Optional[PIProject_Sample],
+) -> bool:
+    """test if a software is to run and return the ids"""
+
+    is_to_run = record.is_to_run
+    if record.type_of_use > 0:
+        parameters = Parameter.objects.filter(
+            software=record,
+            project=project,
+            project_sample=project_sample,
+            sample=sample,
+            televir_project=televir_project,
+            televir_project_sample=televir_project_sample,
+        )
+
+        if len(parameters) > 0:
+            if record.type_of_use in [
+                Software.TYPE_OF_USE_qc,
+                Software.TYPE_OF_USE_global,
+                Software.TYPE_OF_USE_televir_project,
+                Software.TYPE_OF_USE_televir_global,
+                Software.TYPE_OF_USE_televir_project,
+                Software.TYPE_OF_USE_televir_settings,
+                Software.TYPE_OF_USE_televir_project_settings,
+            ]:
+                is_to_run = parameters[0].software.is_to_run
+            elif (
+                record.pipeline_step.name
+                == ConstantsSettings.PIPELINE_NAME_variant_detection
+                and record.technology.name in ConstantsSettings.vect_technology_samples
+            ):
+                is_to_run = parameters[0].software.is_to_run
+            else:
+                is_to_run = parameters[0].is_to_run
+
+    return is_to_run
+
+
+@csrf_protect
 def turn_on_off_software(request):
     """
     Denies is_to_run in main software description.
@@ -762,6 +862,7 @@ def turn_on_off_software(request):
             televir_project_sample_id = request.GET[televir_project_sample_id_a]
 
         default_parameters = DefaultParameters(prep_televir_dbs=False)
+
         if software_id_a in request.GET:
             software_id = request.GET[software_id_a]
 
@@ -780,7 +881,30 @@ def turn_on_off_software(request):
                     None,
                 )
                 software = Software.objects.get(pk=software_id)
-                current_is_to_run = software.is_to_run
+
+                if not televir_project_id is None:
+                    televir_project = PIProjects.objects.get(pk=televir_project_id)
+                if not televir_project_sample_id is None:
+                    televir_project_sample = PIProject_Sample.objects.get(
+                        pk=televir_project_sample_id
+                    )
+                if not project_id is None:
+                    project = Project.objects.get(pk=project_id)
+                if not project_sample_id is None:
+                    project_sample = ProjectSample.objects.get(pk=project_sample_id)
+                if not sample_id is None:
+                    sample = Sample.objects.get(pk=sample_id)
+
+                current_is_to_run = _is_to_run(
+                    software,
+                    project,
+                    project_sample,
+                    sample,
+                    televir_project,
+                    televir_project_sample,
+                )
+
+                ###########################################################
                 if (
                     not televir_project_sample_id is None
                     and not televir_project_id is None
@@ -828,7 +952,7 @@ def turn_on_off_software(request):
                         )
 
                         return JsonResponse(data)
-
+                ###########################################################
                 if not type_of_use_id is None:
                     if type_of_use_id in Software.TELEVIR_GLOBAL_TYPES:
                         pipeline_steps_televir_global = (
@@ -848,7 +972,7 @@ def turn_on_off_software(request):
                             )
 
                             return JsonResponse(data)
-
+                ############################################################################
                 if not project_id is None:  ##    project
                     project = Project.objects.get(pk=project_id)
                 elif not project_sample_id is None:  ##    project sample
@@ -925,7 +1049,7 @@ def turn_on_off_software(request):
                         )
                     except:
                         pass
-
+                ##########################################################
                 elif not sample_id is None:  ## for Sample
                     sample = Sample.objects.get(pk=sample_id)
 
@@ -978,35 +1102,80 @@ def turn_on_off_software(request):
                         process_SGE.set_create_sample_list_by_user(
                             request.user, [job_name]
                         )
-                if (
-                    software.pipeline_step.name
-                    == ConstantsSettings.PIPELINE_NAME_variant_detection
-                    and software.is_to_run == True
-                ):
+
+                try:
                     if (
-                        Software.objects.filter(
+                        software.pipeline_step.name
+                        == ConstantsSettings.PIPELINE_NAME_variant_detection
+                        and current_is_to_run == True
+                    ):
+
+                        existing_software = (
+                            Software.objects.filter(
+                                owner=software.owner,
+                                type_of_use=software.type_of_use,
+                                parameter__project_sample=project_sample,
+                                parameter__project=project,
+                                parameter__televir_project=televir_project,
+                                parameter__televir_project_sample=televir_project_sample,
+                                pipeline_step__name=ConstantsSettings.PIPELINE_NAME_variant_detection,
+                                technology=software.technology,
+                                is_to_run=True,
+                            )
+                            .distinct()
+                            .exclude(pk=software.pk)
+                        )
+
+                        if (existing_software).exists() is False:
+                            data["message"] = (
+                                "At least one {} software must be active.".format(
+                                    ConstantsSettings.PIPELINE_NAME_variant_detection
+                                )
+                            )
+                            return JsonResponse(data)
+                    if (
+                        software.name == SoftwareNames.SOFTWARE_FREEBAYES_name
+                        and current_is_to_run is False
+                    ):
+                        variant_detection_on = Software.objects.filter(
                             owner=software.owner,
                             type_of_use=software.type_of_use,
+                            name_extended=SoftwareNames.SOFTWARE_IRMA_name_extended,
+                            parameter__project_sample=project_sample,
+                            parameter__project=project,
                             parameter__televir_project=televir_project,
                             parameter__televir_project_sample=televir_project_sample,
                             pipeline_step__name=ConstantsSettings.PIPELINE_NAME_variant_detection,
                             technology=software.technology,
                             is_to_run=True,
-                        )
-                        .distinct()
-                        .exclude(pk=software.pk)
-                    ).exists() is False:
-                        data["message"] = (
-                            "At least one {} software must be active.".format(
-                                ConstantsSettings.PIPELINE_NAME_variant_detection
+                        ).distinct()
+
+                        if variant_detection_on.exists():
+                            data["message"] = (
+                                "Software {} for {} is incompatible with software {} in pipeline step {}.".format(
+                                    SoftwareNames.SOFTWARE_FREEBAYES_name,
+                                    ConstantsSettings.PIPELINE_NAME_variant_detection,
+                                    SoftwareNames.SOFTWARE_IRMA_name_extended,
+                                    ConstantsSettings.PIPELINE_NAME_variant_detection,
+                                )
                             )
-                        )
-                        return JsonResponse(data)
+                            return JsonResponse(data)
+
+                except Exception as e:
+                    print(e)
 
                 ## set ON|OFF software
                 is_to_run = default_parameters.set_software_to_run_by_software(
-                    software, project, televir_project, project_sample, sample
+                    software,
+                    project,
+                    televir_project,
+                    project_sample,
+                    sample,
+                    is_to_run=not current_is_to_run,
                 )
+                active_filters = None
+                additional_filter = None
+
                 if (
                     software.pipeline_step.name
                     == ConstantsSettings.PIPELINE_NAME_variant_detection
@@ -1017,6 +1186,8 @@ def turn_on_off_software(request):
                         Software.objects.filter(
                             owner=software.owner,
                             type_of_use=software.type_of_use,
+                            parameter__project_sample=project_sample,
+                            parameter__project=project,
                             parameter__televir_project=televir_project,
                             parameter__televir_project_sample=televir_project_sample,
                             pipeline_step__name=ConstantsSettings.PIPELINE_NAME_variant_detection,
@@ -1028,12 +1199,45 @@ def turn_on_off_software(request):
                     )
 
                     for filter in active_filters:
-
-                        output = default_parameters.set_software_to_run_by_software(
-                            filter, project, televir_project, project_sample, sample
+                        _ = default_parameters.set_software_to_run_by_software(
+                            filter,
+                            project,
+                            televir_project,
+                            project_sample,
+                            sample,
+                            is_to_run=False,
                         )
 
                         data["other_kills"] += [filter.pk]
+
+                    if (
+                        software.name_extended
+                        == SoftwareNames.SOFTWARE_IRMA_name_extended
+                    ):
+                        additional_filter = Software.objects.filter(
+                            owner=software.owner,
+                            type_of_use=software.type_of_use,
+                            parameter__project_sample=project_sample,
+                            parameter__project=project,
+                            parameter__televir_project=televir_project,
+                            parameter__televir_project_sample=televir_project_sample,
+                            pipeline_step__name=ConstantsSettings.PIPELINE_NAME_intra_host_minor_variant_detection,
+                            technology=software.technology,
+                            name=SoftwareNames.SOFTWARE_FREEBAYES_name,
+                            parameter__is_to_run=True,
+                        ).distinct()
+
+                        for filter in additional_filter:
+                            _ = default_parameters.set_software_to_run_by_software(
+                                filter,
+                                project,
+                                televir_project,
+                                project_sample,
+                                sample,
+                                is_to_run=False,
+                            )
+
+                            data["other_kills"] += [filter.pk]
 
                 if (
                     software.pipeline_step.name
@@ -1115,7 +1319,20 @@ def turn_on_off_software(request):
                     software.technology.name,
                     "ON" if is_to_run else "OFF",
                 )
-                print(data)
+                if active_filters is not None:
+                    for sof in active_filters:
+                        data[
+                            "message"
+                        ] += " The '{}' in '{}' technology was turned 'OFF'.".format(
+                            sof.name_extended, sof.technology.name
+                        )
+                if additional_filter is not None:
+                    for sof in additional_filter:
+                        data[
+                            "message"
+                        ] += " The '{}' in '{}' technology was turned 'OFF'.".format(
+                            sof.name_extended, sof.technology.name
+                        )
 
             except Software.DoesNotExist:
                 return JsonResponse(data)
@@ -1138,7 +1355,6 @@ def get_software_name_to_turn_on_off(request):
         sample_id_a = "sample_id"
         project_id_a = "project_id"
         project_sample_id_a = "project_sample_id"
-        type_of_use_id_a = "type_of_use_id"
         televir_project_id_a = "televir_project_id"
         televir_project_sample_id_a = "televir_project_sample_id"
 
@@ -1155,12 +1371,9 @@ def get_software_name_to_turn_on_off(request):
         sample_id = None
         project_id = None
         project_sample_id = None
-        type_of_use_id = None
         televir_project_id = None
         televir_project_sample_id = None
 
-        if type_of_use_id_a in request.GET:
-            type_of_use_id = request.GET[type_of_use_id_a]
         if televir_project_id_a in request.GET:
             televir_project_id = int(request.GET[televir_project_id_a])
         if televir_project_sample_id_a in request.GET:

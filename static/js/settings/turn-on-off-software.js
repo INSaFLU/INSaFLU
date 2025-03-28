@@ -15,6 +15,7 @@ $('#id-set-turn-on-off-button').on('click', function(){
 	var type_of_use_id = $('#id-set-turn-on-off-button').attr('type_of_use_id');
 	//block all page
 	wait_screen();
+	console.log(project_sample_id);
 	
 	$.ajax({
         url: '/settings/ajax/turn_on_off_software',

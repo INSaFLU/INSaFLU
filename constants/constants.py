@@ -285,9 +285,7 @@ class Constants(object):
     NEXTCLADE_LINK_MPXV_All_clades = (
         "https://clades.nextstrain.org/?dataset-name=MPXV&input-fasta="
     )
-    NEXTCLADE_LINK_MPXV_CladeI = (
-        "https://clades.nextstrain.org/?dataset-name=nextstrain/mpox/clade-i&input-fasta="
-    )    
+    NEXTCLADE_LINK_MPXV_CladeI = "https://clades.nextstrain.org/?dataset-name=nextstrain/mpox/clade-i&input-fasta="
     NEXTCLADE_LINK_RSV_A = (
         "https://clades.nextstrain.org/?dataset-name=rsv_a&input-fasta="
     )
@@ -393,6 +391,10 @@ class Constants(object):
             return "ref.fa"
         if file_type == FileType.FILE_REF_FASTA_FAI:
             return "ref.fa.fai"
+        if file_type == FileType.FILE_MIXED_VARIANTS:
+            return "{}.mixed.variants.tsv".format(file_name)
+        if file_type == FileType.FILE_CONSENSUS_ORIGINAL_FA:
+            return "{}.consensus.original.fa".format(file_name)
         return ""
 
     ### complement
@@ -482,7 +484,7 @@ class FileType(Enum):
     [06:29:16] * /tmp/insafli/xpto/xpto.vcf
     [06:29:16] * /tmp/insafli/xpto/xpto.vcf.gz
     [06:29:16] * /tmp/insafli/xpto/xpto.vcf.gz.tbi
-                            /tmp/insafli/xpto/ref/ref.fa
+                            /tmp/insafli/xpto/reference/ref.fa
     """
 
     FILE_BAM = 0
@@ -499,6 +501,8 @@ class FileType(Enum):
     FILE_CSV = 11
     FILE_REF_FASTA = 12  ## ref/ref.fa
     FILE_REF_FASTA_FAI = 13  ## ref/ref.fa.fai
+    FILE_MIXED_VARIANTS = 14
+    FILE_CONSENSUS_ORIGINAL_FA = 15
 
 
 class TypeFile(object):

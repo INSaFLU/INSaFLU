@@ -5,7 +5,9 @@ import pathogen_identification.views as PIviews
 from managing_files import ajax_views, views
 
 urlpatterns = [
-    re_path("download-template/", PIviews.download_template_view, name="download_template"),
+    re_path(
+        "download-template/", PIviews.download_template_view, name="download_template"
+    ),
     path(
         "services",
         PIviews.Services.as_view(),
@@ -162,7 +164,12 @@ urlpatterns = [
         name="PIproject-settings",
     ),
     path(
-        "Project_samples/<int:pk>",
+        r"Project/(?P<pk>\d+)/select_project_type$",
+        views.ProjectSelectView.as_view(),
+        name="PIproject-select-software",
+    ),
+    path(
+        r"Project_samples/(?P<pk>\d+)$",
         views.SamplesDetailView.as_view(),
         name="remove-sample-PIproject",
     ),

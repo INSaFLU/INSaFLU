@@ -59,6 +59,7 @@ from pathogen_identification.utilities.utilities_views import (
 )
 from pathogen_identification.views import inject__added_references
 from settings.constants_settings import ConstantsSettings as CS
+from settings.default_software_project_sample import DefaultProjectSoftware
 from utils.process_SGE import ProcessSGE
 from utils.software import Software
 from utils.utils import Utils
@@ -1367,19 +1368,24 @@ def teleflu_igv_create(request):
         sample_dict = {}
 
         ### get sample files
-        software_names = SoftwareNames()
+        default_project_software = DefaultProjectSoftware()
 
         for sample in samples:
+
+            software_mdcg = (
+                default_project_software.get_project_sample_mdcg_software_name(sample)
+            )
+
             bam_file = sample.get_file_output(
-                TypePath.MEDIA_ROOT, FileType.FILE_BAM, software_names.get_snippy_name()
+                TypePath.MEDIA_ROOT, FileType.FILE_BAM, software_mdcg
             )
             bam_file_index = sample.get_file_output(
                 TypePath.MEDIA_ROOT,
                 FileType.FILE_BAM_BAI,
-                software_names.get_snippy_name(),
+                software_mdcg,
             )
             vcf_file = sample.get_file_output(
-                TypePath.MEDIA_ROOT, FileType.FILE_VCF, software_names.get_snippy_name()
+                TypePath.MEDIA_ROOT, FileType.FILE_VCF, software_mdcg
             )
 
             if bam_file and bam_file_index and vcf_file:
@@ -1672,7 +1678,10 @@ def query_teleflu_projects(request):
                     "ref_accid": tproj.raw_reference.accids_str,
                     "ref_taxid": tproj.raw_reference.taxids_str,
                     "insaflu_project": False if tproj.insaflu_project is None else True,
+                    "nworkflows": tproj.nworkflows,
+                    "mapping_or_queued": tproj.mapping_or_queued,
                 }
+                print(tproj.mapping_or_queued)
 
                 insaflu_project = tproj.insaflu_project
                 if insaflu_project is None:

@@ -27,6 +27,47 @@
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script type="text/javascript" src="{% static 'js/televir_projects/heatmap_clades.js' %}"></script>
 
+
+<style>
+    .collapsible-summary {
+        position: fixed;
+        top: 60px; /* Add space at the top */
+        right: -100%; /* Start off-screen */
+        width: 1000px; /* Default width */
+        height: calc(100% - 20px); /* Adjust height to account for the top space */
+        background-color: white;
+        box-shadow: -2px 0 5px rgba(0,0,0,0.5);
+        transition: right 0.3s ease, width 0.3s ease; /* Smooth transition */
+        z-index: 1000; /* Ensure it appears above other content */
+        overflow-y: auto; /* Enable scrolling if content overflows */
+        padding: 20px; /* Add padding around the content */
+    }
+
+    .collapsible-summary.show {
+        right: 0; /* Slide in */
+    }
+
+    .slider-container {
+        position: fixed;
+        top: 30px; /* Adjust based on the top space */
+        right: 320px; /* Adjust based on the default width */
+        z-index: 1001; /* Ensure it appears above other content */
+    }
+
+    .js-plotly-plot .plotly {
+        margin-bottom: 50px;
+    }
+
+    .main-svg {
+        height: 500px;
+    }
+
+    #close-summary {
+        margin-top: 10px;
+    }
+
+</style>
+
 {% if owner %}
 
 <div id="accordion1" role="tablist" aria-multiselectable="true">
@@ -337,6 +378,10 @@
     </div>
 </div>
 
+<div class="slider-container">
+    <label for="width-slider">Adjust Width:</label>
+    <input type="range" id="width-slider" min="300" max="800" value="300">
+</div>
 
 <div id="accordion2" role="tablist" aria-multiselectable="true">
     <div class="card">
@@ -360,9 +405,7 @@
 
                     {% if sort_performed %}
                     <div class="float-right overlap-button">
-                        <a href="#" class="summary-header btn btn-primary dark"> 
-                            <span><i class="fa fa-exclamation-circle"></i> Read Overlap Summary</span>
-                        </a>
+                        <button id="toggle-summary" class="btn btn-primary">Read Overlap Summary</button>
                     </div> 
 
                     {% endif %}
@@ -372,8 +415,9 @@
         
         {% if sort_performed %}
         <div id="summary" class="collapsible">
-            <div class="card-block collapsible-summary" style="display: none;">
-                <div style="padding: 20px; padding-bottom: 0px;">
+            <div class="card-block collapsible-summary">
+                <button id="close-summary" class="btn btn-secondary">Close</button>
+                <div style="padding: 20px; padding-bottom: 0px; padding-top: 50px">
                     <div class="row">
                         <div class="col-sm">
                             <p> 
@@ -384,18 +428,17 @@
                     </div>
                 </div>
                 {% if clade_heatmap_json_exists %}
-                <div style="padding: 20px; padding-top: 0px;">
+                <div style="padding: 20px; padding-top: 0px">
                     <div class="row">
                         <div class="col-sm">
                             <p> 
-                                The shared heatmap displays the proportion of reads of one group (column) that are shared with another group (row). 
-                                Groups are sorted by maximum coverage. 
+                                The shared heatmap displays the proportion of reads of one group (column) that are shared with another group (row).
+                                Groups are sorted by maximum coverage. If the heatmap is not visible, please re-run sorting for this sample. 
                             </p>
                         </div>
                     </div>
                 </div>
                 <div id="clade-heatmap" class="plot-container">
-                
                 </div>
                 <script>
                     createHeatmapClades('{{ clade_heatmap_json|safe }}', "clade-heatmap");
@@ -417,7 +460,7 @@
                             </p>
                             <p>
                                 <i class="fa fa-exclamation-circle"></i> <strong>
-                                This sorting algorith is taxonomy-blind. Groups are constructed according to a minimum shared mapped read threshold of <strong>{{ min_shared_reads }} % </strong> between between remapped hits. </strong>
+                                This sorting algorithm is taxonomy-blind. Groups are constructed according to a minimum shared mapped read threshold of <strong>{{ min_shared_reads }} % </strong> between remapped hits. </strong>
                             </p>
                         </div>
                     </div>
@@ -425,6 +468,7 @@
             </div>
         </div>
         {% endif %}
+
         {% if no_mapping %}
         <div id="collapseReport" class="collapse show" role="tabpanel" aria-labelledby="headingReport">
             <div class="card-block">
@@ -852,6 +896,26 @@
 
 
 <script type="text/javascript">
+
+    document.getElementById('toggle-summary').addEventListener('click', function() {
+        var summaryDiv = document.querySelector('.collapsible-summary');
+        summaryDiv.classList.toggle('show');
+    });
+
+    document.getElementById('close-summary').addEventListener('click', function() {
+        var summaryDiv = document.querySelector('.collapsible-summary');
+        summaryDiv.classList.remove('show');
+    });
+
+    document.getElementById('width-slider').addEventListener('input', function() {
+        var summaryDiv = document.querySelector('.collapsible-summary');
+        var newWidth = this.value + 'px';
+        summaryDiv.style.width = newWidth;
+
+        // Adjust the position of the slider container
+        var sliderContainer = document.querySelector('.slider-container');
+        sliderContainer.style.right = (parseInt(newWidth) + 20) + 'px';
+    });
 
     var buttons = document.querySelectorAll('.showSecondaryRows, .showSecondaryRows i');
     for (var b = 0; b < buttons.length; b++) {

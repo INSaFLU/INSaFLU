@@ -38,7 +38,7 @@
 				<p class="insa-description-process" style="text-align: center;">Please choose <strong>your software settings</strong> 
 					before uploading new samples to your account.</p>
 			{% else %}
-				<p class="insa-description-process" style="text-align: center;">Please choose <strong>your software settings</strong></p>
+				<p class="insa-description-process" style="text-align: center;">Please choose <strong>your software settings</strong> {{ setup_note }} </p> 
 			{% endif %}
 		
 			<!-- NAV tabs -->
@@ -138,13 +138,14 @@
 				to the conditions you are working with, e.g., default end’s trimming size for ONT may be
 				too restrictive depending on design of your tiling amplicon multiplex PCR method and on
 				your sequencing protocol (if reads are or not already trimmed/clipped).</p>
+			
 		{% endif %}
 		<!-- End length softwares to show -->
 		
 		<!--  Go back  function -->	
 		{% if project_settings %}
 			<br>
-			<a id="id_go_back_button" href="{% url 'projects' %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>	
+			<a id="id_go_back_button" href="{% url 'projects' %}" class="btn btn-small btn-primary dark">{% if is_setup %} Done {% else %} <i class="fa fa-arrow-left"></i> Go back {% endif %}</a>	
 		{% elif project_sample_settings %}
 			<br>
 			<a id="id_go_back_button" href="{% url 'show-sample-project-results' project_sample.project.pk %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>

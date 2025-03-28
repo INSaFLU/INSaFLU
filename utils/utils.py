@@ -176,7 +176,7 @@ class Utils(object):
             temp_file_name = os.path.join(path_added, ntpath.basename(file_name))
         return os.path.join(main_path, temp_file_name.replace(" ", "_")), path_added
 
-    def get_temp_file(self, file_name, sz_type):
+    def get_temp_file(self, file_name, sz_type) -> str:
         """
         return a temp file name
         """
@@ -959,6 +959,7 @@ class Utils(object):
         vcf_hanlder = pysam.VariantFile(vcf_file, "r")
         if FREQ in vcf_hanlder.header.info:
             vcf_hanlder.close()
+            os.system("cp {} {}".format(vcf_file, vcf_file_out))
             return
 
         vcf_hanlder_write = pysam.VariantFile(vcf_file_out, "w")
@@ -1590,6 +1591,31 @@ class Utils(object):
                         SeqRecord(
                             Seq(str(seq_record.seq).upper().replace("-", "")),
                             id=seq_record.id,
+                            description="",
+                            name="",
+                        )
+                    )
+                SeqIO.write(vect_sequences, output_file_handle, "fasta")
+
+    def clean_fasta_file_new_name(self, in_file, out_file, keep_segs={}):
+        """
+        clean fasta file from '-'
+        """
+        if not os.path.exists(in_file):
+            return
+
+        with open(out_file, "w+") as output_file_handle:
+            vect_sequences = []
+            with open(in_file, "r") as file_handle:
+                for seq_record in SeqIO.parse(file_handle, "fasta"):
+                    if seq_record.id not in keep_segs.keys():
+                        continue
+                    # Take the current sequence
+                    # vect_sequences.append(SeqRecord(Seq(str(seq_record.seq).upper().replace('-', ''), IUPAC.ambiguous_dna), id=seq_record.id, description="", name=""))
+                    vect_sequences.append(
+                        SeqRecord(
+                            Seq(str(seq_record.seq).upper().replace("-", "")),
+                            id=keep_segs[seq_record.id],
                             description="",
                             name="",
                         )

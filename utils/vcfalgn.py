@@ -2,6 +2,7 @@ import argparse
 import logging
 import os
 from dataclasses import dataclass
+from typing import Dict, List
 
 import numpy as np
 import pandas as pd
@@ -50,12 +51,13 @@ class VcfAlgn:
         self.input = input
         self.reference = reference
         self.nucl = nucl
+        self.early_stops = []
         if odir and odir[-1] != "/":
             odir += "/"
         self.odir = odir
 
         os.makedirs(self.odir, exist_ok=True)
-        self.output = self.odir + output
+        self.output = os.path.join(self.odir, output)
 
     def read_input(self):
         """
@@ -68,9 +70,8 @@ class VcfAlgn:
         ref_seq = self.reference
         # compares the full refseq identifier/description in the alnmt, to the ref_seq provided in argument.
         # This is a fix to deal with identifiers that (1) include spaces, (2) might consist of separate words of which the first is not unique.
-        self.ref_seq_index = [
-            i for i, s in enumerate(self.Alnmt) if s.description == ref_seq
-        ]
+
+        self.ref_seq_index = [i for i, s in enumerate(self.Alnmt) if s.id == ref_seq]
         if len(self.ref_seq_index) == 0:
             raise ValueError(
                 "Reference sequence not found in alignment. Please check alignment and reference sequence."
@@ -86,11 +87,9 @@ class VcfAlgn:
         :return: self with reference sequence
 
         """
-        samples = [s.description for _, s in enumerate(self.Alnmt)]
+        samples = [s.id for _, s in enumerate(self.Alnmt) if s.id != self.reference]
 
-        refseq = [
-            s.seq for _, s in enumerate(self.Alnmt) if s.description == self.reference
-        ]
+        refseq = [s.seq for _, s in enumerate(self.Alnmt) if s.id == self.reference]
         if len(refseq) == 0:
             logging.info("Reference sequence not found in alignment")
             self.refseq = None
@@ -109,23 +108,25 @@ class VcfAlgn:
         generate dataframe with (1) positions that vary, (2) aa at these positions in the refseq, (3) any alternatives in the dataset (sep by /), (4-end) for each sequence the aa at these positions
         :return: self with allele overview dataframe
         """
-        fasta = {s.description: s.seq for _, s in enumerate(self.Alnmt)}
-        seqnames = [s.description for _, s in enumerate(self.Alnmt)]
+        fasta: Dict[str, str] = {s.id: s.seq for _, s in enumerate(self.Alnmt)}
+        seqnames = [s.id for _, s in enumerate(self.Alnmt)]
         refid = self.reference
-        refseq = str(fasta[refid])
+        refseq = str(fasta[refid]).upper()
         self.refseq = refseq
 
         refseq_nogap = refseq.replace("-", "")
 
         n = -1
-        seq2 = {}  # new dictionary of rotated sequences with no-gap postions as keys
+        seq2: Dict[int, str] = (
+            {}
+        )  # new dictionary of rotated sequences with no-gap postions as keys
 
         for i in range(len(refseq)):  # i is the position of seq poition
             if refseq[i] != "-":
                 n += 1
             templist = []
             for j in seqnames:  # j is seq name
-                seq = fasta[j]
+                seq = fasta[j].upper()
                 templist.append(seq[i])
             if n not in seq2:
                 seq2[n] = templist
@@ -136,8 +137,9 @@ class VcfAlgn:
         outlist = []
 
         for k in range(len(refseq_nogap)):
-            seq = [
-                w[0] + w[1:].replace("-", "") if len(w) > 1 else w for w in seq2[k]
+            seq: List[str] = [
+                w[0] + w[1:].replace("-", "").upper() if len(w) > 1 else w.upper()
+                for w in seq2[k]
             ]  # remove "-" in alleles in "A--"
             # seq= seq2
             alleles = set(seq)  # set: unique values
@@ -198,6 +200,18 @@ class VcfAlgn:
         self.snps = outframe.Pos
         return self
 
+    def report(self):
+        """
+        print out summary statistics
+        :return: None
+        """
+        print(f"Number of SNPs: {len(self.snps)}")
+        print(f"Number of sequences: {len(self.samples)}")
+        print(
+            f"Number of early stops: {len([x for x in self.early_stops if x < len(self.refseq)])}"
+        )
+        return None
+
     def find_stops(self):
         """
         determine "stop" positions for each sequence, to be able to identify sequences with early stops
@@ -234,6 +248,9 @@ class VcfAlgn:
         ##fileformat=VCFv4.2
         ##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Depth">
         ##INFO=<ID=AF,Number=A,Type=Float,Description="Allele Frequency">
+        #INFO=<ID=RO,Number=1,Type=Integer,Description=\"Depth of reference base\">\n"
+        #INFO=<ID=AO,Number=A,Type=Integer,Description=\"Depth of variant bases\">\n"
+        #INFO=<ID=TYPE,Number=1,Type=String,Description=\"Type of variant\">\n"
         #CHROM POS ID REF ALT QUAL FILTER INFO
         first:
             format self.vcf dataframe to standard vcf notation of allele relative to reference.
@@ -249,10 +266,20 @@ class VcfAlgn:
 
         with open(self.output, "w") as f:
             f.write("##fileformat=VCFv4.2\n")
-            f.write("##INFO=<ID=DP,Number=1,Type=Integer,Description='Total Depth'>\n")
+            f.write('##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Depth">\n')
             f.write(
-                "##INFO=<ID=AF,Number=A,Type=Float,Description='Allele Frequency'>\n"
+                '##INFO=<ID=AF,Number=A,Type=Float,Description="Allele Frequency">\n'
             )
+            f.write(
+                '##INFO=<ID=RO,Number=1,Type=Integer,Description="Depth of reference base">\n'
+            )
+            f.write(
+                '##INFO=<ID=AO,Number=A,Type=Integer,Description="Depth of variant bases">\n'
+            )
+            f.write(
+                '##INFO=<ID=TYPE,Number=1,Type=String,Description="Type of variant">\n'
+            )
+            f.write(f"##contig=<ID={self.reference},length={len(self.refseq)}>\n")
             header = [
                 "#CHROM",
                 "POS",
@@ -270,17 +297,26 @@ class VcfAlgn:
                 ref = vcf.loc[i, "ref"]
                 alt = vcf.loc[i, "alt"]
                 pos = vcf.loc[i, "Pos"]
+                allele_type = "snp"
+                if len(ref) > 1:
+                    allele_type = "del"
+                if len(alt) > 1:
+                    allele_type = "ins"
                 chrom = self.reference
                 alleles = vcf.loc[i, self.samples]
-                alleles.replace(ref, "0/0:1", inplace=True)
-                alleles.replace(alt, "1/1:1", inplace=True)
-                alleles.replace("N", "./.:0", inplace=True)
-                alleles.replace("-", "./.:0", inplace=True)
+                alleles.replace(ref, "0/0", inplace=True)
+                alleles.replace(alt, "1/1", inplace=True)
+                alleles.replace("N", "./.", inplace=True)
+                alleles.replace("-", "./.", inplace=True)
+
+                ro = 0
+                ao = 1 - ro
+                info_str = f"DP=1;AF=1;RO={ro};AO={ao};TYPE={allele_type}"
 
                 alleles = "\t".join(alleles)
 
                 f.write(
-                    f"{chrom}\t{pos}\t.\t{ref}\t{alt}\t.\tPASS\tDP=1;AF=1\t{alleles}\n"
+                    f"{chrom}\t{pos}\t.\t{ref}\t{alt}\t.\tPASS\t{info_str}\t{alleles}\n"
                 )
 
         return self
@@ -310,4 +346,5 @@ if __name__ == "__main__":
     vcf_algn.read_input()
     vcf_algn.read_ref()
     vcf_algn = vcf_algn.msa2snp()
+    vcf_algn = vcf_algn.write_vcf()
     vcf_algn = vcf_algn.write_vcf()

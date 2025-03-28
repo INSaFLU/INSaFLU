@@ -312,6 +312,7 @@ def show_variants_as_a_table(request):
                             )
                         )
                     )
+
                     data["static_table_filter"] = mark_safe(
                         request.build_absolute_uri(
                             os.path.join(settings.STATIC_URL, "vendor/tablefilter")
@@ -361,6 +362,42 @@ def show_aln2pheno(request):
 
 
 @csrf_protect
+def show_flumut(request):
+    """
+    return table with variants
+    """
+    if request.is_ajax():
+        data = {"is_ok": False}
+        key_with_project_id = "project_id"
+        if key_with_project_id in request.GET:
+            project_id = int(request.GET.get(key_with_project_id))
+            try:
+                project = Project.objects.get(id=project_id)
+                out_file = project.get_global_file_by_project(
+                    TypePath.MEDIA_ROOT,
+                    Project.PROJECT_FILE_NAME_Flumut_markers_report,
+                )
+                if os.path.exists(out_file) and os.stat(out_file).st_size > 0:
+                    data["is_ok"] = True
+                    data["url_path_flumut"] = mark_safe(
+                        request.build_absolute_uri(
+                            project.get_global_file_by_project(
+                                TypePath.MEDIA_URL,
+                                Project.PROJECT_FILE_NAME_Flumut_markers_report,
+                            )
+                        )
+                    )
+                    data["static_table_filter"] = mark_safe(
+                        request.build_absolute_uri(
+                            os.path.join(settings.STATIC_URL, "vendor/tablefilter")
+                        )
+                    )
+            except Project.DoesNotExist:
+                pass
+        return JsonResponse(data)
+
+
+@csrf_protect
 def show_coverage_as_a_table(request):
     """
     return table with coverage
@@ -378,6 +415,14 @@ def show_coverage_as_a_table(request):
                 default_software = DefaultProjectSoftware()
                 utils = Utils()
                 project = Project.objects.get(id=project_id)
+                project_mdcg = default_software.get_software_project_mdcg_illumina(
+                    project
+                )
+                show_coverage_modal = (
+                    'href="#coverageModal"'
+                    if project_mdcg.name == SoftwareNames.SOFTWARE_SNIPPY_name
+                    else ""
+                )
 
                 ### get all elements and gene names
                 geneticElement = utils.get_elements_and_genes(
@@ -452,7 +497,8 @@ def show_coverage_as_a_table(request):
                                 sequence_name, Coverage.COVERAGE_MORE_9
                             )
                         )
-                        href_sample = '<a href="#coverageModal" id="id_table-coverage_{}_{}" data-toggle="modal" class="tip" project_sample_id="{}" sequence="{}" title="{}"></a>'.format(
+                        href_sample = '<a {} id="id_table-coverage_{}_{}" data-toggle="modal" class="tip" project_sample_id="{}" sequence="{}" title="{}"></a>'.format(
+                            show_coverage_modal,
                             count_projects,
                             count_sequences,
                             project_sample.id,
@@ -867,6 +913,57 @@ def update_project_pangolin(request):
 
 
 @csrf_protect
+def update_project_mutation_report(request):
+    """
+    get image coverage
+    """
+    if request.is_ajax():
+        data = {"is_ok": False}
+        key_with_project_id = "project_id"
+        if key_with_project_id in request.GET:
+
+            project_id = request.GET[key_with_project_id]
+            try:
+                project = Project.objects.get(pk=int(project_id))
+            except Project.DoesNotExist:
+                import traceback
+
+                traceback.print_exc()
+                return JsonResponse(data)
+
+            try:
+                ### need to send a message to recalculate the global files
+                metaKeyAndValue = MetaKeyAndValue()
+                manageDatabase = ManageDatabase()
+                try:
+                    process_SGE = ProcessSGE()
+                    project = Project.objects.get(id=project_id)
+                    taskID = process_SGE.set_collect_update_mutation_report(
+                        project, request.user
+                    )
+
+                    manageDatabase.set_project_metakey(
+                        project,
+                        request.user,
+                        metaKeyAndValue.get_meta_key(
+                            MetaKeyAndValue.META_KEY_Queue_TaskID_Project,
+                            project.id,
+                        ),
+                        MetaKeyAndValue.META_VALUE_Queue,
+                        taskID,
+                    )
+
+                    data = {"is_ok": True}
+                except Exception as e:
+
+                    data = {"is_ok": False}
+            except ProjectSample.DoesNotExist as e:
+
+                pass
+        return JsonResponse(data)
+
+
+@csrf_protect
 def show_igv(request):
     """
     get data for IGV
@@ -879,21 +976,29 @@ def show_igv(request):
                 project_sample = ProjectSample.objects.get(
                     id=request.GET.get(key_with_project_sample_id)
                 )
+                default_project_software = DefaultProjectSoftware()
+
+                software_mdcg = (
+                    default_project_software.get_software_project_sample_mdcg_illumina(
+                        project_sample=project_sample,
+                    )
+                )
+
                 if project_sample.is_sample_illumina():
                     path_name_bam = project_sample.get_file_output(
                         TypePath.MEDIA_URL,
                         FileType.FILE_BAM,
-                        SoftwareNames.SOFTWARE_SNIPPY_name,
+                        software_mdcg.name,
                     )
                     path_name_bai = project_sample.get_file_output(
                         TypePath.MEDIA_URL,
                         FileType.FILE_BAM_BAI,
-                        SoftwareNames.SOFTWARE_SNIPPY_name,
+                        software_mdcg.name,
                     )
                     path_name_vcf = project_sample.get_file_output(
                         TypePath.MEDIA_URL,
                         FileType.FILE_VCF,
-                        SoftwareNames.SOFTWARE_SNIPPY_name,
+                        software_mdcg.name,
                     )
                 else:
                     path_name_bam = project_sample.get_file_output(

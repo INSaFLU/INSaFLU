@@ -10,8 +10,6 @@ from django.contrib.auth.models import User
 from django.core.management import BaseCommand
 
 from managing_files.models import ProjectSample
-from pathogen_identification.models import TeleFluProject
-from pathogen_identification.utilities.reference_utils import create_teleflu_igv_report
 from utils.software import Software
 
 
@@ -78,6 +76,7 @@ class Command(BaseCommand):
 
             self.stdout.write("End")
         except ProjectSample.DoesNotExist as e:
+
             self.stdout.write(
                 "Error: ProjectSample id '{}' does not exist.".format(project_sample_id)
             )

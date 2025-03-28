@@ -63,7 +63,12 @@ urlpatterns = [
         name="project-settings",
     ),
     path(
-        "project_samples/<int:pk>/<int:tf>/add_sample_project",
+        r"project/(?P<pk>\d+)/show_project_settings_setup$",
+        views.ProjectsSettingsSetupView.as_view(),
+        name="project-settings-setup",
+    ),
+    path(
+        r"project_samples/(?P<pk>\d+)/(?P<tf>\d+)/add_sample_project$",
         views.AddSamplesProjectsView.as_view(),
         name="add-sample-project",
     ),
@@ -113,9 +118,10 @@ urlpatterns = [
         ajax_views.show_variants_as_a_table,
         name="show-variants-as-a-table",
     ),
-    path("ajax/show_aln2pheno", ajax_views.show_aln2pheno, name="show-aln2pheno"),
+    path(r"^ajax/show_aln2pheno$", ajax_views.show_aln2pheno, name="show-aln2pheno"),
+    path(r"^ajax/show_flumut$", ajax_views.show_flumut, name="show-flumut"),
     path(
-        "ajax/show_coverage_as_a_table",
+        r"^ajax/show_coverage_as_a_table$",
         ajax_views.show_coverage_as_a_table,
         name="show-coverage-as-a-table",
     ),
@@ -146,7 +152,12 @@ urlpatterns = [
         name="update_project_pangolin",
     ),
     path(
-        "ajax/add_single_value_database",
+        r"^ajax/update_project_mutation_report",
+        ajax_views.update_project_mutation_report,
+        name="update_project_mutation_report",
+    ),
+    path(
+        r"^ajax/add_single_value_database$",
         ajax_views.add_single_value_database,
         name="add_single_value_database",
     ),  ## add a single value to a table in database
@@ -163,11 +174,11 @@ urlpatterns = [
     path(
         "ajax/remove_sample", ajax_views.remove_sample, name="remove_sample"
     ),  ## remove a sample
-    path(
-        "ajax/swap_technology", ajax_views.swap_technology, name="swap_technology"
+    url(
+        r"^ajax/swap_technology$", ajax_views.swap_technology, name="swap_technology"
     ),  ## swap technology in sample
-    path(
-        "ajax/remove_project", ajax_views.remove_project, name="remove_project"
+    url(
+        r"^ajax/remove_project$", ajax_views.remove_project, name="remove_project"
     ),  ## remove a project
     path(
         "ajax/remove_televir_project",
@@ -204,8 +215,8 @@ urlpatterns = [
         ajax_views.relink_uploaded_files,
         name="relink_uploaded_files",
     ),  ## remove remove_uploaded_file
-    path(
-        "ajax/unlock_sample_file",
+    url(
+        r"^ajax/unlock_sample_file$",
         ajax_views.unlock_sample_file,
         name="unlock_sample_file",
     ),  ## unlock sample list files

@@ -3,7 +3,8 @@ Created on Jan 7, 2018
 
 @author: mmp
 """
-from django.urls import path, re_path
+
+from django.conf.urls import url
 
 from settings import ajax_views, views
 
@@ -62,8 +63,13 @@ urlpatterns = [
         ajax_views.set_default_parameters,
         name="default_parameters",
     ),
-    path(
-        "ajax/turn_on_off_software",
+    url(
+        r"^ajax/get_mdcg_project_software$",
+        ajax_views.get_mdcg_project_software,
+        name="get_mdcg_project_software",
+    ),
+    url(
+        r"^ajax/turn_on_off_software$",
         ajax_views.turn_on_off_software,
         name="turn_on_off_software",
     ),

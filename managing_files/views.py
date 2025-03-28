@@ -31,6 +31,7 @@ from constants.meta_key_and_values import MetaKeyAndValue
 from constants.nextclade_links import get_constext_nextclade
 from constants.software_names import SoftwareNames
 from extend_user.models import Profile
+from manage_virus.constants_virus import ConstantsVirus
 from managing_files.forms import (
     AddSampleProjectForm,
     ReferenceForm,
@@ -73,7 +74,7 @@ from utils.session_variables import (
     clean_check_box_in_session,
     is_all_check_box_in_session,
 )
-from utils.software import Software
+from utils.software import Software, SoftwareFlumut
 from utils.software_pangolin import SoftwarePangolin
 from utils.support_django_template import get_link_for_dropdown_item
 from utils.utils import ShowInfoMainPage, Utils
@@ -1066,10 +1067,12 @@ class SamplesUploadDescriptionFileView(
             upload_files.type_file = type_file
             upload_files.file_name = utils.clean_name(ntpath.basename(path_name.name))
             upload_files.owner = self.request.user
+            upload_files.type_file = type_file
+            upload_files.file_name = utils.clean_name(ntpath.basename(path_name.name))
+            upload_files.owner = self.request.user
 
             upload_files.description = ""
             upload_files.save()
-            print("save")
 
             ## move the files to the right place
             sz_file_to = os.path.join(
@@ -1108,7 +1111,6 @@ class SamplesUploadDescriptionFileView(
 
             try:
                 process_SGE = ProcessSGE()
-                print("set_read_sample_file")
                 taskID = process_SGE.set_read_sample_file(
                     upload_files, self.request.user
                 )
@@ -2406,6 +2408,12 @@ class AddSamplesProjectsView(
             insaflu_project=project
         ).exists()
 
+        default_project_software = DefaultProjectSoftware()
+        software_mdcg = default_project_software.get_software_project_mdcg_illumina(
+            project=project,
+        )
+        is_project_snippy = software_mdcg.name == SoftwareNames.SOFTWARE_SNIPPY_name
+
         context["nav_project"] = True
 
         if project.owner.id != self.request.user.id:
@@ -2440,6 +2448,10 @@ class AddSamplesProjectsView(
                 is_deleted_processed_fastq=False,
                 is_ready_for_projects=True,
             ).exclude(pk__in=samples_out)
+
+        # if project illumina mdcg software is not sippy then only show samples with the same technology
+        if is_project_snippy is False:
+            query_set = query_set.filter(type_of_fastq=Sample.TYPE_OF_FASTQ_illumina)
 
         tag_search = "search_add_project_sample"
         if self.request.GET.get(tag_search) != None and self.request.GET.get(
@@ -2842,9 +2854,62 @@ class ShowSampleProjectsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
                     Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK,
                 )
             )
-        # if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_pokay)):
-        # 	context['aln2pheno_report_pokay'] = get_link_for_dropdown_item(
-        # 		project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_Aln2pheno_report_pokay))
+        ## irma output
+        if os.path.exists(
+            project.get_global_file_by_project(
+                TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_IRMA_OUTPUT_zipped
+            )
+        ):
+            context["irma_output"] = get_link_for_dropdown_item(
+                project.get_global_file_by_project(
+                    TypePath.MEDIA_URL,
+                    Project.PROJECT_FILE_NAME_IRMA_OUTPUT_zipped,
+                )
+            )
+
+        if os.path.exists(
+            project.get_global_file_by_project(
+                TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Flumut_markers_report
+            )
+        ):
+
+            context["flumut_report"] = get_link_for_dropdown_item(
+                project.get_global_file_by_project(
+                    TypePath.MEDIA_URL,
+                    Project.PROJECT_FILE_NAME_Flumut_markers_report,
+                )
+            )
+
+            software_flumut = SoftwareFlumut()
+            if software_flumut.flumut_results_out_date(project):
+                context["update_flumut"] = True
+                context["update_mutation_report_message"] = mark_safe(
+                    software_flumut.get_update_message(project)
+                )
+
+        if os.path.exists(
+            project.get_global_file_by_project(
+                TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_flumut_excel
+            )
+        ):
+            context["flumut_excel"] = get_link_for_dropdown_item(
+                project.get_global_file_by_project(
+                    TypePath.MEDIA_URL,
+                    Project.PROJECT_FILE_NAME_flumut_excel,
+                )
+            )
+
+        if os.path.exists(
+            project.get_global_file_by_project(
+                TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_flumut_version
+            )
+        ):
+            context["flumut_version"] = get_link_for_dropdown_item(
+                project.get_global_file_by_project(
+                    TypePath.MEDIA_URL,
+                    Project.PROJECT_FILE_NAME_flumut_version,
+                )
+            )
 
         if os.path.exists(
             project.get_global_file_by_project(
@@ -3024,6 +3089,52 @@ class ShowSampleProjectsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
         return context
 
 
+class ProjectSelectView(LoginRequiredMixin, ListView):
+    """
+    choose one of Mutation Detecion and Consensus Generation software
+    """
+
+    model = Project
+    template_name = "project/project_select_software.html"
+    context_object_name = "project"
+
+    def get_context_data(self, **kwargs):
+        context = super(ProjectSelectView, self).get_context_data(**kwargs)
+        project = Project.objects.get(pk=self.kwargs["pk"])
+
+        ### can't see this project
+        context["nav_project"] = True
+        if project.owner.id != self.request.user.id:
+            context["error_cant_see"] = "1"
+            return context
+
+        ### test all defaults first, if exist in database
+        default_software = DefaultProjectSoftware()
+        default_software.test_all_defaults(
+            self.request.user, project, None, None
+        )  ## the user can have defaults yet
+        ### current global softwares
+        software_global = default_software.user_global_mdcg_illumina_software(
+            self.request.user
+        )
+
+        if software_global.name == SoftwareNames.SOFTWARE_SNIPPY_name:
+            context["snippy_global"] = True
+        elif software_global.name == SoftwareNames.SOFTWARE_IRMA_name:
+            context["irma_global"] = True
+        elif software_global.name == SoftwareNames.SOFTWARE_IVAR_name:
+            context["ivar_global"] = True
+
+        context["software_global"] = software_global
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
+        context["project"] = project
+        context["project_index"] = project.id
+        context["type_of_use_id"] = SoftwareSettings.TYPE_OF_USE_project
+        return context
+
+
 class ProjectsSettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
     """
     can change settings in the projects
@@ -3056,11 +3167,10 @@ class ProjectsSettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
             context["error_cant_see"] = "1"
             return context
 
-        ### test all defaults first, if exist in database
         default_software = DefaultProjectSoftware()
-        default_software.test_all_defaults(
-            self.request.user, project, None, None, None
-        )  ## the user can have defaults yet
+        software_mdcg = default_software.get_software_project_mdcg_illumina(
+            project=project,
+        )
 
         all_tables = []  ## order by Technology, PipelineStep, table
         ## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],
@@ -3073,7 +3183,11 @@ class ProjectsSettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
             project=project, is_deleted=False
         ).count()
         ### IMPORTANT, must have technology__name, because old versions don't
-        for technology in ConstantsSettings.vect_technology:  ## run over all technology
+        technologies = ConstantsSettings.vect_technology
+        if not software_mdcg.name == SoftwareNames.SOFTWARE_SNIPPY_name:
+            technologies = ConstantsSettings.vect_technology_illumina_projects
+
+        for technology in technologies:  ## run over all technology
             vect_pipeline_step = []
             for pipeline_step in ConstantsSettings.vect_pipeline_names:
                 query_set = SoftwareSettings.objects.filter(
@@ -3090,6 +3204,12 @@ class ProjectsSettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
                     is_obsolete=False,
                 ).distinct()
 
+                if (
+                    pipeline_step == ConstantsSettings.PIPELINE_NAME_variant_detection
+                    and technology == ConstantsSettings.TECHNOLOGY_illumina
+                ):
+                    query_set = query_set.filter(name=software_mdcg.name)
+
                 ### if there are software
                 if query_set.count() > 0:
                     vect_pipeline_step.append(
@@ -3105,6 +3225,7 @@ class ProjectsSettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
                                 project_sample=None,
                                 sample=None,
                                 b_enable_options=count_project_sample == 0,
+                                project_setup=self.is_setup,
                             ),
                         ]
                     )
@@ -3126,6 +3247,22 @@ class ProjectsSettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
         context["project"] = project
         context["main_settings"] = False
         context["project_settings"] = True
+        context["setup_note"] = self.setup_note
+        context["is_setup"] = self.is_setup
+        return context
+
+
+class ProjectsSettingsSetupView(ProjectsSettingsView):
+
+    def setup(self, request, *args, **kwargs):
+        super(ProjectsSettingsSetupView, self).setup(request, *args, **kwargs)
+        self.is_setup = True
+        self.setup_note = "Software selection will be blocked after this"
+
+    def get_context_data(self, **kwargs):
+        self.is_setup = True
+        self.setup_note = "Software selection will be blocked after this"
+        context = super(ProjectsSettingsSetupView, self).get_context_data(**kwargs)
         return context
 
 
@@ -3172,7 +3309,6 @@ class SampleProjectsSettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListVi
         default_software.test_all_defaults(
             self.request.user, None, project_sample, None
         )  ## the user can have defaults yet
-
         all_tables = []  ## order by Technology, PipelineStep, table
         ## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],
         ##	[unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...], etc
@@ -3430,6 +3566,9 @@ class ShowSampleProjectsDetailsView(BaseBreadcrumbMixin, LoginRequiredMixin, Lis
             context["consensus_file"] = project_sample.get_consensus_file_web(
                 not default_software.include_consensus(project_sample)
             )
+            software_mdcg = default_software.get_software_project_sample_mdcg_illumina(
+                project_sample=project_sample,
+            )
             software_used = (
                 []
             )  ### has a list with all software used... [name, parameters]
@@ -3437,7 +3576,7 @@ class ShowSampleProjectsDetailsView(BaseBreadcrumbMixin, LoginRequiredMixin, Lis
             decode_result = DecodeObjects()
             if project_sample.is_sample_illumina():
                 context["snippy_variants_file"] = project_sample.get_file_web(
-                    FileType.FILE_TAB, SoftwareNames.SOFTWARE_SNIPPY_name
+                    FileType.FILE_TAB, software_mdcg.name
                 )
                 context["freebayes_variants_file"] = project_sample.get_file_web(
                     FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name
@@ -3451,14 +3590,14 @@ class ShowSampleProjectsDetailsView(BaseBreadcrumbMixin, LoginRequiredMixin, Lis
                     )
                 )
                 context["depth_file"] = project_sample.get_file_web(
-                    FileType.FILE_DEPTH_GZ, SoftwareNames.SOFTWARE_SNIPPY_name
+                    FileType.FILE_DEPTH_GZ, software_mdcg.name
                 )
                 context["depth_tbi_file"] = project_sample.get_file_web(
-                    FileType.FILE_DEPTH_GZ_TBI, SoftwareNames.SOFTWARE_SNIPPY_name
+                    FileType.FILE_DEPTH_GZ_TBI, software_mdcg.name
                 )
 
                 #### software versions...
-                software_used.append([SoftwareNames.SOFTWARE_SNIPPY_name, "Fail"])
+                software_used.append([software_mdcg.name, "Fail"])
                 software_used.append([SoftwareNames.SOFTWARE_FREEBAYES_name, "Fail"])
                 list_meta = manageDatabase.get_project_sample_metakey(
                     project_sample, MetaKeyAndValue.META_KEY_Snippy_Freebayes, None
@@ -3470,9 +3609,7 @@ class ShowSampleProjectsDetailsView(BaseBreadcrumbMixin, LoginRequiredMixin, Lis
                 ):
                     result = decode_result.decode_result(list_meta[0].description)
                     if not result is None:
-                        software_used[0][1] = result.get_software(
-                            SoftwareNames.SOFTWARE_SNIPPY_name
-                        )
+                        software_used[0][1] = result.get_software(software_mdcg.name)
                         software_used[1][1] = result.get_software(
                             SoftwareNames.SOFTWARE_FREEBAYES_name
                         )

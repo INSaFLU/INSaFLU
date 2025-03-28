@@ -9,6 +9,7 @@ import os
 from django.conf import settings
 
 from constants.constants import Constants
+from constants.televir_directories import Televir_Directory_Constants
 from settings.constants_settings import ConstantsSettings
 
 
@@ -114,6 +115,7 @@ class SoftwareNames(object):
         "SARS_CoV_2_MN908947_artic_3.fa",
         "SARS_CoV_2_MN908947_artic_4.1.fa",
         "SARS_CoV_2_MN908947_artic_5.3.2.fa",
+        "SARS_CoV_2_MN908947_artic_5.4.2.fa",        
         "MPXV_MT903345_Yale_PrimalSeq_v.1.fa",
         "MPXV_comb-ccc7sszn.fa",
         "RSV_A_KT992094_Wang2022.fa",
@@ -282,7 +284,7 @@ class SoftwareNames(object):
     SOFTWARE_SNIPPY = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/snippy")
     SOFTWARE_SNIPPY_name = "Snippy"
     SOFTWARE_SNIPPY_name_extended = (
-        "Mapping (Snippy) and Optional Primer Clipping (iVar)"
+        "INSaFLU Full Pipeline (with optional iVar primmer clipping)"
     )
     SOFTWARE_SNIPPY_VERSION = "3.2-dev"
     SOFTWARE_SNIPPY_PARAMETERS = "--mapqual 20 --mincov 10 --minfrac 0.51"
@@ -292,6 +294,7 @@ class SoftwareNames(object):
         "SARS_CoV_2_MN908947_artic_3.fa",
         "SARS_CoV_2_MN908947_artic_4.1.fa",
         "SARS_CoV_2_MN908947_artic_5.3.2.fa",
+        "SARS_CoV_2_MN908947_artic_5.4.2.fa",        
         "MPXV_MT903345_Yale_PrimalSeq_v.1.fa",
         "MPXV_comb-ccc7sszn.fa",
         "RSV_A_KT992094_Wang2022.fa",
@@ -304,11 +307,21 @@ class SoftwareNames(object):
         # "MPXV_xGEN_Mpox_Amplicon_panel_no_ITR.fa",
     ]
 
+    ########### iVar
+
     SOFTWARE_IVAR = os.path.join(DIR_SOFTWARE_SNIPPY, "binaries/ivar")
     SOFTWARE_IVAR_name = "iVar"
     SOFTWARE_IVAR_name_extended = "iVar Full Pipeline"
     SOFTWARE_IVAR_VERSION = "1.4.2"
     SOFTWARE_IVAR_PARAMETERS = ""
+
+    ########### IRMA
+
+    SOFTWARE_IRMA = os.path.join(settings.DIR_SOFTWARE, "irma/irma.sh")
+    SOFTWARE_IRMA_name = "IRMA"
+    SOFTWARE_IRMA_name_extended = "IRMA Full Pipeline"
+    SOFTWARE_IRMA_VERSION = "v1.2.0"
+    SOFTWARE_IRMA_PARAMETER_model_options = ["FLU"]
 
     #### VERY important, change in snippy-vcf
     #     mmp@california:/usr/local/software/insaflu/snippy/bin$ diff snippy-vcf_to_tab_add_freq snippy-vcf_to_tab_add_freq~
@@ -487,6 +500,10 @@ class SoftwareNames(object):
 
     ### flumut
     SOFTWARE_FLUMUT = os.path.join(settings.DIR_SOFTWARE, "flumut/flumut.sh")
+    SOFTWARE_FLUMUT_name = "Flumut"
+
+    ### IRMA
+    SOFTWARE_IRMA = os.path.join(settings.DIR_SOFTWARE, "irma/irma.sh")
 
     ### Nextstrain
     SOFTWARE_NEXTSTRAIN_DIR = os.path.join(settings.DIR_SOFTWARE, "nextstrain/")
@@ -666,7 +683,7 @@ class SoftwareNames(object):
 
     ### QC SOFTWARE
     SOFTWARE_PRINSEQ = os.path.join(
-        settings.DIR_SOFTWARE,
+        Televir_Directory_Constants.environments_directory,
         "preprocess/prinseq/bin/prinseq++",
     )
     SOFTWARE_PRINSEQ_name = "Prinseq++"
@@ -680,7 +697,7 @@ class SoftwareNames(object):
     SOFTWARE_BAMUTIL_name = "BamUtil"
     SOFTWARE_BAMUTIL_name_extended = "BamUtil - Mapping Stringency"
     SOFTWARE_BAMUTIL = os.path.join(
-        settings.DIR_SOFTWARE,
+        Televir_Directory_Constants.environments_directory,
         "preprocess/bamUtil/bin/bam",
     )
     SOFTWARE_BAMUTIL_VERSION = "1.0.15"
@@ -688,7 +705,7 @@ class SoftwareNames(object):
     SOFTWARE_MSAMTOOLS_name = "msamtools"
     SOFTWARE_MSAMTOOLS_name_extended = "msamtools - Mapping Filtering"
     SOFTWARE_MSAMTOOLS = os.path.join(
-        settings.DIR_SOFTWARE,
+        Televir_Directory_Constants.environments_directory,
         "preprocess/msamtools/bin/msamtools",
     )
     SOFTWARE_MSAMTOOLS_VERSION = "1.1.3"
@@ -720,7 +737,7 @@ class SoftwareNames(object):
 
     ### CENTRIFUGE
     SOFTWARE_CENTRIFUGE = os.path.join(
-        settings.DIR_SOFTWARE,
+        Televir_Directory_Constants.environments_directory,
         "host_depletion/hostdep_env/bin/centrifuge",
     )
     SOFTWARE_CENTRIFUGE_name = "Centrifuge"
@@ -732,8 +749,8 @@ class SoftwareNames(object):
 
     ### BWA
     SOFTWARE_BWA = os.path.join(
-        settings.DIR_SOFTWARE,
-        "preprocess/preproc/bin/bwa",
+        Televir_Directory_Constants.environments_directory,
+        "remap/remap/bin/bwa",
     )
 
     SOFTWARE_BWA_name = "BWA"
@@ -746,7 +763,8 @@ class SoftwareNames(object):
 
     ### KRAKEN2
     SOFTWARE_KRAKEN2 = os.path.join(
-        settings.DIR_SOFTWARE, "kraken2/kraken_env/bin/kraken2"
+        Televir_Directory_Constants.environments_directory,
+        "kraken2/kraken_env/bin/kraken2",
     )
     SOFTWARE_KRAKEN2_name = "Kraken2"
     SOFTWARE_KRAKEN2_name_extended = "Kraken2"
@@ -759,7 +777,7 @@ class SoftwareNames(object):
 
     ### KRAKENUNIQ
     SOFTARE_KRAKENUNIQ = os.path.join(
-        settings.DIR_SOFTWARE,
+        Televir_Directory_Constants.environments_directory,
         "host_depletion/hostdep_env/bin/krakenuniq",
     )
     SOFTWARE_KRAKENUNIQ_name = "Krakenuniq"
@@ -1039,6 +1057,19 @@ class SoftwareNames(object):
     }
     ###
     ###################################
+    SOFTWARE_MDCG_list = [
+        SOFTWARE_SNIPPY_name,
+        SOFTWARE_IVAR_name,
+        SOFTWARE_IRMA_name,
+    ]
+
+    ### software with duplicates in project and sample
+    duplicate_softwares = [
+        SOFTWARE_SNIPPY_name,
+        SOFTWARE_IRMA_name,
+        SOFTWARE_IVAR_name,
+    ]
+    ###
 
     ### software with application in multiple pipeline_steps:
     polyvalent_software = [
@@ -1049,6 +1080,7 @@ class SoftwareNames(object):
         SOFTWARE_MINIMAP2_REMAP_ONT_name,
         SOFTWARE_MSAMTOOLS_name,
     ]
+
     # pipeline_steps per software, for software with multiple pipeline_steps.
 
     polyvalent_software_pipelines = {
@@ -1236,6 +1268,15 @@ class SoftwareNames(object):
         return self.SOFTWARE_SNIPPY_PARAMETERS
 
     """
+    get bwa mem software"""
+
+    def get_bwa(self):
+        return self.SOFTWARE_BWA
+
+    def get_bwa_mem_name(self):
+        return self.SOFTWARE_BWA_name
+
+    """
     return iVar software
     """
 
@@ -1253,6 +1294,21 @@ class SoftwareNames(object):
 
     def get_ivar_parameters(self):
         return self.SOFTWARE_IVAR_PARAMETERS
+
+    """
+    return IRMA software"""
+
+    def get_irma(self):
+        return self.SOFTWARE_IRMA
+
+    def get_irma_name(self):
+        return self.SOFTWARE_IRMA_name
+
+    def get_irma_name_extended(self):
+        return self.SOFTWARE_IRMA_name_extended
+
+    def get_irma_version(self):
+        return self.SOFTWARE_IRMA_VERSION
 
     """
     return snippy-vcf_to_tab software. Add FRED
@@ -1439,10 +1495,10 @@ class SoftwareNames(object):
     """
     return Coverage software
     """
-    #     def get_coverage(self): return self.SOFTWARE_COVERAGE
-    #     def get_coverage_name(self): return self.SOFTWARE_COVERAGE_name
-    #     def get_coverage_version(self): return self.SOFTWARE_COVERAGEVERSION
-    #     def get_coverage_parameters(self): return self.SOFTWARE_COVERAGE_PARAMETERS
+    # def get_coverage(self): return self.SOFTWARE_COVERAGE
+    # def get_coverage_name(self): return self.SOFTWARE_COVERAGE_name
+    # def get_coverage_version(self): return self.SOFTWARE_COVERAGEVERSION
+    # def get_coverage_parameters(self): return self.SOFTWARE_COVERAGE_PARAMETERS
 
     """
     return Prokka software

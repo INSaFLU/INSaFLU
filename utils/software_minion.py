@@ -3,6 +3,7 @@ Created on 01/01/2021
 
 @author: mmp
 """
+
 import datetime
 import logging
 import os
@@ -966,13 +967,13 @@ class SoftwareMinion(object):
             except Exception as e:
                 result = Result()
                 result.set_error("Fail to get coverage: " + e.args[0])
-                result.add_software(
-                    SoftwareDesc(
-                        self.software_names.get_coverage_name(),
-                        self.software_names.get_coverage_version(),
-                        self.software_names.get_coverage_parameters(),
-                    )
-                )
+                # result.add_software(
+                #    SoftwareDesc(
+                #        self.software_names.get_coverage_name(),
+                #        self.software_names.get_coverage_version(),
+                #        self.software_names.get_coverage_parameters(),
+                #    )
+                # )
                 manageDatabase.set_project_sample_metakey(
                     project_sample,
                     user,

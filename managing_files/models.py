@@ -19,7 +19,6 @@ from constants.constants import Constants, FileExtensions, FileType, TypePath
 from constants.constants_mixed_infection import ConstantsMixedInfection
 from constants.software_names import SoftwareNames
 from fluwebvirus.formatChecker import ContentTypeRestrictedFileField
-from manage_virus.constants_virus import ConstantsVirus
 from manage_virus.models import IdentifyVirus
 from settings.constants_settings import ConstantsSettings
 
@@ -1017,6 +1016,11 @@ class Project(models.Model):
         "flumut_full_report.xlsx"  ### has results of flumut
     )
 
+    PROJECT_FILE_NAME_flumut_version = "flumut_version.txt"  ### has results of flumut
+
+    PROJECT_FILE_NAME_IRMA_OUTPUT_zipped = "irma_output.zip"  ### has results of irma
+    PROJECT_FILE_NAME_IRMA_MIXED_POSITIONS_folder = "irma_mixed_variants"
+
     PROJECT_FILE_NAME_all_files_zipped = "AllFiles.zip"  ### Several files zipped
 
     ## put the type file here to clean if there isn't enough sequences to create the trees and alignments
@@ -1279,7 +1283,7 @@ class ProjectSample(models.Model):
     PATH_MAIN_RESULT = "main_result"
     PREFIX_FILE_COVERAGE = "coverage"
     FILE_CONSENSUS_FILE = "Consensus_"
-    FILE_SNIPPY_TAB = "validated_variants_sample_"
+    FILE_VARIANTS_TAB = "validated_variants_sample_"
     FILE_FREEBAYES_TAB = "validated_minor_iSNVs_sample_"
     FILE_FREEBAYES_TAB_with_indels = "validated_minor_inc_indels_sample_"
 
@@ -1345,6 +1349,18 @@ class ProjectSample(models.Model):
     def __str__(self):
         return self.project.name
 
+    @property
+    def name(self):
+        return self.sample.name
+
+    @property
+    def reference_fasta(self):
+        return self.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT)
+
+    @property
+    def reference_gbk(self):
+        return self.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT)
+
     def get_global_file_by_element(
         self, type_path, prefix_file_name, sequence_name, extension
     ):
@@ -1400,11 +1416,11 @@ class ProjectSample(models.Model):
         get human file name
         """
         if (
-            software == SoftwareNames.SOFTWARE_SNIPPY_name
+            software in SoftwareNames.SOFTWARE_MDCG_list
             or software == SoftwareNames.SOFTWARE_Medaka_name
         ):
             if file_type == FileType.FILE_TAB:
-                return "{}{}".format(ProjectSample.FILE_SNIPPY_TAB, self.sample.name)
+                return "{}{}".format(ProjectSample.FILE_VARIANTS_TAB, self.sample.name)
         if software == SoftwareNames.SOFTWARE_FREEBAYES_name and not b_second_choice:
             if file_type == FileType.FILE_TAB:
                 return "{}{}".format(ProjectSample.FILE_FREEBAYES_TAB, self.sample.name)
@@ -1924,6 +1940,11 @@ class ProcessControler(models.Model):
     def get_name_televir_map(self, reference_pk):
         return "{}{}".format(
             ProcessControler.PREFIX_TELEVIR_REFERENCE_MAP, reference_pk
+        )
+
+    def __str__(self):
+        return "PK:{} name:{}  is_finished:{}  is_running:{}  is_error:{}".format(
+            self.pk, self.name, self.is_finished, self.is_running, self.is_error
         )
 
     def __str__(self):

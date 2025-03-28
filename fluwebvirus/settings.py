@@ -15,7 +15,7 @@ import os
 from decouple import config
 
 ## define APP version
-APP_VERSION_NUMBER = "2.1.0"
+APP_VERSION_NUMBER = "2.2.0"
 
 ### running tests in command line
 RUN_TEST_IN_COMMAND_LINE = False
@@ -364,6 +364,12 @@ LOGGING = {
             "level": "INFO",
             "class": "logging.FileHandler",
             "filename": "/var/log/insaFlu/update_pangolin.log",
+            "formatter": "verbose",
+        },
+        "update_flumut": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": "/var/log/insaFlu/update_flumut.log",
             "formatter": "verbose",
         },
         "console": {

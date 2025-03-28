@@ -225,6 +225,8 @@ var load_panels_main = function(load_url, user_id, target, load = false, suggest
     var samplesText = document.createTextNode(` Samples: ${project.samples}`);
     addSamplesButton.appendChild(samplesText);
 
+    
+
     // Assuming 'panelContainer' is the container to which you want to append the buttons
     panelContainer.append(viewDetailsButton);
     panelContainer.append(addSamplesButton);
@@ -312,6 +314,20 @@ var teleflu_projects_load = function() {
               // Add buttons to panelContainer
               createTelefluProjectButtons(project, teleflu_manage);            
               panelContainer.append(teleflu_manage);
+
+              // add number of existing workflows nworkflows
+              var workflows = $('<div>', { class: 'teleflu-workflows' });
+              workflows.append('<span class="nworkflows">W.' + project.nworkflows + '</span>');
+              teleflu_manage.append(workflows);
+            
+              if (project.mapping_or_queued == true) {
+                var spinnerContainer = $('<div class="spinner-container"></div>');
+                // Create the spinner icon
+                var spinner = $('<i id="workflow-container-spinner" class="fa fa-spin fa-circle-o-notch"></i>');
+                spinnerContainer.append(spinner);
+                teleflu_manage.append(spinnerContainer);
+                }
+
             
               addInsafluProjectStatusToPanel(project, panelContainer);
 

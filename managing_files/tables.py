@@ -804,10 +804,9 @@ class ShowProjectSamplesResults(tables.Table):
 
         show_coverage = 'href="#coverageModal"'
         default_software = DefaultProjectSoftware()
-        if not record.project is None:
 
-            if not default_software.is_software_mdcg_illumina_snippy(record.project):
-                show_coverage = ""
+        if default_software.is_project_coverage_available(record.project) is False:
+            show_coverage = ""
 
         ### coverage
         decode_coverage = DecodeObjects()

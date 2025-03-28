@@ -2606,6 +2606,12 @@ class DefaultProjectSoftware(object):
             return False
         return software.name == SoftwareNames.SOFTWARE_SNIPPY_name
 
+    def is_project_coverage_available(self, project: Project):
+        software = self.get_software_project_mdcg_illumina(project)
+        if software is None:
+            return False
+        return software.name != SoftwareNames.SOFTWARE_IRMA_name
+
     def possible_sample_technologyes(self, project: Project):
         """
         Return True if project mdcg illumina technology is SNIPPY otherwise no"""

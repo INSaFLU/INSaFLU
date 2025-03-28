@@ -2339,12 +2339,6 @@ class Software(object):
         """
         segments_in_reference = {v: g for g, v in keep_segment.items()}
 
-        # fasta_files = [
-        #    f for f in os.listdir(os.path.join(irma_output_dir, "amended_consensus"))
-        # ]
-        # fasta_segs = {f.split(".")[0].split("_")[-1]: f for f in fasta_files}
-        # print(fasta_segs)
-
         segments_generated = {
             segname: os.path.join(
                 irma_output_dir, "amended_consensus", f"{sample_name}_{segname}.fa"
@@ -2362,7 +2356,6 @@ class Software(object):
                 "fasta",
             )
             for segname, consensus in segments_generated.items()
-            # fasta_segs[gene] for segname, gene in keep_segment.items()
         }
 
         ## split reference into segment fastas and align to respective consensus.

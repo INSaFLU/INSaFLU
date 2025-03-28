@@ -2704,8 +2704,6 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
             )
         ):
 
-            software_flumut = SoftwareFlumut()
-
             context["flumut_report"] = get_link_for_dropdown_item(
                 project.get_global_file_by_project(
                     TypePath.MEDIA_URL,
@@ -2713,6 +2711,7 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
                 )
             )
 
+            software_flumut = SoftwareFlumut()
             if software_flumut.flumut_results_out_date(project):
                 context["update_flumut"] = True
                 context["update_mutation_report_message"] = mark_safe(
@@ -2730,9 +2729,18 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
                     Project.PROJECT_FILE_NAME_flumut_excel,
                 )
             )
-        # if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_pokay)):
-        # 	context['aln2pheno_report_pokay'] = get_link_for_dropdown_item(
-        # 		project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_Aln2pheno_report_pokay))
+
+        if os.path.exists(
+            project.get_global_file_by_project(
+                TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_flumut_version
+            )
+        ):
+            context["flumut_version"] = get_link_for_dropdown_item(
+                project.get_global_file_by_project(
+                    TypePath.MEDIA_URL,
+                    Project.PROJECT_FILE_NAME_flumut_version,
+                )
+            )
 
         if os.path.exists(
             project.get_global_file_by_project(

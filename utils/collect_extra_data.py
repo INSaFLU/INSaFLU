@@ -25,9 +25,9 @@ from managing_files.models import (
     ProjectSample,
     Reference,
     Sample,
+    TagNames,
 )
 from managing_files.models import Software as SoftwareModel
-from managing_files.models import TagNames
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software_project_sample import DefaultProjectSoftware
@@ -414,9 +414,9 @@ class CollectExtraData(object):
         file_flumut_excel = project.get_global_file_by_project(
             TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_flumut_excel
         )
-        # file_flumut_version = project.get_global_file_by_project(
-        #    TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_flumut_version
-        # )
+        file_flumut_version = project.get_global_file_by_project(
+            TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_flumut_version
+        )
 
         self.software.run_flumut(
             file_alignments,
@@ -425,6 +425,11 @@ class CollectExtraData(object):
             file_flumut_litterature_report,
             file_flumut_excel,
         )
+
+        flumut_version = self.software.get_flumut_version()
+
+        with open(file_flumut_version, "w") as f:
+            f.write(flumut_version)
 
         try:
             software = SoftwareModel.objects.get(

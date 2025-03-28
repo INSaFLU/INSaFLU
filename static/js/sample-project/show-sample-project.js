@@ -615,7 +615,6 @@ $('#id-update-pangolin-button').on('click', function(){
 
 $('#id-update-mutation-report-button').on('click', function () {
 	
-	console.log($('#id-modal-body-update-mutation-report').attr("update-mutation-report-value-url"));
 	$.ajax({
 		url: $('#id-modal-body-update-mutation-report').attr("update-mutation-report-value-url"),
 		data : { 

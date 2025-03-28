@@ -31,7 +31,7 @@ def set_default_parameters(request):
     """
     remove a reference. It can only be removed if not belongs to any deleted project
     """
-    if request.accepts():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
         software_id_a = "software_id"
         project_id_a = "project_id"
@@ -376,7 +376,7 @@ def mask_consensus(request):
     """
     mask consensus
     """
-    if request.accepts():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
 
         ## some pre-requisites
@@ -626,7 +626,7 @@ def get_mask_consensus_actual_values(request):
     return mask consensus of actual values
     """
     data = {"is_ok": False}
-    if request.accepts():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         ## some pre-requisites
         if not request.user.is_active or not request.user.is_authenticated:
             return JsonResponse(data)
@@ -724,7 +724,7 @@ def get_mdcg_project_software(request):
     test all defaults for project software, return project pk for selected project software
     """
 
-    if request.accepts():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
         project_id = request.GET["project_id"]
         software_name = request.GET["software_name"]
@@ -819,7 +819,7 @@ def turn_on_off_software(request):
     Denies is_to_run in main software description.
     Don't do this if the software already run
     """
-    if request.accepts():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False, "other_kills": []}
         software_id_a = "software_id"
         sample_id_a = "sample_id"
@@ -1350,7 +1350,7 @@ def turn_on_off_software(request):
 def get_software_name_to_turn_on_off(request):
     data = {"is_ok": False, "message": "You are not allow to do this operation."}
 
-    if request.accepts():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         software_id_a = "software_id"
         sample_id_a = "sample_id"
         project_id_a = "project_id"
@@ -1451,7 +1451,7 @@ def get_software_name_to_turn_on_off(request):
 @csrf_protect
 def reset_project_settings(request):
     data = {"is_ok": False, "message": "You are not allow to do this operation."}
-    if request.accepts():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         televir_project_id_a = "project_id"
         televir_id = int(request.GET[televir_project_id_a])
 

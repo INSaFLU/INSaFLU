@@ -43,7 +43,7 @@ def remove_dataset(request):
     """
     remove a dataset.
     """
-    if request.accepts():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
         dataset_id_a = "dataset_id"
 
@@ -90,7 +90,7 @@ def add_dataset_name(request):
     """
     add new dataset
     """
-    if request.accepts():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
         dataset_name = "dataset_name"
 
@@ -167,7 +167,7 @@ def test_dataset_name(request):
     """
     test dataset name, Return True if exits
     """
-    if request.accepts():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_taken": False}
         dataset_name = "dataset_name"
 
@@ -208,7 +208,7 @@ def test_consensus_name(request):
     """
     test dataset name, Return True if exits
     """
-    if request.accepts():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_taken": False}
         consensus_name = "consensus_name"
 
@@ -249,7 +249,7 @@ def add_consensus_name(request):
     """
     add new dataset
     """
-    if request.accepts():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
         consensus_name = "consensus_name"
 
@@ -302,7 +302,7 @@ def remove_consensus(request):
     """
     remove a consensus in a dataset.
     """
-    if request.accepts():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
         consensus_id_a = "consensus_id"
 
@@ -344,7 +344,7 @@ def remove_consensus_in_dataset(request):
     """
     remove a dataset.
     """
-    if request.accepts():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False, "message": "Something went wrong. Fail to remove."}
         consensus_id_a = "consensus_id"
 
@@ -441,7 +441,7 @@ def validate_consensus_name(request):
     """
     test if exist this reference name
     """
-    if request.accepts():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         consensus_name = request.GET.get("consensus_name")
 
         data = {
@@ -459,7 +459,7 @@ def dataset_rebuild(request):
     """
     Rebuild results
     """
-    if request.accepts():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
 
         data = {"is_ok": False, "message": "Something went wrong."}
         key_with_dataset_id = "dataset_id"
@@ -488,7 +488,7 @@ def show_msa_nucleotide(request):
     """
     manage msa nucleotide alignments
     """
-    if request.accepts():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
         key_with_dataset_id = "dataset_id"
         if key_with_dataset_id in request.GET:
@@ -555,7 +555,7 @@ def show_phylo_canvas(request):
     manage check boxes through ajax
     """
 
-    if request.accepts():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
         utils = Utils()
         key_with_dataset_id = "dataset_id"

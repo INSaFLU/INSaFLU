@@ -4,7 +4,7 @@ Created on Nov 1, 2017
 @author: mmp
 """
 
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 from constants.constants import Constants, FileExtensions
 from utils.utils import Utils

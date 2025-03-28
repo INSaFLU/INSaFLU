@@ -174,10 +174,10 @@ urlpatterns = [
     path(
         "ajax/remove_sample", ajax_views.remove_sample, name="remove_sample"
     ),  ## remove a sample
-    url(
+    path(
         r"^ajax/swap_technology$", ajax_views.swap_technology, name="swap_technology"
     ),  ## swap technology in sample
-    url(
+    path(
         r"^ajax/remove_project$", ajax_views.remove_project, name="remove_project"
     ),  ## remove a project
     path(
@@ -215,7 +215,7 @@ urlpatterns = [
         ajax_views.relink_uploaded_files,
         name="relink_uploaded_files",
     ),  ## remove remove_uploaded_file
-    url(
+    path(
         r"^ajax/unlock_sample_file$",
         ajax_views.unlock_sample_file,
         name="unlock_sample_file",

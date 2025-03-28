@@ -126,6 +126,10 @@ class DefaultParameters(object):
             if software is None:
                 try:
                     software = parameter.software
+<<<<<<< HEAD
+=======
+
+>>>>>>> 6a32c5a4 (remove some locks, update request ajax identification.)
                     software.save()
 
                 except Exception as e:
@@ -1057,16 +1061,16 @@ class DefaultParameters(object):
         """set software to run ON/OFF
         :output True if the is_to_run is changed"""
 
-        with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
-            ## get parameters for a specific sample, project or project_sample
-            parameters = Parameter.objects.filter(
-                software=software,
-                project=project,
-                project_sample=project_sample,
-                televir_project=televir_project,
-                sample=sample,
-                dataset=dataset,
-            )
+        # with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
+        ## get parameters for a specific sample, project or project_sample
+        parameters = Parameter.objects.filter(
+            software=software,
+            project=project,
+            project_sample=project_sample,
+            televir_project=televir_project,
+            sample=sample,
+            dataset=dataset,
+        )
 
         ## if None need to take the value from database
         if is_to_run is None:
@@ -1085,6 +1089,7 @@ class DefaultParameters(object):
             else:
                 is_to_run = not software.is_to_run
 
+<<<<<<< HEAD
             ## if the software can not be change return False
             if not software.can_be_on_off_in_pipeline:
                 if software.type_of_use in [
@@ -1143,8 +1148,61 @@ class DefaultParameters(object):
                 parameter.is_to_run = is_to_run
                 parameter.save()
 >>>>>>> cb39ec32 (merge flumut / insaflu pipelins into ubuntu development branch)
+=======
+        ## if the software can not be change return False
+        if not software.can_be_on_off_in_pipeline:
+            if software.type_of_use in [
+                Software.TYPE_OF_USE_qc,
+                Software.TYPE_OF_USE_global,
+                Software.TYPE_OF_USE_televir_global,
+                Software.TYPE_OF_USE_televir_project,
+                Software.TYPE_OF_USE_televir_settings,
+                Software.TYPE_OF_USE_televir_project_settings,
+            ]:
+                return software.is_to_run
+            elif len(parameters) > 0:
+                return parameters[0].is_to_run
+            return True
 
-            return is_to_run
+        # if it is Global it is software that is mandatory
+        # only can change if TYPE_OF_USE_global, other type_of_use is not be tested
+        if software.type_of_use in [
+            Software.TYPE_OF_USE_qc,
+            Software.TYPE_OF_USE_project,
+            Software.TYPE_OF_USE_global,
+            Software.TYPE_OF_USE_televir_global,
+            Software.TYPE_OF_USE_televir_project,
+            Software.TYPE_OF_USE_televir_settings,
+            Software.TYPE_OF_USE_televir_project_settings,
+        ]:
+            software.is_to_run = is_to_run
+            software.save()
+
+        if (
+            software.pipeline_step.name
+            == ConstantsSettings.PIPELINE_NAME_variant_detection
+        ):
+            software.is_to_run = is_to_run
+            software.save()
+
+        ## get parameters for a specific sample, project or project_sample
+
+        parameters = Parameter.objects.filter(
+            software=software,
+            project=project,
+            televir_project=televir_project,
+            project_sample=project_sample,
+            sample=sample,
+            dataset=dataset,
+        )
+>>>>>>> 6a32c5a4 (remove some locks, update request ajax identification.)
+
+        ### Try to find the parameter of sequence_out == 1. It is the one that has the flag to run or not.
+        for parameter in parameters:
+            parameter.is_to_run = is_to_run
+            parameter.save()
+
+        return is_to_run
 
     def get_vect_parameters(self, software: Software):
         """return all parameters, by software instance"""

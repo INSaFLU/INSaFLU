@@ -186,7 +186,7 @@ class SampleTable(tables.Table):
     )
     #     extra_info = tables.LinkColumn('sample-description', args=[tables.A('pk')], orderable=False, verbose_name='Extra Information', empty_values=())
     extra_info = tables.LinkColumn(
-        "Extra Information", orderable=False, empty_values=()
+        text="Extra Information", orderable=False, empty_values=()
     )
     technology = tables.Column("Technology", empty_values=())
     type_and_subtype = tables.Column("Classification", empty_values=())
@@ -204,7 +204,6 @@ class SampleTable(tables.Table):
             "data_set",
             "number_alerts",
             "number_quality_sequences",
-            "extra_info",
         )
         attrs = {"class": "table-striped table-bordered"}
         empty_text = "There are no Samples to show..."
@@ -428,7 +427,7 @@ class SampleTable(tables.Table):
             return _("Error")
         return _("Not yet")
 
-    def render_extra_info(self, record):
+    def render_extra_info(self, record: Sample):
         """
         icon with link to extra info
         """

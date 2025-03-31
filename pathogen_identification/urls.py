@@ -163,12 +163,12 @@ urlpatterns = [
         views.ProjectsSettingsView.as_view(),
         name="PIproject-settings",
     ),
-    path(
-        r"Project/(?P<pk>\d+)/select_project_type$",
+    re_path(
+        r"Project/(?P<pk>\d+)/select_project_type",
         views.ProjectSelectView.as_view(),
         name="PIproject-select-software",
     ),
-    path(
+    re_path(
         r"Project_samples/(?P<pk>\d+)$",
         views.SamplesDetailView.as_view(),
         name="remove-sample-PIproject",

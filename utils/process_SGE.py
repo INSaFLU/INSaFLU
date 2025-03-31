@@ -70,9 +70,7 @@ class ProcessSGE(object):
         """
         temp_file = self.utils.get_temp_file("qsub_out", FileExtensions.FILE_TXT)
 
-        cmd = "export SGE_ROOT={}; sbatch {} > {}".format(
-            settings.SGE_ROOT, file_name, temp_file
-        )
+        cmd = "sbatch {} > {}".format(file_name, temp_file)
         exist_status = os.system(cmd)
 
         if exist_status != 0:
@@ -137,11 +135,11 @@ class ProcessSGE(object):
             #    "#$ -j y\n"
             # )  # merge the standard error with standard output
             handleSLURM.write("#$ --job-name={}\n".format(job_name))  # job name
-            handleSLURM.write(
-                "#$ -cwd\n"
-            )  # execute the job for the current work directory
             handleSLURM.write("#$ --partition={}\n".format(queue_name))  # queue name
             handleSLURM.write("#$ --output={}\n".format(out_dir))  # out path file
+            handleSLURM.write("#$ --error={}\n".format(out_dir))
+            handleSLURM.write("#$ --ntasks=1\n")
+            handleSLURM.write("#$ --output={}/%x_%j.out\n".format(out_dir))
             for cline in vect_cmd:
                 handleSLURM.write("\n" + cline)
             if b_remove_out_dir and not settings.RUN_TEST_IN_COMMAND_LINE:

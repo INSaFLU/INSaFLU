@@ -127,7 +127,6 @@ class DefaultParameters(object):
             if software is None:
                 try:
                     software = parameter.software
-
                     software.save()
 
                 except Exception as e:

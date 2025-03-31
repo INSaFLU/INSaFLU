@@ -47,35 +47,35 @@ class ContentTypeRestrictedFileField(FileField):
             ### Important to catch the content_type
             self.logger_production.info(
                 "Read '{}' size '{}' content type: {}".format(
-                    file.name, file._size, content_type
+                    file.name, file.size, content_type
                 )
             )
             self.logger_debug.info(
                 "Read '{}' size '{}' content type: {}".format(
-                    file.name, file._size, content_type
+                    file.name, file.size, content_type
                 )
             )
             if content_type in self.content_types:
-                if file._size > self.max_upload_size:
+                if file.size > self.max_upload_size:
                     self.logger_debug.warning(
                         _("Please, keep file size under %s. Current file size %s")
                         % (
                             filesizeformat(self.max_upload_size),
-                            filesizeformat(file._size),
+                            filesizeformat(file.size),
                         )
                     )
                     self.logger_production.warning(
                         _("Please, keep file size under %s. Current file size %s")
                         % (
                             filesizeformat(self.max_upload_size),
-                            filesizeformat(file._size),
+                            filesizeformat(file.size),
                         )
                     )
                     raise forms.ValidationError(
                         _("Please, keep file size under %s. Current file size %s")
                         % (
                             filesizeformat(self.max_upload_size),
-                            filesizeformat(file._size),
+                            filesizeformat(file.size),
                         )
                     )
             else:

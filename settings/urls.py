@@ -69,7 +69,7 @@ urlpatterns = [
         name="turn_on_off_software",
     ),
     path(
-        r"^ajax/get_mdcg_project_software$",
+        r"^ajax/get_mdcg_project_software",
         ajax_views.get_mdcg_project_software,
         name="get_mdcg_project_software",
     ),

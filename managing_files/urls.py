@@ -189,8 +189,6 @@ urlpatterns = [
         "ajax/remove_sample", ajax_views.remove_sample, name="remove_sample"
     ),  ## remove a sample
     path(
-        r"^ajax/swap_technology$", ajax_views.swap_technology, name="swap_technology"
-    path(
         r"^ajax/swap_technology", ajax_views.swap_technology, name="swap_technology"
     ),  ## swap technology in sample
     path(

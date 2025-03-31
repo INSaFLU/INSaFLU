@@ -126,10 +126,6 @@ class DefaultParameters(object):
             if software is None:
                 try:
                     software = parameter.software
-<<<<<<< HEAD
-=======
-
->>>>>>> 6a32c5a4 (remove some locks, update request ajax identification.)
                     software.save()
 
                 except Exception as e:

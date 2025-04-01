@@ -203,7 +203,6 @@ class Command(BaseCommand):
                 user=user,
                 pisample_pk=target_sample.pk,
             )
-            # calculate_reports_overlaps(target_sample, force=True)
 
             process_SGE.set_process_controler(
                 user,

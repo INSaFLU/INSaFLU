@@ -129,9 +129,6 @@ class Command(BaseCommand):
         }
 
         # SUBMISSION
-        print("MATCHED PATHS")
-        print(matched_paths)
-
         module_tree = utils.module_tree(pipeline_tree, list(matched_paths.values()))
 
         try:

@@ -839,8 +839,6 @@ class DefaultSoftware(object):
         """
         test if exist, if not persist in database, for televir"""
 
-        print("test_defaults_test_televir")
-
         self.test_default_db(
             SoftwareNames.SOFTWARE_BWA_name,
             self.default_parameters.get_bwa_default(

@@ -1194,7 +1194,10 @@ class SoftwareUnit:
         except ParameterSet.DoesNotExist:
             return ("", "")
 
-        runs = RunMain.objects.filter(parameter_set=parameter_set)
+        runs = RunMain.objects.filter(
+            parameter_set__leaf__index=parameter_set.leaf.index,
+            parameter_set__leaf__software_tree__global_index=parameter_set.leaf.software_tree.global_index,
+        )
 
         for run_main in runs:
             try:
@@ -1225,7 +1228,10 @@ class SoftwareUnit:
         except ParameterSet.DoesNotExist:
             return ("", "")
 
-        runs = RunMain.objects.filter(parameter_set=parameter_set)
+        runs = RunMain.objects.filter(
+            parameter_set__leaf__index=parameter_set.leaf.index,
+            parameter_set__leaf__software_tree__global_index=parameter_set.leaf.software_tree.global_index,
+        )
 
         for run_main in runs:
 
@@ -1261,7 +1267,10 @@ class SoftwareUnit:
         except ParameterSet.DoesNotExist:
             return ("", "")
 
-        runs = RunMain.objects.filter(parameter_set=parameter_set)
+        runs = RunMain.objects.filter(
+            parameter_set__leaf__index=parameter_set.leaf.index,
+            parameter_set__leaf__software_tree__global_index=parameter_set.leaf.software_tree.global_index,
+        )
 
         for run_main in runs:
             try:

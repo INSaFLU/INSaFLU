@@ -30,6 +30,7 @@ from pathogen_identification.models import (
     RunAssembly,
     RunDetail,
     RunMain,
+    RunReadsRegister,
     SoftwareTree,
     SoftwareTreeNode,
 )
@@ -47,6 +48,33 @@ from pathogen_identification.utilities.utilities_general import (
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
+
+
+class SampleReadsRetrieve:
+
+    def __init__(self, sample: PIProject_Sample):
+        self.sample = sample
+
+    def sample_televir_paths(self) -> QuerySet:
+        """
+        get sample televir paths
+        """
+
+        sample_televir_paths = ParameterSet.objects.filter(
+            sample=self.sample,
+        )
+
+        registered_runs = RunReadsRegister.objects.filter(
+            run__parameter_set__sample__sample=self.sample
+        )
+
+        registered_runs = registered_runs
+
+        sample_televir_paths = sample_televir_paths.exclude(
+            Q(leaf__software_tree__global_index=-1) | Q(leaf__index=-1)
+        ).distinct("leaf__index", "leaf__software_tree__global_index")
+
+        sample_televir_paths = sample_televir_paths
 
 
 class SampleReferenceManager:

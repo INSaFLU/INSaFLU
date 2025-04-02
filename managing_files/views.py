@@ -60,6 +60,7 @@ from managing_files.tables import (
     ShowProjectSamplesResults,
 )
 from pathogen_identification.models import PIProject_Sample, TeleFluProject
+from pathogen_identification.utilities.utilities_views import RunReadsRegister
 from settings.constants_settings import ConstantsSettings
 from settings.default_software import DefaultSoftware
 from settings.default_software_project_sample import DefaultProjectSoftware
@@ -1831,6 +1832,19 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
                         SoftwareNames.SOFTWARE_ABRICATE_name
                     )
 
+            ### sample processed reads
+
+            from pathogen_identification.utilities.utilities_views import (
+                SampleReadsRetrieve,
+            )
+
+            # sample = INSaFLU_Sample.objects.get(pk= 25)
+            ret = SampleReadsRetrieve(sample)
+            reads_processed = ret.sample_televir_paths()
+            if len(reads_processed) > 0:
+                print(True)
+                context["reads_processed"] = reads_processed
+                context["has_reads_processed"] = True
             ##### extra data sample, columns added by the user
             ## [[header1, value1], [header2, value2], [header3, value3], ...]
             ### if it's to big expand button is better
@@ -3605,6 +3619,26 @@ def get_first_pk_from_session(request):
         ):
             return key.split("_")[2]
     return None
+
+
+def get_unique_pk_from_session(request):
+    """
+    return the unique pk selected. If exists more than one return none
+    """
+    utils = Utils()
+    return_pk = None
+    for key in request.session.keys():
+        if (
+            key.startswith(Constants.CHECK_BOX)
+            and len(key.split("_")) == 3
+            and utils.is_integer(key.split("_")[2])
+            and request.session[key]
+        ):
+            if return_pk == None:
+                return_pk = key.split("_")[2]
+            else:
+                return None
+    return return_pk
 
 
 def get_unique_pk_from_session(request):

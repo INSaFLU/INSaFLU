@@ -74,19 +74,20 @@
 			
 			<!-- NAV tabs -->
 			<div class="container">
-				<ul id="main_tab" class="nav nav-tabs" role="tablist">
-					<li class="nav-item"><a class="nav-link fa fa-align-justify" href="#original_fastq" role="tab" data-toggle="tab" > Original fastq</a></li>
-					<li class="nav-item"><a class="nav-link fa fa-align-center" href="#trimmomatic" role="tab" data-toggle="tab"> Quality processed reads</a></li>
-					{% if data_illuminastat or data_nanostat %}
-						<li class="nav-item"><a class="nav-link fa fa-bar-chart" href="#nanostat" role="tab" data-toggle="tab"> Filter Stat.</a></li>
-					{% endif %}
-					<li class="nav-item"><a class="nav-link fa fa-list" href="#virus_identification" role="tab" data-toggle="tab"> Type and subtype/lineage</a></li>
-					<li class="nav-item"><a class="nav-link fa fa-warning" href="#alerts" role="tab" data-toggle="tab"> Alerts</a></li>
-					{% if has_reads_processed %}
-						<li class="nav-item"><a class="nav-link fa fa-list" href="#reads_processed" role="tab" data-toggle="tab"> Processed</a></li>
-					{% endif %}
-				</ul>
-	
+				<div class="d-flex justify-content-center">
+					<ul id="main_tab" class="nav nav-tabs" role="tablist">
+						<li class="nav-item"><a class="nav-link fa fa-align-justify" href="#original_fastq" role="tab" data-toggle="tab" > Original fastq</a></li>
+						<li class="nav-item"><a class="nav-link fa fa-align-center" href="#trimmomatic" role="tab" data-toggle="tab"> Quality processed reads</a></li>
+						{% if data_illuminastat or data_nanostat %}
+							<li class="nav-item"><a class="nav-link fa fa-bar-chart" href="#nanostat" role="tab" data-toggle="tab"> Filter Stat.</a></li>
+						{% endif %}
+						<li class="nav-item"><a class="nav-link fa fa-list" href="#virus_identification" role="tab" data-toggle="tab"> Type and subtype/lineage</a></li>
+						<li class="nav-item"><a class="nav-link fa fa-warning" href="#alerts" role="tab" data-toggle="tab"> Alerts</a></li>
+						{% if has_reads_processed %}
+							<li class="nav-item"><a class="nav-link fa fa-align-center" href="#reads_processed" role="tab" data-toggle="tab"> Extra Processed </a></li>
+						{% endif %}
+					</ul>
+				</div>
 				<div class="tab-content">
 					{% if href_trimmonatic_2 %}	<!-- has always info for illumina, in single end has "Not available" -->
 						<div id="original_fastq" role="tabpanel" class="tab-pane fade box-blue">

@@ -74,7 +74,7 @@ class ProcessedSample:
         if not isinstance(other, ProcessedSample):
             return False
         return (
-            self.sample == other.sample
+            self.sample.sample == other.sample.sample
             and self.software == other.software
             and self.process_type == other.process_type
             and self.parameters == other.parameters
@@ -83,7 +83,7 @@ class ProcessedSample:
     def __hash__(self):
         return hash(
             (
-                self.sample,
+                self.sample.sample,
                 self.software,
                 self.process_type,
                 self.parameters,
@@ -114,7 +114,7 @@ class ProcessedSample:
         return processed r2 download
         """
         if self.processed_path_r2 is None:
-            return None
+            return "None"
 
         # remove pwd
         processed_path_r2_download = self.processed_path_r2.split("media/")[-1]
@@ -131,43 +131,29 @@ class SampleReadsRetrieve:
 
     def __init__(self, sample: INSaFLU_Sample):
         self.sample = sample
+        self.utils = Utils_Manager()
 
-    def sample_televir_paths(self) -> QuerySet:
+    def parameter_set_processed_reads(
+        self, parameter_set: ParameterSet
+    ) -> List[ProcessedSample]:
         """
-        get sample televir paths
+        get processed reads from parameter set
         """
+        processed_samples: List[ProcessedSample] = []
+        params_df = self.utils.get_leaf_parameters(parameter_set.leaf)
+        params_df.set_index("module", inplace=True)
 
         registered_runs = RunReadsRegister.objects.filter(
-            run__parameter_set__sample__sample=self.sample
+            run__parameter_set=parameter_set,
         )
-
-        psets = registered_runs.values_list("run__parameter_set__pk", flat=True)
-        psets = ParameterSet.objects.filter(
-            pk__in=psets,
-        )
-
-        registered_runs = RunReadsRegister.objects.filter(
-            run__parameter_set__in=psets,
-            run__parameter_set__sample__sample=self.sample,
-        ).distinct("run__parameter_set")
 
         if registered_runs.count() == 0:
             return []
 
-        utils_manager = Utils_Manager()
-        processed_samples: List[ProcessedSample] = []
-
         for run in registered_runs:
-            parameter_set = run.run.parameter_set
-            params_df = utils_manager.get_leaf_parameters(parameter_set.leaf)
-            # params_df.drop_duplicates(["module", "software"], inplace=True)
-            params_df.set_index("module", inplace=True)
 
             if ConstantsSettings.PIPELINE_NAME_host_depletion in params_df.index:
-                if (
-                    os.path.exists(run.depleted_reads_r1) is False
-                    and os.path.exists(run.depleted_reads_r2) is False
-                ):
+                if os.path.exists(run.depleted_reads_r1) is False:
                     continue
 
                 host_depletion_software = params_df.loc[
@@ -186,21 +172,19 @@ class SampleReadsRetrieve:
                 psample.software = host_depletion_software
                 psample.parameters = host_depletion_parameters
                 psample.processed_path_r1 = run.depleted_reads_r1
-                psample.processed_path_r2 = run.depleted_reads_r2
+                if os.path.exists(run.depleted_reads_r2):
+                    psample.processed_path_r2 = run.depleted_reads_r2
                 processed_samples.append(psample)
 
-            elif ConstantsSettings.PIPELINE_NAME_enrichment in params_df.index:
-                if (
-                    os.path.exists(run.enriched_reads_r1) is False
-                    and os.path.exists(run.enriched_reads_r2) is False
-                ):
+            if ConstantsSettings.PIPELINE_NAME_viral_enrichment in params_df.index:
+                if os.path.exists(run.enriched_reads_r1) is False:
                     continue
 
                 enrichment_software = params_df.loc[
-                    ConstantsSettings.PIPELINE_NAME_enrichment, "software"
+                    ConstantsSettings.PIPELINE_NAME_viral_enrichment, "software"
                 ]
                 enrichment_parameters = params_df.loc[
-                    ConstantsSettings.PIPELINE_NAME_enrichment, "value"
+                    ConstantsSettings.PIPELINE_NAME_viral_enrichment, "value"
                 ]
 
                 psample = ProcessedSample(
@@ -208,18 +192,16 @@ class SampleReadsRetrieve:
                 )
 
                 psample.enrichment = True
-                psample.process_type = ConstantsSettings.PIPELINE_NAME_enrichment
+                psample.process_type = ConstantsSettings.PIPELINE_NAME_viral_enrichment
                 psample.software = enrichment_software
                 psample.parameters = enrichment_parameters
                 psample.processed_path_r1 = run.enriched_reads_r1
-                psample.processed_path_r2 = run.enriched_reads_r2
+                if os.path.exists(run.enriched_reads_r2):
+                    psample.processed_path_r2 = run.enriched_reads_r2
                 processed_samples.append(psample)
 
-            elif ConstantsSettings.PIPELINE_NAME_extra_qc in params_df.index:
-                if (
-                    os.path.exists(run.qc_reads_r1) is False
-                    and os.path.exists(run.qc_reads_r2) is False
-                ):
+            if ConstantsSettings.PIPELINE_NAME_extra_qc in params_df.index:
+                if os.path.exists(run.qc_reads_r1) is False:
                     continue
                 qc_software = params_df.loc[
                     ConstantsSettings.PIPELINE_NAME_extra_qc, "software"
@@ -237,8 +219,34 @@ class SampleReadsRetrieve:
                 psample.software = qc_software
                 psample.parameters = qc_parameters
                 psample.processed_path_r1 = run.qc_reads_r1
-                psample.processed_path_r2 = run.qc_reads_r2
+                if os.path.exists(run.qc_reads_r2):
+                    psample.processed_path_r2 = run.qc_reads_r2
                 processed_samples.append(psample)
+
+        # get unique processed samples
+        processed_samples = list(set(processed_samples))
+        return processed_samples
+
+    @property
+    def processed_reads(self) -> List[ProcessedSample]:
+        """
+        get processed reads
+        """
+
+        # get parameter sets
+        parameter_sets = ParameterSet.objects.filter(
+            sample__sample=self.sample,
+            status=ParameterSet.STATUS_FINISHED,
+            leaf__software_tree__global_index__gt=0,
+        ).distinct("leaf__index", "leaf__software_tree__global_index")
+
+        if parameter_sets.count() == 0:
+            return []
+
+        processed_samples: List[ProcessedSample] = []
+
+        for parameter_set in parameter_sets:
+            processed_samples += self.parameter_set_processed_reads(parameter_set)
 
         # get unique processed samples
         processed_samples = list(set(processed_samples))

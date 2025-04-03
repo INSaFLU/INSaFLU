@@ -280,8 +280,12 @@
 													<strong>R1:</strong> 
 													<a href="{{ processed_read.processed_r1_download }}" download>{{ processed_read.processed_path_r1|basename }}</a>
 													<span style="margin-left: 20px;"></span> <!-- Add space -->
-													<strong>R2:</strong> 
-													<a href="{{ processed_read.processed_r2_download }}" download>{{ processed_read.processed_path_r2|basename }}</a>
+													{% if processed_read.processed_path_r2 %} <!-- Check if R2 exists -->
+														<strong>R2:</strong> 
+														<a href="{{ processed_read.processed_r2_download }}" download>{{ processed_read.processed_path_r2|basename }}</a>
+													{% else %}
+														<strong>R2:</strong> Not available
+													{% endif %}
 												</p>
 											</div>
 										</div>

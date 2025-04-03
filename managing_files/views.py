@@ -1840,9 +1840,8 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 
             # sample = INSaFLU_Sample.objects.get(pk= 25)
             ret = SampleReadsRetrieve(sample)
-            reads_processed = ret.sample_televir_paths()
+            reads_processed = ret.processed_reads
             if len(reads_processed) > 0:
-                print(True)
                 context["reads_processed"] = reads_processed
                 context["has_reads_processed"] = True
             ##### extra data sample, columns added by the user

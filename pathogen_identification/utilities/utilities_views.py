@@ -63,7 +63,7 @@ class ProcessedSample:
         self.host_depletion = None
         self.enrichment = None
         self.software = None
-        self.parameters = None
+        self._parameters = None
         self.processed_path_r1 = None
         self.processed_path_r2 = None
 
@@ -77,7 +77,7 @@ class ProcessedSample:
             self.sample.sample == other.sample.sample
             and self.software == other.software
             and self.process_type == other.process_type
-            and self.parameters == other.parameters
+            and self._parameters == other._parameters
         )
 
     def __hash__(self):
@@ -89,6 +89,25 @@ class ProcessedSample:
                 self.parameters,
             )
         )
+
+    @property
+    def parameters(self):
+        """
+        get parameters, remove any paths to keep only basename
+        """
+        if self._parameters is None:
+            return None
+
+        # remove pwd
+        if not "/" in self._parameters:
+            return self._parameters
+        parameters = self._parameters.split(" ")
+        for i, param in enumerate(parameters):
+            if "/" in param:
+                parameters[i] = os.path.basename(param)
+        parameters = " ".join(parameters)
+
+        return parameters
 
     @property
     def processed_r1_download(self):
@@ -170,7 +189,7 @@ class SampleReadsRetrieve:
                 psample.host_depletion = True
                 psample.process_type = ConstantsSettings.PIPELINE_NAME_host_depletion
                 psample.software = host_depletion_software
-                psample.parameters = host_depletion_parameters
+                psample._parameters = host_depletion_parameters
                 psample.processed_path_r1 = run.depleted_reads_r1
                 if os.path.exists(run.depleted_reads_r2):
                     psample.processed_path_r2 = run.depleted_reads_r2
@@ -194,7 +213,7 @@ class SampleReadsRetrieve:
                 psample.enrichment = True
                 psample.process_type = ConstantsSettings.PIPELINE_NAME_viral_enrichment
                 psample.software = enrichment_software
-                psample.parameters = enrichment_parameters
+                psample._parameters = enrichment_parameters
                 psample.processed_path_r1 = run.enriched_reads_r1
                 if os.path.exists(run.enriched_reads_r2):
                     psample.processed_path_r2 = run.enriched_reads_r2
@@ -217,7 +236,7 @@ class SampleReadsRetrieve:
                 psample.qc = True
                 psample.process_type = ConstantsSettings.PIPELINE_NAME_extra_qc
                 psample.software = qc_software
-                psample.parameters = qc_parameters
+                psample._parameters = qc_parameters
                 psample.processed_path_r1 = run.qc_reads_r1
                 if os.path.exists(run.qc_reads_r2):
                     psample.processed_path_r2 = run.qc_reads_r2

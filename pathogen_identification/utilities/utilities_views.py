@@ -299,8 +299,8 @@ class SampleReadsRetrieve:
 
                     psample.qc = True
                     psample.process_type = f" {ConstantsSettings.PIPELINE_NAME_extra_qc} + {psample.process_type}"
-                    psample.software_qc = enrichment_software
-                    psample._parameters_qc = enrichment_parameters
+                    psample.software_qc = software_qc
+                    psample._parameters_qc = parameters_qc
 
                 psample.processed_path_r1 = run.enriched_reads_r1
                 if os.path.exists(run.enriched_reads_r2):

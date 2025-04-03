@@ -62,8 +62,13 @@ class ProcessedSample:
         self.qc = None
         self.host_depletion = None
         self.enrichment = None
-        self.software = None
-        self._parameters = None
+        self.software_qc = None
+        self.software_enrichment = None
+        self.software_host_depletion = None
+        self._parameters_qc = None
+        self._parameters_enrichment = None
+        self._parameters_host_depletion = None
+
         self.processed_path_r1 = None
         self.processed_path_r2 = None
 
@@ -75,33 +80,71 @@ class ProcessedSample:
             return False
         return (
             self.sample.sample == other.sample.sample
-            and self.software == other.software
+            and self.software_qc == other.software_qc
             and self.process_type == other.process_type
-            and self._parameters == other._parameters
+            and self._parameters_qc == other._parameters_qc
         )
 
     def __hash__(self):
         return hash(
             (
                 self.sample.sample,
-                self.software,
+                self.software_qc,
                 self.process_type,
-                self.parameters,
+                self.parameters_qc,
             )
         )
 
     @property
-    def parameters(self):
+    def parameters_qc(self):
         """
         get parameters, remove any paths to keep only basename
         """
-        if self._parameters is None:
+        if self._parameters_qc is None:
             return None
 
         # remove pwd
-        if not "/" in self._parameters:
-            return self._parameters
-        parameters = self._parameters.split(" ")
+        if not "/" in self._parameters_qc:
+            return self._parameters_qc
+        parameters = self._parameters_qc.split(" ")
+        for i, param in enumerate(parameters):
+            if "/" in param:
+                parameters[i] = os.path.basename(param)
+        parameters = " ".join(parameters)
+
+        return parameters
+
+    @property
+    def parameters_enrichment(self):
+        """
+        get parameters, remove any paths to keep only basename
+        """
+        if self._parameters_enrichment is None:
+            return None
+
+        # remove pwd
+        if not "/" in self._parameters_enrichment:
+            return self._parameters_enrichment
+        parameters = self._parameters_enrichment.split(" ")
+        for i, param in enumerate(parameters):
+            if "/" in param:
+                parameters[i] = os.path.basename(param)
+        parameters = " ".join(parameters)
+
+        return parameters
+
+    @property
+    def parameters_host_depletion(self):
+        """
+        get parameters, remove any paths to keep only basename
+        """
+        if self._parameters_host_depletion is None:
+            return None
+
+        # remove pwd
+        if not "/" in self._parameters_host_depletion:
+            return self._parameters_host_depletion
+        parameters = self._parameters_host_depletion.split(" ")
         for i, param in enumerate(parameters):
             if "/" in param:
                 parameters[i] = os.path.basename(param)
@@ -188,14 +231,44 @@ class SampleReadsRetrieve:
 
                 psample.host_depletion = True
                 psample.process_type = ConstantsSettings.PIPELINE_NAME_host_depletion
-                psample.software = host_depletion_software
-                psample._parameters = host_depletion_parameters
+                psample.software_host_depletion = host_depletion_software
+                psample._parameters_host_depletion = host_depletion_parameters
                 psample.processed_path_r1 = run.depleted_reads_r1
+
+                if ConstantsSettings.PIPELINE_NAME_viral_enrichment in params_df.index:
+
+                    enrichment_software = params_df.loc[
+                        ConstantsSettings.PIPELINE_NAME_viral_enrichment, "software"
+                    ]
+                    enrichment_parameters = params_df.loc[
+                        ConstantsSettings.PIPELINE_NAME_viral_enrichment, "value"
+                    ]
+
+                    psample.enrichment = True
+                    psample.process_type = f"{ConstantsSettings.PIPELINE_NAME_viral_enrichment} + {psample.process_type}"
+                    psample.software_enrichment = enrichment_software
+                    psample._parameters_enrichment = enrichment_parameters
+
+                if ConstantsSettings.PIPELINE_NAME_extra_qc in params_df.index:
+
+                    software_qc = params_df.loc[
+                        ConstantsSettings.PIPELINE_NAME_extra_qc, "software"
+                    ]
+                    parameters_qc = params_df.loc[
+                        ConstantsSettings.PIPELINE_NAME_extra_qc, "value"
+                    ]
+
+                    psample.qc = True
+                    psample.process_type = f"{ConstantsSettings.PIPELINE_NAME_extra_qc} + {psample.process_type}"
+                    psample.software_qc = software_qc
+                    psample._parameters_qc = parameters_qc
+
                 if os.path.exists(run.depleted_reads_r2):
                     psample.processed_path_r2 = run.depleted_reads_r2
+
                 processed_samples.append(psample)
 
-            if ConstantsSettings.PIPELINE_NAME_viral_enrichment in params_df.index:
+            elif ConstantsSettings.PIPELINE_NAME_viral_enrichment in params_df.index:
                 if os.path.exists(run.enriched_reads_r1) is False:
                     continue
 
@@ -212,14 +285,29 @@ class SampleReadsRetrieve:
 
                 psample.enrichment = True
                 psample.process_type = ConstantsSettings.PIPELINE_NAME_viral_enrichment
-                psample.software = enrichment_software
-                psample._parameters = enrichment_parameters
+                psample.software_enrichment = enrichment_software
+                psample._parameters_enrichment = enrichment_parameters
+
+                if ConstantsSettings.PIPELINE_NAME_extra_qc in params_df.index:
+
+                    software_qc = params_df.loc[
+                        ConstantsSettings.PIPELINE_NAME_extra_qc, "software"
+                    ]
+                    parameters_qc = params_df.loc[
+                        ConstantsSettings.PIPELINE_NAME_extra_qc, "value"
+                    ]
+
+                    psample.qc = True
+                    psample.process_type = f" {ConstantsSettings.PIPELINE_NAME_extra_qc} + {psample.process_type}"
+                    psample.software_qc = enrichment_software
+                    psample._parameters_qc = enrichment_parameters
+
                 psample.processed_path_r1 = run.enriched_reads_r1
                 if os.path.exists(run.enriched_reads_r2):
                     psample.processed_path_r2 = run.enriched_reads_r2
                 processed_samples.append(psample)
 
-            if ConstantsSettings.PIPELINE_NAME_extra_qc in params_df.index:
+            elif ConstantsSettings.PIPELINE_NAME_extra_qc in params_df.index:
                 if os.path.exists(run.qc_reads_r1) is False:
                     continue
                 qc_software = params_df.loc[
@@ -235,8 +323,8 @@ class SampleReadsRetrieve:
 
                 psample.qc = True
                 psample.process_type = ConstantsSettings.PIPELINE_NAME_extra_qc
-                psample.software = qc_software
-                psample._parameters = qc_parameters
+                psample.software_qc = qc_software
+                psample._parameters_qc = qc_parameters
                 psample.processed_path_r1 = run.qc_reads_r1
                 if os.path.exists(run.qc_reads_r2):
                     psample.processed_path_r2 = run.qc_reads_r2

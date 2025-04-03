@@ -272,11 +272,28 @@
 										<div class="card" style="background-color: #e6f7ff; border: 1px solid #007bff;"> <!-- Light blue background with darker border -->
 											<div class="card-body">
 												<h5 class="card-title"><strong>Type:</strong> {{ processed_read.process_type }}</h5>
+												{% if processed_read.qc%}
 												<p class="card-text">
-													<strong>Software:</strong> {{ processed_read.software }} 
+													<strong>QC:</strong> {{ processed_read.software_qc }} 
 													<span style="margin-left: 20px;"></span> <!-- Add space -->
-													<strong>Parameters:</strong> {{ processed_read.parameters }}
+													<strong>Parameters:</strong> {{ processed_read.parameters_qc }}
 												</p>
+												{% endif %}
+												{% if processed_read.enrichment %}
+												<p class="card-text">
+													<strong>Enriched:</strong> {{ processed_read.software_enrichment }} 
+													<span style="margin-left: 20px;"></span> <!-- Add space -->
+													<strong>Parameters:</strong> {{ processed_read.parameters_enrichment }}
+												</p>
+												{% endif %}
+												{% if processed_read.host_depletion %}
+												<p class="card-text">
+													<strong>Host depleted:</strong> {{ processed_read.software_host_depletion }} 
+													<span style="margin-left: 20px;"></span> <!-- Add space -->
+													<strong>Parameters:</strong> {{ processed_read.parameters_host_depletion }}
+												</p>
+												{% endif %}
+
 												<p class="card-text">
 													<strong>R1:</strong> 
 													<a href="{{ processed_read.processed_r1_download }}" download>{{ processed_read.processed_path_r1|basename }}</a>

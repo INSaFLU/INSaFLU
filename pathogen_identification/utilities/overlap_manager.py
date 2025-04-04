@@ -1058,8 +1058,30 @@ class ReadOverlapManager(MappingResultsParser):
 
                 continue
 
-            # combinations = self.clade_shared_by_pair_old(leaves)
             combinations = self.clade_shared_by_pair(leaves)
+
+            ########################################################
+            ### calculate max per sample shared reads per sample
+            individual_sets = []
+            for leaf in leaves:
+                pairs_set = combinations[
+                    (combinations.accid_A == leaf) | (combinations.accid_B == leaf)
+                ]
+                pairs_set = pairs_set.aggregate(
+                    {
+                        "proportion_max": lambda x: max(x),
+                        "proportion_min": lambda x: max(x),
+                    }
+                )
+                individual_sets.append(pairs_set)
+            individual_sets = pd.DataFrame(individual_sets)
+            individual_sets["proportion_max"] = individual_sets[
+                "proportion_max"
+            ].fillna(0)
+            individual_sets["proportion_min"] = individual_sets[
+                "proportion_min"
+            ].fillna(0)
+            individual_sets["proportion_std"] = individual_sets["proportion_max"].std()
 
             node_stats_dict[node] = Clade(
                 name=node,
@@ -1068,9 +1090,9 @@ class ReadOverlapManager(MappingResultsParser):
                 total_proportion=total_proportion,
                 group_counts=clade_counts,
                 private_counts=private_reads,
-                shared_proportion_min=min(combinations.proportion_max),
-                shared_proportion_max=max(combinations.proportion_max),
-                shared_proportion_std=np.std(combinations.proportion_max),
+                shared_proportion_min=min(individual_sets.proportion_max),
+                shared_proportion_max=max(individual_sets.proportion_max),
+                shared_proportion_std=np.std(individual_sets.proportion_max),
                 overlap_df=combinations,
             )
 

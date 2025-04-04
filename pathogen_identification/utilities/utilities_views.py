@@ -1542,6 +1542,7 @@ class ReportSorter:
             group_list.sort(key=lambda x: x.coverage, reverse=True)
             name = group_df.clade.iloc[0]
             if len(group_list):
+
                 clades_to_keep.append(name)
                 if len(group_list) > 1:
 

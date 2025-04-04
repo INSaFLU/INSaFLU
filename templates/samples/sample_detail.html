@@ -3,6 +3,7 @@
 {% load crispy_forms_tags %}
 {% load django_bootstrap_breadcrumbs %}
 {% load static from staticfiles %}
+{% load custom_filters %}
 
 {% block css %}
 	{% load static from staticfiles %}
@@ -73,16 +74,20 @@
 			
 			<!-- NAV tabs -->
 			<div class="container">
-				<ul id="main_tab" class="nav nav-tabs" role="tablist">
-					<li class="nav-item"><a class="nav-link fa fa-align-justify" href="#original_fastq" role="tab" data-toggle="tab" > Original fastq</a></li>
-					<li class="nav-item"><a class="nav-link fa fa-align-center" href="#trimmomatic" role="tab" data-toggle="tab"> Quality processed reads</a></li>
-					{% if data_illuminastat or data_nanostat %}
-						<li class="nav-item"><a class="nav-link fa fa-bar-chart" href="#nanostat" role="tab" data-toggle="tab"> Filter Stat.</a></li>
-					{% endif %}
-					<li class="nav-item"><a class="nav-link fa fa-list" href="#virus_identification" role="tab" data-toggle="tab"> Type and subtype/lineage</a></li>
-					<li class="nav-item"><a class="nav-link fa fa-warning" href="#alerts" role="tab" data-toggle="tab"> Alerts</a></li>
-				</ul>
-	
+				<div class="d-flex justify-content-center">
+					<ul id="main_tab" class="nav nav-tabs" role="tablist">
+						<li class="nav-item"><a class="nav-link fa fa-align-justify" href="#original_fastq" role="tab" data-toggle="tab" > Original fastq</a></li>
+						<li class="nav-item"><a class="nav-link fa fa-align-center" href="#trimmomatic" role="tab" data-toggle="tab"> Quality processed reads</a></li>
+						{% if data_illuminastat or data_nanostat %}
+							<li class="nav-item"><a class="nav-link fa fa-bar-chart" href="#nanostat" role="tab" data-toggle="tab"> Filter Stat.</a></li>
+						{% endif %}
+						<li class="nav-item"><a class="nav-link fa fa-list" href="#virus_identification" role="tab" data-toggle="tab"> Type and subtype/lineage</a></li>
+						<li class="nav-item"><a class="nav-link fa fa-warning" href="#alerts" role="tab" data-toggle="tab"> Alerts</a></li>
+						{% if has_reads_processed %}
+							<li class="nav-item"><a class="nav-link fa fa-align-center" href="#reads_processed" role="tab" data-toggle="tab"> Extra Processed </a></li>
+						{% endif %}
+					</ul>
+				</div>
 				<div class="tab-content">
 					{% if href_trimmonatic_2 %}	<!-- has always info for illumina, in single end has "Not available" -->
 						<div id="original_fastq" role="tabpanel" class="tab-pane fade box-blue">
@@ -258,6 +263,57 @@
 					  		<p class="software">There's no alerts.</p>
 						{% endif %}
 			  		</div>
+					{% if has_reads_processed %}
+					<div id="reads_processed" role="tabpanel" class="tab-pane fade box-blue">
+						<div class="container-fluid mt-3"> <!-- Use container-fluid for full-width layout -->
+							<div class="row">
+								{% for processed_read in reads_processed %}
+									<div class="col-lg-12 mb-4"> <!-- Full-width cards -->
+										<div class="card" style="background-color: #e6f7ff; border: 1px solid #007bff;"> <!-- Light blue background with darker border -->
+											<div class="card-body">
+												<h5 class="card-title"><strong>Type:</strong> {{ processed_read.process_type }}</h5>
+												{% if processed_read.qc%}
+												<p class="card-text">
+													<strong>QC:</strong> {{ processed_read.software_qc }} 
+													<span style="margin-left: 20px;"></span> <!-- Add space -->
+													<strong>Parameters:</strong> {{ processed_read.parameters_qc }}
+												</p>
+												{% endif %}
+												{% if processed_read.enrichment %}
+												<p class="card-text">
+													<strong>Enriched:</strong> {{ processed_read.software_enrichment }} 
+													<span style="margin-left: 20px;"></span> <!-- Add space -->
+													<strong>Parameters:</strong> {{ processed_read.parameters_enrichment }}
+												</p>
+												{% endif %}
+												{% if processed_read.host_depletion %}
+												<p class="card-text">
+													<strong>Host depleted:</strong> {{ processed_read.software_host_depletion }} 
+													<span style="margin-left: 20px;"></span> <!-- Add space -->
+													<strong>Parameters:</strong> {{ processed_read.parameters_host_depletion }}
+												</p>
+												{% endif %}
+
+												<p class="card-text">
+													<strong>R1:</strong> 
+													<a href="{{ processed_read.processed_r1_download }}" download>{{ processed_read.processed_path_r1|basename }}</a>
+													<span style="margin-left: 20px;"></span> <!-- Add space -->
+													{% if processed_read.processed_path_r2 %} <!-- Check if R2 exists -->
+														<strong>R2:</strong> 
+														<a href="{{ processed_read.processed_r2_download }}" download>{{ processed_read.processed_path_r2|basename }}</a>
+													{% else %}
+														<strong>R2:</strong> Not available
+													{% endif %}
+												</p>
+											</div>
+										</div>
+									</div>
+								{% endfor %}
+							</div>
+						</div>
+					</div>
+					{% endif %}
+
 			  	</div>	<!-- tab-content -->
 			</div> <!-- container -->
 		</div> <!-- container-fluid -->

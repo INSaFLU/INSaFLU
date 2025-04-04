@@ -789,7 +789,6 @@ class SampleTableOne(tables.Table):
                 RunMain.RUN_TYPE_MAP_REQUEST,
                 RunMain.RUN_TYPE_PANEL_MAPPING,
             ],
-            # status=RunMain.STATUS_PREP,
             parameter_set__status__in=[
                 ParameterSet.STATUS_PROXIED,
                 ParameterSet.STATUS_QUEUED,

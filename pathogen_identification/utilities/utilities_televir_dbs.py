@@ -49,7 +49,11 @@ class Utility_Repository:
 
         # self.connection = self.engine.connect()
         self.metadata = MetaData()
-        # self.create_tables()
+
+        if not self.check_tables_exists():
+            # self.delete_tables()
+            # self.clear_tables()
+            self.create_tables()
 
     def setup_engine(self, install_type):
         if not os.path.exists(self.db_path):
@@ -77,6 +81,28 @@ class Utility_Repository:
         self.engine = create_engine(
             f"postgresql+psycopg2://{config('DB_USER')}:{config('DB_PASSWORD')}@{config('DB_HOST')}:{config('DB_PORT')}/{config('DB_NAME')}"
         )
+
+    def check_table_exists(self, table_name):
+        """
+        Check if a table exists in the database
+        """
+        find = self.engine.execute(
+            f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table_name}'"
+        ).fetchall()
+
+        if len(find) > 0:
+            return True
+        else:
+            return False
+
+    def check_tables_exists(self):
+        """
+        Check if the tables exist in the database
+        """
+        for table_name in self.tables:
+            if not self.check_table_exists(table_name):
+                return False
+        return True
 
     def create_software_table(self):
         self.software = Table(

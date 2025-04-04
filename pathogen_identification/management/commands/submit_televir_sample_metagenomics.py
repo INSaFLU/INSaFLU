@@ -8,12 +8,7 @@ from django.core.management.base import BaseCommand
 from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.deployment_main import Run_Main_from_Leaf
-from pathogen_identification.models import (
-    ParameterSet,
-    PIProject_Sample,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.models import ParameterSet, PIProject_Sample, SoftwareTree
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
 from pathogen_identification.utilities.utilities_pipeline import (
     SoftwareTreeUtils,
@@ -96,8 +91,6 @@ class Command(BaseCommand):
             was_run_killed = utils.parameter_util.check_ParameterSet_killed(
                 sample=target_sample, leaf=matched_path_node, project=project
             )
-
-            print("was_run_killed", was_run_killed)
 
             ### draw graph
             graph_progress = TreeProgressGraph(target_sample)

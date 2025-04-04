@@ -406,6 +406,7 @@ class RunCMD:
 
         with operation_files as op_files:
             cmd_string = self.bash_software_cmd_string(cmd)
+            print(f"running command: {cmd_string}")
 
             op_files.write_bash_script(cmd_string)
 
@@ -1193,7 +1194,10 @@ class SoftwareUnit:
         except ParameterSet.DoesNotExist:
             return ("", "")
 
-        runs = RunMain.objects.filter(parameter_set=parameter_set)
+        runs = RunMain.objects.filter(
+            parameter_set__leaf__index=parameter_set.leaf.index,
+            parameter_set__leaf__software_tree__global_index=parameter_set.leaf.software_tree.global_index,
+        )
 
         for run_main in runs:
             try:
@@ -1224,7 +1228,10 @@ class SoftwareUnit:
         except ParameterSet.DoesNotExist:
             return ("", "")
 
-        runs = RunMain.objects.filter(parameter_set=parameter_set)
+        runs = RunMain.objects.filter(
+            parameter_set__leaf__index=parameter_set.leaf.index,
+            parameter_set__leaf__software_tree__global_index=parameter_set.leaf.software_tree.global_index,
+        )
 
         for run_main in runs:
 
@@ -1260,7 +1267,10 @@ class SoftwareUnit:
         except ParameterSet.DoesNotExist:
             return ("", "")
 
-        runs = RunMain.objects.filter(parameter_set=parameter_set)
+        runs = RunMain.objects.filter(
+            parameter_set__leaf__index=parameter_set.leaf.index,
+            parameter_set__leaf__software_tree__global_index=parameter_set.leaf.software_tree.global_index,
+        )
 
         for run_main in runs:
             try:

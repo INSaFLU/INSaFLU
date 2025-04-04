@@ -751,7 +751,6 @@ class Run_Main_from_Leaf:
 
             if run_success:
                 self.register_completion()
-                self.run_reference_overlap_analysis()
                 self.update_project_change_date()
 
             else:

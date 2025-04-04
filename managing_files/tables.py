@@ -214,7 +214,7 @@ class SampleTable(tables.Table):
             "type_and_subtype",
             "data_set",
             "number_quality_sequences",
-            "extra_info",
+            # "extra_info",
         )
 
     def render_fastq_files(self, record):

@@ -1623,9 +1623,12 @@ class SamplesDetailView(BaseBreadcrumbMixin, LoginRequiredMixin, DetailView):
 
     @cached_property
     def crumbs(self):
+        sample: Sample = self.kwargs["object"]
+        if sample is None:
+            return []
         return [
             ("Samples", reverse("samples")),
-            ("Sample details", reverse("sample-description")),
+            ("Sample details", reverse("sample-description"), args = [sample.pk]),
         ]
 
     def get_context_data(self, **kwargs):

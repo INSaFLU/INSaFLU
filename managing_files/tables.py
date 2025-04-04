@@ -185,9 +185,9 @@ class SampleTable(tables.Table):
         empty_values=(),
     )
     #     extra_info = tables.LinkColumn('sample-description', args=[tables.A('pk')], orderable=False, verbose_name='Extra Information', empty_values=())
-    extra_info = tables.LinkColumn(
-        text="Extra Information", orderable=False, empty_values=()
-    )
+    # extra_info = tables.LinkColumn(
+    #    text="Extra Information", orderable=False, empty_values=()
+    # )
     technology = tables.Column("Technology", empty_values=())
     type_and_subtype = tables.Column("Classification", empty_values=())
     fastq_files = tables.Column("#Fastq Files", empty_values=())

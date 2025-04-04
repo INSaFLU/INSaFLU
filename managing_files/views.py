@@ -1823,9 +1823,12 @@ class SamplesDetailView(BaseBreadcrumbMixin, LoginRequiredMixin, DetailView):
         sample: Sample = self.kwargs["object"]
         if sample is None:
             return []
+        sample: Sample = self.kwargs["object"]
+        if sample is None:
+            return []
         return [
             ("Samples", reverse("samples")),
-            ("Sample details", reverse("sample-description", args=[sample.pk])),
+            ("Sample details", reverse("sample-description", args=[sample.pk]), args = [sample.pk]),
         ]
 
     def get_context_data(self, **kwargs):

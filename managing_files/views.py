@@ -1628,7 +1628,7 @@ class SamplesDetailView(BaseBreadcrumbMixin, LoginRequiredMixin, DetailView):
             return []
         return [
             ("Samples", reverse("samples")),
-            ("Sample details", reverse("sample-description"), args = [sample.pk]),
+            ("Sample details", reverse("sample-description", args=[sample.pk])),
         ]
 
     def get_context_data(self, **kwargs):

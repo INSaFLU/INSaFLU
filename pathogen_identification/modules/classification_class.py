@@ -10,8 +10,7 @@ from typing import Any, Type
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.modules.object_classes import (RunCMD,
-                                                            SoftwareDetail)
+from pathogen_identification.modules.object_classes import RunCMD, SoftwareDetail
 
 
 def read_sam_file(
@@ -144,11 +143,11 @@ class Classifier_init(ABC):
             pass
 
     @abstractmethod
-    def run_SE(self, threads: int = 3):
+    def run_SE(self, threads: str = "3"):
         pass
 
     @abstractmethod
-    def run_PE(self, threads: int = 3):
+    def run_PE(self, threads: str = "3"):
         pass
 
     @abstractmethod

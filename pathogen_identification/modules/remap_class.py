@@ -424,19 +424,33 @@ class Remap_Bwa(RemapMethod_init):
     def remap(self):
         """
         Remap reads to reference using bwa."""
-        if self.type == CS.SINGLE_END:
-            self.remap_SE()
-        elif self.type == CS.PAIR_END:
-            self.remap_PE()
-        else:
-            raise ValueError
+        print("REMAPPPING")
+        try:
+            if self.type == CS.SINGLE_END:
+                self.remap_SE()
+            elif self.type == CS.PAIR_END:
+                self.remap_PE()
+            else:
+                raise ValueError
+        except Exception as e:
+            import traceback
+
+            traceback.print_exc()
+            print(e)
+            raise e
 
     def remap_SE(self):
         """
 
         Remap reads to reference using bwa for single end reads."""
         temp_sam = os.path.join(self.outdir, self.prefix + ".sam")
-        cmd_01 = [
+        cmd_index = [
+            "bwa",
+            "index",
+            self.reference,
+        ]
+
+        cmd_map = [
             "bwa",
             "mem",
             self.args,
@@ -455,14 +469,20 @@ class Remap_Bwa(RemapMethod_init):
             self.outbam,
             temp_sam,
         ]
-        self.cmd.run_script(cmd_01)
-        self.cmd.run_script(cmd_samtools)
+        self.cmd.run_script_software(cmd_index)
+        self.cmd.run_script_software(cmd_map)
+        self.cmd.run_script_software(cmd_samtools)
 
     def remap_PE(self):
         """
         Remap reads to reference using bwa for paired end reads."""
         temp_sam = os.path.join(self.outdir, self.prefix + ".sam")
-        cmd = [
+        cmd_index = [
+            "bwa",
+            "index",
+            self.reference,
+        ]
+        cmd_map = [
             "bwa",
             "mem",
             self.args,
@@ -482,8 +502,9 @@ class Remap_Bwa(RemapMethod_init):
             self.outbam,
             temp_sam,
         ]
-        self.cmd.run_script(cmd)
-        self.cmd.run_script(cmd_samtools)
+        self.cmd.run_script_software(cmd_index)
+        self.cmd.run_script_software(cmd_map)
+        self.cmd.run_script_software(cmd_samtools)
 
 
 class Remap_Minimap2(RemapMethod_init):

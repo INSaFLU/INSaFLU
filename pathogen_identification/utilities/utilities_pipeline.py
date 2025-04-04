@@ -1247,6 +1247,12 @@ class Utility_Pipeline_Manager:
                 columns=["name", "path", "database", "installed", "env_path"]
             )
 
+    def check_tables_exist(self):
+        """
+        Check if the software table exist
+        """
+        return self.utility_repository.check_tables_exists()
+
     def check_software_db_available(self, software_name: str) -> bool:
         """
         Check if a software is installed

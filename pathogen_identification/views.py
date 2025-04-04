@@ -35,7 +35,6 @@ from django_tables2 import RequestConfig
 from view_breadcrumbs import BaseBreadcrumbMixin
 
 from constants.constants import Constants, FileType, TypePath
-from constants.software_names import SoftwareNames
 from extend_user.models import Profile
 from fluwebvirus.settings import (
     BASE_DIR,
@@ -2984,13 +2983,12 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         )
 
         report_sorter = ReportSorter(sample, unique_reports, report_layout_params)
-        sort_tree_exists = False
         sort_tree_plot_path = None
         if report_sorter.overlap_manager is not None:
-            sort_tree_exists = report_sorter.overlap_manager.tree_plot_exists
             sort_tree_plot_path = report_sorter.overlap_manager.tree_plot_path_render
 
         sorted_reports = report_sorter.get_reports_compound()
+
         sort_performed = True if report_sorter.analysis_empty is False else False
         private_reads_available = False
         for report_group in sorted_reports:

@@ -11,7 +11,8 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 
 from constants.constants import Constants
-from fluwebvirus.settings import STATIC_ROOT
+from fluwebvirus.settings import MEDIA_URL, STATIC_ROOT
+from managing_files.models import Sample as INSaFLU_Sample
 from pathogen_identification.constants_settings import (
     ConstantsSettings as PIConstantsSettings,
 )
@@ -30,6 +31,7 @@ from pathogen_identification.models import (
     RunAssembly,
     RunDetail,
     RunMain,
+    RunReadsRegister,
     SoftwareTree,
     SoftwareTreeNode,
 )
@@ -47,6 +49,316 @@ from pathogen_identification.utilities.utilities_general import (
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
+
+
+class ProcessedSample:
+    """
+    Class to process sample
+    """
+
+    def __init__(self, sample: PIProject_Sample):
+        self.sample = sample
+        self.process_type = None
+        self.qc = None
+        self.host_depletion = None
+        self.enrichment = None
+        self.software_qc = None
+        self.software_enrichment = None
+        self.software_host_depletion = None
+        self._parameters_qc = None
+        self._parameters_enrichment = None
+        self._parameters_host_depletion = None
+
+        self.processed_path_r1 = None
+        self.processed_path_r2 = None
+
+    def __str__(self):
+        return f"ProcessedSample(sample={self.sample}, qc={self.qc}, host_depletion={self.host_depletion}, enrichment={self.enrichment})"
+
+    def __eq__(self, other):
+        if not isinstance(other, ProcessedSample):
+            return False
+        return (
+            self.sample.sample == other.sample.sample
+            and self.software_qc == other.software_qc
+            and self.process_type == other.process_type
+            and self._parameters_qc == other._parameters_qc
+        )
+
+    def __hash__(self):
+        return hash(
+            (
+                self.sample.sample,
+                self.software_qc,
+                self.process_type,
+                self.parameters_qc,
+            )
+        )
+
+    @property
+    def parameters_qc(self):
+        """
+        get parameters, remove any paths to keep only basename
+        """
+        if self._parameters_qc is None:
+            return None
+
+        # remove pwd
+        if not "/" in self._parameters_qc:
+            return self._parameters_qc
+        parameters = self._parameters_qc.split(" ")
+        for i, param in enumerate(parameters):
+            if "/" in param:
+                parameters[i] = os.path.basename(param)
+        parameters = " ".join(parameters)
+
+        return parameters
+
+    @property
+    def parameters_enrichment(self):
+        """
+        get parameters, remove any paths to keep only basename
+        """
+        if self._parameters_enrichment is None:
+            return None
+
+        # remove pwd
+        if not "/" in self._parameters_enrichment:
+            return self._parameters_enrichment
+        parameters = self._parameters_enrichment.split(" ")
+        for i, param in enumerate(parameters):
+            if "/" in param:
+                parameters[i] = os.path.basename(param)
+        parameters = " ".join(parameters)
+
+        return parameters
+
+    @property
+    def parameters_host_depletion(self):
+        """
+        get parameters, remove any paths to keep only basename
+        """
+        if self._parameters_host_depletion is None:
+            return None
+
+        # remove pwd
+        if not "/" in self._parameters_host_depletion:
+            return self._parameters_host_depletion
+        parameters = self._parameters_host_depletion.split(" ")
+        for i, param in enumerate(parameters):
+            if "/" in param:
+                parameters[i] = os.path.basename(param)
+        parameters = " ".join(parameters)
+
+        return parameters
+
+    @property
+    def processed_r1_download(self):
+        """
+        return processed r1 download
+        """
+        if self.processed_path_r1 is None:
+            return None
+
+        # remove pwd
+        processed_path_r1_download = self.processed_path_r1.split("media/")[-1]
+
+        processed_path_r1_download = os.path.join(
+            MEDIA_URL,
+            processed_path_r1_download,
+        )
+
+        return processed_path_r1_download
+
+    @property
+    def processed_r2_download(self):
+        """
+        return processed r2 download
+        """
+        if self.processed_path_r2 is None:
+            return "None"
+
+        # remove pwd
+        processed_path_r2_download = self.processed_path_r2.split("media/")[-1]
+
+        processed_path_r2_download = os.path.join(
+            MEDIA_URL,
+            processed_path_r2_download,
+        )
+
+        return processed_path_r2_download
+
+
+class SampleReadsRetrieve:
+
+    def __init__(self, sample: INSaFLU_Sample):
+        self.sample = sample
+        self.utils = Utils_Manager()
+
+    def parameter_set_processed_reads(
+        self, parameter_set: ParameterSet
+    ) -> List[ProcessedSample]:
+        """
+        get processed reads from parameter set
+        """
+        processed_samples: List[ProcessedSample] = []
+        params_df = self.utils.get_leaf_parameters(parameter_set.leaf)
+        params_df.set_index("module", inplace=True)
+
+        registered_runs = RunReadsRegister.objects.filter(
+            run__parameter_set=parameter_set,
+        )
+
+        if registered_runs.count() == 0:
+            return []
+
+        for run in registered_runs:
+
+            if ConstantsSettings.PIPELINE_NAME_host_depletion in params_df.index:
+                if os.path.exists(run.depleted_reads_r1) is False:
+                    continue
+
+                host_depletion_software = params_df.loc[
+                    ConstantsSettings.PIPELINE_NAME_host_depletion, "software"
+                ]
+                host_depletion_parameters = params_df.loc[
+                    ConstantsSettings.PIPELINE_NAME_host_depletion, "value"
+                ]
+
+                psample = ProcessedSample(
+                    sample=run.run.parameter_set.sample,
+                )
+
+                psample.host_depletion = True
+                psample.process_type = ConstantsSettings.PIPELINE_NAME_host_depletion
+                psample.software_host_depletion = host_depletion_software
+                psample._parameters_host_depletion = host_depletion_parameters
+                psample.processed_path_r1 = run.depleted_reads_r1
+
+                if ConstantsSettings.PIPELINE_NAME_viral_enrichment in params_df.index:
+
+                    enrichment_software = params_df.loc[
+                        ConstantsSettings.PIPELINE_NAME_viral_enrichment, "software"
+                    ]
+                    enrichment_parameters = params_df.loc[
+                        ConstantsSettings.PIPELINE_NAME_viral_enrichment, "value"
+                    ]
+
+                    psample.enrichment = True
+                    psample.process_type = f"{ConstantsSettings.PIPELINE_NAME_viral_enrichment} + {psample.process_type}"
+                    psample.software_enrichment = enrichment_software
+                    psample._parameters_enrichment = enrichment_parameters
+
+                if ConstantsSettings.PIPELINE_NAME_extra_qc in params_df.index:
+
+                    software_qc = params_df.loc[
+                        ConstantsSettings.PIPELINE_NAME_extra_qc, "software"
+                    ]
+                    parameters_qc = params_df.loc[
+                        ConstantsSettings.PIPELINE_NAME_extra_qc, "value"
+                    ]
+
+                    psample.qc = True
+                    psample.process_type = f"{ConstantsSettings.PIPELINE_NAME_extra_qc} + {psample.process_type}"
+                    psample.software_qc = software_qc
+                    psample._parameters_qc = parameters_qc
+
+                if os.path.exists(run.depleted_reads_r2):
+                    psample.processed_path_r2 = run.depleted_reads_r2
+
+                processed_samples.append(psample)
+
+            elif ConstantsSettings.PIPELINE_NAME_viral_enrichment in params_df.index:
+                if os.path.exists(run.enriched_reads_r1) is False:
+                    continue
+
+                enrichment_software = params_df.loc[
+                    ConstantsSettings.PIPELINE_NAME_viral_enrichment, "software"
+                ]
+                enrichment_parameters = params_df.loc[
+                    ConstantsSettings.PIPELINE_NAME_viral_enrichment, "value"
+                ]
+
+                psample = ProcessedSample(
+                    sample=run.run.parameter_set.sample,
+                )
+
+                psample.enrichment = True
+                psample.process_type = ConstantsSettings.PIPELINE_NAME_viral_enrichment
+                psample.software_enrichment = enrichment_software
+                psample._parameters_enrichment = enrichment_parameters
+
+                if ConstantsSettings.PIPELINE_NAME_extra_qc in params_df.index:
+
+                    software_qc = params_df.loc[
+                        ConstantsSettings.PIPELINE_NAME_extra_qc, "software"
+                    ]
+                    parameters_qc = params_df.loc[
+                        ConstantsSettings.PIPELINE_NAME_extra_qc, "value"
+                    ]
+
+                    psample.qc = True
+                    psample.process_type = f" {ConstantsSettings.PIPELINE_NAME_extra_qc} + {psample.process_type}"
+                    psample.software_qc = software_qc
+                    psample._parameters_qc = parameters_qc
+
+                psample.processed_path_r1 = run.enriched_reads_r1
+                if os.path.exists(run.enriched_reads_r2):
+                    psample.processed_path_r2 = run.enriched_reads_r2
+                processed_samples.append(psample)
+
+            elif ConstantsSettings.PIPELINE_NAME_extra_qc in params_df.index:
+                if os.path.exists(run.qc_reads_r1) is False:
+                    continue
+                qc_software = params_df.loc[
+                    ConstantsSettings.PIPELINE_NAME_extra_qc, "software"
+                ]
+                qc_parameters = params_df.loc[
+                    ConstantsSettings.PIPELINE_NAME_extra_qc, "value"
+                ]
+
+                psample = ProcessedSample(
+                    sample=run.run.parameter_set.sample,
+                )
+
+                psample.qc = True
+                psample.process_type = ConstantsSettings.PIPELINE_NAME_extra_qc
+                psample.software_qc = qc_software
+                psample._parameters_qc = qc_parameters
+                psample.processed_path_r1 = run.qc_reads_r1
+                if os.path.exists(run.qc_reads_r2):
+                    psample.processed_path_r2 = run.qc_reads_r2
+                processed_samples.append(psample)
+
+        # get unique processed samples
+        processed_samples = list(set(processed_samples))
+        return processed_samples
+
+    @property
+    def processed_reads(self) -> List[ProcessedSample]:
+        """
+        get processed reads
+        """
+
+        # get parameter sets
+        parameter_sets = ParameterSet.objects.filter(
+            sample__sample=self.sample,
+            status=ParameterSet.STATUS_FINISHED,
+            leaf__software_tree__global_index__gt=0,
+        ).distinct("leaf__index", "leaf__software_tree__global_index")
+
+        if parameter_sets.count() == 0:
+            return []
+
+        processed_samples: List[ProcessedSample] = []
+
+        for parameter_set in parameter_sets:
+            processed_samples += self.parameter_set_processed_reads(parameter_set)
+
+        # get unique processed samples
+        processed_samples = list(set(processed_samples))
+
+        return processed_samples
 
 
 class SampleReferenceManager:
@@ -1230,6 +1542,7 @@ class ReportSorter:
             group_list.sort(key=lambda x: x.coverage, reverse=True)
             name = group_df.clade.iloc[0]
             if len(group_list):
+
                 clades_to_keep.append(name)
                 if len(group_list) > 1:
 
@@ -2370,6 +2683,21 @@ class RawReferenceUtils:
 
         run_references_tables = run_references_tables[run_references_tables.taxid != 0]
 
+        return run_references_tables
+
+    @staticmethod
+    def simplify_by_description(df: pd.DataFrame):
+        if "description" not in df.columns:
+            return df
+
+        df["description_first"] = df["description"].str.split(" ").str[0]
+
+        df = df.sort_values("standard_score", ascending=False)
+        df = df.drop_duplicates(subset=["description_first"], keep="first")
+
+        df.drop(columns=["description_first"], inplace=True)
+
+        return df
         return run_references_tables
 
     @staticmethod

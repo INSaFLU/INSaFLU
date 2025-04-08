@@ -2330,42 +2330,44 @@ class Software(object):
         os.system(cmd)
 
     def irma_align_get_msas(
-        self, keep_segment, reference_fasta, irma_output_dir, sample_name
+        self,
+        reference_segments,
+        reference_fasta,
+        irma_segments,
+        consensus_fasta,
+        irma_output_dir,
+        sample_name,
     ) -> dict:
         """
         fetch consenssu from irma output. Match each to reference segments.
         Align each segment to reference and generate vcf files.
         """
-        segments_in_reference = {v: g for g, v in keep_segment.items()}
+        segments_in_reference = {v: g for g, v in reference_segments.items()}
+        ## get segments from irma output
+        segments_in_consensus = {v: g for g, v in irma_segments.items()}
 
-        segments_generated = {
-            segname: os.path.join(
-                irma_output_dir, "amended_consensus", f"{sample_name}_{segname}.fa"
-            )
-            for segname in segments_in_reference.keys()  # if there are more than in the reference get ignored.
-        }
-
-        segments_generated = {
-            s: f for s, f in segments_generated.items() if os.path.exists(f)
-        }
-
-        matched_segments = {
-            segname: SeqIO.read(
-                consensus,
-                "fasta",
-            )
-            for segname, consensus in segments_generated.items()
+        segments_in_consensus = {
+            segnumber: segname
+            for segnumber, segname in segments_in_consensus.items()
+            if segnumber in segments_in_reference
         }
 
         ## split reference into segment fastas and align to respective consensus.
         with open(reference_fasta, "r") as ref:
             ref_seqs = SeqIO.to_dict(SeqIO.parse(ref, "fasta"))
 
+        with open(consensus_fasta, "r") as cons:
+            consensus_seqs = SeqIO.to_dict(SeqIO.parse(cons, "fasta"))
+
         msa_output = {}
 
-        for segname, fasta in matched_segments.items():
+        for segname, segment in segments_in_consensus.items():
+            fasta = consensus_seqs[segment]
             fasta_seq = fasta
             fasta_seq.id = sample_name
+
+            reference_segment = segments_in_reference[segname]
+            ref_fasta = ref_seqs[reference_segment]
 
             tmp_cons = os.path.join(irma_output_dir, segname + ".fasta")
             fasta_id = fasta.id
@@ -2376,13 +2378,13 @@ class Software(object):
 
             tmp__ref = os.path.join(irma_output_dir, segname + "_ref.fasta")
             with open(tmp__ref, "w") as ref:
-                SeqIO.write(ref_seqs[segname], ref, "fasta")
+                SeqIO.write(ref_fasta, ref, "fasta")
 
             fasta.id = fasta_id
 
             tmp_comb = os.path.join(irma_output_dir, segname + "_comb.fasta")
             with open(tmp_comb, "w") as ref:
-                SeqIO.write(ref_seqs[segname], ref, "fasta")
+                SeqIO.write(ref_fasta, ref, "fasta")
                 SeqIO.write(fasta, ref, "fasta")
 
             self.align_combined_fasta(
@@ -2604,19 +2606,12 @@ class Software(object):
             os.path.join(irma_output_dir, sample_name + ".mixed.variants.tsv"), sep="\t"
         )
 
-        ## generate additional_files
-        keep_segment = self.match_segments_to_numbers(path_reference_fasta)
-        ## generate individual segment alignments
-        seqname_msa_dict = self.irma_align_get_msas(
-            keep_segment, path_reference_fasta, irma_output_dir, sample_name=sample_name
-        )
-
         # concatenated original consensus fasta
         full_consensus_irma_original = os.path.join(
             irma_output_dir, sample_name + ".consensus.original.fa"
         )
-        fasta_files_original = os.listdir(
-            os.path.join(irma_output_dir, "amended_consensus")
+        fasta_files_original = sorted(
+            os.listdir(os.path.join(irma_output_dir, "amended_consensus"))
         )
         fasta_files_original = [
             os.path.join(irma_output_dir, "amended_consensus", f)
@@ -2627,12 +2622,26 @@ class Software(object):
             for file in fasta_files_original:
                 with open(file, "r") as g:
                     f.write(g.read())
+        ## IRMA match and keep segments
+        irma_segments = self.match_segments_to_numbers(full_consensus_irma_original)
+
+        ## generate additional_files
+        keep_segment = self.match_segments_to_numbers(path_reference_fasta)
+        ## generate individual segment alignments
+        seqname_msa_dict = self.irma_align_get_msas(
+            keep_segment,
+            path_reference_fasta,
+            irma_segments,
+            full_consensus_irma_original,
+            irma_output_dir,
+            sample_name=sample_name,
+        )
 
         ## concatenate all fasta files to keep (matched to reference sequence).
         full_consensus_irma = os.path.join(
             irma_output_dir, sample_name + ".consensus.fa"
         )
-        fasta_files = [x + ".fasta" for x in seqname_msa_dict.keys()]
+        fasta_files = sorted([x + ".fasta" for x in seqname_msa_dict.keys()])
         fasta_files = [os.path.join(irma_output_dir, f) for f in fasta_files]
         with open(full_consensus_irma, "w") as f:
             for file in fasta_files:

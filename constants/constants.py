@@ -197,7 +197,7 @@ class Constants(object):
 
     DIR_ICONS = "icons"
     DIR_TEMPLATE_INPUT = "template_input"
-    TEMP_DIRECTORY = "/data"
+    TEMP_DIRECTORY = "/data/tmp/"
     COUNT_DNA_TEMP_DIRECTORY = "insaFlu"
 
     FILE_TEMPLATE_INPUT_csv = "template_input.csv"

@@ -2622,6 +2622,7 @@ class Software(object):
             for file in fasta_files_original:
                 with open(file, "r") as g:
                     f.write(g.read())
+
         ## IRMA match and keep segments
         irma_segments = self.match_segments_to_numbers(full_consensus_irma_original)
 

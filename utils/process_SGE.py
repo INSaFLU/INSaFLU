@@ -71,8 +71,17 @@ class ProcessSGE(object):
         temp_file = self.utils.get_temp_file("qsub_out", FileExtensions.FILE_TXT)
 
         cmd = "sbatch {} > {}".format(file_name, temp_file)
-        exist_status = os.system(cmd)
+        print(cmd)
+        ## submit job
 
+        os.chdir("/data/tmp")
+        exist_status = os.system(cmd)
+        print("#########")
+        print(cmd)
+        print(exist_status)
+        os.chdir(settings.BASE_DIR)
+
+        ## check if error occurred
         if exist_status != 0:
             if os.path.exists(temp_file):
                 os.unlink(temp_file)
@@ -82,6 +91,7 @@ class ProcessSGE(object):
             self.logger_debug.error(
                 "Fail to run: " + cmd + " - exit code: " + str(exist_status)
             )
+            print("Fail to run: " + cmd + " - exit code: " + str(exist_status))
             raise Exception("Fail to submit qsub")
         ## read output
         vect_out = self.utils.read_text_file(temp_file)
@@ -90,10 +100,13 @@ class ProcessSGE(object):
         b_found = False
 
         for line in vect_out:
-            if line.find("has been submitted") != -1:
+            print(line)
+            print(line.find("Submitted batch job"))
+            if line.find("Submitted batch job") != -1:
                 lst_line = line.split(" ")
-                if len(lst_line) > 4 and self.utils.is_integer(lst_line[2]):
-                    return int(lst_line[2])
+                print(lst_line)
+                if len(lst_line) > 2 and self.utils.is_integer(lst_line[3]):
+                    return int(lst_line[3])
                 return None  ## don't rise exception...
         if not b_found:
             raise Exception("\n".join(vect_out))

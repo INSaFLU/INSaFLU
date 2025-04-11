@@ -109,6 +109,7 @@ class ProcessSGE(object):
             self.logger_debug.error(
                 "Fail to run: " + cmd + " - exit code: " + str(exist_status)
             )
+            print("Fail to run: " + cmd + " - exit code: " + str(exist_status))
             raise Exception("Fail to submit qsub")
         ## read output
         vect_out = self.utils.read_text_file(temp_file)

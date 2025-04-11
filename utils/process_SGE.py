@@ -613,8 +613,7 @@ class ProcessSGE(object):
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         out_dir = self.utils.get_temp_dir()
         try:
-            print("SUBMITTING JOB")
-            path_file = self.set_script_run_slurm(
+            path_file = self.set_script_run_sge(
                 out_dir, Constants.QUEUE_SGE_NAME_GLOBAL, vect_command, job_name, True
             )
             sge_id = self.submitte_job(path_file)

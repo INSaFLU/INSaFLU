@@ -16,8 +16,6 @@
 {% endblock %}
 
 
-<<<<<<< HEAD
-=======
 {% block breadcrumbs %}
 {{block.super}}
 {% breadcrumb "Project Index" "project-index" %}
@@ -25,11 +23,11 @@
 {% breadcrumb project_name  "" %}
 {% endblock %}
 
->>>>>>> c25437f1 (l)
 {% block content %}
 
 {% block extra_head %}
-    <link rel="stylesheet" href="{% static 'css/televir_main_page.css' %}">
+<link rel="stylesheet" href="{% static 'css/televir_main_page.css' %}">
+<link rel="stylesheet" href="{% static 'css/televir_reference_management_panels.css' %}">
 
 {% endblock %}
 
@@ -93,6 +91,18 @@
                                 <a href="{% url "pathogenID_pipeline" level=project_index %}"><span class="hidden-phone" style="color:white"><i>Project Settings</i></span></a>
                                     </button>
                         </div>
+                        {% if project_not_updated %}
+                            <div class="btn-group">
+                                <button type="button" id="update-project" class="btn btn-primary dark" aria-haspopup="true" aria-expanded="false" update-url="{% url "update_televir_project" %}" project-id="{{ project_index }}" {% if update_running %} disabled {% endif %}>
+                                    {% if update_running %}
+                                    <i class="fa fa-spinner fa-spin" style= "color: white;"></i>
+                                    <a href="#"><span class="hidden-phone" style="color:white"><i>Updating</i></span></a>
+                                    {% else %}
+                                    <a href="#"><span class="hidden-phone" style="color:white"><i>Update</i></span></a>
+                                    {% endif %}
+                                        </button>
+                            </div>
+                        {% endif %}
 
                         <div class="btn-group" style="float: right;">
                             <button type="button" class="kill-runs btn btn-warning btn-primary" data-toggle="modal" data-target="#id_remove_all_modal">
@@ -139,7 +149,7 @@
                         <th {{ column.attrs.th.as_html }}><a href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header|title }}</a></th>
                     {% else %}
                         <th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
-                    {% endif %}                    
+                    {% endif %}
                     {% endfor %}
                 </tr>
             </thead>
@@ -189,69 +199,9 @@
     <br>
 
     {% endif %}
-
     
-    <div id="teleflu-projects-info">
-        {% if teleflu_projects_exist %}
-        <div class="teleflu-table-container">
-            <h4 class="table-title"> Reference Analysis </h4>
-            <p class="table-description">
-                <i class="fa fa-crosshairs fa-lg" aria-hidden="true">‌</i>
-                Focus on selected targets for validation. 
-                Coordinate processing and mapping workflows against selected references across multiple samples. 
-            </p>
+    <div id="teleflu-projects-info" teleflu-projects-url="{% url 'query_teleflu_projects' %}">
 
-            <div id="teleflu-projects-list">
-                
-            <ul id="teleflu-list">
-                {% for project in teleflu_projects %}
-                <li>
-                    <div class="teleflu-panel-container">
-
-                        <div class="teleflu-manage clearfix">
-
-                            <div class="reference-item">
-                                <p class="reference-description">{{ project.ref_description }}</p>
-                                <p class="reference-id">Taxid: {{ project.ref_taxid }}</p>
-                                <p class="reference-id">Accid: {{ project.ref_accid }}</p>
-                            </div>
-
-
-                            <a href="{% url 'teleflu_project' project.id %}" class="teleflu-details btn btn-primary">View Details</a>
-
-                            <a teleflu-id="{{project.id}}" href="#" class="request-add-teleflu-sample btn btn-primary" data-toggle="modal" data-target="#add_teleflu_sample_modal">
-                                <i class="fa fa-plus" aria-hidden="true" style="margin-right: 5px;"></i> Samples: {{ project.samples }} 
-                            </a>    
-
-                        </div>
-
-                        <div class="teleflu-results ">
-                            {% if project.insaflu_project == "Finished" %}
-                            <span class="insaflu-exists">
-                                <a>
-                                    <i class="fa fa-check" aria-hidden="true"></i>
-                                    INSaFLU Project
-                                </a>
-                            </span>
-                            {% elif project.insaflu_project == "Processing" %}
-                            <span class="insaflu-processing">
-                                <a>
-                                    <i class="fa fa-spinner fa-spin" aria-hidden="true"></i>
-                                    INSaFLU Project
-                                </a>
-                            </span>
-                            {% endif %}
-                        </div>
-
-                    </div>
-                </li>
-                {% endfor %}
-            </ul>
-            </div>
-
-        </div>
-        {% endif %}
-        
     </div>
 
     <a href="javascript:history.go(0)" class="btn btn-small btn-primary dark"><i class="fa fa-refresh"></i> Refresh</a>
@@ -459,7 +409,7 @@
         <div class="modal-header">
         <div>
             <h4 class="modal-title" id="myModalLabel_teleflu">Reference Targeted Analysis</h4>
-            <p class="modal-title-description">Map selected samples and connect to an INSaFLU project. Select Televir hit below to use as reference.</p>
+            <p class="modal-title-description">Map selected samples and connect to an INSaFLU project. Select Televir hits below to use as reference.</p>
         </div>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="position: absolute; top: 15px; right: 15px;">
             <span aria-hidden="true">&times;</span>
@@ -515,6 +465,33 @@
         </div>
     </div>
 </div>
+
+<!-- Delete Teleflu Project Modal -->
+<div class="modal fade" id="delete_teleflu_project_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel_delete_teleflu_project" data-backdrop="static">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <!-- Modal Header -->
+            <div class="modal-header alert alert-danger">
+                <h4 class="modal-title">Delete Teleflu Project</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="modal-body mx-auto mw-100">
+                <p>Are you sure you want to delete this Teleflu project?</p>
+                <!-- Additional details can be added here if needed -->
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="modal-footer">
+                <button id="confirm-delete-teleflu-project-button" type="button" class="btn btn-danger" delete-url="{% url 'delete_teleflu_project' %}" data-dismiss="modal">Delete</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock content %}
 
 {% block js %}
@@ -528,11 +505,7 @@
 <script type="text/javascript" src="{% static 'js/check-box-general.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/televir_projects/main_page_panels.js' %}"></script>
 
-<<<<<<< HEAD
-{% load static from staticfiles %}
-=======
 {% load static %}
->>>>>>> c25437f1 (l)
  
 
 
@@ -571,12 +544,14 @@
         $('#id-cancel-add-teleflu-sample-button').click(function () {
             $.unblockUI();
         });
-
-
         $('.add-panels').click(function() {
-        var url= $(this).attr('href');
-        load_panels_main(url, '.panel-list-modal ul', false, true);
+            var url= $(this).attr('href');
+            var user_id = $(".deploypi_btn").attr('user-id');
+            load_panels_main(url, user_id, '.panel-list-modal ul', false, true);
         });
+
+        teleflu_projects_load();
+
     });
 
 

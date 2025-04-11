@@ -756,6 +756,7 @@ class SamplesAddView(
         return kw
 
     def get_context_data(self, **kwargs):
+        print("HOI")
         context = super(SamplesAddView, self).get_context_data(**kwargs)
         context["nav_sample"] = True
         context["nav_modal"] = True  ## short the size of modal window

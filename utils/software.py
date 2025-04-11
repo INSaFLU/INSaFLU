@@ -1000,6 +1000,8 @@ class Software(object):
             temp_file,
             out_file,
         )
+
+        print("CMD:", cmd)
         exist_status = os.system(cmd)
         self.utils.remove_temp_file(temp_file)
         if exist_status != 0:
@@ -4172,7 +4174,8 @@ class Software(object):
                     meta_sample.description,
                 )
 
-        except:
+        except Exception as e:
+            print(e)
             process_SGE.set_process_controler(
                 user,
                 process_controler.get_name_sample(sample),

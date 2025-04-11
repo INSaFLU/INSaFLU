@@ -562,6 +562,7 @@ class SamplesAddView(
         return kw
 
     def get_context_data(self, **kwargs):
+        print("HOI")
         context = super(SamplesAddView, self).get_context_data(**kwargs)
         context["nav_sample"] = True
         context["nav_modal"] = True  ## short the size of modal window
@@ -700,6 +701,7 @@ class SamplesAddView(
                 taskID = process_SGE.set_run_trimmomatic_species(
                     sample, self.request.user, job_name
                 )
+                print("taskID: " + str(taskID))
             else:  ### Minion, codify with other
                 taskID = process_SGE.set_run_clean_minion(
                     sample, self.request.user, job_name

@@ -1637,6 +1637,7 @@ class UpdateParametersSampleView(BaseBreadcrumbMixin, LoginRequiredMixin, Update
                     taskID = process_SGE.set_run_trimmomatic_species(
                         sample, sample.owner, job_name
                     )
+                    print("taskID: ", taskID)
                 else:
                     taskID = process_SGE.set_run_clean_minion(
                         sample, sample.owner, job_name
@@ -1650,7 +1651,8 @@ class UpdateParametersSampleView(BaseBreadcrumbMixin, LoginRequiredMixin, Update
                     MetaKeyAndValue.META_VALUE_Queue,
                     taskID,
                 )
-            except:
+            except Exception as e:
+                print("Error: ", e)
                 sample.is_sample_in_the_queue = False
                 sample.save()
                 pass

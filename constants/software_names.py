@@ -52,7 +52,7 @@ class SoftwareNames(object):
     SOFTWARE_IGVTOOLS_PARAMETERS = ""
 
     SOFTWARE_SPAdes = os.path.join(
-        settings.DIR_SOFTWARE, "SPAdes-3.11.1-Linux/bin/spades.py"
+        settings.DIR_SOFTWARE, "SPAdes-4.0.0-Linux/bin/spades.py"
     )
     #     SOFTWARE_SPAdes = os.path.join(settings.DIR_SOFTWARE, "SPAdes-3.13.0-Linux/bin/spades.py")
     SOFTWARE_SPAdes_name = "SPAdes"
@@ -115,7 +115,7 @@ class SoftwareNames(object):
         "SARS_CoV_2_MN908947_artic_3.fa",
         "SARS_CoV_2_MN908947_artic_4.1.fa",
         "SARS_CoV_2_MN908947_artic_5.3.2.fa",
-        "SARS_CoV_2_MN908947_artic_5.4.2.fa",        
+        "SARS_CoV_2_MN908947_artic_5.4.2.fa",
         "MPXV_MT903345_Yale_PrimalSeq_v.1.fa",
         "MPXV_comb-ccc7sszn.fa",
         "RSV_A_KT992094_Wang2022.fa",
@@ -294,7 +294,7 @@ class SoftwareNames(object):
         "SARS_CoV_2_MN908947_artic_3.fa",
         "SARS_CoV_2_MN908947_artic_4.1.fa",
         "SARS_CoV_2_MN908947_artic_5.3.2.fa",
-        "SARS_CoV_2_MN908947_artic_5.4.2.fa",        
+        "SARS_CoV_2_MN908947_artic_5.4.2.fa",
         "MPXV_MT903345_Yale_PrimalSeq_v.1.fa",
         "MPXV_comb-ccc7sszn.fa",
         "RSV_A_KT992094_Wang2022.fa",

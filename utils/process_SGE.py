@@ -129,11 +129,13 @@ class ProcessSGE(object):
             return None
 
         file_name_out = os.path.join(out_dir, ProcessSGE.FILE_NAME_SCRIPT_SGE)
+
         with open(file_name_out, "w") as handleSLURM:
             handleSLURM.write("#!/bin/bash\n")
             handleSLURM.write(
                 "#SBATCH --export=ALL\n"
             )  # Specifies  that  all  environment  variables active
+            ##
             # within the qsub utility be exported to the context of the job.
             # handleSLURM.write("#$ -S /bin/bash\n")  # interpreting shell
             ## hold_jid <comma separated list of job-ids, can also be a job id pattern such as 2722*> :
@@ -149,10 +151,11 @@ class ProcessSGE(object):
             # )  # merge the standard error with standard output
             handleSLURM.write("#$ --job-name={}\n".format(job_name))  # job name
             handleSLURM.write("#$ --partition={}\n".format(queue_name))  # queue name
-            handleSLURM.write("#$ --output={}\n".format(out_dir))  # out path file
+            # handleSLURM.write("#$ --output={}\n".format(out_dir))  # out path file
             handleSLURM.write("#$ --error={}\n".format(out_dir))
             handleSLURM.write("#$ --ntasks=1\n")
             handleSLURM.write("#$ --output={}/%x_%j.out\n".format(out_dir))
+            handleSLURM.write("#$ --begin=now\n")
             for cline in vect_cmd:
                 handleSLURM.write("\n" + cline)
             if b_remove_out_dir and not settings.RUN_TEST_IN_COMMAND_LINE:
@@ -451,6 +454,8 @@ class ProcessSGE(object):
         )
         try:
             sge_id = self.submitte_job(path_file)
+            print("SGE_ID", sge_id)
+
             if sge_id != None:
                 self.set_process_controlers(
                     user, process_controler.get_name_project(project), sge_id
@@ -589,9 +594,15 @@ class ProcessSGE(object):
         self.logger_production.info("Processing: " + ";".join(vect_command))
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         out_dir = self.utils.get_temp_dir()
-        path_file = self.set_script_run_sge(
-            out_dir, Constants.QUEUE_SGE_NAME_GLOBAL, vect_command, job_name, True
-        )
+        try:
+            path_file = self.set_script_run_sge(
+                out_dir, Constants.QUEUE_SGE_NAME_GLOBAL, vect_command, job_name, True
+            )
+            sge_id = self.submitte_job(path_file)
+        except Exception as e:
+            print("Error: ", e)
+            raise Exception("Fail to submit the job.")
+
         try:
             self._remove_files_create_by_identify_type_and_sub_type(sample)
             self._remove_files_create_by_fastq_and_trimmomatic(sample)
@@ -606,6 +617,7 @@ class ProcessSGE(object):
             sample.is_sample_in_the_queue = True
             sample.save()
         except:
+            print("Error: ", e)
             raise Exception("Fail to submit the job.")
         return sge_id
 

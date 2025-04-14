@@ -109,7 +109,6 @@ class ProcessSGE(object):
             self.logger_debug.error(
                 "Fail to run: " + cmd + " - exit code: " + str(exist_status)
             )
-            print("Fail to run: " + cmd + " - exit code: " + str(exist_status))
             raise Exception("Fail to submit qsub")
         ## read output
         vect_out = self.utils.read_text_file(temp_file)
@@ -173,6 +172,15 @@ class ProcessSGE(object):
             handleSLURM.write("#$ --output={}/%x_%j.out\n".format(out_dir))
             handleSLURM.write("#$ --begin=now\n")
             handleSLURM.write("\n")
+
+            handleSLURM.write("\n")
+            ### read .bashrc
+            handleSLURM.write("source ~/.bashrc\n")
+
+            ### output ls /software
+            handleSLURM.write("echo `ls /software`\n")
+            handleSLURM.write("echo $USER\n")
+            handleSLURM.write("echo $HOSTNAME\n")
 
             for cline in vect_cmd:
                 handleSLURM.write("\n" + cline)
@@ -613,7 +621,8 @@ class ProcessSGE(object):
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         out_dir = self.utils.get_temp_dir()
         try:
-            path_file = self.set_script_run_sge(
+            print("SUBMITTING JOB")
+            path_file = self.set_script_run_slurm(
                 out_dir, Constants.QUEUE_SGE_NAME_GLOBAL, vect_command, job_name, True
             )
             sge_id = self.submitte_job(path_file)

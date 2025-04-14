@@ -1637,7 +1637,6 @@ class UpdateParametersSampleView(BaseBreadcrumbMixin, LoginRequiredMixin, Update
                     taskID = process_SGE.set_run_trimmomatic_species(
                         sample, sample.owner, job_name
                     )
-                    print("taskID: ", taskID)
                 else:
                     taskID = process_SGE.set_run_clean_minion(
                         sample, sample.owner, job_name

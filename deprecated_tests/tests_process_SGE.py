@@ -55,7 +55,7 @@ class Test(TestCase):
         out_dir = self.utils.get_temp_dir()
         self.assertEquals(
             None,
-            process_SGE.set_script_run_sge(
+            process_SGE.set_script_run_slurm(
                 out_dir, Constants.QUEUE_SGE_NAME_GLOBAL, [], "job_name"
             ),
         )
@@ -66,7 +66,7 @@ class Test(TestCase):
         process_SGE = ProcessSGE()
         out_dir = self.utils.get_temp_dir()
         vect_command = ["vai.te e vira-te"]
-        path_file = process_SGE.set_script_run_sge(
+        path_file = process_SGE.set_script_run_slurm(
             out_dir, Constants.QUEUE_SGE_NAME_GLOBAL, vect_command, "job_name"
         )
         self.assertEquals(
@@ -91,7 +91,7 @@ class Test(TestCase):
         vect_command.append("sleep 2s")
         vect_command.append("date >> " + temp_file)
         vect_command.append('echo "end" >> ' + temp_file)
-        path_file = process_SGE.set_script_run_sge(
+        path_file = process_SGE.set_script_run_slurm(
             out_dir, Constants.QUEUE_SGE_NAME_GLOBAL, vect_command, "job_name"
         )
         try:
@@ -130,7 +130,7 @@ class Test(TestCase):
         vect_command.append("sleep 2s")
         vect_command.append("date >> " + temp_file)
         vect_command.append('echo "end" >> ' + temp_file)
-        path_file = process_SGE.set_script_run_sge(
+        path_file = process_SGE.set_script_run_slurm(
             out_dir, Constants.QUEUE_SGE_NAME_GLOBAL, vect_command, "job_name", True
         )
         try:
@@ -171,7 +171,7 @@ class Test(TestCase):
         vect_command.append("date >> " + temp_file)
         vect_command.append('echo "end" >> ' + temp_file)
         vect_command.append("rm xpto_xpt")
-        path_file = process_SGE.set_script_run_sge(
+        path_file = process_SGE.set_script_run_slurm(
             out_dir, Constants.QUEUE_SGE_NAME_GLOBAL, vect_command, "job_name", True
         )
         try:
@@ -375,7 +375,7 @@ class Test(TestCase):
                 os.path.join(settings.BASE_DIR, "manage.py"), project.pk, user.pk
             )
         ]
-        path_file = process_SGE.set_script_run_sge(
+        path_file = process_SGE.set_script_run_slurm(
             out_dir, Constants.QUEUE_SGE_NAME_GLOBAL, vect_command, "job_name"
         )
         try:

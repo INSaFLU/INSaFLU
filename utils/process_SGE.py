@@ -69,20 +69,38 @@ class ProcessSGE(object):
         raise exception if something wrong
         """
         temp_file = self.utils.get_temp_file("qsub_out", FileExtensions.FILE_TXT)
+        cmd = ""
+        # Create a bash script to deploy the SLURM job
+        bash_script_path = "/data/tmp/submit_slurm_job.sh"
+        with open(bash_script_path, "w") as bash_script:
+            bash_script.write("#!/bin/bash\n")
+            bash_script.write("cd /data/tmp\n")
+            bash_script.write("sbatch {} > {}\n".format(file_name, temp_file))
+            bash_script.write("cd /insaflu_web/INSaFLU\n")
 
-        cmd = "sbatch {} > {}".format(file_name, temp_file)
-        print(cmd)
-        ## submit job
+        # Make the script executable
+        os.chmod(bash_script_path, 0o755)
 
-        os.chdir("/data/tmp")
-        exist_status = os.system(cmd)
-        print("#########")
-        print(cmd)
-        print(exist_status)
-        os.chdir(settings.BASE_DIR)
+        # Execute the bash script using subprocess
+        cmd = bash_script_path
+        process = subprocess.Popen(
+            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        stdout, stderr = process.communicate()
+        exist_status = process.returncode
+
+        # Check if error occurred
+        if exist_status != 0:
+            print("Error: ", stderr.decode())
+            print("stdout: ", stdout.decode())
+            print("Error: ", exist_status)
+            print("cmd: ", cmd)
+            raise Exception("Fail to submit qsub")
 
         ## check if error occurred
         if exist_status != 0:
+
+            ## remove file
             if os.path.exists(temp_file):
                 os.unlink(temp_file)
             self.logger_production.error(
@@ -91,7 +109,6 @@ class ProcessSGE(object):
             self.logger_debug.error(
                 "Fail to run: " + cmd + " - exit code: " + str(exist_status)
             )
-            print("Fail to run: " + cmd + " - exit code: " + str(exist_status))
             raise Exception("Fail to submit qsub")
         ## read output
         vect_out = self.utils.read_text_file(temp_file)
@@ -100,18 +117,16 @@ class ProcessSGE(object):
         b_found = False
 
         for line in vect_out:
-            print(line)
-            print(line.find("Submitted batch job"))
+
             if line.find("Submitted batch job") != -1:
                 lst_line = line.split(" ")
-                print(lst_line)
                 if len(lst_line) > 2 and self.utils.is_integer(lst_line[3]):
                     return int(lst_line[3])
                 return None  ## don't rise exception...
         if not b_found:
             raise Exception("\n".join(vect_out))
 
-    def set_script_run_sge(
+    def set_script_run_slurm(
         self,
         out_dir,
         queue_name,
@@ -124,7 +139,7 @@ class ProcessSGE(object):
         """
         create the script to run SGE
         """
-
+        b_remove_out_dir = False
         if len(vect_cmd) == 0:
             return None
 
@@ -156,6 +171,15 @@ class ProcessSGE(object):
             handleSLURM.write("#$ --ntasks=1\n")
             handleSLURM.write("#$ --output={}/%x_%j.out\n".format(out_dir))
             handleSLURM.write("#$ --begin=now\n")
+            handleSLURM.write("\n")
+            ### read .bashrc
+            handleSLURM.write("source ~/.bashrc\n")
+
+            ### output ls /software
+            handleSLURM.write("echo `ls /software`\n")
+            handleSLURM.write("echo $USER\n")
+            handleSLURM.write("echo $HOSTNAME\n")
+
             for cline in vect_cmd:
                 handleSLURM.write("\n" + cline)
             if b_remove_out_dir and not settings.RUN_TEST_IN_COMMAND_LINE:
@@ -345,7 +369,7 @@ class ProcessSGE(object):
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
             Profile.SGE_PROCESS_projects, Profile.SGE_GLOBAL
         )
-        path_file = self.set_script_run_sge(
+        path_file = self.set_script_run_slurm(
             out_dir, queue_name, vect_command, job_name, True, [job_name_wait]
         )
         try:
@@ -380,7 +404,7 @@ class ProcessSGE(object):
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
             Profile.SGE_PROCESS_dont_care, Profile.SGE_GLOBAL
         )
-        path_file = self.set_script_run_sge(
+        path_file = self.set_script_run_slurm(
             out_dir, queue_name, vect_command, job_name, True, [job_name_wait]
         )
         try:
@@ -415,7 +439,7 @@ class ProcessSGE(object):
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
             Profile.SGE_PROCESS_dont_care, Profile.SGE_GLOBAL
         )
-        path_file = self.set_script_run_sge(
+        path_file = self.set_script_run_slurm(
             out_dir, queue_name, vect_command, job_name, True, [job_name_wait]
         )
         try:
@@ -449,7 +473,7 @@ class ProcessSGE(object):
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
             Profile.SGE_PROCESS_dont_care, Profile.SGE_GLOBAL
         )
-        path_file = self.set_script_run_sge(
+        path_file = self.set_script_run_slurm(
             out_dir, queue_name, vect_command, job_name, True, [job_name_wait]
         )
         try:
@@ -489,7 +513,7 @@ class ProcessSGE(object):
         queue_name = user.profile.queue_name_sge
         if queue_name == None:
             queue_name = Constants.QUEUE_SGE_NAME_GLOBAL
-        path_file = self.set_script_run_sge(
+        path_file = self.set_script_run_slurm(
             out_dir, queue_name, vect_command, job_name, True, vect_job_name_wait
         )
         try:
@@ -529,7 +553,7 @@ class ProcessSGE(object):
         queue_name = user.profile.queue_name_sge
         if queue_name == None:
             queue_name = Constants.QUEUE_SGE_NAME_GLOBAL
-        path_file = self.set_script_run_sge(
+        path_file = self.set_script_run_slurm(
             out_dir, queue_name, vect_command, job_name, True, vect_job_name_wait
         )
         try:
@@ -595,7 +619,8 @@ class ProcessSGE(object):
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         out_dir = self.utils.get_temp_dir()
         try:
-            path_file = self.set_script_run_sge(
+            print("SUBMITTING JOB")
+            path_file = self.set_script_run_slurm(
                 out_dir, Constants.QUEUE_SGE_NAME_GLOBAL, vect_command, job_name, True
             )
             sge_id = self.submitte_job(path_file)
@@ -606,7 +631,6 @@ class ProcessSGE(object):
         try:
             self._remove_files_create_by_identify_type_and_sub_type(sample)
             self._remove_files_create_by_fastq_and_trimmomatic(sample)
-            sge_id = self.submitte_job(path_file)
             if sge_id != None:
                 self.set_process_controlers(
                     user, process_controler.get_name_sample(sample), sge_id
@@ -642,7 +666,7 @@ class ProcessSGE(object):
         self.logger_production.info("Processing: " + ";".join(vect_command))
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         out_dir = self.utils.get_temp_dir()
-        path_file = self.set_script_run_sge(
+        path_file = self.set_script_run_slurm(
             out_dir, Constants.QUEUE_SGE_NAME_GLOBAL, vect_command, job_name, True
         )
         try:
@@ -686,7 +710,7 @@ class ProcessSGE(object):
             (job_name_wait, job_name) = user.profile.get_name_sge_seq(
                 Profile.SGE_PROCESS_link_files, Profile.SGE_LINK
             )
-            path_file = self.set_script_run_sge(
+            path_file = self.set_script_run_slurm(
                 out_dir,
                 Constants.QUEUE_SGE_NAME_FAST,
                 vect_command,
@@ -731,7 +755,7 @@ class ProcessSGE(object):
             (job_name_wait, job_name) = user.profile.get_name_sge_seq(
                 Profile.SGE_PROCESS_collect_all_samples, Profile.SGE_REGULAR
             )
-            path_file = self.set_script_run_sge(
+            path_file = self.set_script_run_slurm(
                 out_dir,
                 Constants.QUEUE_SGE_NAME_FAST,
                 vect_command,
@@ -776,7 +800,7 @@ class ProcessSGE(object):
             (job_name_wait, job_name) = user.profile.get_name_sge_seq(
                 Profile.SGE_PROCESS_collect_all_projects, Profile.SGE_REGULAR
             )
-            path_file = self.set_script_run_sge(
+            path_file = self.set_script_run_slurm(
                 out_dir,
                 Constants.QUEUE_SGE_NAME_FAST,
                 vect_command,
@@ -820,7 +844,7 @@ class ProcessSGE(object):
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
             Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
         )
-        path_file = self.set_script_run_sge(
+        path_file = self.set_script_run_slurm(
             out_dir,
             Constants.QUEUE_SGE_NAME_FAST,
             vect_command,
@@ -857,7 +881,7 @@ class ProcessSGE(object):
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
             Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
         )
-        path_file = self.set_script_run_sge(
+        path_file = self.set_script_run_slurm(
             out_dir, queue_name, vect_command, job_name, True, [job_name_wait]
         )
         try:
@@ -894,7 +918,7 @@ class ProcessSGE(object):
             Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
-        path_file = self.set_script_run_sge(
+        path_file = self.set_script_run_slurm(
             outdir_sge,
             queue_name,
             vect_command,
@@ -942,7 +966,7 @@ class ProcessSGE(object):
             Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
-        path_file = self.set_script_run_sge(
+        path_file = self.set_script_run_slurm(
             outdir_sge,
             queue_name,
             vect_command,
@@ -1003,7 +1027,7 @@ class ProcessSGE(object):
             Profile.SGE_PROCESS_televir, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
-        path_file = self.set_script_run_sge(
+        path_file = self.set_script_run_slurm(
             outdir_sge,
             queue_name,
             vect_command,
@@ -1060,7 +1084,7 @@ class ProcessSGE(object):
             Profile.SGE_PROCESS_televir, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
-        path_file = self.set_script_run_sge(
+        path_file = self.set_script_run_slurm(
             outdir_sge,
             queue_name,
             vect_command,
@@ -1116,7 +1140,7 @@ class ProcessSGE(object):
             Profile.SGE_PROCESS_televir, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
-        path_file = self.set_script_run_sge(
+        path_file = self.set_script_run_slurm(
             outdir_sge,
             queue_name,
             vect_command,
@@ -1166,7 +1190,7 @@ class ProcessSGE(object):
             PICS.PROCESS_TYPE_DEPLOYMENT, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
-        path_file = self.set_script_run_sge(
+        path_file = self.set_script_run_slurm(
             outdir_sge,
             queue_name,
             vect_command,
@@ -1225,7 +1249,7 @@ class ProcessSGE(object):
             Profile.SGE_PROCESS_televir, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
-        path_file = self.set_script_run_sge(
+        path_file = self.set_script_run_slurm(
             outdir_sge,
             queue_name,
             vect_command,
@@ -1285,7 +1309,7 @@ class ProcessSGE(object):
             Profile.SGE_PROCESS_televir, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
-        path_file = self.set_script_run_sge(
+        path_file = self.set_script_run_slurm(
             outdir_sge,
             queue_name,
             vect_command,
@@ -1340,7 +1364,7 @@ class ProcessSGE(object):
             Profile.SGE_PROCESS_televir, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
-        path_file = self.set_script_run_sge(
+        path_file = self.set_script_run_slurm(
             outdir_sge,
             queue_name,
             vect_command,
@@ -1387,7 +1411,7 @@ class ProcessSGE(object):
             Profile.SGE_PROCESS_televir, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
-        path_file = self.set_script_run_sge(
+        path_file = self.set_script_run_slurm(
             outdir_sge,
             queue_name,
             vect_command,
@@ -1430,7 +1454,7 @@ class ProcessSGE(object):
             Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
-        path_file = self.set_script_run_sge(
+        path_file = self.set_script_run_slurm(
             outdir_sge,
             queue_name,
             vect_command,
@@ -1475,7 +1499,7 @@ class ProcessSGE(object):
             Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
-        path_file = self.set_script_run_sge(
+        path_file = self.set_script_run_slurm(
             outdir_sge,
             queue_name,
             vect_command,
@@ -1520,7 +1544,7 @@ class ProcessSGE(object):
             Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
-        path_file = self.set_script_run_sge(
+        path_file = self.set_script_run_slurm(
             outdir_sge,
             queue_name,
             vect_command,
@@ -1565,7 +1589,7 @@ class ProcessSGE(object):
             Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
-        path_file = self.set_script_run_sge(
+        path_file = self.set_script_run_slurm(
             outdir_sge,
             queue_name,
             vect_command,
@@ -1612,7 +1636,7 @@ class ProcessSGE(object):
             Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
-        path_file = self.set_script_run_sge(
+        path_file = self.set_script_run_slurm(
             outdir_sge,
             queue_name,
             vect_command,
@@ -1659,7 +1683,7 @@ class ProcessSGE(object):
             Profile.SGE_PROCESS_televir, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
-        path_file = self.set_script_run_sge(
+        path_file = self.set_script_run_slurm(
             outdir_sge,
             queue_name,
             vect_command,
@@ -1702,7 +1726,7 @@ class ProcessSGE(object):
             Profile.SGE_PROCESS_televir, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
-        path_file = self.set_script_run_sge(
+        path_file = self.set_script_run_slurm(
             outdir_sge,
             queue_name,
             vect_command,
@@ -1740,7 +1764,7 @@ class ProcessSGE(object):
             'echo "end" >> /tmp/sge.out',
         ]
         out_dir = self.utils.get_temp_dir()
-        path_file = self.set_script_run_sge(
+        path_file = self.set_script_run_slurm(
             out_dir, Constants.QUEUE_SGE_NAME_FAST, vect_command, job_name, True
         )
         os.system("/bin/sh {}".format(path_file))
@@ -1964,7 +1988,7 @@ class ProcessSGE(object):
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
             Profile.SGE_PROCESS_datasets, Profile.SGE_GLOBAL
         )
-        path_file = self.set_script_run_sge(
+        path_file = self.set_script_run_slurm(
             out_dir, queue_name, vect_command, job_name, True, [job_name_wait]
         )
         try:
@@ -2003,7 +2027,7 @@ class ProcessSGE(object):
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
             Profile.SGE_PROCESS_datasets, Profile.SGE_GLOBAL
         )
-        path_file = self.set_script_run_sge(
+        path_file = self.set_script_run_slurm(
             out_dir, queue_name, vect_command, job_name, True, [job_name_wait]
         )
         try:

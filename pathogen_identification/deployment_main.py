@@ -55,11 +55,6 @@ class PathogenIdentificationDeploymentCore:
         threads: int = 3,
     ):
         self.sample = sample
-        # self.project = sample.project
-        # self.project_pk = sample.project.pk
-        # self.project_name = sample.project.name
-        # self.username = sample.project.owner.username
-        # self.technology = sample.project.technology
         self.prefix = prefix
 
         self.deployment_root_dir = deployment_root_dir

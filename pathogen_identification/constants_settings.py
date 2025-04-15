@@ -85,13 +85,13 @@ class ConstantsSettings:
     ]
 
     PIPELINE_STEPS_GLOBAL = [
+        CS.PIPELINE_NAME_extra_qc,
         CS.PIPELINE_NAME_reporting,
     ]
 
     ################################### Pipeline steps aggregate
 
     PIPELINE_STEPS_AGGREGATE = [
-        CS.PIPELINE_NAME_extra_qc,
         CS.PIPELINE_NAME_remap_filtering,
         CS.PIPELINE_NAME_map_filtering,
     ]

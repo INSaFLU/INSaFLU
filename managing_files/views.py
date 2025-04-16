@@ -562,21 +562,6 @@ class SamplesAddView(
         return kw
 
     def get_context_data(self, **kwargs):
-        print("HOI")
-        cmd = "echo $USER"
-        import subprocess
-
-        p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-        output = p.stdout.read()
-        print(output)
-        cmd = "whoami"
-        p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-        output = p.stdout.read()
-        print(output)
-        cmd = "echo $HOME > /insaflu_web/INSaFLU/home.txt"
-        p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-        output = p.stdout.read()
-        print(output)
         context = super(SamplesAddView, self).get_context_data(**kwargs)
         context["nav_sample"] = True
         context["nav_modal"] = True  ## short the size of modal window
@@ -713,11 +698,10 @@ class SamplesAddView(
                 Profile.SGE_PROCESS_clean_sample, Profile.SGE_SAMPLE
             )
             if sample.is_type_fastq_gz_sequencing():  ### default is Illumina
-                print("submitting run trimmomatic")
                 taskID = process_SGE.set_run_trimmomatic_species(
                     sample, self.request.user, job_name
                 )
-                print("taskID: " + str(taskID))
+
             else:  ### Minion, codify with other
                 taskID = process_SGE.set_run_clean_minion(
                     sample, self.request.user, job_name

@@ -1448,7 +1448,6 @@ class Utility_Pipeline_Manager:
 
                 else:
                     param_combs.append([(f"{soft.upper()}_ARGS", "None", "param")])
-                    # soft_dict[soft] = {(f"{soft.upper()}_ARGS", "None", "param"): {}}
 
             param_combs = list(it.product(*param_combs))
             param_tree = make_tree(param_combs)

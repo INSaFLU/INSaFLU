@@ -1000,6 +1000,8 @@ class Software(object):
             temp_file,
             out_file,
         )
+
+        print("CMD:", cmd)
         exist_status = os.system(cmd)
         self.utils.remove_temp_file(temp_file)
         if exist_status != 0:
@@ -1148,6 +1150,8 @@ class Software(object):
         if sample.is_type_fastq_gz_sequencing():  ## illumina
             try:
                 cmd = self.run_spades(fastq1_1, fastq1_2, out_dir_result)
+                print("CMD SPADES:", cmd)
+
                 parameters = self.software_names.get_spades_parameters()
                 if fastq1_2 == None or len(fastq1_2) == 0:
                     parameters = self.software_names.get_spades_parameters_single()
@@ -1158,7 +1162,8 @@ class Software(object):
                         parameters,
                     )
                 )
-            except Exception:
+            except Exception as e:
+                print(e)
                 result = Result()
                 result.set_error(
                     "Spades (%s) fail to run"
@@ -1266,8 +1271,10 @@ class Software(object):
 
         ### test id abricate has the database
         try:
+            print("Get abricate upload file")
             uploadFile = self.get_abricate_uploadfile_create()
         except UploadFile.DoesNotExist:
+            print("UploadFile does not exist")
             ## save error in MetaKeySample
             result = Result()
             result.set_error(
@@ -1293,6 +1300,7 @@ class Software(object):
 
         ## run abricate
         out_file_abricate = self.utils.get_temp_file("temp_abricate", ".txt")
+        print("RUN ABRICATE")
         try:
             cmd = self.run_abricate(
                 uploadFile.abricate_name,
@@ -4046,12 +4054,14 @@ class Software(object):
         try:
             ### run trimmomatics
             b_has_data, b_it_ran = self.run_fastq_and_trimmomatic(sample, user)
+            print("Has data: ", b_has_data)
 
             ### test Abricate ON/OFF
             default_software_project = DefaultProjectSoftware()
             b_make_identify_species = default_software_project.is_to_run_abricate(
                 sample.owner, sample, ConstantsSettings.TECHNOLOGY_illumina
             )
+            print(b_make_identify_species)
 
             ### queue the quality check and
             if (
@@ -4065,6 +4075,7 @@ class Software(object):
                 )
 
             ## set the flag that is ready for process
+            print("STILL HAS DATA: ", b_has_data)
             sample_to_update = Sample.objects.get(pk=sample.id)
             sample_to_update.is_sample_in_the_queue = False
             if b_has_data:
@@ -4172,7 +4183,8 @@ class Software(object):
                     meta_sample.description,
                 )
 
-        except:
+        except Exception as e:
+            print(e)
             process_SGE.set_process_controler(
                 user,
                 process_controler.get_name_sample(sample),

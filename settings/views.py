@@ -1650,7 +1650,8 @@ class UpdateParametersSampleView(BaseBreadcrumbMixin, LoginRequiredMixin, Update
                     MetaKeyAndValue.META_VALUE_Queue,
                     taskID,
                 )
-            except:
+            except Exception as e:
+                print("Error: ", e)
                 sample.is_sample_in_the_queue = False
                 sample.save()
                 pass

@@ -692,6 +692,7 @@ class SamplesAddView(
 
         ### create a task to perform the analysis of fastq and trimmomatic
         try:
+
             process_SGE = ProcessSGE()
             (job_name_wait, job_name) = self.request.user.profile.get_name_sge_seq(
                 Profile.SGE_PROCESS_clean_sample, Profile.SGE_SAMPLE
@@ -700,6 +701,7 @@ class SamplesAddView(
                 taskID = process_SGE.set_run_trimmomatic_species(
                     sample, self.request.user, job_name
                 )
+
             else:  ### Minion, codify with other
                 taskID = process_SGE.set_run_clean_minion(
                     sample, self.request.user, job_name
@@ -2405,7 +2407,9 @@ class AddSamplesProjectsView(
             ("Projects", reverse("projects")),
             (
                 "Add samples to project",
-                reverse("add-sample-project"),
+                reverse(
+                    "add-sample-project", kwargs={"pk": self.kwargs["pk"], "tf": 0}
+                ),
             ),
         ]
 

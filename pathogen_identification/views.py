@@ -655,7 +655,9 @@ class AddSamples_PIProjectsView(
             ("TELEVIR Projects", reverse("PIprojects_main")),
             (
                 "Add samples to project",
-                reverse("add-sample-project"),
+                reverse(
+                    "add-sample-project", kwargs={"pk": self.kwargs["pk"], "tf": 0}
+                ),
             ),
         ]
 
@@ -913,7 +915,7 @@ class AddSamples_PIProjectsView(
     form_valid_message = ""  ## need to have this, even empty
 
 
-class MainPage(LoginRequiredMixin, generic.CreateView):
+class MainPage(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView):
     """
     Page with samples of a project
     """
@@ -922,6 +924,27 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
     template_name = "pathogen_identification/main_page.html"
     model = PIProject_Sample
     fields = ["name"]
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Projects Index", reverse("project-index")),
+            ("TELEVIR Projects", reverse("PIprojects_main")),
+            (self.kwargs["project_name"], ""),
+        ]
+
+    def setup(self, request, *args, **kwargs):
+        super(MainPage, self).setup(request, *args, **kwargs)
+
+        project_pk = int(self.kwargs["pk"])
+        try:
+            project = Projects.objects.get(pk=project_pk)
+        except Projects.DoesNotExist:
+            raise Http404
+
+        self.kwargs["project_name"] = project.name
+        self.kwargs["project_index"] = project.pk
+        self.kwargs["project_technology"] = project.technology
 
     def get_context_data(self, **kwargs):
         context = super(MainPage, self).get_context_data(**kwargs)
@@ -1508,16 +1531,19 @@ class Sample_main(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView):
 
     @cached_property
     def crumbs(self):
+        print(
+            self.kwargs["project_name"],
+            reverse("PIproject_samples", kwargs={"pk": self.kwargs["pk1"]}),
+        )
+        print(self.kwargs["sample_name"], "")
         return [
+            ("Project Index", reverse("project-index")),
+            ("TELEVIR Projects", reverse("PIprojects_main")),
             (
-                ("Project Index", reverse("project-index")),
-                ("TELEVIR Projects", reverse("PIprojects_main")),
-                (
-                    self.kwargs["project_name"],
-                    reverse("PIproject_samples", kwargs={"pk": project_index}),
-                ),
-                (self.kwargs["sample_name"], ""),
-            )
+                self.kwargs["project_name"],
+                reverse("PIproject_samples", kwargs={"pk": self.kwargs["pk1"]}),
+            ),
+            (self.kwargs["sample_name"], ""),
         ]
 
     def setup(self, request, *args, **kwargs):
@@ -1533,6 +1559,7 @@ class Sample_main(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView):
             raise Http404
 
         self.kwargs["project_name"] = project.name
+        self.kwargs["project_index"] = project.pk
         self.kwargs["sample_name"] = sample.sample.name
 
     def get_context_data(self, **kwargs):

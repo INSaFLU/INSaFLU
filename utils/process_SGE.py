@@ -173,15 +173,6 @@ class ProcessSGE(object):
             handleSLURM.write("#$ --begin=now\n")
             handleSLURM.write("\n")
 
-            handleSLURM.write("\n")
-            ### read .bashrc
-            handleSLURM.write("source ~/.bashrc\n")
-
-            ### output ls /software
-            handleSLURM.write("echo `ls /software`\n")
-            handleSLURM.write("echo $USER\n")
-            handleSLURM.write("echo $HOSTNAME\n")
-
             for cline in vect_cmd:
                 handleSLURM.write("\n" + cline)
             if b_remove_out_dir and not settings.RUN_TEST_IN_COMMAND_LINE:

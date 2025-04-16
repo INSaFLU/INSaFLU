@@ -2407,7 +2407,9 @@ class AddSamplesProjectsView(
             ("Projects", reverse("projects")),
             (
                 "Add samples to project",
-                reverse("add-sample-project"),
+                reverse(
+                    "add-sample-project", kwargs={"pk": self.kwargs["pk"], "tf": 0}
+                ),
             ),
         ]
 

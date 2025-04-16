@@ -1267,6 +1267,13 @@ class DefaultParameters(object):
                 software.technology.name,
             )
 
+        elif software.name == SoftwareNames.SOFTWARE_BWA_FILTER_name:
+            return self.get_bwa_filter_defaults(
+                software.owner,
+                Software.TYPE_OF_USE_televir_global,
+                software.technology.name,
+            )
+
         elif software.name == SoftwareNames.SOFTWARE_televir_report_layout_name:
             return self.get_televir_report_defaults(
                 software.owner,
@@ -2733,6 +2740,75 @@ class DefaultParameters(object):
         parameter.range_max = "1.0"
         parameter.range_min = "0.0"
         parameter.description = "Filter on a maximum DUST score."
+        vect_parameters.append(parameter)
+
+        return vect_parameters
+
+    def get_bwa_filter_defaults(
+        self, user, type_of_use, technology_name, sample=None, pipeline_step=""
+    ):
+        if not pipeline_step:
+            pipeline_step = ConstantsSettings.PIPELINE_NAME_host_depletion
+
+        software = Software()
+        software.name = SoftwareNames.SOFTWARE_BWA_FILTER_name
+        software.name_extended = SoftwareNames.SOFTWARE_BWA_FILTER_name_extended
+        software.type_of_use = type_of_use
+        software.type_of_software = Software.TYPE_SOFTWARE
+        software.version = SoftwareNames.SOFTWARE_BWA_VERSION
+        software.version_parameters = self.get_software_parameters_version(
+            software.name
+        )
+        software.technology = self.get_technology(technology_name)
+        software.can_be_on_off_in_pipeline = (
+            True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
+        )
+        software.is_to_run = False
+
+        ###  small description of software
+        software.help_text = ""
+        software.pipeline_step = self._get_pipeline(
+            ConstantsSettings.PIPELINE_NAME_extra_qc
+        )
+        software.owner = user
+
+        ### software db
+        dbs_available = self.televir_db_manager.get_from_host_db(
+            software.name.lower(), ["None"]
+        )
+
+        vect_parameters = []
+
+        parameter = Parameter()
+        parameter.name = "--db"
+        parameter.parameter = dbs_available[0][0]
+        parameter.type_data = Parameter.PARAMETER_multiple_choice
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True
+        parameter.sequence_out = 1
+        parameter.range_available = ""
+        parameter.range_max = ""
+        parameter.range_min = ""
+        parameter.description = "Database to use"
+
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "-M"
+        parameter.parameter = ""
+        parameter.type_data = Parameter.PARAMETER_null
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = ""
+        parameter.can_change = False
+        parameter.is_to_run = True
+        parameter.sequence_out = 2
+        parameter.description = (
+            "Mark shorter split hits as secondary (for Picard compatibility)."
+        )
         vect_parameters.append(parameter)
 
         return vect_parameters

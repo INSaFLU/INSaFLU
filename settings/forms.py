@@ -96,6 +96,8 @@ class SoftwareForm(forms.ModelForm):
         dt_fields = {}
         vect_divs = []
         for parameter in paramers:
+            print("################################## PARAMETER")
+            print("parameter: {}".format(parameter))
             if not parameter.can_change or parameter.is_null():
                 dt_fields[parameter.get_unique_id()] = forms.CharField(
                     disabled=True,
@@ -137,7 +139,44 @@ class SoftwareForm(forms.ModelForm):
                         )
                     )
                 dt_fields[parameter.get_unique_id()].help_text = escape(help_text)
+
+            elif parameter.is_multiple_choice():  # Update this condition if needed
+                print("################################## PARAMETER")
+                print("parameter.is_multiple_choice()")
+                if (
+                    parameter.software.pipeline_step.name
+                    == ConstantsSettings.PIPELINE_NAME_extra_qc
+                ):
+                    ## already selected
+                    selected = (
+                        parameter.parameter.split(";") if parameter.parameter else []
+                    )
+
+                    list_data = [
+                        [data_[0], data_[1]]
+                        for data_ in self.televir_utiltity.get_from_host_db(
+                            parameter.software.name.lower(), []
+                        )
+                    ]
+
+                ## setup multiple choice widget
+                dt_fields[parameter.get_unique_id()] = forms.MultipleChoiceField(
+                    choices=list_data, widget=forms.CheckboxSelectMultiple
+                )
+                dt_fields[parameter.get_unique_id()].help_text = escape(
+                    parameter.description
+                )
+                dt_fields[parameter.get_unique_id()].label = parameter.name
+                dt_fields[parameter.get_unique_id()].initial = selected
+                dt_fields[parameter.get_unique_id()].widget.attrs.update(
+                    {"class": "checkbox-inline"}
+                )
+                dt_fields[parameter.get_unique_id()].widget.attrs.update(
+                    {"style": "margin-right: 10px;"}
+                )
+
             ### this is use for Medaka and Trimmomatic
+
             elif parameter.is_char_list():
                 if parameter.software.name == SoftwareNames.SOFTWARE_NEXTSTRAIN_name:
                     list_data = [
@@ -166,9 +205,7 @@ class SoftwareForm(forms.ModelForm):
                         [data_, data_]
                         for data_ in SoftwareNames.SOFTWARE_TRIMMOMATIC_addapter_vect_available
                     ]
-                elif (
-                    parameter.name == DefaultParameters.SNIPPY_PRIMER_NAME
-                ):
+                elif parameter.name == DefaultParameters.SNIPPY_PRIMER_NAME:
                     list_data = [
                         [data_, data_]
                         for data_ in SoftwareNames.SOFTWARE_SNIPPY_PRIMERS

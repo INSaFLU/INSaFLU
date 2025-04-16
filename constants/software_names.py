@@ -115,7 +115,7 @@ class SoftwareNames(object):
         "SARS_CoV_2_MN908947_artic_3.fa",
         "SARS_CoV_2_MN908947_artic_4.1.fa",
         "SARS_CoV_2_MN908947_artic_5.3.2.fa",
-        "SARS_CoV_2_MN908947_artic_5.4.2.fa",        
+        "SARS_CoV_2_MN908947_artic_5.4.2.fa",
         "MPXV_MT903345_Yale_PrimalSeq_v.1.fa",
         "MPXV_comb-ccc7sszn.fa",
         "RSV_A_KT992094_Wang2022.fa",
@@ -294,7 +294,7 @@ class SoftwareNames(object):
         "SARS_CoV_2_MN908947_artic_3.fa",
         "SARS_CoV_2_MN908947_artic_4.1.fa",
         "SARS_CoV_2_MN908947_artic_5.3.2.fa",
-        "SARS_CoV_2_MN908947_artic_5.4.2.fa",        
+        "SARS_CoV_2_MN908947_artic_5.4.2.fa",
         "MPXV_MT903345_Yale_PrimalSeq_v.1.fa",
         "MPXV_comb-ccc7sszn.fa",
         "RSV_A_KT992094_Wang2022.fa",
@@ -758,6 +758,19 @@ class SoftwareNames(object):
     SOFTWARE_BWA_VERSION = "0.7.17"
     SOFTWARE_BWA_parameters = "mem -t 4 -M -R '@RG\tID:foo\tSM:bar\tPL:illumina'"
     SOFTWARE_BWA_PARAMETERS_TWO_SEQUENCES = (
+        "mem -t 4 -M -R '@RG\tID:foo\tSM:bar\tPL:illumina'"
+    )
+
+    ### BWA FILTER
+    SOFTWARE_BWA_FILTER = os.path.join(
+        Televir_Directory_Constants.environments_directory,
+        "remap/remap/bin/bwa",
+    )
+    SOFTWARE_BWA_FILTER_name = "BWA"
+    SOFTWARE_BWA_FILTER_name_extended = "BWA - Filter"
+    SOFTWARE_BWA_FILTER_VERSION = "0.7.17"
+    SOFTWARE_BWA_FILTER_parameters = "mem -t 4 -M -R '@RG\tID:foo\tSM:bar\tPL:illumina'"
+    SOFTWARE_BWA_FILTER_PARAMETERS_TWO_SEQUENCES = (
         "mem -t 4 -M -R '@RG\tID:foo\tSM:bar\tPL:illumina'"
     )
 

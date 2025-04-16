@@ -452,6 +452,16 @@ class DefaultSoftware(object):
         )
 
         self.test_default_db(
+            SoftwareNames.SOFTWARE_BWA_FILTER_name,
+            self.default_parameters.get_bwa_filter_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            ),
+            user,
+        )
+
+        self.test_default_db(
             SoftwareNames.SOFTWARE_televir_report_layout_name,
             self.default_parameters.get_televir_report_defaults(
                 user,
@@ -1210,6 +1220,20 @@ class DefaultSoftware(object):
         )
         return "" if result is None else result
 
+    def get_bwa_filter_parameters(self, user, technology_name):
+        result = self.default_parameters.get_parameters_parsed(
+            SoftwareNames.SOFTWARE_BWA_FILTER_name,
+            user,
+            Software.TYPE_OF_USE_televir_global,
+            None,
+            None,
+            None,
+            technology_name,
+            pipeline_step=ConstantsSettings.PIPELINE_NAME_extra_qc,
+            software_name_extended=SoftwareNames.SOFTWARE_BWA_FILTER_name_extended,
+        )
+        return "" if result is None else result
+
     def get_bamutil_parameters(self, user, technology_name):
         result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_BAMUTIL_name,
@@ -1736,6 +1760,11 @@ class DefaultSoftware(object):
             )
             return self.get_prinseq_parameters(user, technology_name)
 
+        if (
+            software_name == SoftwareNames.SOFTWARE_BWA_FILTER_name
+            and pipeline_step == ConstantsSettings.PIPELINE_NAME_extra_qc
+        ):
+            return self.get_bwa_filter_parameters(user, technology_name)
         if software_name == SoftwareNames.SOFTWARE_BAMUTIL_name:
 
             return self.get_bamutil_parameters(user, technology_name)

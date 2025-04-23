@@ -116,6 +116,7 @@ class ProcessSGE(object):
 
         if len(vect_cmd) == 0:
             return None
+        b_remove_out_dir = False
 
         file_name_out = os.path.join(out_dir, ProcessSGE.FILE_NAME_SCRIPT_SGE)
         with open(file_name_out, "w") as handleSGE:

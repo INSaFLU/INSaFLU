@@ -330,7 +330,6 @@ class RunCMD:
             cmd = " ".join(cmd)
 
         self.logger.info(f"running: {self.bin}{cmd}")
-        print(f"running: {self.bin}{cmd}")
 
         cmd_string = self.bash_software_cmd_string(cmd)
         out, err, exec_time = self.system_deploy(cmd_string)
@@ -406,7 +405,6 @@ class RunCMD:
 
         with operation_files as op_files:
             cmd_string = self.bash_software_cmd_string(cmd)
-            print(f"running command: {cmd_string}")
 
             op_files.write_bash_script(cmd_string)
 

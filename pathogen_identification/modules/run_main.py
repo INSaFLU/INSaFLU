@@ -712,8 +712,8 @@ class Run_Deployment_Methods(RunDetail_main):
     def Prep_deploy(self, remap_prep=True):
         if self.qc_performed is False:
             self.preprocess_drone = Preprocess(
-                self.sample.r1.current,
-                self.sample.r2.current,
+                self.sample.r1,
+                self.sample.r2,
                 self.filtered_reads_dir,
                 self.type,
                 self.preprocess_method,
@@ -819,6 +819,9 @@ class Run_Deployment_Methods(RunDetail_main):
                 self.sample.r1.clean_exo = r1_proc
                 if self.type == ConstantsSettings.PAIR_END:
                     self.sample.r2.clean_exo = r2_proc
+
+            self.sample.r1.clean_read_names()
+            self.sample.r2.clean_read_names()
 
             self.preprocess_drone.run()
 
@@ -1335,7 +1338,6 @@ class RunMainTree_class(Run_Deployment_Methods):
         if self.quality_control and not self.qc_performed:
             self.deploy_QC()
             self.sample.qc_soft = self.preprocess_drone.preprocess_method.name
-
             self.process_QC()
 
             self.qc_performed = True
@@ -1364,11 +1366,8 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.logger.info(
             "r1 current reads: " + str(self.sample.r1.get_current_fastq_read_number())
         )
-        print("RUNNING PREPROCESS", self.enrichment)
 
         if self.enrichment:
-            print("ENRICHMENT EXISTS")
-            print(self.enrichment_method.check_enriched_exist())
 
             if self.enrichment_method.check_enriched_exist():
 
@@ -1404,8 +1403,7 @@ class RunMainTree_class(Run_Deployment_Methods):
             self.enrichment_performed = True
 
         if self.depletion:
-            print(self.enrichment_method.check_depleted_exist())
-            print("DEPLETION EXISTS")
+
             if self.depletion_method.check_depleted_exist():
                 r1_proc, r2_proc = self.depletion_method.retrieve_depleted_reads()
                 depleted_read_number = self.depletion_method.get_depleted_read_number()
@@ -1560,20 +1558,12 @@ class RunMainTree_class(Run_Deployment_Methods):
 
     def plan_remap_prep(self):
 
-        print("########### PLANNING REMAP PREP ###########")
-        print("remap prep: ", self.remap_prepped)
-
-        print("MAX TAXIDS: ", self.remap_params.max_taxids)
-        print("MAX ACCIDS: ", self.remap_params.max_accids)
-
         self.metadata_tool.match_and_select_targets(
             self.read_classification_drone.classification_report,
             self.contig_classification_drone.classification_report,
             max_remap=self.remap_params.max_accids,
             taxid_limit=self.remap_params.max_taxids,
         )
-
-        print("remap targets: ", self.metadata_tool.remap_targets)
 
         self.import_from_remap_prep()
 
@@ -1582,7 +1572,6 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.rclass_summary = self.metadata_tool.rclass
         self.merged_targets = self.metadata_tool.merged_targets
 
-        print("RAW TARGETS: ", self.metadata_tool.raw_targets)
         self.raw_targets = self.metadata_tool.raw_targets
         self.remap_plan = self.metadata_tool.remap_plan
 
@@ -1599,18 +1588,13 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.remap_prepped = True
 
     def Run_Remapping(self, prep=True):
-        print("remapping: ", self.remapping)
-        print(self.remap_prepped)
+
         if not self.remap_prepped:
             return
 
-        print("remapping: ", self.remapping)
-        print(self.remap_prepped)
         if self.remapping is True and self.remapping_performed is False:
             if self.remap_prepped == False:
                 self.plan_remap_prep_safe()
-
-            print("merged targets: ", self.merged_targets)
 
             if prep:
                 self.prep_REMAPPING()
@@ -1653,11 +1637,6 @@ class RunMainTree_class(Run_Deployment_Methods):
 
     def save_df_check_exists(self, df: pd.DataFrame, path: str):
         dirname = os.path.dirname(path)
-        print("############### SAVING ", path)
-        print("path exists: ", os.path.exists(path))
-        print("dirname exists: ", os.path.exists(dirname))
-        print(df.shape)
-
         if not os.path.exists(dirname):
             os.makedirs(dirname, exist_ok=True)
 

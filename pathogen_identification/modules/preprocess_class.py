@@ -59,6 +59,8 @@ class Preprocess:
         """
         self.r1 = r1
         self.r2 = r2
+        self.r1_string = r1.current
+        self.r2_string = r2.current
         self.threads = str(threads)
         self.preprocess_dir = preprocess_dir
         self.bin = preprocess_method.bin
@@ -243,6 +245,7 @@ class Preprocess:
         """
         Configure preprocess
         """
+
         if self.preprocess_method.name == "trimmomatic":
             self.run_trimmomatic()
         elif self.preprocess_method.name == "nanofilt":
@@ -251,6 +254,8 @@ class Preprocess:
             self.run_prinseq()
         elif self.preprocess_method.name == "prinseq++":
             self.run_prinseq()
+        elif self.preprocess_method.name == "bwa":
+            self.run_bwa_filter()
         else:
             raise ValueError(
                 "preprocess method {} not supported".format(self.preprocess_method.name)
@@ -294,8 +299,8 @@ class Preprocess:
         """
         fastq_cmd = [
             "zcat",
-            self.r1,
-            self.r2,
+            self.r1_string,
+            self.r2_string,
             "|",
             os.path.join(self.cmd.bin, "fastqc"),
             "stdin",
@@ -313,7 +318,7 @@ class Preprocess:
         """
         fastq_cmd = [
             "zcat",
-            self.r1,
+            self.r1_string,
             "|",
             os.path.join(self.cmd.bin, "fastqc"),
             "stdin",
@@ -414,8 +419,8 @@ class Preprocess:
             CS.PAIR_END,
             "-threads",
             self.threads,
-            self.r1,
-            self.r2,
+            self.r1_string,
+            self.r2_string,
             "-baseout",
             self.preprocess_name_fastq_gz,
             self.args,
@@ -443,7 +448,7 @@ class Preprocess:
             CS.SINGLE_END,
             "-threads",
             self.threads,
-            self.r1,
+            self.r1_string,
             self.preprocess_name_fastq,
             self.args,
         ]
@@ -458,6 +463,120 @@ class Preprocess:
         elif self.preprocess_type == CS.SINGLE_END:
             self.prinseq_SE()
 
+    def run_bwa_filter_PE(self, database, r1, r2, output_filename) -> str:
+        """
+        filter low complexity reads using bwa
+        """
+
+        if database.endswith(".fa") or database.endswith(".fasta"):
+            database_index = os.path.splitext(database)[0]
+        else:
+            database_index = database
+
+        bwa_cmd = [
+            "bwa",
+            "mem",
+            "-t",
+            str(self.threads),
+            self.args,
+            database_index,
+            r1,
+            r2,
+            "|",
+            os.path.join(self.cmd.bin, "samtools"),
+            "view",
+            "-Sb",
+            "-o",
+            output_filename + ".bam",
+        ]
+
+        self.cmd.run_script_software(bwa_cmd)
+        # extract reads from bam file
+        reads_list = self.filter_mapped_fastq_using_bam(output_filename + ".bam")
+
+        return reads_list
+
+    def run_bwa_filter_SE(self, database: str, r1, output_filename) -> str:
+        """
+        filter low complexity reads using bwa
+        """
+
+        if database.endswith(".fa") or database.endswith(".fasta"):
+            database_index = os.path.splitext(database)[0]
+        else:
+            database_index = database
+
+        bwa_cmd = [
+            "bwa",
+            "mem",
+            "-t",
+            str(self.threads),
+            self.args,
+            database_index,
+            r1,
+            "|",
+            os.path.join(self.cmd.bin, "samtools"),
+            "view",
+            "-Sb",
+            "-o",
+            output_filename + ".bam",
+        ]
+
+        self.cmd.run_script_software(bwa_cmd)
+        # extract reads from bam file
+        reads_list = self.filter_mapped_fastq_using_bam(output_filename + ".bam")
+        return reads_list
+
+    def read_filter(self, input, output: str, read_list: str):
+
+        cmd = "seqtk subseq %s %s | gzip > %s" % (input, read_list, output)
+        self.cmd.run_script_software(cmd)
+
+    def run_bwa_filter(self):
+        """
+        filter low complexity reads using bwa
+        """
+        databases = self.preprocess_method.db
+        databases = databases.split(";")
+
+        input_r1 = self.r1.current
+        input_r2 = self.r2.current
+
+        for database in databases:
+            tmp_basename = self.generate_tmp_file_name()
+
+            if self.preprocess_type == CS.PAIR_END:
+                reads_list = self.run_bwa_filter_PE(
+                    database, input_r1, input_r2, tmp_basename
+                )
+
+                self.read_filter(input_r1, tmp_basename + "_r1.fastq.gz", reads_list)
+                self.read_filter(input_r2, tmp_basename + "_r2.fastq.gz", reads_list)
+                if os.path.exists(tmp_basename + "_r1.fastq.gz") and os.path.getsize(
+                    tmp_basename + "_r1.fastq.gz"
+                ):
+                    input_r1 = tmp_basename + "_r1.fastq.gz"
+                    input_r2 = tmp_basename + "_r2.fastq.gz"
+
+            elif self.preprocess_type == CS.SINGLE_END:
+                reads_list = self.run_bwa_filter_SE(database, input_r1, tmp_basename)
+
+                self.read_filter(input_r1, tmp_basename + "_r1.fastq.gz", reads_list)
+                # replace if subsampled
+                if os.path.exists(tmp_basename + "_r1.fastq.gz") and os.path.getsize(
+                    tmp_basename + "_r1.fastq.gz"
+                ):
+                    input_r1 = tmp_basename + "_r1.fastq.gz"
+
+            else:
+                raise ValueError(
+                    "read type {} not supported".format(self.preprocess_type)
+                )
+
+        shutil.copy(input_r1, self.preprocess_name_fastq_gz)
+        if self.preprocess_type == CS.PAIR_END:
+            shutil.copy(input_r2, self.preprocess_name_r2_fastq_gz)
+
     def prinseq_PE(self):
         """
         filter low complexity reads using prinseq
@@ -466,9 +585,9 @@ class Preprocess:
         prinseq_cmd = [
             "prinseq++",
             "-fastq",
-            self.r1,
+            self.r1_string,
             "-fastq2",
-            self.r2,
+            self.r2_string,
             "-out_good",
             self.preprocess_name_fastq,
             "-out_good2",
@@ -498,7 +617,7 @@ class Preprocess:
         prinseq_cmd = [
             "prinseq++",
             "-fastq",
-            self.r1,
+            self.r1_string,
             "-out_good",
             self.preprocess_name_fastq,
             "-out_bad",
@@ -547,7 +666,7 @@ class Preprocess:
         Nanofilt SE
         """
         temp_file_path = os.path.dirname(self.preprocess_name_fastq) + "/temp_r1.fastq"
-        unzip_cmd = ["gunzip", "-c", self.r1, ">", temp_file_path]
+        unzip_cmd = ["gunzip", "-c", self.r1_string, ">", temp_file_path]
         nanofilt_cmd = [
             "NanoFilt",
             self.args,
@@ -620,6 +739,49 @@ class Preprocess:
             self.subsample_PE()
             self.clean_unpaired()
 
+    def generate_tmp_file_name(self):
+        """
+        Generate a temporary file name
+        """
+        from random import randint
+
+        seed = randint(1, 100000)
+        tempdir = self.preprocess_dir
+        tempname = f"temp_subsample_{seed}"
+
+        temp1 = os.path.join(tempdir, tempname)
+
+        return temp1
+
+    def filter_mapped_fastq_using_bam(self, bam_file):
+        """
+        filter mapped fastq using bam file
+        """
+
+        tmp_read = self.generate_tmp_file_name()
+        tmp_read1 = tmp_read + ".lst"
+
+        cmd = [
+            "samtools",
+            "view",
+            "-h",
+            "-F",
+            "4",
+            bam_file,
+            "|",
+            "cut -f1",
+            "|",
+            "sort",
+            "|",
+            "uniq",
+            ">",
+            tmp_read1,
+        ]
+
+        self.cmd.run_script_software(cmd)
+
+        return tmp_read1
+
     def subsample_SE(self):
         """
         Subsample SE, use seqtk to subsample.
@@ -627,7 +789,7 @@ class Preprocess:
         from random import randint
 
         seed = randint(1, 100000)
-        tempdir = os.path.dirname(self.r1)
+        tempdir = os.path.dirname(self.r1_string)
         tempname = f"temp_subsample_{seed}"
 
         temp1 = os.path.join(tempdir, tempname + "_r1.fq")
@@ -637,13 +799,13 @@ class Preprocess:
             "sample",
             "-s",
             str(seed),
-            self.r1,
+            self.r1_string,
             str(self.subsample_number),
             ">",
             temp1,
         ]
 
-        compress_and_relocate_r1_cmd = ["bgzip", "-c", temp1, ">", self.r1]
+        compress_and_relocate_r1_cmd = ["bgzip", "-c", temp1, ">", self.r1_string]
 
         self.cmd.run(seqtk_subsample_r1_cmd)
         self.cmd.run(compress_and_relocate_r1_cmd)
@@ -657,7 +819,7 @@ class Preprocess:
         if self.subsample_number == 0:
             return
 
-        WHERETO = os.path.dirname(self.r1.current)
+        WHERETO = os.path.dirname(self.r2.current)
         common_reads = os.path.join(WHERETO, "common_reads.lst")
 
         cmd_find_common = [
@@ -700,7 +862,7 @@ class Preprocess:
         iii) run trimmomatic with minimal arguments to sort reads and remove unpaired reads.
         """
 
-        read_dir = os.path.dirname(self.r1)
+        read_dir = os.path.dirname(self.r1_string)
         common_reads = os.path.join(read_dir, "common_reads.tsv")
         temp_name = os.path.join(read_dir, "temp1")
         temp1 = temp_name + ".fq.gz"
@@ -709,8 +871,8 @@ class Preprocess:
         find_common_seqtk_cmd = [
             "seqtk",
             "subseq",
-            self.r1,
-            self.r2,
+            self.r1_string,
+            self.r2_string,
             "|",
             "paste",
             "- - - -",
@@ -729,7 +891,7 @@ class Preprocess:
         subseq_r1_cmd = [
             "seqtk",
             "subseq",
-            self.r1,
+            self.r1_string,
             common_reads,
             "|",
             "gzip",
@@ -740,7 +902,7 @@ class Preprocess:
         subseq_r2_cmd = [
             "seqtk",
             "subseq",
-            self.r2,
+            self.r2_string,
             common_reads,
             "|",
             "gzip",
@@ -751,13 +913,13 @@ class Preprocess:
         mv_r1 = [
             "mv",
             temp1,
-            self.r1,
+            self.r1_string,
         ]
 
         mv_r2 = [
             "mv",
             temp2,
-            self.r2,
+            self.r2_string,
         ]
 
         trimmomatic_cmd = [
@@ -766,16 +928,16 @@ class Preprocess:
             "-phred33",
             "-threads",
             self.threads,
-            self.r1,
-            self.r2,
+            self.r1_string,
+            self.r2_string,
             "-baseout",
             temp1,
             "MINLEN:20",
         ]
 
-        mv_trimmomatic_output_r1_cmd = ["mv", temp1, self.r1]
+        mv_trimmomatic_output_r1_cmd = ["mv", temp1, self.r1_string]
 
-        mv_trimmomatic_output_r2_cmd = ["mv", temp2, self.r2]
+        mv_trimmomatic_output_r2_cmd = ["mv", temp2, self.r2_string]
 
         self.cmd.run_script(find_common_seqtk_cmd)
         if os.path.getsize(common_reads) > 0:

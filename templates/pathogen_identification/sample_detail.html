@@ -149,7 +149,11 @@
                     <div class= "col-sm">
                     {% if qc_report.performed %}
                     <p> Input reads: <strong>{{ qc_report.input_reads }}</strong> </p>
-                    <p> Low complexity filtering (printseq) removed: <strong>{% difference_str_to_str_format qc_report.input_reads qc_report.output_reads %}</strong> ({{qc_report.output_reads_percent|round_str_perc_invert}} %) </p>
+                    <p> Filtering (
+                        {% for software_qc in qc_processing.software_qc %}
+                            {{ software_qc.software }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    ) removed: <strong>{% difference_str_to_str_format qc_report.input_reads qc_report.output_reads %}</strong> ({{ qc_report.output_reads_percent|round_str_perc_invert }} %) </p>
                     {% else %}
                     <p> Input reads: <strong>{{ run_detail.input }}</strong> </p>
                     {% endif %}

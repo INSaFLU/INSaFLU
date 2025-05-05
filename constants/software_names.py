@@ -766,7 +766,7 @@ class SoftwareNames(object):
         Televir_Directory_Constants.environments_directory,
         "remap/remap/bin/bwa",
     )
-    SOFTWARE_BWA_FILTER_name = "BWA"
+    SOFTWARE_BWA_FILTER_name = "BWA-Filter"
     SOFTWARE_BWA_FILTER_name_extended = "BWA - Filter"
     SOFTWARE_BWA_FILTER_VERSION = "0.7.17"
     SOFTWARE_BWA_FILTER_parameters = "mem -t 4 -M -R '@RG\tID:foo\tSM:bar\tPL:illumina'"

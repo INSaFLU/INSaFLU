@@ -6,6 +6,7 @@ import shutil
 import subprocess
 from typing import Tuple
 
+from constants.constants import Televir_Metadata_Constants
 from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.modules.object_classes import (
     Read_class,
@@ -96,6 +97,7 @@ class Preprocess:
         self.logger.info("Preprocess type: {}".format(self.preprocess_type))
         self.logger.info("Preprocess method: {}".format(self.preprocess_method.name))
         self.logger.info("args: {}".format(self.args))
+        self.televir_metadata = Televir_Metadata_Constants()
 
     def check_processed_exist(self) -> bool:
         """
@@ -254,7 +256,7 @@ class Preprocess:
             self.run_prinseq()
         elif self.preprocess_method.name == "prinseq++":
             self.run_prinseq()
-        elif self.preprocess_method.name == "bwa":
+        elif self.preprocess_method.name == "bwa-filter":
             self.run_bwa_filter()
         else:
             raise ValueError(
@@ -473,8 +475,10 @@ class Preprocess:
         else:
             database_index = database
 
+        bwa_software = self.televir_metadata.get_software_binary("bwa")
+
         bwa_cmd = [
-            "bwa",
+            bwa_software,
             "mem",
             "-t",
             str(self.threads),
@@ -490,7 +494,7 @@ class Preprocess:
             output_filename + ".bam",
         ]
 
-        self.cmd.run_script_software(bwa_cmd)
+        self.cmd.run_script(bwa_cmd)
         # extract reads from bam file
         reads_list = self.filter_mapped_fastq_using_bam(output_filename + ".bam")
 
@@ -505,9 +509,10 @@ class Preprocess:
             database_index = os.path.splitext(database)[0]
         else:
             database_index = database
+        bwa_software = self.televir_metadata.get_software_binary("bwa")
 
         bwa_cmd = [
-            "bwa",
+            bwa_software,
             "mem",
             "-t",
             str(self.threads),
@@ -522,7 +527,7 @@ class Preprocess:
             output_filename + ".bam",
         ]
 
-        self.cmd.run_script_software(bwa_cmd)
+        self.cmd.run_script(bwa_cmd)
         # extract reads from bam file
         reads_list = self.filter_mapped_fastq_using_bam(output_filename + ".bam")
         return reads_list
@@ -530,6 +535,7 @@ class Preprocess:
     def read_filter(self, input, output: str, read_list: str):
 
         cmd = "seqtk subseq %s %s | gzip > %s" % (input, read_list, output)
+
         self.cmd.run_script_software(cmd)
 
     def run_bwa_filter(self):

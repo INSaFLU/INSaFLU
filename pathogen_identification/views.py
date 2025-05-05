@@ -43,9 +43,8 @@ from fluwebvirus.settings import (
     STATICFILES_DIRS,
 )
 from managing_files.forms import AddSampleProjectForm
-from managing_files.models import ProcessControler
+from managing_files.models import ProcessControler, Reference
 from managing_files.models import ProjectSample as InsafluProjectSample
-from managing_files.models import Reference
 from managing_files.tables import SampleToProjectsTable
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.constants_settings import ConstantsSettings as PICS
@@ -118,6 +117,7 @@ from pathogen_identification.utilities.utilities_views import (  # #############
     RawReferenceUtils,
     ReportSorter,
     RunMainWrapper,
+    SampleReadsRetrieve,
     final_report_best_cov_by_accid,
     recover_assembly_contigs,
 )
@@ -2551,6 +2551,18 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             sample=sample_main, run=run_main_pipeline
         )
 
+        ### Reads Processing
+        # ret = SampleReadsRetrieve(sample)
+        sample_retrieve = SampleReadsRetrieve(sample_main.sample)
+        parameter_set = run_main_pipeline.parameter_set
+        processed_reads = sample_retrieve.parameter_set_processed_reads(parameter_set)
+        if len(processed_reads) > 0:
+            processed_reads = processed_reads[0]
+        else:
+            processed_reads = None
+        print("processed reads", processed_reads)
+        for software_qc in processed_reads.software_qc:
+            print("software qc", software_qc)
         context = {
             "project": project_name,
             "run_name": run_name,
@@ -2563,6 +2575,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "clade_heatmap_json": clade_heatmap_json,
             "is_classification": is_classification,
             "remapping_performed": remapping_performed,
+            "qc_processing": processed_reads,
             "sample": sample_name,
             "run_main": run_main_pipeline,
             "run_detail": run_detail,

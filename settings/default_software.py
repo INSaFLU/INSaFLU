@@ -1760,11 +1760,9 @@ class DefaultSoftware(object):
             )
             return self.get_prinseq_parameters(user, technology_name)
 
-        if (
-            software_name == SoftwareNames.SOFTWARE_BWA_FILTER_name
-            and pipeline_step == ConstantsSettings.PIPELINE_NAME_extra_qc
-        ):
+        if software_name == SoftwareNames.SOFTWARE_BWA_FILTER_name:
             return self.get_bwa_filter_parameters(user, technology_name)
+
         if software_name == SoftwareNames.SOFTWARE_BAMUTIL_name:
 
             return self.get_bamutil_parameters(user, technology_name)

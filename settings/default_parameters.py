@@ -72,6 +72,7 @@ class DefaultParameters(object):
         if prep_televir_dbs:
             self.televir_db_manager.get_software_db_dict()
             self.televir_db_manager.get_host_dbs()
+            self.televir_db_manager.get_filter_dbs()
 
     def get_software_parameters_version(self, software_name):
         """
@@ -186,7 +187,6 @@ class DefaultParameters(object):
                     # keep last one
                     software = sof.last()
 
-                    print("MULTIPLE SOFTWARES: ", sof.count(), software.name)
                     if sof.count() > 1:
                         sof_delete = sof.exclude(pk=software.pk)
                         with LockedAtomicTransaction(Software), LockedAtomicTransaction(
@@ -2747,8 +2747,6 @@ class DefaultParameters(object):
     def get_bwa_filter_defaults(
         self, user, type_of_use, technology_name, sample=None, pipeline_step=""
     ):
-        if not pipeline_step:
-            pipeline_step = ConstantsSettings.PIPELINE_NAME_host_depletion
 
         software = Software()
         software.name = SoftwareNames.SOFTWARE_BWA_FILTER_name
@@ -2773,9 +2771,11 @@ class DefaultParameters(object):
         software.owner = user
 
         ### software db
-        dbs_available = self.televir_db_manager.get_from_host_db(
+        dbs_available = self.televir_db_manager.get_from_filter_dbs(
             software.name.lower(), ["None"]
         )
+        print("DBS_AVAILABLE")
+        print(dbs_available)
 
         vect_parameters = []
 

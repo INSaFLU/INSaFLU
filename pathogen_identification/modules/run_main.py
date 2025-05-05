@@ -389,7 +389,6 @@ class RunDetail_main:
         self.modules = list(self.method_args["module"].unique())
         self.config = config
         self.log_dir = config["directories"]["log_dir"]
-        print("logdir", self.log_dir, "run type", self.run_type)
 
         self.cmd = RunCMD(
             get_bindir_from_binaries(

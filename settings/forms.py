@@ -54,6 +54,7 @@ class SoftwareForm(forms.ModelForm):
         self.televir_utiltity.get_software_list()
         self.televir_utiltity.get_software_db_dict()
         self.televir_utiltity.get_host_dbs()
+        self.televir_utiltity.get_filter_dbs()
         ###
         if not pk_project is None:
             kwargs.pop("pk_project")
@@ -154,7 +155,7 @@ class SoftwareForm(forms.ModelForm):
 
                     list_data = [
                         [data_[0], data_[1]]
-                        for data_ in self.televir_utiltity.get_from_host_db(
+                        for data_ in self.televir_utiltity.get_from_filter_dbs(
                             parameter.software.name.lower(), []
                         )
                     ]

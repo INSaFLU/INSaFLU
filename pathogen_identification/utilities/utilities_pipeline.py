@@ -1279,7 +1279,7 @@ class Utility_Pipeline_Manager:
         )
         hosts_dbs_dict = {
             software.lower(): self.get_software_dbs_if_exist(
-                software,  # filters=[("tag", "host")]
+                software, filters=[("tag", "host")]
             )
             for software in software_list
         }
@@ -1318,6 +1318,28 @@ class Utility_Pipeline_Manager:
 
         self.host_dbs = hosts_dbs_dict
 
+    def get_filter_dbs(self):
+        """
+        Get the filter databases for a software
+        """
+        software_list = self.utility_repository.get_list_unique_field(
+            "software", "name"
+        )
+
+        filter_dbs_dict = {
+            software.lower(): self.get_software_dbs_if_exist(
+                software, filters=[("tag", "filter")]
+            )
+            for software in software_list
+        }
+
+        filter_dbs_dict = {k: v for k, v in filter_dbs_dict.items() if len(v) > 0}
+        for sof, filter_df in filter_dbs_dict.items():
+            filter_df["file_str"] = filter_df.apply(
+                lambda x: os.path.basename(x.path), axis=1
+            )
+        self.filter_dbs = filter_dbs_dict
+
     ##################################
     ##################################
 
@@ -1337,6 +1359,7 @@ class Utility_Pipeline_Manager:
 
     def get_from_host_db(self, software_name: str, empty=[]):
         possibilities = [software_name, software_name.lower()]
+
         if "_" in software_name:
             element = software_name.split("_")[0]
 
@@ -1360,6 +1383,22 @@ class Utility_Pipeline_Manager:
                 )
 
         return empty
+
+    def get_from_filter_dbs(self, software_name: str, empty=[]):
+        possibilities = [software_name, software_name.lower()]
+
+        if "_" in software_name:
+            element = software_name.split("_")[0]
+
+            possibilities.append(element)
+            possibilities.append(element.lower())
+
+        for possibility in possibilities:
+            if possibility in self.filter_dbs.keys():
+                filter_df = self.filter_dbs[possibility]
+                return list(
+                    filter_df[["path", "file_str"]].itertuples(index=False, name=None)
+                )
 
     def generate_argument_combinations(
         self, pipeline_software_dt: pd.DataFrame

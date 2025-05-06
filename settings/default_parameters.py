@@ -324,7 +324,10 @@ class DefaultParameters(object):
         """
         software_list = Software.objects.filter(
             owner=user,
-            technology__name=ConstantsSettings.TECHNOLOGY_illumina,
+            technology__name__in=[
+                ConstantsSettings.TECHNOLOGY_illumina,
+                ConstantsSettings.TECHNOLOGY_illumina_old,
+            ],
             parameter__project=project,
             parameter__project_sample=project_sample,
             pipeline_step__name=ConstantsSettings.PIPELINE_NAME_variant_detection,
@@ -334,7 +337,10 @@ class DefaultParameters(object):
         if len(software_list) == 0:
             software_list = Software.objects.filter(
                 owner=user,
-                technology__name=ConstantsSettings.TECHNOLOGY_illumina,
+                technology__name__in=[
+                    ConstantsSettings.TECHNOLOGY_illumina,
+                    ConstantsSettings.TECHNOLOGY_illumina_old,
+                ],
                 parameter__project=project,
                 pipeline_step__name=ConstantsSettings.PIPELINE_NAME_variant_detection,
                 is_to_run=True,
@@ -343,7 +349,10 @@ class DefaultParameters(object):
         if len(software_list) == 0:
             software_list = Software.objects.filter(
                 owner=user,
-                technology__name=ConstantsSettings.TECHNOLOGY_illumina,
+                technology__name__in=[
+                    ConstantsSettings.TECHNOLOGY_illumina,
+                    ConstantsSettings.TECHNOLOGY_illumina_old,
+                ],
                 parameter__project_sample=project_sample,
                 pipeline_step__name=ConstantsSettings.PIPELINE_NAME_variant_detection,
                 is_to_run=True,

@@ -567,6 +567,99 @@ class run_blast_p(Classifier_init):
         )
 
 
+import json
+
+from constants.constants import Televir_Metadata_Constants
+
+
+class run_voyager(Classifier_init):
+    method_name = "voyager"
+    report_suffix = ".json"
+    full_report_suffix = ".json"
+
+    def extract_json_taxonomy(json_file: str):
+        """
+        Poorly structured json file, need to extract 'taxonomy' field."""
+        lines_to_keep = ["{"]
+        with open(json_file, "r") as f:
+            line = f.readline()
+            keep = False
+            while line:
+                if "taxonomy" in line:
+                    keep = True
+                if "]" in line:
+                    keep = False
+                if keep:
+                    lines_to_keep.append(line.replace("\t", ""))
+                line = f.readline()
+        lines_to_keep.append("]}")
+        lines_to_keep = "".join(lines_to_keep)
+
+        data = json.loads(lines_to_keep)
+        return data
+
+    def parse_json_taxonomy(self, json_file: str) -> pd.DataFrame:
+        """
+        parse voyager json output file.
+        """
+        order = [
+            "species",
+            "subgenus",
+            "genus",
+            "family",
+            "suborder",
+            "order",
+            "class",
+            "phylum",
+            "kingdom",
+            "clade",
+        ]
+        data = self.extract_json_taxonomy(json_file)
+        taxonomy = data["taxonomy"]
+        output = []
+        for taxa in taxonomy:
+            for clade in order:
+                if clade in taxa.keys():
+                    output.append(taxa[clade])
+                    break
+        output = pd.DataFrame(output)
+        output.columns = ["taxid", "description"]
+
+        output["taxid"] = output["taxid"].astype(str)
+        output["description"] = output["description"].astype(str)
+        return output
+
+    def run_SE(self, threads: int = 3):
+        televir_dirs = Televir_Metadata_Constants()
+        voyager_bindir = televir_dirs.get_software_bin_directory("voyager")
+
+        cmd = [
+            os.path.join(voyager_bindir, "voyager-cli"),
+            "-x",
+            self.db_path,
+            "--input",
+            self.query_path,
+            "--output",
+            self.report_path,
+        ]
+
+        self.cmd.run(cmd)
+
+    def run_PE(self, threads: int = 3):
+        raise NotImplementedError("PE not implemented for voyager")
+
+    def get_report(self) -> pd.DataFrame:
+        """
+        read classifier output. return pandas dataframe with standard query sequence id and accession column names.
+        """
+        if check_report_empty(self.report_path):
+            return pd.DataFrame(columns=["qseqid", "acc"])
+
+        report = self.parse_json_taxonomy(self.report_path)
+
+        return report
+
+
 class run_centrifuge(Classifier_init):
     method_name = "centrifuge"
     report_suffix = ".report.tsv"
@@ -1357,6 +1450,7 @@ class Classifier:
         "blastn": run_blast,
         "blastp": run_blast_p,
         "centrifuge": run_centrifuge,
+        "voyager": run_voyager,
         "desamba": run_deSamba,
         "kraken2": run_kraken2,
         "minimap2_illumina": run_minimap2_illumina,

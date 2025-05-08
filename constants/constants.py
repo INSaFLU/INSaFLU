@@ -71,6 +71,7 @@ class Televir_Metadata_Constants:
             "minimap2_illu": "hostDepletion/hostdep_env",
             "minimap2_remap": "hostDepletion/hostdep_env",
             "minimap2_ont": "hostDepletion/hostdep_env",
+            "voyager": "/classification/voyager/",
             "snippy_pi": config("DIR_SOFTWARE") + "/snippy",
             "prinseq++": "preprocess/prinseq",
             "prinseq": "preprocess/prinseq",

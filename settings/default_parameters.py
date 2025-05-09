@@ -1389,6 +1389,13 @@ class DefaultParameters(object):
                 ConstantsSettings.TECHNOLOGY_illumina,
             )
 
+        elif software.name == SoftwareNames.SOFTWARE_VOYAGER_name:
+            return self.get_voyager_default(
+                software.owner,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            )
+
         elif software.name == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ILLU_name:
 
             if (
@@ -3292,6 +3299,53 @@ class DefaultParameters(object):
             "This (re)encodes the quality part of the FASTQ file to base 33."
         )
         vect_parameters.append(parameter)
+        return vect_parameters
+
+    def get_voyager_default(
+        self,
+        user,
+        type_of_use,
+        technology_name,
+        sample=None,
+        pipeline_step="",
+        is_to_run=True,
+    ):
+        """
+        voyager default illumina
+        """
+        if not pipeline_step:
+            pipeline_step = ConstantsSettings.PIPELINE_NAME_read_classification
+
+        software = Software()
+        software.name = SoftwareNames.SOFTWARE_VOYAGER_name
+        software.name_extended = SoftwareNames.SOFTWARE_VOYAGER_name_extended
+        software.type_of_use = type_of_use
+        software.type_of_software = Software.TYPE_SOFTWARE
+        software.version = SoftwareNames.SOFTWARE_VOYAGER_VERSION
+        software.version_parameters = self.get_software_parameters_version(
+            software.name
+        )
+        software.technology = self.get_technology(technology_name)
+        software.can_be_on_off_in_pipeline = (
+            True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
+        )
+        software.is_to_run = is_to_run
+
+        ###  small description of software
+        software.help_text = ""
+
+        ###  which part of pipeline is going to run; NEED TO CHECK
+        software.pipeline_step = self._get_pipeline(pipeline_step)
+
+        software.owner = user
+
+        ### software db
+        dbs_available = self.televir_db_manager.software_dbs_dict.get(
+            software.name.lower(), ["None"]
+        )
+
+        vect_parameters = []
+
         return vect_parameters
 
     def get_centrifuge_default(

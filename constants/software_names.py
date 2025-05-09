@@ -747,6 +747,16 @@ class SoftwareNames(object):
     SOFTWARE_CENTRIFUGE_parameters = "-p 4 --time -k 3 --out-fmt sam"
     SOFTWARE_CENTRIFUGE_PARAMETERS_TWO_SEQUENCES = "-p 4 --time -k 3 --out-fmt sam"
 
+    ### VOYAGER
+    SOFTWARE_VOYAGER = os.path.join(
+        Televir_Directory_Constants.environments_directory,
+        "classification/voyager-cli",
+    )
+
+    SOFTWARE_VOYAGER_name = "Voyager"
+    SOFTWARE_VOYAGER_name_extended = "Voyager"
+    SOFTWARE_VOYAGER_VERSION = "0.1.5"
+
     ### BWA
     SOFTWARE_BWA = os.path.join(
         Televir_Directory_Constants.environments_directory,

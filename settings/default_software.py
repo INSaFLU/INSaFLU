@@ -766,6 +766,28 @@ class DefaultSoftware(object):
             user,
         )
 
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_BWA_name,
+            self.default_parameters.get_bwa_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_request_mapping,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_BWA_name,
+            self.default_parameters.get_bwa_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_remapping,
+            ),
+            user,
+        )
+
         if PICS.TEST_SOFTWARE:
             self.test_defaults_test_televir(user)
         if PICS.METAGENOMICS:
@@ -850,23 +872,11 @@ class DefaultSoftware(object):
         test if exist, if not persist in database, for televir"""
 
         self.test_default_db(
-            SoftwareNames.SOFTWARE_BWA_name,
-            self.default_parameters.get_bwa_default(
+            SoftwareNames.SOFTWARE_VOYAGER_name,
+            self.default_parameters.get_voyager_default(
                 user,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
-                pipeline_step=ConstantsSettings.PIPELINE_NAME_request_mapping,
-            ),
-            user,
-        )
-
-        self.test_default_db(
-            SoftwareNames.SOFTWARE_BWA_name,
-            self.default_parameters.get_bwa_default(
-                user,
-                Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_illumina,
-                pipeline_step=ConstantsSettings.PIPELINE_NAME_remapping,
             ),
             user,
         )
@@ -1318,6 +1328,18 @@ class DefaultSoftware(object):
             None,
             technology_name,
             pipeline_step=pipeline_step,
+        )
+        return "" if result is None else result
+
+    def get_voyager_parameters(self, user, technology_name):
+        result = self.default_parameters.get_parameters_parsed(
+            SoftwareNames.SOFTWARE_VOYAGER_name,
+            user,
+            Software.TYPE_OF_USE_televir_global,
+            None,
+            None,
+            None,
+            technology_name,
         )
         return "" if result is None else result
 

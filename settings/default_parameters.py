@@ -3339,12 +3339,23 @@ class DefaultParameters(object):
 
         software.owner = user
 
-        ### software db
-        dbs_available = self.televir_db_manager.software_dbs_dict.get(
-            software.name.lower(), ["None"]
-        )
-
         vect_parameters = []
+
+        parameter = Parameter()
+        parameter.name = "--rate"
+        parameter.parameter = "100"
+        parameter.type_data = Parameter.PARAMETER_int
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = False
+        parameter.is_to_run = True
+        parameter.sequence_out = 1
+        parameter.range_available = "[1:10000]"
+        parameter.range_max = "10000"
+        parameter.range_min = "1"
+        parameter.description = "Output update processing rate."
+        vect_parameters.append(parameter)
 
         return vect_parameters
 

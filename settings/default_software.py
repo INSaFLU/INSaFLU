@@ -870,7 +870,7 @@ class DefaultSoftware(object):
     def test_defaults_test_televir(self, user):
         """
         test if exist, if not persist in database, for televir"""
-
+        print("testing")
         self.test_default_db(
             SoftwareNames.SOFTWARE_VOYAGER_name,
             self.default_parameters.get_voyager_default(
@@ -1812,6 +1812,9 @@ class DefaultSoftware(object):
             return self.get_centrifuge_parameters(
                 user, technology_name, pipeline_step=pipeline_step
             )
+
+        if software_name == SoftwareNames.SOFTWARE_VOYAGER_name:
+            return self.get_voyager_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name:
 

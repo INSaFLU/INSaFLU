@@ -2560,9 +2560,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             processed_reads = processed_reads[0]
         else:
             processed_reads = None
-        print("processed reads", processed_reads)
-        for software_qc in processed_reads.software_qc:
-            print("software qc", software_qc)
+
         context = {
             "project": project_name,
             "run_name": run_name,

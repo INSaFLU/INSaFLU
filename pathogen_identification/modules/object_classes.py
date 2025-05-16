@@ -289,7 +289,7 @@ class RunCMD:
         return f"{self.bin}{cmd}"
 
     def python_cmd_string(self, cmd: str):
-        return f"python {self.bin}{cmd}"
+        return f"python {cmd}"
 
     def java_cmd_string(self, cmd: str):
         java_bin = os.path.join(

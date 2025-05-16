@@ -660,6 +660,116 @@ class run_voyager(Classifier_init):
         return report
 
 
+class run_metaphlan(Classifier_init):
+    method_name = "metaphlan"
+    report_suffix = ".tsv"
+    full_report_suffix = ".tsv"
+
+    def parse_metaphlan_output(self, file: str) -> pd.DataFrame:
+        """
+        parse metaphlan output file.
+        """
+        data = []
+
+        with open(file, "r") as f:
+            for line in f:
+                if line.startswith("#"):
+                    continue
+                line = line.strip().split("\t")
+                if len(line) < 2:
+                    continue
+
+                taxonomy = line[0].split("|")
+                taxids = line[1].split("|")
+                tax_index = -1
+                if "SGD" in taxonomy[tax_index]:
+                    tax_index = -2
+
+                data.append([taxonomy[tax_index], taxids[tax_index], line[2]])
+        data = pd.DataFrame(data)
+        data.columns = ["description", "taxid", "abundance"]
+        data["taxid"] = data["taxid"].astype(str)
+        data["description"] = data["description"].astype(str)
+        data["abundance"] = data["abundance"].astype(float)
+        return data
+
+    def run_SE(self, threads: int = 3):
+        cmd = [
+            "metaphlan",
+            self.query_path,
+            "--input_type",
+            "fastq",
+            "--nproc",
+            str(threads),
+            "--bowtie2out",
+            self.report_path.replace(".tsv", ".bowtie2.bam"),
+            "--output_file",
+            self.report_path,
+        ]
+
+        self.cmd.run(cmd)
+
+    def run_PE(self, threads: int = 3):
+        televir_constants = Televir_Metadata_Constants()
+        metaphlan_bidir = televir_constants.get_software_bin_directory("metaphlan")
+
+        cmd_r1 = [
+            metaphlan_bidir + "metaphlan",
+            self.query_path,
+            "--input_type",
+            "fastq",
+            "--nproc",
+            str(threads),
+            "--bowtie2out",
+            self.report_path.replace(".tsv", ".bowtie2.bz2"),
+            ">",
+            f"{self.report_path}.r1",
+        ]
+
+        cmd_r2 = [
+            metaphlan_bidir + "metaphlan",
+            self.r2,
+            "--input_type",
+            "fastq",
+            "--nproc",
+            str(threads),
+            "--bowtie2out",
+            self.report_path.replace(".tsv", ".bowtie2.bz2"),
+            ">",
+            f"{self.report_path}.r2",
+        ]
+
+        self.cmd.run(cmd_r1)
+        self.cmd.run(cmd_r2)
+
+        merge_output_cmd = [
+            "python",
+            metaphlan_bidir + "merge_metaphlan_tables.py",
+            f"{self.report_path}.r1",
+            f"{self.report_path}.r2",
+            ">",
+            self.report_path,
+        ]
+
+        self.cmd.run_python(merge_output_cmd)
+
+    def get_report(self) -> pd.DataFrame:
+        if check_report_empty(self.report_path):
+            return pd.DataFrame(columns=["description", "taxid", "abundance"])
+
+        report = self.parse_metaphlan_output(self.report_path)
+
+        return report
+
+    def get_report_simple(self) -> pd.DataFrame:
+        if check_report_empty(self.report_path):
+            return pd.DataFrame(columns=["qseqid", "acc"])
+
+        report = self.parse_metaphlan_output(self.report_path)
+
+        return report
+
+
 class run_centrifuge(Classifier_init):
     method_name = "centrifuge"
     report_suffix = ".report.tsv"

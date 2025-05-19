@@ -940,6 +940,11 @@ class DefaultSoftware(object):
                 vect_parameters[0].software.pipeline_step.name
                 in self.televir_utiltity.steps_db_dependant
             ):
+                if (
+                    vect_parameters[0].software.name
+                    == SoftwareNames.SOFTWARE_METAPHLAN_NAME
+                ):
+                    return True
                 if not self.televir_utiltity.check_software_db_available(
                     software_name=software_name,
                 ):

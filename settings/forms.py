@@ -142,6 +142,7 @@ class SoftwareForm(forms.ModelForm):
                 dt_fields[parameter.get_unique_id()].help_text = escape(help_text)
 
             elif parameter.is_multiple_choice():  # Update this condition if needed
+                print("HOIOIHOIHOH")
                 ## already selected
                 selected = parameter.parameter.split(";") if parameter.parameter else []
 
@@ -159,7 +160,7 @@ class SoftwareForm(forms.ModelForm):
 
                 elif parameter.software.name == SoftwareNames.SOFTWARE_METAPHLAN_NAME:
                     list_data = [
-                        [data_[0], data_[1]]
+                        [data_, data_]
                         for data_ in SoftwareNames.SOFTWARE_METAPHLAN_DB_options
                     ]
                 else:

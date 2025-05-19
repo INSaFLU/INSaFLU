@@ -773,7 +773,7 @@ class SoftwareNames(object):
         "--ignore_archaea",
         "--ignore_bacteria",
         "--ignore_ksgbs",
-        "--ignore__usgbs",
+        "--ignore_usgbs",
     ]
 
     ### BWA

@@ -3358,7 +3358,7 @@ class DefaultParameters(object):
         parameter = Parameter()
         parameter.name = "--db"
         parameter.parameter = "--ignore_eukaryotes"
-        parameter.type_data = Parameter.PARAMETER_radio_button
+        parameter.type_data = Parameter.is_multiple_choice
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "

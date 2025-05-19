@@ -142,7 +142,6 @@ class SoftwareForm(forms.ModelForm):
                 dt_fields[parameter.get_unique_id()].help_text = escape(help_text)
 
             elif parameter.is_multiple_choice():  # Update this condition if needed
-                print("HOIOIHOIHOH")
                 ## already selected
                 selected = parameter.parameter.split(";") if parameter.parameter else []
 

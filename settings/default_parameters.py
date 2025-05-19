@@ -3337,6 +3337,11 @@ class DefaultParameters(object):
 
         software.owner = user
 
+        ### software db
+        dbs_available = self.televir_db_manager.software_dbs_dict.get(
+            software.name.lower(), ["None"]
+        )
+
         vect_parameters = []
 
         parameter = Parameter()
@@ -3356,7 +3361,7 @@ class DefaultParameters(object):
         vect_parameters.append(parameter)
 
         parameter = Parameter()
-        parameter.name = "--db"
+        parameter.name = "--edits"
         parameter.parameter = "--ignore_eukaryotes"
         parameter.type_data = Parameter.PARAMETER_multiple_choice
         parameter.software = software
@@ -3369,6 +3374,22 @@ class DefaultParameters(object):
         parameter.range_max = ""
         parameter.range_min = ""
         parameter.description = "Database adjustments."
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "--db"
+        parameter.parameter = dbs_available[0]
+        parameter.type_data = Parameter.PARAMETER_char_list
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True
+        parameter.sequence_out = 3
+        parameter.range_available = ""
+        parameter.range_max = ""
+        parameter.range_min = ""
+        parameter.description = "Database to use"
         vect_parameters.append(parameter)
 
         return vect_parameters

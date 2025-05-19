@@ -633,8 +633,9 @@ class run_voyager(Classifier_init):
         televir_dirs = Televir_Metadata_Constants()
         voyager_bindir = televir_dirs.get_software_bin_directory("voyager")
 
+        voyager_dir = voyager_bindir.replace("/bin", "")
         cmd = [
-            os.path.join(voyager_bindir, "voyager-cli"),
+            os.path.join(voyager_dir, "voyager-cli"),
             "-x",
             self.db_path,
             "--input",
@@ -706,7 +707,7 @@ class run_metaphlan(Classifier_init):
 
     def parse_args_db_edits(self):
 
-        where_db_edits = self.args.split("--db").index("--db")
+        where_db_edits = self.args.split(" ").index("--edits")
         args = self.args.split(" ")
         if where_db_edits > 0:
             edits = self.args.split(" ")[where_db_edits + 1]

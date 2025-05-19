@@ -643,7 +643,7 @@ class run_voyager(Classifier_init):
             self.report_path,
         ]
 
-        self.cmd.run(cmd)
+        self.cmd.run_bash(cmd)
 
     def run_PE(self, threads: int = 3):
         raise NotImplementedError("PE not implemented for voyager")
@@ -718,8 +718,11 @@ class run_metaphlan(Classifier_init):
         self.args = " ".join(args)
 
     def run_SE(self, threads: int = 3):
+        televir_constants = Televir_Metadata_Constants()
+        metaphlan_bin = televir_constants.get_software_binary("metaphlan")
+
         cmd = [
-            "metaphlan",
+            metaphlan_bin,
             self.query_path,
             "--input_type",
             "fastq",
@@ -736,10 +739,10 @@ class run_metaphlan(Classifier_init):
 
     def run_PE(self, threads: int = 3):
         televir_constants = Televir_Metadata_Constants()
-        metaphlan_bidir = televir_constants.get_software_bin_directory("metaphlan")
+        metaphlan_bidir = televir_constants.get_software_binary("metaphlan")
 
         cmd_r1 = [
-            metaphlan_bidir + "metaphlan",
+            os.path.join(metaphlan_bidir, "metaphlan"),
             self.query_path,
             "--input_type",
             "fastq",
@@ -753,7 +756,7 @@ class run_metaphlan(Classifier_init):
         ]
 
         cmd_r2 = [
-            metaphlan_bidir + "metaphlan",
+            os.path.join(metaphlan_bidir, "metaphlan"),
             self.r2,
             "--input_type",
             "fastq",
@@ -770,7 +773,7 @@ class run_metaphlan(Classifier_init):
 
         merge_output_cmd = [
             "python",
-            metaphlan_bidir + "merge_metaphlan_tables.py",
+            os.path.join(metaphlan_bidir, "merge_metaphlan_tables.py"),
             f"{self.report_path}.r1",
             f"{self.report_path}.r2",
             ">",

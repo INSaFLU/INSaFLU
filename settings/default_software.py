@@ -1026,7 +1026,7 @@ class DefaultSoftware(object):
 
         try:
 
-            software_queried = Software.objects.get(
+            _ = Software.objects.get(
                 name=software_name,
                 owner=user,
                 type_of_use=vect_parameters[0].software.type_of_use,

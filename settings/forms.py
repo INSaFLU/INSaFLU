@@ -142,16 +142,13 @@ class SoftwareForm(forms.ModelForm):
                 dt_fields[parameter.get_unique_id()].help_text = escape(help_text)
 
             elif parameter.is_multiple_choice():  # Update this condition if needed
-                print("################################## PARAMETER")
-                print("parameter.is_multiple_choice()")
+                ## already selected
+                selected = parameter.parameter.split(";") if parameter.parameter else []
+
                 if (
-                    parameter.software.pipeline_step.name
-                    == ConstantsSettings.PIPELINE_NAME_extra_qc
+                    parameter.software.name_extended
+                    == SoftwareNames.SOFTWARE_BWA_FILTER_name_extended
                 ):
-                    ## already selected
-                    selected = (
-                        parameter.parameter.split(";") if parameter.parameter else []
-                    )
 
                     list_data = [
                         [data_[0], data_[1]]
@@ -159,6 +156,18 @@ class SoftwareForm(forms.ModelForm):
                             parameter.software.name.lower(), []
                         )
                     ]
+
+                elif parameter.software.name == SoftwareNames.SOFTWARE_METAPHLAN_NAME:
+                    list_data = [
+                        [data_[0], data_[1]]
+                        for data_ in SoftwareNames.SOFTWARE_METAPHLAN_DB_options
+                    ]
+                else:
+                    raise Exception(
+                        "Error: Software {} not implemented.".format(
+                            parameter.software.name
+                        )
+                    )
 
                 ## setup multiple choice widget
                 dt_fields[parameter.get_unique_id()] = forms.MultipleChoiceField(

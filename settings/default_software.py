@@ -870,13 +870,32 @@ class DefaultSoftware(object):
     def test_defaults_test_televir(self, user):
         """
         test if exist, if not persist in database, for televir"""
-        print("testing")
         self.test_default_db(
             SoftwareNames.SOFTWARE_VOYAGER_name,
             self.default_parameters.get_voyager_default(
                 user,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_METAPHLAN_NAME,
+            self.default_parameters.get_metaphlan_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_METAPHLAN_NAME,
+            self.default_parameters.get_metaphlan_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
             ),
             user,
         )
@@ -1328,6 +1347,18 @@ class DefaultSoftware(object):
             None,
             technology_name,
             pipeline_step=pipeline_step,
+        )
+        return "" if result is None else result
+
+    def get_metaphlan_parameters(self, user, technology_name):
+        result = self.default_parameters.get_parameters_parsed(
+            SoftwareNames.SOFTWARE_METAPHLAN_NAME,
+            user,
+            Software.TYPE_OF_USE_televir_global,
+            None,
+            None,
+            None,
+            technology_name,
         )
         return "" if result is None else result
 
@@ -1812,6 +1843,9 @@ class DefaultSoftware(object):
             return self.get_centrifuge_parameters(
                 user, technology_name, pipeline_step=pipeline_step
             )
+
+        if software_name == SoftwareNames.SOFTWARE_METAPHLAN_NAME:
+            return self.get_metaphlan_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_VOYAGER_name:
             return self.get_voyager_parameters(user, technology_name)

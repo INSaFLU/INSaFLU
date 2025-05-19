@@ -526,6 +526,7 @@ class PISettingsGroupsView(PISettingsView):
                             is_obsolete=False,
                         ).distinct()
 
+                    print(query_set)
                     query_set = self.patch_filter_queryset(
                         query_set, pipeline_step_name
                     )
@@ -849,7 +850,10 @@ class UpdateParametersView(LoginRequiredMixin, UpdateView):
                         )
                     if value_from_form != parameter.parameter:
                         b_change = True
-                        parameter.parameter = value_from_form
+                        if value_from_form == "":
+                            parameter.parameter = "None"
+                        else:
+                            parameter.parameter = value_from_form
                         parameter.save()
 
             if b_change:

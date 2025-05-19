@@ -757,6 +757,25 @@ class SoftwareNames(object):
     SOFTWARE_VOYAGER_name_extended = "Voyager"
     SOFTWARE_VOYAGER_VERSION = "0.1.5"
 
+    ### Metaphlan
+
+    SOFTWARE_METAPHLAN = os.path.join(
+        Televir_Directory_Constants.environments_directory, "Metaphlan/metaphlan/bin"
+    )
+
+    SOFTWARE_METAPHLAN_NAME = "Metaphlan"
+    SOFTWARE_METAPHLAN_NAME_extended = "Metaphlan"
+    SOFTWARE_METAPHLAN_VERSION = "3.0.13"
+
+    SOFTWARE_METAPHLAN_DB_options = [
+        "--add_viruses",
+        "--ignore_eukaryotes",
+        "--ignore_archaea",
+        "--ignore_bacteria",
+        "--ignore_ksgbs",
+        "--ignore__usgbs",
+    ]
+
     ### BWA
     SOFTWARE_BWA = os.path.join(
         Televir_Directory_Constants.environments_directory,

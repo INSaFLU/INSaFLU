@@ -1304,6 +1304,13 @@ class DefaultParameters(object):
                 ConstantsSettings.TECHNOLOGY_illumina,
             )
 
+        elif software.name == SoftwareNames.SOFTWARE_METAPHLAN_NAME:
+            return self.get_metaphlan_default(
+                software.owner,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            )
+
         elif software.name == SoftwareNames.SOFTWARE_BWA_name:
             return self.get_bwa_default(
                 software.owner,
@@ -2790,9 +2797,6 @@ class DefaultParameters(object):
         dbs_available = self.televir_db_manager.get_from_filter_dbs(
             software.name.lower(), ["None"]
         )
-        print("DBS_AVAILABLE")
-        print(dbs_available)
-
         vect_parameters = []
 
         parameter = Parameter()
@@ -3301,6 +3305,74 @@ class DefaultParameters(object):
         vect_parameters.append(parameter)
         return vect_parameters
 
+    def get_metaphlan_default(
+        self,
+        user,
+        type_of_use,
+        technology_name,
+        sample=None,
+        is_to_run=True,
+    ):
+
+        pipeline_step = ConstantsSettings.PIPELINE_NAME_read_classification
+        software = Software()
+        software.name = SoftwareNames.SOFTWARE_METAPHLAN_NAME
+        software.name_extended = SoftwareNames.SOFTWARE_METAPHLAN_NAME_extended
+        software.type_of_use = type_of_use
+        software.type_of_software = Software.TYPE_SOFTWARE
+        software.version = SoftwareNames.SOFTWARE_METAPHLAN_VERSION
+        software.version_parameters = self.get_software_parameters_version(
+            software.name
+        )
+        software.technology = self.get_technology(technology_name)
+        software.can_be_on_off_in_pipeline = True
+
+        software.is_to_run = is_to_run
+
+        ###  small description of software
+        software.help_text = ""
+
+        ###  which part of pipeline is going to run; NEED TO CHECK
+        software.pipeline_step = self._get_pipeline(pipeline_step)
+
+        software.owner = user
+
+        vect_parameters = []
+
+        parameter = Parameter()
+        parameter.name = "--min_alignment_len"
+        parameter.parameter = "100"
+        parameter.type_data = Parameter.PARAMETER_int
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = False
+        parameter.is_to_run = True
+        parameter.sequence_out = 1
+        parameter.range_available = "[50:200]"
+        parameter.range_max = "200"
+        parameter.range_min = "50"
+        parameter.description = "Minimum alignment length."
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "--db"
+        parameter.parameter = "--ignore_eukaryotes"
+        parameter.type_data = Parameter.PARAMETER_radio_button
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True
+        parameter.sequence_out = 2
+        parameter.range_available = ""
+        parameter.range_max = ""
+        parameter.range_min = ""
+        parameter.description = "Database adjustments."
+        vect_parameters.append(parameter)
+
+        return vect_parameters
+
     def get_voyager_default(
         self,
         user,
@@ -3325,6 +3397,7 @@ class DefaultParameters(object):
         software.version_parameters = self.get_software_parameters_version(
             software.name
         )
+
         software.technology = self.get_technology(technology_name)
         software.can_be_on_off_in_pipeline = (
             True  ## set to True if can be ON/OFF in pipeline, otherwise always ON

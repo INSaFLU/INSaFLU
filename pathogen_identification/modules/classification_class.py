@@ -659,6 +659,17 @@ class run_voyager(Classifier_init):
 
         return report
 
+    def get_report_simple(self) -> pd.DataFrame:
+        """
+        read classifier output, return only query and reference sequence id columns.
+        """
+        if check_report_empty(self.report_path):
+            return pd.DataFrame(columns=["qseqid", "acc"])
+
+        report = self.parse_json_taxonomy(self.report_path)
+
+        return report
+
 
 class run_metaphlan(Classifier_init):
     method_name = "metaphlan"

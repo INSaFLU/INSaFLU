@@ -1585,6 +1585,7 @@ class Classifier:
         "minimap2_asm": run_minimap2_asm,
         "minimap2_remap": run_minimap2_illumina,
         "diamond": run_diamond,
+        "metaphlan": run_metaphlan,
         "kaiju": run_kaiju,
         "krakenuniq": run_krakenuniq,
         "fastviromeexplorer": run_FastViromeExplorer,

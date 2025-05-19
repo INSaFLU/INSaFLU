@@ -693,6 +693,19 @@ class run_metaphlan(Classifier_init):
         data["abundance"] = data["abundance"].astype(float)
         return data
 
+    def parse_args_db_edits(self):
+
+        where_db_edits = self.args.split("--db").index("--db")
+        args = self.args.split(" ")
+        if where_db_edits > 0:
+            edits = self.args.split(" ")[where_db_edits + 1]
+            edits = edits.split(";")
+            args = args[:where_db_edits] + args[where_db_edits + 2 :]
+            for edit in edits:
+                args.append(edit)
+
+        self.args = " ".join(args)
+
     def run_SE(self, threads: int = 3):
         cmd = [
             "metaphlan",
@@ -701,6 +714,7 @@ class run_metaphlan(Classifier_init):
             "fastq",
             "--nproc",
             str(threads),
+            self.args,
             "--bowtie2out",
             self.report_path.replace(".tsv", ".bowtie2.bam"),
             "--output_file",
@@ -720,6 +734,7 @@ class run_metaphlan(Classifier_init):
             "fastq",
             "--nproc",
             str(threads),
+            self.args,
             "--bowtie2out",
             self.report_path.replace(".tsv", ".bowtie2.bz2"),
             ">",

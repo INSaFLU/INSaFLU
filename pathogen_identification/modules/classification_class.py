@@ -738,7 +738,7 @@ class run_metaphlan(Classifier_init):
             self.report_path,
         ]
 
-        self.cmd.run(cmd)
+        self.cmd.run_bash(cmd)
 
     def run_PE(self, threads: int = 3):
         televir_constants = Televir_Metadata_Constants()
@@ -773,8 +773,8 @@ class run_metaphlan(Classifier_init):
             f"{self.report_path}.r2",
         ]
 
-        self.cmd.run(cmd_r1)
-        self.cmd.run(cmd_r2)
+        self.cmd.run_bash(cmd_r1)
+        self.cmd.run_bash(cmd_r2)
 
         merge_output_cmd = [
             "python",

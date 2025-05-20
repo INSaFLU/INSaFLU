@@ -43,8 +43,9 @@ from fluwebvirus.settings import (
     STATICFILES_DIRS,
 )
 from managing_files.forms import AddSampleProjectForm
-from managing_files.models import ProcessControler, Reference
+from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
+from managing_files.models import Reference
 from managing_files.tables import SampleToProjectsTable
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.constants_settings import ConstantsSettings as PICS
@@ -2560,6 +2561,9 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             processed_reads = processed_reads[0]
         else:
             processed_reads = None
+
+        print("OIJOINOIN")
+        print("qc_processing", processed_reads)
 
         context = {
             "project": project_name,

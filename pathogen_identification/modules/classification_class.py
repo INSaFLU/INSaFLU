@@ -698,6 +698,10 @@ class run_metaphlan(Classifier_init):
                     tax_index = -2
 
                 data.append([taxonomy[tax_index], taxids[tax_index], line[2]])
+
+        if len(data) == 0:
+            return pd.DataFrame(columns=["description", "taxid", "abundance"])
+
         data = pd.DataFrame(data)
         data.columns = ["description", "taxid", "abundance"]
         data["taxid"] = data["taxid"].astype(str)
@@ -730,7 +734,7 @@ class run_metaphlan(Classifier_init):
             "--nproc",
             str(threads),
             "--index",
-            os.path.splitext(os.path.basename(self.db_path))[0],
+            os.path.basename(self.db_path).split(".")[0],
             self.args,
             "--bowtie2out",
             self.report_path.replace(".tsv", ".bowtie2.bam"),
@@ -753,7 +757,7 @@ class run_metaphlan(Classifier_init):
             str(threads),
             self.args,
             "--index",
-            os.path.splitext(os.path.basename(self.db_path))[0],
+            os.path.basename(self.db_path).split(".")[0],
             "--bowtie2out",
             self.report_path.replace(".tsv", ".bowtie2.bz2"),
             ">",

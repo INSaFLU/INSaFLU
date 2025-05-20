@@ -23,6 +23,7 @@ from pathogen_identification.models import (
     RunAssembly,
     RunDetail,
     RunMain,
+    RunReadsRegister,
     RunRemapMain,
     SampleQC,
     TelevirRunQC,
@@ -42,6 +43,42 @@ def summarize_description(description, max_length=100):
 
 ####################################################################################################################
 ####################################################################################################################
+
+
+def RegisterRunReads(runmain: RunMain, run_class: RunEngine_class):
+    """get run data
+    Update TABLES:
+    - RunMain,
+    - RunRemapMain,
+
+    :param sample_class:
+    :return: run_data
+    """
+
+    try:
+        run_read_register = RunReadsRegister.objects.get(run=runmain)
+        run_read_register.qc_reads_r1 = run_class.sample.r1.clean
+        run_read_register.qc_reads_r2 = run_class.sample.r2.clean
+        run_read_register.enriched_reads_r1 = run_class.sample.r1.enriched
+        run_read_register.enriched_reads_r2 = run_class.sample.r2.enriched
+        run_read_register.depleted_reads_r1 = run_class.sample.r1.depleted
+        run_read_register.depleted_reads_r2 = run_class.sample.r2.depleted
+        run_read_register.save()
+
+    except RunReadsRegister.DoesNotExist:
+        run_read_register = RunReadsRegister(
+            run=runmain,
+            qc_reads_r1=run_class.sample.r1.clean,
+            qc_reads_r2=run_class.sample.r2.clean,
+            enriched_reads_r1=run_class.sample.r1.enriched,
+            enriched_reads_r2=run_class.sample.r2.enriched,
+            depleted_reads_r1=run_class.sample.r1.depleted,
+            depleted_reads_r2=run_class.sample.r2.depleted,
+        )
+
+        run_read_register.save()
+
+
 def Update_project(project_directory_path, user: str = "admin"):
     """Updates the project"""
     project_directory_path = os.path.dirname(project_directory_path)
@@ -514,6 +551,8 @@ def Update_RunMain(run_class: RunEngine_class, parameter_set: ParameterSet):
 
         runmain.save()
 
+    RegisterRunReads(runmain, run_class)
+
 
 def Sample_update_combinations(run_class: Type[RunEngine_class]):
     user = User.objects.get(username=run_class.username)
@@ -690,6 +729,8 @@ def Update_RunMain_noCheck(
     # static_dir=run_class.static_dir,
 
     runmain.save()
+
+    RegisterRunReads(runmain, run_class)
 
 
 def Update_Run_Detail(run_class: RunEngine_class, parameter_set: ParameterSet):

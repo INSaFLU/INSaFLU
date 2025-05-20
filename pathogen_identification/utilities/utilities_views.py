@@ -263,6 +263,7 @@ class SampleReadsRetrieve:
         registered_runs = RunReadsRegister.objects.filter(
             run__parameter_set=parameter_set,
         )
+        print(registered_runs.count())
 
         if registered_runs.count() == 0:
             return []

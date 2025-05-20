@@ -250,18 +250,19 @@ class Preprocess:
 
         if self.preprocess_method.name == "trimmomatic":
             self.run_trimmomatic()
-        elif self.preprocess_method.name == "nanofilt":
+        if self.preprocess_method.name == "nanofilt":
             self.run_nanofilt()
-        elif self.preprocess_method.name == "prinseq":
+        if self.preprocess_method.name == "prinseq":
             self.run_prinseq()
-        elif self.preprocess_method.name == "prinseq++":
+        if self.preprocess_method.name == "prinseq++":
             self.run_prinseq()
-        elif self.preprocess_method.name == "bwa-filter":
+        if self.preprocess_method.name == "bwa-filter":
             self.run_bwa_filter()
-        else:
-            raise ValueError(
-                "preprocess method {} not supported".format(self.preprocess_method.name)
-            )
+
+        # else:
+        #    raise ValueError(
+        #        "preprocess method {} not supported".format(self.preprocess_method.name)
+        #    )
 
     def fastqc_input(self, suffix="input_data"):
         """

@@ -97,8 +97,7 @@ class SoftwareForm(forms.ModelForm):
         dt_fields = {}
         vect_divs = []
         for parameter in paramers:
-            print("################################## PARAMETER")
-            print("parameter: {}".format(parameter))
+
             if not parameter.can_change or parameter.is_null():
                 dt_fields[parameter.get_unique_id()] = forms.CharField(
                     disabled=True,

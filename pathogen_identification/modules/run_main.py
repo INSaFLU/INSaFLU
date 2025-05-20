@@ -565,6 +565,7 @@ class RunDetail_main:
         self.house_cleaning = config["actions"]["CLEAN"]
 
         ### drones
+
         self.depletion_drone = Classifier(
             SoftwareDetail("NONE", method_args, config, self.prefix),
             logging_level=self.logger_level_detail,

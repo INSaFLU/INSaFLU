@@ -1263,7 +1263,7 @@ class DefaultSoftware(object):
             None,
             None,
             technology_name,
-            pipeline_step=ConstantsSettings.PIPELINE_NAME_extra_qc,
+            pipeline_step=ConstantsSettings.PIPELINE_NAME_host_depletion,
             software_name_extended=SoftwareNames.SOFTWARE_BWA_FILTER_name_extended,
         )
         return "" if result is None else result

@@ -526,7 +526,6 @@ class PISettingsGroupsView(PISettingsView):
                             is_obsolete=False,
                         ).distinct()
 
-                    print(query_set)
                     query_set = self.patch_filter_queryset(
                         query_set, pipeline_step_name
                     )
@@ -841,8 +840,10 @@ class UpdateParametersView(LoginRequiredMixin, UpdateView):
                     continue
                 if parameter.get_unique_id() in form.cleaned_data:
                     if parameter.is_multiple_choice():
+                        print("multiple choice")
                         value_from_form = form.cleaned_data[parameter.get_unique_id()]
                         value_from_form = ";".join(value_from_form)
+                        print("value_from_form", value_from_form)
 
                     else:
                         value_from_form = "{}".format(

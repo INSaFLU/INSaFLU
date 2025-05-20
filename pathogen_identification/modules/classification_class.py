@@ -1421,6 +1421,120 @@ class run_bwa_mem(Classifier_init):
         return report
 
 
+class run_bwa_mem_iterative(Classifier_init):
+    method_name = "bwa_illumina_iterative"
+    report_suffix = ".lst"
+    full_report_suffix = ".bwa_illumina_iterative"
+
+    def generate_tmp_file_name(self):
+        """
+        Generate a temporary file name
+        """
+        from random import randint
+
+        seed = randint(1, 100000)
+        tempdir = self.out_path
+        tempname = f"temp_subsample_{seed}"
+
+        temp1 = os.path.join(tempdir, tempname)
+
+        return temp1
+
+    def filter_mapped_fastq_using_bam(self, bam_file):
+        """
+        filter mapped fastq using bam file
+        """
+
+        tmp_read = self.generate_tmp_file_name()
+        tmp_read1 = tmp_read + ".lst"
+
+        cmd = [
+            "samtools",
+            "view",
+            "-h",
+            "-F",
+            "4",
+            bam_file,
+            "|",
+            "grep -v '^@'",
+            "|",
+            "cut -f1",
+            "|",
+            "sort",
+            "|",
+            "uniq",
+            ">",
+            tmp_read1,
+        ]
+
+        self.cmd.run_script_software(cmd)
+
+        return tmp_read1
+
+    def run_SE(self, threads: int = 3):
+        rundir = os.path.dirname(self.report_path)
+        unzip_seq = f"gunzip -c {self.query_path} > {rundir}/seq.fq"
+
+        self.cmd.run_bash(unzip_seq)
+
+        db_list = self.db_path.split(";")
+        db_list = [os.path.splitext(db)[0] for db in db_list]
+        reads_to_keep = set()
+        for db in db_list:
+
+            cmd = f"bwa mem -t {threads} {self.args} {db} {rundir}/seq.fq > {self.report_path}.sam"
+            self.cmd.run(cmd)
+            mapped_reads = self.filter_mapped_fastq_using_bam(f"{self.report_path}.sam")
+            with open(mapped_reads, "r") as f:
+                for line in f:
+                    line = line.strip()
+                    reads_to_keep.add(line)
+
+        with open(self.report_path, "w") as f:
+            for read in reads_to_keep:
+                f.write(f"{read}\n")
+
+    def run_PE(self, threads: int = 3):
+        rundir = os.path.dirname(self.report_path)
+        unzip_seq = f"gunzip -c {self.query_path} > {rundir}/seq.fq"
+        unzip_seq2 = f"gunzip -c {self.r2} > {rundir}/seq2.fq"
+
+        self.cmd.run_bash(unzip_seq)
+        self.cmd.run_bash(unzip_seq2)
+
+        db_list = self.db_path.split(";")
+        db_list = [os.path.splitext(db)[0] for db in db_list]
+        reads_to_keep = set()
+        for db in db_list:
+            cmd = f"bwa mem -t {threads} {self.args} {db} {rundir}/seq.fq {rundir}/seq2.fq > {self.report_path}.sam"
+            self.cmd.run(cmd)
+            mapped_reads = self.filter_mapped_fastq_using_bam(f"{self.report_path}.sam")
+            with open(mapped_reads, "r") as f:
+                for line in f:
+                    line = line.strip()
+                    reads_to_keep.add(line)
+        with open(self.report_path, "w") as f:
+            for read in reads_to_keep:
+                f.write(f"{read}\n")
+
+    def get_report(self) -> pd.DataFrame:
+
+        if check_report_empty(self.report_path):
+            return pd.DataFrame(columns=["qseqid", "acc"])
+
+        report = pd.read_csv(self.report_path, sep="\t", header=None).rename(
+            columns={0: "qseqid"}
+        )
+
+        report["qseqid"] = report["qseqid"].apply(lambda x: x.split("/")[0])
+        report["qseqid"] = report["qseqid"].apply(lambda x: x.split(" ")[0])
+        return report
+
+    def get_report_simple(self) -> pd.DataFrame:
+
+        return self.get_report()
+
+
 class run_bowtie2_ONT(Classifier_init):
     method_name = "bowtie2_ONT"
     report_suffix = ".sam"
@@ -1616,6 +1730,7 @@ class Classifier:
         "bowtie2_remap": run_bowtie2,
         "bowtie2": run_bowtie2,
         "bwa": run_bwa_mem,
+        "bwa-filter": run_bwa_mem_iterative,
     }
 
     def __init__(

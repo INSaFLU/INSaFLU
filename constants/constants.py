@@ -64,6 +64,8 @@ class Televir_Metadata_Constants:
             "bcftools": "remap/remap",
             "samtools": "remap/remap",
             "bwa": "remap/remap",
+            "bwa-filter": "remap/remap",
+            "bwa-mem": "remap/remap",
             "bowtie2": "remap/remap",
             "bowtie2_remap": "remap/remap",
             "minimap2": "hostDepletion/hostdep_env",

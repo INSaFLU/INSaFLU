@@ -837,9 +837,19 @@ class DefaultParameters(object):
                         )
 
                 elif par_name == "--db":
+                    db = dict_out[par_name][1][0]
+
+                    if ";" in db:
+                        db = db.split(";")
+                    else:
+                        db = [db]
+
+                    db = [os.path.basename(x) for x in db]
+                    dbs = "; ".join(db)
+
                     return_parameter += "{}{}".format(
                         dict_out[par_name][0][0],
-                        os.path.basename(dict_out[par_name][1][0]),
+                        dbs,
                     )
                 else:
                     for _ in range(len(dict_out[par_name][0])):
@@ -2789,7 +2799,7 @@ class DefaultParameters(object):
         ###  small description of software
         software.help_text = ""
         software.pipeline_step = self._get_pipeline(
-            ConstantsSettings.PIPELINE_NAME_extra_qc
+            ConstantsSettings.PIPELINE_NAME_host_depletion,
         )
         software.owner = user
 

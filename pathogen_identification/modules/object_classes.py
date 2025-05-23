@@ -1347,20 +1347,6 @@ class SoftwareUnit:
 
         return 0
 
-    def check_processed_exist(self) -> bool:
-        """
-        Check if processed reads exist
-        """
-
-        for leaf_pk in self.leaves:
-
-            processed_r1, processed_r2 = self.find_qc_reads(leaf_pk)
-
-            if self.check_return_reads(processed_r1, processed_r2):
-                return True
-
-        return False
-
     def check_enriched_exist(self) -> bool:
         """
         Check if enriched reads exist
@@ -1422,6 +1408,20 @@ class SoftwareUnit:
                 return (processed_r1, processed_r2)
 
         return ("", "")
+
+    def check_processed_exist(self) -> bool:
+        """
+        Check if processed reads exist
+        """
+
+        for leaf_pk in self.leaves:
+
+            processed_r1, processed_r2 = self.find_qc_reads(leaf_pk)
+
+            if self.check_return_reads(processed_r1, processed_r2):
+                return True
+
+        return False
 
 
 class SoftwareDetail(SoftwareUnit):
@@ -1543,9 +1543,7 @@ class SoftwareDetail(SoftwareUnit):
 
 
 class SoftwareDetailCompound:
-    def __init__(
-        self, modules: List[str], args_df: pd.DataFrame, config: dict, prefix: str
-    ):
+    def __init__(self, args_df: pd.DataFrame, config: dict, prefix: str):
         """
 
         Args:
@@ -1560,8 +1558,13 @@ class SoftwareDetailCompound:
         self.prefix = prefix
 
         self.software_list: List[SoftwareDetail] = []
+
+    def register_modules(self, modules: List[str]):
+        """
+        Register modules to software list.
+        """
         for module in modules:
-            if module in args_df.module.unique():
+            if module in self.args_df.module.unique():
                 self.module = module
                 self.fill_software_list()
 
@@ -1576,6 +1579,80 @@ class SoftwareDetailCompound:
 
     def check_exists(self):
         return any([x.check_exists() for x in self.software_list])
+
+    @property
+    def leaves(self):
+        leaves = []
+        for software in self.software_list:
+            leaves.extend(software.leaves)
+        return list(set(leaves))
+
+    def retrieve_qc_reads(self) -> Tuple[str, str]:
+        """
+        Retrieve processed reads
+        """
+
+        for leaf_pk in self.leaves:
+            processed_r1, processed_r2 = SoftwareUnit.find_qc_reads(leaf_pk)
+            if SoftwareUnit.check_return_reads(processed_r1, processed_r2):
+                return (processed_r1, processed_r2)
+
+        return ("", "")
+
+    def check_processed_exist(self) -> bool:
+        """
+        Check if processed reads exist
+        """
+
+        for leaf_pk in self.leaves:
+
+            processed_r1, processed_r2 = SoftwareUnit.find_qc_reads(leaf_pk)
+
+            if SoftwareUnit.check_return_reads(processed_r1, processed_r2):
+                return True
+
+        return False
+
+
+class SoftwarePreprocess(SoftwareDetail):
+
+    def __init__(self, module, args_df: pd.DataFrame, config: dict, prefix: str):
+        super().__init__(module, args_df, config, prefix)
+
+        self.reads_before_processing = 0
+        self.reads_after_processing = 0
+
+    def set_reads_before_processing(self, reads_before_processing: int):
+        self.reads_before_processing = reads_before_processing
+
+    def set_reads_after_processing(self, reads_after_processing: int):
+        self.reads_after_processing = reads_after_processing
+
+
+class SoftwareDetailCompoundPreprocess(SoftwareDetailCompound):
+
+    def __init__(self, args_df: pd.DataFrame, config: dict, prefix: str):
+        super().__init__(args_df, config, prefix)
+        self.software_list: List[SoftwarePreprocess] = []
+
+        self.reads_before_processing = 0
+        self.reads_after_processing = 0
+
+    def set_reads_before_processing(self, reads_before_processing: int):
+        self.reads_before_processing = reads_before_processing
+
+    def set_reads_after_processing(self, reads_after_processing: int):
+        self.reads_after_processing = reads_after_processing
+
+    def fill_software_list(self):
+        module_df = self.args_df[self.args_df.module == self.module]
+
+        for software_name, software_df in module_df.groupby("software"):
+            software = SoftwarePreprocess(
+                self.module, software_df, self.config, self.prefix
+            )
+
+            self.software_list.append(software)
 
 
 class SoftwareRemap:

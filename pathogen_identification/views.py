@@ -43,9 +43,8 @@ from fluwebvirus.settings import (
     STATICFILES_DIRS,
 )
 from managing_files.forms import AddSampleProjectForm
-from managing_files.models import ProcessControler
+from managing_files.models import ProcessControler, Reference
 from managing_files.models import ProjectSample as InsafluProjectSample
-from managing_files.models import Reference
 from managing_files.tables import SampleToProjectsTable
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.constants_settings import ConstantsSettings as PICS
@@ -2465,9 +2464,10 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         run_detail = RunDetail.objects.get(sample=sample_main, run=run_main_pipeline)
 
         #
-        try:
-            run_qc = TelevirRunQC.objects.get(run=run_main_pipeline)
-            qc_report = RunQC_report(
+        run_qc = TelevirRunQC.objects.filter(run=run_main_pipeline)
+
+        qc_reports = [
+            RunQC_report(
                 performed=run_qc.performed,
                 method=run_qc.method,
                 args=run_qc.args,
@@ -2475,16 +2475,30 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
                 output_reads=run_qc.output_reads,
                 output_reads_percent=run_qc.output_reads_percent,
             )
+            for run_qc in run_qc
+        ]
 
-        except TelevirRunQC.DoesNotExist:
-            qc_report = RunQC_report(
-                performed=False,
-                method="None",
-                args="None",
-                input_reads=run_detail.input,
-                output_reads=run_detail.input,
-                output_reads_percent="1",
-            )
+        qc_reports = sorted(qc_reports, key=lambda x: x.output_reads, reverse=True)
+
+        if run_qc.exists() is False:
+            qc_reports = [
+                RunQC_report(
+                    performed=False,
+                    method="None",
+                    args="None",
+                    input_reads=run_detail.input,
+                    output_reads=run_detail.input,
+                    output_reads_percent="1",
+                )
+            ]
+
+        output_reads = int(qc_reports[-1].output_reads.replace(",", ""))
+        output_reads_percent = (
+            output_reads / int(qc_reports[0].input_reads.replace(",", "")) * 100
+        )
+        output_reads_percent = f"{output_reads_percent:.2f}"
+        print(output_reads_percent)
+
         #
         try:
             run_assembly = RunAssembly.objects.get(
@@ -2562,9 +2576,6 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         else:
             processed_reads = None
 
-        print("OIJOINOIN")
-        print("qc_processing", processed_reads)
-
         context = {
             "project": project_name,
             "run_name": run_name,
@@ -2581,7 +2592,9 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "sample": sample_name,
             "run_main": run_main_pipeline,
             "run_detail": run_detail,
-            "qc_report": qc_report,
+            "output_reads": output_reads,
+            "output_reads_percent": output_reads_percent,
+            "qc_reports": qc_reports,
             "assembly": run_assembly,
             "contig_classification": contig_classification,
             "read_classification": read_classification,

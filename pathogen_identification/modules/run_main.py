@@ -26,6 +26,7 @@ from pathogen_identification.modules.object_classes import (
     Sample_runClass,
     SoftwareDetail,
     SoftwareDetailCompound,
+    SoftwareDetailCompoundPreprocess,
     SoftwareRemap,
     SoftwareUnit,
 )
@@ -124,7 +125,7 @@ class RunDetail_main:
     depletion_report = None
 
     ## methods
-    preprocess_method: SoftwareUnit
+    preprocess_method: SoftwareDetailCompoundPreprocess
     depletion_method: SoftwareDetail
     enrichment_method: SoftwareDetail
     assembly_method: SoftwareDetail
@@ -172,11 +173,14 @@ class RunDetail_main:
         self.logger = None
 
     def set_preprocess_check(self, config: dict, method_args: pd.DataFrame):
-        self.preprocess_method = SoftwareDetail(
-            CS.PIPELINE_NAME_extra_qc,
+        self.preprocess_method = SoftwareDetailCompoundPreprocess(
             method_args,
             config,
             self.prefix,
+        )
+
+        self.preprocess_method.register_modules(
+            [CS.PIPELINE_NAME_extra_qc],
         )
 
         self.check_preprocess_exists()
@@ -304,10 +308,12 @@ class RunDetail_main:
 
     def set_remapping_filtering_check(self, config: dict, method_args: pd.DataFrame):
         self.remap_filtering_method = SoftwareDetailCompound(
-            [CS.PIPELINE_NAME_remap_filtering, CS.PIPELINE_NAME_map_filtering],
             method_args,
             config,
             self.prefix,
+        )
+        self.remap_filtering_method.register_modules(
+            [CS.PIPELINE_NAME_remap_filtering, CS.PIPELINE_NAME_map_filtering]
         )
 
         self.check_remap_filtering_exists()
@@ -723,6 +729,9 @@ class Run_Deployment_Methods(RunDetail_main):
                 self.subsample,
                 logging_level=self.logger_level_detail,
                 log_dir=self.log_dir,
+                bin=get_bindir_from_binaries(
+                    self.config["bin"], CS.PIPELINE_NAME_extra_qc
+                ),
             )
 
         if self.depletion_performed is False:
@@ -820,10 +829,10 @@ class Run_Deployment_Methods(RunDetail_main):
                 if self.type == ConstantsSettings.PAIR_END:
                     self.sample.r2.clean_exo = r2_proc
 
-            self.sample.r1.clean_read_names()
-            self.sample.r2.clean_read_names()
-
-            self.preprocess_drone.run()
+            else:
+                self.sample.r1.clean_read_names()
+                self.sample.r2.clean_read_names()
+                self.preprocess_drone.run()
 
     def deploy_HD(self):
         self.update_reads()
@@ -1004,7 +1013,7 @@ class RunEngine_class(Run_Deployment_Methods):
             print("Deploying QC")
             self.deploy_QC()
 
-            self.sample.qc_soft = self.preprocess_drone.preprocess_method.name
+            # self.sample.qc_soft = self.preprocess_drone.preprocess_method.name
             self.sample.input_fastqc_report = self.preprocess_drone.input_qc_report
             self.sample.processed_fastqc_report = (
                 self.preprocess_drone.processed_qc_report
@@ -1242,8 +1251,8 @@ class RunEngine_class(Run_Deployment_Methods):
 
         self.qc_report = RunQC_report(
             performed=self.quality_control,
-            method=self.preprocess_drone.preprocess_method.name,
-            args=self.preprocess_drone.preprocess_method.args,
+            method=self.preprocess_drone.preprocess_methods.name,
+            args=self.preprocess_drone.preprocess_methods.args,
             input_reads=self.sample.reads_before_processing,
             output_reads=self.sample.reads_after_processing,
             output_reads_percent=self.sample.reads_after_processing
@@ -1337,7 +1346,7 @@ class RunMainTree_class(Run_Deployment_Methods):
     def Run_QC(self):
         if self.quality_control and not self.qc_performed:
             self.deploy_QC()
-            self.sample.qc_soft = self.preprocess_drone.preprocess_method.name
+            # self.sample.qc_soft = self.preprocess_drone.preprocess_method.name
             self.process_QC()
 
             self.qc_performed = True
@@ -1746,15 +1755,15 @@ class RunMainTree_class(Run_Deployment_Methods):
             ", ".join(files),
         )
 
-        self.qc_report = RunQC_report(
-            performed=self.qc_performed,
-            method=self.preprocess_drone.preprocess_method.name,
-            args=self.preprocess_drone.preprocess_method.args,
-            input_reads=self.sample.reads_before_processing,
-            output_reads=self.sample.reads_after_processing,
-            output_reads_percent=self.sample.reads_after_processing
-            / self.sample.reads_before_processing,
-        )
+        # self.qc_report = RunQC_report(
+        #    performed=self.qc_performed,
+        #    method=self.preprocess_drone.preprocess_method.name,
+        #    args=self.preprocess_drone.preprocess_method.args,
+        #    input_reads=self.sample.reads_before_processing,
+        #    output_reads=self.sample.reads_after_processing,
+        #    output_reads_percent=self.sample.reads_after_processing
+        #    / self.sample.reads_before_processing,
+        # )
 
         self.contig_classification_results = Contig_classification_results(
             (

@@ -457,6 +457,40 @@ class DefaultSoftware(object):
                 user,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_host_depletion,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_BWA_FILTER_name,
+            self.default_parameters.get_bwa_filter_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_extra_qc,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_BWA_FILTER_name,
+            self.default_parameters.get_bwa_filter_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_host_depletion,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_BWA_FILTER_name,
+            self.default_parameters.get_bwa_filter_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_extra_qc,
             ),
             user,
         )
@@ -1254,7 +1288,7 @@ class DefaultSoftware(object):
         )
         return "" if result is None else result
 
-    def get_bwa_filter_parameters(self, user, technology_name):
+    def get_bwa_filter_parameters(self, user, technology_name, pipeline_step):
         result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_BWA_FILTER_name,
             user,
@@ -1263,7 +1297,7 @@ class DefaultSoftware(object):
             None,
             None,
             technology_name,
-            pipeline_step=ConstantsSettings.PIPELINE_NAME_host_depletion,
+            pipeline_step=pipeline_step,
             software_name_extended=SoftwareNames.SOFTWARE_BWA_FILTER_name_extended,
         )
         return "" if result is None else result
@@ -1819,7 +1853,7 @@ class DefaultSoftware(object):
             return self.get_prinseq_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_BWA_FILTER_name:
-            return self.get_bwa_filter_parameters(user, technology_name)
+            return self.get_bwa_filter_parameters(user, technology_name, pipeline_step)
 
         if software_name == SoftwareNames.SOFTWARE_BAMUTIL_name:
 

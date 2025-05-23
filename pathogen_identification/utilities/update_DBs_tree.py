@@ -25,12 +25,11 @@ from pathogen_identification.models import (
     RunMain,
     RunReadsRegister,
     RunRemapMain,
-    SampleQC,
-    TelevirRunQC,
 )
 from pathogen_identification.modules.object_classes import Sample_runClass
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunEngine_class
+from pathogen_identification.utilities.update_DBs import Update_Run_QC, get_run_parents
 
 
 ####################################################################################################################
@@ -60,39 +59,6 @@ def Update_project(project_directory_path, user: str = "admin"):
             created_by=user,
         )
         project.save()
-
-
-def Update_Sample(sample_class: Sample_runClass):
-    """
-    Update Sample class.
-
-    :param sample_class:
-    :return: None
-    """
-
-    user = User.objects.get(username=sample_class.user_name)
-
-    project = Projects.objects.get(
-        name=sample_class.project_name, owner=user, is_deleted=False
-    )
-
-    try:
-        PIProject_Sample.objects.get(
-            name=sample_class.sample_name,
-            project=project,
-        )
-    except PIProject_Sample.DoesNotExist:
-        Update_sample(sample_class)
-
-    sample = PIProject_Sample.objects.get(
-        name=sample_class.sample_name,
-        project=project,
-    )
-
-    try:
-        SampleQC.objects.get(sample=sample)
-    except SampleQC.DoesNotExist:
-        Update_sample_qc(sample_class)
 
 
 def Update_sample(sample_class: Sample_runClass):
@@ -130,49 +96,6 @@ def Update_sample(sample_class: Sample_runClass):
             report="report",
         )
         sample.save()
-
-
-def Update_sample_qc(sample_class: Sample_runClass):
-    """update sample_class.qc_data.
-    :param sample_class:
-    :return: None
-    """
-
-    user = User.objects.get(username=sample_class.user_name)
-    project = Projects.objects.get(
-        name=sample_class.project_name, owner=user, is_deleted=False
-    )
-
-    sample = PIProject_Sample.objects.get(
-        project=project, name=sample_class.sample_name
-    )
-
-    percent_passed = (
-        int(sample_class.reads_after_processing)
-        / int(sample_class.reads_before_processing)
-    ) * 100
-
-    # input_report = open(sample_class.input_fastqc_report, "r")
-    # processed_report = open(sample_class.processed_fastqc_report, "r")
-
-    try:
-        sampleqc = SampleQC(
-            sample=sample,
-            software=sample_class.qc_soft,
-            encoding=sample_class.technology,
-            input_reads=f"{int(sample_class.reads_before_processing):,}",
-            processed_reads=f"{int(sample_class.reads_after_processing):,}",
-            percent_passed=round(percent_passed, 2),
-            sequence_length=sample_class.qcdata["processed"].loc["Sequence length"][
-                "value"
-            ],
-            percent_gc=sample_class.qcdata["processed"].loc["%GC"]["value"],
-        )
-
-        sampleqc.save()
-
-    except:
-        print(f"failed to input sample {sample_class.sample_name}")
 
 
 def Update_QC_report(sample_class: Sample_runClass, parameter_set: ParameterSet):
@@ -521,31 +444,6 @@ def Sample_update_combinations(run_class: Type[RunEngine_class]):
     sample.save()
 
 
-def get_run_parents(run_class: RunEngine_class, parameter_set: ParameterSet):
-    """get run parents for run_class. Update run_class.run_data."""
-    user = User.objects.get(username=run_class.username)
-    project = Projects.objects.get(
-        name=run_class.project_name, owner=user, is_deleted=False
-    )
-
-    sample = PIProject_Sample.objects.get(
-        project=project,
-        name=run_class.sample.sample_name,
-    )
-
-    try:
-        runmain = RunMain.objects.get(
-            project=project,
-            sample=sample,
-            parameter_set=parameter_set,
-        )
-
-    except RunMain.DoesNotExist:
-        return None, None, None
-
-    return sample, runmain, project
-
-
 def get_run_parents_and_reads(run_class: RunEngine_class, parameter_set: ParameterSet):
 
     sample, RunMain, project = get_run_parents(run_class, parameter_set)
@@ -813,42 +711,6 @@ def Update_Run_Detail_noCheck(run_class: RunEngine_class, parameter_set: Paramet
         )
 
         run_detail.save()
-
-
-def Update_Run_QC(run_class: RunEngine_class, parameter_set: ParameterSet):
-    sample, runmain, _ = get_run_parents(run_class, parameter_set)
-
-    if sample is None or runmain is None:
-        return
-
-    run_qc_exists = TelevirRunQC.objects.filter(run=runmain).exists()
-
-    if run_qc_exists:
-
-        run_qc = TelevirRunQC.objects.get(run=runmain)
-        run_qc.run = runmain
-        run_qc.performed = run_class.qc_report.performed
-        run_qc.method = run_class.qc_report.method
-        run_qc.args = run_class.qc_report.args
-        run_qc.input_reads = f"{run_class.qc_report.input_reads:,}"
-        run_qc.output_reads = f"{run_class.qc_report.output_reads:,}"
-        run_qc.output_reads_percent = str(
-            run_class.qc_report.output_reads_percent * 100
-        )
-        run_qc.save()
-
-    else:
-        run_qc = TelevirRunQC(
-            run=runmain,
-            performed=run_class.qc_report.performed,
-            method=run_class.qc_report.method,
-            args=run_class.qc_report.args,
-            input_reads=f"{run_class.qc_report.input_reads:,}",
-            output_reads=f"{run_class.qc_report.output_reads:,}",
-            output_reads_percent=str(run_class.qc_report.output_reads_percent * 100),
-        )
-
-        run_qc.save()
 
 
 def Update_Run_Assembly(run_class: RunEngine_class, parameter_set: ParameterSet):

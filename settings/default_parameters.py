@@ -1291,6 +1291,7 @@ class DefaultParameters(object):
                 software.owner,
                 Software.TYPE_OF_USE_televir_global,
                 software.technology.name,
+                pipeline_step=software.pipeline_step.name,
             )
 
         elif software.name == SoftwareNames.SOFTWARE_televir_report_layout_name:
@@ -2778,8 +2779,11 @@ class DefaultParameters(object):
         return vect_parameters
 
     def get_bwa_filter_defaults(
-        self, user, type_of_use, technology_name, sample=None, pipeline_step=""
+        self, user, type_of_use, technology_name, sample=None, pipeline_step=None
     ):
+
+        if pipeline_step == None:
+            pipeline_step = ConstantsSettings.PIPELINE_NAME_extra_qc
 
         software = Software()
         software.name = SoftwareNames.SOFTWARE_BWA_FILTER_name
@@ -2799,7 +2803,7 @@ class DefaultParameters(object):
         ###  small description of software
         software.help_text = ""
         software.pipeline_step = self._get_pipeline(
-            ConstantsSettings.PIPELINE_NAME_host_depletion,
+            pipeline_step,
         )
         software.owner = user
 

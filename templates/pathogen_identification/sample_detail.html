@@ -147,16 +147,13 @@
                 <div style="padding: 20px">
                     <div class="row">
                     <div class= "col-sm">
-                    {% if qc_report.performed %}
-                    <p> Input reads: <strong>{{ qc_report.input_reads }}</strong> </p>
-                    <p> Filtering (
-                        {% for software_qc in qc_processing.software_qc %}
-                            {{ software_qc.software }}{% if not forloop.last %}, {% endif %}
-                        {% endfor %}
-                    ) removed: <strong>{% difference_str_to_str_format qc_report.input_reads qc_report.output_reads %}</strong> ({{ qc_report.output_reads_percent|round_str_perc_invert }} %) </p>
-                    {% else %}
                     <p> Input reads: <strong>{{ run_detail.input }}</strong> </p>
-                    {% endif %}
+                    {% for qc_report in qc_reports %}
+                    <p> Filtering (
+                        {{ qc_report.method}}
+                    ) removed: <strong>{% difference_str_to_str_format qc_report.input_reads qc_report.output_reads %}</strong> ({{ qc_report.output_reads_percent|round_str_perc_invert }} %) </p>
+                    {% endfor %}
+
                     {% if run_main.enrichment_performed or run_main.host_depletion_performed %}
                         {% if run_main.enrichment_performed %}
                         {% if run_detail.enriched_reads == 0 %}
@@ -172,12 +169,14 @@
                         <p> Host depletion ({{ run_main.host_depletion }}) removed <strong>{{run_detail.depleted_reads|convert_int_to_str_format}}</strong> reads ({{run_detail.depleted_reads_percent|round_to_percent}} %)</p>
                         {% endif %}
                         {% endif %}
-                        {% if run_detail.processed != "0" %}
                         <p>Output reads: <strong>{{ run_detail.processing_final }} </strong> ({{run_detail.processing_final_percent}} %) </p>
-                        {% endif %}
+                    
                     {% else %}
-                        <p> No pre-processing step was performed </p>
+                        <p> Output reads: <strong>{{ output_reads }} </strong> ({{output_reads_percent}} %) </p>
+
                     {% endif %}
+
+
                     </div>
                     
                     {% if run_main.enrichment_performed or run_main.host_depletion_performed and run_detail.processed != "0" %}

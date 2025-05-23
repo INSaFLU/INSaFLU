@@ -3080,7 +3080,7 @@ class CollectExtraData(object):
                         sz_out += project.name
                     else:
                         sz_out += ";{}".format(project.name)
-                vect_out.append(sz_out)
+                vect_out.append(sz_out.encode("utf-8"))
 
                 ### END save global parameters
                 csv_writer.writerow(vect_out)

@@ -53,6 +53,12 @@
             <span class="nav-link-text">Home</span>
           </a>
         </li>
+        <li class="nav-item {% if nav_primer %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="Primer Management">
+			<a class="nav-link " href="{% url 'primer' %}">
+			  <i class="fa fa-fw fa-align-left "></i>
+			  <span class="nav-link-text ">Primers</span>
+			</a>
+		</li>		
         <li class="nav-item {% if nav_reference %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="References Management">
           <a class="nav-link " href="{% url 'references-index' %}">
             <i class="fa fa-fw fa-bug "></i>

@@ -954,6 +954,14 @@ class UpdateParametersTelevirProjView(LoginRequiredMixin, UpdateView):
                         form.cleaned_data[parameter.get_unique_id()]
                     )
                     if value_from_form != parameter.parameter:
+                        if value_from_form == "":
+                            parameter.parameter = "None"
+                        else:
+                            if parameter.is_multiple_choice():
+                                value_from_form = form.cleaned_data[
+                                    parameter.get_unique_id()
+                                ]
+                                value_from_form = ";".join(value_from_form)
                         b_change = True
                         parameter.parameter = value_from_form
                         parameter.save()

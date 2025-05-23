@@ -12,10 +12,12 @@ from django import forms
 from django.urls import reverse
 from django.utils.html import escape
 from django.utils.translation import ugettext_lazy as _
+from django.contrib.auth.models import User
+from django.conf import settings
 
 from constants.software_names import SoftwareNames
 from datasets.models import Dataset
-from managing_files.models import Project, ProjectSample
+from managing_files.models import Project, ProjectSample, Primer
 from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from pathogen_identification.models import Projects as TelevirProject
 from pathogen_identification.modules.remap_class import Remap_Bowtie2
@@ -26,7 +28,7 @@ from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.models import Parameter, Sample, Software
 from utils.utils import Utils
-
+from constants.constants import Constants
 
 ## https://kuanyui.github.io/2015/04/13/django-crispy-inline-form-layout-with-bootstrap/
 class SoftwareForm(forms.ModelForm):
@@ -152,6 +154,18 @@ class SoftwareForm(forms.ModelForm):
                             [data_, data_]
                             for data_ in SoftwareNames.SOFTWARE_SNIPPY_PRIMERS
                         ]
+                        # Add own sets
+                        for primer in Primer.objects.filter(
+                            owner__id=self.request.user.id, 
+                            is_deleted=False
+                        ).order_by("-name"):
+                            list_data.append([os.path.join(settings.BASE_DIR, settings.MEDIA_ROOT, primer.primer_fasta.name),primer.primer_fasta_name])
+                        # Add system sets
+                        for primer in Primer.objects.filter(
+                            owner__id=User.objects.get(username=Constants.DEFAULT_USER).id,
+                            is_deleted=False
+                            ).order_by("-name"):
+                                list_data.append([os.path.join(settings.BASE_DIR, settings.MEDIA_ROOT, primer.primer_fasta.name),primer.primer_fasta_name])                       
                     else:
                         list_data = [
                             [data_, data_]
@@ -162,10 +176,24 @@ class SoftwareForm(forms.ModelForm):
                     and parameter.software.name
                     == SoftwareNames.SOFTWARE_TRIMMOMATIC_name
                 ):
-                    list_data = [
-                        [data_, data_]
-                        for data_ in SoftwareNames.SOFTWARE_TRIMMOMATIC_addapter_vect_available
-                    ]
+                    list_data = []
+                    for data_ in SoftwareNames.SOFTWARE_TRIMMOMATIC_addapter_vect_available:
+                        if data_ != SoftwareNames.SOFTWARE_TRIMMOMATIC_addapter_not_apply:
+                            list_data.append([os.path.join( settings.DIR_SOFTWARE, "trimmomatic/adapters", data_ ), data_])
+                        else:
+                            list_data.append([data_, data_ ])
+                    # Add own sets
+                    for primer in Primer.objects.filter(
+                        owner__id=self.request.user.id, 
+                        is_deleted=False
+                        ).order_by("-name"):
+                        list_data.append([primer.primer_fasta,primer.primer_fasta_name])
+                    # Add system sets
+                    for primer in Primer.objects.filter(
+                        owner__id=User.objects.get(username=Constants.DEFAULT_USER).id,
+                        is_deleted=False
+                        ).order_by("-name"):
+                        list_data.append([os.path.join(settings.BASE_DIR, settings.MEDIA_ROOT, primer.primer_fasta.name),primer.primer_fasta_name])                        
                 elif (
                     parameter.name == DefaultParameters.SNIPPY_PRIMER_NAME
                 ):
@@ -173,6 +201,18 @@ class SoftwareForm(forms.ModelForm):
                         [data_, data_]
                         for data_ in SoftwareNames.SOFTWARE_SNIPPY_PRIMERS
                     ]
+                    # Add own sets
+                    for primer in Primer.objects.filter(
+                        owner__id=self.request.user.id, 
+                        is_deleted=False
+                        ).order_by("-name"):
+                        list_data.append([os.path.join(settings.BASE_DIR, settings.MEDIA_ROOT, primer.primer_fasta.name),primer.primer_fasta_name])
+                    # Add system sets
+                    for primer in Primer.objects.filter(
+                        owner__id=User.objects.get(username=Constants.DEFAULT_USER).id,
+                        is_deleted=False
+                        ).order_by("-name"):
+                        list_data.append([os.path.join(settings.BASE_DIR, settings.MEDIA_ROOT, primer.primer_fasta.name),primer.primer_fasta_name])                    
                 elif (
                     parameter.name == DefaultParameters.MASK_CLEAN_HUMAN_READS
                     and parameter.software.name

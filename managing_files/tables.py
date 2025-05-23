@@ -136,6 +136,72 @@ class ReferenceProjectTable(tables.Table):
         return (queryset, True)
 
 
+class PrimerTable(tables.Table):
+    #   Renders a normal value as an internal hyperlink to another page.
+    #   account_number = tables.LinkColumn('customer-detail', args=[A('pk')])
+    primer_fasta_name = tables.LinkColumn(
+        "primer_fasta_name", args=[tables.A("pk")], verbose_name="Primer Fasta file"
+    )
+    owner = tables.Column("Owner", orderable=True, empty_values=())
+    constants = Constants()
+
+    SHORT_NAME_LENGTH = 20
+
+    class Meta:
+        model = Reference
+        fields = (
+            "name",
+            "primer_fasta_name",
+            "primer_pairs_name",
+            "creation_date",
+            "owner",
+        )
+        attrs = {"class": "table-striped table-bordered"}
+        empty_text = "There are no Primers to show..."
+
+    def render_owner(self, record):
+        return record.owner.username
+
+    def render_name(self, record):
+        from crequest.middleware import CrequestMiddleware
+
+        current_request = CrequestMiddleware.get_request()
+        user = current_request.user
+        if user.username == Constants.USER_ANONYMOUS:
+            return record.name
+        if (
+            user.username == record.owner.username
+            ## TODO  ## it can't be used in any active project
+        ): 
+            return mark_safe(
+                '<a href="#modal_remove_primer" id="id_remove_primer_modal" data-toggle="modal"'
+                + ' primer_name="'
+                + record.name
+                + '" pk="'
+                + str(record.pk)
+                + '"><i class="fa fa-trash"></i></span> </a>'
+                + record.name
+            )
+        return record.name
+
+    def render_primer_fasta_name(self, **kwargs):
+        record = kwargs.pop("record")
+        return record.get_primer_fasta_web()
+
+    def render_primer_pairs_name(self, **kwargs):
+        record = kwargs.pop("record")
+        return record.get_primer_pairs_web()
+
+    def render_creation_date(self, **kwargs):
+        record = kwargs.pop("record")
+        return record.creation_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE)
+
+    def order_owner(self, queryset, is_descending):
+        queryset = queryset.annotate(owner_name=F("owner__username")).order_by(
+            ("-" if is_descending else "") + "owner_name"
+        )
+        return (queryset, True)
+
 class SampleToProjectsTable(tables.Table):
     """
     To add samples to projects

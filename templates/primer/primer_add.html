@@ -1,0 +1,78 @@
+{% extends '_layouts/base.html' %}
+
+{% load crispy_forms_tags %}
+{% load django_bootstrap_breadcrumbs %}
+
+{% block css %}
+	{% load static from staticfiles %}
+		<!-- pre-define in-house css for main page-->
+		<link rel="stylesheet" href="{% static 'css/main-page.css' %}" type="text/css" />
+		<link rel="stylesheet" href="{% static 'css/error_add_html.css' %}" type="text/css" />
+{% endblock css %}
+
+<!-- Breadcrumbs-->
+{% block breadcrumbs %}
+	{{ block.super }}
+	{% breadcrumb "Primer" "primer" %}
+	{% breadcrumb "Add primer" "primer-add" %}
+{% endblock %}
+
+<!-- Main content-->
+{% block content %}
+	<p class="insa-title"><a class="btn btn-primary" data-toggle="collapse" href="#collapseExample" aria-expanded="false" aria-controls="collapseExample">Guide to generate new primer sets</a></p>
+	<div class="collapse bg-insa-fixed-top" id="collapseExample">
+  		<p class="insa-description-read-more">If you want to <mark>upload additional primer sets to the user-restricted primer database.</p>
+  		
+  		<ul>
+	  		<li>
+				<p class="mb-0 insa-description-read-more">You need to upload a multi-FASTA file with the set of primer sequences. Example: </p>
+				<p class="mb-0 insa-description-read-more"> >Forward1<br/>AGTCGTACGT<br/> >Reverse1<br/>CGTGACAGTGA<br/> >Forward2<br/>TTGCAGTTTT<br/> >Reverse2<br/>GGTGAACGTCA<br/></p>
+			</li>
+			<li>
+				<p class="mb-0 insa-description-read-more">You also need to upload a tabular file with the primer pairs. Example: </p>
+				<p class="mb-0 insa-description-read-more">Forward1	Reverse1<br/>Forward2	Reverse2<br/></p>
+			</li>
+	  	</ul>
+	  	
+  	</div>
+  	
+<!--   	{% if user_mmp %}
+  		<button id="id-submit-sge" type="button" class="btn btn-primary" remove-single-value-url="{% url 'submit-sge' %}">Send SGE</button>
+  	{% endif %}-->
+  	
+	{% crispy form %}
+{% endblock %}
+
+
+{% block js %}
+
+	{% load static from staticfiles %}
+		<!-- Custom scripts for all pages-->
+		<script type="text/javascript" src="{% static 'js/primer_add.js' %}"></script>
+
+	<script>
+ 		$("#id_primer_fasta").click( function(){
+ 			$('#error_1_id_primer_fasta').empty();
+ 			$.unblockUI();
+ 		});
+ 		$("#id_primer_pairs").click( function(){
+ 			$('#error_1_id_primer_pairs').empty();
+ 			$.unblockUI();
+ 		});
+ 		
+ 		/* wait button */
+ 		$(document).ready(function() { 
+		    $('#submit-id-save').click(function() { 
+		        $.blockUI({ css: { 
+		            border: 'none', 
+		            padding: '15px', 
+		            backgroundColor: '#000', 
+		            '-webkit-border-radius': '10px', 
+		            '-moz-border-radius': '10px', 
+		            opacity: .5, 
+		            color: '#fff' 
+		        } }); 
+		    }); 
+		});
+	</script>
+{% endblock js %}

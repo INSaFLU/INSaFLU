@@ -689,7 +689,7 @@ class PipelineTree:
                         df.append(
                             [
                                 current_module.get("module"),
-                                current_module.get("software"),
+                                "_".join(param.split("_")[:-1]).lower(),
                                 param,
                                 value,
                                 list(set(current_module.get("leaves"))),

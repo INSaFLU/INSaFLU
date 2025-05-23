@@ -2462,9 +2462,15 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
 
         #####
         run_detail = RunDetail.objects.get(sample=sample_main, run=run_main_pipeline)
-
         #
         run_qc = TelevirRunQC.objects.filter(run=run_main_pipeline)
+        #
+        from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
+
+        utils_manager = Utils_Manager()
+        params_df = utils_manager.get_leaf_parameters(
+            run_main_pipeline.parameter_set.leaf
+        )
 
         qc_reports = [
             RunQC_report(
@@ -2496,8 +2502,8 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         output_reads_percent = (
             output_reads / int(qc_reports[0].input_reads.replace(",", "")) * 100
         )
+        output_reads = f"{output_reads:,}"
         output_reads_percent = f"{output_reads_percent:.2f}"
-        print(output_reads_percent)
 
         #
         try:
@@ -2632,6 +2638,9 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         context["files"] = {}
         # 1. parameters
         params_file_path = run_main_pipeline.params_file_path
+        params_df.drop(columns=["leaves"]).to_csv(
+            params_file_path, index=False, sep="\t", header=True
+        )
         if os.path.exists(params_file_path):
             context["files"]["parameters"] = params_file_path
         # intermediate files zip

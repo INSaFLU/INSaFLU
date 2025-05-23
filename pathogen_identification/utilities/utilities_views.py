@@ -263,7 +263,6 @@ class SampleReadsRetrieve:
         registered_runs = RunReadsRegister.objects.filter(
             run__parameter_set=parameter_set,
         )
-        print(registered_runs.count())
 
         if registered_runs.count() == 0:
             return []
@@ -685,14 +684,14 @@ class RunMainWrapper:
 
         return " ".join(software_name_list)
 
-    def get_pipeline_software(self, pipeline_name: str):
+    @staticmethod
+    def process_software_name(software_name: str) -> str:
+        """
+        process software name
+        """
 
-        software_name = "None"
-
-        if pipeline_name in self.params_df.index:
-
-            software_name = self.params_df.loc[pipeline_name, "software"]
-            software_name = str(software_name)
+        if software_name == "None":
+            return "None"
 
         if "(" in software_name:
             software_name = software_name.split("(")[0]
@@ -700,7 +699,28 @@ class RunMainWrapper:
         if "_" in software_name:
             software_name = software_name.split("_")[0]
 
-        return self.capitalize_software(software_name)
+        return RunMainWrapper.capitalize_software(software_name)
+
+    def get_pipeline_software(self, pipeline_name: str):
+
+        software_names = "None"
+
+        if pipeline_name in self.params_df.index:
+
+            softwares_column = self.params_df.loc[pipeline_name, "software"]
+
+            if isinstance(softwares_column, str):
+                softwares_column = [softwares_column]
+
+            software_names = list(softwares_column)
+
+            for i, software in enumerate(softwares_column):
+
+                software_names[i] = self.process_software_name(software)
+
+            software_names = "; ".join(software_names)
+
+        return software_names
 
     def progress_display(self) -> str:
 

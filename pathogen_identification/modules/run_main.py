@@ -1650,6 +1650,8 @@ class RunMainTree_class(Run_Deployment_Methods):
             os.makedirs(dirname, exist_ok=True)
 
         if not os.path.exists(path):
+            df = df.drop_duplicates()
+            df = df.reset_index(drop=True)
             df.to_csv(path, index=False, sep="\t", header=True)
 
     def export_intermediate_reports(self):

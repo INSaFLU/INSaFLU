@@ -182,6 +182,28 @@ class Command(BaseCommand):
             "Number of references processed on species tag: {}".format(count)
         )
 
+    @transaction.atomic
+    def upload_default_primers(self):
+        """
+        upload default files for primers
+        """
+
+        try:
+            User.objects.get(username=Constants.DEFAULT_USER)
+            ### great, the default user exist
+        except User.DoesNotExist:
+            self.stdout.write(
+                "Upload Primers failed because there's not default user.\n"
+                + "Please, start the application first."
+            )
+            return
+
+        uploadFiles = UploadFiles()
+        b_test = False
+        uploadFiles.upload_default_primers(
+            User.objects.get(username=Constants.DEFAULT_USER), b_test
+        )
+
     def default_database_fields(self):
         """
         set default fields in database
@@ -270,6 +292,10 @@ class Command(BaseCommand):
         #### set default references
         self.stdout.write("Upload References")
         self.upload_default_references()
+
+        #### set default primer sets
+        self.stdout.write("Upload Primer Sets")
+        self.upload_default_primers()
 
         #### set all species tags to reference
         self.stdout.write("Set species tag to all references")

@@ -183,6 +183,7 @@ class Constants(object):
 
     ## DIR_PROCESSED_FILES_FROM_WEB/userId_<id>/refId_<id>
     DIR_PROCESSED_FILES_REFERENCE = DIR_PROCESSED_FILES_UPLOADS + "/references"
+    DIR_PROCESSED_FILES_PRIMER = DIR_PROCESSED_FILES_UPLOADS + "/primers"
     DIR_PROCESSED_FILES_TELEFLU_REFERENCE = (
         DIR_PROCESSED_FILES_UPLOADS + "/teleflu_references"
     )
@@ -232,8 +233,11 @@ class Constants(object):
     DIR_TYPE_CONTIGS_2_SEQUENCES = "db/contigs2sequences/"
     DIR_TYPE_IDENTIFICATION = "db/type_identification/"
     DIR_TYPE_REFERENCES = "db/references/"
+    DIR_TYPE_PRIMERS = "db/primers/"
+    EXTENSION_PRIMER_PAIR = ".pair_information.tsv"
     DIR_NEXTSTRAIN_tables = "db/nextstrain"
     DIR_TEST_TYPE_REFERENCES = "tests/db/references/"
+    DIR_TEST_TYPE_PRIMERS = "tests/db/primers/"    
     DIR_TYPE_ALN2PHENO = "db/Alignment2phenotype/"
     DIR_TYPE_IDENTIFICATION_PROJECTS = "db/type_identification_projects/"
     TYPE_IDENTIFICATION_PROJECTS_DBNAME = "db_projects_v1"

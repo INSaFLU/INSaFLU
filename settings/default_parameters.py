@@ -780,11 +780,12 @@ class DefaultParameters(object):
                 ):
                     return_parameter += "{}{}{}".format(
                         dict_out[par_name][0][0],
-                        os.path.join(
-                            settings.DIR_SOFTWARE,
-                            "trimmomatic/adapters",
-                            dict_out[par_name][1][0],
-                        ),
+                        dict_out[par_name][1][0],
+                        #os.path.join(
+                        #    settings.DIR_SOFTWARE,
+                        #    "trimmomatic/adapters",
+                        #    dict_out[par_name][1][0],
+                        #),
                         SoftwareNames.SOFTWARE_TRIMMOMATIC_addapter_trim_used_to_assemble,
                     )
                 elif (
@@ -802,11 +803,12 @@ class DefaultParameters(object):
                 elif par_name == DefaultParameters.SNIPPY_PRIMER_NAME:
 
                     return_parameter += " {}".format(
-                        os.path.join(
-                            settings.DIR_SOFTWARE,
-                            "trimmomatic/adapters",
-                            dict_out[par_name][1][0],
-                        )
+                        dict_out[par_name][1][0]
+                        #os.path.join(
+                        #    settings.DIR_SOFTWARE,
+                        #    "trimmomatic/adapters",
+                        #    dict_out[par_name][1][0],
+                        #)
                     )
                 elif (
                     par_name == DefaultParameters.MEDAKA_PRIMER_NAME
@@ -820,11 +822,12 @@ class DefaultParameters(object):
                         return_parameter += " {}".format(dict_out[par_name][1][0])
                     else:
                         return_parameter += " {}".format(
-                            os.path.join(
-                                settings.DIR_SOFTWARE,
-                                "trimmomatic/adapters",
-                                dict_out[par_name][1][0],
-                            )
+                            dict_out[par_name][1][0]
+                            #os.path.join(
+                            #    settings.DIR_SOFTWARE,
+                            #    "trimmomatic/adapters",
+                            #    dict_out[par_name][1][0],
+                            #)
                         )
 
                 elif par_name == "--db":

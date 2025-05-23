@@ -273,8 +273,6 @@ class Preprocess:
                 + self.r2.get_current_fastq_read_number()
             )
             method.set_reads_before_processing(reads_number_start)
-            print("################## #########################")
-            print("reads number start: ", reads_number_start)
 
             self.cmd_software.bin = method.bin + "/" if method.bin else self.bin + "/"
 
@@ -293,30 +291,11 @@ class Preprocess:
                     "preprocess method {} not supported".format(method.name)
                 )
 
-            print("DONME")
-            print(self.preprocess_name_fastq_gz, self.r1.current)
-
-            if os.path.exists(self.preprocess_name_fastq_gz) and os.path.getsize(
-                self.preprocess_name_fastq_gz
-            ):
-                os.system("mv %s %s" % (self.preprocess_name_fastq_gz, self.r1.current))
-
-            if self.r2.exists:
-                if os.path.exists(self.preprocess_name_r2_fastq_gz) and os.path.getsize(
-                    self.preprocess_name_r2_fastq_gz
-                ):
-                    os.system(
-                        "mv %s %s" % (self.preprocess_name_r2_fastq_gz, self.r2.current)
-                    )
-
             # update reads number after processing
             reads_number = (
                 self.r1.get_current_fastq_read_number()
                 + self.r2.get_current_fastq_read_number()
             )
-
-            print("reads number after: ", reads_number)
-            print("##################3 #########################")
 
             method.set_reads_after_processing(reads_number)
 
@@ -590,8 +569,7 @@ class Preprocess:
         return reads_list
 
     def read_filter_deplete(self, input, output: str, read_list_path: str):
-        print("read_filter_deplete")
-        print(read_list_path)
+
         with open(read_list_path, "r") as f:
             read_list = f.read().splitlines()
 
@@ -612,10 +590,6 @@ class Preprocess:
                     counter = 0
 
         read_list_to_keep = list(set(read_names) - set(read_list))
-        print("reads original", len(read_names))
-        print(read_list)
-        print("reads to keep", len(read_list_to_keep))
-        print("reads to remove", len(read_list))
 
         reads_to_keep_path = self.generate_tmp_file_name() + ".lst"
         reads_to_keep_path = os.path.join(self.preprocess_dir, reads_to_keep_path)
@@ -673,8 +647,6 @@ class Preprocess:
             "cat %s | cut -f1 | sort | uniq >> %s" % (reads_output, final_reads_list)
         )
         # filter reads
-        print("final_reads_list", final_reads_list)
-        print()
 
         tmp_basename = self.generate_tmp_file_name()
 
@@ -700,9 +672,6 @@ class Preprocess:
                 tmp_basename + "_r1.fastq.gz"
             ):
                 input_r1 = tmp_basename + "_r1.fastq.gz"
-
-        print("input_r1", input_r1)
-        print(self.preprocess_name_fastq_gz)
 
         shutil.copy(input_r1, self.preprocess_name_fastq_gz)
         if self.preprocess_type == CS.PAIR_END:

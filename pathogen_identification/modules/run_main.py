@@ -795,8 +795,7 @@ class Run_Deployment_Methods(RunDetail_main):
             )
 
         if self.read_classification_performed is False:
-            print("preparing read classification")
-            print(self.sample.r1.current)
+
             self.read_classification_drone = Classifier(
                 self.read_classification_method,
                 self.sample.r1.current,
@@ -959,7 +958,7 @@ class Run_Deployment_Methods(RunDetail_main):
 
     def deploy_REMAPPING(self):
 
-        print(
+        self.logger.info(
             f"{self.prefix} remapping # targets: {len(self.metadata_tool.remap_targets)}"
         )
 
@@ -969,6 +968,75 @@ class Run_Deployment_Methods(RunDetail_main):
 
         self.remap_manager.merge_mapping_reports()
         self.remap_manager.collect_final_report_summary_statistics()
+
+    #### SUMMARY FUNCTIONS ####
+
+    def update_mapped_instances(self, mapped_instance: List[Mapping_Instance]):
+        """Update the remap manager with the new mapped instances, register."""
+        self.prep_REMAPPING()
+        self.remap_manager.update_mapped_instances(mapped_instance)
+
+        self.remapping_performed = True
+        self.Update_exec_time()
+
+    def export_logdir(self):
+        if os.path.exists(self.media_dir_logdir):
+            shutil.rmtree(self.media_dir_logdir)
+
+        shutil.copytree(
+            self.log_dir,
+            self.media_dir_logdir,
+        )
+
+    def export_final_reports(self):
+        # main report
+        self.report.to_csv(
+            self.full_report,
+            index=False,
+            sep="\t",
+            header=True,
+        )
+
+    def save_df_check_exists(self, df: pd.DataFrame, path: str):
+        dirname = os.path.dirname(path)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname, exist_ok=True)
+
+        if not os.path.exists(path):
+            if "leaves" in df.columns:
+                df = df.drop(columns=["leaves"])
+            df = df.drop_duplicates()
+            df = df.reset_index(drop=True)
+            df.to_csv(path, index=False, sep="\t", header=True)
+
+    def export_intermediate_reports(self):
+        export_dict = {
+            self.params_file_path: self.method_args,
+            self.remap_plan_path: self.remap_plan,
+            self.assembly_classification_summary: self.aclass_summary,
+            self.read_classification_summary: self.rclass_summary,
+            self.merged_classification_summary: self.merged_targets,
+        }
+        for output_df_path, df in export_dict.items():
+
+            self.save_df_check_exists(df, output_df_path)
+
+    def export_sequences(self):
+        self.sample.export_reads(self.media_dir)
+
+    def export_assembly(self):
+        self.assembly_drone.export_assembly(self.media_dir)
+
+    def Summarize(self):
+        self.logger.info(f"prefix: {self.prefix}")
+        with open(os.path.join(self.log_dir, self.prefix + "_latest.fofn"), "w") as f:
+            f.write(self.sample.r1.current + "\n")
+            if self.type == ConstantsSettings.PAIR_END:
+                f.write(self.sample.r2.current + "\n")
+
+        with open(os.path.join(self.log_dir, "reads_latest.stats"), "w") as f:
+            f.write(f"CLEAN\t{self.sample.r1.read_number_clean}\n")
+            f.write(f"ENRICHED\t{self.sample.r1.read_number_enriched}\n")
 
 
 class RunEngine_class(Run_Deployment_Methods):
@@ -1010,7 +1078,7 @@ class RunEngine_class(Run_Deployment_Methods):
 
     def Run_QC(self):
         if self.quality_control:
-            print("Deploying QC")
+            self.logger.info("Deploying QC")
             self.deploy_QC()
 
             # self.sample.qc_soft = self.preprocess_drone.preprocess_method.name
@@ -1126,58 +1194,6 @@ class RunEngine_class(Run_Deployment_Methods):
             self.export_final_reports()
 
         self.Update_exec_time()
-
-    #### SUMMARY FUNCTIONS ####
-
-    def export_logdir(self):
-        if os.path.exists(self.media_dir_logdir):
-            shutil.rmtree(self.media_dir_logdir)
-
-        shutil.copytree(
-            self.log_dir,
-            self.media_dir_logdir,
-        )
-
-    def export_final_reports(self):
-        ### main report
-        self.report.to_csv(
-            self.full_report,
-            index=False,
-            sep="\t",
-            header=True,
-        )
-
-    def save_df_check_exists(self, df: pd.DataFrame, path: str):
-        if not os.path.exists(path):
-            df.to_csv(path, index=False, sep="\t", header=True)
-
-    def export_intermediate_reports(self):
-        export_dict = {
-            self.params_file_path: self.method_args,
-            self.remap_plan_path: self.remap_plan,
-            self.assembly_classification_summary: self.aclass_summary,
-            self.read_classification_summary: self.rclass_summary,
-            self.merged_classification_summary: self.merged_targets,
-        }
-        for output_df_path, df in export_dict.items():
-            self.save_df_check_exists(df, output_df_path)
-
-    def export_sequences(self):
-        self.sample.export_reads(self.media_dir)
-
-    def export_assembly(self):
-        self.assembly_drone.export_assembly(self.media_dir)
-
-    def Summarize(self):
-        self.logger.info(f"prefix: {self.prefix}")
-        with open(os.path.join(self.log_dir, self.prefix + "_latest.fofn"), "w") as f:
-            f.write(self.sample.r1.current + "\n")
-            if self.type == ConstantsSettings.PAIR_END:
-                f.write(self.sample.r2.current + "\n")
-
-        with open(os.path.join(self.log_dir, "reads_latest.stats"), "w") as f:
-            f.write(f"CLEAN\t{self.sample.r1.read_number_clean}\n")
-            f.write(f"ENRICHED\t{self.sample.r1.read_number_enriched}\n")
 
     def generate_output_data_classes(self):
         ### transfer to sample class
@@ -1615,72 +1631,9 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.Update_exec_time()
         self.generate_output_data_classes()
 
-    #### SUMMARY FUNCTIONS ####
-
     def update_mapped_instances(self, mapped_instance: List[Mapping_Instance]):
-        """Update the remap manager with the new mapped instances, register."""
-        self.prep_REMAPPING()
-        self.remap_manager.update_mapped_instances(mapped_instance)
-
-        self.remapping_performed = True
+        super().update_mapped_instances(self.mapped_instances)
         self.generate_output_data_classes()
-        self.Update_exec_time()
-
-    def export_logdir(self):
-        if os.path.exists(self.media_dir_logdir):
-            shutil.rmtree(self.media_dir_logdir)
-
-        shutil.copytree(
-            self.log_dir,
-            self.media_dir_logdir,
-        )
-
-    def export_final_reports(self):
-        # main report
-        self.report.to_csv(
-            self.full_report,
-            index=False,
-            sep="\t",
-            header=True,
-        )
-
-    def save_df_check_exists(self, df: pd.DataFrame, path: str):
-        dirname = os.path.dirname(path)
-        if not os.path.exists(dirname):
-            os.makedirs(dirname, exist_ok=True)
-
-        if not os.path.exists(path):
-            df = df.drop_duplicates()
-            df = df.reset_index(drop=True)
-            df.to_csv(path, index=False, sep="\t", header=True)
-
-    def export_intermediate_reports(self):
-        export_dict = {
-            self.params_file_path: self.method_args,
-            self.remap_plan_path: self.remap_plan,
-            self.assembly_classification_summary: self.aclass_summary,
-            self.read_classification_summary: self.rclass_summary,
-            self.merged_classification_summary: self.merged_targets,
-        }
-        for output_df_path, df in export_dict.items():
-            self.save_df_check_exists(df, output_df_path)
-
-    def export_sequences(self):
-        self.sample.export_reads(self.media_dir)
-
-    def export_assembly(self):
-        self.assembly_drone.export_assembly(self.media_dir)
-
-    def Summarize(self):
-        self.logger.info(f"prefix: {self.prefix}")
-        with open(os.path.join(self.log_dir, self.prefix + "_latest.fofn"), "w") as f:
-            f.write(self.sample.r1.current + "\n")
-            if self.type == ConstantsSettings.PAIR_END:
-                f.write(self.sample.r2.current + "\n")
-
-        with open(os.path.join(self.log_dir, "reads_latest.stats"), "w") as f:
-            f.write(f"CLEAN\t{self.sample.r1.read_number_clean}\n")
-            f.write(f"ENRICHED\t{self.sample.r1.read_number_enriched}\n")
 
     def generate_output_data_classes(self):
         # merge mapping results if exist.

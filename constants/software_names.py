@@ -1130,6 +1130,10 @@ class SoftwareNames(object):
             ConstantsSettings.PIPELINE_NAME_remap_filtering,
             ConstantsSettings.PIPELINE_NAME_map_filtering,
         ],
+        SOFTWARE_BWA_FILTER_name: [
+            ConstantsSettings.PIPELINE_NAME_extra_qc,
+            ConstantsSettings.PIPELINE_NAME_host_depletion,
+        ],
     }
 
     ###### Relation between software and technology

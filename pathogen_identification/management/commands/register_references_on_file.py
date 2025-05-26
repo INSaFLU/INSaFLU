@@ -54,8 +54,8 @@ def find_pattern_multiple_files(files, pattern, filter=None):
     return [line for line in result if line]
 
 
-def extract_file_accids(file, output_file, pattern):
-    cmd = f"zgrep {pattern} {file} | cut -f1 -d' ' | sort | uniq > {output_file}"
+def extract_file_accids(file, output_file, pattern_include="", pattern_exclude=""):
+    cmd = f"zgrep {pattern_include} {file} {pattern_exclude} | cut -f1 -d' ' | sort | uniq > {output_file}"
     os.system(cmd)
     # to dict
     with open(output_file, "r") as f:
@@ -136,8 +136,13 @@ class Command(BaseCommand):
                     viros_file,
                 ),
                 os.path.join(outdir, "keep_accids.txt"),
-                "-v GENE",
+                '-e "^>"',
+                "| grep -v GENE",
             )
+
+        print(f"Number of ignore accids: {len(ignore_dict)}")
+        print(f"Number of keep accids: {len(keep_dict)}")
+        print(keep_dict)
 
         if options["curate"] is False:
             entrez_descriptions = entrez_connection.run_entrez_query(
@@ -161,6 +166,20 @@ class Command(BaseCommand):
         print("Registering entrez descriptions")
 
         d = 0
+        print("Processing taxids...")
+        full_df = entrez_descriptions.merge(
+            accid_file_df,
+            how="left",
+            left_on="accession",
+            right_on="acc",
+        )
+        print(f"Number of entries in full_df: {len(full_df)}")
+        full_df = full_df[full_df.file.notnull()]
+        print(f"Number of entries in full_df with files: {len(full_df)}")
+        print(full_df[full_df.file.str.contains("virosaurus")])
+        print(full_df[full_df.file.str.contains("virosaurus")].shape)
+
+        # raise Exception("Debugging point reached")
 
         for taxid_str, taxid_df in entrez_descriptions.groupby("taxid"):
 
@@ -171,7 +190,7 @@ class Command(BaseCommand):
 
             for _, row in taxid_df.iterrows():
 
-                ### register a log every 1000 taxids
+                ### register a log every 1000 accids
                 d += 1
 
                 if d % 1000 == 0:
@@ -179,6 +198,8 @@ class Command(BaseCommand):
                     print(f"Number of taxids processed: {d}")
 
                 accid_str = row.accession
+                simple_accid = accid_str.split(".")[0]
+
                 description = row.description
 
                 if len(description) > 300:
@@ -187,34 +208,31 @@ class Command(BaseCommand):
                 files = list(accid_file_df[accid_file_df.acc == accid_str].file)
 
                 if (
-                    sum(["virosaurus" in file for file in files]) > 0
+                    ignore_dict.get(simple_accid, None) is not None
                     and options["curate"] is False
                 ):
                     viros_file = [file for file in files if "virosaurus" in file][0]
 
                     simple_accid = accid_str.split(".")[0]
 
-                    if (
-                        ignore_dict.get(simple_accid, None) is not None
-                        and keep_dict.get(simple_accid, None) is None
-                    ):
+                    # if accid is in ignore_dict, remove it from the files
 
-                        ref_source = ReferenceSource.objects.filter(accid=accid_str)
+                    ref_source = ReferenceSource.objects.filter(accid=accid_str)
 
-                        viro_maps = ReferenceSourceFileMap.objects.filter(
-                            reference_source__accid=accid_str,
-                            reference_source_file__file=viros_file,
-                        )
-                        viro_maps.delete()
+                    viro_maps = ReferenceSourceFileMap.objects.filter(
+                        reference_source__accid=accid_str,
+                        reference_source_file__file=viros_file,
+                    )
+                    viro_maps.delete()
 
-                        any_left = ReferenceSourceFileMap.objects.filter(
-                            reference_source__accid=accid_str,
-                        )
+                    any_left = ReferenceSourceFileMap.objects.filter(
+                        reference_source__accid=accid_str,
+                    )
 
-                        if ref_source and not any_left.exists():
-                            ref_source.delete()
+                    if ref_source and not any_left.exists():
+                        ref_source.delete()
 
-                        files = [file for file in files if file != viros_file]
+                    files = [file for file in files if file != viros_file]
 
                 ref_source = ReferenceSource.objects.filter(accid=accid_str)
 
@@ -256,7 +274,7 @@ class Command(BaseCommand):
                             file=file_str
                         )
 
-                    description = entrez_connection
+                    # description = entrez_connection
 
                     try:
                         _ = ReferenceSourceFileMap.objects.get(

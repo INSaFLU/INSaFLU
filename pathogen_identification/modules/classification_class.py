@@ -1951,6 +1951,8 @@ class Classifier:
 
         self.classification_report = self.get_report_simple()
 
-        self.classified_reads_list = list(
-            set(self.classification_report.qseqid.to_list())
-        )
+        if "qseqid" in self.classification_report.columns:
+
+            self.classified_reads_list = list(
+                set(self.classification_report.qseqid.to_list())
+            )

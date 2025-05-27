@@ -618,6 +618,8 @@ class run_voyager(Classifier_init):
             "clade",
         ]
         data = self.extract_json_taxonomy(json_file)
+        if "taxonomy" not in data:
+            return pd.DataFrame(columns=["taxid", "description"])
         taxonomy = data["taxonomy"]
         output = []
         for taxa in taxonomy:

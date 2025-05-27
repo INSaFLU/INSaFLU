@@ -647,7 +647,21 @@ class run_voyager(Classifier_init):
         self.cmd.run_bash(cmd)
 
     def run_PE(self, threads: int = 3):
-        raise NotImplementedError("PE not implemented for voyager")
+        televir_dirs = Televir_Metadata_Constants()
+        voyager_bindir = televir_dirs.get_software_bin_directory("voyager")
+
+        voyager_dir = voyager_bindir.replace("/bin", "")
+        cmd = [
+            os.path.join(voyager_dir, "voyager-cli"),
+            "-x",
+            self.db_path,
+            "--input",
+            self.query_path,
+            "--output",
+            self.report_path,
+        ]
+
+        self.cmd.run_bash(cmd)
 
     def get_report(self) -> pd.DataFrame:
         """

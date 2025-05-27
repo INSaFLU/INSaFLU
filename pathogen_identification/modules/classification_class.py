@@ -757,6 +757,7 @@ class run_metaphlan(Classifier_init):
     def run_SE(self, threads: int = 3):
         televir_constants = Televir_Metadata_Constants()
         metaphlan_bin = televir_constants.get_software_binary("metaphlan")
+        self.parse_args_db_edits()
 
         cmd = [
             metaphlan_bin,
@@ -779,7 +780,7 @@ class run_metaphlan(Classifier_init):
     def run_PE(self, threads: int = 3):
         televir_constants = Televir_Metadata_Constants()
         metaphlan_bidir = televir_constants.get_software_bin_directory("metaphlan")
-
+        self.parse_args_db_edits()
         cmd_r1 = [
             os.path.join(metaphlan_bidir, "metaphlan"),
             self.query_path,
@@ -803,6 +804,9 @@ class run_metaphlan(Classifier_init):
             "fastq",
             "--nproc",
             str(threads),
+            self.args,
+            "--index",
+            os.path.basename(self.db_path).split(".")[0],
             "--bowtie2out",
             self.report_path.replace(".tsv", ".bowtie2.bz2"),
             ">",

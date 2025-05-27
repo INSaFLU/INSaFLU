@@ -778,7 +778,7 @@ class run_metaphlan(Classifier_init):
 
     def run_PE(self, threads: int = 3):
         televir_constants = Televir_Metadata_Constants()
-        metaphlan_bidir = televir_constants.get_software_binary("metaphlan")
+        metaphlan_bidir = televir_constants.get_software_bin_directory("metaphlan")
 
         cmd_r1 = [
             os.path.join(metaphlan_bidir, "metaphlan"),
@@ -813,7 +813,6 @@ class run_metaphlan(Classifier_init):
         self.cmd.run_bash(cmd_r2)
 
         merge_output_cmd = [
-            "python",
             os.path.join(metaphlan_bidir, "merge_metaphlan_tables.py"),
             f"{self.report_path}.r1",
             f"{self.report_path}.r2",

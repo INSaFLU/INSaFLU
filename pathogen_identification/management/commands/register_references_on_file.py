@@ -142,12 +142,19 @@ class Command(BaseCommand):
 
         print(f"Number of ignore accids: {len(ignore_dict)}")
         print(f"Number of keep accids: {len(keep_dict)}")
-        print(keep_dict)
 
         if options["curate"] is False:
-            entrez_descriptions = entrez_connection.run_entrez_query(
-                query_list=accid_file_df.acc.unique().tolist(),
-            )
+            entrez_descriptions = []
+            for file_source, file_df in accid_file_df.groupby("file"):
+
+                file_descriptor = entrez_connection.run_entrez_query(
+                    query_list=file_df.acc.unique().tolist(),
+                )
+                file_descriptor["file"] = file_source
+                entrez_descriptions.append(file_descriptor)
+
+            entrez_descriptions = pd.concat(entrez_descriptions, ignore_index=True)
+
         else:
             entrez_descriptions = ReferenceSource.objects.all()
             entrez_descriptions = pd.DataFrame(
@@ -166,22 +173,14 @@ class Command(BaseCommand):
         print("Registering entrez descriptions")
 
         d = 0
-        print("Processing taxids...")
-        full_df = entrez_descriptions.merge(
-            accid_file_df,
-            how="left",
-            left_on="accession",
-            right_on="acc",
-        )
-        print(f"Number of entries in full_df: {len(full_df)}")
-        full_df = full_df[full_df.file.notnull()]
-        print(f"Number of entries in full_df with files: {len(full_df)}")
-        print(full_df[full_df.file.str.contains("virosaurus")])
-        print(full_df[full_df.file.str.contains("virosaurus")].shape)
 
         # raise Exception("Debugging point reached")
 
         for taxid_str, taxid_df in entrez_descriptions.groupby("taxid"):
+            if pd.isna(taxid_str):
+                print("Skipping NaN taxid")
+                continue
+            taxid_str = str(int(taxid_str))
 
             try:
                 ref_taxid = ReferenceTaxid.objects.get(taxid=taxid_str)
@@ -189,6 +188,17 @@ class Command(BaseCommand):
                 ref_taxid = ReferenceTaxid.objects.create(taxid=taxid_str)
 
             for _, row in taxid_df.iterrows():
+                if pd.isna(row.accession):
+                    print("Skipping NaN accession")
+                    continue
+
+                if pd.isna(row.description):
+                    print("Skipping NaN description")
+                    continue
+
+                if pd.isna(row.file):
+                    print("Skipping NaN file")
+                    continue
 
                 ### register a log every 1000 accids
                 d += 1
@@ -205,23 +215,19 @@ class Command(BaseCommand):
                 if len(description) > 300:
                     description = description[:300]
 
-                files = list(accid_file_df[accid_file_df.acc == accid_str].file)
+                file_str = row.file
 
                 if (
                     ignore_dict.get(simple_accid, None) is not None
                     and options["curate"] is False
+                    and "viros" in file_str
                 ):
-                    viros_file = [file for file in files if "virosaurus" in file][0]
-
-                    simple_accid = accid_str.split(".")[0]
-
-                    # if accid is in ignore_dict, remove it from the files
 
                     ref_source = ReferenceSource.objects.filter(accid=accid_str)
 
                     viro_maps = ReferenceSourceFileMap.objects.filter(
                         reference_source__accid=accid_str,
-                        reference_source_file__file=viros_file,
+                        reference_source_file__file=file_str,
                     )
                     viro_maps.delete()
 
@@ -232,7 +238,9 @@ class Command(BaseCommand):
                     if ref_source and not any_left.exists():
                         ref_source.delete()
 
-                    files = [file for file in files if file != viros_file]
+                    continue
+
+                print(f"Files after filtering: {files}")
 
                 ref_source = ReferenceSource.objects.filter(accid=accid_str)
 
@@ -251,39 +259,22 @@ class Command(BaseCommand):
                 else:
                     ref_source = ref_source.first()
 
-                if options["curate"]:
-                    files_associated = ReferenceSourceFileMap.objects.filter(
-                        reference_source=ref_source
-                    )
-                    for file_associated in files_associated:
-                        if file_associated.reference_source_file.file not in files:
-                            file_associated.status = (
-                                ReferenceSourceFileMap.STATUS_DEPRECATED
-                            )
-                            file_associated.save()
-
-                if len(files) == 0:
-                    continue
-
                 # get reference source file
-                for file_str in files:
-                    try:
-                        ref_source_file = ReferenceSourceFile.objects.get(file=file_str)
-                    except ReferenceSourceFile.DoesNotExist:
-                        ref_source_file = ReferenceSourceFile.objects.create(
-                            file=file_str
-                        )
+                try:
+                    ref_source_file = ReferenceSourceFile.objects.get(file=file_str)
+                except ReferenceSourceFile.DoesNotExist:
+                    ref_source_file = ReferenceSourceFile.objects.create(file=file_str)
 
-                    # description = entrez_connection
+                # description = entrez_connection
 
-                    try:
-                        _ = ReferenceSourceFileMap.objects.get(
-                            reference_source=ref_source,
-                            reference_source_file=ref_source_file,
-                        )
+                try:
+                    _ = ReferenceSourceFileMap.objects.get(
+                        reference_source=ref_source,
+                        reference_source_file=ref_source_file,
+                    )
 
-                    except ReferenceSourceFileMap.DoesNotExist:
-                        _ = ReferenceSourceFileMap.objects.create(
-                            reference_source=ref_source,
-                            reference_source_file=ref_source_file,
-                        )
+                except ReferenceSourceFileMap.DoesNotExist:
+                    _ = ReferenceSourceFileMap.objects.create(
+                        reference_source=ref_source,
+                        reference_source_file=ref_source_file,
+                    )

@@ -117,7 +117,6 @@ class Command(BaseCommand):
 
         if len(viros_file) == 0:
             ignore_dict = {}
-            keep_dict = {}
         else:
             viros_file = viros_file[0]
 
@@ -129,19 +128,6 @@ class Command(BaseCommand):
                 os.path.join(outdir, "ignore_accids.txt"),
                 "GENE",
             )
-
-            keep_dict = extract_file_accids(
-                os.path.join(
-                    Televir_Metadata_Constants.SOURCE["REF_FASTA"],
-                    viros_file,
-                ),
-                os.path.join(outdir, "keep_accids.txt"),
-                '-e "^>"',
-                "| grep -v GENE",
-            )
-
-        print(f"Number of ignore accids: {len(ignore_dict)}")
-        print(f"Number of keep accids: {len(keep_dict)}")
 
         if options["curate"] is False:
             entrez_descriptions = []
@@ -239,8 +225,6 @@ class Command(BaseCommand):
                         ref_source.delete()
 
                     continue
-
-                print(f"Files after filtering: {files}")
 
                 ref_source = ReferenceSource.objects.filter(accid=accid_str)
 

@@ -577,6 +577,7 @@ class run_voyager(Classifier_init):
     report_suffix = ".json"
     full_report_suffix = ".json"
 
+    @staticmethod
     def extract_json_taxonomy(json_file: str):
         """
         Poorly structured json file, need to extract 'taxonomy' field."""

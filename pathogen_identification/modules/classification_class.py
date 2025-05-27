@@ -593,9 +593,11 @@ class run_voyager(Classifier_init):
                 if keep:
                     lines_to_keep.append(line.replace("\t", ""))
                 line = f.readline()
-        lines_to_keep.append("]}")
+        if keep:
+            lines_to_keep.append("]}")
+        else:
+            lines_to_keep.append("}")
         lines_to_keep = "".join(lines_to_keep)
-
         data = json.loads(lines_to_keep)
         return data
 

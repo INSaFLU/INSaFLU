@@ -624,11 +624,12 @@ class Tree_Progress:
                 or node.run_manager.run_engine.depletion_performed
             ):
                 node.run_manager.run_engine.export_sequences()
-                db_updated = Update_RunMain_Secondary(
-                    node.run_manager.run_engine, node.parameter_set
-                )
-                if not db_updated:
-                    return False
+
+            db_updated = Update_RunMain_Secondary(
+                node.run_manager.run_engine, node.parameter_set
+            )
+            if not db_updated:
+                return False
 
             if (
                 node.run_manager.run_engine.assembly_performed

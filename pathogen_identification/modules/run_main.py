@@ -1382,7 +1382,7 @@ class RunMainTree_class(Run_Deployment_Methods):
 
             self.process_QC()
 
-            # self.qc_performed = True
+            self.qc_performed = True
 
         self.Update_exec_time()
         self.generate_output_data_classes()

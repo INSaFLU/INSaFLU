@@ -635,6 +635,8 @@ class run_voyager(Classifier_init):
         voyager_bindir = televir_dirs.get_software_bin_directory("voyager")
 
         voyager_dir = voyager_bindir.replace("/bin", "")
+        print(self.db_path)
+        print(self.args)
         cmd = [
             os.path.join(voyager_dir, "voyager-cli"),
             "-x",
@@ -734,7 +736,7 @@ class run_metaphlan(Classifier_init):
             args = args[:where_db_edits] + args[where_db_edits + 2 :]
             for edit in edits:
                 args.append(edit)
-
+        args.remove("--edits")
         self.args = " ".join(args)
 
     def run_SE(self, threads: int = 3):

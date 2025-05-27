@@ -698,6 +698,12 @@ class run_metaphlan(Classifier_init):
     report_suffix = ".tsv"
     full_report_suffix = ".tsv"
 
+    def __post_init__(self):
+        """
+        Post initialization method to set up the report path.
+        """
+        self.parse_args_db_edits()
+
     def parse_metaphlan_output(self, file: str) -> pd.DataFrame:
         """
         parse metaphlan output file.
@@ -732,15 +738,20 @@ class run_metaphlan(Classifier_init):
 
     def parse_args_db_edits(self):
 
-        where_db_edits = self.args.split(" ").index("--edits")
         args = self.args.split(" ")
+        where_db_edits = -1
+        if "--edits" not in self.args:
+            return
+        where_db_edits = self.args.split(" ").index("--edits")
+
         if where_db_edits > 0:
             edits = self.args.split(" ")[where_db_edits + 1]
             edits = edits.split(";")
             args = args[:where_db_edits] + args[where_db_edits + 2 :]
             for edit in edits:
                 args.append(edit)
-        args.remove("--edits")
+
+            args.remove("--edits")
         self.args = " ".join(args)
 
     def run_SE(self, threads: int = 3):

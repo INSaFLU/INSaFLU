@@ -544,12 +544,12 @@ class RunMetadataHandler:
                 else:
                     counts_df = df.groupby(["acc"]).size().reset_index(name="counts")
 
-                df = self.merge_check_column_types(
-                    counts_df,
-                    self.accession_to_taxid,
-                    column="acc",
-                    column_two="acc_in_file",
-                )
+                #df = self.merge_check_column_types(
+                #    counts_df,
+                #    self.accession_to_taxid,
+                #    column="acc",
+                #    column_two="acc_in_file",
+                #)
 
             if "taxid" not in df.columns:
                 if "acc" in df.columns:
@@ -627,6 +627,9 @@ class RunMetadataHandler:
 
         if len(column_two) == 0:
             column_two = column
+
+        if column_two != column and column in df2.columns:
+            
 
         if column not in df1.columns:
             df1[column] = ""

@@ -744,13 +744,13 @@ class run_metaphlan(Classifier_init):
             return
         where_db_edits = self.args.split(" ").index("--edits")
 
-        edits = self.args.split(" ")[where_db_edits + 1]
+        edits = args[where_db_edits + 1]
         edits = edits.split(";")
         args = args[:where_db_edits] + args[where_db_edits + 2 :]
         for edit in edits:
             args.append(edit)
 
-        args.remove("--edits")
+        # args.remove("--edits")
 
         self.args = " ".join(args)
 
@@ -760,7 +760,7 @@ class run_metaphlan(Classifier_init):
         self.parse_args_db_edits()
 
         cmd = [
-            "metaphlan",
+            os.path.join(metaphlan_bidir, "metaphlan"),
             self.query_path,
             "--input_type",
             "fastq",
@@ -768,6 +768,8 @@ class run_metaphlan(Classifier_init):
             str(threads),
             "--index",
             os.path.basename(self.db_path).split(".")[0],
+            "--bowtie2db",
+            os.path.dirname(self.db_path),
             self.args,
             "--bowtie2out",
             self.report_path.replace(".tsv", ".bowtie2.bam"),
@@ -775,7 +777,7 @@ class run_metaphlan(Classifier_init):
             self.report_path,
         ]
 
-        self.cmd.run_script(cmd, conda_env=os.path.basename(metaphlan_bidir))
+        self.cmd.run_script(cmd, conda_env=os.path.dirname(metaphlan_bidir))
 
     def run_PE(self, threads: int = 3):
         televir_constants = Televir_Metadata_Constants()
@@ -817,8 +819,8 @@ class run_metaphlan(Classifier_init):
             f"{self.report_path}.r2",
         ]
 
-        self.cmd.run_script(cmd_r1, conda_env=os.path.basename(metaphlan_bidir))
-        self.cmd.run_script(cmd_r2, conda_env=os.path.basename(metaphlan_bidir))
+        self.cmd.run_script(cmd_r1, conda_env=os.path.dirname(metaphlan_bidir))
+        self.cmd.run_script(cmd_r2, conda_env=os.path.dirname(metaphlan_bidir))
 
         merge_output_cmd = [
             os.path.join(metaphlan_bidir, "python3"),

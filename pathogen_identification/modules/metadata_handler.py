@@ -89,7 +89,6 @@ class RunMetadataHandler:
             "input_protein_accession_to_taxid_path"
         ]
 
-        self.accession_to_taxid: pd.DataFrame
         self.taxonomy_to_description: pd.DataFrame
         self.protein_to_accession: pd.DataFrame
         self.protein_accession_to_csv: pd.DataFrame
@@ -454,17 +453,7 @@ class RunMetadataHandler:
         """
         Get metadata from files.
         """
-        try:
-            self.accession_to_taxid = pd.read_csv(
-                self.input_accession_to_taxid_path, sep="\t", header=0
-            )
-        except:
-            self.accession_to_taxid = pd.DataFrame(columns=["acc", "taxid"])
-            self.logger.info("No accession to taxid file found.")
-            self.logger.info(
-                "This file is required for mapping, check installation. Exiting."
-            )
-            exit()
+
 
         try:
             self.taxonomy_to_description = pd.read_csv(
@@ -543,13 +532,6 @@ class RunMetadataHandler:
 
                 else:
                     counts_df = df.groupby(["acc"]).size().reset_index(name="counts")
-
-                #df = self.merge_check_column_types(
-                #    counts_df,
-                #    self.accession_to_taxid,
-                #    column="acc",
-                #    column_two="acc_in_file",
-                #)
 
             if "taxid" not in df.columns:
                 if "acc" in df.columns:

@@ -184,7 +184,8 @@ def Update_RunMain_Initial(run_class: RunEngine_class, parameter_set: ParameterS
 
         return True
 
-    except IntegrityError as e:
+    except Exception as e:
+        print(e)
         print(f"failed to update sample {run_class.sample_name}")
         return False
 
@@ -446,17 +447,17 @@ def Sample_update_combinations(run_class: Type[RunEngine_class]):
 
 def get_run_parents_and_reads(run_class: RunEngine_class, parameter_set: ParameterSet):
 
-    sample, RunMain, project = get_run_parents(run_class, parameter_set)
+    sample, runmain, project = get_run_parents(run_class, parameter_set)
 
-    if sample is None or RunMain is None:
+    if sample is None or runmain is None:
         return None, None, None, None
 
     try:
-        run_read_register = RunReadsRegister.objects.get(run=RunMain)
+        run_read_register = RunReadsRegister.objects.get(run=runmain)
     except RunReadsRegister.DoesNotExist:
-        return sample, RunMain, project, None
+        return sample, runmain, project, None
 
-    return sample, RunMain, project, run_read_register
+    return sample, runmain, project, run_read_register
 
 
 def Update_RunMain_noCheck(
@@ -941,7 +942,7 @@ def Update_Sample_Runs_DB(run_class: RunEngine_class, parameter_set: ParameterSe
     try:
         runmain = RunMain.objects.get(
             project=project,
-            suprun=run_class.suprun,
+            # suprun=run_class.suprun,
             sample=sample,
             name=run_class.prefix,
             parameter_set=parameter_set,

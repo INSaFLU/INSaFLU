@@ -504,9 +504,9 @@ def get_run_parents(run_class: RunEngine_class, parameter_set: ParameterSet):
         else:
             runmain = RunMain.objects.get(
                 project=project,
-                suprun=run_class.suprun,
+                # suprun=run_class.suprun,
                 sample=sample,
-                name=run_class.prefix,
+                # run_class.prefix,
                 parameter_set=parameter_set,
             )
 

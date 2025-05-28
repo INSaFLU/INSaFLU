@@ -817,6 +817,7 @@ class run_metaphlan(Classifier_init):
         self.cmd.run_bash(cmd_r2)
 
         merge_output_cmd = [
+            os.path.join(metaphlan_bidir, "python3"),
             os.path.join(metaphlan_bidir, "merge_metaphlan_tables.py"),
             f"{self.report_path}.r1",
             f"{self.report_path}.r2",

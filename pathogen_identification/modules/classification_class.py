@@ -756,11 +756,11 @@ class run_metaphlan(Classifier_init):
 
     def run_SE(self, threads: int = 3):
         televir_constants = Televir_Metadata_Constants()
-        metaphlan_bin = televir_constants.get_software_binary("metaphlan")
+        metaphlan_bidir = televir_constants.get_software_bin_directory("metaphlan")
         self.parse_args_db_edits()
 
         cmd = [
-            metaphlan_bin,
+            "metaphlan",
             self.query_path,
             "--input_type",
             "fastq",
@@ -775,7 +775,7 @@ class run_metaphlan(Classifier_init):
             self.report_path,
         ]
 
-        self.cmd.run_bash(cmd)
+        self.cmd.run_script(cmd, conda_env=os.path.basename(metaphlan_bidir))
 
     def run_PE(self, threads: int = 3):
         televir_constants = Televir_Metadata_Constants()
@@ -817,8 +817,8 @@ class run_metaphlan(Classifier_init):
             f"{self.report_path}.r2",
         ]
 
-        self.cmd.run_bash(cmd_r1)
-        self.cmd.run_bash(cmd_r2)
+        self.cmd.run_script(cmd_r1, conda_env=os.path.basename(metaphlan_bidir))
+        self.cmd.run_script(cmd_r2, conda_env=os.path.basename(metaphlan_bidir))
 
         merge_output_cmd = [
             os.path.join(metaphlan_bidir, "python3"),

@@ -131,6 +131,24 @@ class Operation_Temp_Files:
             f.write("\n")
             f.write("touch " + self.flag)
 
+    def write_conda_script(self, cmd: str, conda_env: str = ""):
+        """
+        Write conda bash script.
+        """
+
+        with open(self.script, "w") as f:
+            f.write("#!/bin/bash")
+            f.write("\n")
+            if conda_env:
+                f.write(f'eval "$(conda shell.bash hook)"')
+                f.write("\n")
+                f.write(f"conda activate {conda_env}")
+                f.write("\n")
+            f.write("\n")
+            f.write(cmd)
+            f.write("\n")
+            f.write("touch " + self.flag)
+
     def run_bash_script(self):
         """
         Run bash script.
@@ -393,7 +411,7 @@ class RunCMD:
 
         return out
 
-    def run_script_software(self, cmd):
+    def run_script_software(self, cmd, conda_env: str = ""):
         """
         Run bash script.
         """
@@ -406,7 +424,7 @@ class RunCMD:
         with operation_files as op_files:
             cmd_string = self.bash_software_cmd_string(cmd)
 
-            op_files.write_bash_script(cmd_string)
+            op_files.write_conda_script(cmd_string, conda_env)
 
             out, err, exec_time = op_files.run_bash_script()
 
@@ -415,30 +433,7 @@ class RunCMD:
 
         self.output_disposal(cmd, err, out, exec_time, "")
 
-    def run_script(self, cmd):
-        """
-        Run bash script.
-        """
-
-        if isinstance(cmd, list):
-            cmd = " ".join(cmd)
-
-        operation_files = Operation_Temp_Files(self.logdir)
-
-        with operation_files as op_files:
-            cmd_string = self.bash_cmd_string(cmd)
-            print(f"cmd_string: {cmd_string}")
-
-            op_files.write_bash_script(cmd_string)
-
-            out, err, exec_time = op_files.run_bash_script()
-
-            if self.flag_error(err):
-                self.logger.error(f"errror in command: {self.bin}{cmd}")
-
-        self.output_disposal(cmd, err, out, exec_time, "")
-
-    def run_script_return(self, cmd):
+    def run_script(self, cmd, conda_env: str = ""):
         """
         Run bash script.
         """
@@ -451,7 +446,29 @@ class RunCMD:
         with operation_files as op_files:
             cmd_string = self.bash_cmd_string(cmd)
 
-            op_files.write_bash_script(cmd_string)
+            op_files.write_conda_script(cmd_string, conda_env)
+
+            out, err, exec_time = op_files.run_bash_script()
+
+            if self.flag_error(err):
+                self.logger.error(f"errror in command: {self.bin}{cmd}")
+
+        self.output_disposal(cmd, err, out, exec_time, "")
+
+    def run_script_return(self, cmd, conda_env: str = ""):
+        """
+        Run bash script.
+        """
+
+        if isinstance(cmd, list):
+            cmd = " ".join(cmd)
+
+        operation_files = Operation_Temp_Files(self.logdir)
+
+        with operation_files as op_files:
+            cmd_string = self.bash_cmd_string(cmd)
+
+            op_files.write_conda_script(cmd_string, conda_env)
 
             out, err, exec_time = op_files.run_bash_script()
 

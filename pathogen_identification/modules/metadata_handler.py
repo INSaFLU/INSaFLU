@@ -5,7 +5,6 @@ from typing import List, Optional
 
 import pandas as pd
 
-from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.models import (
     PIProject_Sample,
     RawReference,
@@ -454,7 +453,6 @@ class RunMetadataHandler:
         Get metadata from files.
         """
 
-
         try:
             self.taxonomy_to_description = pd.read_csv(
                 self.input_taxonomy_to_descriptor_path, sep="\t", header=0
@@ -609,9 +607,6 @@ class RunMetadataHandler:
 
         if len(column_two) == 0:
             column_two = column
-
-        if column_two != column and column in df2.columns:
-            
 
         if column not in df1.columns:
             df1[column] = ""

@@ -552,15 +552,13 @@ class RunMetadataHandler:
                 )
 
             if "taxid" not in df.columns:
+                if "acc" in df.columns:
+                    df = self.db_get_taxid_from_accid(df)
 
-                if "acc" not in df.columns:
-
+                else:
                     raise ValueError(
                         "No taxid, accid or protid in the dataframe, unable to retrieve description."
                     )
-
-                else:
-                    df = self.db_get_taxid_from_accid(df)
 
         df = df[(df.taxid != "0") | (df.taxid != 0)]
 

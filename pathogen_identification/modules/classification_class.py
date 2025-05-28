@@ -744,14 +744,14 @@ class run_metaphlan(Classifier_init):
             return
         where_db_edits = self.args.split(" ").index("--edits")
 
-        if where_db_edits > 0:
-            edits = self.args.split(" ")[where_db_edits + 1]
-            edits = edits.split(";")
-            args = args[:where_db_edits] + args[where_db_edits + 2 :]
-            for edit in edits:
-                args.append(edit)
+        edits = self.args.split(" ")[where_db_edits + 1]
+        edits = edits.split(";")
+        args = args[:where_db_edits] + args[where_db_edits + 2 :]
+        for edit in edits:
+            args.append(edit)
 
-            args.remove("--edits")
+        args.remove("--edits")
+
         self.args = " ".join(args)
 
     def run_SE(self, threads: int = 3):

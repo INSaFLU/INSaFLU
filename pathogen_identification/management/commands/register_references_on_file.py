@@ -129,6 +129,19 @@ class Command(BaseCommand):
                 "GENE",
             )
 
+<<<<<<< HEAD
+=======
+            keep_dict = extract_file_accids(
+                os.path.join(
+                    Televir_Metadata_Constants.SOURCE["REF_FASTA"],
+                    viros_file,
+                ),
+                os.path.join(outdir, "keep_accids.txt"),
+                '-e "^>"',
+                "| grep -v GENE",
+            )
+
+>>>>>>> develop
         if options["curate"] is False:
             entrez_descriptions = []
             for file_source, file_df in accid_file_df.groupby("file"):

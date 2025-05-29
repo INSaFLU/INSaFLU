@@ -140,7 +140,7 @@ class Operation_Temp_Files:
             f.write("#!/bin/bash")
             f.write("\n")
             if conda_env:
-                f.write(f'eval "$(conda shell.bash hook)"')
+                f.write(f'eval "$(/software/miniconda2/bin/conda shell.bash hook)"')
                 f.write("\n")
                 f.write(f"conda activate {conda_env}")
                 f.write("\n")

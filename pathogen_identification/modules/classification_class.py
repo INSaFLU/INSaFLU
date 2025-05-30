@@ -704,12 +704,12 @@ class run_metaphlan(Classifier_init):
         """
         self.parse_args_db_edits()
 
-    def parse_metaphlan_output(self, file: str) -> pd.DataFrame:
+    @staticmethod
+    def parse_metaphlan_output(file: str) -> pd.DataFrame:
         """
         parse metaphlan output file.
         """
         data = []
-
         with open(file, "r") as f:
             for line in f:
                 if line.startswith("#"):
@@ -717,24 +717,63 @@ class run_metaphlan(Classifier_init):
                 line = line.strip().split("\t")
                 if len(line) < 2:
                     continue
-
                 taxonomy = line[0].split("|")
                 taxids = line[1].split("|")
                 tax_index = -1
                 if "SGD" in taxonomy[tax_index]:
                     tax_index = -2
-
                 data.append([taxonomy[tax_index], taxids[tax_index], line[2]])
-
         if len(data) == 0:
             return pd.DataFrame(columns=["description", "taxid", "abundance"])
-
         data = pd.DataFrame(data)
         data.columns = ["description", "taxid", "abundance"]
         data["taxid"] = data["taxid"].astype(str)
         data["description"] = data["description"].astype(str)
         data["abundance"] = data["abundance"].astype(float)
+        data = data[data["taxid"] != "0"]
+        data = data[data["taxid"] != ""]
         return data
+
+    @staticmethod
+    def parse_metaphlan_output_as_tree(file: str) -> pd.DataFrame:
+        nodes = {}
+        edges = {}
+        with open(file, "r") as f:
+            for line in f:
+                if line.startswith("#"):
+                    continue
+                line = line.strip().split("\t")
+                if len(line) < 2:
+                    continue
+                taxonomy = line[0].split("|")
+                taxids = line[1].split("|")
+                for i in range(len(taxonomy)):
+                    if taxonomy[i] == "unclassified":
+                        continue
+                    if "SGD" in taxonomy[i]:
+                        continue
+                    if taxids[i] == "0":
+                        continue
+                    if taxids[i] not in nodes and taxids[i] != "":
+                        nodes[taxids[i]] = (taxids[i], taxonomy[i], i)
+                if len(taxids) < 2:
+                    continue
+                for i in range(len(taxids) - 1):
+                    if taxonomy[i] == "unclassified":
+                        continue
+                    if "SGD" in taxonomy[i] or "SGD" in taxonomy[i + 1]:
+                        continue
+                    if taxids[i] == "0" or taxids[i + 1] == "0" or taxids[i] == "":
+                        continue
+                    if taxids[i + 1] == "":
+                        continue
+                    if taxids[i] not in edges:
+                        edges[taxids[i]] = []
+                    edges[taxids[i]].append((taxids[i + 1], taxonomy[i + 1], i + 1))
+        if len(nodes) > 0:
+            leaves = [nodes[taxid] for taxid in nodes.keys() if taxid not in edges]
+            return pd.DataFrame(leaves, columns=["taxid", "description", "level"])
+        return pd.DataFrame(columns=["taxid", "description", "level"])
 
     def parse_args_db_edits(self):
 
@@ -837,7 +876,7 @@ class run_metaphlan(Classifier_init):
         if check_report_empty(self.report_path):
             return pd.DataFrame(columns=["description", "taxid", "abundance"])
 
-        report = self.parse_metaphlan_output(self.report_path)
+        report = self.parse_metaphlan_output_as_tree(self.report_path)
 
         return report
 
@@ -845,7 +884,7 @@ class run_metaphlan(Classifier_init):
         if check_report_empty(self.report_path):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
-        report = self.parse_metaphlan_output(self.report_path)
+        report = self.parse_metaphlan_output_as_tree(self.report_path)
 
         return report
 

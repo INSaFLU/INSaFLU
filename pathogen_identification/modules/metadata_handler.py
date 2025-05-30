@@ -709,11 +709,16 @@ class RunMetadataHandler:
         if merged_table.shape[0] == 0:
             return pd.DataFrame(columns=["taxid", "file", "counts"])
 
+        print("Mapping hits to taxids...")
+        print(merged_table.columns)
+        print(merged_table.head())
+
         if "counts" not in merged_table.columns:
             counts = merged_table.taxid.value_counts()
             counts = pd.DataFrame(counts).reset_index()
             counts.columns = ["taxid", "counts"]
-
+            merged_table = merged_table.drop_duplicates(subset="taxid")
+            merged_table = merged_table[merged_table["taxid"] != ""]
             merged_table["taxid"] = merged_table["taxid"].astype(int)
             counts["taxid"] = counts["taxid"].astype(int)
 

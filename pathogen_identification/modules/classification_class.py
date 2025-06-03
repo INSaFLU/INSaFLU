@@ -600,6 +600,7 @@ class run_voyager(Classifier_init):
         else:
             lines_to_keep.append("}")
         lines_to_keep = "".join(lines_to_keep)
+        print(lines_to_keep)
         data = json.loads(lines_to_keep)
         return data
 

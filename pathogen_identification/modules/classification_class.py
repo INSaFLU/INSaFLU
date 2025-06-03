@@ -600,7 +600,6 @@ class run_voyager(Classifier_init):
         else:
             lines_to_keep.append("}")
         lines_to_keep = "".join(lines_to_keep)
-        print(lines_to_keep)
         data = json.loads(lines_to_keep)
         return data
 
@@ -681,6 +680,8 @@ class run_voyager(Classifier_init):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
         report = self.parse_json_taxonomy(self.report_path)
+
+        report = report[report["description"] != "UNCLASSIFIED"]
 
         return report
 

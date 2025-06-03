@@ -582,18 +582,20 @@ class run_voyager(Classifier_init):
         """
         Poorly structured json file, need to extract 'taxonomy' field."""
         lines_to_keep = ["{"]
+        kept = False
         with open(json_file, "r") as f:
             line = f.readline()
             keep = False
             while line:
                 if "taxonomy" in line:
                     keep = True
+                    kept = True
                 if "]" in line:
                     keep = False
                 if keep:
                     lines_to_keep.append(line.replace("\t", ""))
                 line = f.readline()
-        if keep:
+        if kept:
             lines_to_keep.append("]}")
         else:
             lines_to_keep.append("}")

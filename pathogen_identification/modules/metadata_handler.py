@@ -6,14 +6,20 @@ from typing import List, Optional
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (PIProject_Sample, RawReference,
-                                            RawReferenceCompoundModel,
-                                            ReferenceSource,
-                                            ReferenceSourceFileMap, RunMain)
+from pathogen_identification.models import (
+    PIProject_Sample,
+    RawReference,
+    RawReferenceCompoundModel,
+    ReferenceSource,
+    ReferenceSourceFileMap,
+    RunMain,
+)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
-from pathogen_identification.utilities.utilities_general import (merge_classes,
-                                                                 simplify_name)
+from pathogen_identification.utilities.utilities_general import (
+    merge_classes,
+    simplify_name,
+)
 from pathogen_identification.utilities.utilities_views import RawReferenceUtils
 
 
@@ -549,9 +555,13 @@ class RunMetadataHandler:
                 )
 
             if "taxid" not in df.columns:
-                raise ValueError(
-                    "No taxid, accid or protid in the dataframe, unable to retrieve description."
-                )
+                if "acc" in df.columns:
+                    df = self.db_get_taxid_from_accid(df)
+
+                else:
+                    raise ValueError(
+                        "No taxid, accid or protid in the dataframe, unable to retrieve description."
+                    )
 
         df = df[(df.taxid != "0") | (df.taxid != 0)]
 
@@ -580,6 +590,30 @@ class RunMetadataHandler:
 
         df["description"] = df["description"].fillna("NA")
         df["description"] = df["description"].astype(str)
+
+        return df
+
+    def db_get_taxid_from_accid(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Get taxid from accid.
+        """
+
+        def get_taxid(accid: str):
+            try:
+                return (
+                    ReferenceSource.objects.filter(
+                        accid__in=[accid, accid.split(".")[0]]
+                    )
+                    .first()
+                    .taxid.taxid
+                )
+            except:
+                return ""
+
+        df["taxid"] = df["acc"].apply(get_taxid)
+
+        df["taxid"] = df["taxid"].fillna("NA")
+        df["taxid"] = df["taxid"].astype(str)
 
         return df
 

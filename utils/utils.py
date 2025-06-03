@@ -75,6 +75,16 @@ class Utils(object):
             "refId_{0}".format(ref_id),
         )
 
+    def get_path_to_primer_file(self, user_id, primer_id):
+        """
+        get the path to primer
+        """
+        return os.path.join(
+            Constants.DIR_PROCESSED_FILES_PRIMER,
+            "userId_{0}".format(user_id),
+            "primerId_{0}".format(primer_id),
+        )
+
     def get_path_to_teleflu_reference_file(self, user_id, ref_id):
         """
         get the path to reference

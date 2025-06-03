@@ -54,8 +54,8 @@ def find_pattern_multiple_files(files, pattern, filter=None):
     return [line for line in result if line]
 
 
-def extract_file_accids(file, output_file, pattern):
-    cmd = f"zgrep {pattern} {file} | cut -f1 -d' ' | sort | uniq > {output_file}"
+def extract_file_accids(file, output_file, pattern_include="", pattern_exclude=""):
+    cmd = f"zgrep {pattern_include} {file} {pattern_exclude} | cut -f1 -d' ' | sort | uniq > {output_file}"
     os.system(cmd)
     # to dict
     with open(output_file, "r") as f:
@@ -136,7 +136,8 @@ class Command(BaseCommand):
                     viros_file,
                 ),
                 os.path.join(outdir, "keep_accids.txt"),
-                "-v GENE",
+                '-e "^>"',
+                "| grep -v GENE",
             )
 
         if options["curate"] is False:

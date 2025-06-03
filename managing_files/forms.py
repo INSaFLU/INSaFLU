@@ -27,6 +27,7 @@ from django.utils.translation import gettext_lazy as _
 from constants.constants import Constants, TypeFile
 from managing_files.models import (
     DataSet,
+    Primer,
     Project,
     Reference,
     Sample,
@@ -34,9 +35,6 @@ from managing_files.models import (
     VaccineStatus,
 )
 from settings.constants_settings import ConstantsSettings
-from utils.parse_in_files import ParseInFiles
-from utils.software import Software
-from utils.utils import Utils
 
 
 ## https://kuanyui.github.io/2015/04/13/django-crispy-inline-form-layout-with-bootstrap/
@@ -315,6 +313,510 @@ class ReferenceForm(forms.ModelForm):
         ## remove temp files
         os.unlink(reference_genbank_temp_file_name.name)
         os.unlink(reference_fasta_temp_file_name.name)
+        return cleaned_data
+
+
+class PrimerForm(forms.ModelForm):
+    """
+    Primer form, name, and others
+    """
+
+    utils = Utils()
+    software = Software()
+    error_css_class = "error"
+
+    class Meta:
+        model = Primer
+        # specify what fields should be used in this form.
+        fields = ("name", "primer_fasta", "primer_pairs")
+
+    def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop("request")
+        super(PrimerForm, self).__init__(*args, **kwargs)
+
+        ## can exclude explicitly
+        ## exclude = ('md5',)
+        field_text = [
+            # (field_name, Field title label, Detailed field description, requiered)
+            ("name", "Name", "Regular name for this primer set", True),
+            (
+                "primer_fasta",
+                "Primer Set (FASTA)",
+                "Primer file in fasta format.<br>"
+                + "Max total sequence length: {}<br>".format(
+                    filesizeformat(settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA)
+                )
+                + "Max FASTA file size: {}".format(
+                    filesizeformat(settings.MAX_REF_FASTA_FILE)
+                ),
+                True,
+            ),
+            (
+                "primer_pairs",
+                "Primer pairs (tabular format)",
+                """Tabular file containing primer pairs.<br>
+					Locus designations must match the ones in the respective fasta file.<br>"""
+                + "Max file size: {}".format(
+                    filesizeformat(settings.MAX_REF_GENBANK_FILE)
+                ),
+                True,
+            ),
+        ]
+        for x in field_text:
+            self.fields[x[0]].label = x[1]
+            self.fields[x[0]].help_text = x[2]
+            self.fields[x[0]].required = x[3]
+
+        self.helper = FormHelper()
+        self.helper.form_method = "POST"
+        self.helper.attrs["data-validate-primer-url"] = reverse("validate-primer-name")
+        self.helper.attrs["id"] = "id_form_reference"
+        self.helper.layout = Layout(
+            Div("name", css_class="show-for-sr"),
+            Div("primer_fasta", css_class="show-for-sr"),
+            Div("primer_pairs", css_class="show-for-sr"),
+            ButtonHolder(
+                Submit(
+                    "save",
+                    "Save",
+                    css_class="btn-primary",
+                    onclick="this.disabled=true,this.form.submit();",
+                ),
+                Button(
+                    "cancel",
+                    "Cancel",
+                    css_class="btn-secondary",
+                    onclick='window.location.href="{}"'.format(reverse("primer")),
+                ),
+            ),
+        )
+
+    def clean(self):
+        """
+        Clean all together because it's necessary to compare the primer fasta and primer pair files
+        """
+        cleaned_data = super(PrimerForm, self).clean()
+        name = self.cleaned_data.get("name", "").strip()
+        if len(name) == 0:
+            self.add_error("name", _("Error: You must give a unique name."))
+            return cleaned_data
+
+        try:
+            Primer.objects.get(
+                name__iexact=name, owner=self.request.user, is_deleted=False
+            )
+            self.add_error(
+                "name",
+                _(
+                    "This name '"
+                    + name
+                    + "' already exist in database, please choose other."
+                ),
+            )
+        except Primer.DoesNotExist:
+            pass
+
+        ## test primer_fasta
+        if "primer_fasta" not in cleaned_data:
+            self.add_error("primer_fasta", _("Error: Must have a file."))
+            return cleaned_data
+
+        ## test primer_pairs
+        if "primer_pairs" not in cleaned_data:
+            self.add_error("primer_pairs", _("Error: Must have a file."))
+            return cleaned_data
+
+        ### testing file names
+        primer_fasta = cleaned_data["primer_fasta"]
+        primer_pairs = cleaned_data["primer_pairs"]
+        if primer_pairs != None and primer_fasta.name == primer_pairs.name:
+            self.add_error(
+                "primer_fasta",
+                _(
+                    "Error: both files have the same name. Please, choose different files."
+                ),
+            )
+            self.add_error(
+                "primer_pairs",
+                _(
+                    "Error: both files have the same name. Please, choose different files."
+                ),
+            )
+            return cleaned_data
+
+        ## testing fasta
+        some_error_in_files = False
+        primer_fasta_temp_file_name = NamedTemporaryFile(prefix="flu_fa_", delete=False)
+        primer_fasta_temp_file_name.write(primer_fasta.read())
+        primer_fasta_temp_file_name.flush()
+        primer_fasta_temp_file_name.close()
+        self.software.dos_2_unix(primer_fasta_temp_file_name.name)
+        try:
+            number_locus = self.utils.is_fasta(primer_fasta_temp_file_name.name)
+            self.request.session[Constants.NUMBER_LOCUS_FASTA_FILE] = number_locus
+
+            ## test the max numbers
+            if number_locus > Constants.MAX_SEQUENCES_FROM_CONTIGS_FASTA:
+                self.add_error(
+                    "primer_fasta",
+                    _(
+                        "Max number of sequences in fasta: {}".format(
+                            Constants.MAX_SEQUENCES_FROM_CONTIGS_FASTA
+                        )
+                    ),
+                )
+                some_error_in_files = True
+            total_length_fasta = self.utils.get_total_length_fasta(
+                primer_fasta_temp_file_name.name
+            )
+            if (
+                not some_error_in_files
+                and total_length_fasta > settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA
+            ):
+                some_error_in_files = True
+                self.add_error(
+                    "primer_fasta",
+                    _(
+                        "The max sum length of the sequences in fasta: {}".format(
+                            settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA
+                        )
+                    ),
+                )
+
+            n_seq_name_bigger_than = self.utils.get_number_seqs_names_bigger_than(
+                primer_fasta_temp_file_name.name, Constants.MAX_LENGTH_CONTIGS_SEQ_NAME
+            )
+            if not some_error_in_files and n_seq_name_bigger_than > 0:
+                some_error_in_files = True
+                if n_seq_name_bigger_than == 1:
+                    self.add_error(
+                        "primer_fasta",
+                        _(
+                            "There is one sequence name length bigger than {0}. The max. length name is {0}.".format(
+                                Constants.MAX_LENGTH_CONTIGS_SEQ_NAME
+                            )
+                        ),
+                    )
+                else:
+                    self.add_error(
+                        "primer_fasta",
+                        _(
+                            "There are {0} sequences with name length bigger than {1}. The max. length name is {1}.".format(
+                                n_seq_name_bigger_than,
+                                Constants.MAX_LENGTH_CONTIGS_SEQ_NAME,
+                            )
+                        ),
+                    )
+
+                ## if some errors in the files, fasta or genBank, return
+                if some_error_in_files:
+                    return cleaned_data
+
+        except IOError as e:  ## (e.errno, e.strerror)
+            os.unlink(primer_fasta_temp_file_name.name)
+            some_error_in_files = True
+            self.add_error("primer_fasta", e.args[0])
+        except ValueError as e:  ## (e.errno, e.strerror)
+            os.unlink(primer_fasta_temp_file_name.name)
+            some_error_in_files = True
+            self.add_error("primer_fasta", e.args[0])
+        except:
+            os.unlink(primer_fasta_temp_file_name.name)
+            some_error_in_files = True
+            self.add_error("primer_fasta", "Not a valid 'fasta' file.")
+
+        ### test if it has degenerated bases
+        # if (os.path.exists(reference_fasta_temp_file_name.name)):
+        # 	try:
+        # 		self.utils.has_degenerated_bases(reference_fasta_temp_file_name.name)
+        # 	except Exception as e:
+        # 		os.unlink(reference_fasta_temp_file_name.name)
+        # 		some_error_in_files = True
+        # 		self.add_error('reference_fasta', e.args[0])
+
+        if "primer_pairs" not in cleaned_data:
+            self.add_error("primer_pairs", _("Error: Must have a file."))
+            return cleaned_data
+
+        ### testing genbank
+        primer_pairs_temp_file_name = NamedTemporaryFile(prefix="flu_pp_", delete=False)
+        primer_pairs = cleaned_data["primer_pairs"]
+        if primer_pairs != None:
+            primer_pairs_temp_file_name.write(primer_pairs.read())
+            primer_pairs_temp_file_name.flush()
+            primer_pairs_temp_file_name.close()
+            self.software.dos_2_unix(primer_pairs_temp_file_name.name)
+            # TODO Verify if primer pairs seems correct
+            # try:
+            # 	self.utils.is_genbank(primer_pairs_temp_file_name.name)
+            # except IOError as e:
+            # 	some_error_in_files = True
+            # 	os.unlink(primer_pairs_temp_file_name.name)
+            # 	self.add_error('primer_pairs', e.args[0])
+            # except:
+            # 	os.unlink(primer_pairs_temp_file_name.name)
+            # 	some_error_in_files = True
+            # 	self.add_error('primer_pairs', "Not a valid 'genbank' file.")
+
+        ## if some errors in the files, fasta or genBank, return
+        if some_error_in_files:
+            return cleaned_data
+
+        ## remove temp files
+        os.unlink(primer_pairs_temp_file_name.name)
+        os.unlink(primer_fasta_temp_file_name.name)
+        return cleaned_data
+
+
+class PrimerForm(forms.ModelForm):
+    """
+    Primer form, name, and others
+    """
+
+    utils = Utils()
+    software = Software()
+    error_css_class = "error"
+
+    class Meta:
+        model = Primer
+        # specify what fields should be used in this form.
+        fields = ("name", "primer_fasta", "primer_pairs")
+
+    def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop("request")
+        super(PrimerForm, self).__init__(*args, **kwargs)
+
+        ## can exclude explicitly
+        ## exclude = ('md5',)
+        field_text = [
+            # (field_name, Field title label, Detailed field description, requiered)
+            ("name", "Name", "Regular name for this primer set", True),
+            (
+                "primer_fasta",
+                "Primer Set (FASTA)",
+                "Primer file in fasta format.<br>"
+                + "Max total sequence length: {}<br>".format(
+                    filesizeformat(settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA)
+                )
+                + "Max FASTA file size: {}".format(
+                    filesizeformat(settings.MAX_REF_FASTA_FILE)
+                ),
+                True,
+            ),
+            (
+                "primer_pairs",
+                "Primer pairs (tabular format)",
+                """Tabular file containing primer pairs.<br>
+					Locus designations must match the ones in the respective fasta file.<br>"""
+                + "Max file size: {}".format(
+                    filesizeformat(settings.MAX_REF_GENBANK_FILE)
+                ),
+                True,
+            ),
+        ]
+        for x in field_text:
+            self.fields[x[0]].label = x[1]
+            self.fields[x[0]].help_text = x[2]
+            self.fields[x[0]].required = x[3]
+
+        self.helper = FormHelper()
+        self.helper.form_method = "POST"
+        self.helper.attrs["data-validate-primer-url"] = reverse("validate-primer-name")
+        self.helper.attrs["id"] = "id_form_reference"
+        self.helper.layout = Layout(
+            Div("name", css_class="show-for-sr"),
+            Div("primer_fasta", css_class="show-for-sr"),
+            Div("primer_pairs", css_class="show-for-sr"),
+            ButtonHolder(
+                Submit(
+                    "save",
+                    "Save",
+                    css_class="btn-primary",
+                    onclick="this.disabled=true,this.form.submit();",
+                ),
+                Button(
+                    "cancel",
+                    "Cancel",
+                    css_class="btn-secondary",
+                    onclick='window.location.href="{}"'.format(reverse("primer")),
+                ),
+            ),
+        )
+
+    def clean(self):
+        """
+        Clean all together because it's necessary to compare the primer fasta and primer pair files
+        """
+        cleaned_data = super(PrimerForm, self).clean()
+        name = self.cleaned_data.get("name", "").strip()
+        if len(name) == 0:
+            self.add_error("name", _("Error: You must give a unique name."))
+            return cleaned_data
+
+        try:
+            Primer.objects.get(
+                name__iexact=name, owner=self.request.user, is_deleted=False
+            )
+            self.add_error(
+                "name",
+                _(
+                    "This name '"
+                    + name
+                    + "' already exist in database, please choose other."
+                ),
+            )
+        except Primer.DoesNotExist:
+            pass
+
+        ## test primer_fasta
+        if "primer_fasta" not in cleaned_data:
+            self.add_error("primer_fasta", _("Error: Must have a file."))
+            return cleaned_data
+
+        ## test primer_pairs
+        if "primer_pairs" not in cleaned_data:
+            self.add_error("primer_pairs", _("Error: Must have a file."))
+            return cleaned_data
+
+        ### testing file names
+        primer_fasta = cleaned_data["primer_fasta"]
+        primer_pairs = cleaned_data["primer_pairs"]
+        if primer_pairs != None and primer_fasta.name == primer_pairs.name:
+            self.add_error(
+                "primer_fasta",
+                _(
+                    "Error: both files have the same name. Please, choose different files."
+                ),
+            )
+            self.add_error(
+                "primer_pairs",
+                _(
+                    "Error: both files have the same name. Please, choose different files."
+                ),
+            )
+            return cleaned_data
+
+        ## testing fasta
+        some_error_in_files = False
+        primer_fasta_temp_file_name = NamedTemporaryFile(prefix="flu_fa_", delete=False)
+        primer_fasta_temp_file_name.write(primer_fasta.read())
+        primer_fasta_temp_file_name.flush()
+        primer_fasta_temp_file_name.close()
+        self.software.dos_2_unix(primer_fasta_temp_file_name.name)
+        try:
+            number_locus = self.utils.is_fasta(primer_fasta_temp_file_name.name)
+            self.request.session[Constants.NUMBER_LOCUS_FASTA_FILE] = number_locus
+
+            ## test the max numbers
+            if number_locus > Constants.MAX_SEQUENCES_FROM_CONTIGS_FASTA:
+                self.add_error(
+                    "primer_fasta",
+                    _(
+                        "Max number of sequences in fasta: {}".format(
+                            Constants.MAX_SEQUENCES_FROM_CONTIGS_FASTA
+                        )
+                    ),
+                )
+                some_error_in_files = True
+            total_length_fasta = self.utils.get_total_length_fasta(
+                primer_fasta_temp_file_name.name
+            )
+            if (
+                not some_error_in_files
+                and total_length_fasta > settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA
+            ):
+                some_error_in_files = True
+                self.add_error(
+                    "primer_fasta",
+                    _(
+                        "The max sum length of the sequences in fasta: {}".format(
+                            settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA
+                        )
+                    ),
+                )
+
+            n_seq_name_bigger_than = self.utils.get_number_seqs_names_bigger_than(
+                primer_fasta_temp_file_name.name, Constants.MAX_LENGTH_CONTIGS_SEQ_NAME
+            )
+            if not some_error_in_files and n_seq_name_bigger_than > 0:
+                some_error_in_files = True
+                if n_seq_name_bigger_than == 1:
+                    self.add_error(
+                        "primer_fasta",
+                        _(
+                            "There is one sequence name length bigger than {0}. The max. length name is {0}.".format(
+                                Constants.MAX_LENGTH_CONTIGS_SEQ_NAME
+                            )
+                        ),
+                    )
+                else:
+                    self.add_error(
+                        "primer_fasta",
+                        _(
+                            "There are {0} sequences with name length bigger than {1}. The max. length name is {1}.".format(
+                                n_seq_name_bigger_than,
+                                Constants.MAX_LENGTH_CONTIGS_SEQ_NAME,
+                            )
+                        ),
+                    )
+
+                ## if some errors in the files, fasta or genBank, return
+                if some_error_in_files:
+                    return cleaned_data
+
+        except IOError as e:  ## (e.errno, e.strerror)
+            os.unlink(primer_fasta_temp_file_name.name)
+            some_error_in_files = True
+            self.add_error("primer_fasta", e.args[0])
+        except ValueError as e:  ## (e.errno, e.strerror)
+            os.unlink(primer_fasta_temp_file_name.name)
+            some_error_in_files = True
+            self.add_error("primer_fasta", e.args[0])
+        except:
+            os.unlink(primer_fasta_temp_file_name.name)
+            some_error_in_files = True
+            self.add_error("primer_fasta", "Not a valid 'fasta' file.")
+
+        ### test if it has degenerated bases
+        # if (os.path.exists(reference_fasta_temp_file_name.name)):
+        # 	try:
+        # 		self.utils.has_degenerated_bases(reference_fasta_temp_file_name.name)
+        # 	except Exception as e:
+        # 		os.unlink(reference_fasta_temp_file_name.name)
+        # 		some_error_in_files = True
+        # 		self.add_error('reference_fasta', e.args[0])
+
+        if "primer_pairs" not in cleaned_data:
+            self.add_error("primer_pairs", _("Error: Must have a file."))
+            return cleaned_data
+
+        ### testing genbank
+        primer_pairs_temp_file_name = NamedTemporaryFile(prefix="flu_pp_", delete=False)
+        primer_pairs = cleaned_data["primer_pairs"]
+        if primer_pairs != None:
+            primer_pairs_temp_file_name.write(primer_pairs.read())
+            primer_pairs_temp_file_name.flush()
+            primer_pairs_temp_file_name.close()
+            self.software.dos_2_unix(primer_pairs_temp_file_name.name)
+            # TODO Verify if primer pairs seems correct
+            # try:
+            # 	self.utils.is_genbank(primer_pairs_temp_file_name.name)
+            # except IOError as e:
+            # 	some_error_in_files = True
+            # 	os.unlink(primer_pairs_temp_file_name.name)
+            # 	self.add_error('primer_pairs', e.args[0])
+            # except:
+            # 	os.unlink(primer_pairs_temp_file_name.name)
+            # 	some_error_in_files = True
+            # 	self.add_error('primer_pairs', "Not a valid 'genbank' file.")
+
+        ## if some errors in the files, fasta or genBank, return
+        if some_error_in_files:
+            return cleaned_data
+
+        ## remove temp files
+        os.unlink(primer_pairs_temp_file_name.name)
+        os.unlink(primer_fasta_temp_file_name.name)
         return cleaned_data
 
 

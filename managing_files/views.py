@@ -35,6 +35,7 @@ from manage_virus.constants_virus import ConstantsVirus
 from managing_files.forms import (
     AddSampleProjectForm,
     ReferenceForm,
+    PrimerForm,
     ReferenceProjectFormSet,
     SampleForm,
     SamplesUploadDescriptionForm,
@@ -47,6 +48,7 @@ from managing_files.models import (
     Project,
     ProjectSample,
     Reference,
+    Primer,
     Sample,
     UploadFiles,
 )
@@ -57,6 +59,7 @@ from managing_files.tables import (
     ProjectTable,
     ReferenceProjectTable,
     ReferenceTable,
+    PrimerTable,
     SampleTable,
     SampleToProjectsTable,
     ShowProjectSamplesResults,
@@ -131,7 +134,6 @@ class ReferencesIndex(BaseBreadcrumbMixin, TemplateView):
         )  ## show main information about the institute
         context["nav_reference"] = True
         return context
-
 
 # class ReferencesView(LoginRequiredMixin, GroupRequiredMixin, ListView):
 class ReferenceView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
@@ -420,6 +422,181 @@ class ReferenceAddView(
 
     ## static method, not need for now.
     form_valid_message = ""  ## need to have this
+
+class PrimerView(LoginRequiredMixin, ListView):
+    model = Primer
+    template_name = "primer/primer.html"
+    context_object_name = "primer"
+    ordering = ["id"]
+
+    def get_context_data(self, **kwargs):
+        context = super(PrimerView, self).get_context_data(**kwargs)
+
+        tag_search = "search_primer"
+        query_set = Primer.objects.filter(
+            owner__id=self.request.user.id, is_deleted=False
+        ).order_by("-name")
+        if self.request.GET.get(tag_search) != None and self.request.GET.get(
+            tag_search
+        ):
+            query_set = query_set.filter(
+                Q(name__icontains=self.request.GET.get(tag_search))
+                | Q(owner__username__icontains=self.request.GET.get(tag_search))
+                | Q(primer_fasta_name__icontains=self.request.GET.get(tag_search))
+            )
+
+        ### get the primer sets from the system
+        query_set_system = Primer.objects.filter(
+            owner__username=Constants.DEFAULT_USER, is_deleted=False
+        ).order_by("-name")
+        if self.request.GET.get(tag_search) != None and self.request.GET.get(
+            tag_search
+        ):
+            query_set_system = query_set_system.filter(
+                Q(name__icontains=self.request.GET.get(tag_search))
+                | Q(owner__username__icontains=self.request.GET.get(tag_search))
+                | Q(primer_fasta_name__icontains=self.request.GET.get(tag_search))
+            )
+        query_set_result = sorted(
+            chain(query_set, query_set_system), key=attrgetter("creation_date")
+        )
+        table = PrimerTable(query_set_result)
+        RequestConfig(
+            self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
+        ).configure(table)
+        if self.request.GET.get(tag_search) != None:
+            context[tag_search] = self.request.GET.get(tag_search)
+        context["table"] = table
+        context["nav_primer"] = True
+        context["show_paginatior"] = len(query_set_result) > Constants.PAGINATE_NUMBER
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
+        return context
+
+
+class PrimerAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView):
+    """
+    Create a new primer set
+    """
+
+    form_class = PrimerForm
+    success_url = reverse_lazy("primer")
+    template_name = "primer/primer_add.html"
+
+    ## Other solution to get the reference
+    ## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1
+    def get_form_kwargs(self):
+        """
+        Set the request to pass in the form
+        """
+        kw = super(PrimerAddView, self).get_form_kwargs()
+        kw["request"] = self.request  # the trick!
+        return kw
+
+    def get_context_data(self, **kwargs):
+        context = super(PrimerAddView, self).get_context_data(**kwargs)
+        context["nav_primer"] = True
+        context["nav_modal"] = True  ## short the size of modal window
+        context["user_demo"] = (
+            self.request.user.username == "demo"
+        )  ## short the size of modal window
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
+        return context
+
+    @transaction.atomic
+    def form_valid(self, form):
+        from utils.software import Software
+
+        ### test anonymous account
+        try:
+            profile = Profile.objects.get(user=self.request.user)
+            if profile.only_view_project:
+                messages.warning(
+                    self.request,
+                    "'{}' account can not add primer sets.".format(
+                        self.request.user.username
+                    ),
+                    fail_silently=True,
+                )
+                return super(PrimerAddView, self).form_invalid(form)
+        except Profile.DoesNotExist:
+            pass
+
+        software = Software()
+        utils = Utils()
+        name = form.cleaned_data["name"]
+        primer_fasta = form.cleaned_data["primer_fasta"]
+        primer_pairs = form.cleaned_data["primer_pairs"]
+
+        primer = form.save(commit=False)
+        ## set other data
+        primer.display_name = primer.name
+        primer.owner = self.request.user
+        primer.primer_fasta_name = utils.clean_name(
+            name + ".fa"
+            #ntpath.basename(primer_fasta.name)
+        )
+        primer.primer_pairs_name = utils.clean_name(
+                name + ".fa" + Constants.EXTENSION_PRIMER_PAIR
+                #ntpath.basename(primer_pairs.name)
+            )
+        primer.save()
+
+        ## move the files to the right place
+        sz_file_to = os.path.join(
+            settings.MEDIA_ROOT,
+            utils.get_path_to_primer_file(self.request.user.id, primer.id),
+            primer.primer_fasta_name,
+        )
+        software.dos_2_unix(
+            os.path.join(settings.MEDIA_ROOT, primer.primer_fasta.name)
+        )
+        ## test if bases all lower
+        software.fasta_2_upper(
+            os.path.join(settings.MEDIA_ROOT, primer.primer_fasta.name)
+        )
+        utils.move_file(
+            os.path.join(settings.MEDIA_ROOT, primer.primer_fasta.name),
+            sz_file_to,
+        )
+        primer.hash_primer_fasta = utils.md5sum(sz_file_to)
+        primer.primer_fasta.name = os.path.join(
+            utils.get_path_to_primer_file(self.request.user.id, primer.id),
+            primer.primer_fasta_name,
+        )
+
+        ###
+        ## genbank file
+        sz_file_to = os.path.join(
+            settings.MEDIA_ROOT,
+            utils.get_path_to_primer_file(self.request.user.id, primer.id),
+            primer.primer_pairs_name,
+        )
+        utils.move_file(
+            os.path.join(settings.MEDIA_ROOT, primer.primer_pairs.name),
+            sz_file_to,
+        )
+        software.dos_2_unix(sz_file_to)
+        primer.hash_primer_pairs = utils.md5sum(sz_file_to)
+        primer.primer_pairs.name = os.path.join(
+            utils.get_path_to_primer_file(self.request.user.id, primer.id),
+            primer.primer_pairs_name,
+        )
+        primer.save()
+
+        messages.success(
+            self.request,
+            "Primer Set '" + name + "' was created successfully",
+            fail_silently=True,
+        )
+        return super(PrimerAddView, self).form_valid(form)
+
+    ## static method, not need for now.
+    form_valid_message = ""  ## need to have this
+
 
 
 class SamplesView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):

@@ -3,9 +3,15 @@ from django.urls import path, re_path
 from managing_files import ajax_views, views
 
 urlpatterns = [
-    path("references/references", views.ReferenceView.as_view(), name="references"),
+    path(r"primer/primer$", views.PrimerView.as_view(), name="primer"),
     path(
-        "references/reference_add",
+        r"primer/primer_add$",
+        views.PrimerAddView.as_view(),
+        name="primer-add",
+    ),
+    path(r"references/references$", views.ReferenceView.as_view(), name="references"),
+    path(
+        r"references/reference_add$",
         views.ReferenceAddView.as_view(),
         name="reference-add",
     ),
@@ -104,6 +110,11 @@ urlpatterns = [
         name="validate-reference-name",
     ),
     path(
+        r"^ajax/validate_primer_name$",
+        ajax_views.validate_primer_name,
+        name="validate-primer-name",
+    ),
+    path(
         "ajax/set_check_box_values",
         ajax_views.set_check_box_values,
         name="set-check-box-values",
@@ -170,6 +181,9 @@ urlpatterns = [
     ## remove
     path(
         "ajax/remove_reference", ajax_views.remove_reference, name="remove_reference"
+    ),  ## remove a reference
+    path(
+        r"^ajax/remove_primer$", ajax_views.remove_primer, name="remove_primer"
     ),  ## remove a reference
     path(
         "ajax/remove_sample", ajax_views.remove_sample, name="remove_sample"

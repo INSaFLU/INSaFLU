@@ -909,7 +909,7 @@ class DefaultSoftware(object):
             self.default_parameters.get_voyager_default(
                 user,
                 Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_illumina,
+                ConstantsSettings.TECHNOLOGY_minion,
             ),
             user,
         )

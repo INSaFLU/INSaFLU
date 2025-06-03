@@ -790,11 +790,11 @@ class DefaultParameters(object):
                     return_parameter += "{}{}{}".format(
                         dict_out[par_name][0][0],
                         dict_out[par_name][1][0],
-                        #os.path.join(
+                        # os.path.join(
                         #    settings.DIR_SOFTWARE,
                         #    "trimmomatic/adapters",
                         #    dict_out[par_name][1][0],
-                        #),
+                        # ),
                         SoftwareNames.SOFTWARE_TRIMMOMATIC_addapter_trim_used_to_assemble,
                     )
                 elif (
@@ -813,11 +813,11 @@ class DefaultParameters(object):
 
                     return_parameter += " {}".format(
                         dict_out[par_name][1][0]
-                        #os.path.join(
+                        # os.path.join(
                         #    settings.DIR_SOFTWARE,
                         #    "trimmomatic/adapters",
                         #    dict_out[par_name][1][0],
-                        #)
+                        # )
                     )
                 elif (
                     par_name == DefaultParameters.MEDAKA_PRIMER_NAME
@@ -832,11 +832,11 @@ class DefaultParameters(object):
                     else:
                         return_parameter += " {}".format(
                             dict_out[par_name][1][0]
-                            #os.path.join(
+                            # os.path.join(
                             #    settings.DIR_SOFTWARE,
                             #    "trimmomatic/adapters",
                             #    dict_out[par_name][1][0],
-                            #)
+                            # )
                         )
 
                 elif par_name == "--db":
@@ -1414,7 +1414,7 @@ class DefaultParameters(object):
             return self.get_voyager_default(
                 software.owner,
                 Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_illumina,
+                ConstantsSettings.TECHNOLOGY_minion,
             )
 
         elif software.name == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ILLU_name:

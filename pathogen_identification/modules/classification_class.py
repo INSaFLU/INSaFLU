@@ -839,7 +839,7 @@ class run_metaphlan(Classifier_init):
             "--bowtie2db",
             os.path.dirname(os.path.dirname(self.db_path)),
             "--bowtie2out",
-            self.report_path.replace(".tsv", ".bowtie2.bz2"),
+            self.report_path.replace(".tsv", ".1.bowtie2.bz2"),
             ">",
             f"{self.report_path}.r1",
         ]
@@ -857,7 +857,7 @@ class run_metaphlan(Classifier_init):
             "--bowtie2db",
             os.path.dirname(os.path.dirname(self.db_path)),
             "--bowtie2out",
-            self.report_path.replace(".tsv", ".bowtie2.bz2"),
+            self.report_path.replace(".tsv", ".2.bowtie2.bz2"),
             ">",
             f"{self.report_path}.r2",
         ]

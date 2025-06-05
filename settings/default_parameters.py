@@ -205,11 +205,8 @@ class DefaultParameters(object):
                     print("MULTIPLE SOFTWARES: ", sof.count(), software.name)
                     if sof.count() > 1:
                         sof_delete = sof.exclude(pk=software.pk)
-                        with LockedAtomicTransaction(Software), LockedAtomicTransaction(
-                            Parameter
-                        ):
-                            Parameter.objects.filter(software__in=sof_delete).delete()
-                            sof_delete.delete()
+                        Parameter.objects.filter(software__in=sof_delete).delete()
+                        sof_delete.delete()
 
                         # raise Exception("MultipleObjectsReturned")
 

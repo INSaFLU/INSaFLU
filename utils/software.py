@@ -979,6 +979,7 @@ class Software(object):
         cmd = "%s --setupdb" % (self.software_names.get_abricate())
         exist_status = os.system(cmd)
         if exist_status != 0:
+            print("Fail to run: " + cmd)
             self.logger_production.error("Fail to run: " + cmd)
             self.logger_debug.error("Fail to run: " + cmd)
             raise Exception("Fail to run abricate --setupdb")
@@ -2759,6 +2760,7 @@ class Software(object):
             )
         exist_status = os.system(cmd)
         if exist_status != 0:
+            print("Fail to run: " + cmd)
             self.logger_production.error("Fail to run: " + cmd)
             self.logger_debug.error("Fail to run: " + cmd)
             self.utils.remove_dir(temp_dir)

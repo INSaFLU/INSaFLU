@@ -26,12 +26,8 @@ class CheckBoxColumnWithName(tables.CheckBoxColumn):
 class ReferenceTable(tables.Table):
     #   Renders a normal value as an internal hyperlink to another page.
     #   account_number = tables.LinkColumn('customer-detail', args=[A('pk')])
-    reference_fasta_name = tables.LinkColumn(
-        "reference_fasta_name", args=[tables.A("pk")], verbose_name="Fasta file"
-    )
-    reference_genbank_name = tables.LinkColumn(
-        "reference_genbank_name", args=[tables.A("pk")], verbose_name="GenBank file"
-    )
+    reference_fasta_name = tables.Column(verbose_name="Fasta file")
+    reference_genbank_name = tables.Column(verbose_name="GenBank file")
     owner = tables.Column("Owner", orderable=True, empty_values=())
     constants = Constants()
 
@@ -251,9 +247,7 @@ class SampleTable(tables.Table):
         empty_values=(),
     )
     #     extra_info = tables.LinkColumn('sample-description', args=[tables.A('pk')], orderable=False, verbose_name='Extra Information', empty_values=())
-    # extra_info = tables.LinkColumn(
-    #    text="Extra Information", orderable=False, empty_values=()
-    # )
+    extra_info = tables.Column("Extra Information", orderable=False, empty_values=())
     technology = tables.Column("Technology", empty_values=())
     type_and_subtype = tables.Column("Classification", empty_values=())
     fastq_files = tables.Column("#Fastq Files", empty_values=())
@@ -640,7 +634,7 @@ class ProjectTable(tables.Table):
     )
     last_change_date = tables.Column("Last Change date", empty_values=())
     creation_date = tables.Column("Creation date", empty_values=())
-    results = tables.LinkColumn("Options", orderable=False, empty_values=())
+    results = tables.Column("Options", orderable=False, empty_values=())
 
     class Meta:
         model = Project

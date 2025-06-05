@@ -65,7 +65,6 @@ from managing_files.tables import (
     ShowProjectSamplesResults,
 )
 from pathogen_identification.models import PIProject_Sample, TeleFluProject
-from pathogen_identification.utilities.utilities_views import RunReadsRegister
 from settings.constants_settings import ConstantsSettings
 from settings.default_software import DefaultSoftware
 from settings.default_software_project_sample import DefaultProjectSoftware

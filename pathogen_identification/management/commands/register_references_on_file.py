@@ -117,6 +117,7 @@ class Command(BaseCommand):
 
         if len(viros_file) == 0:
             ignore_dict = {}
+            keep_dict = {}
         else:
             viros_file = viros_file[0]
 
@@ -129,8 +130,6 @@ class Command(BaseCommand):
                 "GENE",
             )
 
-<<<<<<< HEAD
-=======
             keep_dict = extract_file_accids(
                 os.path.join(
                     Televir_Metadata_Constants.SOURCE["REF_FASTA"],
@@ -141,19 +140,10 @@ class Command(BaseCommand):
                 "| grep -v GENE",
             )
 
->>>>>>> develop
         if options["curate"] is False:
-            entrez_descriptions = []
-            for file_source, file_df in accid_file_df.groupby("file"):
-
-                file_descriptor = entrez_connection.run_entrez_query(
-                    query_list=file_df.acc.unique().tolist(),
-                )
-                file_descriptor["file"] = file_source
-                entrez_descriptions.append(file_descriptor)
-
-            entrez_descriptions = pd.concat(entrez_descriptions, ignore_index=True)
-
+            entrez_descriptions = entrez_connection.run_entrez_query(
+                query_list=accid_file_df.acc.unique().tolist(),
+            )
         else:
             entrez_descriptions = ReferenceSource.objects.all()
             entrez_descriptions = pd.DataFrame(
@@ -173,13 +163,7 @@ class Command(BaseCommand):
 
         d = 0
 
-        # raise Exception("Debugging point reached")
-
         for taxid_str, taxid_df in entrez_descriptions.groupby("taxid"):
-            if pd.isna(taxid_str):
-                print("Skipping NaN taxid")
-                continue
-            taxid_str = str(int(taxid_str))
 
             try:
                 ref_taxid = ReferenceTaxid.objects.get(taxid=taxid_str)
@@ -187,19 +171,8 @@ class Command(BaseCommand):
                 ref_taxid = ReferenceTaxid.objects.create(taxid=taxid_str)
 
             for _, row in taxid_df.iterrows():
-                if pd.isna(row.accession):
-                    print("Skipping NaN accession")
-                    continue
 
-                if pd.isna(row.description):
-                    print("Skipping NaN description")
-                    continue
-
-                if pd.isna(row.file):
-                    print("Skipping NaN file")
-                    continue
-
-                ### register a log every 1000 accids
+                ### register a log every 1000 taxids
                 d += 1
 
                 if d % 1000 == 0:
@@ -207,37 +180,42 @@ class Command(BaseCommand):
                     print(f"Number of taxids processed: {d}")
 
                 accid_str = row.accession
-                simple_accid = accid_str.split(".")[0]
-
                 description = row.description
 
                 if len(description) > 300:
                     description = description[:300]
 
-                file_str = row.file
+                files = list(accid_file_df[accid_file_df.acc == accid_str].file)
 
                 if (
-                    ignore_dict.get(simple_accid, None) is not None
+                    sum(["virosaurus" in file for file in files]) > 0
                     and options["curate"] is False
-                    and "viros" in file_str
                 ):
+                    viros_file = [file for file in files if "virosaurus" in file][0]
 
-                    ref_source = ReferenceSource.objects.filter(accid=accid_str)
+                    simple_accid = accid_str.split(".")[0]
 
-                    viro_maps = ReferenceSourceFileMap.objects.filter(
-                        reference_source__accid=accid_str,
-                        reference_source_file__file=file_str,
-                    )
-                    viro_maps.delete()
+                    if (
+                        ignore_dict.get(simple_accid, None) is not None
+                        and keep_dict.get(simple_accid, None) is None
+                    ):
 
-                    any_left = ReferenceSourceFileMap.objects.filter(
-                        reference_source__accid=accid_str,
-                    )
+                        ref_source = ReferenceSource.objects.filter(accid=accid_str)
 
-                    if ref_source and not any_left.exists():
-                        ref_source.delete()
+                        viro_maps = ReferenceSourceFileMap.objects.filter(
+                            reference_source__accid=accid_str,
+                            reference_source_file__file=viros_file,
+                        )
+                        viro_maps.delete()
 
-                    continue
+                        any_left = ReferenceSourceFileMap.objects.filter(
+                            reference_source__accid=accid_str,
+                        )
+
+                        if ref_source and not any_left.exists():
+                            ref_source.delete()
+
+                        files = [file for file in files if file != viros_file]
 
                 ref_source = ReferenceSource.objects.filter(accid=accid_str)
 
@@ -256,22 +234,39 @@ class Command(BaseCommand):
                 else:
                     ref_source = ref_source.first()
 
+                if options["curate"]:
+                    files_associated = ReferenceSourceFileMap.objects.filter(
+                        reference_source=ref_source
+                    )
+                    for file_associated in files_associated:
+                        if file_associated.reference_source_file.file not in files:
+                            file_associated.status = (
+                                ReferenceSourceFileMap.STATUS_DEPRECATED
+                            )
+                            file_associated.save()
+
+                if len(files) == 0:
+                    continue
+
                 # get reference source file
-                try:
-                    ref_source_file = ReferenceSourceFile.objects.get(file=file_str)
-                except ReferenceSourceFile.DoesNotExist:
-                    ref_source_file = ReferenceSourceFile.objects.create(file=file_str)
+                for file_str in files:
+                    try:
+                        ref_source_file = ReferenceSourceFile.objects.get(file=file_str)
+                    except ReferenceSourceFile.DoesNotExist:
+                        ref_source_file = ReferenceSourceFile.objects.create(
+                            file=file_str
+                        )
 
-                # description = entrez_connection
+                    description = entrez_connection
 
-                try:
-                    _ = ReferenceSourceFileMap.objects.get(
-                        reference_source=ref_source,
-                        reference_source_file=ref_source_file,
-                    )
+                    try:
+                        _ = ReferenceSourceFileMap.objects.get(
+                            reference_source=ref_source,
+                            reference_source_file=ref_source_file,
+                        )
 
-                except ReferenceSourceFileMap.DoesNotExist:
-                    _ = ReferenceSourceFileMap.objects.create(
-                        reference_source=ref_source,
-                        reference_source_file=ref_source_file,
-                    )
+                    except ReferenceSourceFileMap.DoesNotExist:
+                        _ = ReferenceSourceFileMap.objects.create(
+                            reference_source=ref_source,
+                            reference_source_file=ref_source_file,
+                        )

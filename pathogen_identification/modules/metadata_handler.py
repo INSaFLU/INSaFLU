@@ -1,7 +1,6 @@
-import http.client
 import logging
 import os
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import pandas as pd
 
@@ -96,6 +95,7 @@ class RunMetadataHandler:
 
         self.rclass: pd.DataFrame
         self.aclass: pd.DataFrame
+        self.taxid_accids: Dict[str, set] = {}
         self.raw_targets: pd.DataFrame = pd.DataFrame()
         self.merged_targets: pd.DataFrame = pd.DataFrame()
         self.remap_targets: List[Remap_Target] = []
@@ -169,37 +169,6 @@ class RunMetadataHandler:
                 )
 
                 accids_replete += 1
-
-    def merge_sample_references_classic_compound(
-        self, sample_registered: PIProject_Sample, max_taxids: int, max_remap: int = 15
-    ):
-        """
-        Generate Remap Targets from all existing references for a given sample."""
-        reference_utils = RawReferenceUtils(sample_registered)
-        _ = reference_utils.sample_reference_tables()
-        reference_table = reference_utils.merged_table
-
-        proxy_rclass = reference_utils.reference_table_renamed(
-            reference_table, {"read_counts": "counts"}
-        )
-
-        proxy_aclass = reference_utils.reference_table_renamed(
-            reference_table, {"contig_counts": "counts"}
-        )
-
-        self.rclass = proxy_rclass
-        self.aclass = proxy_aclass
-
-        self.merge_reports_clean(
-            max_taxids,
-        )
-
-        self.generate_targets_from_report(
-            reference_table,
-            max_taxids=max_taxids,
-            max_remap=max_remap,
-            skip_scrape=False,
-        )
 
     def merge_sample_references_ensemble(
         self,
@@ -357,26 +326,6 @@ class RunMetadataHandler:
 
         return references_table
 
-    def generate_targets_from_report(
-        self,
-        df: pd.DataFrame,
-        max_taxids: Optional[int] = None,
-        max_remap: int = 15,
-        skip_scrape: bool = True,
-    ):
-        references_table = self.filter_references_table(df)
-
-        # references_table = references_table.drop_duplicates(subset=["taxid"])
-        references_table.rename(columns={"accid": "acc"}, inplace=True)
-
-        if max_taxids is not None:
-            references_table = references_table.iloc[:max_taxids, :]
-
-        self.generate_mapping_targets(
-            references_table,
-            max_remap=max_remap,
-        )
-
     @staticmethod
     def filter_taxids_not_in_db(df) -> pd.DataFrame:
 
@@ -397,6 +346,36 @@ class RunMetadataHandler:
         df.drop(columns=["has_refs"], inplace=True)
         return df
 
+    def register_taxid_accids(self, taxid: str, accids: List[str]):
+        """
+        Register taxid and accids in the taxid_accids dictionary.
+        """
+        if taxid not in self.taxid_accids:
+            self.taxid_accids[taxid] = set()
+
+        for accid in accids:
+            if accid is not None and accid != "-":
+                self.taxid_accids[taxid].add(accid)
+
+    def accid_register(self, df: pd.DataFrame):
+        """
+        Register accids in the taxid_accids dictionary.
+        """
+
+        for taxid, taxid_df in df.groupby("taxid"):
+            taxid = str(taxid)
+            if "accid_in_file" in taxid_df.columns:
+                accids = taxid_df.accid_in_file.unique().tolist()
+            elif "acc" in taxid_df.columns:
+                accids = taxid_df.acc.unique().tolist()
+            elif "accid" in taxid_df.columns:
+                accids = taxid_df.accid.unique().tolist()
+            else:
+                accids = None
+
+            if accids is not None:
+                self.register_taxid_accids(taxid, accids)
+
     def results_collect_metadata(
         self, df: pd.DataFrame, sift: bool = True
     ) -> pd.DataFrame:
@@ -414,6 +393,8 @@ class RunMetadataHandler:
         df = self.map_hit_report(df)
 
         df = self.filter_taxids_not_in_db(df)
+
+        self.accid_register(df)
 
         df = self.db_get_taxid_descriptions(df)
         # df = self.entrez_get_taxid_descriptions(df)
@@ -543,13 +524,6 @@ class RunMetadataHandler:
 
                 else:
                     counts_df = df.groupby(["acc"]).size().reset_index(name="counts")
-
-                df = self.merge_check_column_types(
-                    counts_df,
-                    self.accession_to_taxid,
-                    column="acc",
-                    column_two="acc_in_file",
-                )
 
             if "taxid" not in df.columns:
                 if "acc" in df.columns:
@@ -814,7 +788,12 @@ class RunMetadataHandler:
         remap_targets = []
         remap_absent_taxid_list = []
 
-        for taxid in targets.taxid.unique():
+        for taxid, taxid_df in targets.groupby("taxid"):
+            taxid = str(taxid)
+            if taxid == "0" or taxid == "1":
+                self.logger.info("skipping taxid", taxid)
+                remap_absent_taxid_list.append(taxid)
+                continue
 
             refs_in_file = ReferenceSourceFileMap.objects.filter(
                 reference_source__taxid__taxid=taxid,
@@ -822,12 +801,23 @@ class RunMetadataHandler:
             ).distinct("reference_source__accid")
 
             if len(refs_in_file) == 0:
-                print("skipping taxid with no references", taxid)
+                self.logger.info("skipping taxid with no references", taxid)
                 remap_absent_taxid_list.append(taxid)
                 continue
 
             #
-            refs_in_file = refs_in_file[:max_remap]
+
+            if taxid in self.taxid_accids:
+                self.logger.info("Filtering references for taxid", taxid)
+                self.logger.info(
+                    "Accids in file:",
+                    refs_in_file.values_list("reference_source__accid", flat=True),
+                )
+                refs_in_file = refs_in_file.filter(
+                    reference_source__accid__in=self.taxid_accids[taxid]
+                )
+            else:
+                refs_in_file = refs_in_file[:max_remap]
 
             for ref_in_file_by_accid in refs_in_file:
                 other_refs = ReferenceSourceFileMap.objects.filter(

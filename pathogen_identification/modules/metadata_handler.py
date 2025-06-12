@@ -813,9 +813,11 @@ class RunMetadataHandler:
                     "Accids in file:",
                     refs_in_file.values_list("reference_source__accid", flat=True),
                 )
-                refs_in_file = refs_in_file.filter(
+                refs_in_file_select = refs_in_file.filter(
                     reference_source__accid__in=self.taxid_accids[taxid]
                 )
+                if refs_in_file_select.exists():
+                    refs_in_file = refs_in_file_select
             else:
                 refs_in_file = refs_in_file[:max_remap]
 

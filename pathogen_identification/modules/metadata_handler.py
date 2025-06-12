@@ -813,13 +813,26 @@ class RunMetadataHandler:
                     "Accids in file:",
                     refs_in_file.values_list("reference_source__accid", flat=True),
                 )
+
                 refs_in_file_select = refs_in_file.filter(
                     reference_source__accid__in=self.taxid_accids[taxid]
                 )
                 if refs_in_file_select.exists():
-                    refs_in_file = refs_in_file_select
-            else:
-                refs_in_file = refs_in_file[:max_remap]
+                    selected_pks = refs_in_file_select.values_list("pk", flat=True)
+
+                    if (
+                        len(refs_in_file) < max_remap
+                        and refs_in_file.count() > max_remap
+                    ):
+                        additional_refs = refs_in_file.exclude(pk__in=selected_pks)[
+                            : max_remap - len(refs_in_file_select)
+                        ]
+                        selected_pks = list(selected_pks) + list(
+                            additional_refs.values_list("pk", flat=True)
+                        )
+                    refs_in_file = refs_in_file.filter(pk__in=selected_pks)
+
+            refs_in_file = refs_in_file[:max_remap]
 
             for ref_in_file_by_accid in refs_in_file:
                 other_refs = ReferenceSourceFileMap.objects.filter(

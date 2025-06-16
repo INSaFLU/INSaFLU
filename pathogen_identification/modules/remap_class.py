@@ -179,10 +179,8 @@ class coverage_parse:
 
                 for ctg in bedp.contig.unique():
                     bp = bedp[bedp.contig == ctg].copy()
-                    print(self.ctgl)
                     if ctg not in self.ctgl:
                         self.logger.error(f"Contig {ctg} not found in fasta file.")
-                        continue
                     ctgsize = self.ctgl[ctg]
                     nwindows = self.calculate_windows(ctgsize)
 

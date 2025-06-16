@@ -458,7 +458,7 @@ class RunCMD:
             if self.flag_error(err):
                 self.logger.error(f"errror in command: {self.bin}{cmd}")
 
-        self.output_disposal(cmd, err, out, exec_time, "")
+        self.output_disposal(cmd, err, out, exec_time, self.bin)
 
     def run_script_return(self, cmd, conda_env: str = ""):
         """

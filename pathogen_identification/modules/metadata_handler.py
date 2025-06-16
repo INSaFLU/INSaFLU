@@ -163,6 +163,17 @@ class RunMetadataHandler:
                     )
                     continue
 
+                if any(
+                    x.accid == ref.accid
+                    and x.file == refmap.reference_source_file.filepath
+                    for x in self.remap_targets
+                ):
+                    self.logger.info(
+                        "Skipping remap target, already in remap targets",
+                        ref.accid,
+                    )
+                    continue
+
                 self.remap_targets.append(
                     Remap_Target(
                         ref.accid,
@@ -196,7 +207,7 @@ class RunMetadataHandler:
             compound_refs = compound_refs[:max_taxids]
 
         remap_plan = []
-        # emap_targets = []
+        # remap_targets = []
         remap_absent_taxid_list = []
 
         for ref in compound_refs:

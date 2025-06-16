@@ -154,6 +154,17 @@ class RunMetadataHandler:
                     continue
                 accid_simple = simplify_name(ref.accid)
 
+                if any(
+                    x.accid == ref.accid
+                    and x.file == refmap.reference_source_file.filepath
+                    for x in self.remap_targets
+                ):
+                    self.logger.info(
+                        "Skipping remap target, already in remap targets",
+                        ref.accid,
+                    )
+                    continue
+
                 self.remap_targets.append(
                     Remap_Target(
                         ref.accid,
@@ -187,7 +198,7 @@ class RunMetadataHandler:
             compound_refs = compound_refs[:max_taxids]
 
         remap_plan = []
-        remap_targets = []
+        # remap_targets = []
         remap_absent_taxid_list = []
 
         for ref in compound_refs:
@@ -206,6 +217,17 @@ class RunMetadataHandler:
                 reference_source_file__file__in=files_to_map
             )
 
+            ### check if alread in remap_targets
+            if any(
+                x.accid == ref.accid and x.file == ref_in_file[0].filepath
+                for x in self.remap_targets
+            ):
+                self.logger.info(
+                    "Skipping remap target, already in remap targets",
+                    ref.accid,
+                )
+                continue
+
             target = Remap_Target(
                 ref.accid,
                 simplify_name(ref.accid),
@@ -218,7 +240,7 @@ class RunMetadataHandler:
                 False,
             )
 
-            remap_targets.append(target)
+            self.remap_targets.append(target)
             remap_plan.append(
                 [
                     ref.taxid,
@@ -232,7 +254,7 @@ class RunMetadataHandler:
             remap_plan, columns=["taxid", "acc", "file", "description"]
         )
 
-        self.remap_targets.extend(remap_targets)
+        # self.remap_targets.extend(remap_targets)
         self.remap_absent_taxid_list.extend(remap_absent_taxid_list)
 
     def match_and_select_targets(
@@ -785,7 +807,7 @@ class RunMetadataHandler:
         """
         Generate remap targets from a dataframe of targets."""
         remap_plan = []
-        remap_targets = []
+        # remap_targets = []
         remap_absent_taxid_list = []
 
         for taxid, taxid_df in targets.groupby("taxid"):
@@ -821,7 +843,7 @@ class RunMetadataHandler:
                     selected_pks = refs_in_file_select.values_list("pk", flat=True)
 
                     if (
-                        len(refs_in_file) < max_remap
+                        len(selected_pks) < max_remap
                         and refs_in_file.count() > max_remap
                     ):
                         additional_refs = refs_in_file.exclude(pk__in=selected_pks)[
@@ -846,6 +868,18 @@ class RunMetadataHandler:
                     reference_source_file__file__in=files_to_map
                 ).first()
 
+                ### check if alread in remap_targets
+                if any(
+                    x.accid == ref_in_file.reference_source.accid
+                    and x.file == ref_in_file.reference_source_file.filepath
+                    for x in self.remap_targets
+                ):
+                    self.logger.info(
+                        "Skipping remap target, already in remap targets",
+                        ref_in_file.reference_source.accid,
+                    )
+                    continue
+
                 target = Remap_Target(
                     ref_in_file.reference_source.accid,
                     simplify_name(ref_in_file.reference_source.accid),
@@ -858,7 +892,7 @@ class RunMetadataHandler:
                     determine_taxid_in_file(taxid, self.aclass),
                 )
 
-                remap_targets.append(target)
+                self.remap_targets.append(target)
                 remap_plan.append(
                     [
                         ref_in_file.reference_source.taxid.taxid,
@@ -872,5 +906,5 @@ class RunMetadataHandler:
             remap_plan, columns=["taxid", "acc", "file", "description"]
         )
 
-        self.remap_targets.extend(remap_targets)
+        # self.remap_targets.extend(remap_targets)
         self.remap_absent_taxid_list.extend(remap_absent_taxid_list)

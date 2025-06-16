@@ -437,7 +437,7 @@ class RunCMD:
             if self.flag_error(err):
                 self.logger.error(f"errror in command: {self.bin}{cmd}")
 
-        self.output_disposal(cmd, err, out, exec_time, "")
+        self.output_disposal(cmd, err, out, exec_time, self.bin)
 
     def run_script_return(self, cmd):
         """
@@ -1798,6 +1798,14 @@ class Remap_Target:
 
     def __post_init__(self):
         self.name = f"{self.run_prefix}_{self.acc_simple}_{self.taxid}_{os.path.splitext(os.path.basename(self.file))[0]}"
+
+    def __eq__(self, other):
+        if isinstance(other, Remap_Target):
+            return self.accid == other.accid and self.taxid == other.taxid
+        return False
+
+    def __hash__(self):
+        return hash((self.accid, self.taxid, self.file, self.run_prefix))
 
 
 @dataclass(frozen=True)

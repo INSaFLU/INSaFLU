@@ -179,6 +179,10 @@ class coverage_parse:
 
                 for ctg in bedp.contig.unique():
                     bp = bedp[bedp.contig == ctg].copy()
+                    print(self.ctgl)
+                    if ctg not in self.ctgl:
+                        self.logger.error(f"Contig {ctg} not found in fasta file.")
+                        continue
                     ctgsize = self.ctgl[ctg]
                     nwindows = self.calculate_windows(ctgsize)
 
@@ -1025,6 +1029,7 @@ class Remapping:
                 self.remap_reads_post_process()
 
             self.summarize()
+
         except Exception as e:
             self.logger.error(e)
             self.logger.error("Remapping failed.")
@@ -1032,7 +1037,7 @@ class Remapping:
 
         else:
             self.logger.error(
-                f"Mapping output not found or unsuccesful after deploying on \
+                f"Mapping output succesful for \
                    target(s): {self.target.accid_in_file}, file: {self.r1}, reference: {self.target.file}"
             )
             return

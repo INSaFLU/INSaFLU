@@ -700,6 +700,9 @@ class RunDetail_main:
         """
         Update the merged classification summary file.
         """
+        targets_list = list(set(targets_list))
+        print(f"Updating merged targets with {len(targets_list)} targets")
+        print(targets_list)
 
         self.metadata_tool.remap_targets = targets_list
 

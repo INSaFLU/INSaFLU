@@ -1896,7 +1896,7 @@ class FinalReport(models.Model):
         relative_proportion = self.control_relative_mapped
 
         if relative_proportion is not None:
-            return f"{control_flag_str} \n (x{relative_proportion:.2f})"
+            return f"{control_flag_str} \n (x{relative_proportion:.3f})"
 
         return control_flag_str
 

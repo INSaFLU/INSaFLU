@@ -1860,7 +1860,7 @@ class FinalReport(models.Model):
             control_reports = FinalReport.objects.filter(
                 sample__project=self.sample.project,
                 control_flag=FinalReport.CONTROL_FLAG_SOURCE,
-                run__parameter_set__leaf__index=self.run.parameter_set.leaf.index,
+                taxid=self.taxid,
             )
 
             if control_reports.exists() == False:

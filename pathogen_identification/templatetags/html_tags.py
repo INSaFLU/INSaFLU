@@ -146,6 +146,11 @@ def difference_str_to_percent(a, b, c):
     if "," in b:
         b = b.replace(",", "")
 
+    if c is None or c == "":
+        return None
+    if b is None or b == "":
+        return None
+
     diff = int(b) - int(c)
 
     perc = 100 * diff / int(a)

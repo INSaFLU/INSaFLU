@@ -122,6 +122,7 @@ DICT_MANDATORY_FIELDS = {
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_ncov : VECT_NEXTSTRAIN_mandatory_ncov,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpx : VECT_NEXTSTRAIN_mandatory_mpx,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpox_clade_i : VECT_NEXTSTRAIN_mandatory_mpox,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpox_mpxv : VECT_NEXTSTRAIN_mandatory_mpox,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic : VECT_NEXTSTRAIN_mandatory_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic_time : VECT_NEXTSTRAIN_mandatory_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y : VECT_NEXTSTRAIN_mandatory_generic,
@@ -173,6 +174,15 @@ DICT_NEXTSTRAIN_default_mpox_clade_i = {
 		NEXTSTRAIN_QC_rare_mutations : 'good',
 	}
 
+DICT_NEXTSTRAIN_default_mpox_mpxv = {
+		NEXTSTRAIN_region : "Europe",
+		NEXTSTRAIN_genbank_accession : "?",
+		NEXTSTRAIN_host : "Homo sapiens",
+		NEXTSTRAIN_clade : "?",
+		NEXTSTRAIN_is_reverse_complement : 'false',
+		NEXTSTRAIN_QC_rare_mutations : 'good',
+	}
+
 DICT_NEXTSTRAIN_default_rsv = {
 		NEXTSTRAIN_region : "Europe",
 		NEXTSTRAIN_genbank_accession : "?",
@@ -198,6 +208,7 @@ DICT_MANDATORY_FIELDS_DEFAULTS = {
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_ncov : DICT_NEXTSTRAIN_default_ncov,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpx : DICT_NEXTSTRAIN_default_mpx,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpox_clade_i : DICT_NEXTSTRAIN_default_mpox_clade_i,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpox_mpxv : DICT_NEXTSTRAIN_default_mpox_mpxv,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y : DICT_NEXTSTRAIN_default_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y : DICT_NEXTSTRAIN_default_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y : DICT_NEXTSTRAIN_default_generic,
@@ -521,10 +532,8 @@ class DataColumns(object):
 		regular_header = self._get_header()
 		self.vect_header_out = []
 		self.dt_header_normal_out = {}
-
 		## mandatory fields
 		self.vect_header_out = DICT_MANDATORY_FIELDS[self.build].copy()
-
 		## try to find others in the other file
 		for regular_name in regular_header:
 			if regular_name in DATASET_LIST_INSAFLU_project_name: continue	## exclude project_name of regular header

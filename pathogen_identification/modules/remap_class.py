@@ -1017,16 +1017,17 @@ class Remapping:
 
         self.index_reference()
 
-        if not self.check_mapping_output_exists():
-            self.remap_deploy()
-            self.process_bam()
         try:
+            if not self.check_mapping_output_exists():
+                self.remap_deploy()
+                self.process_bam()
             if self.check_remap_status_paf():
                 self.assembly_to_reference_map()
             if self.check_remap_status_bam():
                 self.remap_reads_post_process()
 
             self.summarize()
+
         except Exception as e:
             self.logger.error(e)
             self.logger.error("Remapping failed.")
@@ -1060,8 +1061,9 @@ class Remapping:
             self.logger.error(e)
 
     def process_bam(self):
-        self.filter_bamfile_read_names()
-        self.filter_bamfile()
+        if self.check_remap_status_bam():
+            self.filter_bamfile_read_names()
+            self.filter_bamfile()
         if self.check_remap_status_bam():
             self.sort_bam()
             self.index_sorted_bam()

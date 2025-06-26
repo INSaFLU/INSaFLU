@@ -229,7 +229,7 @@ class Tree_Node:
         self.parameter_set.status = ParameterSet.STATUS_ERROR
         self.parameter_set.save()
 
-        self.run_manager.delete_run()
+        # self.run_manager.delete_run()
 
         return True
 

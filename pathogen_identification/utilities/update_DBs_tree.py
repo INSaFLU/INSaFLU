@@ -1348,7 +1348,7 @@ def Update_FinalReport(run_class: RunEngine_class, runmain, sample):
                 taxid=row["taxid"],
                 accid=row["ID"],
                 status=RawReference.STATUS_MAPPED,
-                description=row["description"],
+                description=summarize_description(row["description"], max_length=200),
                 counts=counts,
                 classification_source=classification_success,
             )

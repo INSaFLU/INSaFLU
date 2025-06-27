@@ -165,8 +165,11 @@
                                 <th>mapped_prop (%)</th>
                                 <th> Gaps </th>
                                 <th>Windows Covered</th>
+                                {% if error_rate_available %}
+                                <th>Mismatch rate</th>
+                                {% endif %}
                                 <th>class. success</th>
-                                <th>mapping success</th>                
+                                <th>mapping success</th>
                                 <th>Warning</th>
                                 <th>Control</th>
                             </tr>
@@ -202,6 +205,10 @@
                                     {{value.ngaps}}</td>
                                 <td data-title="Windows Covered">
                                     {% windows_safe value.windows_covered %}</td>
+                                {% if error_rate_available %}
+                                <td data-title="Error rate" style="{% depth_color_error value.error_rate max_error_rate %}">
+                                    {{value.error_rate}}</td>
+                                {% endif %}
                                 <td data-title="class. success" style="{% success_count_color value.classification_success %}">
                                     {{value.classification_success}}</td>
                                 <td data-title="mapping success" style="{% success_count_color value.mapping_success %}">

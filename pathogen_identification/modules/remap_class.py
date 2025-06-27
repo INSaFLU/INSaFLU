@@ -1017,10 +1017,10 @@ class Remapping:
 
         self.index_reference()
 
-        if not self.check_mapping_output_exists():
-            self.remap_deploy()
-            self.process_bam()
         try:
+            if not self.check_mapping_output_exists():
+                self.remap_deploy()
+                self.process_bam()
             if self.check_remap_status_paf():
                 self.assembly_to_reference_map()
             if self.check_remap_status_bam():
@@ -1029,6 +1029,9 @@ class Remapping:
             self.summarize()
 
         except Exception as e:
+            import traceback
+
+            traceback.print_exc()
             self.logger.error(e)
             self.logger.error("Remapping failed.")
             return self
@@ -1061,8 +1064,10 @@ class Remapping:
             self.logger.error(e)
 
     def process_bam(self):
+
         self.filter_bamfile_read_names()
         self.filter_bamfile()
+
         if self.check_remap_status_bam():
             self.sort_bam()
             self.index_sorted_bam()
@@ -1434,6 +1439,8 @@ class Remapping:
         ):
             return True
         else:
+            print("Assembly map file not found or empty.")
+            self.logger.error("Assembly map file not found or empty.")
             return False
 
     def filter_samfile_read_names(self, same=True, output_sam=""):

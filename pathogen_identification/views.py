@@ -13,7 +13,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.core.files.temp import NamedTemporaryFile
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Max, Q
 from django.http import (
     FileResponse,
     Http404,
@@ -2336,6 +2336,17 @@ def Project_reports(requesdst, pk1):
         all_reports = FinalReport.objects.none()
         project_name = "project"
 
+    error_rate_available = False
+    max_error_rate = 0
+    if all_reports.exists():
+        error_rate_available = all_reports.filter(error_rate__isnull=False).exists()
+
+        max_error_rate = (
+            all_reports.aggregate(Max("error_rate"))["error_rate__max"]
+            if error_rate_available
+            else 0
+        )
+
     return render(
         requesdst,
         template_name,
@@ -2343,6 +2354,8 @@ def Project_reports(requesdst, pk1):
             "final_report": all_reports,
             "project": project_name,
             "project_index": project.pk,
+            "error_rate_available": error_rate_available,
+            "max_error_rate": max_error_rate,
         },
     )
 
@@ -2380,6 +2393,17 @@ def Sample_reports(requesdst, pk1, pk2):
         project_name = "project"
         sample_name = "sample"
 
+    error_rate_available = False
+    max_error_rate = 0
+    if all_reports.exists():
+        error_rate_available = all_reports.filter(error_rate__isnull=False).exists()
+
+        max_error_rate = (
+            all_reports.aggregate(Max("error_rate"))["error_rate__max"]
+            if error_rate_available
+            else 0
+        )
+
     return render(
         requesdst,
         template_name,
@@ -2389,6 +2413,8 @@ def Sample_reports(requesdst, pk1, pk2):
             "sample": sample_name,
             "sample_index": pk2,
             "project_index": project.pk,
+            "error_rate_available": error_rate_available,
+            "max_error_rate": max_error_rate,
         },
     )
 

@@ -653,16 +653,21 @@ def deploy_ProjectPI(request):
         samples = PIProject_Sample.objects.filter(
             project=project, is_deleted_in_file_system=False
         )
+        print(f"Project {project.name} has {len(samples)} samples to deploy.")
 
         sample_ids = request.POST.getlist("sample_ids[]")
         sample_ids = [int(sample_id) for sample_id in sample_ids]
         check_box_all_checked = request.POST.get("check_box_all_checked", False)
+        print(f"Check box all checked: {check_box_all_checked}")
+        print(f"Sample ids: {sample_ids}")
+
         if check_box_all_checked:
             samples = samples.filter(is_deleted_in_file_system=False)
         elif len(sample_ids) > 0:
             samples = samples.filter(pk__in=sample_ids)
 
         software_utils = SoftwareTreeUtils(user, project)
+        print(f"Samples to deploy: {len(samples)}")
 
         try:
             for sample in samples:

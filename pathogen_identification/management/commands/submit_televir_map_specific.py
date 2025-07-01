@@ -226,7 +226,7 @@ class RunEngine:
         )
 
         self.static_dir_plots = os.path.join(
-            self.substructure_dir,
+            self.static_dir,
             self.dir_plots,
         )
 

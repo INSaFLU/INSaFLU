@@ -344,10 +344,11 @@ def Update_RunMain(run_class: RunEngine_class, parameter_set: ParameterSet):
         name=run_class.project_name, owner=user, is_deleted=False
     )
 
-    sample = PIProject_Sample.objects.get(
-        name=run_class.sample.sample_name,
-        project=project,
-    )
+    # sample = PIProject_Sample.objects.get(
+    #    name=run_class.sample.sample_name,
+    #    project=project,
+    # )
+    sample = run_class.sample_registered
 
     reads_after_processing = run_class.sample.reads_after_processing
 
@@ -934,10 +935,11 @@ def Update_Sample_Runs_DB(run_class: RunEngine_class, parameter_set: ParameterSe
         name=run_class.project_name, owner=user, is_deleted=False
     )
 
-    sample = PIProject_Sample.objects.get(
-        project=project,
-        name=run_class.sample.sample_name,
-    )
+    # sample = PIProject_Sample.objects.get(
+    #    project=project,
+    #    name=run_class.sample.sample_name,
+    # )
+    sample = run_class.sample_registered
 
     try:
         runmain = RunMain.objects.get(

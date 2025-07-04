@@ -931,7 +931,11 @@ class TelevirReferencesTable(tables.Table):
 
     def render_source(self, record: ReferenceSourceFileMap):
         records_same_accid = ReferenceSourceFileMap.objects.filter(
-            reference_source__accid=record.reference_source.accid
+            reference_source__accid=record.reference_source.accid,
+            reference_source_file___owner__in=[
+                None,
+                record.reference_source_file.owner,
+            ],
         ).distinct("reference_source_file")
         files_flat = [
             record.reference_source_file.file for record in records_same_accid

@@ -99,7 +99,6 @@ class Command(BaseCommand):
         process_SGE = ProcessSGE()
 
         ### SETUP
-        print(user.pk)
         process_SGE.set_process_controlers(
             user,
             process_controler.get_name_televir_reference_update(user_pk=user.pk),

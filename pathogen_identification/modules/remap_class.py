@@ -1021,7 +1021,7 @@ class Remapping:
             if not self.check_mapping_output_exists():
                 self.remap_deploy()
                 self.process_bam()
-            if self.check_remap_status_paf():
+            if not self.check_remap_status_paf():
                 self.assembly_to_reference_map()
             if self.check_remap_status_bam():
                 self.remap_reads_post_process()
@@ -1966,7 +1966,9 @@ class Tandem_Remap:
             "description",
             reference_remap.mapped_contigs,
         )
-
+        print("############################")
+        print("Mapped contigs:", reference_remap.mapped_contigs)
+        print("Assembly target:", assembly_target)
         assembly_remap_drone = Remapping(
             reference_remap.mapped_subset_r1,
             assembly_target,

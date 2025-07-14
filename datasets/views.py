@@ -24,14 +24,22 @@ from constants.constants import Constants, FileExtensions, TypeFile, TypePath
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.nextclade_links import get_constext_nextclade
 from constants.software_names import SoftwareNames
-from datasets.forms import (AddConsensusDatasetForm, AddProjectsDatasetForm,
-                            AddReferencesDatasetForm, ConsensusForm,
-                            DatastesUploadDescriptionMetadataForm)
-from datasets.models import (Consensus, Dataset, DatasetConsensus, MetaKey,
-                             UploadFiles)
-from datasets.tables import (AddDatasetFromCvsFileTableMetadata,
-                             ConsensusTable, DatasetConsensusTable,
-                             DatasetTable, ProjectTable, ReferenceTable)
+from datasets.forms import (
+    AddConsensusDatasetForm,
+    AddProjectsDatasetForm,
+    AddReferencesDatasetForm,
+    ConsensusForm,
+    DatastesUploadDescriptionMetadataForm,
+)
+from datasets.models import Consensus, Dataset, DatasetConsensus, MetaKey, UploadFiles
+from datasets.tables import (
+    AddDatasetFromCvsFileTableMetadata,
+    ConsensusTable,
+    DatasetConsensusTable,
+    DatasetTable,
+    ProjectTable,
+    ReferenceTable,
+)
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project, ProjectSample, Reference
@@ -42,15 +50,16 @@ from settings.models import Software as SoftwareSettings
 from settings.tables import SoftwaresTable
 from utils.process_SGE import ProcessSGE
 from utils.result import DecodeObjects
-from utils.session_variables import (clean_check_box_in_session,
-                                     is_all_check_box_in_session)
+from utils.session_variables import (
+    clean_check_box_in_session,
+    is_all_check_box_in_session,
+)
 from utils.software import Software
 from utils.support_django_template import get_link_for_dropdown_item
 from utils.utils import ShowInfoMainPage, Utils
 
 
 class DatasetsView(LoginRequiredMixin, ListView):
-
     """
     List all datasets
     """
@@ -94,9 +103,9 @@ class DatasetsView(LoginRequiredMixin, ListView):
         context["nav_dataset"] = True
         context["show_paginatior"] = query_set.count() > Constants.PAGINATE_NUMBER
         context["query_set_count"] = query_set.count()
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
 
@@ -202,9 +211,9 @@ class AddDatasetsReferencesView(
         dt_reference_id_add_temp = {}
         if context[Constants.CHECK_BOX_ALL]:
             for reference in query_set_result:
-                dt_reference_id_add_temp[
-                    reference.id
-                ] = 1  ## add the ids that are in the tables
+                dt_reference_id_add_temp[reference.id] = (
+                    1  ## add the ids that are in the tables
+                )
             for key in self.request.session.keys():
                 if (
                     key.startswith(Constants.CHECK_BOX)
@@ -225,9 +234,9 @@ class AddDatasetsReferencesView(
         context["add_all_references_message"] = "Add {} reference{}".format(
             len(query_set_result), pluralize(len(query_set_result), "s")
         )
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
 
         ## Add references to DataSet
         if self.request.POST:
@@ -442,9 +451,9 @@ class AddDatasetsConsensusView(
         dt_reference_id_add_temp = {}
         if context[Constants.CHECK_BOX_ALL]:
             for consensus in query_set_result:
-                dt_reference_id_add_temp[
-                    consensus.id
-                ] = 1  ## add the ids that are in the tables
+                dt_reference_id_add_temp[consensus.id] = (
+                    1  ## add the ids that are in the tables
+                )
             for key in self.request.session.keys():
                 if (
                     key.startswith(Constants.CHECK_BOX)
@@ -466,9 +475,9 @@ class AddDatasetsConsensusView(
         context["add_all_references_message"] = "Add {} consensus to data set".format(
             len(query_set_result)
         )
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
 
         ## Add references to DataSet
         if self.request.POST:
@@ -686,9 +695,9 @@ class AddDatasetsProjectsView(
         dt_reference_id_add_temp = {}
         if context[Constants.CHECK_BOX_ALL]:
             for consensus in query_set_result:
-                dt_reference_id_add_temp[
-                    consensus.id
-                ] = 1  ## add the ids that are in the tables
+                dt_reference_id_add_temp[consensus.id] = (
+                    1  ## add the ids that are in the tables
+                )
             for key in self.request.session.keys():
                 if (
                     key.startswith(Constants.CHECK_BOX)
@@ -710,9 +719,9 @@ class AddDatasetsProjectsView(
         context["add_all_references_message"] = "Add {} project{}".format(
             len(query_set_result), pluralize(len(query_set_result), "s")
         )
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
 
         ## Add references to DataSet
         if self.request.POST:
@@ -771,7 +780,7 @@ class AddDatasetsProjectsView(
                 vect_sample_id_add = vect_sample_id_add_temp
 
             ### start adding...
-            default_software = DefaultProjectSoftware()	
+            default_software = DefaultProjectSoftware()
             decode_coverage = DecodeObjects()
             manageDatabase = ManageDatabase()
 
@@ -800,35 +809,34 @@ class AddDatasetsProjectsView(
                         continue
 
                     # Only add the ones that have all segments with suficient coverage
-                    #meta_value = manageDatabase.get_project_sample_metakey_last(project_sample, 
-                    #                                                            MetaKeyAndValue.META_KEY_Coverage, 
+                    # meta_value = manageDatabase.get_project_sample_metakey_last(project_sample,
+                    #                                                            MetaKeyAndValue.META_KEY_Coverage,
                     #                                                            MetaKeyAndValue.META_VALUE_Success)
-                    #if (meta_value is None): continue
+                    # if (meta_value is None): continue
 
-                    #decode_coverage = DecodeObjects()
-                    #coverage = decode_coverage.decode_result(meta_value.description)
+                    # decode_coverage = DecodeObjects()
+                    # coverage = decode_coverage.decode_result(meta_value.description)
 
                     ### get consensus
-                    #sample_tecnology = ConstantsSettings.TECHNOLOGY_generic
-                    #if project_sample.is_sample_illumina(): 
+                    # sample_tecnology = ConstantsSettings.TECHNOLOGY_generic
+                    # if project_sample.is_sample_illumina():
                     #    sample_tecnology = ConstantsSettings.TECHNOLOGY_illumina
-                    #else:
+                    # else:
                     #    sample_tecnology = ConstantsSettings.TECHNOLOGY_minion
-                    #limit_to_mask_consensus = -1               
-                    #if (project_sample.is_mask_consensus_sequences): 
+                    # limit_to_mask_consensus = -1
+                    # if (project_sample.is_mask_consensus_sequences):
                     #    limit_to_mask_consensus = int(default_software.get_mask_consensus_single_parameter(project_sample,
                     #            DefaultParameters.MASK_CONSENSUS_threshold, sample_tecnology))
-                    
-                    #consensus_fasta = project_sample.get_consensus_file(TypePath.MEDIA_ROOT)
-                    #temp_dir = self.utils.get_temp_dir()
-                    #if (not self.utils.filter_fasta_all_sequences(consensus_fasta, project_sample.sample.name, coverage, limit_to_mask_consensus, temp_dir)):
+
+                    # consensus_fasta = project_sample.get_consensus_file(TypePath.MEDIA_ROOT)
+                    # temp_dir = self.utils.get_temp_dir()
+                    # if (not self.utils.filter_fasta_all_sequences(consensus_fasta, project_sample.sample.name, coverage, limit_to_mask_consensus, temp_dir)):
                     #     self.utils.remove_dir(temp_dir)
                     #     continue
-                    #self.utils.remove_dir(temp_dir)
+                    # self.utils.remove_dir(temp_dir)
 
                     # Only include the ones that have all segments
-                    #if not default_software.include_consensus(project_sample): continue
-
+                    # if not default_software.include_consensus(project_sample): continue
 
                     try:
                         dataset_consensus = DatasetConsensus.objects.get(
@@ -863,13 +871,13 @@ class AddDatasetsProjectsView(
                         consensus_add += 1
 
                 ### Add the reference of this project if not there yet
-                build = 'NA'
+                build = "NA"
                 parameters = Parameter.objects.filter(dataset=dataset)
-                if(len(parameters) > 0):
-                     build = parameters[0].parameter
-                
-                if(build != SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_ncov):
-                     try:
+                if len(parameters) > 0:
+                    build = parameters[0].parameter
+
+                if build != SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_ncov:
+                    try:
                         dataset_consensus = DatasetConsensus.objects.get(
                             reference=project.reference, dataset=dataset
                         )
@@ -878,7 +886,7 @@ class AddDatasetsProjectsView(
                             dataset_consensus.is_error = False
                             dataset_consensus.save()
                             reference_add += 1
-                     except DatasetConsensus.DoesNotExist:
+                    except DatasetConsensus.DoesNotExist:
                         dataset_consensus = DatasetConsensus()
                         dataset_consensus.name = project.reference.name
                         dataset_consensus.dataset = dataset
@@ -967,9 +975,9 @@ class UploadNewConsensusView(
         context["nav_dataset"] = True
         context["nav_modal"] = True  ## short the size of modal window
         context["pk"] = self.kwargs["pk"]  ## pk of dataset, need to return
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         return context
 
     @transaction.atomic
@@ -1106,90 +1114,155 @@ class UploadNewConsensusView(
 
 class ShowDatasetsConsensusView(LoginRequiredMixin, ListView):
 
-	model = Project
-	template_name = 'datasets/datasets_consensus_show.html'
-	context_object_name = 'dataset_consensus'
-	software = Software()
-	
-	def get_context_data(self, **kwargs):
-		context = super(ShowDatasetsConsensusView, self).get_context_data(**kwargs)
-		dataset = Dataset.objects.get(pk=self.kwargs['pk'])
-		
-		### can't see this project
-		context['nav_dataset'] = True
-		if (dataset.owner.id != self.request.user.id): 
-			context['error_cant_see'] = "1"
-			return context
-		
-		query_set = DatasetConsensus.objects.filter(dataset=dataset, is_deleted=False, is_error=False).order_by('creation_date')
-		tag_search = 'search_add_project_sample'
-		### filter the search
-		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)): 
-			query_set = query_set.filter(Q(name__icontains=self.request.GET.get(tag_search)) |\
-										Q(type_subtype__icontains=self.request.GET.get(tag_search)))
-		table = DatasetConsensusTable(query_set)
-		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
+    model = Project
+    template_name = "datasets/datasets_consensus_show.html"
+    context_object_name = "dataset_consensus"
+    software = Software()
 
-		if (self.request.GET.get(tag_search) != None): context[tag_search] = self.request.GET.get('search_add_project_sample')		
-		context['table'] = table
-		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
-		context['query_set_count'] = query_set.count()
-		context['dataset'] = dataset
-		
-		## metadata already there
-		if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_CSV)):
-			context['dataset_file_result_csv'] = get_link_for_dropdown_item(
-				dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_RESULT_CSV))
-		if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_TSV)):
-			context['dataset_file_result_tsv'] = get_link_for_dropdown_item(
-				dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_RESULT_TSV))
-		if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV)):
-			context['dataset_file_nextstrain_tsv'] = get_link_for_dropdown_item(
-				dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV))
-		if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_all_consensus)):
-			context['all_consensus'] = get_link_for_dropdown_item(
-				dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_RESULT_all_consensus))
-		if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_auspice_zip)):
-			context['nextstrain_auspice_zip'] = get_link_for_dropdown_item(
-			   dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_nextstrain_auspice_zip))				
-		if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_error)):
-			context['nextstrain_error'] = get_link_for_dropdown_item(
-				dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_nextstrain_error))
-			
-		## all files zipped
-		if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_all_files_zipped)):
-			context['download_all_files'] = get_link_for_dropdown_item(
-				dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_all_files_zipped),
-				"{}_{}_{}".format(os.path.splitext(Dataset.DATASET_FILE_NAME_all_files_zipped)[0],
-				dataset.get_clean_dataset_name(), datetime.datetime.now().strftime(settings.DATE_FORMAT_FOR_SHOW)))
+    def get_context_data(self, **kwargs):
+        context = super(ShowDatasetsConsensusView, self).get_context_data(**kwargs)
+        dataset = Dataset.objects.get(pk=self.kwargs["pk"])
 
-		context['different_references'] = dataset.get_number_different_references()
-		context['number_of_consensus'] = dataset.number_of_sequences_from_consensus
-		context['number_of_references'] = dataset.number_of_sequences_from_references
-		context['n_consensus_from_projects'] = dataset.number_of_sequences_from_projects
-		context['spinner_url'] = os.path.join("/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.AJAX_LOADING_GIF)
-		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
-		
-		#### nextclade link
-		#is_sars_cov_2 = software_pangolin.is_ref_sars_cov_2(project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))
-		# TODO define this elsewhere...
-		SPECIES_TAG = {
-			SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic: "",
+        ### can't see this project
+        context["nav_dataset"] = True
+        if dataset.owner.id != self.request.user.id:
+            context["error_cant_see"] = "1"
+            return context
+
+        query_set = DatasetConsensus.objects.filter(
+            dataset=dataset, is_deleted=False, is_error=False
+        ).order_by("creation_date")
+        tag_search = "search_add_project_sample"
+        ### filter the search
+        if self.request.GET.get(tag_search) != None and self.request.GET.get(
+            tag_search
+        ):
+            query_set = query_set.filter(
+                Q(name__icontains=self.request.GET.get(tag_search))
+                | Q(type_subtype__icontains=self.request.GET.get(tag_search))
+            )
+        table = DatasetConsensusTable(query_set)
+        RequestConfig(
+            self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
+        ).configure(table)
+
+        if self.request.GET.get(tag_search) != None:
+            context[tag_search] = self.request.GET.get("search_add_project_sample")
+        context["table"] = table
+        context["show_paginatior"] = query_set.count() > Constants.PAGINATE_NUMBER
+        context["query_set_count"] = query_set.count()
+        context["dataset"] = dataset
+
+        ## metadata already there
+        if os.path.exists(
+            dataset.get_global_file_by_dataset(
+                TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_CSV
+            )
+        ):
+            context["dataset_file_result_csv"] = get_link_for_dropdown_item(
+                dataset.get_global_file_by_dataset(
+                    TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_RESULT_CSV
+                )
+            )
+        if os.path.exists(
+            dataset.get_global_file_by_dataset(
+                TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_TSV
+            )
+        ):
+            context["dataset_file_result_tsv"] = get_link_for_dropdown_item(
+                dataset.get_global_file_by_dataset(
+                    TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_RESULT_TSV
+                )
+            )
+        if os.path.exists(
+            dataset.get_global_file_by_dataset(
+                TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV
+            )
+        ):
+            context["dataset_file_nextstrain_tsv"] = get_link_for_dropdown_item(
+                dataset.get_global_file_by_dataset(
+                    TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV
+                )
+            )
+        if os.path.exists(
+            dataset.get_global_file_by_dataset(
+                TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_all_consensus
+            )
+        ):
+            context["all_consensus"] = get_link_for_dropdown_item(
+                dataset.get_global_file_by_dataset(
+                    TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_RESULT_all_consensus
+                )
+            )
+        if os.path.exists(
+            dataset.get_global_file_by_dataset(
+                TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_auspice_zip
+            )
+        ):
+            context["nextstrain_auspice_zip"] = get_link_for_dropdown_item(
+                dataset.get_global_file_by_dataset(
+                    TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_nextstrain_auspice_zip
+                )
+            )
+        if os.path.exists(
+            dataset.get_global_file_by_dataset(
+                TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_error
+            )
+        ):
+            context["nextstrain_error"] = get_link_for_dropdown_item(
+                dataset.get_global_file_by_dataset(
+                    TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_nextstrain_error
+                )
+            )
+
+        ## all files zipped
+        if os.path.exists(
+            dataset.get_global_file_by_dataset(
+                TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_all_files_zipped
+            )
+        ):
+            context["download_all_files"] = get_link_for_dropdown_item(
+                dataset.get_global_file_by_dataset(
+                    TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_all_files_zipped
+                ),
+                "{}_{}_{}".format(
+                    os.path.splitext(Dataset.DATASET_FILE_NAME_all_files_zipped)[0],
+                    dataset.get_clean_dataset_name(),
+                    datetime.datetime.now().strftime(settings.DATE_FORMAT_FOR_SHOW),
+                ),
+            )
+
+        context["different_references"] = dataset.get_number_different_references()
+        context["number_of_consensus"] = dataset.number_of_sequences_from_consensus
+        context["number_of_references"] = dataset.number_of_sequences_from_references
+        context["n_consensus_from_projects"] = dataset.number_of_sequences_from_projects
+        context["spinner_url"] = os.path.join(
+            "/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.AJAX_LOADING_GIF
+        )
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
+
+        #### nextclade link
+        # is_sars_cov_2 = software_pangolin.is_ref_sars_cov_2(project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))
+        # TODO define this elsewhere...
+        SPECIES_TAG = {
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic: "",
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic_time: "",
-			SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_ncov: Reference.SPECIES_SARS_COV_2,
-			SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y: Reference.SPECIES_INFLUENZA,
-			SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y: Reference.SPECIES_INFLUENZA,
-			SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y: Reference.SPECIES_INFLUENZA,
-			SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y: Reference.SPECIES_INFLUENZA,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_ncov: Reference.SPECIES_SARS_COV_2,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y: Reference.SPECIES_INFLUENZA,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y: Reference.SPECIES_INFLUENZA,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y: Reference.SPECIES_INFLUENZA,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y: Reference.SPECIES_INFLUENZA,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha: Reference.SPECIES_INFLUENZA,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na: Reference.SPECIES_INFLUENZA,
-            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2: Reference.SPECIES_INFLUENZA,                       
-            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb1: Reference.SPECIES_INFLUENZA,           
-            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pa: Reference.SPECIES_INFLUENZA,           
-            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_np: Reference.SPECIES_INFLUENZA,            
-            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_mp: Reference.SPECIES_INFLUENZA,            
-            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns: Reference.SPECIES_INFLUENZA,            
-			SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpx: Reference.SPECIES_MPXV,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2: Reference.SPECIES_INFLUENZA,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb1: Reference.SPECIES_INFLUENZA,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pa: Reference.SPECIES_INFLUENZA,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_np: Reference.SPECIES_INFLUENZA,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_mp: Reference.SPECIES_INFLUENZA,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns: Reference.SPECIES_INFLUENZA,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpx: Reference.SPECIES_MPXV,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpox_clade_i: Reference.SPECIES_MPXV,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpox_mpxv: Reference.SPECIES_MPXV,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a: Reference.SPECIES_RSV,
@@ -1199,227 +1272,336 @@ class ShowDatasetsConsensusView(LoginRequiredMixin, ListView):
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv2: Reference.SPECIES_DENGUE,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv3: Reference.SPECIES_DENGUE,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4: Reference.SPECIES_DENGUE,
-		}
+        }
 
-		build = 'NA'
-		specie_tag = ''
-		parameters = Parameter.objects.filter(dataset__pk=self.kwargs['pk'])
-		if(len(parameters) > 0):
-			build = parameters[0].parameter
-			specie_tag = SPECIES_TAG[build]
+        build = "NA"
+        specie_tag = ""
+        parameters = Parameter.objects.filter(dataset__pk=self.kwargs["pk"])
+        if len(parameters) > 0:
+            build = parameters[0].parameter
+            specie_tag = SPECIES_TAG[build]
 
-		# If the build is generic try to look at the reference...
-		if(build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic):
-			reference = dataset.get_first_reference()
-			if not reference is None:
-				specie_tag = self.software.get_species_tag(reference)
-        
-		if(specie_tag != ''):
-			if (os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_all_consensus)) and \
-				settings.SHOW_NEXTCLADE_LINK):		## docker versions doesn't show NextClade link
-				context = get_constext_nextclade(dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_RESULT_all_consensus),
-				    context, get_current_site(self.request), specie_tag)
+        # If the build is generic try to look at the reference...
+        if build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic:
+            reference = dataset.get_first_reference()
+            if not reference is None:
+                specie_tag = self.software.get_species_tag(reference)
 
-		return context
-				
+        if specie_tag != "":
+            if (
+                os.path.exists(
+                    dataset.get_global_file_by_dataset(
+                        TypePath.MEDIA_ROOT,
+                        Dataset.DATASET_FILE_NAME_RESULT_all_consensus,
+                    )
+                )
+                and settings.SHOW_NEXTCLADE_LINK
+            ):  ## docker versions doesn't show NextClade link
+                context = get_constext_nextclade(
+                    dataset.get_global_file_by_dataset(
+                        TypePath.MEDIA_URL,
+                        Dataset.DATASET_FILE_NAME_RESULT_all_consensus,
+                    ),
+                    context,
+                    get_current_site(self.request),
+                    specie_tag,
+                )
+
+        return context
 
 
-class UpdateMetadataDataset(LoginRequiredMixin, FormValidMessageMixin, generic.CreateView):
-	"""
-	Update metadata
-	"""
-	utils = Utils()
-	template_name = 'datasets/datasets_upload_metadata.html'
-	model = UploadFiles
-	fields = ['file_name']
-	
-	def get_success_url(self):
-		"""
-		get source_pk from consensus dataset, need to pass it in context
-		"""
-		return reverse_lazy('show-dataset-consensus', kwargs={'pk': self.kwargs.get('pk')})
+class UpdateMetadataDataset(
+    LoginRequiredMixin, FormValidMessageMixin, generic.CreateView
+):
+    """
+    Update metadata
+    """
 
-	def get_context_data(self, **kwargs):
-		context = super(UpdateMetadataDataset, self).get_context_data(**kwargs)
-		
-		### test anonymous account
-		disable_upload_files = False
-		try:
-			profile = Profile.objects.get(user=self.request.user)
-			if (profile.only_view_project): disable_upload_files = True
-		except Profile.DoesNotExist:
-			pass
-		
-		try:
-			dataset = Dataset.objects.get(owner=self.request.user, pk=self.kwargs.get('pk'))
-		except Dataset.DoesNotExist:
-			if (profile.only_view_project): disable_upload_files = True
-			pass
-		
-		tag_search = 'search_datasets'
-		query_set = UploadFiles.objects.filter(owner__id=self.request.user.id, is_deleted=False,\
-				type_file__name=TypeFile.TYPE_FILE_dataset_file_metadata, is_valid=True,
-				dataset=dataset).order_by('-creation_date')
-		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)): 
-			query_set = query_set.filter(Q(file_name__icontains=self.request.GET.get(tag_search)) |\
-										Q(owner__username__icontains=self.request.GET.get(tag_search)))
-		table = AddDatasetFromCvsFileTableMetadata(query_set)
-		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
-		if (self.request.GET.get(tag_search) != None): context[tag_search] = self.request.GET.get(tag_search)
-		context['table'] = table
-		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
-		context['nav_dataset'] = True
-		context['disable_upload_files'] = disable_upload_files
-		
-		### test if can add other csv file
-		count_not_complete = UploadFiles.objects.filter(owner__id=self.request.user.id, is_deleted=False,\
-				type_file__name=TypeFile.TYPE_FILE_sample_file_metadata, is_processed=False, is_valid=True,
-				dataset=dataset).count()
-		if (count_not_complete > 0):
-			context['can_add_other_file'] = "You cannot add other file because there is a file in pipeline."
-			context['disable_upload_files'] = True
-			
-		context['show_info_main_page'] = ShowInfoMainPage() ## show main information about the institute 
-		context['dataset'] = dataset						## dataset in analysis 
-		return context
+    utils = Utils()
+    template_name = "datasets/datasets_upload_metadata.html"
+    model = UploadFiles
+    fields = ["file_name"]
 
-	def form_valid(self, form):
-		"""
-		Validate the form
-		"""
-		### test anonymous account
-		try:
-			profile = Profile.objects.get(user=self.request.user)
-			if (profile.only_view_project):
-				messages.warning(self.request, "'{}' account can not add metadata.".format(self.request.user.username), fail_silently=True)
-				return super(UpdateMetadataDataset, self).form_invalid(form)
-		except Profile.DoesNotExist:
-			pass
-		
-		return super(UpdateMetadataDataset, self).form_valid(form)
+    def get_success_url(self):
+        """
+        get source_pk from consensus dataset, need to pass it in context
+        """
+        return reverse_lazy(
+            "show-dataset-consensus", kwargs={"pk": self.kwargs.get("pk")}
+        )
 
-	form_valid_message = ""		## need to have this, even empty
+    def get_context_data(self, **kwargs):
+        context = super(UpdateMetadataDataset, self).get_context_data(**kwargs)
 
-class AddSingleMetadataDatasetFile(LoginRequiredMixin, FormValidMessageMixin, generic.FormView):
+        ### test anonymous account
+        disable_upload_files = False
+        try:
+            profile = Profile.objects.get(user=self.request.user)
+            if profile.only_view_project:
+                disable_upload_files = True
+        except Profile.DoesNotExist:
+            pass
 
-	"""
-	Create a new reference
-	"""
-	form_class = DatastesUploadDescriptionMetadataForm
-	template_name = 'datasets/datasets_upload_description_file_metadata.html'
+        try:
+            dataset = Dataset.objects.get(
+                owner=self.request.user, pk=self.kwargs.get("pk")
+            )
+        except Dataset.DoesNotExist:
+            if profile.only_view_project:
+                disable_upload_files = True
+            pass
 
-	def get_form_kwargs(self):
-		"""
-		Set the request to pass in the form
-		"""
-		kw = super(AddSingleMetadataDatasetFile, self).get_form_kwargs()
-		kw['request'] = self.request
-		kw['pk'] = self.kwargs.get('pk')
-		return kw
-	
-	def get_success_url(self):
-		"""
-		get source_pk from consensus dataset, need to pass it in context
-		"""
-		return reverse_lazy('dataset-update-metadata', kwargs={'pk': self.kwargs.get('pk')})
-	
-	def get_context_data(self, **kwargs):
-		context = super(AddSingleMetadataDatasetFile, self).get_context_data(**kwargs)
-		if ('form' in kwargs and hasattr(kwargs['form'], 'error_in_file')):
-			context['error_in_file'] = mark_safe(kwargs['form'].error_in_file.replace('\n', "<br>")) ## pass a list
-		
-		disable_upload_files = False
-		try:
-			profile = Profile.objects.get(user=self.request.user)
-			if (profile.only_view_project): disable_upload_files = True
-		except Profile.DoesNotExist:
-			pass
-		
-		try:
-			dataset = Dataset.objects.get(owner=self.request.user, pk=self.kwargs.get('pk'))
-		except Dataset.DoesNotExist:
-			if (profile.only_view_project): disable_upload_files = True
-			pass
-		
-		context['nav_dataset'] = True
-		context['disable_upload_files'] = disable_upload_files
-		context['nav_modal'] = True			## short the size of modal window
-		context['dataset'] = dataset		## dataset in analysis
-		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
-		return context
+        tag_search = "search_datasets"
+        query_set = UploadFiles.objects.filter(
+            owner__id=self.request.user.id,
+            is_deleted=False,
+            type_file__name=TypeFile.TYPE_FILE_dataset_file_metadata,
+            is_valid=True,
+            dataset=dataset,
+        ).order_by("-creation_date")
+        if self.request.GET.get(tag_search) != None and self.request.GET.get(
+            tag_search
+        ):
+            query_set = query_set.filter(
+                Q(file_name__icontains=self.request.GET.get(tag_search))
+                | Q(owner__username__icontains=self.request.GET.get(tag_search))
+            )
+        table = AddDatasetFromCvsFileTableMetadata(query_set)
+        RequestConfig(
+            self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
+        ).configure(table)
+        if self.request.GET.get(tag_search) != None:
+            context[tag_search] = self.request.GET.get(tag_search)
+        context["table"] = table
+        context["show_paginatior"] = query_set.count() > Constants.PAGINATE_NUMBER
+        context["nav_dataset"] = True
+        context["disable_upload_files"] = disable_upload_files
 
-	def form_valid(self, form):
-		
-		### test anonymous account
-		try:
-			profile = Profile.objects.get(user=self.request.user)
-			if (profile.only_view_project):
-				messages.warning(self.request, "'{}' account can not add file with metadata.".format(self.request.user.username), fail_silently=True)
-				return super(AddSingleMetadataDatasetFile, self).form_invalid(form)
-		except Profile.DoesNotExist:
-			pass
+        ### test if can add other csv file
+        count_not_complete = UploadFiles.objects.filter(
+            owner__id=self.request.user.id,
+            is_deleted=False,
+            type_file__name=TypeFile.TYPE_FILE_sample_file_metadata,
+            is_processed=False,
+            is_valid=True,
+            dataset=dataset,
+        ).count()
+        if count_not_complete > 0:
+            context["can_add_other_file"] = (
+                "You cannot add other file because there is a file in pipeline."
+            )
+            context["disable_upload_files"] = True
 
-		utils = Utils()
-		software = Software()
-		path_name = form.cleaned_data['path_name']
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
+        context["dataset"] = dataset  ## dataset in analysis
+        return context
 
-		## create a genbank file
-		if (not path_name is None):
-			try:
-				dataset = Dataset.objects.get(owner=self.request.user, pk=self.kwargs.get('pk'))
-			except Dataset.DoesNotExist:
-				messages.warning(self.request, "No Dataset was found for this is '{}'".format(self.kwargs.get('pk')), fail_silently=True)
-				return super(AddSingleMetadataDatasetFile, self).form_invalid(form)
-		
-			upload_files = form.save(commit=False)
-			upload_files.is_valid = True
-			upload_files.is_processed = False
-			upload_files.number_errors = 0
-			
-			try:
-				type_file = MetaKey.objects.get(name=TypeFile.TYPE_FILE_dataset_file_metadata)
-			except MetaKey.DoesNotExist:
-				type_file = MetaKey()
-				type_file.name = TypeFile.TYPE_FILE_dataset_file_metadata
-				type_file.save()
-			
-			upload_files.type_file = type_file
-			upload_files.dataset = dataset
-			upload_files.file_name = utils.clean_name(ntpath.basename(path_name.name))
-			upload_files.owner = self.request.user
-			
-			upload_files.description = ""
-			upload_files.save()				## need this save because of 
-		
-			## move the files to the right place
-			sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_upload_file(self.request.user.id,\
-													TypeFile.TYPE_FILE_dataset_file_metadata), upload_files.file_name)
-			sz_file_to, path_added = utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
-			utils.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), upload_files.path_name.name), sz_file_to)
-			software.dos_2_unix(sz_file_to)
-			if path_added is None:
-				upload_files.path_name.name = os.path.join(utils.get_path_upload_file(self.request.user.id,\
-									TypeFile.TYPE_FILE_dataset_file_metadata), ntpath.basename(sz_file_to))
-			else:
-				upload_files.path_name.name = os.path.join(utils.get_path_upload_file(self.request.user.id,\
-									TypeFile.TYPE_FILE_dataset_file_metadata), path_added, ntpath.basename(sz_file_to))
-			upload_files.save()
-			
+    def form_valid(self, form):
+        """
+        Validate the form
+        """
+        ### test anonymous account
+        try:
+            profile = Profile.objects.get(user=self.request.user)
+            if profile.only_view_project:
+                messages.warning(
+                    self.request,
+                    "'{}' account can not add metadata.".format(
+                        self.request.user.username
+                    ),
+                    fail_silently=True,
+                )
+                return super(UpdateMetadataDataset, self).form_invalid(form)
+        except Profile.DoesNotExist:
+            pass
+
+        return super(UpdateMetadataDataset, self).form_valid(form)
+
+    form_valid_message = ""  ## need to have this, even empty
+
+
+class AddSingleMetadataDatasetFile(
+    LoginRequiredMixin, FormValidMessageMixin, generic.FormView
+):
+    """
+    Create a new reference
+    """
+
+    form_class = DatastesUploadDescriptionMetadataForm
+    template_name = "datasets/datasets_upload_description_file_metadata.html"
+
+    def get_form_kwargs(self):
+        """
+        Set the request to pass in the form
+        """
+        kw = super(AddSingleMetadataDatasetFile, self).get_form_kwargs()
+        kw["request"] = self.request
+        kw["pk"] = self.kwargs.get("pk")
+        return kw
+
+    def get_success_url(self):
+        """
+        get source_pk from consensus dataset, need to pass it in context
+        """
+        return reverse_lazy(
+            "dataset-update-metadata", kwargs={"pk": self.kwargs.get("pk")}
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super(AddSingleMetadataDatasetFile, self).get_context_data(**kwargs)
+        if "form" in kwargs and hasattr(kwargs["form"], "error_in_file"):
+            context["error_in_file"] = mark_safe(
+                kwargs["form"].error_in_file.replace("\n", "<br>")
+            )  ## pass a list
+
+        disable_upload_files = False
+        try:
+            profile = Profile.objects.get(user=self.request.user)
+            if profile.only_view_project:
+                disable_upload_files = True
+        except Profile.DoesNotExist:
+            pass
+
+        try:
+            dataset = Dataset.objects.get(
+                owner=self.request.user, pk=self.kwargs.get("pk")
+            )
+        except Dataset.DoesNotExist:
+            if profile.only_view_project:
+                disable_upload_files = True
+            pass
+
+        context["nav_dataset"] = True
+        context["disable_upload_files"] = disable_upload_files
+        context["nav_modal"] = True  ## short the size of modal window
+        context["dataset"] = dataset  ## dataset in analysis
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
+        return context
+
+    def form_valid(self, form):
+
+        ### test anonymous account
+        try:
+            profile = Profile.objects.get(user=self.request.user)
+            if profile.only_view_project:
+                messages.warning(
+                    self.request,
+                    "'{}' account can not add file with metadata.".format(
+                        self.request.user.username
+                    ),
+                    fail_silently=True,
+                )
+                return super(AddSingleMetadataDatasetFile, self).form_invalid(form)
+        except Profile.DoesNotExist:
+            pass
+
+        utils = Utils()
+        software = Software()
+        path_name = form.cleaned_data["path_name"]
+
+        ## create a genbank file
+        if not path_name is None:
+            try:
+                dataset = Dataset.objects.get(
+                    owner=self.request.user, pk=self.kwargs.get("pk")
+                )
+            except Dataset.DoesNotExist:
+                messages.warning(
+                    self.request,
+                    "No Dataset was found for this is '{}'".format(
+                        self.kwargs.get("pk")
+                    ),
+                    fail_silently=True,
+                )
+                return super(AddSingleMetadataDatasetFile, self).form_invalid(form)
+
+            upload_files = form.save(commit=False)
+            upload_files.is_valid = True
+            upload_files.is_processed = False
+            upload_files.number_errors = 0
+
+            try:
+                type_file = MetaKey.objects.get(
+                    name=TypeFile.TYPE_FILE_dataset_file_metadata
+                )
+            except MetaKey.DoesNotExist:
+                type_file = MetaKey()
+                type_file.name = TypeFile.TYPE_FILE_dataset_file_metadata
+                type_file.save()
+
+            upload_files.type_file = type_file
+            upload_files.dataset = dataset
+            upload_files.file_name = utils.clean_name(ntpath.basename(path_name.name))
+            upload_files.owner = self.request.user
+
+            upload_files.description = ""
+            upload_files.save()  ## need this save because of
+
+            ## move the files to the right place
+            sz_file_to = os.path.join(
+                getattr(settings, "MEDIA_ROOT", None),
+                utils.get_path_upload_file(
+                    self.request.user.id, TypeFile.TYPE_FILE_dataset_file_metadata
+                ),
+                upload_files.file_name,
+            )
+            sz_file_to, path_added = utils.get_unique_file(
+                sz_file_to
+            )  ## get unique file name, user can upload files with same name...
+            utils.move_file(
+                os.path.join(
+                    getattr(settings, "MEDIA_ROOT", None), upload_files.path_name.name
+                ),
+                sz_file_to,
+            )
+            software.dos_2_unix(sz_file_to)
+            if path_added is None:
+                upload_files.path_name.name = os.path.join(
+                    utils.get_path_upload_file(
+                        self.request.user.id, TypeFile.TYPE_FILE_dataset_file_metadata
+                    ),
+                    ntpath.basename(sz_file_to),
+                )
+            else:
+                upload_files.path_name.name = os.path.join(
+                    utils.get_path_upload_file(
+                        self.request.user.id, TypeFile.TYPE_FILE_dataset_file_metadata
+                    ),
+                    path_added,
+                    ntpath.basename(sz_file_to),
+                )
+            upload_files.save()
+
             # This part was commented before... maybe comment it again?
-			try:                                
-				process_SGE = ProcessSGE()
-				#taskID =  process_SGE.set_read_sample_file_with_metadata(upload_files, self.request.user)
-				taskID =  process_SGE.set_collect_dataset_global_files_for_update_metadata(dataset=dataset, user=self.request.user)
-			except Exception as e:
-				# messages.success(self.request, "File '" + upload_files.file_name + "' with metadata was uploaded successfully with strange results " + str(e), fail_silently=True)                
-				return super(AddSingleMetadataDatasetFile, self).form_invalid(form)
-			
-			messages.success(self.request, "File '" + upload_files.file_name + "' with metadata was uploaded successfully", fail_silently=True)
-			return super(AddSingleMetadataDatasetFile, self).form_valid(form)
-		return super(AddSingleMetadataDatasetFile, self).form_invalid(form)
+            try:
+                process_SGE = ProcessSGE()
+                # taskID =  process_SGE.set_read_sample_file_with_metadata(upload_files, self.request.user)
+                taskID = (
+                    process_SGE.set_collect_dataset_global_files_for_update_metadata(
+                        dataset=dataset, user=self.request.user
+                    )
+                )
+            except Exception as e:
+                # messages.success(self.request, "File '" + upload_files.file_name + "' with metadata was uploaded successfully with strange results " + str(e), fail_silently=True)
+                return super(AddSingleMetadataDatasetFile, self).form_invalid(form)
 
-	## static method, not need for now.
-	form_valid_message = ""		## need to have this
+            messages.success(
+                self.request,
+                "File '"
+                + upload_files.file_name
+                + "' with metadata was uploaded successfully",
+                fail_silently=True,
+            )
+            return super(AddSingleMetadataDatasetFile, self).form_valid(form)
+        return super(AddSingleMetadataDatasetFile, self).form_invalid(form)
+
+    ## static method, not need for now.
+    form_valid_message = ""  ## need to have this
+
 
 class DatasetsSettingsView(LoginRequiredMixin, ListView):
     """
@@ -1481,9 +1663,9 @@ class DatasetsSettingsView(LoginRequiredMixin, ListView):
             )
 
         context["all_softwares"] = all_tables
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
         context["dataset"] = dataset
         context["main_settings"] = False
         context["dataset_settings"] = True

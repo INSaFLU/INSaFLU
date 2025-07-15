@@ -1740,26 +1740,12 @@ class ReferencePanelManagement(LoginRequiredMixin, generic.CreateView):
         return context
 
 
-from django.views.generic import ListView, TemplateView
+from django.views.generic import ListView
 
 from pathogen_identification.tables import (
     ReferenceSourceFileTable,
     TelevirReferencesTable,
 )
-
-
-class ReferenceManagementBase(TemplateView):
-    """
-    page to manage and create insaflu references files, generate panels.
-    """
-
-    template_name = "pathogen_identification/televir_references_base.html"
-
-    def get_context_data(self, **kwargs) -> Dict[str, Any]:
-
-        context = super().get_context_data(**kwargs)
-        context["nav_reference"] = True
-        return context
 
 
 class ReferenceFileManagement(LoginRequiredMixin, generic.CreateView):
@@ -1794,6 +1780,13 @@ class ReferenceFileManagement(LoginRequiredMixin, generic.CreateView):
         files_table = ReferenceSourceFileTable(files)
         RequestConfig(self.request, paginate={"per_page": 15}).configure(files_table)
 
+        process_controler = ProcessControler()
+        reference_update_running = ProcessControler.objects.filter(
+            name=process_controler.get_name_televir_reference_update(1),
+            is_running=True,
+        ).exists()
+
+        context["reference_update_running"] = reference_update_running
         context["files_table"] = files_table
         context["nav_reference"] = True
         context["show_paginatior"] = files.count() > 15
@@ -1893,6 +1886,14 @@ class ReferenceManagement(LoginRequiredMixin, generic.CreateView):
             self.request,
             paginate={"per_page": ConstantsSettings.TELEVIR_REFERENCE_PAGINATE_NUMBER},
         ).configure(files_table)
+
+        process_controler = ProcessControler()
+        referene_update_running = ProcessControler.objects.filter(
+            name=process_controler.get_name_televir_reference_update(1),
+            is_running=True,
+        ).exists()
+
+        context["reference_update_running"] = referene_update_running
 
         context["summary"] = summary
         context["files_table"] = files_table

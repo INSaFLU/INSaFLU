@@ -9,8 +9,10 @@ from django.conf import settings
 from django.contrib.auth.models import User
 
 # Create your models here.
-from django.contrib.gis.db.models import GeoManager  # #  change to django  2.x
-from django.contrib.gis.db.models import PointField
+from django.contrib.gis.db.models import (
+    GeoManager,  # #  change to django  2.x
+    PointField,
+)
 from django.db import models
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
@@ -27,9 +29,11 @@ def reference_directory_path(instance, filename):
     # file will be uploaded to MEDIA_ROOT/<filename>
     return "uploads/generic_data/user_{0}/{1}".format(instance.owner.id, filename)
 
+
 def primer_directory_path(instance, filename):
     # file will be uploaded to MEDIA_ROOT/<filename>
     return "uploads/generic_data/user_{0}/{1}".format(instance.owner.id, filename)
+
 
 def user_directory_path(instance, filename):
     # file will be uploaded to MEDIA_ROOT/<filename>
@@ -133,10 +137,8 @@ class Primer(models.Model):
         blank=True, null=True, verbose_name="Date attached"
     )  ## this date has the time of deleted by web page
 
-
     def __str__(self):
         return self.name
-
 
     def get_primer_fasta(self, type_path):
         """
@@ -213,8 +215,6 @@ class Primer(models.Model):
         indexes = [
             models.Index(fields=["name"], name="primer_name_idx"),
         ]
-
-
 
 
 class Reference(models.Model):
@@ -1992,6 +1992,9 @@ class ProcessControler(models.Model):
 
     def get_name_collect_all_projects_user(self, user):
         return "{}{}".format(ProcessControler.PREFIX_COLLECT_ALL_PROJECTS_USER, user.pk)
+
+    def get_name_televir_reference_update(self, user_pk):
+        return "televir_reference_update_{}".format(user_pk)
 
     def get_name_televir_project(self, project_pk):
         return "{}{}".format(ProcessControler.PREFIX_TELEVIR_PROJECT, project_pk)

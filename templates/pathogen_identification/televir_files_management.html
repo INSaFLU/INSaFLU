@@ -41,6 +41,14 @@
     <link rel="stylesheet" href="{% static 'css/televir_references_nav.css' %}">
 {% endblock %}
 
+
+{% if reference_update_running %}
+<div class="alert alert-warning" role="alert">
+    <strong>Reference update is currently running.</strong> Please wait until it finishes before deploying pathogen identification
+</div>
+{% endif %}
+
+
 <div class="table-responsive">
     <table class="table table-striped table-bordered table-hover">
         <thead>

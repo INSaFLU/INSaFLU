@@ -182,11 +182,6 @@ urlpatterns = [
         name="reference_panels",
     ),
     url(
-        r"Projects/reference_panels$",
-        PIviews.ReferenceManagementBase.as_view(),
-        name="reference_dashboard",
-    ),
-    url(
         r"Projects/reference_files$",
         PIviews.ReferenceFileManagement.as_view(),
         name="televir_reference_files",

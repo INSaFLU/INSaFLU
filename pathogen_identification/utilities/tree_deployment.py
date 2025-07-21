@@ -1312,7 +1312,6 @@ class TreeProgressGraph:
         """
         setup the trees for the progress graph
         """
-        pipeline_utils = Utils_Manager()
 
         technologies = [ps.project.technology for ps in existing_parameter_sets]
         if len(set(technologies)) > 1:
@@ -1324,17 +1323,6 @@ class TreeProgressGraph:
         tree_list = [ps.leaf.software_tree for ps in existing_parameter_sets]
         trees_pk_list = [tree.pk for tree in tree_list]
         trees_pk_list = list(set(trees_pk_list))
-
-        software_tree_dict = {
-            tree_pk: SoftwareTree.objects.get(pk=tree_pk) for tree_pk in trees_pk_list
-        }
-
-        # pipetrees_dict = {
-        #    tree_pk: pipeline_utils.parameter_util.convert_softwaretree_to_pipeline_tree(
-        #        tree
-        #    )
-        #    for tree_pk, tree in software_tree_dict.items()
-        # }
 
         stacked_df_dict = {}
 

@@ -268,20 +268,23 @@ class ReferenceForm(forms.ModelForm):
             some_error_in_files = True
             self.add_error("reference_fasta", "Not a valid 'fasta' file.")
 
-        ### test if it has degenerated bases
-        if os.path.exists(reference_fasta_temp_file_name.name):
-            try:
-                self.utils.has_degenerated_bases(reference_fasta_temp_file_name.name)
-            except Exception as e:
-                os.unlink(reference_fasta_temp_file_name.name)
-                some_error_in_files = True
-                self.add_error("reference_fasta", e.args[0])
+        ### test if it has degenerated bases (only if there is no genbank...)
+        reference_genbank = cleaned_data["reference_genbank"]
+
+        if reference_genbank == None:
+            if os.path.exists(reference_fasta_temp_file_name.name):
+                try:
+                    self.utils.has_degenerated_bases(reference_fasta_temp_file_name.name)
+                except Exception as e:
+                    os.unlink(reference_fasta_temp_file_name.name)
+                    some_error_in_files = True
+                    self.add_error("reference_fasta", e.args[0])
 
         ### testing genbank
         reference_genbank_temp_file_name = NamedTemporaryFile(
             prefix="flu_gb_", delete=False
         )
-        reference_genbank = cleaned_data["reference_genbank"]
+
         if reference_genbank != None:
             reference_genbank_temp_file_name.write(reference_genbank.read())
             reference_genbank_temp_file_name.flush()

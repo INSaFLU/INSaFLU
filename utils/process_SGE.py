@@ -1821,6 +1821,52 @@ class ProcessSGE(object):
 
         self.kill_processes(processes)
 
+    @transaction.atomic
+    def kill_project_samples(
+        self, user_pk: int, project, project_sample_list
+    ):
+        """
+        Kill the processes for the given Project in process controler.
+        """
+        process_controler = ProcessControler()
+
+        names_processes = []
+        names_processes.append(process_controler.get_name_project(project))
+        for project_sample in project_sample_list:
+            names_processes.append(process_controler.get_name_project_sample(project_sample))
+
+        processes = ProcessControler.objects.filter(
+            owner__id=user_pk,
+            name__in=names_processes,
+            is_error=False,
+            is_finished=False,
+        )
+
+        self.kill_processes(processes)
+
+
+    @transaction.atomic
+    def kill_dataset(
+        self, user_pk: int, dataset
+    ):
+        """
+        Kill the processes for the given Dataset in process controler.
+        """
+        process_controler = ProcessControler()
+
+        names_processes = []
+        names_processes.append(process_controler.get_name_dataset(dataset))
+
+        processes = ProcessControler.objects.filter(
+            owner__id=user_pk,
+            name__in=names_processes,
+            is_error=False,
+            is_finished=False,
+        )
+
+        self.kill_processes(processes)
+
+
     def kill_processes(self, processes: List[ProcessControler]):
         """ """
 

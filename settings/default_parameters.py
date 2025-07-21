@@ -3370,13 +3370,15 @@ class DefaultParameters(object):
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = False
+        parameter.can_change = True
         parameter.is_to_run = True
         parameter.sequence_out = 1
         parameter.range_available = "[50:200]"
         parameter.range_max = "200"
         parameter.range_min = "50"
-        parameter.description = "Minimum alignment length."
+        parameter.description = (
+            "Minimum alignment length, in bp, for a read to be considered aligned."
+        )
         vect_parameters.append(parameter)
 
         parameter = Parameter()

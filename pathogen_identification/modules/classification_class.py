@@ -793,8 +793,6 @@ class run_metaphlan(Classifier_init):
         for edit in edits:
             args.append(edit)
 
-        # args.remove("--edits")
-
         self.args = " ".join(args)
 
     def run_SE(self, threads: int = 3):

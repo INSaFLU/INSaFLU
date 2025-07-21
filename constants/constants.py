@@ -300,6 +300,9 @@ class Constants(object):
     NEXTCLADE_LINK_RSV_B = (
         "https://clades.nextstrain.org/?dataset-name=rsv_b&input-fasta="
     )
+    NEXTCLADE_LINK_MULTI = (
+        "https://clades.nextstrain.org/?multi-dataset=true&input-fasta="
+    )
     AUSPICE_LINK = "https://auspice.us/"
 
     ## NUMBER OF SETs to paginate

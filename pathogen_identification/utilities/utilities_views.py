@@ -4,7 +4,7 @@ import os
 from typing import Dict, List, Optional, Union
 
 import pandas as pd
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Q
 from django.db.models.query import QuerySet
 from django.urls import reverse
@@ -536,6 +536,14 @@ class SampleReferenceManager:
             )
             parameter_set_management.save()
 
+        except ParameterSet.MultipleObjectsReturned:
+            parameter_set_management = ParameterSet.objects.filter(
+                sample__project=self.sample.project,
+                sample=self.sample,
+                leaf=self.software_tree_node_storage,
+                status=ParameterSet.STATUS_PROXIED,
+            ).first()
+
     @property
     def parameter_set_storage(self):
         return ParameterSet.objects.get(
@@ -580,17 +588,18 @@ class SampleReferenceManager:
         """
         mapping run from leaf
         """
-
         try:
-            parameter_set = ParameterSet.objects.get(
-                sample=self.sample,
-                leaf=leaf,
-                project=self.sample.project,
-            )
+            with transaction.atomic():
 
-            if parameter_set.status == ParameterSet.STATUS_FINISHED:
-                parameter_set.status = ParameterSet.STATUS_QUEUED
-                parameter_set.save()
+                parameter_set = ParameterSet.objects.get(
+                    sample=self.sample,
+                    leaf=leaf,
+                    project=self.sample.project,
+                )
+
+                if parameter_set.status == ParameterSet.STATUS_FINISHED:
+                    parameter_set.status = ParameterSet.STATUS_QUEUED
+                    parameter_set.save()
 
         except ParameterSet.DoesNotExist:
             parameter_set = ParameterSet.objects.create(
@@ -600,6 +609,36 @@ class SampleReferenceManager:
                 project=self.sample.project,
             )
             parameter_set.save()
+
+        except ParameterSet.MultipleObjectsReturned:
+            parameter_set = ParameterSet.objects.filter(
+                sample=self.sample,
+                leaf=leaf,
+                project=self.sample.project,
+            ).first()
+            if parameter_set.status == ParameterSet.STATUS_FINISHED:
+                parameter_set.status = ParameterSet.STATUS_QUEUED
+                parameter_set.save()
+
+        except IntegrityError:
+            # Handle IntegrityError if it occurs, e.g., duplicate entry
+            parameter_set = ParameterSet.objects.filter(
+                sample=self.sample,
+                leaf=leaf,
+                project=self.sample.project,
+            ).first()
+            if parameter_set is None:
+                parameter_set = ParameterSet.objects.create(
+                    sample=self.sample,
+                    leaf=leaf,
+                    status=ParameterSet.STATUS_PROXIED,
+                    project=self.sample.project,
+                )
+            else:
+                if parameter_set.status == ParameterSet.STATUS_FINISHED:
+                    parameter_set.status = ParameterSet.STATUS_QUEUED
+                    parameter_set.save()
+
         except Exception as e:
             print(e)
 

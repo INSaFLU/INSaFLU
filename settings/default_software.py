@@ -839,8 +839,6 @@ class DefaultSoftware(object):
         """
         test if exist, if not persist in database, for televir"""
 
-        return
-
         #        self.test_default_db(
         #            SoftwareNames.SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name,
         #            self.default_parameters.get_minimap2_map_assembly_default(
@@ -870,6 +868,8 @@ class DefaultSoftware(object):
         #    ),
         #    user,
         # )
+
+        return
 
     def assess_db_dependency_met(self, vect_parameters, software_name):
         """for pipeline steps where sequence dbs are required, check that they exist."""

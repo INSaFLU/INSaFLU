@@ -426,7 +426,6 @@ class Remap_Bwa(RemapMethod_init):
     def remap(self):
         """
         Remap reads to reference using bwa."""
-        print("REMAPPPING")
         try:
             if self.type == CS.SINGLE_END:
                 self.remap_SE()
@@ -1439,7 +1438,6 @@ class Remapping:
         ):
             return True
         else:
-            print("Assembly map file not found or empty.")
             self.logger.error("Assembly map file not found or empty.")
             return False
 
@@ -1558,6 +1556,7 @@ class Remapping:
                     self.number_of_reads_mapped = self.number_of_reads_mapped * 2
 
         except FileNotFoundError:
+            print(f"File {self.mapped_reads_file} not found.")
             self.number_of_reads_mapped = 0
 
     def subset_mapped_reads_r1(self, tempfile=""):
@@ -1966,9 +1965,7 @@ class Tandem_Remap:
             "description",
             reference_remap.mapped_contigs,
         )
-        print("############################")
-        print("Mapped contigs:", reference_remap.mapped_contigs)
-        print("Assembly target:", assembly_target)
+
         assembly_remap_drone = Remapping(
             reference_remap.mapped_subset_r1,
             assembly_target,
@@ -2256,6 +2253,7 @@ class Mapping_Manager(Tandem_Remap):
         return False
 
     def update_mapped_instance_safe(self, mapped_instance: Mapping_Instance):
+
         if self.verify_mapped_instance(mapped_instance):
             if self.validate_mapped_instance_taxid(mapped_instance):
 

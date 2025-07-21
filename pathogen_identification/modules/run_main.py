@@ -1634,8 +1634,8 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.Update_exec_time()
         self.generate_output_data_classes()
 
-    def update_mapped_instances(self, mapped_instance: List[Mapping_Instance]):
-        super().update_mapped_instances(self.mapped_instances)
+    def update_mapped_instances(self, mapped_instances: List[Mapping_Instance]):
+        super().update_mapped_instances(mapped_instances)
         self.generate_output_data_classes()
 
     def generate_output_data_classes(self):

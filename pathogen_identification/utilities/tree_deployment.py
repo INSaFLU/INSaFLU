@@ -342,7 +342,10 @@ class ClassificationMonitor(ABC):
 class ClassificationMonitor_ContigOnly(ClassificationMonitor):
     @check_planned
     def ready_to_merge(self, node: Tree_Node):
-        if node.run_manager.run_engine.contig_classification_performed:
+        if (
+            node.run_manager.run_engine.contig_classification_performed
+            and node.run_manager.classification_updated == False
+        ):
             return True
 
         return False
@@ -363,6 +366,7 @@ class ClassificationMonitor_ContigAndReads(ClassificationMonitor):
         if (
             node.run_manager.run_engine.contig_classification_performed
             and node.run_manager.run_engine.read_classification_performed
+            and node.run_manager.classification_updated == False
         ):
             return True
 
@@ -384,7 +388,10 @@ class ClassificationMonitor_ContigAndReads(ClassificationMonitor):
 class ClassificationMonitor_ReadsOnly(ClassificationMonitor):
     @check_planned
     def ready_to_merge(self, node: Tree_Node):
-        if node.run_manager.run_engine.read_classification_performed:
+        if (
+            node.run_manager.run_engine.read_classification_performed
+            and node.run_manager.classification_updated == False
+        ):
             return True
 
         return False
@@ -611,6 +618,8 @@ class Tree_Progress:
         return registraction_success
 
     def update_node_dbs(self, node: Tree_Node, step="initial"):
+        print("Updating node dbs...")
+        print(node.run_manager.run_engine.remapping_performed)
         try:
             db_updated = Update_RunMain_Initial(
                 node.run_manager.run_engine, node.parameter_set
@@ -674,7 +683,6 @@ class Tree_Progress:
         except Exception as e:
             self.logger.error("Error updating node dbs, returning false.")
             self.logger.error(e)
-            traceback.print_exc()
             return False
 
     def register_node_safe(self, node: Tree_Node):
@@ -905,8 +913,10 @@ class Tree_Progress:
                 volonteer, group_targets
             )
 
+            print(f"#### Deployment success: {deployment_success}")
             nodes = self.update_mapped_instances(nodes, mapped_instances_shared)
             self.export_intermediate_reports_leaves(nodes)
+            print(mapped_instances_shared)
 
             if deployment_success:
                 current_nodes.extend(nodes)
@@ -925,7 +935,13 @@ class Tree_Progress:
     ):
         new_nodes = []
 
+        print("Updating mapped instances for nodes...")
+        print(f"Mapped instances shared: {len(mapped_instances_shared)}")
+        print(nodes_to_update)
+
         for node in nodes_to_update:
+            print(node.run_manager.run_engine.remap_manager.remap_targets)
+            print(node.run_manager.run_engine.remap_manager.target_taxids)
             node.run_manager.run_engine.update_mapped_instances(mapped_instances_shared)
             new_nodes.append(node)
 
@@ -1045,10 +1061,7 @@ class Tree_Progress:
         action()
 
         for node in self.current_nodes:
-            if (
-                self.classification_monitor.ready_to_merge(node)
-                and node.run_manager.classification_updated == False
-            ):
+            if self.classification_monitor.ready_to_merge(node):
                 node.run_manager.run_engine.plan_remap_prep_safe()
 
             self.update_node_leaves_dbs(node)

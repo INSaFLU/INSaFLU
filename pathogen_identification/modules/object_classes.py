@@ -149,11 +149,6 @@ class Operation_Temp_Files:
             f.write("\n")
             f.write("touch " + self.flag)
 
-        with open(self.script, "r") as f:
-            script_content = f.read()
-            for line in script_content.splitlines():
-                print(line)
-
     def run_bash_script(self):
         """
         Run bash script.

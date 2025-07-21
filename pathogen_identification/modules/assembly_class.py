@@ -494,8 +494,6 @@ class Assembly_class:
 
         self.assembly_exists = self.assembly_file_check_fasta_gz()
 
-        print(subdirectory, final_file, self.assembly_file_fasta_gz)
-
         if self.assembly_exists:
             if os.path.exists(final_file) is False:
                 shutil.copy(self.assembly_file_fasta_gz, subdirectory)

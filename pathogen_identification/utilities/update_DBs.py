@@ -486,17 +486,13 @@ def Sample_update_combinations(run_class: Type[RunEngine_class]):
     sample.save()
 
 
-def get_run_parents(run_class: RunEngine_class, parameter_set: ParameterSet):
+def get_run_parents(run_class: RunEngine_class, parameter_set: ParameterSet) -> tuple:
     """get run parents for run_class. Update run_class.run_data."""
     user = User.objects.get(username=run_class.username)
     project = Projects.objects.get(
         name=run_class.project_name, owner=user, is_deleted=False
     )
 
-    # sample = PIProject_Sample.objects.get(
-    #    project=project,
-    #    name=run_class.sample.sample_name,
-    # )
     sample = run_class.sample_registered
 
     try:

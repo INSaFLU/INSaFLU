@@ -839,27 +839,7 @@ class DefaultSoftware(object):
         """
         test if exist, if not persist in database, for televir"""
 
-        self.test_default_db(
-            SoftwareNames.SOFTWARE_BWA_name,
-            self.default_parameters.get_bwa_default(
-                user,
-                Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_illumina,
-                pipeline_step=ConstantsSettings.PIPELINE_NAME_request_mapping,
-            ),
-            user,
-        )
-
-        self.test_default_db(
-            SoftwareNames.SOFTWARE_BWA_name,
-            self.default_parameters.get_bwa_default(
-                user,
-                Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_illumina,
-                pipeline_step=ConstantsSettings.PIPELINE_NAME_remapping,
-            ),
-            user,
-        )
+        return
 
         #        self.test_default_db(
         #            SoftwareNames.SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name,

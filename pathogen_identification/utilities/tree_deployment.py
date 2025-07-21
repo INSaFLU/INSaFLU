@@ -618,8 +618,7 @@ class Tree_Progress:
         return registraction_success
 
     def update_node_dbs(self, node: Tree_Node, step="initial"):
-        print("Updating node dbs...")
-        print(node.run_manager.run_engine.remapping_performed)
+
         try:
             db_updated = Update_RunMain_Initial(
                 node.run_manager.run_engine, node.parameter_set
@@ -913,10 +912,8 @@ class Tree_Progress:
                 volonteer, group_targets
             )
 
-            print(f"#### Deployment success: {deployment_success}")
             nodes = self.update_mapped_instances(nodes, mapped_instances_shared)
             self.export_intermediate_reports_leaves(nodes)
-            print(mapped_instances_shared)
 
             if deployment_success:
                 current_nodes.extend(nodes)
@@ -935,13 +932,8 @@ class Tree_Progress:
     ):
         new_nodes = []
 
-        print("Updating mapped instances for nodes...")
-        print(f"Mapped instances shared: {len(mapped_instances_shared)}")
-        print(nodes_to_update)
-
         for node in nodes_to_update:
-            print(node.run_manager.run_engine.remap_manager.remap_targets)
-            print(node.run_manager.run_engine.remap_manager.target_taxids)
+
             node.run_manager.run_engine.update_mapped_instances(mapped_instances_shared)
             new_nodes.append(node)
 

@@ -877,14 +877,7 @@ class CollectExtraDatasetData(object):
                 time = True
             reference = dataset.get_first_reference()
             if reference is None or reference == "":
-                out_file_file_system = dataset.get_global_file_by_dataset(
-                    TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_error
-                )
-                with open(out_file_file_system, "w") as handle_write:
-                    handle_write.write(
-                        "No Reference was found. The generic build needs at least one reference"
-                    )
-                return None, Dataset.RUN_out_path
+                raise Exception("No Reference was found. The generic build needs at least one reference")
             try:
                 # Check for user?
                 tree_file, alignment_file, auspice_zip = (
@@ -897,22 +890,12 @@ class CollectExtraDatasetData(object):
                     )
                 )
             except Reference.DoesNotExist:
-                out_file_file_system = dataset.get_global_file_by_dataset(
-                    TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_error
-                )
-                with open(out_file_file_system, "w") as handle_write:
-                    handle_write.write(
-                        "Reference was not found. The generic build needs at least one reference"
-                    )
-                return None, Dataset.RUN_out_path
+                raise Exception("No Reference was found. The generic build needs at least one reference")
+            except Exception as e:
+                raise e
         else:
             # It is not supposed to arrive here
-            out_file_file_system = dataset.get_global_file_by_dataset(
-                TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_error
-            )
-            with open(out_file_file_system, "w") as handle_write:
-                handle_write.write("Unknown error. Please contact the administrators")
-            return None, Dataset.RUN_out_path
+            raise Exception("Unknown error. Please contact the administrators")
 
         # temp_dir = self.software.run_nextstrain(Dataset.REFERENCE_NAME, sequences_file, metadata_file)
         return tree_file, alignment_file, auspice_zip

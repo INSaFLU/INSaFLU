@@ -34,6 +34,7 @@ from pathogen_identification.models import (
     RunReadsRegister,
     SoftwareTree,
     SoftwareTreeNode,
+    TelevirRunQC,
 )
 from pathogen_identification.utilities.clade_objects import Clade
 from pathogen_identification.utilities.overlap_manager import ReadOverlapManager
@@ -620,9 +621,6 @@ class SampleReferenceManager:
     def screening_run_from_leaf(self, leaf: SoftwareTreeNode) -> RunMain:
         """ """
         return self.create_mapping_run(leaf, RunMain.RUN_TYPE_SCREENING)
-
-
-from pathogen_identification.models import TelevirRunQC
 
 
 class RunMainWrapper:

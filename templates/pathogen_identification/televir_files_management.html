@@ -49,6 +49,12 @@
 {% endif %}
 
 
+{% if master_files_missing %}
+<div class="alert alert-info" role="alert">
+    <strong>No TELEVIR reference files found.</strong> To register TELEVIR references, run the command <code>docker exec -it insaflu_web register-televir-references</code> in the terminal.
+</div>
+{% endif %}
+
 <div class="table-responsive">
     <table class="table table-striped table-bordered table-hover">
         <thead>

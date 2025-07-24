@@ -46,12 +46,9 @@
 <div class="alert alert-warning" role="alert">
     <strong>Reference update is currently running.</strong> Please wait until it finishes before deploying pathogen identification
 </div>
-{% endif %}
-
-
-{% if master_files_missing %}
+{% elif master_files_missing %}
 <div class="alert alert-info" role="alert">
-    <strong>No TELEVIR reference files found.</strong> To register TELEVIR references, run the command <code>docker exec -it insaflu_web register-televir-references</code> in the terminal.
+    <strong>No TELEVIR reference files found.</strong> To register TELEVIR references, run the command <code>docker exec -it -d insaflu-server register-televir-references</code> in the terminal.
 </div>
 {% endif %}
 

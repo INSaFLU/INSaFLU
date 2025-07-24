@@ -729,6 +729,7 @@ class RunMainWrapper:
             ConstantsSettings.PIPELINE_NAME_assembly: self.assembly_performed,
             ConstantsSettings.PIPELINE_NAME_contig_classification: self.classification_performed,
             ConstantsSettings.PIPELINE_NAME_read_classification: self.classification_performed,
+            ConstantsSettings.PIPELINE_NAME_remapping: self.remapping_performed,
         }
 
         finished_processing = (

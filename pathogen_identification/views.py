@@ -13,7 +13,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.core.files.temp import NamedTemporaryFile
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Max, Q
 from django.http import (
     FileResponse,
     Http404,
@@ -33,7 +33,6 @@ from django.views.generic import ListView
 from django_tables2 import RequestConfig
 
 from constants.constants import Constants, FileType, TypePath
-from constants.software_names import SoftwareNames
 from extend_user.models import Profile
 from fluwebvirus.settings import (
     BASE_DIR,
@@ -44,9 +43,8 @@ from fluwebvirus.settings import (
     STATICFILES_DIRS,
 )
 from managing_files.forms import AddSampleProjectForm
-from managing_files.models import ProcessControler
+from managing_files.models import ProcessControler, Reference
 from managing_files.models import ProjectSample as InsafluProjectSample
-from managing_files.models import Reference
 from managing_files.tables import SampleToProjectsTable
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.constants_settings import ConstantsSettings as PICS
@@ -1741,26 +1739,12 @@ class ReferencePanelManagement(LoginRequiredMixin, generic.CreateView):
         return context
 
 
-from django.views.generic import ListView, TemplateView
+from django.views.generic import ListView
 
 from pathogen_identification.tables import (
     ReferenceSourceFileTable,
     TelevirReferencesTable,
 )
-
-
-class ReferenceManagementBase(TemplateView):
-    """
-    page to manage and create insaflu references files, generate panels.
-    """
-
-    template_name = "pathogen_identification/televir_references_base.html"
-
-    def get_context_data(self, **kwargs) -> Dict[str, Any]:
-
-        context = super().get_context_data(**kwargs)
-        context["nav_reference"] = True
-        return context
 
 
 class ReferenceFileManagement(LoginRequiredMixin, generic.CreateView):
@@ -1795,6 +1779,14 @@ class ReferenceFileManagement(LoginRequiredMixin, generic.CreateView):
         files_table = ReferenceSourceFileTable(files)
         RequestConfig(self.request, paginate={"per_page": 15}).configure(files_table)
 
+        process_controler = ProcessControler()
+        reference_update_running = ProcessControler.objects.filter(
+            name=process_controler.get_name_televir_reference_update(1),
+            is_running=True,
+        ).exists()
+        master_files_exist = ReferenceSourceFile.objects.filter(Q(owner=None)).exists()
+        context["master_files_missing"] = not master_files_exist
+        context["reference_update_running"] = reference_update_running
         context["files_table"] = files_table
         context["nav_reference"] = True
         context["show_paginatior"] = files.count() > 15
@@ -1894,6 +1886,14 @@ class ReferenceManagement(LoginRequiredMixin, generic.CreateView):
             self.request,
             paginate={"per_page": ConstantsSettings.TELEVIR_REFERENCE_PAGINATE_NUMBER},
         ).configure(files_table)
+
+        process_controler = ProcessControler()
+        referene_update_running = ProcessControler.objects.filter(
+            name=process_controler.get_name_televir_reference_update(1),
+            is_running=True,
+        ).exists()
+
+        context["reference_update_running"] = referene_update_running
 
         context["summary"] = summary
         context["files_table"] = files_table
@@ -2337,6 +2337,17 @@ def Project_reports(requesdst, pk1):
         all_reports = FinalReport.objects.none()
         project_name = "project"
 
+    error_rate_available = False
+    max_error_rate = 0
+    if all_reports.exists():
+        error_rate_available = all_reports.filter(error_rate__isnull=False).exists()
+
+        max_error_rate = (
+            all_reports.aggregate(Max("error_rate"))["error_rate__max"]
+            if error_rate_available
+            else 0
+        )
+
     return render(
         requesdst,
         template_name,
@@ -2344,6 +2355,8 @@ def Project_reports(requesdst, pk1):
             "final_report": all_reports,
             "project": project_name,
             "project_index": project.pk,
+            "error_rate_available": error_rate_available,
+            "max_error_rate": max_error_rate,
         },
     )
 
@@ -2381,6 +2394,17 @@ def Sample_reports(requesdst, pk1, pk2):
         project_name = "project"
         sample_name = "sample"
 
+    error_rate_available = False
+    max_error_rate = 0
+    if all_reports.exists():
+        error_rate_available = all_reports.filter(error_rate__isnull=False).exists()
+
+        max_error_rate = (
+            all_reports.aggregate(Max("error_rate"))["error_rate__max"]
+            if error_rate_available
+            else 0
+        )
+
     return render(
         requesdst,
         template_name,
@@ -2390,6 +2414,8 @@ def Sample_reports(requesdst, pk1, pk2):
             "sample": sample_name,
             "sample_index": pk2,
             "project_index": project.pk,
+            "error_rate_available": error_rate_available,
+            "max_error_rate": max_error_rate,
         },
     )
 
@@ -2689,13 +2715,12 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         )
 
         report_sorter = ReportSorter(sample, unique_reports, report_layout_params)
-        sort_tree_exists = False
         sort_tree_plot_path = None
         if report_sorter.overlap_manager is not None:
-            sort_tree_exists = report_sorter.overlap_manager.tree_plot_exists
             sort_tree_plot_path = report_sorter.overlap_manager.tree_plot_path_render
 
         sorted_reports = report_sorter.get_reports_compound()
+
         sort_performed = True if report_sorter.analysis_empty is False else False
         private_reads_available = False
         for report_group in sorted_reports:

@@ -4,7 +4,7 @@ import os
 from typing import Dict, List, Optional, Union
 
 import pandas as pd
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Q
 from django.db.models.query import QuerySet
 from django.urls import reverse
@@ -34,6 +34,7 @@ from pathogen_identification.models import (
     RunReadsRegister,
     SoftwareTree,
     SoftwareTreeNode,
+    TelevirRunQC,
 )
 from pathogen_identification.utilities.clade_objects import Clade
 from pathogen_identification.utilities.overlap_manager import ReadOverlapManager
@@ -471,6 +472,14 @@ class SampleReferenceManager:
             )
             parameter_set_management.save()
 
+        except ParameterSet.MultipleObjectsReturned:
+            parameter_set_management = ParameterSet.objects.filter(
+                sample__project=self.sample.project,
+                sample=self.sample,
+                leaf=self.software_tree_node_storage,
+                status=ParameterSet.STATUS_PROXIED,
+            ).first()
+
     @property
     def parameter_set_storage(self):
         return ParameterSet.objects.get(
@@ -515,17 +524,18 @@ class SampleReferenceManager:
         """
         mapping run from leaf
         """
-
         try:
-            parameter_set = ParameterSet.objects.get(
-                sample=self.sample,
-                leaf=leaf,
-                project=self.sample.project,
-            )
+            with transaction.atomic():
 
-            if parameter_set.status == ParameterSet.STATUS_FINISHED:
-                parameter_set.status = ParameterSet.STATUS_QUEUED
-                parameter_set.save()
+                parameter_set = ParameterSet.objects.get(
+                    sample=self.sample,
+                    leaf=leaf,
+                    project=self.sample.project,
+                )
+
+                if parameter_set.status == ParameterSet.STATUS_FINISHED:
+                    parameter_set.status = ParameterSet.STATUS_QUEUED
+                    parameter_set.save()
 
         except ParameterSet.DoesNotExist:
             parameter_set = ParameterSet.objects.create(
@@ -535,6 +545,36 @@ class SampleReferenceManager:
                 project=self.sample.project,
             )
             parameter_set.save()
+
+        except ParameterSet.MultipleObjectsReturned:
+            parameter_set = ParameterSet.objects.filter(
+                sample=self.sample,
+                leaf=leaf,
+                project=self.sample.project,
+            ).first()
+            if parameter_set.status == ParameterSet.STATUS_FINISHED:
+                parameter_set.status = ParameterSet.STATUS_QUEUED
+                parameter_set.save()
+
+        except IntegrityError:
+            # Handle IntegrityError if it occurs, e.g., duplicate entry
+            parameter_set = ParameterSet.objects.filter(
+                sample=self.sample,
+                leaf=leaf,
+                project=self.sample.project,
+            ).first()
+            if parameter_set is None:
+                parameter_set = ParameterSet.objects.create(
+                    sample=self.sample,
+                    leaf=leaf,
+                    status=ParameterSet.STATUS_PROXIED,
+                    project=self.sample.project,
+                )
+            else:
+                if parameter_set.status == ParameterSet.STATUS_FINISHED:
+                    parameter_set.status = ParameterSet.STATUS_QUEUED
+                    parameter_set.save()
+
         except Exception as e:
             print(e)
 
@@ -645,14 +685,52 @@ class RunMainWrapper:
 
         return mark_safe(run_log)
 
-    def run_progess_tracker(self) -> str:
+    @property
+    def qc_performed(self) -> bool:
+        return TelevirRunQC.objects.filter(run=self.record, performed=True).exists()
 
-        finished_preprocessing = self.record.report != "initial"
-        finished_assembly = RunAssembly.objects.filter(run=self.record).count() > 0
-        finished_classification = (
+    @property
+    def enrichemnt_performed(self) -> bool:
+        return self.record.enrichment_performed
+
+    @property
+    def depletion_performed(self) -> bool:
+        return self.record.host_depletion_performed
+
+    @property
+    def assembly_performed(self) -> bool:
+        return RunAssembly.objects.filter(run=self.record).exists()
+
+    @property
+    def classification_performed(self) -> bool:
+        return (
             ContigClassification.objects.filter(run=self.record).exists()
             and ReadClassification.objects.filter(run=self.record).exists()
         )
+
+    @property
+    def remapping_performed(self) -> bool:
+        return ReferenceMap_Main.objects.filter(run=self.record).exists()
+
+    @property
+    def is_running(self) -> bool:
+        return self.record.status == RunMain.STATUS_RUNNING
+
+    @property
+    def is_finished(self) -> bool:
+        return self.record.status == RunMain.STATUS_FINISHED
+
+    def run_progess_tracker(self) -> str:
+
+        object_to_step_dict = {
+            ConstantsSettings.PIPELINE_NAME_extra_qc: self.qc_performed,
+            ConstantsSettings.PIPELINE_NAME_viral_enrichment: self.enrichemnt_performed,
+            ConstantsSettings.PIPELINE_NAME_host_depletion: self.depletion_performed,
+            ConstantsSettings.PIPELINE_NAME_assembly: self.assembly_performed,
+            ConstantsSettings.PIPELINE_NAME_contig_classification: self.classification_performed,
+            ConstantsSettings.PIPELINE_NAME_read_classification: self.classification_performed,
+            ConstantsSettings.PIPELINE_NAME_remapping: self.remapping_performed,
+        }
 
         finished_processing = (
             self.record.parameter_set.status == ParameterSet.STATUS_FINISHED
@@ -677,62 +755,36 @@ class RunMainWrapper:
         )
 
         if finished_processing or finished_remapping:
-
             return report_link
 
-        else:
-            runlog = " <a " + 'href="#" >'
-            if finished_preprocessing:
-                runlog += '<i class="fa fa-check"'
-                runlog += 'title="Preprocessing finished"></i>'
+        # Initialize progress tracker
+        progress_html = ""
+
+        # Iterate through the steps in the params_df
+        for step in self.params_df.index:
+            step_status = object_to_step_dict.get(step, None)
+
+            if step_status is None:
+                # If the step is not mapped, skip it
+                continue
+
+            if step_status:
+                # Step is completed
+                progress_html += (
+                    f'<i class="fa fa-check" title="{step} completed"></i> '
+                )
+            elif self.is_running:
+                # Step is running
+                progress_html += (
+                    f'<i class="fa fa-cog fa-spin" title="{step} running"></i> '
+                )
             else:
-                runlog += '<i class="fa fa-cog"'
-                runlog += 'title="Preprocessing running."></i>'
+                # Step is pending
+                progress_html += (
+                    f'<i class="fa fa-circle-o" title="{step} pending"></i> '
+                )
 
-            runlog += "</a>"
-
-            ###
-
-            runlog += " <a " + 'href="#" >'
-
-            if finished_assembly:
-                runlog += '<i class="fa fa-check"'
-                runlog += 'title="Assembly finished"></i>'
-            else:
-                runlog += '<i class="fa fa-cog"'
-                if finished_preprocessing:
-                    runlog += 'title="Assembly running."></i>'
-                else:
-                    runlog += 'title="Assembly." style="color: gray;"></i>'
-            runlog += "</a>"
-
-            ###
-
-            runlog += " <a " + 'href="#" >'
-
-            if finished_classification:
-                runlog += '<i class="fa fa-check"'
-                runlog += 'title="Classification finished"></i>'
-            else:
-                runlog += '<i class="fa fa-cog"'
-                if finished_assembly:
-                    runlog += 'title="Classification running."></i>'
-                else:
-                    runlog += 'title="Classification." style="color: gray;"></i>'
-            runlog += "</a>"
-
-            runlog += " <a " + 'href="#" >'
-
-            runlog += '<i class="fa fa-cog"'
-            if finished_classification:
-                runlog += 'title="Mapping to references."></i>'
-            else:
-                runlog += 'title="Validation mapping" style="color: gray;"></i>'
-            runlog += "</a>"
-
-            return runlog
-
-        return ""
+        return mark_safe(progress_html)
 
 
 class EmptyRemapMain:

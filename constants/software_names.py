@@ -112,20 +112,6 @@ class SoftwareNames(object):
         "TruSeq3-PE-2.fa",
         "TruSeq3-PE.fa",
         "TruSeq3-SE.fa",
-        "SARS_CoV_2_MN908947_artic_3.fa",
-        "SARS_CoV_2_MN908947_artic_4.1.fa",
-        "SARS_CoV_2_MN908947_artic_5.3.2.fa",
-        "SARS_CoV_2_MN908947_artic_5.4.2.fa",        
-        "MPXV_MT903345_Yale_PrimalSeq_v.1.fa",
-        "MPXV_comb-ccc7sszn.fa",
-        "RSV_A_KT992094_Wang2022.fa",
-        "RSV_B_AF013254_Wang2022.fa",
-        "RSV_A_B_KT992094_AF013254_Wang2022.fa",
-        "HCoV_NL63_KF530113.1_McClure2024.fa",
-        "HCoV_OC43_KF530084.1_McClure2024.fa",
-        "HCoV_HKU1_DQ415913.1_McClure2024.fa",
-        "HCoV_229E_KF293666.1_McClure2024.fa",
-        # "MPXV_xGEN_Mpox_Amplicon_panel_no_ITR.fa",
     ]
     ### collect stat data for ILLUMINA, in form of key value
     SOFTWARE_ILLUMINA_stat = "illumina_stat"
@@ -291,20 +277,6 @@ class SoftwareNames(object):
     SOFTWARE_SNIPPY_no_primer = "None"
     SOFTWARE_SNIPPY_PRIMERS = [
         SOFTWARE_SNIPPY_no_primer,
-        "SARS_CoV_2_MN908947_artic_3.fa",
-        "SARS_CoV_2_MN908947_artic_4.1.fa",
-        "SARS_CoV_2_MN908947_artic_5.3.2.fa",
-        "SARS_CoV_2_MN908947_artic_5.4.2.fa",        
-        "MPXV_MT903345_Yale_PrimalSeq_v.1.fa",
-        "MPXV_comb-ccc7sszn.fa",
-        "RSV_A_KT992094_Wang2022.fa",
-        "RSV_B_AF013254_Wang2022.fa",
-        "RSV_A_B_KT992094_AF013254_Wang2022.fa",
-        "HCoV_NL63_KF530113.1_McClure2024.fa",
-        "HCoV_OC43_KF530084.1_McClure2024.fa",
-        "HCoV_HKU1_DQ415913.1_McClure2024.fa",
-        "HCoV_229E_KF293666.1_McClure2024.fa",
-        # "MPXV_xGEN_Mpox_Amplicon_panel_no_ITR.fa",
     ]
 
     ########### iVar
@@ -537,10 +509,12 @@ class SoftwareNames(object):
     SOFTWARE_NEXTSTRAIN_BUILDS_ncov = "ncov"
     SOFTWARE_NEXTSTRAIN_BUILDS_mpx = "mpx"
     SOFTWARE_NEXTSTRAIN_BUILDS_mpox_clade_i = "mpox_clade-i"
+    SOFTWARE_NEXTSTRAIN_BUILDS_mpox_mpxv = "mpox_all-clades"
 
     SOFTWARE_NEXTSTRAIN_BUILDS_mpox = [
         SOFTWARE_NEXTSTRAIN_BUILDS_mpx,
         SOFTWARE_NEXTSTRAIN_BUILDS_mpox_clade_i,
+        SOFTWARE_NEXTSTRAIN_BUILDS_mpox_mpxv,
     ]
 
     SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y = "flu_h3n2_12y"
@@ -615,6 +589,7 @@ class SoftwareNames(object):
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns,
         SOFTWARE_NEXTSTRAIN_BUILDS_mpx,
         SOFTWARE_NEXTSTRAIN_BUILDS_mpox_clade_i,
+        SOFTWARE_NEXTSTRAIN_BUILDS_mpox_mpxv,
         SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a,
         SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b,
         SOFTWARE_NEXTSTRAIN_BUILDS_dengue_all,
@@ -641,6 +616,7 @@ class SoftwareNames(object):
         [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns, "Avian Influenza (H5N1 NS)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_mpx, "mpox (hMPXV)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_mpox_clade_i, "mpox (clade I)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_mpox_mpxv, "mpox (all clades)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a, "RSV (A)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b, "RSV (B)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_dengue_all, "Dengue (all)"],

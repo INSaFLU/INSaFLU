@@ -442,10 +442,11 @@ def Update_RunMain(run_class: RunEngine_class, parameter_set: ParameterSet):
         name=run_class.project_name, owner=user, is_deleted=False
     )
 
-    sample = PIProject_Sample.objects.get(
-        name=run_class.sample.sample_name,
-        project=project,
-    )
+    # sample = PIProject_Sample.objects.get(
+    #    name=run_class.sample.sample_name,
+    #    project=project,
+    # )
+    sample = run_class.sample_registered
 
     reads_after_processing = run_class.sample.reads_after_processing
 
@@ -521,10 +522,11 @@ def Sample_update_combinations(run_class: Type[RunEngine_class]):
         name=run_class.project_name, owner=user, is_deleted=False
     )
 
-    sample = PIProject_Sample.objects.get(
-        project=project,
-        name=run_class.sample.sample_name,
-    )
+    # sample = PIProject_Sample.objects.get(
+    #    project=project,
+    #    name=run_class.sample.sample_name,
+    # )
+    sample = run_class.sample_registered
 
     sample.combinations = sample.combinations + 1
 
@@ -538,10 +540,11 @@ def get_run_parents(run_class: RunEngine_class, parameter_set: ParameterSet):
         name=run_class.project_name, owner=user, is_deleted=False
     )
 
-    sample = PIProject_Sample.objects.get(
-        project=project,
-        name=run_class.sample.sample_name,
-    )
+    # sample = PIProject_Sample.objects.get(
+    #    project=project,
+    #    name=run_class.sample.sample_name,
+    # )
+    sample = run_class.sample_registered
 
     try:
         if run_class.run_pk is not None:
@@ -1166,7 +1169,7 @@ def Update_FinalReport(run_class, runmain, sample):
                 taxid=row["taxid"],
                 accid=row["ID"],
                 status=RawReference.STATUS_MAPPED,
-                description=row["description"],
+                description=summarize_description(row["description"], 200),
                 counts=counts,
                 classification_source=translate_classification_success(
                     row["classification_success"]

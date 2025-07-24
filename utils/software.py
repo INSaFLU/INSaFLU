@@ -2330,42 +2330,44 @@ class Software(object):
         os.system(cmd)
 
     def irma_align_get_msas(
-        self, keep_segment, reference_fasta, irma_output_dir, sample_name
+        self,
+        reference_segments,
+        reference_fasta,
+        irma_segments,
+        consensus_fasta,
+        irma_output_dir,
+        sample_name,
     ) -> dict:
         """
         fetch consenssu from irma output. Match each to reference segments.
         Align each segment to reference and generate vcf files.
         """
-        segments_in_reference = {v: g for g, v in keep_segment.items()}
+        segments_in_reference = {v: g for g, v in reference_segments.items()}
+        ## get segments from irma output
+        segments_in_consensus = {v: g for g, v in irma_segments.items()}
 
-        segments_generated = {
-            segname: os.path.join(
-                irma_output_dir, "amended_consensus", f"{sample_name}_{segname}.fa"
-            )
-            for segname in segments_in_reference.keys()  # if there are more than in the reference get ignored.
-        }
-
-        segments_generated = {
-            s: f for s, f in segments_generated.items() if os.path.exists(f)
-        }
-
-        matched_segments = {
-            segname: SeqIO.read(
-                consensus,
-                "fasta",
-            )
-            for segname, consensus in segments_generated.items()
+        segments_in_consensus = {
+            segnumber: segname
+            for segnumber, segname in segments_in_consensus.items()
+            if segnumber in segments_in_reference
         }
 
         ## split reference into segment fastas and align to respective consensus.
         with open(reference_fasta, "r") as ref:
             ref_seqs = SeqIO.to_dict(SeqIO.parse(ref, "fasta"))
 
+        with open(consensus_fasta, "r") as cons:
+            consensus_seqs = SeqIO.to_dict(SeqIO.parse(cons, "fasta"))
+
         msa_output = {}
 
-        for segname, fasta in matched_segments.items():
+        for segname, segment in segments_in_consensus.items():
+            fasta = consensus_seqs[segment]
             fasta_seq = fasta
             fasta_seq.id = sample_name
+
+            reference_segment = segments_in_reference[segname]
+            ref_fasta = ref_seqs[reference_segment]
 
             tmp_cons = os.path.join(irma_output_dir, segname + ".fasta")
             fasta_id = fasta.id
@@ -2376,13 +2378,13 @@ class Software(object):
 
             tmp__ref = os.path.join(irma_output_dir, segname + "_ref.fasta")
             with open(tmp__ref, "w") as ref:
-                SeqIO.write(ref_seqs[segname], ref, "fasta")
+                SeqIO.write(ref_fasta, ref, "fasta")
 
             fasta.id = fasta_id
 
             tmp_comb = os.path.join(irma_output_dir, segname + "_comb.fasta")
             with open(tmp_comb, "w") as ref:
-                SeqIO.write(ref_seqs[segname], ref, "fasta")
+                SeqIO.write(ref_fasta, ref, "fasta")
                 SeqIO.write(fasta, ref, "fasta")
 
             self.align_combined_fasta(
@@ -2604,19 +2606,12 @@ class Software(object):
             os.path.join(irma_output_dir, sample_name + ".mixed.variants.tsv"), sep="\t"
         )
 
-        ## generate additional_files
-        keep_segment = self.match_segments_to_numbers(path_reference_fasta)
-        ## generate individual segment alignments
-        seqname_msa_dict = self.irma_align_get_msas(
-            keep_segment, path_reference_fasta, irma_output_dir, sample_name=sample_name
-        )
-
         # concatenated original consensus fasta
         full_consensus_irma_original = os.path.join(
             irma_output_dir, sample_name + ".consensus.original.fa"
         )
-        fasta_files_original = os.listdir(
-            os.path.join(irma_output_dir, "amended_consensus")
+        fasta_files_original = sorted(
+            os.listdir(os.path.join(irma_output_dir, "amended_consensus"))
         )
         fasta_files_original = [
             os.path.join(irma_output_dir, "amended_consensus", f)
@@ -2627,12 +2622,26 @@ class Software(object):
             for file in fasta_files_original:
                 with open(file, "r") as g:
                     f.write(g.read())
+        ## IRMA match and keep segments
+        irma_segments = self.match_segments_to_numbers(full_consensus_irma_original)
+
+        ## generate additional_files
+        keep_segment = self.match_segments_to_numbers(path_reference_fasta)
+        ## generate individual segment alignments
+        seqname_msa_dict = self.irma_align_get_msas(
+            keep_segment,
+            path_reference_fasta,
+            irma_segments,
+            full_consensus_irma_original,
+            irma_output_dir,
+            sample_name=sample_name,
+        )
 
         ## concatenate all fasta files to keep (matched to reference sequence).
         full_consensus_irma = os.path.join(
             irma_output_dir, sample_name + ".consensus.fa"
         )
-        fasta_files = [x + ".fasta" for x in seqname_msa_dict.keys()]
+        fasta_files = sorted([x + ".fasta" for x in seqname_msa_dict.keys()])
         fasta_files = [os.path.join(irma_output_dir, f) for f in fasta_files]
         with open(full_consensus_irma, "w") as f:
             for file in fasta_files:
@@ -5455,6 +5464,9 @@ class Software(object):
             + " --configfile "
             + temp_dir
             + "/config/config.yaml"
+            + " 2> "
+            + temp_dir
+            + "/stderr.txt"
             + " > "
             + temp_dir
             + "/stdout.txt"
@@ -5504,6 +5516,12 @@ class Software(object):
 
         cmd = "mv {} {}".format(
             os.path.join(temp_dir, "stdout.txt"),
+            os.path.join(temp_dir, "auspice", "log"),
+        )
+        exit_status = os.system(cmd)
+
+        cmd = "mv {} {}".format(
+            os.path.join(temp_dir, "stderr.txt"),
             os.path.join(temp_dir, "auspice", "log"),
         )
         exit_status = os.system(cmd)
@@ -5630,6 +5648,9 @@ class Software(object):
             + " > "
             + temp_dir
             + "/stdout.txt"
+            + " 2> "
+            + temp_dir
+            + "/stderr.txt"
         )
         exit_status = os.system(cmd)
         if exit_status != 0:
@@ -5674,6 +5695,12 @@ class Software(object):
 
         cmd = "mv {} {}".format(
             os.path.join(temp_dir, "stdout.txt"),
+            os.path.join(temp_dir, "auspice", "log"),
+        )
+        exit_status = os.system(cmd)
+        
+        cmd = "mv {} {}".format(
+            os.path.join(temp_dir, "stderr.txt"),
             os.path.join(temp_dir, "auspice", "log"),
         )
         exit_status = os.system(cmd)
@@ -5744,12 +5771,13 @@ class Software(object):
         )
 
         # Now run Nextstrain
-        cmd = "{} build --native {} targets/flu_{}_ha_{} --cores {} > {}/stdout.txt".format(
+        cmd = "{} build --native {} targets/flu_{}_ha_{} --cores {} 2> {}/stderr.txt > {}/stdout.txt".format(
             SoftwareNames.SOFTWARE_NEXTSTRAIN,
             temp_dir,
             strain,
             period,
             str(cores),
+            temp_dir,
             temp_dir,
         )
         exit_status = os.system(cmd)
@@ -5797,6 +5825,13 @@ class Software(object):
 
         cmd = "mv {} {}".format(
             os.path.join(temp_dir, "stdout.txt"),
+            os.path.join(temp_dir, "auspice", "log"),
+        )
+        exit_status = os.system(cmd)
+
+
+        cmd = "mv {} {}".format(
+            os.path.join(temp_dir, "stderr.txt"),
             os.path.join(temp_dir, "auspice", "log"),
         )
         exit_status = os.system(cmd)
@@ -5881,11 +5916,12 @@ class Software(object):
 
         # Need to estimate clades of these new samples (only for H5N1 ha)
         if (strain == "h5n1") and (gene == "ha"):
-            cmd = "cd {}; {} -s Snakefile_h5n1.clades --cores {} --config label={} > {}/stdout.txt".format(
+            cmd = "cd {}; {} -s Snakefile_h5n1.clades --cores {} --config label={} 2> {}/stdout.txt > {}/stdout.txt".format(
                 temp_dir,
                 SoftwareNames.SOFTWARE_NEXTSTRAIN_snakemake,
                 str(cores),
                 SoftwareNames.SOFTWARE_NEXTSTRAIN_LABEL,
+                temp_dir,
                 temp_dir,
             )
             exit_status = os.system(cmd)
@@ -5959,6 +5995,12 @@ class Software(object):
             os.path.join(temp_dir, "auspice", "log"),
         )
         exit_status = os.system(cmd)
+        
+        cmd = "mv {} {}".format(
+            os.path.join(temp_dir, "stderr.txt"),
+            os.path.join(temp_dir, "auspice", "log"),
+        )
+        exit_status = os.system(cmd)
 
         # Collect results
         zip_out = self.zip_files_in_path(os.path.join(temp_dir, "auspice"))
@@ -6026,8 +6068,8 @@ class Software(object):
 
         # Now run Nextstrain
         # cmd = "{} -j {} {}/auspice/rsv_{}_genome.json {}/auspice/rsv_{}_G.json {}/auspice/rsv_{}_F.json --configfile {}/config/configfile.yaml".format(
-        cmd = "cd {} && {} -j {} auspice/rsv_{}_genome.json --configfile config/configfile.yaml > {}/stdout.txt".format(
-            temp_dir, SoftwareNames.SOFTWARE_NEXTSTRAIN_RSV, str(cores), type, temp_dir
+        cmd = "cd {} && {} -j {} auspice/rsv_{}_genome.json --configfile config/configfile.yaml 2> {}/stderr.txt > {}/stdout.txt".format(
+            temp_dir, SoftwareNames.SOFTWARE_NEXTSTRAIN_RSV, str(cores), type, temp_dir, temp_dir
         )
         exit_status = os.system(cmd)
         if exit_status != 0:
@@ -6071,6 +6113,12 @@ class Software(object):
 
         cmd = "mv {} {}".format(
             os.path.join(temp_dir, "stdout.txt"),
+            os.path.join(temp_dir, "auspice", "log"),
+        )
+        exit_status = os.system(cmd)
+
+        cmd = "mv {} {}".format(
+            os.path.join(temp_dir, "stderr.txt"),
             os.path.join(temp_dir, "auspice", "log"),
         )
         exit_status = os.system(cmd)
@@ -6147,10 +6195,11 @@ class Software(object):
             )
 
         # Now run Nextstrain
-        cmd = "{} build --native {} --cores {}  --configfile config/config_hmpxv1_big.yaml > {}".format(
+        cmd = "{} build --native {} --cores {}  --configfile config/config_hmpxv1_big.yaml 2> {} > {}".format(
             SoftwareNames.SOFTWARE_NEXTSTRAIN_MPX,
             temp_dir,
             str(cores),
+            os.path.join(temp_dir, "stderr.txt"),
             os.path.join(temp_dir, "stdout.txt"),
         )
         exit_status = os.system(cmd)
@@ -6196,6 +6245,12 @@ class Software(object):
 
         cmd = "mv {} {}".format(
             os.path.join(temp_dir, "stdout.txt"),
+            os.path.join(temp_dir, "auspice", "log"),
+        )
+        exit_status = os.system(cmd)
+
+        cmd = "mv {} {}".format(
+            os.path.join(temp_dir, "stderr.txt"),
             os.path.join(temp_dir, "auspice", "log"),
         )
         exit_status = os.system(cmd)
@@ -6337,10 +6392,11 @@ class Software(object):
         )
 
         # Now run Nextstrain
-        cmd = "{} build --native {} --cores {} > {}".format(
+        cmd = "{} build --native {} --cores {} 2> {} > {}".format(
             SoftwareNames.SOFTWARE_NEXTSTRAIN_DENGUE,
             temp_dir,
             str(cores),
+            os.path.join(temp_dir, "stderr.txt"),
             os.path.join(temp_dir, "stdout.txt"),
         )
         exit_status = os.system(cmd)
@@ -6386,6 +6442,12 @@ class Software(object):
 
         cmd = "mv {} {}".format(
             os.path.join(temp_dir, "stdout.txt"),
+            os.path.join(temp_dir, "auspice", "log"),
+        )
+        exit_status = os.system(cmd)
+
+        cmd = "mv {} {}".format(
+            os.path.join(temp_dir, "stderr.txt"),
             os.path.join(temp_dir, "auspice", "log"),
         )
         exit_status = os.system(cmd)
@@ -6458,10 +6520,11 @@ class Software(object):
         )
 
         # Now run Nextstrain
-        cmd = "{} build --native {} --cores {} > {}".format(
+        cmd = "{} build --native {} --cores {} 2> {} > {}".format(
             SoftwareNames.SOFTWARE_NEXTSTRAIN_DENGUE,
             temp_dir,
             str(cores),
+            os.path.join(temp_dir, "stderr.txt"),
             os.path.join(temp_dir, "stdout.txt"),
         )
         exit_status = os.system(cmd)
@@ -6510,6 +6573,12 @@ class Software(object):
 
         cmd = "mv {} {}".format(
             os.path.join(temp_dir, "stdout.txt"),
+            os.path.join(temp_dir, "auspice", "log"),
+        )
+        exit_status = os.system(cmd)
+
+        cmd = "mv {} {}".format(
+            os.path.join(temp_dir, "stderr.txt"),
             os.path.join(temp_dir, "auspice", "log"),
         )
         exit_status = os.system(cmd)

@@ -3,6 +3,12 @@ from django.conf.urls import url
 from managing_files import ajax_views, views
 
 urlpatterns = [
+    url(r"primer/primer$", views.PrimerView.as_view(), name="primer"),
+    url(
+        r"primer/primer_add$",
+        views.PrimerAddView.as_view(),
+        name="primer-add",
+    ),
     url(r"references/references$", views.ReferenceView.as_view(), name="references"),
     url(
         r"references/reference_add$",
@@ -51,7 +57,7 @@ urlpatterns = [
         views.SamplesUploadFastQView.as_view(),
         name="sample-upload-fastq",
     ),  ## upload several fastq.gz
-    url(r"project-index", views.ProjectIndex.as_view(), name="project-index"),
+    url(r"project-index", views.ProjectIndex.as_view(), name="project-index"), 
     url(r"references-index", views.ReferencesIndex.as_view(), name="references-index"),
     url(r"project/projects$", views.ProjectsView.as_view(), name="projects"),
     url(r"project/project_add$", views.ProjectCreateView.as_view(), name="project-add"),
@@ -101,6 +107,11 @@ urlpatterns = [
         ajax_views.validate_reference_name,
         name="validate-reference-name",
     ),
+    url(
+        r"^ajax/validate_primer_name$",
+        ajax_views.validate_primer_name,
+        name="validate-primer-name",
+    ),    
     url(
         r"^ajax/set_check_box_values$",
         ajax_views.set_check_box_values,
@@ -173,6 +184,9 @@ urlpatterns = [
     url(
         r"^ajax/remove_reference$", ajax_views.remove_reference, name="remove_reference"
     ),  ## remove a reference
+    url(
+        r"^ajax/remove_primer$", ajax_views.remove_primer, name="remove_primer"
+    ),  ## remove a reference    
     url(
         r"^ajax/remove_sample$", ajax_views.remove_sample, name="remove_sample"
     ),  ## remove a sample

@@ -38,7 +38,7 @@
 
 
 {% block content %}
-<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-3.0.1.min.js"></script>
 <script type="text/javascript" src="{% static 'js/televir_projects/heatmap_clades.js' %}"></script>
 
 <style>
@@ -578,15 +578,20 @@
 <script type="text/javascript" src="{% static 'js/televir_projects/sample_detail.js' %}"></script>
 
 <script>
-    document.getElementById('toggle-summary').addEventListener('click', function() {
-        var summaryDiv = document.querySelector('.collapsible-summary');
-        summaryDiv.classList.toggle('show');
-    });
+    if (document.getElementById('toggle-summary')) {
+        document.getElementById('toggle-summary').addEventListener('click', function() {
+            var summaryDiv = document.querySelector('.collapsible-summary');
+            summaryDiv.classList.toggle('show');
+        });
+    
+    }
 
-    document.getElementById('close-summary').addEventListener('click', function() {
-        var summaryDiv = document.querySelector('.collapsible-summary');
-        summaryDiv.classList.remove('show');
-    });
+    if (document.getElementById('close-summary')) {
+        document.getElementById('close-summary').addEventListener('click', function() {
+            var summaryDiv = document.querySelector('.collapsible-summary');
+            summaryDiv.classList.remove('show');
+        });
+    }
 
     document.getElementById('width-slider').addEventListener('input', function() {
         var summaryDiv = document.querySelector('.collapsible-summary');

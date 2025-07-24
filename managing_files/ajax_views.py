@@ -29,6 +29,7 @@ from managing_files.models import (
     Project,
     ProjectSample,
     Reference,
+    Primer,
     Sample,
     UploadFiles,
     VaccineStatus,
@@ -1130,6 +1131,24 @@ def validate_reference_name(request):
             data["error_message"] = _("Exists a reference with this name.")
         return JsonResponse(data)
 
+@csrf_protect
+def validate_primer_name(request):
+    """
+    test if this primer name exists
+    """
+    if request.is_ajax():
+        primer_name = request.GET.get("primer_name")
+
+        data = {
+            "is_taken": Primer.objects.filter(
+                name__iexact=primer_name,
+                is_deleted=False,
+                owner__username=request.user.username,
+            ).exists()
+        }
+        if data["is_taken"]:
+            data["error_message"] = _("There is already a primer set with this name.")
+        return JsonResponse(data)
 
 @csrf_protect
 def add_single_value_database(request):
@@ -1353,6 +1372,57 @@ def remove_reference(request):
             data = {"is_ok": True}
 
         return JsonResponse(data)
+
+
+@transaction.atomic
+@csrf_protect
+def remove_primer(request):
+    """
+    remove a primer. It can only be removed if the is no active project using that as parameter
+    """
+    if request.is_ajax():
+        data = {"is_ok": False}
+        primer_id_a = "primer_id"
+
+        if primer_id_a in request.GET:
+
+            ## some pre-requisites
+            if not request.user.is_active or not request.user.is_authenticated:
+                data = {"is_ok": False, "reason": "User not authenticated"}
+                return JsonResponse(data)
+            try:
+                profile = Profile.objects.get(user__pk=request.user.pk)
+            except Profile.DoesNotExist:
+                data = {"is_ok": False, "reason": "User "+request.user+" does not exist"}
+                return JsonResponse(data)
+            if profile.only_view_project:
+                data = {"is_ok": False, "reason": "User "+request.user+" cannot modify data"}
+                return JsonResponse(data)
+
+            primer_id = request.GET[primer_id_a]
+            try:
+                primer = Primer.objects.get(pk=primer_id)
+            except Profile.DoesNotExist:
+                data = {"is_ok": False, "reason": "Primer "+primer_id+" does not exist"}
+                return JsonResponse(data)
+
+            ## different owner
+            if (primer.owner.pk != request.user.pk):
+                data = {"is_ok": False, "reason": "Primer owner different from the owner of this primer"}
+                return JsonResponse(data)
+
+            # TODO Need to go to all projects from this user and see 
+            # if there is any project using the primer as parameter
+
+            ### now you can remove
+            primer.is_deleted = True
+            primer.is_deleted_in_file_system = False
+            primer.date_deleted = datetime.now()
+            primer.save()
+            data = {"is_ok": True}
+
+        return JsonResponse(data)
+
 
 
 @transaction.atomic
@@ -1606,6 +1676,14 @@ def remove_project(request):
 
             ## refresh sample and project list for this user
             process_SGE = ProcessSGE()
+            ### kill any processes that may be running
+            #try:
+            process_SGE.kill_project_samples(request.user.pk, project, project.project_samples.all())
+            #except Exception as e:
+            #    #data = {"is_ok": False, "message_number_of_changes" : "Error " + str(e), "message" : "Error " + str(e)}
+            #    data = {"is_ok": False}
+            #    return JsonResponse(data)
+
             process_SGE.set_create_sample_list_by_user(request.user, [])
             process_SGE.set_create_project_list_by_user(request.user)
             data = {"is_ok": True}

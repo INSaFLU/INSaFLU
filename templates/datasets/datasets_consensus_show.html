@@ -168,7 +168,7 @@
 										
 										<!-- Show nextClade link -->
 										{% if nextclade_link_covid or nextclade_link_a_h3n2 or nextclade_link_mpxv_hmpxv_b1 or nextclade_link_rsv_a %}
-											<div class="btn-group" data-toggle="tooltip" data-original-title="Jump to NextClade Annotation">
+											<div class="btn-group" >
 												<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 													Jump to NextClade
 				  								</button>
@@ -200,6 +200,8 @@
 															class="dropdown-item" target="_blank"><span class="hidden-phone"> (B-Yamagata)</span></a>
 														<a href="{{nextclade_link_b_victoria}}" data-title="Upload your Consensus File in NextClade Annotation B-Vitoria" 
 															class="dropdown-item" target="_blank"><span class="hidden-phone"> (B-Vitoria)</span></a>
+														<a href="{{nextclade_link_multi}}" data-title="Upload your Consensus File in NextClade Annotation Automatic" 
+															class="dropdown-item" target="_blank"><span class="hidden-phone"> (Automatic)</span></a>																
 													{% else %}
 														<a href="{{nextclade_link_rsv_a}}" data-title="Upload your Consensus File in NextClade Annotation RSV-A" 
 															class="dropdown-item" target="_blank"><span class="hidden-phone"> (RSV-A)</span></a>		

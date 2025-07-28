@@ -24,7 +24,7 @@
 
 {% block content %}
 
-<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-3.0.1.min.js"></script>
 <script type="text/javascript" src="{% static 'js/televir_projects/heatmap_clades.js' %}"></script>
 
 
@@ -909,15 +909,20 @@
 
 <script type="text/javascript">
 
-    document.getElementById('toggle-summary').addEventListener('click', function() {
-        var summaryDiv = document.querySelector('.collapsible-summary');
-        summaryDiv.classList.toggle('show');
-    });
+    if (document.getElementById('toggle-summary')) {
+        document.getElementById('toggle-summary').addEventListener('click', function() {
+            var summaryDiv = document.querySelector('.collapsible-summary');
+            summaryDiv.classList.toggle('show');
+        });
+    }
 
-    document.getElementById('close-summary').addEventListener('click', function() {
-        var summaryDiv = document.querySelector('.collapsible-summary');
-        summaryDiv.classList.remove('show');
-    });
+    if (document.getElementById('close-summary')) {
+        document.getElementById('close-summary').addEventListener('click', function() {
+            var summaryDiv = document.querySelector('.collapsible-summary');
+            summaryDiv.classList.remove('show');
+        });
+    }
+
 
     document.getElementById('width-slider').addEventListener('input', function() {
         var summaryDiv = document.querySelector('.collapsible-summary');
@@ -928,6 +933,7 @@
         var sliderContainer = document.querySelector('.slider-container');
         sliderContainer.style.right = (parseInt(newWidth) + 20) + 'px';
     });
+
 
     var buttons = document.querySelectorAll('.showSecondaryRows, .showSecondaryRows i');
     for (var b = 0; b < buttons.length; b++) {
@@ -967,6 +973,8 @@
     google.charts.setOnLoadCallback(drawChart);
     
     // Draw the chart and set the chart values
+
+    //console.log("{{qc_report.input_reads}}");
     function drawChart() {
         var raw_data= [['Input', "Number"]];
         raw_data.push(["Kept", parseFloat("{{run_detail.processing_final|reconvert_string_to_int}}")]);
@@ -996,6 +1004,8 @@
       var chart = new google.visualization.PieChart(document.getElementById('piechart'));
       chart.draw(data, options);
     }
+    
+
 </script>
 
 

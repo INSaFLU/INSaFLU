@@ -22,7 +22,11 @@ from django.forms.models import inlineformset_factory
 from django.template.defaultfilters import filesizeformat
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+<<<<<<< HEAD
 from django.utils.translation import gettext_lazy as _
+=======
+from django.utils.translation import ugettext_lazy as _
+>>>>>>> develop
 
 from constants.constants import Constants, TypeFile
 from managing_files.models import (
@@ -268,6 +272,7 @@ class ReferenceForm(forms.ModelForm):
             some_error_in_files = True
             self.add_error("reference_fasta", "Not a valid 'fasta' file.")
 
+<<<<<<< HEAD
         ### test if it has degenerated bases
         if os.path.exists(reference_fasta_temp_file_name.name):
             try:
@@ -276,12 +281,29 @@ class ReferenceForm(forms.ModelForm):
                 os.unlink(reference_fasta_temp_file_name.name)
                 some_error_in_files = True
                 self.add_error("reference_fasta", e.args[0])
+=======
+        ### test if it has degenerated bases (only if there is no genbank...)
+        reference_genbank = cleaned_data["reference_genbank"]
+
+        if reference_genbank == None:
+            if os.path.exists(reference_fasta_temp_file_name.name):
+                try:
+                    self.utils.has_degenerated_bases(reference_fasta_temp_file_name.name)
+                except Exception as e:
+                    os.unlink(reference_fasta_temp_file_name.name)
+                    some_error_in_files = True
+                    self.add_error("reference_fasta", e.args[0])
+>>>>>>> develop
 
         ### testing genbank
         reference_genbank_temp_file_name = NamedTemporaryFile(
             prefix="flu_gb_", delete=False
         )
+<<<<<<< HEAD
         reference_genbank = cleaned_data["reference_genbank"]
+=======
+
+>>>>>>> develop
         if reference_genbank != None:
             reference_genbank_temp_file_name.write(reference_genbank.read())
             reference_genbank_temp_file_name.flush()
@@ -569,6 +591,7 @@ class PrimerForm(forms.ModelForm):
         os.unlink(primer_pairs_temp_file_name.name)
         os.unlink(primer_fasta_temp_file_name.name)
         return cleaned_data
+<<<<<<< HEAD
 
 
 class PrimerForm(forms.ModelForm):
@@ -821,6 +844,8 @@ class PrimerForm(forms.ModelForm):
         os.unlink(primer_pairs_temp_file_name.name)
         os.unlink(primer_fasta_temp_file_name.name)
         return cleaned_data
+=======
+>>>>>>> develop
 
 
 class RelatedFieldWidgetCanAdd(widgets.Select):
@@ -1461,6 +1486,12 @@ class SamplesUploadDescriptionForm(forms.ModelForm):
         cleaned_data = super(SamplesUploadDescriptionForm, self).clean()
 
         ### get path name
+<<<<<<< HEAD
+=======
+        if self.cleaned_data.get("path_name") is None:
+            self.add_error("path_name", _("Error: Must have a file."))
+            return cleaned_data
+>>>>>>> develop
         path_name = self.cleaned_data["path_name"]
 
         ## testing fastq
@@ -1601,6 +1632,14 @@ class SamplesUploadDescriptionMetadataForm(forms.ModelForm):
         cleaned_data = super(SamplesUploadDescriptionMetadataForm, self).clean()
 
         ### get path name
+<<<<<<< HEAD
+=======
+        if self.cleaned_data.get("path_name") is None:
+            self.add_error("path_name", _("Error: Must have a file."))
+
+            return cleaned_data
+
+>>>>>>> develop
         path_name = self.cleaned_data["path_name"]
 
         ## testing fastq
@@ -1655,6 +1694,10 @@ class SamplesUploadMultipleFastqForm(forms.ModelForm):
         if "path_name" not in self.cleaned_data:
             self.add_error("path_name", "There's no file to upload")
             return cleaned_data
+<<<<<<< HEAD
+=======
+
+>>>>>>> develop
         path_name = self.cleaned_data["path_name"]
 
         ### test the file name if exist

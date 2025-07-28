@@ -216,10 +216,10 @@ class CollectExtraDatasetData(object):
             start = time.time()
             ## collect sample table with plus type and subtype, mixed infection, equal to upload table
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_CSV, dataset)
-            self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_TSV, dataset)
+            self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_TSV, dataset)            
             self.calculate_global_files(
                 Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV, dataset
-            )
+            )          
             self.calculate_global_files(
                 Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_CSV, dataset
             )
@@ -277,6 +277,7 @@ class CollectExtraDatasetData(object):
             )
             count += 1
             start = time.time()
+
         except Exception as e:
             ## finished with error
             process_SGE.set_process_controler(
@@ -555,6 +556,7 @@ class CollectExtraDatasetData(object):
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic_time,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpx,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpox_clade_i,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpox_mpxv,            
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_ncov,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b,
@@ -734,6 +736,10 @@ class CollectExtraDatasetData(object):
             tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_mpox(
                 alignments=sequences_file, metadata=metadata_file, type="clade-i"
             )
+        elif build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpox_mpxv:
+            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_mpox(
+                alignments=sequences_file, metadata=metadata_file, type="all-clades"
+            )            
         elif build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y:
             # This one can have extra parameters such as strain (default: h3n2, h1n1, etc...) and time period (default: 12y)
             tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_flu(
@@ -871,14 +877,7 @@ class CollectExtraDatasetData(object):
                 time = True
             reference = dataset.get_first_reference()
             if reference is None or reference == "":
-                out_file_file_system = dataset.get_global_file_by_dataset(
-                    TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_error
-                )
-                with open(out_file_file_system, "w") as handle_write:
-                    handle_write.write(
-                        "No Reference was found. The generic build needs at least one reference"
-                    )
-                return None, Dataset.RUN_out_path
+                raise Exception("No Reference was found. The generic build needs at least one reference")
             try:
                 # Check for user?
                 tree_file, alignment_file, auspice_zip = (
@@ -891,22 +890,12 @@ class CollectExtraDatasetData(object):
                     )
                 )
             except Reference.DoesNotExist:
-                out_file_file_system = dataset.get_global_file_by_dataset(
-                    TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_error
-                )
-                with open(out_file_file_system, "w") as handle_write:
-                    handle_write.write(
-                        "Reference was not found. The generic build needs at least one reference"
-                    )
-                return None, Dataset.RUN_out_path
+                raise Exception("No Reference was found. The generic build needs at least one reference")
+            except Exception as e:
+                raise e
         else:
             # It is not supposed to arrive here
-            out_file_file_system = dataset.get_global_file_by_dataset(
-                TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_error
-            )
-            with open(out_file_file_system, "w") as handle_write:
-                handle_write.write("Unknown error. Please contact the administrators")
-            return None, Dataset.RUN_out_path
+            raise Exception("Unknown error. Please contact the administrators")
 
         # temp_dir = self.software.run_nextstrain(Dataset.REFERENCE_NAME, sequences_file, metadata_file)
         return tree_file, alignment_file, auspice_zip
@@ -1296,16 +1285,4 @@ class CollectExtraDatasetData(object):
                 )
             )
 
-        if os.path.exists(zip_out):
-            self.utils.move_file(
-                zip_out,
-                dataset.get_global_file_by_dataset(
-                    TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_all_files_zipped
-                ),
-            )
-        else:
-            self.utils.remove_file(
-                dataset.get_global_file_by_dataset(
-                    TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_all_files_zipped
-                )
-            )
+

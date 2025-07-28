@@ -1676,6 +1676,14 @@ def remove_project(request):
 
             ## refresh sample and project list for this user
             process_SGE = ProcessSGE()
+            ### kill any processes that may be running
+            #try:
+            process_SGE.kill_project_samples(request.user.pk, project, project.project_samples.all())
+            #except Exception as e:
+            #    #data = {"is_ok": False, "message_number_of_changes" : "Error " + str(e), "message" : "Error " + str(e)}
+            #    data = {"is_ok": False}
+            #    return JsonResponse(data)
+
             process_SGE.set_create_sample_list_by_user(request.user, [])
             process_SGE.set_create_project_list_by_user(request.user)
             data = {"is_ok": True}

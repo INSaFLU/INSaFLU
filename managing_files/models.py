@@ -19,6 +19,7 @@ from constants.constants import Constants, FileExtensions, FileType, TypePath
 from constants.constants_mixed_infection import ConstantsMixedInfection
 from constants.software_names import SoftwareNames
 from fluwebvirus.formatChecker import ContentTypeRestrictedFileField
+from manage_virus.constants_virus import ConstantsVirus
 from manage_virus.models import IdentifyVirus
 from settings.constants_settings import ConstantsSettings
 
@@ -27,9 +28,6 @@ def reference_directory_path(instance, filename):
     # file will be uploaded to MEDIA_ROOT/<filename>
     return "uploads/generic_data/user_{0}/{1}".format(instance.owner.id, filename)
 
-def primer_directory_path(instance, filename):
-    # file will be uploaded to MEDIA_ROOT/<filename>
-    return "uploads/generic_data/user_{0}/{1}".format(instance.owner.id, filename)
 
 def user_directory_path(instance, filename):
     # file will be uploaded to MEDIA_ROOT/<filename>
@@ -78,152 +76,12 @@ class MetaKey(models.Model):
         ]
 
 
-class Primer(models.Model):
-    constants = Constants()
-
-    name = models.CharField(
-        max_length=200, db_index=True, verbose_name="Primer set name"
-    )
-    creation_date = models.DateTimeField(
-        auto_now_add=True, verbose_name="Uploaded Date"
-    )
-
-    ## Size 100K
-    primer_fasta = ContentTypeRestrictedFileField(
-        upload_to=primer_directory_path,
-        content_types=["application/octet-stream"],
-        max_upload_size=settings.MAX_REF_FASTA_FILE,
-        blank=True,
-        null=True,
-        max_length=500,
-    )
-    primer_fasta_name = models.CharField(
-        max_length=200, default="", verbose_name="Fasta file"
-    )
-    hash_primer_fasta = models.CharField(max_length=50, blank=True, null=True)
-
-    ## Size 100K
-    primer_pairs = ContentTypeRestrictedFileField(
-        upload_to=primer_directory_path,
-        content_types=["application/octet-stream"],
-        max_upload_size=settings.MAX_REF_FASTA_FILE,
-        blank=True,
-        null=True,
-        max_length=500,
-    )
-    primer_pairs_name = models.CharField(
-        max_length=200, default="", verbose_name="Tabular file with primer pairs"
-    )
-    hash_primer_pairs = models.CharField(max_length=50, blank=True, null=True)
-
-    owner = models.ForeignKey(
-        User, related_name="primer", blank=True, null=True, on_delete=models.CASCADE
-    )
-    is_deleted = models.BooleanField(default=False, verbose_name="Deleted")
-
-    description = models.CharField(
-        max_length=500, default="", blank=True, null=True, verbose_name="Description"
-    )
-
-    ### if is deleted in file system
-    is_deleted_in_file_system = models.BooleanField(
-        default=False
-    )  ## if this file was removed in file system
-    date_deleted = models.DateTimeField(
-        blank=True, null=True, verbose_name="Date attached"
-    )  ## this date has the time of deleted by web page
-
-
-    def __str__(self):
-        return self.name
-
-
-    def get_primer_fasta(self, type_path):
-        """
-        get a path, type_path, from MEDIA_URL or MEDIA_ROOT
-        """
-        path_to_find = self.primer_fasta.name
-        if type_path == TypePath.MEDIA_ROOT:
-            if not path_to_find.startswith("/"):
-                path_to_find = os.path.join(
-                    getattr(settings, "MEDIA_ROOT", None), path_to_find
-                )
-        else:
-            path_to_find = os.path.join(
-                getattr(settings, "MEDIA_URL", None), path_to_find
-            )
-        return path_to_find
-
-    def get_primer_fasta_web(self):
-        """
-        return web link for reference
-        """
-        out_file = self.get_primer_fasta(TypePath.MEDIA_ROOT)
-        if os.path.exists(out_file):
-            return mark_safe(
-                '<a href="{}" download="{}"> {}</a>'.format(
-                    self.get_primer_fasta(TypePath.MEDIA_URL),
-                    os.path.basename(self.get_primer_fasta(TypePath.MEDIA_ROOT)),
-                    self.constants.short_name(
-                        self.primer_fasta_name, Constants.SHORT_NAME_LENGTH
-                    ),
-                )
-            )
-        return _("File not available.")
-
-    def get_primer_pairs(self, type_path):
-        """
-        get a path, type_path, from MEDIA_URL or MEDIA_ROOT
-        """
-        path_to_find = self.primer_pairs.name
-        if type_path == TypePath.MEDIA_ROOT:
-            if not path_to_find.startswith("/"):
-                path_to_find = os.path.join(
-                    getattr(settings, "MEDIA_ROOT", None), path_to_find
-                )
-        else:
-            path_to_find = os.path.join(
-                getattr(settings, "MEDIA_URL", None), path_to_find
-            )
-        return path_to_find
-
-    def get_primer_pairs_web(self):
-        """
-        return web link for reference
-        """
-        out_file = self.get_primer_pairs(TypePath.MEDIA_ROOT)
-        if os.path.exists(out_file):
-            return mark_safe(
-                '<a href="{}" download="{}"> {}</a>'.format(
-                    self.get_primer_pairs(TypePath.MEDIA_URL),
-                    os.path.basename(self.get_primer_pairs(TypePath.MEDIA_ROOT)),
-                    self.constants.short_name(
-                        self.primer_pairs_name, Constants.SHORT_NAME_LENGTH
-                    ),
-                )
-            )
-        return _("File not available.")
-
-    class Meta:
-        verbose_name = "Primer"
-        verbose_name_plural = "Primers"
-        ordering = [
-            "-creation_date",
-        ]
-        indexes = [
-            models.Index(fields=["name"], name="primer_name_idx"),
-        ]
-
-
-
-
 class Reference(models.Model):
     constants = Constants()
 
     ### species
     SPECIES_SARS_COV_2 = "SARS_COV_2"
     SPECIES_MPXV = "MPXV"
-    SPECIES_DENGUE = "DENGUE"
     SPECIES_INFLUENZA = "INFLUENZA"
     SPECIES_RSV = "RSV"
     SPECIES_NOT_SET = "NOT_SET"
@@ -1145,24 +1003,6 @@ class Project(models.Model):
     PROJECT_FILE_NAME_Aln2pheno_flagged_carabelli = "aln2pheno_flagged_mutation_report_EpitopeResidues_Carabelli_2023.tsv"  ### has results of aln2pheno
     PROJECT_FILE_NAME_Aln2pheno_zip = "aln2pheno.zip"  ### has results of aln2pheno
 
-    PROJECT_FILE_NAME_Flumut_mutation_report = (
-        "flumut_mutation_report.tsv"  ### has results of flumut
-    )
-    PROJECT_FILE_NAME_Flumut_markers_report = (
-        "flumut_markers_report.tsv"  ### has results of flumut
-    )
-    PROJECT_FILE_NAME_Flumut_litterature_report = (
-        "flumut_litterature_report.tsv"  ### has results of flumut
-    )
-    PROJECT_FILE_NAME_flumut_excel = (
-        "flumut_full_report.xlsx"  ### has results of flumut
-    )
-
-    PROJECT_FILE_NAME_flumut_version = "flumut_version.txt"  ### has results of flumut
-
-    PROJECT_FILE_NAME_IRMA_OUTPUT_zipped = "irma_output.zip"  ### has results of irma
-    PROJECT_FILE_NAME_IRMA_MIXED_POSITIONS_folder = "irma_mixed_variants"
-
     PROJECT_FILE_NAME_all_files_zipped = "AllFiles.zip"  ### Several files zipped
 
     ## put the type file here to clean if there isn't enough sequences to create the trees and alignments
@@ -1425,7 +1265,7 @@ class ProjectSample(models.Model):
     PATH_MAIN_RESULT = "main_result"
     PREFIX_FILE_COVERAGE = "coverage"
     FILE_CONSENSUS_FILE = "Consensus_"
-    FILE_VARIANTS_TAB = "validated_variants_sample_"
+    FILE_SNIPPY_TAB = "validated_variants_sample_"
     FILE_FREEBAYES_TAB = "validated_minor_iSNVs_sample_"
     FILE_FREEBAYES_TAB_with_indels = "validated_minor_inc_indels_sample_"
 
@@ -1491,18 +1331,6 @@ class ProjectSample(models.Model):
     def __str__(self):
         return self.project.name
 
-    @property
-    def name(self):
-        return self.sample.name
-
-    @property
-    def reference_fasta(self):
-        return self.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT)
-
-    @property
-    def reference_gbk(self):
-        return self.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT)
-
     def get_global_file_by_element(
         self, type_path, prefix_file_name, sequence_name, extension
     ):
@@ -1558,11 +1386,11 @@ class ProjectSample(models.Model):
         get human file name
         """
         if (
-            software in SoftwareNames.SOFTWARE_MDCG_list
+            software == SoftwareNames.SOFTWARE_SNIPPY_name
             or software == SoftwareNames.SOFTWARE_Medaka_name
         ):
             if file_type == FileType.FILE_TAB:
-                return "{}{}".format(ProjectSample.FILE_VARIANTS_TAB, self.sample.name)
+                return "{}{}".format(ProjectSample.FILE_SNIPPY_TAB, self.sample.name)
         if software == SoftwareNames.SOFTWARE_FREEBAYES_name and not b_second_choice:
             if file_type == FileType.FILE_TAB:
                 return "{}{}".format(ProjectSample.FILE_FREEBAYES_TAB, self.sample.name)
@@ -2082,11 +1910,6 @@ class ProcessControler(models.Model):
     def get_name_televir_map(self, reference_pk):
         return "{}{}".format(
             ProcessControler.PREFIX_TELEVIR_REFERENCE_MAP, reference_pk
-        )
-
-    def __str__(self):
-        return "PK:{} name:{}  is_finished:{}  is_running:{}  is_error:{}".format(
-            self.pk, self.name, self.is_finished, self.is_running, self.is_error
         )
 
     def __str__(self):

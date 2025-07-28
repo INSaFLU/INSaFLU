@@ -142,7 +142,7 @@ class ProcessSGE(object):
         b_remove_out_dir = False
         if len(vect_cmd) == 0:
             return None
-        # b_remove_out_dir=False,
+        # b_remove_out_dir = (False,)
         file_name_out = os.path.join(out_dir, ProcessSGE.FILE_NAME_SCRIPT_SGE)
 
         with open(file_name_out, "w") as handleSLURM:
@@ -1861,6 +1861,48 @@ class ProcessSGE(object):
 
         self.kill_processes(processes)
 
+    @transaction.atomic
+    def kill_project_samples(self, user_pk: int, project, project_sample_list):
+        """
+        Kill the processes for the given Project in process controler.
+        """
+        process_controler = ProcessControler()
+
+        names_processes = []
+        names_processes.append(process_controler.get_name_project(project))
+        for project_sample in project_sample_list:
+            names_processes.append(
+                process_controler.get_name_project_sample(project_sample)
+            )
+
+        processes = ProcessControler.objects.filter(
+            owner__id=user_pk,
+            name__in=names_processes,
+            is_error=False,
+            is_finished=False,
+        )
+
+        self.kill_processes(processes)
+
+    @transaction.atomic
+    def kill_dataset(self, user_pk: int, dataset):
+        """
+        Kill the processes for the given Dataset in process controler.
+        """
+        process_controler = ProcessControler()
+
+        names_processes = []
+        names_processes.append(process_controler.get_name_dataset(dataset))
+
+        processes = ProcessControler.objects.filter(
+            owner__id=user_pk,
+            name__in=names_processes,
+            is_error=False,
+            is_finished=False,
+        )
+
+        self.kill_processes(processes)
+
     def kill_processes(self, processes: List[ProcessControler]):
         """ """
 
@@ -1942,19 +1984,20 @@ class ProcessSGE(object):
             )
 
         if data_set.count() > 0:
-            process_controler = ProcessControler.objects.get(pk=data_set[0].pk)
-            if flags == ProcessControler.FLAG_FINISHED:
-                process_controler.is_finished = True
-                process_controler.is_running = False
-                process_controler.close_date = datetime.now()
-            elif flags == ProcessControler.FLAG_ERROR:
-                process_controler.is_finished = True
-                process_controler.is_error = True
-                process_controler.is_running = False
-                process_controler.close_date = datetime.now()
-            elif flags == ProcessControler.FLAG_RUNNING:
-                process_controler.is_running = True
-            process_controler.save()
+            for process_controler in data_set:
+                # process_controler = ProcessControler.objects.get(pk=data_set[0].pk)
+                if flags == ProcessControler.FLAG_FINISHED:
+                    process_controler.is_finished = True
+                    process_controler.is_running = False
+                    process_controler.close_date = datetime.now()
+                elif flags == ProcessControler.FLAG_ERROR:
+                    process_controler.is_finished = True
+                    process_controler.is_error = True
+                    process_controler.is_running = False
+                    process_controler.close_date = datetime.now()
+                elif flags == ProcessControler.FLAG_RUNNING:
+                    process_controler.is_running = True
+                process_controler.save()
 
     ##### set collect global files
     def set_collect_dataset_global_files(self, dataset, user):

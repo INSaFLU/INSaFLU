@@ -555,13 +555,9 @@ class RunMetadataHandler:
                 )
 
             if "taxid" not in df.columns:
-                if "acc" in df.columns:
-                    df = self.db_get_taxid_from_accid(df)
-
-                else:
-                    raise ValueError(
-                        "No taxid, accid or protid in the dataframe, unable to retrieve description."
-                    )
+                raise ValueError(
+                    "No taxid, accid or protid in the dataframe, unable to retrieve description."
+                )
 
         df = df[(df.taxid != "0") | (df.taxid != 0)]
 
@@ -590,30 +586,6 @@ class RunMetadataHandler:
 
         df["description"] = df["description"].fillna("NA")
         df["description"] = df["description"].astype(str)
-
-        return df
-
-    def db_get_taxid_from_accid(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Get taxid from accid.
-        """
-
-        def get_taxid(accid: str):
-            try:
-                return (
-                    ReferenceSource.objects.filter(
-                        accid__in=[accid, accid.split(".")[0]]
-                    )
-                    .first()
-                    .taxid.taxid
-                )
-            except:
-                return ""
-
-        df["taxid"] = df["acc"].apply(get_taxid)
-
-        df["taxid"] = df["taxid"].fillna("NA")
-        df["taxid"] = df["taxid"].astype(str)
 
         return df
 

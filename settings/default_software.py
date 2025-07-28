@@ -955,8 +955,7 @@ class DefaultSoftware(object):
         except Software.MultipleObjectsReturned:
             ## keep the first one, delete the rest
             software_query = (
-                Software.objects.select_for_update()
-                .filter(
+                Software.objects.filter(
                     name=software_name,
                     owner=user,
                     type_of_use=vect_parameters[0].software.type_of_use,
@@ -968,11 +967,15 @@ class DefaultSoftware(object):
                     parameter__televir_project=None,
                     parameter__televir_project_sample=None,
                 )
+                .distinct("id")
                 .order_by("id")
             )
 
             if software_query.count() > 1:
                 software = software_query.exclude(pk=software_query.last().pk)
+                software = Software.objects.select_for_update().filter(
+                    pk__in=software.values_list("pk", flat=True)
+                )
 
                 parameters = Parameter.objects.select_for_update().filter(
                     software__in=software

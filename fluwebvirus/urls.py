@@ -14,7 +14,10 @@ Including another URLconf
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
 
+
 from django.conf import settings
+from django.urls import include
+from django.conf.urls import re_path
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path, re_path
@@ -38,47 +41,49 @@ if settings.ADMIN_ENABLED:
     ]
 
 urlpatterns += [
-    path("", HomePageView.as_view(), name="home"),
-    path("accounts/register/", SignUpView.as_view(), name="register"),
-    path(
-        "accounts/reset_password/",
+    re_path("^$", HomePageView.as_view(), name="home"),
+    re_path(r"^accounts/register/$", SignUpView.as_view(), name="register"),
+    re_path(
+        r"^accounts/reset_password/$",
         ResetPasswordView.as_view(),
         name="reset_password",
     ),
-    path(
-        "accounts/get_message_confirm_email/",
+    re_path(
+        r"^accounts/get_message_confirm_email/$",
         GetMessageConfirmEmailView.as_view(),
         name="get_message_confirm_email",
     ),
-    path(
-        "accounts/change_password/",
+    re_path(
+        r"^accounts/change_password/$",
         ChangePasswordView.as_view(),
         name="change_password",
     ),
-    path("accounts/login/", LoginView.as_view(), name="login"),
-    path("accounts/logout/", LogOutView.as_view(), name="logout"),
+    re_path(r"^accounts/login/$", LoginView.as_view(), name="login"),
+    re_path(r"^accounts/logout/$", LogOutView.as_view(), name="logout"),
     re_path(
         r"^accounts/activate/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$",
         activate,
         name="activate",
     ),
     re_path(
+    re_path(
         r"^accounts/reset_password_key/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$",
         reset_password_key,
         name="reset_password_key",
     ),
     re_path(
+    re_path(
         r"^accounts/change_password/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$",
         ChangePasswordView.as_view(),
         name="change_password",
     ),
-    path("dashboard/", HomePageView.as_view(), name="dashboard"),
-    path("managing_files/", include("managing_files.urls")),
-    path("pathogen_identification/", include("pathogen_identification.urls")),
-    path("phylogeny/", include("phylogeny.urls")),
-    path("settings/", include("settings.urls")),
+    re_path(r"^dashboard/$", HomePageView.as_view(), name="dashboard"),
+    re_path(r"^managing_files/", include("managing_files.urls")),
+    re_path(r"^pathogen_identification/", include("pathogen_identification.urls")),
+    re_path(r"^phylogeny/", include("phylogeny.urls")),
+    re_path(r"^settings/", include("settings.urls")),
     #    url(r"^settings_pf/", include("settings_pf.urls")),
-    path("datasets/", include("datasets.urls")),
+    re_path(r"^datasets/", include("datasets.urls")),
 ]
 
 if settings.DEBUG is True:

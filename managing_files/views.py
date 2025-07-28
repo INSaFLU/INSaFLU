@@ -24,11 +24,7 @@ from django.utils.translation import gettext_lazy as _
 from django.views import generic
 from django.views.generic import DetailView, ListView, TemplateView
 from django_tables2 import RequestConfig
-<<<<<<< HEAD
 from view_breadcrumbs import BaseBreadcrumbMixin
-=======
-from view_breadcrumbs import BaseBreadcrumbMixin, DetailBreadcrumbMixin
->>>>>>> 39a26f64 (begin transition to view_breadcrumbs to views.)
 
 from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
 from constants.meta_key_and_values import MetaKeyAndValue

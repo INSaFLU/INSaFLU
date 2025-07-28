@@ -3387,6 +3387,16 @@ class ProjectsSettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
             ),
         ]
 
+    def __init__(self):
+        self.is_setup = False
+        self.setup_note = ""
+
+    def setup(self, request, *args, **kwargs):
+        super(ProjectsSettingsView, self).setup(request, *args, **kwargs)
+        self.request = request
+        self.is_setup = False
+        self.setup_note = ""
+
     def get_context_data(self, **kwargs):
         context = super(ProjectSelectView, self).get_context_data(**kwargs)
         project = Project.objects.get(pk=self.kwargs["pk"])

@@ -3365,7 +3365,7 @@ class ProjectSelectView(LoginRequiredMixin, ListView):
         return context
 
 
-class ProjectsSettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
+class ProjectSelectView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
     """
     choose one of Mutation Detecion and Consensus Generation software
     """
@@ -3386,16 +3386,6 @@ class ProjectsSettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
                 reverse("project-settings", kwargs={"pk": self.kwargs["pk"]}),
             ),
         ]
-
-    def __init__(self):
-        self.is_setup = False
-        self.setup_note = ""
-
-    def setup(self, request, *args, **kwargs):
-        super(ProjectsSettingsView, self).setup(request, *args, **kwargs)
-        self.request = request
-        self.is_setup = False
-        self.setup_note = ""
 
     def get_context_data(self, **kwargs):
         context = super(ProjectSelectView, self).get_context_data(**kwargs)
@@ -3455,6 +3445,16 @@ class ProjectsSettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
                 reverse("project-settings", kwargs={"pk": self.kwargs["pk"]}),
             ),
         ]
+
+    def __init__(self):
+        self.is_setup = False
+        self.setup_note = ""
+
+    def setup(self, request, *args, **kwargs):
+        super(ProjectsSettingsView, self).setup(request, *args, **kwargs)
+        self.request = request
+        self.is_setup = False
+        self.setup_note = ""
 
     def get_context_data(self, **kwargs):
         context = super(ProjectsSettingsView, self).get_context_data(**kwargs)

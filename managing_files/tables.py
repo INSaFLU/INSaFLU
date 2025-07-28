@@ -135,9 +135,10 @@ class ReferenceProjectTable(tables.Table):
 class PrimerTable(tables.Table):
     #   Renders a normal value as an internal hyperlink to another page.
     #   account_number = tables.LinkColumn('customer-detail', args=[A('pk')])
-    primer_fasta_name = tables.LinkColumn(
-        "primer_fasta_name", args=[tables.A("pk")], verbose_name="Primer Fasta file"
-    )
+    # primer_fasta_name = tables.LinkColumn(
+    #    "primer_fasta_name", args=[tables.A("pk")], verbose_name="Primer Fasta file"
+    # )
+    primer_fasta_name = tables.Column(verbose_name="Primer Fasta file")
     owner = tables.Column("Owner", orderable=True, empty_values=())
     constants = Constants()
 

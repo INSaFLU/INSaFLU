@@ -1365,29 +1365,6 @@ class UpdateParametersProjSampleView(
                 ("Update parameters", reverse("software-update")),
             ],
         )
-<<<<<<< HEAD
-
-    add_home = True
-
-    @cached_property
-    def crumbs(self):
-        return (
-            [
-                ("Project Index", reverse("project-index")),
-                ("Projects", reverse("projects")),
-                (
-                    "Show project results",
-                    reverse(
-                        "show-sample-project-results",
-                        kwargs={"pk": self.kwargs["pk_proj_sample"]},
-                    ),
-                ),
-                ("Project sample settings", reverse("sample-project-settings")),
-                ("Update parameters", reverse("software-update")),
-            ],
-        )
-=======
->>>>>>> 451991c3 (breadcrumbs samples & settings finished)
 
     ## Other solution to get the reference
     ## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1

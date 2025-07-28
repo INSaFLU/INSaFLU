@@ -13,6 +13,7 @@ from django.db import DatabaseError, transaction
 
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
+from managing_files.models import Project, ProjectSample
 from pathogen_identification.constants_settings import (
     ConstantsSettings as PI_ConstantsSettings,
 )
@@ -1044,6 +1045,7 @@ class DefaultParameters(object):
         )
         return True
 
+    # @transaction.atomic
     def set_software_to_run_by_software(
         self,
         software: Software,
@@ -1085,66 +1087,6 @@ class DefaultParameters(object):
             else:
                 is_to_run = not software.is_to_run
 
-<<<<<<< HEAD
-            ## if the software can not be change return False
-            if not software.can_be_on_off_in_pipeline:
-                if software.type_of_use in [
-                    Software.TYPE_OF_USE_qc,
-                    Software.TYPE_OF_USE_global,
-                    Software.TYPE_OF_USE_televir_global,
-                    Software.TYPE_OF_USE_televir_project,
-                    Software.TYPE_OF_USE_televir_settings,
-                    Software.TYPE_OF_USE_televir_project_settings,
-                ]:
-                    return software.is_to_run
-                elif len(parameters) > 0:
-                    return parameters[0].is_to_run
-                return True
-
-        # if it is Global it is software that is mandatory
-        # only can change if TYPE_OF_USE_global, other type_of_use is not be tested
-        if software.type_of_use in [
-            Software.TYPE_OF_USE_qc,
-            Software.TYPE_OF_USE_project,
-            Software.TYPE_OF_USE_global,
-            Software.TYPE_OF_USE_televir_global,
-            Software.TYPE_OF_USE_televir_project,
-            Software.TYPE_OF_USE_televir_settings,
-            Software.TYPE_OF_USE_televir_project_settings,
-        ]:
-            software.is_to_run = is_to_run
-            software.save()
-
-        if (
-            software.pipeline_step.name
-            == ConstantsSettings.PIPELINE_NAME_variant_detection
-        ):
-            software.is_to_run = is_to_run
-            software.save()
-
-        ## get parameters for a specific sample, project or project_sample
-
-        parameters = Parameter.objects.filter(
-            software=software,
-            project=project,
-            televir_project=televir_project,
-            project_sample=project_sample,
-            sample=sample,
-            dataset=dataset,
-        )
-
-<<<<<<< HEAD
-        ### Try to find the parameter of sequence_out == 1. It is the one that has the flag to run or not.
-        for parameter in parameters:
-            parameter.is_to_run = is_to_run
-            parameter.save()
-=======
-            ### Try to find the parameter of sequence_out == 1. It is the one that has the flag to run or not.
-            for parameter in parameters:
-                parameter.is_to_run = is_to_run
-                parameter.save()
->>>>>>> cb39ec32 (merge flumut / insaflu pipelins into ubuntu development branch)
-=======
         ## if the software can not be change return False
         if not software.can_be_on_off_in_pipeline:
             if software.type_of_use in [
@@ -1191,7 +1133,6 @@ class DefaultParameters(object):
             sample=sample,
             dataset=dataset,
         )
->>>>>>> 6a32c5a4 (remove some locks, update request ajax identification.)
 
         ### Try to find the parameter of sequence_out == 1. It is the one that has the flag to run or not.
         for parameter in parameters:

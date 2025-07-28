@@ -1143,6 +1143,24 @@ class Project(models.Model):
     PROJECT_FILE_NAME_Aln2pheno_flagged_carabelli = "aln2pheno_flagged_mutation_report_EpitopeResidues_Carabelli_2023.tsv"  ### has results of aln2pheno
     PROJECT_FILE_NAME_Aln2pheno_zip = "aln2pheno.zip"  ### has results of aln2pheno
 
+    PROJECT_FILE_NAME_Flumut_mutation_report = (
+        "flumut_mutation_report.tsv"  ### has results of flumut
+    )
+    PROJECT_FILE_NAME_Flumut_markers_report = (
+        "flumut_markers_report.tsv"  ### has results of flumut
+    )
+    PROJECT_FILE_NAME_Flumut_litterature_report = (
+        "flumut_litterature_report.tsv"  ### has results of flumut
+    )
+    PROJECT_FILE_NAME_flumut_excel = (
+        "flumut_full_report.xlsx"  ### has results of flumut
+    )
+
+    PROJECT_FILE_NAME_flumut_version = "flumut_version.txt"  ### has results of flumut
+
+    PROJECT_FILE_NAME_IRMA_OUTPUT_zipped = "irma_output.zip"  ### has results of irma
+    PROJECT_FILE_NAME_IRMA_MIXED_POSITIONS_folder = "irma_mixed_variants"
+
     PROJECT_FILE_NAME_all_files_zipped = "AllFiles.zip"  ### Several files zipped
 
     ## put the type file here to clean if there isn't enough sequences to create the trees and alignments

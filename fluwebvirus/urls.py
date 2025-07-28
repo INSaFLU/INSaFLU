@@ -14,7 +14,6 @@ Including another URLconf
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
 
-
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
@@ -64,12 +63,10 @@ urlpatterns += [
         name="activate",
     ),
     re_path(
-    re_path(
         r"^accounts/reset_password_key/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$",
         reset_password_key,
         name="reset_password_key",
     ),
-    re_path(
     re_path(
         r"^accounts/change_password/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$",
         ChangePasswordView.as_view(),

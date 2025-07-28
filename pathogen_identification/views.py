@@ -1536,6 +1536,7 @@ class Sample_main(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView):
             reverse("PIproject_samples", kwargs={"pk": self.kwargs["pk1"]}),
         )
         print(self.kwargs["sample_name"], "")
+        print("OIHOIH")
         return [
             ("Project Index", reverse("project-index")),
             ("TELEVIR Projects", reverse("PIprojects_main")),
@@ -1548,6 +1549,7 @@ class Sample_main(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView):
 
     def setup(self, request, *args, **kwargs):
         super(Sample_main, self).setup(request, *args, **kwargs)
+
         project = Projects.objects.get(pk=self.kwargs["pk1"])
         sample = PIProject_Sample.objects.get(pk=self.kwargs["pk2"])
         if project.owner != self.request.user:
@@ -2644,33 +2646,33 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
 
     @cached_property
     def crumbs(self):
+        print("OIHOi")
+        print(self.kwargs)
         return [
+            ("Project Index", reverse("project-index")),
+            ("TELEVIR Projects", reverse("PIprojects_main")),
             (
-                ("Project Index", reverse("project-index")),
-                ("TELEVIR Projects", reverse("PIprojects_main")),
-                (
-                    self.kwargs["project_name"],
-                    reverse("PIproject_samples", kwargs={"pk": self.kwargs["pk1"]}),
+                self.kwargs["project_name"],
+                reverse("PIproject_samples", kwargs={"pk": self.kwargs["pk1"]}),
+            ),
+            (
+                self.kwargs["sample_name"],
+                reverse(
+                    "sample_main",
+                    kwargs={"pk1": self.kwargs["pk1"], "pk2": self.kwargs["pk2"]},
                 ),
-                (
-                    self.kwargs["sample_name"],
-                    reverse(
-                        "sample_main",
-                        kwargs={"pk1": self.kwargs["pk1"], "pk2": self.kwargs["pk2"]},
-                    ),
+            ),
+            (
+                self.kwargs["run_name"],
+                reverse(
+                    "sample_detail",
+                    kwargs={
+                        "pk1": self.kwargs["pk1"],
+                        "pk2": self.kwargs["pk2"],
+                        "pk3": self.kwargs["pk3"],
+                    },
                 ),
-                (
-                    self.kwargs["run_name"],
-                    reverse(
-                        "sample_detail",
-                        kwargs={
-                            "pk1": self.kwargs["pk1"],
-                            "pk2": self.kwargs["pk2"],
-                            "pk3": self.kwargs["pk3"],
-                        },
-                    ),
-                ),
-            )
+            ),
         ]
 
     def setup(self, request, *args, **kwargs):
@@ -2847,6 +2849,7 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
         )
 
         context = {
+            "crumbs": self.crumbs,
             "project": project_name,
             "run_name": run_name,
             "sort_performed": sort_performed,
@@ -2953,11 +2956,11 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
             ("Project Index", reverse("project-index")),
             ("TELEVIR Projects", reverse("PIprojects_main")),
             (
-                self.kwargs["project"],
+                self.kwargs["project_name"],
                 reverse("PIproject_samples", kwargs={"pk": self.kwargs["pk1"]}),
             ),
             (
-                self.kwargs["sample"],
+                self.kwargs["sample_name"],
                 reverse(
                     "sample_main",
                     kwargs={
@@ -3044,6 +3047,7 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         runs_exist = runs_number > 0
 
         context = {
+            "crumbs": self.crumbs,
             "project": project_name,
             "nav_project": True,
             "graph_json": graph_json,

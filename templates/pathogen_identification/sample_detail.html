@@ -68,6 +68,18 @@
 
 </style>
 
+{% if crumbs %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            {% for name, url in crumbs %}
+                <li class="breadcrumb-item">
+                    <a href="{{ url }}">{{ name }}</a>
+                </li>
+            {% endfor %}
+        </ol>
+    </nav>
+{% endif %}
+
 {% if owner %}
 
 <div id="accordion1" role="tablist" aria-multiselectable="true">

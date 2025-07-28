@@ -163,8 +163,8 @@ class UploadFiles(object):
         """
                         :in dict_data -> dictonary { 'Seq.id' : [dt_data, dt_data2, ...], 'Seq.id1' : [dt_data5, dt_data6, ...]
                         OrderedDict(sorted(dict_data_out.items(), reverse=True,
-        #			key=lambda k: (k[1][0][self.COVERAGE],
-        #			k[1][0][self.IDENTITY]) )), clean_abricate_file
+        #            key=lambda k: (k[1][0][self.COVERAGE],
+        #            k[1][0][self.IDENTITY]) )), clean_abricate_file
         """
         ### first look for the type
         ### this is necessary because of the order
@@ -205,7 +205,7 @@ class UploadFiles(object):
                     if save:
                         seqVirus.save()
                     # raise Exception(_("Gene '%s', Accession '%s' not found in database '%s'" % (dt_type.get(ParseOutFiles.GENE),\
-                    # 			dt_type.get(ParseOutFiles.ACCESSION), database_name)))
+                    #             dt_type.get(ParseOutFiles.ACCESSION), database_name)))
 
                 identifyVirus = IdentifyVirus()
                 identifyVirus.coverage = "%.2f" % (dt_type.get(ParseOutFiles.COVERAGE))
@@ -392,73 +392,98 @@ class UploadFiles(object):
                 self.utils.get_elements_from_db(reference, user)
                 self.utils.get_elements_and_cds_from_db(reference, user)
 
-				## create the index before commit in database, throw exception if something goes wrong
-				software.create_fai_fasta(os.path.join(getattr(settings, "MEDIA_ROOT", None), reference.reference_fasta.name))
-		
-				print("Upload reference: {}".format(name))
-				n_upload += 1
-			
-			if (b_test and n_upload > 2): break
-		print("#Upload references: {}".format(n_upload))
+                ## create the index before commit in database, throw exception if something goes wrong
+                software.create_fai_fasta(
+                    os.path.join(
+                        getattr(settings, "MEDIA_ROOT", None),
+                        reference.reference_fasta.name,
+                    )
+                )
 
-	@transaction.atomic
-	def upload_default_primers(self, user, b_test):
-		"""
-		upload default files for primers
-		"""
-		from managing_files.models import Primer
-		from utils.software import Software
-		
-		software = Software()
-		path_to_find = os.path.join(getattr(settings, "STATIC_ROOT", None), \
-					Constants.DIR_TEST_TYPE_PRIMERS if b_test else Constants.DIR_TYPE_PRIMERS)
-		n_upload = 0
-		for file in self.utils.get_all_files(path_to_find):
-			file = os.path.join(path_to_find, file)
-			
-			try:
-				number_of_elements = self.utils.is_fasta(file)
-			except IOError as e:
-				continue
-			except Exception as e:    ## (e.errno, e.strerror)
-				print(e.args[0])
-				continue
-			
-			name = self.utils.clean_extension(os.path.basename(file))
+                print("Upload reference: {}".format(name))
+                n_upload += 1
 
-			try:
-				primer = Primer.objects.get(owner=user, is_deleted=False, name__iexact=name)
-			except Primer.DoesNotExist as e:
+            if b_test and n_upload > 2:
+                break
+        print("#Upload references: {}".format(n_upload))
 
-				### check if exist pairinformation file
-				pair_file = file + Constants.EXTENSION_PRIMER_PAIR
+    @transaction.atomic
+    def upload_default_primers(self, user, b_test):
+        """
+        upload default files for primers
+        """
+        from managing_files.models import Primer
+        from utils.software import Software
 
-				if(not os.path.exists(pair_file)):
-					print(pair_file + " does not exist, not uploading primer set")
-					continue
-				
-				primer = Primer()
-				primer.name = name
-				primer.owner = user
-				primer.primer_fasta_name = os.path.basename(file)
-				primer.hash_primer_fasta = self.utils.md5sum(file)
-				primer.primer_pairs_name = os.path.basename(pair_file)
-				primer.hash_primer_pairs = self.utils.md5sum(pair_file)
-				primer.save()
-				
-				## move the files to the right place
-				sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), self.utils.get_path_to_primer_file(user.id, primer.id), primer.primer_fasta_name)
-				self.utils.copy_file(file, sz_file_to)
-				primer.primer_fasta.name = os.path.join(self.utils.get_path_to_primer_file(user.id, primer.id), primer.primer_fasta_name)
-				
-				### genbank files
-				sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), self.utils.get_path_to_primer_file(user.id, primer.id), primer.primer_pairs_name)
-				self.utils.copy_file(pair_file, sz_file_to)
-				primer.primer_pairs.name = os.path.join(self.utils.get_path_to_primer_file(user.id, primer.id), primer.primer_pairs_name)
-				primer.save()
-				
-				print("Upload primer set: {}".format(name))
-				n_upload += 1
-			
-			if (b_test and n_upload > 2): break
-		print("#Upload primer sets: {}".format(n_upload))
+        software = Software()
+        path_to_find = os.path.join(
+            getattr(settings, "STATIC_ROOT", None),
+            Constants.DIR_TEST_TYPE_PRIMERS if b_test else Constants.DIR_TYPE_PRIMERS,
+        )
+        n_upload = 0
+        for file in self.utils.get_all_files(path_to_find):
+            file = os.path.join(path_to_find, file)
+
+            try:
+                number_of_elements = self.utils.is_fasta(file)
+            except IOError as e:
+                continue
+            except Exception as e:  ## (e.errno, e.strerror)
+                print(e.args[0])
+                continue
+
+            name = self.utils.clean_extension(os.path.basename(file))
+
+            try:
+                primer = Primer.objects.get(
+                    owner=user, is_deleted=False, name__iexact=name
+                )
+            except Primer.DoesNotExist as e:
+
+                ### check if exist pairinformation file
+                pair_file = file + Constants.EXTENSION_PRIMER_PAIR
+
+                if not os.path.exists(pair_file):
+                    print(pair_file + " does not exist, not uploading primer set")
+                    continue
+
+                primer = Primer()
+                primer.name = name
+                primer.owner = user
+                primer.primer_fasta_name = os.path.basename(file)
+                primer.hash_primer_fasta = self.utils.md5sum(file)
+                primer.primer_pairs_name = os.path.basename(pair_file)
+                primer.hash_primer_pairs = self.utils.md5sum(pair_file)
+                primer.save()
+
+                ## move the files to the right place
+                sz_file_to = os.path.join(
+                    getattr(settings, "MEDIA_ROOT", None),
+                    self.utils.get_path_to_primer_file(user.id, primer.id),
+                    primer.primer_fasta_name,
+                )
+                self.utils.copy_file(file, sz_file_to)
+                primer.primer_fasta.name = os.path.join(
+                    self.utils.get_path_to_primer_file(user.id, primer.id),
+                    primer.primer_fasta_name,
+                )
+
+                ### genbank files
+                sz_file_to = os.path.join(
+                    getattr(settings, "MEDIA_ROOT", None),
+                    self.utils.get_path_to_primer_file(user.id, primer.id),
+                    primer.primer_pairs_name,
+                )
+                self.utils.copy_file(pair_file, sz_file_to)
+                primer.primer_pairs.name = os.path.join(
+                    self.utils.get_path_to_primer_file(user.id, primer.id),
+                    primer.primer_pairs_name,
+                )
+                primer.save()
+
+                print("Upload primer set: {}".format(name))
+                n_upload += 1
+
+            if b_test and n_upload > 2:
+                break
+        print("#Upload primer sets: {}".format(n_upload))

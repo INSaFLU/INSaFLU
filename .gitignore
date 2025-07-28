@@ -159,3 +159,5 @@ ENV/
 # televir projects media and static
 media/televir_projects
 
+[safe]
+directory = *

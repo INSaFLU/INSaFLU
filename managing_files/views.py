@@ -4154,23 +4154,3 @@ def get_unique_pk_from_session(request):
             else:
                 return None
     return return_pk
-
-
-def get_unique_pk_from_session(request):
-    """
-    return the unique pk selected. If exists more than one return none
-    """
-    utils = Utils()
-    return_pk = None
-    for key in request.session.keys():
-        if (
-            key.startswith(Constants.CHECK_BOX)
-            and len(key.split("_")) == 3
-            and utils.is_integer(key.split("_")[2])
-            and request.session[key]
-        ):
-            if return_pk == None:
-                return_pk = key.split("_")[2]
-            else:
-                return None
-    return return_pk

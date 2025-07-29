@@ -4,6 +4,9 @@ Created on Nov 1, 2017
 @author: mmp
 """
 
+import csv
+import os
+
 from django.utils.translation import gettext_lazy as _
 
 from constants.constants import Constants, FileExtensions
@@ -484,7 +487,6 @@ class ParseOutFiles(object):
             for line in handle_in:
                 sz_temp = line.strip()
                 if len(sz_temp) == 0 or sz_temp[0] == "#":
-
                     ### check annotation info, because now they have two HGVS.p
                     if line.startswith("##INFO=<ID=ANN,Number="):
                         line = line.replace("| HGVS.p", "| HGVS.p | HGVS.p")
@@ -510,4 +512,5 @@ class ParseOutFiles(object):
                     handle_out.write("\t".join(lst_data) + "\n")
                 else:
                     handle_out.write(line)
+        return temp_file
         return temp_file

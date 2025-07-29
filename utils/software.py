@@ -60,11 +60,9 @@ from utils.utils import Utils
 
 
 class ProjectSampleDepthCoverage(object):
-
     def __init__(
         self, project_sample: ProjectSample, software: SoftwareSettings, reference
     ):
-
         self.project_sample = project_sample
         self.b_coverage_default = True
         self.default_coverage_value = None
@@ -116,7 +114,6 @@ class ProjectSampleDepthCoverage(object):
         return self.coverage.is_100_more_9(element, b_only_project)
 
     def get_fault_message_9(self, element_name):
-
         return self.coverage.get_fault_message_9(element_name)
 
     def is_100_more_defined_by_user(self, element):
@@ -144,7 +141,6 @@ class ProjectSampleDepthCoverage(object):
         project_sample.alert_first_level = 0
 
         for element in self.get_dict_data():
-
             if not self.is_100_more_9(element) and self.b_coverage_default:
                 project_sample.alert_second_level += 1
                 meta_key = metaKeyAndValue.get_meta_key(
@@ -199,7 +195,6 @@ class ParseFreebayesException(Exception):
 
 
 class SoftwareFlumut(object):
-
     def __init__(self):
         self.utils = Utils()
 
@@ -265,7 +260,6 @@ class SoftwareFlumut(object):
 
         dt_result_version = {}
         if not settings.DEBUG:
-
             cmd = "{} --update".format(SoftwareNames.SOFTWARE_FLUMUT)
             exit_status = os.system(cmd)
 
@@ -279,7 +273,6 @@ class SoftwareFlumut(object):
         return dt_result_version
 
     def _flumut_dt_versions(self):
-
         version_tag = self.get_flumut_db_version()
         dt_result_version = {}
         dt_result_version[SoftwareNames.SOFTWARE_FLUMUT_name.lower()] = version_tag
@@ -297,7 +290,6 @@ class SoftwareFlumut(object):
                 name=SoftwareNames.SOFTWARE_FLUMUT_name
             )
         except SoftwareModel.DoesNotExist:
-
             dt_result_version = self._run_flumut_update()
 
             software = SoftwareModel(name=SoftwareNames.SOFTWARE_FLUMUT_name)
@@ -345,7 +337,6 @@ class SoftwareFlumut(object):
 
     @staticmethod
     def flumut_version_extract(version_string: str):
-
         return version_string.split("\n")[0].split(" ")[1]
 
     def get_flumut_db_version(self):
@@ -549,7 +540,6 @@ class Software(object):
         software : SOFTWARE_SNIPPY_name, SOFTWARE_FREEBAYES_name
         """
         for type_file in self.get_vect_type_files_to_copy(software):
-
             if type_file == FileType.FILE_CONSENSUS_FA:  ## if .fa file pass to .fasta
                 self.utils.copy_file(
                     os.path.join(
@@ -1086,7 +1076,6 @@ class Software(object):
     """
 
     def identify_project_reference_type_and_subtype(self, project: Project):
-
         reference_fasta = project.reference.get_reference_fasta(TypePath.MEDIA_ROOT)
         ### type
 
@@ -1643,7 +1632,6 @@ class Software(object):
         )
 
         if len(vect_data) == 0:
-
             ## save error in MetaKeySample
             result = Result()
             result.set_error("Fail to identify type and sub type")
@@ -1752,7 +1740,6 @@ class Software(object):
         return True
 
     def get_abricate_uploadfile_create(self):
-
         ### test id abricate has the database
         try:
             uploadFile = UploadFile.objects.order_by("-version")[0]
@@ -2178,9 +2165,7 @@ class Software(object):
                                 .split(
                                     SoftwareNames.SOFTWARE_TRIMMOMATIC_vect_info_to_collect[
                                         _ + 1
-                                    ][
-                                        0
-                                    ]
+                                    ][0]
                                 )[0]
                                 .strip(),
                             )
@@ -2224,7 +2209,6 @@ class Software(object):
             )
 
         elif software.name_extended == SoftwareNames.SOFTWARE_IRMA_name_extended:
-
             out_put_path = self.run_irma_and_snpEff(
                 project_sample.sample.get_fastq(TypePath.MEDIA_ROOT, True),
                 project_sample.sample.get_fastq(TypePath.MEDIA_ROOT, False),
@@ -2241,7 +2225,6 @@ class Software(object):
         return out_put_path
 
     def run_irma(self, file_name_1, file_name_2, module, sample_name):
-
         temp_dir = os.path.join(self.utils.get_temp_dir(), sample_name)
 
         cmd = "{} {} {} {} {}".format(
@@ -2276,7 +2259,6 @@ class Software(object):
         path_reference_fasta,
         path_reference_genbank,
     ):
-
         ############# Collect output files ################
         ## copy fastqs to irma output
         self.utils.copy_file(file_name_1, os.path.join(irma_output_dir, "R1.fastq"))
@@ -3283,7 +3265,6 @@ class Software(object):
     def run_freebayes_stratified(
         self, project_sample: ProjectSample, software: SoftwareSettings
     ):
-
         try:
             out_put_path = self.run_freebayes_parallel(
                 project_sample.get_file_output(
@@ -4081,7 +4062,6 @@ class Software(object):
 
                 ### make identify species
                 if b_make_identify_species:
-
                     sample_to_update.type_subtype = (
                         sample_to_update.get_type_sub_type()[
                             : Sample.TYPE_SUBTYPE_LENGTH - 1
@@ -4324,10 +4304,8 @@ class Software(object):
         os.chdir("/tmp/insaFlu/")
 
         try:
-
             ## process snippy
             try:
-
                 ### get snippy parameters
                 mdcg_parameters = default_project_software.get_mdcg_parameters_parsed_all_possibilities(
                     user, project_sample, is_to_run=True
@@ -4358,7 +4336,6 @@ class Software(object):
 
                 result_all.add_software(software_description)
             except Exception as e:
-
                 import traceback
 
                 traceback.print_exc()
@@ -4511,6 +4488,7 @@ class Software(object):
 
             except Exception as e:
                 print(e)
+                print("OOIONOIJNOI")
 
                 result = Result()
                 result.set_error("Fail to mask consensus: " + e.args[0])
@@ -4528,6 +4506,10 @@ class Software(object):
                     MetaKeyAndValue.META_KEY_Masking_consensus,
                 )
             ### add version of mask
+            print(
+                "#####################################################################"
+            )
+            print("Masking consensus parameters: ", msa_parameters)
 
             ## identify VARIANTS IN INCOMPLETE LOCUS in all locus, set yes in variants if are in areas with coverage problems
             ## transform 'synonymous_variant c.981A>G p.Glu327Glu' to ["synonymous_variant", "c.981A>G", "p.Glu327Glu"]
@@ -4548,9 +4530,12 @@ class Software(object):
             ## run freebayes if at least one segment has some coverage
             ## test if it is necessary to run freebayes
             count_hits = CountHits()
+            print(
+                "is to run freebayes: ",
+                default_project_software.is_to_run_freebayes(user, project_sample),
+            )
             if default_project_software.is_to_run_freebayes(user, project_sample):
                 try:
-
                     out_put_path, count_hits = self.run_freebayes_and_count(
                         project_sample, software
                     )
@@ -4621,6 +4606,8 @@ class Software(object):
 
                 from utils.collect_extra_data import CollectExtraData
 
+                print("###################")
+                print("Collect extra data")
                 collect_extra_data = CollectExtraData()
 
                 ### get a clean freebayes file
@@ -4669,6 +4656,8 @@ class Software(object):
                 ### remove several files that can exist form previous interactions
 
             ### draw coverage
+            print("###################")
+            print("Draw coverage")
             try:
                 ### make the coverage images
                 draw_all_coverage = DrawAllCoverage()
@@ -4999,7 +4988,6 @@ class Software(object):
         with open(reference_fasta, "rU") as handle_fasta:
             dt_consensus = SeqIO.to_dict(SeqIO.parse(consensus_file, "fasta"))
             for record in SeqIO.parse(handle_fasta, "fasta"):
-
                 if (
                     record.id in dt_consensus
                     and coverage.ratio_value_coverage_bigger_limit(
@@ -5186,9 +5174,10 @@ class Software(object):
         """masking consensus file with positions related with reference elements"""
         vect_record_out = []
         ## always work with the backup
-        with open(reference_fasta_file, "rU") as handle_ref, open(
-            consensus_fasta_file, "rU"
-        ) as handle_consensus:
+        with (
+            open(reference_fasta_file, "rU") as handle_ref,
+            open(consensus_fasta_file, "rU") as handle_consensus,
+        ):
             dict_record_ref = SeqIO.to_dict(SeqIO.parse(handle_ref, "fasta"))
             for record_consensus in SeqIO.parse(handle_consensus, "fasta"):
                 masking_consensus = genetic_elemets.dt_elements_mask.get(
@@ -6356,7 +6345,6 @@ class Software(object):
 
     @staticmethod
     def flumut_version_extract(version_string):
-
         return version_string.split("\n")[0].split(" ")[1]
 
     def get_flumut_db_version(self):

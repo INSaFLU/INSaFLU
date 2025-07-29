@@ -21,7 +21,6 @@ from utils.utils import Utils
 
 
 class DrawAllCoverage(object):
-
     logger_debug = logging.getLogger("fluWebVirus.debug")
     logger_production = logging.getLogger("fluWebVirus.production")
 
@@ -833,7 +832,6 @@ class DrawCoverage(object):
     def draw_legend_coverage_and_text(
         self, draw, font_, startDraw, endDraw, pointY, value
     ):
-
         smallOffset = 3
         smallOffset_y = (-1 * (font_.getsize("123")[1] >> 1)) - smallOffset
         nLength_X = endDraw - startDraw
@@ -861,7 +859,6 @@ class DrawCoverage(object):
             )
 
     def draw_variants(self, draw, var_more_50, var_less_50):
-
         for pos in var_more_50:
             self.draw_variant(draw, int(pos / self.rateImage), False)
         for pos in var_less_50:
@@ -921,7 +918,6 @@ class DrawCoverage(object):
 
 
 class ColorSquares(object):
-
     def __init__(self, draw):
         self.draw = draw
         self.set_color((0, 0, 204))
@@ -1173,7 +1169,6 @@ class ColorSquares(object):
         text,
         bVertical,
     ):
-
         if bVertical:
             rect_point_top_temp = rect_point_top
             rect_point_bottom_temp = (rect_point_bottom[0], nPos)
@@ -1201,7 +1196,7 @@ class ColorSquares(object):
         if text is not None and len(text):
             fontsize = 14
             font_ = ImageFont.truetype(DrawCoverage.PATH_FONT_BOLD, fontsize)
-            size_x = font_.getsize(text)[0]
+            size_x = font_.getbbox(text)[2] - font_.getbbox(text)[0]
             if bVertical:
                 self.draw.text(
                     (rect_point_top[0] - 2, rect_point_top[1] + 5),
@@ -1221,14 +1216,14 @@ class ColorSquares(object):
     def draw_text(self, start_x, end_x, y, text):
         fontsize = 14
         font_ = ImageFont.truetype(DrawCoverage.PATH_FONT, fontsize)
-        size_x = font_.getsize(text)[0]
-        middle = start_x + ((end_x - start_x) >> 1) - (size_x >> 1)
+        size_x = font_.getbbox(text)[2] - font_.getbbox(text)[0]
+        middle = start_x + ((end_x - start_x) // 2) - (size_x // 2)
         self.draw.text(
             (middle, y + 2), text, fill=DrawCoverage.COLOR_RGBGrey_32_32_32, font=font_
         )
 
-        size_x = font_.getsize(text)[0]
-        middle = start_x + ((end_x - start_x) >> 1) - (size_x >> 1)
+        size_x = font_.getbbox(text)[2] - font_.getbbox(text)[0]
+        middle = start_x + ((end_x - start_x) // 1) - (size_x // 1)
         self.draw.text(
             (middle, y + 2), text, fill=DrawCoverage.COLOR_RGBGrey_32_32_32, font=font_
         )

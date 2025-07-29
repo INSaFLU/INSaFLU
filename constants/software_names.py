@@ -352,7 +352,7 @@ class SoftwareNames(object):
     SOFTWARE_COVERAGE_TO_REGIONS_PARAMETERS = ""
 
     SOFTWARE_BAMTOOLS = os.path.join(
-        settings.DIR_SOFTWARE, "bamtools/build/src/toolkit/bamtools"
+        settings.DIR_SOFTWARE, "bamtools/build/src/bamtools"
     )
     SOFTWARE_BAMTOOLS_name = "Bamtools"
     SOFTWARE_BAMTOOLS_VERSION = "2.5"
@@ -383,13 +383,17 @@ class SoftwareNames(object):
     SOFTWARE_MAFFT_VERSION = None
     SOFTWARE_MAFFT = None
     for version in vect_versions_available:
+        SOFTWARE_MAFFT_tmp = os.path.join(
+            settings.DIR_SOFTWARE,
+            "mafft-{}-without-extensions/scripts/mafft".format(version),
+        )
 
-        if os.path.exists(SOFTWARE_MAFFT):
-            SOFTWARE_MAFFT_VERSION = version
+        if os.path.exists(SOFTWARE_MAFFT_tmp):
             SOFTWARE_MAFFT = os.path.join(
                 settings.DIR_SOFTWARE,
                 "mafft-{}-without-extensions/scripts/mafft".format(version),
             )
+            SOFTWARE_MAFFT_VERSION = version
 
     if SOFTWARE_MAFFT_VERSION is None:
         raise Exception(

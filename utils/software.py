@@ -4511,6 +4511,22 @@ class Software(object):
 
             except Exception as e:
                 print(e)
+
+                result = Result()
+                result.set_error("Fail to mask consensus: " + e.args[0])
+                result.add_software(
+                    SoftwareDesc(
+                        self.software_names.get_msa_masker_name(),
+                        self.software_names.get_msa_masker_version(),
+                        self.software_names.get_msa_masker_parameters(),
+                    )
+                )
+
+                self.__set_process_error(
+                    result,
+                    project_sample,
+                    MetaKeyAndValue.META_KEY_Masking_consensus,
+                )
             ### add version of mask
 
             ## identify VARIANTS IN INCOMPLETE LOCUS in all locus, set yes in variants if are in areas with coverage problems

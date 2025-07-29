@@ -1489,6 +1489,18 @@ class ProjectSample(models.Model):
     def __str__(self):
         return self.project.name
 
+    @property
+    def name(self):
+        return self.sample.name
+
+    @property
+    def reference_fasta(self):
+        return self.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT)
+
+    @property
+    def reference_gbk(self):
+        return self.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT)
+
     def get_global_file_by_element(
         self, type_path, prefix_file_name, sequence_name, extension
     ):

@@ -48,42 +48,38 @@ class SoftwarePangolin(object):
         #### test if there's a new update
         # Lock the table, and with this approach only one job can run at the time
 
-        with LockedAtomicTransaction(SoftwareModel):
-            try:
-                software = SoftwareModel.objects.get(
-                    name=SoftwareNames.SOFTWARE_Pangolin_name
-                )
-            except SoftwareModel.DoesNotExist:  ## need to create with last version
+        # with LockedAtomicTransaction(SoftwareModel):
+        try:
+            software = SoftwareModel.objects.get(
+                name=SoftwareNames.SOFTWARE_Pangolin_name
+            )
+        except SoftwareModel.DoesNotExist:  ## need to create with last version
 
-                ### run pangolin update first time
-                dt_result_version = self._run_pangolin_update()
-                software = SoftwareModel()
-                software.name = SoftwareNames.SOFTWARE_Pangolin_name
-                software.set_version(
-                    dt_result_version.get(
-                        SoftwareNames.SOFTWARE_Pangolin_name.lower(), ""
-                    )
-                )
-                software.set_version_long(dt_result_version)
-                software.save()
-                return dt_result_version
-
-            ## return if the software was updated today
-            if software.is_updated_today():
-                return software.get_version_long()
-
+            ### run pangolin update first time
             dt_result_version = self._run_pangolin_update()
-            if len(dt_result_version) > 0:
-                software.set_version_long(dt_result_version)
-                software.set_version(
-                    dt_result_version.get(
-                        SoftwareNames.SOFTWARE_Pangolin_name.lower(), ""
-                    )
-                )
-                software.set_last_update_today()
-                software.save()
-            else:
-                dt_result_version = software.get_version_long()
+            software = SoftwareModel()
+            software.name = SoftwareNames.SOFTWARE_Pangolin_name
+            software.set_version(
+                dt_result_version.get(SoftwareNames.SOFTWARE_Pangolin_name.lower(), "")
+            )
+            software.set_version_long(dt_result_version)
+            software.save()
+            return dt_result_version
+
+        ## return if the software was updated today
+        if software.is_updated_today():
+            return software.get_version_long()
+
+        dt_result_version = self._run_pangolin_update()
+        if len(dt_result_version) > 0:
+            software.set_version_long(dt_result_version)
+            software.set_version(
+                dt_result_version.get(SoftwareNames.SOFTWARE_Pangolin_name.lower(), "")
+            )
+            software.set_last_update_today()
+            software.save()
+        else:
+            dt_result_version = software.get_version_long()
 
         return dt_result_version
 

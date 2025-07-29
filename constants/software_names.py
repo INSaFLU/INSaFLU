@@ -379,15 +379,24 @@ class SoftwareNames(object):
     SOFTWARE_CONVERT_VERSION = ""
     SOFTWARE_CONVERT_PARAMETERS = ""
 
-    vect_versions_available = ["7.453", "7.313"]
+    vect_versions_available = ["7.453", "7.313", "7.525"]
+    SOFTWARE_MAFFT_VERSION = None
+    SOFTWARE_MAFFT = None
     for version in vect_versions_available:
-        SOFTWARE_MAFFT_VERSION = version
-        SOFTWARE_MAFFT = os.path.join(
-            settings.DIR_SOFTWARE,
-            "mafft-{}-without-extensions/scripts/mafft".format(version),
-        )
+
         if os.path.exists(SOFTWARE_MAFFT):
-            break
+            SOFTWARE_MAFFT_VERSION = version
+            SOFTWARE_MAFFT = os.path.join(
+                settings.DIR_SOFTWARE,
+                "mafft-{}-without-extensions/scripts/mafft".format(version),
+            )
+
+    if SOFTWARE_MAFFT_VERSION is None:
+        raise Exception(
+            "Mafft version not found in the software directory: {}".format(
+                settings.DIR_SOFTWARE
+            )
+        )
 
     SOFTWARE_SET_ENV_MAFFT = "export MAFFT_BINARIES={}".format(
         os.path.join(

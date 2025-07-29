@@ -83,7 +83,7 @@ Software to install:
 - [Bamtools](https://github.com/pezmaster31/bamtools) 2.5
 - [Prokka](https://github.com/tseemann/prokka) 1.12
 - [Mauve](http://darlinglab.org/mauve/mauve.html) 2.4.0, Feb 13 2015
-- [Mafft](https://mafft.cbrc.jp/alignment/software/) 7.313
+- [Mafft](https://mafft.cbrc.jp/alignment/software/) 7.525
 - [seqret](http://emboss.sourceforge.net/download/) (EMBOSS) 6.6.0.0
 - [FastTreeDbl](http://www.microbesonline.org/fasttree/) 2.1.10 Double precision
 - [freebayes](https://github.com/ekg/freebayes) v1.1.0-54-g49413aa - Also need some scripts available in freebays

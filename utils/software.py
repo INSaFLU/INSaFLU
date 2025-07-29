@@ -27,8 +27,14 @@ from constants.software_names import SoftwareNames
 from manage_virus.models import UploadFile
 from manage_virus.uploadFiles import UploadFiles
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import (MixedInfectionsTag, ProcessControler,
-                                   Project, ProjectSample, Reference, Sample)
+from managing_files.models import (
+    MixedInfectionsTag,
+    ProcessControler,
+    Project,
+    ProjectSample,
+    Reference,
+    Sample,
+)
 from managing_files.models import Software as SoftwareModel
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
@@ -41,8 +47,15 @@ from utils.mixed_infections_management import MixedInfectionsManagement
 from utils.parse_coverage_file import GetCoverage
 from utils.parse_out_files import ParseOutFiles
 from utils.process_SGE import ProcessSGE
-from utils.result import (CountHits, DecodeObjects, KeyValue, MaskingConsensus,
-                          Result, ResultAverageAndNumberReads, SoftwareDesc)
+from utils.result import (
+    CountHits,
+    DecodeObjects,
+    KeyValue,
+    MaskingConsensus,
+    Result,
+    ResultAverageAndNumberReads,
+    SoftwareDesc,
+)
 from utils.utils import Utils
 
 
@@ -278,41 +291,37 @@ class SoftwareFlumut(object):
         Run flumut update
         """
 
-        with LockedAtomicTransaction(SoftwareModel):
-            try:
-                software = SoftwareModel.objects.get(
-                    name=SoftwareNames.SOFTWARE_FLUMUT_name
-                )
-            except SoftwareModel.DoesNotExist:
-
-                dt_result_version = self._run_flumut_update()
-
-                software = SoftwareModel(name=SoftwareNames.SOFTWARE_FLUMUT_name)
-                software.set_version(
-                    dt_result_version.get(
-                        SoftwareNames.SOFTWARE_FLUMUT_name.lower(), ""
-                    )
-                )
-                software.set_version_long(dt_result_version)
-                software.save()
-                return dt_result_version
-
-                ## return if the software was updated today
-            if software.is_updated_today():
-                return software.get_version_long()
+        # with LockedAtomicTransaction(SoftwareModel):
+        try:
+            software = SoftwareModel.objects.get(
+                name=SoftwareNames.SOFTWARE_FLUMUT_name
+            )
+        except SoftwareModel.DoesNotExist:
 
             dt_result_version = self._run_flumut_update()
-            if len(dt_result_version) > 0:
-                software.set_version_long(dt_result_version)
-                software.set_version(
-                    dt_result_version.get(
-                        SoftwareNames.SOFTWARE_FLUMUT_name.lower(), ""
-                    )
-                )
-                software.set_last_update_today()
-                software.save()
-            else:
-                dt_result_version = software.get_version_long()
+
+            software = SoftwareModel(name=SoftwareNames.SOFTWARE_FLUMUT_name)
+            software.set_version(
+                dt_result_version.get(SoftwareNames.SOFTWARE_FLUMUT_name.lower(), "")
+            )
+            software.set_version_long(dt_result_version)
+            software.save()
+            return dt_result_version
+
+            ## return if the software was updated today
+        if software.is_updated_today():
+            return software.get_version_long()
+
+        dt_result_version = self._run_flumut_update()
+        if len(dt_result_version) > 0:
+            software.set_version_long(dt_result_version)
+            software.set_version(
+                dt_result_version.get(SoftwareNames.SOFTWARE_FLUMUT_name.lower(), "")
+            )
+            software.set_last_update_today()
+            software.save()
+        else:
+            dt_result_version = software.get_version_long()
 
         return dt_result_version
 
@@ -5700,7 +5709,7 @@ class Software(object):
             os.path.join(temp_dir, "auspice", "log"),
         )
         exit_status = os.system(cmd)
-        
+
         cmd = "mv {} {}".format(
             os.path.join(temp_dir, "stderr.txt"),
             os.path.join(temp_dir, "auspice", "log"),
@@ -5830,7 +5839,6 @@ class Software(object):
             os.path.join(temp_dir, "auspice", "log"),
         )
         exit_status = os.system(cmd)
-
 
         cmd = "mv {} {}".format(
             os.path.join(temp_dir, "stderr.txt"),
@@ -5997,7 +6005,7 @@ class Software(object):
             os.path.join(temp_dir, "auspice", "log"),
         )
         exit_status = os.system(cmd)
-        
+
         cmd = "mv {} {}".format(
             os.path.join(temp_dir, "stderr.txt"),
             os.path.join(temp_dir, "auspice", "log"),
@@ -6071,7 +6079,12 @@ class Software(object):
         # Now run Nextstrain
         # cmd = "{} -j {} {}/auspice/rsv_{}_genome.json {}/auspice/rsv_{}_G.json {}/auspice/rsv_{}_F.json --configfile {}/config/configfile.yaml".format(
         cmd = "cd {} && {} -j {} auspice/rsv_{}_genome.json --configfile config/configfile.yaml 2> {}/stderr.txt > {}/stdout.txt".format(
-            temp_dir, SoftwareNames.SOFTWARE_NEXTSTRAIN_RSV, str(cores), type, temp_dir, temp_dir
+            temp_dir,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_RSV,
+            str(cores),
+            type,
+            temp_dir,
+            temp_dir,
         )
         exit_status = os.system(cmd)
         if exit_status != 0:

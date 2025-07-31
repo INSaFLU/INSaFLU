@@ -29,6 +29,7 @@
 
 {% block content %}
 
+
 <style>
 
     .summary-section {
@@ -63,6 +64,13 @@
 
     <link rel="stylesheet" href="{% static 'css/televir_references_nav.css' %}">
 {% endblock %}
+
+
+{% if reference_update_running %}
+<div class="alert alert-warning" role="alert">
+    <strong>Reference update is currently running.</strong> Please wait until it finishes before deploying pathogen identification
+</div>
+{% endif %}
 
 <!-- Adjusted Summary Section with Flexbox -->
 <div class="container-fluid">

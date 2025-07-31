@@ -1,5 +1,6 @@
 # Create your views here.
 
+import datetime
 import logging
 import ntpath
 import os
@@ -31,11 +32,10 @@ from constants.meta_key_and_values import MetaKeyAndValue
 from constants.nextclade_links import get_constext_nextclade
 from constants.software_names import SoftwareNames
 from extend_user.models import Profile
-from manage_virus.constants_virus import ConstantsVirus
 from managing_files.forms import (
     AddSampleProjectForm,
-    ReferenceForm,
     PrimerForm,
+    ReferenceForm,
     ReferenceProjectFormSet,
     SampleForm,
     SamplesUploadDescriptionForm,
@@ -45,10 +45,10 @@ from managing_files.forms import (
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import (
     MetaKey,
+    Primer,
     Project,
     ProjectSample,
     Reference,
-    Primer,
     Sample,
     UploadFiles,
 )
@@ -56,16 +56,15 @@ from managing_files.tables import (
     AddSamplesFromCvsFileTable,
     AddSamplesFromCvsFileTableMetadata,
     AddSamplesFromFastqFileTable,
+    PrimerTable,
     ProjectTable,
     ReferenceProjectTable,
     ReferenceTable,
-    PrimerTable,
     SampleTable,
     SampleToProjectsTable,
     ShowProjectSamplesResults,
 )
 from pathogen_identification.models import PIProject_Sample, TeleFluProject
-from pathogen_identification.utilities.utilities_views import RunReadsRegister
 from settings.constants_settings import ConstantsSettings
 from settings.default_software import DefaultSoftware
 from settings.default_software_project_sample import DefaultProjectSoftware
@@ -134,6 +133,7 @@ class ReferencesIndex(BaseBreadcrumbMixin, TemplateView):
         )  ## show main information about the institute
         context["nav_reference"] = True
         return context
+
 
 # class ReferencesView(LoginRequiredMixin, GroupRequiredMixin, ListView):
 class ReferenceView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
@@ -423,11 +423,20 @@ class ReferenceAddView(
     ## static method, not need for now.
     form_valid_message = ""  ## need to have this
 
+
 class PrimerView(LoginRequiredMixin, ListView):
     model = Primer
     template_name = "primer/primer.html"
     context_object_name = "primer"
     ordering = ["id"]
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Primer", reverse("primer")),
+        ]
 
     def get_context_data(self, **kwargs):
         context = super(PrimerView, self).get_context_data(**kwargs)
@@ -484,6 +493,15 @@ class PrimerAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView)
     success_url = reverse_lazy("primer")
     template_name = "primer/primer_add.html"
 
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Primer", reverse("primer")),
+            ("Add Primer Set", reverse("primer-add")),
+        ]
+
     ## Other solution to get the reference
     ## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1
     def get_form_kwargs(self):
@@ -537,12 +555,12 @@ class PrimerAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView)
         primer.owner = self.request.user
         primer.primer_fasta_name = utils.clean_name(
             name + ".fa"
-            #ntpath.basename(primer_fasta.name)
+            # ntpath.basename(primer_fasta.name)
         )
         primer.primer_pairs_name = utils.clean_name(
-                name + ".fa" + Constants.EXTENSION_PRIMER_PAIR
-                #ntpath.basename(primer_pairs.name)
-            )
+            name + ".fa" + Constants.EXTENSION_PRIMER_PAIR
+            # ntpath.basename(primer_pairs.name)
+        )
         primer.save()
 
         ## move the files to the right place
@@ -551,9 +569,7 @@ class PrimerAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView)
             utils.get_path_to_primer_file(self.request.user.id, primer.id),
             primer.primer_fasta_name,
         )
-        software.dos_2_unix(
-            os.path.join(settings.MEDIA_ROOT, primer.primer_fasta.name)
-        )
+        software.dos_2_unix(os.path.join(settings.MEDIA_ROOT, primer.primer_fasta.name))
         ## test if bases all lower
         software.fasta_2_upper(
             os.path.join(settings.MEDIA_ROOT, primer.primer_fasta.name)
@@ -596,7 +612,6 @@ class PrimerAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView)
 
     ## static method, not need for now.
     form_valid_message = ""  ## need to have this
-
 
 
 class SamplesView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
@@ -869,7 +884,6 @@ class SamplesAddView(
 
         ### create a task to perform the analysis of fastq and trimmomatic
         try:
-
             process_SGE = ProcessSGE()
             (job_name_wait, job_name) = self.request.user.profile.get_name_sge_seq(
                 Profile.SGE_PROCESS_clean_sample, Profile.SGE_SAMPLE
@@ -1806,6 +1820,9 @@ class SamplesDetailView(BaseBreadcrumbMixin, LoginRequiredMixin, DetailView):
         sample: Sample = self.kwargs["object"]
         if sample is None:
             return []
+        sample: Sample = self.kwargs["object"]
+        if sample is None:
+            return []
         return [
             ("Samples", reverse("samples")),
             ("Sample details", reverse("sample-description", args=[sample.pk])),
@@ -2160,10 +2177,9 @@ class SamplesDetailView(BaseBreadcrumbMixin, LoginRequiredMixin, DetailView):
             ## [[header1, value1], [header2, value2], [header3, value3], ...]
             ### if it's to big expand button is better
             tag_names = sample.get_tag_names()
-            context[
-                "extra_data_sample_expand"
-            ] = tag_names != None and tag_names.count() > (
-                Constants.START_EXPAND_SAMPLE_TAG_NAMES_ROWS
+            context["extra_data_sample_expand"] = (
+                tag_names != None
+                and tag_names.count() > (Constants.START_EXPAND_SAMPLE_TAG_NAMES_ROWS)
             )
             if tag_names != None:
                 context["extra_data_sample"] = self.utils.grouped(tag_names, 4)
@@ -2924,7 +2940,9 @@ class ShowSampleProjectsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
             ("Projects", reverse("projects")),
             (
                 "Show samples in project",
-                reverse("show-sample-project-results"),
+                reverse(
+                    "show-sample-project-results", kwargs={"pk": self.kwargs["pk"]}
+                ),
             ),
         ]
 
@@ -3069,7 +3087,6 @@ class ShowSampleProjectsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
                 TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Flumut_markers_report
             )
         ):
-
             context["flumut_report"] = get_link_for_dropdown_item(
                 project.get_global_file_by_project(
                     TypePath.MEDIA_URL,
@@ -3132,7 +3149,7 @@ class ShowSampleProjectsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
                 "{}_{}_{}".format(
                     os.path.splitext(Project.PROJECT_FILE_NAME_all_files_zipped)[0],
                     project.get_clean_project_name(),
-                    datetime.now().strftime(settings.DATE_FORMAT_FOR_SHOW),
+                    datetime.datetime.now().strftime(settings.DATE_FORMAT_FOR_SHOW),
                 ),
             )
 
@@ -3295,6 +3312,78 @@ class ProjectSelectView(LoginRequiredMixin, ListView):
     template_name = "project/project_select_software.html"
     context_object_name = "project"
 
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Projects Index", reverse("project-index")),
+            ("Projects", reverse("projects")),
+            (
+                "Select software in project",
+                reverse("project-select-software", kwargs={"pk": self.kwargs["pk"]}),
+            ),
+        ]
+
+    def get_context_data(self, **kwargs):
+        context = super(ProjectSelectView, self).get_context_data(**kwargs)
+        project = Project.objects.get(pk=self.kwargs["pk"])
+
+        ### can't see this project
+        context["nav_project"] = True
+        if project.owner.id != self.request.user.id:
+            context["error_cant_see"] = "1"
+            return context
+
+        ### test all defaults first, if exist in database
+        default_software = DefaultProjectSoftware()
+        default_software.test_all_defaults(
+            self.request.user, project, None, None
+        )  ## the user can have defaults yet
+        ### current global softwares
+        software_global = default_software.user_global_mdcg_illumina_software(
+            self.request.user
+        )
+
+        if software_global.name == SoftwareNames.SOFTWARE_SNIPPY_name:
+            context["snippy_global"] = True
+        elif software_global.name == SoftwareNames.SOFTWARE_IRMA_name:
+            context["irma_global"] = True
+        elif software_global.name == SoftwareNames.SOFTWARE_IVAR_name:
+            context["ivar_global"] = True
+
+        context["software_global"] = software_global
+        context["show_info_main_page"] = (
+            ShowInfoMainPage()
+        )  ## show main information about the institute
+        context["project"] = project
+        context["project_index"] = project.id
+        context["type_of_use_id"] = SoftwareSettings.TYPE_OF_USE_project
+        return context
+
+
+class ProjectSelectView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
+    """
+    choose one of Mutation Detecion and Consensus Generation software
+    """
+
+    model = Project
+    template_name = "project/project_select_software.html"
+    context_object_name = "project"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Projects Index", reverse("project-index")),
+            ("Projects", reverse("projects")),
+            (
+                "Settings in project",
+                reverse("project-settings", kwargs={"pk": self.kwargs["pk"]}),
+            ),
+        ]
+
     def get_context_data(self, **kwargs):
         context = super(ProjectSelectView, self).get_context_data(**kwargs)
         project = Project.objects.get(pk=self.kwargs["pk"])
@@ -3353,6 +3442,16 @@ class ProjectsSettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
                 reverse("project-settings", kwargs={"pk": self.kwargs["pk"]}),
             ),
         ]
+
+    def __init__(self):
+        self.is_setup = False
+        self.setup_note = ""
+
+    def setup(self, request, *args, **kwargs):
+        super(ProjectsSettingsView, self).setup(request, *args, **kwargs)
+        self.request = request
+        self.is_setup = False
+        self.setup_note = ""
 
     def get_context_data(self, **kwargs):
         context = super(ProjectsSettingsView, self).get_context_data(**kwargs)
@@ -3450,7 +3549,6 @@ class ProjectsSettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
 
 
 class ProjectsSettingsSetupView(ProjectsSettingsView):
-
     def setup(self, request, *args, **kwargs):
         super(ProjectsSettingsSetupView, self).setup(request, *args, **kwargs)
         self.is_setup = True
@@ -3766,9 +3864,7 @@ class ShowSampleProjectsDetailsView(BaseBreadcrumbMixin, LoginRequiredMixin, Lis
             software_mdcg = default_software.get_software_project_sample_mdcg_illumina(
                 project_sample=project_sample,
             )
-            software_used = (
-                []
-            )  ### has a list with all software used... [name, parameters]
+            software_used = []  ### has a list with all software used... [name, parameters]
             ### only for illumina
             decode_result = DecodeObjects()
             if project_sample.is_sample_illumina():
@@ -4052,23 +4148,4 @@ def get_unique_pk_from_session(request):
             else:
                 return None
     return return_pk
-
-
-def get_unique_pk_from_session(request):
-    """
-    return the unique pk selected. If exists more than one return none
-    """
-    utils = Utils()
-    return_pk = None
-    for key in request.session.keys():
-        if (
-            key.startswith(Constants.CHECK_BOX)
-            and len(key.split("_")) == 3
-            and utils.is_integer(key.split("_")[2])
-            and request.session[key]
-        ):
-            if return_pk == None:
-                return_pk = key.split("_")[2]
-            else:
-                return None
     return return_pk

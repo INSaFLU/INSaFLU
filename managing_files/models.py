@@ -19,6 +19,7 @@ from constants.constants import Constants, FileExtensions, FileType, TypePath
 from constants.constants_mixed_infection import ConstantsMixedInfection
 from constants.software_names import SoftwareNames
 from fluwebvirus.formatChecker import ContentTypeRestrictedFileField
+from manage_virus.constants_virus import ConstantsVirus
 from manage_virus.models import IdentifyVirus
 from settings.constants_settings import ConstantsSettings
 
@@ -27,9 +28,11 @@ def reference_directory_path(instance, filename):
     # file will be uploaded to MEDIA_ROOT/<filename>
     return "uploads/generic_data/user_{0}/{1}".format(instance.owner.id, filename)
 
+
 def primer_directory_path(instance, filename):
     # file will be uploaded to MEDIA_ROOT/<filename>
     return "uploads/generic_data/user_{0}/{1}".format(instance.owner.id, filename)
+
 
 def user_directory_path(instance, filename):
     # file will be uploaded to MEDIA_ROOT/<filename>
@@ -133,10 +136,8 @@ class Primer(models.Model):
         blank=True, null=True, verbose_name="Date attached"
     )  ## this date has the time of deleted by web page
 
-
     def __str__(self):
         return self.name
-
 
     def get_primer_fasta(self, type_path):
         """
@@ -215,15 +216,12 @@ class Primer(models.Model):
         ]
 
 
-
-
 class Reference(models.Model):
     constants = Constants()
 
     ### species
     SPECIES_SARS_COV_2 = "SARS_COV_2"
     SPECIES_MPXV = "MPXV"
-    SPECIES_DENGUE = "DENGUE"
     SPECIES_INFLUENZA = "INFLUENZA"
     SPECIES_RSV = "RSV"
     SPECIES_NOT_SET = "NOT_SET"
@@ -1425,7 +1423,7 @@ class ProjectSample(models.Model):
     PATH_MAIN_RESULT = "main_result"
     PREFIX_FILE_COVERAGE = "coverage"
     FILE_CONSENSUS_FILE = "Consensus_"
-    FILE_VARIANTS_TAB = "validated_variants_sample_"
+    FILE_SNIPPY_TAB = "validated_variants_sample_"
     FILE_FREEBAYES_TAB = "validated_minor_iSNVs_sample_"
     FILE_FREEBAYES_TAB_with_indels = "validated_minor_inc_indels_sample_"
 
@@ -1558,11 +1556,11 @@ class ProjectSample(models.Model):
         get human file name
         """
         if (
-            software in SoftwareNames.SOFTWARE_MDCG_list
+            software == SoftwareNames.SOFTWARE_SNIPPY_name
             or software == SoftwareNames.SOFTWARE_Medaka_name
         ):
             if file_type == FileType.FILE_TAB:
-                return "{}{}".format(ProjectSample.FILE_VARIANTS_TAB, self.sample.name)
+                return "{}{}".format(ProjectSample.FILE_SNIPPY_TAB, self.sample.name)
         if software == SoftwareNames.SOFTWARE_FREEBAYES_name and not b_second_choice:
             if file_type == FileType.FILE_TAB:
                 return "{}{}".format(ProjectSample.FILE_FREEBAYES_TAB, self.sample.name)
@@ -2082,11 +2080,6 @@ class ProcessControler(models.Model):
     def get_name_televir_map(self, reference_pk):
         return "{}{}".format(
             ProcessControler.PREFIX_TELEVIR_REFERENCE_MAP, reference_pk
-        )
-
-    def __str__(self):
-        return "PK:{} name:{}  is_finished:{}  is_running:{}  is_error:{}".format(
-            self.pk, self.name, self.is_finished, self.is_running, self.is_error
         )
 
     def __str__(self):

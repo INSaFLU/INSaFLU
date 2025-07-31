@@ -35,6 +35,7 @@ from django_tables2 import RequestConfig
 from view_breadcrumbs import BaseBreadcrumbMixin
 
 from constants.constants import Constants, FileType, TypePath
+from constants.software_names import SoftwareNames
 from extend_user.models import Profile
 from fluwebvirus.settings import (
     BASE_DIR,
@@ -124,7 +125,6 @@ from pathogen_identification.utilities.utilities_views import (  # #############
     recover_assembly_contigs,
 )
 from settings.constants_settings import ConstantsSettings as CS
-from settings.default_software_project_sample import DefaultProjectSoftware
 from utils.process_SGE import ProcessSGE
 from utils.software import Software
 from utils.support_django_template import get_link_for_dropdown_item
@@ -1478,12 +1478,14 @@ class INSaFLUMappingIGV(LoginRequiredMixin, generic.TemplateView):
         sample_dict = {}
 
         ### get sample files
-        default_project_software = DefaultProjectSoftware()
+        software_names = SoftwareNames()
 
         for sample in samples:
-            filename = default_project_software.get_project_sample_mdcg_software_name(
-                sample
-            )
+
+            if sample.sample.type_of_fastq == 0:
+                filename = software_names.get_snippy_name()
+            else:
+                filename = software_names.get_medaka_name()
 
             bam_file = sample.get_file_output(
                 TypePath.MEDIA_ROOT, FileType.FILE_BAM, filename
@@ -1531,11 +1533,6 @@ class Sample_main(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView):
 
     @cached_property
     def crumbs(self):
-        print(
-            self.kwargs["project_name"],
-            reverse("PIproject_samples", kwargs={"pk": self.kwargs["pk1"]}),
-        )
-        print(self.kwargs["sample_name"], "")
         return [
             ("Project Index", reverse("project-index")),
             ("TELEVIR Projects", reverse("PIprojects_main")),
@@ -1548,6 +1545,7 @@ class Sample_main(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView):
 
     def setup(self, request, *args, **kwargs):
         super(Sample_main, self).setup(request, *args, **kwargs)
+
         project = Projects.objects.get(pk=self.kwargs["pk1"])
         sample = PIProject_Sample.objects.get(pk=self.kwargs["pk2"])
         if project.owner != self.request.user:
@@ -1884,7 +1882,6 @@ class ReferencePanelManagement(
         context = super().get_context_data(**kwargs)
         user = self.request.user
 
-        is_user_demo = True if user.username == Constants.USER_ANONYMOUS else False
         panels = (
             ReferencePanel.objects.filter(
                 project_sample=None,
@@ -1898,7 +1895,6 @@ class ReferencePanelManagement(
         context["panels"] = panels
         context["user_id"] = user.pk
         context["nav_reference"] = True
-        context["demo_account"] = is_user_demo
 
         return context
 
@@ -2644,33 +2640,33 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
 
     @cached_property
     def crumbs(self):
+        print("OIHOi")
+        print(self.kwargs)
         return [
+            ("Project Index", reverse("project-index")),
+            ("TELEVIR Projects", reverse("PIprojects_main")),
             (
-                ("Project Index", reverse("project-index")),
-                ("TELEVIR Projects", reverse("PIprojects_main")),
-                (
-                    self.kwargs["project_name"],
-                    reverse("PIproject_samples", kwargs={"pk": self.kwargs["pk1"]}),
+                self.kwargs["project_name"],
+                reverse("PIproject_samples", kwargs={"pk": self.kwargs["pk1"]}),
+            ),
+            (
+                self.kwargs["sample_name"],
+                reverse(
+                    "sample_main",
+                    kwargs={"pk1": self.kwargs["pk1"], "pk2": self.kwargs["pk2"]},
                 ),
-                (
-                    self.kwargs["sample_name"],
-                    reverse(
-                        "sample_main",
-                        kwargs={"pk1": self.kwargs["pk1"], "pk2": self.kwargs["pk2"]},
-                    ),
+            ),
+            (
+                self.kwargs["run_name"],
+                reverse(
+                    "sample_detail",
+                    kwargs={
+                        "pk1": self.kwargs["pk1"],
+                        "pk2": self.kwargs["pk2"],
+                        "pk3": self.kwargs["pk3"],
+                    },
                 ),
-                (
-                    self.kwargs["run_name"],
-                    reverse(
-                        "sample_detail",
-                        kwargs={
-                            "pk1": self.kwargs["pk1"],
-                            "pk2": self.kwargs["pk2"],
-                            "pk3": self.kwargs["pk3"],
-                        },
-                    ),
-                ),
-            )
+            ),
         ]
 
     def setup(self, request, *args, **kwargs):
@@ -2847,6 +2843,7 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
         )
 
         context = {
+            "crumbs": self.crumbs,
             "project": project_name,
             "run_name": run_name,
             "sort_performed": sort_performed,
@@ -2953,11 +2950,11 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
             ("Project Index", reverse("project-index")),
             ("TELEVIR Projects", reverse("PIprojects_main")),
             (
-                self.kwargs["project"],
+                self.kwargs["project_name"],
                 reverse("PIproject_samples", kwargs={"pk": self.kwargs["pk1"]}),
             ),
             (
-                self.kwargs["sample"],
+                self.kwargs["sample_name"],
                 reverse(
                     "sample_main",
                     kwargs={
@@ -3010,12 +3007,13 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         )
 
         report_sorter = ReportSorter(sample, unique_reports, report_layout_params)
+        sort_tree_exists = False
         sort_tree_plot_path = None
         if report_sorter.overlap_manager is not None:
+            sort_tree_exists = report_sorter.overlap_manager.tree_plot_exists
             sort_tree_plot_path = report_sorter.overlap_manager.tree_plot_path_render
 
         sorted_reports = report_sorter.get_reports_compound()
-
         sort_performed = True if report_sorter.analysis_empty is False else False
         private_reads_available = False
         for report_group in sorted_reports:
@@ -3044,6 +3042,7 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         runs_exist = runs_number > 0
 
         context = {
+            "crumbs": self.crumbs,
             "project": project_name,
             "nav_project": True,
             "graph_json": graph_json,

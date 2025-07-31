@@ -26,12 +26,8 @@ class CheckBoxColumnWithName(tables.CheckBoxColumn):
 class ReferenceTable(tables.Table):
     #   Renders a normal value as an internal hyperlink to another page.
     #   account_number = tables.LinkColumn('customer-detail', args=[A('pk')])
-    reference_fasta_name = tables.LinkColumn(
-        "reference_fasta_name", args=[tables.A("pk")], verbose_name="Fasta file"
-    )
-    reference_genbank_name = tables.LinkColumn(
-        "reference_genbank_name", args=[tables.A("pk")], verbose_name="GenBank file"
-    )
+    reference_fasta_name = tables.Column(verbose_name="Fasta file")
+    reference_genbank_name = tables.Column(verbose_name="GenBank file")
     owner = tables.Column("Owner", orderable=True, empty_values=())
     constants = Constants()
 
@@ -139,9 +135,10 @@ class ReferenceProjectTable(tables.Table):
 class PrimerTable(tables.Table):
     #   Renders a normal value as an internal hyperlink to another page.
     #   account_number = tables.LinkColumn('customer-detail', args=[A('pk')])
-    primer_fasta_name = tables.LinkColumn(
-        "primer_fasta_name", args=[tables.A("pk")], verbose_name="Primer Fasta file"
-    )
+    # primer_fasta_name = tables.LinkColumn(
+    #    "primer_fasta_name", args=[tables.A("pk")], verbose_name="Primer Fasta file"
+    # )
+    primer_fasta_name = tables.Column(verbose_name="Primer Fasta file")
     owner = tables.Column("Owner", orderable=True, empty_values=())
     constants = Constants()
 
@@ -172,7 +169,7 @@ class PrimerTable(tables.Table):
         if (
             user.username == record.owner.username
             ## TODO  ## it can't be used in any active project
-        ): 
+        ):
             return mark_safe(
                 '<a href="#modal_remove_primer" id="id_remove_primer_modal" data-toggle="modal"'
                 + ' primer_name="'
@@ -201,6 +198,7 @@ class PrimerTable(tables.Table):
             ("-" if is_descending else "") + "owner_name"
         )
         return (queryset, True)
+
 
 class SampleToProjectsTable(tables.Table):
     """
@@ -238,7 +236,6 @@ class SampleToProjectsTable(tables.Table):
 
 
 class SampleTable(tables.Table):
-
     ### manage database
     manage_database = ManageDatabase()
 
@@ -251,9 +248,7 @@ class SampleTable(tables.Table):
         empty_values=(),
     )
     #     extra_info = tables.LinkColumn('sample-description', args=[tables.A('pk')], orderable=False, verbose_name='Extra Information', empty_values=())
-    # extra_info = tables.LinkColumn(
-    #    text="Extra Information", orderable=False, empty_values=()
-    # )
+    extra_info = tables.Column("Extra Information", orderable=False, empty_values=())
     technology = tables.Column("Technology", empty_values=())
     type_and_subtype = tables.Column("Classification", empty_values=())
     fastq_files = tables.Column("#Fastq Files", empty_values=())
@@ -640,7 +635,7 @@ class ProjectTable(tables.Table):
     )
     last_change_date = tables.Column("Last Change date", empty_values=())
     creation_date = tables.Column("Creation date", empty_values=())
-    results = tables.LinkColumn("Options", orderable=False, empty_values=())
+    results = tables.Column("Options", orderable=False, empty_values=())
 
     class Meta:
         model = Project
@@ -688,7 +683,7 @@ class ProjectTable(tables.Table):
         if count > 0:
             project_sample = (
                 "<a href="
-                + reverse("show-sample-project-results", args=[record.pk])
+                + reverse("show-sample-project-results", kwargs={"pk": record.pk})
                 + ' data-toggle="tooltip" title="See Results">'
                 + "{}</a>".format(record.name)
             )
@@ -766,7 +761,7 @@ class ProjectTable(tables.Table):
         if count > 0:
             sz_project_sample = (
                 "<a href="
-                + reverse("show-sample-project-results", args=[record.pk])
+                + reverse("show-sample-project-results", kwargs={"pk": record.pk})
                 + ' data-toggle="tooltip" title="See Results"> '
                 + '<span ><i class="padding-button-table fa fa-info-circle padding-button-table"></i></span></a> '
             )
@@ -892,12 +887,15 @@ class ShowProjectSamplesResults(tables.Table):
         )
         return_html = ""
         for key in coverage.get_sorted_elements_name():
-            return_html += '<a {} id="showImageCoverage" data-toggle="modal" project_sample_id="{}" '.format(
-                show_coverage, record.id
-            ) + 'sequence="{}"><img title="{}" class="tip" src="{}"></a>'.format(
-                key,
-                coverage.get_message_to_show_in_web_site(record.sample.name, key),
-                coverage.get_icon(key, limit_to_mask_consensus),
+            return_html += (
+                '<a {} id="showImageCoverage" data-toggle="modal" project_sample_id="{}" '.format(
+                    show_coverage, record.id
+                )
+                + 'sequence="{}"><img title="{}" class="tip" src="{}"></a>'.format(
+                    key,
+                    coverage.get_message_to_show_in_web_site(record.sample.name, key),
+                    coverage.get_icon(key, limit_to_mask_consensus),
+                )
             )
         return mark_safe(return_html)
 

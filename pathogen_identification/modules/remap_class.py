@@ -179,6 +179,8 @@ class coverage_parse:
 
                 for ctg in bedp.contig.unique():
                     bp = bedp[bedp.contig == ctg].copy()
+                    if ctg not in self.ctgl:
+                        self.logger.error(f"Contig {ctg} not found in fasta file.")
                     ctgsize = self.ctgl[ctg]
                     nwindows = self.calculate_windows(ctgsize)
 
@@ -1015,24 +1017,28 @@ class Remapping:
 
         self.index_reference()
 
-        if not self.check_mapping_output_exists():
-            self.remap_deploy()
-            self.process_bam()
         try:
-            if self.check_remap_status_paf():
+            if not self.check_mapping_output_exists():
+                self.remap_deploy()
+                self.process_bam()
+            if not self.check_remap_status_paf():
                 self.assembly_to_reference_map()
             if self.check_remap_status_bam():
                 self.remap_reads_post_process()
 
             self.summarize()
+
         except Exception as e:
+            import traceback
+
+            traceback.print_exc()
             self.logger.error(e)
             self.logger.error("Remapping failed.")
             return self
 
         else:
             self.logger.error(
-                f"Mapping output not found or unsuccesful after deploying on \
+                f"Mapping output succesful for \
                    target(s): {self.target.accid_in_file}, file: {self.r1}, reference: {self.target.file}"
             )
             return
@@ -1058,8 +1064,10 @@ class Remapping:
             self.logger.error(e)
 
     def process_bam(self):
+
         self.filter_bamfile_read_names()
         self.filter_bamfile()
+
         if self.check_remap_status_bam():
             self.sort_bam()
             self.index_sorted_bam()
@@ -1431,6 +1439,8 @@ class Remapping:
         ):
             return True
         else:
+            print("Assembly map file not found or empty.")
+            self.logger.error("Assembly map file not found or empty.")
             return False
 
     def filter_samfile_read_names(self, same=True, output_sam=""):
@@ -1956,7 +1966,9 @@ class Tandem_Remap:
             "description",
             reference_remap.mapped_contigs,
         )
-
+        print("############################")
+        print("Mapped contigs:", reference_remap.mapped_contigs)
+        print("Assembly target:", assembly_target)
         assembly_remap_drone = Remapping(
             reference_remap.mapped_subset_r1,
             assembly_target,

@@ -50,6 +50,7 @@ class MetaKeyAndValue(object):
     META_KEY_Flumut = "Flumut"
     META_KEY_Coverage = "Coverage"
     META_KEY_Mixed_Infection = "Mixed Infection"
+    META_KEY_Masking_consensus = "Masking consensus"
 
     ## metakey about the alerts
     META_KEY_ALERT_COVERAGE = "Alert Coverage"

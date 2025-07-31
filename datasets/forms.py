@@ -444,6 +444,10 @@ class DatastesUploadDescriptionMetadataForm(forms.ModelForm):
         cleaned_data = super(DatastesUploadDescriptionMetadataForm, self).clean()
 
         ### get path name
+
+        if self.cleaned_data.get("path_name") is None:
+            self.add_error("path_name", "Error: Must have a file.")
+            return cleaned_data
         path_name = self.cleaned_data["path_name"]
 
         ## testing fastq

@@ -1862,7 +1862,7 @@ class FinalReport(models.Model):
             control_reports = FinalReport.objects.filter(
                 sample__project=self.sample.project,
                 control_flag=FinalReport.CONTROL_FLAG_SOURCE,
-                run__parameter_set__leaf__index=self.run.parameter_set.leaf.index,
+                taxid=self.taxid,
             )
 
             if control_reports.exists() == False:
@@ -1898,7 +1898,7 @@ class FinalReport(models.Model):
         relative_proportion = self.control_relative_mapped
 
         if relative_proportion is not None:
-            return f"{control_flag_str} \n (x{relative_proportion:.2f})"
+            return f"{control_flag_str} \n (x{relative_proportion:.3f})"
 
         return control_flag_str
 

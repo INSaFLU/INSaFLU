@@ -1,7 +1,10 @@
 """
+"""
 Created on Jan 5, 2018
 
 @author: mmp
+"""
+
 """
 
 from django.core.management import BaseCommand

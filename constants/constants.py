@@ -58,7 +58,7 @@ class Televir_Metadata_Constants:
             "clark": "classification/Clark",
             "blastn": "hostDepletion/hostdep_env",
             "blastp": "hostDepletion/hostdep_env",
-            "snippy": config("DIR_SOFTWARE") + "/snippy",
+            "snippy": "remap/remap",
             "bamutil": "remap/remap",
             "msamtools": "remap/remap",
             "bcftools": "remap/remap",
@@ -71,7 +71,7 @@ class Televir_Metadata_Constants:
             "minimap2_illu": "hostDepletion/hostdep_env",
             "minimap2_remap": "hostDepletion/hostdep_env",
             "minimap2_ont": "hostDepletion/hostdep_env",
-            "snippy_pi": config("DIR_SOFTWARE") + "/snippy",
+            "snippy_pi": "remap/remap",  # config("DIR_SOFTWARE") + "/snippy",
             "prinseq++": "preprocess/prinseq",
             "prinseq": "preprocess/prinseq",
             "collapsibleTree": "remap/Renv",
@@ -237,7 +237,7 @@ class Constants(object):
     EXTENSION_PRIMER_PAIR = ".pair_information.tsv"
     DIR_NEXTSTRAIN_tables = "db/nextstrain"
     DIR_TEST_TYPE_REFERENCES = "tests/db/references/"
-    DIR_TEST_TYPE_PRIMERS = "tests/db/primers/"    
+    DIR_TEST_TYPE_PRIMERS = "tests/db/primers/"
     DIR_TYPE_ALN2PHENO = "db/Alignment2phenotype/"
     DIR_TYPE_IDENTIFICATION_PROJECTS = "db/type_identification_projects/"
     TYPE_IDENTIFICATION_PROJECTS_DBNAME = "db_projects_v1"
@@ -295,6 +295,9 @@ class Constants(object):
     )
     NEXTCLADE_LINK_RSV_B = (
         "https://clades.nextstrain.org/?dataset-name=rsv_b&input-fasta="
+    )
+    NEXTCLADE_LINK_MULTI = (
+        "https://clades.nextstrain.org/?multi-dataset=true&input-fasta="
     )
     AUSPICE_LINK = "https://auspice.us/"
 

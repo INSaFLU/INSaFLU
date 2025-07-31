@@ -1,3 +1,4 @@
+import os
 from typing import Any, List, Optional
 
 import pandas as pd
@@ -9,6 +10,7 @@ from pathogen_identification.models import (
     PIProject_Sample,
     Projects,
     RawReference,
+    ReferenceMap_Main,
     RunMain,
 )
 
@@ -162,9 +164,16 @@ def merge_classes(r1: pd.DataFrame, r2: pd.DataFrame, maxt=6, exclude="phage"):
     full_descriptor = descriptor_counts(full_descriptor, r1_raw, r2_raw)
 
     merged_final = full_descriptor[full_descriptor.taxid.isin(r1.taxid.to_list())]
+
     # get taxid index in r1
+    def get_taxid_index(row):
+        try:
+            return r1[r1.taxid == row.taxid].index[0]
+        except IndexError:
+            return -1
+
     merged_final["taxid_index"] = merged_final.apply(
-        lambda x: r1[r1.taxid == x.taxid].index[0], axis=1
+        lambda row: get_taxid_index(row), axis=1
     )
     merged_final = merged_final.sort_values("taxid_index").reset_index(drop=True)
     merged_final["source"] = merged_final.source.apply(
@@ -455,9 +464,6 @@ class HitFactory:
         )
 
 
-import pandas as pd
-
-
 def get_hit_best_reference(hit: Hit) -> Optional[RawReference]:
     if len(hit.raw_reference_id_list) == 0:
         return None
@@ -614,6 +620,47 @@ def determine_reads_stats(ref: RawReference, samples_list: List[SampleWrapper] =
     return mapped_reads
 
 
+def determine_bamfile(ref: RawReference, samples_list: List[SampleWrapper] = []):
+
+    run = ref.run
+    sample = run.sample
+
+    accid_use = ref.accid
+    accid_use = accid_use.split(".")[0]
+
+    reports = FinalReport.objects.filter(
+        taxid__icontains=ref.taxid,
+        sample__in=[sample.sample for sample in samples_list],
+    ).order_by("-coverage")
+    bamfile = ""
+
+    print(f"Found {reports.count()} reports for {ref.accid} in {sample.name}")
+    print([f.mapped_reads for f in reports])
+
+    if reports.exists():
+        report_first = reports.first()
+        accid_simple = (
+            report_first.accid.replace(".", "_")
+            .replace(";", "_")
+            .replace(":", "_")
+            .replace("|", "_")
+        )
+        reference_map = ReferenceMap_Main.objects.filter(
+            sample=report_first.sample, run=report_first.run, reference=accid_simple
+        ).first()
+
+        print(report_first.bam_path)
+        print(f"Reference map: {reference_map}")
+        # bamfile = reference_map.mapped_subset_r1
+        bamfile = report_first.bam_path
+        if bamfile is None:
+            bamfile = ""
+    else:
+        bamfile = ""
+
+    return bamfile
+
+
 def determine_reads_map_qual(ref: RawReference, samples_list: List[SampleWrapper] = []):
 
     run = ref.run
@@ -648,7 +695,7 @@ def df_report_analysis(analysis_df_filename, project_id: int):
 
     df = pd.read_csv(analysis_df_filename, sep="\t")
 
-    bact_results = df[df["Class"] == "bacterial"]
+    # bact_results = df[df["Class"] == "bacterial"]
 
     new_table = []
 
@@ -702,6 +749,11 @@ def df_report_analysis(analysis_df_filename, project_id: int):
                 "RPIP": "-",
             }
 
+            reads_bam = {
+                "UPIP": "",
+                "RPIP": "",
+            }
+
             for sample in expected_hit.raw_reference_samples:
                 sample_class = sample.sample_class
                 class_mapped_reads[sample_class] += determine_reads_stats(
@@ -712,6 +764,10 @@ def df_report_analysis(analysis_df_filename, project_id: int):
                     best_mapping, [sample]
                 )
 
+                reads_bam[sample_class] = determine_bamfile(best_mapping, [sample])
+
+            new_row["mapped reads file UPIP"] = reads_bam["UPIP"]
+            new_row["mapped reads file RPIP"] = reads_bam["RPIP"]
             new_row["mapped_reads UPIP / RPIP"] = (
                 f"{class_mapped_reads['UPIP']} / {class_mapped_reads['RPIP']}"
             )
@@ -775,6 +831,13 @@ class Command(BaseCommand):
             help="output file",
         )
 
+        parser.add_argument(
+            "--sample_indexes",
+            type=str,
+            default="",
+            help="sample indexes to be used in the output",
+        )
+
     def handle(self, *args, **options):
 
         project = Projects.objects.filter(
@@ -786,3 +849,68 @@ class Command(BaseCommand):
         df = df_report_analysis(report, project.pk)
 
         df.to_csv(options["output"], index=False, sep="\t")
+
+        if options["sample_indexes"]:
+            SAMTOOLS_BIN = "samtools"
+            sample_indeces = pd.read_csv(
+                options["sample_indexes"],
+                sep="\t",
+            )
+            output_dir = options["output"].replace(".tsv", "")
+            os.makedirs(output_dir, exist_ok=True)
+            upip_files_kept = []
+            rpip_files_kept = []
+
+            for sample, df_sample in df.groupby("Sample_ID"):
+                sample_index = sample_indeces[
+                    sample_indeces[0] == sample
+                ].index.tolist()
+                if len(sample_index) == 0:
+                    continue
+                sample_index = sample_index[0]
+                sample_dir = os.path.join(output_dir, sample)
+                upip_dir = os.path.join(sample_dir, "UPIP")
+                rpip_dir = os.path.join(sample_dir, "RPIP")
+                os.makedirs(sample_dir, exist_ok=True)
+
+                for ix, row in df_sample.iterrows():
+                    pathogen_name = row["hitname"]
+                    pathogen_name_safe = (
+                        pathogen_name.replace(" ", "_")
+                        .replace("/", "_")
+                        .replace(":", "_")
+                        .replace("|", "_")
+                    )
+
+                    upip_file = os.path.join(upip_dir, f"{pathogen_name_safe}_UPIP.tsv")
+                    rpip_file = os.path.join(rpip_dir, f"{pathogen_name_safe}_RPIP.tsv")
+                    os.makedirs(upip_dir, exist_ok=True)
+                    os.makedirs(rpip_dir, exist_ok=True)
+                    if row["mapped reads file UPIP"] != "":
+
+                        upip_file = os.path.join(
+                            upip_dir, f"{pathogen_name_safe}_UPIP.fastq"
+                        )
+                        upip_files_kept.append(upip_file)
+                        cmd = [
+                            SAMTOOLS_BIN,
+                            "fastq",
+                            row["mapped reads file UPIP"],
+                            "-o",
+                            upip_file,
+                        ]
+                        os.system(" ".join(cmd))
+
+                    if row["mapped reads file RPIP"] != "":
+                        rpip_file = os.path.join(
+                            rpip_dir, f"{pathogen_name_safe}_RPIP.fastq"
+                        )
+                        rpip_files_kept.append(rpip_file)
+                        cmd = [
+                            SAMTOOLS_BIN,
+                            "fastq",
+                            row["mapped reads file RPIP"],
+                            "-o",
+                            rpip_file,
+                        ]
+                        os.system(" ".join(cmd))

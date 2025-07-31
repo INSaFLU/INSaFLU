@@ -352,7 +352,7 @@ class SoftwareNames(object):
     SOFTWARE_COVERAGE_TO_REGIONS_PARAMETERS = ""
 
     SOFTWARE_BAMTOOLS = os.path.join(
-        settings.DIR_SOFTWARE, "bamtools/build/src/toolkit/bamtools"
+        settings.DIR_SOFTWARE, "bamtools/build/src/bamtools"
     )
     SOFTWARE_BAMTOOLS_name = "Bamtools"
     SOFTWARE_BAMTOOLS_VERSION = "2.5"
@@ -379,15 +379,28 @@ class SoftwareNames(object):
     SOFTWARE_CONVERT_VERSION = ""
     SOFTWARE_CONVERT_PARAMETERS = ""
 
-    vect_versions_available = ["7.453", "7.313"]
+    vect_versions_available = ["7.453", "7.313", "7.525"]
+    SOFTWARE_MAFFT_VERSION = None
+    SOFTWARE_MAFFT = None
     for version in vect_versions_available:
-        SOFTWARE_MAFFT_VERSION = version
-        SOFTWARE_MAFFT = os.path.join(
+        SOFTWARE_MAFFT_tmp = os.path.join(
             settings.DIR_SOFTWARE,
             "mafft-{}-without-extensions/scripts/mafft".format(version),
         )
-        if os.path.exists(SOFTWARE_MAFFT):
-            break
+
+        if os.path.exists(SOFTWARE_MAFFT_tmp):
+            SOFTWARE_MAFFT = os.path.join(
+                settings.DIR_SOFTWARE,
+                "mafft-{}-without-extensions/scripts/mafft".format(version),
+            )
+            SOFTWARE_MAFFT_VERSION = version
+
+    if SOFTWARE_MAFFT_VERSION is None:
+        raise Exception(
+            "Mafft version not found in the software directory: {}".format(
+                settings.DIR_SOFTWARE
+            )
+        )
 
     SOFTWARE_SET_ENV_MAFFT = "export MAFFT_BINARIES={}".format(
         os.path.join(
@@ -509,10 +522,12 @@ class SoftwareNames(object):
     SOFTWARE_NEXTSTRAIN_BUILDS_ncov = "ncov"
     SOFTWARE_NEXTSTRAIN_BUILDS_mpx = "mpx"
     SOFTWARE_NEXTSTRAIN_BUILDS_mpox_clade_i = "mpox_clade-i"
+    SOFTWARE_NEXTSTRAIN_BUILDS_mpox_mpxv = "mpox_all-clades"
 
     SOFTWARE_NEXTSTRAIN_BUILDS_mpox = [
         SOFTWARE_NEXTSTRAIN_BUILDS_mpx,
         SOFTWARE_NEXTSTRAIN_BUILDS_mpox_clade_i,
+        SOFTWARE_NEXTSTRAIN_BUILDS_mpox_mpxv,
     ]
 
     SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y = "flu_h3n2_12y"
@@ -587,6 +602,7 @@ class SoftwareNames(object):
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns,
         SOFTWARE_NEXTSTRAIN_BUILDS_mpx,
         SOFTWARE_NEXTSTRAIN_BUILDS_mpox_clade_i,
+        SOFTWARE_NEXTSTRAIN_BUILDS_mpox_mpxv,
         SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a,
         SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b,
         SOFTWARE_NEXTSTRAIN_BUILDS_dengue_all,
@@ -613,6 +629,7 @@ class SoftwareNames(object):
         [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns, "Avian Influenza (H5N1 NS)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_mpx, "mpox (hMPXV)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_mpox_clade_i, "mpox (clade I)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_mpox_mpxv, "mpox (all clades)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a, "RSV (A)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b, "RSV (B)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_dengue_all, "Dengue (all)"],

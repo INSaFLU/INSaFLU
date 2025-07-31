@@ -205,11 +205,8 @@ class DefaultParameters(object):
                     print("MULTIPLE SOFTWARES: ", sof.count(), software.name)
                     if sof.count() > 1:
                         sof_delete = sof.exclude(pk=software.pk)
-                        with LockedAtomicTransaction(Software), LockedAtomicTransaction(
-                            Parameter
-                        ):
-                            Parameter.objects.filter(software__in=sof_delete).delete()
-                            sof_delete.delete()
+                        Parameter.objects.filter(software__in=sof_delete).delete()
+                        sof_delete.delete()
 
                         # raise Exception("MultipleObjectsReturned")
 
@@ -806,11 +803,11 @@ class DefaultParameters(object):
                     return_parameter += "{}{}{}".format(
                         dict_out[par_name][0][0],
                         dict_out[par_name][1][0],
-                        #os.path.join(
+                        # os.path.join(
                         #    settings.DIR_SOFTWARE,
                         #    "trimmomatic/adapters",
                         #    dict_out[par_name][1][0],
-                        #),
+                        # ),
                         SoftwareNames.SOFTWARE_TRIMMOMATIC_addapter_trim_used_to_assemble,
                     )
                 elif (
@@ -829,11 +826,11 @@ class DefaultParameters(object):
 
                     return_parameter += " {}".format(
                         dict_out[par_name][1][0]
-                        #os.path.join(
+                        # os.path.join(
                         #    settings.DIR_SOFTWARE,
                         #    "trimmomatic/adapters",
                         #    dict_out[par_name][1][0],
-                        #)
+                        # )
                     )
                 elif (
                     par_name == DefaultParameters.MEDAKA_PRIMER_NAME
@@ -848,11 +845,11 @@ class DefaultParameters(object):
                     else:
                         return_parameter += " {}".format(
                             dict_out[par_name][1][0]
-                            #os.path.join(
+                            # os.path.join(
                             #    settings.DIR_SOFTWARE,
                             #    "trimmomatic/adapters",
                             #    dict_out[par_name][1][0],
-                            #)
+                            # )
                         )
 
                 elif par_name == "--db":
@@ -1048,6 +1045,7 @@ class DefaultParameters(object):
         )
         return True
 
+    # @transaction.atomic
     def set_software_to_run_by_software(
         self,
         software: Software,
@@ -1146,25 +1144,27 @@ class DefaultParameters(object):
     def get_vect_parameters(self, software: Software):
         """return all parameters, by software instance"""
 
+        if software.name == SoftwareNames.SOFTWARE_IVAR_name:
+            return self.get_ivar_default(
+                software.owner,
+                Software.TYPE_OF_USE_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            )
+
+        elif software.name == SoftwareNames.SOFTWARE_IRMA_name:
+            return self.get_irma_default(
+                software.owner,
+                Software.TYPE_OF_USE_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            )
+
         if software.name == SoftwareNames.SOFTWARE_SNIPPY_name:
-            if software.name_extended == SoftwareNames.SOFTWARE_IVAR_name_extended:
-                return self.get_ivar_default(
-                    software.owner,
-                    Software.TYPE_OF_USE_global,
-                    ConstantsSettings.TECHNOLOGY_illumina,
-                )
-            elif software.name_extended == SoftwareNames.SOFTWARE_IRMA_name_extended:
-                return self.get_irma_default(
-                    software.owner,
-                    Software.TYPE_OF_USE_global,
-                    ConstantsSettings.TECHNOLOGY_illumina,
-                )
-            else:
-                return self.get_snippy_default(
-                    software.owner,
-                    Software.TYPE_OF_USE_global,
-                    ConstantsSettings.TECHNOLOGY_illumina,
-                )
+
+            return self.get_snippy_default(
+                software.owner,
+                Software.TYPE_OF_USE_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            )
         elif software.name == SoftwareNames.SOFTWARE_TRIMMOMATIC_name:
             return self.get_trimmomatic_default(
                 software.owner,

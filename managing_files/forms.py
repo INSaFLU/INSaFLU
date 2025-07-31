@@ -35,6 +35,9 @@ from managing_files.models import (
     VaccineStatus,
 )
 from settings.constants_settings import ConstantsSettings
+from utils.parse_in_files import ParseInFiles
+from utils.software import Software
+from utils.utils import Utils
 
 
 ## https://kuanyui.github.io/2015/04/13/django-crispy-inline-form-layout-with-bootstrap/
@@ -1688,7 +1691,37 @@ class SamplesUploadMultipleFastqForm(forms.ModelForm):
             os.unlink(temp_file_name.name)
             self.add_error("path_name", e.args[0])
             return cleaned_data
+        try:
+            if not utils.is_gzip(path_name.name):
+                raise Exception("File need to have suffix '.fastq.gz'/'.fq.gz'")
+            utils.is_fastq_gz(temp_file_name.name)
+        except Exception as e:  ## (e.errno, e.strerror)
+            os.unlink(temp_file_name.name)
+            self.add_error("path_name", e.args[0])
+            return cleaned_data
 
+        if settings.DOWN_SIZE_FASTQ_FILES:
+            if path_name.size > settings.MAX_FASTQ_FILE_WITH_DOWNSIZE:
+                os.unlink(temp_file_name.name)
+                self.add_error(
+                    "path_name",
+                    "Max file size is: {}".format(
+                        filesizeformat(int(settings.MAX_FASTQ_FILE_WITH_DOWNSIZE))
+                    ),
+                )
+                return cleaned_data
+        elif path_name.size > settings.MAX_FASTQ_FILE_UPLOAD:
+            os.unlink(temp_file_name.name)
+            self.add_error(
+                "path_name",
+                "Max file size is: {}".format(
+                    filesizeformat(int(settings.MAX_FASTQ_FILE_UPLOAD))
+                ),
+            )
+            return cleaned_data
+
+        os.unlink(temp_file_name.name)
+        return cleaned_data
         if settings.DOWN_SIZE_FASTQ_FILES:
             if path_name.size > settings.MAX_FASTQ_FILE_WITH_DOWNSIZE:
                 os.unlink(temp_file_name.name)

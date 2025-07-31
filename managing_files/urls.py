@@ -16,8 +16,8 @@ urlpatterns = [
         name="reference-add",
     ),
     path("samples/samples", views.SamplesView.as_view(), name="samples"),
-    path(
-        "samples/<int:pk>/show_sample_settings",
+    re_path(
+        r"samples/(?P<pk>\d+)/show_sample_settings",
         views.SampleSettingsView.as_view(),
         name="sample-settings",
     ),
@@ -32,8 +32,8 @@ urlpatterns = [
         views.SamplesUploadDescriptionFileView.as_view(),
         name="sample-add-single-csv-file",
     ),  ## upload xls file with several samples
-    path(
-        "samples/<int:pk>/sample_description",
+    re_path(
+        r"samples/(?P<pk>\d+)/sample_description",
         views.SamplesDetailView.as_view(),
         name="sample-description",
     ),
@@ -63,10 +63,15 @@ urlpatterns = [
     ),
     path("project/projects", views.ProjectsView.as_view(), name="projects"),
     path("project/project_add", views.ProjectCreateView.as_view(), name="project-add"),
-    path(
-        "project/<int:pk>/show_project_settings",
+    re_path(
+        r"project/(?P<pk>\d+)/show_project_settings",
         views.ProjectsSettingsView.as_view(),
         name="project-settings",
+    ),
+    re_path(
+        r"project_samples/(?P<pk>\d+)/show_sample_project_results",
+        views.ShowSampleProjectsView.as_view(),
+        name="show-sample-project-results",
     ),
     re_path(
         r"project/(?P<pk>\d+)/show_project_settings_setup",
@@ -78,23 +83,18 @@ urlpatterns = [
         views.AddSamplesProjectsView.as_view(),
         name="add-sample-project",
     ),
-    path(
-        "project_samples/<int:pk>/remove_sample_project",
+    re_path(
+        r"project_samples/(?P<pk>\d+)/remove_sample_project",
         views.SamplesDetailView.as_view(),
         name="remove-sample-project",
     ),
-    path(
-        "project_samples/<int:pk>/show_sample_project_results",
-        views.ShowSampleProjectsView.as_view(),
-        name="show-sample-project-results",
-    ),
-    path(
-        "project_samples/<int:pk>/show_project_sample_settings",
+    re_path(
+        r"project_samples/(?P<pk>\d+)/show_project_sample_settings",
         views.SampleProjectsSettingsView.as_view(),
         name="sample-project-settings",
     ),
-    path(
-        "project_samples/<int:pk>/show_sample_project_single_details",
+    re_path(
+        r"project_samples/(?P<pk>\d+)/show_sample_project_single_details",
         views.ShowSampleProjectsDetailsView.as_view(),
         name="show-sample-project-single-detail",
     ),

@@ -542,7 +542,10 @@ class DrawCoverage(object):
 
         ## draw coverage text
         if not b_only_calculate_size:
-            start_coverage = font_12.getsize("Coverage")[0] >> 1
+            start_coverage = (
+                font_12.getbbox("Coverage")[2] - font_12.getbbox("Coverage")[0]
+            )
+            start_coverage = start_coverage // 2
             start_coverage = (
                 5
                 if (self.get_start_x() - start_coverage) < 0
@@ -601,7 +604,12 @@ class DrawCoverage(object):
         )
         position_x_fourth_header = position_x
         position_x = position_x_third_header
-        point_y += (self.START_DRAW_HEADER << 1) + font_12.getsize("text")[1]
+
+        point_y += (
+            (self.START_DRAW_HEADER << 1)
+            + font_12.getbbox("text")[3]
+            - font_12.getbbox("text")[1]
+        )
         position_x += self.draw_text_header(
             draw,
             font_12,
@@ -617,16 +625,20 @@ class DrawCoverage(object):
 
         ### second line
         position_x = position_x_second_header
-        point_y += (self.START_DRAW_HEADER << 1) + font_12.getsize("text")[1]
+        point_y += (
+            (self.START_DRAW_HEADER << 1)
+            + font_12.getbbox("text")[3]
+            - font_12.getbbox("text")[1]
+        )
         # 		position_x += self.draw_text_header(draw, font_12, "Max. Coverage: {}".format(max_coverage), position_x, point_y, DrawCoverage.COLOR_RGBGrey_32_32_32, b_only_calculate_size)
         # 		position_x += self.draw_text_header(draw, font_12, "Min. Coverage: {}".format(min_coverage), position_x, point_y, DrawCoverage.COLOR_RGBGrey_32_32_32, b_only_calculate_size)
         if not b_only_calculate_size:
             draw.line(
                 (
                     position_x,
-                    point_y + (font_12.getsize("text")[1] >> 1),
+                    point_y + font_12.getbbox("text")[3] - font_12.getbbox("text")[1],
                     position_x + lines_size,
-                    point_y + (font_12.getsize("text")[1] >> 1),
+                    point_y + font_12.getbbox("text")[3] - font_12.getbbox("text")[1],
                 ),
                 fill=self.COLOR_RGBRed_153_0_0,
                 width=3,
@@ -646,9 +658,9 @@ class DrawCoverage(object):
             draw.line(
                 (
                     position_x,
-                    point_y + (font_12.getsize("text")[1] >> 1),
+                    point_y + font_12.getbbox("text")[3] - font_12.getbbox("text")[1],
                     position_x + lines_size,
-                    point_y + (font_12.getsize("text")[1] >> 1),
+                    point_y + font_12.getbbox("text")[3] - font_12.getbbox("text")[1],
                 ),
                 fill=self.COLOR_RGBGreen_0_153_0,
                 width=3,
@@ -673,9 +685,9 @@ class DrawCoverage(object):
             draw.line(
                 (
                     position_x,
-                    point_y + (font_12.getsize("text")[1] >> 1),
+                    point_y + font_12.getbbox("text")[3] - font_12.getbbox("text")[1],
                     position_x + lines_size,
-                    point_y + (font_12.getsize("text")[1] >> 1),
+                    point_y + font_12.getbbox("text")[3] - font_12.getbbox("text")[1],
                 ),
                 fill=self.COLOR_RGBRed_153_0_0,
                 width=3,
@@ -684,12 +696,12 @@ class DrawCoverage(object):
                 (
                     position_x + lines_size - 4,
                     point_y
-                    + (font_12.getsize("text")[1] >> 1)
+                    + (font_12.getbbox("text")[3] - font_12.getbbox("text")[1])
                     - self.GAP_MARK_VARIATIONS
                     - 1,
                     position_x + lines_size + 4,
                     point_y
-                    + (font_12.getsize("text")[1] >> 1)
+                    + (font_12.getbbox("text")[3] - font_12.getbbox("text")[1])
                     + self.GAP_MARK_VARIATIONS
                     + 1,
                 ),
@@ -712,9 +724,9 @@ class DrawCoverage(object):
             draw.line(
                 (
                     position_x,
-                    point_y + (font_12.getsize("text")[1] >> 1),
+                    point_y + (font_12.getbbox("text")[3] - font_12.getbbox("text")[1]),
                     position_x + lines_size,
-                    point_y + (font_12.getsize("text")[1] >> 1),
+                    point_y + (font_12.getbbox("text")[3] - font_12.getbbox("text")[1]),
                 ),
                 fill=self.COLOR_RGBBlack,
                 width=3,
@@ -723,12 +735,12 @@ class DrawCoverage(object):
                 (
                     position_x + lines_size - 4,
                     point_y
-                    + (font_12.getsize("text")[1] >> 1)
+                    + (font_12.getbbox("text")[3] - font_12.getbbox("text")[1])
                     - self.GAP_MARK_VARIATIONS
                     - 1,
                     position_x + lines_size + 4,
                     point_y
-                    + (font_12.getsize("text")[1] >> 1)
+                    + (font_12.getbbox("text")[3] - font_12.getbbox("text")[1])
                     + self.GAP_MARK_VARIATIONS
                     + 1,
                 ),
@@ -760,7 +772,8 @@ class DrawCoverage(object):
         gap_between_text = 20
         if not bOnlyCalculatesize:
             draw.text((pointX, pointY), text, fill=color, font=font_)
-        return font_.getsize(text)[0] + gap_between_text
+
+        return font_.getbbox(text)[2] - font_.getbbox(text)[0] + gap_between_text
 
     def draw_legend_coverage(self, draw, startDraw, endDraw, length):
         """
@@ -782,9 +795,8 @@ class DrawCoverage(object):
                 fill=self.COLOR_RGBGrey_64_64_64,
                 width=1,
             )
-            middle_size = (
-                font_.getsize("{}".format(i * number_space * self.rateImage))[0] >> 1
-            )
+            text = "{}".format(i * number_space * self.rateImage // 1)[0]
+            middle_size = font_.getbbox(text)[2] - font_.getbbox(text)[0]
             draw.text(
                 (
                     self.get_start_x() + i * number_space - middle_size,
@@ -833,7 +845,8 @@ class DrawCoverage(object):
         self, draw, font_, startDraw, endDraw, pointY, value
     ):
         smallOffset = 3
-        smallOffset_y = (-1 * (font_.getsize("123")[1] >> 1)) - smallOffset
+        height_123 = font_.getbbox("123")[3] - font_.getbbox("123")[1]
+        smallOffset_y = (-1 * (height_123 // 1)) - smallOffset
         nLength_X = endDraw - startDraw
         draw.line(
             (startDraw - smallOffset, pointY, endDraw + smallOffset, pointY),

@@ -1,5 +1,6 @@
 # Create your views here.
 
+import datetime
 import logging
 import ntpath
 import os
@@ -553,14 +554,11 @@ class PrimerAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView)
         primer.display_name = primer.name
         primer.owner = self.request.user
         primer.primer_fasta_name = utils.clean_name(
-            name
-            + ".fa"
+            name + ".fa"
             # ntpath.basename(primer_fasta.name)
         )
         primer.primer_pairs_name = utils.clean_name(
-            name
-            + ".fa"
-            + Constants.EXTENSION_PRIMER_PAIR
+            name + ".fa" + Constants.EXTENSION_PRIMER_PAIR
             # ntpath.basename(primer_pairs.name)
         )
         primer.save()
@@ -886,7 +884,6 @@ class SamplesAddView(
 
         ### create a task to perform the analysis of fastq and trimmomatic
         try:
-
             process_SGE = ProcessSGE()
             (job_name_wait, job_name) = self.request.user.profile.get_name_sge_seq(
                 Profile.SGE_PROCESS_clean_sample, Profile.SGE_SAMPLE
@@ -2180,10 +2177,9 @@ class SamplesDetailView(BaseBreadcrumbMixin, LoginRequiredMixin, DetailView):
             ## [[header1, value1], [header2, value2], [header3, value3], ...]
             ### if it's to big expand button is better
             tag_names = sample.get_tag_names()
-            context[
-                "extra_data_sample_expand"
-            ] = tag_names != None and tag_names.count() > (
-                Constants.START_EXPAND_SAMPLE_TAG_NAMES_ROWS
+            context["extra_data_sample_expand"] = (
+                tag_names != None
+                and tag_names.count() > (Constants.START_EXPAND_SAMPLE_TAG_NAMES_ROWS)
             )
             if tag_names != None:
                 context["extra_data_sample"] = self.utils.grouped(tag_names, 4)
@@ -2944,7 +2940,9 @@ class ShowSampleProjectsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
             ("Projects", reverse("projects")),
             (
                 "Show samples in project",
-                reverse("show-sample-project-results"),
+                reverse(
+                    "show-sample-project-results", kwargs={"pk": self.kwargs["pk"]}
+                ),
             ),
         ]
 
@@ -3089,7 +3087,6 @@ class ShowSampleProjectsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
                 TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Flumut_markers_report
             )
         ):
-
             context["flumut_report"] = get_link_for_dropdown_item(
                 project.get_global_file_by_project(
                     TypePath.MEDIA_URL,
@@ -3152,7 +3149,7 @@ class ShowSampleProjectsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
                 "{}_{}_{}".format(
                     os.path.splitext(Project.PROJECT_FILE_NAME_all_files_zipped)[0],
                     project.get_clean_project_name(),
-                    datetime.now().strftime(settings.DATE_FORMAT_FOR_SHOW),
+                    datetime.datetime.now().strftime(settings.DATE_FORMAT_FOR_SHOW),
                 ),
             )
 
@@ -3552,7 +3549,6 @@ class ProjectsSettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
 
 
 class ProjectsSettingsSetupView(ProjectsSettingsView):
-
     def setup(self, request, *args, **kwargs):
         super(ProjectsSettingsSetupView, self).setup(request, *args, **kwargs)
         self.is_setup = True
@@ -3868,9 +3864,7 @@ class ShowSampleProjectsDetailsView(BaseBreadcrumbMixin, LoginRequiredMixin, Lis
             software_mdcg = default_software.get_software_project_sample_mdcg_illumina(
                 project_sample=project_sample,
             )
-            software_used = (
-                []
-            )  ### has a list with all software used... [name, parameters]
+            software_used = []  ### has a list with all software used... [name, parameters]
             ### only for illumina
             decode_result = DecodeObjects()
             if project_sample.is_sample_illumina():
@@ -4153,4 +4147,5 @@ def get_unique_pk_from_session(request):
                 return_pk = key.split("_")[2]
             else:
                 return None
+    return return_pk
     return return_pk

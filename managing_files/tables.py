@@ -167,8 +167,7 @@ class PrimerTable(tables.Table):
         if user.username == Constants.USER_ANONYMOUS:
             return record.name
         if (
-            user.username
-            == record.owner.username
+            user.username == record.owner.username
             ## TODO  ## it can't be used in any active project
         ):
             return mark_safe(
@@ -237,7 +236,6 @@ class SampleToProjectsTable(tables.Table):
 
 
 class SampleTable(tables.Table):
-
     ### manage database
     manage_database = ManageDatabase()
 
@@ -685,7 +683,7 @@ class ProjectTable(tables.Table):
         if count > 0:
             project_sample = (
                 "<a href="
-                + reverse("show-sample-project-results", args=[record.pk])
+                + reverse("show-sample-project-results", kwargs={"pk": record.pk})
                 + ' data-toggle="tooltip" title="See Results">'
                 + "{}</a>".format(record.name)
             )
@@ -763,7 +761,7 @@ class ProjectTable(tables.Table):
         if count > 0:
             sz_project_sample = (
                 "<a href="
-                + reverse("show-sample-project-results", args=[record.pk])
+                + reverse("show-sample-project-results", kwargs={"pk": record.pk})
                 + ' data-toggle="tooltip" title="See Results"> '
                 + '<span ><i class="padding-button-table fa fa-info-circle padding-button-table"></i></span></a> '
             )
@@ -889,12 +887,15 @@ class ShowProjectSamplesResults(tables.Table):
         )
         return_html = ""
         for key in coverage.get_sorted_elements_name():
-            return_html += '<a {} id="showImageCoverage" data-toggle="modal" project_sample_id="{}" '.format(
-                show_coverage, record.id
-            ) + 'sequence="{}"><img title="{}" class="tip" src="{}"></a>'.format(
-                key,
-                coverage.get_message_to_show_in_web_site(record.sample.name, key),
-                coverage.get_icon(key, limit_to_mask_consensus),
+            return_html += (
+                '<a {} id="showImageCoverage" data-toggle="modal" project_sample_id="{}" '.format(
+                    show_coverage, record.id
+                )
+                + 'sequence="{}"><img title="{}" class="tip" src="{}"></a>'.format(
+                    key,
+                    coverage.get_message_to_show_in_web_site(record.sample.name, key),
+                    coverage.get_icon(key, limit_to_mask_consensus),
+                )
             )
         return mark_safe(return_html)
 

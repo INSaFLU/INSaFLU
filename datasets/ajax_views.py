@@ -533,7 +533,6 @@ def show_msa_nucleotide(request):
                         url_file_name_fasta
                     )
                 )
-                print("!OIHO")
                 data["alignment_nex_id"] = mark_safe(
                     "<strong>Alignment (.nex):</strong> {}".format(url_file_name_nex)
                 )

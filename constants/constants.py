@@ -548,6 +548,7 @@ class FileExtensions(object):
     FILE_FA = ".fa"
     FILE_FAI = ".fai"
     FILE_CONSENSUS_FASTA = ".consensus.fasta"
+    FILE_BASH_SCRIPT = ".sh"
     FILE_TREE = ".tree"
     FILE_NWK = ".nwk"
     FILE_GZ = ".gz"

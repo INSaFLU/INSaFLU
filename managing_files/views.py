@@ -2804,6 +2804,7 @@ class AddSamplesProjectsView(
             ### start adding...
             (job_name_wait, job_name) = ("", "")
             project_sample_add = 0
+            taskids_wait = []
             for id_sample in vect_sample_id_add:
                 ## keep track of samples out
                 if id_sample in dt_sample_out:
@@ -2867,7 +2868,7 @@ class AddSamplesProjectsView(
                         taskID = process_SGE.set_second_stage_medaka(
                             project_sample, self.request.user, job_name, [job_name_wait]
                         )
-
+                    taskids_wait.append(taskID)
                     ### set project sample queue ID
                     manageDatabase.set_project_sample_metakey(
                         project_sample,
@@ -2878,6 +2879,7 @@ class AddSamplesProjectsView(
                         MetaKeyAndValue.META_VALUE_Queue,
                         taskID,
                     )
+
                 except:
                     pass
 
@@ -3300,65 +3302,6 @@ class ShowSampleProjectsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
                 specie_tag,
             )
 
-        return context
-
-
-class ProjectSelectView(LoginRequiredMixin, ListView):
-    """
-    choose one of Mutation Detecion and Consensus Generation software
-    """
-
-    model = Project
-    template_name = "project/project_select_software.html"
-    context_object_name = "project"
-
-    add_home = True
-
-    @cached_property
-    def crumbs(self):
-        return [
-            ("Projects Index", reverse("project-index")),
-            ("Projects", reverse("projects")),
-            (
-                "Select software in project",
-                reverse("project-select-software", kwargs={"pk": self.kwargs["pk"]}),
-            ),
-        ]
-
-    def get_context_data(self, **kwargs):
-        context = super(ProjectSelectView, self).get_context_data(**kwargs)
-        project = Project.objects.get(pk=self.kwargs["pk"])
-
-        ### can't see this project
-        context["nav_project"] = True
-        if project.owner.id != self.request.user.id:
-            context["error_cant_see"] = "1"
-            return context
-
-        ### test all defaults first, if exist in database
-        default_software = DefaultProjectSoftware()
-        default_software.test_all_defaults(
-            self.request.user, project, None, None
-        )  ## the user can have defaults yet
-        ### current global softwares
-        software_global = default_software.user_global_mdcg_illumina_software(
-            self.request.user
-        )
-
-        if software_global.name == SoftwareNames.SOFTWARE_SNIPPY_name:
-            context["snippy_global"] = True
-        elif software_global.name == SoftwareNames.SOFTWARE_IRMA_name:
-            context["irma_global"] = True
-        elif software_global.name == SoftwareNames.SOFTWARE_IVAR_name:
-            context["ivar_global"] = True
-
-        context["software_global"] = software_global
-        context["show_info_main_page"] = (
-            ShowInfoMainPage()
-        )  ## show main information about the institute
-        context["project"] = project
-        context["project_index"] = project.id
-        context["type_of_use_id"] = SoftwareSettings.TYPE_OF_USE_project
         return context
 
 
@@ -4147,5 +4090,4 @@ def get_unique_pk_from_session(request):
                 return_pk = key.split("_")[2]
             else:
                 return None
-    return return_pk
     return return_pk

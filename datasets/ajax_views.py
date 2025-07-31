@@ -48,7 +48,6 @@ def remove_dataset(request):
         dataset_id_a = "dataset_id"
 
         if dataset_id_a in request.GET:
-
             ## some pre-requisites
             if not request.user.is_active or not request.user.is_authenticated:
                 return JsonResponse(data)
@@ -100,7 +99,6 @@ def add_dataset_name(request):
         dataset_name = "dataset_name"
 
         if dataset_name in request.GET:
-
             ## some pre-requisites
             if not request.user.is_active or not request.user.is_authenticated:
                 return JsonResponse(data)
@@ -177,7 +175,6 @@ def test_dataset_name(request):
         dataset_name = "dataset_name"
 
         if dataset_name in request.GET:
-
             ## some pre-requisites
             if not request.user.is_active or not request.user.is_authenticated:
                 return JsonResponse(data)
@@ -218,7 +215,6 @@ def test_consensus_name(request):
         consensus_name = "consensus_name"
 
         if consensus_name in request.GET:
-
             ## some pre-requisites
             if not request.user.is_active or not request.user.is_authenticated:
                 return JsonResponse(data)
@@ -259,7 +255,6 @@ def add_consensus_name(request):
         consensus_name = "consensus_name"
 
         if consensus_name in request.POST:
-
             ## some pre-requisites
             if not request.user.is_active or not request.user.is_authenticated:
                 return JsonResponse(data)
@@ -312,7 +307,6 @@ def remove_consensus(request):
         consensus_id_a = "consensus_id"
 
         if consensus_id_a in request.GET:
-
             ## some pre-requisites
             if not request.user.is_active or not request.user.is_authenticated:
                 return JsonResponse(data)
@@ -354,14 +348,12 @@ def remove_consensus_in_dataset(request):
         consensus_id_a = "consensus_id"
 
         if consensus_id_a in request.GET:
-
             ## some pre-requisites
             if not request.user.is_active or not request.user.is_authenticated:
                 return JsonResponse(data)
             try:
                 profile = Profile.objects.get(user__pk=request.user.pk)
             except Profile.DoesNotExist:
-
                 return JsonResponse(data)
             if profile.only_view_project:
                 return JsonResponse(data)
@@ -465,7 +457,6 @@ def dataset_rebuild(request):
     Rebuild results
     """
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
-
         data = {"is_ok": False, "message": "Something went wrong."}
         key_with_dataset_id = "dataset_id"
         if key_with_dataset_id in request.GET:
@@ -542,6 +533,7 @@ def show_msa_nucleotide(request):
                         url_file_name_fasta
                     )
                 )
+                print("!OIHO")
                 data["alignment_nex_id"] = mark_safe(
                     "<strong>Alignment (.nex):</strong> {}".format(url_file_name_nex)
                 )
@@ -608,9 +600,12 @@ def show_phylo_canvas(request):
                         not os.path.exists(file_name_root_json)
                         or os.path.getsize(file_name_root_json) == 0
                     ):
-                        with open(
-                            file_name_root_json, "w", encoding="utf-8"
-                        ) as handle_write, open(file_name_root_sample) as handle_in_csv:
+                        with (
+                            open(
+                                file_name_root_json, "w", encoding="utf-8"
+                            ) as handle_write,
+                            open(file_name_root_sample) as handle_in_csv,
+                        ):
                             reader = csv.DictReader(handle_in_csv)
                             all_data = json.loads(json.dumps(list(reader)))
                             dt_result = {}

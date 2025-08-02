@@ -89,6 +89,12 @@ class Command(BaseCommand):
             help="curate references",
         )
 
+        parser.add_argument(
+            "--force",
+            action="store_true",
+            help="force update references",
+        )
+
     def handle(self, *args, **options):
         ###
         # get user
@@ -97,6 +103,17 @@ class Command(BaseCommand):
         process_controler = ProcessControler()
 
         process_SGE = ProcessSGE()
+
+        reference_update_running = ProcessControler.objects.filter(
+            name=process_controler.get_name_televir_reference_update(1),
+            is_running=True,
+        ).exists()
+
+        if reference_update_running and not options["force"]:
+            print(
+                "Reference update is already running. Use --force to override and run again."
+            )
+            return
 
         ### SETUP
         process_SGE.set_process_controlers(

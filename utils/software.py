@@ -5471,6 +5471,9 @@ class Software(object):
             + " --configfile "
             + temp_dir
             + "/config/config.yaml"
+            + " 2> "
+            + temp_dir
+            + "/stderr.txt"
             + " > "
             + temp_dir
             + "/stdout.txt"
@@ -5520,6 +5523,12 @@ class Software(object):
 
         cmd = "mv {} {}".format(
             os.path.join(temp_dir, "stdout.txt"),
+            os.path.join(temp_dir, "auspice", "log"),
+        )
+        exit_status = os.system(cmd)
+
+        cmd = "mv {} {}".format(
+            os.path.join(temp_dir, "stderr.txt"),
             os.path.join(temp_dir, "auspice", "log"),
         )
         exit_status = os.system(cmd)
@@ -5646,6 +5655,9 @@ class Software(object):
             + " > "
             + temp_dir
             + "/stdout.txt"
+            + " 2> "
+            + temp_dir
+            + "/stderr.txt"
         )
         exit_status = os.system(cmd)
         if exit_status != 0:
@@ -5690,6 +5702,12 @@ class Software(object):
 
         cmd = "mv {} {}".format(
             os.path.join(temp_dir, "stdout.txt"),
+            os.path.join(temp_dir, "auspice", "log"),
+        )
+        exit_status = os.system(cmd)
+        
+        cmd = "mv {} {}".format(
+            os.path.join(temp_dir, "stderr.txt"),
             os.path.join(temp_dir, "auspice", "log"),
         )
         exit_status = os.system(cmd)
@@ -5760,12 +5778,13 @@ class Software(object):
         )
 
         # Now run Nextstrain
-        cmd = "{} build --native {} targets/flu_{}_ha_{} --cores {} > {}/stdout.txt".format(
+        cmd = "{} build --native {} targets/flu_{}_ha_{} --cores {} 2> {}/stderr.txt > {}/stdout.txt".format(
             SoftwareNames.SOFTWARE_NEXTSTRAIN,
             temp_dir,
             strain,
             period,
             str(cores),
+            temp_dir,
             temp_dir,
         )
         exit_status = os.system(cmd)
@@ -5813,6 +5832,13 @@ class Software(object):
 
         cmd = "mv {} {}".format(
             os.path.join(temp_dir, "stdout.txt"),
+            os.path.join(temp_dir, "auspice", "log"),
+        )
+        exit_status = os.system(cmd)
+
+
+        cmd = "mv {} {}".format(
+            os.path.join(temp_dir, "stderr.txt"),
             os.path.join(temp_dir, "auspice", "log"),
         )
         exit_status = os.system(cmd)
@@ -5897,11 +5923,12 @@ class Software(object):
 
         # Need to estimate clades of these new samples (only for H5N1 ha)
         if (strain == "h5n1") and (gene == "ha"):
-            cmd = "cd {}; {} -s Snakefile_h5n1.clades --cores {} --config label={} > {}/stdout.txt".format(
+            cmd = "cd {}; {} -s Snakefile_h5n1.clades --cores {} --config label={} 2> {}/stdout.txt > {}/stdout.txt".format(
                 temp_dir,
                 SoftwareNames.SOFTWARE_NEXTSTRAIN_snakemake,
                 str(cores),
                 SoftwareNames.SOFTWARE_NEXTSTRAIN_LABEL,
+                temp_dir,
                 temp_dir,
             )
             exit_status = os.system(cmd)
@@ -5975,6 +6002,12 @@ class Software(object):
             os.path.join(temp_dir, "auspice", "log"),
         )
         exit_status = os.system(cmd)
+        
+        cmd = "mv {} {}".format(
+            os.path.join(temp_dir, "stderr.txt"),
+            os.path.join(temp_dir, "auspice", "log"),
+        )
+        exit_status = os.system(cmd)
 
         # Collect results
         zip_out = self.zip_files_in_path(os.path.join(temp_dir, "auspice"))
@@ -6042,8 +6075,8 @@ class Software(object):
 
         # Now run Nextstrain
         # cmd = "{} -j {} {}/auspice/rsv_{}_genome.json {}/auspice/rsv_{}_G.json {}/auspice/rsv_{}_F.json --configfile {}/config/configfile.yaml".format(
-        cmd = "cd {} && {} -j {} auspice/rsv_{}_genome.json --configfile config/configfile.yaml > {}/stdout.txt".format(
-            temp_dir, SoftwareNames.SOFTWARE_NEXTSTRAIN_RSV, str(cores), type, temp_dir
+        cmd = "cd {} && {} -j {} auspice/rsv_{}_genome.json --configfile config/configfile.yaml 2> {}/stderr.txt > {}/stdout.txt".format(
+            temp_dir, SoftwareNames.SOFTWARE_NEXTSTRAIN_RSV, str(cores), type, temp_dir, temp_dir
         )
         exit_status = os.system(cmd)
         if exit_status != 0:
@@ -6087,6 +6120,12 @@ class Software(object):
 
         cmd = "mv {} {}".format(
             os.path.join(temp_dir, "stdout.txt"),
+            os.path.join(temp_dir, "auspice", "log"),
+        )
+        exit_status = os.system(cmd)
+
+        cmd = "mv {} {}".format(
+            os.path.join(temp_dir, "stderr.txt"),
             os.path.join(temp_dir, "auspice", "log"),
         )
         exit_status = os.system(cmd)
@@ -6163,10 +6202,11 @@ class Software(object):
             )
 
         # Now run Nextstrain
-        cmd = "{} build --native {} --cores {}  --configfile config/config_hmpxv1_big.yaml > {}".format(
+        cmd = "{} build --native {} --cores {}  --configfile config/config_hmpxv1_big.yaml 2> {} > {}".format(
             SoftwareNames.SOFTWARE_NEXTSTRAIN_MPX,
             temp_dir,
             str(cores),
+            os.path.join(temp_dir, "stderr.txt"),
             os.path.join(temp_dir, "stdout.txt"),
         )
         exit_status = os.system(cmd)
@@ -6212,6 +6252,12 @@ class Software(object):
 
         cmd = "mv {} {}".format(
             os.path.join(temp_dir, "stdout.txt"),
+            os.path.join(temp_dir, "auspice", "log"),
+        )
+        exit_status = os.system(cmd)
+
+        cmd = "mv {} {}".format(
+            os.path.join(temp_dir, "stderr.txt"),
             os.path.join(temp_dir, "auspice", "log"),
         )
         exit_status = os.system(cmd)
@@ -6353,10 +6399,11 @@ class Software(object):
         )
 
         # Now run Nextstrain
-        cmd = "{} build --native {} --cores {} > {}".format(
+        cmd = "{} build --native {} --cores {} 2> {} > {}".format(
             SoftwareNames.SOFTWARE_NEXTSTRAIN_DENGUE,
             temp_dir,
             str(cores),
+            os.path.join(temp_dir, "stderr.txt"),
             os.path.join(temp_dir, "stdout.txt"),
         )
         exit_status = os.system(cmd)
@@ -6402,6 +6449,12 @@ class Software(object):
 
         cmd = "mv {} {}".format(
             os.path.join(temp_dir, "stdout.txt"),
+            os.path.join(temp_dir, "auspice", "log"),
+        )
+        exit_status = os.system(cmd)
+
+        cmd = "mv {} {}".format(
+            os.path.join(temp_dir, "stderr.txt"),
             os.path.join(temp_dir, "auspice", "log"),
         )
         exit_status = os.system(cmd)
@@ -6474,10 +6527,11 @@ class Software(object):
         )
 
         # Now run Nextstrain
-        cmd = "{} build --native {} --cores {} > {}".format(
+        cmd = "{} build --native {} --cores {} 2> {} > {}".format(
             SoftwareNames.SOFTWARE_NEXTSTRAIN_DENGUE,
             temp_dir,
             str(cores),
+            os.path.join(temp_dir, "stderr.txt"),
             os.path.join(temp_dir, "stdout.txt"),
         )
         exit_status = os.system(cmd)
@@ -6526,6 +6580,12 @@ class Software(object):
 
         cmd = "mv {} {}".format(
             os.path.join(temp_dir, "stdout.txt"),
+            os.path.join(temp_dir, "auspice", "log"),
+        )
+        exit_status = os.system(cmd)
+
+        cmd = "mv {} {}".format(
+            os.path.join(temp_dir, "stderr.txt"),
             os.path.join(temp_dir, "auspice", "log"),
         )
         exit_status = os.system(cmd)

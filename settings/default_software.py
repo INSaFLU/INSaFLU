@@ -904,35 +904,6 @@ class DefaultSoftware(object):
     def test_defaults_test_televir(self, user):
         """
         test if exist, if not persist in database, for televir"""
-        self.test_default_db(
-            SoftwareNames.SOFTWARE_VOYAGER_name,
-            self.default_parameters.get_voyager_default(
-                user,
-                Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_minion,
-            ),
-            user,
-        )
-
-        self.test_default_db(
-            SoftwareNames.SOFTWARE_METAPHLAN_NAME,
-            self.default_parameters.get_metaphlan_default(
-                user,
-                Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_illumina,
-            ),
-            user,
-        )
-
-        self.test_default_db(
-            SoftwareNames.SOFTWARE_METAPHLAN_NAME,
-            self.default_parameters.get_metaphlan_default(
-                user,
-                Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_minion,
-            ),
-            user,
-        )
 
         #        self.test_default_db(
         #            SoftwareNames.SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name,
@@ -963,6 +934,8 @@ class DefaultSoftware(object):
         #    ),
         #    user,
         # )
+
+        return
 
     def assess_db_dependency_met(self, vect_parameters, software_name):
         """for pipeline steps where sequence dbs are required, check that they exist."""

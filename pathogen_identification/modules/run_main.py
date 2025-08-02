@@ -1634,8 +1634,14 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.Update_exec_time()
         self.generate_output_data_classes()
 
+    #### SUMMARY FUNCTIONS ####
+
     def update_mapped_instances(self, mapped_instances: List[Mapping_Instance]):
-        super().update_mapped_instances(mapped_instances)
+        """Update the remap manager with the new mapped instances, register."""
+        self.prep_REMAPPING()
+        self.remap_manager.update_mapped_instances(mapped_instances)
+
+        self.remapping_performed = True
         self.generate_output_data_classes()
 
     def generate_output_data_classes(self):

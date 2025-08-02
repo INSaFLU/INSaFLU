@@ -34,6 +34,7 @@ from pathogen_identification.models import (
     RunReadsRegister,
     SoftwareTree,
     SoftwareTreeNode,
+    TelevirRunQC,
 )
 from pathogen_identification.utilities.clade_objects import Clade
 from pathogen_identification.utilities.overlap_manager import ReadOverlapManager
@@ -770,14 +771,52 @@ class RunMainWrapper:
 
         return mark_safe(run_log)
 
-    def run_progess_tracker(self) -> str:
+    @property
+    def qc_performed(self) -> bool:
+        return TelevirRunQC.objects.filter(run=self.record, performed=True).exists()
 
-        finished_preprocessing = self.record.report != "initial"
-        finished_assembly = RunAssembly.objects.filter(run=self.record).count() > 0
-        finished_classification = (
+    @property
+    def enrichemnt_performed(self) -> bool:
+        return self.record.enrichment_performed
+
+    @property
+    def depletion_performed(self) -> bool:
+        return self.record.host_depletion_performed
+
+    @property
+    def assembly_performed(self) -> bool:
+        return RunAssembly.objects.filter(run=self.record).exists()
+
+    @property
+    def classification_performed(self) -> bool:
+        return (
             ContigClassification.objects.filter(run=self.record).exists()
             and ReadClassification.objects.filter(run=self.record).exists()
         )
+
+    @property
+    def remapping_performed(self) -> bool:
+        return ReferenceMap_Main.objects.filter(run=self.record).exists()
+
+    @property
+    def is_running(self) -> bool:
+        return self.record.status == RunMain.STATUS_RUNNING
+
+    @property
+    def is_finished(self) -> bool:
+        return self.record.status == RunMain.STATUS_FINISHED
+
+    def run_progess_tracker(self) -> str:
+
+        object_to_step_dict = {
+            ConstantsSettings.PIPELINE_NAME_extra_qc: self.qc_performed,
+            ConstantsSettings.PIPELINE_NAME_viral_enrichment: self.enrichemnt_performed,
+            ConstantsSettings.PIPELINE_NAME_host_depletion: self.depletion_performed,
+            ConstantsSettings.PIPELINE_NAME_assembly: self.assembly_performed,
+            ConstantsSettings.PIPELINE_NAME_contig_classification: self.classification_performed,
+            ConstantsSettings.PIPELINE_NAME_read_classification: self.classification_performed,
+            ConstantsSettings.PIPELINE_NAME_remapping: self.remapping_performed,
+        }
 
         finished_processing = (
             self.record.parameter_set.status == ParameterSet.STATUS_FINISHED
@@ -802,62 +841,36 @@ class RunMainWrapper:
         )
 
         if finished_processing or finished_remapping:
-
             return report_link
 
-        else:
-            runlog = " <a " + 'href="#" >'
-            if finished_preprocessing:
-                runlog += '<i class="fa fa-check"'
-                runlog += 'title="Preprocessing finished"></i>'
+        # Initialize progress tracker
+        progress_html = ""
+
+        # Iterate through the steps in the params_df
+        for step in self.params_df.index:
+            step_status = object_to_step_dict.get(step, None)
+
+            if step_status is None:
+                # If the step is not mapped, skip it
+                continue
+
+            if step_status:
+                # Step is completed
+                progress_html += (
+                    f'<i class="fa fa-check" title="{step} completed"></i> '
+                )
+            elif self.is_running:
+                # Step is running
+                progress_html += (
+                    f'<i class="fa fa-cog fa-spin" title="{step} running"></i> '
+                )
             else:
-                runlog += '<i class="fa fa-cog"'
-                runlog += 'title="Preprocessing running."></i>'
+                # Step is pending
+                progress_html += (
+                    f'<i class="fa fa-circle-o" title="{step} pending"></i> '
+                )
 
-            runlog += "</a>"
-
-            ###
-
-            runlog += " <a " + 'href="#" >'
-
-            if finished_assembly:
-                runlog += '<i class="fa fa-check"'
-                runlog += 'title="Assembly finished"></i>'
-            else:
-                runlog += '<i class="fa fa-cog"'
-                if finished_preprocessing:
-                    runlog += 'title="Assembly running."></i>'
-                else:
-                    runlog += 'title="Assembly." style="color: gray;"></i>'
-            runlog += "</a>"
-
-            ###
-
-            runlog += " <a " + 'href="#" >'
-
-            if finished_classification:
-                runlog += '<i class="fa fa-check"'
-                runlog += 'title="Classification finished"></i>'
-            else:
-                runlog += '<i class="fa fa-cog"'
-                if finished_assembly:
-                    runlog += 'title="Classification running."></i>'
-                else:
-                    runlog += 'title="Classification." style="color: gray;"></i>'
-            runlog += "</a>"
-
-            runlog += " <a " + 'href="#" >'
-
-            runlog += '<i class="fa fa-cog"'
-            if finished_classification:
-                runlog += 'title="Mapping to references."></i>'
-            else:
-                runlog += 'title="Validation mapping" style="color: gray;"></i>'
-            runlog += "</a>"
-
-            return runlog
-
-        return ""
+        return mark_safe(progress_html)
 
 
 class EmptyRemapMain:
@@ -1954,6 +1967,42 @@ class ReportSorter:
             report_group.group_list = new_list
 
         return reports
+
+    def get_compound_pandas_report(self) -> pd.DataFrame:
+        """
+        Return pandas dataframe of reports
+        """
+        if not self.reports_availble:
+            return pd.DataFrame()
+
+        if not self.check_analyzed():
+            return pd.DataFrame()
+
+        reports = self.get_reports_compound()
+        if len(reports) == 0:
+            return pd.DataFrame()
+
+        data = []
+        for report_group in reports:
+            group_name = report_group.name
+            for report in report_group.group_list:
+                data.append(
+                    {
+                        "sample": self.sample.name,
+                        "name": group_name,
+                        "accid": report.accid,
+                        "description": report.description,
+                        "taxid": report.taxid,
+                        "coverage": report.coverage,
+                        "private_reads": report.private_reads,
+                        "mapped_proportion": report.mapped_proportion,
+                        "windows_covered": report.windows_covered,
+                        "error_rate": report.error_rate,
+                        "quality_avg": report.quality_avg,
+                    }
+                )
+        df = pd.DataFrame(data)
+        return df
 
     def check_excluded_exist(self) -> bool:
         """return True if there are excluded reports"""

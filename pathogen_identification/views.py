@@ -1785,7 +1785,8 @@ class ReferenceFileManagement(LoginRequiredMixin, generic.CreateView):
             name=process_controler.get_name_televir_reference_update(1),
             is_running=True,
         ).exists()
-
+        master_files_exist = ReferenceSourceFile.objects.filter(Q(owner=None)).exists()
+        context["master_files_missing"] = not master_files_exist
         context["reference_update_running"] = reference_update_running
         context["files_table"] = files_table
         context["nav_reference"] = True

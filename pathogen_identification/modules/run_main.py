@@ -906,7 +906,7 @@ class Run_Deployment_Methods(RunDetail_main):
             log_dir=self.log_dir,
         )
 
-        self.contig_classification_drone.run()
+        self.contig_classification_drone.run(output_type="classification")
 
     def deploy_METAGENOMICS_CLASSIFICATION_reads(self):
         self.metagenomics_classification_drone = Classifier(
@@ -921,7 +921,7 @@ class Run_Deployment_Methods(RunDetail_main):
             logging_level=self.logger_level_detail,
             log_dir=self.log_dir,
         )
-        self.metagenomics_classification_drone.run()
+        self.metagenomics_classification_drone.run(output_type="classification")
 
     def deploy_READ_CLASSIFICATION(self):
         self.read_classification_drone = Classifier(
@@ -937,7 +937,7 @@ class Run_Deployment_Methods(RunDetail_main):
             logging_level=self.logger_level_detail,  #
             log_dir=self.log_dir,
         )
-        self.read_classification_drone.run()
+        self.read_classification_drone.run(output_type="classification")
 
     def prep_REMAPPING(self):
 

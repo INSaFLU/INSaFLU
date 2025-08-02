@@ -958,9 +958,17 @@ class run_centrifuge(Classifier_init):
         if check_report_empty(self.report_path):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
-        return pd.read_csv(self.report_path, sep="\t").rename(
-            columns={"numReads": "counts"}
+        from pathogen_identification.utilities.classifier_processor import (
+            CentrifugeOutputProcessor,
         )
+
+        centrifuge_processor = CentrifugeOutputProcessor(self.report_path)
+        centrifuge_processor.from_file().process().prep_final_report()
+        # final_report = centrifuge_processor.final_report
+        # report = report[report["taxid"].isin(final_report["taxid"])]
+        report = centrifuge_processor.final_report
+
+        return report
 
     def get_report_simple(self) -> pd.DataFrame:
         """
@@ -1046,7 +1054,7 @@ class run_deSamba(Classifier_init):
 class run_kraken2(Classifier_init):
     method_name = "kraken2"
     report_suffix = ".tsv"
-    full_report_suffix = ".tsv"
+    full_report_suffix = "_full.tsv"
 
     def __init__(
         self,
@@ -1075,6 +1083,8 @@ class run_kraken2(Classifier_init):
             self.db_path,
             "--gzip-compressed",
             "--output",
+            self.full_report_path,
+            "--report",
             self.report_path,
             self.args,
         ]
@@ -1102,6 +1112,8 @@ class run_kraken2(Classifier_init):
             "--fastq-input",
             "--gzip-compressed",
             "--output",
+            self.full_report_path,
+            "--report",
             self.report_path,
             self.args,
         ]
@@ -1123,25 +1135,39 @@ class run_kraken2(Classifier_init):
         if check_report_empty(self.report_path):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
-        return pd.read_csv(self.report_path, sep="\t", header=None).rename(
-            columns={
-                0: "CU",
-                1: "seqid",
-                2: "taxid",
-                3: "length",
-                4: "LCAmap",
-            }
+        from pathogen_identification.utilities.classifier_processor import (
+            KrakenOutputProcessor,
         )
+
+        kraken_processor = KrakenOutputProcessor(self.report_path)
+        kraken_processor.from_file().process().prep_final_report()
+        final_report = kraken_processor.final_report
+
+        return final_report
+
+        # return pd.read_csv(self.report_path, sep="\t", header=None).rename(
+        #    columns={
+        #        0: "CU",
+        #        1: "seqid",
+        #        2: "taxid",
+        #        3: "length",
+        #        4: "LCAmap",
+        #    }
+        # )
 
     def get_report_simple(self) -> pd.DataFrame:
         """
         read classifier output, return only query and reference sequence id columns.
         """
-        if check_report_empty(self.report_path):
+        if check_report_empty(self.full_report_path):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
         report = pd.read_csv(
-            self.report_path, sep="\t", header=None, usecols=[0, 1, 2, 3], comment="@"
+            self.full_report_path,
+            sep="\t",
+            header=None,
+            usecols=[0, 1, 2, 3],
+            comment="@",
         ).rename(columns={0: "status", 1: "qseqid", 2: "taxid", 3: "length"})
         report = report[report.status != "U"][
             ["qseqid", "taxid", "length"]
@@ -1873,7 +1899,7 @@ class Classifier:
         self.finished = False
         self.deployed = False
 
-    def run(self):
+    def run(self, output_type="classification"):
         """
         deploy classifier method. read classifier output, return only query and reference sequence id columns.
         """
@@ -1884,14 +1910,14 @@ class Classifier:
             return
 
         if not self.check_r1():
-            self.collect_report()
+            self.collect_report(output_type=output_type)
             self.finished = self.check_classifier_output()
 
         else:
             if not self.check_classifier_output():
                 self.classify()
 
-            self.collect_report()
+            self.collect_report(output_type=output_type)
             self.finished = self.check_classifier_output()
 
         self.deployed = True
@@ -2005,13 +2031,20 @@ class Classifier:
         # except Exception as e:
         #    return pd.DataFrame(columns=["qseqid", "acc"])
 
-    def collect_report(self) -> pd.DataFrame:
+    def collect_report(self, output_type="classification") -> pd.DataFrame:
         """
         set classification_report attribute query and reference sequence id columns from classifier output.
         set classified_reads_list attribute to list of classified reads from classifier report.
         """
-
-        self.classification_report = self.get_report_simple()
+        if output_type == "classification":
+            if self.classifier.method_name == run_centrifuge.method_name:
+                self.classification_report = self.get_report()
+            elif self.classifier.method_name == run_kraken2.method_name:
+                self.classification_report = self.get_report()
+            else:
+                self.classification_report = self.get_report_simple()
+        else:
+            self.classification_report = self.get_report_simple()
 
         if "qseqid" in self.classification_report.columns:
 

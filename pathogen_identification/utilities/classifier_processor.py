@@ -32,7 +32,7 @@ class ClassifierOutputProcesseor(ABC):
 
 class CentrifugeOutputProcessor(ClassifierOutputProcesseor):
 
-    def __init__(self, class_output_path, nuniq_threshold: int = 15):
+    def __init__(self, class_output_path, nuniq_threshold: int = 1):
         super().__init__(class_output_path)
         self.nuniq_threshold = nuniq_threshold
 
@@ -66,7 +66,7 @@ def count_prefix_spaces(s):
 
 class KrakenOutputProcessor(ClassifierOutputProcesseor):
 
-    def __init__(self, class_output_path, min_perc_reads: float = 0.01):
+    def __init__(self, class_output_path, min_perc_reads: float = 10):
         super().__init__(class_output_path)
         self.min_perc_reads = min_perc_reads
 
@@ -133,9 +133,12 @@ class KrakenOutputProcessor(ClassifierOutputProcesseor):
             prefix_spaces = count_prefix_spaces(row["name"])
             perc_reads = row["PercReads"]
             tax_rank = row["RankCode"]
+            nreads = row["Nreads"]
 
-            nodes_list.append((tax_id, name, prefix_spaces, perc_reads, tax_rank))
-            taxid_dict[tax_id] = (name, prefix_spaces, perc_reads, tax_rank)
+            nodes_list.append(
+                (tax_id, name, prefix_spaces, perc_reads, tax_rank, nreads)
+            )
+            taxid_dict[tax_id] = (name, prefix_spaces, perc_reads, tax_rank, nreads)
 
             # find parent node
             parent_node = None
@@ -155,26 +158,6 @@ class KrakenOutputProcessor(ClassifierOutputProcesseor):
                 edges.append((parent_tax_id, tax_id))
 
         return nodes_list, edges
-
-    @staticmethod
-    def draw_tree(edges):
-
-        G = nx.DiGraph()
-        G.add_edges_from(edges)
-
-        pos = nx.spring_layout(G)
-        nx.draw(
-            G,
-            pos,
-            with_labels=True,
-            arrows=True,
-            node_size=5000,
-            node_color="lightblue",
-            font_size=10,
-            font_color="black",
-        )
-
-        plt.show()
 
     @staticmethod
     def get_leaves(nodes, edges):
@@ -246,5 +229,6 @@ class KrakenOutputProcessor(ClassifierOutputProcesseor):
                 "prefix_spaces",
                 "perc_reads",
                 "rank_code",
+                "Nreads",
             ],
         )

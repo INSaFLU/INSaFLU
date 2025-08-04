@@ -966,7 +966,9 @@ class run_centrifuge(Classifier_init):
         centrifuge_processor.from_file().process().prep_final_report()
         # final_report = centrifuge_processor.final_report
         # report = report[report["taxid"].isin(final_report["taxid"])]
+
         report = centrifuge_processor.final_report
+        report = report[~report.description.str.contains("phage")]
 
         return report
 

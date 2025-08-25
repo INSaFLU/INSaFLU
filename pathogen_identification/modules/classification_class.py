@@ -18,7 +18,6 @@ def read_sam_file(
 ) -> pd.DataFrame:
     """
     read file line by line, keep only lines that do not start with @, return dataframe.
-
     """
 
     with open(file, "r") as f:
@@ -1144,6 +1143,9 @@ class run_kraken2(Classifier_init):
         kraken_processor = KrakenOutputProcessor(self.report_path)
         kraken_processor.from_file().process().prep_final_report()
         final_report = kraken_processor.final_report
+
+        print(final_report)
+        print(final_report.columns)
 
         return final_report
 

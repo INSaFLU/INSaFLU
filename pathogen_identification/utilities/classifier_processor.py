@@ -66,7 +66,7 @@ def count_prefix_spaces(s):
 
 class KrakenOutputProcessor(ClassifierOutputProcesseor):
 
-    def __init__(self, class_output_path, min_perc_reads: float = 10):
+    def __init__(self, class_output_path, min_perc_reads: float = 5):
         super().__init__(class_output_path)
         self.min_perc_reads = min_perc_reads
 
@@ -105,9 +105,7 @@ class KrakenOutputProcessor(ClassifierOutputProcesseor):
             for parent, leaves in leaves_simple.items()
         }
         leaves_summary = self.summarize_leaves(leaves_simple)
-        leaves_summary = leaves_summary[
-            leaves_summary["perc_reads"] > self.min_perc_reads
-        ]
+        leaves_summary = leaves_summary[leaves_summary["Nreads"] > self.min_perc_reads]
         self.final_report = leaves_summary.rename(
             columns={
                 "name": "description",

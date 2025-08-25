@@ -3588,6 +3588,22 @@ class DefaultParameters(object):
         parameter.range_max = ""
         parameter.range_min = ""
         parameter.description = "Database to use"
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "--min-hits"
+        parameter.parameter = "1"
+        parameter.type_data = Parameter.PARAMETER_int
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True  ### by default it's True
+        parameter.sequence_out = 5
+        parameter.range_available = "[1:20]"
+        parameter.range_max = "20"
+        parameter.range_min = "1"
+        parameter.description = "Minimum number of hits for a taxon to be reported."
 
         vect_parameters.append(parameter)
 
@@ -4297,6 +4313,22 @@ class DefaultParameters(object):
         parameter.range_min = ""
         parameter.description = "Database to use"
 
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "--min-hits"
+        parameter.parameter = "1"
+        parameter.type_data = Parameter.PARAMETER_int
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True  ### by default it's True
+        parameter.sequence_out = 5
+        parameter.range_available = "[1:20]"
+        parameter.range_max = "20"
+        parameter.range_min = "1"
+        parameter.description = "Minimum number of hits for a taxon to be reported."
         vect_parameters.append(parameter)
 
         return vect_parameters

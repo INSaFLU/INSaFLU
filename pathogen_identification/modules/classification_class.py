@@ -640,8 +640,7 @@ class run_voyager(Classifier_init):
         voyager_bindir = televir_dirs.get_software_bin_directory("voyager")
 
         voyager_dir = voyager_bindir.replace("/bin", "")
-        print(self.db_path)
-        print(self.args)
+
         cmd = [
             os.path.join(voyager_dir, "voyager-cli"),
             "-x",
@@ -895,6 +894,33 @@ class run_centrifuge(Classifier_init):
     report_suffix = ".report.tsv"
     full_report_suffix = ".centrifuge"
 
+    def __init__(
+        self,
+        db_path: str,
+        query_path: str,
+        out_path: str,
+        args="",
+        r2: str = "",
+        prefix: str = "",
+        bin: str = "",
+        log_dir="",
+    ):
+        super().__init__(db_path, query_path, out_path, args, r2, prefix, bin, log_dir)
+        self.min_unique_reads = 5
+        self.get_unique_read_from_args()
+
+    def get_unique_read_from_args(self):
+        args = self.args.split(" ")
+        if "--min-hits" in args:
+            where_min_hits = args.index("--min-hits")
+            try:
+                self.min_unique_reads = int(args[where_min_hits + 1])
+            except ValueError:
+                pass
+
+            args = args[:where_min_hits] + args[where_min_hits + 2 :]
+            self.args = " ".join(args)
+
     def run_SE(self, threads: int = 3, *args, **kwargs):
         """
         run single read file classification.
@@ -1071,6 +1097,20 @@ class run_kraken2(Classifier_init):
         super().__init__(db_path, query_path, out_path, args, r2, prefix, bin, log_dir)
         self.args = self.args.replace("--quick OFF", "")
         self.args = self.args.replace("--quick ON", "--quick")
+        self.min_unique_reads = 5
+        self.get_unique_read_from_args()
+
+    def get_unique_read_from_args(self):
+        args = self.args.split(" ")
+        if "--min-hits" in args:
+            where_min_hits = args.index("--min-hits")
+            try:
+                self.min_unique_reads = int(args[where_min_hits + 1])
+            except ValueError:
+                pass
+
+            args = args[:where_min_hits] + args[where_min_hits + 2 :]
+            self.args = " ".join(args)
 
     def run_SE(self, threads: int = 3, **kwargs):
         """
@@ -1143,9 +1183,6 @@ class run_kraken2(Classifier_init):
         kraken_processor = KrakenOutputProcessor(self.report_path)
         kraken_processor.from_file().process().prep_final_report()
         final_report = kraken_processor.final_report
-
-        print(final_report)
-        print(final_report.columns)
 
         return final_report
 
@@ -1973,10 +2010,6 @@ class Classifier:
         """
         check r1 is not empty
         """
-        print("CHECKING R1")
-        print(self.r1)
-        print(os.path.isfile(self.r1))
-        print(self.check_gz_file_not_empty(self.r1))
 
         if os.path.isfile(self.r1):
             if self.check_gz_file_not_empty(self.r1):

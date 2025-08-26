@@ -2512,8 +2512,6 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             for run_qc in run_qc
         ]
 
-        qc_reports = sorted(qc_reports, key=lambda x: x.output_reads, reverse=True)
-
         if run_qc.exists() is False:
             qc_reports = [
                 RunQC_report(

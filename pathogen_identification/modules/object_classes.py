@@ -1200,7 +1200,7 @@ class SoftwareUnit:
             return False
 
     @staticmethod
-    def find_qc_reads(ps_pk: int) -> Tuple[str, str]:
+    def find_qc_reads(ps_pk: int) -> Tuple[str, str, str]:
         """
         Find reads
         """
@@ -1208,7 +1208,7 @@ class SoftwareUnit:
         try:
             parameter_set = ParameterSet.objects.get(pk=ps_pk)
         except ParameterSet.DoesNotExist:
-            return ("", "")
+            return ("", "", "")
 
         runs = RunMain.objects.filter(
             parameter_set__leaf__index=parameter_set.leaf.index,
@@ -1226,12 +1226,12 @@ class SoftwareUnit:
                     read_register.qc_reads_r2 if read_register.qc_reads_r2 else ""
                 )
 
-                return (processed_reads_r1, processed_reads_r2)
+                return (processed_reads_r1, processed_reads_r2, str(run_main.pk))
 
             except RunReadsRegister.DoesNotExist:
                 continue
 
-        return ("", "")
+        return ("", "", "")
 
     @staticmethod
     def find_enriched_reads(ps_pk: int) -> Tuple[str, str]:
@@ -1420,25 +1420,11 @@ class SoftwareUnit:
         """
 
         for leaf_pk in self.leaves:
-            processed_r1, processed_r2 = self.find_qc_reads(leaf_pk)
+            processed_r1, processed_r2, _ = self.find_qc_reads(leaf_pk)
             if self.check_return_reads(processed_r1, processed_r2):
                 return (processed_r1, processed_r2)
 
         return ("", "")
-
-    def check_processed_exist(self) -> bool:
-        """
-        Check if processed reads exist
-        """
-
-        for leaf_pk in self.leaves:
-
-            processed_r1, processed_r2 = self.find_qc_reads(leaf_pk)
-
-            if self.check_return_reads(processed_r1, processed_r2):
-                return True
-
-        return False
 
 
 class SoftwareDetail(SoftwareUnit):
@@ -1604,17 +1590,17 @@ class SoftwareDetailCompound:
             leaves.extend(software.leaves)
         return list(set(leaves))
 
-    def retrieve_qc_reads(self) -> Tuple[str, str]:
+    def retrieve_qc_reads(self) -> Tuple[str, str, str]:
         """
         Retrieve processed reads
         """
 
         for leaf_pk in self.leaves:
-            processed_r1, processed_r2 = SoftwareUnit.find_qc_reads(leaf_pk)
+            processed_r1, processed_r2, run_pk = SoftwareUnit.find_qc_reads(leaf_pk)
             if SoftwareUnit.check_return_reads(processed_r1, processed_r2):
-                return (processed_r1, processed_r2)
+                return (processed_r1, processed_r2, str(run_pk))
 
-        return ("", "")
+        return ("", "", "")
 
     def check_processed_exist(self) -> bool:
         """
@@ -1623,7 +1609,7 @@ class SoftwareDetailCompound:
 
         for leaf_pk in self.leaves:
 
-            processed_r1, processed_r2 = SoftwareUnit.find_qc_reads(leaf_pk)
+            processed_r1, processed_r2, _ = SoftwareUnit.find_qc_reads(leaf_pk)
 
             if SoftwareUnit.check_return_reads(processed_r1, processed_r2):
                 return True

@@ -825,16 +825,7 @@ class Run_Deployment_Methods(RunDetail_main):
         else:
             self.update_reads()
 
-            if self.preprocess_method.check_processed_exist():
-                r1_proc, r2_proc = self.preprocess_method.retrieve_qc_reads()
-                self.sample.r1.clean_exo = r1_proc
-                if self.type == ConstantsSettings.PAIR_END:
-                    self.sample.r2.clean_exo = r2_proc
-
-            else:
-                self.sample.r1.clean_read_names()
-                self.sample.r2.clean_read_names()
-                self.preprocess_drone.run()
+            self.preprocess_drone.run()
 
     def deploy_HD(self):
         self.update_reads()
@@ -1021,8 +1012,9 @@ class Run_Deployment_Methods(RunDetail_main):
             self.merged_classification_summary: self.merged_targets,
         }
         for output_df_path, df in export_dict.items():
-
-            self.save_df_check_exists(df, output_df_path)
+            if df is not None:
+                if not df.empty:
+                    self.save_df_check_exists(df, output_df_path)
 
     def export_sequences(self):
         self.sample.export_reads(self.media_dir)
@@ -1394,13 +1386,17 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.logger.info(
             "r1 current reads: " + str(self.sample.r1.get_current_fastq_read_number())
         )
-
+        print("Running Preprocessing")
+        print(f"Enrichment: {self.enrichment}")
+        print(f"Depletion: {self.depletion}")
         if self.enrichment:
 
             if self.enrichment_method.check_enriched_exist():
+                print("Enriched reads exist, retrieving")
 
                 r1_proc, r2_proc = self.enrichment_method.retrieve_enriched_reads()
                 enriched_read_number = self.enrichment_method.get_enriched_read_number()
+                print(f"Enriched read number: {enriched_read_number}")
                 if self.type == ConstantsSettings.PAIR_END:
                     enriched_read_number = enriched_read_number / 2
                     self.sample.r2.enriched_read_number = enriched_read_number
@@ -1412,7 +1408,7 @@ class RunMainTree_class(Run_Deployment_Methods):
                 if self.type == ConstantsSettings.PAIR_END:
                     self.sample.r2.enriched_exo = r2_proc
                     shutil.copy(r2_proc, self.sample.r2.enriched)
-
+                print("Enriched reads retrieved")
                 self.sample.r1.is_enriched()
                 self.sample.r2.is_enriched()
 
@@ -1453,13 +1449,6 @@ class RunMainTree_class(Run_Deployment_Methods):
 
             else:
                 self.deploy_HD()
-
-                ###########################
-                ###########################
-
-                from pathogen_identification.utilities.televir_bioinf import (
-                    TelevirBioinf,
-                )
 
                 # televir_bioinf = TelevirBioinf()
                 # alignment_file = self.depletion_drone.classifier.report_path
@@ -1647,6 +1636,7 @@ class RunMainTree_class(Run_Deployment_Methods):
     def generate_output_data_classes(self):
         # merge mapping results if exist.
         #
+        print("Generating output data classes")
         self.remap_manager.merge_mapping_reports()
         self.remap_manager.collect_final_report_summary_statistics()
         self.report = self.remap_manager.report

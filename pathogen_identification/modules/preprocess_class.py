@@ -124,7 +124,7 @@ class Preprocess:
 
         return self.preprocess_methods.check_processed_exist()
 
-    def retrieve_processed_reads(self) -> Tuple[str, str]:
+    def retrieve_processed_reads(self) -> Tuple[str, str, str]:
         """
         Retrieve processed reads
         """
@@ -220,14 +220,28 @@ class Preprocess:
         self.fastqc_input()
 
         if self.check_processed_exist():
-            exo_r1, exo_r2 = self.retrieve_processed_reads()
-            # os.symlink(exo_r1, self.preprocess_name_fastq_gz)
+            exo_r1, exo_r2, run_pk = self.retrieve_processed_reads()
             shutil.copy(exo_r1, self.preprocess_name_fastq_gz)
             if self.preprocess_type == CS.PAIR_END:
-                # os.symlink(exo_r2, self.preprocess_name_r2_fastq_gz)
                 shutil.copy(exo_r2, self.preprocess_name_r2_fastq_gz)
 
+            from pathogen_identification.models import TelevirRunQC
+
+            for method in self.preprocess_methods.software_list:
+                stored = TelevirRunQC.objects.filter(
+                    run__pk=run_pk, method=method.name
+                ).first()
+                if stored:
+                    method.set_reads_before_processing(
+                        int(float(stored.input_reads.replace(",", "")))
+                    )
+                    method.set_reads_after_processing(
+                        int(float(stored.output_reads.replace(",", "")))
+                    )
+
         else:
+            self.r1.clean_read_names()
+            self.r2.clean_read_names()
             self.preprocess_QC()
         self.fastqc_processed()
 
@@ -291,7 +305,6 @@ class Preprocess:
                     "preprocess method {} not supported".format(method.name)
                 )
 
-            # update reads number after processing
             reads_number = (
                 self.r1.get_current_fastq_read_number()
                 + self.r2.get_current_fastq_read_number()
@@ -673,8 +686,10 @@ class Preprocess:
             ):
                 input_r1 = tmp_basename + "_r1.fastq.gz"
 
+        shutil.copy(input_r1, self.r1.current)
         shutil.copy(input_r1, self.preprocess_name_fastq_gz)
         if self.preprocess_type == CS.PAIR_END:
+            shutil.copy(input_r2, self.r2.current)
             shutil.copy(input_r2, self.preprocess_name_r2_fastq_gz)
 
     def prinseq_PE(self, software: SoftwareUnit):
@@ -859,7 +874,7 @@ class Preprocess:
         """
 
         tmp_read = self.generate_tmp_file_name()
-        tmp_read1 = tmp_read + ".lst"
+        tmp_read1 = tmp_read + "_mapped.lst"
 
         cmd = [
             "samtools",

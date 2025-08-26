@@ -680,6 +680,9 @@ class Tree_Progress:
 
             return True
         except Exception as e:
+            import traceback
+
+            traceback.print_exc()
             self.logger.error("Error updating node dbs, returning false.")
             self.logger.error(e)
             return False
@@ -975,10 +978,12 @@ class Tree_Progress:
             node.run_manager.run_main()
             return True
         except Exception as e:
+            import traceback
 
-            print("error")
-            print(e)
             traceback.print_exc()
+
+            print("Node failed to run, registering as failed.")
+            print(e)
 
             return False
 

@@ -307,9 +307,6 @@ class PathogenIdentification_SingleDeployment(PathogenIdentificationDeploymentCo
 
         self.run_params_db = all_paths.get(self.pipeline_index, None)
 
-        print("RUN PARAMS DB", self.run_params_db)
-        print("RUN PARAMS DB", self.run_params_db)
-
         if self.run_params_db is None:
             print("Pipeline index not found")
             return False

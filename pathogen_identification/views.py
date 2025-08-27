@@ -1974,6 +1974,15 @@ class ReferenceFileManagement(
         files_table = ReferenceSourceFileTable(files)
         RequestConfig(self.request, paginate={"per_page": 15}).configure(files_table)
 
+
+        process_controler = ProcessControler()
+        reference_update_running = ProcessControler.objects.filter(
+            name=process_controler.get_name_televir_reference_update(1),
+            is_running=True,
+        ).exists()
+        master_files_exist = ReferenceSourceFile.objects.filter(Q(owner=None)).exists()
+        context["master_files_missing"] = not master_files_exist
+        context["reference_update_running"] = reference_update_running
         context["files_table"] = files_table
         context["nav_reference"] = True
         context["show_paginatior"] = files.count() > 15
@@ -2083,12 +2092,21 @@ class ReferenceManagement(BaseBreadcrumbMixin, LoginRequiredMixin, generic.Creat
             paginate={"per_page": ConstantsSettings.TELEVIR_REFERENCE_PAGINATE_NUMBER},
         ).configure(files_table)
 
+        process_controler = ProcessControler()
+        referene_update_running = ProcessControler.objects.filter(
+            name=process_controler.get_name_televir_reference_update(1),
+            is_running=True,
+        ).exists()
+
+        context["reference_update_running"] = referene_update_running
+
         context["summary"] = summary
         context["files_table"] = files_table
         context["nav_reference"] = True
         context["show_paginatior"] = references.count() > Constants.PAGINATE_NUMBER
         context["query_set_count"] = references.count()
         context["user_id"] = user.pk
+
 
         return context
 

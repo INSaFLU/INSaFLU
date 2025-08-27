@@ -342,7 +342,10 @@ class ClassificationMonitor(ABC):
 class ClassificationMonitor_ContigOnly(ClassificationMonitor):
     @check_planned
     def ready_to_merge(self, node: Tree_Node):
-        if node.run_manager.run_engine.contig_classification_performed:
+        if (
+            node.run_manager.run_engine.contig_classification_performed
+            and node.run_manager.classification_updated == False
+        ):
             return True
 
         return False
@@ -363,6 +366,7 @@ class ClassificationMonitor_ContigAndReads(ClassificationMonitor):
         if (
             node.run_manager.run_engine.contig_classification_performed
             and node.run_manager.run_engine.read_classification_performed
+            and node.run_manager.classification_updated == False
         ):
             return True
 
@@ -384,7 +388,10 @@ class ClassificationMonitor_ContigAndReads(ClassificationMonitor):
 class ClassificationMonitor_ReadsOnly(ClassificationMonitor):
     @check_planned
     def ready_to_merge(self, node: Tree_Node):
-        if node.run_manager.run_engine.read_classification_performed:
+        if (
+            node.run_manager.run_engine.read_classification_performed
+            and node.run_manager.classification_updated == False
+        ):
             return True
 
         return False
@@ -611,6 +618,7 @@ class Tree_Progress:
         return registraction_success
 
     def update_node_dbs(self, node: Tree_Node, step="initial"):
+
         try:
             db_updated = Update_RunMain_Initial(
                 node.run_manager.run_engine, node.parameter_set
@@ -624,11 +632,12 @@ class Tree_Progress:
                 or node.run_manager.run_engine.depletion_performed
             ):
                 node.run_manager.run_engine.export_sequences()
-                db_updated = Update_RunMain_Secondary(
-                    node.run_manager.run_engine, node.parameter_set
-                )
-                if not db_updated:
-                    return False
+
+            db_updated = Update_RunMain_Secondary(
+                node.run_manager.run_engine, node.parameter_set
+            )
+            if not db_updated:
+                return False
 
             if (
                 node.run_manager.run_engine.assembly_performed
@@ -671,9 +680,11 @@ class Tree_Progress:
 
             return True
         except Exception as e:
+            import traceback
+
+            traceback.print_exc()
             self.logger.error("Error updating node dbs, returning false.")
             self.logger.error(e)
-            traceback.print_exc()
             return False
 
     def register_node_safe(self, node: Tree_Node):
@@ -925,6 +936,7 @@ class Tree_Progress:
         new_nodes = []
 
         for node in nodes_to_update:
+
             node.run_manager.run_engine.update_mapped_instances(mapped_instances_shared)
             new_nodes.append(node)
 
@@ -966,10 +978,12 @@ class Tree_Progress:
             node.run_manager.run_main()
             return True
         except Exception as e:
+            import traceback
 
-            print("error")
-            print(e)
             traceback.print_exc()
+
+            print("Node failed to run, registering as failed.")
+            print(e)
 
             return False
 
@@ -1044,10 +1058,7 @@ class Tree_Progress:
         action()
 
         for node in self.current_nodes:
-            if (
-                self.classification_monitor.ready_to_merge(node)
-                and node.run_manager.classification_updated == False
-            ):
+            if self.classification_monitor.ready_to_merge(node):
                 node.run_manager.run_engine.plan_remap_prep_safe()
 
             self.update_node_leaves_dbs(node)
@@ -1306,7 +1317,6 @@ class TreeProgressGraph:
         """
         setup the trees for the progress graph
         """
-        pipeline_utils = Utils_Manager()
 
         technologies = [ps.project.technology for ps in existing_parameter_sets]
         if len(set(technologies)) > 1:
@@ -1318,17 +1328,6 @@ class TreeProgressGraph:
         tree_list = [ps.leaf.software_tree for ps in existing_parameter_sets]
         trees_pk_list = [tree.pk for tree in tree_list]
         trees_pk_list = list(set(trees_pk_list))
-
-        software_tree_dict = {
-            tree_pk: SoftwareTree.objects.get(pk=tree_pk) for tree_pk in trees_pk_list
-        }
-
-        # pipetrees_dict = {
-        #    tree_pk: pipeline_utils.parameter_util.convert_softwaretree_to_pipeline_tree(
-        #        tree
-        #    )
-        #    for tree_pk, tree in software_tree_dict.items()
-        # }
 
         stacked_df_dict = {}
 

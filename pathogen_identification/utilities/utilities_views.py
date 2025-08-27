@@ -52,6 +52,81 @@ from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
 
 
+class QCSoftware:
+    """
+    Class to manage QC software
+    """
+
+    def __init__(self, software: str, parameters: str):
+        self.software = software
+        self._parameters = parameters
+
+    @property
+    def parameters(self):
+        """
+        get parameters, remove any paths to keep only basename
+        """
+        if self._parameters is None:
+            return None
+
+        # remove pwd
+        if not "/" in self._parameters:
+            return self._parameters
+        parameters = self._parameters.split(" ")
+        for i, param in enumerate(parameters):
+            if "/" in param:
+                parameters[i] = os.path.basename(param)
+        parameters = " ".join(parameters)
+
+        return parameters
+
+    def __str__(self):
+        return f"QCSoftware(software={self.software}, parameters={self.parameters})"
+
+    def __eq__(self, other):
+        if not isinstance(other, QCSoftware):
+            return False
+        return self.software == other.software and self.parameters == other.parameters
+
+    def __hash__(self):
+        return hash((self.software, self.parameters))
+
+
+class MultipleQCSoftware:
+    """
+    Class to manage multiple QC software
+    """
+
+    def __init__(self, software: List[QCSoftware]):
+        self.software = software
+
+    def add_software(self, software: QCSoftware):
+        """
+        Add software to the list
+        """
+        if software not in self.software:
+            self.software.append(software)
+
+    def __str__(self):
+        return f"MultipleQCSoftware(software={self.software})"
+
+    def __eq__(self, other):
+        if not isinstance(other, MultipleQCSoftware):
+            return False
+        return set(self.software) == set(other.software)
+
+    def __hash__(self):
+        return hash(frozenset(self.software))
+
+    def __len__(self):
+        return len(self.software)
+
+    def __getitem__(self, index):
+        if index >= len(self.software):
+            raise IndexError("Index out of range")
+        return self.software[index]
+
+
 class ProcessedSample:
     """
     Class to process sample
@@ -60,13 +135,12 @@ class ProcessedSample:
     def __init__(self, sample: PIProject_Sample):
         self.sample = sample
         self.process_type = None
-        self.qc = None
-        self.host_depletion = None
-        self.enrichment = None
-        self.software_qc = None
+        self.qc = False
+        self.host_depletion = False
+        self.enrichment = False
+        self.software_qc: Optional[MultipleQCSoftware] = None
         self.software_enrichment = None
         self.software_host_depletion = None
-        self._parameters_qc = None
         self._parameters_enrichment = None
         self._parameters_host_depletion = None
 
@@ -83,7 +157,7 @@ class ProcessedSample:
             self.sample.sample == other.sample.sample
             and self.software_qc == other.software_qc
             and self.process_type == other.process_type
-            and self._parameters_qc == other._parameters_qc
+            and self.software_qc == other.software_qc
         )
 
     def __hash__(self):
@@ -92,28 +166,9 @@ class ProcessedSample:
                 self.sample.sample,
                 self.software_qc,
                 self.process_type,
-                self.parameters_qc,
+                self.software_qc,
             )
         )
-
-    @property
-    def parameters_qc(self):
-        """
-        get parameters, remove any paths to keep only basename
-        """
-        if self._parameters_qc is None:
-            return None
-
-        # remove pwd
-        if not "/" in self._parameters_qc:
-            return self._parameters_qc
-        parameters = self._parameters_qc.split(" ")
-        for i, param in enumerate(parameters):
-            if "/" in param:
-                parameters[i] = os.path.basename(param)
-        parameters = " ".join(parameters)
-
-        return parameters
 
     @property
     def parameters_enrichment(self):
@@ -251,18 +306,21 @@ class SampleReadsRetrieve:
                     psample._parameters_enrichment = enrichment_parameters
 
                 if ConstantsSettings.PIPELINE_NAME_extra_qc in params_df.index:
+                    psample.process_type = f"{ConstantsSettings.PIPELINE_NAME_extra_qc} + {psample.process_type}"
+                    psample.qc = True
 
-                    software_qc = params_df.loc[
-                        ConstantsSettings.PIPELINE_NAME_extra_qc, "software"
-                    ]
-                    parameters_qc = params_df.loc[
-                        ConstantsSettings.PIPELINE_NAME_extra_qc, "value"
+                    qc_block = params_df.loc[
+                        params_df.index == ConstantsSettings.PIPELINE_NAME_extra_qc
                     ]
 
                     psample.qc = True
-                    psample.process_type = f"{ConstantsSettings.PIPELINE_NAME_extra_qc} + {psample.process_type}"
-                    psample.software_qc = software_qc
-                    psample._parameters_qc = parameters_qc
+                    qc_multiple = MultipleQCSoftware([])
+                    for row in qc_block.iterrows():
+                        qc_software = row[1]["software"]
+                        qc_parameters = row[1]["value"]
+                        software_qc = QCSoftware(qc_software, qc_parameters)
+                        qc_multiple.add_software(software_qc)
+                    psample.software_qc = qc_multiple
 
                 if os.path.exists(run.depleted_reads_r2):
                     psample.processed_path_r2 = run.depleted_reads_r2
@@ -290,18 +348,21 @@ class SampleReadsRetrieve:
                 psample._parameters_enrichment = enrichment_parameters
 
                 if ConstantsSettings.PIPELINE_NAME_extra_qc in params_df.index:
+                    psample.process_type = f"{ConstantsSettings.PIPELINE_NAME_extra_qc} + {psample.process_type}"
+                    psample.qc = True
 
-                    software_qc = params_df.loc[
-                        ConstantsSettings.PIPELINE_NAME_extra_qc, "software"
-                    ]
-                    parameters_qc = params_df.loc[
-                        ConstantsSettings.PIPELINE_NAME_extra_qc, "value"
+                    qc_block = params_df.loc[
+                        params_df.index == ConstantsSettings.PIPELINE_NAME_extra_qc
                     ]
 
                     psample.qc = True
-                    psample.process_type = f" {ConstantsSettings.PIPELINE_NAME_extra_qc} + {psample.process_type}"
-                    psample.software_qc = software_qc
-                    psample._parameters_qc = parameters_qc
+                    qc_multiple = MultipleQCSoftware([])
+                    for row in qc_block.iterrows():
+                        qc_software = row[1]["software"]
+                        qc_parameters = row[1]["value"]
+                        software_qc = QCSoftware(qc_software, qc_parameters)
+                        qc_multiple.add_software(software_qc)
+                    psample.software_qc = qc_multiple
 
                 psample.processed_path_r1 = run.enriched_reads_r1
                 if os.path.exists(run.enriched_reads_r2):
@@ -311,21 +372,25 @@ class SampleReadsRetrieve:
             elif ConstantsSettings.PIPELINE_NAME_extra_qc in params_df.index:
                 if os.path.exists(run.qc_reads_r1) is False:
                     continue
-                qc_software = params_df.loc[
-                    ConstantsSettings.PIPELINE_NAME_extra_qc, "software"
-                ]
-                qc_parameters = params_df.loc[
-                    ConstantsSettings.PIPELINE_NAME_extra_qc, "value"
-                ]
 
                 psample = ProcessedSample(
                     sample=run.run.parameter_set.sample,
                 )
 
+                qc_block = params_df.loc[
+                    params_df.index == ConstantsSettings.PIPELINE_NAME_extra_qc
+                ]
+
                 psample.qc = True
                 psample.process_type = ConstantsSettings.PIPELINE_NAME_extra_qc
-                psample.software_qc = qc_software
-                psample._parameters_qc = qc_parameters
+                qc_multiple = MultipleQCSoftware([])
+                for row in qc_block.iterrows():
+                    qc_software = row[1]["software"]
+                    qc_parameters = row[1]["value"]
+                    software_qc = QCSoftware(qc_software, qc_parameters)
+                    qc_multiple.add_software(software_qc)
+                psample.software_qc = qc_multiple
+
                 psample.processed_path_r1 = run.qc_reads_r1
                 if os.path.exists(run.qc_reads_r2):
                     psample.processed_path_r2 = run.qc_reads_r2
@@ -659,14 +724,14 @@ class RunMainWrapper:
 
         return " ".join(software_name_list)
 
-    def get_pipeline_software(self, pipeline_name: str):
+    @staticmethod
+    def process_software_name(software_name: str) -> str:
+        """
+        process software name
+        """
 
-        software_name = "None"
-
-        if pipeline_name in self.params_df.index:
-
-            software_name = self.params_df.loc[pipeline_name, "software"]
-            software_name = str(software_name)
+        if software_name == "None":
+            return "None"
 
         if "(" in software_name:
             software_name = software_name.split("(")[0]
@@ -674,7 +739,28 @@ class RunMainWrapper:
         if "_" in software_name:
             software_name = software_name.split("_")[0]
 
-        return self.capitalize_software(software_name)
+        return RunMainWrapper.capitalize_software(software_name)
+
+    def get_pipeline_software(self, pipeline_name: str):
+
+        software_names = "None"
+
+        if pipeline_name in self.params_df.index:
+
+            softwares_column = self.params_df.loc[pipeline_name, "software"]
+
+            if isinstance(softwares_column, str):
+                softwares_column = [softwares_column]
+
+            software_names = list(softwares_column)
+
+            for i, software in enumerate(softwares_column):
+
+                software_names[i] = self.process_software_name(software)
+
+            software_names = "; ".join(software_names)
+
+        return software_names
 
     def progress_display(self) -> str:
 
@@ -1881,6 +1967,42 @@ class ReportSorter:
             report_group.group_list = new_list
 
         return reports
+
+    def get_compound_pandas_report(self) -> pd.DataFrame:
+        """
+        Return pandas dataframe of reports
+        """
+        if not self.reports_availble:
+            return pd.DataFrame()
+
+        if not self.check_analyzed():
+            return pd.DataFrame()
+
+        reports = self.get_reports_compound()
+        if len(reports) == 0:
+            return pd.DataFrame()
+
+        data = []
+        for report_group in reports:
+            group_name = report_group.name
+            for report in report_group.group_list:
+                data.append(
+                    {
+                        "sample": self.sample.name,
+                        "name": group_name,
+                        "accid": report.accid,
+                        "description": report.description,
+                        "taxid": report.taxid,
+                        "coverage": report.coverage,
+                        "private_reads": report.private_reads,
+                        "mapped_proportion": report.mapped_proportion,
+                        "windows_covered": report.windows_covered,
+                        "error_rate": report.error_rate,
+                        "quality_avg": report.quality_avg,
+                    }
+                )
+        df = pd.DataFrame(data)
+        return df
 
     def check_excluded_exist(self) -> bool:
         """return True if there are excluded reports"""

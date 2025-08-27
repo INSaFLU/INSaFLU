@@ -14,20 +14,16 @@ from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
 from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.models import (
-    ContigClassification,
     FinalReport,
     ParameterSet,
     PIProject_Sample,
     Projects,
     RawReference,
     RawReferenceCompoundModel,
-    ReadClassification,
     ReferenceContigs,
-    RunAssembly,
     RunMain,
     SampleQC,
     TeleFluProject,
-    TelevirRunQC,
 )
 from pathogen_identification.utilities.reference_utils import (
     check_file_reference_submitted,
@@ -44,7 +40,7 @@ from pathogen_identification.utilities.utilities_views import (
     RunMainWrapper,
 )
 from settings.constants_settings import ConstantsSettings as SettingsCS
-from settings.models import Parameter, Software
+from settings.models import Parameter
 
 
 class ProjectTable(tables.Table):

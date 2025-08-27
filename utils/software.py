@@ -2231,6 +2231,13 @@ class Software(object):
 
         os.system(cmd)
 
+        if not os.path.exists(os.path.join(temp_dir, "amended_consensus")):
+            raise Exception(
+                "IRMA did not generate the expected output directory: {}".format(
+                    os.path.join(temp_dir, "amended_consensus")
+                )
+            )
+
         output_fastas = [
             x
             for x in os.listdir(os.path.join(temp_dir, "amended_consensus"))

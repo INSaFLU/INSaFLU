@@ -266,11 +266,13 @@
 											<div class="card-body">
 												<h5 class="card-title"><strong>Type:</strong> {{ processed_read.process_type }}</h5>
 												{% if processed_read.qc%}
-												<p class="card-text">
-													<strong>QC:</strong> {{ processed_read.software_qc }} 
-													<span style="margin-left: 20px;"></span> <!-- Add space -->
-													<strong>Parameters:</strong> {{ processed_read.parameters_qc }}
-												</p>
+												{% for software_qc in processed_read.software_qc %}
+													<p class="card-text">
+														<strong>QC:</strong> {{ software_qc.software }} 
+														<span style="margin-left: 20px;"></span> <!-- Add space -->
+														<strong>Parameters:</strong> {{ software_qc.parameters }}
+													</p>
+												{% endfor %}
 												{% endif %}
 												{% if processed_read.enrichment %}
 												<p class="card-text">

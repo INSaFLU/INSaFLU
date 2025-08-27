@@ -121,6 +121,7 @@ from pathogen_identification.utilities.utilities_views import (  # #############
     RawReferenceUtils,
     ReportSorter,
     RunMainWrapper,
+    SampleReadsRetrieve,
     final_report_best_cov_by_accid,
     recover_assembly_contigs,
 )
@@ -2753,11 +2754,18 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
 
         #####
         run_detail = RunDetail.objects.get(sample=sample_main, run=run_main_pipeline)
-
         #
-        try:
-            run_qc = TelevirRunQC.objects.get(run=run_main_pipeline)
-            qc_report = RunQC_report(
+        run_qc = TelevirRunQC.objects.filter(run=run_main_pipeline)
+        #
+        from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
+
+        utils_manager = Utils_Manager()
+        params_df = utils_manager.get_leaf_parameters(
+            run_main_pipeline.parameter_set.leaf
+        )
+
+        qc_reports = [
+            RunQC_report(
                 performed=run_qc.performed,
                 method=run_qc.method,
                 args=run_qc.args,
@@ -2765,16 +2773,28 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
                 output_reads=run_qc.output_reads,
                 output_reads_percent=run_qc.output_reads_percent,
             )
+            for run_qc in run_qc
+        ]
 
-        except TelevirRunQC.DoesNotExist:
-            qc_report = RunQC_report(
-                performed=False,
-                method="None",
-                args="None",
-                input_reads=run_detail.input,
-                output_reads=run_detail.input,
-                output_reads_percent="1",
-            )
+        if run_qc.exists() is False:
+            qc_reports = [
+                RunQC_report(
+                    performed=False,
+                    method="None",
+                    args="None",
+                    input_reads=run_detail.input,
+                    output_reads=run_detail.input,
+                    output_reads_percent="1",
+                )
+            ]
+
+        output_reads = int(qc_reports[-1].output_reads.replace(",", ""))
+        output_reads_percent = (
+            output_reads / int(qc_reports[0].input_reads.replace(",", "")) * 100
+        )
+        output_reads = f"{output_reads:,}"
+        output_reads_percent = f"{output_reads_percent:.2f}"
+
         #
         try:
             run_assembly = RunAssembly.objects.get(
@@ -2842,6 +2862,16 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
             sample=sample_main, run=run_main_pipeline
         )
 
+        ### Reads Processing
+        # ret = SampleReadsRetrieve(sample)
+        sample_retrieve = SampleReadsRetrieve(sample_main.sample)
+        parameter_set = run_main_pipeline.parameter_set
+        processed_reads = sample_retrieve.parameter_set_processed_reads(parameter_set)
+        if len(processed_reads) > 0:
+            processed_reads = processed_reads[0]
+        else:
+            processed_reads = None
+
         context = {
             "crumbs": self.crumbs,
             "project": project_name,
@@ -2855,10 +2885,13 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
             "clade_heatmap_json": clade_heatmap_json,
             "is_classification": is_classification,
             "remapping_performed": remapping_performed,
+            "qc_processing": processed_reads,
             "sample": sample_name,
             "run_main": run_main_pipeline,
             "run_detail": run_detail,
-            "qc_report": qc_report,
+            "output_reads": output_reads,
+            "output_reads_percent": output_reads_percent,
+            "qc_reports": qc_reports,
             "assembly": run_assembly,
             "contig_classification": contig_classification,
             "read_classification": read_classification,
@@ -2896,6 +2929,9 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
         context["files"] = {}
         # 1. parameters
         params_file_path = run_main_pipeline.params_file_path
+        params_df.drop(columns=["leaves"]).to_csv(
+            params_file_path, index=False, sep="\t", header=True
+        )
         if os.path.exists(params_file_path):
             context["files"]["parameters"] = params_file_path
         # intermediate files zip

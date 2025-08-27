@@ -413,13 +413,19 @@ class SampleTableOne(tables.Table):
             },
         },
     )
-    report = tables.Column(
-        verbose_name="Sample Report", orderable=False, empty_values=(), attrs=cell_attrs
+    combined = tables.Column(
+        verbose_name="Reports",
+        orderable=False, empty_values=(), attrs= {
+            "th":  {
+                "style": "text-align: center;"
+            }
+        }
     )
     runs = tables.Column(
         verbose_name="Workflows", orderable=False, empty_values=(), attrs=cell_attrs
     )
-    deploy = tables.Column(
+    
+    sample_management = tables.Column(
         verbose_name="Run", orderable=False, empty_values=(), attrs=cell_attrs
     )
 
@@ -427,18 +433,6 @@ class SampleTableOne(tables.Table):
         "Sorting", orderable=False, empty_values=(), attrs=cell_attrs
     )
 
-    select_ref = tables.CheckBoxColumn(
-        verbose_name="Select Samples",
-        accessor="pk",
-        orderable=False,
-        attrs={
-            "th": {
-                "style": "background-color: #dce4f0; text-align: center;",
-            },
-            "td": {"style": "background-color: #dce4f0; text-align: center;"},
-            "th__input": {"id": "checkBoxAll"},
-        },
-    )
 
     ref_management = tables.Column(
         "References",
@@ -450,18 +444,30 @@ class SampleTableOne(tables.Table):
         },
     )
 
-    processes = tables.Column(
-        "Processes",
-        orderable=False,
-        empty_values=(),
+    select_ref = tables.CheckBoxColumn(
+        accessor="pk",
         attrs={
-            "th": {"style": "background-color: #eaf5ff; text-align: center;"},
-            "td": {
-                "style": "text-align: center;",
-                "title": "Running / Queued / Finished",
+            "th": {
+                "style": "background-color: #dce4f0; text-align: center;",
             },
+            "td": {"style": "background-color: #dce4f0; text-align: center;"},
+            "th__input": {"id": "checkBoxAll"},
         },
     )
+
+
+    #processes = tables.Column(
+    #    "Processes",
+    #    orderable=False,
+    #    empty_values=(),
+    #    attrs={
+    #        "th": {"style": "background-color: #eaf5ff; text-align: center;"},
+    #        "td": {
+    #            "style": "text-align: center;",
+    #            "title": "Running / Queued / Finished",
+    #        },
+    #    },
+    #)
 
     class Meta:
         model = PIProject_Sample
@@ -472,17 +478,12 @@ class SampleTableOne(tables.Table):
         fields = (
             "set_control",
             "name",
-            "report",
+            "combined",
             "runs",
-            "deploy",
+            "sample_management",
             "sorting",
             "ref_management",
             "select_ref",
-            "processes",
-            # "combinations",
-            # "mapping_runs",
-            # "running_processes",
-            # "queued_processes",
         )
 
     def render_set_control(self, record: PIProject_Sample):
@@ -510,7 +511,7 @@ class SampleTableOne(tables.Table):
                 + '"><i class="fa fa-circle-o"></i></span> </a>'
             )
 
-    def render_report(self, record):
+    def render_combined(self, record):
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
 
@@ -538,33 +539,43 @@ class SampleTableOne(tables.Table):
             + reverse("sample_main", args=[record.project.pk, record.pk])
             + '">'
             + " <fa class='fa fa-reorder'></fa>"
-            + f" Workflow Panel {self.render_finished_processes(record)}"
+            + f" Workflow Panel" 
             + "</a>"
+            + f" | {self.render_finished_processes(record)}"
         )
         if user.username == Constants.USER_ANONYMOUS:
             return mark_safe("report")
         if user.username == record.project.owner.username:
             return mark_safe(record_name)
 
+    def render_sample_management(self, record: PIProject_Sample):
+
+        deployment_management = self.render_deploy(record)
+        processes = self.render_processes(record)
+
+        return mark_safe(deployment_management + " | " + processes)
+
     def render_deploy(self, record: PIProject_Sample):
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
 
+        if user.username != record.project.owner.username:
+            return mark_safe(deployment_management)
+        
         active_runs = ParameterSet.objects.filter(
             sample=record,
             status__in=[ParameterSet.STATUS_RUNNING, ParameterSet.STATUS_QUEUED],
         )
 
-        record_name = '<a><i class="fa fa-bug"></i></span> </a>'
+        deployment_management = '<a><i class="fa fa-bug"></i></span> </a>'
 
         TELEVIR_DEPLOY_URL = "submit_televir_project_sample"
         if CS.DEPLOYMENT_DEFAULT == CS.DEPLOYMENT_TYPE_PIPELINE:
             TELEVIR_DEPLOY_URL = "submit_televir_runs_project_sample"
 
-        if user.username != record.project.owner.username:
-            return mark_safe(record_name)
 
-        record_name = (
+
+        deployment_management = (
             '<a href="#" id="deploypi_sample_btn" class="sample-deploy" data-toggle="modal" data-toggle="tooltip" title="Run Televir Classic Workflow"'
             + ' ref_name="'
             + record.name
@@ -591,10 +602,10 @@ class SampleTableOne(tables.Table):
 
             metagen_buttons = metagen_buttons + "</span>"
 
-            record_name += metagen_buttons
+            deployment_management += metagen_buttons
 
         if active_runs.count() > 0:
-            record_name += (
+            deployment_management += (
                 '<a href="#id_kill_modal" id="id_kill_reference_modal" data-toggle="modal" data-toggle="tooltip" title="Cancel"'
                 + ' ref_name="'
                 + record.name
@@ -603,7 +614,7 @@ class SampleTableOne(tables.Table):
                 + '"><i class="fa fa-power-off"></i></span> </a>'
             )
 
-        return mark_safe(record_name)
+        return mark_safe(deployment_management)
 
     def render_name(self, record: PIProject_Sample):
         from crequest.middleware import CrequestMiddleware
@@ -756,10 +767,6 @@ class SampleTableOne(tables.Table):
         )
 
         return mark_safe(references_management_button)
-
-    report = tables.LinkColumn(
-        "sample_main", text="Report", args=[tables.A("project__pk"), tables.A("pk")]
-    )
 
     def render_combinations(self, record: PIProject_Sample):
         return RunMain.objects.filter(

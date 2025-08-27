@@ -553,11 +553,17 @@ class SampleTableOne(tables.Table):
         deployment_management = self.render_deploy(record)
         processes = self.render_processes(record)
 
-        return mark_safe(deployment_management + " | " + processes)
-
+        return mark_safe(
+                    f"""
+            {deployment_management} |  {processes}
+        """
+        )
     def render_deploy(self, record: PIProject_Sample):
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
+
+        deployment_management = '<a><i class="fa fa-bug"></i></span> </a>'
+
 
         if user.username != record.project.owner.username:
             return mark_safe(deployment_management)
@@ -613,6 +619,7 @@ class SampleTableOne(tables.Table):
                 + str(record.pk)
                 + '"><i class="fa fa-power-off"></i></span> </a>'
             )
+
 
         return mark_safe(deployment_management)
 

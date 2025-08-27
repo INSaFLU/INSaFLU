@@ -2817,8 +2817,6 @@ class DefaultParameters(object):
             software.name.lower(), ["None"]
         )
 
-        if dbs_available[0] == "None":
-            return None
 
         vect_parameters = []
 

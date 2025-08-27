@@ -932,6 +932,7 @@ class DefaultSoftware(object):
                     == SoftwareNames.SOFTWARE_METAPHLAN_NAME
                 ):
                     return True
+                
                 if not self.televir_utiltity.check_software_db_available(
                     software_name=software_name,
                 ):

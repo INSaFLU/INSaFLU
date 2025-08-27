@@ -2830,6 +2830,10 @@ class DefaultParameters(object):
         dbs_available = self.televir_db_manager.get_from_filter_dbs(
             software.name.lower(), ["None"]
         )
+
+        if dbs_available[0] == "None":
+            return None
+
         vect_parameters = []
 
         parameter = Parameter()

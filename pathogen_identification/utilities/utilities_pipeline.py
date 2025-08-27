@@ -1399,6 +1399,8 @@ class Utility_Pipeline_Manager:
                 return list(
                     filter_df[["path", "file_str"]].itertuples(index=False, name=None)
                 )
+        
+        return ["None"]
 
     def generate_argument_combinations(
         self, pipeline_software_dt: pd.DataFrame

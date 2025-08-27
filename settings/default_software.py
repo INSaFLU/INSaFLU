@@ -451,16 +451,6 @@ class DefaultSoftware(object):
             user,
         )
 
-        self.test_default_db(
-            SoftwareNames.SOFTWARE_BWA_FILTER_name,
-            self.default_parameters.get_bwa_filter_defaults(
-                user,
-                Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_illumina,
-                pipeline_step=ConstantsSettings.PIPELINE_NAME_host_depletion,
-            ),
-            user,
-        )
 
         self.test_default_db(
             SoftwareNames.SOFTWARE_BWA_FILTER_name,
@@ -473,16 +463,6 @@ class DefaultSoftware(object):
             user,
         )
 
-        self.test_default_db(
-            SoftwareNames.SOFTWARE_BWA_FILTER_name,
-            self.default_parameters.get_bwa_filter_defaults(
-                user,
-                Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_minion,
-                pipeline_step=ConstantsSettings.PIPELINE_NAME_host_depletion,
-            ),
-            user,
-        )
 
         self.test_default_db(
             SoftwareNames.SOFTWARE_BWA_FILTER_name,
@@ -966,6 +946,9 @@ class DefaultSoftware(object):
         type_of_use = Software.TYPE_OF_USE_global
 
         if not self.assess_db_dependency_met(vect_parameters, software_name):
+            return
+        
+        if vect_parameters == None:
             return
 
         ## lock because more than one process can duplicate software names

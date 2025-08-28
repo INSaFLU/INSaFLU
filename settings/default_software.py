@@ -885,6 +885,26 @@ class DefaultSoftware(object):
         """
         test if exist, if not persist in database, for televir"""
 
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_VOYAGER_name,
+            self.default_parameters.get_voyager_defaults(
+                user, 
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion
+            ),
+            user
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_METAPHLAN_NAME,
+            self.default_parameters.get_metaphlan_defaults(
+                user, 
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            ),
+            user,
+        )
+
         #        self.test_default_db(
         #            SoftwareNames.SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name,
         #            self.default_parameters.get_minimap2_map_assembly_default(

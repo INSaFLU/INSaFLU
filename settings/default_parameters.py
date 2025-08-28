@@ -1321,7 +1321,7 @@ class DefaultParameters(object):
             )
 
         elif software.name == SoftwareNames.SOFTWARE_METAPHLAN_NAME:
-            return self.get_metaphlan_default(
+            return self.get_metaphlan_defaults(
                 software.owner,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
@@ -1413,7 +1413,7 @@ class DefaultParameters(object):
             )
 
         elif software.name == SoftwareNames.SOFTWARE_VOYAGER_name:
-            return self.get_voyager_default(
+            return self.get_voyager_defaults(
                 software.owner,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_minion,
@@ -3326,7 +3326,7 @@ class DefaultParameters(object):
         vect_parameters.append(parameter)
         return vect_parameters
 
-    def get_metaphlan_default(
+    def get_metaphlan_defaults(
         self,
         user,
         type_of_use,
@@ -3417,7 +3417,7 @@ class DefaultParameters(object):
 
         return vect_parameters
 
-    def get_voyager_default(
+    def get_voyager_defaults(
         self,
         user,
         type_of_use,

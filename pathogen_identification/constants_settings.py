@@ -62,7 +62,6 @@ class ConstantsSettings:
         CS.PIPELINE_NAME_host_depletion,
         CS.PIPELINE_NAME_read_classification,
         CS.PIPELINE_NAME_contig_classification,
-        CS.PIPELINE_NAME_extra_qc,
     ]
 
     #################################### Pipeline Groups

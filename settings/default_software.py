@@ -923,6 +923,12 @@ class DefaultSoftware(object):
             vect_parameters[0].software.type_of_use
             == Software.TYPE_OF_USE_televir_global
         ):
+            if vect_parameters[0].software.name == SoftwareNames.SOFTWARE_BWA_FILTER_name:
+
+                return self.televir_utiltity.check_software_db_available(
+                    software_name = software_name
+                )
+
             if (
                 vect_parameters[0].software.pipeline_step.name
                 in self.televir_utiltity.steps_db_dependant

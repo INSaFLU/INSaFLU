@@ -1285,29 +1285,29 @@ class TreeProgressGraph:
                         ]
                     )
 
-            network_df = pd.DataFrame(
-                network_df,
-                columns=[
-                    "parent",
-                    "child",
-                    "module",
-                    "software_parent",
-                    "software_child",
-                    "colour",
-                ],
-            )
+        network_df = pd.DataFrame(
+            network_df,
+            columns=[
+                "parent",
+                "child",
+                "module",
+                "software_parent",
+                "software_child",
+                "colour",
+            ],
+        )
 
-            unique_nodes = list(network_df["child"].values) + list(
-                network_df["parent"].values
-            )
-            unique_nodes = list(set(unique_nodes))
+        unique_nodes = list(network_df["child"].values) + list(
+            network_df["parent"].values
+        )
+        unique_nodes = list(set(unique_nodes))
 
-            # replace node names with numbers paste to software
+        # replace node names with numbers paste to software
 
-            node_dict = {node: i for i, node in enumerate(unique_nodes)}
-            node_dict["NA"] = "NA"
+        node_dict = {node: i for i, node in enumerate(unique_nodes)}
+        node_dict["NA"] = "NA"
 
-            network_df = network_df.apply(merge_names, axis=1)
+        network_df = network_df.apply(merge_names, axis=1)
 
         return network_df
 

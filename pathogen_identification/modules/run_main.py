@@ -26,6 +26,7 @@ from pathogen_identification.modules.object_classes import (
     Sample_runClass,
     SoftwareDetail,
     SoftwareDetailCompound,
+    SoftwareDetailCompoundPreprocess,
     SoftwareRemap,
     SoftwareUnit,
 )
@@ -124,7 +125,7 @@ class RunDetail_main:
     depletion_report = None
 
     ## methods
-    preprocess_method: SoftwareUnit
+    preprocess_method: SoftwareDetailCompoundPreprocess
     depletion_method: SoftwareDetail
     enrichment_method: SoftwareDetail
     assembly_method: SoftwareDetail
@@ -172,11 +173,14 @@ class RunDetail_main:
         self.logger = None
 
     def set_preprocess_check(self, config: dict, method_args: pd.DataFrame):
-        self.preprocess_method = SoftwareDetail(
-            CS.PIPELINE_NAME_extra_qc,
+        self.preprocess_method = SoftwareDetailCompoundPreprocess(
             method_args,
             config,
             self.prefix,
+        )
+
+        self.preprocess_method.register_modules(
+            [CS.PIPELINE_NAME_extra_qc],
         )
 
         self.check_preprocess_exists()
@@ -304,10 +308,12 @@ class RunDetail_main:
 
     def set_remapping_filtering_check(self, config: dict, method_args: pd.DataFrame):
         self.remap_filtering_method = SoftwareDetailCompound(
-            [CS.PIPELINE_NAME_remap_filtering, CS.PIPELINE_NAME_map_filtering],
             method_args,
             config,
             self.prefix,
+        )
+        self.remap_filtering_method.register_modules(
+            [CS.PIPELINE_NAME_remap_filtering, CS.PIPELINE_NAME_map_filtering]
         )
 
         self.check_remap_filtering_exists()
@@ -389,7 +395,6 @@ class RunDetail_main:
         self.modules = list(self.method_args["module"].unique())
         self.config = config
         self.log_dir = config["directories"]["log_dir"]
-        print("logdir", self.log_dir, "run type", self.run_type)
 
         self.cmd = RunCMD(
             get_bindir_from_binaries(
@@ -566,6 +571,7 @@ class RunDetail_main:
         self.house_cleaning = config["actions"]["CLEAN"]
 
         ### drones
+
         self.depletion_drone = Classifier(
             SoftwareDetail("NONE", method_args, config, self.prefix),
             logging_level=self.logger_level_detail,
@@ -694,6 +700,9 @@ class RunDetail_main:
         """
         Update the merged classification summary file.
         """
+        targets_list = list(set(targets_list))
+        print(f"Updating merged targets with {len(targets_list)} targets")
+        print(targets_list)
 
         self.metadata_tool.remap_targets = targets_list
 
@@ -712,8 +721,8 @@ class Run_Deployment_Methods(RunDetail_main):
     def Prep_deploy(self, remap_prep=True):
         if self.qc_performed is False:
             self.preprocess_drone = Preprocess(
-                self.sample.r1.current,
-                self.sample.r2.current,
+                self.sample.r1,
+                self.sample.r2,
                 self.filtered_reads_dir,
                 self.type,
                 self.preprocess_method,
@@ -723,6 +732,9 @@ class Run_Deployment_Methods(RunDetail_main):
                 self.subsample,
                 logging_level=self.logger_level_detail,
                 log_dir=self.log_dir,
+                bin=get_bindir_from_binaries(
+                    self.config["bin"], CS.PIPELINE_NAME_extra_qc
+                ),
             )
 
         if self.depletion_performed is False:
@@ -786,8 +798,7 @@ class Run_Deployment_Methods(RunDetail_main):
             )
 
         if self.read_classification_performed is False:
-            print("preparing read classification")
-            print(self.sample.r1.current)
+
             self.read_classification_drone = Classifier(
                 self.read_classification_method,
                 self.sample.r1.current,
@@ -813,12 +824,6 @@ class Run_Deployment_Methods(RunDetail_main):
             self.preprocess_drone.fake_run()
         else:
             self.update_reads()
-
-            if self.preprocess_method.check_processed_exist():
-                r1_proc, r2_proc = self.preprocess_method.retrieve_qc_reads()
-                self.sample.r1.clean_exo = r1_proc
-                if self.type == ConstantsSettings.PAIR_END:
-                    self.sample.r2.clean_exo = r2_proc
 
             self.preprocess_drone.run()
 
@@ -892,7 +897,7 @@ class Run_Deployment_Methods(RunDetail_main):
             log_dir=self.log_dir,
         )
 
-        self.contig_classification_drone.run()
+        self.contig_classification_drone.run(output_type="classification")
 
     def deploy_METAGENOMICS_CLASSIFICATION_reads(self):
         self.metagenomics_classification_drone = Classifier(
@@ -907,7 +912,7 @@ class Run_Deployment_Methods(RunDetail_main):
             logging_level=self.logger_level_detail,
             log_dir=self.log_dir,
         )
-        self.metagenomics_classification_drone.run()
+        self.metagenomics_classification_drone.run(output_type="classification")
 
     def deploy_READ_CLASSIFICATION(self):
         self.read_classification_drone = Classifier(
@@ -923,7 +928,7 @@ class Run_Deployment_Methods(RunDetail_main):
             logging_level=self.logger_level_detail,  #
             log_dir=self.log_dir,
         )
-        self.read_classification_drone.run()
+        self.read_classification_drone.run(output_type="classification")
 
     def prep_REMAPPING(self):
 
@@ -947,7 +952,7 @@ class Run_Deployment_Methods(RunDetail_main):
 
     def deploy_REMAPPING(self):
 
-        print(
+        self.logger.info(
             f"{self.prefix} remapping # targets: {len(self.metadata_tool.remap_targets)}"
         )
 
@@ -957,6 +962,76 @@ class Run_Deployment_Methods(RunDetail_main):
 
         self.remap_manager.merge_mapping_reports()
         self.remap_manager.collect_final_report_summary_statistics()
+
+    #### SUMMARY FUNCTIONS ####
+
+    def update_mapped_instances(self, mapped_instance: List[Mapping_Instance]):
+        """Update the remap manager with the new mapped instances, register."""
+        self.prep_REMAPPING()
+        self.remap_manager.update_mapped_instances(mapped_instance)
+
+        self.remapping_performed = True
+        self.Update_exec_time()
+
+    def export_logdir(self):
+        if os.path.exists(self.media_dir_logdir):
+            shutil.rmtree(self.media_dir_logdir)
+
+        shutil.copytree(
+            self.log_dir,
+            self.media_dir_logdir,
+        )
+
+    def export_final_reports(self):
+        # main report
+        self.report.to_csv(
+            self.full_report,
+            index=False,
+            sep="\t",
+            header=True,
+        )
+
+    def save_df_check_exists(self, df: pd.DataFrame, path: str):
+        dirname = os.path.dirname(path)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname, exist_ok=True)
+
+        if not os.path.exists(path):
+            if "leaves" in df.columns:
+                df = df.drop(columns=["leaves"])
+            df = df.drop_duplicates()
+            df = df.reset_index(drop=True)
+            df.to_csv(path, index=False, sep="\t", header=True)
+
+    def export_intermediate_reports(self):
+        export_dict = {
+            self.params_file_path: self.method_args,
+            self.remap_plan_path: self.remap_plan,
+            self.assembly_classification_summary: self.aclass_summary,
+            self.read_classification_summary: self.rclass_summary,
+            self.merged_classification_summary: self.merged_targets,
+        }
+        for output_df_path, df in export_dict.items():
+            if df is not None:
+                if not df.empty:
+                    self.save_df_check_exists(df, output_df_path)
+
+    def export_sequences(self):
+        self.sample.export_reads(self.media_dir)
+
+    def export_assembly(self):
+        self.assembly_drone.export_assembly(self.media_dir)
+
+    def Summarize(self):
+        self.logger.info(f"prefix: {self.prefix}")
+        with open(os.path.join(self.log_dir, self.prefix + "_latest.fofn"), "w") as f:
+            f.write(self.sample.r1.current + "\n")
+            if self.type == ConstantsSettings.PAIR_END:
+                f.write(self.sample.r2.current + "\n")
+
+        with open(os.path.join(self.log_dir, "reads_latest.stats"), "w") as f:
+            f.write(f"CLEAN\t{self.sample.r1.read_number_clean}\n")
+            f.write(f"ENRICHED\t{self.sample.r1.read_number_enriched}\n")
 
 
 class RunEngine_class(Run_Deployment_Methods):
@@ -998,10 +1073,10 @@ class RunEngine_class(Run_Deployment_Methods):
 
     def Run_QC(self):
         if self.quality_control:
-            print("Deploying QC")
+            self.logger.info("Deploying QC")
             self.deploy_QC()
 
-            self.sample.qc_soft = self.preprocess_drone.preprocess_method.name
+            # self.sample.qc_soft = self.preprocess_drone.preprocess_method.name
             self.sample.input_fastqc_report = self.preprocess_drone.input_qc_report
             self.sample.processed_fastqc_report = (
                 self.preprocess_drone.processed_qc_report
@@ -1115,58 +1190,6 @@ class RunEngine_class(Run_Deployment_Methods):
 
         self.Update_exec_time()
 
-    #### SUMMARY FUNCTIONS ####
-
-    def export_logdir(self):
-        if os.path.exists(self.media_dir_logdir):
-            shutil.rmtree(self.media_dir_logdir)
-
-        shutil.copytree(
-            self.log_dir,
-            self.media_dir_logdir,
-        )
-
-    def export_final_reports(self):
-        ### main report
-        self.report.to_csv(
-            self.full_report,
-            index=False,
-            sep="\t",
-            header=True,
-        )
-
-    def save_df_check_exists(self, df: pd.DataFrame, path: str):
-        if not os.path.exists(path):
-            df.to_csv(path, index=False, sep="\t", header=True)
-
-    def export_intermediate_reports(self):
-        export_dict = {
-            self.params_file_path: self.method_args,
-            self.remap_plan_path: self.remap_plan,
-            self.assembly_classification_summary: self.aclass_summary,
-            self.read_classification_summary: self.rclass_summary,
-            self.merged_classification_summary: self.merged_targets,
-        }
-        for output_df_path, df in export_dict.items():
-            self.save_df_check_exists(df, output_df_path)
-
-    def export_sequences(self):
-        self.sample.export_reads(self.media_dir)
-
-    def export_assembly(self):
-        self.assembly_drone.export_assembly(self.media_dir)
-
-    def Summarize(self):
-        self.logger.info(f"prefix: {self.prefix}")
-        with open(os.path.join(self.log_dir, self.prefix + "_latest.fofn"), "w") as f:
-            f.write(self.sample.r1.current + "\n")
-            if self.type == ConstantsSettings.PAIR_END:
-                f.write(self.sample.r2.current + "\n")
-
-        with open(os.path.join(self.log_dir, "reads_latest.stats"), "w") as f:
-            f.write(f"CLEAN\t{self.sample.r1.read_number_clean}\n")
-            f.write(f"ENRICHED\t{self.sample.r1.read_number_enriched}\n")
-
     def generate_output_data_classes(self):
         ### transfer to sample class
         input_reads = self.sample.reads_before_processing
@@ -1239,8 +1262,8 @@ class RunEngine_class(Run_Deployment_Methods):
 
         self.qc_report = RunQC_report(
             performed=self.quality_control,
-            method=self.preprocess_drone.preprocess_method.name,
-            args=self.preprocess_drone.preprocess_method.args,
+            method=self.preprocess_drone.preprocess_methods.name,
+            args=self.preprocess_drone.preprocess_methods.args,
             input_reads=self.sample.reads_before_processing,
             output_reads=self.sample.reads_after_processing,
             output_reads_percent=self.sample.reads_after_processing
@@ -1334,8 +1357,7 @@ class RunMainTree_class(Run_Deployment_Methods):
     def Run_QC(self):
         if self.quality_control and not self.qc_performed:
             self.deploy_QC()
-            self.sample.qc_soft = self.preprocess_drone.preprocess_method.name
-
+            # self.sample.qc_soft = self.preprocess_drone.preprocess_method.name
             self.process_QC()
 
             self.qc_performed = True
@@ -1355,7 +1377,7 @@ class RunMainTree_class(Run_Deployment_Methods):
 
             self.process_QC()
 
-            # self.qc_performed = True
+            self.qc_performed = True
 
         self.Update_exec_time()
         self.generate_output_data_classes()
@@ -1364,16 +1386,17 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.logger.info(
             "r1 current reads: " + str(self.sample.r1.get_current_fastq_read_number())
         )
-        print("RUNNING PREPROCESS", self.enrichment)
-
+        print("Running Preprocessing")
+        print(f"Enrichment: {self.enrichment}")
+        print(f"Depletion: {self.depletion}")
         if self.enrichment:
-            print("ENRICHMENT EXISTS")
-            print(self.enrichment_method.check_enriched_exist())
 
             if self.enrichment_method.check_enriched_exist():
+                print("Enriched reads exist, retrieving")
 
                 r1_proc, r2_proc = self.enrichment_method.retrieve_enriched_reads()
                 enriched_read_number = self.enrichment_method.get_enriched_read_number()
+                print(f"Enriched read number: {enriched_read_number}")
                 if self.type == ConstantsSettings.PAIR_END:
                     enriched_read_number = enriched_read_number / 2
                     self.sample.r2.enriched_read_number = enriched_read_number
@@ -1385,7 +1408,7 @@ class RunMainTree_class(Run_Deployment_Methods):
                 if self.type == ConstantsSettings.PAIR_END:
                     self.sample.r2.enriched_exo = r2_proc
                     shutil.copy(r2_proc, self.sample.r2.enriched)
-
+                print("Enriched reads retrieved")
                 self.sample.r1.is_enriched()
                 self.sample.r2.is_enriched()
 
@@ -1404,8 +1427,7 @@ class RunMainTree_class(Run_Deployment_Methods):
             self.enrichment_performed = True
 
         if self.depletion:
-            print(self.enrichment_method.check_depleted_exist())
-            print("DEPLETION EXISTS")
+
             if self.depletion_method.check_depleted_exist():
                 r1_proc, r2_proc = self.depletion_method.retrieve_depleted_reads()
                 depleted_read_number = self.depletion_method.get_depleted_read_number()
@@ -1427,13 +1449,6 @@ class RunMainTree_class(Run_Deployment_Methods):
 
             else:
                 self.deploy_HD()
-
-                ###########################
-                ###########################
-
-                from pathogen_identification.utilities.televir_bioinf import (
-                    TelevirBioinf,
-                )
 
                 # televir_bioinf = TelevirBioinf()
                 # alignment_file = self.depletion_drone.classifier.report_path
@@ -1560,20 +1575,12 @@ class RunMainTree_class(Run_Deployment_Methods):
 
     def plan_remap_prep(self):
 
-        print("########### PLANNING REMAP PREP ###########")
-        print("remap prep: ", self.remap_prepped)
-
-        print("MAX TAXIDS: ", self.remap_params.max_taxids)
-        print("MAX ACCIDS: ", self.remap_params.max_accids)
-
         self.metadata_tool.match_and_select_targets(
             self.read_classification_drone.classification_report,
             self.contig_classification_drone.classification_report,
             max_remap=self.remap_params.max_accids,
             taxid_limit=self.remap_params.max_taxids,
         )
-
-        print("remap targets: ", self.metadata_tool.remap_targets)
 
         self.import_from_remap_prep()
 
@@ -1582,7 +1589,6 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.rclass_summary = self.metadata_tool.rclass
         self.merged_targets = self.metadata_tool.merged_targets
 
-        print("RAW TARGETS: ", self.metadata_tool.raw_targets)
         self.raw_targets = self.metadata_tool.raw_targets
         self.remap_plan = self.metadata_tool.remap_plan
 
@@ -1599,18 +1605,13 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.remap_prepped = True
 
     def Run_Remapping(self, prep=True):
-        print("remapping: ", self.remapping)
-        print(self.remap_prepped)
+
         if not self.remap_prepped:
             return
 
-        print("remapping: ", self.remapping)
-        print(self.remap_prepped)
         if self.remapping is True and self.remapping_performed is False:
             if self.remap_prepped == False:
                 self.plan_remap_prep_safe()
-
-            print("merged targets: ", self.merged_targets)
 
             if prep:
                 self.prep_REMAPPING()
@@ -1631,70 +1632,11 @@ class RunMainTree_class(Run_Deployment_Methods):
 
         self.remapping_performed = True
         self.generate_output_data_classes()
-        self.Update_exec_time()
-
-    def export_logdir(self):
-        if os.path.exists(self.media_dir_logdir):
-            shutil.rmtree(self.media_dir_logdir)
-
-        shutil.copytree(
-            self.log_dir,
-            self.media_dir_logdir,
-        )
-
-    def export_final_reports(self):
-        # main report
-        self.report.to_csv(
-            self.full_report,
-            index=False,
-            sep="\t",
-            header=True,
-        )
-
-    def save_df_check_exists(self, df: pd.DataFrame, path: str):
-        dirname = os.path.dirname(path)
-        print("############### SAVING ", path)
-        print("path exists: ", os.path.exists(path))
-        print("dirname exists: ", os.path.exists(dirname))
-        print(df.shape)
-
-        if not os.path.exists(dirname):
-            os.makedirs(dirname, exist_ok=True)
-
-        if not os.path.exists(path):
-            df.to_csv(path, index=False, sep="\t", header=True)
-
-    def export_intermediate_reports(self):
-        export_dict = {
-            self.params_file_path: self.method_args,
-            self.remap_plan_path: self.remap_plan,
-            self.assembly_classification_summary: self.aclass_summary,
-            self.read_classification_summary: self.rclass_summary,
-            self.merged_classification_summary: self.merged_targets,
-        }
-        for output_df_path, df in export_dict.items():
-            self.save_df_check_exists(df, output_df_path)
-
-    def export_sequences(self):
-        self.sample.export_reads(self.media_dir)
-
-    def export_assembly(self):
-        self.assembly_drone.export_assembly(self.media_dir)
-
-    def Summarize(self):
-        self.logger.info(f"prefix: {self.prefix}")
-        with open(os.path.join(self.log_dir, self.prefix + "_latest.fofn"), "w") as f:
-            f.write(self.sample.r1.current + "\n")
-            if self.type == ConstantsSettings.PAIR_END:
-                f.write(self.sample.r2.current + "\n")
-
-        with open(os.path.join(self.log_dir, "reads_latest.stats"), "w") as f:
-            f.write(f"CLEAN\t{self.sample.r1.read_number_clean}\n")
-            f.write(f"ENRICHED\t{self.sample.r1.read_number_enriched}\n")
 
     def generate_output_data_classes(self):
         # merge mapping results if exist.
         #
+        print("Generating output data classes")
         self.remap_manager.merge_mapping_reports()
         self.remap_manager.collect_final_report_summary_statistics()
         self.report = self.remap_manager.report
@@ -1767,15 +1709,15 @@ class RunMainTree_class(Run_Deployment_Methods):
             ", ".join(files),
         )
 
-        self.qc_report = RunQC_report(
-            performed=self.qc_performed,
-            method=self.preprocess_drone.preprocess_method.name,
-            args=self.preprocess_drone.preprocess_method.args,
-            input_reads=self.sample.reads_before_processing,
-            output_reads=self.sample.reads_after_processing,
-            output_reads_percent=self.sample.reads_after_processing
-            / self.sample.reads_before_processing,
-        )
+        # self.qc_report = RunQC_report(
+        #    performed=self.qc_performed,
+        #    method=self.preprocess_drone.preprocess_method.name,
+        #    args=self.preprocess_drone.preprocess_method.args,
+        #    input_reads=self.sample.reads_before_processing,
+        #    output_reads=self.sample.reads_after_processing,
+        #    output_reads_percent=self.sample.reads_after_processing
+        #    / self.sample.reads_before_processing,
+        # )
 
         self.contig_classification_results = Contig_classification_results(
             (

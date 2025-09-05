@@ -72,6 +72,7 @@ class DefaultParameters(object):
         if prep_televir_dbs:
             self.televir_db_manager.get_software_db_dict()
             self.televir_db_manager.get_host_dbs()
+            self.televir_db_manager.get_filter_dbs()
 
     def get_software_parameters_version(self, software_name):
         """
@@ -186,7 +187,6 @@ class DefaultParameters(object):
                     # keep last one
                     software = sof.last()
 
-                    print("MULTIPLE SOFTWARES: ", sof.count(), software.name)
                     if sof.count() > 1:
                         sof_delete = sof.exclude(pk=software.pk)
                         with LockedAtomicTransaction(Software), LockedAtomicTransaction(
@@ -840,9 +840,19 @@ class DefaultParameters(object):
                         )
 
                 elif par_name == "--db":
+                    db = dict_out[par_name][1][0]
+
+                    if ";" in db:
+                        db = db.split(";")
+                    else:
+                        db = [db]
+
+                    db = [os.path.basename(x) for x in db]
+                    dbs = "; ".join(db)
+
                     return_parameter += "{}{}".format(
                         dict_out[par_name][0][0],
-                        os.path.basename(dict_out[par_name][1][0]),
+                        dbs,
                     )
                 else:
                     for _ in range(len(dict_out[par_name][0])):
@@ -1281,6 +1291,14 @@ class DefaultParameters(object):
                 software.technology.name,
             )
 
+        elif software.name == SoftwareNames.SOFTWARE_BWA_FILTER_name:
+            return self.get_bwa_filter_defaults(
+                software.owner,
+                Software.TYPE_OF_USE_televir_global,
+                software.technology.name,
+                pipeline_step=software.pipeline_step.name,
+            )
+
         elif software.name == SoftwareNames.SOFTWARE_televir_report_layout_name:
             return self.get_televir_report_defaults(
                 software.owner,
@@ -1297,6 +1315,13 @@ class DefaultParameters(object):
 
         elif software.name == SoftwareNames.SOFTWARE_CENTRIFUGE_name:
             return self.get_centrifuge_default(
+                software.owner,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            )
+
+        elif software.name == SoftwareNames.SOFTWARE_METAPHLAN_NAME:
+            return self.get_metaphlan_defaults(
                 software.owner,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
@@ -1385,6 +1410,13 @@ class DefaultParameters(object):
                 software.owner,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
+            )
+
+        elif software.name == SoftwareNames.SOFTWARE_VOYAGER_name:
+            return self.get_voyager_defaults(
+                software.owner,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
             )
 
         elif software.name == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ILLU_name:
@@ -2751,6 +2783,77 @@ class DefaultParameters(object):
 
         return vect_parameters
 
+    def get_bwa_filter_defaults(
+        self, user, type_of_use, technology_name, sample=None, pipeline_step=None
+    ):
+
+        if pipeline_step == None:
+            pipeline_step = ConstantsSettings.PIPELINE_NAME_extra_qc
+
+        software = Software()
+        software.name = SoftwareNames.SOFTWARE_BWA_FILTER_name
+        software.name_extended = SoftwareNames.SOFTWARE_BWA_FILTER_name_extended
+        software.type_of_use = type_of_use
+        software.type_of_software = Software.TYPE_SOFTWARE
+        software.version = SoftwareNames.SOFTWARE_BWA_VERSION
+        software.version_parameters = self.get_software_parameters_version(
+            software.name
+        )
+        software.technology = self.get_technology(technology_name)
+        software.can_be_on_off_in_pipeline = (
+            True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
+        )
+        software.is_to_run = False
+
+        ###  small description of software
+        software.help_text = ""
+        software.pipeline_step = self._get_pipeline(
+            pipeline_step,
+        )
+        software.owner = user
+
+        ### software db
+        dbs_available = self.televir_db_manager.get_from_filter_dbs(
+            software.name.lower(), ["None"]
+        )
+
+
+        vect_parameters = []
+
+        parameter = Parameter()
+        parameter.name = "--db"
+        parameter.parameter = dbs_available[0][0]
+        parameter.type_data = Parameter.PARAMETER_multiple_choice
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True
+        parameter.sequence_out = 1
+        parameter.range_available = ""
+        parameter.range_max = ""
+        parameter.range_min = ""
+        parameter.description = "Database to use"
+
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "-M"
+        parameter.parameter = ""
+        parameter.type_data = Parameter.PARAMETER_null
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = ""
+        parameter.can_change = False
+        parameter.is_to_run = True
+        parameter.sequence_out = 2
+        parameter.description = (
+            "Mark shorter split hits as secondary (for Picard compatibility)."
+        )
+        vect_parameters.append(parameter)
+
+        return vect_parameters
+
     def get_televir_report_defaults(
         self, user, type_of_use, technology_name, sample=None, is_to_run=True
     ):
@@ -3223,6 +3326,177 @@ class DefaultParameters(object):
         vect_parameters.append(parameter)
         return vect_parameters
 
+    def get_metaphlan_defaults(
+        self,
+        user,
+        type_of_use,
+        technology_name,
+        sample=None,
+        is_to_run=True,
+    ):
+
+        pipeline_step = ConstantsSettings.PIPELINE_NAME_read_classification
+        software = Software()
+        software.name = SoftwareNames.SOFTWARE_METAPHLAN_NAME
+        software.name_extended = SoftwareNames.SOFTWARE_METAPHLAN_NAME_extended
+        software.type_of_use = type_of_use
+        software.type_of_software = Software.TYPE_SOFTWARE
+        software.version = SoftwareNames.SOFTWARE_METAPHLAN_VERSION
+        software.version_parameters = self.get_software_parameters_version(
+            software.name
+        )
+        software.technology = self.get_technology(technology_name)
+        software.can_be_on_off_in_pipeline = True
+
+        software.is_to_run = is_to_run
+
+        ###  small description of software
+        software.help_text = ""
+
+        ###  which part of pipeline is going to run; NEED TO CHECK
+        software.pipeline_step = self._get_pipeline(pipeline_step)
+
+        software.owner = user
+
+        ### software db
+        dbs_available = self.televir_db_manager.software_dbs_dict.get(
+            software.name.lower(), ["None"]
+        )
+
+        vect_parameters = []
+
+        parameter = Parameter()
+        parameter.name = "--min_alignment_len"
+        parameter.parameter = "100"
+        parameter.type_data = Parameter.PARAMETER_int
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True
+        parameter.sequence_out = 1
+        parameter.range_available = "[50:200]"
+        parameter.range_max = "200"
+        parameter.range_min = "50"
+        parameter.description = (
+            "Minimum alignment length, in bp, for a read to be considered aligned."
+        )
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "--edits"
+        parameter.parameter = "--ignore_eukaryotes"
+        parameter.type_data = Parameter.PARAMETER_multiple_choice
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True
+        parameter.sequence_out = 2
+        parameter.range_available = ""
+        parameter.range_max = ""
+        parameter.range_min = ""
+        parameter.description = "Database adjustments."
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "--db"
+        parameter.parameter = dbs_available[0]
+        parameter.type_data = Parameter.PARAMETER_char_list
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True
+        parameter.sequence_out = 3
+        parameter.range_available = ""
+        parameter.range_max = ""
+        parameter.range_min = ""
+        parameter.description = "Database to use"
+        vect_parameters.append(parameter)
+
+        return vect_parameters
+
+    def get_voyager_defaults(
+        self,
+        user,
+        type_of_use,
+        technology_name,
+        sample=None,
+        pipeline_step="",
+        is_to_run=True,
+    ):
+        """
+        voyager default illumina
+        """
+        if not pipeline_step:
+            pipeline_step = ConstantsSettings.PIPELINE_NAME_read_classification
+
+        software = Software()
+        software.name = SoftwareNames.SOFTWARE_VOYAGER_name
+        software.name_extended = SoftwareNames.SOFTWARE_VOYAGER_name_extended
+        software.type_of_use = type_of_use
+        software.type_of_software = Software.TYPE_SOFTWARE
+        software.version = SoftwareNames.SOFTWARE_VOYAGER_VERSION
+        software.version_parameters = self.get_software_parameters_version(
+            software.name
+        )
+
+        software.technology = self.get_technology(technology_name)
+        software.can_be_on_off_in_pipeline = (
+            True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
+        )
+        software.is_to_run = is_to_run
+
+        ###  small description of software
+        software.help_text = ""
+
+        ###  which part of pipeline is going to run; NEED TO CHECK
+        software.pipeline_step = self._get_pipeline(pipeline_step)
+
+        software.owner = user
+
+        ### software db
+        dbs_available = self.televir_db_manager.software_dbs_dict.get(
+            software.name.lower(), ["None"]
+        )
+
+        vect_parameters = []
+
+        parameter = Parameter()
+        parameter.name = "--rate"
+        parameter.parameter = "100"
+        parameter.type_data = Parameter.PARAMETER_int
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = False
+        parameter.is_to_run = True
+        parameter.sequence_out = 1
+        parameter.range_available = "[1:10000]"
+        parameter.range_max = "10000"
+        parameter.range_min = "1"
+        parameter.description = "Output update processing rate."
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "--db"
+        parameter.parameter = dbs_available[0]
+        parameter.type_data = Parameter.PARAMETER_char_list
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True
+        parameter.sequence_out = 2
+        parameter.range_available = ""
+        parameter.range_max = ""
+        parameter.range_min = ""
+        parameter.description = "Database to use"
+        vect_parameters.append(parameter)
+
+        return vect_parameters
+
     def get_centrifuge_default(
         self,
         user,
@@ -3316,6 +3590,22 @@ class DefaultParameters(object):
         parameter.range_max = ""
         parameter.range_min = ""
         parameter.description = "Database to use"
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "--min-hits"
+        parameter.parameter = "1"
+        parameter.type_data = Parameter.PARAMETER_int
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True  ### by default it's True
+        parameter.sequence_out = 5
+        parameter.range_available = "[1:20]"
+        parameter.range_max = "20"
+        parameter.range_min = "1"
+        parameter.description = "Minimum number of hits for a taxon to be reported."
 
         vect_parameters.append(parameter)
 
@@ -4025,6 +4315,22 @@ class DefaultParameters(object):
         parameter.range_min = ""
         parameter.description = "Database to use"
 
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "--min-hits"
+        parameter.parameter = "1"
+        parameter.type_data = Parameter.PARAMETER_int
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True  ### by default it's True
+        parameter.sequence_out = 5
+        parameter.range_available = "[1:20]"
+        parameter.range_max = "20"
+        parameter.range_min = "1"
+        parameter.description = "Minimum number of hits for a taxon to be reported."
         vect_parameters.append(parameter)
 
         return vect_parameters

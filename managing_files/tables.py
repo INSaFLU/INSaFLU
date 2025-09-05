@@ -170,9 +170,10 @@ class PrimerTable(tables.Table):
         if user.username == Constants.USER_ANONYMOUS:
             return record.name
         if (
-            user.username == record.owner.username
+            user.username
+            == record.owner.username
             ## TODO  ## it can't be used in any active project
-        ): 
+        ):
             return mark_safe(
                 '<a href="#modal_remove_primer" id="id_remove_primer_modal" data-toggle="modal"'
                 + ' primer_name="'
@@ -201,6 +202,7 @@ class PrimerTable(tables.Table):
             ("-" if is_descending else "") + "owner_name"
         )
         return (queryset, True)
+
 
 class SampleToProjectsTable(tables.Table):
     """

@@ -266,6 +266,8 @@ class SampleCurator:
 
 def name_translator(name: str) -> str:
 
+    name = name.replace("í", "i").replace("í", "i").replace("ó", "o").replace("ú", "u")
+
     if "EBV" in name:
         return "human herpesvirus 4"
 
@@ -306,6 +308,11 @@ def match_name_score(name: str, reference: RawReference) -> float:
         return 0
 
     description_lower = reference.description.lower()
+    description_list = description_lower.split(" ")
+    evaluate_name = name_list.copy()
+    for string in description_list:
+        if string not in evaluate_name:
+            evaluate_name.append(string)
 
     scores = []
 
@@ -316,7 +323,7 @@ def match_name_score(name: str, reference: RawReference) -> float:
         if string_until_now in description_lower:
             score += 1
 
-    score = score / len(name_list)
+    score = score / len(evaluate_name)
     scores.append(score)
 
     if "betaherpes" in name:
@@ -332,7 +339,7 @@ def match_name_score(name: str, reference: RawReference) -> float:
         if string_until_now in description_lower:
             score += 1
 
-    score = score / len(name_list)
+    score = score / len(evaluate_name)
     scores.append(score)
 
     return max(scores)
@@ -410,7 +417,7 @@ class HitFactory:
             reference_hits = (
                 RawReference.objects.filter(
                     run__sample__in=self.collection.samples_televir,
-                    run__run_type=RunMain.RUN_TYPE_PIPELINE,
+                    # run__run_type=RunMain.RUN_TYPE_PIPELINE,
                 )
                 .exclude(run=None)
                 .exclude(accid="-")
@@ -424,12 +431,48 @@ class HitFactory:
                 .exclude(accid="-")
             )
 
+        report_hits = FinalReport.objects.filter(
+            run__sample__in=self.collection.samples_televir
+        ).exclude(run=None)
+        print("Reference hits:", reference_hits.count())
+        print("Report hits:", report_hits.count())
+        print(report_hits)
+
+        report_hits_list = []
+        if report_hits.exists():
+            report_hits = report_hits.all()
+            report_hits = list(report_hits)
+            report_hits.sort(key=lambda x: match_name_score(name, x), reverse=True)
+            print([(x.description, match_name_score(name, x)) for x in report_hits])
+            if match_name_score(name, report_hits[0]) == 1:
+                report_hits_list = [
+                    x for x in report_hits if match_name_score(name, x) == 1
+                ]
+            else:
+                report_hits_list = [
+                    x for x in report_hits if match_name_score(name, x) >= 0.2
+                ]
+
+        report_hits_taxid = [x.taxid for x in report_hits_list]
+        report_hits_list = [x.pk for x in report_hits_list]
+
         reference_hits_list = []
 
         if reference_hits.exists():
             reference_hits = reference_hits.all()
             reference_hits = list(reference_hits)
             reference_hits.sort(key=lambda x: match_name_score(name, x), reverse=True)
+            reference_hits = [x for x in reference_hits if x.taxid in report_hits_taxid]
+
+            if len(reference_hits) == 0:
+                return Hit(
+                    name,
+                    raw_reference_id_list=[],
+                    reports_list=report_hits_list,
+                )
+
+            print([(x.description, match_name_score(name, x)) for x in reference_hits])
+
             if match_name_score(name, reference_hits[0]) == 1:
                 reference_hits_list = [
                     x.pk for x in reference_hits if match_name_score(name, x) == 1
@@ -437,24 +480,6 @@ class HitFactory:
             else:
                 reference_hits_list = [
                     x.pk for x in reference_hits if match_name_score(name, x) > 0
-                ]
-
-        report_hits = FinalReport.objects.filter(
-            run__sample__in=self.collection.samples_televir
-        ).exclude(run=None)
-
-        report_hits_list = []
-        if report_hits.exists():
-            report_hits = report_hits.all()
-            report_hits = list(report_hits)
-            report_hits.sort(key=lambda x: match_name_score(name, x), reverse=True)
-            if match_name_score(name, report_hits[0]) == 1:
-                report_hits_list = [
-                    x.pk for x in report_hits if match_name_score(name, x) == 1
-                ]
-            else:
-                report_hits_list = [
-                    x.pk for x in report_hits if match_name_score(name, x) > 0
                 ]
 
         return Hit(
@@ -471,6 +496,7 @@ def get_hit_best_reference(hit: Hit) -> Optional[RawReference]:
     hit_references = RawReference.objects.filter(
         id__in=hit.raw_reference_id_list
     ).exclude(accid="-")
+
     hit_references = [(x, determine_raw_ref_index(x)) for x in hit_references]
     hit_references.sort(key=lambda x: x[1])
 
@@ -633,8 +659,9 @@ def determine_bamfile(ref: RawReference, samples_list: List[SampleWrapper] = [])
         sample__in=[sample.sample for sample in samples_list],
     ).order_by("-coverage")
     bamfile = ""
-
-    print(f"Found {reports.count()} reports for {ref.accid} in {sample.name}")
+    print("######")
+    print("Reference accid:", ref.accid, ref.description)
+    print(f"Found {reports.count()} reports for {ref.taxid} in {sample.name}")
     print([f.mapped_reads for f in reports])
 
     if reports.exists():
@@ -701,14 +728,18 @@ def df_report_analysis(analysis_df_filename, project_id: int):
 
     for ix, row in df.iterrows():
         sample_name = str(row["Sample_ID"])
+        if sample_name == "VG220770":
+            print("#############################################################3")
         hitname = str(row["Reporting Name"])
         org_class = str(row["Class"])
         curator = SampleCurator(project_id, sample_name)
         curator.set_collection(sample_name)
         hit_factory = HitFactory(project_id, curator.collection)
-
+        print("Sample:", sample_name, "Hit:", hitname, "Class:", org_class)
         expected_hit = hit_factory.hit_by_name(hitname)
+        print(expected_hit.name, expected_hit.taxid, expected_hit.raw_reference_id_list)
         best_mapping = get_hit_best_reference(expected_hit)
+        print("Best mapping:", best_mapping)
         mapped = 0
         run_pk = -1
         sample = None

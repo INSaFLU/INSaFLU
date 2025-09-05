@@ -131,6 +131,24 @@ class Operation_Temp_Files:
             f.write("\n")
             f.write("touch " + self.flag)
 
+    def write_conda_script(self, cmd: str, conda_env: str = ""):
+        """
+        Write conda bash script.
+        """
+
+        with open(self.script, "w") as f:
+            f.write("#!/bin/bash")
+            f.write("\n")
+            if conda_env:
+                f.write(f'eval "$(/software/miniconda2/bin/conda shell.bash hook)"')
+                f.write("\n")
+                f.write(f"conda activate {conda_env}")
+                f.write("\n")
+            f.write("\n")
+            f.write(cmd)
+            f.write("\n")
+            f.write("touch " + self.flag)
+
     def run_bash_script(self):
         """
         Run bash script.
@@ -289,7 +307,7 @@ class RunCMD:
         return f"{self.bin}{cmd}"
 
     def python_cmd_string(self, cmd: str):
-        return f"python {self.bin}{cmd}"
+        return f"python {cmd}"
 
     def java_cmd_string(self, cmd: str):
         java_bin = os.path.join(
@@ -330,7 +348,6 @@ class RunCMD:
             cmd = " ".join(cmd)
 
         self.logger.info(f"running: {self.bin}{cmd}")
-        print(f"running: {self.bin}{cmd}")
 
         cmd_string = self.bash_software_cmd_string(cmd)
         out, err, exec_time = self.system_deploy(cmd_string)
@@ -394,7 +411,7 @@ class RunCMD:
 
         return out
 
-    def run_script_software(self, cmd):
+    def run_script_software(self, cmd, conda_env: str = ""):
         """
         Run bash script.
         """
@@ -406,31 +423,8 @@ class RunCMD:
 
         with operation_files as op_files:
             cmd_string = self.bash_software_cmd_string(cmd)
-            print(f"running command: {cmd_string}")
 
-            op_files.write_bash_script(cmd_string)
-
-            out, err, exec_time = op_files.run_bash_script()
-
-            if self.flag_error(err):
-                self.logger.error(f"errror in command: {self.bin}{cmd}")
-
-        self.output_disposal(cmd, err, out, exec_time, "")
-
-    def run_script(self, cmd):
-        """
-        Run bash script.
-        """
-
-        if isinstance(cmd, list):
-            cmd = " ".join(cmd)
-
-        operation_files = Operation_Temp_Files(self.logdir)
-
-        with operation_files as op_files:
-            cmd_string = self.bash_cmd_string(cmd)
-
-            op_files.write_bash_script(cmd_string)
+            op_files.write_conda_script(cmd_string, conda_env)
 
             out, err, exec_time = op_files.run_bash_script()
 
@@ -439,7 +433,7 @@ class RunCMD:
 
         self.output_disposal(cmd, err, out, exec_time, self.bin)
 
-    def run_script_return(self, cmd):
+    def run_script(self, cmd, conda_env: str = ""):
         """
         Run bash script.
         """
@@ -452,7 +446,29 @@ class RunCMD:
         with operation_files as op_files:
             cmd_string = self.bash_cmd_string(cmd)
 
-            op_files.write_bash_script(cmd_string)
+            op_files.write_conda_script(cmd_string, conda_env)
+
+            out, err, exec_time = op_files.run_bash_script()
+
+            if self.flag_error(err):
+                self.logger.error(f"errror in command: {self.bin}{cmd}")
+
+        self.output_disposal(cmd, err, out, exec_time, self.bin)
+
+    def run_script_return(self, cmd, conda_env: str = ""):
+        """
+        Run bash script.
+        """
+
+        if isinstance(cmd, list):
+            cmd = " ".join(cmd)
+
+        operation_files = Operation_Temp_Files(self.logdir)
+
+        with operation_files as op_files:
+            cmd_string = self.bash_cmd_string(cmd)
+
+            op_files.write_conda_script(cmd_string, conda_env)
 
             out, err, exec_time = op_files.run_bash_script()
 
@@ -1184,7 +1200,7 @@ class SoftwareUnit:
             return False
 
     @staticmethod
-    def find_qc_reads(ps_pk: int) -> Tuple[str, str]:
+    def find_qc_reads(ps_pk: int) -> Tuple[str, str, str]:
         """
         Find reads
         """
@@ -1192,7 +1208,7 @@ class SoftwareUnit:
         try:
             parameter_set = ParameterSet.objects.get(pk=ps_pk)
         except ParameterSet.DoesNotExist:
-            return ("", "")
+            return ("", "", "")
 
         runs = RunMain.objects.filter(
             parameter_set__leaf__index=parameter_set.leaf.index,
@@ -1210,12 +1226,12 @@ class SoftwareUnit:
                     read_register.qc_reads_r2 if read_register.qc_reads_r2 else ""
                 )
 
-                return (processed_reads_r1, processed_reads_r2)
+                return (processed_reads_r1, processed_reads_r2, str(run_main.pk))
 
             except RunReadsRegister.DoesNotExist:
                 continue
 
-        return ("", "")
+        return ("", "", "")
 
     @staticmethod
     def find_enriched_reads(ps_pk: int) -> Tuple[str, str]:
@@ -1348,20 +1364,6 @@ class SoftwareUnit:
 
         return 0
 
-    def check_processed_exist(self) -> bool:
-        """
-        Check if processed reads exist
-        """
-
-        for leaf_pk in self.leaves:
-
-            processed_r1, processed_r2 = self.find_qc_reads(leaf_pk)
-
-            if self.check_return_reads(processed_r1, processed_r2):
-                return True
-
-        return False
-
     def check_enriched_exist(self) -> bool:
         """
         Check if enriched reads exist
@@ -1418,7 +1420,7 @@ class SoftwareUnit:
         """
 
         for leaf_pk in self.leaves:
-            processed_r1, processed_r2 = self.find_qc_reads(leaf_pk)
+            processed_r1, processed_r2, _ = self.find_qc_reads(leaf_pk)
             if self.check_return_reads(processed_r1, processed_r2):
                 return (processed_r1, processed_r2)
 
@@ -1544,9 +1546,7 @@ class SoftwareDetail(SoftwareUnit):
 
 
 class SoftwareDetailCompound:
-    def __init__(
-        self, modules: List[str], args_df: pd.DataFrame, config: dict, prefix: str
-    ):
+    def __init__(self, args_df: pd.DataFrame, config: dict, prefix: str):
         """
 
         Args:
@@ -1561,8 +1561,13 @@ class SoftwareDetailCompound:
         self.prefix = prefix
 
         self.software_list: List[SoftwareDetail] = []
+
+    def register_modules(self, modules: List[str]):
+        """
+        Register modules to software list.
+        """
         for module in modules:
-            if module in args_df.module.unique():
+            if module in self.args_df.module.unique():
                 self.module = module
                 self.fill_software_list()
 
@@ -1577,6 +1582,80 @@ class SoftwareDetailCompound:
 
     def check_exists(self):
         return any([x.check_exists() for x in self.software_list])
+
+    @property
+    def leaves(self):
+        leaves = []
+        for software in self.software_list:
+            leaves.extend(software.leaves)
+        return list(set(leaves))
+
+    def retrieve_qc_reads(self) -> Tuple[str, str, str]:
+        """
+        Retrieve processed reads
+        """
+
+        for leaf_pk in self.leaves:
+            processed_r1, processed_r2, run_pk = SoftwareUnit.find_qc_reads(leaf_pk)
+            if SoftwareUnit.check_return_reads(processed_r1, processed_r2):
+                return (processed_r1, processed_r2, str(run_pk))
+
+        return ("", "", "")
+
+    def check_processed_exist(self) -> bool:
+        """
+        Check if processed reads exist
+        """
+
+        for leaf_pk in self.leaves:
+
+            processed_r1, processed_r2, _ = SoftwareUnit.find_qc_reads(leaf_pk)
+
+            if SoftwareUnit.check_return_reads(processed_r1, processed_r2):
+                return True
+
+        return False
+
+
+class SoftwarePreprocess(SoftwareDetail):
+
+    def __init__(self, module, args_df: pd.DataFrame, config: dict, prefix: str):
+        super().__init__(module, args_df, config, prefix)
+
+        self.reads_before_processing = 0
+        self.reads_after_processing = 0
+
+    def set_reads_before_processing(self, reads_before_processing: int):
+        self.reads_before_processing = reads_before_processing
+
+    def set_reads_after_processing(self, reads_after_processing: int):
+        self.reads_after_processing = reads_after_processing
+
+
+class SoftwareDetailCompoundPreprocess(SoftwareDetailCompound):
+
+    def __init__(self, args_df: pd.DataFrame, config: dict, prefix: str):
+        super().__init__(args_df, config, prefix)
+        self.software_list: List[SoftwarePreprocess] = []
+
+        self.reads_before_processing = 0
+        self.reads_after_processing = 0
+
+    def set_reads_before_processing(self, reads_before_processing: int):
+        self.reads_before_processing = reads_before_processing
+
+    def set_reads_after_processing(self, reads_after_processing: int):
+        self.reads_after_processing = reads_after_processing
+
+    def fill_software_list(self):
+        module_df = self.args_df[self.args_df.module == self.module]
+
+        for software_name, software_df in module_df.groupby("software"):
+            software = SoftwarePreprocess(
+                self.module, software_df, self.config, self.prefix
+            )
+
+            self.software_list.append(software)
 
 
 class SoftwareRemap:

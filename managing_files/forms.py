@@ -824,9 +824,7 @@ class PrimerForm(forms.ModelForm):
 
 
 class RelatedFieldWidgetCanAdd(widgets.Select):
-
     def __init__(self, related_model, related_url=None, *args, **kw):
-
         super(RelatedFieldWidgetCanAdd, self).__init__(*args, **kw)
 
         if not related_url:
@@ -905,9 +903,9 @@ class SampleForm(forms.ModelForm):
         self.fields["data_set"].queryset = DataSet.objects.filter(
             owner__id=self.request.user.id
         )
-        self.fields["data_set"].empty_label = (
-            None  ## to remove empty label in combo box
-        )
+        self.fields[
+            "data_set"
+        ].empty_label = None  ## to remove empty label in combo box
         self.fields["vaccine_status"].queryset = VaccineStatus.objects.filter(
             owner__id=self.request.user.id
         )
@@ -1020,12 +1018,12 @@ class SampleForm(forms.ModelForm):
 
         ### set formats of date
         self.fields["date_of_onset"].input_formats = settings.DATETIME_INPUT_FORMATS
-        self.fields["date_of_collection"].input_formats = (
-            settings.DATETIME_INPUT_FORMATS
-        )
-        self.fields["date_of_receipt_lab"].input_formats = (
-            settings.DATETIME_INPUT_FORMATS
-        )
+        self.fields[
+            "date_of_collection"
+        ].input_formats = settings.DATETIME_INPUT_FORMATS
+        self.fields[
+            "date_of_receipt_lab"
+        ].input_formats = settings.DATETIME_INPUT_FORMATS
 
         self.helper = FormHelper()
         self.helper.form_method = "POST"
@@ -1683,14 +1681,6 @@ class SamplesUploadMultipleFastqForm(forms.ModelForm):
         else:
             utils.link_file(path_name.file.name, temp_file_name.name, False)
 
-        try:
-            if not utils.is_gzip(path_name.name):
-                raise Exception("File need to have suffix '.fastq.gz'/'.fq.gz'")
-            utils.is_fastq_gz(temp_file_name.name)
-        except Exception as e:  ## (e.errno, e.strerror)
-            os.unlink(temp_file_name.name)
-            self.add_error("path_name", e.args[0])
-            return cleaned_data
         try:
             if not utils.is_gzip(path_name.name):
                 raise Exception("File need to have suffix '.fastq.gz'/'.fq.gz'")

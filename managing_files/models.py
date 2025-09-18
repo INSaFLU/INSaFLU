@@ -1991,6 +1991,9 @@ class ProcessControler(models.Model):
     def get_name_collect_all_projects_user(self, user):
         return "{}{}".format(ProcessControler.PREFIX_COLLECT_ALL_PROJECTS_USER, user.pk)
 
+    def get_name_televir_reference_update(self, user_pk):
+        return "televir_reference_update_{}".format(user_pk)
+
     def get_name_televir_project(self, project_pk):
         return "{}{}".format(ProcessControler.PREFIX_TELEVIR_PROJECT, project_pk)
 

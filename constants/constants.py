@@ -64,6 +64,8 @@ class Televir_Metadata_Constants:
             "bcftools": "remap/remap",
             "samtools": "remap/remap",
             "bwa": "remap/remap",
+            "bwa-filter": "remap/remap",
+            "bwa-mem": "remap/remap",
             "bowtie2": "remap/remap",
             "bowtie2_remap": "remap/remap",
             "minimap2": "hostDepletion/hostdep_env",
@@ -71,7 +73,9 @@ class Televir_Metadata_Constants:
             "minimap2_illu": "hostDepletion/hostdep_env",
             "minimap2_remap": "hostDepletion/hostdep_env",
             "minimap2_ont": "hostDepletion/hostdep_env",
-            "snippy_pi": "remap/remap",  # config("DIR_SOFTWARE") + "/snippy",
+            "metaphlan": "Metaphlan/metaphlan",
+            "voyager": "classification",
+            "snippy_pi": config("DIR_SOFTWARE") + "/snippy",
             "prinseq++": "preprocess/prinseq",
             "prinseq": "preprocess/prinseq",
             "collapsibleTree": "remap/Renv",
@@ -548,6 +552,7 @@ class FileExtensions(object):
     FILE_FA = ".fa"
     FILE_FAI = ".fai"
     FILE_CONSENSUS_FASTA = ".consensus.fasta"
+    FILE_BASH_SCRIPT = ".sh"
     FILE_TREE = ".tree"
     FILE_NWK = ".nwk"
     FILE_GZ = ".gz"

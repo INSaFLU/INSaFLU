@@ -454,6 +454,30 @@ class DefaultSoftware(object):
             user,
         )
 
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_BWA_FILTER_name,
+            self.default_parameters.get_bwa_filter_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_extra_qc,
+            ),
+            user,
+        )
+
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_BWA_FILTER_name,
+            self.default_parameters.get_bwa_filter_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_extra_qc,
+            ),
+            user,
+        )
+
         self.test_default_db(
             SoftwareNames.SOFTWARE_televir_report_layout_name,
             self.default_parameters.get_televir_report_defaults(
@@ -759,6 +783,28 @@ class DefaultSoftware(object):
             user,
         )
 
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_BWA_name,
+            self.default_parameters.get_bwa_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_request_mapping,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_BWA_name,
+            self.default_parameters.get_bwa_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_remapping,
+            ),
+            user,
+        )
+
         if PICS.TEST_SOFTWARE:
             self.test_defaults_test_televir(user)
         if PICS.METAGENOMICS:
@@ -880,10 +926,22 @@ class DefaultSoftware(object):
             vect_parameters[0].software.type_of_use
             == Software.TYPE_OF_USE_televir_global
         ):
+            
+            if vect_parameters[0].software.name == SoftwareNames.SOFTWARE_BWA_FILTER_name:
+
+                return self.televir_utiltity.check_software_db_available(
+                    software_name = software_name
+                )
+
             if (
                 vect_parameters[0].software.pipeline_step.name
                 in self.televir_utiltity.steps_db_dependant
             ):
+                if (
+                    vect_parameters[0].software.name
+                    == SoftwareNames.SOFTWARE_METAPHLAN_NAME
+                ):
+                    return True
                 if not self.televir_utiltity.check_software_db_available(
                     software_name=software_name,
                 ):
@@ -898,6 +956,9 @@ class DefaultSoftware(object):
         type_of_use = Software.TYPE_OF_USE_global
 
         if not self.assess_db_dependency_met(vect_parameters, software_name):
+            return
+        
+        if vect_parameters == None:
             return
 
         ## lock because more than one process can duplicate software names
@@ -974,7 +1035,7 @@ class DefaultSoftware(object):
 
         try:
 
-            software_queried = Software.objects.get(
+            _ = Software.objects.get(
                 name=software_name,
                 owner=user,
                 type_of_use=vect_parameters[0].software.type_of_use,
@@ -1204,6 +1265,20 @@ class DefaultSoftware(object):
         )
         return "" if result is None else result
 
+    def get_bwa_filter_parameters(self, user, technology_name, pipeline_step):
+        result = self.default_parameters.get_parameters_parsed(
+            SoftwareNames.SOFTWARE_BWA_FILTER_name,
+            user,
+            Software.TYPE_OF_USE_televir_global,
+            None,
+            None,
+            None,
+            technology_name,
+            pipeline_step=pipeline_step,
+            software_name_extended=SoftwareNames.SOFTWARE_BWA_FILTER_name_extended,
+        )
+        return "" if result is None else result
+
     def get_bamutil_parameters(self, user, technology_name):
         result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_BAMUTIL_name,
@@ -1288,6 +1363,30 @@ class DefaultSoftware(object):
             None,
             technology_name,
             pipeline_step=pipeline_step,
+        )
+        return "" if result is None else result
+
+    def get_metaphlan_parameters(self, user, technology_name):
+        result = self.default_parameters.get_parameters_parsed(
+            SoftwareNames.SOFTWARE_METAPHLAN_NAME,
+            user,
+            Software.TYPE_OF_USE_televir_global,
+            None,
+            None,
+            None,
+            technology_name,
+        )
+        return "" if result is None else result
+
+    def get_voyager_parameters(self, user, technology_name):
+        result = self.default_parameters.get_parameters_parsed(
+            SoftwareNames.SOFTWARE_VOYAGER_name,
+            user,
+            Software.TYPE_OF_USE_televir_global,
+            None,
+            None,
+            None,
+            technology_name,
         )
         return "" if result is None else result
 
@@ -1730,6 +1829,9 @@ class DefaultSoftware(object):
             )
             return self.get_prinseq_parameters(user, technology_name)
 
+        if software_name == SoftwareNames.SOFTWARE_BWA_FILTER_name:
+            return self.get_bwa_filter_parameters(user, technology_name, pipeline_step)
+
         if software_name == SoftwareNames.SOFTWARE_BAMUTIL_name:
 
             return self.get_bamutil_parameters(user, technology_name)
@@ -1757,6 +1859,12 @@ class DefaultSoftware(object):
             return self.get_centrifuge_parameters(
                 user, technology_name, pipeline_step=pipeline_step
             )
+
+        if software_name == SoftwareNames.SOFTWARE_METAPHLAN_NAME:
+            return self.get_metaphlan_parameters(user, technology_name)
+
+        if software_name == SoftwareNames.SOFTWARE_VOYAGER_name:
+            return self.get_voyager_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name:
 

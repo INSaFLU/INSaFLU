@@ -306,10 +306,15 @@ def set_default_parameters(request):
 
                     ## set a new default
                     data["default"] = default_software.get_parameters(
-                        software.name, request.user, software.technology.name
+                        software.name,
+                        request.user,
+                        software.technology.name,
+                        pipeline_step=software.pipeline_step.name,
                     )
+                    ## set a new default
                     b_change = default_software.is_change_values_for_software(
-                        software, request.user.username
+                        software,
+                        request.user.username,
                     )
 
                 ### clean values in mask site consensus

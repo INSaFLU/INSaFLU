@@ -25,12 +25,11 @@ from pathogen_identification.models import (
     RunMain,
     RunReadsRegister,
     RunRemapMain,
-    SampleQC,
-    TelevirRunQC,
 )
 from pathogen_identification.modules.object_classes import Sample_runClass
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunEngine_class
+from pathogen_identification.utilities.update_DBs import Update_Run_QC, get_run_parents
 
 
 ####################################################################################################################
@@ -60,39 +59,6 @@ def Update_project(project_directory_path, user: str = "admin"):
             created_by=user,
         )
         project.save()
-
-
-def Update_Sample(sample_class: Sample_runClass):
-    """
-    Update Sample class.
-
-    :param sample_class:
-    :return: None
-    """
-
-    user = User.objects.get(username=sample_class.user_name)
-
-    project = Projects.objects.get(
-        name=sample_class.project_name, owner=user, is_deleted=False
-    )
-
-    try:
-        PIProject_Sample.objects.get(
-            name=sample_class.sample_name,
-            project=project,
-        )
-    except PIProject_Sample.DoesNotExist:
-        Update_sample(sample_class)
-
-    sample = PIProject_Sample.objects.get(
-        name=sample_class.sample_name,
-        project=project,
-    )
-
-    try:
-        SampleQC.objects.get(sample=sample)
-    except SampleQC.DoesNotExist:
-        Update_sample_qc(sample_class)
 
 
 def Update_sample(sample_class: Sample_runClass):
@@ -130,49 +96,6 @@ def Update_sample(sample_class: Sample_runClass):
             report="report",
         )
         sample.save()
-
-
-def Update_sample_qc(sample_class: Sample_runClass):
-    """update sample_class.qc_data.
-    :param sample_class:
-    :return: None
-    """
-
-    user = User.objects.get(username=sample_class.user_name)
-    project = Projects.objects.get(
-        name=sample_class.project_name, owner=user, is_deleted=False
-    )
-
-    sample = PIProject_Sample.objects.get(
-        project=project, name=sample_class.sample_name
-    )
-
-    percent_passed = (
-        int(sample_class.reads_after_processing)
-        / int(sample_class.reads_before_processing)
-    ) * 100
-
-    # input_report = open(sample_class.input_fastqc_report, "r")
-    # processed_report = open(sample_class.processed_fastqc_report, "r")
-
-    try:
-        sampleqc = SampleQC(
-            sample=sample,
-            software=sample_class.qc_soft,
-            encoding=sample_class.technology,
-            input_reads=f"{int(sample_class.reads_before_processing):,}",
-            processed_reads=f"{int(sample_class.reads_after_processing):,}",
-            percent_passed=round(percent_passed, 2),
-            sequence_length=sample_class.qcdata["processed"].loc["Sequence length"][
-                "value"
-            ],
-            percent_gc=sample_class.qcdata["processed"].loc["%GC"]["value"],
-        )
-
-        sampleqc.save()
-
-    except:
-        print(f"failed to input sample {sample_class.sample_name}")
 
 
 def Update_QC_report(sample_class: Sample_runClass, parameter_set: ParameterSet):
@@ -215,38 +138,6 @@ def Update_QC_report(sample_class: Sample_runClass, parameter_set: ParameterSet)
 
 
 @transaction.atomic
-def Update_Sample_Runs(run_class: RunEngine_class, parameter_set: ParameterSet):
-    """get run data
-    Update ALL run TABLES:
-    - RunMain,
-    - RunDetail,
-    - RunAssembly,
-    - ReadClassification,
-    - ContigClassification,
-    - RunRemapMain,
-    - ReferenceMap_Main
-    - ReferenceContigs
-    - FinalReport,
-
-    :param sample_class:
-    :return: run_data
-    """
-
-    try:
-        with transaction.atomic():
-            Update_RunMain(run_class, parameter_set)
-            Update_Run_Detail(run_class, parameter_set)
-            Update_Sample_Runs_DB(run_class, parameter_set)
-            Update_RefMap_DB(run_class, parameter_set)
-
-        return True
-
-    except IntegrityError as e:
-        print(f"failed to update sample {run_class.sample_name} {e}")
-        return False
-
-
-@transaction.atomic
 def Update_RunMain_Initial(run_class: RunEngine_class, parameter_set: ParameterSet):
     """get run data
     Update ALL run TABLES:
@@ -261,7 +152,8 @@ def Update_RunMain_Initial(run_class: RunEngine_class, parameter_set: ParameterS
 
         return True
 
-    except IntegrityError as e:
+    except Exception as e:
+        print(e)
         print(f"failed to update sample {run_class.sample_name}")
         return False
 
@@ -349,8 +241,10 @@ def Update_Remap(run_class: RunEngine_class, parameter_set: ParameterSet):
     """
 
     sample, runmain, _ = get_run_parents(run_class, parameter_set)
+
     try:
         with transaction.atomic():
+            Update_RemapMain(run_class, runmain, sample, parameter_set)
             Update_FinalReport(run_class, runmain, sample)
             Update_Targets(run_class, runmain)
             Update_RefMap_DB(run_class, parameter_set)
@@ -522,45 +416,19 @@ def Sample_update_combinations(run_class: Type[RunEngine_class]):
     sample.save()
 
 
-def get_run_parents(run_class: RunEngine_class, parameter_set: ParameterSet):
-    """get run parents for run_class. Update run_class.run_data."""
-    user = User.objects.get(username=run_class.username)
-    project = Projects.objects.get(
-        name=run_class.project_name, owner=user, is_deleted=False
-    )
-
-    # sample = PIProject_Sample.objects.get(
-    #    project=project,
-    #    name=run_class.sample.sample_name,
-    # )
-    sample = run_class.sample_registered
-
-    try:
-        runmain = RunMain.objects.get(
-            project=project,
-            sample=sample,
-            parameter_set=parameter_set,
-        )
-
-    except RunMain.DoesNotExist:
-        return None, None, None
-
-    return sample, runmain, project
-
-
 def get_run_parents_and_reads(run_class: RunEngine_class, parameter_set: ParameterSet):
 
-    sample, RunMain, project = get_run_parents(run_class, parameter_set)
+    sample, runmain, project = get_run_parents(run_class, parameter_set)
 
-    if sample is None or RunMain is None:
+    if sample is None or runmain is None:
         return None, None, None, None
 
     try:
-        run_read_register = RunReadsRegister.objects.get(run=RunMain)
+        run_read_register = RunReadsRegister.objects.get(run=runmain)
     except RunReadsRegister.DoesNotExist:
-        return sample, RunMain, project, None
+        return sample, runmain, project, None
 
-    return sample, RunMain, project, run_read_register
+    return sample, runmain, project, run_read_register
 
 
 def Update_RunMain_noCheck(
@@ -574,9 +442,6 @@ def Update_RunMain_noCheck(
     sample, runmain, project, run_read_register = get_run_parents_and_reads(
         run_class, parameter_set
     )
-
-    print("RUNMAIN: ", runmain.pk)
-    print("PARAMETER_SET: ", parameter_set.pk)
 
     if sample is None or runmain is None:
         return
@@ -817,42 +682,6 @@ def Update_Run_Detail_noCheck(run_class: RunEngine_class, parameter_set: Paramet
         run_detail.save()
 
 
-def Update_Run_QC(run_class: RunEngine_class, parameter_set: ParameterSet):
-    sample, runmain, _ = get_run_parents(run_class, parameter_set)
-
-    if sample is None or runmain is None:
-        return
-
-    run_qc_exists = TelevirRunQC.objects.filter(run=runmain).exists()
-
-    if run_qc_exists:
-
-        run_qc = TelevirRunQC.objects.get(run=runmain)
-        run_qc.run = runmain
-        run_qc.performed = run_class.qc_report.performed
-        run_qc.method = run_class.qc_report.method
-        run_qc.args = run_class.qc_report.args
-        run_qc.input_reads = f"{run_class.qc_report.input_reads:,}"
-        run_qc.output_reads = f"{run_class.qc_report.output_reads:,}"
-        run_qc.output_reads_percent = str(
-            run_class.qc_report.output_reads_percent * 100
-        )
-        run_qc.save()
-
-    else:
-        run_qc = TelevirRunQC(
-            run=runmain,
-            performed=run_class.qc_report.performed,
-            method=run_class.qc_report.method,
-            args=run_class.qc_report.args,
-            input_reads=f"{run_class.qc_report.input_reads:,}",
-            output_reads=f"{run_class.qc_report.output_reads:,}",
-            output_reads_percent=str(run_class.qc_report.output_reads_percent * 100),
-        )
-
-        run_qc.save()
-
-
 def Update_Run_Assembly(run_class: RunEngine_class, parameter_set: ParameterSet):
     """
     Update ALL run TABLES for one run_class.:
@@ -997,33 +826,6 @@ def Update_Run_Classification(run_class: RunEngine_class, parameter_set: Paramet
         )
         contig_classification.save()
 
-    try:
-        remap_main = RunRemapMain.objects.get(run=runmain, sample=sample)
-        remap_main.merged_log = run_class.merged_classification_summary
-        remap_main.remap_plan = run_class.remap_plan_path
-        remap_main.performed = run_class.remap_main.performed
-        remap_main.method = run_class.remap_main.method
-        remap_main.found_total = run_class.remap_main.found_total
-        remap_main.coverage_maximum = run_class.remap_main.coverage_max
-        remap_main.coverage_minimum = run_class.remap_main.coverage_min
-        remap_main.success = run_class.remap_main.success
-        remap_main.save()
-
-    except RunRemapMain.DoesNotExist:
-        remap_main = RunRemapMain(
-            run=runmain,
-            sample=sample,
-            merged_log=run_class.merged_classification_summary,
-            remap_plan=run_class.remap_plan_path,
-            performed=run_class.remap_main.performed,
-            method=run_class.remap_main.method,
-            found_total=run_class.remap_main.found_total,
-            coverage_maximum=run_class.remap_main.coverage_max,
-            coverage_minimum=run_class.remap_main.coverage_min,
-            success=run_class.remap_main.success,
-        )
-        remap_main.save()
-
     for ref, row in run_class.raw_targets.iterrows():
         if row.status:
             status = RawReference.STATUS_MAPPED
@@ -1050,177 +852,6 @@ def Update_Run_Classification(run_class: RunEngine_class, parameter_set: Paramet
             remap_target.save()
 
 
-def Update_Sample_Runs_DB(run_class: RunEngine_class, parameter_set: ParameterSet):
-    """
-    Update ALL run TABLES for one run_class.:
-    - RunMain,
-    - RunDetail,
-    - RunAssembly,
-    - ReadClassification,
-    - ContigClassification,
-    - RunRemapMain,
-    - ReferenceMap_Main
-    - ReferenceContigs
-    - FinalReport,
-
-    :param run_class:
-    :return: run_data
-    """
-    # Sample_update_combinations(run_class)
-
-    user = User.objects.get(username=run_class.username)
-    project = Projects.objects.get(
-        name=run_class.project_name, owner=user, is_deleted=False
-    )
-
-    # sample = PIProject_Sample.objects.get(
-    #    project=project,
-    #    name=run_class.sample.sample_name,
-    # )
-    sample = run_class.sample_registered
-
-    try:
-        runmain = RunMain.objects.get(
-            project=project,
-            suprun=run_class.suprun,
-            sample=sample,
-            name=run_class.prefix,
-            parameter_set=parameter_set,
-        )
-
-    except RunMain.DoesNotExist:
-        return
-
-    try:
-        run_detail = RunDetail.objects.get(run=runmain, sample=sample)
-    except RunDetail.DoesNotExist:
-        run_detail = RunDetail(
-            run=runmain,
-            sample=sample,
-            max_depth=run_class.run_detail_report.max_depth,  #
-            max_depthR=run_class.run_detail_report.max_depthR,  #
-            max_gaps=run_class.run_detail_report.max_gaps,  #
-            max_prop=run_class.run_detail_report.max_prop,  #
-            max_mapped=run_class.run_detail_report.max_mapped,  #
-            input=run_class.run_detail_report.input,  #
-            enriched_reads=run_class.run_detail_report.enriched_reads,  #
-            enriched_reads_percent=run_class.run_detail_report.enriched_reads_percent,  #
-            depleted_reads=run_class.run_detail_report.depleted_reads,  #
-            depleted_reads_percent=run_class.run_detail_report.depleted_reads_percent,  #
-            processed=run_class.run_detail_report.processed,  #
-            processed_percent=run_class.run_detail_report.processed_percent,  #
-            sift_preproc=run_class.run_detail_report.sift_preproc,  #
-            sift_remap=run_class.run_detail_report.sift_remap,  #
-            sift_removed_pprc=run_class.run_detail_report.sift_removed_pprc,
-            processing_final=run_class.run_detail_report.processing_final,  #
-            processing_final_percent=run_class.run_detail_report.processing_final_percent,  #
-            merged=run_class.run_detail_report.merged,  #
-            merged_number=run_class.run_detail_report.merged_number,  #
-            merged_files=run_class.run_detail_report.merged_files,  #
-        )
-
-        run_detail.save()
-
-    try:
-        run_assembly = RunAssembly.objects.get(run=runmain, sample=sample)
-    except RunAssembly.DoesNotExist:
-        run_assembly = RunAssembly(
-            run=runmain,
-            sample=sample,
-            performed=run_class.assembly_report.performed,
-            method=run_class.assembly_report.assembly_soft,
-            args=run_class.assembly_report.assembly_args,  #
-            contig_number=run_class.assembly_report.assembly_number,
-            contig_max=run_class.assembly_report.assembly_max,
-            contig_min=run_class.assembly_report.assembly_min,
-            contig_mean=run_class.assembly_report.assembly_mean,
-            contig_trim=run_class.assembly_report.assembly_trim,
-            assembly_contigs=run_class.assembly_drone.assembly_file_fasta_gz,
-        )
-        run_assembly.save()
-
-    try:
-        read_classification = ReadClassification.objects.get(run=runmain, sample=sample)
-    except ReadClassification.DoesNotExist:
-        read_classification = ReadClassification(
-            run=runmain,
-            sample=sample,
-            read_classification_report=run_class.read_classification_summary,
-            performed=run_class.read_classification_results.performed,
-            method=run_class.read_classification_results.method,
-            args=run_class.read_classification_results.args,
-            db=run_class.read_classification_results.db,
-            classification_number=run_class.read_classification_results.classification_number,
-            classification_minhit=run_class.read_classification_results.classification_minhit,
-            success=run_class.read_classification_results.success,
-        )
-        read_classification.save()
-
-    try:
-        contig_classification = ContigClassification.objects.get(
-            run=runmain, sample=sample
-        )
-
-    except ContigClassification.DoesNotExist:
-        contig_classification = ContigClassification(
-            run=runmain,
-            sample=sample,
-            contig_classification_report=run_class.assembly_classification_summary,
-            performed=run_class.contig_classification_results.performed,
-            method=run_class.contig_classification_results.method,
-            args=run_class.contig_classification_results.args,
-            db=run_class.contig_classification_results.db,
-            classification_number=run_class.contig_classification_results.classification_number,
-            classification_minhit=run_class.contig_classification_results.classification_minhit,
-            # success=run_class.contig_classification_results.success,
-        )
-        contig_classification.save()
-
-    try:
-        remap_main = RunRemapMain.objects.get(run=runmain, sample=sample)
-
-    except RunRemapMain.DoesNotExist:
-        remap_main = RunRemapMain(
-            run=runmain,
-            sample=sample,
-            merged_log=run_class.merged_classification_summary,
-            remap_plan=run_class.remap_plan_path,
-            performed=run_class.remap_main.performed,
-            method=run_class.remap_main.method,
-            found_total=run_class.remap_main.found_total,
-            coverage_maximum=run_class.remap_main.coverage_max,
-            coverage_minimum=run_class.remap_main.coverage_min,
-            success=run_class.remap_main.success,
-        )
-        remap_main.save()
-
-    for ref, row in run_class.raw_targets.iterrows():
-        if row.status:
-            status = RawReference.STATUS_MAPPED
-        else:
-            status = RawReference.STATUS_UNMAPPED
-        try:
-            remap_target = RawReference.objects.get(
-                run=runmain,
-                taxid=row.taxid,
-                accid=row.accid,
-            )
-        except RawReference.DoesNotExist:
-            remap_target = RawReference(
-                run=runmain,
-                taxid=row.taxid,
-                accid=row.accid,
-                status=status,
-                description=row.description,
-                counts=row.counts,
-                classification_source=row.source,
-            )
-
-            remap_target.save()
-
-    Update_FinalReport(run_class, runmain, sample)
-
-
 def translate_classification_success(success):
 
     if success == "reads":
@@ -1245,8 +876,6 @@ def summarize_description(description, max_length=100):
 def Update_Targets(run_class: RunEngine_class, runmain):
 
     for target in run_class.metadata_tool.remap_targets:
-        print(target.taxid, target.accid)
-
         try:
             raw_reference = RawReference.objects.get(
                 run=runmain,
@@ -1266,6 +895,42 @@ def Update_Targets(run_class: RunEngine_class, runmain):
             )
 
             raw_reference.save()
+
+
+@transaction.atomic
+def Update_RemapMain(
+    run_class: RunEngine_class,
+    runmain: RunMain,
+    sample: PIProject_Sample,
+    parameter_set: ParameterSet,
+):
+
+    try:
+        remap_main = RunRemapMain.objects.get(run=runmain, sample=sample)
+        remap_main.merged_log = run_class.merged_classification_summary
+        remap_main.remap_plan = run_class.remap_plan_path
+        remap_main.performed = run_class.remap_main.performed
+        remap_main.method = run_class.remap_main.method
+        remap_main.found_total = run_class.remap_main.found_total
+        remap_main.coverage_maximum = run_class.remap_main.coverage_max
+        remap_main.coverage_minimum = run_class.remap_main.coverage_min
+        remap_main.success = run_class.remap_main.success
+        remap_main.save()
+
+    except RunRemapMain.DoesNotExist:
+        remap_main = RunRemapMain(
+            run=runmain,
+            sample=sample,
+            merged_log=run_class.merged_classification_summary,
+            remap_plan=run_class.remap_plan_path,
+            performed=run_class.remap_main.performed,
+            method=run_class.remap_main.method,
+            found_total=run_class.remap_main.found_total,
+            coverage_maximum=run_class.remap_main.coverage_max,
+            coverage_minimum=run_class.remap_main.coverage_min,
+            success=run_class.remap_main.success,
+        )
+        remap_main.save()
 
 
 def Update_FinalReport(run_class: RunEngine_class, runmain, sample):
@@ -1366,8 +1031,6 @@ def Update_RefMap_DB(run_class: RunEngine_class, parameter_set: ParameterSet):
     :param run_class:
     :return: run_data
     """
-    print(f"updating refmap_dbs run {run_class.prefix}")
-
     sample, run, _ = get_run_parents(run_class, parameter_set)
 
     for ref_map in run_class.remap_manager.mapped_instances:

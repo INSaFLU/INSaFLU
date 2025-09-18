@@ -283,7 +283,8 @@ class Utility_Repository:
         check_list = ",".join(check_list)
 
         software_list = self.engine.execute(f"SELECT * FROM {table_name}")
-
+        for i in software_list:
+            print(i)
         find = self.engine.execute(
             f"SELECT * FROM {table_name} WHERE {field} IN ({check_list})"
         ).fetchall()

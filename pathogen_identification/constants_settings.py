@@ -84,6 +84,7 @@ class ConstantsSettings:
     ]
 
     PIPELINE_STEPS_GLOBAL = [
+        CS.PIPELINE_NAME_extra_qc,
         CS.PIPELINE_NAME_reporting,
     ]
 

@@ -1,7 +1,6 @@
-import http.client
 import logging
 import os
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import pandas as pd
 
@@ -96,6 +95,7 @@ class RunMetadataHandler:
 
         self.rclass: pd.DataFrame
         self.aclass: pd.DataFrame
+        self.taxid_accids: Dict[str, set] = {}
         self.raw_targets: pd.DataFrame = pd.DataFrame()
         self.merged_targets: pd.DataFrame = pd.DataFrame()
         self.remap_targets: List[Remap_Target] = []
@@ -154,6 +154,17 @@ class RunMetadataHandler:
                     continue
                 accid_simple = simplify_name(ref.accid)
 
+                if any(
+                    x.accid == ref.accid
+                    and x.file == refmap.reference_source_file.filepath
+                    for x in self.remap_targets
+                ):
+                    self.logger.info(
+                        "Skipping remap target, already in remap targets",
+                        ref.accid,
+                    )
+                    continue
+
                 self.remap_targets.append(
                     Remap_Target(
                         ref.accid,
@@ -169,37 +180,6 @@ class RunMetadataHandler:
                 )
 
                 accids_replete += 1
-
-    def merge_sample_references_classic_compound(
-        self, sample_registered: PIProject_Sample, max_taxids: int, max_remap: int = 15
-    ):
-        """
-        Generate Remap Targets from all existing references for a given sample."""
-        reference_utils = RawReferenceUtils(sample_registered)
-        _ = reference_utils.sample_reference_tables()
-        reference_table = reference_utils.merged_table
-
-        proxy_rclass = reference_utils.reference_table_renamed(
-            reference_table, {"read_counts": "counts"}
-        )
-
-        proxy_aclass = reference_utils.reference_table_renamed(
-            reference_table, {"contig_counts": "counts"}
-        )
-
-        self.rclass = proxy_rclass
-        self.aclass = proxy_aclass
-
-        self.merge_reports_clean(
-            max_taxids,
-        )
-
-        self.generate_targets_from_report(
-            reference_table,
-            max_taxids=max_taxids,
-            max_remap=max_remap,
-            skip_scrape=False,
-        )
 
     def merge_sample_references_ensemble(
         self,
@@ -218,7 +198,7 @@ class RunMetadataHandler:
             compound_refs = compound_refs[:max_taxids]
 
         remap_plan = []
-        remap_targets = []
+        # remap_targets = []
         remap_absent_taxid_list = []
 
         for ref in compound_refs:
@@ -237,6 +217,17 @@ class RunMetadataHandler:
                 reference_source_file__file__in=files_to_map
             )
 
+            ### check if alread in remap_targets
+            if any(
+                x.accid == ref.accid and x.file == ref_in_file[0].filepath
+                for x in self.remap_targets
+            ):
+                self.logger.info(
+                    "Skipping remap target, already in remap targets",
+                    ref.accid,
+                )
+                continue
+
             target = Remap_Target(
                 ref.accid,
                 simplify_name(ref.accid),
@@ -249,7 +240,7 @@ class RunMetadataHandler:
                 False,
             )
 
-            remap_targets.append(target)
+            self.remap_targets.append(target)
             remap_plan.append(
                 [
                     ref.taxid,
@@ -263,7 +254,7 @@ class RunMetadataHandler:
             remap_plan, columns=["taxid", "acc", "file", "description"]
         )
 
-        self.remap_targets.extend(remap_targets)
+        # self.remap_targets.extend(remap_targets)
         self.remap_absent_taxid_list.extend(remap_absent_taxid_list)
 
     def match_and_select_targets(
@@ -357,26 +348,6 @@ class RunMetadataHandler:
 
         return references_table
 
-    def generate_targets_from_report(
-        self,
-        df: pd.DataFrame,
-        max_taxids: Optional[int] = None,
-        max_remap: int = 15,
-        skip_scrape: bool = True,
-    ):
-        references_table = self.filter_references_table(df)
-
-        # references_table = references_table.drop_duplicates(subset=["taxid"])
-        references_table.rename(columns={"accid": "acc"}, inplace=True)
-
-        if max_taxids is not None:
-            references_table = references_table.iloc[:max_taxids, :]
-
-        self.generate_mapping_targets(
-            references_table,
-            max_remap=max_remap,
-        )
-
     @staticmethod
     def filter_taxids_not_in_db(df) -> pd.DataFrame:
 
@@ -397,6 +368,36 @@ class RunMetadataHandler:
         df.drop(columns=["has_refs"], inplace=True)
         return df
 
+    def register_taxid_accids(self, taxid: str, accids: List[str]):
+        """
+        Register taxid and accids in the taxid_accids dictionary.
+        """
+        if taxid not in self.taxid_accids:
+            self.taxid_accids[taxid] = set()
+
+        for accid in accids:
+            if accid is not None and accid != "-":
+                self.taxid_accids[taxid].add(accid)
+
+    def accid_register(self, df: pd.DataFrame):
+        """
+        Register accids in the taxid_accids dictionary.
+        """
+
+        for taxid, taxid_df in df.groupby("taxid"):
+            taxid = str(taxid)
+            if "accid_in_file" in taxid_df.columns:
+                accids = taxid_df.accid_in_file.unique().tolist()
+            elif "acc" in taxid_df.columns:
+                accids = taxid_df.acc.unique().tolist()
+            elif "accid" in taxid_df.columns:
+                accids = taxid_df.accid.unique().tolist()
+            else:
+                accids = None
+
+            if accids is not None:
+                self.register_taxid_accids(taxid, accids)
+
     def results_collect_metadata(
         self, df: pd.DataFrame, sift: bool = True
     ) -> pd.DataFrame:
@@ -414,6 +415,8 @@ class RunMetadataHandler:
         df = self.map_hit_report(df)
 
         df = self.filter_taxids_not_in_db(df)
+
+        self.accid_register(df)
 
         df = self.db_get_taxid_descriptions(df)
         # df = self.entrez_get_taxid_descriptions(df)
@@ -544,20 +547,14 @@ class RunMetadataHandler:
                 else:
                     counts_df = df.groupby(["acc"]).size().reset_index(name="counts")
 
-                ### if acc in format ACC:ACC; get first acc
-                counts_df["acc"] = counts_df["acc"].apply(lambda x: x.split(":")[0])
-
-                df = self.merge_check_column_types(
-                    counts_df,
-                    self.accession_to_taxid,
-                    column="acc",
-                    column_two="acc_in_file",
-                )
-
             if "taxid" not in df.columns:
-                raise ValueError(
-                    "No taxid, accid or protid in the dataframe, unable to retrieve description."
-                )
+                if "acc" in df.columns:
+                    df = self.db_get_taxid_from_accid(df)
+
+                else:
+                    raise ValueError(
+                        "No taxid, accid or protid in the dataframe, unable to retrieve description."
+                    )
 
         df = df[(df.taxid != "0") | (df.taxid != 0)]
 
@@ -586,6 +583,30 @@ class RunMetadataHandler:
 
         df["description"] = df["description"].fillna("NA")
         df["description"] = df["description"].astype(str)
+
+        return df
+
+    def db_get_taxid_from_accid(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Get taxid from accid.
+        """
+
+        def get_taxid(accid: str):
+            try:
+                return (
+                    ReferenceSource.objects.filter(
+                        accid__in=[accid, accid.split(".")[0]]
+                    )
+                    .first()
+                    .taxid.taxid
+                )
+            except:
+                return ""
+
+        df["taxid"] = df["acc"].apply(get_taxid)
+
+        df["taxid"] = df["taxid"].fillna("NA")
+        df["taxid"] = df["taxid"].astype(str)
 
         return df
 
@@ -786,10 +807,15 @@ class RunMetadataHandler:
         """
         Generate remap targets from a dataframe of targets."""
         remap_plan = []
-        remap_targets = []
+        # remap_targets = []
         remap_absent_taxid_list = []
 
-        for taxid in targets.taxid.unique():
+        for taxid, taxid_df in targets.groupby("taxid"):
+            taxid = str(taxid)
+            if taxid == "0" or taxid == "1":
+                self.logger.info("skipping taxid", taxid)
+                remap_absent_taxid_list.append(taxid)
+                continue
 
             refs_in_file = ReferenceSourceFileMap.objects.filter(
                 reference_source__taxid__taxid=taxid,
@@ -797,11 +823,37 @@ class RunMetadataHandler:
             ).distinct("reference_source__accid")
 
             if len(refs_in_file) == 0:
-                print("skipping taxid with no references", taxid)
+                self.logger.info("skipping taxid with no references", taxid)
                 remap_absent_taxid_list.append(taxid)
                 continue
 
             #
+
+            if taxid in self.taxid_accids:
+                self.logger.info("Filtering references for taxid", taxid)
+                self.logger.info(
+                    "Accids in file:",
+                    refs_in_file.values_list("reference_source__accid", flat=True),
+                )
+
+                refs_in_file_select = refs_in_file.filter(
+                    reference_source__accid__in=self.taxid_accids[taxid]
+                )
+                if refs_in_file_select.exists():
+                    selected_pks = refs_in_file_select.values_list("pk", flat=True)
+
+                    if (
+                        len(selected_pks) < max_remap
+                        and refs_in_file.count() > max_remap
+                    ):
+                        additional_refs = refs_in_file.exclude(pk__in=selected_pks)[
+                            : max_remap - len(refs_in_file_select)
+                        ]
+                        selected_pks = list(selected_pks) + list(
+                            additional_refs.values_list("pk", flat=True)
+                        )
+                    refs_in_file = refs_in_file.filter(pk__in=selected_pks)
+
             refs_in_file = refs_in_file[:max_remap]
 
             for ref_in_file_by_accid in refs_in_file:
@@ -816,6 +868,18 @@ class RunMetadataHandler:
                     reference_source_file__file__in=files_to_map
                 ).first()
 
+                ### check if alread in remap_targets
+                if any(
+                    x.accid == ref_in_file.reference_source.accid
+                    and x.file == ref_in_file.reference_source_file.filepath
+                    for x in self.remap_targets
+                ):
+                    self.logger.info(
+                        "Skipping remap target, already in remap targets",
+                        ref_in_file.reference_source.accid,
+                    )
+                    continue
+
                 target = Remap_Target(
                     ref_in_file.reference_source.accid,
                     simplify_name(ref_in_file.reference_source.accid),
@@ -828,7 +892,7 @@ class RunMetadataHandler:
                     determine_taxid_in_file(taxid, self.aclass),
                 )
 
-                remap_targets.append(target)
+                self.remap_targets.append(target)
                 remap_plan.append(
                     [
                         ref_in_file.reference_source.taxid.taxid,
@@ -842,5 +906,5 @@ class RunMetadataHandler:
             remap_plan, columns=["taxid", "acc", "file", "description"]
         )
 
-        self.remap_targets.extend(remap_targets)
+        # self.remap_targets.extend(remap_targets)
         self.remap_absent_taxid_list.extend(remap_absent_taxid_list)

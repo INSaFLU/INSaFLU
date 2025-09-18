@@ -22,124 +22,182 @@
 
 {% endblock %}
 
-<div class="metagenomics-table-container">
-    {% block table %}
-    <div class="table-responsive">
+<style>
+    .table tbody tr {
+        margin-bottom: 15px; /* Add space between rows */
+        border-radius: 10px; /* Make rows rounder */
+        border: 1px solid #ddd; /* Add a border to rows */
+        box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
+        overflow: hidden; /* Ensure content stays within rounded corners */
+        background-color: #fff;
+    }
+    
+    .table tbody tr td {
+        padding: 15px; /* Add padding inside cells */
+    }
+    
+    .table tbody tr:hover {
+        background-color: #f9f9f9; /* Highlight row on hover */
+    }
+    .samples-management-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 15px; /* Add spacing below the header */
+    }
 
-        <h4 class="table-title"> Metagenomics Management </h4>
-        <p class="table-description"> 
-            <i class="fa fa-flask"></i> 
-            Run Metagenomics workflows, and validation by mapping.
-            <i class="fa fa-cog"></i>
-            Change settings (workflows, validation and reporting). 
-            <i class="fa fa-database">‌</i>
-            Add and manage targets for validation.
-            <i class="fa fa-crosshairs fa-lg" aria-hidden="true">‌</i> 
-            Focus on selected targets for validation (multi-sample and INSaFLU connection). 
+    .samples-management-header h4 {
+        margin: 0; /* Remove default margin */
+    }
+
+    .samples-management-header p {
+        margin: 0; /* Remove default margin */
+        font-size: 14px; /* Optional: Adjust font size */
+        color: #666; /* Optional: Adjust text color */
+    }
+
+    .samples-management-header form {
+        display: flex;
+        align-items: center;
+        gap: 10px; /* Add spacing between input and button */
+    }
+</style>
+
+<div class="project-management-container">
+    <h4 class="table-title">Project Management</h4>
+    <p class="table-description">
+        <i class="fa fa-cogs"></i> Manage project-level settings and actions.
+    </p>
+    <div class="btn-group">
+        {% if not demo %}
+        {% if metagenomics %}
+        <!-- Run Dropdown -->
+        <div class="btn-group">
+            <button type="button" class="btn btn-primary dark dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="fa fa-flask"></i>
+            <span class="hidden-phone"> Run </span>
+            </button>
+            <div class="dropdown-menu pull-right">
+            <a href="#" id="deploypi_btn" class="dropdown-item" style="text-align:left;" deploy-url="{% url deploy_url %}" user-id="{{ user_id }}" project-id="{{ project_index }}">
+                Classic Workflows
+            </a>
+            <a href="#" id="deploypi_mapping_btn" class="dropdown-item" style="text-align:left;" deploy-url="{% url 'deploy_Project_PIMapping' %}">
+                Map Combined
+            </a>
+            <a href="#" id="deploypi_added_mapping_btn" class="dropdown-item" style="text-align:left;" deploy-url="{% url 'map_selected_references_project_samples' %}">
+                Map Added
+            </a>
+            <a href="#" id="deploypi_panels_btn" class="dropdown-item" style="text-align:left;" deploy-url="{% url 'map_panels_project_samples' %}">
+                Map Panels
+            </a>
+            </div>
+        </div>
+        <!-- Actions Dropdown -->
+        <div class="btn-group">
+            <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="fa fa-database" style="margin-right: 5px;"></i> Actions
+            </button>
+            <div class="dropdown-menu">
+            <button class="dropdown-item" data-toggle="modal" data-target="#myModal">Add Targets</button>
+            <button class="dropdown-item add-panels" data-toggle="modal" data-target="#addPanelModal" href="{% url 'get_project_panel_suggestions' %}">Add Panels</button>
+            <button id="teleflu_open" class="dropdown-item" data-toggle="modal" data-target="#teleflu_ref_modal">
+                <i class="fa fa-crosshairs fa-lg" aria-hidden="true" style="margin-right: 5px;">‌</i>  Focus
+            </button>
+            <button type="button" class="dropdown-item" id="sortpi_btn" deploy-url="{% url 'sort_project_reports' %}" aria-haspopup="true" aria-expanded="false">
+                <i class="fa fa-align-left"></i>
+                <span class="hidden-phone"> Sort reports </span>
+            </button>
+
+            </div>
+        </div>
+
+        <button type="button" class="kill-runs btn btn-warning btn-primary" data-toggle="modal" data-target="#id_remove_all_modal">
+            <i class="fa fa-power-off" aria-hidden="true" ></i>
+        </button>
+        {% else %}
+        <button type="button" class="btn btn-primary dark" id="deploypi_btn" deploy-url="{% url deploy_url %}" aria-haspopup="true" aria-expanded="false">
+            <i class="fa fa-flask"></i>
+            <span class="hidden-phone"> Run </span>
+        </button>
+        {% endif %}
+        {% endif %}
+    </div>
+    <div class="btn-group">
+
+    </div>
+    <div class="btn-group">
+        <button type="button" class="btn btn-primary dark" aria-haspopup="true" aria-expanded="false">
+            <a href="{% url 'all_PIproject_reports' pk1=project_index %}" style="color:white">
+                <i>View Project Reports</i>
+            </a>
+        </button>
+    </div>
+
+    <div class="btn-group" style="float: right;">
+        <button type="button" class="btn btn-primary dark" aria-haspopup="true" aria-expanded="false">
+            <a href="{% url 'add-sample-project' pk=project_index tf=1 %}" style="color:white">
+                <i>Add Project Sample</i>
+            </a>
+        </button>
+        <button type="button" class="btn btn-primary dark" aria-haspopup="true" aria-expanded="false">
+            <i class="fa fa-cog" aria-hidden="true"></i>
+            <a href="{% url 'pathogenID_pipeline' level=project_index %}" style="color:white">
+                <i>Project Settings</i>
+            </a>
+        </button>
+
+    </div>
+    <div class="btn-group">
+
+    </div>
+    {% if project_not_updated %}
+    <div class="btn-group">
+        <button type="button" id="update-project" class="btn btn-primary dark" update-url="{% url 'update_televir_project' %}" project-id="{{ project_index }}" {% if update_running %} disabled {% endif %}>
+            {% if update_running %}
+            <i class="fa fa-spinner fa-spin" style="color: white;"></i>
+            <span class="hidden-phone" style="color:white"><i>Updating</i></span>
+            {% else %}
+            <span class="hidden-phone" style="color:white"><i>Update</i></span>
+            {% endif %}
+        </button>
+    </div>
+
+    
+    {% endif %}
+</div>
+
+<hr>
+
+<div class="samples-table-container">
+    <div class="samples-management-header d-flex align-items-center justify-content-between">
+        <div>
+            <h4 class="table-title">Samples Management</h4>
+            <p class="table-description">
+                <i class="fa fa-database"></i> Manage individual samples within the project.
             </p>
-        <table id="table_with_check_id" class="table table-hover table-bordered table-striped" set-check-box-values-url="{% url 'set-check-box-values' %}"  check_box_all="{{ check_box_all }}" {% if table.attrs %} 
-            {{ table.attrs.as_html }}{% endif %} >
+        </div>
+        <form method="get" class="form-inline form-search">
+            {% csrf_token %}
+            <input id="search_form_id" name="search_projects" type="text" class="form-control col-md-8"
+                placeholder="Sample Name" {% if search_projects %}
+                value="{{ search_projects }}" {% endif %}>
+            <button type="submit" class="btn btn-small btn-dark"><i class="fa fa-search"></i>
+                Search</button>
+        </form>
+        </div>
+
+        <table id="table_with_check_id" class="table table-hover table-bordered table-striped" set-check-box-values-url="{% url 'set-check-box-values' %}" check_box_all="{{ check_box_all }}" {% if table.attrs %} 
+            {{ table.attrs.as_html }}{% endif %}>
             {% block table.thead %}
             <thead>
-                {% if project_owner %}
-                <tr>
-                    <th colspan="6">
-                        {% if not demo %}
-                        <div class="btn-group">
-                            {% if metagenomics %}
-                            <button type="button" class="btn btn-primary dark dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fa fa-flask"></i>
-                                <a><span class="hidden-phone"> Run </span></a> 
-                            </button>
-                            <div class="dropdown-menu pull-right">
-                                <a href="#" id="deploypi_btn" class="dropdown-item" style="text-align:left;" deploy-url="{% url deploy_url %}" user-id="{{ user_id }}" project-id= "{{ project_index }}"><span class="hidden-phone" >  Classic Workflows </span></a>
-                                <a href="#" id="deploypi_mapping_btn" class="dropdown-item" style="text-align:left;" deploy-url="{% url 'deploy_Project_PIMapping' %}" ><span class="hidden-phone"> Map Combined </span></a>
-                                <a href="#" id="deploypi_added_mapping_btn" class="dropdown-item" style="text-align:left;" deploy-url="{% url 'map_selected_references_project_samples' %}" ><span class="hidden-phone"> Map Added </span></a>
-                                <a href="#" id="deploypi_panels_btn" class="dropdown-item" style="text-align:left;" deploy-url="{% url 'map_panels_project_samples' %}" ><span class="hidden-phone"> Map Panels </span></a>
-                            </div>
-                            {% else %}
-                            <button type="button" class="btn btn-primary dark" id="deploypi_btn" deploy-url="{% url deploy_url %}" aria-haspopup="true" aria-expanded="false">
-                                <i class="fa fa-flask"></i>
-                                <a><span class="hidden-phone"> Run </span></a>
-                            </button>
-                            {% endif %}
-                        </div>
-                        {% endif %}
-                        <div class="btn-group">
-                            <button type="button" class="btn btn-primary dark" id="sortpi_btn" deploy-url="{% url 'sort_project_reports' %}" aria-haspopup="true" aria-expanded="false">
-                                <i class="fa fa-align-left"></i>
-                                <a><span class="hidden-phone"> Sort sample reports </span></a>
-                            </button>
-                        </div>
-                        <div class="btn-group">
-                            <button type="button" class="btn btn-primary dark" aria-haspopup="true" aria-expanded="false">
-                                <a href="{% url "all_PIproject_reports" pk1=project_index %}"><span class="hidden-phone" style="color:white"><i>View Project reports</i></span></a>
-                                    </button>
-                        </div>
-                        <div class="btn-group">
-                            <button type="button" class="btn btn-primary dark" aria-haspopup="true" aria-expanded="false">
-                                <i class="fa fa-cog" aria-hidden="true" ></i>
-                                <a href="{% url "pathogenID_pipeline" level=project_index %}"><span class="hidden-phone" style="color:white"><i>Project Settings</i></span></a>
-                                    </button>
-                        </div>
-                        {% if project_not_updated %}
-                            <div class="btn-group">
-                                <button type="button" id="update-project" class="btn btn-primary dark" aria-haspopup="true" aria-expanded="false" update-url="{% url "update_televir_project" %}" project-id="{{ project_index }}" {% if update_running %} disabled {% endif %}>
-                                    {% if update_running %}
-                                    <i class="fa fa-spinner fa-spin" style= "color: white;"></i>
-                                    <a href="#"><span class="hidden-phone" style="color:white"><i>Updating</i></span></a>
-                                    {% else %}
-                                    <a href="#"><span class="hidden-phone" style="color:white"><i>Update</i></span></a>
-                                    {% endif %}
-                                        </button>
-                            </div>
-                        {% endif %}
-
-                        <div class="btn-group" style="float: right;">
-                            <button type="button" class="kill-runs btn btn-warning btn-primary" data-toggle="modal" data-target="#id_remove_all_modal">
-                                <i class="fa fa-power-off" aria-hidden="true" ></i>
-                              </button>
-                        </div>
-
-                    </th>
-                    <th colspan="1">
-                        <div class="btn-group d-flex justify-content-center">
-                            <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fa fa-database" style="margin-right: 5px;"></i> Actions
-                            </button>
-                            <div class="dropdown-menu">
-                                <button class="dropdown-item" data-toggle="modal" data-target="#myModal">Add Targets</button>
-                                <button class="dropdown-item add-panels" data-toggle="modal" data-target="#addPanelModal" href="{% url 'get_project_panel_suggestions' %}">Add Panels</button>
-                                <button id="teleflu_open" class="dropdown-item" data-toggle="modal" data-target="#teleflu_ref_modal">
-                                    <i class="fa fa-crosshairs fa-lg" aria-hidden="true" style="margin-right: 5px;">‌</i>  Focus
-                                </button>
-                            </div>
-                        </div>
-                    </th>
-
-                    <th colspan="1" style="text-align: center;">
-                        Sample Select
-                    </th>
-                    <th colspan="4" style="">
-
-                        <form method="get" class="form-inline form-search pull-right">
-                            {% csrf_token %}
-                            <input id="search_form_id" name="search_projects" type="text" class="form-control col-md-8"
-                                placeholder="Sample Name" {% if search_projects %}
-                                value="{{ search_projects }}" {% endif %}>
-                            <button type="submit" class="btn btn-small btn-dark"><i class="fa fa-search"></i>
-                                Search</button>
-                        </form>  
-
-                    </th>             
-                </tr>
-                {% endif %}
                 <tr>
                     {% for column in table.columns %}
                     {% if column.orderable %}
-                        <th {{ column.attrs.th.as_html }}><a href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header }}</a></th>
+                    <th {{ column.attrs.th.as_html }}>
+                        <a href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header }}</a>
+                    </th>
                     {% else %}
-                        <th {{ column.attrs.th.as_html }}>{{ column.header }}</th>
+                    <th {{ column.attrs.th.as_html }}>{{ column.header }}</th>
                     {% endif %}
                     {% endfor %}
                 </tr>
@@ -147,30 +205,21 @@
             {% endblock table.thead %}
             {% block table.tbody %}
             <tbody>
-                {% for row in table.page.object_list|default:table.rows %} {# support pagination #}
-                  {% block table.tbody.row %}
-                  <tr id="row_{{ row.record.id }}" class="{% cycle "odd" "even" %}">
+                {% for row in table.page.object_list|default:table.rows %}
+                <tr id="row_{{ row.record.id }}" class="{% cycle 'odd' 'even' %}">
                     {% for column, cell in row.items %}
-                      <td {{ column.attrs.td.as_html }}>{{ cell }}</td>
+                    <td {{ column.attrs.td.as_html }}>{{ cell }}</td>
                     {% endfor %}
-                  </tr>
-                  {% endblock table.tbody.row %}
+                </tr>
                 {% empty %}
-                  {% if table.empty_text %}
-                  {% block table.tbody.empty_text %}
-                      <tr><td colspan="{{ table.columns|length }}">{{ table.empty_text }}</td></tr>
-                  {% endblock table.tbody.empty_text %}
-                  {% endif %}
+                <tr>
+                    <td colspan="{{ table.columns|length }}">No samples available.</td>
+                </tr>
                 {% endfor %}
             </tbody>
             {% endblock table.tbody %}
-            {% block table.tfoot %}
-                <tfoot></tfoot>
-            {% endblock table.tfoot %}
         </table>
     </div>
-    {% endblock table %}
-
     <p class="insa-description bg-insa-fixed-top" style=""><strong>
         <i class="fa fa-info-circle"></i> 
         <span class="hidden-phone">
@@ -198,7 +247,6 @@
     <a href="javascript:history.go(0)" class="btn btn-small btn-primary dark"><i class="fa fa-refresh"></i> Refresh</a>
 
 </div>
-
 
 <!-- The remove Modal -->
 <div class="modal fade" id="id_kill_modal">

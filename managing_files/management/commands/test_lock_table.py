@@ -1,10 +1,7 @@
 """
-"""
 Created on Jan 5, 2018
 
 @author: mmp
-"""
-
 """
 
 from django.core.management import BaseCommand
@@ -49,7 +46,6 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def transaction_atomic(self):
-
         meatkey = self.get_meta_key(self.meta_key_name)
         # 		meatkey = self.get_meta_key_without(self.meta_key_name)
 
@@ -61,7 +57,6 @@ class Command(BaseCommand):
 
     # A command must define handle()
     def handle(self, *args, **options):
-
         self.meta_key_name = options["key"]
 
         #### set default fields

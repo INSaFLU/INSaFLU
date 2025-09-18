@@ -71,7 +71,10 @@ class ProcessSGE(object):
         temp_file = self.utils.get_temp_file("qsub_out", FileExtensions.FILE_TXT)
         cmd = ""
         # Create a bash script to deploy the SLURM job
-        bash_script_path = "/data/tmp/submit_slurm_job.sh"
+        # bash_script_path = "/data/tmp/submit_slurm_job.sh"
+        bash_script_path = self.utils.get_temp_file(
+            "submit_slurm_job", FileExtensions.FILE_BASH_SCRIPT
+        )
         with open(bash_script_path, "w") as bash_script:
             bash_script.write("#!/bin/bash\n")
             bash_script.write("cd /data/tmp\n")
@@ -99,7 +102,6 @@ class ProcessSGE(object):
 
         ## check if error occurred
         if exist_status != 0:
-
             ## remove file
             if os.path.exists(temp_file):
                 os.unlink(temp_file)
@@ -117,7 +119,6 @@ class ProcessSGE(object):
         b_found = False
 
         for line in vect_out:
-
             if line.find("Submitted batch job") != -1:
                 lst_line = line.split(" ")
                 if len(lst_line) > 2 and self.utils.is_integer(lst_line[3]):
@@ -125,6 +126,43 @@ class ProcessSGE(object):
                 return None  ## don't rise exception...
         if not b_found:
             raise Exception("\n".join(vect_out))
+
+    def collect_jobname_jobid_slurm(self, job_name):
+        """
+        collect the job id from slurm squeue using the job name.
+        if job_name is not found return None
+        """
+        cmd = "squeue -o '%j %i' | grep {}".format(job_name)
+
+        process = subprocess.Popen(
+            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        stdout, stderr = process.communicate()
+        exist_status = process.returncode
+
+        if exist_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            return None
+
+        output_lines = stdout.decode().strip().split("\n")
+        #
+        # JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)
+        for line in output_lines:
+            parts = line.split()
+            if len(parts) >= 2:
+                job_name_found = parts[0]
+                job_id = parts[1]
+                if job_name_found == job_name:
+                    return job_id
+
+        return None
+
+    def jobwait_ids(self, job_names_wait: list):
+        ids = [
+            self.collect_jobname_jobid_slurm(job_name) for job_name in job_names_wait
+        ]
+        return [job_id for job_id in ids if job_id is not None]
 
     def set_script_run_slurm(
         self,
@@ -142,7 +180,7 @@ class ProcessSGE(object):
         b_remove_out_dir = False
         if len(vect_cmd) == 0:
             return None
-        # b_remove_out_dir = (False,)
+        # b_remove_out_dir = False
         file_name_out = os.path.join(out_dir, ProcessSGE.FILE_NAME_SCRIPT_SGE)
 
         with open(file_name_out, "w") as handleSLURM:
@@ -158,19 +196,24 @@ class ProcessSGE(object):
             if isinstance(job_name_wait, str):
                 job_name_wait = [job_name_wait]
             if len(job_name_wait) > 0:
-                handleSLURM.write(
-                    "#$ --dependency=afteany:{}\n".format(":".join(job_name_wait))
-                )  # need to wait until all this jobs names finished
+                job_wait_ids = self.jobwait_ids(job_name_wait)
+                if len(job_wait_ids) > 0:
+                    handleSLURM.write(
+                        "#$ --dependency=afterok:{}\n".format(",".join(job_wait_ids))
+                    )  # need to wait until all this jobs names finished
+
             # handleSLURM.write(
             #    "#$ -j y\n"
             # )  # merge the standard error with standard output
-            handleSLURM.write("#$ --job-name={}\n".format(job_name))  # job name
-            handleSLURM.write("#$ --partition={}\n".format(queue_name))  # queue name
+            handleSLURM.write("#SBATCH -J {}\n".format(job_name))  # job name
+            # handleSLURM.write(
+            #    "#SBATCH --partition={}\n".format(queue_name)
+            # )  # queue name
             # handleSLURM.write("#$ --output={}\n".format(out_dir))  # out path file
-            handleSLURM.write("#$ --error={}\n".format(out_dir))
-            handleSLURM.write("#$ --ntasks=1\n")
-            handleSLURM.write("#$ --output={}/%x_%j.out\n".format(out_dir))
-            handleSLURM.write("#$ --begin=now\n")
+            # handleSLURM.write("#SBATCH --error={}\n".format(out_dir))
+            handleSLURM.write("#SBATCH --ntasks=1\n")
+            handleSLURM.write("#SBATCH --output={}/slurm_%j.out\n".format(out_dir))
+            handleSLURM.write("#SBATCH --begin=now\n")
             handleSLURM.write("\n")
 
             for cline in vect_cmd:
@@ -471,7 +514,6 @@ class ProcessSGE(object):
         )
         try:
             sge_id = self.submitte_job(path_file)
-            print("SGE_ID", sge_id)
 
             if sge_id != None:
                 self.set_process_controlers(
@@ -612,7 +654,6 @@ class ProcessSGE(object):
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         out_dir = self.utils.get_temp_dir()
         try:
-            print("SUBMITTING JOB")
             path_file = self.set_script_run_slurm(
                 out_dir, Constants.QUEUE_SGE_NAME_GLOBAL, vect_command, job_name, True
             )
@@ -1785,7 +1826,7 @@ class ProcessSGE(object):
 
         bash_command = (
             # SLURM: scancel process_id
-            "export SGE_ROOT={}; export PATH={}/bin/lx-amd64/:$PATH; qdel {}".format(
+            "export SGE_ROOT={}; export PATH={}/bin/lx-amd64/:$PATH; scancel {}".format(
                 settings.SGE_ROOT, settings.SGE_ROOT, process_id
             )
         )
@@ -1907,7 +1948,6 @@ class ProcessSGE(object):
         """ """
 
         for process in processes:
-
             if process.name_sge_id:
                 self.kill_process(process.name_sge_id)
 

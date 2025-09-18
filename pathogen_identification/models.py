@@ -684,15 +684,32 @@ class RunMain(models.Model):
         return FinalReport.objects.filter(run=self).order_by("-coverage")
 
     def intermediate_reports_get(self) -> IntermediateFiles:
-        contig_classification = ContigClassification.objects.get(run=self)
-        read_classification = ReadClassification.objects.get(run=self)
-        run_remap = RunRemapMain.objects.get(run=self)
+        try:
+            contig_classification = ContigClassification.objects.get(run=self)
+            contig_classification_report = (
+                contig_classification.contig_classification_report
+            )
+        except ContigClassification.DoesNotExist:
+            contig_classification_report = None
+        try:
+            read_classification = ReadClassification.objects.get(run=self)
+            read_classification_report = read_classification.read_classification_report
+        except ReadClassification.DoesNotExist:
+            read_classification_report = None
+        try:
+            run_remap = RunRemapMain.objects.get(run=self)
+            remap_main_report = run_remap.merged_log
+            database_matches = run_remap.remap_plan
+
+        except RunRemapMain.DoesNotExist:
+            remap_main_report = None
+            database_matches = None
 
         intermediate_reports = IntermediateFiles(
-            read_classification_report=read_classification.read_classification_report,
-            contig_classification_report=contig_classification.contig_classification_report,
-            remap_main_report=run_remap.merged_log,
-            database_matches=run_remap.remap_plan,
+            read_classification_report=read_classification_report,
+            contig_classification_report=contig_classification_report,
+            remap_main_report=remap_main_report,
+            database_matches=database_matches,
         )
 
         return intermediate_reports

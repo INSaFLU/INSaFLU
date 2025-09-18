@@ -167,7 +167,8 @@ class PrimerTable(tables.Table):
         if user.username == Constants.USER_ANONYMOUS:
             return record.name
         if (
-            user.username == record.owner.username
+            user.username
+            == record.owner.username
             ## TODO  ## it can't be used in any active project
         ):
             return mark_safe(

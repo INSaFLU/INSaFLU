@@ -238,9 +238,12 @@ def show_phylo_canvas(request):
                         not os.path.exists(file_name_root_json)
                         or os.path.getsize(file_name_root_json) == 0
                     ):
-                        with open(
-                            file_name_root_json, "w", encoding="utf-8"
-                        ) as handle_write, open(file_name_root_sample) as handle_in_csv:
+                        with (
+                            open(
+                                file_name_root_json, "w", encoding="utf-8"
+                            ) as handle_write,
+                            open(file_name_root_sample) as handle_in_csv,
+                        ):
                             reader = csv.DictReader(handle_in_csv)
                             all_data = json.loads(json.dumps(list(reader)))
                             dt_result = {}
@@ -508,14 +511,19 @@ def show_coverage_as_a_table(request):
                                 project_sample.sample.name, sequence_name
                             ),
                         )
-                        content += '<td id="id_table-coverage_content_{}_{}" class="table-coverage-image" value_data="{}" '.format(
-                            count_projects, count_sequences, coverage_value
-                        ) + 'value_data_average="{}" color_graphic="{}" size="{}" value_limit_coverage="{}">{}</td>'.format(
-                            coverage_value_average,
-                            coverage.get_color(sequence_name, limit_to_mask_consensus),
-                            size_elements,
-                            coverage.get_middle_limit(),
-                            href_sample,
+                        content += (
+                            '<td id="id_table-coverage_content_{}_{}" class="table-coverage-image" value_data="{}" '.format(
+                                count_projects, count_sequences, coverage_value
+                            )
+                            + 'value_data_average="{}" color_graphic="{}" size="{}" value_limit_coverage="{}">{}</td>'.format(
+                                coverage_value_average,
+                                coverage.get_color(
+                                    sequence_name, limit_to_mask_consensus
+                                ),
+                                size_elements,
+                                coverage.get_middle_limit(),
+                                href_sample,
+                            )
                         )
                         count_sequences += 1
 
@@ -578,11 +586,11 @@ def show_msa_nucleotide(request):
                     last_name_seq = None
                     if not file_name_gff3 is None:
                         last_name_seq = utils.get_last_name_from_fasta(file_name_fasta)
-
                     if os.path.exists(file_name_fasta):
                         file_name_fasta = project.get_global_file_by_project(
                             TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_MAFFT
                         )
+
                         data["alignment_fasta_show_id"] = mark_safe(
                             request.build_absolute_uri(file_name_fasta)
                         )
@@ -764,9 +772,7 @@ def show_count_variations(request):
                 data["data_less_50"] = []  ## number of variations less than 50
                 data["data_50_var_90_50"] = []  ##number of variations 50<var<90
 
-                data_out = (
-                    []
-                )  ## [[#<50, 50<var<90, sample name], [#<50, 50<var<90, sample name], ....]
+                data_out = []  ## [[#<50, 50<var<90, sample name], [#<50, 50<var<90, sample name], ....]
                 for project_sample in project.project_samples.all():
                     if project_sample.is_deleted:
                         continue
@@ -879,7 +885,6 @@ def update_project_pangolin(request):
         data = {"is_ok": False}
         key_with_project_id = "project_id"
         if key_with_project_id in request.GET:
-
             project_id = request.GET[key_with_project_id]
             try:
                 project = Project.objects.get(pk=project_id)
@@ -922,7 +927,6 @@ def update_project_mutation_report(request):
         data = {"is_ok": False}
         key_with_project_id = "project_id"
         if key_with_project_id in request.GET:
-
             project_id = request.GET[key_with_project_id]
             try:
                 project = Project.objects.get(pk=int(project_id))
@@ -956,10 +960,8 @@ def update_project_mutation_report(request):
 
                     data = {"is_ok": True}
                 except Exception as e:
-
                     data = {"is_ok": False}
             except ProjectSample.DoesNotExist as e:
-
                 pass
         return JsonResponse(data)
 
@@ -1342,7 +1344,6 @@ def remove_reference(request):
         reference_id_a = "reference_id"
 
         if reference_id_a in request.GET:
-
             ## some pre-requisites
             if not request.user.is_active or not request.user.is_authenticated:
                 return JsonResponse(data)
@@ -1387,7 +1388,6 @@ def remove_primer(request):
         primer_id_a = "primer_id"
 
         if primer_id_a in request.GET:
-
             ## some pre-requisites
             if not request.user.is_active or not request.user.is_authenticated:
                 data = {"is_ok": False, "reason": "User not authenticated"}
@@ -1449,7 +1449,6 @@ def remove_sample(request):
 
         sample_id_a = "sample_id"
         if sample_id_a in request.GET:
-
             ## some pre-requisites
             if not request.user.is_active or not request.user.is_authenticated:
                 return JsonResponse(data)
@@ -1535,7 +1534,6 @@ def swap_technology(request):
 
         sample_id_a = "sample_id"
         if sample_id_a in request.GET:
-
             ## some pre-requisites
             if not request.user.is_active or not request.user.is_authenticated:
                 data["message"] = "User not authenticated"
@@ -1652,7 +1650,6 @@ def remove_project(request):
         project_id_a = "project_id"
 
         if project_id_a in request.GET:
-
             ## some pre-requisites
             if not request.user.is_active or not request.user.is_authenticated:
                 return JsonResponse(data)
@@ -1773,7 +1770,6 @@ def remove_televir_project_sample(request):
         project_sample_id_a = "project_sample_id"
 
         if project_sample_id_a in request.GET:
-
             ## some pre-requisites
             if not request.user.is_active or not request.user.is_authenticated:
                 return JsonResponse(data)
@@ -1815,7 +1811,6 @@ def remove_project_sample(request):
         project_sample_id_a = "project_sample_id"
 
         if project_sample_id_a in request.GET:
-
             ## some pre-requisites
             if not request.user.is_active or not request.user.is_authenticated:
                 return JsonResponse(data)
@@ -1882,7 +1877,6 @@ def remove_uploaded_file(request):
         uploaded_file_id_a = "uploaded_file_id"
 
         if uploaded_file_id_a in request.GET:
-
             ## some pre-requisites
             if not request.user.is_active or not request.user.is_authenticated:
                 return JsonResponse(data)
@@ -1949,7 +1943,6 @@ def remove_uploaded_files(request):
             type_file__name=TypeFile.TYPE_FILE_fastq_gz,
         )
         for uploaded_file in query_set:
-
             ### now you can remove
             uploaded_file.is_deleted = True
             uploaded_file.is_deleted_in_file_system = False
@@ -2103,7 +2096,6 @@ def unlock_sample_file(request):
             is_deleted=False, is_processed=False, owner=request.user, type_file=metaKey
         )
         for uploadfile in lst_files:
-
             ## teste the number files already processed
             if uploadfile.number_files_processed == uploadfile.number_files_to_process:
                 continue

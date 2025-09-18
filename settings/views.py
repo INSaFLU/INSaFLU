@@ -930,12 +930,22 @@ class UpdateParametersView(BaseBreadcrumbMixin, LoginRequiredMixin, UpdateView):
                 if not parameter.can_change:
                     continue
                 if parameter.get_unique_id() in form.cleaned_data:
-                    value_from_form = "{}".format(
-                        form.cleaned_data[parameter.get_unique_id()]
-                    )
+                    if parameter.is_multiple_choice():
+                        print("multiple choice")
+                        value_from_form = form.cleaned_data[parameter.get_unique_id()]
+                        value_from_form = ";".join(value_from_form)
+                        print("value_from_form", value_from_form)
+
+                    else:
+                        value_from_form = "{}".format(
+                            form.cleaned_data[parameter.get_unique_id()]
+                        )
                     if value_from_form != parameter.parameter:
                         b_change = True
-                        parameter.parameter = value_from_form
+                        if value_from_form == "":
+                            parameter.parameter = "None"
+                        else:
+                            parameter.parameter = value_from_form
                         parameter.save()
 
             if b_change:
@@ -1049,6 +1059,14 @@ class UpdateParametersTelevirProjView(
                         form.cleaned_data[parameter.get_unique_id()]
                     )
                     if value_from_form != parameter.parameter:
+                        if value_from_form == "":
+                            parameter.parameter = "None"
+                        else:
+                            if parameter.is_multiple_choice():
+                                value_from_form = form.cleaned_data[
+                                    parameter.get_unique_id()
+                                ]
+                                value_from_form = ";".join(value_from_form)
                         b_change = True
                         parameter.parameter = value_from_form
                         parameter.save()

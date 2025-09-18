@@ -11,6 +11,8 @@ from crispy_forms.layout import Button, ButtonHolder, Div, Fieldset, Layout, Sub
 from django import forms
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.conf import settings
+from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils.html import escape
 from django.utils.translation import gettext_lazy as _
@@ -57,6 +59,7 @@ class SoftwareForm(forms.ModelForm):
         self.televir_utiltity.get_software_list()
         self.televir_utiltity.get_software_db_dict()
         self.televir_utiltity.get_host_dbs()
+        self.televir_utiltity.get_filter_dbs()
         ###
         if not pk_project is None:
             kwargs.pop("pk_project")
@@ -99,6 +102,7 @@ class SoftwareForm(forms.ModelForm):
         dt_fields = {}
         vect_divs = []
         for parameter in paramers:
+
             if not parameter.can_change or parameter.is_null():
                 dt_fields[parameter.get_unique_id()] = forms.CharField(
                     disabled=True,
@@ -140,7 +144,53 @@ class SoftwareForm(forms.ModelForm):
                         )
                     )
                 dt_fields[parameter.get_unique_id()].help_text = escape(help_text)
+
+            elif parameter.is_multiple_choice():  # Update this condition if needed
+                ## already selected
+                selected = parameter.parameter.split(";") if parameter.parameter else []
+
+                if (
+                    parameter.software.name_extended
+                    == SoftwareNames.SOFTWARE_BWA_FILTER_name_extended
+                ):
+
+                    list_data = [
+                        [data_[0], data_[1]]
+                        for data_ in self.televir_utiltity.get_from_filter_dbs(
+                            parameter.software.name.lower(), []
+                        )
+                    ]
+
+                elif parameter.software.name == SoftwareNames.SOFTWARE_METAPHLAN_NAME:
+                    list_data = [
+                        [data_, data_]
+                        for data_ in SoftwareNames.SOFTWARE_METAPHLAN_DB_options
+                    ]
+                else:
+                    raise Exception(
+                        "Error: Software {} not implemented.".format(
+                            parameter.software.name
+                        )
+                    )
+
+                ## setup multiple choice widget
+                dt_fields[parameter.get_unique_id()] = forms.MultipleChoiceField(
+                    choices=list_data, widget=forms.CheckboxSelectMultiple
+                )
+                dt_fields[parameter.get_unique_id()].help_text = escape(
+                    parameter.description
+                )
+                dt_fields[parameter.get_unique_id()].label = parameter.name
+                dt_fields[parameter.get_unique_id()].initial = selected
+                dt_fields[parameter.get_unique_id()].widget.attrs.update(
+                    {"class": "checkbox-inline"}
+                )
+                dt_fields[parameter.get_unique_id()].widget.attrs.update(
+                    {"style": "margin-right: 10px;"}
+                )
+
             ### this is use for Medaka and Trimmomatic
+
             elif parameter.is_char_list():
                 if parameter.software.name == SoftwareNames.SOFTWARE_NEXTSTRAIN_name:
                     list_data = [

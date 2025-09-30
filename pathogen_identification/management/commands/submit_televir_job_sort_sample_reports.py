@@ -6,8 +6,7 @@ from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
 from managing_files.models import ProcessControler
-from pathogen_identification.models import PIProject_Sample, Projects
-from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
+
 from pathogen_identification.utilities.utilities_views import calculate_reports_overlaps
 from utils.process_SGE import ProcessSGE
 

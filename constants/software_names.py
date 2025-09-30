@@ -723,6 +723,35 @@ class SoftwareNames(object):
     SOFTWARE_CENTRIFUGE_parameters = "-p 4 --time -k 3 --out-fmt sam"
     SOFTWARE_CENTRIFUGE_PARAMETERS_TWO_SEQUENCES = "-p 4 --time -k 3 --out-fmt sam"
 
+    ### VOYAGER
+    SOFTWARE_VOYAGER = os.path.join(
+        Televir_Directory_Constants.environments_directory,
+        "classification/voyager-cli",
+    )
+
+    SOFTWARE_VOYAGER_name = "Voyager"
+    SOFTWARE_VOYAGER_name_extended = "Voyager"
+    SOFTWARE_VOYAGER_VERSION = "0.1.5"
+
+    ### Metaphlan
+
+    SOFTWARE_METAPHLAN = os.path.join(
+        Televir_Directory_Constants.environments_directory, "Metaphlan/metaphlan/bin"
+    )
+
+    SOFTWARE_METAPHLAN_NAME = "Metaphlan"
+    SOFTWARE_METAPHLAN_NAME_extended = "Metaphlan"
+    SOFTWARE_METAPHLAN_VERSION = "3.0.13"
+
+    SOFTWARE_METAPHLAN_DB_options = [
+        "--add_viruses",
+        "--ignore_eukaryotes",
+        "--ignore_archaea",
+        "--ignore_bacteria",
+        "--ignore_ksgbs",
+        "--ignore_usgbs",
+    ]
+
     ### BWA
     SOFTWARE_BWA = os.path.join(
         Televir_Directory_Constants.environments_directory,
@@ -734,6 +763,19 @@ class SoftwareNames(object):
     SOFTWARE_BWA_VERSION = "0.7.17"
     SOFTWARE_BWA_parameters = "mem -t 4 -M -R '@RG\tID:foo\tSM:bar\tPL:illumina'"
     SOFTWARE_BWA_PARAMETERS_TWO_SEQUENCES = (
+        "mem -t 4 -M -R '@RG\tID:foo\tSM:bar\tPL:illumina'"
+    )
+
+    ### BWA FILTER
+    SOFTWARE_BWA_FILTER = os.path.join(
+        Televir_Directory_Constants.environments_directory,
+        "remap/remap/bin/bwa",
+    )
+    SOFTWARE_BWA_FILTER_name = "BWA-Filter"
+    SOFTWARE_BWA_FILTER_name_extended = "BWA - Filter"
+    SOFTWARE_BWA_FILTER_VERSION = "0.7.17"
+    SOFTWARE_BWA_FILTER_parameters = "mem -t 4 -M -R '@RG\tID:foo\tSM:bar\tPL:illumina'"
+    SOFTWARE_BWA_FILTER_PARAMETERS_TWO_SEQUENCES = (
         "mem -t 4 -M -R '@RG\tID:foo\tSM:bar\tPL:illumina'"
     )
 
@@ -1049,6 +1091,7 @@ class SoftwareNames(object):
 
     ### software with application in multiple pipeline_steps:
     polyvalent_software = [
+        SOFTWARE_BWA_FILTER_name,
         SOFTWARE_CENTRIFUGE_name,
         SOFTWARE_BWA_name,
         SOFTWARE_BOWTIE2_REMAP_name,
@@ -1090,6 +1133,10 @@ class SoftwareNames(object):
         SOFTWARE_MSAMTOOLS_name: [
             ConstantsSettings.PIPELINE_NAME_remap_filtering,
             ConstantsSettings.PIPELINE_NAME_map_filtering,
+        ],
+        SOFTWARE_BWA_FILTER_name: [
+            ConstantsSettings.PIPELINE_NAME_extra_qc,
+            ConstantsSettings.PIPELINE_NAME_host_depletion,
         ],
     }
 

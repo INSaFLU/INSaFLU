@@ -202,10 +202,13 @@ class RunEngine:
         )
 
         self.remap_filtering_method = SoftwareDetailCompound(
-            [CS.PIPELINE_NAME_remap_filtering],
             method_args,
             config,
             self.prefix,
+        )
+
+        self.remap_filtering_method.register_modules(
+            [CS.PIPELINE_NAME_remap_filtering],
         )
 
         ###

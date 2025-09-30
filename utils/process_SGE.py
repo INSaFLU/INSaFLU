@@ -116,7 +116,11 @@ class ProcessSGE(object):
 
         if len(vect_cmd) == 0:
             return None
+<<<<<<< HEAD
         #b_remove_out_dir = False
+=======
+        # b_remove_out_dir = False
+>>>>>>> 61ddcd3c282b5b8119d5bff22c37505ef2bd8d8a
         file_name_out = os.path.join(out_dir, ProcessSGE.FILE_NAME_SCRIPT_SGE)
         with open(file_name_out, "w") as handleSGE:
             handleSGE.write("#!/bin/bash\n")

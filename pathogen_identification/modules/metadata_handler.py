@@ -1,10 +1,9 @@
 import logging
 import os
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 import pandas as pd
 
-from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.models import (
     PIProject_Sample,
     RawReference,
@@ -88,7 +87,6 @@ class RunMetadataHandler:
             "input_protein_accession_to_taxid_path"
         ]
 
-        self.accession_to_taxid: pd.DataFrame
         self.taxonomy_to_description: pd.DataFrame
         self.protein_to_accession: pd.DataFrame
         self.protein_accession_to_csv: pd.DataFrame
@@ -153,6 +151,17 @@ class RunMetadataHandler:
                 if ref.accid is None:
                     continue
                 accid_simple = simplify_name(ref.accid)
+
+                if any(
+                    x.accid == ref.accid
+                    and x.file == refmap.reference_source_file.filepath
+                    for x in self.remap_targets
+                ):
+                    self.logger.info(
+                        "Skipping remap target, already in remap targets",
+                        ref.accid,
+                    )
+                    continue
 
                 if any(
                     x.accid == ref.accid
@@ -457,17 +466,6 @@ class RunMetadataHandler:
         """
         Get metadata from files.
         """
-        try:
-            self.accession_to_taxid = pd.read_csv(
-                self.input_accession_to_taxid_path, sep="\t", header=0
-            )
-        except:
-            self.accession_to_taxid = pd.DataFrame(columns=["acc", "taxid"])
-            self.logger.info("No accession to taxid file found.")
-            self.logger.info(
-                "This file is required for mapping, check installation. Exiting."
-            )
-            exit()
 
         try:
             self.taxonomy_to_description = pd.read_csv(
@@ -725,11 +723,16 @@ class RunMetadataHandler:
         if merged_table.shape[0] == 0:
             return pd.DataFrame(columns=["taxid", "file", "counts"])
 
+        print("Mapping hits to taxids...")
+        print(merged_table.columns)
+        print(merged_table.head())
+
         if "counts" not in merged_table.columns:
             counts = merged_table.taxid.value_counts()
             counts = pd.DataFrame(counts).reset_index()
             counts.columns = ["taxid", "counts"]
-
+            merged_table = merged_table.drop_duplicates(subset="taxid")
+            merged_table = merged_table[merged_table["taxid"] != ""]
             merged_table["taxid"] = merged_table["taxid"].astype(int)
             counts["taxid"] = counts["taxid"].astype(int)
 
@@ -828,7 +831,6 @@ class RunMetadataHandler:
                 continue
 
             #
-
             if taxid in self.taxid_accids:
                 self.logger.info("Filtering references for taxid", taxid)
                 self.logger.info(

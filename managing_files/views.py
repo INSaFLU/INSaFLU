@@ -63,7 +63,7 @@ from managing_files.tables import (
     ShowProjectSamplesResults,
 )
 from pathogen_identification.models import PIProject_Sample, TeleFluProject
-from pathogen_identification.utilities.utilities_views import RunReadsRegister
+from pathogen_identification.utilities.utilities_views import SampleReadsRetrieve
 from settings.constants_settings import ConstantsSettings
 from settings.default_software import DefaultSoftware
 from settings.default_software_project_sample import DefaultProjectSoftware
@@ -2010,10 +2010,6 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
                     )
 
             ### sample processed reads
-
-            from pathogen_identification.utilities.utilities_views import (
-                SampleReadsRetrieve,
-            )
 
             # sample = INSaFLU_Sample.objects.get(pk= 25)
             ret = SampleReadsRetrieve(sample)

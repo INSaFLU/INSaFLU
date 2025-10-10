@@ -12,6 +12,7 @@ from django.utils.translation import gettext_lazy as _
 from constants.constants import Constants, FileExtensions
 from utils.utils import Utils
 
+import logging
 
 class ParseOutFiles(object):
     """
@@ -48,6 +49,9 @@ class ParseOutFiles(object):
     SEQ_NAME = "Seq_Name"
 
     utils = Utils()
+
+    logger_debug = logging.getLogger("fluWebVirus.debug")
+    logger_production = logging.getLogger("fluWebVirus.production")
 
     def __init__(self):
         """
@@ -95,7 +99,10 @@ class ParseOutFiles(object):
                     b_fisrt_line_found = True
                 elif b_fisrt_line_found:
                     lst_split = line.split("\t")
-                    if len(lst_split) != 13:
+                    if len(lst_split) != 15:
+                        self.logger_production.warning(
+                            f"Abricate parse_abricate_file: unexpected column count {len(lst_split)} (expected 15). Line: {line.strip()}"
+                        )
                         continue
 
                     ### clean SoftwareNames.SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE
@@ -113,21 +120,21 @@ class ParseOutFiles(object):
                     )
 
                     dt_data = {}
-                    dt_data[self.GENE] = lst_split[4]
-                    if self.utils.is_float(lst_split[8]):
-                        dt_data[self.COVERAGE] = float(lst_split[8])
-                    else:
-                        raise ValueError(
-                            _("Value must be float '" + lst_split[8] + "'")
-                        )
-                    if self.utils.is_float(lst_split[8]):
-                        dt_data[self.IDENTITY] = float(lst_split[9])
+                    dt_data[self.GENE] = lst_split[5]
+                    if self.utils.is_float(lst_split[9]):
+                        dt_data[self.COVERAGE] = float(lst_split[9])
                     else:
                         raise ValueError(
                             _("Value must be float '" + lst_split[9] + "'")
                         )
-                    dt_data[self.TYPE] = lst_split[10]
-                    dt_data[self.ACCESSION] = lst_split[11]
+                    if self.utils.is_float(lst_split[9]):
+                        dt_data[self.IDENTITY] = float(lst_split[10])
+                    else:
+                        raise ValueError(
+                            _("Value must be float '" + lst_split[9] + "'")
+                        )
+                    dt_data[self.TYPE] = lst_split[11]
+                    dt_data[self.ACCESSION] = lst_split[12]
                     dt_data[self.SEQ_NAME] = lst_split[1]
                     if dt_data[self.SEQ_NAME] in dict_data_out:
                         dict_data_out[dt_data[self.SEQ_NAME]].append(dt_data)
@@ -173,24 +180,27 @@ class ParseOutFiles(object):
                     b_fisrt_line_found = True
                 elif b_fisrt_line_found:
                     lst_split = line.split("\t")
-                    if len(lst_split) != 13:
+                    if len(lst_split) != 15:
+                        self.logger_production.warning(
+                            f"Abricate parse_abricate_file: unexpected column count {len(lst_split)} (expected 15). Line: {line.strip()}"
+                        )                        
                         continue
                     dt_data = {}
-                    dt_data[self.GENE] = lst_split[4]
-                    if self.utils.is_float(lst_split[8]):
-                        dt_data[self.COVERAGE] = float(lst_split[8])
-                    else:
-                        raise ValueError(
-                            _("Value must be float '" + lst_split[8] + "'")
-                        )
-                    if self.utils.is_float(lst_split[8]):
-                        dt_data[self.IDENTITY] = float(lst_split[9])
+                    dt_data[self.GENE] = lst_split[5]
+                    if self.utils.is_float(lst_split[9]):
+                        dt_data[self.COVERAGE] = float(lst_split[9])
                     else:
                         raise ValueError(
                             _("Value must be float '" + lst_split[9] + "'")
                         )
-                    dt_data[self.TYPE] = lst_split[10]
-                    dt_data[self.ACCESSION] = lst_split[11]
+                    if self.utils.is_float(lst_split[9]):
+                        dt_data[self.IDENTITY] = float(lst_split[10)
+                    else:
+                        raise ValueError(
+                            _("Value must be float '" + lst_split[9] + "'")
+                        )
+                    dt_data[self.TYPE] = lst_split[11]
+                    dt_data[self.ACCESSION] = lst_split[12]
                     dt_data[self.SEQ_NAME] = lst_split[1]
                     if dt_data[self.SEQ_NAME] in dict_data_out:
                         dict_data_out[dt_data[self.SEQ_NAME]].append(dt_data)

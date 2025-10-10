@@ -3,15 +3,15 @@ from django.urls import path, re_path
 from managing_files import ajax_views, views
 
 urlpatterns = [
-    path(r"primer/primer$", views.PrimerView.as_view(), name="primer"),
+    path(r"primer/primer", views.PrimerView.as_view(), name="primer"),
     path(
-        r"primer/primer_add$",
+        r"primer/primer_add",
         views.PrimerAddView.as_view(),
         name="primer-add",
     ),
-    path(r"references/references$", views.ReferenceView.as_view(), name="references"),
+    path(r"references/references", views.ReferenceView.as_view(), name="references"),
     path(
-        r"references/reference_add$",
+        r"references/reference_add",
         views.ReferenceAddView.as_view(),
         name="reference-add",
     ),
@@ -110,7 +110,7 @@ urlpatterns = [
         name="validate-reference-name",
     ),
     path(
-        r"^ajax/validate_primer_name$",
+        r"^ajax/validate_primer_name",
         ajax_views.validate_primer_name,
         name="validate-primer-name",
     ),
@@ -129,10 +129,10 @@ urlpatterns = [
         ajax_views.show_variants_as_a_table,
         name="show-variants-as-a-table",
     ),
-    path(r"^ajax/show_aln2pheno$", ajax_views.show_aln2pheno, name="show-aln2pheno"),
+    path(r"^ajax/show_aln2pheno", ajax_views.show_aln2pheno, name="show-aln2pheno"),
     path(r"^ajax/show_flumut", ajax_views.show_flumut, name="show-flumut"),
     path(
-        r"^ajax/show_coverage_as_a_table$",
+        r"^ajax/show_coverage_as_a_table",
         ajax_views.show_coverage_as_a_table,
         name="show-coverage-as-a-table",
     ),
@@ -183,7 +183,7 @@ urlpatterns = [
         "ajax/remove_reference", ajax_views.remove_reference, name="remove_reference"
     ),  ## remove a reference
     path(
-        r"^ajax/remove_primer$", ajax_views.remove_primer, name="remove_primer"
+        r"^ajax/remove_primer", ajax_views.remove_primer, name="remove_primer"
     ),  ## remove a reference
     path(
         "ajax/remove_sample", ajax_views.remove_sample, name="remove_sample"
@@ -192,7 +192,7 @@ urlpatterns = [
         r"^ajax/swap_technology", ajax_views.swap_technology, name="swap_technology"
     ),  ## swap technology in sample
     path(
-        r"^ajax/remove_project$", ajax_views.remove_project, name="remove_project"
+        r"^ajax/remove_project", ajax_views.remove_project, name="remove_project"
     ),  ## remove a project
     path(
         "ajax/remove_televir_project",

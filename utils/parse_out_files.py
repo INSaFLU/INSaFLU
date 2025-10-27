@@ -194,7 +194,7 @@ class ParseOutFiles(object):
                             _("Value must be float '" + lst_split[9] + "'")
                         )
                     if self.utils.is_float(lst_split[9]):
-                        dt_data[self.IDENTITY] = float(lst_split[10)
+                        dt_data[self.IDENTITY] = float(lst_split[10])
                     else:
                         raise ValueError(
                             _("Value must be float '" + lst_split[9] + "'")

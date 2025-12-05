@@ -499,6 +499,9 @@ class SoftwareNames(object):
     SOFTWARE_NEXTSTRAIN_DENGUE = os.path.join(
         settings.DIR_SOFTWARE, "nextstrain/nextstrain_dengue.sh"
     )
+    SOFTWARE_NEXTSTRAIN_05_12_2025 = os.path.join(
+        settings.DIR_SOFTWARE, "nextstrain/nextstrain_05_12_2025.sh"
+    )
 
     ### Several types of builds for NEXTSTRAIN
     SOFTWARE_NEXTSTRAIN_BUILDS_BASE = os.path.join(

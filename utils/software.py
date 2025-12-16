@@ -5728,15 +5728,15 @@ class Software(object):
 
         return [tree_file, alignment_file, auspice_zip]
 
-    def run_nextstrain_flu(
-        self, alignments, metadata, strain="h3n2", period="12y", cores=1
+    def run_nextstrain_flu_051225(
+        self, alignments, metadata, strain="h3n2", segment="ha", cores=1
     ):
         """
         run nextstrain
         :param  alignments: sequence file with nucleotides
         :param  metadata: tabbed table file with properties
         :param  strain: flu strain (one of: h3n2, h1n1pdm, vic, yam)
-        :param  period: the reference time period (one of: 6m, 2y, 3y, 6y, 12y, 60y)
+        :param  segment: flu segment (one of: pb2, pb1, pa, ha, np, na, mp, ns)
         :param  cores: the number of cores to be used in nextstrain (defaults to 1)
         :out temp folder with all data (including results)
         """
@@ -5767,6 +5767,8 @@ class Software(object):
                 + "/* "
                 + temp_dir
             )
+
+        # TODO Create folder instead of relying on a pre-existing one
 
         # add sequences.fasta and metadata.tsv to data folder
         self.utils.copy_file(
@@ -5862,7 +5864,7 @@ class Software(object):
         return [tree_file, alignment_file, auspice_zip]
 
 
-    def run_nextstrain_flu_old(
+    def run_nextstrain_flu(
         self, alignments, metadata, strain="h3n2", period="12y", cores=1
     ):
         """

@@ -617,7 +617,7 @@ class CollectExtraDatasetData(object):
                 best_matches = {}
                 for sample in dict_data_out.keys():
                     for entry_dic in dict_data_out[sample]:
-                        if entry_dic["Gene"] == build:
+                        if entry_dic["Gene"] == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_REF_DICT[build]:
                             if sample in best_matches.keys():
                                 if float(entry_dic["Identity"]) > best_matches[sample]:
                                     best_matches[sample] = float(entry_dic["Identity"])
@@ -745,14 +745,28 @@ class CollectExtraDatasetData(object):
             tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_flu(
                 alignments=sequences_file, metadata=metadata_file, strain="h3n2"
             )
+        elif build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_051225:
+            # This one can have extra parameters such as strain (default: h3n2, h1n1, etc...) and segment (default: ha)
+            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_flu_051225(
+                alignments=sequences_file, metadata=metadata_file, strain="h3n2"
+            )            
         elif build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y:
             tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_flu(
                 alignments=sequences_file, metadata=metadata_file, strain="h1n1pdm"
             )
+        elif build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_051225:
+            # This one can have extra parameters such as strain (default: h3n2, h1n1, etc...) and segment (default: ha)
+            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_flu_051225(
+                alignments=sequences_file, metadata=metadata_file, strain="h1n1pdm"
+            )               
         elif build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y:
             tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_flu(
                 alignments=sequences_file, metadata=metadata_file, strain="vic"
             )
+        elif build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_051225:
+            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_flu_051225(
+                alignments=sequences_file, metadata=metadata_file, strain="vic"
+            )            
         elif build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y:
             tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_flu(
                 alignments=sequences_file, metadata=metadata_file, strain="yam"

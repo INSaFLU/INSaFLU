@@ -1196,7 +1196,7 @@ class SamplesUploadDescriptionFileView(
         return [
             ("Samples", reverse("samples")),
             ("Add Samples from a (csv/tsv) file", reverse("sample-add-file")),
-            ("Upload (csv/tsv) file", reverse("sample_add_single_csv_file")),
+            ("Upload (csv/tsv) file", reverse("sample-add-single-csv-file")),
         ]
 
     def get_form_kwargs(self):
@@ -1346,7 +1346,7 @@ class SamplesUploadDescriptionFileViewMetadata(
             ("Update metadata", reverse("sample-update-metadata")),
             (
                 "Upload metadata (csv/tsv) file",
-                reverse("sample_add_single_csv_file_metadata"),
+                reverse("sample-add-single-csv-file-metadata"),
             ),
         ]
 
@@ -1818,10 +1818,7 @@ class SamplesDetailView(BaseBreadcrumbMixin, LoginRequiredMixin, DetailView):
 
     @cached_property
     def crumbs(self):
-        sample: Sample = self.kwargs["object"]
-        if sample is None:
-            return []
-        sample: Sample = self.kwargs["object"]
+        sample: Sample = self.get_object()
         if sample is None:
             return []
         return [
@@ -1831,7 +1828,7 @@ class SamplesDetailView(BaseBreadcrumbMixin, LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(SamplesDetailView, self).get_context_data(**kwargs)
-        sample: Sample = kwargs["object"]
+        sample: Sample = self.get_object()
         context["nav_sample"] = True
         if sample.owner.id != self.request.user.id:
             context["error_cant_see"] = "1"

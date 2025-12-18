@@ -5859,7 +5859,7 @@ class Software(object):
             alignment_file,
         )
 
-        #self.utils.remove_dir(temp_dir)
+        self.utils.remove_dir(temp_dir)
 
         return [tree_file, alignment_file, auspice_zip]
 

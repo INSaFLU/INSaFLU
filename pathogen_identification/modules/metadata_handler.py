@@ -556,7 +556,7 @@ class RunMetadataHandler:
                         "No taxid, accid or protid in the dataframe, unable to retrieve description."
                     )
 
-        df = df[(df.taxid != "0") | (df.taxid != 0) | (df.taxid.isnull()) | (df.taxid != "")]
+        df = df[(df.taxid != "0") & (df.taxid != 0) & (df.taxid.isnull()) & (df.taxid != "")]
 
         df["taxid"] = df["taxid"].astype(str)
         # remove decimals from taxid

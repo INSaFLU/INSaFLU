@@ -812,7 +812,7 @@ def Update_Run_QC(run_class: RunEngine_class, parameter_set: ParameterSet):
                 input_reads=f"{method.reads_before_processing:,}",
                 output_reads=f"{method.reads_after_processing:,}",
                 output_reads_percent=str(
-                    method.reads_after_processing / method.reads_before_processing * 100
+                    0 if method.reads_before_processing == 0 else method.reads_after_processing / method.reads_before_processing * 100
                 ),
             )
             RunQC.save()

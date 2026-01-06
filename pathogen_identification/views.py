@@ -97,14 +97,15 @@ from pathogen_identification.tables import (
     TeleFluReferenceTable,
 )
 
-##########################################
-########################################## MAKE THESE DISAPPEAR - MORE TABLES
-########################################## FIND OR CREATE - LINK TO SAMPLES, RUNS.
+
 from pathogen_identification.utilities.reference_utils import (
     filter_reference_maps_select,
     generate_insaflu_reference,
 )
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
+##########################################
+########################################## MAKE THESE DISAPPEAR - MORE TABLES
+########################################## FIND OR CREATE - LINK TO SAMPLES, RUNS.
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
 from pathogen_identification.utilities.utilities_general import (
@@ -394,7 +395,6 @@ class UploadNewReferencesView(
                         continue
 
                     vect_pass.append(seq_name)
-                    insaflu_reference = Reference.objects.get(pk=ref_pk)
 
             utils.remove_file(original_file_name)
             message = (
@@ -1174,6 +1174,10 @@ class TelefluProjectView(BaseBreadcrumbMixin, LoginRequiredMixin, generic.Create
             pk=teleflu_project_pk, is_deleted=False
         ).order_by("-last_change_date")
         televir_project = teleflu_projects[0].televir_project
+        if televir_project is None:
+            messages.error(self.request, "Televir project does not exist")
+            raise Http404
+        
         user = televir_project.owner
 
         context["insaflu_table"] = None
@@ -1293,13 +1297,20 @@ class TelefluMappingIGV(BaseBreadcrumbMixin, LoginRequiredMixin, generic.Templat
 
         teleflu_mapping_pk = int(self.kwargs["pk"])
         teleflu_mapping = TelefluMapping.objects.get(pk=teleflu_mapping_pk)
-        leaf_index = teleflu_mapping.leaf.index
         teleflu_project = teleflu_mapping.teleflu_project
+
+        if teleflu_project is None:
+            return False
+        
         televir_project_index = teleflu_project.televir_project.pk
 
         ### get reference
+        if teleflu_project.raw_reference is None:
+            return False
+        
         teleflu_reference = teleflu_project.raw_reference
-        if teleflu_reference is None:
+
+        if teleflu_reference.file_path is None:
             return False
 
         reference_file = teleflu_reference.file_path
@@ -1314,7 +1325,7 @@ class TelefluMappingIGV(BaseBreadcrumbMixin, LoginRequiredMixin, generic.Templat
         igv_genome_options = {
             "reference": reference_file,
             "reference_index": reference_index,
-            "reference_name": teleflu_mapping.teleflu_project.raw_reference.description,
+            "reference_name": teleflu_reference.description,
         }
 
         # samples
@@ -1330,6 +1341,9 @@ class TelefluMappingIGV(BaseBreadcrumbMixin, LoginRequiredMixin, generic.Templat
                 sample, teleflu_mapping.leaf.index, accid_list_simple
             )
             if ref_select is None:
+                continue
+
+            if ref_select.has_data is False:
                 continue
 
             sample_dict[sample.pk] = {
@@ -2747,6 +2761,19 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
 
         project_name = project_main.name
         sample_name = sample.name
+
+        if run_main_pipeline.parameter_set is None:
+            messages.error(self.request, "Run parameters do not exist")
+            raise Http404
+
+        if run_main_pipeline.parameter_set.leaf is None:
+            messages.error(self.request, "Run parameters do not exist")
+            raise Http404
+        
+        if run_main_pipeline.parameter_set.leaf.index is None:
+            messages.error(self.request, "Run parameters do not exist")
+            raise Http404
+
         run_name = run_main_pipeline.parameter_set.leaf.index
         sample_main = run_main_pipeline.sample
         #
@@ -2850,7 +2877,6 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
         excluded_reports_exist = report_sorter.check_excluded_exist()
         empty_reports = report_sorter.get_reports_empty()
 
-        sort_performed = True if report_sorter.analysis_empty is False else False
 
         if excluded_reports_exist and report_sorter.analysis_empty is False:
 
@@ -2884,6 +2910,7 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
         # ret = SampleReadsRetrieve(sample)
         sample_retrieve = SampleReadsRetrieve(sample_main.sample)
         parameter_set = run_main_pipeline.parameter_set
+        
         processed_reads = sample_retrieve.parameter_set_processed_reads(parameter_set)
         if len(processed_reads) > 0:
             processed_reads = processed_reads[0]
@@ -2894,7 +2921,7 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
             "crumbs": self.crumbs,
             "project": project_name,
             "run_name": run_name,
-            "sort_performed": sort_performed,
+            "sort_performed": report_sorter.sort_performed,
             "groups_count": len(sorted_reports),
             "min_shared_reads": round(
                 report_layout_params.shared_proportion_threshold * 100, 2

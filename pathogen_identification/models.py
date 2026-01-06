@@ -1753,6 +1753,17 @@ class ReferenceMap_Main(models.Model):
     def __str__(self):
         return self.reference
 
+    @property
+    def has_data(self):
+        return (
+            self.bam_file_path is not None
+            and self.bai_file_path is not None
+            and self.fasta_file_path is not None
+            and self.fai_file_path is not None
+            and self.mapped_subset_r1 is not None
+            and self.mapped_subset_r1_fasta is not None
+        )
+
     def delete_data(self):
         if self.bam_file_path:
             if os.path.isfile(self.bam_file_path):

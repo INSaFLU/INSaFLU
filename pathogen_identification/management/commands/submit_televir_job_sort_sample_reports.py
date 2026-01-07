@@ -4,7 +4,7 @@ from typing import List
 
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
-
+from pathogen_identification.models import PIProject_Sample
 from managing_files.models import ProcessControler
 
 from pathogen_identification.utilities.utilities_views import calculate_reports_overlaps

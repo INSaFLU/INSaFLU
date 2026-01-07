@@ -556,7 +556,7 @@ class RunMetadataHandler:
                         "No taxid, accid or protid in the dataframe, unable to retrieve description."
                     )
 
-        df = df[(df.taxid != "0") | (df.taxid != 0)]
+        df = df[(df.taxid != "0") & (df.taxid != 0) & (df.taxid != "")]
 
         df["taxid"] = df["taxid"].astype(str)
         # remove decimals from taxid
@@ -729,7 +729,7 @@ class RunMetadataHandler:
             counts = merged_table.taxid.value_counts()
             counts = pd.DataFrame(counts).reset_index()
             counts.columns = ["taxid", "counts"]
-
+            
             merged_table["taxid"] = merged_table["taxid"].astype(int)
             counts["taxid"] = counts["taxid"].astype(int)
 

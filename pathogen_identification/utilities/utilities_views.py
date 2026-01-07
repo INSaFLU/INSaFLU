@@ -1313,6 +1313,10 @@ class ReportSorter:
         self.logger = logging.getLogger(__name__)
         self.logger.info("ReportSorter: {}".format(self.media_dir))
         self.logger.setLevel(logging.DEBUG)
+    
+    @property
+    def sort_performed(self):
+        return self.analysis_empty == False
 
     def build_tree(self):
 

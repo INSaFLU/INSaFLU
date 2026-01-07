@@ -235,7 +235,10 @@ class TelevirParameters:
             run_main = RunMain.objects.get(pk=run_pk)
             project = run_main.project
         elif project_pk:
-            project = Projects.objects.get(pk=project_pk)
+            try:
+                project = Projects.objects.get(pk=project_pk)
+            except Projects.DoesNotExist:
+                raise Exception("Project not found")
         else:
             raise Exception("No run or project pk")
 

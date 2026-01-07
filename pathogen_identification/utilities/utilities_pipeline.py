@@ -3222,7 +3222,7 @@ class SoftwareTreeUtils:
             mapping_only=False,
         )
 
-        clean_samples_leaf_dict, workflow_deployed_dict = (
+        clean_samples_leaf_dict, _ = (
             self.utils_manager.sample_nodes_check_repeat_allowed(
                 submission_dict, available_path_nodes, self.project
             )
@@ -3296,7 +3296,6 @@ class SoftwareTreeUtils:
         Generate a software tree for a technology and a tree makeup
         """
         tree_makeup = local_tree.makeup
-        technology = local_tree.technology
 
         if self.check_default_software_tree_exists(global_index=tree_makeup) is False:
             self.update_software_tree(local_tree)
@@ -3312,10 +3311,12 @@ class SoftwareTreeUtils:
         """Generate Software Tree Register and extend with local paths"""
         local_paths = local_tree.get_all_graph_paths_explicit()
         pipeline_tree = self.generate_software_tree_register(local_tree)
-        for leaf, path in local_paths.items():
+
+        for _, path in local_paths.items():
             pipeline_tree = self.utility_manager.match_path_to_tree_extend(
                 path, pipeline_tree
             )
+        
         self.update_software_tree(pipeline_tree)
         pipeline_tree = self.prep_tree_for_extend(pipeline_tree)
         return pipeline_tree

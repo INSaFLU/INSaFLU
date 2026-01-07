@@ -1,3 +1,4 @@
+import os
 import django_tables2 as tables
 from django.conf import settings
 from django.db.models import F
@@ -513,6 +514,10 @@ class SampleTable(tables.Table):
             ),
             None,
         )
+        file_name = record.get_fastq(TypePath.MEDIA_ROOT, True)
+        warning_sign = ""
+        if os.path.exists(file_name) is False:
+            warning_sign = '<span style="color: red; border:1px; border-color: red;"><i class="fa fa-warning" title="FASTQ file not found"></i></span> '
 
         if (
             record.is_ready_for_projects
@@ -521,9 +526,9 @@ class SampleTable(tables.Table):
         ):
             if user.username != Constants.USER_ANONYMOUS:
                 ## test if it has the original fastq files
-                str_links = self._get_magic_handle(record)
+                str_links = warning_sign + self._get_magic_handle(record)
             else:
-                str_links = ""
+                str_links = warning_sign + ""
             return mark_safe(
                 str_links
                 + "<a href="
@@ -537,7 +542,8 @@ class SampleTable(tables.Table):
             and len(record.candidate_file_name_1) > 0
         ):
             return mark_safe(
-                "<a href="
+                warning_sign
+                + "<a href="
                 + reverse("sample-description", args=[record.pk])
                 + '><span ><i class="fa fa-plus-square"></i></span> More Info</a>'
             )

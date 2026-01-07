@@ -720,14 +720,7 @@ def filter_reference_maps_select(
         run__parameter_set__leaf__index=leaf_id,
         reference__in=reference,
     )
-
-    refs = RawReference.objects.filter(
-        run__parameter_set__sample=sample,
-        accid__in=reference,
-        run__parameter_set__leaf__index=leaf_id,
-        status=RawReference.STATUS_MAPPED,
-    )
-
+    
     for ref in ref_maps:
 
         if not ref.bam_file_path:

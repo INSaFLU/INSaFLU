@@ -505,7 +505,15 @@ class Tree_Progress:
         for leaf in node.leaves:
             leaf_node = self.spawn_node_child_prepped(node, leaf)
             self.register_node(leaf_node)
-            self.update_node_dbs(leaf_node)
+            update_success = self.update_node_dbs(leaf_node)
+
+            if not update_success:
+                self.logger.warning(f"Node {leaf_node.node_index} failed to update databases")
+                leaf_node = self.spawn_node_child(node, leaf)
+                # self.submit_node_run(leaf_node)
+                _ = leaf_node.register_failed(
+                    self.project, self.sample, self.tree
+                )
 
             node.run_manager.classification_updated = (
                 leaf_node.run_manager.classification_updated

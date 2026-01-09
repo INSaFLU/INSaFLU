@@ -34,7 +34,7 @@ from fluwebvirus.views import (
 urlpatterns = []
 if settings.ADMIN_ENABLED:
     urlpatterns += [
-        path(r"^admin/", admin.site.urls),
+        path("admin/", admin.site.urls),
     ]
 
 urlpatterns += [

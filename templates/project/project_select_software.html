@@ -9,11 +9,6 @@
 <link rel="stylesheet" href="{% static 'css/settings-index.css' %}" type="text/css" />
 {% endblock css %}
 
-{% block breadcrumbs %}
-{{ block.super }}
-{% breadcrumb "Project Index" "project-index"%}
-{% endblock %}
-
 {% block content %}
 <style>
     .highlight {
@@ -159,13 +154,20 @@
             var href = $(this).attr('href');
 
             $.ajax({
-                url: '/settings/ajax/get_mdcg_project_software',
+                url: '{% url "get_mdcg_project_software" %}',
                 data: {
                     project_id: project_id,
                     software_name: software_name,
                     csrfmiddlewaretoken: '{{ csrf_token }}'
                 },
                 success: function(data) {
+                    if (!data.is_ok) {
+                        $.unblockUI();
+                        var msg = data.message || "Error initializing software settings.";
+                        alert(msg);
+                        return;
+                    }
+
                     var software_id = data['software_id'];
                     wait_screen();
 
@@ -176,7 +178,7 @@
                     }
 
                     $.ajax({
-                        url: '/settings/ajax/turn_on_off_software',
+                        url: '{% url "turn_on_off_software" %}',
                         data: {
                             software_id: software_id,
                             type_of_use_id: type_of_use_id,
@@ -188,7 +190,7 @@
                             window.location.href = href;
                         },
                         error: function(xhr, errmsg, err) {
-                            alert(errmsg);
+                            alert("AJAX Error: " + errmsg);
                             console.log(xhr.status + ": " + xhr.responseText);
                             $.unblockUI();
                         }

@@ -159,5 +159,8 @@ ENV/
 # televir projects media and static
 media/televir_projects
 
+# Gemini
+GEMINI.md
+
 [safe]
 directory = *

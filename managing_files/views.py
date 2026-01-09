@@ -2350,10 +2350,13 @@ class ProjectCreateView(
     utils = Utils()
     model = Project
     fields = ["name"]
-    success_url = reverse_lazy("projects")
+    # success_url = reverse_lazy("projects")
     template_name = "project/project_add.html"
 
     add_home = True
+
+    def get_success_url(self):
+        return reverse("PIproject-select-software", kwargs={"pk": self.object.id})
 
     @cached_property
     def crumbs(self):
@@ -3417,7 +3420,7 @@ class ProjectsSettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
         ).count()
         ### IMPORTANT, must have technology__name, because old versions don't
         technologies = ConstantsSettings.vect_technology
-        if not software_mdcg.name == SoftwareNames.SOFTWARE_SNIPPY_name:
+        if software_mdcg and not software_mdcg.name == SoftwareNames.SOFTWARE_SNIPPY_name:
             technologies = ConstantsSettings.vect_technology_illumina_projects
 
         for technology in technologies:  ## run over all technology

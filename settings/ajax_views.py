@@ -729,48 +729,54 @@ def get_mdcg_project_software(request):
     test all defaults for project software, return project pk for selected project software
     """
 
-    if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        data = {"is_ok": False}
-        project_id = request.GET["project_id"]
-        software_name = request.GET["software_name"]
-        project = Project.objects.get(pk=project_id)
-        default_software = DefaultProjectSoftware()
-        default_software.test_all_defaults(
-            request.user, project, None, None, None
-        )  ## the user can have defaults yet
+    try:
 
-        if software_name == "IRMA":
-            software_name = SoftwareNames.SOFTWARE_IRMA_name
-        elif software_name == "IVAR":
-            software_name = SoftwareNames.SOFTWARE_IVAR_name
-        elif software_name == "Snippy":
-            software_name = SoftwareNames.SOFTWARE_SNIPPY_name
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            data = {"is_ok": False}
+            project_id = request.GET["project_id"]
+            software_name = request.GET["software_name"]
+            project = Project.objects.get(pk=project_id)
+            default_software = DefaultProjectSoftware()
+            default_software.test_all_defaults(
+                request.user, project, None, None, None
+            )  ## the user can have defaults yet
 
-        else:
-            data["is_ok"] = False
+            if software_name == "IRMA":
+                software_name = SoftwareNames.SOFTWARE_IRMA_name
+            elif software_name == "IVAR":
+                software_name = SoftwareNames.SOFTWARE_IVAR_name
+            elif software_name == "Snippy":
+                software_name = SoftwareNames.SOFTWARE_SNIPPY_name
+
+            else:
+                data["is_ok"] = False
+                return JsonResponse(data)
+
+            software = Software.objects.filter(
+                name=software_name,
+                owner=request.user,
+                type_of_use=Software.TYPE_OF_USE_project,
+                parameter__project=project,
+                parameter__project_sample=None,
+                is_obsolete=False,
+            ).distinct()
+
+            software = software.first()
+
+            if software is None:
+                data["is_ok"] = False
+                return JsonResponse(data)
+
+            data["is_ok"] = True
+            data["project_id"] = project_id
+            data["software_id"] = software.id
+            data["has_samples"] = ProjectSample.objects.filter(
+                project=project, is_deleted=False
+            ).exists()
             return JsonResponse(data)
-
-        software = Software.objects.filter(
-            name=software_name,
-            owner=request.user,
-            type_of_use=Software.TYPE_OF_USE_project,
-            parameter__project=project,
-            parameter__project_sample=None,
-            is_obsolete=False,
-        ).distinct()
-
-        software = software.first()
-
-        if software is None:
-            data["is_ok"] = False
-            return JsonResponse(data)
-
-        data["is_ok"] = True
-        data["project_id"] = project_id
-        data["software_id"] = software.id
-        data["has_samples"] = ProjectSample.objects.filter(
-            project=project, is_deleted=False
-        ).exists()
+            
+    except Exception as e:
+        data = {"is_ok": False, "message": "Error:" + str(e)}
         return JsonResponse(data)
 
 

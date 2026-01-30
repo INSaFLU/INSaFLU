@@ -1275,6 +1275,9 @@ class ShowDatasetsConsensusView(LoginRequiredMixin, ListView):
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv2: Reference.SPECIES_DENGUE,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv3: Reference.SPECIES_DENGUE,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4: Reference.SPECIES_DENGUE,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_wnv_all: Reference.SPECIES_WNV,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_wnv_1a: Reference.SPECIES_WNV,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_wnv_2: Reference.SPECIES_WNV,
         }
 
         build = "NA"

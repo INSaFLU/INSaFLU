@@ -5563,6 +5563,7 @@ class Software(object):
 
         return [tree_file, alignment_file, auspice_zip]
 
+
     def run_nextstrain_generic(
         self, alignments, metadata, ref_fasta, ref_genbank, time=False, cores=1
     ):
@@ -5860,6 +5861,174 @@ class Software(object):
         )
 
         self.utils.remove_dir(temp_dir)
+
+        return [tree_file, alignment_file, auspice_zip]
+
+
+    def run_nextstrain_wnv(
+        self, alignments, metadata, strain="all-lineages", cores=1
+    ):
+        """
+        run nextstrain
+        :param  alignments: sequence file with nucleotides
+        :param  metadata: tabbed table file with properties
+        :param  strain: wnv strain (one of: all-lineages, lineage-1A, lineage-2 - defaults to all-lineages)
+        :param  cores: the number of cores to be used in nextstrain (defaults to 1)
+        :out temp folder with all data (including results)
+        """
+
+        # Create a temp folder
+        temp_dir = self.utils.get_temp_dir()
+
+        # copy the base nexstrain folder to a temp folder
+        # TODO Make a function copy_folder in utils
+        build = "WNV"
+        cmd = (
+            "cp -r "
+            + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE
+            + "/"
+            + build
+            + "/phylogenetic"
+            + "/* "
+            + temp_dir
+        )
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise Exception(
+                "Fail to copy nexstrain folder "
+                + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE
+                + "/"
+                + build
+                + "/* "
+                + temp_dir
+            )
+
+        # TODO Create folder instead of relying on a pre-existing one
+
+        # add sequences.fasta and metadata.tsv to data folder
+        if(strain == "lineage-1A"):
+
+            nbrseqs = self.utils.merge_fasta_files_simple(
+                [alignments, os.path.join(temp_dir, "data", "KX394399.fasta")],
+                os.path.join(temp_dir, "data", "sequences.fasta"),
+            )
+            if(nbrseqs < 1):
+                self.logger_production.error("Fail to concatenate KX394399 fasta with consensus in temp folder")
+                self.logger_debug.error("Fail to concatenate KX394399 fasta with consensus in temp folder")
+                raise Exception(
+                    "Fail to concatenate KX394399 fasta with consensus in temp folder"
+                    + temp_dir
+                )
+
+            merged_df = self.utils.merge_metadata(
+                [metadata, os.path.join(temp_dir, "data", "KX394399.tsv")],
+                os.path.join(temp_dir, "data", "metadata.tsv"), 
+                Constants.SEPARATOR_TAB, fillna_value="?"
+            ) 
+            #if(merged_df.empty()):
+            #    self.logger_production.error("Fail to concatenate KX394399 metadata with consensus in temp folder")
+            #    self.logger_debug.error("Fail to concatenate KX394399 metadata with consensus in temp folder")
+            #    raise Exception(
+            #        "Fail to concatenate KX394399 metadata with consensus in temp folder"
+            #        + temp_dir
+            #    )
+            print("Created metadata.tsv")
+        else:
+            self.utils.copy_file(
+                alignments,
+                os.path.join(temp_dir, "data", "sequences.fasta"),
+            )
+            self.utils.copy_file(
+                metadata, 
+                os.path.join(temp_dir, "data", "metadata.tsv")
+            )
+
+        self.utils.remove_temp_file(os.path.join(temp_dir, "Snakefile"))
+
+        self.utils.copy_file(os.path.join(temp_dir, "Snakefile_{}".format(strain)),
+                        os.path.join(temp_dir, "Snakefile"))
+
+        # Now run Nextstrain
+        cmd = "{} build --native {} --cores {} 2> {}/stderr.txt > {}/stdout.txt".format(
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_05_12_2025,
+            temp_dir,
+            str(cores),
+            temp_dir,
+            temp_dir,
+        )
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise CmdException(
+                message="Fail to run nextstrain.", cmd=cmd, output_path=temp_dir
+            )
+
+        tree_file = self.utils.get_temp_file("treefile.nwk", sz_type="nwk")
+        # Convert json to tree
+        cmd = "{} --tree {} --output-tree {}".format(
+            os.path.join(settings.DIR_SOFTWARE, "nextstrain/auspice_tree_to_table.sh"),
+            os.path.join(
+                temp_dir, "auspice", "WNV_"+ strain + ".json"
+            ),
+            tree_file,
+        )
+
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise CmdException(
+                message="Fail to run conversion of json to tree.",
+                cmd=cmd,
+                output_path=temp_dir,
+            )
+
+        # Copy log folder to auspice to be included in the zip
+        cmd = "cp -r {} {}".format(
+            os.path.join(temp_dir, "logs"),
+            os.path.join(temp_dir, "auspice"),
+        )
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise CmdException(
+                message="Fail to copy log to output folder.",
+                cmd=cmd,
+                output_path=temp_dir,
+            )
+
+        cmd = "mv {} {}".format(
+            os.path.join(temp_dir, "stdout.txt"),
+            os.path.join(temp_dir, "auspice", "logs"),
+        )
+        exit_status = os.system(cmd)
+
+
+        cmd = "mv {} {}".format(
+            os.path.join(temp_dir, "stderr.txt"),
+            os.path.join(temp_dir, "auspice"),
+        )
+        exit_status = os.system(cmd)
+
+        # Collect results
+        zip_out = self.zip_files_in_path(os.path.join(temp_dir, "auspice"))
+        auspice_zip = self.utils.get_temp_file("tempfile.zip", sz_type="zip")
+        self.utils.move_file(zip_out, auspice_zip)
+
+        # results/aligned_h3n2_ha_12y.fasta
+        alignment_file = self.utils.get_temp_file("aligned.fasta", sz_type="fasta")
+        self.utils.move_file(
+            os.path.join(
+                temp_dir, "results", strain, "aligned.fasta"
+            ),
+            alignment_file,
+        )
+
+        #self.utils.remove_dir(temp_dir)
 
         return [tree_file, alignment_file, auspice_zip]
 

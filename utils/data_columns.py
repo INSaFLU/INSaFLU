@@ -121,6 +121,7 @@ VECT_NEXTSTRAIN_mandatory_dengue = [
 
 VECT_NEXTSTRAIN_mandatory_wnv = [
 		NEXTSTRAIN_accession,
+		NEXTSTRAIN_genbank_accession,
 		NEXTSTRAIN_strain,
 		NEXTSTRAIN_date,
 		NEXTSTRAIN_region,

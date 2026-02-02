@@ -223,6 +223,7 @@ DICT_NEXTSTRAIN_default_dengue = {
 	}
 
 DICT_NEXTSTRAIN_default_wnv_all = {
+		NEXTSTRAIN_genbank_accession : "?",
 		NEXTSTRAIN_region : "?",
 		NEXTSTRAIN_host : "?", 
 		NEXTSTRAIN_is_lab_host : "",
@@ -230,6 +231,7 @@ DICT_NEXTSTRAIN_default_wnv_all = {
 	}	
 
 DICT_NEXTSTRAIN_default_wnv_1A = {
+		NEXTSTRAIN_genbank_accession : "?",
 		NEXTSTRAIN_region : "?",
 		NEXTSTRAIN_host : "?", 
 		NEXTSTRAIN_is_lab_host : "",
@@ -237,6 +239,7 @@ DICT_NEXTSTRAIN_default_wnv_1A = {
 	}
 
 DICT_NEXTSTRAIN_default_wnv_2 = {
+		NEXTSTRAIN_genbank_accession : "?",
 		NEXTSTRAIN_region : "?",
 		NEXTSTRAIN_host : "?", 
 		NEXTSTRAIN_is_lab_host : "",

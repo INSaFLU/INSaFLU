@@ -666,7 +666,7 @@ class PipelineTree:
         path_extensive = self.get_path_explicit(path_extensive)
 
         path = [x[1] for x in path_extensive]
-        df = []
+        df_list = []
         path = [x for x in path if x[0] != "root"]
         current_module = None
         for ix, node in enumerate(path):
@@ -685,7 +685,7 @@ class PipelineTree:
             if node_type == "module":
                 if current_module:
                     for param, value in current_module["params"].items():
-                        df.append(
+                        df_list.append(
                             [
                                 current_module.get("module"),
                                 "_".join(param.split("_")[:-1]).lower(),
@@ -710,7 +710,7 @@ class PipelineTree:
 
         if current_module:
             for param, value in current_module["params"].items():
-                df.append(
+                df_list.append(
                     [
                         current_module.get("module"),
                         current_module.get("software"),
@@ -719,10 +719,10 @@ class PipelineTree:
                         list(set(current_module.get("leaves"))),
                     ]
                 )
-        df = pd.DataFrame(
-            df, columns=["module", "software", "parameter", "value", "leaves"]
+        df_list = pd.DataFrame(
+            df_list, columns=["module", "software", "parameter", "value", "leaves"]
         )
-        return df
+        return df_list
 
     def leaves_from_node(self, node, leaves=[]):
         """ """
@@ -1831,8 +1831,12 @@ class Utility_Pipeline_Manager:
 
         def update_nodes_index(new_node, df: pd.DataFrame):
             """Add new node to nodes index dict"""
-            df = df.append(
-                pd.DataFrame([[new_node]], columns=["child"]).set_index("child")
+
+            if df.empty:
+                df = pd.DataFrame(columns=["child"]).set_index("child")
+
+            df = pd.concat(
+                [df, pd.DataFrame([[new_node]], columns=["child"]).set_index("child")]  
             )
             return df
 

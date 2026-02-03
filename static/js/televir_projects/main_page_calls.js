@@ -203,7 +203,6 @@ $('#checkBoxAll').on('change', function () {
 
 $(document).ready(function () {
 
-    console.log("Document ready, loading checked rows from sessionStorage");
     sessionStorage.removeItem('checkedRows');
 
     var checkedRows = JSON.parse(sessionStorage.getItem('checkedRows')) || [];

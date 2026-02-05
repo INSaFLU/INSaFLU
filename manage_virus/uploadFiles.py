@@ -352,7 +352,6 @@ class UploadFiles(object):
                     reference.reference_genbank_name,
                 )
                 if gbk_file_name is None:
-                    print(file)
                     temp_dir = software.run_prokka(file, os.path.basename(file))
                     self.utils.move_file(
                         os.path.join(temp_dir, reference.reference_genbank_name),

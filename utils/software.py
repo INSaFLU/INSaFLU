@@ -1924,6 +1924,7 @@ class Software(object):
         if exist_status != 0:
             self.logger_production.error("Fail to run: " + cmd)
             self.logger_debug.error("Fail to run: " + cmd)
+            print(cmd)
             raise Exception("Fail to run prokka")
 
         ## clean /mol_type=

@@ -169,11 +169,14 @@ class DefaultParameters(object):
                         type_of_software=parameter.software.type_of_software,
                         type_of_use=parameter.software.type_of_use,
                         technology=parameter.software.technology,
+                        pipeline_step=parameter.software.pipeline_step,
                     )
                 except Software.DoesNotExist:
                     software = parameter.software
+
                     try:
                         # with LockedAtomicTransaction(Software):
+
                         software = Software.objects.create(
                             name=parameter.software.name,
                             name_extended=parameter.software.name_extended,
@@ -184,9 +187,13 @@ class DefaultParameters(object):
                             version_parameters=parameter.software.version_parameters,
                             pipeline_step=parameter.software.pipeline_step,
                             can_be_on_off_in_pipeline=parameter.software.can_be_on_off_in_pipeline,
+                            is_to_run=parameter.software.is_to_run,
                         )
+
                     except Exception as e:
                         logging.error("Error persisting software: {}".format(e))
+                        import traceback
+                        traceback.print_exc()
                         continue
 
                 except Software.MultipleObjectsReturned:

@@ -2325,6 +2325,7 @@ class ReferencesManagementSample(
 
     @cached_property
     def crumbs(self):
+        sample = PIProject_Sample.objects.get(pk=self.kwargs["pk1"])
         return [
             ("Project Index", reverse("project-index")),
             ("TELEVIR Projects", reverse("PIprojects_main")),
@@ -2336,13 +2337,13 @@ class ReferencesManagementSample(
                 self.kwargs["sample_name"],
                 reverse(
                     "sample_main",
-                    kwargs={"pk1": self.kwargs["pk1"], "pk2": self.kwargs["pk2"]},
+                    kwargs={"pk1": self.kwargs["pk1"], "pk2": sample.project.pk},
                 ),
             ),
             (
                 "References Management",
                 reverse(
-                    "sample_references_management", kwargs={"pk1": self.kwargs["pk2"]}
+                    "sample_references_management", kwargs={"pk1": self.kwargs["pk1"]}
                 ),
             ),
         ]

@@ -196,6 +196,7 @@ class DefaultSoftware(object):
             ),
             user,
         )
+
         self.test_default_db(
             SoftwareNames.SOFTWARE_SNIPPY_name,
             self.default_parameters.get_snippy_default(
@@ -204,6 +205,7 @@ class DefaultSoftware(object):
             user,
             SoftwareNames.SOFTWARE_SNIPPY_name_extended,
         )
+
         self.test_default_db(
             SoftwareNames.SOFTWARE_IVAR_name,
             self.default_parameters.get_ivar_default(
@@ -980,6 +982,7 @@ class DefaultSoftware(object):
     def test_default_persist_general(
         self, software_name, vect_parameters, user, type_of_use
     ):
+
         try:
 
             software_queried = Software.objects.get(
@@ -995,6 +998,7 @@ class DefaultSoftware(object):
 
         except Software.MultipleObjectsReturned:
             ## keep the first one, delete the rest
+            print("Multiple software found for:", software_name)
             software_query = (
                 Software.objects.filter(
                     name=software_name,
@@ -1027,6 +1031,7 @@ class DefaultSoftware(object):
                     software.delete()
 
         except Software.DoesNotExist:  ### if not exist save it
+            print("software does not exist", software_name)
             self.default_parameters.persist_parameters(vect_parameters, type_of_use)
 
     def test_default_persist_specific(
@@ -1855,7 +1860,6 @@ class DefaultSoftware(object):
             return self.get_televir_report_layout_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_CENTRIFUGE_name:
-
             return self.get_centrifuge_parameters(
                 user, technology_name, pipeline_step=pipeline_step
             )

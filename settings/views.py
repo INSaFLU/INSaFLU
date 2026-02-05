@@ -260,6 +260,7 @@ class PISettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
                     parameter__televir_project=project,
                     parameter__televir_project_sample=None,
                     pipeline_step=software.pipeline_step,
+                    technology__name=project.technology,
                 )
 
             except Software.MultipleObjectsReturned:
@@ -318,6 +319,7 @@ class PISettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
                     parameter__televir_project=project,
                     parameter__televir_project_sample=None,
                     pipeline_step=software.pipeline_step,
+                    technology__name=project.technology,
                 )
 
             except Software.MultipleObjectsReturned:
@@ -533,7 +535,7 @@ class PISettingsGroupsView(PISettingsView):
 
         else:
             technologies = ConstantsSettings.vect_technology
-
+        
         all_tables = []  ## order by Technology, Group, PipelineStep, table
         ## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],
         ##    [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...], etc
@@ -625,6 +627,7 @@ class PISettingsGroupsView(PISettingsView):
                             vect_pipeline_step,
                         ]
                     )
+            
             ## if there is software for the pipeline step
             if len(groups_tables) > 0:
                 all_tables.append(

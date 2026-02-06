@@ -3365,7 +3365,8 @@ class ProjectsSettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
     """
     can change settings in the projects
     """
-
+    is_setup = False
+    setup_note = ""
     model = Project
     template_name = "settings/settings.html"
     context_object_name = "project"
@@ -3383,15 +3384,9 @@ class ProjectsSettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
             ),
         ]
 
-    def __init__(self):
-        self.is_setup = False
-        self.setup_note = ""
-
     def setup(self, request, *args, **kwargs):
         super(ProjectsSettingsView, self).setup(request, *args, **kwargs)
         self.request = request
-        self.is_setup = False
-        self.setup_note = ""
 
     def get_context_data(self, **kwargs):
         context = super(ProjectsSettingsView, self).get_context_data(**kwargs)
@@ -3488,17 +3483,6 @@ class ProjectsSettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
         return context
 
 
-class ProjectsSettingsSetupView(ProjectsSettingsView):
-    def setup(self, request, *args, **kwargs):
-        super(ProjectsSettingsSetupView, self).setup(request, *args, **kwargs)
-        self.is_setup = True
-        self.setup_note = "Software selection will be blocked after this"
-
-    def get_context_data(self, **kwargs):
-        self.is_setup = True
-        self.setup_note = "Software selection will be blocked after this"
-        context = super(ProjectsSettingsSetupView, self).get_context_data(**kwargs)
-        return context
 
 
 class SampleProjectsSettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):

@@ -321,7 +321,7 @@ class SoftwaresTable(tables.Table):
             else record.technology.name
         )
 
-    def render_options(self, record):
+    def render_options(self, record: Software):
         ### if project
         ## Edit
         from crequest.middleware import CrequestMiddleware

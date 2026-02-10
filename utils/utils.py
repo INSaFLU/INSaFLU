@@ -2043,14 +2043,14 @@ class Utils(object):
                         r10_min_high_g340, r941_min_fast_g303,
                         r941_min_high_g303, r941_min_high_g330,
                         r941_min_high_g340_rle, r941_min_high_g344,
-                        r941_min_high_g351, r941_min_high_g360,
+                        r941_min_high_g351, r1041_e82_400bps_sup_v4.3.0,
                         r941_prom_fast_g303, r941_prom_high_g303,
                         r941_prom_high_g330, r941_prom_high_g344,
                         r941_prom_high_g360, r941_prom_high_g4011,
                         r941_prom_snp_g303, r941_prom_snp_g322,
                         r941_prom_snp_g360, r941_prom_variant_g303,
                         r941_prom_variant_g322, r941_prom_variant_g360}
-                        (default: r941_min_high_g360)
+                        (default: r1041_e82_400bps_sup_v4.3.0)
         --threads THREADS     Number of threads used by inference. (default: 1)
 
         Medaka models are named to indicate:

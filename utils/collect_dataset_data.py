@@ -565,6 +565,9 @@ class CollectExtraDatasetData(object):
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv2,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv3,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_wnv_all,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_wnv_1a,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_wnv_2,
         ]
 
         build_to_ignore = False
@@ -881,6 +884,24 @@ class CollectExtraDatasetData(object):
                     alignments=sequences_file, metadata=metadata_file, type="denv4"
                 )
             )
+        elif build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_wnv_all:
+            tree_file, alignment_file, auspice_zip = (
+                self.software.run_nextstrain_wnv(
+                    alignments=sequences_file, metadata=metadata_file, strain="all-lineages"
+                )
+            )            
+        elif build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_wnv_1a:
+            tree_file, alignment_file, auspice_zip = (
+                self.software.run_nextstrain_wnv(
+                    alignments=sequences_file, metadata=metadata_file, strain="lineage-1A"
+                )
+            )            
+        elif build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_wnv_2:
+            tree_file, alignment_file, auspice_zip = (
+                self.software.run_nextstrain_wnv(
+                    alignments=sequences_file, metadata=metadata_file, strain="lineage-2"
+                )
+            )            
         elif build in [
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic_time,

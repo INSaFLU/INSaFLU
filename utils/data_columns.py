@@ -50,7 +50,8 @@ NEXTSTRAIN_clade = "clade"		## host; if not available needs to be “?”  - fro
 NEXTSTRAIN_genome_coverage = "genome_coverage"
 NEXTSTRAIN_is_reverse_complement = "is_reverse_complement"
 NEXTSTRAIN_QC_rare_mutations = "QC_rare_mutations"
-
+NEXTSTRAIN_is_lab_host = "is_lab_host"
+NEXTSTRAIN_lineage = "lineage"
 
 DATASET_LIST_INSAFLU_project_name = "project_name"	## project name or empty, if not from project
 
@@ -118,6 +119,17 @@ VECT_NEXTSTRAIN_mandatory_dengue = [
 		NEXTSTRAIN_host, 
 	]	
 
+VECT_NEXTSTRAIN_mandatory_wnv = [
+		NEXTSTRAIN_accession,
+		NEXTSTRAIN_genbank_accession,
+		NEXTSTRAIN_strain,
+		NEXTSTRAIN_date,
+		NEXTSTRAIN_region,
+		NEXTSTRAIN_host, 
+		NEXTSTRAIN_is_lab_host,
+		NEXTSTRAIN_lineage,
+	]	
+
 DICT_MANDATORY_FIELDS = {
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_ncov : VECT_NEXTSTRAIN_mandatory_ncov,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpx : VECT_NEXTSTRAIN_mandatory_mpx,
@@ -147,6 +159,9 @@ DICT_MANDATORY_FIELDS = {
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv2 : VECT_NEXTSTRAIN_mandatory_dengue,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv3 : VECT_NEXTSTRAIN_mandatory_dengue,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4 : VECT_NEXTSTRAIN_mandatory_dengue,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_wnv_all : VECT_NEXTSTRAIN_mandatory_wnv,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_wnv_1a : VECT_NEXTSTRAIN_mandatory_wnv,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_wnv_2 : VECT_NEXTSTRAIN_mandatory_wnv,
 }
 
 
@@ -207,6 +222,30 @@ DICT_NEXTSTRAIN_default_dengue = {
 		NEXTSTRAIN_host : "?",
 	}
 
+DICT_NEXTSTRAIN_default_wnv_all = {
+		NEXTSTRAIN_genbank_accession : "?",
+		NEXTSTRAIN_region : "?",
+		NEXTSTRAIN_host : "?", 
+		NEXTSTRAIN_is_lab_host : "",
+		NEXTSTRAIN_lineage : '?',
+	}	
+
+DICT_NEXTSTRAIN_default_wnv_1A = {
+		NEXTSTRAIN_genbank_accession : "?",
+		NEXTSTRAIN_region : "?",
+		NEXTSTRAIN_host : "?", 
+		NEXTSTRAIN_is_lab_host : "",
+		NEXTSTRAIN_lineage : '1A',
+	}
+
+DICT_NEXTSTRAIN_default_wnv_2 = {
+		NEXTSTRAIN_genbank_accession : "?",
+		NEXTSTRAIN_region : "?",
+		NEXTSTRAIN_host : "?", 
+		NEXTSTRAIN_is_lab_host : "",
+		NEXTSTRAIN_lineage : '2',
+	}
+
 DICT_MANDATORY_FIELDS_DEFAULTS = {
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_ncov : DICT_NEXTSTRAIN_default_ncov,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpx : DICT_NEXTSTRAIN_default_mpx,
@@ -236,7 +275,9 @@ DICT_MANDATORY_FIELDS_DEFAULTS = {
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv2 : DICT_NEXTSTRAIN_default_dengue,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv3 : DICT_NEXTSTRAIN_default_dengue,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4 : DICT_NEXTSTRAIN_default_dengue,
-
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_wnv_all : DICT_NEXTSTRAIN_default_wnv_all,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_wnv_1a : DICT_NEXTSTRAIN_default_wnv_1A,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_wnv_2 : DICT_NEXTSTRAIN_default_wnv_2,
 }
 
 ### if None pass

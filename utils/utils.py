@@ -1824,6 +1824,27 @@ class Utils(object):
                 SeqIO.write(vect_out_fasta, handle_fasta_out, "fasta")
         return len(vect_out_fasta)
 
+    def merge_fasta_files_simple(self, vect_path, out_file):
+        """
+        :param vect_path = [path_file1, path_file1, ... ]
+        :param outfile file
+        """
+        vect_out_fasta = []
+
+        for file in vect_path:
+            if not os.path.exists(file):
+                continue
+            with open(file, "rU") as handle_fasta:
+                for record in SeqIO.parse(handle_fasta, "fasta"):
+                    vect_out_fasta.append(record)
+
+        ### write the output
+        with open(out_file, "w") as handle_fasta_out:
+            if len(vect_out_fasta) > 0:
+                SeqIO.write(vect_out_fasta, handle_fasta_out, "fasta")
+        return len(vect_out_fasta)
+
+
     def merge_fasta_files(self, vect_sample_path_and_name, out_file):
         """
         :param vect_sample_path_and_name = [[path_file, sample_name],
@@ -2319,6 +2340,18 @@ class Utils(object):
         )
         pangolin_data.rename(columns={"taxon": "Sequence"}, inplace=True)
         return pangolin_data
+
+    def merge_metadata(self, metadata_file_list, out_file, separator, fillna_value="?"):
+        """
+        Merges the content of metadata files
+        """
+        all_dfs = [pandas.read_csv(f, sep=separator) for f in metadata_file_list]
+        merged_df = pandas.concat(all_dfs, axis=0, ignore_index=True, sort=False)
+        merged_df = merged_df.fillna(fillna_value)
+        
+        merged_df.to_csv(out_file, sep=separator, index=False)
+
+        return merged_df
 
 
 class ShowInfoMainPage(object):

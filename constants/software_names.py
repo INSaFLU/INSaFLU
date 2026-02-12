@@ -580,6 +580,10 @@ class SoftwareNames(object):
         SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4,
     ]
 
+    SOFTWARE_NEXTSTRAIN_BUILDS_wnv_all = "wnv_all"
+    SOFTWARE_NEXTSTRAIN_BUILDS_wnv_1a = "wnv_1a"
+    SOFTWARE_NEXTSTRAIN_BUILDS_wnv_2 = "wnv_2"
+
     SOFTWARE_NEXTSTRAIN_BUILDS = [
         SOFTWARE_NEXTSTRAIN_BUILDS_generic,
         SOFTWARE_NEXTSTRAIN_BUILDS_generic_time,
@@ -609,6 +613,9 @@ class SoftwareNames(object):
         SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv2,
         SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv3,
         SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4,
+        SOFTWARE_NEXTSTRAIN_BUILDS_wnv_all,
+        SOFTWARE_NEXTSTRAIN_BUILDS_wnv_1a,
+        SOFTWARE_NEXTSTRAIN_BUILDS_wnv_2,
     ]
     SOFTWARE_NEXTSTRAIN_BUILDS_DESC = [
         [SOFTWARE_NEXTSTRAIN_BUILDS_generic, "Generic"],
@@ -639,6 +646,9 @@ class SoftwareNames(object):
         [SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv2, "Dengue (DENV2)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv3, "Dengue (DENV3)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4, "Dengue (DENV4)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_wnv_all, "West Nile Virus (all)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_wnv_1a, "West Nile Virus (1a)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_wnv_2, "West Nile Virus (2)"],
     ]
 
     SOFTWARE_NEXTSTRAIN_BUILDS_REF_DICT = {
@@ -671,6 +681,9 @@ class SoftwareNames(object):
         SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv2: SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv2,
         SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv3: SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv3,
         SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4: SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4,
+        SOFTWARE_NEXTSTRAIN_BUILDS_wnv_all: SOFTWARE_NEXTSTRAIN_BUILDS_wnv_all,
+        SOFTWARE_NEXTSTRAIN_BUILDS_wnv_1a: SOFTWARE_NEXTSTRAIN_BUILDS_wnv_1a,
+        SOFTWARE_NEXTSTRAIN_BUILDS_wnv_2: SOFTWARE_NEXTSTRAIN_BUILDS_wnv_2,
     }
 
     # default build

@@ -690,58 +690,6 @@ def deploy_ProjectPI(request):
 
 @login_required
 @require_POST
-def deploy_ProjectPI_runs(request):
-    """
-    prepare data for deployment of pathogen identification.
-    """
-
-    if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        data = {"is_ok": False, "is_deployed": False}
-
-        process_SGE = ProcessSGE()
-
-        project_id = int(request.POST["project_id"])
-        project = Projects.objects.get(id=int(project_id))
-
-        user_id = int(request.POST["user_id"])
-        user = User.objects.get(id=int(user_id))
-
-        software_utils = SoftwareTreeUtils(user, project)
-        runs_to_deploy = software_utils.check_runs_to_deploy_project()
-
-        sample_ids = request.POST.getlist("sample_ids[]")
-        check_box_all_checked = request.POST.get("check_box_all_checked", False)
-        if check_box_all_checked:
-            sample_ids = []
-        else:
-            sample_ids = [int(sample_id) for sample_id in sample_ids]
-
-        try:
-            if len(runs_to_deploy) > 0:
-                for sample, leaves_to_deploy in runs_to_deploy.items():
-                    if len(sample_ids) > 0:
-                        if sample.pk not in sample_ids:
-                            continue
-                    for leaf in leaves_to_deploy:
-                        taskID = process_SGE.set_submit_televir_run(
-                            user=request.user,
-                            project_pk=project.pk,
-                            sample_pk=sample.pk,
-                            leaf_pk=leaf.pk,
-                        )
-
-                data["is_deployed"] = True
-
-        except Exception as e:
-            print(e)
-            data["is_deployed"] = False
-
-        data["is_ok"] = True
-        return JsonResponse(data)
-
-
-@login_required
-@require_POST
 def deploy_ProjectPI_combined_runs(request):
     """
     prepare data for deployment of pathogen identification.
@@ -807,47 +755,6 @@ def deploy_ProjectPI_combined_runs(request):
                 samples_deployed += 1
 
             if samples_deployed > 0:
-                data["is_deployed"] = True
-
-        except Exception as e:
-            print(e)
-            data["is_deployed"] = False
-
-        data["is_ok"] = True
-        return JsonResponse(data)
-
-
-@login_required
-@require_POST
-def submit_televir_project_sample_runs(request):
-    """
-    submit a new sample to televir project
-    """
-
-    if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        data = {"is_ok": False, "is_deployed": False}
-
-        process_SGE = ProcessSGE()
-        user = request.user
-
-        sample_id = int(request.POST["sample_id"])
-        sample = PIProject_Sample.objects.get(id=int(sample_id))
-        project = Projects.objects.get(id=int(sample.project.pk))
-
-        software_utils = SoftwareTreeUtils(user, project)
-        runs_to_deploy = software_utils.check_runs_to_deploy_sample(sample)
-
-        try:
-            if len(runs_to_deploy) > 0:
-                for sample, leafs_to_deploy in runs_to_deploy.items():
-                    for leaf in leafs_to_deploy:
-                        taskID = process_SGE.set_submit_televir_run(
-                            user=request.user,
-                            project_pk=project.pk,
-                            sample_pk=sample.pk,
-                            leaf_pk=leaf.pk,
-                        )
-
                 data["is_deployed"] = True
 
         except Exception as e:
@@ -1420,40 +1327,6 @@ def teleflu_igv_create(request):
             print(e)
             return JsonResponse(data)
 
-        return JsonResponse(data)
-
-
-@login_required
-@require_POST
-def create_insaflu_reference_from_raw(request):
-    if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        data = {"is_ok": False, "exists": False}
-
-        ref_id = int(request.POST["ref_id"])
-        user_id = int(request.POST["user_id"])
-        user = User.objects.get(id=user_id)
-        process_SGE = ProcessSGE()
-
-        try:
-            raw_ref = RawReference.objects.get(id=ref_id)
-
-            description = raw_ref.description
-            accid = raw_ref.accid
-
-            if check_user_reference_exists(
-                description, accid, user_id
-            ) or check_raw_reference_submitted(ref_id=ref_id, user_id=user_id):
-                data["is_ok"] = True
-                data["exists"] = True
-                return JsonResponse(data)
-            # success = create_reference(ref_id, user_id)
-            taskID = process_SGE.set_submit_raw_televir_teleflu_create(user, ref_id)
-
-        except Exception as e:
-            print(e)
-            return JsonResponse(data)
-
-        data["is_ok"] = True
         return JsonResponse(data)
 
 

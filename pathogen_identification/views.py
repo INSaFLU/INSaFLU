@@ -1037,8 +1037,6 @@ class MainPage(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView):
         DEPLOY_TYPE = PICS.DEPLOYMENT_DEFAULT
         DEPLOY_URL = "deploy_ProjectPI"
 
-        if DEPLOY_TYPE == PICS.DEPLOYMENT_TYPE_PIPELINE:
-            DEPLOY_URL = "deploy_runs_ProjectPI"
 
         context["rows_color"] = [
             "combinations",
@@ -1540,7 +1538,7 @@ class Sample_main(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView):
     sample main page with list runs per sample
     """
 
-    template_name = "pathogen_identification/sample_main.html"
+    template_name = "pathogen_identification/sample_workflows.html"
     model = RunMain
     fields = ["name"]
 
@@ -1670,13 +1668,13 @@ class Sample_main(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView):
             )
 
         RequestConfig(
-            self.request, paginate={"per_page": ConstantsSettings.PAGINATE_NUMBER}
+            self.request, paginate={"per_page": ConstantsSettings.TELEVIR_REFERENCE_PAGINATE_NUMBER}
         ).configure(runs_table)
 
         context = {
             "nav_project": True,
             "total_items": runs.count(),
-            "show_paginatior": runs.count() > ConstantsSettings.PAGINATE_NUMBER,
+            "show_paginatior": runs.count() > ConstantsSettings.TELEVIR_REFERENCE_PAGINATE_NUMBER,
             "show_info_main_page": ShowInfoMainPage(),
             "table": runs_table,
             "table_mapping": rendered_table,

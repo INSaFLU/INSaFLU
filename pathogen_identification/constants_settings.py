@@ -25,7 +25,7 @@ class ConstantsSettings:
     static_directory = STATIC_ROOT
     televir_subdirectory = "televir_projects"
     run_files_zipped = "run.zip"
-    PAGINATE_NUMBER = 10
+    PAGINATE_NUMBER = 20
     TELEVIR_REFERENCE_PAGINATE_NUMBER = 15
     test_subdirectory = "temp_objects_tests"
 

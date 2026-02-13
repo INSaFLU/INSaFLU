@@ -704,7 +704,7 @@ class Test(TestCase):
 			self.software_names.get_msa_masker_name()))
 		self.assertEquals("Minimum depth of coverage per site to validate the sequence; (Threshold:5)", result.get_software(
 			self.software_names.get_insaflu_parameter_limit_coverage_name()))
-		self.assertEquals("Medaka-1.2.1; (consensus -m r941_min_high_g360)/Medaka-1.2.1; (variant --verbose)",\
+		self.assertEquals("Medaka-1.2.1; (consensus -m r1041_e82_400bps_sup_v4.3.0)/Medaka-1.2.1; (variant --verbose)",\
  			result.get_software(self.software_names.get_medaka_name()))
 		self.assertEquals("Samtools-1.3; (depth -aa)",\
  			result.get_software(self.software_names.get_samtools_name()))

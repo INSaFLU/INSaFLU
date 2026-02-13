@@ -394,10 +394,10 @@ class testsDefaultSoftwares(TestCase):
         self.assertTrue(1, len(parameters))
 
         ### test set default
-        self.assertEqual("r941_min_high_g360", parameters[0].parameter)
+        self.assertEqual("r1041_e82_400bps_sup_v4.3.0", parameters[0].parameter)
         self.assertEqual("-m", parameters[0].name)
         self.assertEqual(
-            "-m r941_min_high_g360",
+            "-m r1041_e82_400bps_sup_v4.3.0",
             default_software.get_medaka_parameters_consensus(user),
         )
         parameter = parameters[0]
@@ -836,10 +836,10 @@ class testsDefaultSoftwares(TestCase):
         self.assertTrue(1, len(parameters))
 
         ### test set default
-        self.assertEqual("r941_min_high_g360", parameters[0].parameter)
+        self.assertEqual("r1041_e82_400bps_sup_v4.3.0", parameters[0].parameter)
         self.assertEqual("-m", parameters[0].name)
         self.assertEqual(
-            "-m r941_min_high_g360",
+            "-m r1041_e82_400bps_sup_v4.3.0",
             default_software.get_medaka_parameters(
                 user, Software.TYPE_OF_USE_project, project, None
             ),

@@ -114,8 +114,6 @@ class Command(BaseCommand):
             sample=target_sample, leaf=matched_path_node, project=project
         )
 
-        print("was_run_killed", was_run_killed)
-
         ### draw graph
         graph_progress = TreeProgressGraph(target_sample)
 

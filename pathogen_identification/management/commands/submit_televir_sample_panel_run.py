@@ -206,7 +206,7 @@ class Command(BaseCommand):
 
                 submission_dict[target_sample].append(run)
 
-                for sample, runs in submission_dict.items():
+                for _, runs in submission_dict.items():
                     for run in runs:
                         run.Submit()
 

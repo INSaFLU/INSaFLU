@@ -877,7 +877,7 @@ class UpdateParametersView(BaseBreadcrumbMixin, LoginRequiredMixin, UpdateView):
         return [
             ("Settings Index", reverse("settings-index")),
             ("Settings", reverse("settings")),
-            ("Update parameters", reverse("software-update")),
+            ("Update parameters", reverse("software-update", kwargs={"pk": self.object.pk}))
         ]
 
     ## Other solution to get the reference
@@ -934,11 +934,8 @@ class UpdateParametersView(BaseBreadcrumbMixin, LoginRequiredMixin, UpdateView):
                     continue
                 if parameter.get_unique_id() in form.cleaned_data:
                     if parameter.is_multiple_choice():
-                        print("multiple choice")
                         value_from_form = form.cleaned_data[parameter.get_unique_id()]
                         value_from_form = ";".join(value_from_form)
-                        print("value_from_form", value_from_form)
-
                     else:
                         value_from_form = "{}".format(
                             form.cleaned_data[parameter.get_unique_id()]
@@ -1115,7 +1112,7 @@ class UpdateParametersProjView(BaseBreadcrumbMixin, LoginRequiredMixin, UpdateVi
             ("Project Index", reverse("project-index")),
             ("Projects", reverse("projects")),
             ("Project settings", reverse("project-settings", self.kwargs["pk_proj"])),
-            ("Update parameters", reverse("software-update")),
+            ("Update parameters", reverse("software-update", kwargs={"pk": self.kwargs["pk"]})),
         ]
 
     ## Other solution to get the reference
@@ -1383,7 +1380,7 @@ class UpdateParametersProjSampleView(
                     ),
                 ),
                 ("Project sample settings", reverse("sample-project-settings")),
-                ("Update parameters", reverse("software-update")),
+                ("Update parameters", reverse("software-update", kwargs={"pk": self.kwargs["pk"]})),
             ],
         )
 
@@ -1560,11 +1557,11 @@ class UpdateParametersSampleView(BaseBreadcrumbMixin, LoginRequiredMixin, Update
                     "Show project results",
                     reverse(
                         "show-sample-project-results",
-                        kwargs={"pk": self.kwargs["pk_proj_sample"]},
+                        kwargs={"pk": self.kwargs["pk_sample"]},
                     ),
                 ),
-                ("Project sample settings", reverse("sample-project-settings")),
-                ("Update parameters", reverse("software-update")),
+                ("Project sample settings", reverse("sample-project-settings", kwargs={"pk": self.kwargs["pk_sample"]})),
+                ("Update parameters", reverse("software-update", kwargs={"pk" : self.kwargs["pk"]})),
             ],
         )
 

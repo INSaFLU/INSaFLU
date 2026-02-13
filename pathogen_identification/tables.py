@@ -572,8 +572,6 @@ class SampleTableOne(tables.Table):
         deployment_management = '<a><i class="fa fa-bug"></i></span> </a>'
 
         TELEVIR_DEPLOY_URL = "submit_televir_project_sample"
-        if CS.DEPLOYMENT_DEFAULT == CS.DEPLOYMENT_TYPE_PIPELINE:
-            TELEVIR_DEPLOY_URL = "submit_televir_runs_project_sample"
 
 
 

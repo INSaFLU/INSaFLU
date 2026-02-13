@@ -175,7 +175,7 @@ class SoftwareNames(object):
     SOFTWARE_Medaka_name = "Medaka"
     SOFTWARE_Medaka_name_consensus = "Medaka consensus"
     SOFTWARE_Medaka_name_variants = "Medaka variants"
-    SOFTWARE_Medaka_default_model = "r941_min_high_g360"
+    SOFTWARE_Medaka_default_model = "r1041_e82_400bps_sup_v4.3.0"
     SOFTWARE_Medaka_remove_tags_model = ["_snp_", "_fast_"]
     SOFTWARE_Medaka_name_extended_consensus = (
         "Consensus Generation (Medaka) and Optional Primer Clipping (iVar)"

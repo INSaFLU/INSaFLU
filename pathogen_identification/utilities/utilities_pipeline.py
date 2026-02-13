@@ -1173,13 +1173,6 @@ class Utility_Pipeline_Manager:
 
         return self.create_pipe_tree()
 
-    def compare_software_trees(self, new_tree: PipelineTree):
-        """
-        Compare two software trees and return the differences
-        """
-        old_tree = self.generate_default_software_tree()
-
-        return new_tree == old_tree
 
     def check_software_is_installed(self, software_name: str) -> bool:
         """
@@ -2058,7 +2051,7 @@ class Parameter_DB_Utility:
         mapping_only: bool = False,
         screening: bool = False,
         request_mapping: bool = False,
-    ):
+    ) -> QuerySet[Parameter]:
         """
         Get software tables for a user
         """
@@ -2074,145 +2067,40 @@ class Parameter_DB_Utility:
         else:
             steps = CS.vect_pipeline_televir_classic
 
-        software_available = Software.objects.filter(
-            technology__name=technology,
-            pipeline_step__name__in=steps,
-            is_to_run=True,
-            owner=user,
+        parameters_available = Parameter.objects.filter(
+            software__technology__name=technology,
+            software__pipeline_step__name__in=steps,
+            software__is_to_run=True,
+            software__owner=user,
         ).distinct()
 
         if not project and not sample:
-            software_available = software_available.filter(
-                type_of_use__in=Software.TELEVIR_GLOBAL_TYPES
+            parameters_available = parameters_available.filter(
+                software__type_of_use__in=Software.TELEVIR_GLOBAL_TYPES
             )
 
         elif sample is not None:
-            software_available = software_available.filter(
-                parameter__televir_project_sample=sample
+            parameters_available = parameters_available.filter(
+                software__parameter__televir_project_sample=sample
             )
 
         elif project is not None:
-            software_available = software_available.filter(
-                parameter__televir_project=project,
-                parameter__televir_project_sample=None,
-                type_of_use__in=Software.TELEVIR_PROJECT_TYPES,
+            parameters_available = parameters_available.filter(
+                software__parameter__televir_project=project,
+                televir_project_sample=None,
+                software__type_of_use__in=Software.TELEVIR_PROJECT_TYPES,
             )
 
-        parameters_available = Parameter.objects.filter(
-            software__in=software_available,
-        ).distinct()
+        #parameters_available = Parameter.objects.filter(
+        #    software__in=software_available,
+        #).distinct()
 
-        software_table = pd.DataFrame(software_available.values())
+        #software_table = pd.DataFrame(software_available.values())
+        #parameters_table = pd.DataFrame(parameters_available.values())
 
-        parameters_table = pd.DataFrame(parameters_available.values())
+        return parameters_available
+    
 
-        return software_table, parameters_table
-
-    def get_software_tables_project(self, owner: User, project: Projects):
-        """
-        Get software tables for a user
-        """
-
-        software_available = Software.objects.filter(
-            owner=owner,
-            type_of_use__in=Software.TELEVIR_PROJECT_TYPES,
-            technology__name=project.technology,
-            parameter__televir_project_sample=None,
-            pipeline_step__name__in=self.televir_constants.vect_pipeline_names_default,
-            is_to_run=True,
-        )
-
-        parameters_available = Parameter.objects.filter(
-            software__in=software_available,
-            televir_project=project,
-            televir_project_sample=None,
-            is_to_run=True,
-        )
-
-        software_table = pd.DataFrame(software_available.values())
-
-        parameters_table = pd.DataFrame(parameters_available.values())
-
-        return software_table, parameters_table
-
-    def get_software_tables_project_sample_metagenomics(
-        self, owner: User, project_sample: PIProject_Sample
-    ):
-        """
-        Get software tables for a user
-        """
-
-        software_available = Software.objects.filter(
-            owner=owner,
-            type_of_use__in=Software.TELEVIR_PROJECT_TYPES,
-            technology__name=project_sample.project.technology,
-            parameter__televir_project_sample=project_sample,
-            pipeline_step__name__in=CS.vect_pipeline_televir_metagenomics,
-            is_to_run=True,
-        )
-
-        parameters_available = Parameter.objects.filter(
-            software__in=software_available,
-            televir_project=project_sample.project,
-            televir_project_sample=project_sample,
-            is_to_run=True,
-        )
-
-        software_table = pd.DataFrame(software_available.values())
-
-        parameters_table = pd.DataFrame(parameters_available.values())
-
-        return software_table, parameters_table
-
-    def merge_software_tables(
-        self, software_table: pd.DataFrame, parameters_table: pd.DataFrame
-    ):
-        """"""
-
-        combined_table = pd.merge(
-            software_table, parameters_table, left_on="id", right_on="software_id"
-        )
-
-        combined_table = combined_table.rename(
-            columns={
-                "id_x": "software_id",
-                "id_y": "parameter_id",
-                "name": "software_name",
-                "name_x": "software_name",
-                "name_y": "parameter_name",
-                "is_to_run_x": "software_is_to_run",
-                "is_to_run_y": "parameter_is_to_run",
-            }
-        )
-
-        combined_table = combined_table[
-            combined_table.type_of_use.isin(
-                Software.TELEVIR_GLOBAL_TYPES + Software.TELEVIR_PROJECT_TYPES
-            )
-        ]
-
-        combined_table["pipeline_step"] = combined_table["pipeline_step_id"].apply(
-            lambda x: PipelineStep.objects.get(id=int(x)).name
-        )
-
-        combined_table["technology"] = combined_table["technology_id"].apply(
-            lambda x: Technology.objects.get(id=int(x)).name
-        )
-
-        combined_table = combined_table.reset_index(drop=True)
-        software_names = combined_table["software_name"].values
-        can_change = combined_table["can_change"].values
-
-        ## remove duplicate columns
-        #
-        combined_table = combined_table.loc[
-            :, ~combined_table.T.duplicated(keep="last")
-        ]
-
-        combined_table["software_name"] = software_names
-        combined_table["can_change"] = can_change
-
-        return combined_table
 
     def generate_merged_table_safe(
         self,
@@ -2227,25 +2115,26 @@ class Parameter_DB_Utility:
     ) -> pd.DataFrame:
         """
         Generate a software tree for a technology and a tree makeup"""
-
-        software_table, parameters_table = self.get_software_tables(
+        if sample is not None:
+            technology = sample.project.technology
+        elif project is not None:
+            technology = project.technology
+        
+        parameters_available = self.get_software_tables(
             technology,
             owner,
             project=project,
-            sample=sample,
+            sample=None,
             metagenomics=metagenomics,
             mapping_only=mapping_only,
             screening=screening,
             request_mapping=request_mapping,
         )
 
-        if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
-            if sample is not None:
-                technology = sample.project.technology
-            elif project is not None:
-                technology = project.technology
+        if parameters_available.count() == 0:
 
-            software_table, parameters_table = self.get_software_tables(
+
+            parameters_available = self.get_software_tables(
                 technology,
                 owner,
                 project=project,
@@ -2256,13 +2145,9 @@ class Parameter_DB_Utility:
                 request_mapping=request_mapping,
             )
 
-        if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
-            if sample is not None:
-                technology = sample.project.technology
-            elif project is not None:
-                technology = project.technology
+        if parameters_available.count() == 0:
 
-            software_table, parameters_table = self.get_software_tables(
+            parameters_available = self.get_software_tables(
                 technology,
                 owner,
                 project=None,
@@ -2273,7 +2158,8 @@ class Parameter_DB_Utility:
                 request_mapping=request_mapping,
             )
 
-        if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
+        if parameters_available.count() == 0:
+            # names after conversion
             return pd.DataFrame(
                 columns=[
                     "software_id",
@@ -2282,10 +2168,39 @@ class Parameter_DB_Utility:
                     "can_change",
                     "pipeline_step",
                     "software_name",
+                    "parameter_name",
                 ]
             )
+        
 
-        merged_table = self.merge_software_tables(software_table, parameters_table)
+        parameters_available = parameters_available.distinct()
+
+        merged_table = pd.DataFrame(parameters_available.values(
+            'software__id',
+            'id',
+            'software__technology__name',
+            'software__is_to_run',
+            'is_to_run',
+            'can_change',
+            'software__pipeline_step__name',
+            'software__name',
+            'name',
+            'parameter',
+            'type_data'
+        )).rename(
+            columns={
+                'software__id': 'software_id',
+                'parameter_id': 'parameter_id',
+                'software__is_to_run': 'software_is_to_run',
+                'is_to_run': 'parameter_is_to_run',
+                'software__technology__name': 'technology',
+                'software__can_change': 'can_change',
+                'software__pipeline_step__name': 'pipeline_step',
+                'software__name': 'software_name',
+                'name': 'parameter_name',
+                'type_data': 'type_data'
+            }
+        )
 
         return merged_table
 
@@ -3090,17 +3005,6 @@ class SoftwareTreeUtils:
 
         return False
 
-    def get_project_pathnodes(self) -> dict:
-        """
-        Get all pathnodes for a project
-        """
-        # local_tree = self.generate_project_tree()
-        if self.project is None:
-            return {}
-        local_tree = self.generate_software_tree_safe(self.project)
-
-        return self.get_available_pathnodes(local_tree)
-
     def get_sample_pathnodes(
         self,
         metagenomics: bool = False,
@@ -3123,25 +3027,6 @@ class SoftwareTreeUtils:
             return {}
 
         return self.get_available_pathnodes(local_tree)
-
-    def get_available_nodes_summary(
-        self,
-        metagenomics: bool = False,
-        mapping_only: bool = False,
-        screening: bool = False,
-    ) -> dict:
-        """return path as df for each leaf"""
-
-        local_tree = self.generate_software_tree_safe(
-            self.project,
-            self.sample,
-            metagenomics=metagenomics,
-            mapping_only=mapping_only,
-            screening=screening,
-        )
-
-        all_paths = local_tree.get_all_graph_paths()
-        return all_paths
 
     def get_available_pathnodes(
         self, local_tree: PipelineTree
@@ -3172,19 +3057,7 @@ class SoftwareTreeUtils:
 
         return available_path_nodes
 
-    def check_runs_to_deploy_project(self) -> dict:
-        """
-        Check if there are runs to run. sets to queue if there are.
-        """
 
-        submission_dict = self.utils_manager.collect_project_samples(self.project)
-
-        available_path_nodes = self.get_project_pathnodes()
-        clean_samples_leaf_dict = self.utils_manager.sample_nodes_check_no_repeats(
-            submission_dict, available_path_nodes, self.project
-        )
-
-        return clean_samples_leaf_dict
 
     def check_runs_to_submit_metagenomics_sample(
         self, sample: PIProject_Sample

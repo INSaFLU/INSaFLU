@@ -64,7 +64,7 @@ urlpatterns = [
     path("project/projects", views.ProjectsView.as_view(), name="projects"),
     path("project/project_add", views.ProjectCreateView.as_view(), name="project-add"),
     re_path(
-        r"project/(?P<pk>\d+)/show_project_settings",
+        r"project/(?P<pk>\d+)/settings$",
         views.ProjectsSettingsView.as_view(),
         name="project-settings",
     ),
@@ -74,8 +74,11 @@ urlpatterns = [
         name="show-sample-project-results",
     ),
     re_path(
-        r"project/(?P<pk>\d+)/show_project_settings_setup",
-        views.ProjectsSettingsSetupView.as_view(),
+        r"project/(?P<pk>\d+)/settings/setup$",
+        views.ProjectsSettingsView.as_view(
+            is_setup=True,
+            setup_note="Software selection will be blocked after this",
+        ),
         name="project-settings-setup",
     ),
     re_path(

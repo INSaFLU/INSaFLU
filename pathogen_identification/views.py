@@ -2672,8 +2672,6 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
 
     @cached_property
     def crumbs(self):
-        print("OIHOi")
-        print(self.kwargs)
         return [
             ("Project Index", reverse("project-index")),
             ("TELEVIR Projects", reverse("PIprojects_main")),

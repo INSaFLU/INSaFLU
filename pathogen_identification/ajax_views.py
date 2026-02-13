@@ -789,13 +789,11 @@ def submit_televir_project_sample(request):
 
             software_utils = SoftwareTreeUtils(user, project=project)
             runs_to_deploy = software_utils.check_runs_to_deploy_sample(sample)
-            print(runs_to_deploy)
             return JsonResponse(data)
         except:
             import traceback
             traceback.print_exc()
             print("Error occurred while checking runs to deploy")
-            return JsonResponse(data)
 
         try:
             if len(runs_to_deploy) > 0:

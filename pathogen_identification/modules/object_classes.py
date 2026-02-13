@@ -1213,6 +1213,7 @@ class SoftwareUnit:
         runs = RunMain.objects.filter(
             parameter_set__leaf__index=parameter_set.leaf.index,
             parameter_set__leaf__software_tree__global_index=parameter_set.leaf.software_tree.global_index,
+            parameter_set__sample=parameter_set.sample
         )
 
         for run_main in runs:
@@ -1247,6 +1248,7 @@ class SoftwareUnit:
         runs = RunMain.objects.filter(
             parameter_set__leaf__index=parameter_set.leaf.index,
             parameter_set__leaf__software_tree__global_index=parameter_set.leaf.software_tree.global_index,
+            parameter_set__sample=parameter_set.sample
         )
 
         for run_main in runs:
@@ -1286,6 +1288,7 @@ class SoftwareUnit:
         runs = RunMain.objects.filter(
             parameter_set__leaf__index=parameter_set.leaf.index,
             parameter_set__leaf__software_tree__global_index=parameter_set.leaf.software_tree.global_index,
+            parameter_set__sample=parameter_set.sample
         )
 
         for run_main in runs:

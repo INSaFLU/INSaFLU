@@ -2072,7 +2072,7 @@ class Parameter_DB_Utility:
             software__pipeline_step__name__in=steps,
             software__is_to_run=True,
             software__owner=user,
-            software__type_of_use__in=[Software.TELEVIR_GLOBAL_TYPES + Software.TELEVIR_PROJECT_TYPES]
+            software__type_of_use__in=Software.TELEVIR_GLOBAL_TYPES + Software.TELEVIR_PROJECT_TYPES
         ).distinct()
         
 
@@ -2102,56 +2102,6 @@ class Parameter_DB_Utility:
 
         return parameters_available
     
-
-    def merge_software_tables(
-        self, software_table: pd.DataFrame, parameters_table: pd.DataFrame
-    ):
-        """"""
-
-        combined_table = pd.merge(
-            software_table, parameters_table, left_on="id", right_on="software_id"
-        )
-
-        #combined_table = combined_table.rename(
-        #    columns={
-        #        "id_x": "software_id",
-        #        "id_y": "parameter_id",
-        #        "name": "software_name",
-        #        "name_x": "software_name",
-        #        "name_y": "parameter_name",
-        #        "is_to_run_x": "software_is_to_run",
-        #        "is_to_run_y": "parameter_is_to_run",
-        #    }
-        #)
-
-        combined_table = combined_table[
-            combined_table.type_of_use.isin(
-                Software.TELEVIR_GLOBAL_TYPES + Software.TELEVIR_PROJECT_TYPES
-            )
-        ]
-
-        #combined_table["pipeline_step"] = combined_table["pipeline_step_id"].apply(
-        #    lambda x: PipelineStep.objects.get(id=int(x)).name
-        #)
-
-        #combined_table["technology"] = combined_table["technology_id"].apply(
-        #    lambda x: Technology.objects.get(id=int(x)).name
-        #)
-
-        combined_table = combined_table.reset_index(drop=True)
-        software_names = combined_table["software_name"].values
-        can_change = combined_table["can_change"].values
-
-        ## remove duplicate columns
-        #
-        combined_table = combined_table.loc[
-            :, ~combined_table.T.duplicated(keep="last")
-        ]
-
-        combined_table["software_name"] = software_names
-        combined_table["can_change"] = can_change
-
-        return combined_table
 
     def generate_merged_table_safe(
         self,
@@ -2252,7 +2202,6 @@ class Parameter_DB_Utility:
                 'type_data': 'type_data'
             }
         )
-        #merged_table = self.merge_software_tables(software_table, parameters_table)
 
         return merged_table
 

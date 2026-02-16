@@ -2072,7 +2072,9 @@ class Parameter_DB_Utility:
             software__pipeline_step__name__in=steps,
             software__is_to_run=True,
             software__owner=user,
+            software__type_of_use__in=Software.TELEVIR_GLOBAL_TYPES + Software.TELEVIR_PROJECT_TYPES
         ).distinct()
+        
 
         if not project and not sample:
             parameters_available = parameters_available.filter(
@@ -2100,7 +2102,6 @@ class Parameter_DB_Utility:
 
         return parameters_available
     
-
 
     def generate_merged_table_safe(
         self,

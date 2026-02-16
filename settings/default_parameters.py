@@ -37,7 +37,7 @@ class DefaultParameters(object):
     SNIPPY_MAPQUAL_NAME = "--mapqual"
     SNIPPY_PRIMER_NAME = "--primer"
 
-    MEDAKA_PRIMER_NAME = "-p"
+    MEDAKA_PRIMER_NAME = "--primer"
 
     ### used in NANOfilt
     NANOfilt_quality_read = "-q"

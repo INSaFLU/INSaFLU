@@ -2721,7 +2721,6 @@ class SoftwareTreeUtils:
                 SoftwareTree.objects.filter(
                     global_index=global_index,
                     technology=self.technology,
-                    model=ConstantsSettings.PIPELINE_MODEL,
                     project=self.project,
                     owner=self.user,
                 )
@@ -2817,11 +2816,10 @@ class SoftwareTreeUtils:
 
         if not software_tree:
             self.logger.info("Creating new software tree")
-            software_tree = SoftwareTree(
+            software_tree = SoftwareTree.objects.create(
                 global_index=global_index,
                 technology=tree.technology,
                 version=0,
-                model=ConstantsSettings.PIPELINE_MODEL,
                 project=self.project,
                 owner=self.user,
             )
@@ -2960,51 +2958,6 @@ class SoftwareTreeUtils:
 
         return pipeline_tree
 
-    def check_pipeline_possible(self, combined_table: pd.DataFrame, tree_makeup: int):
-        """
-        Check if a pipeline is possible
-        """
-
-        pipeline_setup = Pipeline_Makeup()
-        makeup_steps = pipeline_setup.get_makeup(tree_makeup)
-
-        pipelines_available = combined_table.pipeline_step.unique().tolist()
-        pipelines_available = [x for x in pipelines_available if x in makeup_steps]
-        self.pipeline_makeup = pipeline_setup.match_makeup_name_from_list(
-            pipelines_available
-        )
-
-        if not self.pipeline_makeup:
-            return False
-
-        return True
-
-    def check_any_pipeline_possible(self, technology: str, user: User):
-        """
-        Check if a pipeline is possible
-        """
-        pipeline_setup = Pipeline_Makeup()
-
-        combined_table = self.parameter_util.generate_merged_table_safe(
-            user, technology
-        )
-
-        for makeup in pipeline_setup.get_makeup_list():
-            if self.check_pipeline_possible(combined_table, makeup):
-                return True
-
-        return False
-
-    def test_televir_pipelines_available(self, user_system: User):
-        """
-        Test if televir is available
-        """
-
-        for technology in self.parameter_util.get_technologies_available():
-            if self.check_any_pipeline_possible(technology, user_system):
-                return True
-
-        return False
 
     def get_sample_pathnodes(
         self,

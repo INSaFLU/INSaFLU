@@ -1288,7 +1288,6 @@ class Televir_Software_Test(TestCase):
 
         self.assertEqual(
             {
-                CS.PIPELINE_NAME_metagenomics_settings,
                 CS.PIPELINE_NAME_request_mapping,
                 CS.PIPELINE_NAME_viral_enrichment,
                 CS.PIPELINE_NAME_contig_classification,

@@ -866,25 +866,8 @@ class DefaultSoftware(object):
             user,
         )
 
-        self.test_default_db(
-            SoftwareNames.SOFTWARE_METAGENOMICS_SETTINGS_name,
-            self.default_parameters.get_metagenomics_settings_defaults(
-                user,
-                Software.TYPE_OF_USE_televir_settings,
-                ConstantsSettings.TECHNOLOGY_illumina,
-            ),
-            user,
-        )
 
-        self.test_default_db(
-            SoftwareNames.SOFTWARE_METAGENOMICS_SETTINGS_name,
-            self.default_parameters.get_metagenomics_settings_defaults(
-                user,
-                Software.TYPE_OF_USE_televir_settings,
-                ConstantsSettings.TECHNOLOGY_minion,
-            ),
-            user,
-        )
+
 
     def test_defaults_test_televir(self, user):
         """
@@ -1308,17 +1291,6 @@ class DefaultSoftware(object):
         )
         return "" if result is None else result
 
-    def get_metagenomics_settings_parameters(self, user, technology_name):
-        result = self.default_parameters.get_parameters_parsed(
-            SoftwareNames.SOFTWARE_METAGENOMICS_SETTINGS_name,
-            user,
-            Software.TYPE_OF_USE_televir_settings,
-            None,
-            None,
-            None,
-            technology_name,
-        )
-        return "" if result is None else result
 
     def get_msamtools_parameters(self, user, technology_name, pipeline_step=None):
         result = self.default_parameters.get_parameters_parsed(
@@ -1845,10 +1817,6 @@ class DefaultSoftware(object):
             return self.get_dustmasker_parameters(
                 user, technology_name, pipeline_step=pipeline_step
             )
-
-        if software_name == SoftwareNames.SOFTWARE_METAGENOMICS_SETTINGS_name:
-
-            return self.get_metagenomics_settings_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_MSAMTOOLS_name:
 

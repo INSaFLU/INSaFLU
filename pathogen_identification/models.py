@@ -115,8 +115,12 @@ class Projects(models.Model):
 
 class SoftwareTree(models.Model):
     """"""
+    PIPELINE_TYPE_OTHER = 0
+    PIPELINE_TYPE_NONE = 1
+    PIPELINE_TYPE_CLASSIC = 2
+    PIPELINE_TYPE_MAPPING = 3
 
-    model = models.IntegerField(default=0)
+
     version = models.IntegerField(default=0)
     date_created = models.DateTimeField(auto_now_add=True, blank=True, null=True)
 
@@ -132,6 +136,8 @@ class SoftwareTree(models.Model):
     project = models.ForeignKey(
         Projects, on_delete=models.CASCADE, blank=True, null=True
     )
+    
+    pipeline_type = models.IntegerField(default=PIPELINE_TYPE_OTHER)
 
     class Meta:
         ordering = ["global_index"]
@@ -174,6 +180,9 @@ class SoftwareTreeNode(models.Model):
     node_place = models.SmallIntegerField(
         default=INTERNAL_node
     )  ### if it is a software, a parameter or a parameter value
+
+    available = models.BooleanField(default=False)  ### if this node is available to run with the current sample and project
+
 
     class Meta:
         ordering = ["name"]

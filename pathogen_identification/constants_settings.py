@@ -219,7 +219,6 @@ class ConstantsSettings:
             not in [
                 CS.PIPELINE_NAME_metagenomics_screening,
                 CS.PIPELINE_NAME_request_mapping,
-                CS.PIPELINE_NAME_metagenomics_settings,
             ]
         ]
 

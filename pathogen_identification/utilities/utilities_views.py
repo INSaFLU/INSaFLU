@@ -460,19 +460,19 @@ class SampleReferenceManager:
     def proxy_tree_prepare(self):
         try:
             software_tree = SoftwareTree.objects.get(
-                model=-1,
                 version=0,
                 technology=self.sample.project.technology,
                 owner=self.sample.project.owner,
                 project=self.sample.project,
+                pipeline_type=SoftwareTree.PIPELINE_TYPE_NONE,
             )
         except SoftwareTree.DoesNotExist:
             software_tree = SoftwareTree.objects.create(
-                model=-1,
                 version=0,
                 technology=self.sample.project.technology,
                 owner=self.sample.project.owner,
                 project=self.sample.project,
+                pipeline_type=SoftwareTree.PIPELINE_TYPE_NONE,
             )
             software_tree.save()
 

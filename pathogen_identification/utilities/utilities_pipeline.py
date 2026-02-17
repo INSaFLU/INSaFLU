@@ -2816,6 +2816,8 @@ class SoftwareTreeUtils:
             tree.software_tree_pk = software_tree.pk
 
         self.update_SoftwareTree_nodes(software_tree, tree)
+        software_tree.set_pipeline_type()
+
 
     def update_SoftwareTree_nodes(
         self, software_tree: SoftwareTree, tree: PipelineTree
@@ -2940,7 +2942,29 @@ class SoftwareTreeUtils:
         pipeline_tree = self.prep_tree_for_extend(pipeline_tree)
 
         return pipeline_tree
+    
+    def query_available_pathnodes(
+        self, 
+        mapping_only: bool = False, 
+        screening: bool = False, 
+    ):
+        type_pipeline = SoftwareTree.PIPELINE_TYPE_CLASSIC
+        if mapping_only:
+            type_pipeline = SoftwareTree.PIPELINE_TYPE_MAPPING
+        elif screening:
+            type_pipeline = SoftwareTree.PIPELINE_TYPE_SCREENING
 
+        nodes = SoftwareTreeNode.objects.filter(
+            software_tree__project=self.project,
+            software_tree__pipeline_type=type_pipeline, 
+            available = True
+        )
+
+        available_path_nodes = {
+            node.index: node for node in nodes
+        }
+
+        return available_path_nodes
 
     def get_sample_pathnodes(
         self,
@@ -2989,6 +3013,10 @@ class SoftwareTreeUtils:
             )
             for leaf, leaf_index in available_paths.items()
         }
+
+        for _, node in available_path_nodes.items():
+            node.available = True
+            node.save()
 
         return available_path_nodes
 

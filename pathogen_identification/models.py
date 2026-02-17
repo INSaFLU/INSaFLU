@@ -26,7 +26,7 @@ from managing_files.models import Sample
 from pathogen_identification.constants_settings import \
     ConstantsSettings as PICS
 from pathogen_identification.data_classes import IntermediateFiles
-
+from settings.constants_settings import ConstantsSettings as CS
 # Create your models here.
 
 no_space_validator = RegexValidator(
@@ -146,6 +146,17 @@ class SoftwareTree(models.Model):
     def get_current_version(self):
         return self.version
 
+    def set_pipeline_type(self):
+        nodes = SoftwareTreeNode.objects.filter(software_tree=self, node_type = "module")
+        unique_pipeline_names = nodes.values_list("name", flat=True).distinct()
+
+        if set(CS.vect_pipeline_televir_classic) == set(unique_pipeline_names):
+            self.pipeline_type = self.PIPELINE_TYPE_CLASSIC
+        elif set(CS.vect_pipeline_televir_mapping_only) == set(unique_pipeline_names):
+            self.pipeline_type = self.PIPELINE_TYPE_MAPPING
+        elif set(CS.vect_pipeline_televir_screening) == set(unique_pipeline_names):
+            self.pipeline_type = self.PIPELINE_TYPE_SCREENING
+        
 
 class SoftwareTreeNode(models.Model):
     INTERNAL_node = 0

@@ -119,6 +119,7 @@ class SoftwareTree(models.Model):
     PIPELINE_TYPE_NONE = 1
     PIPELINE_TYPE_CLASSIC = 2
     PIPELINE_TYPE_MAPPING = 3
+    PIPELINE_TYPE_SCREENING = 4
 
 
     version = models.IntegerField(default=0)

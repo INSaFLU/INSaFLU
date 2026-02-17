@@ -221,7 +221,7 @@ class TelevirMetagenomicsDeploymentManager(DeploymentManager):
         self.pipeline_makeup = Pipeline_Makeup()
         self.software_utils = SoftwareTreeUtils(self.project.owner, self.project)
 
-        self.pipeline_steps = ConstantsSettings.vect_pipeline_televir_metagenomics
+        self.pipeline_steps = ConstantsSettings.vect_pipeline_televir_mapping_only
         self.indicies_allowed = self.get_indeces_allowed()
         self.metagenomics = True
         self.set_insaflu_command(TelevirMetagenomicsSample())

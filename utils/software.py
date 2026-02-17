@@ -2738,6 +2738,7 @@ class Software(object):
                 file_name_1,
                 file_name_2,
             )
+        
         exist_status = os.system(cmd)
         if exist_status != 0:
             self.logger_production.error("Fail to run: " + cmd)

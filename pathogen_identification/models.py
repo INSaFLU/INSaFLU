@@ -178,6 +178,10 @@ class SoftwareTreeNode(models.Model):
     class Meta:
         ordering = ["name"]
 
+    @property
+    def is_leaf(self):
+        return self.node_place == SoftwareTreeNode.LEAF_node
+
     def get_descendants(self, include_self: bool = True):
         """return all descendants of this node"""
 

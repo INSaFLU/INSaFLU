@@ -149,15 +149,15 @@ class Command(BaseCommand):
         utils = Utils_Manager()
         software_utils = SoftwareTreeUtils(user, project, sample=target_sample)
 
-        local_tree = software_utils.generate_software_tree_safe(
-            project,
-            sample=target_sample,
-            metagenomics=metagenomics,
-            screening=screening,
-            mapping_only=mapping_only,
-        )
-
-        pipeline_tree_index = local_tree.software_tree_pk
+        #local_tree = software_utils.generate_software_tree_safe(
+        #    project,
+        #    sample=target_sample,
+        #    metagenomics=metagenomics,
+        #    screening=screening,
+        #    mapping_only=mapping_only,
+        #)
+        
+        pipeline_tree_index = matched_path_node.software_tree.pk #local_tree.software_tree_pk
         pipeline_tree_query = SoftwareTree.objects.get(pk=pipeline_tree_index)
 
         ### MANAGEMENT

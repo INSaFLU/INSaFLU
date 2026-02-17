@@ -95,43 +95,29 @@ class Command(BaseCommand):
         utils = Utils_Manager()
         software_utils = SoftwareTreeUtils(user, project)
         ####
-        local_tree = software_utils.generate_project_tree()
-        local_paths = local_tree.get_all_graph_paths_explicit()
-
-        # pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
-        pipeline_tree = software_utils.generate_software_tree_extend(local_tree)
-        pipeline_tree_index = local_tree.software_tree_pk
-
-        # MANAGEMENT
-        matched_paths = {
-            leaf: utils.utility_manager.match_path_to_tree_safe(path, pipeline_tree)
-            for leaf, path in local_paths.items()
-        }
-
-        matched_paths = {k: v for k, v in matched_paths.items() if v is not None}
-
-        available_path_nodes = {
-            leaf: SoftwareTreeNode.objects.get(
-                software_tree__pk=pipeline_tree_index, index=path
-            )
-            for leaf, path in matched_paths.items()
-        }
-
-        available_path_nodes = {
-            leaf: utils.parameter_util.check_ParameterSet_available_to_run(
-                sample=sample, leaf=matched_path_node, project=project
-            )
-            for leaf, matched_path_node in available_path_nodes.items()
-        }
-
-        matched_paths = {
-            k: v for k, v in matched_paths.items() if available_path_nodes[k] == True
-        }
-
-        # SUBMISSION
-        module_tree = utils.module_tree(pipeline_tree, list(matched_paths.values()))
-
         try:
+
+            if software_utils.project is None:
+                raise Exception("Project tree not found")
+            
+            local_tree = software_utils.generate_software_tree_safe(software_utils.project)
+            available_path_nodes = software_utils.get_available_pathnodes(local_tree)
+            
+            available_path_nodes = {
+                leaf: utils.parameter_util.check_ParameterSet_available_to_run(
+                    sample=sample, leaf=matched_path_node, project=project
+                )
+                for leaf, matched_path_node in available_path_nodes.items()
+            }
+
+            matched_paths = {
+                k: v for k, v in matched_paths.items() if available_path_nodes[k] == True
+            }
+
+            # SUBMISSION
+            module_tree = utils.module_tree(pipeline_tree, list(matched_paths.values()))
+
+
             for project_sample in samples:
                 if project_sample.is_deleted:
                     continue

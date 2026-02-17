@@ -95,7 +95,7 @@ class Command(BaseCommand):
             test_file = reference.get_reference_bed(TypePath.MEDIA_ROOT)
             if not os.path.exists(
                 reference.get_reference_gbk(TypePath.MEDIA_ROOT)
-            ):  ## remove this reference
+            ) or os.path.isdir(reference.get_reference_gbk(TypePath.MEDIA_ROOT)):  ## remove this reference
 
                 self.stdout.write(
                     "Reference removed: '{}' owner: '{}'".format(

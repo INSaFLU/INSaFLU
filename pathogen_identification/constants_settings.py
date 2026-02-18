@@ -88,7 +88,7 @@ class ConstantsSettings:
     ]
 
     ################################### Pipeline steps aggregate
-
+    
     PIPELINE_STEPS_AGGREGATE = [
         CS.PIPELINE_NAME_extra_qc,
         CS.PIPELINE_NAME_remap_filtering,
@@ -219,7 +219,6 @@ class ConstantsSettings:
             not in [
                 CS.PIPELINE_NAME_metagenomics_screening,
                 CS.PIPELINE_NAME_request_mapping,
-                CS.PIPELINE_NAME_metagenomics_settings,
             ]
         ]
 

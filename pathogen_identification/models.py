@@ -26,7 +26,7 @@ from managing_files.models import Sample
 from pathogen_identification.constants_settings import \
     ConstantsSettings as PICS
 from pathogen_identification.data_classes import IntermediateFiles
-
+from settings.constants_settings import ConstantsSettings as CS
 # Create your models here.
 
 no_space_validator = RegexValidator(
@@ -115,8 +115,13 @@ class Projects(models.Model):
 
 class SoftwareTree(models.Model):
     """"""
+    PIPELINE_TYPE_OTHER = 0
+    PIPELINE_TYPE_NONE = 1
+    PIPELINE_TYPE_CLASSIC = 2
+    PIPELINE_TYPE_MAPPING = 3
+    PIPELINE_TYPE_SCREENING = 4
 
-    model = models.IntegerField(default=0)
+
     version = models.IntegerField(default=0)
     date_created = models.DateTimeField(auto_now_add=True, blank=True, null=True)
 
@@ -132,6 +137,8 @@ class SoftwareTree(models.Model):
     project = models.ForeignKey(
         Projects, on_delete=models.CASCADE, blank=True, null=True
     )
+    
+    pipeline_type = models.IntegerField(default=PIPELINE_TYPE_OTHER)
 
     class Meta:
         ordering = ["global_index"]
@@ -139,6 +146,22 @@ class SoftwareTree(models.Model):
     def get_current_version(self):
         return self.version
 
+    def set_pipeline_type(self):
+        nodes = SoftwareTreeNode.objects.filter(software_tree=self, node_type = "module")
+        unique_pipeline_names = nodes.values_list("name", flat=True).distinct()
+
+        print("Setting pipeline type")
+        print(list(unique_pipeline_names))
+
+        if set(unique_pipeline_names).issubset(set(CS.vect_pipeline_televir_classic)):
+            self.pipeline_type = self.PIPELINE_TYPE_CLASSIC
+        elif set(unique_pipeline_names).issubset(set(CS.vect_pipeline_televir_mapping_only)):
+            self.pipeline_type = self.PIPELINE_TYPE_MAPPING
+        elif set(unique_pipeline_names).issubset(set(CS.vect_pipeline_televir_screening)):
+            self.pipeline_type = self.PIPELINE_TYPE_SCREENING
+        print(self.pipeline_type)
+
+        self.save()
 
 class SoftwareTreeNode(models.Model):
     INTERNAL_node = 0
@@ -175,8 +198,15 @@ class SoftwareTreeNode(models.Model):
         default=INTERNAL_node
     )  ### if it is a software, a parameter or a parameter value
 
+    available = models.BooleanField(default=False)  ### if this node is available to run with the current sample and project
+
+
     class Meta:
         ordering = ["name"]
+
+    @property
+    def is_leaf(self):
+        return self.node_place == SoftwareTreeNode.LEAF_node
 
     def get_descendants(self, include_self: bool = True):
         """return all descendants of this node"""

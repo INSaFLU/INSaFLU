@@ -2738,6 +2738,7 @@ class Software(object):
                 file_name_1,
                 file_name_2,
             )
+        
         exist_status = os.system(cmd)
         if exist_status != 0:
             self.logger_production.error("Fail to run: " + cmd)
@@ -4486,8 +4487,6 @@ class Software(object):
 
             except Exception as e:
                 print(e)
-                print("OOIONOIJNOI")
-
                 result = Result()
                 result.set_error("Fail to mask consensus: " + e.args[0])
                 result.add_software(
@@ -4504,10 +4503,6 @@ class Software(object):
                     MetaKeyAndValue.META_KEY_Masking_consensus,
                 )
             ### add version of mask
-            print(
-                "#####################################################################"
-            )
-            print("Masking consensus parameters: ", msa_parameters)
 
             ## identify VARIANTS IN INCOMPLETE LOCUS in all locus, set yes in variants if are in areas with coverage problems
             ## transform 'synonymous_variant c.981A>G p.Glu327Glu' to ["synonymous_variant", "c.981A>G", "p.Glu327Glu"]

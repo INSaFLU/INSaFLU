@@ -398,14 +398,35 @@ class PISettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
             self.request.user
         )  ## the user can have defaults yet
         ### project parameters
+        print(televir_project)
         if televir_project:
             # if not self.check_project_params_exist(televir_project):
+            software_primed = self.check_project_params_exist(televir_project)
             self.duplicate_software_params_global_project_if_missing(televir_project)
             # else:
             self.update_software_params_global_project(televir_project)
 
             technologies = [televir_project.technology]
-
+            print(software_primed)
+            if software_primed == False:
+                from pathogen_identification.utilities.utilities_pipeline import (
+                    SoftwareTreeUtils,
+                )
+                software_utils = SoftwareTreeUtils(televir_project.owner, televir_project, None)
+                software_utils.set_technology(televir_project.technology)
+                software_utils.deactivate_all_nodes()
+                _ = software_utils.get_sample_pathnodes(
+                    screening=False,
+                    mapping_only=True,
+                )
+                _ = software_utils.get_sample_pathnodes(
+                    screening=True,
+                    mapping_only=False,
+                )
+                _ = software_utils.get_sample_pathnodes(
+                    screening=False,
+                    mapping_only=False,
+                )
         else:
             technologies = ConstantsSettings.vect_technology
 
@@ -527,11 +548,32 @@ class PISettingsGroupsView(PISettingsView):
         ### project parameters
         if televir_project:
             # if not self.check_project_params_exist(televir_project):
+            software_primed = self.check_project_params_exist(televir_project)
             self.duplicate_software_params_global_project_if_missing(televir_project)
             # else:
             self.update_software_params_global_project(televir_project)
 
             technologies = [televir_project.technology]
+            print(software_primed)
+            if software_primed == False:
+                from pathogen_identification.utilities.utilities_pipeline import (
+                    SoftwareTreeUtils,
+                )
+                software_utils = SoftwareTreeUtils(televir_project.owner, televir_project, None)
+                software_utils.set_technology(televir_project.technology)
+                software_utils.deactivate_all_nodes()
+                _ = software_utils.get_sample_pathnodes(
+                    screening=False,
+                    mapping_only=True,
+                )
+                _ = software_utils.get_sample_pathnodes(
+                    screening=True,
+                    mapping_only=False,
+                )
+                _ = software_utils.get_sample_pathnodes(
+                    screening=False,
+                    mapping_only=False,
+                )
 
         else:
             technologies = ConstantsSettings.vect_technology

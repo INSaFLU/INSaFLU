@@ -719,6 +719,7 @@ class SoftwareMinion(object):
                 meta_sample != None
                 and meta_sample.value == MetaKeyAndValue.META_VALUE_Success
             ):
+                print("Sample {} already processed successfully.".format(project_sample.id))
                 return
 
             ## process medaka
@@ -746,7 +747,7 @@ class SoftwareMinion(object):
                 parameters_depth = default_project_software.get_samtools_parameters_all_possibilities_ONT(
                     user, project_sample
                 )
-
+                print("project_sample_index: {}".format(project_sample.pk))
                 out_put_path = self.run_medaka(
                     project_sample.sample.get_fastq_available(TypePath.MEDIA_ROOT),
                     project_sample.project.reference.get_reference_fasta(
@@ -762,6 +763,7 @@ class SoftwareMinion(object):
                     freq_vcf_limit,
                     project_sample,
                 )
+                print("Medaka output path: {}".format(out_put_path))
                 result_all.add_software(
                     SoftwareDesc(
                         self.software_names.get_medaka_name(),
@@ -805,6 +807,9 @@ class SoftwareMinion(object):
                     )
                 )
             except Exception as e:
+                print("Error occurred while processing Medaka for sample {}: {}".format(project_sample.id, e))
+                import traceback
+                traceback.print_exc()
                 result = Result()
                 result.set_error(e.args[0])
                 result.add_software(
@@ -965,6 +970,9 @@ class SoftwareMinion(object):
                     coverage.to_json(),
                 )
             except Exception as e:
+                print("Error occurred while processing coverage for sample {}: {}".format(project_sample.id, e))
+                import traceback
+                traceback.print_exc()
                 result = Result()
                 result.set_error("Fail to get coverage: " + e.args[0])
                 # result.add_software(
@@ -1065,6 +1073,9 @@ class SoftwareMinion(object):
                     project_sample, SoftwareNames.SOFTWARE_Medaka_name
                 )
             except:
+                print("Error occurred while drawing coverage for sample {}: {}".format(project_sample.id, e))
+                import traceback
+                traceback.print_exc()
                 result = Result()
                 result.set_error("Fail to draw coverage images")
                 result.add_software(SoftwareDesc("In house software", "1.0", ""))
@@ -1133,6 +1144,9 @@ class SoftwareMinion(object):
                     project_sample, user, count_hits
                 )
             except:
+                print("Error occurred while calculating mixed infection for sample {}: {}".format(project_sample.id, e))
+                import traceback
+                traceback.print_exc()
                 result = Result()
                 result.set_error("Fail to calculate mixed infection")
                 result.add_software(SoftwareDesc("In house software", "1.0", ""))
@@ -1233,6 +1247,9 @@ class SoftwareMinion(object):
                     meta_sample.description,
                 )
         except Exception as e:
+            print("Error occurred while processing sample {}: {}".format(project_sample.id, e))
+            import traceback
+            traceback.print_exc()
             ## finished with error
             process_SGE.set_process_controler(
                 user,
@@ -1328,9 +1345,13 @@ class SoftwareMinion(object):
         reference_fasta_medaka = self.utils.get_temp_file_from_dir(
             temp_dir, "medaka_ref", ".fasta"
         )
-        self.utils.copy_file(reference_fasta, reference_fasta_medaka)
+        print("reference fasta: {}".format(reference_fasta))
 
-        cmd = "{} {}_consensus -i {} -d {} -o {} -t {} {}".format(
+        self.utils.copy_file(reference_fasta, reference_fasta_medaka)
+        print(os.path.exists(reference_fasta_medaka))
+        print("reference fasta: {}".format(reference_fasta_medaka))
+
+        cmd = "{} {}_consensus -i {} -d {} -o {} -p consensus -t {} {}".format(
             self.software_names.get_medaka_env(),
             self.software_names.get_medaka(),
             file_fastq,
@@ -1339,11 +1360,15 @@ class SoftwareMinion(object):
             settings.THREADS_TO_RUN_SLOW,
             parameters_consensus,
         )
+        print(cmd)
         exist_status = os.system(cmd)
         if exist_status != 0:
+            
+            print("### CMD")
+            print(cmd)
             self.logger_production.error("Fail to run: " + cmd)
             self.logger_debug.error("Fail to run: " + cmd)
-            self.utils.remove_dir(temp_dir)
+            #self.utils.remove_dir(temp_dir)
             raise Exception("Fail to run medaka_consensus")
 
         ### test output files
@@ -1360,7 +1385,7 @@ class SoftwareMinion(object):
                 )
                 self.logger_production.error(message)
                 self.logger_debug.error(message)
-                self.utils.remove_dir(temp_dir)
+                #self.utils.remove_dir(temp_dir)
                 raise Exception(message)
 
         ### change bam file names

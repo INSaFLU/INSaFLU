@@ -79,39 +79,22 @@ class Command(BaseCommand):
         software_utils = SoftwareTreeUtils(user, project)
 
         samples = PIProject_Sample.objects.filter(project=project)
-        local_tree = software_utils.generate_project_tree()
-        local_paths = local_tree.get_all_graph_paths_explicit()
-
-        tree_makeup = local_tree.makeup
-
-        # pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
-        pipeline_tree = software_utils.generate_software_tree_extend(local_tree)
-        # global_paths = pipeline_tree.get_all_graph_paths_explicit()
-
-        pipeline_tree_index = local_tree.software_tree_pk
-        pipeline_tree_query = SoftwareTree.objects.get(pk=pipeline_tree_index)
-
-        ### MANAGEMENT
 
         submission_dict = {sample: [] for sample in samples if not sample.is_deleted}
-        matched_paths = {
-            leaf: utils.utility_manager.match_path_to_tree_safe(path, pipeline_tree)
-            for leaf, path in local_paths.items()
-        }
-        available_paths = {
-            leaf: path for leaf, path in matched_paths.items() if path is not None
-        }
-
-        available_path_nodes = {
-            leaf: SoftwareTreeNode.objects.get(
-                software_tree__pk=pipeline_tree_index, index=path
-            )
-            for leaf, path in available_paths.items()
-        }
 
         ### SUBMISSION
         try:
 
+
+            if software_utils.project is None:
+                raise Exception("Project tree not found")
+            
+            #local_tree = software_utils.generate_software_tree_safe(software_utils.project)
+            #available_path_nodes = software_utils.get_available_pathnodes(local_tree)
+            available_path_nodes = software_utils.query_available_pathnodes(
+                screening=False,
+                mapping_only=False,
+            )
             for sample in submission_dict.keys():
 
                 for leaf, matched_path_node in available_path_nodes.items():
@@ -123,7 +106,8 @@ class Command(BaseCommand):
                         is False
                     ):
                         continue
-
+                    
+                    pipeline_tree_query = leaf.software_tree
                     run = Run_Main_from_Leaf(
                         user=user,
                         input_data=sample,

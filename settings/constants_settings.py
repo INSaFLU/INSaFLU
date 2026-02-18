@@ -42,7 +42,6 @@ class ConstantsSettings(object):
     PIPELINE_NAME_remap_filtering = "Remap filtering"
     PIPELINE_NAME_map_filtering = "Map filtering"
     PIPELINE_NAME_reporting = "Reporting"
-    PIPELINE_NAME_metagenomics_settings = "Metagenomics settings"
 
     ## values to upload to database
     vect_pipeline_names = [
@@ -58,7 +57,6 @@ class ConstantsSettings(object):
         PIPELINE_NAME_assembly,
         PIPELINE_NAME_contig_classification,
         PIPELINE_NAME_read_classification,
-        PIPELINE_NAME_metagenomics_settings,
         PIPELINE_NAME_request_mapping,
         PIPELINE_NAME_remapping,
         PIPELINE_NAME_remap_filtering,
@@ -78,29 +76,6 @@ class ConstantsSettings(object):
         PIPELINE_NAME_remap_filtering,
     ]
 
-    vect_pipeline_televir_metagenomics = [
-        PIPELINE_NAME_extra_qc,
-        PIPELINE_NAME_viral_enrichment,
-        PIPELINE_NAME_host_depletion,
-        PIPELINE_NAME_metagenomics_settings,
-        PIPELINE_NAME_request_mapping,
-        PIPELINE_NAME_map_filtering,
-        PIPELINE_NAME_reporting,
-    ]
-
-    vect_pipeline_televir_metagenomics_for_parameters = (
-        vect_pipeline_televir_metagenomics + [PIPELINE_NAME_metagenomics_screening]
-    )
-
-    vect_pipeline_televir_screening = [
-        PIPELINE_NAME_extra_qc,
-        PIPELINE_NAME_viral_enrichment,
-        PIPELINE_NAME_host_depletion,
-        PIPELINE_NAME_map_filtering,
-        PIPELINE_NAME_metagenomics_screening,
-        PIPELINE_NAME_metagenomics_settings,
-    ]
-
     vect_pipeline_televir_mapping_only = [
         PIPELINE_NAME_extra_qc,
         PIPELINE_NAME_viral_enrichment,
@@ -110,21 +85,24 @@ class ConstantsSettings(object):
         PIPELINE_NAME_reporting,
     ]
 
+    vect_pipeline_televir_screening = [
+        PIPELINE_NAME_extra_qc,
+        PIPELINE_NAME_viral_enrichment,
+        PIPELINE_NAME_host_depletion,
+        PIPELINE_NAME_map_filtering,
+        PIPELINE_NAME_metagenomics_screening,
+    ]
+
+    vect_pipeline_televir_metagenomics_for_parameters = (
+        vect_pipeline_televir_mapping_only + [PIPELINE_NAME_metagenomics_screening]
+    )
+
     vect_pipeline_televir_workflows_display = [
         PIPELINE_NAME_extra_qc,
         PIPELINE_NAME_viral_enrichment,
         PIPELINE_NAME_host_depletion,
         PIPELINE_NAME_request_mapping,
         PIPELINE_NAME_map_filtering,
-    ]
-
-    vect_pipeline_televir_request_mapping = [
-        PIPELINE_NAME_extra_qc,
-        PIPELINE_NAME_viral_enrichment,
-        PIPELINE_NAME_host_depletion,
-        PIPELINE_NAME_request_mapping,
-        PIPELINE_NAME_map_filtering,
-        PIPELINE_NAME_reporting,
     ]
 
     vect_short_acronyms = {
@@ -140,7 +118,6 @@ class ConstantsSettings(object):
         PIPELINE_NAME_contig_classification: "CC",
         PIPELINE_NAME_read_classification: "RC",
         PIPELINE_NAME_metagenomics_screening: "MS",
-        PIPELINE_NAME_metagenomics_settings: "MS",
         PIPELINE_NAME_request_mapping: "RM",
         PIPELINE_NAME_assembly: "AS",
         PIPELINE_NAME_remapping: "REM",
@@ -218,6 +195,6 @@ class ConstantsSettings(object):
     def pipeline_step_to_pipeline_name(self, pipeline_step: str) -> str:
         """
         Translate pipeline step names - use to combine steps."""
-        if pipeline_step == self.PIPELINE_NAME_metagenomics_settings:
-            return self.PIPELINE_NAME_metagenomics_screening
+
         return pipeline_step
+

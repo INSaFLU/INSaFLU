@@ -37,7 +37,7 @@ class DefaultParameters(object):
     SNIPPY_MAPQUAL_NAME = "--mapqual"
     SNIPPY_PRIMER_NAME = "--primer"
 
-    MEDAKA_PRIMER_NAME = "-p"
+    MEDAKA_PRIMER_NAME = "--primer"
 
     ### used in NANOfilt
     NANOfilt_quality_read = "-q"
@@ -1327,12 +1327,7 @@ class DefaultParameters(object):
                 software.technology.name,
             )
 
-        elif software.name == SoftwareNames.SOFTWARE_METAGENOMICS_SETTINGS_name:
-            return self.get_metagenomics_settings_defaults(
-                software.owner,
-                Software.TYPE_OF_USE_televir_settings,
-                software.technology.name,
-            )
+
 
         elif software.name == SoftwareNames.SOFTWARE_CENTRIFUGE_name:
             return self.get_centrifuge_default(
@@ -2570,81 +2565,6 @@ class DefaultParameters(object):
 
         return vect_parameters
 
-    def get_metagenomics_settings_defaults(
-        self,
-        user,
-        type_of_use,
-        technology_name,
-        sample=None,
-        is_to_run=True,
-    ):
-        """
-        remapping parameters, namely:
-            max number of taxids to map against.
-            max number of acccids to map for each taxid.
-            minimum coverage?
-        """
-        software = Software()
-        software.name = SoftwareNames.SOFTWARE_METAGENOMICS_SETTINGS_name
-        software.name_extended = (
-            SoftwareNames.SOFTWARE_METAGENOMICS_SETTINGS_name_extended
-        )
-        software.type_of_use = type_of_use
-        software.type_of_software = Software.TYPE_INSAFLU_PARAMETER
-        software.version = SoftwareNames.SOFTWARE_METAGENOMICS_SETTINGS_VERSION
-        software.version_parameters = self.get_software_parameters_version(
-            software.name
-        )
-        software.technology = self.get_technology(technology_name)
-        software.can_be_on_off_in_pipeline = False
-        software.is_to_run = is_to_run
-
-        ###  small description of software
-        software.help_text = ""
-
-        ###  which part of pipeline is going to run
-        software.pipeline_step = self._get_pipeline(
-            ConstantsSettings.PIPELINE_NAME_metagenomics_settings
-        )
-
-        software.owner = user
-        vect_parameters = []
-
-        parameter = Parameter()
-        parameter.name = SoftwareNames.SOFTWARE_COMBINED_min_score  # "min_score"
-        parameter.parameter = "0"
-        parameter.type_data = Parameter.PARAMETER_float
-        parameter.software = software
-        parameter.sample = sample
-        parameter.union_char = ":"
-        parameter.can_change = True
-        parameter.is_to_run = True
-        parameter.sequence_out = 1
-        parameter.range_available = "[0:1]"
-        parameter.range_max = "1"
-        parameter.range_min = "0"
-        parameter.description = "Minimum standardized score to consider a reference for confirmatory mapping. (Defaults to 0)"
-        vect_parameters.append(parameter)
-
-        parameter = Parameter()
-        parameter.name = (
-            SoftwareNames.SOFTWARE_COMBINED_include_screening
-        )  # "min_length"
-        parameter.parameter = "OFF"
-        parameter.type_data = Parameter.PARAMETER_char_list
-
-        parameter.software = software
-        parameter.sample = sample
-        parameter.union_char = ":"
-        parameter.can_change = True
-        parameter.is_to_run = True
-        parameter.sequence_out = 2
-        parameter.description = (
-            "Include screening step in the pipeline. (Defaults to OFF)"
-        )
-        vect_parameters.append(parameter)
-
-        return vect_parameters
 
     def get_remap_defaults(
         self,
@@ -2673,6 +2593,7 @@ class DefaultParameters(object):
         software.can_be_on_off_in_pipeline = (
             False  ## set to True if can be ON/OFF in pipeline, otherwise always ON
         )
+        
         software.is_to_run = is_to_run  ## set to True if it is going to run, for example Trimmomatic can run or not
 
         ###  small description of software

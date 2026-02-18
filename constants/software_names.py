@@ -1047,10 +1047,6 @@ class SoftwareNames(object):
     SOFTWARE_REMAP_PARAMS_extended = "Remapping - Management"
     SOFTWARE_REMAP_PARAMS_VERSION = "1.0.0"
 
-    SOFTWARE_METAGENOMICS_SETTINGS_name = "Metagenomics - Settings"
-    SOFTWARE_METAGENOMICS_SETTINGS_name_extended = "Metagenomics - Settings"
-    SOFTWARE_METAGENOMICS_SETTINGS_VERSION = "1.0.0"
-
     ###################################
     ###################################
     ###

@@ -2047,23 +2047,18 @@ class Parameter_DB_Utility:
         user: User,
         project: Optional[Projects] = None,
         sample: Optional[PIProject_Sample] = None,
-        metagenomics: bool = False,
         mapping_only: bool = False,
         screening: bool = False,
-        request_mapping: bool = False,
     ) -> QuerySet[Parameter]:
         """
         Get software tables for a user
         """
 
-        if metagenomics:
-            steps = CS.vect_pipeline_televir_metagenomics
-        elif mapping_only:
+
+        if mapping_only:
             steps = CS.vect_pipeline_televir_mapping_only
         elif screening:
             steps = CS.vect_pipeline_televir_screening
-        elif request_mapping:
-            steps = CS.vect_pipeline_televir_request_mapping
         else:
             steps = CS.vect_pipeline_televir_classic
 
@@ -2072,7 +2067,9 @@ class Parameter_DB_Utility:
             software__pipeline_step__name__in=steps,
             software__is_to_run=True,
             software__owner=user,
+            software__type_of_use__in=Software.TELEVIR_GLOBAL_TYPES + Software.TELEVIR_PROJECT_TYPES
         ).distinct()
+        
 
         if not project and not sample:
             parameters_available = parameters_available.filter(
@@ -2101,17 +2098,14 @@ class Parameter_DB_Utility:
         return parameters_available
     
 
-
     def generate_merged_table_safe(
         self,
         owner: User,
         technology: str,
         project: Optional[Projects] = None,
         sample: Optional[PIProject_Sample] = None,
-        metagenomics: bool = False,
         mapping_only: bool = False,
         screening: bool = False,
-        request_mapping: bool = False,
     ) -> pd.DataFrame:
         """
         Generate a software tree for a technology and a tree makeup"""
@@ -2125,10 +2119,8 @@ class Parameter_DB_Utility:
             owner,
             project=project,
             sample=None,
-            metagenomics=metagenomics,
             mapping_only=mapping_only,
             screening=screening,
-            request_mapping=request_mapping,
         )
 
         if parameters_available.count() == 0:
@@ -2139,10 +2131,8 @@ class Parameter_DB_Utility:
                 owner,
                 project=project,
                 sample=None,
-                metagenomics=metagenomics,
                 mapping_only=mapping_only,
                 screening=screening,
-                request_mapping=request_mapping,
             )
 
         if parameters_available.count() == 0:
@@ -2152,10 +2142,8 @@ class Parameter_DB_Utility:
                 owner,
                 project=None,
                 sample=None,
-                metagenomics=metagenomics,
                 mapping_only=mapping_only,
                 screening=screening,
-                request_mapping=request_mapping,
             )
 
         if parameters_available.count() == 0:
@@ -2702,6 +2690,8 @@ class SoftwareTreeUtils:
 
     ###############################################
     ###############################################  SOFTWARE TREE CONNECTIONS
+    def set_technology(self, technology: str):
+        self.technology = technology
 
     def set_project(self, project: Projects):
         self.project = project
@@ -2710,24 +2700,32 @@ class SoftwareTreeUtils:
     def set_sample(self, sample: PIProject_Sample):
         self.sample = sample
 
+    def deactivate_all_nodes(self):
+        relevant_nodes = SoftwareTreeNode.objects.filter(
+            software_tree__owner=self.user,
+            software_tree__project=self.project
+        )
+        relevant_nodes.update(available=False)
+
     def query_software_tree(self, global_index: int) -> SoftwareTree:
         """
         Query software tree
         """
 
         try:
-            software_tree = (
-                SoftwareTree.objects.filter(
+            software_tree_query = SoftwareTree.objects.filter(
                     global_index=global_index,
-                    technology=self.technology,
-                    model=ConstantsSettings.PIPELINE_MODEL,
                     project=self.project,
                     owner=self.user,
                 )
-                .order_by("date_created")
-                .last()
-            )
 
+            if self.technology is not None:
+                software_tree_query = software_tree_query.filter(technology=self.technology)
+
+            software_tree = (software_tree_query
+                             .order_by("date_created")
+                             .last())
+            
         except SoftwareTree.DoesNotExist:
             software_tree = None
         return software_tree
@@ -2816,11 +2814,10 @@ class SoftwareTreeUtils:
 
         if not software_tree:
             self.logger.info("Creating new software tree")
-            software_tree = SoftwareTree(
+            software_tree = SoftwareTree.objects.create(
                 global_index=global_index,
                 technology=tree.technology,
                 version=0,
-                model=ConstantsSettings.PIPELINE_MODEL,
                 project=self.project,
                 owner=self.user,
             )
@@ -2830,6 +2827,8 @@ class SoftwareTreeUtils:
             tree.software_tree_pk = software_tree.pk
 
         self.update_SoftwareTree_nodes(software_tree, tree)
+        software_tree.set_pipeline_type()
+
 
     def update_SoftwareTree_nodes(
         self, software_tree: SoftwareTree, tree: PipelineTree
@@ -2899,29 +2898,25 @@ class SoftwareTreeUtils:
         self,
         project: Projects,
         sample: Optional[PIProject_Sample] = None,
-        metagenomics: bool = False,
         mapping_only: bool = False,
         screening: bool = False,
-        request_mapping: bool = False,
     ) -> PipelineTree:
         """
         Generate a software tree for a technology and a tree makeup
         """
 
         merged_table = self.parameter_util.generate_merged_table_safe(
-            project.owner,
-            project.technology,
+            self.user,
+            self.technology,
             project=project,
             sample=sample,
-            metagenomics=metagenomics,
             mapping_only=mapping_only,
             screening=screening,
-            request_mapping=request_mapping,
         )
 
         if merged_table.shape[0] == 0:
             return PipelineTree(
-                technology=project.technology,
+                technology=self.technology,
                 nodes=[],
                 edges={},
                 leaves=[],
@@ -2958,56 +2953,47 @@ class SoftwareTreeUtils:
         pipeline_tree = self.prep_tree_for_extend(pipeline_tree)
 
         return pipeline_tree
+    
+    def query_available_pathnodes(
+        self, 
+        mapping_only: bool = False, 
+        screening: bool = False, 
+    ):
+        type_pipeline = SoftwareTree.PIPELINE_TYPE_CLASSIC
+        if mapping_only:
+            type_pipeline = SoftwareTree.PIPELINE_TYPE_MAPPING
+        elif screening:
+            type_pipeline = SoftwareTree.PIPELINE_TYPE_SCREENING
 
-    def check_pipeline_possible(self, combined_table: pd.DataFrame, tree_makeup: int):
-        """
-        Check if a pipeline is possible
-        """
-
-        pipeline_setup = Pipeline_Makeup()
-        makeup_steps = pipeline_setup.get_makeup(tree_makeup)
-
-        pipelines_available = combined_table.pipeline_step.unique().tolist()
-        pipelines_available = [x for x in pipelines_available if x in makeup_steps]
-        self.pipeline_makeup = pipeline_setup.match_makeup_name_from_list(
-            pipelines_available
+        nodes = SoftwareTreeNode.objects.filter(
+            software_tree__project=self.project,
+            software_tree__pipeline_type=type_pipeline, 
+            available = True
         )
-
-        if not self.pipeline_makeup:
-            return False
-
-        return True
-
-    def check_any_pipeline_possible(self, technology: str, user: User):
-        """
-        Check if a pipeline is possible
-        """
-        pipeline_setup = Pipeline_Makeup()
-
-        combined_table = self.parameter_util.generate_merged_table_safe(
-            user, technology
+        nodes_test = SoftwareTreeNode.objects.filter(
+            software_tree__project=self.project,
+            software_tree__pipeline_type=type_pipeline, 
         )
+        print("######3 available nodes")
+        print(SoftwareTree.objects.filter(project = self.project))
+        print(SoftwareTree.objects.filter(project = self.project).values_list('pipeline_type', flat=True))
+        print(nodes)
+        print(nodes_test)
+        print(self.project)
+        print(type_pipeline)
 
-        for makeup in pipeline_setup.get_makeup_list():
-            if self.check_pipeline_possible(combined_table, makeup):
-                return True
+        available_path_nodes = {
+            node.index: node for node in nodes
+        }
 
-        return False
+        print("######3 available paths")
+        for index, node in available_path_nodes.items():
+            print(f"Path {index}: {node}")
 
-    def test_televir_pipelines_available(self, user_system: User):
-        """
-        Test if televir is available
-        """
-
-        for technology in self.parameter_util.get_technologies_available():
-            if self.check_any_pipeline_possible(technology, user_system):
-                return True
-
-        return False
+        return available_path_nodes
 
     def get_sample_pathnodes(
         self,
-        metagenomics: bool = False,
         mapping_only: bool = False,
         screening: bool = False,
     ) -> dict:
@@ -3018,7 +3004,6 @@ class SoftwareTreeUtils:
         local_tree = self.generate_software_tree_safe(
             self.project,
             self.sample,
-            metagenomics=metagenomics,
             mapping_only=mapping_only,
             screening=screening,
         )
@@ -3055,6 +3040,13 @@ class SoftwareTreeUtils:
             for leaf, leaf_index in available_paths.items()
         }
 
+        print(available_path_nodes)
+        print(self.project)
+        for _, node in available_path_nodes.items():
+            node.available = True
+            print(node.software_tree.technology)
+            node.save()
+
         return available_path_nodes
 
 
@@ -3068,10 +3060,14 @@ class SoftwareTreeUtils:
 
         submission_dict = {sample: []}
 
-        available_path_nodes = self.get_sample_pathnodes(
-            metagenomics=True,
-            screening=False,
-            mapping_only=False,
+        #available_path_nodes = self.get_sample_pathnodes(
+        #    screening=False,
+        #    mapping_only=True,
+        #)
+
+        available_path_nodes = self.query_available_pathnodes(
+            screening= False,
+            mapping_only = True,
         )
 
         clean_samples_leaf_dict, workflow_deployed_dict = (
@@ -3093,10 +3089,14 @@ class SoftwareTreeUtils:
 
         submission_dict = {sample: []}
 
-        available_path_nodes = self.get_sample_pathnodes(
-            metagenomics=False,
-            screening=True,
-            mapping_only=False,
+        #available_path_nodes = self.get_sample_pathnodes(
+        #    screening=True,
+        #    mapping_only=False,
+        #)
+
+        available_path_nodes= self.query_available_pathnodes(
+            screening= True,
+            mapping_only = False,
         )
 
         clean_samples_leaf_dict, _ = (
@@ -3116,10 +3116,14 @@ class SoftwareTreeUtils:
 
         submission_dict = {sample: []}
 
-        available_path_nodes = self.get_sample_pathnodes(
-            metagenomics=False,
-            screening=False,
-            mapping_only=True,
+        #available_path_nodes = self.available_path_nodes(
+        #    screening=False,
+        #    mapping_only=True,
+        #)
+
+        available_path_nodes= self.query_available_pathnodes(
+            screening= False,
+            mapping_only = True,
         )
 
         clean_samples_leaf_dict, workflow_deployed_dict = (
@@ -3137,11 +3141,16 @@ class SoftwareTreeUtils:
 
         submission_dict = {sample: []}
 
-        available_path_nodes = self.get_sample_pathnodes(
-            metagenomics=False,
+        #available_path_nodes = self.get_sample_pathnodes(
+        #    screening=False,
+        #    mapping_only=False,
+        #)
+
+        available_path_nodes = self.query_available_pathnodes(
             screening=False,
             mapping_only=False,
         )
+
         clean_samples_leaf_dict = self.utils_manager.sample_nodes_check_no_repeats(
             submission_dict, available_path_nodes, self.project
         )

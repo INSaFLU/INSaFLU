@@ -1204,7 +1204,6 @@ class TelefluProjectView(BaseBreadcrumbMixin, LoginRequiredMixin, generic.Create
         local_tree = software_utils.generate_software_tree_safe(
             software_utils.project,
             None,
-            metagenomics=False,
             mapping_only=True,
             screening=False,
         )
@@ -1213,6 +1212,7 @@ class TelefluProjectView(BaseBreadcrumbMixin, LoginRequiredMixin, generic.Create
             all_paths = {}
             available_path_nodes = {}
         else:
+
             all_paths = local_tree.get_all_graph_paths()
             available_path_nodes = software_utils.get_available_pathnodes(local_tree)
         ########################################## get workflows
@@ -2672,8 +2672,6 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
 
     @cached_property
     def crumbs(self):
-        print("OIHOi")
-        print(self.kwargs)
         return [
             ("Project Index", reverse("project-index")),
             ("TELEVIR Projects", reverse("PIprojects_main")),

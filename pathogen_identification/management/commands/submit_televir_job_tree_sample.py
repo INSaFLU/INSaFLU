@@ -100,9 +100,12 @@ class Command(BaseCommand):
             if software_utils.project is None:
                 raise Exception("Project tree not found")
             
-            local_tree = software_utils.generate_software_tree_safe(software_utils.project)
-            available_path_nodes = software_utils.get_available_pathnodes(local_tree)
-            
+            #local_tree = software_utils.generate_software_tree_safe(software_utils.project)
+            #available_path_nodes = software_utils.get_available_pathnodes(local_tree)
+            available_path_nodes = software_utils.query_available_pathnodes(
+                screening=False,
+                mapping_only=False,
+            )            
             available_path_nodes = {
                 leaf: utils.parameter_util.check_ParameterSet_available_to_run(
                     sample=sample, leaf=matched_path_node, project=project

@@ -147,7 +147,7 @@ class Command(BaseCommand):
 
         ### UTILITIES
         utils = Utils_Manager()
-        software_utils = SoftwareTreeUtils(user, project, sample=target_sample)
+        #software_utils = SoftwareTreeUtils(user, project, sample=target_sample)
 
         #local_tree = software_utils.generate_software_tree_safe(
         #    project,

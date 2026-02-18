@@ -89,9 +89,12 @@ class Command(BaseCommand):
             if software_utils.project is None:
                 raise Exception("Project tree not found")
             
-            local_tree = software_utils.generate_software_tree_safe(software_utils.project)
-            available_path_nodes = software_utils.get_available_pathnodes(local_tree)
-
+            #local_tree = software_utils.generate_software_tree_safe(software_utils.project)
+            #available_path_nodes = software_utils.get_available_pathnodes(local_tree)
+            available_path_nodes = software_utils.query_available_pathnodes(
+                screening=False,
+                mapping_only=False,
+            )
             for sample in submission_dict.keys():
 
                 for leaf, matched_path_node in available_path_nodes.items():

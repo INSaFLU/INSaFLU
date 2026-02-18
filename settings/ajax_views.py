@@ -16,7 +16,7 @@ from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project, ProjectSample, Sample
 from pathogen_identification.models import PIProject_Sample
 from pathogen_identification.models import Projects as PIProjects
-from pathogen_identification.utilities.utilities_pipeline import Pipeline_Makeup
+from pathogen_identification.utilities.utilities_pipeline import Pipeline_Makeup, SoftwareTreeUtils
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software import DefaultSoftware
@@ -874,7 +874,7 @@ def turn_on_off_software(request):
                 televir_project_sample_id = request.GET[televir_project_sample_id_a]
 
             default_parameters = DefaultParameters(prep_televir_dbs=False)
-
+            televir_in_any_way = False
             if software_id_a in request.GET:
                 software_id = request.GET[software_id_a]
 
@@ -937,12 +937,16 @@ def turn_on_off_software(request):
                         makeup = pipeline_makeup.match_makeup_name_from_list(
                             pipeline_steps_project_sample
                         )
+
+                        #### SET NODES HERE
                         if makeup is None:
                             data["message"] = (
                                 f"You cannot perform this operation. Project '{televir_project_sample.project.name}' with sample '{televir_project_sample.sample.name}' would not meet minimum pipeline step requirements."
                             )
 
                             return JsonResponse(data)
+                    
+                        televir_in_any_way = True
 
                     elif not televir_project_id is None:
                         televir_project = PIProjects.objects.get(pk=televir_project_id)
@@ -960,12 +964,15 @@ def turn_on_off_software(request):
                                 pipeline_steps_televir_project
                             )
                         )
+
                         if makeup is None:
                             data["message"] = (
                                 f"You cannot perform this operation. Project '{televir_project}' would not meet minimum pipeline step requirements."
                             )
-
                             return JsonResponse(data)
+
+                        televir_in_any_way = True
+
                     ###########################################################
                     if not type_of_use_id is None:
                         if type_of_use_id in Software.TELEVIR_GLOBAL_TYPES:
@@ -984,6 +991,8 @@ def turn_on_off_software(request):
                                 )
 
                                 return JsonResponse(data)
+                            televir_in_any_way = True
+
                     ############################################################################
                     if not project_id is None:  ##    project
                         project = Project.objects.get(pk=project_id)
@@ -1186,6 +1195,7 @@ def turn_on_off_software(request):
                         sample,
                         is_to_run=not current_is_to_run,
                     )
+                    
                     active_filters = None
                     additional_filter = None
 
@@ -1332,7 +1342,27 @@ def turn_on_off_software(request):
                                 )
 
                                 data["other_kills"] += [filter.pk]
-
+                    ### SET TREE NODES HERE
+                    if televir_in_any_way:
+                        from pathogen_identification.utilities.utilities_pipeline import (
+                            SoftwareTreeUtils,
+                        )
+                        print("televir way", televir_project, televir_project_sample)
+                        software_utils = SoftwareTreeUtils(request.user, televir_project, televir_project_sample)
+                        software_utils.set_technology(software.technology.name)
+                        software_utils.deactivate_all_nodes()
+                        _ = software_utils.get_sample_pathnodes(
+                            screening=False,
+                            mapping_only=True,
+                        )
+                        _ = software_utils.get_sample_pathnodes(
+                            screening=True,
+                            mapping_only=False,
+                        )
+                        _ = software_utils.get_sample_pathnodes(
+                            screening=False,
+                            mapping_only=False,
+                        )
                     ## set a new default
                     data["is_to_run"] = is_to_run
                     data["message"] = (

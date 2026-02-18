@@ -2690,6 +2690,8 @@ class SoftwareTreeUtils:
 
     ###############################################
     ###############################################  SOFTWARE TREE CONNECTIONS
+    def set_technology(self, technology: str):
+        self.technology = technology
 
     def set_project(self, project: Projects):
         self.project = project
@@ -2698,23 +2700,32 @@ class SoftwareTreeUtils:
     def set_sample(self, sample: PIProject_Sample):
         self.sample = sample
 
+    def deactivate_all_nodes(self):
+        relevant_nodes = SoftwareTreeNode.objects.filter(
+            software_tree__owner=self.user,
+            software_tree__project=self.project
+        )
+        relevant_nodes.update(available=False)
+
     def query_software_tree(self, global_index: int) -> SoftwareTree:
         """
         Query software tree
         """
 
         try:
-            software_tree = (
-                SoftwareTree.objects.filter(
+            software_tree_query = SoftwareTree.objects.filter(
                     global_index=global_index,
-                    technology=self.technology,
                     project=self.project,
                     owner=self.user,
                 )
-                .order_by("date_created")
-                .last()
-            )
 
+            if self.technology is not None:
+                software_tree_query = software_tree_query.filter(technology=self.technology)
+
+            software_tree = (software_tree_query
+                             .order_by("date_created")
+                             .last())
+            
         except SoftwareTree.DoesNotExist:
             software_tree = None
         return software_tree
@@ -2895,8 +2906,8 @@ class SoftwareTreeUtils:
         """
 
         merged_table = self.parameter_util.generate_merged_table_safe(
-            project.owner,
-            project.technology,
+            self.user,
+            self.technology,
             project=project,
             sample=sample,
             mapping_only=mapping_only,
@@ -2905,7 +2916,7 @@ class SoftwareTreeUtils:
 
         if merged_table.shape[0] == 0:
             return PipelineTree(
-                technology=project.technology,
+                technology=self.technology,
                 nodes=[],
                 edges={},
                 leaves=[],
@@ -2959,10 +2970,25 @@ class SoftwareTreeUtils:
             software_tree__pipeline_type=type_pipeline, 
             available = True
         )
+        nodes_test = SoftwareTreeNode.objects.filter(
+            software_tree__project=self.project,
+            software_tree__pipeline_type=type_pipeline, 
+        )
+        print("######3 available nodes")
+        print(SoftwareTree.objects.filter(project = self.project))
+        print(SoftwareTree.objects.filter(project = self.project).values_list('pipeline_type', flat=True))
+        print(nodes)
+        print(nodes_test)
+        print(self.project)
+        print(type_pipeline)
 
         available_path_nodes = {
             node.index: node for node in nodes
         }
+
+        print("######3 available paths")
+        for index, node in available_path_nodes.items():
+            print(f"Path {index}: {node}")
 
         return available_path_nodes
 
@@ -3014,8 +3040,11 @@ class SoftwareTreeUtils:
             for leaf, leaf_index in available_paths.items()
         }
 
+        print(available_path_nodes)
+        print(self.project)
         for _, node in available_path_nodes.items():
             node.available = True
+            print(node.software_tree.technology)
             node.save()
 
         return available_path_nodes
@@ -3031,9 +3060,14 @@ class SoftwareTreeUtils:
 
         submission_dict = {sample: []}
 
-        available_path_nodes = self.get_sample_pathnodes(
-            screening=False,
-            mapping_only=True,
+        #available_path_nodes = self.get_sample_pathnodes(
+        #    screening=False,
+        #    mapping_only=True,
+        #)
+
+        available_path_nodes = self.query_available_pathnodes(
+            screening= False,
+            mapping_only = True,
         )
 
         clean_samples_leaf_dict, workflow_deployed_dict = (
@@ -3055,9 +3089,14 @@ class SoftwareTreeUtils:
 
         submission_dict = {sample: []}
 
-        available_path_nodes = self.get_sample_pathnodes(
-            screening=True,
-            mapping_only=False,
+        #available_path_nodes = self.get_sample_pathnodes(
+        #    screening=True,
+        #    mapping_only=False,
+        #)
+
+        available_path_nodes= self.query_available_pathnodes(
+            screening= True,
+            mapping_only = False,
         )
 
         clean_samples_leaf_dict, _ = (
@@ -3077,9 +3116,14 @@ class SoftwareTreeUtils:
 
         submission_dict = {sample: []}
 
-        available_path_nodes = self.get_sample_pathnodes(
-            screening=False,
-            mapping_only=True,
+        #available_path_nodes = self.available_path_nodes(
+        #    screening=False,
+        #    mapping_only=True,
+        #)
+
+        available_path_nodes= self.query_available_pathnodes(
+            screening= False,
+            mapping_only = True,
         )
 
         clean_samples_leaf_dict, workflow_deployed_dict = (
@@ -3097,10 +3141,16 @@ class SoftwareTreeUtils:
 
         submission_dict = {sample: []}
 
-        available_path_nodes = self.get_sample_pathnodes(
+        #available_path_nodes = self.get_sample_pathnodes(
+        #    screening=False,
+        #    mapping_only=False,
+        #)
+
+        available_path_nodes = self.query_available_pathnodes(
             screening=False,
             mapping_only=False,
         )
+
         clean_samples_leaf_dict = self.utils_manager.sample_nodes_check_no_repeats(
             submission_dict, available_path_nodes, self.project
         )

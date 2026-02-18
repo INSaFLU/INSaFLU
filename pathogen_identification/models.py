@@ -162,7 +162,6 @@ class SoftwareTree(models.Model):
         print(self.pipeline_type)
 
         self.save()
-        
 
 class SoftwareTreeNode(models.Model):
     INTERNAL_node = 0

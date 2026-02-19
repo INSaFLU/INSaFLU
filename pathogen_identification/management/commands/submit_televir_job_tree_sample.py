@@ -106,55 +106,61 @@ class Command(BaseCommand):
                 screening=False,
                 mapping_only=False,
             )            
-            available_path_nodes = {
-                leaf: utils.parameter_util.check_ParameterSet_available_to_run(
-                    sample=sample, leaf=matched_path_node, project=project
-                )
-                for leaf, matched_path_node in available_path_nodes.items()
-            }
+
 
             matched_paths = {
-                k: v for k, v in matched_paths.items() if available_path_nodes[k] == True
+                leaf_index: leaf for leaf_index, leaf in available_path_nodes.items() if utils.parameter_util.check_ParameterSet_available_to_run(
+                    sample=sample, leaf=leaf, project=project
+                ) == True
             }
 
-            # SUBMISSION
-            module_tree = utils.module_tree(pipeline_tree, list(matched_paths.values()))
+            trees = list(set(leaf.software_tree for leaf in matched_paths.values()))
+            software_tree_matched_paths = {
+                stree: {
+                    leaf_index: leaf for leaf_index, leaf in matched_paths.items() if leaf.software_tree == stree
+                }
+                for stree in trees
+            }
+            for software_tree, matched_leaves in software_tree_matched_paths.items():
+                # SUBMISSION
+                pipeline_tree = software_utils.software_pipeline_tree(software_tree)
+                module_tree = utils.module_tree(pipeline_tree, list(matched_leaves.keys()))
 
 
-            for project_sample in samples:
-                if project_sample.is_deleted:
-                    continue
-                if len(matched_paths) > 0:
-                    graph_progress = TreeProgressGraph(project_sample)
+                for project_sample in samples:
+                    if project_sample.is_deleted:
+                        continue
+                    if len(matched_paths) > 0:
+                        graph_progress = TreeProgressGraph(project_sample)
 
-                    deployment_tree = Tree_Progress(
-                        module_tree, project_sample, project
-                    )
+                        deployment_tree = Tree_Progress(
+                            module_tree, project_sample, project
+                        )
 
-                    graph_progress.generate_graph()
+                        graph_progress.generate_graph()
 
-                    deployment_tree.cycle_process()
+                        deployment_tree.cycle_process()
 
-                    graph_progress.generate_graph()
-                    set_control_reports(project.pk)
+                        graph_progress.generate_graph()
+                        set_control_reports(project.pk)
 
-                    reference_utils = RawReferenceUtils(project_sample)
-                    _ = reference_utils.create_compound_references()
+                        reference_utils = RawReferenceUtils(project_sample)
+                        _ = reference_utils.create_compound_references()
 
-                    _ = process_SGE.set_submit_televir_sort_pisample_reports(
-                        user=user,
-                        pisample_pk=project_sample.pk,
-                    )
+                        _ = process_SGE.set_submit_televir_sort_pisample_reports(
+                            user=user,
+                            pisample_pk=project_sample.pk,
+                        )
 
-                    break
+                        break
 
-            process_SGE.set_process_controler(
-                user,
-                process_controler.get_name_televir_project_sample(
-                    project_pk=project.pk, sample_pk=sample.pk
-                ),
-                ProcessControler.FLAG_FINISHED,
-            )
+                process_SGE.set_process_controler(
+                    user,
+                    process_controler.get_name_televir_project_sample(
+                        project_pk=project.pk, sample_pk=sample.pk
+                    ),
+                    ProcessControler.FLAG_FINISHED,
+                )
 
         except Exception as e:
             print(e)
@@ -165,7 +171,7 @@ class Command(BaseCommand):
                 ),
                 ProcessControler.FLAG_ERROR,
             )
-            reference_utils = RawReferenceUtils(project_sample)
+            reference_utils = RawReferenceUtils(sample)
             _ = reference_utils.create_compound_references()
 
             raise e

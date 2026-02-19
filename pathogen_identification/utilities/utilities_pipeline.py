@@ -25,7 +25,6 @@ from pathogen_identification.models import (
 from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
-
 tree = lambda: defaultdict(tree)
 
 
@@ -2784,6 +2783,7 @@ class SoftwareTreeUtils:
             edges=edges,
             leaves=leaves,
             makeup=software_tree.global_index,
+            software_tree_pk=software_tree.pk,
         )
 
     def query_software_default_tree(
@@ -2958,7 +2958,7 @@ class SoftwareTreeUtils:
         self, 
         mapping_only: bool = False, 
         screening: bool = False, 
-    ):
+    ) -> Dict[int, SoftwareTreeNode]:
         type_pipeline = SoftwareTree.PIPELINE_TYPE_CLASSIC
         if mapping_only:
             type_pipeline = SoftwareTree.PIPELINE_TYPE_MAPPING

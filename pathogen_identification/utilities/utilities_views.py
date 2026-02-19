@@ -1264,7 +1264,7 @@ class ReportSorter:
 
         self.level = level
 
-        self.reports_availble = len(reports) > 0
+        self.reports_available = len(reports) > 0
 
         self.media_dir = sample.media_dir
 
@@ -1320,7 +1320,7 @@ class ReportSorter:
 
     def build_tree(self):
 
-        if self.reports_availble:
+        if self.reports_available:
             self.overlap_manager.build_tree()
 
     def update_max_error_rate(self, report: FinalReport):
@@ -1654,7 +1654,7 @@ class ReportSorter:
         """
         Return sorted reports
         """
-        if self.reports_availble is False:
+        if self.reports_available is False:
             return self.return_no_analysis()
 
         try:
@@ -1931,7 +1931,7 @@ class ReportSorter:
         """
         Return sorted reports
         """
-        if self.reports_availble is False:
+        if self.reports_available is False:
             return self.return_no_analysis()
 
         if self.metadata_df.empty:
@@ -1976,7 +1976,7 @@ class ReportSorter:
         """
         Return pandas dataframe of reports
         """
-        if not self.reports_availble:
+        if not self.reports_available:
             return pd.DataFrame()
 
         if not self.check_analyzed():

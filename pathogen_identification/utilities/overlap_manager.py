@@ -286,7 +286,7 @@ class MappingResultsParser:
         temp_dir = utils.get_temp_dir()
         televir_bioinf = TelevirBioinf()
 
-        for ix, row in self.metadata.iterrows():
+        for _, row in self.metadata.iterrows():
 
             accid = row["accid"]
             bam = row["bam"]

@@ -1208,7 +1208,7 @@ def sort_report_projects(request):
                     sample, final_reports, report_layout_params
                 )
 
-                if report_sorter.reports_availble is False:
+                if report_sorter.reports_available is False:
                     pass
                 elif report_sorter.check_analyzed():
                     pass
@@ -1247,7 +1247,7 @@ def sort_report_sample(request):
 
             report_sorter = ReportSorter(sample, final_reports, report_layout_params)
 
-            if report_sorter.reports_availble is False:
+            if report_sorter.reports_available is False:
                 pass
             elif report_sorter.check_analyzed():
                 pass

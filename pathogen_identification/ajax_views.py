@@ -671,7 +671,7 @@ def deploy_ProjectPI(request):
         try:
             for sample in samples:
 
-                runs_to_deploy = software_utils.check_runs_to_deploy_sample(sample)
+                runs_to_deploy = software_utils.check_and_set_runs_to_deploy_sample(sample)
 
                 if len(runs_to_deploy) > 0:
                     for sample, _ in runs_to_deploy.items():
@@ -788,8 +788,7 @@ def submit_televir_project_sample(request):
             project = Projects.objects.get(id=int(sample.project.pk))
 
             software_utils = SoftwareTreeUtils(user, project=project)
-            runs_to_deploy = software_utils.check_runs_to_deploy_sample(sample)
-            return JsonResponse(data)
+            runs_to_deploy = software_utils.check_and_set_runs_to_deploy_sample(sample)
         except:
             import traceback
             traceback.print_exc()
@@ -797,8 +796,8 @@ def submit_televir_project_sample(request):
 
         try:
             if len(runs_to_deploy) > 0:
-                for sample, leafs_to_deploy in runs_to_deploy.items():
-                    taskID = process_SGE.set_submit_televir_sample(
+                for sample, _ in runs_to_deploy.items():
+                    _ = process_SGE.set_submit_televir_sample(
                         user=request.user,
                         project_pk=project.pk,
                         sample_pk=sample.pk,
@@ -808,8 +807,9 @@ def submit_televir_project_sample(request):
 
         except Exception as e:
             print(e)
+            print("this gave an error")
             data["is_deployed"] = False
-
+        print(data)
         data["is_ok"] = True
         return JsonResponse(data)
 
@@ -1208,7 +1208,7 @@ def sort_report_projects(request):
                     sample, final_reports, report_layout_params
                 )
 
-                if report_sorter.reports_availble is False:
+                if report_sorter.reports_available is False:
                     pass
                 elif report_sorter.check_analyzed():
                     pass
@@ -1247,7 +1247,7 @@ def sort_report_sample(request):
 
             report_sorter = ReportSorter(sample, final_reports, report_layout_params)
 
-            if report_sorter.reports_availble is False:
+            if report_sorter.reports_available is False:
                 pass
             elif report_sorter.check_analyzed():
                 pass

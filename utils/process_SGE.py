@@ -140,7 +140,7 @@ class ProcessSGE(object):
         stdout, stderr = process.communicate()
         exist_status = process.returncode
 
-        if exist_status != 0:
+        if exist_status != 0 and stderr.decode().strip() != "": # counts as error if nothing is returned
             self.logger_production.error("Fail to run: " + cmd)
             self.logger_debug.error("Fail to run: " + cmd)
             return None
@@ -1402,6 +1402,8 @@ class ProcessSGE(object):
                     sge_id,
                 )
         except:
+            import traceback
+            traceback.print_exc()
             raise Exception("Fail to submit the job.")
         return sge_id
 

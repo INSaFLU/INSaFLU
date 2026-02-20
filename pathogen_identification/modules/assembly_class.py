@@ -404,7 +404,7 @@ class Assembly_class:
         if number_of_sequences > 0:
             return True
         else:
-            print("Number of sequences in assebly: {}".format(number_of_sequences))
+            print("Number of sequences in assembly: {}".format(number_of_sequences))
             return False
 
     def assembly_file_check_fasta_gz(self):

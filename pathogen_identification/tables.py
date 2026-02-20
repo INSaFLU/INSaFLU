@@ -573,8 +573,6 @@ class SampleTableOne(tables.Table):
 
         TELEVIR_DEPLOY_URL = "submit_televir_project_sample"
 
-
-
         deployment_management = (
             '<a href="#" id="deploypi_sample_btn" class="sample-deploy" data-toggle="modal" data-toggle="tooltip" title="Run Televir Classic Workflow"'
             + ' ref_name="'

@@ -509,7 +509,7 @@ def generate_compressed_tree(user, project, sample, makeup):
     utils_manager = Utils_Manager()
 
     runs_to_deploy: Dict[PIProject_Sample, List[SoftwareTreeNode]] = (
-        software_tree_utils.check_runs_to_deploy_sample(sample)
+        software_tree_utils.check_and_set_runs_to_deploy_sample(sample)
     )
 
     local_tree = software_tree_utils.generate_project_tree()
@@ -1593,7 +1593,7 @@ class Televir_Project_Test(TestCase):
             set_project_makeup(self.project_ont, makeup)
 
             runs_to_deploy: Dict[PIProject_Sample, List[SoftwareTreeNode]] = (
-                software_tree_utils.check_runs_to_deploy_sample(self.ont_project_sample)
+                software_tree_utils.check_and_set_runs_to_deploy_sample(self.ont_project_sample)
             )
 
             local_tree = software_tree_utils.generate_project_tree()

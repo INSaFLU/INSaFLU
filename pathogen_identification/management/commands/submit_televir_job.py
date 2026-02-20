@@ -97,7 +97,7 @@ class Command(BaseCommand):
             )
             for sample in submission_dict.keys():
 
-                for leaf, matched_path_node in available_path_nodes.items():
+                for _, matched_path_node in available_path_nodes.items():
 
                     if (
                         utils.parameter_util.check_ParameterSet_available_to_run(
@@ -107,7 +107,7 @@ class Command(BaseCommand):
                     ):
                         continue
                     
-                    pipeline_tree_query = leaf.software_tree
+                    pipeline_tree_query = matched_path_node.software_tree
                     run = Run_Main_from_Leaf(
                         user=user,
                         input_data=sample,

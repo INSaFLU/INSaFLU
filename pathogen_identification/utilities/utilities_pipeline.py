@@ -2974,21 +2974,10 @@ class SoftwareTreeUtils:
             software_tree__project=self.project,
             software_tree__pipeline_type=type_pipeline, 
         )
-        print("######3 available nodes")
-        print(SoftwareTree.objects.filter(project = self.project))
-        print(SoftwareTree.objects.filter(project = self.project).values_list('pipeline_type', flat=True))
-        print(nodes)
-        print(nodes_test)
-        print(self.project)
-        print(type_pipeline)
 
         available_path_nodes = {
             node.index: node for node in nodes
         }
-
-        print("######3 available paths")
-        for index, node in available_path_nodes.items():
-            print(f"Path {index}: {node}")
 
         return available_path_nodes
 
@@ -3040,11 +3029,8 @@ class SoftwareTreeUtils:
             for leaf, leaf_index in available_paths.items()
         }
 
-        print(available_path_nodes)
-        print(self.project)
         for _, node in available_path_nodes.items():
             node.available = True
-            print(node.software_tree.technology)
             node.save()
 
         return available_path_nodes
@@ -3134,17 +3120,12 @@ class SoftwareTreeUtils:
 
         return clean_samples_leaf_dict, workflow_deployed_dict
 
-    def check_runs_to_deploy_sample(self, sample: PIProject_Sample) -> dict:
+    def check_and_set_runs_to_deploy_sample(self, sample: PIProject_Sample) -> dict:
         """
         Check if there are runs to run. sets to queue if there are.
         """
 
         submission_dict = {sample: []}
-
-        #available_path_nodes = self.get_sample_pathnodes(
-        #    screening=False,
-        #    mapping_only=False,
-        #)
 
         available_path_nodes = self.query_available_pathnodes(
             screening=False,

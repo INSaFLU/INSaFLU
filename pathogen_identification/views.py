@@ -2329,13 +2329,13 @@ class ReferencesManagementSample(
             ("TELEVIR Projects", reverse("PIprojects_main")),
             (
                 self.kwargs["project_name"],
-                reverse("PIproject_samples", kwargs={"pk": self.kwargs["pk1"]}),
+                reverse("PIproject_samples", kwargs={"pk": sample.project.pk}),
             ),
             (
                 self.kwargs["sample_name"],
                 reverse(
                     "sample_main",
-                    kwargs={"pk1": self.kwargs["pk1"], "pk2": sample.project.pk},
+                    kwargs={"pk1": sample.project.pk, "pk2":self.kwargs["pk1"]},
                 ),
             ),
             (

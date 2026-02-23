@@ -14,14 +14,9 @@ from django.contrib import messages
 from django.core.files.temp import NamedTemporaryFile
 from django.db import transaction
 from django.db.models import Q
-from django.http import (
-    FileResponse,
-    Http404,
-    HttpResponse,
-    HttpResponseNotFound,
-    HttpResponseRedirect,
-    JsonResponse,
-)
+from django.http import (FileResponse, Http404, HttpResponse,
+                         HttpResponseNotFound, HttpResponseRedirect,
+                         JsonResponse)
 from django.http.response import HttpResponse
 from django.shortcuts import render
 from django.template.defaultfilters import pluralize
@@ -37,95 +32,58 @@ from view_breadcrumbs import BaseBreadcrumbMixin
 from constants.constants import Constants, FileType, TypePath
 from constants.software_names import SoftwareNames
 from extend_user.models import Profile
-from fluwebvirus.settings import (
-    BASE_DIR,
-    MEDIA_ROOT,
-    MEDIA_URL,
-    STATIC_ROOT,
-    STATIC_URL,
-    STATICFILES_DIRS,
-)
+from fluwebvirus.settings import (BASE_DIR, MEDIA_ROOT, MEDIA_URL, STATIC_ROOT,
+                                  STATIC_URL, STATICFILES_DIRS)
 from managing_files.forms import AddSampleProjectForm
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
 from managing_files.models import Reference
 from managing_files.tables import SampleToProjectsTable
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
-from pathogen_identification.forms import (
-    PanelReferencesUploadForm,
-    ReferenceForm,
-    UploadFileForm,
-)
-from pathogen_identification.models import (
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReadClassification,
-    ReferenceContigs,
-    ReferenceMap_Main,
-    ReferencePanel,
-    ReferenceSourceFile,
-    ReferenceSourceFileMap,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    RunRemapMain,
-    Sample,
-    TelefluMapping,
-    TeleFluProject,
-    TeleFluSample,
-    TelevirRunQC,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
+from pathogen_identification.forms import (PanelReferencesUploadForm,
+                                           ReferenceForm, UploadFileForm)
+from pathogen_identification.models import (ContigClassification, FinalReport,
+                                            ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            ReadClassification,
+                                            ReferenceContigs,
+                                            ReferenceMap_Main, ReferencePanel,
+                                            ReferenceSourceFile,
+                                            ReferenceSourceFileMap,
+                                            RunAssembly, RunDetail, RunMain,
+                                            RunRemapMain, Sample,
+                                            TelefluMapping, TeleFluProject,
+                                            TeleFluSample, TelevirRunQC)
 from pathogen_identification.modules.object_classes import RunQC_report
-from pathogen_identification.tables import (
-    AddedReferenceTable,
-    CompoundRefereceScoreWithScreening,
-    CompoundReferenceScore,
-    ContigTable,
-    ProjectTable,
-    RawReferenceTable,
-    RawReferenceTable_Basic,
-    ReferenceSourceTable,
-    RunMainTable,
-    RunMappingTable,
-    SampleTableOne,
-    TeleFluInsaFLuProjectTable,
-    TeleFluReferenceTable,
-)
-
-
+from pathogen_identification.tables import (AddedReferenceTable,
+                                            CompoundRefereceScoreWithScreening,
+                                            CompoundReferenceScore,
+                                            ContigTable, ProjectTable,
+                                            RawReferenceTable,
+                                            RawReferenceTable_Basic,
+                                            ReferenceSourceTable, RunMainTable,
+                                            RunMappingTable, SampleTableOne,
+                                            TeleFluInsaFLuProjectTable,
+                                            TeleFluReferenceTable)
 from pathogen_identification.utilities.reference_utils import (
-    filter_reference_maps_select,
-    generate_insaflu_reference,
-)
+    filter_reference_maps_select, generate_insaflu_reference)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
 ##########################################
 ########################################## MAKE THESE DISAPPEAR - MORE TABLES
 ########################################## FIND OR CREATE - LINK TO SAMPLES, RUNS.
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
 from pathogen_identification.utilities.utilities_general import (
-    get_services_dir,
-    infer_run_media_dir,
-    simplify_name,
-)
+    get_services_dir, infer_run_media_dir, simplify_name)
 from pathogen_identification.utilities.utilities_pipeline import (  # ### KEEP THIS
-    Parameter_DB_Utility,
-    SoftwareTreeUtils,
-)
+    Parameter_DB_Utility, SoftwareTreeUtils)
 from pathogen_identification.utilities.utilities_views import (  # ############################################
-    EmptyRemapMain,
-    RawReferenceUtils,
-    ReportSorter,
-    RunMainWrapper,
-    SampleReadsRetrieve,
-    final_report_best_cov_by_accid,
-    recover_assembly_contigs,
-)
+    EmptyRemapMain, RawReferenceUtils, ReportSorter, RunMainWrapper,
+    SampleReadsRetrieve, final_report_best_cov_by_accid,
+    recover_assembly_contigs)
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
 from utils.software import Software
@@ -1147,7 +1105,9 @@ class TelefluProjectView(BaseBreadcrumbMixin, LoginRequiredMixin, generic.Create
         ]
 
     def setup(self, request, *args, **kwargs):
-        super(TelefluMappingIGV, self).setup(request, *args, **kwargs)
+        super(TelefluProjectView, self).setup(request, *args, **kwargs)
+
+        print(self.kwargs)
 
         teleflu_mapping_pk = int(self.kwargs["pk"])
         teleflu_mapping = TelefluMapping.objects.get(pk=teleflu_mapping_pk)
@@ -1201,20 +1161,28 @@ class TelefluProjectView(BaseBreadcrumbMixin, LoginRequiredMixin, generic.Create
 
         context["mapping_workflows"] = mapping_workflows
         ####################################### get combinations to deploy
-        local_tree = software_utils.generate_software_tree_safe(
-            software_utils.project,
-            None,
-            mapping_only=True,
-            screening=False,
+        available_path_nodes = software_utils.query_available_pathnodes(
+            mapping_only = True, screening = False
         )
+        parameter_utils = Parameter_DB_Utility()
+        trees = list(set(leaf.software_tree for leaf in available_path_nodes.values()))
+        software_tree_matched_paths = {
+            stree: {
+                leaf_index: leaf for leaf_index, leaf in available_path_nodes.items() if leaf.software_tree == stree
+            }
+            for stree in trees
+        }
+        software_pipeline_trees = {
+            stree: parameter_utils.convert_softwaretree_to_pipeline_tree(stree) for stree in software_tree_matched_paths
+        }
+        all_paths = {
+            stree: ptree.get_all_graph_paths()
+            for stree, ptree in software_pipeline_trees.items()
+        }
+        all_paths = {
+            leaf: path for stree_paths in all_paths.values() for leaf, path in stree_paths.items()
+        }
 
-        if local_tree.makeup == -1:
-            all_paths = {}
-            available_path_nodes = {}
-        else:
-
-            all_paths = local_tree.get_all_graph_paths()
-            available_path_nodes = software_utils.get_available_pathnodes(local_tree)
         ########################################## get workflows
         workflows = []
         for node, params_df in all_paths.items():
@@ -1914,10 +1882,8 @@ class ReferencePanelManagement(
 
 from django.views.generic import ListView, TemplateView
 
-from pathogen_identification.tables import (
-    ReferenceSourceFileTable,
-    TelevirReferencesTable,
-)
+from pathogen_identification.tables import (ReferenceSourceFileTable,
+                                            TelevirReferencesTable)
 
 
 class ReferenceManagementBase(BaseBreadcrumbMixin, TemplateView):
@@ -2799,7 +2765,8 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
         #
         run_qc = TelevirRunQC.objects.filter(run=run_main_pipeline)
         #
-        from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
+        from pathogen_identification.utilities.utilities_pipeline import \
+            Utils_Manager
 
         utils_manager = Utils_Manager()
         params_df = utils_manager.get_leaf_parameters(

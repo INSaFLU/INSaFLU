@@ -13,32 +13,22 @@ from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    RawReferenceCompoundModel,
-    ReferenceContigs,
-    RunMain,
-    SampleQC,
-    TeleFluProject,
-)
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference,
+                                            RawReferenceCompoundModel,
+                                            ReferenceContigs,
+                                            ReferenceSourceFile,
+                                            ReferenceSourceFileMap, RunMain,
+                                            SampleQC, TeleFluProject)
 from pathogen_identification.utilities.reference_utils import (
-    check_file_reference_submitted,
-    check_reference_exists,
-)
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+    check_file_reference_submitted, check_reference_exists)
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.utilities_general import (
-    get_project_dir,
-    get_project_dir_no_media_root,
-    infer_run_media_dir,
-)
+    get_project_dir, get_project_dir_no_media_root, infer_run_media_dir)
 from pathogen_identification.utilities.utilities_views import (
-    RawReferenceCompound,
-    RunMainWrapper,
-)
+    RawReferenceCompound, RunMainWrapper)
 from settings.constants_settings import ConstantsSettings as SettingsCS
 from settings.models import Parameter
 
@@ -81,9 +71,7 @@ class ProjectTable(tables.Table):
             },
         },
     )
-    # finished_processes = tables.Column("Finished", orderable=False, empty_values=())
-    # running_processes = tables.Column("Running", orderable=False, empty_values=())
-    # queued_processes = tables.Column("Queued", orderable=False, empty_values=())
+
 
     class Meta:
         model = Projects
@@ -91,12 +79,10 @@ class ProjectTable(tables.Table):
         fields = (
             "name",
             "results",
-            # "samples",
             "last_change_date",
             "creation_date",
             "description",
             "technology",
-            # "running_processes",
         )
         attrs = {
             "class": "table-striped table-bordered",
@@ -107,13 +93,9 @@ class ProjectTable(tables.Table):
             "name",
             "results",
             "settings",
-            # "samples",
             "description",
             "technology",
             "processes",
-            # "running_processes",
-            # "queued_processes",
-            # "finished_processes",
         )
 
     def render_technology(self, record):
@@ -133,27 +115,18 @@ class ProjectTable(tables.Table):
         """
         return number of running processes in this project"""
 
-        running = 0
         parameter_sets = ParameterSet.objects.filter(
-            project=record, sample__sample__is_deleted=False
-        )
-        for parameter_set in parameter_sets:
-            if parameter_set.status == ParameterSet.STATUS_RUNNING:
-                running += 1
-
-        return running
+            project=record, sample__sample__is_deleted=False, status=ParameterSet.STATUS_RUNNING
+        ).count()
+        return parameter_sets
 
     def render_queued_processes(self, record):
         """
         return number of queued processes in this project"""
 
-        queued = 0
-        parameter_sets = ParameterSet.objects.filter(
-            project=record, sample__sample__is_deleted=False
-        )
-        for parameter_set in parameter_sets:
-            if parameter_set.status == ParameterSet.STATUS_QUEUED:
-                queued += 1
+        queued = ParameterSet.objects.filter(
+            project=record, sample__sample__is_deleted=False, status=ParameterSet.STATUS_QUEUED
+        ).count()
 
         mapping_runs = RunMain.objects.filter(
             project=record,
@@ -170,15 +143,11 @@ class ProjectTable(tables.Table):
         """
         return number of finished processes in this project"""
 
-        finished = 0
         parameter_sets = ParameterSet.objects.filter(
-            project=record, sample__sample__is_deleted=False
-        )
-        for parameter_set in parameter_sets:
-            if parameter_set.status == ParameterSet.STATUS_FINISHED:
-                finished += 1
-
-        return finished
+            project=record, sample__sample__is_deleted=False, status=ParameterSet.STATUS_FINISHED
+        ).count()
+    
+        return parameter_sets
 
     def render_settings(self, record):
         color = ""
@@ -186,7 +155,7 @@ class ProjectTable(tables.Table):
             televir_project__pk=record.pk
         ).exists()
 
-        if project_settings_exist:
+        if project_settings_exist == True:
             color = 'style="color: purple;"'
 
         parameters = (
@@ -196,7 +165,7 @@ class ProjectTable(tables.Table):
             + f'<span ><i class="padding-button-table fa fa-pencil padding-button-table" {color}></i></span></a>'
         )
 
-        if project_settings_exist:
+        if project_settings_exist == True:
             parameters = parameters + (
                 '<a href="#id_reset_modal" id="id_reset_parameters_modal" data-toggle="modal" data-toggle="tooltip" title="Reset"'
                 + ' ref_name="'
@@ -451,20 +420,6 @@ class SampleTableOne(tables.Table):
         },
     )
 
-
-    #processes = tables.Column(
-    #    "Processes",
-    #    orderable=False,
-    #    empty_values=(),
-    #    attrs={
-    #        "th": {"style": "background-color: #eaf5ff; text-align: center;"},
-    #        "td": {
-    #            "style": "text-align: center;",
-    #            "title": "Running / Queued / Finished",
-    #        },
-    #    },
-    #)
-
     class Meta:
         model = PIProject_Sample
 
@@ -571,8 +526,6 @@ class SampleTableOne(tables.Table):
 
         deployment_management = '<a><i class="fa fa-bug"></i></span> </a>'
 
-        TELEVIR_DEPLOY_URL = "submit_televir_project_sample"
-
         deployment_management = (
             '<a href="#" id="deploypi_sample_btn" class="sample-deploy" data-toggle="modal" data-toggle="tooltip" title="Run Televir Classic Workflow"'
             + ' ref_name="'
@@ -581,7 +534,7 @@ class SampleTableOne(tables.Table):
             + str(record.pk)
             + '" deploy-url="'
             + reverse(
-                TELEVIR_DEPLOY_URL,
+                "submit_televir_project_sample",
             )
             + '"'
             + '"><i class="fa fa-flask"></i></span> </a>'
@@ -622,7 +575,6 @@ class SampleTableOne(tables.Table):
         user = current_request.user
 
         ### get the link for sample, to expand data
-        sample_name = record.sample.name
         sample_name = (
             '<a href="'
             + reverse(
@@ -650,7 +602,7 @@ class SampleTableOne(tables.Table):
 
         return mark_safe(sample_name)
 
-    def render_sorting(self, record):
+    def render_sorting(self, record: PIProject_Sample):
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
 
@@ -683,27 +635,10 @@ class SampleTableOne(tables.Table):
             return mark_safe(request_sorting)
 
         ### check if sorted
-
-        sample_runs = RunMain.objects.filter(sample=record)
-
-        ## return empty square if no report
-        if sample_runs.count() == 0:
-            return mark_safe('<i class="fa fa-square-o" title="Empty"></i>')
-        ## check sorted
-
         report_layout_params = TelevirParameters.get_report_layout_params(
             project_pk=record.project.pk
         )
-        media_dir = None
-
-        for run in sample_runs:
-            try:
-                media_dir = infer_run_media_dir(run)
-                media_dir = os.path.dirname(media_dir)
-                break
-            except:
-                continue
-
+        media_dir = record.media_dir_if_exists
         if media_dir is None:
             return mark_safe('<i class="fa fa-square-o" title="Empty"></i>')
 
@@ -846,7 +781,6 @@ class SampleTableOne(tables.Table):
         return f"{self.render_combinations(record)}::{self.render_mapping_runs(record)}"
 
 
-from pathogen_identification.models import ReferenceSourceFile, ReferenceSourceFileMap
 
 
 class ReferenceSourceFileTable(tables.Table):

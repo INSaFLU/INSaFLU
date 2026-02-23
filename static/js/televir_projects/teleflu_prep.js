@@ -29,9 +29,6 @@ $(document).ready(function () {
       // get checked samples rows
       var checkedRows_samples = JSON.parse(sessionStorage.getItem('checkedRows')) || [];
       var remember = document.getElementById('checkBoxAll');
-
-    
-
   
       // Process the checked rows
       // Add your processing logic here

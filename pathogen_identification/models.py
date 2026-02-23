@@ -358,7 +358,12 @@ class PIProject_Sample(models.Model):
             str(self.project.pk),
             str(self.sample.pk),
         )
-
+    
+    @property
+    def media_dir_if_exists(self):
+        if os.path.exists(self.media_dir):
+            return self.media_dir
+        return None
 
 class ParameterSet(models.Model):
     STATUS_NOT_STARTED = 0

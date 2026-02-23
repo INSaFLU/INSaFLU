@@ -68,7 +68,6 @@ function show_aln2pheno() {
 	    				count += 1;
 		    	    });
 	    			content += '</tbody></table>'
-//	    			console.log(content);
 	    			$('#showaln2pheno').append(content);
 	    			
 	    			var tf = new TableFilter('table_with_aln2pheno_id', {

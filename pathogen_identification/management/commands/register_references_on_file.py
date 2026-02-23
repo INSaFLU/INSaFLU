@@ -1,21 +1,15 @@
 import os
-import time
-from abc import ABC, abstractmethod
-from datetime import date
 
 import pandas as pd
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
-from django.db.models import Q
 
 from constants.constants import Televir_Metadata_Constants
 from managing_files.models import ProcessControler
-from pathogen_identification.models import (
-    ReferenceSource,
-    ReferenceSourceFile,
-    ReferenceSourceFileMap,
-    ReferenceTaxid,
-)
+from pathogen_identification.models import (ReferenceSource,
+                                            ReferenceSourceFile,
+                                            ReferenceSourceFileMap,
+                                            ReferenceTaxid)
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
 from utils.process_SGE import ProcessSGE
 from utils.utils import Utils

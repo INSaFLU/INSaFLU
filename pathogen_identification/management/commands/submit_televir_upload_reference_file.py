@@ -8,13 +8,12 @@ from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
 from managing_files.models import ProcessControler
-from pathogen_identification.models import (
-    ReferenceSource,
-    ReferenceSourceFile,
-    ReferenceSourceFileMap,
-    ReferenceTaxid,
-)
-from pathogen_identification.utilities.reference_utils import raw_reference_to_insaflu
+from pathogen_identification.models import (ReferenceSource,
+                                            ReferenceSourceFile,
+                                            ReferenceSourceFileMap,
+                                            ReferenceTaxid)
+from pathogen_identification.utilities.reference_utils import \
+    raw_reference_to_insaflu
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
 from utils.process_SGE import ProcessSGE
 
@@ -126,7 +125,7 @@ class Command(BaseCommand):
                     ]["Description"].values[0]
 
                     try:
-                        taxid = ReferenceTaxid.objects.get_or_create(
+                        taxid, _ = ReferenceTaxid.objects.get_or_create(
                             taxid=taxid,
                         )
                     except ReferenceTaxid.MultipleObjectsReturned:

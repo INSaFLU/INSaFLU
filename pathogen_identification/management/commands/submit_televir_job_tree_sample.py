@@ -1,7 +1,3 @@
-import os
-from datetime import date
-from typing import List
-
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 

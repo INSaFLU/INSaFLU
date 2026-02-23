@@ -1,21 +1,14 @@
 import os
-from typing import List
 
 import pandas as pd
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
 from managing_files.models import ProcessControler
-from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import FinalReport, PIProject_Sample, Projects
-from pathogen_identification.templatetags.report_colors import flag_false_positive
 from pathogen_identification.utilities.explify_merge import (
-    get_illumina_found,
-    merge_panels,
-    process_televir,
-    read_panel,
-)
-from pathogen_identification.utilities.utilities_general import get_services_dir
+    get_illumina_found, merge_panels, process_televir, read_panel)
+from pathogen_identification.utilities.utilities_general import \
+    get_services_dir
 from utils.process_SGE import ProcessSGE
 
 

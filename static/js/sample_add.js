@@ -52,8 +52,6 @@ $(document).on("click", "a", function(){
 
 $('#id-save-button').off('click').on('click', function () {
 	
-	console.log('id-save-button');
-	console.log('{{ csrf_token }}');
 	//id_name_to_insert
 	$.ajax({
         url: $('#modal-body-add-sample').attr("add-single-value-url"),

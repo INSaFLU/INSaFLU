@@ -5,7 +5,7 @@ import os
 import subprocess
 import time
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -14,7 +14,8 @@ from django.db import transaction
 from constants.constants import Constants, FileExtensions, TypePath
 from extend_user.models import Profile
 from managing_files.models import ProcessControler
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from utils.utils import Utils
 
 # http://www.socher.org/index.php/Main/HowToInstallSunGridEngineOnUbuntu
@@ -98,10 +99,7 @@ class ProcessSGE(object):
             print("stdout: ", stdout.decode())
             print("Error: ", exist_status)
             print("cmd: ", cmd)
-            raise Exception("Fail to submit qsub")
 
-        ## check if error occurred
-        if exist_status != 0:
             ## remove file
             if os.path.exists(temp_file):
                 os.unlink(temp_file)
@@ -112,20 +110,39 @@ class ProcessSGE(object):
                 "Fail to run: " + cmd + " - exit code: " + str(exist_status)
             )
             raise Exception("Fail to submit qsub")
-        ## read output
-        vect_out = self.utils.read_text_file(temp_file)
-        if os.path.exists(temp_file):
-            os.unlink(temp_file)
-        b_found = False
 
-        for line in vect_out:
-            if line.find("Submitted batch job") != -1:
-                lst_line = line.split(" ")
-                if len(lst_line) > 2 and self.utils.is_integer(lst_line[3]):
-                    return int(lst_line[3])
-                return None  ## don't rise exception...
+        ## read output
+
+        b_found = False
+        tries = 3
+        time_wait_past_first = 3
+
+        def read_file_once(temp_file) -> Optional[int]:
+            vect_out = self.utils.read_text_file(temp_file)
+
+            for line in vect_out:
+                if line.find("Submitted batch job") != -1:
+                    lst_line = line.split(" ")
+                    if len(lst_line) > 2 and self.utils.is_integer(lst_line[3]):
+                        return int(lst_line[3])
+                    return None  ## don't rise exception...
+        
+        submitted = read_file_once(temp_file)
+        if submitted is None:
+            while tries > 0:
+                time.sleep(time_wait_past_first)
+                submitted = read_file_once(temp_file)
+                if submitted is not None:
+                    b_found = True
+                    break
+                tries -= 1
+        else:
+            b_found = True
+        #if os.path.exists(temp_file):
+        #    os.unlink(temp_file)
+
         if not b_found:
-            raise Exception("\n".join(vect_out))
+            raise Exception("Fail to submit job")
 
     def collect_jobname_jobid_slurm(self, job_name):
         """

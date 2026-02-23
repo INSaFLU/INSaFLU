@@ -73,7 +73,6 @@ function show_variants_as_a_table() {
 	    				count += 1;
 		    	    });
 	    			content += '</tbody></table>'
-//	    			console.log(content);
 	    			$('#showvariantsasatable').append(content);
 	    			
 	    			var tf = new TableFilter('table_with_variants_id', {

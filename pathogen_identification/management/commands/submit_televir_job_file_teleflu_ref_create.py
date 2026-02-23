@@ -1,10 +1,9 @@
-from typing import List
-
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
 from managing_files.models import ProcessControler
-from pathogen_identification.utilities.reference_utils import file_reference_to_insaflu
+from pathogen_identification.utilities.reference_utils import \
+    file_reference_to_insaflu
 from utils.process_SGE import ProcessSGE
 
 

@@ -340,7 +340,6 @@
         var iconElement = document.querySelector('input[name="panel-icon"]:checked');
         var icon = iconElement ? iconElement.value : "none";
         var reload_url = '{% url "panel_list" %}';
-        console.log('icon', icon);
         $.ajax({
             url: url,  // Replace with the actual URL of your view
             method: 'POST',

@@ -27,14 +27,8 @@ from constants.software_names import SoftwareNames
 from manage_virus.models import UploadFile
 from manage_virus.uploadFiles import UploadFiles
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import (
-    MixedInfectionsTag,
-    ProcessControler,
-    Project,
-    ProjectSample,
-    Reference,
-    Sample,
-)
+from managing_files.models import (MixedInfectionsTag, ProcessControler,
+                                   Project, ProjectSample, Reference, Sample)
 from managing_files.models import Software as SoftwareModel
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
@@ -47,15 +41,8 @@ from utils.mixed_infections_management import MixedInfectionsManagement
 from utils.parse_coverage_file import GetCoverage
 from utils.parse_out_files import ParseOutFiles
 from utils.process_SGE import ProcessSGE
-from utils.result import (
-    CountHits,
-    DecodeObjects,
-    KeyValue,
-    MaskingConsensus,
-    Result,
-    ResultAverageAndNumberReads,
-    SoftwareDesc,
-)
+from utils.result import (CountHits, DecodeObjects, KeyValue, MaskingConsensus,
+                          Result, ResultAverageAndNumberReads, SoftwareDesc)
 from utils.utils import Utils
 
 
@@ -4599,8 +4586,6 @@ class Software(object):
 
                 from utils.collect_extra_data import CollectExtraData
 
-                print("###################")
-                print("Collect extra data")
                 collect_extra_data = CollectExtraData()
 
                 ### get a clean freebayes file
@@ -4649,8 +4634,6 @@ class Software(object):
                 ### remove several files that can exist form previous interactions
 
             ### draw coverage
-            print("###################")
-            print("Draw coverage")
             try:
                 ### make the coverage images
                 draw_all_coverage = DrawAllCoverage()

@@ -1467,10 +1467,7 @@ def create_teleflu_project(request):
         date = datetime.now()
 
         try:
-            print("############")
             metareference = create_combined_reference(ref_ids, project_name)
-            print(metareference)
-            print("OINOIN")
 
             if not metareference:
                 data["is_error"] = True

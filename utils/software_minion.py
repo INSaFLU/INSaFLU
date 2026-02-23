@@ -16,12 +16,8 @@ from constants.constants import Constants, FileType, TypePath
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import (
-    MixedInfectionsTag,
-    ProcessControler,
-    ProjectSample,
-    Sample,
-)
+from managing_files.models import (MixedInfectionsTag, ProcessControler,
+                                   ProjectSample, Sample)
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software_project_sample import DefaultProjectSoftware
@@ -31,15 +27,8 @@ from utils.mixed_infections_management import MixedInfectionsManagement
 from utils.parse_coverage_file import GetCoverage
 from utils.parse_out_files import ParseOutFiles
 from utils.process_SGE import ProcessSGE
-from utils.result import (
-    CountHits,
-    DecodeObjects,
-    KeyValue,
-    MaskingConsensus,
-    Result,
-    ResultAverageAndNumberReads,
-    SoftwareDesc,
-)
+from utils.result import (CountHits, DecodeObjects, KeyValue, MaskingConsensus,
+                          Result, ResultAverageAndNumberReads, SoftwareDesc)
 from utils.software import Software
 from utils.utils import Utils
 
@@ -1345,11 +1334,9 @@ class SoftwareMinion(object):
         reference_fasta_medaka = self.utils.get_temp_file_from_dir(
             temp_dir, "medaka_ref", ".fasta"
         )
-        print("reference fasta: {}".format(reference_fasta))
 
         self.utils.copy_file(reference_fasta, reference_fasta_medaka)
-        print(os.path.exists(reference_fasta_medaka))
-        print("reference fasta: {}".format(reference_fasta_medaka))
+
 
         cmd = "{} {}_consensus -i {} -d {} -o {} -p consensus -t {} {}".format(
             self.software_names.get_medaka_env(),
@@ -1360,12 +1347,9 @@ class SoftwareMinion(object):
             settings.THREADS_TO_RUN_SLOW,
             parameters_consensus,
         )
-        print(cmd)
         exist_status = os.system(cmd)
         if exist_status != 0:
-            
-            print("### CMD")
-            print(cmd)
+
             self.logger_production.error("Fail to run: " + cmd)
             self.logger_debug.error("Fail to run: " + cmd)
             #self.utils.remove_dir(temp_dir)

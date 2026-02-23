@@ -21,42 +21,29 @@ from constants.software_names import SoftwareNames
 from fluwebvirus.settings import BASE_DIR, STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReferenceMap_Main,
-    ReferencePanel,
-    ReferenceSourceFileMap,
-    RunMain,
-    SoftwareTreeNode,
-    TelefluMapping,
-    TeleFluProject,
-    TeleFluSample,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference, ReferenceMap_Main,
+                                            ReferencePanel,
+                                            ReferenceSourceFileMap, RunMain,
+                                            SoftwareTreeNode, TelefluMapping,
+                                            TeleFluProject, TeleFluSample)
 from pathogen_identification.tables import ReferenceSourceTable
 from pathogen_identification.utilities.reference_utils import (
-    check_file_reference_submitted,
-    check_raw_reference_submitted,
-    check_user_reference_exists,
-    create_combined_reference,
-)
+    check_file_reference_submitted, check_raw_reference_submitted,
+    check_user_reference_exists, create_combined_reference)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
-from pathogen_identification.utilities.utilities_general import get_services_dir
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
+from pathogen_identification.utilities.utilities_general import \
+    get_services_dir
 from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils,
-    Utils_Manager,
-)
+    SoftwareTreeUtils, Utils_Manager)
 from pathogen_identification.utilities.utilities_views import (
-    RawReferenceUtils,
-    ReportSorter,
-    SampleReferenceManager,
-    set_control_reports,
-)
+    RawReferenceUtils, ReportSorter, SampleReferenceManager,
+    set_control_reports)
 from pathogen_identification.views import inject__added_references
 from settings.constants_settings import ConstantsSettings as CS
 from settings.default_software_project_sample import DefaultProjectSoftware
@@ -1480,7 +1467,6 @@ def create_teleflu_project(request):
         date = datetime.now()
 
         try:
-
             metareference = create_combined_reference(ref_ids, project_name)
 
             if not metareference:
@@ -1525,6 +1511,7 @@ def create_teleflu_project(request):
             data["project_name"] = teleflu_project.name
 
         except Exception as e:
+            print("Error creating teleflu project")
             print(e)
             data["is_error"] = True
             return JsonResponse(data)

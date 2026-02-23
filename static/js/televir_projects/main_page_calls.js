@@ -91,7 +91,6 @@ $('.sample-deploy').on('click', function () {
 
     csrf_token = $('#teleflu_create-button').attr("csrf");
     url = $(this).attr("deploy-url");
-    console.log(url);
 
     $.ajax({
         url: $(this).attr("deploy-url"),
@@ -146,12 +145,9 @@ $('.sort-sample').on('click', function () {
 $(document).on("click", "a", function (e) {
 
     /// set wait screen
-    //var id_ = $(this).attr('id');
     var href = $(this).attr('href');
     var onclick = $(this).attr('onclick');
     var id_ = $(this).attr('id');
-    // check if href is defined
-    console.log(href);
 
     if (typeof href !== 'undefined' && onclick !== 'undefined' && id_ !== 'undefined') {
         

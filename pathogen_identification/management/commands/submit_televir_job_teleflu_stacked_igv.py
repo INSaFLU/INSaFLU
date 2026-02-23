@@ -1,13 +1,10 @@
-import os
-from datetime import date
-from typing import List
-
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
 from managing_files.models import ProcessControler
 from pathogen_identification.models import TelefluMapping, TeleFluProject
-from pathogen_identification.utilities.reference_utils import create_televir_igv_report
+from pathogen_identification.utilities.reference_utils import \
+    create_televir_igv_report
 from utils.process_SGE import ProcessSGE
 
 

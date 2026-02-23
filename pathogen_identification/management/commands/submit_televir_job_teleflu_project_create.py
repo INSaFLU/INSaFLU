@@ -1,20 +1,15 @@
-import os
-from datetime import date
-from typing import List
-
-from django.contrib import messages
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
 from constants.meta_key_and_values import MetaKeyAndValue
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import ProcessControler, ProjectSample
+from managing_files.models import ProcessControler
 from managing_files.models import Project as InsafluProject
+from managing_files.models import ProjectSample
 from pathogen_identification.models import TeleFluProject, TeleFluSample
-from pathogen_identification.utilities.reference_utils import (
-    teleflu_to_insaflu_reference,
-)
+from pathogen_identification.utilities.reference_utils import \
+    teleflu_to_insaflu_reference
 from settings.default_software_project_sample import DefaultProjectSoftware
 from utils.process_SGE import ProcessSGE
 

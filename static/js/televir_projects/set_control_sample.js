@@ -66,9 +66,9 @@ $('#id-set-control-button').on('click', function(){
                 '</div>');
             }
         },
-        error: function (data) {
+        error : function(xhr,errmsg,err) {
             console.log('error');
-            console.log(data);
+            console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
         }
     });
 });

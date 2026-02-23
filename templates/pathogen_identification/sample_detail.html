@@ -976,8 +976,6 @@
     google.charts.setOnLoadCallback(drawChart);
     
     // Draw the chart and set the chart values
-
-    //console.log("{{qc_report.input_reads}}");
     function drawChart() {
         var raw_data= [['Input', "Number"]];
         raw_data.push(["Kept", parseFloat("{{run_detail.processing_final|reconvert_string_to_int}}")]);

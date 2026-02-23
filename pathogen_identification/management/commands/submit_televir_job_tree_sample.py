@@ -1,24 +1,15 @@
-import os
-from datetime import date
-from typing import List
-
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
 from managing_files.models import ProcessControler
-from pathogen_identification.models import PIProject_Sample, Projects, SoftwareTreeNode
+from pathogen_identification.models import (PIProject_Sample, Projects,
+                                            SoftwareTreeNode)
 from pathogen_identification.utilities.tree_deployment import (
-    Tree_Progress,
-    TreeProgressGraph,
-)
+    Tree_Progress, TreeProgressGraph)
 from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils,
-    Utils_Manager,
-)
+    SoftwareTreeUtils, Utils_Manager)
 from pathogen_identification.utilities.utilities_views import (
-    RawReferenceUtils,
-    set_control_reports,
-)
+    RawReferenceUtils, set_control_reports)
 from utils.process_SGE import ProcessSGE
 
 

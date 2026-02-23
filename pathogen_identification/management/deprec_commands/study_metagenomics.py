@@ -5,14 +5,9 @@ import pandas as pd
 from django.core.management.base import BaseCommand
 from django.db.models import Q
 
-from pathogen_identification.models import (
-    FinalReport,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReferenceMap_Main,
-    RunMain,
-)
+from pathogen_identification.models import (FinalReport, PIProject_Sample,
+                                            Projects, RawReference,
+                                            ReferenceMap_Main, RunMain)
 
 
 def process_class(r2, maxt=6):
@@ -728,8 +723,7 @@ def df_report_analysis(analysis_df_filename, project_id: int):
 
     for ix, row in df.iterrows():
         sample_name = str(row["Sample_ID"])
-        if sample_name == "VG220770":
-            print("#############################################################3")
+
         hitname = str(row["Reporting Name"])
         org_class = str(row["Class"])
         curator = SampleCurator(project_id, sample_name)

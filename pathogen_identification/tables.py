@@ -481,7 +481,7 @@ class SampleTableOne(tables.Table):
         if user.username == record.project.owner.username:
             return mark_safe(record_name)
 
-    def render_runs(self, record):
+    def render_runs(self, record: PIProject_Sample):
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
 

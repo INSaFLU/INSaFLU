@@ -37,7 +37,6 @@ from fluwebvirus.settings import (BASE_DIR, MEDIA_ROOT, MEDIA_URL, STATIC_ROOT,
 from managing_files.forms import AddSampleProjectForm
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
-from managing_files.models import Reference
 from managing_files.tables import SampleToProjectsTable
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.constants_settings import \
@@ -1164,25 +1163,7 @@ class TelefluProjectView(BaseBreadcrumbMixin, LoginRequiredMixin, generic.Create
         available_path_nodes = software_utils.query_available_pathnodes(
             mapping_only = True, screening = False
         )
-        parameter_utils = Parameter_DB_Utility()
-        trees = list(set(leaf.software_tree for leaf in available_path_nodes.values()))
-        software_tree_matched_paths = {
-            stree: {
-                leaf_index: leaf for leaf_index, leaf in available_path_nodes.items() if leaf.software_tree == stree
-            }
-            for stree in trees
-        }
-        software_pipeline_trees = {
-            stree: parameter_utils.convert_softwaretree_to_pipeline_tree(stree) for stree in software_tree_matched_paths
-        }
-        all_paths = {
-            stree: ptree.get_all_graph_paths()
-            for stree, ptree in software_pipeline_trees.items()
-        }
-        all_paths = {
-            leaf: path for stree_paths in all_paths.values() for leaf, path in stree_paths.items()
-        }
-
+        all_paths = software_utils.get_all_technology_pipelines()
         ########################################## get workflows
         workflows = []
         for node, params_df in all_paths.items():

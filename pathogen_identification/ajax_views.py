@@ -1,4 +1,3 @@
-import mimetypes
 import os
 from datetime import datetime
 from typing import Dict, List, Optional
@@ -8,16 +7,14 @@ from Bio import SeqIO
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.files.temp import NamedTemporaryFile
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_POST
 
-from constants.constants import Constants, FileExtensions, FileType, TypePath
-from constants.meta_key_and_values import MetaKeyAndValue
-from constants.software_names import SoftwareNames
+from constants.constants import Constants, FileType, TypePath
 from fluwebvirus.settings import BASE_DIR, STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
@@ -32,8 +29,8 @@ from pathogen_identification.models import (FinalReport, ParameterSet,
                                             TeleFluProject, TeleFluSample)
 from pathogen_identification.tables import ReferenceSourceTable
 from pathogen_identification.utilities.reference_utils import (
-    check_file_reference_submitted, check_raw_reference_submitted,
-    check_user_reference_exists, create_combined_reference)
+    check_file_reference_submitted, check_user_reference_exists,
+    create_combined_reference)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
 from pathogen_identification.utilities.televir_parameters import \
     TelevirParameters
@@ -416,7 +413,7 @@ def submit_sample_mapping_panels(request):
         sample = PIProject_Sample.objects.get(id=int(sample_id))
 
         project = sample.project
-        software_utils = SoftwareTreeUtils(user, project, sample=sample)
+        software_utils = SoftwareTreeUtils(user, project)
         runs_to_deploy, _ = software_utils.check_runs_to_submit_mapping_only(sample)
 
         if len(runs_to_deploy) == 0:

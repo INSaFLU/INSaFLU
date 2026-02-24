@@ -4,6 +4,7 @@ from typing import DefaultDict
 import django_tables2 as tables
 from crequest.middleware import CrequestMiddleware
 from django.conf import settings
+from django.db.models import Q
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
@@ -481,7 +482,7 @@ class SampleTableOne(tables.Table):
         if user.username == record.project.owner.username:
             return mark_safe(record_name)
 
-    def render_runs(self, record):
+    def render_runs(self, record: PIProject_Sample):
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
 
@@ -884,13 +885,14 @@ class TelevirReferencesTable(tables.Table):
         return record.reference_source.taxid
 
     def render_source(self, record: ReferenceSourceFileMap):
+        
         records_same_accid = ReferenceSourceFileMap.objects.filter(
-            reference_source__accid=record.reference_source.accid,
-            reference_source_file__owner__in=[
-                None,
-                record.reference_source_file.owner,
-            ],
+            Q(reference_source__accid=record.reference_source.accid)
+            & Q(reference_source_file__owner__in=[
+                self.user_id
+            ]) | Q(reference_source_file__owner__isnull=True)
         ).distinct("reference_source_file")
+        
         files_flat = [
             record.reference_source_file.file for record in records_same_accid
         ]

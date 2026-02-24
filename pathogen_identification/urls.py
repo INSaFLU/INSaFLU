@@ -2,7 +2,7 @@ from django.urls import path, re_path
 
 import pathogen_identification.ajax_views as PIajax_views
 import pathogen_identification.views as PIviews
-from managing_files import ajax_views, views
+from managing_files import views
 
 urlpatterns = [
     re_path(

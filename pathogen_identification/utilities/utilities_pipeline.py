@@ -11,20 +11,19 @@ from django.contrib.auth.models import User
 from django.db import DatabaseError, transaction
 from django.db.models import Q, QuerySet
 
-from constants.constants import Televir_Directory_Constants as Televir_Directories
+from constants.constants import \
+    Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.host_library import HomoSapiens, Host
-from pathogen_identification.models import (
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
-from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
+from pathogen_identification.models import (ParameterSet, PIProject_Sample,
+                                            Projects, SoftwareTree,
+                                            SoftwareTreeNode)
+from pathogen_identification.utilities.utilities_televir_dbs import \
+    Utility_Repository
 from settings.constants_settings import ConstantsSettings as CS
-from settings.models import Parameter, PipelineStep, Software, Technology
+from settings.models import Parameter, Software
+
 tree = lambda: defaultdict(tree)
 
 
@@ -2970,10 +2969,6 @@ class SoftwareTreeUtils:
             software_tree__pipeline_type=type_pipeline, 
             available = True
         )
-        nodes_test = SoftwareTreeNode.objects.filter(
-            software_tree__project=self.project,
-            software_tree__pipeline_type=type_pipeline, 
-        )
 
         available_path_nodes = {
             node.index: node for node in nodes
@@ -3112,6 +3107,8 @@ class SoftwareTreeUtils:
             mapping_only = True,
         )
 
+        print(available_path_nodes)
+
         clean_samples_leaf_dict, workflow_deployed_dict = (
             self.utils_manager.sample_nodes_check_repeat_allowed(
                 submission_dict, available_path_nodes, self.project
@@ -3138,14 +3135,32 @@ class SoftwareTreeUtils:
 
         return clean_samples_leaf_dict
 
-    def get_all_technology_pipelines(self, tree_makeup: int) -> dict:
+    def get_all_technology_pipelines(self) -> Dict[int, pd.DataFrame]:
         """
         Get all pipelines for a technology
         """
 
-        pipeline_tree = self.generate_software_tree(tree_makeup)
+        available_path_nodes = self.query_available_pathnodes(
+            mapping_only = True, screening = False
+        )
+        trees = list(set(leaf.software_tree for leaf in available_path_nodes.values()))
+        software_tree_matched_paths = {
+            stree: {
+                leaf_index: leaf for leaf_index, leaf in available_path_nodes.items() if leaf.software_tree == stree
+            }
+            for stree in trees
+        }
+        software_pipeline_trees = {
+            stree: self.parameter_util.convert_softwaretree_to_pipeline_tree(stree) for stree in software_tree_matched_paths
+        }
+        all_paths = {
+            stree: ptree.get_all_graph_paths()
+            for stree, ptree in software_pipeline_trees.items()
+        }
+        all_paths = {
+            leaf: path for stree_paths in all_paths.values() for leaf, path in stree_paths.items()
+        }
 
-        all_paths = pipeline_tree.get_all_graph_paths()
         return all_paths
 
     def generate_software_tree(self, tree_makeup: int):

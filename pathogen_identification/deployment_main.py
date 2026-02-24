@@ -11,32 +11,21 @@ from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from constants.constants import TypePath
 from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RunMain, SoftwareTree,
+                                            SoftwareTreeNode)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.modules.run_main import RunMainTree_class
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.update_DBs import (
-    Update_Assembly,
-    Update_Classification,
-    Update_Metagenomics,
-    Update_Remap,
-    Update_RunMain_Initial,
-    Update_RunMain_Secondary,
-    get_run_parents,
-)
-from pathogen_identification.utilities.utilities_general import simplify_name_lower
+    Update_Assembly, Update_Classification, Update_Metagenomics, Update_Remap,
+    Update_RunMain_Initial, Update_RunMain_Secondary, get_run_parents)
+from pathogen_identification.utilities.utilities_general import \
+    simplify_name_lower
 from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils,
-    Utils_Manager,
-)
+    Parameter_DB_Utility, SoftwareTreeUtils, Utils_Manager)
 from pathogen_identification.utilities.utilities_views import ReportSorter
 from settings.constants_settings import ConstantsSettings as SettingsConstants
 from utils.process_SGE import ProcessSGE
@@ -303,7 +292,7 @@ class PathogenIdentification_SingleDeployment(PathogenIdentificationDeploymentCo
 
         software_tree_utils = SoftwareTreeUtils(self.project.owner, self.project)
 
-        all_paths = software_tree_utils.get_all_technology_pipelines(self.tree_makup)
+        all_paths = software_tree_utils.get_all_technology_pipelines()
 
         self.run_params_db = all_paths.get(self.pipeline_index, None)
 

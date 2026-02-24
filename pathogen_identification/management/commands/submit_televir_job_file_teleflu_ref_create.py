@@ -64,8 +64,7 @@ class Command(BaseCommand):
 
         else:
             print("Process does not exist")
-
-        # UTILITIES
+            
 
         try:
             success, ref_id = file_reference_to_insaflu(ref_id, user_id)

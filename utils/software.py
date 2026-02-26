@@ -1977,7 +1977,7 @@ class Software(object):
         run mafft
         out: out_file
         """
-        cmd = "{}; {} {} --thread {} {} > {}".format(
+        cmd = "{}; {} {} --quiet --thread {} {} > {}".format(
             self.software_names.get_mafft_set_env_variable(),
             self.software_names.get_mafft(),
             parameters,

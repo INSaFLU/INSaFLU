@@ -13,12 +13,12 @@ from datasets.models import Dataset, DatasetConsensus
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project, ProjectSample, Sample
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from pathogen_identification.models import PIProject_Sample
 from pathogen_identification.models import Projects as Televir_Project
-from pathogen_identification.utilities.utilities_views import (
-    duplicate_metagenomics_software,
-)
+from pathogen_identification.utilities.utilities_views import \
+    duplicate_metagenomics_software
 from settings.constants_settings import ConstantsSettings
 from settings.default_software import DefaultSoftware
 from settings.forms import SoftwareForm
@@ -409,9 +409,8 @@ class PISettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
             technologies = [televir_project.technology]
             print(software_primed)
             if software_primed == False:
-                from pathogen_identification.utilities.utilities_pipeline import (
-                    SoftwareTreeUtils,
-                )
+                from pathogen_identification.utilities.utilities_pipeline import \
+                    SoftwareTreeUtils
                 software_utils = SoftwareTreeUtils(televir_project.owner, televir_project, None)
                 software_utils.set_technology(televir_project.technology)
                 software_utils.deactivate_all_nodes()
@@ -556,9 +555,8 @@ class PISettingsGroupsView(PISettingsView):
             technologies = [televir_project.technology]
             print(software_primed)
             if software_primed == False:
-                from pathogen_identification.utilities.utilities_pipeline import (
-                    SoftwareTreeUtils,
-                )
+                from pathogen_identification.utilities.utilities_pipeline import \
+                    SoftwareTreeUtils
                 software_utils = SoftwareTreeUtils(televir_project.owner, televir_project, None)
                 software_utils.set_technology(televir_project.technology)
                 software_utils.deactivate_all_nodes()
@@ -1533,20 +1531,6 @@ class UpdateParametersProjSampleView(
                     taskID,
                 )
 
-                ### need to collect global files again
-                taskID = process_SGE.set_collect_global_files(
-                    project_sample.project, user
-                )
-                manageDatabase.set_project_metakey(
-                    project_sample.project,
-                    user,
-                    metaKeyAndValue.get_meta_key(
-                        MetaKeyAndValue.META_KEY_Queue_TaskID_Project,
-                        project_sample.project.id,
-                    ),
-                    MetaKeyAndValue.META_VALUE_Queue,
-                    taskID,
-                )
             except:
                 pass
 

@@ -107,6 +107,8 @@ class DrawAllCoverage(object):
         draw_coverage = DrawCoverage(coverage.limit_defined_by_user)
 
         for sequence_name in geneticElement.get_sorted_elements():
+            if sequence_name not in dict_coverage:
+                continue
             draw_coverage.create_coverage(
                 dict_coverage[sequence_name],
                 geneticElement.get_genes(sequence_name),

@@ -16,7 +16,8 @@ from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project, ProjectSample, Sample
 from pathogen_identification.models import PIProject_Sample
 from pathogen_identification.models import Projects as PIProjects
-from pathogen_identification.utilities.utilities_pipeline import Pipeline_Makeup, SoftwareTreeUtils
+from pathogen_identification.utilities.utilities_pipeline import (
+    Pipeline_Makeup, SoftwareTreeUtils)
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software import DefaultSoftware
@@ -196,20 +197,7 @@ def set_default_parameters(request):
                                     taskID,
                                 )
 
-                                ### need to collect global files again
-                                taskID = process_SGE.set_collect_global_files(
-                                    project, request.user
-                                )
-                                manageDatabase.set_project_metakey(
-                                    project,
-                                    request.user,
-                                    metaKeyAndValue.get_meta_key(
-                                        MetaKeyAndValue.META_KEY_Queue_TaskID_Project,
-                                        project.id,
-                                    ),
-                                    MetaKeyAndValue.META_VALUE_Queue,
-                                    taskID,
-                                )
+
                             except:
                                 pass
 
@@ -1344,9 +1332,8 @@ def turn_on_off_software(request):
                                 data["other_kills"] += [filter.pk]
                     ### SET TREE NODES HERE
                     if televir_in_any_way:
-                        from pathogen_identification.utilities.utilities_pipeline import (
-                            SoftwareTreeUtils,
-                        )
+                        from pathogen_identification.utilities.utilities_pipeline import \
+                            SoftwareTreeUtils
                         print("televir way", televir_project, televir_project_sample)
                         software_utils = SoftwareTreeUtils(request.user, televir_project, televir_project_sample)
                         software_utils.set_technology(software.technology.name)

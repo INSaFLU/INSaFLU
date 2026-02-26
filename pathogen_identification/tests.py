@@ -1184,9 +1184,6 @@ class MetadataManagementTests(TestCase):
         #############################
         query_string = "Influenza A virus"
         references = reference_utils.retrieve_compound_references(query_string)
-        print("###################")
-        print(references)
-
         first_report_group = sorted_reports[0]
 
         first_compound: FinalReportCompound = first_report_group.group_list[0]

@@ -58,7 +58,6 @@ class SoftwareMinion(object):
         """
         Global processing, RabbitQC, NanoStat, NanoFilt and GetSpecies
         """
-        print("Start ProcessControler")
         process_controler = ProcessControler()
         process_SGE = ProcessSGE()
         process_SGE.set_process_controler(
@@ -736,7 +735,6 @@ class SoftwareMinion(object):
                 parameters_depth = default_project_software.get_samtools_parameters_all_possibilities_ONT(
                     user, project_sample
                 )
-                print("project_sample_index: {}".format(project_sample.pk))
                 out_put_path = self.run_medaka(
                     project_sample.sample.get_fastq_available(TypePath.MEDIA_ROOT),
                     project_sample.project.reference.get_reference_fasta(
@@ -752,7 +750,6 @@ class SoftwareMinion(object):
                     freq_vcf_limit,
                     project_sample,
                 )
-                print("Medaka output path: {}".format(out_put_path))
                 result_all.add_software(
                     SoftwareDesc(
                         self.software_names.get_medaka_name(),
@@ -1421,13 +1418,13 @@ class SoftwareMinion(object):
 
         ### vcf
         vcf_before_file = os.path.join(temp_dir, sample_name + "_before_annotation.vcf")
-        cmd = "{} {} variant --verbose {} {} {};".format(
+        cmd = "{} {}_variant -r {} -i {} -o {};".format(
             #         cmd =  "{} {} snp --verbose {} {} {}".format(
             self.software_names.get_medaka_env(),
             self.software_names.get_medaka(),
             reference_fasta_medaka,
-            hdf_file,
-            vcf_before_file,
+            file_fastq,
+            temp_dir,
         )
         exist_status = os.system(cmd)
         if exist_status != 0:
@@ -1435,6 +1432,12 @@ class SoftwareMinion(object):
             self.logger_debug.error("Fail to run: " + cmd)
             self.utils.remove_dir(temp_dir)
             raise Exception("Fail to run medaka variant")
+
+        vcf_outfile = os.path.join(temp_dir, "medaka.annotated.vcf")
+        self.utils.move_file(
+            vcf_outfile,
+            vcf_before_file
+        )
 
         ### annotate vcf
         vcf_file = os.path.join(temp_dir, sample_name + ".vcf")

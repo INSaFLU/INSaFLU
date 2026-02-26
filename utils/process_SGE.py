@@ -143,6 +143,8 @@ class ProcessSGE(object):
 
         if not b_found:
             raise Exception("Fail to submit job")
+        
+        return submitted
 
     def collect_jobname_jobid_slurm(self, job_name):
         """

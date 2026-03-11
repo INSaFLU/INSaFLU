@@ -26,22 +26,14 @@ from constants.constants import Constants, FileExtensions, TypeFile, TypePath
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.nextclade_links import get_constext_nextclade
 from constants.software_names import SoftwareNames
-from datasets.forms import (
-    AddConsensusDatasetForm,
-    AddProjectsDatasetForm,
-    AddReferencesDatasetForm,
-    ConsensusForm,
-    DatastesUploadDescriptionMetadataForm,
-)
-from datasets.models import Consensus, Dataset, DatasetConsensus, MetaKey, UploadFiles
-from datasets.tables import (
-    AddDatasetFromCvsFileTableMetadata,
-    ConsensusTable,
-    DatasetConsensusTable,
-    DatasetTable,
-    ProjectTable,
-    ReferenceTable,
-)
+from datasets.forms import (AddConsensusDatasetForm, AddProjectsDatasetForm,
+                            AddReferencesDatasetForm, ConsensusForm,
+                            DatastesUploadDescriptionMetadataForm)
+from datasets.models import (Consensus, Dataset, DatasetConsensus, MetaKey,
+                             UploadFiles)
+from datasets.tables import (AddDatasetFromCvsFileTableMetadata,
+                             ConsensusTable, DatasetConsensusTable,
+                             DatasetTable, ProjectTable, ReferenceTable)
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project, ProjectSample, Reference
@@ -52,10 +44,8 @@ from settings.models import Software as SoftwareSettings
 from settings.tables import SoftwaresTable
 from utils.process_SGE import ProcessSGE
 from utils.result import DecodeObjects
-from utils.session_variables import (
-    clean_check_box_in_session,
-    is_all_check_box_in_session,
-)
+from utils.session_variables import (clean_check_box_in_session,
+                                     is_all_check_box_in_session)
 from utils.software import Software
 from utils.support_django_template import get_link_for_dropdown_item
 from utils.utils import ShowInfoMainPage, Utils
@@ -418,7 +408,7 @@ class AddDatasetsConsensusView(
     def crumbs(self):
         return [
             ("Datasets", reverse("datasets")),
-            ("Add Consensus to dataset", reverse("add-consensus-dataset")),
+            ("Add Consensus to dataset", ""),
         ]
 
     if settings.DEBUG:
@@ -664,8 +654,7 @@ class AddDatasetsProjectsView(
         return [
             ("Datasets", reverse("datasets")),
             (
-                "Add Consensus from projects",
-                reverse("add-consensus-from-projects-dataset"),
+                "Add Consensus from projects", ""
             ),
         ]
 

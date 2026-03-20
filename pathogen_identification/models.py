@@ -27,6 +27,7 @@ from pathogen_identification.constants_settings import \
     ConstantsSettings as PICS
 from pathogen_identification.data_classes import IntermediateFiles
 from settings.constants_settings import ConstantsSettings as CS
+
 # Create your models here.
 
 no_space_validator = RegexValidator(
@@ -996,6 +997,35 @@ class RunAssembly(models.Model):
 
         self.save()
 
+
+
+class ClassifierOutput(models.Model):
+
+    run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)
+    software_name = models.CharField(max_length=100, blank=True, null=True)
+
+
+    class Meta:
+        ordering = [
+            "run",
+        ]
+
+    def __str__(self):
+        return self.software_name
+
+
+class ClassifierOutputFile(models.Model):
+
+    classifier_output = models.ForeignKey(ClassifierOutput, blank=True, null=True, on_delete=models.CASCADE)
+    file_path = models.CharField(max_length=1000, blank=True, null=True)
+
+    class Meta:
+        ordering = [
+            "classifier_output",
+        ]
+
+    def __str__(self):
+        return self.file_path
 
 class ReadClassification(models.Model):
     run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)

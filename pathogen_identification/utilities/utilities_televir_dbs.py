@@ -72,7 +72,7 @@ class Utility_Repository:
     def setup_engine_docker(self):
         self.engine = create_engine(
             f"{self.dbtype_local}:////"
-            + os.path.join(*self.db_path.split("/"), "utility_docker.db")
+            + os.path.join(*self.db_path.split("/"), "utility_local.db")
         )
 
     def setup_engine_posrgres(self):

@@ -1219,18 +1219,23 @@ class Utility_Pipeline_Manager:
         self, software_name: str, filters: List[tuple] = []
     ) -> pd.DataFrame:
         fields = self.utility_repository.select_explicit_statement(
-            "software", "name", software_name.lower(), filters=filters
+            "database", "name", software_name.lower(), filters=filters
         )
+        print("fields")
+        print(fields)
 
         try:
             with self.utility_repository.engine.connect() as conn:
                 r = conn.execute(fields)
-                rows = r.fetchall()
-                fields = pd.DataFrame(rows, columns=r.keys())
-                fields = fields.drop_duplicates(subset=["database"])
+                rows = [dict(row) for row in r.fetchall()]
 
+                fields = pd.DataFrame(rows, columns=rows[0].keys())
+                fields = fields.drop_duplicates(subset=["name"])
+                fields['name']= fields['name'].apply(lambda x: x.split('/')[0])
+                print(fields)
             return fields
         except Exception as e:
+            print("Exception", e)
             self.logger.error(
                 f"failed to fail to pandas read_sql {self.utility_repository.engine} software table for {software_name}. Error: {e}"
             )
@@ -1255,15 +1260,18 @@ class Utility_Pipeline_Manager:
 
     def get_software_db_dict(self):
         software_list = self.utility_repository.get_list_unique_field(
-            "software", "name"
+            "database", "name"
         )
+        print(software_list)
 
         self.software_dbs_dict = {
-            software.lower(): self.get_software_dbs_if_exist(software)
+            software.lower().split('/')[0]: self.get_software_dbs_if_exist(software)
             .path.unique()
             .tolist()
             for software in software_list
         }
+
+        print(self.software_dbs_dict)
 
     def get_host_dbs(self):
 
@@ -1271,7 +1279,7 @@ class Utility_Pipeline_Manager:
             "software", "name"
         )
         hosts_dbs_dict = {
-            software.lower(): self.get_software_dbs_if_exist(
+            software.lower().split('/')[0]: self.get_software_dbs_if_exist(
                 software, filters=[("tag", "host")]
             )
             for software in software_list
@@ -1320,7 +1328,7 @@ class Utility_Pipeline_Manager:
         )
 
         filter_dbs_dict = {
-            software.lower(): self.get_software_dbs_if_exist(
+            software.lower().split('/')[0]: self.get_software_dbs_if_exist(
                 software, filters=[("tag", "filter")]
             )
             for software in software_list
@@ -1337,6 +1345,7 @@ class Utility_Pipeline_Manager:
     ##################################
 
     def get_from_software_db_dict(self, software_name: str, empty=[]):
+        
         possibilities = [software_name, software_name.lower()]
         if "_" in software_name:
             element = software_name.split("_")[0]

@@ -1052,6 +1052,63 @@ class PipelineTree:
         }
 
 
+
+class UtilityDB:
+    def __init__(self, db_path: str, install_type: str):
+        self.repository = Utility_Repository(
+            db_path=db_path, install_type=install_type
+        )
+
+    def query_databases(self, category: str = None, db_type: str = None) -> pd.DataFrame:
+        sql_parts = ["SELECT * FROM database"]
+        
+        conditions = []
+        if category:
+            conditions.append(f"db_category = '{category}'")
+        if db_type:
+            conditions.append(f"db_type = '{db_type}'")
+        
+        if conditions:
+            sql_parts.append("WHERE " + " AND ".join(conditions))
+        
+        sql = " ".join(sql_parts)
+        return self._execute_query(sql)
+
+    def get_software_dbs(self, category: str, db_type: str = None) -> pd.DataFrame:
+        table= self.query_databases(category=category.lower(), db_type=db_type)
+        return table
+
+    def get_host_dbs(self, category: str = None) -> pd.DataFrame:
+        return self.query_databases(category=category.lower() if category else None, db_type="host")
+
+    def get_filter_dbs(self, category: str) -> pd.DataFrame:
+        return self.query_databases(category=category.lower(), db_type="filter")
+
+    def get_all_databases(self) -> pd.DataFrame:
+        return self.query_databases()
+
+    def get_unique_categories(self) -> list:
+        rows = self.repository.engine_execute_return_table(
+            "SELECT DISTINCT db_category FROM database WHERE db_category IS NOT NULL"
+        )
+        return [r[0] for r in rows if r[0]]
+
+    def _execute_query(self, sql: str) -> pd.DataFrame:
+        try:
+            with self.repository.engine.connect() as conn:
+                result = conn.execute(sql)
+                rows = result.fetchall()
+                if not rows:
+                    return pd.DataFrame()
+                columns = result.keys()
+                df = pd.DataFrame(rows, columns=columns)
+                df = df.dropna(subset=['path'])
+                return df
+        except Exception as e:
+            print(f"Query error: {e}")
+            return pd.DataFrame()
+
+
 class Utility_Pipeline_Manager:
     """
     Takes a combined table and generates a pipeline tree.
@@ -1080,6 +1137,9 @@ class Utility_Pipeline_Manager:
         self.utility_repository = Utility_Repository(
             db_path=Televir_Directories.docker_app_directory, install_type="docker"
         )
+        self.utility_db = UtilityDB(
+            db_path=Televir_Directories.docker_app_directory, install_type="docker"
+        )
 
         self.steps_db_dependant = ConstantsSettings.PIPELINE_STEPS_DB_DEPENDENT
         self.binaries = Televir_Metadata.BINARIES
@@ -1090,6 +1150,207 @@ class Utility_Pipeline_Manager:
         self.logger.setLevel(logging.ERROR)
         self.logger.addHandler(logging.StreamHandler())
         self.host_dbs = {}
+        self.filter_dbs = {}
+        self.software_dbs_dict = {}
+
+    def check_software_is_installed(self, software_name: str) -> bool:
+        """
+        Check if a software is installed
+        """
+        software_lower = software_name.lower()
+        if software_lower in self.binaries["software"].keys():
+            bin_path = os.path.join(
+                Televir_Directories.docker_install_directory,
+                self.binaries["software"][software_lower],
+                "bin",
+                software_lower,
+            )
+            return os.path.isfile(bin_path)
+        else:
+            for pipeline in [
+                CS.PIPELINE_NAME_remapping,
+                CS.PIPELINE_NAME_read_quality_analysis,
+                CS.PIPELINE_NAME_extra_qc,
+                CS.PIPELINE_NAME_assembly,
+            ]:
+                if os.path.exists(
+                    os.path.join(
+                        Televir_Directories.docker_install_directory,
+                        self.binaries[pipeline]["default"],
+                        "bin",
+                        software_lower,
+                    )
+                ):
+                    return True
+
+        return False
+
+    def normalize_name(self, name: str) -> str:
+        return name.lower().split('/')[0]
+
+    def set_software_list(self, software_list):
+        self.software_name_list = software_list
+
+    def get_software_list(self):
+        self.software_name_list = Software.objects.filter(
+            type_of_use__in=Software.TELEVIR_GLOBAL_TYPES,
+        ).values_list("name", flat=True)
+
+    ##############################
+    # Software DBs
+    def get_software_dbs_if_exist(
+        self, software_name: str, filters: List[tuple] = []
+    ) -> pd.DataFrame:
+        
+        db_type_filter = None
+        for col, val in filters:
+            if col == "software" and val == "host":
+                db_type_filter = "host"
+            elif col == "tag" and val == "filter":
+                db_type_filter = "filter"
+        
+        df = self.utility_db.get_software_dbs(
+            category=self.normalize_name(software_name),
+            db_type=db_type_filter
+        )
+
+        return df
+
+    def check_tables_exist(self):
+        """
+        Check if the software table exist
+        """
+        return self.utility_repository.check_tables_exists()
+
+    def check_software_db_available(self, software_name: str) -> bool:
+        """
+        Check if a software is installed in the database.
+        """
+        #return True
+        return self.utility_repository.check_exists("software", software_name.lower())
+
+    def get_software_db_dict(self):
+        software_list = self.utility_db.get_unique_categories()
+
+        self.software_dbs_dict = {
+            category: self.utility_db.get_software_dbs(category)['path'].unique().tolist()
+            for category in software_list
+        }
+
+    def get_host_dbs(self):
+        software_list = self.utility_db.get_unique_categories()
+
+        hosts_dbs_dict = {
+            category: self.utility_db.get_host_dbs(category=category)
+            for category in software_list
+        }
+        
+
+        hosts_dbs_dict = {k: v for k, v in hosts_dbs_dict.items() if len(v) > 0}
+        try:
+            import numpy as np
+            for software in hosts_dbs_dict.keys():
+                if 'db_name' in hosts_dbs_dict[software].columns:
+                    hosts_dbs_dict[software] = hosts_dbs_dict[software].rename(
+                        columns={'db_name': 'database'}
+                    )
+                if 'host_name' not in hosts_dbs_dict[software].columns:
+                    hosts_dbs_dict[software]["host_name"] = np.nan
+                    hosts_dbs_dict[software]["host_filename"] = hosts_dbs_dict[software].get("database", "")
+                    hosts_dbs_dict[software]["file_str"] = hosts_dbs_dict[software].get("database", "")
+        except ImportError:
+            pass
+
+        self.host_dbs = hosts_dbs_dict
+
+    def get_filter_dbs(self):
+        software_list = self.utility_db.get_unique_categories()
+
+        filter_dbs_dict = {
+            category: self.utility_db.get_filter_dbs(category=category)
+            for category in software_list
+        }
+
+        filter_dbs_dict = {k: v for k, v in filter_dbs_dict.items() if len(v) > 0}
+        for sof, filter_df in filter_dbs_dict.items():
+            if 'path' in filter_df.columns:
+                filter_df = filter_df.copy()
+                filter_df["file_str"] = filter_df.apply(
+                    lambda x: os.path.basename(x.path) if pd.notna(x.path) else "", axis=1
+                )
+                filter_dbs_dict[sof] = filter_df
+        self.filter_dbs = filter_dbs_dict
+
+    ##################################
+    ############# GETTERS ############
+
+    def get_from_software_db_dict(self, software_name: str, empty=None):
+        if empty is None:
+            empty = []
+        possibilities = self._get_name_possibilities(software_name)
+
+        for possibility in possibilities:
+            if possibility in self.software_dbs_dict.keys():
+                return self.software_dbs_dict[possibility]
+
+        return empty
+
+    def get_from_host_db(self, software_name: str, empty=None):
+        if empty is None:
+            empty = []
+        possibilities = self._get_name_possibilities(software_name)
+
+        for possibility in possibilities:
+            if possibility in self.host_dbs.keys():
+                host_df = self.host_dbs[possibility]
+                if 'host_name' in host_df.columns:
+                    try:
+                        human_reference = HomoSapiens()
+                        if human_reference.host_name in host_df.host_name.unique():
+                            host_df = host_df[host_df.host_name == human_reference.host_name]
+                            host_df = pd.concat(
+                                [host_df, self.host_dbs[possibility].drop(host_df.index)]
+                            )
+                    except (NameError, AttributeError):
+                        pass
+
+                if 'path' in host_df.columns and 'file_str' in host_df.columns:
+                    return list(
+                        host_df[["path", "file_str"]].itertuples(index=False, name=None)
+                    )
+
+        return empty
+
+    def get_from_filter_dbs(self, software_name: str, empty=None):
+        if empty is None:
+            empty = ["None"]
+        possibilities = self._get_name_possibilities(software_name)
+
+
+        for possibility in possibilities:
+            if possibility in self.filter_dbs.keys():
+                filter_df = self.filter_dbs[possibility]
+
+                if 'path' in filter_df.columns and 'file_str' in filter_df.columns:
+                    return list(
+                        filter_df[["path", "file_str"]].itertuples(index=False, name=None)
+                    )
+        
+        return ["None"]
+
+    def _get_name_possibilities(self, software_name: str) -> list:
+        possibilities = [software_name, software_name.lower()]
+        if "_" in software_name:
+            element = software_name.split("_")[0]
+            possibilities.append(element)
+            possibilities.append(element.lower())
+        if "-" in software_name:
+            element = software_name.split("-")[0]
+            possibilities.append(element)
+            possibilities.append(element.lower())
+            possibilities.append(software_name.replace("-", "_"))
+        return possibilities
+
 
     def input(self, combined_table: pd.DataFrame, technology="ONT"):
         """
@@ -1204,206 +1465,9 @@ class Utility_Pipeline_Manager:
 
         return False
 
-    def set_software_list(self, software_list):
-        self.software_name_list = software_list
-
-    def get_software_list(self):
-        self.software_name_list = Software.objects.filter(
-            type_of_use__in=Software.TELEVIR_GLOBAL_TYPES,
-        ).values_list("name", flat=True)
-
-    ##############################
-    ##############################
-    # Software DBs
-    def get_software_dbs_if_exist(
-        self, software_name: str, filters: List[tuple] = []
-    ) -> pd.DataFrame:
-        fields = self.utility_repository.select_explicit_statement(
-            "database", "name", software_name.lower(), filters=filters
-        )
-        print("fields")
-        print(fields)
-
-        try:
-            with self.utility_repository.engine.connect() as conn:
-                r = conn.execute(fields)
-                rows = [dict(row) for row in r.fetchall()]
-
-                fields = pd.DataFrame(rows, columns=rows[0].keys())
-                fields = fields.drop_duplicates(subset=["name"])
-                fields['name']= fields['name'].apply(lambda x: x.split('/')[0])
-                print(fields)
-            return fields
-        except Exception as e:
-            print("Exception", e)
-            self.logger.error(
-                f"failed to fail to pandas read_sql {self.utility_repository.engine} software table for {software_name}. Error: {e}"
-            )
-            return pd.DataFrame(
-                columns=["name", "path", "database", "installed", "env_path"]
-            )
-
-    def check_tables_exist(self):
-        """
-        Check if the software table exist
-        """
-        return self.utility_repository.check_tables_exists()
-
-    def check_software_db_available(self, software_name: str) -> bool:
-        """
-        Check if a software is installed
-        """
-
-        return self.utility_repository.check_exists(
-            "software", "name", software_name.lower()
-        )
-
-    def get_software_db_dict(self):
-        software_list = self.utility_repository.get_list_unique_field(
-            "database", "name"
-        )
-        print(software_list)
-
-        self.software_dbs_dict = {
-            software.lower().split('/')[0]: self.get_software_dbs_if_exist(software)
-            .path.unique()
-            .tolist()
-            for software in software_list
-        }
-
-        print(self.software_dbs_dict)
-
-    def get_host_dbs(self):
-
-        software_list = self.utility_repository.get_list_unique_field(
-            "software", "name"
-        )
-        hosts_dbs_dict = {
-            software.lower().split('/')[0]: self.get_software_dbs_if_exist(
-                software, filters=[("tag", "host")]
-            )
-            for software in software_list
-        }
-
-        hosts_dbs_dict = {k: v for k, v in hosts_dbs_dict.items() if len(v) > 0}
-
-        def recover_host(database: str) -> Host:
-            for host in Host.__subclasses__():
-                if database.startswith(host().host_name):
-                    return host()
-
-            return None
-
-        def get_name_filename(row: pd.Series) -> pd.Series:
-            host = recover_host(row.database)
-            if host is None:
-                row["host_name"] = np.nan
-                row["host_filename"] = row.database
-                row["file_str"] = f"{row.database}"
-
-            else:
-                row["host_name"] = host.host_name
-                filename_simple = host.remote_filename
-                row["host_filename"] = filename_simple
-                row["file_str"] = f"{host.host_name} - {filename_simple}"
-
-            return row
-
-        for software in hosts_dbs_dict.keys():
-            hosts_dbs_dict[software] = hosts_dbs_dict[software].apply(
-                get_name_filename, axis=1
-            )
-            hosts_dbs_dict[software] = hosts_dbs_dict[software].dropna(
-                subset=["host_name"], axis=0
-            )
-
-        self.host_dbs = hosts_dbs_dict
-
-    def get_filter_dbs(self):
-        """
-        Get the filter databases for a software
-        """
-        software_list = self.utility_repository.get_list_unique_field(
-            "software", "name"
-        )
-
-        filter_dbs_dict = {
-            software.lower().split('/')[0]: self.get_software_dbs_if_exist(
-                software, filters=[("tag", "filter")]
-            )
-            for software in software_list
-        }
-
-        filter_dbs_dict = {k: v for k, v in filter_dbs_dict.items() if len(v) > 0}
-        for sof, filter_df in filter_dbs_dict.items():
-            filter_df["file_str"] = filter_df.apply(
-                lambda x: os.path.basename(x.path), axis=1
-            )
-        self.filter_dbs = filter_dbs_dict
-
     ##################################
-    ##################################
+    #### PIPELINE FUNCTIONS ##########
 
-    def get_from_software_db_dict(self, software_name: str, empty=[]):
-        
-        possibilities = [software_name, software_name.lower()]
-        if "_" in software_name:
-            element = software_name.split("_")[0]
-
-            possibilities.append(element)
-            possibilities.append(element.lower())
-
-        for possibility in possibilities:
-            if possibility in self.software_dbs_dict.keys():
-                return self.software_dbs_dict[possibility]
-
-        return empty
-
-    def get_from_host_db(self, software_name: str, empty=[]):
-        possibilities = [software_name, software_name.lower()]
-
-        if "_" in software_name:
-            element = software_name.split("_")[0]
-
-            possibilities.append(element)
-            possibilities.append(element.lower())
-
-        for possibility in possibilities:
-            if possibility in self.host_dbs.keys():
-                host_df = self.host_dbs[possibility]
-                human_reference = HomoSapiens()
-                if (
-                    human_reference.host_name in host_df.host_name.unique()
-                ):  # place human dbs first
-
-                    host_df = host_df[host_df.host_name == human_reference.host_name]
-                    host_df = pd.concat(
-                        [host_df, self.host_dbs[possibility].drop(host_df.index)]
-                    )
-
-                return list(
-                    host_df[["path", "file_str"]].itertuples(index=False, name=None)
-                )
-
-        return empty
-
-    def get_from_filter_dbs(self, software_name: str, empty=[]):
-        possibilities = [software_name, software_name.lower()]
-
-        if "_" in software_name:
-            element = software_name.split("_")[0]
-
-            possibilities.append(element)
-            possibilities.append(element.lower())
-
-        for possibility in possibilities:
-            if possibility in self.filter_dbs.keys():
-                filter_df = self.filter_dbs[possibility]
-                return list(
-                    filter_df[["path", "file_str"]].itertuples(index=False, name=None)
-                )
-        
-        return ["None"]
 
     def generate_argument_combinations(
         self, pipeline_software_dt: pd.DataFrame
@@ -3115,8 +3179,6 @@ class SoftwareTreeUtils:
             screening= False,
             mapping_only = True,
         )
-
-        print(available_path_nodes)
 
         clean_samples_leaf_dict, workflow_deployed_dict = (
             self.utils_manager.sample_nodes_check_repeat_allowed(

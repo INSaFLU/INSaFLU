@@ -9,11 +9,7 @@ from typing import Optional, Tuple
 from constants.constants import Televir_Metadata_Constants
 from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.modules.object_classes import (
-    Read_class,
-    RunCMD,
-    SoftwareDetailCompoundPreprocess,
-    SoftwareUnit,
-)
+    Read_class, RunCMD, SoftwareDetailCompoundPreprocess, SoftwareUnit)
 
 
 class Preprocess:
@@ -686,11 +682,11 @@ class Preprocess:
             ):
                 input_r1 = tmp_basename + "_r1.fastq.gz"
 
-        shutil.copy(input_r1, self.r1.current)
-        shutil.copy(input_r1, self.preprocess_name_fastq_gz)
+        shutil.move(input_r1, self.r1.current)
+        shutil.copy(self.r1.current, self.preprocess_name_fastq_gz)
         if self.preprocess_type == CS.PAIR_END:
-            shutil.copy(input_r2, self.r2.current)
-            shutil.copy(input_r2, self.preprocess_name_r2_fastq_gz)
+            shutil.move(input_r2, self.r2.current)
+            shutil.copy(self.r2.current, self.preprocess_name_r2_fastq_gz)
 
     def prinseq_PE(self, software: SoftwareUnit):
         """

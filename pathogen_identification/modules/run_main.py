@@ -14,31 +14,16 @@ from pathogen_identification.modules.assembly_class import Assembly_class
 from pathogen_identification.modules.classification_class import Classifier
 from pathogen_identification.modules.metadata_handler import RunMetadataHandler
 from pathogen_identification.modules.object_classes import (
-    Assembly_results,
-    Contig_classification_results,
-    Read_class,
-    Read_classification_results,
-    Remap_main,
-    Remap_Target,
-    Run_detail_report,
-    RunCMD,
-    RunQC_report,
-    Sample_runClass,
-    SoftwareDetail,
-    SoftwareDetailCompound,
-    SoftwareDetailCompoundPreprocess,
-    SoftwareRemap,
-    SoftwareUnit,
-)
+    Assembly_results, Contig_classification_results, Read_class,
+    Read_classification_results, Remap_main, Remap_Target, Run_detail_report,
+    RunCMD, RunQC_report, Sample_runClass, SoftwareDetail,
+    SoftwareDetailCompound, SoftwareDetailCompoundPreprocess, SoftwareRemap,
+    SoftwareUnit)
 from pathogen_identification.modules.preprocess_class import Preprocess
-from pathogen_identification.modules.remap_class import (
-    Mapping_Instance,
-    Mapping_Manager,
-)
+from pathogen_identification.modules.remap_class import (Mapping_Instance,
+                                                         Mapping_Manager)
 from pathogen_identification.utilities.televir_parameters import (
-    RemapParams,
-    TelevirParameters,
-)
+    RemapParams, TelevirParameters)
 from pathogen_identification.utilities.utilities_views import RawReferenceUtils
 from settings.constants_settings import ConstantsSettings as CS
 
@@ -186,7 +171,7 @@ class RunDetail_main:
         self.check_preprocess_exists()
 
     def check_preprocess_exists(self):
-        self.quality_control = self.preprocess_method.check_exists()
+        self.quality_control = self.preprocess_method.check_software_exists()
 
     def set_depletion_check(self, config: dict, method_args: pd.DataFrame):
         self.depletion_method = SoftwareDetail(
@@ -319,7 +304,7 @@ class RunDetail_main:
         self.check_remap_filtering_exists()
 
     def check_remap_filtering_exists(self):
-        self.remapping_filtering = self.remap_filtering_method.check_exists()
+        self.remapping_filtering = self.remap_filtering_method.check_software_exists()
 
     def set_settings_dict(self):
         self.settings_dict = {

@@ -9,10 +9,8 @@ from django.conf import settings
 
 from extend_user.models import Profile
 from fluwebvirus.settings import MEDIA_ROOT, STATIC_ROOT, TelevirSetup
-from pathogen_identification.utilities.mapping_flags import (
-    MapFlagProbes,
-    MapFlagViruses,
-)
+from pathogen_identification.utilities.mapping_flags import (MapFlagProbes,
+                                                             MapFlagViruses)
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -58,6 +56,7 @@ class ConstantsSettings:
     ################################### Pipeline steps
 
     PIPELINE_STEPS_DB_DEPENDENT = [
+        CS.PIPELINE_NAME_extra_qc,
         CS.PIPELINE_NAME_viral_enrichment,
         CS.PIPELINE_NAME_host_depletion,
         CS.PIPELINE_NAME_read_classification,

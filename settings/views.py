@@ -1027,7 +1027,7 @@ class UpdateParametersTelevirProjView(
             ("Project Index", reverse("project-index")),
             (
                 "Settings Pathogen Identification",
-                reverse("pathogenID_pipeline", self.kwargs["pk_televir_project"]),
+                reverse("pathogenID_pipeline", kwargs={"level": self.kwargs["pk_televir_project"]}),
             ),
         ]
 

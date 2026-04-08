@@ -13,12 +13,8 @@ import pandas as pd
 from numpy import ERR_CALL
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import (
-    ParameterSet,
-    RunDetail,
-    RunMain,
-    RunReadsRegister,
-)
+from pathogen_identification.models import (ParameterSet, RunDetail, RunMain,
+                                            RunReadsRegister)
 from pathogen_identification.utilities.utilities_general import fastqc_parse
 
 matplotlib.use("Agg")
@@ -1583,7 +1579,7 @@ class SoftwareDetailCompound:
             )
             self.software_list.append(software)
 
-    def check_exists(self):
+    def check_software_exists(self):
         return any([x.check_exists() for x in self.software_list])
 
     @property

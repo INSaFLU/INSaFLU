@@ -199,7 +199,6 @@ class SoftwareForm(forms.ModelForm):
             ### this is use for Medaka and Trimmomatic
 
             elif parameter.is_char_list():
-                print("##########3 char list")
                 if parameter.software.name == SoftwareNames.SOFTWARE_NEXTSTRAIN_name:
                     list_data = [
                         data_ for data_ in SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_DESC

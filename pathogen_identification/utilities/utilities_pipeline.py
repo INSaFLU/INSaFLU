@@ -1238,15 +1238,14 @@ class Utility_Pipeline_Manager:
         }
 
     def get_host_dbs(self):
-        software_list = self.utility_db.get_unique_categories()
-
-        hosts_dbs_dict = {
-            category: self.utility_db.get_host_dbs(category=category)
-            for category in software_list
-        }
+        all_host_dbs = self.utility_db.query_databases(db_type="host")
         
-
-        hosts_dbs_dict = {k: v for k, v in hosts_dbs_dict.items() if len(v) > 0}
+        hosts_dbs_dict = {}
+        if not all_host_dbs.empty and 'db_category' in all_host_dbs.columns:
+            for category in all_host_dbs['db_category'].unique():
+                category_df = all_host_dbs[all_host_dbs['db_category'] == category]
+                if len(category_df) > 0:
+                    hosts_dbs_dict[category] = category_df
         try:
             import numpy as np
             for software in hosts_dbs_dict.keys():
@@ -1264,12 +1263,14 @@ class Utility_Pipeline_Manager:
         self.host_dbs = hosts_dbs_dict
 
     def get_filter_dbs(self):
-        software_list = self.utility_db.get_unique_categories()
+        all_filter_dbs = self.utility_db.query_databases(db_type="filter")
 
-        filter_dbs_dict = {
-            category: self.utility_db.get_filter_dbs(category=category)
-            for category in software_list
-        }
+        filter_dbs_dict = {}
+        if not all_filter_dbs.empty and 'db_category' in all_filter_dbs.columns:
+            for category in all_filter_dbs['db_category'].unique():
+                category_df = all_filter_dbs[all_filter_dbs['db_category'] == category]
+                if len(category_df) > 0:
+                    filter_dbs_dict[category] = category_df
 
         filter_dbs_dict = {k: v for k, v in filter_dbs_dict.items() if len(v) > 0}
         for sof, filter_df in filter_dbs_dict.items():
@@ -1431,39 +1432,6 @@ class Utility_Pipeline_Manager:
         self.generate_software_parameter_dict()
 
         return self.create_pipe_tree()
-
-
-    def check_software_is_installed(self, software_name: str) -> bool:
-        """
-        Check if a software is installed
-        """
-        software_lower = software_name.lower()
-        if software_lower in self.binaries["software"].keys():
-            bin_path = os.path.join(
-                Televir_Directories.docker_install_directory,
-                self.binaries["software"][software_lower],
-                "bin",
-                software_lower,
-            )
-            return os.path.isfile(bin_path)
-        else:
-            for pipeline in [
-                CS.PIPELINE_NAME_remapping,
-                CS.PIPELINE_NAME_read_quality_analysis,
-                CS.PIPELINE_NAME_extra_qc,
-                CS.PIPELINE_NAME_assembly,
-            ]:
-                if os.path.exists(
-                    os.path.join(
-                        Televir_Directories.docker_install_directory,
-                        self.binaries[pipeline]["default"],
-                        "bin",
-                        software_lower,
-                    )
-                ):
-                    return True
-
-        return False
 
     ##################################
     #### PIPELINE FUNCTIONS ##########
@@ -2716,6 +2684,7 @@ class Utils_Manager:
         software = Software.objects.filter(
             type_of_use=Software.TYPE_OF_USE_televir_global, owner=user_system
         )
+
         if software.count() == 0:
             return False
 

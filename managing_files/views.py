@@ -48,7 +48,9 @@ from managing_files.tables import (AddSamplesFromCvsFileTable,
                                    ReferenceTable, SampleTable,
                                    SampleToProjectsTable,
                                    ShowProjectSamplesResults)
-from pathogen_identification.models import PIProject_Sample, TeleFluProject
+from pathogen_identification.models import PIProject_Sample
+from pathogen_identification.models import Projects as TelevirProject
+from pathogen_identification.models import TeleFluProject
 from pathogen_identification.utilities.utilities_views import \
     SampleReadsRetrieve
 from settings.constants_settings import ConstantsSettings
@@ -3373,7 +3375,7 @@ class ProjectsSettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super(ProjectsSettingsView, self).get_context_data(**kwargs)
-        project = Project.objects.get(pk=self.kwargs["pk"])
+        project = TelevirProject.objects.get(pk=self.kwargs["pk"])
 
         ### can't see this project
         context["nav_project"] = True

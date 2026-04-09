@@ -158,11 +158,6 @@ urlpatterns = [
         PIviews.AddSamples_PIProjectsView.as_view(),
         name="add-sample-PIproject",
     ),
-    path(
-        "Project/<int:pk>/show_project_settings",
-        views.ProjectsSettingsView.as_view(),
-        name="PIproject-settings",
-    ),
     re_path(
         r"Project/(?P<pk>\d+)/select_project_type",
         views.ProjectSelectView.as_view(),

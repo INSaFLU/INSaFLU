@@ -38,7 +38,7 @@ class DefaultSoftware(object):
         test if exist, if not persist in database
         """
         try:
-            software_test = SoftwareDefaultTest.objects.get(
+            SoftwareDefaultTest.objects.get(
                 user=user, televir_pipelines_available=True
             )
 

@@ -914,10 +914,26 @@ class UpdateParametersView(BaseBreadcrumbMixin, LoginRequiredMixin, UpdateView):
 
     @cached_property
     def crumbs(self):
+
+        software = Software.objects.get(pk=self.object.pk)
+        settings_return_to = reverse_lazy("settings-index")
+        if software.type_of_use in [
+            Software.TYPE_OF_USE_televir_global,
+            Software.TYPE_OF_USE_televir_settings,
+        ]:
+            settings_return_to = reverse_lazy("pathogenID_pipeline", args=(0,))
+        
+        if software.type_of_use in [
+            Software.TYPE_OF_USE_televir_project,
+            Software.TYPE_OF_USE_televir_project_settings,
+        ]:
+
+            settings_return_to = reverse_lazy("project-settings", args=(software.parameter.first().televir_project.pk,))
+
         return [
             ("Settings Index", reverse("settings-index")),
-            ("Settings", reverse("settings")),
-            ("Update parameters", reverse("software-update", kwargs={"pk": self.object.pk}))
+            ("Settings", settings_return_to),
+            ("Update parameters", reverse("software-update", kwargs={"pk": software.pk}))
         ]
 
     ## Other solution to get the reference
@@ -928,6 +944,7 @@ class UpdateParametersView(BaseBreadcrumbMixin, LoginRequiredMixin, UpdateView):
         """
         kw = super(UpdateParametersView, self).get_form_kwargs()
         kw["request"] = self.request  # the trick!
+        
         return kw
 
     def get_success_url(self):
@@ -1023,12 +1040,15 @@ class UpdateParametersTelevirProjView(
 
     @cached_property
     def crumbs(self):
+        
         return [
-            ("Project Index", reverse("project-index")),
+            ("Settings Index", reverse("settings-index")),
             (
-                "Settings Pathogen Identification",
+                "Project Settings",
                 reverse("pathogenID_pipeline", kwargs={"level": self.kwargs["pk_televir_project"]}),
             ),
+            ("Software Settings", "")
+
         ]
 
     ## Other solution to get the reference

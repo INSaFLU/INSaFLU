@@ -28,13 +28,13 @@ class Televir_Directory_Constants_Docker(TelevirConstantsBase):
     """
 
     project_directory = "/tmp/televir/projects/"
-    docker_app_directory = "/televir/mngs_benchmark/"
-    docker_install_directory = "/televir/mngs_benchmark/mngs_environments/"
-    environments_directory = "/televir/mngs_benchmark/mngs_environments/"
+    docker_app_directory = "opt/televir/"
+    docker_install_directory = "opt/televir/mngs_environments/"
+    environments_directory = "opt/televir/mngs_environments/"
     conda_directory = "/opt/conda/"
-    ref_db_directory = "/televir/mngs_benchmark/ref_db/"
-    ref_fasta_directory = "/televir/mngs_benchmark/ref_fasta/"
-    metadata_directory = "/televir/mngs_benchmark/metadata/"
+    ref_db_directory = "opt/televir/ref_db/"
+    ref_fasta_directory = "opt/televir/ref_fasta/"
+    metadata_directory = "opt/televir/metadata/"
     scripts_directory = "/insaflu_web/TELEVIR/deployment_scripts/scripts/"
 
 
@@ -44,7 +44,7 @@ class Televir_Directory_Constants_PreProduction(TelevirConstantsBase):
     """
 
     project_directory = "/usr/local/web_site/INSaFLU/media/televir_projects/"
-    docker_app_directory = "/usr/local/web_site/televir/mngs_benchmark/"
+    docker_app_directory = "/usr/local/web_siteopt/televir/"
     docker_install_directory = "/usr/local/web_site/televir/mngs_environments/"
     environments_directory = "/usr/local/web_site/televir/mngs_environments/"
     conda_directory = "/usr/local/software/insaflu/miniconda/"
@@ -60,7 +60,7 @@ class Televir_Directory_Constants_Production(TelevirConstantsBase):
     """
 
     project_directory = "/usr/local/web_site/media/televir_projects/"
-    docker_app_directory = "/usr/local/web_site/televir/mngs_benchmark/"
+    docker_app_directory = "/usr/local/web_siteopt/televir/"
     docker_install_directory = "/usr/local/web_site/televir/mngs_environments/"
     environments_directory = "/usr/local/web_site/televir/mngs_environments/"
     conda_directory = "/usr/local/software/insaflu/miniconda3/"

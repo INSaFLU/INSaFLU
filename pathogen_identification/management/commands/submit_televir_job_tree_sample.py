@@ -117,7 +117,7 @@ class Command(BaseCommand):
                 pipeline_tree = software_utils.software_pipeline_tree(software_tree)
                 module_tree = utils.module_tree(pipeline_tree, list(matched_leaves.keys()))
 
-
+                
                 for project_sample in samples:
                     if project_sample.is_deleted:
                         continue

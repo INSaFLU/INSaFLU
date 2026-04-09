@@ -28,13 +28,13 @@ class Televir_Directory_Constants_Docker(TelevirConstantsBase):
     """
 
     project_directory = "/tmp/televir/projects/"
-    docker_app_directory = "opt/televir/"
-    docker_install_directory = "opt/televir/mngs_environments/"
-    environments_directory = "opt/televir/mngs_environments/"
+    docker_app_directory = "/opt/televir/"
+    docker_install_directory = "/opt/televir/environments/"
+    environments_directory = "/opt/televir/environments/"
     conda_directory = "/opt/conda/"
-    ref_db_directory = "opt/televir/ref_db/"
-    ref_fasta_directory = "opt/televir/ref_fasta/"
-    metadata_directory = "opt/televir/metadata/"
+    ref_db_directory = "/opt/televir/ref_db/"
+    ref_fasta_directory = "/opt/televir/ref_fasta/"
+    metadata_directory = "/opt/televir/metadata/"
     scripts_directory = "/insaflu_web/TELEVIR/deployment_scripts/scripts/"
 
 

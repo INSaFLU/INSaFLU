@@ -90,7 +90,6 @@ class SoftwareForm(forms.ModelForm):
         super(SoftwareForm, self).__init__(*args, **kwargs)
 
         ### return the parameters that is possible to change
-        print("##########3 PARAMETERS")
         paramers = Parameter.objects.filter(
             software=self.instance,
             project=project,
@@ -102,8 +101,7 @@ class SoftwareForm(forms.ModelForm):
         dt_fields = {}
         vect_divs = []
         for parameter in paramers:
-            print("Parameter: {}".format(parameter, parameter.name))
-            print(parameter.software.pipeline_step.name)
+
             if not parameter.can_change or parameter.is_null():
                 dt_fields[parameter.get_unique_id()] = forms.CharField(
                     disabled=True,
@@ -148,13 +146,9 @@ class SoftwareForm(forms.ModelForm):
 
             elif parameter.is_multiple_choice():  # Update this condition if needed
                 ## already selected
-                print("HOIH")
-                print(parameter.parameter)
+
                 selected = parameter.parameter.split(";") if parameter.parameter else []
-                print(
-                    parameter.software.name_extended
-                    == SoftwareNames.SOFTWARE_BWA_FILTER_name_extended
-                )
+
                 if (
                     parameter.software.name_extended
                     == SoftwareNames.SOFTWARE_BWA_FILTER_name_extended
@@ -166,7 +160,6 @@ class SoftwareForm(forms.ModelForm):
                             parameter.software.name.lower(), []
                         )
                     ]
-                    print(list_data)
 
                 elif parameter.software.name == SoftwareNames.SOFTWARE_METAPHLAN_NAME:
                     list_data = [
@@ -359,8 +352,7 @@ class SoftwareForm(forms.ModelForm):
                     and parameter.software.pipeline_step.name
                     in self.televir_utiltity.steps_db_dependant
                 ):
-                    print("OIO")
-                    print(parameter.software.pipeline_step.name)
+
                     if (
                         parameter.software.pipeline_step.name
                         == ConstantsSettings.PIPELINE_NAME_host_depletion
@@ -372,7 +364,6 @@ class SoftwareForm(forms.ModelForm):
                             )
                         ]
                     else:
-                        print("ELSE")
                         list_data = [
                             [data_, os.path.basename(data_)]
                             for data_ in self.televir_utiltity.get_from_software_db_dict(

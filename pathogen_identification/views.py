@@ -614,7 +614,7 @@ class AddSamples_PIProjectsView(
             (
                 "Add samples to project",
                 reverse(
-                    "add-sample-project", kwargs={"pk": self.kwargs["pk"], "tf": 0}
+                    "add-sample-PIproject", kwargs={"pk": self.kwargs["pk"]}
                 ),
             ),
         ]

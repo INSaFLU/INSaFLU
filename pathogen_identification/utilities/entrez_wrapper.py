@@ -403,6 +403,7 @@ class EntrezWrapper:
             os.remove(self.output_path)
 
         for cmd in cmds:
+            print(cmd)
             os.system(cmd)
 
         output_path = os.path.join(self.outdir, self.outfile)

@@ -5,20 +5,14 @@ from typing import Dict, List, Optional
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (
-    PIProject_Sample,
-    RawReference,
-    RawReferenceCompoundModel,
-    ReferenceSource,
-    ReferenceSourceFileMap,
-    RunMain,
-)
+from pathogen_identification.models import (PIProject_Sample, RawReference,
+                                            RawReferenceCompoundModel,
+                                            ReferenceSource,
+                                            ReferenceSourceFileMap, RunMain)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
-from pathogen_identification.utilities.utilities_general import (
-    merge_classes,
-    simplify_name,
-)
+from pathogen_identification.utilities.utilities_general import (merge_classes,
+                                                                 simplify_name)
 from pathogen_identification.utilities.utilities_views import RawReferenceUtils
 
 
@@ -502,10 +496,12 @@ class RunMetadataHandler:
         self.logger.info("Finished retrieving metadata")
 
     def get_protacc_taxid(self, df: pd.DataFrame) -> pd.DataFrame:
+        print("prot_accesions")
         query_list = df.prot_acc.unique().tolist()
         self.entrez_conn.bin_query = self.entrez_conn.bin_query_factory.get_query(
             "fetch_protein_accession_taxon"
         )
+        
         output = self.entrez_conn.run_entrez_query(query_list)
         self.entrez_conn.bin_query = self.entrez_conn.bin_query_factory.get_query(
             "fetch_taxid_description"

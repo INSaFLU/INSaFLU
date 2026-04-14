@@ -1479,6 +1479,9 @@ class RunMainTree_class(Run_Deployment_Methods):
             self.deploy_READ_CLASSIFICATION()
             self.deploy_CONTIG_CLASSIFICATION()
 
+            print("######## READ CLASSIGFICATION REPORT")
+            print(self.read_classification_drone.classification_report.head())
+
             self.metadata_tool.match_and_select_targets(
                 self.read_classification_drone.classification_report,
                 self.contig_classification_drone.classification_report,

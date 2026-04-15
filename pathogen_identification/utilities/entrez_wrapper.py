@@ -25,7 +25,7 @@ class EntrezQuery(ABC):
         pass
 
     @abstractmethod
-    def read_output(self, outptuf_path: str) -> List[str]:
+    def read_output(self, output_path: str) -> pd.DataFrame:
         pass
 
     @property
@@ -142,11 +142,29 @@ class EntrezFetchAccessionDescription(EntrezQuery):
         ]
 
         return " ".join(cmd)
+    
+    def process_query_output(self, output_path: str) -> pd.DataFrame:
+        """
+        Process the output of the query. some rows have the taxid column repeated, ending wwith 4 columns instead of 3
+        """
+
+        tmp_duplicate_file = os.path.join(self.outdir, "tmp_duplicate_taxids.txt")
+        tmp_file = os.path.join(self.outdir, "tmp_file.txt")
+        os.system(f"awk -F'\t' 'NF==4' {output_path} > {tmp_duplicate_file}")
+        os.system(f"awk -F'\t' 'NF==3' {output_path} > {tmp_file}")
+        os.system("cut -f2,3,4 " + tmp_duplicate_file + " >> " + tmp_file)
+        os.system("mv " + tmp_file + " " + output_path)
+        os.system("rm " + tmp_duplicate_file)
+        os.system("rm " + tmp_file)
+
+
 
     def read_output(self, output_path: str) -> pd.DataFrame:
         """
         Read output from Entrez query using pandas
         """
+
+        self.process_query_output(output_path)
 
         df = pd.read_csv(
             output_path,
@@ -375,24 +393,7 @@ class EntrezWrapper:
 
         return df
 
-    def process_query_output(self, output_path: str) -> pd.DataFrame:
-        """
-        Process the output of the query. some rows have the taxid column repeated, ending wwith 4 columns instead of 3
-        """
 
-        tmp_duplicate_file = os.path.join(self.outdir, "tmp_duplicate_taxids.txt")
-        tmp_file = os.path.join(self.outdir, "tmp_file.txt")
-        os.system(f"awk -F'\t' 'NF==4' {output_path} > {tmp_duplicate_file}")
-        os.system(f"awk -F'\t' 'NF==3' {output_path} > {tmp_file}")
-        os.system("cut -f2,3,4 " + tmp_duplicate_file + " >> " + tmp_file)
-        os.system("mv " + tmp_file + " " + output_path)
-        os.system("rm " + tmp_duplicate_file)
-        os.system("rm " + tmp_file)
-
-    def filter_query_output(self, output_path: str) -> pd.DataFrame:
-        tmp_file = os.path.join(self.outdir, "tmp_file.txt")
-        os.system(f"awk -F'\t' 'NF==3' {output_path} > {tmp_file}")
-        os.system("mv " + tmp_file + " " + output_path)
 
     def run_queries_binaries(self, query: List[str]) -> None:
         """
@@ -407,14 +408,16 @@ class EntrezWrapper:
             os.system(cmd)
 
         output_path = os.path.join(self.outdir, self.outfile)
-        self.process_query_output(output_path)
+        with open(output_path, "r") as f:
+            print("########### read")
+            print(f.read())
+        import traceback
         try:
-            df = pd.read_csv(output_path, sep="\t", header=None)
+            df = self.bin_query.read_output(output_path)
             df.columns = self.bin_query.output_columns
-        except pd.errors.ParserError:
-            self.filter_query_output(output_path)
-            df = pd.read_csv(output_path, sep="\t", header=None)
+
         except pd.errors.EmptyDataError:
+            traceback.print_exc()
             df = pd.DataFrame(columns=self.bin_query.output_columns)
 
         df.to_csv(self.output_path, sep="\t", index=False)

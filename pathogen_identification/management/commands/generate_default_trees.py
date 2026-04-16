@@ -73,9 +73,27 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         ###
+        from settings.constants_settings import ConstantsSettings
         default_software = DefaultSoftware()
         self.stdout.write("Set default users...")
         self.create_default_user()
-
+        from pathogen_identification.utilities.utilities_pipeline import \
+            SoftwareTreeUtils
         for user in User.objects.all():
             default_software.test_all_defaults(user)
+            for technology in [ConstantsSettings.TECHNOLOGY_illumina, ConstantsSettings.TECHNOLOGY_minion]:
+                software_utils = SoftwareTreeUtils(user, None, None)
+                software_utils.set_technology(technology)
+                software_utils.deactivate_all_nodes()
+                _ = software_utils.get_sample_pathnodes(
+                    screening=False,
+                    mapping_only=True,
+                )
+                _ = software_utils.get_sample_pathnodes(
+                    screening=True,
+                    mapping_only=False,
+                )
+                _ = software_utils.get_sample_pathnodes(
+                    screening=False,
+                    mapping_only=False,
+                )

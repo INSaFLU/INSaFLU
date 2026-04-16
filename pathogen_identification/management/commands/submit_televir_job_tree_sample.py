@@ -96,8 +96,7 @@ class Command(BaseCommand):
             available_path_nodes = software_utils.query_available_pathnodes(
                 screening=False,
                 mapping_only=False,
-            )            
-
+            )
 
             matched_paths = {
                 leaf_index: leaf for leaf_index, leaf in available_path_nodes.items() if utils.parameter_util.check_ParameterSet_available_to_run(

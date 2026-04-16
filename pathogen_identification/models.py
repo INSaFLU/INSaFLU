@@ -189,6 +189,7 @@ class SoftwareTreeNode(models.Model):
     parent = models.ForeignKey(
         "self", on_delete=models.CASCADE, blank=True, null=True, related_name="children"
     )
+    
     node_type = models.CharField(
         max_length=200,
         db_index=True,

@@ -952,6 +952,7 @@ class Tree_Progress:
         self.stacked_deployement_mapping(nodes_by_sample_sources)
 
     def run_simplified_classification_reads(self):
+        print("######### CLASSSIFICATIONNN")
         nodes_by_sample_sources = self.group_nodes_by_source_and_parameters()
 
         self.stacked_deployment_read_classification(nodes_by_sample_sources)
@@ -1050,7 +1051,7 @@ class Tree_Progress:
             self.update_tree_nodes()
             return
 
-        self.logger.info(f"CURRENT MODULE, {self.current_module}")
+        print(f"CURRENT MODULE, {self.current_module}")
         action = map_actions[self.current_module]
 
         action()

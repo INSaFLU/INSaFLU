@@ -10,7 +10,8 @@ from typing import Any, Type
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.modules.object_classes import RunCMD, SoftwareDetail
+from pathogen_identification.modules.object_classes import (RunCMD,
+                                                            SoftwareDetail)
 
 
 def read_sam_file(
@@ -983,9 +984,8 @@ class run_centrifuge(Classifier_init):
         if check_report_empty(self.report_path):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
-        from pathogen_identification.utilities.classifier_processor import (
-            CentrifugeOutputProcessor,
-        )
+        from pathogen_identification.utilities.classifier_processor import \
+            CentrifugeOutputProcessor
 
         centrifuge_processor = CentrifugeOutputProcessor(self.report_path)
         centrifuge_processor.from_file().process().prep_final_report()
@@ -1143,7 +1143,7 @@ class run_kraken2(Classifier_init):
         """
         run paired read files classification.
         """
-        cmd = f"kraken2 --threads 4 --db {self.db_path} --fastq-input --gzip-compressed --output {self.out_path} {self.query_path} {self.r2}"
+        cmd = f"kraken2 --threads 4 --db {self.db_path} --gzip-compressed --output {self.out_path} {self.query_path} {self.r2}"
         cmd = [
             "kraken2",
             "--threads",
@@ -1176,9 +1176,8 @@ class run_kraken2(Classifier_init):
         if check_report_empty(self.report_path):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
-        from pathogen_identification.utilities.classifier_processor import (
-            KrakenOutputProcessor,
-        )
+        from pathogen_identification.utilities.classifier_processor import \
+            KrakenOutputProcessor
 
         kraken_processor = KrakenOutputProcessor(self.report_path)
         kraken_processor.from_file().process().prep_final_report()

@@ -649,11 +649,11 @@ class PipelineTree:
                 index_nodes = []
 
                 for x in leaves_for_matched_node:
-
+                    idx_pk = self.index_to_pk.get(x, None)
                     try:
                         index_nodes.append(
                             SoftwareTreeNode.objects.get(
-                                software_tree=software_tree, index=x
+                                pk=idx_pk
                             )
                         )
                     except SoftwareTreeNode.DoesNotExist:
@@ -1740,7 +1740,7 @@ class Utility_Pipeline_Manager:
     ) -> Tuple[int, tuple]:
         """"""
 
-        self.logger.info("Matching path to tree")
+        self.logger.info("Matching path to tree cutoff")
 
         self.logger.info("Generating node index dict")
         nodes_index_dict = self.node_index_dict(pipe_tree)
@@ -1841,7 +1841,7 @@ class Utility_Pipeline_Manager:
         Match explicit path to pipeline tree and extend the tree if necessary
         """
 
-        self.logger.info("Matching path to tree")
+        self.logger.info("Matching path to tree extend")
         tree_nodes = pipe_tree.nodes.copy()
         self.logger.info("Generating node index dict")
         nodes_index_dict = self.node_index_dict(pipe_tree)
@@ -3074,17 +3074,11 @@ class SoftwareTreeUtils:
             node = row.node
 
             is_leaf = int(index in tree.leaves)
-            name = node[0]
-            value = node[1]
-            node_type = node[2]
+            index_pk = tree.index_to_pk.get(index, None)
 
             try:
                 tree_node = SoftwareTreeNode.objects.get(
-                    software_tree=software_tree,
-                    #index=index,
-                    name=name,
-                    value=value,
-                    node_type=node_type,
+                    pk = index_pk
                 )
 
             except SoftwareTreeNode.DoesNotExist:
@@ -3112,7 +3106,6 @@ class SoftwareTreeUtils:
 
                     tree_node = SoftwareTreeNode(
                         software_tree=software_tree,
-                        index=index,
                         name=node[0],
                         value=node[1],
                         node_type=node[2],

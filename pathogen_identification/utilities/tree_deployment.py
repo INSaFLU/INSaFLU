@@ -11,33 +11,24 @@ from django.db.models import QuerySet
 
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from fluwebvirus.settings import STATIC_ROOT
-from pathogen_identification.constants_settings import ConstantsSettings as PIConstants
-from pathogen_identification.deployment_main import PathogenIdentificationDeploymentCore
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PIConstants
+from pathogen_identification.deployment_main import \
+    PathogenIdentificationDeploymentCore
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RunMain, SoftwareTree,
+                                            SoftwareTreeNode)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunMainTree_class
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.update_DBs_tree import (
-    Update_Assembly,
-    Update_Classification,
-    Update_Remap,
-    Update_RunMain_Initial,
-    Update_RunMain_Secondary,
-)
+    Update_Assembly, Update_Classification, Update_Remap,
+    Update_RunMain_Initial, Update_RunMain_Secondary)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Pipeline_Makeup,
-    PipelineTree,
-    Utils_Manager,
-)
+    Pipeline_Makeup, PipelineTree, Utils_Manager)
 from pathogen_identification.utilities.utilities_views import ReportSorter
 from settings.constants_settings import ConstantsSettings
 from utils.utils import Utils
@@ -151,20 +142,16 @@ class Tree_Node:
     def _is_node_leaf(self):
         return len(self.children) == 0
 
-    def generate_software_tree_node_entry(self, pipe_tree: PipelineTree):
+    def generate_software_tree_node_entry(self, pipe_tree: PipelineTree) -> Optional[SoftwareTreeNode]:
         if not self._is_node_leaf():
             return
+        node_pk = pipe_tree.index_to_pk.get(self.node_index)
 
-        node_metadata = pipe_tree.node_index.loc[self.node_index].node
-        software_tree = SoftwareTree.objects.get(pk=self.software_tree_pk)
-
+        if node_pk is None:
+            raise ValueError("Node primary key not found")
         try:
             tree_node = SoftwareTreeNode.objects.get(
-                software_tree=software_tree,
-                index=self.node_index,
-                name=node_metadata[0],
-                value=node_metadata[1],
-                node_type=node_metadata[2],
+                pk=node_pk
             )
         except SoftwareTreeNode.DoesNotExist:
             tree_node = None
@@ -592,9 +579,9 @@ class Tree_Progress:
 
         return child
 
-    def spawn_node_child(self, node: Tree_Node, child: int) -> Tree_Node:
+    def spawn_node_child(self, node: Tree_Node, child_index: int) -> Tree_Node:
         new_node = Tree_Node(
-            self.tree, child, node.software_tree_pk, sample=self.sample
+            self.tree, child_index, node.software_tree_pk, sample=self.sample
         )
 
         run_manager_copy = copy.deepcopy(node.run_manager)

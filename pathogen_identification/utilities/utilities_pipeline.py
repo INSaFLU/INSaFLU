@@ -438,7 +438,7 @@ class PipelineTree:
         makeup: int,
         is_sorted=True,
         software_tree_pk: int = 0,
-        index_to_pk: Optional[Dict[int, int]] = None,
+        index_to_pk: Dict[int, int] = {},
     ):
         self.technology = technology
 
@@ -467,6 +467,18 @@ class PipelineTree:
             ]
             for z in self.node_index.index
         }
+
+    def match_node_to_index(self, node: SoftwareTreeNode) -> int:
+        """
+        Match a node to its index in the node index DataFrame.
+        """
+        node_found = self.node_index[
+            self.node_index.node == (node.name, node.value, node.node_type)
+        ]
+        if not node_found.empty:
+            return node_found.index[0]
+        else:
+            raise ValueError("Node not found in index")
 
     def __eq__(self, other):
         diff_nodes = differences_tuple_list(self.nodes, other.nodes)
@@ -1651,7 +1663,7 @@ class Utility_Pipeline_Manager:
             return None
         print("MATCHED PATH", matched_path) 
         if matched_path is not None:
-            if pipe_tree.index_to_pk is not None:
+            if pipe_tree.index_to_pk:
                 print(pipe_tree.index_to_pk)
                 return pipe_tree.index_to_pk.get(matched_path, None)
 
@@ -2585,7 +2597,7 @@ class Utils_Manager:
         samples_leaf_dict = {sample: [] for sample in submission_dict.keys()}
 
         for sample in submission_dict.keys():
-            for leaf, matched_path_node in available_path_nodes.items():
+            for _leaf, matched_path_node in available_path_nodes.items():
                 exists = self.parameter_util.check_ParameterSet_exists(
                     sample=sample, leaf=matched_path_node, project=project
                 )
@@ -2626,7 +2638,7 @@ class Utils_Manager:
         workflow_deployed_dict = {sample: {} for sample in submission_dict.keys()}
 
         for sample in submission_dict.keys():
-            for leaf, matched_path_node in available_path_nodes.items():
+            for _leaf, matched_path_node in available_path_nodes.items():
                 exists = self.parameter_util.check_ParameterSet_exists(
                     sample=sample, leaf=matched_path_node, project=project
                 )
@@ -3347,13 +3359,13 @@ class SoftwareTreeUtils:
 
         return clean_samples_leaf_dict
 
-    def get_all_technology_pipelines(self) -> Dict[int, pd.DataFrame]:
+    def get_all_technology_pipelines(self, mapping_only = True, screening = False) -> Dict[int, pd.DataFrame]:
         """
         Get all pipelines for a technology
         """
 
         available_path_nodes = self.query_available_pathnodes(
-            mapping_only = True, screening = False
+            mapping_only=mapping_only, screening=screening
         )
         trees = list(set(leaf.software_tree for leaf in available_path_nodes.values()))
         software_tree_matched_paths = {
@@ -3369,6 +3381,7 @@ class SoftwareTreeUtils:
             stree: ptree.get_all_graph_paths()
             for stree, ptree in software_pipeline_trees.items()
         }
+        
         all_paths = {
             leaf: path for stree_paths in all_paths.values() for leaf, path in stree_paths.items()
         }

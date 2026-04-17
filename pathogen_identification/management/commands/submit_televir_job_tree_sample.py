@@ -114,7 +114,8 @@ class Command(BaseCommand):
             for software_tree, matched_leaves in software_tree_matched_paths.items():
                 # SUBMISSION
                 pipeline_tree = software_utils.software_pipeline_tree(software_tree)
-                module_tree = utils.module_tree(pipeline_tree, list(matched_leaves.keys()))
+                leaves = [pipeline_tree.match_node_to_index(node) for node in matched_leaves.values()]
+                module_tree = utils.module_tree(pipeline_tree, leaves)
 
                 
                 for project_sample in samples:

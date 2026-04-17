@@ -287,12 +287,22 @@ class PathogenIdentification_SingleDeployment(PathogenIdentificationDeploymentCo
         self.parameter_set = ParameterSet.objects.get(pk=pk)
         self.tree_makup = self.parameter_set.leaf.software_tree.global_index
 
-    def configure_params(self):
+    def configure_params(self, run_type: int = RunMainTree_class.RUN_TYPE_PIPELINE) -> bool:
         """get pipeline parameters from database"""
 
         software_tree_utils = SoftwareTreeUtils(self.project.owner, self.project)
 
-        all_paths = software_tree_utils.get_all_technology_pipelines()
+        mapping_only = False
+        screening = False
+
+        if run_type in [
+            RunMainTree_class.RUN_TYPE_MAPPING_REQUEST,
+            RunMainTree_class.RUN_TYPE_COMBINED_MAPPING,
+            RunMainTree_class.RUN_TYPE_PANEL_MAPPING,
+        ]:
+            mapping_only = True
+
+        all_paths = software_tree_utils.get_all_technology_pipelines(mapping_only= mapping_only)
 
         self.run_params_db = all_paths.get(self.pipeline_index, None)
 
@@ -387,7 +397,7 @@ class Run_Main_from_Leaf:
         self.pk = self.parameter_set.pk
 
         self.container = PathogenIdentification_SingleDeployment(
-            pipeline_index=pipeline_leaf.index,
+            pipeline_index=pipeline_leaf.pk,
             sample=input_data,
             prefix=prefix,
             deployment_root_dir=odir,
@@ -659,8 +669,6 @@ class Run_Main_from_Leaf:
 
     def register_error(self):
         self.set_run_process_error()
-        print("REGISTERING ERROR")
-        print("RUN PS PK", self.pk)
 
         new_run = ParameterSet.objects.get(pk=self.pk)
         new_run.register_error()

@@ -1163,7 +1163,8 @@ class TelefluProjectView(BaseBreadcrumbMixin, LoginRequiredMixin, generic.Create
         available_path_nodes = software_utils.query_available_pathnodes(
             mapping_only = True, screening = False
         )
-        all_paths = software_utils.get_all_technology_pipelines()
+        #available_leaves = [pipeline_tree.match_node_to_index(node) for node in matched_leaves.values()]
+        all_paths = software_utils.get_all_technology_pipelines(mapping_only=True, screening=False)
         ########################################## get workflows
         workflows = []
         for node, params_df in all_paths.items():

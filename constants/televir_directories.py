@@ -44,7 +44,7 @@ class Televir_Directory_Constants_PreProduction(TelevirConstantsBase):
     """
 
     project_directory = "/usr/local/web_site/INSaFLU/media/televir_projects/"
-    docker_app_directory = "/usr/local/web_siteopt/televir/"
+    docker_app_directory = "/usr/local/web_site/opt/televir/"
     docker_install_directory = "/usr/local/web_site/televir/mngs_environments/"
     environments_directory = "/usr/local/web_site/televir/mngs_environments/"
     conda_directory = "/usr/local/software/insaflu/miniconda/"

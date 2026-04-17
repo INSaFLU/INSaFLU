@@ -2682,10 +2682,11 @@ class Utils_Manager:
         reduced_dag, reduced_node_index = tree.reduced_tree(leaves)
 
         reduced_tree = self.pipe_tree_from_dag_dict(
-            reduced_dag, reduced_node_index, tree.technology, tree.makeup
+            reduced_dag, reduced_node_index, tree
         )
 
         reduced_tree.software_tree_pk = tree.software_tree_pk
+        #reduced_tree.index_to_pk = tree.index_to_pk
 
         return reduced_tree
 
@@ -2693,14 +2694,17 @@ class Utils_Manager:
         self,
         dag_dict: dict,
         node_index: pd.DataFrame,
-        technology: str,
-        tree_makeup: int,
+        tree: PipelineTree
+        #technology: str,
+        #tree_makeup: int,
     ) -> PipelineTree:
         """
         Generate a pipeline tree from a dag dict
         """
-
-        nodes = node_index.node.unique()
+        node_index_no_dups = node_index.drop_duplicates(subset=["node"])
+        #node_indices = node_index_no_dups.index
+        #new_index_to_pk = {i: tree.index_to_pk[idx] for i, idx in enumerate(node_indices)}
+        nodes = node_index_no_dups.node
 
         nodes = []
         edge_list = []
@@ -2717,9 +2721,10 @@ class Utils_Manager:
             nodes=node_index.reset_index().to_numpy().tolist(),
             edges=edge_list,
             leaves=leaves,
-            technology=technology,
-            makeup=tree_makeup,
+            technology=tree.technology,
+            makeup=tree.makeup,
             is_sorted=False,
+            index_to_pk=tree.index_to_pk
         )
 
     ### Copied to softwareTreeUtils
@@ -2785,6 +2790,8 @@ class Utils_Manager:
         reduced_tree = self.tree_subset(pipeline_tree, leaves)
 
         module_tree = self.utility_manager.compress_software_tree(reduced_tree)
+        print("MODULE TREE")
+        print(module_tree.index_to_pk)
 
         return module_tree
 
@@ -3381,7 +3388,7 @@ class SoftwareTreeUtils:
             stree: ptree.get_all_graph_paths()
             for stree, ptree in software_pipeline_trees.items()
         }
-        
+
         all_paths = {
             leaf: path for stree_paths in all_paths.values() for leaf, path in stree_paths.items()
         }

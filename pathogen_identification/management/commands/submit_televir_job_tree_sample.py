@@ -115,6 +115,8 @@ class Command(BaseCommand):
                 # SUBMISSION
                 pipeline_tree = software_utils.software_pipeline_tree(software_tree)
                 leaves = [pipeline_tree.match_node_to_index(node) for node in matched_leaves.values()]
+                print("pipeline tree")
+                print(pipeline_tree.index_to_pk)
                 module_tree = utils.module_tree(pipeline_tree, leaves)
 
                 

@@ -148,6 +148,10 @@ class Tree_Node:
         node_pk = pipe_tree.index_to_pk.get(self.node_index)
 
         if node_pk is None:
+            print(pipe_tree.node_index)
+            print(self.node_index)
+            print(pipe_tree.index_to_pk)
+            print(node_pk)
             raise ValueError("Node primary key not found")
         try:
             tree_node = SoftwareTreeNode.objects.get(
@@ -161,7 +165,6 @@ class Tree_Node:
     def setup_parameterset(
         self, project: Projects, sample: PIProject_Sample, node: SoftwareTreeNode
     ):
-        utils_manager = Utils_Manager()
 
         try:
             parameter_set = ParameterSet.objects.get(
@@ -1406,15 +1409,6 @@ class TreeProgressGraph:
 
         return test_df
 
-    def get_tree_progress_df(self, tree: PipelineTree):
-        ## setup a deployment and record the progress
-
-        deployment_tree = Tree_Progress(tree, self.sample, self.project)
-
-        stacked_df = deployment_tree.stacked_changes_log()
-        #
-
-        return stacked_df
 
     @staticmethod
     def extract_graph_data(html_filepath) -> Optional[str]:

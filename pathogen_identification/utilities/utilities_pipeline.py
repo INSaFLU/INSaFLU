@@ -468,6 +468,12 @@ class PipelineTree:
             for z in self.node_index.index
         }
 
+    @property
+    def leaves_pk(self):
+        if self.index_to_pk:
+            return [self.index_to_pk[leaf] for leaf in self.leaves]
+        return self.leaves
+
     def match_node_to_index(self, node: SoftwareTreeNode) -> int:
         """
         Match a node to its index in the node index DataFrame.
@@ -1697,10 +1703,10 @@ class Utility_Pipeline_Manager:
         self.logger.info(f"leaves {pipe_tree.leaves}")
 
         for child in explicit_path[1:]:
-            print("--------------------")
-            print(f"Parent: {parent}")
-            print(f"Parent main: {parent_main}")
-            print(f"Child: {child}")
+            self.logger.info("--------------------")
+            self.logger.info(f"Parent: {parent}")
+            self.logger.info(f"Parent main: {parent_main}")
+            self.logger.info(f"Child: {child}")
 
             try:
                 child_main = match_nodes(
@@ -1916,11 +1922,11 @@ class Utility_Pipeline_Manager:
 
             return explicit_edge_dict
 
-        print("Initialize matching nodes")
-        print(f"Parent: {parent}")
-        print(f"Parent main: {parent_main}")
-        print(f"Child main: {child_main}")
-        print("Matching nodes iterating through explicit path")
+        self.logger.info("Initialize matching nodes")
+        self.logger.info(f"Parent: {parent}")
+        self.logger.info(f"Parent main: {parent_main}")
+        self.logger.info(f"Child main: {child_main}")
+        self.logger.info("Matching nodes iterating through explicit path")
 
         if parent_main not in explicit_edge_dict.keys():
             explicit_edge_dict[parent_main] = pd.DataFrame(columns=["child"]).set_index(
@@ -1929,10 +1935,10 @@ class Utility_Pipeline_Manager:
             nodes_index_dict[parent_main] = 0
 
         for child in explicit_path[1:]:
-            print("--------------------")
-            print(f"Parent: {parent}")
-            print(f"Parent main: {parent_main}")
-            print(f"Child: {child}")
+            self.logger.info("--------------------")
+            self.logger.info(f"Parent: {parent}")
+            self.logger.info(f"Parent main: {parent_main}")
+            self.logger.info(f"Child: {child}")
 
             try:
                 child_main = match_nodes(
@@ -1940,10 +1946,9 @@ class Utility_Pipeline_Manager:
                 )
 
             except KeyError:
-                print(f"#########   Child {child} not found in parent {parent}")
-                
+                self.logger.info(f"#########   Child {child} not found in parent {parent}")
+
                 #print(explicit_edge_dict[parent_main])
-                print("###")
                 child_main = (add_node(child, tree_nodes), child[1])
                 nodes_index_dict[child_main] = child_main[0]
 
@@ -1951,16 +1956,16 @@ class Utility_Pipeline_Manager:
                     explicit_edge_dict, parent_main, child_main
                 )
 
-            print(f"Child main: {child_main}")
+            self.logger.info(f"Child main: {child_main}")
 
             try:
                 nodes_index_dict[child_main]
             except KeyError:
-                print(f"{child_main} node not in tree nodes")
+                self.logger.info(f"{child_main} node not in tree nodes")
                 # return None
 
             if child_main not in explicit_edge_dict[parent_main].index:
-                print(f"Child {child} not in parent {parent}")
+                self.logger.info(f"Child {child} not in parent {parent}")
                 # return None
 
             parent = child
@@ -2547,12 +2552,14 @@ class Utils_Manager:
             parameter_leaf.software_tree
         )
 
-        if parameter_leaf.index not in pipeline_tree.leaves:
+        if parameter_leaf.pk not in pipeline_tree.leaves_pk:
             raise Exception("Node is not a leaf")
+
+        parameter_leaf_index = [i for i, pk in pipeline_tree.index_to_pk.items() if pk == parameter_leaf.pk][0]
 
         all_paths = pipeline_tree.get_all_graph_paths()
 
-        return all_paths[parameter_leaf.index]
+        return all_paths[parameter_leaf_index]
 
     def get_parameterset_leaves(
         self, parameterset: ParameterSet, pipeline_tree: PipelineTree
@@ -2564,7 +2571,13 @@ class Utils_Manager:
         ps_pipeline_tree = self.parameter_util.convert_softwaretree_to_pipeline_tree(
             parameterset.leaf.software_tree
         )
-        ps_leaves = ps_pipeline_tree.leaves_from_node(parameterset.leaf.index)
+
+        try:
+            parameter_leaf_index = [i for i, pk in ps_pipeline_tree.index_to_pk.items() if pk == parameterset.leaf.pk][0]
+        except IndexError:
+            raise Exception("Node is not a leaf")
+
+        ps_leaves = ps_pipeline_tree.leaves_from_node(parameter_leaf_index)
 
         ps_paths = ps_pipeline_tree.get_specific_leaf_paths_explicit(ps_leaves)
 
@@ -3437,9 +3450,12 @@ class SoftwareTreeUtils:
             pipeline_tree = self.utility_manager.match_path_to_tree_extend(
                 path, pipeline_tree
             )
-        
-        self.update_software_tree(pipeline_tree)
-        pipeline_tree = self.query_software_default_tree(global_index=pipeline_tree.makeup)
+            self.update_software_tree(pipeline_tree)
+            pipeline_tree = self.query_software_default_tree(global_index=pipeline_tree.makeup)
+
+        print("EXTENDED PIPELINE TREE")
+        print(pipeline_tree.leaves)
+
 
         pipeline_tree = self.prep_tree_for_extend(pipeline_tree)
         return pipeline_tree

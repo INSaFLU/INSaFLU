@@ -478,12 +478,30 @@ class PipelineTree:
         """
         Match a node to its index in the node index DataFrame.
         """
-        node_found = self.node_index[
-            self.node_index.node == (node.name, node.value, node.node_type)
-        ]
-        if not node_found.empty:
-            return node_found.index[0]
-        else:
+        parameter_util = Parameter_DB_Utility()
+        df = parameter_util.retrace_from_leaf(node)
+        df = df.dropna(subset = 'node_type')
+        new_df = []
+        module = None
+        software = None
+        parameter = None
+        for _idx, row in df.iterrows():
+            if row.node_type == "module":
+                module = row['name']
+                software = row['value']
+            elif row.node_type == "param":
+                parameter = row['value']
+                new_df.append((module, software, parameter))
+        new_df = pd.DataFrame(new_df, columns=["module", "software", "value"])
+
+        local_paths = self.get_all_graph_paths()
+        for leaf_index, path_df in local_paths.items():
+            if set(path_df.module) == set(new_df.module) and set(path_df.software) == set(
+                new_df.software
+            ) and set(
+                path_df.value
+            ) == set(new_df.value):
+                return leaf_index
             raise ValueError("Node not found in index")
 
     def __eq__(self, other):

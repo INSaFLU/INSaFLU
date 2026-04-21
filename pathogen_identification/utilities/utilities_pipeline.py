@@ -479,8 +479,10 @@ class PipelineTree:
         Match a node to its index in the node index DataFrame.
         """
         parameter_util = Parameter_DB_Utility()
+        print(node)
         df = parameter_util.retrace_from_leaf(node)
         df = df.dropna(subset = 'node_type')
+        print(df)
         new_df = []
         module = None
         software = None
@@ -493,16 +495,22 @@ class PipelineTree:
                 parameter = row['value']
                 new_df.append((module, software, parameter))
         new_df = pd.DataFrame(new_df, columns=["module", "software", "value"])
-
+        print(new_df)
         local_paths = self.get_all_graph_paths()
+        print(local_paths)
+        print(len(local_paths))
+        print("#####")
+
+        
         for leaf_index, path_df in local_paths.items():
+            print(path_df)
             if set(path_df.module) == set(new_df.module) and set(path_df.software) == set(
                 new_df.software
             ) and set(
                 path_df.value
             ) == set(new_df.value):
                 return leaf_index
-            raise ValueError("Node not found in index")
+        raise ValueError("Node not found in index")
 
     def __eq__(self, other):
         diff_nodes = differences_tuple_list(self.nodes, other.nodes)

@@ -1685,18 +1685,15 @@ class Utility_Pipeline_Manager:
             print("Exception:")
             print(e)
             return None
-        print("MATCHED PATH", matched_path) 
         if matched_path is not None:
             if pipe_tree.index_to_pk:
-                print(pipe_tree.index_to_pk)
                 return pipe_tree.index_to_pk.get(matched_path, None)
 
         return matched_path
 
     def match_path_to_tree(self, explicit_path: list, pipe_tree: PipelineTree):
         """"""
-        print("Matching path to tree")
-        print(explicit_path)
+
         self.logger.info("Generating node index dict")
         nodes_index_dict = self.node_index_dict(pipe_tree)
         self.logger.info("Generating explicit edge dict")
@@ -1890,7 +1887,6 @@ class Utility_Pipeline_Manager:
         explicit_edge_dict: dict,
         tree_nodes: list,
     ):
-        print("###########         Extending tree dicts")
         parent = explicit_path[0]
         parent_main = (0, ("root", None, None))
         child_main = None
@@ -1966,7 +1962,6 @@ class Utility_Pipeline_Manager:
             except KeyError:
                 self.logger.info(f"#########   Child {child} not found in parent {parent}")
 
-                #print(explicit_edge_dict[parent_main])
                 child_main = (add_node(child, tree_nodes), child[1])
                 nodes_index_dict[child_main] = child_main[0]
 
@@ -2820,9 +2815,7 @@ class Utils_Manager:
 
         reduced_tree = self.tree_subset(pipeline_tree, leaves)
 
-        module_tree = self.utility_manager.compress_software_tree(reduced_tree)
-        print("MODULE TREE")
-        print(module_tree.index_to_pk)
+        module_tree = self.utility_manager.compress_software_tree(reduced_tree)k)
 
         return module_tree
 
@@ -3036,8 +3029,7 @@ class SoftwareTreeUtils:
         """
         tree.generate_graph()
         tree_root = (0, ('root', None, None))
-        print("NODES", tree.nodes)
-        print("NODES_INDEX", tree.node_index)
+
         tree_nodes_dict = {
             x[0]: x for x in tree.nodes
         }
@@ -3048,8 +3040,7 @@ class SoftwareTreeUtils:
         def recursive_update_descendantes(tree_node: tuple, software_node: Optional[SoftwareTreeNode], software_parent: Optional[SoftwareTreeNode]):
             tree_node_descendants = tree.dag_dict[tree_node[0]]
             tree_node_descendants = [(x, tree.node_index.loc[x].node) for x in tree_node_descendants]
-            print(f"Tree node: {tree_node}")
-            print("descendants", tree_node_descendants)
+
             is_leaf = tree_node[0] in tree.leaves
             if software_node is None: 
                 software_node = SoftwareTreeNode(
@@ -3236,10 +3227,6 @@ class SoftwareTreeUtils:
 
         if local_tree.makeup == -1:
             return {}
-        
-
-        print("LOCAL TREE LEAVES")
-        print(local_tree.leaves)
 
         return self.get_available_pathnodes(local_tree)
 
@@ -3253,24 +3240,17 @@ class SoftwareTreeUtils:
 
         local_paths = local_tree.get_all_graph_paths_explicit()
 
-        print("LOCAL PATHS")
-        print(local_paths.keys())
         pipeline_tree = self.generate_software_tree_extend(local_tree=local_tree)
-        print("extended pipleline tree")
-        print(pipeline_tree.leaves)
+
         ### MANAGEMENT
         matched_paths = {
             leaf: utils.utility_manager.match_path_to_tree_safe(path, pipeline_tree)
             for leaf, path in local_paths.items()
         }
 
-        print(matched_paths.keys())
-
         available_paths = {
             leaf: path for leaf, path in matched_paths.items() if path is not None
         }
-        print(available_paths.keys())
-        print(available_paths)
 
         available_path_nodes = {
             leaf: SoftwareTreeNode.objects.get(
@@ -3381,9 +3361,6 @@ class SoftwareTreeUtils:
             screening=False,
             mapping_only=False,
         )
-        print("AVAILABLE PATH NODES")
-        print(available_path_nodes)
-
         clean_samples_leaf_dict = self.utils_manager.sample_nodes_check_no_repeats(
             submission_dict, available_path_nodes, self.project
         )
@@ -3434,8 +3411,6 @@ class SoftwareTreeUtils:
         Generate a software tree for a technology and a tree makeup
         """
         tree_makeup = local_tree.makeup
-        print('tree makeup', tree_makeup)
-        print(self.check_default_software_tree_exists(global_index=tree_makeup))
 
         if self.check_default_software_tree_exists(global_index=tree_makeup) is False:
             self.update_software_tree(local_tree)
@@ -3452,21 +3427,13 @@ class SoftwareTreeUtils:
         """Generate Software Tree Register and extend with local paths"""
         local_paths = local_tree.get_all_graph_paths_explicit()
         pipeline_tree = self.generate_software_tree_register(local_tree)
-        print("REGISTERED PIPELINE TREE")
-        print(local_paths.keys())
-        print(sorted(pipeline_tree.leaves))
 
         for _, path in local_paths.items():
-            print(path)
             pipeline_tree = self.utility_manager.match_path_to_tree_extend(
                 path, pipeline_tree
             )
             self.update_software_tree(pipeline_tree)
             pipeline_tree = self.query_software_default_tree(global_index=pipeline_tree.makeup)
-
-        print("EXTENDED PIPELINE TREE")
-        print(pipeline_tree.leaves)
-
 
         pipeline_tree = self.prep_tree_for_extend(pipeline_tree)
         return pipeline_tree

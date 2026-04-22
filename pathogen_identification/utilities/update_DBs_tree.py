@@ -232,8 +232,7 @@ def Update_Remap(run_class: RunEngine_class, parameter_set: ParameterSet):
     """
 
     sample, runmain, _ = get_run_parents(run_class, parameter_set)
-    print("UPDATE REMAP")
-    print(runmain)
+
     try:
         with transaction.atomic():
             Update_RemapMain(run_class, runmain, sample, parameter_set)

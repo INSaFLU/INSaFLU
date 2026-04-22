@@ -57,7 +57,6 @@ class Utility_Repository:
             self.create_tables()
 
     def setup_engine(self, install_type):
-        print(self.db_path)
         if not os.path.exists(self.db_path):
             os.makedirs(self.db_path, exist_ok=True)
         if install_type == "local":

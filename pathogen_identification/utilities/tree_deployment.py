@@ -148,10 +148,7 @@ class Tree_Node:
         node_pk = pipe_tree.index_to_pk.get(self.node_index)
 
         if node_pk is None:
-            print(pipe_tree.node_index)
-            print(self.node_index)
-            print(pipe_tree.index_to_pk)
-            print(node_pk)
+
             raise ValueError("Node primary key not found")
         try:
             tree_node = SoftwareTreeNode.objects.get(
@@ -492,15 +489,13 @@ class Tree_Progress:
             _ = self.register_node_safe(leaf_node)
 
     def update_node_leaves_dbs(self, node: Tree_Node):
-        print("UPDATING LEAVES")
         for leaf in node.leaves:
             leaf_node = self.spawn_node_child_prepped(node, leaf)
             self.register_node(leaf_node)
             update_success = self.update_node_dbs(leaf_node)
 
-
             if not update_success:
-                print(f"Node {leaf_node.node_index} failed to update databases")
+                self.logger.warning(f"Node {leaf_node.node_index} failed to update databases")
                 leaf_node = self.spawn_node_child(node, leaf)
                 # self.submit_node_run(leaf_node)
                 _ = leaf_node.register_failed(
@@ -666,7 +661,6 @@ class Tree_Progress:
                     return False
 
                 node.run_manager.classification_updated = True
-            print("### REMAPPING PERFORMED", node.run_manager.run_engine.remapping_performed)
             if node.run_manager.run_engine.remapping_performed:
                 node.run_manager.run_engine.export_final_reports()
                 node.run_manager.run_engine.Summarize()
@@ -982,8 +976,8 @@ class Tree_Progress:
 
             traceback.print_exc()
 
-            print("Node failed to run, registering as failed.")
-            print(e)
+            self.logger.error("Node failed to run, registering as failed.")
+            self.logger.error(e)
 
             return False
 
@@ -1052,14 +1046,13 @@ class Tree_Progress:
             self.update_tree_nodes()
             return
 
-        print(f"CURRENT MODULE, {self.current_module}")
         action = map_actions[self.current_module]
 
         action()
 
         for node in self.current_nodes:
             if self.classification_monitor.ready_to_merge(node):
-                print(f"Node {node.node_index} ready to merge, planning remap prep.")
+                self.logger.info(f"Node {node.node_index} ready to merge, planning remap prep.")
                 node.run_manager.run_engine.plan_remap_prep_safe()
 
             self.update_node_leaves_dbs(node)
@@ -1106,7 +1099,7 @@ class Tree_Progress:
 
         self.register_leaves_finished()
 
-        print("DONE")
+        self.logger.info("DONE")
         return
 
     def stacked_changes_log(self):

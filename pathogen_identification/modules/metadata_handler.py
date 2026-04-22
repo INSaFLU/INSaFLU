@@ -402,7 +402,10 @@ class RunMetadataHandler:
         if sift is true, filter results to only include self.sift_query.
         """
 
+        print("Collecting metadata for results")
         df = self.clean_report(df)
+        print("clean df")
+        print(df.head())
 
         df = self.merge_report_to_metadata_taxid(df)
 

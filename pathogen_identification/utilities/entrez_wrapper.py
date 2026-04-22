@@ -142,14 +142,14 @@ class EntrezFetchAccessionDescription(EntrezQuery):
         ]
 
         return " ".join(cmd)
-    
-    def process_query_output(self, output_path: str) -> pd.DataFrame:
+
+    def process_query_output(self, output_path: str) -> None:
         """
         Process the output of the query. some rows have the taxid column repeated, ending wwith 4 columns instead of 3
         """
-
-        tmp_duplicate_file = os.path.join(self.outdir, "tmp_duplicate_taxids.txt")
-        tmp_file = os.path.join(self.outdir, "tmp_file.txt")
+        outdir = os.path.dirname(output_path)
+        tmp_duplicate_file = os.path.join(outdir, "tmp_duplicate_taxids.txt")
+        tmp_file = os.path.join(outdir, "tmp_file.txt")
         os.system(f"awk -F'\t' 'NF==4' {output_path} > {tmp_duplicate_file}")
         os.system(f"awk -F'\t' 'NF==3' {output_path} > {tmp_file}")
         os.system("cut -f2,3,4 " + tmp_duplicate_file + " >> " + tmp_file)

@@ -1058,6 +1058,7 @@ class Tree_Progress:
 
         for node in self.current_nodes:
             if self.classification_monitor.ready_to_merge(node):
+                print(f"Node {node.node_index} ready to merge, planning remap prep.")
                 node.run_manager.run_engine.plan_remap_prep_safe()
 
             self.update_node_leaves_dbs(node)

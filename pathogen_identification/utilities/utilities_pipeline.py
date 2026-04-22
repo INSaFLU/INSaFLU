@@ -494,11 +494,8 @@ class PipelineTree:
                 new_df.append((module, software, parameter))
         new_df = pd.DataFrame(new_df, columns=["module", "software", "value"])
         local_paths = self.get_all_graph_paths()
-
-
         
         for leaf_index, path_df in local_paths.items():
-            print(path_df)
             if set(path_df.module) == set(new_df.module) and set(path_df.software) == set(
                 new_df.software
             ) and set(
@@ -1189,7 +1186,7 @@ class Utility_Pipeline_Manager:
         self.logger = logging.getLogger(__name__)
         if self.logger.hasHandlers():
             self.logger.handlers.clear()
-        self.logger.setLevel(logging.INFO)
+        self.logger.setLevel(logging.ERROR)
         handler = logging.StreamHandler()
         handler.setStream(sys.stdout)
         self.logger.addHandler(handler)

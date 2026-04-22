@@ -1563,6 +1563,9 @@ class RunMainTree_class(Run_Deployment_Methods):
 
     def plan_remap_prep(self):
 
+        print("Planning remap preparation")
+        print(self.read_classification_drone.classification_report.head())
+
         self.metadata_tool.match_and_select_targets(
             self.read_classification_drone.classification_report,
             self.contig_classification_drone.classification_report,

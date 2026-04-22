@@ -2938,10 +2938,11 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
             # final report
             reports_df = run_main_pipeline.get_final_reports_df()
             run_main_dir = infer_run_media_dir(run_main_pipeline)
-            reports_df.to_csv(
-                os.path.join(run_main_dir, "final_reports.csv"), index=False
-            )
             file_path = os.path.join(run_main_dir, "final_reports.csv")
+            reports_df.to_csv(
+                file_path, index=False
+            )
+            
             context["files"]["final_reports_csv"] = file_path
 
             def eliminate_path_before_media(path: str):

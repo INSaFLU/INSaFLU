@@ -937,7 +937,7 @@ class Run_Deployment_Methods(RunDetail_main):
 
     def deploy_REMAPPING(self):
 
-        self.logger.info(
+        print(
             f"{self.prefix} remapping # targets: {len(self.metadata_tool.remap_targets)}"
         )
 
@@ -1172,6 +1172,8 @@ class RunEngine_class(Run_Deployment_Methods):
             self.deploy_REMAPPING()
             self.report = self.remap_manager.report
             self.export_final_reports()
+            print("## Remap Performed")
+            print(self.report)
 
         self.Update_exec_time()
 

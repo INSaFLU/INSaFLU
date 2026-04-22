@@ -492,13 +492,15 @@ class Tree_Progress:
             _ = self.register_node_safe(leaf_node)
 
     def update_node_leaves_dbs(self, node: Tree_Node):
+        print("UPDATING LEAVES")
         for leaf in node.leaves:
             leaf_node = self.spawn_node_child_prepped(node, leaf)
             self.register_node(leaf_node)
             update_success = self.update_node_dbs(leaf_node)
 
+
             if not update_success:
-                self.logger.warning(f"Node {leaf_node.node_index} failed to update databases")
+                print(f"Node {leaf_node.node_index} failed to update databases")
                 leaf_node = self.spawn_node_child(node, leaf)
                 # self.submit_node_run(leaf_node)
                 _ = leaf_node.register_failed(
@@ -664,7 +666,7 @@ class Tree_Progress:
                     return False
 
                 node.run_manager.classification_updated = True
-
+            print("### REMAPPING PERFORMED", node.run_manager.run_engine.remapping_performed)
             if node.run_manager.run_engine.remapping_performed:
                 node.run_manager.run_engine.export_final_reports()
                 node.run_manager.run_engine.Summarize()
@@ -952,7 +954,6 @@ class Tree_Progress:
         self.stacked_deployement_mapping(nodes_by_sample_sources)
 
     def run_simplified_classification_reads(self):
-        print("######### CLASSSIFICATIONNN")
         nodes_by_sample_sources = self.group_nodes_by_source_and_parameters()
 
         self.stacked_deployment_read_classification(nodes_by_sample_sources)

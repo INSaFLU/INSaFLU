@@ -91,6 +91,17 @@ class Classifier_init(ABC):
             self.out_path, self.prefix + self.full_report_suffix
         )
 
+    def export_reports(self, output_dir):
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        if os.path.exists(self.report_path):
+            shutil.copy(self.report_path, output_dir)
+            self.report_path = os.path.join(output_dir, os.path.basename(self.report_path))
+        if os.path.exists(self.full_report_path):
+            shutil.copy(self.full_report_path, output_dir)
+            self.full_report_path = os.path.join(output_dir, os.path.basename(self.full_report_path))
+
     def filter_samfile_read_names(self, same=True, output_sam="", sep=",", idx=0):
         if not output_sam:
             output_sam = os.path.join(self.out_path, f"temp{randint(1,1999)}.sam")

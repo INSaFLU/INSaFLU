@@ -1161,7 +1161,7 @@ class TelefluProjectView(BaseBreadcrumbMixin, LoginRequiredMixin, generic.Create
         )
         #available_leaves = [pipeline_tree.match_node_to_index(node) for node in matched_leaves.values()]
         all_paths = software_utils.get_all_technology_pipelines(pipeline_type=SoftwareTree.PIPELINE_TYPE_MAPPING)
-        
+
         ########################################## get workflows
         workflows = []
         for node, params_df in all_paths.items():
@@ -2739,6 +2739,17 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
             raw_references = run_main_pipeline.references_sorted(mapping_only=True)
             raw_reference_table = RawReferenceTable_Basic(raw_references)
 
+        from pathogen_identification.models import (ClassifierOutput,
+                                                    ClassifierOutputFile)
+
+        classifier_outputs = ClassifierOutput.objects.filter(run=run_main_pipeline)
+        classifier_outputs = {
+            clo: ClassifierOutputFile.objects.filter(classifier_output=clo)
+            for clo in classifier_outputs
+        }
+        
+
+
         #####
         run_detail = RunDetail.objects.get(sample=sample_main, run=run_main_pipeline)
         #
@@ -2872,6 +2883,7 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
             "clade_heatmap_json_exists": False if clade_heatmap_json is None else True,
             "clade_heatmap_json": clade_heatmap_json,
             "is_classification": is_classification,
+            "classification_reports": classifier_outputs,
             "remapping_performed": remapping_performed,
             "qc_processing": processed_reads,
             "sample": sample_name,

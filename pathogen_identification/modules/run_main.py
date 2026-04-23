@@ -966,6 +966,12 @@ class Run_Deployment_Methods(RunDetail_main):
             self.log_dir,
             self.media_dir_logdir,
         )
+    
+    def export_classification_reports(self):
+        classification_report_dir = os.path.join(self.media_dir, "classification_reports")
+
+        self.read_classification_drone.classifier.export_reports(classification_report_dir)
+        self.contig_classification_drone.classifier.export_reports(classification_report_dir)
 
     def export_final_reports(self):
         # main report

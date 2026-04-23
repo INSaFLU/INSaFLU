@@ -340,6 +340,16 @@
                             </form>
                             {% endif %}
                             {% endif %}
+                            {% for classifier, outputs in classification_reports.items %}
+
+                                {% for output in outputs %}
+                                <form id="download_classifier_report_{{ forloop.counter }}" action="{% url 'download_file' %}" method="POST" style="padding-right: 0px; width: 50%; float: right;">
+                                    {% csrf_token %}
+                                    <input type=submit value="{{ classifier.software_name }} classification report" name="btn{{ forloop.counter }}" style= "font-size: 13px;">
+                                    <input type="hidden" name="file_path" value="{{ output.file_path }}">
+                                </form>
+                            {% endfor %}
+                            {% endfor %}
                         </div>
                         {% endif %}
                     </div>

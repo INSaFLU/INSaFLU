@@ -654,6 +654,7 @@ class Tree_Progress:
                 node.run_manager.run_engine.plan_remap_prep_safe()
                 node.run_manager.run_engine.export_intermediate_reports()
                 node.run_manager.run_engine.generate_output_data_classes()
+                node.run_manager.run_engine.export_classification_reports()
                 db_updated = Update_Classification(
                     node.run_manager.run_engine, node.parameter_set
                 )

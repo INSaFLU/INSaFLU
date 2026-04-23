@@ -327,7 +327,7 @@
                             {% if read_classification.classification_number > 0 %}
                             <form id="download_read_class_report" action="{% url 'download_file' %}" method="POST" style="padding-right: 0px; width: 50%; float: right;">
                                 {% csrf_token %}
-                                <input type=submit value="read classification report" name="btn2" style= "font-size: 13px;">
+                                <input type=submit value="read classification report combined" name="btn2" style= "font-size: 13px;">
                                 <input type="hidden" name="file_path" value="{{read_classification.read_classification_report}}">
                             </form>
                             {% endif %}

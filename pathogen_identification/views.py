@@ -25,7 +25,7 @@ from django.urls import reverse, reverse_lazy
 from django.utils.functional import cached_property
 from django.utils.safestring import mark_safe
 from django.views import generic
-from django.views.generic import ListView
+from django.views.generic import ListView, TemplateView
 from django_tables2 import RequestConfig
 from view_breadcrumbs import BaseBreadcrumbMixin
 
@@ -62,10 +62,12 @@ from pathogen_identification.tables import (AddedReferenceTable,
                                             ContigTable, ProjectTable,
                                             RawReferenceTable,
                                             RawReferenceTable_Basic,
+                                            ReferenceSourceFileTable,
                                             ReferenceSourceTable, RunMainTable,
                                             RunMappingTable, SampleTableOne,
                                             TeleFluInsaFLuProjectTable,
-                                            TeleFluReferenceTable)
+                                            TeleFluReferenceTable,
+                                            TelevirReferencesTable)
 from pathogen_identification.utilities.reference_utils import (
     filter_reference_maps_select, generate_insaflu_reference)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
@@ -1091,7 +1093,7 @@ class TelefluProjectView(BaseBreadcrumbMixin, LoginRequiredMixin, generic.Create
             ("TELEVIR Projects", reverse("PIprojects_main")),
             (
                 self.kwargs["project_name"],
-                reverse("teleflu_project", args=[self.kwargs["pk"]]),
+                reverse("PIproject_samples", kwargs={"pk": self.kwargs["project_index"]}),
             ),
             (
                 self.kwargs["teleflu_project_name"],
@@ -1858,11 +1860,6 @@ class ReferencePanelManagement(
 
         return context
 
-
-from django.views.generic import ListView, TemplateView
-
-from pathogen_identification.tables import (ReferenceSourceFileTable,
-                                            TelevirReferencesTable)
 
 
 class ReferenceManagementBase(BaseBreadcrumbMixin, TemplateView):

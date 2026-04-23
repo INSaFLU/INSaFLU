@@ -52,7 +52,7 @@ from pathogen_identification.models import (ContigClassification, FinalReport,
                                             ReferenceSourceFile,
                                             ReferenceSourceFileMap,
                                             RunAssembly, RunDetail, RunMain,
-                                            RunRemapMain, Sample,
+                                            RunRemapMain, Sample, SoftwareTree,
                                             TelefluMapping, TeleFluProject,
                                             TeleFluSample, TelevirRunQC)
 from pathogen_identification.modules.object_classes import RunQC_report
@@ -1161,10 +1161,10 @@ class TelefluProjectView(BaseBreadcrumbMixin, LoginRequiredMixin, generic.Create
         context["mapping_workflows"] = mapping_workflows
         ####################################### get combinations to deploy
         available_path_nodes = software_utils.query_available_pathnodes(
-            mapping_only = True, screening = False
+            pipeline_type=SoftwareTree.PIPELINE_TYPE_MAPPING
         )
         #available_leaves = [pipeline_tree.match_node_to_index(node) for node in matched_leaves.values()]
-        all_paths = software_utils.get_all_technology_pipelines(mapping_only=True, screening=False)
+        all_paths = software_utils.get_all_technology_pipelines(pipeline_type=SoftwareTree.PIPELINE_TYPE_MAPPING)
         ########################################## get workflows
         workflows = []
         for node, params_df in all_paths.items():

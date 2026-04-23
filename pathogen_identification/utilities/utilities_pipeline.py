@@ -2815,7 +2815,7 @@ class Utils_Manager:
 
         reduced_tree = self.tree_subset(pipeline_tree, leaves)
 
-        module_tree = self.utility_manager.compress_software_tree(reduced_tree)k)
+        module_tree = self.utility_manager.compress_software_tree(reduced_tree)
 
         return module_tree
 
@@ -3188,19 +3188,16 @@ class SoftwareTreeUtils:
     
     def query_available_pathnodes(
         self, 
-        mapping_only: bool = False, 
-        screening: bool = False, 
+        pipeline_type: Optional[int] = None,
     ) -> Dict[int, SoftwareTreeNode]:
-        type_pipeline = SoftwareTree.PIPELINE_TYPE_CLASSIC
-        if mapping_only:
-            type_pipeline = SoftwareTree.PIPELINE_TYPE_MAPPING
-        elif screening:
-            type_pipeline = SoftwareTree.PIPELINE_TYPE_SCREENING
+        
+        if pipeline_type is None:
+            pipeline_type = SoftwareTree.PIPELINE_TYPE_CLASSIC
 
         nodes = SoftwareTreeNode.objects.filter(
             software_tree__project=self.project,
-            software_tree__pipeline_type=type_pipeline, 
-            available = True
+            software_tree__pipeline_type=pipeline_type,
+            available=True
         )
 
         available_path_nodes = {
@@ -3282,8 +3279,7 @@ class SoftwareTreeUtils:
         #)
 
         available_path_nodes = self.query_available_pathnodes(
-            screening= False,
-            mapping_only = True,
+            pipeline_type=SoftwareTree.PIPELINE_TYPE_MAPPING
         )
 
         clean_samples_leaf_dict, workflow_deployed_dict = (
@@ -3311,8 +3307,7 @@ class SoftwareTreeUtils:
         #)
 
         available_path_nodes= self.query_available_pathnodes(
-            screening= True,
-            mapping_only = False,
+            pipeline_type=SoftwareTree.PIPELINE_TYPE_SCREENING,
         )
 
         clean_samples_leaf_dict, _ = (
@@ -3338,8 +3333,7 @@ class SoftwareTreeUtils:
         #)
 
         available_path_nodes= self.query_available_pathnodes(
-            screening= False,
-            mapping_only = True,
+            pipeline_type=SoftwareTree.PIPELINE_TYPE_MAPPING
         )
 
         clean_samples_leaf_dict, workflow_deployed_dict = (
@@ -3358,8 +3352,7 @@ class SoftwareTreeUtils:
         submission_dict = {sample: []}
 
         available_path_nodes = self.query_available_pathnodes(
-            screening=False,
-            mapping_only=False,
+            pipeline_type=SoftwareTree.PIPELINE_TYPE_CLASSIC
         )
         clean_samples_leaf_dict = self.utils_manager.sample_nodes_check_no_repeats(
             submission_dict, available_path_nodes, self.project
@@ -3367,14 +3360,15 @@ class SoftwareTreeUtils:
 
         return clean_samples_leaf_dict
 
-    def get_all_technology_pipelines(self, mapping_only = True, screening = False) -> Dict[int, pd.DataFrame]:
+    def get_all_technology_pipelines(self, pipeline_type: Optional[int]) -> Dict[int, pd.DataFrame]:
         """
         Get all pipelines for a technology
         """
 
         available_path_nodes = self.query_available_pathnodes(
-            mapping_only=mapping_only, screening=screening
+            pipeline_type=pipeline_type
         )
+        print(available_path_nodes)
         trees = list(set(leaf.software_tree for leaf in available_path_nodes.values()))
         software_tree_matched_paths = {
             stree: {
@@ -3385,9 +3379,16 @@ class SoftwareTreeUtils:
         software_pipeline_trees = {
             stree: self.parameter_util.convert_softwaretree_to_pipeline_tree(stree) for stree in software_tree_matched_paths
         }
+
         all_paths = {
             stree: ptree.get_all_graph_paths()
             for stree, ptree in software_pipeline_trees.items()
+        }
+
+        all_paths = {
+            stree: {
+                software_pipeline_trees[stree].index_to_pk.get(leaf_index, None): path for leaf_index, path in stree_paths.items()
+            } for stree, stree_paths in all_paths.items()
         }
 
         all_paths = {

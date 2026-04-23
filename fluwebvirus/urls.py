@@ -19,17 +19,10 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path, re_path
 
-from fluwebvirus.views import (
-    ChangePasswordView,
-    GetMessageConfirmEmailView,
-    HomePageView,
-    LoginView,
-    LogOutView,
-    ResetPasswordView,
-    SignUpView,
-    activate,
-    reset_password_key,
-)
+from fluwebvirus.views import (ChangePasswordView, GetMessageConfirmEmailView,
+                               HomePageView, LoginView, LogOutView,
+                               ResetPasswordView, SignUpView, activate,
+                               reset_password_key)
 
 urlpatterns = []
 if settings.ADMIN_ENABLED:

@@ -100,7 +100,7 @@ class Command(BaseCommand):
             if mapping_run_pk is None:
                 raise Exception("mapping_run_id is required for mapping request")
         elif combined_analysis:
-            metagenomics = True
+            mapping_only = True
         else:
             screening = True
 

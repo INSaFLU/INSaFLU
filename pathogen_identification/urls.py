@@ -359,7 +359,7 @@ urlpatterns = [
         name="deploy_metagenomics_televir_project_sample",
     ),
     path(
-        "ajax/select_all_samples_televir_project",
+        "Projects/ajax/select_all_samples_televir_project",
         PIajax_views.get_all_samples_selected,
         name="select_all_samples_televir_project",
     ),

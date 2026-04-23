@@ -287,22 +287,19 @@ class PathogenIdentification_SingleDeployment(PathogenIdentificationDeploymentCo
         self.parameter_set = ParameterSet.objects.get(pk=pk)
         self.tree_makup = self.parameter_set.leaf.software_tree.global_index
 
-    def configure_params(self, run_type: int = RunMainTree_class.RUN_TYPE_PIPELINE) -> bool:
+    @property
+    def pipeline_type(self):
+        try: 
+            return self.parameter_set.leaf.software_tree.pipeline_type
+        except AttributeError:
+            return None
+
+    def configure_params(self) -> bool:
         """get pipeline parameters from database"""
 
         software_tree_utils = SoftwareTreeUtils(self.project.owner, self.project)
 
-        mapping_only = False
-        screening = False
-
-        if run_type in [
-            RunMainTree_class.RUN_TYPE_MAPPING_REQUEST,
-            RunMainTree_class.RUN_TYPE_COMBINED_MAPPING,
-            RunMainTree_class.RUN_TYPE_PANEL_MAPPING,
-        ]:
-            mapping_only = True
-
-        all_paths = software_tree_utils.get_all_technology_pipelines(mapping_only= mapping_only)
+        all_paths = software_tree_utils.get_all_technology_pipelines(pipeline_type=self.pipeline_type)
 
         self.run_params_db = all_paths.get(self.pipeline_index, None)
 

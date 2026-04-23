@@ -8,10 +8,12 @@ from django.contrib.auth.models import User
 from django.core.files import File
 from django.db import IntegrityError, transaction
 
-from pathogen_identification.models import (QC_REPORT, ContigClassification,
-                                            FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RawReference, ReadClassification,
+from pathogen_identification.models import (QC_REPORT, ClassifierOutput,
+                                            ClassifierOutputFile,
+                                            ContigClassification, FinalReport,
+                                            ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            ReadClassification,
                                             ReferenceContigs,
                                             ReferenceMap_Main, RunAssembly,
                                             RunDetail, RunIndex, RunMain,
@@ -19,12 +21,75 @@ from pathogen_identification.models import (QC_REPORT, ContigClassification,
 from pathogen_identification.modules.object_classes import Sample_runClass
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunEngine_class
-from pathogen_identification.utilities.update_DBs import (Update_Run_QC,
-                                                          get_run_parents)
+
+#from pathogen_identification.utilities.update_DBs import (Update_Run_QC,
+#                                                          get_run_parents)
 
 
 ####################################################################################################################
 ####################################################################################################################
+
+
+
+def get_run_parents(run_class: RunEngine_class, parameter_set: ParameterSet) -> tuple:
+    """get run parents for run_class. Update run_class.run_data."""
+    user = User.objects.get(username=run_class.username)
+    project = Projects.objects.get(
+        name=run_class.project_name, owner=user, is_deleted=False
+    )
+
+    sample = run_class.sample_registered
+
+    try:
+        if run_class.run_pk is not None:
+            runmain = RunMain.objects.get(
+                pk=run_class.run_pk,
+            )
+        else:
+            runmain = RunMain.objects.get(
+                project=project,
+                # suprun=run_class.suprun,
+                sample=sample,
+                # run_class.prefix,
+                parameter_set=parameter_set,
+            )
+
+    except RunMain.DoesNotExist:
+
+        return None, None, None
+
+    return sample, runmain, project
+
+
+
+def Update_Run_QC(run_class: RunEngine_class, parameter_set: ParameterSet):
+    sample, runmain, _ = get_run_parents(run_class, parameter_set)
+
+    if sample is None or runmain is None:
+        return
+
+    for method in run_class.preprocess_method.software_list:
+        try:
+            RunQC = TelevirRunQC.objects.get(
+                run=runmain,
+                method=method.name,
+                args=method.args,
+            )
+        except TelevirRunQC.DoesNotExist:
+            RunQC = TelevirRunQC(
+                run=runmain,
+                performed=True,
+                method=method.name,
+                args=method.args,
+                input_reads=f"{method.reads_before_processing:,}",
+                output_reads=f"{method.reads_after_processing:,}",
+                output_reads_percent=str(
+                    0 if method.reads_before_processing == 0 else method.reads_after_processing / method.reads_before_processing * 100
+                ),
+            )
+            RunQC.save()
+
+
 def Update_project(project_directory_path, user: str = "admin"):
     """Updates the project"""
     project_directory_path = os.path.dirname(project_directory_path)
@@ -779,6 +844,30 @@ def Update_Run_Classification(run_class: RunEngine_class, parameter_set: Paramet
             success=run_class.read_classification_results.success,
         )
         read_classification.save()
+    
+    
+    try:
+        classifier_output = ClassifierOutput.objects.get(
+            run=runmain,
+            software_name = run_class.read_classification_results.method,
+        )
+    except ClassifierOutput.DoesNotExist:
+        classifier_output = ClassifierOutput(
+            run=runmain,
+            software_name=run_class.read_classification_results.method,
+        )
+        classifier_output.save()
+        
+    if os.path.exists(run_class.read_classification_drone.classifier.full_report_path):
+        ClassifierOutputFile.objects.update_or_create(
+            classifier_output=classifier_output,
+            file_path=run_class.read_classification_drone.classifier.full_report_path
+        )
+    if os.path.exists(run_class.read_classification_drone.classifier.report_suffix):
+        ClassifierOutputFile.objects.update_or_create(
+            classifier_output=classifier_output,
+            file_path=run_class.read_classification_drone.classifier.report_suffix
+        )
 
     try:
         contig_classification = ContigClassification.objects.get(
@@ -817,7 +906,30 @@ def Update_Run_Classification(run_class: RunEngine_class, parameter_set: Paramet
         )
         contig_classification.save()
 
-    for ref, row in run_class.raw_targets.iterrows():
+    try:
+        classifier_output = ClassifierOutput.objects.get(
+            run=runmain,
+            software_name=contig_classification.method,
+        )
+    except ClassifierOutput.DoesNotExist:
+        classifier_output = ClassifierOutput(
+            run=runmain,
+            software_name=contig_classification.method,
+        )
+        classifier_output.save()
+        
+    if os.path.exists(run_class.contig_classification_drone.classifier.full_report_path):
+        ClassifierOutputFile.objects.update_or_create(
+            classifier_output=classifier_output,
+            file_path=run_class.contig_classification_drone.classifier.full_report_path
+        )
+    if os.path.exists(run_class.contig_classification_drone.classifier.report_suffix):
+        ClassifierOutputFile.objects.update_or_create(
+            classifier_output=classifier_output,
+            file_path=run_class.contig_classification_drone.classifier.report_suffix
+        )
+
+    for _ref, row in run_class.raw_targets.iterrows():
         if row.status:
             status = RawReference.STATUS_MAPPED
         else:

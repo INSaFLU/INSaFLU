@@ -34,7 +34,7 @@ urlpatterns = [
         name="insaflu_project_igv",
     ),
     path(
-        "teleflu_workflow_igv/<int:pk>",
+        "teleflu_project/teleflu_workflow_igv/<int:pk>",
         PIviews.TelefluMappingIGV.as_view(),
         name="teleflu_workflow_igv",
     ),

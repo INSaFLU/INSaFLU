@@ -1097,10 +1097,6 @@ class TelefluProjectView(BaseBreadcrumbMixin, LoginRequiredMixin, generic.Create
                 self.kwargs["teleflu_project_name"],
                 reverse("teleflu_project", args=[self.kwargs["pk"]]),
             ),
-            (
-                self.kwargs["mapping_id"],
-                reverse("teleflu_mapping_igv", args=[self.kwargs["pk"]]),
-            ),
         ]
 
     def setup(self, request, *args, **kwargs):
@@ -1108,15 +1104,15 @@ class TelefluProjectView(BaseBreadcrumbMixin, LoginRequiredMixin, generic.Create
 
         print(self.kwargs)
 
-        teleflu_mapping_pk = int(self.kwargs["pk"])
-        teleflu_mapping = TelefluMapping.objects.get(pk=teleflu_mapping_pk)
-        project_name = teleflu_mapping.teleflu_project.name
+        teleflu_project_pk = int(self.kwargs["pk"])
+        teleflu_project = TeleFluProject.objects.get(pk=teleflu_project_pk)
+        project_name = teleflu_project.name
         self.kwargs["project_name"] = project_name
         self.kwargs["project_index"] = (
-            teleflu_mapping.teleflu_project.televir_project.pk
+            teleflu_project.televir_project.pk
         )
         self.kwargs["teleflu_project_name"] = (
-            f"Focus: {teleflu_mapping.teleflu_project.raw_reference.description_first}"
+            f"Focus: {teleflu_project.raw_reference.description_first}"
         )
 
     def get_context_data(self, **kwargs):
@@ -1165,6 +1161,7 @@ class TelefluProjectView(BaseBreadcrumbMixin, LoginRequiredMixin, generic.Create
         )
         #available_leaves = [pipeline_tree.match_node_to_index(node) for node in matched_leaves.values()]
         all_paths = software_utils.get_all_technology_pipelines(pipeline_type=SoftwareTree.PIPELINE_TYPE_MAPPING)
+        
         ########################################## get workflows
         workflows = []
         for node, params_df in all_paths.items():
@@ -1220,7 +1217,7 @@ class TelefluMappingIGV(BaseBreadcrumbMixin, LoginRequiredMixin, generic.Templat
             ),
             (
                 self.kwargs["mapping_id"],
-                reverse("teleflu_mapping_igv", args=[self.kwargs["pk"]]),
+                "",
             ),
         ]
 

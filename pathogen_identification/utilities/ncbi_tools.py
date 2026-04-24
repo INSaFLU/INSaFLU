@@ -8,12 +8,9 @@ from dataclasses import dataclass
 from functools import wraps
 from typing import Generator, List, Optional, Tuple
 
-import dotenv
 import numpy as np
 import pandas as pd
 from Bio import Entrez
-
-dotenv.load_dotenv()
 from decouple import config
 
 Entrez.email = config("NCBI_EMAIL")

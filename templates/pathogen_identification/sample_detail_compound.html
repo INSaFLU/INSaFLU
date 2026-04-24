@@ -685,6 +685,7 @@
 <script type="text/javascript" src="{% static 'js/televir_projects/sample_detail.js' %}"></script>
 
 <script>
+
     if (document.getElementById('toggle-summary')) {
         document.getElementById('toggle-summary').addEventListener('click', function() {
             var summaryDiv = document.querySelector('.collapsible-summary');
@@ -699,7 +700,6 @@
             summaryDiv.classList.remove('show');
         });
     }
-
 
     var buttons = document.querySelectorAll('.showSecondaryRows, .showSecondaryRows i');
     for (var b = 0; b < buttons.length; b++) {

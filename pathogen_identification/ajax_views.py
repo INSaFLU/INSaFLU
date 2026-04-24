@@ -1664,6 +1664,113 @@ def get_user_tags(request):
         return JsonResponse(data)
 
 
+@csrf_protect
+def get_project_tags(request):
+    """
+    Get all tags for a specific project
+    """
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        data = {"is_ok": False, "tags": []}
+
+        user = request.user
+        project_id = int(request.POST.get("project_id", 0))
+        project = Projects.objects.filter(id=project_id, owner=user).first()
+
+        if project:
+            tags = ProjectTagAssignment.objects.filter(project=project).select_related("tag")
+            for tag_assignment in tags:
+                data["tags"].append({"id": tag_assignment.tag.id, "name": tag_assignment.tag.name})
+
+            data["is_ok"] = True
+        return JsonResponse(data)
+
+@csrf_protect
+def delete_tag(request):
+    """
+    Delete a tag for the current user
+    """
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        data = {"is_ok": False}
+
+        user = request.user
+        tag_id = int(request.POST.get("tag_id", 0))
+        tag = ProjectTag.objects.filter(id=tag_id, owner=user, is_deleted=False).first()
+
+        if tag:
+            tag.is_deleted = True
+            tag.save()
+            data["is_ok"] = True
+
+        return JsonResponse(data)
+
+@csrf_protect
+def create_user_project_tag(request):
+    """
+    Create a new tag for the current user
+    """
+
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        data = {"is_ok": False}
+
+        user = request.user
+        tag_name = request.POST.get("name", "").strip()
+
+        if tag_name == "":
+            n_user_tags = ProjectTag.objects.filter(owner=user, is_deleted=False).count()
+            tag_name = f"Tag {n_user_tags + 1}"
+            if ProjectTag.objects.filter(name=tag_name, owner=user, is_deleted=False).exists():
+                tag_name = f""
+
+        if tag_name:
+            tag = ProjectTag.objects.create(name=tag_name, owner=user)
+            data["is_ok"] = True
+            data["tag"] = {"id": tag.id, "name": tag.name}
+
+        return JsonResponse(data)
+
+
+@csrf_protect
+def possible_project_tags(request):
+    """
+    tags not yet assigned to this project"""
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        data = {"is_ok": False, "tags": []}
+        print(request.POST)
+        user = request.user
+        project_id = int(request.POST.get("project_id", 0))
+        project = Projects.objects.filter(id=project_id, owner=user).first()
+
+        if project:
+            assigned_tags = ProjectTagAssignment.objects.filter(project=project).values_list("tag_id", flat=True)
+            possible_tags = ProjectTag.objects.filter(owner=user, is_deleted=False).exclude(id__in=assigned_tags)
+
+            for tag in possible_tags:
+                data["tags"].append({"id": tag.id, "name": tag.name})
+
+            data["is_ok"] = True
+        return JsonResponse(data)
+
+@csrf_protect
+def assign_tag_to_project(request):
+    """
+    Assign a tag to a project for the current user
+    """
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        data = {"is_ok": False}
+
+        user = request.user
+        project_id = int(request.POST.get("project_id", 0))
+        tag_id = int(request.POST.get("tag_id", 0))
+
+        project = Projects.objects.filter(id=project_id, owner=user).first()
+        tag = ProjectTag.objects.filter(id=tag_id, owner=user, is_deleted=False).first()
+
+        if project and tag:
+            ProjectTagAssignment.objects.create(tag=tag, project=project)
+            data["is_ok"] = True
+
+        return JsonResponse(data)
+
 #########################################################################
 ##################### TELEVIR FOCUS FUNCTIONS (TELEFLU) #################
 #########################################################################

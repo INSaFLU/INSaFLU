@@ -129,6 +129,31 @@ urlpatterns = [
         name="add_panels_to_sample",
     ),
     re_path(
+        r"get_user_tags",
+        PIajax_views.get_user_tags,
+        name="get_user_tags",
+    ),
+    re_path(
+        r"get_project_tags",
+        PIajax_views.get_project_tags,
+        name="get_project_tags",
+    ),
+    re_path(
+        r"create_tag",
+        PIajax_views.create_user_project_tag,
+        name="create_user_project_tag",
+    ),
+    re_path(
+        r"project_tag_candidates",
+        PIajax_views.possible_project_tags,
+        name="project_tag_candidates"
+    ),
+    re_path(
+        r"assign_tag_to_project",
+        PIajax_views.assign_tag_to_project,
+        name="assign_tag_to_project",
+    ),
+    re_path(
         r"add_panels_to_project",
         PIajax_views.add_panels_to_project,
         name="add_panels_to_project",

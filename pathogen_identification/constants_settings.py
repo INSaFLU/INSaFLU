@@ -3,6 +3,7 @@ Ceated on 06/05/2022
 @author: joao santos
 """
 
+from pathlib import Path
 from typing import Dict, List
 
 from django.conf import settings
@@ -21,6 +22,7 @@ class ConstantsSettings:
 
     media_directory = MEDIA_ROOT
     static_directory = STATIC_ROOT
+    local_assembly_store = Path(MEDIA_ROOT) / "assembly_store"
     televir_subdirectory = "televir_projects"
     run_files_zipped = "run.zip"
     PAGINATE_NUMBER = 20

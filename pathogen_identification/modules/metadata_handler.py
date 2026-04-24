@@ -343,7 +343,7 @@ class RunMetadataHandler:
         return references_table
 
     @staticmethod
-    def filter_taxids_not_in_db(df) -> pd.DataFrame:
+    def check_taxids_not_in_db(df) -> pd.DataFrame:
 
         def get_refs_existing(taxid):
             try:
@@ -358,8 +358,21 @@ class RunMetadataHandler:
                 return False
 
         df["has_refs"] = df["taxid"].apply(get_refs_existing)
-        df = df[df["has_refs"] == True]
-        df.drop(columns=["has_refs"], inplace=True)
+
+        return df
+    
+    def retrieve_taxids_ncbi(self, df: pd.DataFrame) -> pd.DataFrame:
+
+        from pathogen_identification.constants_settings import \
+            ConstantsSettings
+        from pathogen_identification.utilities.reference_utils import \
+            AssemblyStore
+
+        assembly_store = AssemblyStore(ConstantsSettings.local_assembly_store)
+        assemblies = assembly_store.match_taxid_to_assembly(df)
+        assembly_store.register_assemblies(assemblies) 
+        df = self.check_taxids_not_in_db(df)
+
         return df
 
     def register_taxid_accids(self, taxid: str, accids: List[str]):
@@ -411,7 +424,13 @@ class RunMetadataHandler:
 
         df = self.map_hit_report(df)
 
-        df = self.filter_taxids_not_in_db(df)
+        df = self.check_taxids_not_in_db(df)
+
+        _ = self.retrieve_taxids_ncbi(df[df["has_refs"] == False])
+        df = self.check_taxids_not_in_db(df)
+
+        df = df[df["has_refs"] == True]
+        df.drop(columns=["has_refs"], inplace=True)
 
         self.accid_register(df)
 

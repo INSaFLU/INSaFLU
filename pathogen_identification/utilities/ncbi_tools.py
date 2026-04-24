@@ -11,12 +11,12 @@ from typing import Generator, List, Optional, Tuple
 import dotenv
 import numpy as np
 import pandas as pd
-import requests
 from Bio import Entrez
 
 dotenv.load_dotenv()
+from decouple import config
 
-Entrez.email = os.getenv("NCBI_EMAIL", None)
+Entrez.email = config("NCBI_EMAIL")
 if Entrez.email is None:
     raise ValueError("NCBI_EMAIL environment variable not set. Please set it to your email address.")
 

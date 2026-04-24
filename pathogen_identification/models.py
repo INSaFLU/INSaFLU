@@ -151,16 +151,12 @@ class SoftwareTree(models.Model):
         nodes = SoftwareTreeNode.objects.filter(software_tree=self, node_type = "module")
         unique_pipeline_names = nodes.values_list("name", flat=True).distinct()
 
-        print("Setting pipeline type")
-        print(list(unique_pipeline_names))
-
         if set(unique_pipeline_names).issubset(set(CS.vect_pipeline_televir_classic)):
             self.pipeline_type = self.PIPELINE_TYPE_CLASSIC
         elif set(unique_pipeline_names).issubset(set(CS.vect_pipeline_televir_mapping_only)):
             self.pipeline_type = self.PIPELINE_TYPE_MAPPING
         elif set(unique_pipeline_names).issubset(set(CS.vect_pipeline_televir_screening)):
             self.pipeline_type = self.PIPELINE_TYPE_SCREENING
-        print(self.pipeline_type)
 
         self.save()
 

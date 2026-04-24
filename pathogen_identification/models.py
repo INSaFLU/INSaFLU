@@ -113,6 +113,19 @@ class Projects(models.Model):
         samples = [project_sample.sample.pk for project_sample in project_samples]
         return samples
 
+class ProjectTag(models.Model):
+    tag = models.CharField(max_length=100, db_index=True, blank=False, null=False)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
+    is_deleted = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.tag
+
+class ProjectTagAssignment(models.Model):
+    tag = models.ForeignKey(ProjectTag, on_delete=models.CASCADE)
+    project = models.ForeignKey(Projects, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
 
 class SoftwareTree(models.Model):
     """"""

@@ -114,7 +114,7 @@ class Projects(models.Model):
         return samples
 
 class ProjectTag(models.Model):
-    tag = models.CharField(max_length=100, db_index=True, blank=False, null=False)
+    name = models.CharField(max_length=100, db_index=True, blank=False, null=False)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
     is_deleted = models.BooleanField(default=False)
 

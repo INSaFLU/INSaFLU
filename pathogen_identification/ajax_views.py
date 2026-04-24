@@ -1640,6 +1640,34 @@ def create_insaflu_project(request):
             return JsonResponse(data)
 
 
+#########################################################################
+##################### TELEVIR PROJECT TAGS ##############################
+#########################################################################
+from pathogen_identification.models import ProjectTag, ProjectTagAssignment
+
+
+@csrf_protect
+def get_user_tags(request):
+    """
+    Get all tags for the current user
+    """
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        data = {"is_ok": False, "tags": []}
+
+        user = request.user
+        tags = ProjectTag.objects.filter(owner=user, is_deleted=False)
+
+        for tag in tags:
+            data["tags"].append({"id": tag.id, "name": tag.name})
+
+        data["is_ok"] = True
+        return JsonResponse(data)
+
+
+#########################################################################
+##################### TELEVIR FOCUS FUNCTIONS (TELEFLU) #################
+#########################################################################
+
 @csrf_protect
 def set_teleflu_check_box_values(request):
     """

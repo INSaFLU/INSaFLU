@@ -944,6 +944,7 @@ class FinalReportCompound:
             .exclude(run__run_type=RunMain.RUN_TYPE_STORAGE)
             .distinct("run")
         )
+        self.report_pk = report.pk
         self.found_in_str = self.get_identical_reports_ps(report)
         self.run_detail = self.get_report_rundetail(report)
         self.run_main = self.get_report_runmain(report)
@@ -1735,7 +1736,6 @@ class ReportSorter:
 
             report_aggregate.save()
         
-        with transaction.atomic():
             for group in sorted_reports:
                 report_group =ReportGroup.objects.create(
                     aggregator=report_aggregate,

@@ -1724,7 +1724,7 @@ class ReportSorter:
                 max_coverage = self.max_coverage,
                 max_windows_covered = self.max_windows_covered,
                 tree_plot_path = self.tree_plot_path,
-                tree_plot_path_exists = self.tree_plot_exists,
+                tree_plot_exists = self.tree_plot_exists,
                 overlap_heatmap_path = self.overlap_heatmap_path,
                 overlap_heatmap_exists = self.overlap_heatmap_exists,
                 overlap_pca_path = self.overlap_pca_path,

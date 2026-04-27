@@ -26,7 +26,8 @@ from pathogen_identification.utilities.utilities_general import \
     simplify_name_lower
 from pathogen_identification.utilities.utilities_pipeline import (
     Parameter_DB_Utility, SoftwareTreeUtils, Utils_Manager)
-from pathogen_identification.utilities.utilities_views import ReportSorter
+from pathogen_identification.utilities.utilities_views import (
+    ReportSorter, final_report_best_cov_by_accid)
 from settings.constants_settings import ConstantsSettings as SettingsConstants
 from utils.process_SGE import ProcessSGE
 
@@ -696,16 +697,30 @@ class Run_Main_from_Leaf:
         if final_reports.exists() is False:
             return
 
-        report_sorter = ReportSorter(self.sample, final_reports, report_layout_params)
 
-        try:
+        runs = RunMain.objects.filter(parameter_set=self.parameter_set).exclude(run_type=RunMain.RUN_TYPE_STORAGE)
+        
+        for run in runs:
+
+            final_report = FinalReport.objects.filter(
+                sample=self.parameter_set.sample, run=run
+            ).order_by("-coverage")
+            #
+            report_sorter = ReportSorter(
+                self.parameter_set.sample, final_report, report_layout_params
+            )
             report_sorter.sort_reports_save()
-        except Exception as e:
-            print(e)
-            print(traceback.format_exc())
+            report_sorter.reports_aggregate_register(run)
 
-            print("Error in report sorter")
-            return
+        final_reports = FinalReport.objects.filter(
+            sample=self.parameter_set.sample, run=run
+        ).order_by("-coverage")
+
+        final_reports = final_report_best_cov_by_accid(final_reports)
+        report_sorter = ReportSorter(
+            self.parameter_set.sample, final_reports, report_layout_params
+        )
+        report_sorter.sort_reports_save()
 
     def register_completion(self):
         self.set_run_process_finished()

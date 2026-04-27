@@ -82,8 +82,8 @@ from pathogen_identification.utilities.utilities_general import (
 from pathogen_identification.utilities.utilities_pipeline import (  # ### KEEP THIS
     Parameter_DB_Utility, SoftwareTreeUtils)
 from pathogen_identification.utilities.utilities_views import (  # ############################################
-    EmptyRemapMain, RawReferenceUtils, ReportSorter, RunMainWrapper,
-    SampleReadsRetrieve, final_report_best_cov_by_accid,
+    EmptyRemapMain, RawReferenceUtils, ReportList, ReportSorter,
+    RunMainWrapper, SampleReadsRetrieve, final_report_best_cov_by_accid,
     recover_assembly_contigs)
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
@@ -2840,13 +2840,33 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
         clade_heatmap_json = report_sorter.clade_heatmap_json(
             to_keep=[report_group.name for report_group in sorted_reports]
         )
-
+        
         #########
         private_reads_available = False
         for report_group in sorted_reports:
             if report_group.reports_have_private_reads():
                 private_reads_available = True
                 break
+
+        ########
+        from pathogen_identification.models import ReportAggregate, ReportGroup
+
+        # get latest reportaggregate
+        latest_report_aggregate = ReportAggregate.objects.filter(
+            sample=sample_main, run=run_main_pipeline
+        ).order_by("-date_created").first()
+
+        report_groups = ReportGroup.objects.filter(
+            aggregator=latest_report_aggregate
+        )
+
+        sorted_reports = [
+            (
+                report_group,
+                ReportList(list(report_group.reports)).set_private_reads(report_group).sort_group_by_private_reads()
+            ) for report_group in report_groups
+        ]
+        ############################ END REPORT SORTING
 
         contig_classification = ContigClassification.objects.get(
             sample=sample_main, run=run_main_pipeline
@@ -3041,10 +3061,8 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         )
 
         report_sorter = ReportSorter(sample, unique_reports, report_layout_params)
-        sort_tree_exists = False
         sort_tree_plot_path = None
         if report_sorter.overlap_manager is not None:
-            sort_tree_exists = report_sorter.overlap_manager.tree_plot_exists
             sort_tree_plot_path = report_sorter.overlap_manager.tree_plot_path_render
 
         sorted_reports = report_sorter.get_reports_compound()
@@ -3055,10 +3073,11 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
                 private_reads_available = True
                 break
 
-        #########
         clade_heatmap_json = report_sorter.clade_heatmap_json(
             to_keep=[report_group.name for report_group in sorted_reports]
         )
+
+        ######### end report sorting
 
         #### graph
         graph_progress = TreeProgressGraph(sample)

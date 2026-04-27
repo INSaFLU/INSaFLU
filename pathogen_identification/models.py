@@ -2006,6 +2006,70 @@ class FinalReport(models.Model):
         return control_flag_str
 
 
+class ReportAggregate(models.Model):
+
+    sample = models.ForeignKey(
+        PIProject_Sample, blank=True, null=True, on_delete=models.CASCADE
+    )
+    run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)
+    date_created = models.DateTimeField(auto_now_add=True,  db_index=True, null = True)
+
+    max_error_rate = models.FloatField(blank=True, null=True)
+    error_rate_available = models.BooleanField(default=False)
+    max_quality_avg = models.FloatField(blank=True, null=True)
+    quality_avg_available = models.BooleanField(default=False)
+    max_mapped_proportion = models.FloatField(blank=True, null=True)
+    max_coverage = models.FloatField(blank=True, null=True)
+    max_windows_covered = models.FloatField(blank=True, null=True)
+
+    tree_plot_path = models.CharField(max_length=200, blank=True, null=True)
+    tree_plot_exists = models.BooleanField(default=False)
+
+    overlap_heatmap_path = models.CharField(max_length=200, blank=True, null=True)
+    overlap_heatmap_exists = models.BooleanField(default=False)
+
+    overlap_pca_path = models.CharField(max_length=200, blank=True, null=True)
+    overlap_pca_exists = models.BooleanField(default=False)
+
+    reports_available = models.BooleanField(default=False)
+
+
+class ReportGroup(models.Model):
+
+    aggregator = models.ForeignKey(
+        ReportAggregate, blank=True, null=True, on_delete=models.CASCADE
+    )
+    name = models.CharField(max_length=100, blank=True, null=True)
+    total_counts = models.IntegerField(blank=True, null=True)
+    private_counts = models.IntegerField(blank=True, null=True)
+    private_counts_exist = models.BooleanField(default=False)
+    private_reads_available = models.BooleanField(default=False)
+
+    shared_proportion = models.FloatField(blank=True, null=True)
+    private_proportion = models.FloatField(blank=True, null=True)
+
+    max_private_reads = models.IntegerField(blank=True, null=True)
+    max_coverage = models.FloatField(blank=True, null=True)
+
+    analysis_empty = models.BooleanField(default=False)
+    has_multiple = models.BooleanField(default=False)
+    toggle = models.CharField(max_length=100, blank=True, null=True)
+
+    clade_heatmap_json = models.CharField(max_length=2000, blank=True, null=True)
+    reports = models.ManyToManyField(FinalReport, blank=True, related_name="aggregated_reports")
+
+    @property
+    def sort_performed(self):
+        return self.analysis_empty == False
+
+class GroupReportData(models.Model):
+    report = models.ForeignKey(FinalReport, blank=True, null=True, on_delete=models.CASCADE)
+    report_group = models.ForeignKey(ReportGroup, blank=True, null=True, on_delete=models.CASCADE)
+    private_reads = models.IntegerField(blank=True, null=True)
+    found_in = models.ManyToManyField(RunMain, blank=True, related_name="compound_runs")
+    data_exists = models.BooleanField(default=False)
+
+
 class RawReferenceCompoundModel(models.Model):
 
     sample = models.ForeignKey(

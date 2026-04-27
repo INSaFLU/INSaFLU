@@ -29,7 +29,8 @@ from pathogen_identification.utilities.update_DBs_tree import (
     Update_RunMain_Initial, Update_RunMain_Secondary)
 from pathogen_identification.utilities.utilities_pipeline import (
     Pipeline_Makeup, PipelineTree, Utils_Manager)
-from pathogen_identification.utilities.utilities_views import ReportSorter
+from pathogen_identification.utilities.utilities_views import (
+    ReportSorter, final_report_best_cov_by_accid)
 from settings.constants_settings import ConstantsSettings
 from utils.utils import Utils
 
@@ -118,17 +119,35 @@ class Tree_Node:
 
     def run_reference_overlap_analysis(self):
         # run = RunMain.objects.filter(parameter_set=self.parameter_set).first()
-        final_report = FinalReport.objects.filter(
-            sample=self.parameter_set.sample,  # run=run
-        ).order_by("-coverage")
-        #
+
         report_layout_params = TelevirParameters.get_report_layout_params(
             project_pk=self.parameter_set.project.pk
         )
+
+        runs = RunMain.objects.filter(parameter_set=self.parameter_set).exclude(run_type=RunMain.RUN_TYPE_STORAGE)
+        
+        for run in runs:
+
+            final_report = FinalReport.objects.filter(
+                sample=self.parameter_set.sample, run=run
+            ).order_by("-coverage")
+            #
+            report_sorter = ReportSorter(
+                self.parameter_set.sample, final_report, report_layout_params
+            )
+            report_sorter.sort_reports_save()
+            report_sorter.reports_aggregate_register(run)
+
+        final_reports = FinalReport.objects.filter(
+            sample=self.parameter_set.sample, run=run
+        ).order_by("-coverage")
+
+        final_reports = final_report_best_cov_by_accid(final_reports)
         report_sorter = ReportSorter(
-            self.parameter_set.sample, final_report, report_layout_params
+            self.parameter_set.sample, final_reports, report_layout_params
         )
         report_sorter.sort_reports_save()
+        report_sorter.reports_aggregate_register()
 
     def receive_run_manager(self, run_manager: PathogenIdentification_TreeDeployment):
         run_manager.prefix = f"run_leaf_{self.node_index}"

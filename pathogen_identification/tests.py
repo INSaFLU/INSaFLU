@@ -1187,7 +1187,7 @@ class MetadataManagementTests(TestCase):
         first_report_group = sorted_reports[0]
 
         first_compound: FinalReportCompound = first_report_group.group_list[0]
-        self.assertEquals(first_compound.found_in, "M")
+        self.assertEquals(first_compound.found_in_str, "M")
         self.assertTrue(first_compound.run_main == mapping_run)
         self.assertTrue(first_compound.data_exists)
         self.assertEquals(first_compound.control_flag, FinalReport.CONTROL_FLAG_NONE)

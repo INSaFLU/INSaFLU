@@ -13,40 +13,27 @@ from django.utils.safestring import mark_safe
 from constants.constants import Constants
 from fluwebvirus.settings import MEDIA_URL, STATIC_ROOT
 from managing_files.models import Sample as INSaFLU_Sample
-from pathogen_identification.constants_settings import (
-    ConstantsSettings as PIConstantsSettings,
-)
-from pathogen_identification.models import (
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    RawReferenceCompoundModel,
-    ReadClassification,
-    ReferenceMap_Main,
-    ReferencePanel,
-    ReferenceSourceFileMap,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    RunReadsRegister,
-    SoftwareTree,
-    SoftwareTreeNode,
-    TelevirRunQC,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PIConstantsSettings
+from pathogen_identification.models import (ContigClassification, FinalReport,
+                                            GroupReportData, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference,
+                                            RawReferenceCompoundModel,
+                                            ReadClassification,
+                                            ReferenceMap_Main, ReferencePanel,
+                                            ReferenceSourceFileMap,
+                                            ReportAggregate, ReportGroup,
+                                            RunAssembly, RunDetail, RunMain,
+                                            RunReadsRegister, SoftwareTree,
+                                            SoftwareTreeNode, TelevirRunQC)
 from pathogen_identification.utilities.clade_objects import Clade
-from pathogen_identification.utilities.overlap_manager import ReadOverlapManager
+from pathogen_identification.utilities.overlap_manager import \
+    ReadOverlapManager
 from pathogen_identification.utilities.televir_parameters import (
-    LayoutParams,
-    TelevirParameters,
-)
+    LayoutParams, TelevirParameters)
 from pathogen_identification.utilities.utilities_general import (
-    infer_run_media_dir,
-    merge_classes,
-    simplify_name,
-)
+    infer_run_media_dir, merge_classes, simplify_name)
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
@@ -919,6 +906,7 @@ class FinalReportWrapper:
         self.first_in_group = False
         self.row_class_name = "secondary-row"
         self.display = "none"
+        self.report_pk = report.pk
 
     @staticmethod
     def prep_for_static(filepath: str) -> str:
@@ -947,7 +935,16 @@ class FinalReportCompound:
                 except Exception as e:
                     raise e
 
-        self.found_in = self.get_identical_reports_ps(report)
+        self.found_in = (
+            RawReference.objects.filter(
+            run__project__pk=report.run.project.pk,
+            run__sample__pk=report.sample.pk,
+            taxid=report.taxid,
+            )
+            .exclude(run__run_type=RunMain.RUN_TYPE_STORAGE)
+            .distinct("run")
+        )
+        self.found_in_str = self.get_identical_reports_ps(report)
         self.run_detail = self.get_report_rundetail(report)
         self.run_main = self.get_report_runmain(report)
         self.run_index = self.run_main.pk
@@ -965,6 +962,9 @@ class FinalReportCompound:
         self.private_reads = private_reads
 
     def get_identical_reports_ps(self, report: FinalReport) -> str:
+        """
+        return text indicator of  all other runs this accession taxonomic id is found.
+        """
         references_found_in = (
             RawReference.objects.filter(
                 run__project__pk=report.run.project.pk,
@@ -976,7 +976,7 @@ class FinalReportCompound:
             .distinct("run")
         )
 
-        sets = set([r.run.parameter_set.leaf.index for r in references_found_in])
+        sets = set([r.run.parameter_set.leaf.pk for r in references_found_in])
 
         strings_return = []
 
@@ -1221,6 +1221,38 @@ def recover_assembly_contigs(run_main: RunMain, run_assembly: RunAssembly):
             run_assembly.assembly_contigs = assembly_contigs
             run_assembly.save()
 
+class ReportList:
+    def __init__(self, reports: List[FinalReport]):
+        self.reports = [FinalReportWrapper(report) for report in reports]
+
+    def set_private_reads(self, report_group: ReportGroup):
+        """
+        Set private reads for each report.
+        """
+        for report in self.reports:
+            report_data = GroupReportData.objects.get(
+                report__pk = report.report_pk, 
+                report_group = report_group
+            )
+            report.private_reads = report_data.private_reads
+
+        return self
+
+    def sort_group_by_private_reads(self):
+        """
+        sort group by private reads
+        """
+        self.reports.sort(key=lambda x: x.private_reads, reverse=True)
+
+        if len(self.reports) == 0:
+            return self
+
+        self.reports[0].first_in_group = True
+        self.reports[0].row_class_name = "primary-row"
+        self.reports[0].display = "table-row"
+
+        return self
+    
 
 class ReportSorter:
     analysis_filename = "overlap_analysis_{}.tsv"
@@ -1649,6 +1681,89 @@ class ReportSorter:
         self.update_report_excluded_dicts(self.overlap_manager)
 
         return clades
+    
+    def reports_aggregate_register(self, run_main: Optional[RunMain] = None):
+        """
+        register in table
+        """
+
+        sorted_reports = self.get_reports_compound()
+        excluded_reports_exist = self.check_excluded_exist()
+        empty_reports = self.get_reports_empty()
+
+
+        if excluded_reports_exist and self.analysis_empty is False:
+
+            if len(empty_reports.group_list) > 0:
+                sorted_reports.append(empty_reports)
+
+        # check has control_flag present
+        # has_controlled_flag = False if sample_main.is_control else True
+        #########
+        clade_heatmap_json = self.clade_heatmap_json(
+            to_keep=[report_group.name for report_group in sorted_reports]
+        )
+
+        #########
+        private_reads_available = False
+        for group in sorted_reports:
+            if group.reports_have_private_reads():
+                private_reads_available = True
+                break
+
+        from django.db import transaction
+        with transaction.atomic():
+            report_aggregate = ReportAggregate.objects.create(
+                sample = self.sample,
+                run = run_main,
+                max_error_rate = self.max_error_rate,
+                error_rate_available = self.error_rate_available,
+                max_quality_avg = self.max_quality_avg,
+                quality_avg_available = self.quality_avg_available,
+                max_mapped_proportion = self.max_mapped_prop,
+                max_coverage = self.max_coverage,
+                max_windows_covered = self.max_windows_covered,
+                tree_plot_path = self.tree_plot_path,
+                tree_plot_path_exists = self.tree_plot_exists,
+                overlap_heatmap_path = self.overlap_heatmap_path,
+                overlap_heatmap_exists = self.overlap_heatmap_exists,
+                overlap_pca_path = self.overlap_pca_path,
+                overlap_pca_exists = self.overlap_pca_exists,
+                reports_available = self.reports_available,
+            )
+
+            report_aggregate.save()
+
+            for group in sorted_reports:
+                report_group =ReportGroup.objects.create(
+                    aggregator=report_aggregate,
+                    name=group.name,
+                    total_counts=group.total_counts, 
+                    private_counts = group.private_counts,
+                    private_counts_exist = group.private_counts_exist,
+                    private_reads_available = private_reads_available,
+                    shared_proportion = group.shared_proportion,
+                    private_proportion = group.private_proportion,
+                    max_private_reads = group.max_private_reads,
+                    max_coverage = group.max_coverage,
+                    analysis_empty = group.analysis_empty,
+                    has_multiple = group.has_multiple,
+                    toggle = group.toggle,
+                    clade_heatmap_json = clade_heatmap_json,
+                )
+                report_group.save()
+
+                for report in group.group_list:
+                    report_group.reports.add(report)
+
+                    GroupReportData.objects.create(
+                        report = FinalReport.objects.get(pk=report.report_pk),
+                        report_group = report_group,
+                        private_reads = report.private_reads,
+                        data_exists = report.data_exists,
+                    )
+                    for run in report.found_in:
+                        report_group.runs.add(run)
 
     def sort_reports_save(self, force=False):
         """

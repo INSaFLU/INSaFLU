@@ -495,7 +495,7 @@ class Tree_Progress:
 
         deployment_manager = PathogenIdentification_TreeDeployment(
             self.sample,
-            deployment_root_dir=temp_dir,
+            deployment_root_dir=self.output_directory,
             dir_branch=deployment_directory_structure,
             threads=PIConstants.DEPLOYMENT_THREADS,
         )

@@ -1734,7 +1734,8 @@ class ReportSorter:
             )
 
             report_aggregate.save()
-
+        
+        with transaction.atomic():
             for group in sorted_reports:
                 report_group =ReportGroup.objects.create(
                     aggregator=report_aggregate,
@@ -1755,7 +1756,7 @@ class ReportSorter:
                 report_group.save()
 
                 for report in group.group_list:
-                    report_group.reports.add(report)
+                    report_group.reports.add(FinalReport.objects.get(pk=report.report_pk))
 
                     GroupReportData.objects.create(
                         report = FinalReport.objects.get(pk=report.report_pk),

@@ -139,7 +139,7 @@ class Tree_Node:
             report_sorter.reports_aggregate_register(run)
 
         final_reports = FinalReport.objects.filter(
-            sample=self.parameter_set.sample, run=run
+            sample=self.parameter_set.sample
         ).order_by("-coverage")
 
         final_reports = final_report_best_cov_by_accid(final_reports)
@@ -1027,7 +1027,7 @@ class Tree_Progress:
             for leaf in node.leaves:
                 leaf_node = self.spawn_node_child(node, leaf)
                 _ = leaf_node.register_running(self.project, self.sample, self.tree)
-
+                leaf_node.run_reference_overlap_analysis()
                 _ = self.register_finished(leaf_node)
 
     def calculate_report_overlaps_runs(self):
@@ -1059,6 +1059,7 @@ class Tree_Progress:
         }
 
         if self.current_module in ["end"]:
+            
             return
 
         if self.current_module == "root":
@@ -1118,6 +1119,7 @@ class Tree_Progress:
             current_module = self.get_current_module()
 
         self.register_leaves_finished()
+        
 
         self.logger.info("DONE")
         return

@@ -713,7 +713,7 @@ class Run_Main_from_Leaf:
             report_sorter.reports_aggregate_register(run)
 
         final_reports = FinalReport.objects.filter(
-            sample=self.parameter_set.sample, run=run
+            sample=self.parameter_set.sample,
         ).order_by("-coverage")
 
         final_reports = final_report_best_cov_by_accid(final_reports)
@@ -721,9 +721,11 @@ class Run_Main_from_Leaf:
             self.parameter_set.sample, final_reports, report_layout_params
         )
         report_sorter.sort_reports_save()
+        report_sorter.reports_aggregate_register()
 
     def register_completion(self):
         self.set_run_process_finished()
+        self.run_reference_overlap_analysis()
         new_run = ParameterSet.objects.get(pk=self.pk)
         new_run.register_finished()
 

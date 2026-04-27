@@ -2817,36 +2817,34 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
         )
 
         ########
-        final_report = FinalReport.objects.filter(
-            sample=sample_main, run=run_main_pipeline
-        ).order_by("-coverage")
-        #
-        report_layout_params = TelevirParameters.get_report_layout_params(run_pk=run_pk)
-        report_sorter = ReportSorter(sample_main, final_report, report_layout_params)
+        #final_report = FinalReport.objects.filter(
+        #    sample=sample_main, run=run_main_pipeline
+        #).order_by("-coverage")
+        ##
+        #report_layout_params = TelevirParameters.get_report_layout_params(run_pk=run_pk)
+        #report_sorter = ReportSorter(sample_main, final_report, report_layout_params)
+        #sorted_reports = report_sorter.get_reports()
+        #excluded_reports_exist = report_sorter.check_excluded_exist()
+        #empty_reports = report_sorter.get_reports_empty()
 
-        sorted_reports = report_sorter.get_reports()
-        excluded_reports_exist = report_sorter.check_excluded_exist()
-        empty_reports = report_sorter.get_reports_empty()
 
-
-        if excluded_reports_exist and report_sorter.analysis_empty is False:
-
-            if len(empty_reports.group_list) > 0:
-                sorted_reports.append(empty_reports)
-
+        #if excluded_reports_exist and report_sorter.analysis_empty is False:
+        #    if len(empty_reports.group_list) > 0:
+        #        sorted_reports.append(empty_reports)
+#
         # check has control_flag present
         # has_controlled_flag = False if sample_main.is_control else True
         #########
-        clade_heatmap_json = report_sorter.clade_heatmap_json(
-            to_keep=[report_group.name for report_group in sorted_reports]
-        )
+        #clade_heatmap_json = report_sorter.clade_heatmap_json(
+        #    to_keep=[report_group.name for report_group in sorted_reports]
+        #)
         
         #########
-        private_reads_available = False
-        for report_group in sorted_reports:
-            if report_group.reports_have_private_reads():
-                private_reads_available = True
-                break
+        #private_reads_available = False
+        #for report_group in sorted_reports:
+        #    if report_group.reports_have_private_reads():
+        #        private_reads_available = True
+        #        break
 
         ########
         from pathogen_identification.models import ReportAggregate, ReportGroup
@@ -2866,6 +2864,13 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
                 ReportList(list(report_group.reports)).set_private_reads(report_group).sort_group_by_private_reads()
             ) for report_group in report_groups
         ]
+
+        private_reads_available = any(
+            report_groups.values_list("private_reads_available", flat=True)
+        )
+
+        clade_heatmap_json = latest_report_aggregate.overlap_heatmap_path
+
         ############################ END REPORT SORTING
 
         contig_classification = ContigClassification.objects.get(

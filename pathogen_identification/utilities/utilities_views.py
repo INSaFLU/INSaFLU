@@ -943,6 +943,7 @@ class FinalReportCompound:
             )
             .exclude(run__run_type=RunMain.RUN_TYPE_STORAGE)
             .distinct("run")
+            .values_list("run", flat=True)
         )
         self.report_pk = report.pk
         self.found_in_str = self.get_identical_reports_ps(report)

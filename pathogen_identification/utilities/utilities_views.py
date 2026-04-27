@@ -1758,14 +1758,16 @@ class ReportSorter:
                 for report in group.group_list:
                     report_group.reports.add(FinalReport.objects.get(pk=report.report_pk))
 
-                    GroupReportData.objects.create(
+                    report_data = GroupReportData.objects.create(
                         report = FinalReport.objects.get(pk=report.report_pk),
                         report_group = report_group,
                         private_reads = report.private_reads,
                         data_exists = report.data_exists,
                     )
+                    report_data.save()
+
                     for run in report.found_in:
-                        report_group.runs.add(run)
+                        report_data.found_in.add(run)
 
     def sort_reports_save(self, force=False):
         """

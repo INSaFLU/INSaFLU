@@ -1,3 +1,5 @@
+import os
+
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
@@ -49,7 +51,10 @@ class Command(BaseCommand):
         process_SGE = ProcessSGE()
         user = User.objects.get(pk=options["user_id"])
         project = Projects.objects.get(pk=options["project_id"])
-        technology = project.technology
+        output_directory = options["outdir"]
+
+        if os.path.exists(output_directory) == False:
+            os.makedirs(output_directory)
 
         samples = PIProject_Sample.objects.filter(
             project=project, is_deleted=False, pk=options["sample_id"]
@@ -113,12 +118,9 @@ class Command(BaseCommand):
             for software_tree, matched_leaves in software_tree_matched_paths.items():
                 # SUBMISSION
                 pipeline_tree = software_utils.software_pipeline_tree(software_tree)
-                print(matched_leaves)
                 leaves = [pipeline_tree.match_node_to_index(node) for node in matched_leaves.values()]
-                print("pipeline tree")
-                print(pipeline_tree.index_to_pk)
+
                 module_tree = utils.module_tree(pipeline_tree, leaves)
-                print(leaves)
                 
                 for project_sample in samples:
                     if project_sample.is_deleted:
@@ -127,7 +129,7 @@ class Command(BaseCommand):
                         graph_progress = TreeProgressGraph(project_sample)
 
                         deployment_tree = Tree_Progress(
-                            module_tree, project_sample, project
+                            module_tree, project_sample, project, output_directory=output_directory
                         )
                         print("############ deployment tree")
                         graph_progress.generate_graph()

@@ -449,6 +449,7 @@ class Tree_Progress:
         pipe_tree: PipelineTree,
         sample: PIProject_Sample,
         project: Projects,
+        output_directory: Optional[str] = None,
     ):
         pipe_tree.nodes_df = pd.DataFrame(
             pipe_tree.nodes_compress, columns=["node", "branch"]
@@ -470,12 +471,17 @@ class Tree_Progress:
         )
         self.updated_classification = False
 
+        if output_directory is not None:
+            self.output_directory = output_directory
+        else:
+            utils = Utils()
+            temp_dir = utils.get_temp_dir()
+            self.output_directory = temp_dir
+
         self.initialize_nodes()
         self.determine_current_module_from_nodes()
 
     def setup_deployment_manager(self):
-        utils = Utils()
-        temp_dir = utils.get_temp_dir()
 
         prefix = f"{self.sample.sample.pk}_{self.sample.sample.name}"
 
@@ -489,9 +495,6 @@ class Tree_Progress:
 
         deployment_manager = PathogenIdentification_TreeDeployment(
             self.sample,
-            # self.project,
-            # self.project.owner.username,
-            # self.project.technology,
             deployment_root_dir=temp_dir,
             dir_branch=deployment_directory_structure,
             threads=PIConstants.DEPLOYMENT_THREADS,

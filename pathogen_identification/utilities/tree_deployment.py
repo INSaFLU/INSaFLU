@@ -136,7 +136,7 @@ class Tree_Node:
                 self.parameter_set.sample, final_report, report_layout_params
             )
             report_sorter.sort_reports_save()
-            report_sorter.reports_aggregate_register(run)
+            report_sorter.reports_aggregate_register(report_layout_params, run)
 
         final_reports = FinalReport.objects.filter(
             sample=self.parameter_set.sample

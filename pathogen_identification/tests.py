@@ -1171,7 +1171,7 @@ class MetadataManagementTests(TestCase):
 
         first_report_group = sorted_reports[0]
         self.assertEquals(first_report_group.max_coverage, 100)
-        self.assertEquals(first_report_group.total_counts, "total counts 0")
+        self.assertEquals(first_report_group.total_counts_str, "total counts 0")
         self.assertEquals(first_report_group.shared_proportion, 0)
         self.assertEquals(first_report_group.max_private_reads, 0)
         self.assertFalse(first_report_group.has_multiple)

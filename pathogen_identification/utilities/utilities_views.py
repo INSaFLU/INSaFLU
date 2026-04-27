@@ -1015,7 +1015,7 @@ class FinalReportGroup:
     analysis_empty = False
 
     name: str
-    total_counts: str
+    total_counts_str: str
     private_counts: int
     shared_proportion: float
     private_proportion: float
@@ -1035,7 +1035,8 @@ class FinalReportGroup:
         analysis_empty=False,
     ):
         self.name = name
-        self.total_counts = f"total counts {total_counts}"
+        self.total_counts = total_counts
+        self.total_counts_str = f"total counts {total_counts}"
         self.private_counts = private_counts
         self.shared_proportion = shared_proportion
         self.private_proportion = round(private_proportion, 2)

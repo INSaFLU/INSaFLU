@@ -710,7 +710,7 @@ class Run_Main_from_Leaf:
                 self.parameter_set.sample, final_report, report_layout_params
             )
             report_sorter.sort_reports_save()
-            report_sorter.reports_aggregate_register(run)
+            report_sorter.reports_aggregate_register(report_layout_params, run)
 
         final_reports = FinalReport.objects.filter(
             sample=self.parameter_set.sample,
@@ -721,7 +721,7 @@ class Run_Main_from_Leaf:
             self.parameter_set.sample, final_reports, report_layout_params
         )
         report_sorter.sort_reports_save()
-        report_sorter.reports_aggregate_register()
+        report_sorter.reports_aggregate_register(report_layout_params)
 
     def register_completion(self):
         self.set_run_process_finished()

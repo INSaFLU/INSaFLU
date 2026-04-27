@@ -14,21 +14,17 @@ from scipy.stats import kstest
 from constants.software_names import SoftwareNames
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.modules.object_classes import (
-    Bedgraph,
-    MappingStats,
-    Read_class,
-    Remap_Target,
-    RunCMD,
-    SoftwareDetail,
-    SoftwareRemap,
-)
+from pathogen_identification.modules.object_classes import (Bedgraph,
+                                                            MappingStats,
+                                                            Read_class,
+                                                            Remap_Target,
+                                                            RunCMD,
+                                                            SoftwareDetail,
+                                                            SoftwareRemap)
 from pathogen_identification.utilities.televir_bioinf import DustMasker
 from pathogen_identification.utilities.televir_parameters import RemapParams
 from pathogen_identification.utilities.utilities_general import (
-    plot_dotplot,
-    read_paf_coordinates,
-)
+    plot_dotplot, read_paf_coordinates)
 
 pd.options.mode.chained_assignment = None
 np.warnings.filterwarnings("ignore")
@@ -1642,12 +1638,15 @@ class Remapping:
     def extract_mapping_stats(self) -> MappingStats:
         """
         read stats as pd data frame, pass to class"""
-
-        stats_df = pd.read_csv(
-            self.read_map_sorted_bam_stats, sep="\t", header=None, index_col=0
-        ).rename(columns={0: "stat", 1: "value", 2: "comment"})
-        error_rate = stats_df.loc["error rate:", "value"]
-        quality_avg = stats_df.loc["average quality:", "value"]
+        try:
+            stats_df = pd.read_csv(
+                self.read_map_sorted_bam_stats, sep="\t", header=None, index_col=0
+            ).rename(columns={0: "stat", 1: "value", 2: "comment"})
+            error_rate = float(stats_df.loc["error rate:", "value"])
+            quality_avg = float(stats_df.loc["average quality:", "value"])
+        except pd.errors.EmptyDataError:
+            error_rate = 0.0
+            quality_avg = 0.0
 
         return MappingStats(error_rate, quality_avg)
 

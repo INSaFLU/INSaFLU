@@ -2022,6 +2022,7 @@ class ReportAggregate(models.Model):
     max_coverage = models.FloatField(blank=True, null=True)
     max_windows_covered = models.FloatField(blank=True, null=True)
 
+    shared_proportion_threshold = models.FloatField(blank=True, null=True)
     tree_plot_path = models.CharField(max_length=200, blank=True, null=True)
     tree_plot_exists = models.BooleanField(default=False)
 
@@ -2032,12 +2033,19 @@ class ReportAggregate(models.Model):
     overlap_pca_exists = models.BooleanField(default=False)
 
     reports_available = models.BooleanField(default=False)
+    sort_performed = models.BooleanField(default=False)
+
+    @property
+    def n_reports_analysed(self):
+        return sum(
+            group.count() for group in self.report_groups.values()
+        )
 
 
 class ReportGroup(models.Model):
 
     aggregator = models.ForeignKey(
-        ReportAggregate, blank=True, null=True, on_delete=models.CASCADE
+        ReportAggregate, blank=True, null=True, on_delete=models.CASCADE, related_name="report_groups"
     )
     name = models.CharField(max_length=100, blank=True, null=True)
     total_counts = models.IntegerField(blank=True, null=True)

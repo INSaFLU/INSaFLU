@@ -945,6 +945,7 @@ class FinalReportCompound:
             .distinct("run")
             .values_list("run", flat=True)
         )
+
         self.report_pk = report.pk
         self.found_in_str = self.get_identical_reports_ps(report)
         self.run_detail = self.get_report_rundetail(report)
@@ -1685,15 +1686,13 @@ class ReportSorter:
 
         return clades
     
-    def reports_aggregate_register(self, run_main: Optional[RunMain] = None):
+    def reports_aggregate_register(self, report_layout_params: LayoutParams, run_main: Optional[RunMain] = None):
         """
         register in table
         """
-
         sorted_reports = self.get_reports_compound()
         excluded_reports_exist = self.check_excluded_exist()
         empty_reports = self.get_reports_empty()
-
 
         if excluded_reports_exist and self.analysis_empty is False:
 
@@ -1726,6 +1725,7 @@ class ReportSorter:
                 max_mapped_proportion = self.max_mapped_prop,
                 max_coverage = self.max_coverage,
                 max_windows_covered = self.max_windows_covered,
+                shared_proportion_threshold = report_layout_params.shared_proportion_threshold,
                 tree_plot_path = self.tree_plot_path,
                 tree_plot_exists = self.tree_plot_exists,
                 overlap_heatmap_path = self.overlap_heatmap_path,
@@ -1733,6 +1733,7 @@ class ReportSorter:
                 overlap_pca_path = self.overlap_pca_path,
                 overlap_pca_exists = self.overlap_pca_exists,
                 reports_available = self.reports_available,
+                sort_performed = self.sort_performed,
             )
 
             report_aggregate.save()

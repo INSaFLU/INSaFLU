@@ -147,7 +147,7 @@ class Tree_Node:
             self.parameter_set.sample, final_reports, report_layout_params
         )
         report_sorter.sort_reports_save()
-        report_sorter.reports_aggregate_register()
+        report_sorter.reports_aggregate_register(report_layout_params)
 
     def receive_run_manager(self, run_manager: PathogenIdentification_TreeDeployment):
         run_manager.prefix = f"run_leaf_{self.node_index}"

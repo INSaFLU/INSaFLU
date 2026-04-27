@@ -489,7 +489,7 @@ class Input_Generator:
             sample, final_reports, report_layout_params
         )
         report_sorter.sort_reports_save()
-        report_sorter.reports_aggregate_register()
+        report_sorter.reports_aggregate_register(report_layout_params)
 
 
 class Command(BaseCommand):

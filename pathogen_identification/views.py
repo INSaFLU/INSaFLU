@@ -2848,7 +2848,7 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
 
         ########
         from pathogen_identification.models import ReportAggregate, ReportGroup
-
+        report_layout_params = TelevirParameters.get_report_layout_params(run_pk=run_pk)
         # get latest reportaggregate
         latest_report_aggregate = ReportAggregate.objects.filter(
             sample=sample_main, run=run_main_pipeline
@@ -2870,6 +2870,8 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
         )
 
         clade_heatmap_json = latest_report_aggregate.overlap_heatmap_path
+        excluded_reports_exist = False
+        empty_reports = []
 
         ############################ END REPORT SORTING
 
@@ -2897,7 +2899,7 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
             "crumbs": self.crumbs,
             "project": project_name,
             "run_name": run_name,
-            "sort_performed": report_sorter.sort_performed,
+            "sort_performed": latest_report_aggregate.sort_performed,
             "groups_count": len(sorted_reports),
             "min_shared_reads": round(
                 report_layout_params.shared_proportion_threshold * 100, 2
@@ -2920,7 +2922,7 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
             "run_remap": run_remap,
             "remap_available": remap_available,
             "reference_remap_main": reference_remap_main,
-            "number_validated": len(final_report),
+            "number_validated": latest_report_aggregate.n_reports_analysed,
             "project_index": project_pk,
             "sample_index": sample_pk,
             "run_index": run_pk,
@@ -2931,17 +2933,17 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
             "data_exists": True if not run_main_pipeline.data_deleted else False,
             "excluded_exist": excluded_reports_exist,
             "empty_reports": empty_reports,
-            "error_rate_available": report_sorter.error_rate_available,
-            "max_error_rate": report_sorter.max_error_rate,
-            "quality_avg_available": report_sorter.quality_avg_available,
-            "max_qualit y_avg": report_sorter.max_quality_avg,
-            "max_mapped_prop": report_sorter.max_mapped_prop,
-            "max_coverage": report_sorter.max_coverage,
-            "max_windows_covered": report_sorter.max_windows_covered,
+            "error_rate_available": latest_report_aggregate.error_rate_available,
+            "max_error_rate": latest_report_aggregate.max_error_rate,
+            "quality_avg_available": latest_report_aggregate.quality_avg_available,
+            "max_qualit y_avg": latest_report_aggregate.max_quality_avg,
+            "max_mapped_prop": latest_report_aggregate.max_mapped_proportion,
+            "max_coverage": latest_report_aggregate.max_coverage,
+            "max_windows_covered": latest_report_aggregate.max_windows_covered,
             "overlap_heatmap_available": False,
-            "overlap_heatmap_path": report_sorter.overlap_heatmap_path,
-            "overlap_pca_exists": report_sorter.overlap_pca_exists,
-            "overlap_pca_path": report_sorter.overlap_pca_path,
+            "overlap_heatmap_path": latest_report_aggregate.overlap_heatmap_path,
+            "overlap_pca_exists": latest_report_aggregate.overlap_pca_exists,
+            "overlap_pca_path": latest_report_aggregate.overlap_pca_path,
             "private_reads_available": private_reads_available,
             "no_mapping": run_main_pipeline.remap == "None",
             "nav_project": True,

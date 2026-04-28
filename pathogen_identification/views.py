@@ -2841,7 +2841,6 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
             latest_report_aggregate = ReportAggregateEmpty()
 
         clade_heatmap_json = json.dumps(latest_report_aggregate.overlap_heatmap_json)
-        print(clade_heatmap_json)
         excluded_reports_exist = False
         empty_reports = []
 

@@ -1739,6 +1739,7 @@ class ReportSorter:
                 tree_plot_path = self.tree_plot_path,
                 tree_plot_exists = self.tree_plot_exists,
                 overlap_heatmap_path = self.overlap_heatmap_path,
+                overlap_heatmap_json = clade_heatmap_json,
                 overlap_heatmap_exists = self.overlap_heatmap_exists,
                 overlap_pca_path = self.overlap_pca_path,
                 overlap_pca_exists = self.overlap_pca_exists,
@@ -1749,7 +1750,7 @@ class ReportSorter:
             report_aggregate.save()
         
             for group in sorted_reports:
-                report_group =ReportGroup.objects.create(
+                report_group = ReportGroup.objects.create(
                     aggregator=report_aggregate,
                     name=group.name,
                     total_counts=group.total_counts, 
@@ -1763,7 +1764,7 @@ class ReportSorter:
                     analysis_empty = group.analysis_empty,
                     has_multiple = group.has_multiple,
                     toggle = group.toggle,
-                    clade_heatmap_json = clade_heatmap_json,
+                    overlap_heatmap_json = group.js_heatmap_data,
                 )
                 report_group.save()
 
@@ -2003,7 +2004,7 @@ class ReportSorter:
             for col, value in row.items():
                 json_data.append({"x": ix, "y": col, "value": value})
 
-        json_data = json.dumps(json_data)
+        #json_data = json.dumps(json_data)
 
         return json_data
 

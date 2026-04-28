@@ -582,8 +582,6 @@
                                     <div class="custom-section">
                                         {% if final_report.js_heatmap_ready %}
                                         <a href="#" id="showButton" class="custom-link">Read Overlap</a>
-                                        {% elif final_report.heatmap_exists %}
-                                        <a href="#" id="showButton" class="custom-link">Read Overlap</a>
                                         {% else %}
                                         <a href="#" id="showButton" class="custom-link">Read Overlap</a>
                                         {% endif %}
@@ -599,17 +597,9 @@
                                    
                                 </div>
                                 <script>
-                                    createHeatmap('{{ final_report.js_heatmap_data|safe }}', "plot-{{final_report.name}}");
+                                    createHeatmap('{{ final_report.overlap_heatmap_json_str|safe }}', "plot-{{final_report.name}}");
                                 </script>
 
-                            </td>
-                        </tr>
-                        {% elif final_report.heatmap_exists %}
-                        <tr class="row-to-toggle" id="rowToToggle" style="display: none;">
-                            <td colspan="100%">
-                                <div id="plot" class="plot-container">
-                                    <img src={{final_report.heatmap_path}} alt="Image">
-                                </div>
                             </td>
                         </tr>
                         {% endif %}

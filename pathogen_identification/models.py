@@ -1,5 +1,6 @@
 import codecs
 import datetime
+import json
 import os
 from typing import Any, List, Optional
 
@@ -2028,6 +2029,7 @@ class ReportAggregate(models.Model):
     tree_plot_path = models.CharField(max_length=200, blank=True, null=True)
     tree_plot_exists = models.BooleanField(default=False)
 
+    overlap_heatmap_json = models.JSONField(blank=True, null=True)
     overlap_heatmap_path = models.CharField(max_length=200, blank=True, null=True)
     overlap_heatmap_exists = models.BooleanField(default=False)
 
@@ -2040,7 +2042,7 @@ class ReportAggregate(models.Model):
     @property
     def reports_analyzed(self):
         return [
-            report for group in self.runs.all() for report in group.reports.all()
+            report for group in self.report_groups.all() for report in group.reports.all()
         ]
 
 
@@ -2072,12 +2074,22 @@ class ReportGroup(models.Model):
     has_multiple = models.BooleanField(default=False)
     toggle = models.CharField(max_length=100, blank=True, null=True)
 
-    clade_heatmap_json = models.CharField(max_length=2000, blank=True, null=True)
+    overlap_heatmap_json = models.JSONField(blank=True, null=True)
     reports = models.ManyToManyField(FinalReport, blank=True, related_name="aggregated_reports")
+
+    @property
+    def js_heatmap_ready(self):
+        return self.overlap_heatmap_json is not None
 
     @property
     def sort_performed(self):
         return self.analysis_empty == False
+
+    @property
+    def overlap_heatmap_json_str(self):
+        if self.overlap_heatmap_json is None:
+            return None
+        return json.dumps(self.overlap_heatmap_json)
 
 class GroupReportData(models.Model):
     report = models.ForeignKey(FinalReport, blank=True, null=True, on_delete=models.CASCADE)

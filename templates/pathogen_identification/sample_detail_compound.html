@@ -419,7 +419,7 @@
                                    
                                 </div>
                                 <script>
-                                    createHeatmap('{{ final_report.js_heatmap_data|safe }}', "plot-{{final_report.name}}");
+                                    createHeatmap('{{ final_report.overlap_heatmap_json_str|safe }}', "plot-{{final_report.name}}");
                                 </script>
 
                             </td>

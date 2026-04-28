@@ -1,3 +1,4 @@
+import json
 import logging
 import mimetypes
 import ntpath
@@ -51,6 +52,7 @@ from pathogen_identification.models import (ContigClassification, FinalReport,
                                             ReferenceMap_Main, ReferencePanel,
                                             ReferenceSourceFile,
                                             ReferenceSourceFileMap,
+                                            ReportAggregate, ReportGroup,
                                             RunAssembly, RunDetail, RunMain,
                                             RunRemapMain, Sample, SoftwareTree,
                                             TelefluMapping, TeleFluProject,
@@ -72,19 +74,18 @@ from pathogen_identification.utilities.reference_utils import (
     filter_reference_maps_select, generate_insaflu_reference)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
 ##########################################
-########################################## MAKE THESE DISAPPEAR - MORE TABLES
-########################################## FIND OR CREATE - LINK TO SAMPLES, RUNS.
+########################################## 
+########################################## 
 from pathogen_identification.utilities.televir_parameters import \
     TelevirParameters
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
 from pathogen_identification.utilities.utilities_general import (
     get_services_dir, infer_run_media_dir, simplify_name)
-from pathogen_identification.utilities.utilities_pipeline import (  # ### KEEP THIS
+from pathogen_identification.utilities.utilities_pipeline import (
     Parameter_DB_Utility, SoftwareTreeUtils)
-from pathogen_identification.utilities.utilities_views import (  # ############################################
-    EmptyRemapMain, RawReferenceUtils, ReportList, ReportSorter,
-    RunMainWrapper, SampleReadsRetrieve, final_report_best_cov_by_accid,
-    recover_assembly_contigs)
+from pathogen_identification.utilities.utilities_views import (
+    EmptyRemapMain, RawReferenceUtils, ReportList, RunMainWrapper,
+    SampleReadsRetrieve, recover_assembly_contigs)
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
 from utils.software import Software
@@ -2817,37 +2818,6 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
         )
 
         ########
-        #final_report = FinalReport.objects.filter(
-        #    sample=sample_main, run=run_main_pipeline
-        #).order_by("-coverage")
-        ##
-        #report_layout_params = TelevirParameters.get_report_layout_params(run_pk=run_pk)
-        #report_sorter = ReportSorter(sample_main, final_report, report_layout_params)
-        #sorted_reports = report_sorter.get_reports()
-        #excluded_reports_exist = report_sorter.check_excluded_exist()
-        #empty_reports = report_sorter.get_reports_empty()
-
-
-        #if excluded_reports_exist and report_sorter.analysis_empty is False:
-        #    if len(empty_reports.group_list) > 0:
-        #        sorted_reports.append(empty_reports)
-#
-        # check has control_flag present
-        # has_controlled_flag = False if sample_main.is_control else True
-        #########
-        #clade_heatmap_json = report_sorter.clade_heatmap_json(
-        #    to_keep=[report_group.name for report_group in sorted_reports]
-        #)
-        
-        #########
-        #private_reads_available = False
-        #for report_group in sorted_reports:
-        #    if report_group.reports_have_private_reads():
-        #        private_reads_available = True
-        #        break
-
-        ########
-        from pathogen_identification.models import ReportAggregate, ReportGroup
         report_layout_params = TelevirParameters.get_report_layout_params(run_pk=run_pk)
         # get latest reportaggregate
         latest_report_aggregate = ReportAggregate.objects.filter(
@@ -2867,7 +2837,8 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
             report_group.private_reads_available for report_group in report_groups
         )
 
-        clade_heatmap_json = latest_report_aggregate.overlap_heatmap_path
+        clade_heatmap_json = json.dumps(latest_report_aggregate.overlap_heatmap_json)
+
         excluded_reports_exist = False
         empty_reports = []
 
@@ -3054,7 +3025,6 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
 
         ######################
         ########
-        from pathogen_identification.models import ReportAggregate, ReportGroup
 
         # get latest reportaggregate
         latest_report_aggregate = ReportAggregate.objects.filter(
@@ -3074,38 +3044,7 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
             report_group.private_reads_available for report_group in report_groups
         )
 
-        clade_heatmap_json = latest_report_aggregate.overlap_heatmap_path
-        excluded_reports_exist = False
-        empty_reports = []     
-
-        ################################################
-        #final_report = FinalReport.objects.filter(
-        #    sample=sample, run__project=project_main
-        #).order_by("-coverage")
-        #unique_reports = final_report_best_cov_by_accid(final_report)
-
-        #
-        #report_layout_params = TelevirParameters.get_report_layout_params(
-        #    project_pk=project_main.pk
-        #)
-
-        #report_sorter = ReportSorter(sample, unique_reports, report_layout_params)
-        #sort_tree_plot_path = None
-        #if report_sorter.overlap_manager is not None:
-        #    sort_tree_plot_path = report_sorter.overlap_manager.tree_plot_path_render
-
-        #sorted_reports = report_sorter.get_reports_compound()
-        #sort_performed = True if report_sorter.analysis_empty is False else False
-        #private_reads_available = False
-        #for report_group in sorted_reports:
-        #    if report_group.reports_have_private_reads():
-        #        private_reads_available = True
-        #        break
-        #clade_heatmap_json = report_sorter.clade_heatmap_json(
-        #    to_keep=[report_group.name for report_group in sorted_reports]
-        #)
-
-        ######### end report sorting
+        clade_heatmap_json = json.dumps(latest_report_aggregate.overlap_heatmap_json) if latest_report_aggregate.overlap_heatmap_path else None
 
         #### graph
         graph_progress = TreeProgressGraph(sample)

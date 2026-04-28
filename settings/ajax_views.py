@@ -1329,12 +1329,10 @@ def turn_on_off_software(request):
                                     sample,
                                 )
 
-                                data["other_kills"] += [filter.pk]
                     print("televir_in any way", televir_in_any_way)
                     ### SET TREE NODES HERE
                     if televir_in_any_way:
 
-                        print("televir way", televir_project, televir_project_sample)
                         software_utils = SoftwareTreeUtils(request.user, televir_project, televir_project_sample)
                         software_utils.set_technology(software.technology.name)
                         software_utils.deactivate_all_nodes()

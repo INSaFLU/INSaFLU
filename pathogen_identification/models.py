@@ -2012,6 +2012,8 @@ class ReportAggregate(models.Model):
         PIProject_Sample, blank=True, null=True, on_delete=models.CASCADE
     )
     run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)
+    runs = models.ManyToManyField(RunMain, blank=True, related_name="aggregated_runs")
+
     date_created = models.DateTimeField(auto_now_add=True,  db_index=True, null = True)
 
     max_error_rate = models.FloatField(blank=True, null=True)
@@ -2036,9 +2038,16 @@ class ReportAggregate(models.Model):
     sort_performed = models.BooleanField(default=False)
 
     @property
-    def n_reports_analysed(self):
+    def reports_analyzed(self):
+        return [
+            report for group in self.report_groups.all() for report in group.reports.all()
+        ]
+
+
+    @property
+    def n_reports_analyzed(self):
         return sum(
-            group.count() for group in self.report_groups.values()
+            group.reports.all().count() for group in self.report_groups.all()
         )
 
 

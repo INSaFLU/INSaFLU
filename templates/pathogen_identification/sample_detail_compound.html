@@ -367,7 +367,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                    {% for final_report in report_list %}
+                    {% for final_report, group_reports in report_list.items %}
                         <tbody class="group-wrapper">
                         <tr>
                             <td colspan="100%">
@@ -433,7 +433,7 @@
                             </td>
                         </tr>
                         {% endif %}
-                        {% for value in final_report.group_list %}
+                        {% for value in group_reports %}
                         <tr class="parent {{value.row_class_name}}"  style="display: {{value.display}}" id="row_{{value.accid}}" group-name="{{final_report.name}}" first="{{value.first_in_group}}" accid>
                             <td data-title="Description" style="text-align: left;">
                                 {% if value.first_in_group %}

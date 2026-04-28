@@ -2858,15 +2858,13 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
             aggregator=latest_report_aggregate
         )
 
-        sorted_reports = [
-            (
-                report_group,
-                ReportList(list(report_group.reports)).set_private_reads(report_group).sort_group_by_private_reads()
-            ) for report_group in report_groups
-        ]
+        sorted_reports = {
+            report_group: ReportList(list(report_group.reports.all())).set_private_reads(report_group).sort_group_by_private_reads()
+            for report_group in report_groups
+        }
 
         private_reads_available = any(
-            report_groups.values_list("private_reads_available", flat=True)
+            report_group.private_reads_available for report_group in report_groups
         )
 
         clade_heatmap_json = latest_report_aggregate.overlap_heatmap_path
@@ -2922,7 +2920,7 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
             "run_remap": run_remap,
             "remap_available": remap_available,
             "reference_remap_main": reference_remap_main,
-            "number_validated": latest_report_aggregate.n_reports_analysed,
+            "number_validated": latest_report_aggregate.n_reports_analyzed,
             "project_index": project_pk,
             "sample_index": sample_pk,
             "run_index": run_pk,
@@ -3054,35 +3052,58 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         sample_name = sample.name
         has_controlled_flag = False if sample.is_control else True
 
-        #
+        ######################
+        ########
+        from pathogen_identification.models import ReportAggregate, ReportGroup
 
-        final_report = FinalReport.objects.filter(
-            sample=sample, run__project=project_main
-        ).order_by("-coverage")
+        # get latest reportaggregate
+        latest_report_aggregate = ReportAggregate.objects.filter(
+            sample=sample, run=None
+        ).order_by("-date_created").first()
 
-        unique_reports = final_report_best_cov_by_accid(final_report)
-
-        #
-        report_layout_params = TelevirParameters.get_report_layout_params(
-            project_pk=project_main.pk
+        report_groups = ReportGroup.objects.filter(
+            aggregator=latest_report_aggregate
         )
 
-        report_sorter = ReportSorter(sample, unique_reports, report_layout_params)
-        sort_tree_plot_path = None
-        if report_sorter.overlap_manager is not None:
-            sort_tree_plot_path = report_sorter.overlap_manager.tree_plot_path_render
+        sorted_reports = {
+            report_group: ReportList(list(report_group.reports.all())).set_private_reads(report_group).sort_group_by_private_reads()
+            for report_group in report_groups
+        }
 
-        sorted_reports = report_sorter.get_reports_compound()
-        sort_performed = True if report_sorter.analysis_empty is False else False
-        private_reads_available = False
-        for report_group in sorted_reports:
-            if report_group.reports_have_private_reads():
-                private_reads_available = True
-                break
-
-        clade_heatmap_json = report_sorter.clade_heatmap_json(
-            to_keep=[report_group.name for report_group in sorted_reports]
+        private_reads_available = any(
+            report_group.private_reads_available for report_group in report_groups
         )
+
+        clade_heatmap_json = latest_report_aggregate.overlap_heatmap_path
+        excluded_reports_exist = False
+        empty_reports = []     
+
+        ################################################
+        #final_report = FinalReport.objects.filter(
+        #    sample=sample, run__project=project_main
+        #).order_by("-coverage")
+        #unique_reports = final_report_best_cov_by_accid(final_report)
+
+        #
+        #report_layout_params = TelevirParameters.get_report_layout_params(
+        #    project_pk=project_main.pk
+        #)
+
+        #report_sorter = ReportSorter(sample, unique_reports, report_layout_params)
+        #sort_tree_plot_path = None
+        #if report_sorter.overlap_manager is not None:
+        #    sort_tree_plot_path = report_sorter.overlap_manager.tree_plot_path_render
+
+        #sorted_reports = report_sorter.get_reports_compound()
+        #sort_performed = True if report_sorter.analysis_empty is False else False
+        #private_reads_available = False
+        #for report_group in sorted_reports:
+        #    if report_group.reports_have_private_reads():
+        #        private_reads_available = True
+        #        break
+        #clade_heatmap_json = report_sorter.clade_heatmap_json(
+        #    to_keep=[report_group.name for report_group in sorted_reports]
+        #)
 
         ######### end report sorting
 
@@ -3091,13 +3112,9 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         # graph_progress.generate_graph()
         graph_json, graph_id = graph_progress.get_graph_data()
         ####
-        runs = set([fr.run.pk for fr in final_report])
-        runs_pipeline = RunMain.objects.filter(
-            pk__in=runs, run_type=RunMain.RUN_TYPE_PIPELINE
-        )
-        runs_mapping = RunMain.objects.filter(pk__in=runs).exclude(
-            run_type=RunMain.RUN_TYPE_PIPELINE
-        )
+        runs = latest_report_aggregate.runs_aggregated.all()
+        runs_pipeline = runs.filter(run_type=RunMain.RUN_TYPE_PIPELINE)
+        runs_mapping = runs.exclude(run_type=RunMain.RUN_TYPE_PIPELINE)
         runs_number = len(runs)
         runs_exist = runs_number > 0
 
@@ -3106,17 +3123,17 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
             "project": project_name,
             "nav_project": True,
             "graph_json": graph_json,
-            "sort_performed": sort_performed,
+            "sort_performed": latest_report_aggregate.sort_performed,
             "groups_count": len(sorted_reports),
             "min_shared_reads": round(
-                report_layout_params.shared_proportion_threshold * 100, 2
+                latest_report_aggregate.shared_proportion_threshold * 100, 2
             ),
             "clade_heatmap_json_exists": False if clade_heatmap_json is None else True,
             "clade_heatmap_json": clade_heatmap_json,
             "graph_id": graph_id,
             "sample": sample_name,
             "tree_plot_exists": False,
-            "tree_plot_path": sort_tree_plot_path,
+            "tree_plot_path": latest_report_aggregate.tree_plot_path,
             "project_index": project_pk,
             "sample_index": sample_pk,
             "report_list": sorted_reports,
@@ -3126,15 +3143,15 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
             "graph_height": runs_number * 22 + 100,
             "owner": True,
             "in_control": has_controlled_flag,
-            "error_rate_available": report_sorter.error_rate_available,
-            "max_error_rate": report_sorter.max_error_rate,
-            "quality_avg_available": report_sorter.quality_avg_available,
-            "max_quality_avg": report_sorter.max_quality_avg,
-            "max_mapped_prop": report_sorter.max_mapped_prop,
-            "max_coverage": report_sorter.max_coverage,
-            "max_windows_covered": report_sorter.max_windows_covered,
+            "error_rate_available": latest_report_aggregate.error_rate_available,
+            "max_error_rate": latest_report_aggregate.max_error_rate,
+            "quality_avg_available": latest_report_aggregate.quality_avg_available,
+            "max_quality_avg": latest_report_aggregate.max_quality_avg,
+            "max_mapped_prop": latest_report_aggregate.max_mapped_proportion,
+            "max_coverage": latest_report_aggregate.max_coverage,
+            "max_windows_covered": latest_report_aggregate.max_windows_covered,
             "overlap_heatmap_available": False,  # report_sorter.overlap_heatmap_exists,
-            "overlap_heatmap_path": report_sorter.overlap_heatmap_path,
+            "overlap_heatmap_path": latest_report_aggregate.overlap_heatmap_path,
             "private_reads_available": private_reads_available,
         }
 

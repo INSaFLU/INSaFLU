@@ -1229,6 +1229,16 @@ class ReportList:
     def __init__(self, reports: List[FinalReport]):
         self.reports = [FinalReportWrapper(report) for report in reports]
 
+    def __iter__(self):
+        return iter(self.reports)
+
+    def __len__(self):
+        return len(self.reports)
+    
+    def __getitem__(self, index):
+        return self.reports[index]
+
+
     def set_private_reads(self, report_group: ReportGroup):
         """
         Set private reads for each report.
@@ -1770,6 +1780,8 @@ class ReportSorter:
 
                     for run in report.found_in:
                         report_data.found_in.add(run)
+                        report_aggregate.runs.add(run)
+
 
     def sort_reports_save(self, force=False):
         """

@@ -84,8 +84,8 @@ from pathogen_identification.utilities.utilities_general import (
 from pathogen_identification.utilities.utilities_pipeline import (
     Parameter_DB_Utility, SoftwareTreeUtils)
 from pathogen_identification.utilities.utilities_views import (
-    EmptyRemapMain, RawReferenceUtils, ReportList, RunMainWrapper,
-    SampleReadsRetrieve, recover_assembly_contigs)
+    EmptyRemapMain, RawReferenceUtils, ReportAggregateEmpty, ReportList,
+    RunMainWrapper, SampleReadsRetrieve, recover_assembly_contigs)
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
 from utils.software import Software
@@ -2837,8 +2837,11 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
             report_group.private_reads_available for report_group in report_groups
         )
 
-        clade_heatmap_json = json.dumps(latest_report_aggregate.overlap_heatmap_json)
+        if latest_report_aggregate is None:
+            latest_report_aggregate = ReportAggregateEmpty()
 
+        clade_heatmap_json = json.dumps(latest_report_aggregate.overlap_heatmap_json)
+        print(clade_heatmap_json)
         excluded_reports_exist = False
         empty_reports = []
 
@@ -3043,6 +3046,9 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         private_reads_available = any(
             report_group.private_reads_available for report_group in report_groups
         )
+
+        if latest_report_aggregate is None:
+            latest_report_aggregate = ReportAggregateEmpty()    
 
         clade_heatmap_json = json.dumps(latest_report_aggregate.overlap_heatmap_json) if latest_report_aggregate.overlap_heatmap_path else None
 

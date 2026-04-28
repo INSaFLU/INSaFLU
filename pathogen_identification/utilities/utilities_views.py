@@ -1266,7 +1266,42 @@ class ReportList:
         self.reports[0].display = "table-row"
 
         return self
-    
+
+class EmptyRuns:
+
+    def all(self):
+        return self
+
+    def filter(self, *args, **kwargs):
+        return []
+
+    def exclude(self, *args, **kwargs):
+        return []
+
+    def __len__(self):
+        return 0
+
+class ReportAggregateEmpty:
+
+    def __init__(self):
+        self.error_rate_available = False
+        self.max_error_rate = 0
+        self.quality_avg_available = 0
+        self.max_quality_avg = 0
+        self.max_mapped_proportion = 0
+        self.max_coverage = 0
+        self.max_windows_covered = 0
+        self.overlap_heatmap_path = None
+        self.overlap_heatmap_json = None
+        self.runs= EmptyRuns()
+        self.sort_performed = False
+        self.shared_proportion_threshold= 0
+        self.clade_heatmap_json = None
+        self.tree_plot_path= None
+        self.overlap_pca_exists = False
+        self.overlap_pca_path = None
+
+
 
 class ReportSorter:
     analysis_filename = "overlap_analysis_{}.tsv"

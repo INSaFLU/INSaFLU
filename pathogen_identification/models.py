@@ -2040,7 +2040,7 @@ class ReportAggregate(models.Model):
     @property
     def reports_analyzed(self):
         return [
-            report for group in self.report_groups.all() for report in group.reports.all()
+            report for group in self.runs.all() for report in group.reports.all()
         ]
 
 

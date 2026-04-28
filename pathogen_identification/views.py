@@ -3112,7 +3112,7 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         # graph_progress.generate_graph()
         graph_json, graph_id = graph_progress.get_graph_data()
         ####
-        runs = latest_report_aggregate.runs_aggregated.all()
+        runs = latest_report_aggregate.runs.all()
         runs_pipeline = runs.filter(run_type=RunMain.RUN_TYPE_PIPELINE)
         runs_mapping = runs.exclude(run_type=RunMain.RUN_TYPE_PIPELINE)
         runs_number = len(runs)

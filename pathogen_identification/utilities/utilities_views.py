@@ -1752,9 +1752,6 @@ class ReportSorter:
             to_keep=[report_group.name for report_group in sorted_reports]
         )
 
-        print("### overlap_heatmap_json")
-        print(clade_heatmap_json)
-
         #########
         private_reads_available = False
         for group in sorted_reports:

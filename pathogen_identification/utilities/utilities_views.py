@@ -1747,6 +1747,7 @@ class ReportSorter:
         # check has control_flag present
         # has_controlled_flag = False if sample_main.is_control else True
         #########
+        self.build_tree()
         clade_heatmap_json = self.clade_heatmap_json(
             to_keep=[report_group.name for report_group in sorted_reports]
         )

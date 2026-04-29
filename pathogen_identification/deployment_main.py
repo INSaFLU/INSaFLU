@@ -498,10 +498,7 @@ class Run_Main_from_Leaf:
                     self.container.run_engine.remap_params.manual_references_include
                     is True
                 ):
-                    self.container.run_engine.metadata_tool.get_manual_references(
-                        self.sample,
-                        max_accids=self.container.run_engine.remap_params.max_accids,
-                    )
+                    self.container.run_engine.metadata_tool.get_manual_references(self.sample)
 
         except Exception as e:
             print(e)

@@ -4,7 +4,6 @@ from typing import Dict, List, Optional
 
 import pandas as pd
 
-from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.models import (PIProject_Sample, RawReference,
                                             RawReferenceCompoundModel,
                                             ReferenceSource,
@@ -109,7 +108,7 @@ class RunMetadataHandler:
             [[0, 0, 0]], columns=["input", "output", "removed"]
         )
 
-    def get_manual_references(self, sample: PIProject_Sample, max_accids: int = 15):
+    def get_manual_references(self, sample: PIProject_Sample):
         """
         Get manual references for a given sample. update map request with references.
         """
@@ -369,9 +368,11 @@ class RunMetadataHandler:
             AssemblyStore
 
         assembly_store = AssemblyStore(ConstantsSettings.local_assembly_store)
-        assemblies = assembly_store.match_taxid_to_assembly(df)
-        assembly_store.register_assemblies(assemblies) 
+        assemblies = assembly_store.match_taxid_to_assembly(df[df["has_refs"] == False])
+        assembly_store.register_assemblies(assemblies, cache = True)
         df = self.check_taxids_not_in_db(df)
+        df = df[df["has_refs"] == True]
+        df.drop(columns=["has_refs"], inplace=True)
 
         return df
 
@@ -415,10 +416,7 @@ class RunMetadataHandler:
         if sift is true, filter results to only include self.sift_query.
         """
 
-        print("Collecting metadata for results")
         df = self.clean_report(df)
-        print("clean df")
-        print(df.head())
 
         df = self.merge_report_to_metadata_taxid(df)
 
@@ -426,11 +424,8 @@ class RunMetadataHandler:
 
         df = self.check_taxids_not_in_db(df)
 
-        _ = self.retrieve_taxids_ncbi(df[df["has_refs"] == False])
-        df = self.check_taxids_not_in_db(df)
+        df = self.retrieve_taxids_ncbi(df)
 
-        df = df[df["has_refs"] == True]
-        df.drop(columns=["has_refs"], inplace=True)
 
         self.accid_register(df)
 

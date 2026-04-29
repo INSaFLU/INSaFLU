@@ -13,6 +13,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.temp import NamedTemporaryFile
 from django.db.models import Q
+from django.db import transaction
 
 from constants.constants import Constants, FileExtensions, FileType, TypePath
 from managing_files.models import ProcessControler
@@ -79,32 +80,35 @@ class AssemblyStore:
 
         self.ncbi = NCBITools()
 
-    def register_assembly(self, local_assembly: LocalAssembly):
+    def register_assembly(self, local_assembly: LocalAssembly, cache = False):
         """
         Register a local assembly by adding it to the database.
         """
-
+        
         try: 
-            taxid = ReferenceTaxid.objects.get_or_create(
-                taxid=str(local_assembly.taxid)
-            )
+            with transaction.atomic():
 
-            reference_source_file = ReferenceSourceFile.objects.get_or_create(
-                file = local_assembly.file_path,
-                owner = None, 
-                description = local_assembly.description, 
-            )
+                taxid = ReferenceTaxid.objects.get_or_create(
+                    taxid=str(local_assembly.taxid)
+                )
 
-            reference_source = ReferenceSource.objects.get_or_create(
-                taxid = taxid,
-                accid = str(local_assembly.accession),
-                description = local_assembly.description,
-            )
+                reference_source_file = ReferenceSourceFile.objects.get_or_create(
+                    file = local_assembly.file_path,
+                    owner = None, 
+                    description = local_assembly.description,
+                    is_cache = cache
+                )
 
-            source_map = ReferenceSourceFileMap.objects.get_or_create(
-                reference_source = reference_source, 
-                reference_source_file = reference_source_file
-            )
+                reference_source = ReferenceSource.objects.get_or_create(
+                    taxid = taxid,
+                    accid = str(local_assembly.accession),
+                    description = local_assembly.description,
+                )
+
+                source_map = ReferenceSourceFileMap.objects.get_or_create(
+                    reference_source = reference_source, 
+                    reference_source_file = reference_source_file
+                )
 
             self.logger.info(f"Registered assembly for taxid {local_assembly.taxid} and accession {local_assembly.accession}")
 
@@ -113,7 +117,7 @@ class AssemblyStore:
 
 
     def get_assembly_path(self, taxid: str) -> str:
-        #return os.path.join(self.store_path, taxid)
+
         return str(self.store_path / taxid)
 
     def retrieve_local_assembly(self, passport: Passport) -> Optional[LocalAssembly]:
@@ -231,9 +235,9 @@ class AssemblyStore:
 
         return assemblies_retrieved
     
-    def register_assemblies(self, assemblies: List[LocalAssembly]):
+    def register_assemblies(self, assemblies: List[LocalAssembly], cache = False):
         for assembly in assemblies:
-            self.register_assembly(assembly)
+            self.register_assembly(assembly, cache = cache)
 
 ####################################################################################
 ###################                                    #############################

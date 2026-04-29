@@ -1910,7 +1910,7 @@ class ReferenceFileManagement(
 
         return (
             ReferenceSourceFile.objects.filter(Q(owner=None) | Q(owner__id=user_pk))
-            .exclude(is_deleted=True)
+            .exclude(is_deleted=True, cache=True)
             .order_by("-creation_date")
         )
 
@@ -1920,7 +1920,7 @@ class ReferenceFileManagement(
 
         files = (
             ReferenceSourceFile.objects.filter(Q(owner=None) | Q(owner__id=user.pk))
-            .exclude(is_deleted=True)
+            .exclude(is_deleted=True, cache=True)
             .order_by("-owner", "-creation_date")
         )
 

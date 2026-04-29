@@ -211,21 +211,21 @@ class SoftwareTreeNode(models.Model):
     )  ### if it is a software, a parameter or a parameter value
 
     available = models.BooleanField(default=False)  ### if this node is available to run with the current sample and project
-
-
+  
     class Meta:
         ordering = ["name"]
 
     @property
     def is_leaf(self):
         return self.node_place == SoftwareTreeNode.LEAF_node
-
+    
     def get_descendants(self, include_self: bool = True):
         """return all descendants of this node"""
 
         nodes = SoftwareTreeNode.objects.filter(
             software_tree=self.software_tree
         ).values_list("id", flat=True)
+        
         edges = [
             (node.parent, node.id)
             for node in SoftwareTreeNode.objects.filter(
@@ -1600,6 +1600,7 @@ class ReferenceSourceFile(models.Model):
     description = models.CharField(max_length=300, blank=True, null=True)
     is_deleted = models.BooleanField(default=False)
     creation_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    is_cache = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.file}"

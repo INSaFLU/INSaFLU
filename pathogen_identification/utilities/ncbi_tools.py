@@ -213,17 +213,32 @@ def get_representative_assembly(taxid, include_term=None, exclude_term=None) -> 
 
 @retry_with_backoff(max_retries=3, initial_delay=1)
 def retrieve_reference_sequence(nucleotide_id, output_path, gzipped=True) -> bool:
+    extention = ".fasta"
+
     try:
         handle = Entrez.efetch(db="nucleotide", id=nucleotide_id, rettype="fasta", retmode="text")
         fasta_data = handle.read()
         handle.close()
+        from utils.utils import Utils
+        utils = Utils()        
+        
+
         if gzipped:
+            extention += '.gz'
+            tmp_path = utils.get_temp_file(f"ncbi_seq_{nucleotide_id}_", extention)
             import gzip
-            with gzip.open(output_path, 'wt') as f:
+            with gzip.open(tmp_path, 'wt') as f:
                 f.write(fasta_data)
         else:
-            with open(output_path, 'w') as f:
+            tmp_path = utils.get_temp_file(f"ncbi_seq_{nucleotide_id}_", extention)
+            with open(tmp_path, 'w') as f:
                 f.write(fasta_data)
+
+        if os.path.exists(tmp_path):
+            raise FileExistsError(f"Output file {tmp_path} already exists.")
+
+        utils.move_file(tmp_path, output_path)
+
         return True
     except Exception as e:
         print(f"An error occurred while downloading sequence: {e}")
@@ -231,6 +246,14 @@ def retrieve_reference_sequence(nucleotide_id, output_path, gzipped=True) -> boo
 
 @retry_with_backoff(max_retries=3, initial_delay=1)
 def retrieve_assembly_sequence(assembly_id, output_path) -> bool:
+    from utils.utils import Utils
+    utils = Utils()
+    extention = ".fasta"
+    if os.path.splitext(output_path)[1] == '.gz':
+        extention += '.gz'
+    tmp_path = utils.get_temp_file(f"ncbi_assembly_{assembly_id}_", extention)
+
+    
     try:
         handle = Entrez.esummary(db="assembly", id=assembly_id, report="full")
         summary = Entrez.read(handle)
@@ -242,9 +265,12 @@ def retrieve_assembly_sequence(assembly_id, output_path) -> bool:
             return False
         asm_name = ftp_path.split('/')[-1]
         fasta_url = f"{ftp_path}/{asm_name}_genomic.fna.gz"
-        result = subprocess.run(['wget', '-O', output_path, fasta_url], capture_output=True, check=False)
+        result = subprocess.run(['wget', '-O', tmp_path, fasta_url], capture_output=True, check=False)
         if result.returncode != 0:
             raise RuntimeError(f"Failed to download file: {result.stderr.decode()}")
+        
+        utils.move_file(tmp_path, output_path)
+
         return True
     except Exception as e:
         print(f"An error occurred while downloading assembly: {e}")

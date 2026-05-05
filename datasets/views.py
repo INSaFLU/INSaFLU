@@ -1388,7 +1388,7 @@ class UpdateMetadataDataset(
             ),
             (
                 "Upload metadata",
-                reverse("upload-metadata", kwargs={"pk": self.kwargs.get("pk")}),
+                reverse("dataset-update-metadata", kwargs={"pk": self.kwargs.get("pk")}),
             ),
         ]
 

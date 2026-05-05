@@ -4227,7 +4227,7 @@ class DefaultParameters(object):
 
         parameter = Parameter()
         parameter.name = "--confidence"
-        parameter.parameter = "0.5"
+        parameter.parameter = "0.2"
         parameter.type_data = Parameter.PARAMETER_float
         parameter.software = software
         parameter.sample = sample
@@ -4235,9 +4235,9 @@ class DefaultParameters(object):
         parameter.can_change = True if PI_ConstantsSettings.METAGENOMICS else False
         parameter.is_to_run = True  ### by default it's True
         parameter.sequence_out = 2
-        parameter.range_available = "[0.4:1.0]"
+        parameter.range_available = "[0.0:1.0]"
         parameter.range_max = "1.0"
-        parameter.range_min = "0.4"
+        parameter.range_min = "0.0"
         parameter.description = "confidence threshold for reporting a taxon"
         vect_parameters.append(parameter)
 

@@ -3375,7 +3375,7 @@ class ProjectsSettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super(ProjectsSettingsView, self).get_context_data(**kwargs)
-        project = TelevirProject.objects.get(pk=self.kwargs["pk"])
+        project = Project.objects.get(pk=self.kwargs["pk"])
 
         ### can't see this project
         context["nav_project"] = True

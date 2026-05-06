@@ -1301,6 +1301,9 @@ class ReportAggregateEmpty:
         self.overlap_pca_exists = False
         self.overlap_pca_path = None
 
+    @property
+    def n_reports_analyzed(self):
+        return 0
 
 
 class ReportSorter:

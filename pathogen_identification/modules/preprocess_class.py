@@ -219,7 +219,10 @@ class Preprocess:
             exo_r1, exo_r2, run_pk = self.retrieve_processed_reads()
             shutil.copy(exo_r1, self.preprocess_name_fastq_gz)
             if self.preprocess_type == CS.PAIR_END:
-                shutil.copy(exo_r2, self.preprocess_name_r2_fastq_gz)
+                if not os.path.exists(self.preprocess_name_r2_fastq_gz) or not self.check_gz_file_not_empty(
+                    self.preprocess_name_r2_fastq_gz
+                ):
+                    shutil.copy(exo_r2, self.preprocess_name_r2_fastq_gz)
 
             from pathogen_identification.models import TelevirRunQC
 

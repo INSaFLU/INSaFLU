@@ -2004,7 +2004,7 @@ class ReportSorter:
 
     def prep_heatmap_data_within_clade(
         self, report_group: FinalReportGroup, distance_matrix: pd.DataFrame
-    ):
+    ) -> List[Dict[str, Union[str, float]]]:
         """
         prepare heatmap data to be used to create javascript heatmap"""
 
@@ -2020,7 +2020,9 @@ class ReportSorter:
 
         return json_data
 
-    def prep_heatmap_data(self, distance_matrix: pd.DataFrame):
+    def prep_heatmap_data(self, distance_matrix: pd.DataFrame) -> List[Dict[str, Union[str, float]]]:
+        """
+        """
 
         distance_matrix = distance_matrix.fillna(0)
 

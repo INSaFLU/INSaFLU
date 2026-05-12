@@ -28,7 +28,7 @@ from pathogen_identification.constants_settings import \
     ConstantsSettings as PICS
 from pathogen_identification.data_classes import IntermediateFiles
 from settings.constants_settings import ConstantsSettings as CS
-
+from constants.constants_taxonomy import TaxonConstants
 # Create your models here.
 
 no_space_validator = RegexValidator(
@@ -37,6 +37,21 @@ no_space_validator = RegexValidator(
     code="invalid_username",
     inverse_match=True,
 )
+
+
+class Taxon(models.Model):
+    taxid = models.IntegerField(unique=True, db_index=True)
+    name = models.CharField(max_length=255, db_index=True)
+    rank = models.CharField(max_length=50, db_index=True, default=TaxonConstants.NO_RANK)
+    rank_raw = models.CharField(max_length=50, db_index=True, default=TaxonConstants.NO_RANK)
+
+    parent = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="children"
+    )
 
 
 class Projects(models.Model):
@@ -1584,6 +1599,9 @@ class TelefluMappedSample(models.Model):
     teleflu_mapping = models.ForeignKey(
         TelefluMapping, on_delete=models.CASCADE, blank=True, null=True
     )
+
+
+
 
 
 class ReferenceTaxid(models.Model):

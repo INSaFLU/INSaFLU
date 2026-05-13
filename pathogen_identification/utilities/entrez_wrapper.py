@@ -2,7 +2,8 @@ import http.client
 import os
 import urllib.error
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Dict, Tuple
+import json
 
 import pandas as pd
 from Bio import Entrez
@@ -175,6 +176,86 @@ class EntrezFetchAccessionDescription(EntrezQuery):
         return df
 
 
+class EntrezFetchTaxidLineage(EntrezQuery):
+    """Fetch complete taxonomic lineage for a given taxid."""
+    name: str = "fetch_taxid_lineage"
+    db = "taxonomy"
+    output_columns = ["taxid", "rank", "name"]
+
+    def query(self, query: List[str]) -> str:
+        cmd = [
+            self.efetch,
+            "-db",
+            self.db,
+            "-id",
+            ",".join(query),
+            "-format",
+            "xml",
+            "|",
+            self.xtract,
+            "-pattern",
+            "LineageEx/Taxon",
+            "-element",
+            "TaxId,Rank,ScientificName",
+        ]
+        return " ".join(cmd)
+
+    def read_output(self, output_path: str) -> pd.DataFrame:
+        """Parse lineage output into DataFrame"""
+        try:
+            df = pd.read_csv(
+                output_path,
+                sep="\t",
+                header=None,
+                names=self.output_columns,
+            )
+            return df
+        except pd.errors.EmptyDataError:
+            return pd.DataFrame(columns=self.output_columns)
+
+
+class EntrezSearchOrganismByName(EntrezQuery):
+    """Search for organisms by scientific or common name."""
+    name: str = "search_organism_by_name"
+    db = "taxonomy"
+    output_columns = ["taxid", "scientific_name", "rank"]
+
+    def query(self, query: List[str]) -> str:
+        # For multiple names, join with OR
+        term = " OR ".join([f'"{name}"' for name in query])
+        cmd = [
+            self.esearch,
+            "-db",
+            self.db,
+            "-term",
+            term,
+            "|",
+            self.efetch,
+            "-format",
+            "docsum",
+            "|",
+            self.xtract,
+            "-pattern",
+            "DocumentSummary",
+            "-element",
+            "TaxId,ScientificName,Rank",
+        ]
+        return " ".join(cmd)
+
+    def read_output(self, output_path: str) -> pd.DataFrame:
+        """Parse search results"""
+        try:
+            df = pd.read_csv(
+                output_path,
+                sep="\t",
+                header=None,
+                names=self.output_columns,
+            )
+            return df
+        except pd.errors.EmptyDataError:
+            return pd.DataFrame(columns=self.output_columns)
+
+
 class EntrezQueryFactory:
     def __init__(self, bindir: str):
         self.bindir = bindir
@@ -186,6 +267,10 @@ class EntrezQueryFactory:
             return EntrezFetchAccessionDescription(self.bindir)
         elif name == "fetch_protein_accession_taxon":
             return EntrezFetchProteinAccession_Taxon(self.bindir)
+        elif name == "fetch_taxid_lineage":
+            return EntrezFetchTaxidLineage(self.bindir)
+        elif name == "search_organism_by_name":
+            return EntrezSearchOrganismByName(self.bindir)
         else:
             raise ValueError("Invalid query name")
 
@@ -454,4 +539,165 @@ class EntrezWrapper:
         self.run_taxid_description_queries_biopy(query)
         df = self.read_output()
 
+        return df
+
+    # NEW METHODS FOR LINEAGE & NAME RESOLUTION
+
+    def fetch_lineage(self, taxids: List[str], use_cache: bool = True) -> Dict[str, List[Dict]]:
+        """
+        Fetch taxonomic lineages for multiple taxids.
+
+        Args:
+            taxids: List of NCBI taxonomy IDs (as strings)
+            use_cache: Whether to use cached lineages from database
+
+        Returns:
+            Dict mapping taxid → list of {rank, name, taxid} dicts
+        """
+        lineages = {}
+        
+        # Chunk taxids to respect NCBI rate limits
+        chunks = self.split_query(taxids)
+        
+        for chunk in chunks:
+            try:
+                # Use Biopython to fetch lineage
+                handle = Entrez.efetch(db="Taxonomy", id=",".join(chunk), retmode="xml")
+                records = Entrez.read(handle)
+                
+                # Extract lineage from each record
+                for record in records:
+                    taxid = str(record.get("TaxId", ""))
+                    lineage_nodes = []
+                    
+                    # Parse LineageEx if present
+                    if "LineageEx" in record:
+                        for taxon in record["LineageEx"]:
+                            lineage_nodes.append({
+                                "taxid": str(taxon.get("TaxId", "")),
+                                "name": taxon.get("ScientificName", ""),
+                                "rank": taxon.get("Rank", "no rank")
+                            })
+                    
+                    # Add the record itself as the leaf node
+                    lineage_nodes.append({
+                        "taxid": taxid,
+                        "name": record.get("ScientificName", ""),
+                        "rank": record.get("Rank", "no rank")
+                    })
+                    
+                    lineages[taxid] = lineage_nodes
+            except Exception as e:
+                print(f"Error fetching lineage for chunk {chunk}: {e}")
+                continue
+        
+        return lineages
+
+    def search_organism_name(self, names: List[str], use_fuzzy: bool = True) -> Dict[str, Dict]:
+        """
+        Search for organisms by name. Tries exact match first, then NCBI search.
+
+        Args:
+            names: List of organism names (can be messy, abbreviated, etc.)
+            use_fuzzy: Enable fuzzy matching for partial matches
+
+        Returns:
+            Dict mapping input_name → {taxid, canonical_name, confidence, source}
+        """
+        results = {}
+        
+        for name in names:
+            # Try direct NCBI search
+            try:
+                handle = Entrez.esearch(db="Taxonomy", term=name, retmax=1)
+                search_result = Entrez.read(handle)
+                
+                if search_result["IdList"]:
+                    taxid = search_result["IdList"][0]
+                    
+                    # Fetch details for this taxid
+                    handle = Entrez.efetch(db="Taxonomy", id=taxid, retmode="xml")
+                    fetch_result = Entrez.read(handle)
+                    
+                    if fetch_result:
+                        record = fetch_result[0]
+                        results[name] = {
+                            "taxid": taxid,
+                            "canonical_name": record.get("ScientificName", ""),
+                            "rank": record.get("Rank", ""),
+                            "confidence": "high",
+                            "source": "ncbi"
+                        }
+                    else:
+                        results[name] = {
+                            "taxid": None,
+                            "canonical_name": None,
+                            "rank": None,
+                            "confidence": "low",
+                            "source": "failed"
+                        }
+                else:
+                    results[name] = {
+                        "taxid": None,
+                        "canonical_name": None,
+                        "rank": None,
+                        "confidence": "none",
+                        "source": "not_found"
+                    }
+            except Exception as e:
+                print(f"Error searching for organism name '{name}': {e}")
+                results[name] = {
+                    "taxid": None,
+                    "canonical_name": None,
+                    "rank": None,
+                    "confidence": "error",
+                    "source": "exception"
+                }
+        
+        return results
+
+    def enrich_references_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Add lineage and taxonomy info to reference DataFrame.
+
+        Assumes input df has columns: taxid, accession, description
+
+        Returns:
+            DataFrame with additional columns:
+            - organism_name
+            - lineage_json
+            - lineage_path (human-readable)
+        """
+        if df.empty:
+            return df
+        
+        # Extract unique taxids
+        taxids = df['taxid'].astype(str).unique().tolist()
+        
+        # Fetch lineages
+        lineages = self.fetch_lineage(taxids)
+        
+        # Create mapping dictionaries for vectorized assignment
+        organism_names = {}
+        lineage_jsons = {}
+        lineage_paths = {}
+        
+        for taxid_str, lineage_list in lineages.items():
+            # Extract organism name (last entry's name)
+            organism_name = lineage_list[-1].get('name', '') if lineage_list else ''
+            organism_names[taxid_str] = organism_name
+            
+            # Store as JSON
+            lineage_jsons[taxid_str] = json.dumps(lineage_list)
+            
+            # Build human-readable path
+            names = [node.get('name', '') for node in lineage_list]
+            lineage_path = ' > '.join(filter(None, names))
+            lineage_paths[taxid_str] = lineage_path
+        
+        # Apply to dataframe using map
+        df['organism_name'] = df['taxid'].astype(str).map(lambda x: organism_names.get(x, ''))
+        df['lineage_json'] = df['taxid'].astype(str).map(lambda x: lineage_jsons.get(x, ''))
+        df['lineage_path'] = df['taxid'].astype(str).map(lambda x: lineage_paths.get(x, ''))
+        
         return df

@@ -31,7 +31,7 @@ from pathogen_identification.utilities.utilities_views import (
     ReportSorter, TelevirParameters, final_report_best_cov_by_accid,
     recover_assembly_contigs)
 from settings.constants_settings import ConstantsSettings as CS
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 
 
 class RunEngine:
@@ -518,7 +518,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         ###
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
 
         raw_reference_id = int(options["ref_id"])
         project_pk = int(options["project_id"])

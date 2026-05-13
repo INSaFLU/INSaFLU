@@ -41,7 +41,7 @@ from settings.default_parameters import DefaultParameters
 from settings.default_software_project_sample import DefaultProjectSoftware
 from utils.collect_extra_data import CollectExtraData
 from utils.parse_in_files import ParseInFiles
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 from utils.result import Coverage, DecodeObjects
 from utils.software import Software
 from utils.utils import Utils
@@ -896,7 +896,7 @@ def update_project_pangolin(request):
                 metaKeyAndValue = MetaKeyAndValue()
                 manageDatabase = ManageDatabase()
                 try:
-                    process_SGE = ProcessSGE()
+                    process_SGE = ProcessSched()
                     project = Project.objects.get(id=project_id)
                     taskID = process_SGE.set_collect_update_pangolin_lineage(
                         project, request.user
@@ -941,7 +941,7 @@ def update_project_mutation_report(request):
                 metaKeyAndValue = MetaKeyAndValue()
                 manageDatabase = ManageDatabase()
                 try:
-                    process_SGE = ProcessSGE()
+                    process_SGE = ProcessSched()
                     project = Project.objects.get(id=project_id)
                     taskID = process_SGE.set_collect_update_mutation_report(
                         project, request.user
@@ -1515,7 +1515,7 @@ def remove_sample(request):
                         break
 
             ## refresh sample list for this user
-            process_SGE = ProcessSGE()
+            process_SGE = ProcessSched()
             process_SGE.set_create_sample_list_by_user(sample.owner, [])
 
             data = {"is_ok": True}
@@ -1594,9 +1594,9 @@ def swap_technology(request):
 
             ### now you can swap technology
             try:
-                process_SGE = ProcessSGE()
-                (job_name_wait, job_name) = request.user.profile.get_name_sge_seq(
-                    Profile.SGE_PROCESS_clean_sample, Profile.SGE_SAMPLE
+                process_SGE = ProcessSched()
+                (job_name_wait, job_name) = request.user.profile.get_name_slurm_seq(
+                    Constants.PROCESS_clean_sample, Constants.PROCESS_SAMPLE
                 )
                 if (
                     sample.get_type_technology()
@@ -1685,7 +1685,7 @@ def remove_project(request):
                 project_sample.save()
 
             ## refresh sample and project list for this user
-            process_SGE = ProcessSGE()
+            process_SGE = ProcessSched()
             ### kill any processes that may be running
             # try:
             process_SGE.kill_project_samples(
@@ -1841,7 +1841,7 @@ def remove_project_sample(request):
             metaKeyAndValue = MetaKeyAndValue()
             manageDatabase = ManageDatabase()
             try:
-                process_SGE = ProcessSGE()
+                process_SGE = ProcessSched()
                 taskID = process_SGE.set_collect_global_files(
                     project_sample.project, request.user
                 )
@@ -2158,6 +2158,6 @@ def submit_sge(request):
     """
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
-        process_SGE = ProcessSGE()
-        process_SGE.submit_dummy_sge()
+        process_SGE = ProcessSched()
+        process_SGE.submit_dummy_job()
         return JsonResponse(data)

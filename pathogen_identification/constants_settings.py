@@ -8,7 +8,7 @@ from typing import Dict, List
 
 from django.conf import settings
 
-from extend_user.models import Profile
+from constants.constants import Constants   
 from fluwebvirus.settings import MEDIA_ROOT, STATIC_ROOT, TelevirSetup
 from pathogen_identification.utilities.mapping_flags import (MapFlagProbes,
                                                              MapFlagViruses)
@@ -110,9 +110,9 @@ class ConstantsSettings:
     #################################### Process Types
 
     PROCESS_TYPE_DEPLOYMENT = (
-        Profile.SGE_PROCESS_dont_care
+        Constants.PROCESS_dont_care
         if TelevirSetup.CURRENT_SETUP == TelevirSetup.SETUP_DEVELOP
-        else Profile.SGE_PROCESS_televir
+        else Constants.PROCESS_televir
     )
 
     ################################### Threads

@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
+from constants.constants import Constants
 from constants.meta_key_and_values import MetaKeyAndValue
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
@@ -11,7 +12,7 @@ from pathogen_identification.models import TeleFluProject, TeleFluSample
 from pathogen_identification.utilities.reference_utils import \
     teleflu_to_insaflu_reference
 from settings.default_software_project_sample import DefaultProjectSoftware
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 
 
 class Command(BaseCommand):
@@ -46,9 +47,9 @@ class Command(BaseCommand):
 
         # PROCESS CONTROLER
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_scheduler = ProcessSched()
 
-        process_SGE.set_process_controler(
+        process_scheduler.set_process_controler(
             user,
             process_controler.get_name_televir_teleflu_project_create(
                 project_id=project_id,
@@ -88,7 +89,7 @@ class Command(BaseCommand):
             print("Success", success, insaflu_reference)
 
             if success is False:
-                process_SGE.set_process_controler(
+                process_scheduler.set_process_controler(
                     user,
                     process_controler.get_name_televir_teleflu_project_create(
                         project_id=project_id,
@@ -113,8 +114,8 @@ class Command(BaseCommand):
                 user, insaflu_project, None, None
             )  ## the user can have defaults yet
 
-            process_SGE = ProcessSGE()
-            process_SGE.set_create_project_list_by_user(user)
+            process_scheduler = ProcessSched()
+            process_scheduler.set_create_project_list_by_user(user)
 
             ###### SAMPLES
             samples = TeleFluSample.objects.filter(teleflu_project=teleflu_project)
@@ -142,15 +143,15 @@ class Command(BaseCommand):
                         (
                             job_name_wait,
                             job_name,
-                        ) = profile.get_name_sge_seq(
-                            Profile.SGE_PROCESS_projects, Profile.SGE_GLOBAL
+                        ) = profile.get_name_slurm_seq(
+                            Constants.PROCESS_projects, Constants.PROCESS_GLOBAL
                         )
                     if original_sample.is_type_fastq_gz_sequencing():
-                        taskID = process_SGE.set_second_stage_snippy(
+                        taskID = process_scheduler.set_second_stage_snippy(
                             project_sample, user, job_name, [job_name_wait]
                         )
                     else:
-                        taskID = process_SGE.set_second_stage_medaka(
+                        taskID = process_scheduler.set_second_stage_medaka(
                             project_sample, user, job_name, [job_name_wait]
                         )
 
@@ -171,7 +172,7 @@ class Command(BaseCommand):
 
         except Exception as e:
             print(e)
-            process_SGE.set_process_controler(
+            process_scheduler.set_process_controler(
                 user,
                 process_controler.get_name_televir_teleflu_project_create(
                     project_id=project_id,
@@ -180,7 +181,7 @@ class Command(BaseCommand):
             )
             raise e
 
-        process_SGE.set_process_controler(
+        process_scheduler.set_process_controler(
             user,
             process_controler.get_name_televir_teleflu_project_create(
                 project_id=project_id,

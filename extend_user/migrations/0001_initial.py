@@ -23,7 +23,7 @@ class Migration(migrations.Migration):
                 ('institution', models.TextField(blank=True, max_length=100)),
                 ('email_confirmed', models.BooleanField(default=False)),
                 ('only_view_project', models.BooleanField(default=False)),
-                ('queue_name_sge', models.CharField(blank=True, max_length=20, null=True)),
+                ('queue_name_slurm', models.CharField(blank=True, max_length=20, null=True)),
                 ('max_references', models.IntegerField(default=30)),
                 ('max_samples', models.IntegerField(default=500)),
                 ('max_file_size_fastq', models.IntegerField(default=50000000)),

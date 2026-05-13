@@ -44,6 +44,7 @@ class Taxon(models.Model):
     name = models.CharField(max_length=255, db_index=True)
     rank = models.CharField(max_length=50, db_index=True, default=TaxonConstants.NO_RANK)
     rank_raw = models.CharField(max_length=50, db_index=True, default=TaxonConstants.NO_RANK)
+    lineage_path = models.CharField(max_length=1000, blank=True, null=True)
 
     parent = models.ForeignKey(
         "self",
@@ -1610,9 +1611,9 @@ class ReferenceTaxid(models.Model):
     genus = models.ForeignKey(Taxon, on_delete=models.CASCADE, blank=True, null=True)
     family = models.ForeignKey(Taxon, on_delete=models.CASCADE, blank=True, null=True)
     order = models.ForeignKey(Taxon, on_delete=models.CASCADE, blank=True, null=True)
-    class_ = models.ForeignKey(Taxon, on_delete=models.CASCADE, blank=True, null=True, related_name="class_taxon")
-    phylum = models.ForeignKey(Taxon, on_delete=models.CASCADE, blank=True, null=True, related_name="phylum_taxon")
-    domain = models.ForeignKey(Taxon, on_delete=models.CASCADE, blank=True, null=True, related_name="domain_taxon") 
+    class_ = models.ForeignKey(Taxon, on_delete=models.CASCADE, blank=True, null=True)
+    phylum = models.ForeignKey(Taxon, on_delete=models.CASCADE, blank=True, null=True)
+    domain = models.ForeignKey(Taxon, on_delete=models.CASCADE, blank=True, null=True) 
 
     def __str__(self):
         return self.taxid

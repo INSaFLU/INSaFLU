@@ -8,7 +8,7 @@ from typing import Optional
 
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
-
+from constants.constants import Constants
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
 from extend_user.models import Profile
@@ -23,7 +23,7 @@ from settings.default_parameters import DefaultParameters
 from settings.default_software import DefaultSoftware
 from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.models import Parameter, Software
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 from utils.result import DecodeObjects, MaskingConsensus
 
 
@@ -157,7 +157,7 @@ def set_default_parameters(request):
                             ### re-run data
                             metaKeyAndValue = MetaKeyAndValue()
                             manageDatabase = ManageDatabase()
-                            process_SGE = ProcessSGE()
+                            process_SGE = ProcessSched()
 
                             ### change flag to not finished
                             project_sample.is_finished = False
@@ -168,8 +168,8 @@ def set_default_parameters(request):
                                 (
                                     job_name_wait,
                                     job_name,
-                                ) = request.user.profile.get_name_sge_seq(
-                                    Profile.SGE_PROCESS_dont_care, Profile.SGE_GLOBAL
+                                ) = request.user.profile.get_name_slurm_seq(
+                                    Constants.PROCESS_dont_care, Constants.PROCESS_GLOBAL
                                 )
                                 if project_sample.is_sample_illumina():
                                     taskID = process_SGE.set_second_stage_snippy(
@@ -250,15 +250,15 @@ def set_default_parameters(request):
 
                         ### re-run data
                         manageDatabase = ManageDatabase()
-                        process_SGE = ProcessSGE()
+                        process_SGE = ProcessSched()
 
                         ### create a task to perform the analysis of NanoFilt
                         try:
                             (
                                 job_name_wait,
                                 job_name,
-                            ) = request.user.profile.get_name_sge_seq(
-                                Profile.SGE_PROCESS_clean_sample, Profile.SGE_SAMPLE
+                            ) = request.user.profile.get_name_slurm_seq(
+                                Constants.PROCESS_clean_sample, Constants.PROCESS_SAMPLE
                             )
                             if sample.is_type_fastq_gz_sequencing():
                                 taskID = process_SGE.set_run_trimmomatic_species(
@@ -324,7 +324,7 @@ def set_default_parameters(request):
                             metaKeyAndValue = MetaKeyAndValue()
                             manageDatabase = ManageDatabase()
                             try:
-                                process_SGE = ProcessSGE()
+                                process_SGE = ProcessSched()
                                 taskID = process_SGE.set_collect_global_files(
                                     project, request.user
                                 )
@@ -494,7 +494,7 @@ def mask_consensus(request):
                 metaKeyAndValue = MetaKeyAndValue()
                 manageDatabase = ManageDatabase()
                 try:
-                    process_SGE = ProcessSGE()
+                    process_SGE = ProcessSched()
                     taskID = process_SGE.set_collect_global_files(project, request.user)
                     manageDatabase.set_project_metakey(
                         project,
@@ -999,7 +999,7 @@ def turn_on_off_software(request):
 
                         ### create a task to perform the analysis of snippy and freebayes
                         manageDatabase = ManageDatabase()
-                        process_SGE = ProcessSGE()
+                        process_SGE = ProcessSched()
                         metaKeyAndValue = MetaKeyAndValue()
 
                         try:
@@ -1012,8 +1012,8 @@ def turn_on_off_software(request):
                                 (
                                     job_name_wait,
                                     job_name,
-                                ) = request.user.profile.get_name_sge_seq(
-                                    Profile.SGE_PROCESS_dont_care, Profile.SGE_GLOBAL
+                                ) = request.user.profile.get_name_slurm_seq(
+                                    Constants.PROCESS_dont_care, Constants.PROCESS_GLOBAL
                                 )
 
                                 if project_sample.is_sample_illumina():
@@ -1074,15 +1074,15 @@ def turn_on_off_software(request):
 
                         ### re-run data
                         manageDatabase = ManageDatabase()
-                        process_SGE = ProcessSGE()
+                        process_SGE = ProcessSched()
 
                         ### create a task to perform the analysis again
                         try:
                             (
                                 job_name_wait,
                                 job_name,
-                            ) = request.user.profile.get_name_sge_seq(
-                                Profile.SGE_PROCESS_clean_sample, Profile.SGE_SAMPLE
+                            ) = request.user.profile.get_name_slurm_seq(
+                                Constants.PROCESS_clean_sample, Constants.PROCESS_SAMPLE
                             )
                             if sample.is_type_fastq_gz_sequencing():
                                 taskID = process_SGE.set_run_trimmomatic_species(

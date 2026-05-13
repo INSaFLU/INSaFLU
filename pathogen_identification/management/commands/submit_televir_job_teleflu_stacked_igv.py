@@ -5,7 +5,7 @@ from managing_files.models import ProcessControler
 from pathogen_identification.models import TelefluMapping, TeleFluProject
 from pathogen_identification.utilities.reference_utils import \
     create_televir_igv_report
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 
 
 class Command(BaseCommand):
@@ -42,7 +42,7 @@ class Command(BaseCommand):
 
         # PROCESS CONTROLER
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
 
         process_SGE.set_process_controler(
             user,

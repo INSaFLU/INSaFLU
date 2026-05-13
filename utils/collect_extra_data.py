@@ -32,7 +32,7 @@ from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software_project_sample import DefaultProjectSoftware
 from utils.parse_out_files import ParseOutFiles
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 from utils.result import Coverage, DecodeObjects, Result, SoftwareDesc
 from utils.software import Contigs2Sequences, Software
 from utils.software_pangolin import SoftwarePangolin
@@ -81,7 +81,7 @@ class CollectExtraData(object):
         """ """
         ### make it running
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         process_SGE.set_process_controler(
             user,
             process_controler.get_name_project(project),
@@ -101,7 +101,7 @@ class CollectExtraData(object):
         """
         ### make it running
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         process_SGE.set_process_controler(
             user,
             process_controler.get_name_project(project),
@@ -121,7 +121,7 @@ class CollectExtraData(object):
         """
         ### make it running
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         process_SGE.set_process_controler(
             user,
             process_controler.get_name_project(project),
@@ -150,7 +150,7 @@ class CollectExtraData(object):
         """
         ### get the taskID and seal it
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         try:
             ## run pangolin and collect output
             file_pangolin_output = project.get_global_file_by_project(
@@ -248,7 +248,7 @@ class CollectExtraData(object):
         """
         ### get the taskID and seal it
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         try:
             # Just go through all process samples for this project,
             # if there is consensus for that sample, classify with abricate
@@ -283,7 +283,7 @@ class CollectExtraData(object):
         """
         ### get the taskID and seal it
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         try:
             ## test SARS cov
             species_tag = self.software.get_species_tag(project.reference)
@@ -607,7 +607,7 @@ class CollectExtraData(object):
         """
         ### get the taskID and seal it
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         manage_database = ManageDatabase()
         metaKeyAndValue = MetaKeyAndValue()
 
@@ -684,7 +684,7 @@ class CollectExtraData(object):
         metaKeyAndValue = MetaKeyAndValue()
         manage_database = ManageDatabase()
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
 
         #### create variation graph, png and html
         ## Obsolete, is to make a html graph, now it is with chart.js

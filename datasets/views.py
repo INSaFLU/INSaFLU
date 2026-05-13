@@ -42,7 +42,7 @@ from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.models import Parameter
 from settings.models import Software as SoftwareSettings
 from settings.tables import SoftwaresTable
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 from utils.result import DecodeObjects
 from utils.session_variables import (clean_check_box_in_session,
                                      is_all_check_box_in_session)
@@ -372,7 +372,7 @@ class AddDatasetsReferencesView(
 
             ## need to run metadata
             try:
-                process_SGE = ProcessSGE()
+                process_SGE = ProcessSched()
                 taskID = (
                     process_SGE.set_collect_dataset_global_files_for_update_metadata(
                         dataset, self.request.user
@@ -619,7 +619,7 @@ class AddDatasetsConsensusView(
 
                 ## need to run metadata
                 try:
-                    process_SGE = ProcessSGE()
+                    process_SGE = ProcessSched()
                     taskID = process_SGE.set_collect_dataset_global_files_for_update_metadata(
                         dataset, self.request.user
                     )
@@ -960,7 +960,7 @@ class AddDatasetsProjectsView(
 
                 ## need to run metadata
                 try:
-                    process_SGE = ProcessSGE()
+                    process_SGE = ProcessSched()
                     taskID = process_SGE.set_collect_dataset_global_files_for_update_metadata(
                         dataset, self.request.user
                     )
@@ -1677,7 +1677,7 @@ class AddSingleMetadataDatasetFile(
 
             # This part was commented before... maybe comment it again?
             try:
-                process_SGE = ProcessSGE()
+                process_SGE = ProcessSched()
                 # taskID =  process_SGE.set_read_sample_file_with_metadata(upload_files, self.request.user)
                 taskID = (
                     process_SGE.set_collect_dataset_global_files_for_update_metadata(

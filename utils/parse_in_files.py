@@ -30,7 +30,7 @@ from managing_files.models import (
     UploadFiles,
     VaccineStatus,
 )
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 from utils.result import ProcessResults, SingleResult
 from utils.utils import Utils
 
@@ -1147,7 +1147,7 @@ class ParseInFiles(object):
 
         ### make it running
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         process_SGE.set_process_controler(
             user,
             process_controler.get_name_link_files_user(user),
@@ -1353,12 +1353,12 @@ class ParseInFiles(object):
         for sample in vect_sample_to_trimmomatic:
             try:
                 if process_name is None:
-                    (job_name_wait, process_name) = user.profile.get_name_sge_seq(
-                        Profile.SGE_PROCESS_clean_sample, Profile.SGE_SAMPLE
+                    (job_name_wait, process_name) = user.profile.get_name_slurm_seq(
+                        Constants.PROCESS_clean_sample, Constants.PROCESS_SAMPLE
                     )
                 ## here can be direct because came from a django
 
-                process_SGE = ProcessSGE()
+                process_SGE = ProcessSched()
                 if sample.is_type_fastq_gz_sequencing():
                     taskID = process_SGE.set_run_trimmomatic_species(
                         sample, user, process_name
@@ -1403,7 +1403,7 @@ class UploadFilesByDjangoQ(object):
         """
         ### make it running
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         process_SGE.set_process_controler(
             user,
             process_controler.get_name_upload_files(upload_files),
@@ -1459,7 +1459,7 @@ class UpdateMetadataFileByDjangoQ(object):
         """
         ### make it running
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         process_SGE.set_process_controler(
             user,
             process_controler.get_name_upload_files(upload_files),

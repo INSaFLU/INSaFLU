@@ -59,7 +59,7 @@ from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.models import Software as SoftwareSettings
 from settings.tables import SoftwaresTable
 from utils.collect_extra_data import CollectExtraData
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 from utils.result import DecodeObjects
 from utils.session_variables import (clean_check_box_in_session,
                                      is_all_check_box_in_session)
@@ -870,9 +870,9 @@ class SamplesAddView(
 
         ### create a task to perform the analysis of fastq and trimmomatic
         try:
-            process_SGE = ProcessSGE()
-            (job_name_wait, job_name) = self.request.user.profile.get_name_sge_seq(
-                Profile.SGE_PROCESS_clean_sample, Profile.SGE_SAMPLE
+            process_SGE = ProcessSched()
+            (job_name_wait, job_name) = self.request.user.profile.get_name_slurm_seq(
+                Constants.PROCESS_clean_sample, Constants.PROCESS_SAMPLE
             )
             if sample.is_type_fastq_gz_sequencing():  ### default is Illumina
                 taskID = process_SGE.set_run_trimmomatic_species(
@@ -1290,7 +1290,7 @@ class SamplesUploadDescriptionFileView(
             upload_files.save()
 
             try:
-                process_SGE = ProcessSGE()
+                process_SGE = ProcessSched()
                 taskID = process_SGE.set_read_sample_file(
                     upload_files, self.request.user
                 )
@@ -1442,7 +1442,7 @@ class SamplesUploadDescriptionFileViewMetadata(
             upload_files.save()
 
             try:
-                process_SGE = ProcessSGE()
+                process_SGE = ProcessSched()
                 taskID = process_SGE.set_read_sample_file_with_metadata(
                     upload_files, self.request.user
                 )
@@ -1775,7 +1775,7 @@ class SamplesUploadFastQView(
         ## if is last file send a message to link files with sample csv file
         if "is_valid" in data and data["is_valid"]:
             try:
-                process_SGE = ProcessSGE()
+                process_SGE = ProcessSched()
                 taskID = process_SGE.set_link_files(self.request.user)
             except:
                 data = {
@@ -2549,7 +2549,7 @@ class ProjectCreateView(
             self.request.user, project, None, None
         )  ## the user can have defaults yet
 
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         process_SGE.set_create_project_list_by_user(self.request.user)
 
         messages.success(
@@ -2746,7 +2746,7 @@ class AddSamplesProjectsView(
         if form.is_valid():
             metaKeyAndValue = MetaKeyAndValue()
             manageDatabase = ManageDatabase()
-            process_SGE = ProcessSGE()
+            process_SGE = ProcessSched()
 
             ### get project sample..
             context = self.get_context_data()
@@ -2839,8 +2839,8 @@ class AddSamplesProjectsView(
                         (
                             job_name_wait,
                             job_name,
-                        ) = self.request.user.profile.get_name_sge_seq(
-                            Profile.SGE_PROCESS_projects, Profile.SGE_GLOBAL
+                        ) = self.request.user.profile.get_name_slurm_seq(
+                            Constants.PROCESS_projects, Constants.PROCESS_GLOBAL
                         )
                     if sample.is_type_fastq_gz_sequencing():
                         taskID = process_SGE.set_second_stage_snippy(

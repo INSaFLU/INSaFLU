@@ -12,7 +12,7 @@ from pathogen_identification.utilities.utilities_pipeline import (
     SoftwareTreeUtils, Utils_Manager)
 from pathogen_identification.utilities.utilities_views import (
     RawReferenceUtils, set_control_reports)
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 
 
 class Command(BaseCommand):
@@ -48,7 +48,7 @@ class Command(BaseCommand):
         ###
         # SETUP
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         user = User.objects.get(pk=options["user_id"])
         project = Projects.objects.get(pk=options["project_id"])
         output_directory = options["outdir"]

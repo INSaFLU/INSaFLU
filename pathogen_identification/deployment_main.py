@@ -29,7 +29,7 @@ from pathogen_identification.utilities.utilities_pipeline import (
 from pathogen_identification.utilities.utilities_views import (
     ReportSorter, final_report_best_cov_by_accid)
 from settings.constants_settings import ConstantsSettings as SettingsConstants
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 
 
 class PathogenIdentificationDeploymentCore:
@@ -509,7 +509,7 @@ class Run_Main_from_Leaf:
 
     def set_run_process_running(self):
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         process_SGE.set_process_controler(
             self.user,
             process_controler.get_name_televir_run(
@@ -522,7 +522,7 @@ class Run_Main_from_Leaf:
 
     def set_run_process_error(self):
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         process_SGE.set_process_controler(
             self.user,
             process_controler.get_name_televir_run(
@@ -535,7 +535,7 @@ class Run_Main_from_Leaf:
 
     def set_run_process_finished(self):
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         process_SGE.set_process_controler(
             self.user,
             process_controler.get_name_televir_run(

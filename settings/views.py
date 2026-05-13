@@ -5,7 +5,7 @@ from django.urls import reverse, reverse_lazy
 from django.utils.functional import cached_property
 from django.views.generic import ListView, TemplateView, UpdateView
 from view_breadcrumbs import BaseBreadcrumbMixin
-
+from constants.constants import Constants
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
 from datasets.manage_database import ManageDatabase as ManageDatasetDatabase
@@ -24,7 +24,7 @@ from settings.default_software import DefaultSoftware
 from settings.forms import SoftwareForm
 from settings.models import Parameter, Software
 from settings.tables import SoftwaresTable
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 from utils.utils import ShowInfoMainPage
 
 # Create your views here.
@@ -1360,7 +1360,7 @@ class UpdateParametersDatasetView(BaseBreadcrumbMixin, LoginRequiredMixin, Updat
                         # Now update the meetadata, if there are dataset_consensus
                         metaKeyAndValue = MetaKeyAndValue()
                         manageDatabase = ManageDatasetDatabase()
-                        process_SGE = ProcessSGE()
+                        process_SGE = ProcessSched()
 
                         ### get the user
                         user = dataset.owner
@@ -1517,7 +1517,7 @@ class UpdateParametersProjSampleView(
             ### re-run data
             metaKeyAndValue = MetaKeyAndValue()
             manageDatabase = ManageDatabase()
-            process_SGE = ProcessSGE()
+            process_SGE = ProcessSched()
 
             ### change flag to nor finished
             project_sample.is_finished = False
@@ -1528,8 +1528,8 @@ class UpdateParametersProjSampleView(
 
             ### create a task to perform the analysis of snippy and freebayes
             try:
-                (job_name_wait, job_name) = user.profile.get_name_sge_seq(
-                    Profile.SGE_PROCESS_projects, Profile.SGE_GLOBAL
+                (job_name_wait, job_name) = user.profile.get_name_slurm_seq(
+                    Constants.PROCESS_projects, Constants.PROCESS_GLOBAL
                 )
                 if project_sample.is_sample_illumina():
                     taskID = process_SGE.set_second_stage_snippy(
@@ -1690,12 +1690,12 @@ class UpdateParametersSampleView(BaseBreadcrumbMixin, LoginRequiredMixin, Update
         if b_change_value:
             ### re-run data
             manageDatabase = ManageDatabase()
-            process_SGE = ProcessSGE()
+            process_SGE = ProcessSched()
 
             ### create a task to perform the analysis of NanoFilt
             try:
-                (job_name_wait, job_name) = sample.owner.profile.get_name_sge_seq(
-                    Profile.SGE_PROCESS_clean_sample, Profile.SGE_SAMPLE
+                (job_name_wait, job_name) = sample.owner.profile.get_name_slurm_seq(
+                    Constants.PROCESS_clean_sample, Constants.PROCESS_SAMPLE
                 )
                 if sample.is_type_fastq_gz_sequencing():
                     taskID = process_SGE.set_run_trimmomatic_species(

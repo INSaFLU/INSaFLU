@@ -15,6 +15,7 @@ from constants.televir_directories import Televir_Directory_Constants
 from settings.constants_settings import ConstantsSettings as CS
 
 
+
 class Televir_Metadata_Constants:
     SOURCE = {
         "ENVSDIR": Televir_Directory_Constants.environments_directory,
@@ -175,11 +176,40 @@ class Constants(object):
     DIR_PROCESSED_PROCESSED = "processed"
 
     ### queue names
-    QUEUE_SGE_NAMES = ["queue_1.q", "queue_2.q"]
-    QUEUE_SGE_NAME_GLOBAL = "all.q"
-    QUEUE_SGE_NAME_FAST = "fast.q"  ## jobs that are fast to run
-    QUEUE_SGE_NAME_INSA = "insa.q"  ## insa queue
+    QUEUE_NAMES = ["queue_1.q", "queue_2.q"]
+    QUEUE_NAME_GLOBAL = "all.q"
+    QUEUE_NAME_FAST = "fast.q"  ## jobs that are fast to run
+    QUEUE_NAME_INSA = "insa.q"  ## insa queue
     ##    QUEUE_SGE_NAME_EMAIL = 'email.q' direct for now...
+
+    ### three types of numbering
+    PROCESS_GLOBAL = "g"  ## runs on projects
+    PROCESS_SAMPLE = "s"  ## runs on samples
+    PROCESS_LINK = "l"
+    PROCESS_REGULAR = "r"
+
+    ### Type of process, it is possible to track the process by this name
+    PROCESS_dont_care = "d"
+    PROCESS_clean_sample = "c"
+    ## set_run_trimmomatic_species; set_run_clean_minion
+    PROCESS_collect_all_samples = "sl"
+    ## set_create_sample_list_by_user
+    PROCESS_collect_all_projects = "pl"
+    ## set_create_project_list_by_user
+    ## related with projects...
+    PROCESS_projects = "ps"
+    ## set_second_stage_snippy; set_second_stage_medaka;
+    ## collect_global_files
+    PROCESS_datasets = "ds"
+    ## process datasets;
+    PROCESS_link_files = "l"
+    ## set_link_files
+    PROCESS_televir = "tv"
+    ## set_televir_map_specific
+    PROCESS_mapping = "m"
+    ## set_televir
+
+    
 
     ### separators
     SEPARATOR_COMMA = ","
@@ -369,6 +399,66 @@ class Constants(object):
         "V": "B",
         "N": "N",
     }
+
+    @staticmethod
+    def get_process_cpu(process_type):
+        """
+        get the number of CPU to use in a process type
+        """
+        if process_type == Constants.PROCESS_dont_care:
+            return 1
+        if process_type == Constants.PROCESS_clean_sample:
+            return 4
+        if process_type == Constants.PROCESS_collect_all_samples:
+            return 4
+        if process_type == Constants.PROCESS_collect_all_projects:
+            return 4
+        if process_type == Constants.PROCESS_projects:
+            return 4
+        if process_type == Constants.PROCESS_datasets:
+            return 4
+        if process_type == Constants.PROCESS_link_files:
+            return 1
+        if process_type == Constants.PROCESS_televir:
+            return 4
+        if process_type == Constants.PROCESS_mapping:
+             return 2
+    
+        return 1
+    
+
+    @staticmethod
+    def get_process_memory(process_type):
+        """
+        get the number of memory to use in a process type
+        """
+        if process_type == Constants.PROCESS_dont_care:
+            return 4
+        if process_type == Constants.PROCESS_clean_sample:
+            return 16
+        if process_type == Constants.PROCESS_collect_all_samples:
+            return 16
+        if process_type == Constants.PROCESS_collect_all_projects:
+            return 16
+        if process_type == Constants.PROCESS_projects:
+            return 16
+        if process_type == Constants.PROCESS_datasets:
+            return 16
+        if process_type == Constants.PROCESS_link_files:
+            return 4
+        if process_type == Constants.PROCESS_televir:
+            return 16
+        if process_type == Constants.PROCESS_mapping:
+            return 8
+        return 4
+    
+    @staticmethod
+    def get_process_mem_string(process_type):
+        """
+        get the memory string to use in a process type
+        """
+        memory = Constants.get_process_memory(process_type)
+        return "{}G".format(memory)
 
     def get_extensions_by_file_type(self, file_name, file_type):
         """

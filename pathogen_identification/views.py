@@ -87,7 +87,7 @@ from pathogen_identification.utilities.utilities_views import (
     EmptyRemapMain, RawReferenceUtils, ReportAggregateEmpty, ReportList,
     RunMainWrapper, SampleReadsRetrieve, recover_assembly_contigs)
 from settings.constants_settings import ConstantsSettings as CS
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 from utils.software import Software
 from utils.support_django_template import get_link_for_dropdown_item
 from utils.utils import ShowInfoMainPage, Utils
@@ -2215,7 +2215,7 @@ class UploadReferencePanel(
             )
             return super(UploadReferencePanel, self).form_invalid(form)
 
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
 
         try:
             # create reference source file

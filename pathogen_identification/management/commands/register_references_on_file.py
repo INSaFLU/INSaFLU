@@ -11,7 +11,7 @@ from pathogen_identification.models import (ReferenceSource,
                                             ReferenceSourceFileMap,
                                             ReferenceTaxid)
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 from utils.utils import Utils
 
 
@@ -96,7 +96,7 @@ class Command(BaseCommand):
         utils: Utils = Utils()
         process_controler = ProcessControler()
 
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
 
         reference_update_running = ProcessControler.objects.filter(
             name=process_controler.get_name_televir_reference_update(1),

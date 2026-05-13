@@ -524,12 +524,12 @@ def generate_compressed_tree(user, project, sample, makeup):
     }
 
     assert set(list(matched_paths.keys())) == set(
-        [x.index for x in runs_to_deploy[sample]]
+        [x.pk for x in runs_to_deploy[sample]]
     )
 
     available_path_nodes = {
         leaf: SoftwareTreeNode.objects.get(
-            software_tree__pk=pipeline_tree_index, index=path
+            software_tree__pk=pipeline_tree_index, pk=path
         )
         for leaf, path in matched_paths.items()
     }
@@ -1171,7 +1171,7 @@ class MetadataManagementTests(TestCase):
 
         first_report_group = sorted_reports[0]
         self.assertEquals(first_report_group.max_coverage, 100)
-        self.assertEquals(first_report_group.total_counts, "total counts 0")
+        self.assertEquals(first_report_group.total_counts_str, "total counts 0")
         self.assertEquals(first_report_group.shared_proportion, 0)
         self.assertEquals(first_report_group.max_private_reads, 0)
         self.assertFalse(first_report_group.has_multiple)
@@ -1187,7 +1187,7 @@ class MetadataManagementTests(TestCase):
         first_report_group = sorted_reports[0]
 
         first_compound: FinalReportCompound = first_report_group.group_list[0]
-        self.assertEquals(first_compound.found_in, "M")
+        self.assertEquals(first_compound.found_in_str, "M")
         self.assertTrue(first_compound.run_main == mapping_run)
         self.assertTrue(first_compound.data_exists)
         self.assertEquals(first_compound.control_flag, FinalReport.CONTROL_FLAG_NONE)
@@ -1568,7 +1568,7 @@ class Televir_Project_Test(TestCase):
 
             for _, path in available_paths.items():
                 node = SoftwareTreeNode.objects.filter(
-                    software_tree__pk=pipeline_tree_index, index=path
+                    software_tree__pk=pipeline_tree_index, pk=path
                 ).exists()
 
                 self.assertTrue(node)
@@ -1609,12 +1609,12 @@ class Televir_Project_Test(TestCase):
             }
 
             assert set(list(matched_paths.keys())) == set(
-                [x.index for x in runs_to_deploy[self.ont_project_sample]]
+                [x.pk for x in runs_to_deploy[self.ont_project_sample]]
             )
 
             available_path_nodes = {
                 leaf: SoftwareTreeNode.objects.get(
-                    software_tree__pk=pipeline_tree_index, index=path
+                    software_tree__pk=pipeline_tree_index, pk=path
                 )
                 for leaf, path in matched_paths.items()
             }

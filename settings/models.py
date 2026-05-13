@@ -3,7 +3,8 @@ from django.db import models
 
 from datasets.models import Dataset
 from managing_files.models import Project, ProjectSample, Sample
-from pathogen_identification.models import PIProject_Sample as TelevirProjectSample
+from pathogen_identification.models import \
+    PIProject_Sample as TelevirProjectSample
 from pathogen_identification.models import Projects as TelevirProject
 
 # Create your models here.
@@ -168,6 +169,10 @@ class Software(models.Model):
         :return True if it is software type
         """
         return self.type_of_software == Software.TYPE_SOFTWARE
+    
+    @property
+    def parameter_set(self):
+        return self.parameter.all()
 
 
 class Parameter(models.Model):

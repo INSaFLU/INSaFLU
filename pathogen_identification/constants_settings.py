@@ -3,16 +3,15 @@ Ceated on 06/05/2022
 @author: joao santos
 """
 
+from pathlib import Path
 from typing import Dict, List
 
 from django.conf import settings
 
 from extend_user.models import Profile
 from fluwebvirus.settings import MEDIA_ROOT, STATIC_ROOT, TelevirSetup
-from pathogen_identification.utilities.mapping_flags import (
-    MapFlagProbes,
-    MapFlagViruses,
-)
+from pathogen_identification.utilities.mapping_flags import (MapFlagProbes,
+                                                             MapFlagViruses)
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -23,6 +22,7 @@ class ConstantsSettings:
 
     media_directory = MEDIA_ROOT
     static_directory = STATIC_ROOT
+    local_assembly_store = Path(MEDIA_ROOT) / "assembly_store"
     televir_subdirectory = "televir_projects"
     run_files_zipped = "run.zip"
     PAGINATE_NUMBER = 20
@@ -58,6 +58,7 @@ class ConstantsSettings:
     ################################### Pipeline steps
 
     PIPELINE_STEPS_DB_DEPENDENT = [
+        CS.PIPELINE_NAME_extra_qc,
         CS.PIPELINE_NAME_viral_enrichment,
         CS.PIPELINE_NAME_host_depletion,
         CS.PIPELINE_NAME_read_classification,

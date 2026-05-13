@@ -1,3 +1,4 @@
+import json
 import logging
 import mimetypes
 import ntpath
@@ -25,7 +26,7 @@ from django.urls import reverse, reverse_lazy
 from django.utils.functional import cached_property
 from django.utils.safestring import mark_safe
 from django.views import generic
-from django.views.generic import ListView
+from django.views.generic import ListView, TemplateView
 from django_tables2 import RequestConfig
 from view_breadcrumbs import BaseBreadcrumbMixin
 
@@ -51,8 +52,9 @@ from pathogen_identification.models import (ContigClassification, FinalReport,
                                             ReferenceMap_Main, ReferencePanel,
                                             ReferenceSourceFile,
                                             ReferenceSourceFileMap,
+                                            ReportAggregate, ReportGroup,
                                             RunAssembly, RunDetail, RunMain,
-                                            RunRemapMain, Sample,
+                                            RunRemapMain, Sample, SoftwareTree,
                                             TelefluMapping, TeleFluProject,
                                             TeleFluSample, TelevirRunQC)
 from pathogen_identification.modules.object_classes import RunQC_report
@@ -62,27 +64,28 @@ from pathogen_identification.tables import (AddedReferenceTable,
                                             ContigTable, ProjectTable,
                                             RawReferenceTable,
                                             RawReferenceTable_Basic,
+                                            ReferenceSourceFileTable,
                                             ReferenceSourceTable, RunMainTable,
                                             RunMappingTable, SampleTableOne,
                                             TeleFluInsaFLuProjectTable,
-                                            TeleFluReferenceTable)
+                                            TeleFluReferenceTable,
+                                            TelevirReferencesTable)
 from pathogen_identification.utilities.reference_utils import (
     filter_reference_maps_select, generate_insaflu_reference)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
 ##########################################
-########################################## MAKE THESE DISAPPEAR - MORE TABLES
-########################################## FIND OR CREATE - LINK TO SAMPLES, RUNS.
+########################################## 
+########################################## 
 from pathogen_identification.utilities.televir_parameters import \
     TelevirParameters
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
 from pathogen_identification.utilities.utilities_general import (
     get_services_dir, infer_run_media_dir, simplify_name)
-from pathogen_identification.utilities.utilities_pipeline import (  # ### KEEP THIS
+from pathogen_identification.utilities.utilities_pipeline import (
     Parameter_DB_Utility, SoftwareTreeUtils)
-from pathogen_identification.utilities.utilities_views import (  # ############################################
-    EmptyRemapMain, RawReferenceUtils, ReportSorter, RunMainWrapper,
-    SampleReadsRetrieve, final_report_best_cov_by_accid,
-    recover_assembly_contigs)
+from pathogen_identification.utilities.utilities_views import (
+    EmptyRemapMain, RawReferenceUtils, ReportAggregateEmpty, ReportList,
+    RunMainWrapper, SampleReadsRetrieve, recover_assembly_contigs)
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
 from utils.software import Software
@@ -614,7 +617,7 @@ class AddSamples_PIProjectsView(
             (
                 "Add samples to project",
                 reverse(
-                    "add-sample-project", kwargs={"pk": self.kwargs["pk"], "tf": 0}
+                    "add-sample-PIproject", kwargs={"pk": self.kwargs["pk"]}
                 ),
             ),
         ]
@@ -1091,32 +1094,26 @@ class TelefluProjectView(BaseBreadcrumbMixin, LoginRequiredMixin, generic.Create
             ("TELEVIR Projects", reverse("PIprojects_main")),
             (
                 self.kwargs["project_name"],
-                reverse("teleflu_project", args=[self.kwargs["pk"]]),
+                reverse("PIproject_samples", kwargs={"pk": self.kwargs["project_index"]}),
             ),
             (
                 self.kwargs["teleflu_project_name"],
                 reverse("teleflu_project", args=[self.kwargs["pk"]]),
-            ),
-            (
-                self.kwargs["mapping_id"],
-                reverse("teleflu_mapping_igv", args=[self.kwargs["pk"]]),
             ),
         ]
 
     def setup(self, request, *args, **kwargs):
         super(TelefluProjectView, self).setup(request, *args, **kwargs)
 
-        print(self.kwargs)
-
-        teleflu_mapping_pk = int(self.kwargs["pk"])
-        teleflu_mapping = TelefluMapping.objects.get(pk=teleflu_mapping_pk)
-        project_name = teleflu_mapping.teleflu_project.name
+        teleflu_project_pk = int(self.kwargs["pk"])
+        teleflu_project = TeleFluProject.objects.get(pk=teleflu_project_pk)
+        project_name = teleflu_project.name
         self.kwargs["project_name"] = project_name
         self.kwargs["project_index"] = (
-            teleflu_mapping.teleflu_project.televir_project.pk
+            teleflu_project.televir_project.pk
         )
         self.kwargs["teleflu_project_name"] = (
-            f"Focus: {teleflu_mapping.teleflu_project.raw_reference.description_first}"
+            f"Focus: {teleflu_project.raw_reference.description_first}"
         )
 
     def get_context_data(self, **kwargs):
@@ -1161,9 +1158,11 @@ class TelefluProjectView(BaseBreadcrumbMixin, LoginRequiredMixin, generic.Create
         context["mapping_workflows"] = mapping_workflows
         ####################################### get combinations to deploy
         available_path_nodes = software_utils.query_available_pathnodes(
-            mapping_only = True, screening = False
+            pipeline_type=SoftwareTree.PIPELINE_TYPE_MAPPING
         )
-        all_paths = software_utils.get_all_technology_pipelines()
+        #available_leaves = [pipeline_tree.match_node_to_index(node) for node in matched_leaves.values()]
+        all_paths = software_utils.get_all_technology_pipelines(pipeline_type=SoftwareTree.PIPELINE_TYPE_MAPPING)
+
         ########################################## get workflows
         workflows = []
         for node, params_df in all_paths.items():
@@ -1219,7 +1218,7 @@ class TelefluMappingIGV(BaseBreadcrumbMixin, LoginRequiredMixin, generic.Templat
             ),
             (
                 self.kwargs["mapping_id"],
-                reverse("teleflu_mapping_igv", args=[self.kwargs["pk"]]),
+                "",
             ),
         ]
 
@@ -1861,11 +1860,6 @@ class ReferencePanelManagement(
         return context
 
 
-from django.views.generic import ListView, TemplateView
-
-from pathogen_identification.tables import (ReferenceSourceFileTable,
-                                            TelevirReferencesTable)
-
 
 class ReferenceManagementBase(BaseBreadcrumbMixin, TemplateView):
     """
@@ -1916,7 +1910,7 @@ class ReferenceFileManagement(
 
         return (
             ReferenceSourceFile.objects.filter(Q(owner=None) | Q(owner__id=user_pk))
-            .exclude(is_deleted=True)
+            .exclude(is_deleted=True, is_cache=True)
             .order_by("-creation_date")
         )
 
@@ -1926,7 +1920,7 @@ class ReferenceFileManagement(
 
         files = (
             ReferenceSourceFile.objects.filter(Q(owner=None) | Q(owner__id=user.pk))
-            .exclude(is_deleted=True)
+            .exclude(is_deleted=True, is_cache=True)
             .order_by("-owner", "-creation_date")
         )
 
@@ -2741,6 +2735,17 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
             raw_references = run_main_pipeline.references_sorted(mapping_only=True)
             raw_reference_table = RawReferenceTable_Basic(raw_references)
 
+        from pathogen_identification.models import (ClassifierOutput,
+                                                    ClassifierOutputFile)
+
+        classifier_outputs = ClassifierOutput.objects.filter(run=run_main_pipeline)
+        classifier_outputs = {
+            clo: ClassifierOutputFile.objects.filter(classifier_output=clo)
+            for clo in classifier_outputs
+        }
+        
+
+
         #####
         run_detail = RunDetail.objects.get(sample=sample_main, run=run_main_pipeline)
         #
@@ -2811,36 +2816,33 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
         )
 
         ########
-        final_report = FinalReport.objects.filter(
-            sample=sample_main, run=run_main_pipeline
-        ).order_by("-coverage")
-        #
         report_layout_params = TelevirParameters.get_report_layout_params(run_pk=run_pk)
-        report_sorter = ReportSorter(sample_main, final_report, report_layout_params)
+        # get latest reportaggregate
+        latest_report_aggregate = ReportAggregate.objects.filter(
+            sample=sample_main, run=run_main_pipeline
+        ).order_by("-date_created").first()
 
-        sorted_reports = report_sorter.get_reports()
-        excluded_reports_exist = report_sorter.check_excluded_exist()
-        empty_reports = report_sorter.get_reports_empty()
-
-
-        if excluded_reports_exist and report_sorter.analysis_empty is False:
-
-            if len(empty_reports.group_list) > 0:
-                sorted_reports.append(empty_reports)
-
-        # check has control_flag present
-        # has_controlled_flag = False if sample_main.is_control else True
-        #########
-        clade_heatmap_json = report_sorter.clade_heatmap_json(
-            to_keep=[report_group.name for report_group in sorted_reports]
+        report_groups = ReportGroup.objects.filter(
+            aggregator=latest_report_aggregate
         )
 
-        #########
-        private_reads_available = False
-        for report_group in sorted_reports:
-            if report_group.reports_have_private_reads():
-                private_reads_available = True
-                break
+        sorted_reports = {
+            report_group: ReportList(list(report_group.reports.all())).set_private_reads(report_group).sort_group_by_private_reads()
+            for report_group in report_groups
+        }
+
+        private_reads_available = any(
+            report_group.private_reads_available for report_group in report_groups
+        )
+
+        if latest_report_aggregate is None:
+            latest_report_aggregate = ReportAggregateEmpty()
+
+        clade_heatmap_json = json.dumps(latest_report_aggregate.overlap_heatmap_json)
+        excluded_reports_exist = False
+        empty_reports = []
+
+        ############################ END REPORT SORTING
 
         contig_classification = ContigClassification.objects.get(
             sample=sample_main, run=run_main_pipeline
@@ -2866,7 +2868,7 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
             "crumbs": self.crumbs,
             "project": project_name,
             "run_name": run_name,
-            "sort_performed": report_sorter.sort_performed,
+            "sort_performed": latest_report_aggregate.sort_performed,
             "groups_count": len(sorted_reports),
             "min_shared_reads": round(
                 report_layout_params.shared_proportion_threshold * 100, 2
@@ -2874,6 +2876,7 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
             "clade_heatmap_json_exists": False if clade_heatmap_json is None else True,
             "clade_heatmap_json": clade_heatmap_json,
             "is_classification": is_classification,
+            "classification_reports": classifier_outputs,
             "remapping_performed": remapping_performed,
             "qc_processing": processed_reads,
             "sample": sample_name,
@@ -2888,7 +2891,7 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
             "run_remap": run_remap,
             "remap_available": remap_available,
             "reference_remap_main": reference_remap_main,
-            "number_validated": len(final_report),
+            "number_validated": latest_report_aggregate.n_reports_analyzed,
             "project_index": project_pk,
             "sample_index": sample_pk,
             "run_index": run_pk,
@@ -2899,17 +2902,17 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
             "data_exists": True if not run_main_pipeline.data_deleted else False,
             "excluded_exist": excluded_reports_exist,
             "empty_reports": empty_reports,
-            "error_rate_available": report_sorter.error_rate_available,
-            "max_error_rate": report_sorter.max_error_rate,
-            "quality_avg_available": report_sorter.quality_avg_available,
-            "max_qualit y_avg": report_sorter.max_quality_avg,
-            "max_mapped_prop": report_sorter.max_mapped_prop,
-            "max_coverage": report_sorter.max_coverage,
-            "max_windows_covered": report_sorter.max_windows_covered,
+            "error_rate_available": latest_report_aggregate.error_rate_available,
+            "max_error_rate": latest_report_aggregate.max_error_rate,
+            "quality_avg_available": latest_report_aggregate.quality_avg_available,
+            "max_qualit y_avg": latest_report_aggregate.max_quality_avg,
+            "max_mapped_prop": latest_report_aggregate.max_mapped_proportion,
+            "max_coverage": latest_report_aggregate.max_coverage,
+            "max_windows_covered": latest_report_aggregate.max_windows_covered,
             "overlap_heatmap_available": False,
-            "overlap_heatmap_path": report_sorter.overlap_heatmap_path,
-            "overlap_pca_exists": report_sorter.overlap_pca_exists,
-            "overlap_pca_path": report_sorter.overlap_pca_path,
+            "overlap_heatmap_path": latest_report_aggregate.overlap_heatmap_path,
+            "overlap_pca_exists": latest_report_aggregate.overlap_pca_exists,
+            "overlap_pca_path": latest_report_aggregate.overlap_pca_path,
             "private_reads_available": private_reads_available,
             "no_mapping": run_main_pipeline.remap == "None",
             "nav_project": True,
@@ -2937,10 +2940,11 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
             # final report
             reports_df = run_main_pipeline.get_final_reports_df()
             run_main_dir = infer_run_media_dir(run_main_pipeline)
-            reports_df.to_csv(
-                os.path.join(run_main_dir, "final_reports.csv"), index=False
-            )
             file_path = os.path.join(run_main_dir, "final_reports.csv")
+            reports_df.to_csv(
+                file_path, index=False
+            )
+            
             context["files"]["final_reports_csv"] = file_path
 
             def eliminate_path_before_media(path: str):
@@ -3019,51 +3023,40 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         sample_name = sample.name
         has_controlled_flag = False if sample.is_control else True
 
-        #
+        ######################
+        ########
 
-        final_report = FinalReport.objects.filter(
-            sample=sample, run__project=project_main
-        ).order_by("-coverage")
+        # get latest reportaggregate
+        latest_report_aggregate = ReportAggregate.objects.filter(
+            sample=sample, run=None
+        ).order_by("-date_created").first()
 
-        unique_reports = final_report_best_cov_by_accid(final_report)
-
-        #
-        report_layout_params = TelevirParameters.get_report_layout_params(
-            project_pk=project_main.pk
+        report_groups = ReportGroup.objects.filter(
+            aggregator=latest_report_aggregate
         )
 
-        report_sorter = ReportSorter(sample, unique_reports, report_layout_params)
-        sort_tree_exists = False
-        sort_tree_plot_path = None
-        if report_sorter.overlap_manager is not None:
-            sort_tree_exists = report_sorter.overlap_manager.tree_plot_exists
-            sort_tree_plot_path = report_sorter.overlap_manager.tree_plot_path_render
+        sorted_reports = {
+            report_group: ReportList(list(report_group.reports.all())).set_private_reads(report_group).sort_group_by_private_reads()
+            for report_group in report_groups
+        }
 
-        sorted_reports = report_sorter.get_reports_compound()
-        sort_performed = True if report_sorter.analysis_empty is False else False
-        private_reads_available = False
-        for report_group in sorted_reports:
-            if report_group.reports_have_private_reads():
-                private_reads_available = True
-                break
-
-        #########
-        clade_heatmap_json = report_sorter.clade_heatmap_json(
-            to_keep=[report_group.name for report_group in sorted_reports]
+        private_reads_available = any(
+            report_group.private_reads_available for report_group in report_groups
         )
+
+        if latest_report_aggregate is None:
+            latest_report_aggregate = ReportAggregateEmpty()    
+
+        clade_heatmap_json = json.dumps(latest_report_aggregate.overlap_heatmap_json) if latest_report_aggregate.overlap_heatmap_path else None
 
         #### graph
         graph_progress = TreeProgressGraph(sample)
         # graph_progress.generate_graph()
         graph_json, graph_id = graph_progress.get_graph_data()
         ####
-        runs = set([fr.run.pk for fr in final_report])
-        runs_pipeline = RunMain.objects.filter(
-            pk__in=runs, run_type=RunMain.RUN_TYPE_PIPELINE
-        )
-        runs_mapping = RunMain.objects.filter(pk__in=runs).exclude(
-            run_type=RunMain.RUN_TYPE_PIPELINE
-        )
+        runs = latest_report_aggregate.runs.all()
+        runs_pipeline = runs.filter(run_type=RunMain.RUN_TYPE_PIPELINE)
+        runs_mapping = runs.exclude(run_type=RunMain.RUN_TYPE_PIPELINE)
         runs_number = len(runs)
         runs_exist = runs_number > 0
 
@@ -3072,17 +3065,17 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
             "project": project_name,
             "nav_project": True,
             "graph_json": graph_json,
-            "sort_performed": sort_performed,
+            "sort_performed": latest_report_aggregate.sort_performed,
             "groups_count": len(sorted_reports),
             "min_shared_reads": round(
-                report_layout_params.shared_proportion_threshold * 100, 2
+                latest_report_aggregate.shared_proportion_threshold * 100, 2
             ),
             "clade_heatmap_json_exists": False if clade_heatmap_json is None else True,
             "clade_heatmap_json": clade_heatmap_json,
             "graph_id": graph_id,
             "sample": sample_name,
             "tree_plot_exists": False,
-            "tree_plot_path": sort_tree_plot_path,
+            "tree_plot_path": latest_report_aggregate.tree_plot_path,
             "project_index": project_pk,
             "sample_index": sample_pk,
             "report_list": sorted_reports,
@@ -3092,15 +3085,15 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
             "graph_height": runs_number * 22 + 100,
             "owner": True,
             "in_control": has_controlled_flag,
-            "error_rate_available": report_sorter.error_rate_available,
-            "max_error_rate": report_sorter.max_error_rate,
-            "quality_avg_available": report_sorter.quality_avg_available,
-            "max_quality_avg": report_sorter.max_quality_avg,
-            "max_mapped_prop": report_sorter.max_mapped_prop,
-            "max_coverage": report_sorter.max_coverage,
-            "max_windows_covered": report_sorter.max_windows_covered,
+            "error_rate_available": latest_report_aggregate.error_rate_available,
+            "max_error_rate": latest_report_aggregate.max_error_rate,
+            "quality_avg_available": latest_report_aggregate.quality_avg_available,
+            "max_quality_avg": latest_report_aggregate.max_quality_avg,
+            "max_mapped_prop": latest_report_aggregate.max_mapped_proportion,
+            "max_coverage": latest_report_aggregate.max_coverage,
+            "max_windows_covered": latest_report_aggregate.max_windows_covered,
             "overlap_heatmap_available": False,  # report_sorter.overlap_heatmap_exists,
-            "overlap_heatmap_path": report_sorter.overlap_heatmap_path,
+            "overlap_heatmap_path": latest_report_aggregate.overlap_heatmap_path,
             "private_reads_available": private_reads_available,
         }
 

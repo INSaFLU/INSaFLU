@@ -33,7 +33,7 @@ class Televir_Metadata_Constants:
         "input_protein_accession_to_taxid_path": "protein_acc2taxid.tsv",
     }
 
-    REFERENCE_MAIN = "/televir/mngs_benchmark/ref_fasta/"
+    REFERENCE_MAIN = Televir_Directory_Constants.ref_fasta_directory
 
     BINARIES = {
         "SOURCE": Televir_Directory_Constants.conda_directory,

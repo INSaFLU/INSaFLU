@@ -367,7 +367,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                    {% for final_report in report_list %}
+                    {% for final_report, group_reports in report_list.items %}
                         <tbody class="group-wrapper">
                         <tr>
                             <td colspan="100%">
@@ -419,7 +419,7 @@
                                    
                                 </div>
                                 <script>
-                                    createHeatmap('{{ final_report.js_heatmap_data|safe }}', "plot-{{final_report.name}}");
+                                    createHeatmap('{{ final_report.overlap_heatmap_json_str|safe }}', "plot-{{final_report.name}}");
                                 </script>
 
                             </td>
@@ -433,7 +433,7 @@
                             </td>
                         </tr>
                         {% endif %}
-                        {% for value in final_report.group_list %}
+                        {% for value in group_reports %}
                         <tr class="parent {{value.row_class_name}}"  style="display: {{value.display}}" id="row_{{value.accid}}" group-name="{{final_report.name}}" first="{{value.first_in_group}}" accid>
                             <td data-title="Description" style="text-align: left;">
                                 {% if value.first_in_group %}
@@ -451,7 +451,7 @@
                             <td data-title="accID">
                                 <a href={{value.accid|link_ncbi}}>{{value.accid}}</a>
                             </td>
-                            <td data-title="Support" {% if value.found_in == "M" %} class="map-only-cell" {% endif %} >{{value.found_in |safe}}</td>                                
+                            <td data-title="Support" {% if value.found_in_str == "M" %} class="map-only-cell" {% endif %} >{{value.found_in_str |safe}}</td>                                
                             <td data-title="Cov" style="{% depth_color value.coverage max_coverage %}" class = "extra-column">
                                 {{value.coverage|round}}</td>
                             <td data-title="Depth" style="{% depth_color value.depth value.run_detail.max_depth %}" class = "extra-column">
@@ -685,6 +685,7 @@
 <script type="text/javascript" src="{% static 'js/televir_projects/sample_detail.js' %}"></script>
 
 <script>
+
     if (document.getElementById('toggle-summary')) {
         document.getElementById('toggle-summary').addEventListener('click', function() {
             var summaryDiv = document.querySelector('.collapsible-summary');
@@ -699,7 +700,6 @@
             summaryDiv.classList.remove('show');
         });
     }
-
 
     var buttons = document.querySelectorAll('.showSecondaryRows, .showSecondaryRows i');
     for (var b = 0; b < buttons.length; b++) {

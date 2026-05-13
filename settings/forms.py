@@ -7,10 +7,9 @@ Created on 04/05/2020
 import os
 
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Button, ButtonHolder, Div, Fieldset, Layout, Submit
+from crispy_forms.layout import (Button, ButtonHolder, Div, Fieldset, Layout,
+                                 Submit)
 from django import forms
-from django.conf import settings
-from django.contrib.auth.models import User
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.urls import reverse
@@ -21,12 +20,12 @@ from constants.constants import Constants
 from constants.software_names import SoftwareNames
 from datasets.models import Dataset
 from managing_files.models import Primer, Project, ProjectSample
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from pathogen_identification.models import Projects as TelevirProject
 from pathogen_identification.modules.remap_class import Remap_Bowtie2
-from pathogen_identification.utilities.utilities_pipeline import (
-    Utility_Pipeline_Manager,
-)
+from pathogen_identification.utilities.utilities_pipeline import \
+    Utility_Pipeline_Manager
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.models import Parameter, Sample, Software
@@ -147,6 +146,7 @@ class SoftwareForm(forms.ModelForm):
 
             elif parameter.is_multiple_choice():  # Update this condition if needed
                 ## already selected
+
                 selected = parameter.parameter.split(";") if parameter.parameter else []
 
                 if (
@@ -352,6 +352,7 @@ class SoftwareForm(forms.ModelForm):
                     and parameter.software.pipeline_step.name
                     in self.televir_utiltity.steps_db_dependant
                 ):
+
                     if (
                         parameter.software.pipeline_step.name
                         == ConstantsSettings.PIPELINE_NAME_host_depletion

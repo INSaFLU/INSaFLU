@@ -1,9 +1,11 @@
+import os
+
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
 from managing_files.models import ProcessControler
 from pathogen_identification.models import (PIProject_Sample, Projects,
-                                            SoftwareTreeNode)
+                                            SoftwareTree)
 from pathogen_identification.utilities.tree_deployment import (
     Tree_Progress, TreeProgressGraph)
 from pathogen_identification.utilities.utilities_pipeline import (
@@ -49,7 +51,10 @@ class Command(BaseCommand):
         process_SGE = ProcessSGE()
         user = User.objects.get(pk=options["user_id"])
         project = Projects.objects.get(pk=options["project_id"])
-        technology = project.technology
+        output_directory = options["outdir"]
+
+        if os.path.exists(output_directory) == False:
+            os.makedirs(output_directory)
 
         samples = PIProject_Sample.objects.filter(
             project=project, is_deleted=False, pk=options["sample_id"]
@@ -94,10 +99,8 @@ class Command(BaseCommand):
             #local_tree = software_utils.generate_software_tree_safe(software_utils.project)
             #available_path_nodes = software_utils.get_available_pathnodes(local_tree)
             available_path_nodes = software_utils.query_available_pathnodes(
-                screening=False,
-                mapping_only=False,
-            )            
-
+                pipeline_type=SoftwareTree.PIPELINE_TYPE_CLASSIC
+            )
 
             matched_paths = {
                 leaf_index: leaf for leaf_index, leaf in available_path_nodes.items() if utils.parameter_util.check_ParameterSet_available_to_run(
@@ -115,9 +118,10 @@ class Command(BaseCommand):
             for software_tree, matched_leaves in software_tree_matched_paths.items():
                 # SUBMISSION
                 pipeline_tree = software_utils.software_pipeline_tree(software_tree)
-                module_tree = utils.module_tree(pipeline_tree, list(matched_leaves.keys()))
+                leaves = [pipeline_tree.match_node_to_index(node) for node in matched_leaves.values()]
 
-
+                module_tree = utils.module_tree(pipeline_tree, leaves)
+                
                 for project_sample in samples:
                     if project_sample.is_deleted:
                         continue
@@ -125,9 +129,9 @@ class Command(BaseCommand):
                         graph_progress = TreeProgressGraph(project_sample)
 
                         deployment_tree = Tree_Progress(
-                            module_tree, project_sample, project
+                            module_tree, project_sample, project, output_directory=output_directory
                         )
-
+                        print("############ deployment tree")
                         graph_progress.generate_graph()
 
                         deployment_tree.cycle_process()

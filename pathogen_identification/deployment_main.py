@@ -26,7 +26,8 @@ from pathogen_identification.utilities.utilities_general import \
     simplify_name_lower
 from pathogen_identification.utilities.utilities_pipeline import (
     Parameter_DB_Utility, SoftwareTreeUtils, Utils_Manager)
-from pathogen_identification.utilities.utilities_views import ReportSorter
+from pathogen_identification.utilities.utilities_views import (
+    ReportSorter, final_report_best_cov_by_accid)
 from settings.constants_settings import ConstantsSettings as SettingsConstants
 from utils.process_SGE import ProcessSGE
 
@@ -287,12 +288,19 @@ class PathogenIdentification_SingleDeployment(PathogenIdentificationDeploymentCo
         self.parameter_set = ParameterSet.objects.get(pk=pk)
         self.tree_makup = self.parameter_set.leaf.software_tree.global_index
 
-    def configure_params(self):
+    @property
+    def pipeline_type(self):
+        try: 
+            return self.parameter_set.leaf.software_tree.pipeline_type
+        except AttributeError:
+            return None
+
+    def configure_params(self) -> bool:
         """get pipeline parameters from database"""
 
         software_tree_utils = SoftwareTreeUtils(self.project.owner, self.project)
 
-        all_paths = software_tree_utils.get_all_technology_pipelines()
+        all_paths = software_tree_utils.get_all_technology_pipelines(pipeline_type=self.pipeline_type)
 
         self.run_params_db = all_paths.get(self.pipeline_index, None)
 
@@ -387,7 +395,7 @@ class Run_Main_from_Leaf:
         self.pk = self.parameter_set.pk
 
         self.container = PathogenIdentification_SingleDeployment(
-            pipeline_index=pipeline_leaf.index,
+            pipeline_index=pipeline_leaf.pk,
             sample=input_data,
             prefix=prefix,
             deployment_root_dir=odir,
@@ -490,10 +498,7 @@ class Run_Main_from_Leaf:
                     self.container.run_engine.remap_params.manual_references_include
                     is True
                 ):
-                    self.container.run_engine.metadata_tool.get_manual_references(
-                        self.sample,
-                        max_accids=self.container.run_engine.remap_params.max_accids,
-                    )
+                    self.container.run_engine.metadata_tool.get_manual_references(self.sample)
 
         except Exception as e:
             print(e)
@@ -590,6 +595,7 @@ class Run_Main_from_Leaf:
             )
             if not db_updated:
                 return False
+        
         except Exception as e:
             print(traceback.format_exc())
             print(e)
@@ -659,8 +665,6 @@ class Run_Main_from_Leaf:
 
     def register_error(self):
         self.set_run_process_error()
-        print("REGISTERING ERROR")
-        print("RUN PS PK", self.pk)
 
         new_run = ParameterSet.objects.get(pk=self.pk)
         new_run.register_error()
@@ -690,19 +694,35 @@ class Run_Main_from_Leaf:
         if final_reports.exists() is False:
             return
 
-        report_sorter = ReportSorter(self.sample, final_reports, report_layout_params)
 
-        try:
+        runs = RunMain.objects.filter(parameter_set=self.parameter_set).exclude(run_type=RunMain.RUN_TYPE_STORAGE)
+        
+        for run in runs:
+
+            final_report = FinalReport.objects.filter(
+                sample=self.parameter_set.sample, run=run
+            ).order_by("-coverage")
+            #
+            report_sorter = ReportSorter(
+                self.parameter_set.sample, final_report, report_layout_params
+            )
             report_sorter.sort_reports_save()
-        except Exception as e:
-            print(e)
-            print(traceback.format_exc())
+            report_sorter.reports_aggregate_register(report_layout_params, run)
 
-            print("Error in report sorter")
-            return
+        final_reports = FinalReport.objects.filter(
+            sample=self.parameter_set.sample,
+        ).order_by("-coverage")
+
+        final_reports = final_report_best_cov_by_accid(final_reports)
+        report_sorter = ReportSorter(
+            self.parameter_set.sample, final_reports, report_layout_params
+        )
+        report_sorter.sort_reports_save()
+        report_sorter.reports_aggregate_register(report_layout_params)
 
     def register_completion(self):
         self.set_run_process_finished()
+        self.run_reference_overlap_analysis()
         new_run = ParameterSet.objects.get(pk=self.pk)
         new_run.register_finished()
 

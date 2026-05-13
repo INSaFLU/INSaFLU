@@ -10,7 +10,8 @@ from typing import Any, Type
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.modules.object_classes import RunCMD, SoftwareDetail
+from pathogen_identification.modules.object_classes import (RunCMD,
+                                                            SoftwareDetail)
 
 
 def read_sam_file(
@@ -89,6 +90,17 @@ class Classifier_init(ABC):
         self.full_report_path = os.path.join(
             self.out_path, self.prefix + self.full_report_suffix
         )
+
+    def export_reports(self, output_dir):
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        if os.path.exists(self.report_path):
+            shutil.copy(self.report_path, output_dir)
+            self.report_path = os.path.join(output_dir, os.path.basename(self.report_path))
+        if os.path.exists(self.full_report_path):
+            shutil.copy(self.full_report_path, output_dir)
+            self.full_report_path = os.path.join(output_dir, os.path.basename(self.full_report_path))
 
     def filter_samfile_read_names(self, same=True, output_sam="", sep=",", idx=0):
         if not output_sam:
@@ -983,9 +995,8 @@ class run_centrifuge(Classifier_init):
         if check_report_empty(self.report_path):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
-        from pathogen_identification.utilities.classifier_processor import (
-            CentrifugeOutputProcessor,
-        )
+        from pathogen_identification.utilities.classifier_processor import \
+            CentrifugeOutputProcessor
 
         centrifuge_processor = CentrifugeOutputProcessor(self.report_path)
         centrifuge_processor.from_file().process().prep_final_report()
@@ -1143,7 +1154,7 @@ class run_kraken2(Classifier_init):
         """
         run paired read files classification.
         """
-        cmd = f"kraken2 --threads 4 --db {self.db_path} --fastq-input --gzip-compressed --output {self.out_path} {self.query_path} {self.r2}"
+        cmd = f"kraken2 --threads 4 --db {self.db_path} --gzip-compressed --output {self.out_path} {self.query_path} {self.r2}"
         cmd = [
             "kraken2",
             "--threads",
@@ -1176,9 +1187,8 @@ class run_kraken2(Classifier_init):
         if check_report_empty(self.report_path):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
-        from pathogen_identification.utilities.classifier_processor import (
-            KrakenOutputProcessor,
-        )
+        from pathogen_identification.utilities.classifier_processor import \
+            KrakenOutputProcessor
 
         kraken_processor = KrakenOutputProcessor(self.report_path)
         kraken_processor.from_file().process().prep_final_report()

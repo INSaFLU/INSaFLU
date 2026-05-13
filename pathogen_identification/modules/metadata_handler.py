@@ -4,21 +4,14 @@ from typing import Dict, List, Optional
 
 import pandas as pd
 
-from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (
-    PIProject_Sample,
-    RawReference,
-    RawReferenceCompoundModel,
-    ReferenceSource,
-    ReferenceSourceFileMap,
-    RunMain,
-)
+from pathogen_identification.models import (PIProject_Sample, RawReference,
+                                            RawReferenceCompoundModel,
+                                            ReferenceSource,
+                                            ReferenceSourceFileMap, RunMain)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
-from pathogen_identification.utilities.utilities_general import (
-    merge_classes,
-    simplify_name,
-)
+from pathogen_identification.utilities.utilities_general import (merge_classes,
+                                                                 simplify_name)
 from pathogen_identification.utilities.utilities_views import RawReferenceUtils
 
 
@@ -115,7 +108,7 @@ class RunMetadataHandler:
             [[0, 0, 0]], columns=["input", "output", "removed"]
         )
 
-    def get_manual_references(self, sample: PIProject_Sample, max_accids: int = 15):
+    def get_manual_references(self, sample: PIProject_Sample):
         """
         Get manual references for a given sample. update map request with references.
         """
@@ -349,7 +342,7 @@ class RunMetadataHandler:
         return references_table
 
     @staticmethod
-    def filter_taxids_not_in_db(df) -> pd.DataFrame:
+    def check_taxids_not_in_db(df) -> pd.DataFrame:
 
         def get_refs_existing(taxid):
             try:
@@ -364,8 +357,23 @@ class RunMetadataHandler:
                 return False
 
         df["has_refs"] = df["taxid"].apply(get_refs_existing)
+
+        return df
+    
+    def retrieve_taxids_ncbi(self, df: pd.DataFrame) -> pd.DataFrame:
+
+        from pathogen_identification.constants_settings import \
+            ConstantsSettings
+        from pathogen_identification.utilities.reference_utils import \
+            AssemblyStore
+
+        assembly_store = AssemblyStore(ConstantsSettings.local_assembly_store)
+        assemblies = assembly_store.match_taxid_to_assembly(df[df["has_refs"] == False])
+        assembly_store.register_assemblies(assemblies, cache = True)
+        df = self.check_taxids_not_in_db(df)
         df = df[df["has_refs"] == True]
         df.drop(columns=["has_refs"], inplace=True)
+
         return df
 
     def register_taxid_accids(self, taxid: str, accids: List[str]):
@@ -414,7 +422,10 @@ class RunMetadataHandler:
 
         df = self.map_hit_report(df)
 
-        df = self.filter_taxids_not_in_db(df)
+        df = self.check_taxids_not_in_db(df)
+
+        df = self.retrieve_taxids_ncbi(df)
+
 
         self.accid_register(df)
 
@@ -502,10 +513,12 @@ class RunMetadataHandler:
         self.logger.info("Finished retrieving metadata")
 
     def get_protacc_taxid(self, df: pd.DataFrame) -> pd.DataFrame:
+        print("prot_accesions")
         query_list = df.prot_acc.unique().tolist()
         self.entrez_conn.bin_query = self.entrez_conn.bin_query_factory.get_query(
             "fetch_protein_accession_taxon"
         )
+        
         output = self.entrez_conn.run_entrez_query(query_list)
         self.entrez_conn.bin_query = self.entrez_conn.bin_query_factory.get_query(
             "fetch_taxid_description"

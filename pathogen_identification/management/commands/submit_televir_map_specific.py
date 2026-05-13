@@ -28,7 +28,8 @@ from pathogen_identification.utilities.utilities_general import \
     simplify_name_lower
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter, TelevirParameters, recover_assembly_contigs)
+    ReportSorter, TelevirParameters, final_report_best_cov_by_accid,
+    recover_assembly_contigs)
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
 
@@ -395,7 +396,7 @@ class Input_Generator:
         ps_leaves = self.utils.get_parameterset_leaves(parameter_set, pipeline_tree)
         parameter_leaf_index = ps_leaves[0]
         parameter_leaf = SoftwareTreeNode.objects.get(
-            index=parameter_leaf_index, software_tree=parameter_set.leaf.software_tree
+            pk=parameter_leaf_index, software_tree=parameter_set.leaf.software_tree
         )
 
         run_df = self.utils.get_leaf_parameters(parameter_leaf)
@@ -478,6 +479,17 @@ class Input_Generator:
         report_layout_params = TelevirParameters.get_report_layout_params(run_pk=run.pk)
         report_sorter = ReportSorter(sample, final_report, report_layout_params)
         report_sorter.sort_reports_save()
+
+        final_reports = FinalReport.objects.filter(
+            sample.sample
+        ).order_by("-coverage")
+
+        final_reports = final_report_best_cov_by_accid(final_reports)
+        report_sorter = ReportSorter(
+            sample, final_reports, report_layout_params
+        )
+        report_sorter.sort_reports_save()
+        report_sorter.reports_aggregate_register(report_layout_params)
 
 
 class Command(BaseCommand):

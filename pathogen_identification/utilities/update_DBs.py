@@ -8,10 +8,10 @@ from django.contrib.auth.models import User
 from django.core.files import File
 from django.db import IntegrityError, transaction
 
-from pathogen_identification.models import (QC_REPORT, ContigClassification,
-                                            FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RawReference,
+from pathogen_identification.models import (QC_REPORT, ClassifierOutput,
+                                            ContigClassification, FinalReport,
+                                            ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
                                             RawReferenceCompoundModel,
                                             ReadClassification,
                                             ReferenceContigs,

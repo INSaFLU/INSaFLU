@@ -1144,7 +1144,7 @@ class ProcessSched(object):
             job_name,
             True,
             [job_name_wait],
-~        )
+        )
         try:
             job_id = self.submit_job(path_file)
             if job_id != None:

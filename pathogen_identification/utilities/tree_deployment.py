@@ -28,11 +28,12 @@ from pathogen_identification.utilities.update_DBs_tree import (
     Update_Assembly, Update_Classification, Update_Remap,
     Update_RunMain_Initial, Update_RunMain_Secondary)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Pipeline_Makeup, PipelineTree, Utils_Manager)
+    PipelineTree, Utils_Manager)
 from pathogen_identification.utilities.utilities_views import (
     ReportSorter, final_report_best_cov_by_accid)
 from settings.constants_settings import ConstantsSettings
 from utils.utils import Utils
+from pathogen_identification.televir_pipeline_makeup import Pipeline_Makeup
 
 
 def logger_copy(x, memo):

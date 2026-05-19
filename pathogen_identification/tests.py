@@ -41,7 +41,7 @@ from pathogen_identification.utilities.televir_parameters import \
 from pathogen_identification.utilities.tree_deployment import Tree_Progress
 from pathogen_identification.utilities.utilities_general import merge_classes
 from pathogen_identification.utilities.utilities_pipeline import (
-    Pipeline_Makeup, PipelineTree, SoftwareTreeUtils, Utils_Manager)
+    PipelineTree, SoftwareTreeUtils, Utils_Manager)
 from pathogen_identification.utilities.utilities_views import (
     FinalReportCompound, RawReferenceUtils, ReportSorter,
     SampleReferenceManager)
@@ -50,6 +50,7 @@ from settings.default_software import DefaultSoftware
 from settings.models import Parameter, Sample, Software
 from utils.software import Software as SoftwareUtils
 from utils.utils import Utils
+from pathogen_identification.televir_pipeline_makeup import Pipeline_Makeup
 
 
 class AttrDict(dict):

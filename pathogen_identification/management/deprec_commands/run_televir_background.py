@@ -8,8 +8,9 @@ from django.core.management.base import BaseCommand
 from django.db.models import Q
 
 from pathogen_identification.models import ParameterSet, PIProject_Sample, Projects
-from pathogen_identification.utilities.utilities_pipeline import Pipeline_Makeup
+
 from settings.constants_settings import ConstantsSettings
+from pathogen_identification.televir_pipeline_makeup import Pipeline_Makeup
 
 
 class InsafluCommand(ABC):

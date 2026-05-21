@@ -13,6 +13,7 @@ from decouple import config
 
 from constants.televir_directories import Televir_Directory_Constants
 from settings.constants_settings import ConstantsSettings as CS
+from pathlib import Path
 
 
 class Televir_Metadata_Constants:
@@ -33,7 +34,7 @@ class Televir_Metadata_Constants:
         "input_protein_accession_to_taxid_path": "protein_acc2taxid.tsv",
     }
 
-    REFERENCE_MAIN = "/televir/mngs_benchmark/ref_fasta/"
+    REFERENCE_MAIN = Televir_Directory_Constants.ref_fasta_directory
 
     BINARIES = {
         "SOURCE": Televir_Directory_Constants.conda_directory,
@@ -58,12 +59,14 @@ class Televir_Metadata_Constants:
             "clark": "classification/Clark",
             "blastn": "hostDepletion/hostdep_env",
             "blastp": "hostDepletion/hostdep_env",
-            "snippy": config("DIR_SOFTWARE") + "/snippy",
+            "snippy": "remap/remap",
             "bamutil": "remap/remap",
             "msamtools": "remap/remap",
             "bcftools": "remap/remap",
             "samtools": "remap/remap",
             "bwa": "remap/remap",
+            "bwa-filter": "remap/remap",
+            "bwa-mem": "remap/remap",
             "bowtie2": "remap/remap",
             "bowtie2_remap": "remap/remap",
             "minimap2": "hostDepletion/hostdep_env",
@@ -71,6 +74,8 @@ class Televir_Metadata_Constants:
             "minimap2_illu": "hostDepletion/hostdep_env",
             "minimap2_remap": "hostDepletion/hostdep_env",
             "minimap2_ont": "hostDepletion/hostdep_env",
+            "metaphlan": "Metaphlan/metaphlan",
+            "voyager": "classification",
             "snippy_pi": config("DIR_SOFTWARE") + "/snippy",
             "prinseq++": "preprocess/prinseq",
             "prinseq": "preprocess/prinseq",
@@ -83,7 +88,7 @@ class Televir_Metadata_Constants:
         CS.PIPELINE_NAME_remap_filtering: {"default": "remap/remap"},
         CS.PIPELINE_NAME_read_quality_analysis: {"default": "preprocess/preproc"},
         CS.PIPELINE_NAME_extra_qc: {"default": "preprocess/preproc"},
-        CS.PIPELINE_NAME_assembly: {"default": "assembly/assembly"},
+        CS.PIPELINE_NAME_assembly: {"default": "assembly/assembly_env"},
     }
 
     @property
@@ -167,37 +172,67 @@ class Constants(object):
     ## start expand tag name rows
     START_EXPAND_SAMPLE_TAG_NAMES_ROWS = 4
 
-    DIR_PROCESSED_FILES_UPLOADS = "uploads"
-    DIR_PROCESSED_PROCESSED = "processed"
+    DIR_PROCESSED_FILES_UPLOADS = Path('uploads')
+    DIR_PROCESSED_PROCESSED = Path('processed')
 
     ### queue names
-    QUEUE_SGE_NAMES = ["queue_1.q", "queue_2.q"]
-    QUEUE_SGE_NAME_GLOBAL = "all.q"
-    QUEUE_SGE_NAME_FAST = "fast.q"  ## jobs that are fast to run
-    QUEUE_SGE_NAME_INSA = "insa.q"  ## insa queue
+    QUEUE_NAMES = ["queue_1.q", "queue_2.q"]
+    QUEUE_NAME_GLOBAL = "all.q"
+    QUEUE_NAME_FAST = "fast.q"  ## jobs that are fast to run
+    QUEUE_NAME_INSA = "insa.q"  ## insa queue
     ##    QUEUE_SGE_NAME_EMAIL = 'email.q' direct for now...
+
+    ### three types of numbering
+    PROCESS_GLOBAL = "g"  ## runs on projects
+    PROCESS_SAMPLE = "s"  ## runs on samples
+    PROCESS_LINK = "l"
+    PROCESS_REGULAR = "r"
+
+    ### Type of process, it is possible to track the process by this name
+    PROCESS_dont_care = "d"
+    PROCESS_clean_sample = "c"
+    ## set_run_trimmomatic_species; set_run_clean_minion
+    PROCESS_collect_all_samples = "sl"
+    ## set_create_sample_list_by_user
+    PROCESS_collect_all_projects = "pl"
+    ## set_create_project_list_by_user
+    ## related with projects...
+    PROCESS_projects = "ps"
+    ## set_second_stage_snippy; set_second_stage_medaka;
+    ## collect_global_files
+    PROCESS_datasets = "ds"
+    ## process datasets;
+    PROCESS_link_files = "l"
+    ## set_link_files
+    PROCESS_televir = "tv"
+    ## set_televir_map_specific
+    PROCESS_mapping = "m"
+    ## set_televir
+
+    
 
     ### separators
     SEPARATOR_COMMA = ","
     SEPARATOR_TAB = "\t"
 
     ## DIR_PROCESSED_FILES_FROM_WEB/userId_<id>/refId_<id>
-    DIR_PROCESSED_FILES_REFERENCE = DIR_PROCESSED_FILES_UPLOADS + "/references"
+    DIR_PROCESSED_FILES_REFERENCE = DIR_PROCESSED_FILES_UPLOADS / "references"
+    DIR_PROCESSED_FILES_PRIMER = DIR_PROCESSED_FILES_UPLOADS / "primers"
     DIR_PROCESSED_FILES_TELEFLU_REFERENCE = (
-        DIR_PROCESSED_FILES_UPLOADS + "/teleflu_references"
+        DIR_PROCESSED_FILES_UPLOADS / "teleflu_references"
     )
-    DIR_TELEVIR_UPLOAD_FILES = DIR_PROCESSED_FILES_UPLOADS + "/televir_references"
-    DIR_PROCESSED_FILES_CONSENSUS = DIR_PROCESSED_FILES_UPLOADS + "/consensus"
-    DIR_PROCESSED_FILES_FASTQ = DIR_PROCESSED_FILES_UPLOADS + "/fastq"
+    DIR_TELEVIR_UPLOAD_FILES = DIR_PROCESSED_FILES_UPLOADS / "televir_references"
+    DIR_PROCESSED_FILES_CONSENSUS = DIR_PROCESSED_FILES_UPLOADS / "consensus"
+    DIR_PROCESSED_FILES_FASTQ = DIR_PROCESSED_FILES_UPLOADS / "fastq"
     DIR_PROCESSED_FILES_PROJECT = "projects/result"
     DIR_PROCESSED_FILES_MULTIPLE_SAMPLES = (
-        DIR_PROCESSED_FILES_UPLOADS + "/multiple_samples"
+        DIR_PROCESSED_FILES_UPLOADS / "multiple_samples"
     )
     DIR_PROCESSED_FILES_DATASETS = "datasets/result"
 
     DIR_ICONS = "icons"
     DIR_TEMPLATE_INPUT = "template_input"
-    TEMP_DIRECTORY = "/tmp"
+    TEMP_DIRECTORY = "/data/tmp/"
     COUNT_DNA_TEMP_DIRECTORY = "insaFlu"
 
     FILE_TEMPLATE_INPUT_csv = "template_input.csv"
@@ -232,8 +267,11 @@ class Constants(object):
     DIR_TYPE_CONTIGS_2_SEQUENCES = "db/contigs2sequences/"
     DIR_TYPE_IDENTIFICATION = "db/type_identification/"
     DIR_TYPE_REFERENCES = "db/references/"
+    DIR_TYPE_PRIMERS = "db/primers/"
+    EXTENSION_PRIMER_PAIR = ".pair_information.tsv"
     DIR_NEXTSTRAIN_tables = "db/nextstrain"
     DIR_TEST_TYPE_REFERENCES = "tests/db/references/"
+    DIR_TEST_TYPE_PRIMERS = "tests/db/primers/"
     DIR_TYPE_ALN2PHENO = "db/Alignment2phenotype/"
     DIR_TYPE_IDENTIFICATION_PROJECTS = "db/type_identification_projects/"
     TYPE_IDENTIFICATION_PROJECTS_DBNAME = "db_projects_v1"
@@ -285,14 +323,15 @@ class Constants(object):
     NEXTCLADE_LINK_MPXV_All_clades = (
         "https://clades.nextstrain.org/?dataset-name=MPXV&input-fasta="
     )
-    NEXTCLADE_LINK_MPXV_CladeI = (
-        "https://clades.nextstrain.org/?dataset-name=nextstrain/mpox/clade-i&input-fasta="
-    )    
+    NEXTCLADE_LINK_MPXV_CladeI = "https://clades.nextstrain.org/?dataset-name=nextstrain/mpox/clade-i&input-fasta="
     NEXTCLADE_LINK_RSV_A = (
         "https://clades.nextstrain.org/?dataset-name=rsv_a&input-fasta="
     )
     NEXTCLADE_LINK_RSV_B = (
         "https://clades.nextstrain.org/?dataset-name=rsv_b&input-fasta="
+    )
+    NEXTCLADE_LINK_MULTI = (
+        "https://clades.nextstrain.org/?multi-dataset=true&input-fasta="
     )
     AUSPICE_LINK = "https://auspice.us/"
 
@@ -361,6 +400,66 @@ class Constants(object):
         "N": "N",
     }
 
+    @staticmethod
+    def get_process_cpu(process_type):
+        """
+        get the number of CPU to use in a process type
+        """
+        if process_type == Constants.PROCESS_dont_care:
+            return 1
+        if process_type == Constants.PROCESS_clean_sample:
+            return 4
+        if process_type == Constants.PROCESS_collect_all_samples:
+            return 4
+        if process_type == Constants.PROCESS_collect_all_projects:
+            return 4
+        if process_type == Constants.PROCESS_projects:
+            return 4
+        if process_type == Constants.PROCESS_datasets:
+            return 4
+        if process_type == Constants.PROCESS_link_files:
+            return 1
+        if process_type == Constants.PROCESS_televir:
+            return 4
+        if process_type == Constants.PROCESS_mapping:
+             return 2
+    
+        return 1
+    
+
+    @staticmethod
+    def get_process_memory(process_type):
+        """
+        get the number of memory to use in a process type
+        """
+        if process_type == Constants.PROCESS_dont_care:
+            return 4
+        if process_type == Constants.PROCESS_clean_sample:
+            return 16
+        if process_type == Constants.PROCESS_collect_all_samples:
+            return 16
+        if process_type == Constants.PROCESS_collect_all_projects:
+            return 16
+        if process_type == Constants.PROCESS_projects:
+            return 16
+        if process_type == Constants.PROCESS_datasets:
+            return 16
+        if process_type == Constants.PROCESS_link_files:
+            return 4
+        if process_type == Constants.PROCESS_televir:
+            return 16
+        if process_type == Constants.PROCESS_mapping:
+            return 8
+        return 4
+    
+    @staticmethod
+    def get_process_mem_string(process_type):
+        """
+        get the memory string to use in a process type
+        """
+        memory = Constants.get_process_memory(process_type)
+        return "{}G".format(memory)
+
     def get_extensions_by_file_type(self, file_name, file_type):
         """
         get extensions by file type
@@ -393,6 +492,10 @@ class Constants(object):
             return "ref.fa"
         if file_type == FileType.FILE_REF_FASTA_FAI:
             return "ref.fa.fai"
+        if file_type == FileType.FILE_MIXED_VARIANTS:
+            return "{}.mixed.variants.tsv".format(file_name)
+        if file_type == FileType.FILE_CONSENSUS_ORIGINAL_FA:
+            return "{}.consensus.original.fa".format(file_name)
         return ""
 
     ### complement
@@ -482,7 +585,7 @@ class FileType(Enum):
     [06:29:16] * /tmp/insafli/xpto/xpto.vcf
     [06:29:16] * /tmp/insafli/xpto/xpto.vcf.gz
     [06:29:16] * /tmp/insafli/xpto/xpto.vcf.gz.tbi
-                            /tmp/insafli/xpto/ref/ref.fa
+                            /tmp/insafli/xpto/reference/ref.fa
     """
 
     FILE_BAM = 0
@@ -499,6 +602,8 @@ class FileType(Enum):
     FILE_CSV = 11
     FILE_REF_FASTA = 12  ## ref/ref.fa
     FILE_REF_FASTA_FAI = 13  ## ref/ref.fa.fai
+    FILE_MIXED_VARIANTS = 14
+    FILE_CONSENSUS_ORIGINAL_FA = 15
 
 
 class TypeFile(object):
@@ -537,6 +642,7 @@ class FileExtensions(object):
     FILE_FA = ".fa"
     FILE_FAI = ".fai"
     FILE_CONSENSUS_FASTA = ".consensus.fasta"
+    FILE_BASH_SCRIPT = ".sh"
     FILE_TREE = ".tree"
     FILE_NWK = ".nwk"
     FILE_GZ = ".gz"

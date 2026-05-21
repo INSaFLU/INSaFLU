@@ -2,12 +2,12 @@
 
 {% load bootstrap4 %}
 {% load querystring from django_tables2 %}
-{% load title from django_tables2 %}
+
 {% load trans blocktrans from i18n %}
-{% load django_bootstrap_breadcrumbs %}
+{% load view_breadcrumbs %}
 
 {% block css %}
-	{% load static from staticfiles %}
+	{% load static %}
 		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
 		<link rel="stylesheet" href="{% static 'css/insaphylogeo.css' %}" type="text/css" />
 		<link rel="stylesheet" href="{% static 'css/project_sample_show.css' %}" type="text/css" />
@@ -20,11 +20,6 @@
 	</div>
 {% endblock %}
 
-{% block breadcrumbs %}
-	{{ block.super }}
-	{% breadcrumb "Datasets" "datasets" %}
-	{% breadcrumb "Show consensus in Dataset" "show-dataset-consensus" dataset.pk %}
-{% endblock %}
 
 {% block content %}
 
@@ -173,7 +168,7 @@
 										
 										<!-- Show nextClade link -->
 										{% if nextclade_link_covid or nextclade_link_a_h3n2 or nextclade_link_mpxv_hmpxv_b1 or nextclade_link_rsv_a %}
-											<div class="btn-group" data-toggle="tooltip" data-original-title="Jump to NextClade Annotation">
+											<div class="btn-group" >
 												<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 													Jump to NextClade
 				  								</button>
@@ -205,6 +200,8 @@
 															class="dropdown-item" target="_blank"><span class="hidden-phone"> (B-Yamagata)</span></a>
 														<a href="{{nextclade_link_b_victoria}}" data-title="Upload your Consensus File in NextClade Annotation B-Vitoria" 
 															class="dropdown-item" target="_blank"><span class="hidden-phone"> (B-Vitoria)</span></a>
+														<a href="{{nextclade_link_multi}}" data-title="Upload your Consensus File in NextClade Annotation Automatic" 
+															class="dropdown-item" target="_blank"><span class="hidden-phone"> (Automatic)</span></a>																
 													{% else %}
 														<a href="{{nextclade_link_rsv_a}}" data-title="Upload your Consensus File in NextClade Annotation RSV-A" 
 															class="dropdown-item" target="_blank"><span class="hidden-phone"> (RSV-A)</span></a>		
@@ -236,9 +233,9 @@
 				              <tr>
 				                {% for column in table.columns %}
 				                   {% if column.orderable %}
-				                    	<th {{ column.attrs.th.as_html }}><a href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header|title }}</a></th>
+				                    	<th {{ column.attrs.th.as_html }}><a href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header }}</a></th>
 				                    {% else %}
-				                    	<th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
+				                    	<th {{ column.attrs.th.as_html }}>{{ column.header }}</th>
 				                    {% endif %}
 				                {% endfor %}
 				              </tr>
@@ -312,7 +309,7 @@
 
  {% block js %}
  
- 	 {% load static from staticfiles %}
+ 	 {% load static %}
  	 		<!-- Custom scripts for all pages-->
 	    	
 	    	<!-- <script type="text/javascript" src="https://cdn.rawgit.com/phylocanvas/phylocanvas-quickstart/v2.8.1/phylocanvas-quickstart.js"></script> -->

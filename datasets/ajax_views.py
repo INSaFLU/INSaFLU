@@ -21,8 +21,8 @@ from datasets.manage_database import ManageDatabase
 from datasets.models import Consensus, Dataset, DatasetConsensus
 from extend_user.models import Profile
 from settings.default_parameters import DefaultParameters
-from settings.models import Software, Parameter
-from utils.process_SGE import ProcessSGE
+from settings.models import Parameter, Software
+from utils.process_SGE import ProcessSched
 from utils.utils import Utils
 
 ### Logger
@@ -43,12 +43,11 @@ def remove_dataset(request):
     """
     remove a dataset.
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
         dataset_id_a = "dataset_id"
 
         if dataset_id_a in request.GET:
-
             ## some pre-requisites
             if not request.user.is_active or not request.user.is_authenticated:
                 return JsonResponse(data)
@@ -80,6 +79,11 @@ def remove_dataset(request):
             for dataset_consensus in dataset.dataset_consensus.all():
                 dataset_consensus.is_deleted = True
                 dataset_consensus.save()
+
+            # Kill any process associated to this dataset...
+            process_SGE = ProcessSched()
+            process_SGE.kill_dataset(request.user.pk, dataset)
+
             data = {"is_ok": True}
         return JsonResponse(data)
 
@@ -90,12 +94,11 @@ def add_dataset_name(request):
     """
     add new dataset
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
         dataset_name = "dataset_name"
 
         if dataset_name in request.GET:
-
             ## some pre-requisites
             if not request.user.is_active or not request.user.is_authenticated:
                 return JsonResponse(data)
@@ -167,12 +170,11 @@ def test_dataset_name(request):
     """
     test dataset name, Return True if exits
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_taken": False}
         dataset_name = "dataset_name"
 
         if dataset_name in request.GET:
-
             ## some pre-requisites
             if not request.user.is_active or not request.user.is_authenticated:
                 return JsonResponse(data)
@@ -208,12 +210,11 @@ def test_consensus_name(request):
     """
     test dataset name, Return True if exits
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_taken": False}
         consensus_name = "consensus_name"
 
         if consensus_name in request.GET:
-
             ## some pre-requisites
             if not request.user.is_active or not request.user.is_authenticated:
                 return JsonResponse(data)
@@ -249,12 +250,11 @@ def add_consensus_name(request):
     """
     add new dataset
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
         consensus_name = "consensus_name"
 
         if consensus_name in request.POST:
-
             ## some pre-requisites
             if not request.user.is_active or not request.user.is_authenticated:
                 return JsonResponse(data)
@@ -302,12 +302,11 @@ def remove_consensus(request):
     """
     remove a consensus in a dataset.
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
         consensus_id_a = "consensus_id"
 
         if consensus_id_a in request.GET:
-
             ## some pre-requisites
             if not request.user.is_active or not request.user.is_authenticated:
                 return JsonResponse(data)
@@ -344,19 +343,17 @@ def remove_consensus_in_dataset(request):
     """
     remove a dataset.
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False, "message": "Something went wrong. Fail to remove."}
         consensus_id_a = "consensus_id"
 
         if consensus_id_a in request.GET:
-
             ## some pre-requisites
             if not request.user.is_active or not request.user.is_authenticated:
                 return JsonResponse(data)
             try:
                 profile = Profile.objects.get(user__pk=request.user.pk)
             except Profile.DoesNotExist:
-
                 return JsonResponse(data)
             if profile.only_view_project:
                 return JsonResponse(data)
@@ -371,27 +368,29 @@ def remove_consensus_in_dataset(request):
             ## different owner or belong to a project not deleted
             if dataset_consensus.dataset.owner.pk != request.user.pk:
                 return JsonResponse(data)
-            
-                    # check what is the build that is configured, otherwise use the default
+
+                # check what is the build that is configured, otherwise use the default
             build = SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_parameter
 
             # See if there is a build parameter specific for this dataset, in which case use it
-            parameters_list = Parameter.objects.filter(dataset=dataset_consensus.dataset)
+            parameters_list = Parameter.objects.filter(
+                dataset=dataset_consensus.dataset
+            )
             if len(list(parameters_list)) == 1:
                 build = list(parameters_list)[0].parameter
 
             ### test how many references exist in this dataset
             if (
-                (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic) and
-                (not dataset_consensus.reference is None)
-                and (DatasetConsensus.objects.filter(
-                    is_deleted=False, is_error=False, reference__isnull=False
-                ).count()
-                < 2)
-            ):
-                data["message"] = (
-                    "At least one must be present for the generic build."
+                (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic)
+                and (not dataset_consensus.reference is None)
+                and (
+                    DatasetConsensus.objects.filter(
+                        is_deleted=False, is_error=False, reference__isnull=False
+                    ).count()
+                    < 2
                 )
+            ):
+                data["message"] = "At least one must be present for the generic build."
                 return JsonResponse(data)
 
             ### now you can remove
@@ -439,7 +438,7 @@ def validate_consensus_name(request):
     """
     test if exist this reference name
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         consensus_name = request.GET.get("consensus_name")
 
         data = {
@@ -457,8 +456,7 @@ def dataset_rebuild(request):
     """
     Rebuild results
     """
-    if request.is_ajax():
-
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False, "message": "Something went wrong."}
         key_with_dataset_id = "dataset_id"
         if key_with_dataset_id in request.GET:
@@ -469,7 +467,7 @@ def dataset_rebuild(request):
                 dataset.save()
                 ## need to run processing
                 try:
-                    process_SGE = ProcessSGE()
+                    process_SGE = ProcessSched()
                     process_SGE.set_collect_dataset_global_files(dataset, request.user)
                     data["is_ok"] = True
                     data["message"] = "alls well that ends well."
@@ -486,7 +484,7 @@ def show_msa_nucleotide(request):
     """
     manage msa nucleotide alignments
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
         key_with_dataset_id = "dataset_id"
         if key_with_dataset_id in request.GET:
@@ -553,7 +551,7 @@ def show_phylo_canvas(request):
     manage check boxes through ajax
     """
 
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
         utils = Utils()
         key_with_dataset_id = "dataset_id"
@@ -601,9 +599,12 @@ def show_phylo_canvas(request):
                         not os.path.exists(file_name_root_json)
                         or os.path.getsize(file_name_root_json) == 0
                     ):
-                        with open(
-                            file_name_root_json, "w", encoding="utf-8"
-                        ) as handle_write, open(file_name_root_sample) as handle_in_csv:
+                        with (
+                            open(
+                                file_name_root_json, "w", encoding="utf-8"
+                            ) as handle_write,
+                            open(file_name_root_sample) as handle_in_csv,
+                        ):
                             reader = csv.DictReader(handle_in_csv)
                             all_data = json.loads(json.dumps(list(reader)))
                             dt_result = {}

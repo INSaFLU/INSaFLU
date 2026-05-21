@@ -2,12 +2,12 @@
 
 {% load bootstrap4 %}
 {% load querystring from django_tables2 %}
-{% load title from django_tables2 %}
+
 {% load trans blocktrans from i18n %}
-{% load django_bootstrap_breadcrumbs %}
+{% load view_breadcrumbs %}
 
 {% block css %}
-	{% load static from staticfiles %}
+	{% load static %}
 		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
 		<link rel="stylesheet" href="{% static 'css/insaphylogeo.css' %}" type="text/css" />
 		<link rel="stylesheet" href="{% static 'css/project_sample_show.css' %}" type="text/css" />
@@ -19,12 +19,6 @@
 	<div class="container">
 		<div id="id_messages_remove"></div>
 	</div>
-{% endblock %}
-
-{% block breadcrumbs %}
-	{{ block.super }}
-	{% breadcrumb "Projects" "projects" %}
-	{% breadcrumb "Show project results" "show-sample-project-results" %}
 {% endblock %}
 
 {% block content %}
@@ -70,7 +64,6 @@
 	      			</div>
 	    		</div>
 	  		</div>
-	
 	  
 			<!-- Card Phylogenetic trees by PhyloCanvas -->
 			<div class="card">
@@ -244,8 +237,33 @@
 			
 			{% endif %}
 
+			{% if flumut_report %}
+
+			<!-- Card Show flumut report -->
+			  <div class="card">
+				<div class="card-header" role="tab" id="headingFlumut">
+					<h5 class="mb-0">
+						<a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseFlumut" aria-expanded="false" aria-controls="collapseFlumut">
+							<strong>Flumut</strong> report
+	        			</a>
+						{% if update_flumut %}
+						<a href="#id_update_mutation_report" id="id-button-update-mutation-report" class="btn btn-small btn-primary" style="float:right" data-toggle="modal"><i class="fa fa-refresh"></i> Update Flumut</a>
+						{% endif %}
+	      			</h5>
+				</div>
+	
+	    		<div id="collapseFlumut" class="collapse" role="tabpanel" aria-labelledby="headingFlumut">
+	      			<div class="card-block">
+	        			<div id='loader_showflumut'><img src="{{ spinner_url }}"/></div>
+	        			<div id="showflumut" class="show_variants_table" project_id="{{ project_id }}" show-flumut-url="{% url 'show-flumut' %}"></div>
+	      			</div>
+	    		</div>
+			</div>
+
+			{% endif %}
+
 	   		<!-- Card Minor variants overview-->
-	   		{% if variations_statistics_file %}
+	   		{% if variations_statistics_file and project_not_irma %}
 		   		<div class="card">
 					<div class="card-header" role="tab" id="headingFifth">
 						<h5 class="mb-0">
@@ -337,6 +355,9 @@
 			    									{% if samples_file_variants %} {{ samples_file_variants }} {% endif %}
 			    									{% if samples_file_minor_intra_host %} {{ samples_file_minor_intra_host }} {% endif %}
 													{% if aln2pheno_zip %} {{ aln2pheno_zip }} {% endif %}
+													{% if flumut_excel %} {{ flumut_excel }} {% endif %}
+													{% if flumut_version %} {{ flumut_version }} {% endif %}
+													{% if irma_output %} {{ irma_output }} {% endif %}
 			    								{% endif %}
 			    								
 			    								{% if pangolin_lineage %}
@@ -352,7 +373,7 @@
 										
 										<!-- Show nextClade link -->
 										{% if nextclade_link_covid or nextclade_link_a_h3n2 or nextclade_link_mpxv_hmpxv_b1 or nextclade_link_rsv_a %}
-											<div class="btn-group" style="padding-left:20px" data-toggle="tooltip" data-original-title="Jump to NextClade Annotation">
+											<div class="btn-group" style="padding-left:20px" >
 												<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 													Jump to NextClade
 				  								</button>
@@ -384,6 +405,8 @@
 															class="dropdown-item" target="_blank"><span class="hidden-phone"> (B-Yamagata)</span></a>
 														<a href="{{nextclade_link_b_victoria}}" data-title="Upload your Consensus File in NextClade Annotation B-Vitoria" 
 															class="dropdown-item" target="_blank"><span class="hidden-phone"> (B-Vitoria)</span></a>
+														<a href="{{nextclade_link_multi}}" data-title="Upload your Consensus File in NextClade Annotation Automatic" 
+															class="dropdown-item" target="_blank"><span class="hidden-phone"> (Automatic)</span></a>															
 													{% else %}
 														<a href="{{nextclade_link_rsv_a}}" data-title="Upload your Consensus File in NextClade Annotation RSV-A" 
 															class="dropdown-item" target="_blank"><span class="hidden-phone"> (RSV-A)</span></a>		
@@ -407,9 +430,9 @@
 				              <tr>
 				                {% for column in table.columns %}
 				                   {% if column.orderable %}
-				                    	<th {{ column.attrs.th.as_html }}><a href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header|title }}</a></th>
+				                    	<th {{ column.attrs.th.as_html }}><a href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header }}</a></th>
 				                    {% else %}
-				                    	<th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
+				                    	<th {{ column.attrs.th.as_html }}>{{ column.header }}</th>
 				                    {% endif %}
 				                {% endfor %}
 				              </tr>
@@ -509,6 +532,32 @@
 						</div>
 	   				</div>
 	 			</div>
+
+				<!-- Update Flumut -->
+				<div class="modal fade" id="id_update_mutation_report">
+					<div class="modal-dialog modal-lg">
+						<div class="modal-content">
+	       					<!-- Modal Header -->
+	       					<div class="modal-header alert alert-primary">
+	         					<h4 class="modal-title">Flumut</h4>
+	         					<button type="button" class="close" data-dismiss="modal">&times;</button>
+	       					</div>
+	       
+	       					<!-- Modal body -->
+		  					<div class="modal-body mx-auto mw-100">
+		  						<div id="id-modal-body-update-mutation-report" pk="{{project_id}}" update-mutation-report-value-url="{% url 'update_project_mutation_report' %}"
+		  								ref_project="{{project_name}}">
+		  							<label id="id-label-update-mutation-report" class="col-form-label">{{update_mutation_report_message}}</label>
+		   						</div>
+		  					</div>
+		  					<!-- Modal footer -->
+		  					<div class="modal-footer" id="id-modal-footer-update">
+		    					<button id="id-update-mutation-report-button" type="button" class="btn btn-primary" data-dismiss="modal">Run</button>
+		    					<button type="button" class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">Cancel</button>
+		  					</div>
+						</div>
+	   				</div>
+	 			</div>
 	 			
 				<!-- The remove Modal -->
 				<div class="modal fade" id="id_remove_modal">
@@ -539,13 +588,14 @@
 
  {% block js %}
  
- 	 {% load static from staticfiles %}
+ 	 {% load static %}
  	 		<!-- Custom scripts for all pages-->
 	    	
 	    	<!-- <script type="text/javascript" src="https://cdn.rawgit.com/phylocanvas/phylocanvas-quickstart/v2.8.1/phylocanvas-quickstart.js"></script> -->
 	    	<script type="text/javascript" src="{% static 'vendor/phylocanvas/v2.8.1/phylocanvas-quickstart.js' %}"></script>
 	    	<script type="text/javascript" src="{% static 'js/sample-project/show-sample-project.js' %}"></script>
 			<script type="text/javascript" src="{% static 'js/sample-project/show-aln2pheno.js' %}"></script>
+			<script type="text/javascript" src="{% static 'js/sample-project/show-flumut.js' %}"></script>
 	    	<script type="text/javascript" src="{% static 'js/sample-project/gff-parser.js' %}"></script>
 	    	<script type="text/javascript" src="{% static 'vendor/msa/msa.min.1.0.js' %}"></script>
 	    	<!-- <script type="text/javascript" src="{% static 'vendor/msa/msa.min.js' %}"></script> -->

@@ -4,7 +4,7 @@ Created on Nov 1, 2017
 @author: mmp
 """
 
-from django.db import connection
+from django.db import DatabaseError, connection, transaction
 
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.tag_names_constants import TagNamesConstants
@@ -19,7 +19,6 @@ from managing_files.models import (
     Statistics,
     TagName,
 )
-from utils.lock_atomic_transaction import LockedAtomicTransaction
 
 
 class ManageDatabase(object):
@@ -37,13 +36,12 @@ class ManageDatabase(object):
         """
         get metakey with lobk table
         """
-        with LockedAtomicTransaction(MetaKey):
-            try:
-                metaKey = MetaKey.objects.get(name=meta_key_name)
-            except MetaKey.DoesNotExist:
-                metaKey = MetaKey()
-                metaKey.name = meta_key_name
-                metaKey.save()
+        # with LockedAtomicTransaction(MetaKey):
+        try:
+            with transaction.atomic():
+                metaKey, _ = MetaKey.objects.get_or_create(name=meta_key_name)
+        except DatabaseError:
+            metaKey, _ = MetaKey.objects.get_or_create(name=meta_key_name)
         return metaKey
 
     def set_reference_metakey(
@@ -232,7 +230,7 @@ class ManageDatabase(object):
         metaKeyProject.value = value
         metaKeyProject.description = description
         metaKeyProject.save()
-        return MetaKeyProject
+        return metaKey
 
     def update_project_metakey(self, project, owner, meta_key_name, value, description):
         """
@@ -507,19 +505,22 @@ class ManageDatabase(object):
                 statistics = Statistics.objects.get(tag__name=percentil_tag)
             except Statistics.DoesNotExist:
 
-                with LockedAtomicTransaction(TagName):
-                    try:
-                        tag_name = TagName.objects.get(
-                            name=percentil_tag, owner__id=user.id
+                # with LockedAtomicTransaction(TagName):
+                try:
+                    with transaction.atomic():
+                        tag_name, _ = TagName.objects.get_or_create(
+                            name=percentil_tag,
+                            owner__id=user.id,
+                            is_meta_data=tagNamesConstants.is_meta_tag_name(
+                                percentil_tag
+                            ),
                         )
-                    except TagName.DoesNotExist:
-                        tag_name = TagName()
-                        tag_name.name = percentil_tag
-                        tag_name.owner = user
-                        tag_name.is_meta_data = tagNamesConstants.is_meta_tag_name(
-                            percentil_tag
-                        )
-                        tag_name.save()
+                except DatabaseError:
+                    tag_name, _ = TagName.objects.get_or_create(
+                        name=percentil_tag,
+                        owner__id=user.id,
+                        is_meta_data=tagNamesConstants.is_meta_tag_name(percentil_tag),
+                    )
 
                 statistics = Statistics()
                 statistics.tag = tag_name

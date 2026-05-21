@@ -12,7 +12,7 @@ from constants.meta_key_and_values import MetaKeyAndValue
 from constants.tag_names_constants import TagNamesConstants
 from utils.software import Software, Contigs2Sequences
 from constants.software_names import SoftwareNames
-from utils.utils import Utils
+from utils.utils import Utils, PathUtils
 from utils.parse_out_files import ParseOutFiles
 from utils.result import DecodeObjects, Coverage, CountHits
 from django.contrib.auth.models import User
@@ -26,7 +26,7 @@ from utils.result import DecodeObjects, MixedInfectionMainVector
 from managing_files.models import CountVariations, MixedInfections
 from utils.mixed_infections_management import MixedInfectionsManagement
 from manage_virus.constants_virus import ConstantsVirus
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 from extend_user.models import Profile
 import os, filecmp, csv, ntpath
 
@@ -36,6 +36,7 @@ class TestMultiProcess(TransactionTestCase):
 	### static
 	software = Software()
 	utils = Utils()
+	path_utils = PathUtils()
 	constants = Constants()
 	constants_tests_case = ConstantsTestsCase()
 	software_names = SoftwareNames()
@@ -111,19 +112,19 @@ class TestMultiProcess(TransactionTestCase):
 		upload_files.description = ""
 		
 		## move the files to the right place
-		sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), self.utils.get_path_upload_file(user.id,\
+		sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), self.path_utils.get_path_upload_file(user.id,\
 												TypeFile.TYPE_FILE_sample_file), upload_files.file_name)
-		sz_file_to, path_added = self.utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
+		sz_file_to, path_added = self.path_utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
 		self.utils.copy_file(csv_file, sz_file_to)
 		if path_added is None:
-			upload_files.path_name.name = os.path.join(self.utils.get_path_upload_file(user.id,\
+			upload_files.path_name.name = os.path.join(self.path_utils.get_path_upload_file(user.id,\
 									TypeFile.TYPE_FILE_sample_file), ntpath.basename(sz_file_to))
 		else:
-			upload_files.path_name.name = os.path.join(self.utils.get_path_upload_file(user.id,\
+			upload_files.path_name.name = os.path.join(self.path_utils.get_path_upload_file(user.id,\
 									TypeFile.TYPE_FILE_sample_file), path_added, ntpath.basename(sz_file_to))
 		upload_files.save()
 			
-		process_SGE = ProcessSGE()
+		process_SGE = ProcessSched()
 		vect_wait_sge_ids = []
 		try:
 			b_test = True
@@ -214,8 +215,8 @@ class TestMultiProcess(TransactionTestCase):
 			project_sample.sample = sample
 			project_sample.save()
 			
-			if len(job_name_wait) == 0: (job_name_wait, job_name) = user.profile.get_name_sge_seq(
-				Profile.SGE_PROCESS_projects, Profile.SGE_GLOBAL)
+			if len(job_name_wait) == 0: (job_name_wait, job_name) = user.profile.get_name_slurm_seq(
+				Constants.PROCESS_projects, Constants.PROCESS_GLOBAL)
 			taskID = process_SGE.set_second_stage_snippy(project_sample, user, job_name, [job_name_wait])
 				
 			### set project sample queue ID
@@ -252,20 +253,20 @@ class TestMultiProcess(TransactionTestCase):
 		upload_files.number_files_processed = 0
 		upload_files.description = ""
 		
-		sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), self.utils.get_path_upload_file(user.id,\
+		sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), self.path_utils.get_path_upload_file(user.id,\
 												TypeFile.TYPE_FILE_fastq_gz), upload_files.file_name)
-		sz_file_to, path_added = self.utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
+		sz_file_to, path_added = self.path_utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
 		self.utils.copy_file(fastq_file, sz_file_to)
 		if path_added is None:
-			upload_files.path_name.name = os.path.join(self.utils.get_path_upload_file(user.id,\
+			upload_files.path_name.name = os.path.join(self.path_utils.get_path_upload_file(user.id,\
 									TypeFile.TYPE_FILE_fastq_gz), ntpath.basename(sz_file_to))
 		else:
-			upload_files.path_name.name = os.path.join(self.utils.get_path_upload_file(user.id,\
+			upload_files.path_name.name = os.path.join(self.path_utils.get_path_upload_file(user.id,\
 									TypeFile.TYPE_FILE_fastq_gz), path_added, ntpath.basename(sz_file_to))
 		
 		upload_files.save()
 		
-		process_SGE = ProcessSGE()
+		process_SGE = ProcessSched()
 		b_test = True
 		taskID = process_SGE.set_link_files(user, b_test)
 		return taskID

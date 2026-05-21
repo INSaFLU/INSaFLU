@@ -338,8 +338,6 @@ var ready_document = function (user_id, reload_url) {
         var panel_id = $('input[name="file"]:checked').attr('panel-id');
         var url_register_file_panel = $(this).attr('url-register-file-panel');
 
-        console.log("selecting file");
-
         if (selected_file_id) {
             // Submit the selected file
             $.ajax({

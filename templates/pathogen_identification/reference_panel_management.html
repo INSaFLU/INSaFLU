@@ -2,9 +2,9 @@
 
 {% load bootstrap4 %}
 {% load querystring from django_tables2 %}
-{% load title from django_tables2 %}
+
 {% load trans blocktrans from i18n %}
-{% load django_bootstrap_breadcrumbs %}
+{% load view_breadcrumbs %}
 {% load static %}
 {% load custom_tags %}
 
@@ -14,12 +14,6 @@
 <div class="container">
 	<div id="id_messages_remove"></div>
 </div>
-{% endblock %}
-
-{% block breadcrumbs %}
-{{ block.super }}
-{% breadcrumb "References Index" "references-index" %}
-{% breadcrumb "Manage References" "" %}
 {% endblock %}
 
 
@@ -208,7 +202,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-          <button type="button" class="btn btn-primary" id="create-panel-button" reload-url= "{% url 'panel_list' %}">Create</button>
+          <button type="button" class="btn btn-primary" id="create-panel-button" reload-url= "{% url 'panel_list' %}" {% if demo_account %} disabled {% endif %}>Create</button>
         </div>
       </div>
     </div>
@@ -346,7 +340,6 @@
         var iconElement = document.querySelector('input[name="panel-icon"]:checked');
         var icon = iconElement ? iconElement.value : "none";
         var reload_url = '{% url "panel_list" %}';
-        console.log('icon', icon);
         $.ajax({
             url: url,  // Replace with the actual URL of your view
             method: 'POST',

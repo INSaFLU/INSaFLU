@@ -186,12 +186,11 @@ def flag_false_positive_color(
     elif flag_build.assert_vestigial():
         return "background-color: rgba(255, 0, 0, 0.5);"
 
-    return "background-color: rgba(169, 169, 169, 1);"  # Dark gray
-
+    return "background-color: #e6f2ff;"
 
 @register.simple_tag
 def flag_control_color(flag):
     """Set background color to red if flag is True, otherwise set it to dark gray."""
     if flag in [FinalReport.CONTROL_FLAG_PRESENT]:
         return "background-color: rgba(255, 0, 0, 0.5);"
-    return "background-color: rgba(169, 169, 169, 1);"  # Dark gray
+    return "background-color: #e6f2ff;"

@@ -50,7 +50,8 @@ $(document).on("click", "a", function(){
 });
 
 
-$('#id-save-button').on('click', function(){
+$('#id-save-button').off('click').on('click', function () {
+	
 	//id_name_to_insert
 	$.ajax({
         url: $('#modal-body-add-sample').attr("add-single-value-url"),

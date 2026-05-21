@@ -3,6 +3,7 @@ Created on 01/01/2021
 
 @author: mmp
 """
+
 import datetime
 import logging
 import os
@@ -15,12 +16,8 @@ from constants.constants import Constants, FileType, TypePath
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import (
-    MixedInfectionsTag,
-    ProcessControler,
-    ProjectSample,
-    Sample,
-)
+from managing_files.models import (MixedInfectionsTag, ProcessControler,
+                                   ProjectSample, Sample)
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software_project_sample import DefaultProjectSoftware
@@ -29,16 +26,9 @@ from utils.coverage import DrawAllCoverage
 from utils.mixed_infections_management import MixedInfectionsManagement
 from utils.parse_coverage_file import GetCoverage
 from utils.parse_out_files import ParseOutFiles
-from utils.process_SGE import ProcessSGE
-from utils.result import (
-    CountHits,
-    DecodeObjects,
-    KeyValue,
-    MaskingConsensus,
-    Result,
-    ResultAverageAndNumberReads,
-    SoftwareDesc,
-)
+from utils.process_SGE import ProcessSched
+from utils.result import (CountHits, DecodeObjects, KeyValue, MaskingConsensus,
+                          Result, ResultAverageAndNumberReads, SoftwareDesc)
 from utils.software import Software
 from utils.utils import Utils
 
@@ -68,9 +58,8 @@ class SoftwareMinion(object):
         """
         Global processing, RabbitQC, NanoStat, NanoFilt and GetSpecies
         """
-        print("Start ProcessControler")
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         process_SGE.set_process_controler(
             user,
             process_controler.get_name_sample(sample),
@@ -689,7 +678,7 @@ class SoftwareMinion(object):
         """
         ### make it running
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         manageDatabase = ManageDatabase()
         result_all = Result()
 
@@ -718,6 +707,7 @@ class SoftwareMinion(object):
                 meta_sample != None
                 and meta_sample.value == MetaKeyAndValue.META_VALUE_Success
             ):
+                print("Sample {} already processed successfully.".format(project_sample.id))
                 return
 
             ## process medaka
@@ -745,7 +735,6 @@ class SoftwareMinion(object):
                 parameters_depth = default_project_software.get_samtools_parameters_all_possibilities_ONT(
                     user, project_sample
                 )
-
                 out_put_path = self.run_medaka(
                     project_sample.sample.get_fastq_available(TypePath.MEDIA_ROOT),
                     project_sample.project.reference.get_reference_fasta(
@@ -804,6 +793,9 @@ class SoftwareMinion(object):
                     )
                 )
             except Exception as e:
+                print("Error occurred while processing Medaka for sample {}: {}".format(project_sample.id, e))
+                import traceback
+                traceback.print_exc()
                 result = Result()
                 result.set_error(e.args[0])
                 result.add_software(
@@ -964,15 +956,18 @@ class SoftwareMinion(object):
                     coverage.to_json(),
                 )
             except Exception as e:
+                print("Error occurred while processing coverage for sample {}: {}".format(project_sample.id, e))
+                import traceback
+                traceback.print_exc()
                 result = Result()
                 result.set_error("Fail to get coverage: " + e.args[0])
-                result.add_software(
-                    SoftwareDesc(
-                        self.software_names.get_coverage_name(),
-                        self.software_names.get_coverage_version(),
-                        self.software_names.get_coverage_parameters(),
-                    )
-                )
+                # result.add_software(
+                #    SoftwareDesc(
+                #        self.software_names.get_coverage_name(),
+                #        self.software_names.get_coverage_version(),
+                #        self.software_names.get_coverage_parameters(),
+                #    )
+                # )
                 manageDatabase.set_project_sample_metakey(
                     project_sample,
                     user,
@@ -1064,6 +1059,9 @@ class SoftwareMinion(object):
                     project_sample, SoftwareNames.SOFTWARE_Medaka_name
                 )
             except:
+                print("Error occurred while drawing coverage for sample {}: {}".format(project_sample.id, e))
+                import traceback
+                traceback.print_exc()
                 result = Result()
                 result.set_error("Fail to draw coverage images")
                 result.add_software(SoftwareDesc("In house software", "1.0", ""))
@@ -1132,6 +1130,9 @@ class SoftwareMinion(object):
                     project_sample, user, count_hits
                 )
             except:
+                print("Error occurred while calculating mixed infection for sample {}: {}".format(project_sample.id, e))
+                import traceback
+                traceback.print_exc()
                 result = Result()
                 result.set_error("Fail to calculate mixed infection")
                 result.add_software(SoftwareDesc("In house software", "1.0", ""))
@@ -1232,6 +1233,9 @@ class SoftwareMinion(object):
                     meta_sample.description,
                 )
         except Exception as e:
+            print("Error occurred while processing sample {}: {}".format(project_sample.id, e))
+            import traceback
+            traceback.print_exc()
             ## finished with error
             process_SGE.set_process_controler(
                 user,
@@ -1290,13 +1294,23 @@ class SoftwareMinion(object):
                 [06:29:16] * /tmp/insafli/xpto/xpto.vcf.gz.tbi
 
                 :param
-                (default: r941_min_high_g360).
-        Available: r103_min_high_g345, r103_min_high_g360, r103_prom_high_g360, r103_prom_snp_g3210, r103_prom_variant_g3210,
-                r10_min_high_g303, r10_min_high_g340, r941_min_fast_g303, r941_min_high_g303, r941_min_high_g330,
-                r941_min_high_g340_rle, r941_min_high_g344, r941_min_high_g351, r941_min_high_g360, r941_prom_fast_g303,
-                r941_prom_high_g303, r941_prom_high_g330, r941_prom_high_g344, r941_prom_high_g360, r941_prom_high_g4011,
-                r941_prom_snp_g303, r941_prom_snp_g322, r941_prom_snp_g360, r941_prom_variant_g303, r941_prom_variant_g322,
-                r941_prom_variant_g360.
+                (default: r1041_e82_400bps_sup_v4.3.0).
+                Available: Available: r103_fast_g507, r103_fast_snp_g507, r103_fast_variant_g507, r103_hac_g507, r103_hac_snp_g507, r103_hac_variant_g507, 
+                r103_sup_g507, r103_sup_snp_g507, r103_sup_variant_g507, r1041_e82_260bps_fast_g632, r1041_e82_260bps_fast_variant_g632, r1041_e82_260bps_hac_g632, 
+                r1041_e82_260bps_hac_v4.0.0, r1041_e82_260bps_hac_v4.1.0, r1041_e82_260bps_hac_variant_g632, r1041_e82_260bps_hac_variant_v4.1.0, 
+                r1041_e82_260bps_joint_apk_ulk_v5.0.0, r1041_e82_260bps_sup_g632, r1041_e82_260bps_sup_v4.0.0, r1041_e82_260bps_sup_v4.1.0, r1041_e82_260bps_sup_variant_g632, 
+                r1041_e82_260bps_sup_variant_v4.1.0, r1041_e82_400bps_bacterial_methylation, r1041_e82_400bps_fast_g615, r1041_e82_400bps_fast_g632, 
+                r1041_e82_400bps_fast_variant_g615, r1041_e82_400bps_fast_variant_g632, r1041_e82_400bps_hac_g615, r1041_e82_400bps_hac_g632, r1041_e82_400bps_hac_v4.0.0, 
+                r1041_e82_400bps_hac_v4.1.0, r1041_e82_400bps_hac_v4.2.0, r1041_e82_400bps_hac_v4.3.0, r1041_e82_400bps_hac_v5.0.0, r1041_e82_400bps_hac_variant_g615, 
+                r1041_e82_400bps_hac_variant_g632, r1041_e82_400bps_hac_variant_v4.1.0, r1041_e82_400bps_hac_variant_v4.2.0, r1041_e82_400bps_hac_variant_v4.3.0, 
+                r1041_e82_400bps_hac_variant_v5.0.0, r1041_e82_400bps_sup_g615, r1041_e82_400bps_sup_v4.0.0, r1041_e82_400bps_sup_v4.1.0, r1041_e82_400bps_sup_v4.2.0, 
+                r1041_e82_400bps_sup_v4.3.0, r1041_e82_400bps_sup_v5.0.0, r1041_e82_400bps_sup_variant_g615, r1041_e82_400bps_sup_variant_v4.1.0, r1041_e82_400bps_sup_variant_v4.2.0, 
+                r1041_e82_400bps_sup_variant_v4.3.0, r1041_e82_400bps_sup_variant_v5.0.0, r104_e81_fast_g5015, r104_e81_fast_variant_g5015, r104_e81_hac_g5015, r104_e81_hac_variant_g5015, 
+                r104_e81_sup_g5015, r104_e81_sup_g610, r104_e81_sup_variant_g610, r941_e81_fast_g514, r941_e81_fast_variant_g514, r941_e81_hac_g514, r941_e81_hac_variant_g514, 
+                r941_e81_sup_g514, r941_e81_sup_variant_g514, r941_min_fast_g507, r941_min_fast_snp_g507, r941_min_fast_variant_g507, r941_min_hac_g507, r941_min_hac_snp_g507, 
+                r941_min_hac_variant_g507, r941_min_sup_g507, r941_min_sup_snp_g507, r941_min_sup_variant_g507, r941_prom_fast_g507, r941_prom_fast_snp_g507, r941_prom_fast_variant_g507, 
+                r941_prom_hac_g507, r941_prom_hac_snp_g507, r941_prom_hac_variant_g507, r941_prom_sup_g507, r941_prom_sup_snp_g507, r941_prom_sup_variant_g507, r941_sup_plant_g610, 
+                r941_sup_plant_variant_g610.
                 ### output medaka files
 
                 bcftools   1.9
@@ -1317,9 +1331,11 @@ class SoftwareMinion(object):
         reference_fasta_medaka = self.utils.get_temp_file_from_dir(
             temp_dir, "medaka_ref", ".fasta"
         )
+
         self.utils.copy_file(reference_fasta, reference_fasta_medaka)
 
-        cmd = "{} {}_consensus -i {} -d {} -o {} -t {} {}".format(
+
+        cmd = "{} {}_consensus -i {} -d {} -o {} -p consensus -t {} {}".format(
             self.software_names.get_medaka_env(),
             self.software_names.get_medaka(),
             file_fastq,
@@ -1330,9 +1346,10 @@ class SoftwareMinion(object):
         )
         exist_status = os.system(cmd)
         if exist_status != 0:
+
             self.logger_production.error("Fail to run: " + cmd)
             self.logger_debug.error("Fail to run: " + cmd)
-            self.utils.remove_dir(temp_dir)
+            #self.utils.remove_dir(temp_dir)
             raise Exception("Fail to run medaka_consensus")
 
         ### test output files
@@ -1349,7 +1366,7 @@ class SoftwareMinion(object):
                 )
                 self.logger_production.error(message)
                 self.logger_debug.error(message)
-                self.utils.remove_dir(temp_dir)
+                #self.utils.remove_dir(temp_dir)
                 raise Exception(message)
 
         ### change bam file names
@@ -1401,13 +1418,13 @@ class SoftwareMinion(object):
 
         ### vcf
         vcf_before_file = os.path.join(temp_dir, sample_name + "_before_annotation.vcf")
-        cmd = "{} {} variant --verbose {} {} {};".format(
+        cmd = "{} {}_variant -r {} -i {} -o {};".format(
             #         cmd =  "{} {} snp --verbose {} {} {}".format(
             self.software_names.get_medaka_env(),
             self.software_names.get_medaka(),
             reference_fasta_medaka,
-            hdf_file,
-            vcf_before_file,
+            file_fastq,
+            temp_dir,
         )
         exist_status = os.system(cmd)
         if exist_status != 0:
@@ -1415,6 +1432,12 @@ class SoftwareMinion(object):
             self.logger_debug.error("Fail to run: " + cmd)
             self.utils.remove_dir(temp_dir)
             raise Exception("Fail to run medaka variant")
+
+        vcf_outfile = os.path.join(temp_dir, "medaka.annotated.vcf")
+        self.utils.move_file(
+            vcf_outfile,
+            vcf_before_file
+        )
 
         ### annotate vcf
         vcf_file = os.path.join(temp_dir, sample_name + ".vcf")

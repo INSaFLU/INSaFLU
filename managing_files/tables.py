@@ -1,9 +1,10 @@
+import os
 import django_tables2 as tables
 from django.conf import settings
 from django.db.models import F
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 from constants.constants import Constants, TypePath
 from constants.meta_key_and_values import MetaKeyAndValue
@@ -26,12 +27,8 @@ class CheckBoxColumnWithName(tables.CheckBoxColumn):
 class ReferenceTable(tables.Table):
     #   Renders a normal value as an internal hyperlink to another page.
     #   account_number = tables.LinkColumn('customer-detail', args=[A('pk')])
-    reference_fasta_name = tables.LinkColumn(
-        "reference_fasta_name", args=[tables.A("pk")], verbose_name="Fasta file"
-    )
-    reference_genbank_name = tables.LinkColumn(
-        "reference_genbank_name", args=[tables.A("pk")], verbose_name="GenBank file"
-    )
+    reference_fasta_name = tables.Column(verbose_name="Fasta file")
+    reference_genbank_name = tables.Column(verbose_name="GenBank file")
     owner = tables.Column("Owner", orderable=True, empty_values=())
     constants = Constants()
 
@@ -136,6 +133,75 @@ class ReferenceProjectTable(tables.Table):
         return (queryset, True)
 
 
+class PrimerTable(tables.Table):
+    #   Renders a normal value as an internal hyperlink to another page.
+    #   account_number = tables.LinkColumn('customer-detail', args=[A('pk')])
+    # primer_fasta_name = tables.LinkColumn(
+    #    "primer_fasta_name", args=[tables.A("pk")], verbose_name="Primer Fasta file"
+    # )
+    primer_fasta_name = tables.Column(verbose_name="Primer Fasta file")
+    owner = tables.Column("Owner", orderable=True, empty_values=())
+    constants = Constants()
+
+    SHORT_NAME_LENGTH = 20
+
+    class Meta:
+        model = Reference
+        fields = (
+            "name",
+            "primer_fasta_name",
+            "primer_pairs_name",
+            "creation_date",
+            "owner",
+        )
+        attrs = {"class": "table-striped table-bordered"}
+        empty_text = "There are no Primers to show..."
+
+    def render_owner(self, record):
+        return record.owner.username
+
+    def render_name(self, record):
+        from crequest.middleware import CrequestMiddleware
+
+        current_request = CrequestMiddleware.get_request()
+        user = current_request.user
+        if user.username == Constants.USER_ANONYMOUS:
+            return record.name
+        if (
+            user.username
+            == record.owner.username
+            ## TODO  ## it can't be used in any active project
+        ):
+            return mark_safe(
+                '<a href="#modal_remove_primer" id="id_remove_primer_modal" data-toggle="modal"'
+                + ' primer_name="'
+                + record.name
+                + '" pk="'
+                + str(record.pk)
+                + '"><i class="fa fa-trash"></i></span> </a>'
+                + record.name
+            )
+        return record.name
+
+    def render_primer_fasta_name(self, **kwargs):
+        record = kwargs.pop("record")
+        return record.get_primer_fasta_web()
+
+    def render_primer_pairs_name(self, **kwargs):
+        record = kwargs.pop("record")
+        return record.get_primer_pairs_web()
+
+    def render_creation_date(self, **kwargs):
+        record = kwargs.pop("record")
+        return record.creation_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE)
+
+    def order_owner(self, queryset, is_descending):
+        queryset = queryset.annotate(owner_name=F("owner__username")).order_by(
+            ("-" if is_descending else "") + "owner_name"
+        )
+        return (queryset, True)
+
+
 class SampleToProjectsTable(tables.Table):
     """
     To add samples to projects
@@ -172,7 +238,6 @@ class SampleToProjectsTable(tables.Table):
 
 
 class SampleTable(tables.Table):
-
     ### manage database
     manage_database = ManageDatabase()
 
@@ -185,9 +250,7 @@ class SampleTable(tables.Table):
         empty_values=(),
     )
     #     extra_info = tables.LinkColumn('sample-description', args=[tables.A('pk')], orderable=False, verbose_name='Extra Information', empty_values=())
-    extra_info = tables.LinkColumn(
-        "Extra Information", orderable=False, empty_values=()
-    )
+    extra_info = tables.Column("Extra Information", orderable=False, empty_values=())
     technology = tables.Column("Technology", empty_values=())
     type_and_subtype = tables.Column("Classification", empty_values=())
     fastq_files = tables.Column("#Fastq Files", empty_values=())
@@ -204,7 +267,6 @@ class SampleTable(tables.Table):
             "data_set",
             "number_alerts",
             "number_quality_sequences",
-            "extra_info",
         )
         attrs = {"class": "table-striped table-bordered"}
         empty_text = "There are no Samples to show..."
@@ -215,7 +277,7 @@ class SampleTable(tables.Table):
             "type_and_subtype",
             "data_set",
             "number_quality_sequences",
-            "extra_info",
+            # "extra_info",
         )
 
     def render_fastq_files(self, record):
@@ -428,7 +490,7 @@ class SampleTable(tables.Table):
             return _("Error")
         return _("Not yet")
 
-    def render_extra_info(self, record):
+    def render_extra_info(self, record: Sample):
         """
         icon with link to extra info
         """
@@ -452,6 +514,10 @@ class SampleTable(tables.Table):
             ),
             None,
         )
+        file_name = record.get_fastq(TypePath.MEDIA_ROOT, True)
+        warning_sign = ""
+        if os.path.exists(file_name) is False:
+            warning_sign = '<span style="color: red; border:1px; border-color: red;"><i class="fa fa-warning" title="FASTQ file not found"></i></span> '
 
         if (
             record.is_ready_for_projects
@@ -460,9 +526,9 @@ class SampleTable(tables.Table):
         ):
             if user.username != Constants.USER_ANONYMOUS:
                 ## test if it has the original fastq files
-                str_links = self._get_magic_handle(record)
+                str_links = warning_sign + self._get_magic_handle(record)
             else:
-                str_links = ""
+                str_links = warning_sign + ""
             return mark_safe(
                 str_links
                 + "<a href="
@@ -476,7 +542,8 @@ class SampleTable(tables.Table):
             and len(record.candidate_file_name_1) > 0
         ):
             return mark_safe(
-                "<a href="
+                warning_sign
+                + "<a href="
                 + reverse("sample-description", args=[record.pk])
                 + '><span ><i class="fa fa-plus-square"></i></span> More Info</a>'
             )
@@ -564,9 +631,18 @@ class ProjectTable(tables.Table):
     #   account_number = tables.LinkColumn('customer-detail', args=[A('pk')])
     reference = tables.Column("Reference", empty_values=())
     samples = tables.Column("#Samples (P/W/E)", orderable=False, empty_values=())
+    technology = tables.Column("Technology", empty_values=())
+    project_type = tables.Column(
+        "Project Type",
+        empty_values=(),
+        attrs={
+            "th": {"style": "text-align: center;"},
+            "td": {"style": "text-align: center;"},
+        },
+    )
     last_change_date = tables.Column("Last Change date", empty_values=())
     creation_date = tables.Column("Creation date", empty_values=())
-    results = tables.LinkColumn("Options", orderable=False, empty_values=())
+    results = tables.Column("Options", orderable=False, empty_values=())
 
     class Meta:
         model = Project
@@ -581,7 +657,26 @@ class ProjectTable(tables.Table):
         attrs = {"class": "table-striped table-bordered"}
         empty_text = "There are no Projects to show..."
 
-    def render_name(self, record):
+    def render_technology(self, record):
+        default_project_software = DefaultProjectSoftware()
+
+        possible_technologies = default_project_software.possible_sample_technologyes(
+            record
+        )
+
+        return mark_safe(possible_technologies)
+
+    def render_project_type(self, record: Project):
+        """return project type"""
+        default_software = DefaultProjectSoftware()
+        software_mdcg = default_software.get_software_project_mdcg_illumina(record)
+
+        if not software_mdcg is None:
+            return software_mdcg.name_extended.split()[0]
+
+        return "Not defined"
+
+    def render_name(self, record: Project):
         from crequest.middleware import CrequestMiddleware
 
         current_request = CrequestMiddleware.get_request()
@@ -595,7 +690,7 @@ class ProjectTable(tables.Table):
         if count > 0:
             project_sample = (
                 "<a href="
-                + reverse("show-sample-project-results", args=[record.pk])
+                + reverse("show-sample-project-results", kwargs={"pk": record.pk})
                 + ' data-toggle="tooltip" title="See Results">'
                 + "{}</a>".format(record.name)
             )
@@ -673,7 +768,7 @@ class ProjectTable(tables.Table):
         if count > 0:
             sz_project_sample = (
                 "<a href="
-                + reverse("show-sample-project-results", args=[record.pk])
+                + reverse("show-sample-project-results", kwargs={"pk": record.pk})
                 + ' data-toggle="tooltip" title="See Results"> '
                 + '<span ><i class="padding-button-table fa fa-info-circle padding-button-table"></i></span></a> '
             )
@@ -763,7 +858,7 @@ class ShowProjectSamplesResults(tables.Table):
             )
         return record.sample.name
 
-    def render_coverage(self, record):
+    def render_coverage(self, record: ProjectSample):
         """
         return icons about coverage
         """
@@ -773,6 +868,12 @@ class ShowProjectSamplesResults(tables.Table):
             MetaKeyAndValue.META_KEY_Coverage,
             MetaKeyAndValue.META_VALUE_Success,
         )
+
+        show_coverage = 'href="#coverageModal"'
+        default_software = DefaultProjectSoftware()
+
+        if default_software.is_project_coverage_available(record.project) is False:
+            show_coverage = ""
 
         ### coverage
         decode_coverage = DecodeObjects()
@@ -793,12 +894,15 @@ class ShowProjectSamplesResults(tables.Table):
         )
         return_html = ""
         for key in coverage.get_sorted_elements_name():
-            return_html += '<a href="#coverageModal" id="showImageCoverage" data-toggle="modal" project_sample_id="{}" '.format(
-                record.id
-            ) + 'sequence="{}"><img title="{}" class="tip" src="{}"></a>'.format(
-                key,
-                coverage.get_message_to_show_in_web_site(record.sample.name, key),
-                coverage.get_icon(key, limit_to_mask_consensus),
+            return_html += (
+                '<a {} id="showImageCoverage" data-toggle="modal" project_sample_id="{}" '.format(
+                    show_coverage, record.id
+                )
+                + 'sequence="{}"><img title="{}" class="tip" src="{}"></a>'.format(
+                    key,
+                    coverage.get_message_to_show_in_web_site(record.sample.name, key),
+                    coverage.get_icon(key, limit_to_mask_consensus),
+                )
             )
         return mark_safe(return_html)
 

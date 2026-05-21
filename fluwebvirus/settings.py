@@ -15,7 +15,7 @@ import os
 from decouple import config
 
 ## define APP version
-APP_VERSION_NUMBER = "2.1.0"
+APP_VERSION_NUMBER = "2.2.0"
 
 ### running tests in command line
 RUN_TEST_IN_COMMAND_LINE = False
@@ -44,8 +44,9 @@ GOOGLE_RECAPTCHA_SECRET_KEY = config("GOOGLE_RECAPTCHA_SECRET_KEY", default="")
 SITE_KEY = config("SITE_KEY")
 
 ### crispy template
-CRISPY_TEMPLATE_PACK = "bootstrap4"
-BREADCRUMBS_TEMPLATE = "django_bootstrap_breadcrumbs/bootstrap4.html"
+CRISPY_TEMPLATE_PACK = "bootstrap5"
+CRISPY_ALLOWED_TEMPLATE_PACKS = ("bootstrap5", "bootstrap4")
+BREADCRUMBS_TEMPLATE = "view_breadcrumbs/bootstrap5.html"
 
 CSRF_COOKIE_AGE = None
 CSRF_COOKIE_DOMAIN = ".min-saude.pt"
@@ -136,11 +137,13 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.gis",
     "crispy_forms",
+    "crispy_bootstrap4",
+    "crispy_bootstrap5",
     "crispy_forms_foundation",
     "django_tables2",
     "bootstrap4",
     "django_user_agents",
-    "django_bootstrap_breadcrumbs",
+    "view_breadcrumbs",
     "managing_files.apps.ManagingFilesConfig",
     "manage_virus.apps.ManageVirusConfig",
     "datasets.apps.DatasetsConfig",
@@ -361,6 +364,12 @@ LOGGING = {
             "level": "INFO",
             "class": "logging.FileHandler",
             "filename": "/var/log/insaFlu/update_pangolin.log",
+            "formatter": "verbose",
+        },
+        "update_flumut": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": "/var/log/insaFlu/update_flumut.log",
             "formatter": "verbose",
         },
         "console": {

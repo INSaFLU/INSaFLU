@@ -1,21 +1,17 @@
 import os
-import time
-from abc import ABC, abstractmethod
-from datetime import date
 
 import pandas as pd
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
-from django.db.models import Q
 
 from constants.constants import Televir_Metadata_Constants
-from pathogen_identification.models import (
-    ReferenceSource,
-    ReferenceSourceFile,
-    ReferenceSourceFileMap,
-    ReferenceTaxid,
-)
+from managing_files.models import ProcessControler
+from pathogen_identification.models import (ReferenceSource,
+                                            ReferenceSourceFile,
+                                            ReferenceSourceFileMap,
+                                            ReferenceTaxid)
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
+from utils.process_SGE import ProcessSched
 from utils.utils import Utils
 
 
@@ -54,8 +50,8 @@ def find_pattern_multiple_files(files, pattern, filter=None):
     return [line for line in result if line]
 
 
-def extract_file_accids(file, output_file, pattern):
-    cmd = f"zgrep {pattern} {file} | cut -f1 -d' ' | sort | uniq > {output_file}"
+def extract_file_accids(file, output_file, pattern_include="", pattern_exclude=""):
+    cmd = f"zgrep {pattern_include} {file} {pattern_exclude} | cut -f1 -d' ' | sort | uniq > {output_file}"
     os.system(cmd)
     # to dict
     with open(output_file, "r") as f:
@@ -87,137 +83,183 @@ class Command(BaseCommand):
             help="curate references",
         )
 
+        parser.add_argument(
+            "--force",
+            action="store_true",
+            help="force update references",
+        )
+
     def handle(self, *args, **options):
         ###
         # get user
         user = User.objects.get(pk=options["user_id"])
         utils: Utils = Utils()
-        outdir = utils.get_temp_dir()
-        os.makedirs(outdir, exist_ok=True)
-        metadadata_constants = Televir_Metadata_Constants()
+        process_controler = ProcessControler()
 
-        # entrez direct interface
-        entrez_connection = EntrezWrapper(
-            user.username,
-            bindir=metadadata_constants.get_software_bin_directory("entrez_direct"),
-            outdir=outdir,
-            outfile="entrez_output.tsv",
-            query_type="fetch_accession_description",
-            chunksize=500,
+        process_SGE = ProcessSched()
+
+        reference_update_running = ProcessControler.objects.filter(
+            name=process_controler.get_name_televir_reference_update(1),
+            is_running=True,
+        ).exists()
+
+        if reference_update_running and not options["force"]:
+            print(
+                "Reference update is already running. Use --force to override and run again."
+            )
+            return
+
+        ### SETUP
+        process_SGE.set_process_controlers(
+            user,
+            process_controler.get_name_televir_reference_update(user_pk=user.pk),
+            0,
         )
 
-        # accids on file
-        accid_file_path = metadadata_constants.accession_to_taxid_path
-        accid_file_df = pd.read_csv(accid_file_path, sep="\t")
+        process_SGE.set_process_controler(
+            user,
+            process_controler.get_name_televir_reference_update(
+                user_pk=user.pk,
+            ),
+            ProcessControler.FLAG_RUNNING,
+        )
 
-        print(f"Number of accids on file: {len(accid_file_df)}")
-
-        files = accid_file_df.file.unique().tolist()
-        viros_file = [file for file in files if "virosaurus" in file]
-
-        if len(viros_file) == 0:
-            ignore_dict = {}
-            keep_dict = {}
-        else:
-            viros_file = viros_file[0]
-
-            ignore_dict = extract_file_accids(
-                os.path.join(
-                    Televir_Metadata_Constants.SOURCE["REF_FASTA"],
-                    viros_file,
-                ),
-                os.path.join(outdir, "ignore_accids.txt"),
-                "GENE",
-            )
-
-            keep_dict = extract_file_accids(
-                os.path.join(
-                    Televir_Metadata_Constants.SOURCE["REF_FASTA"],
-                    viros_file,
-                ),
-                os.path.join(outdir, "keep_accids.txt"),
-                "-v GENE",
-            )
-
-        if options["curate"] is False:
-            entrez_descriptions = entrez_connection.run_entrez_query(
-                query_list=accid_file_df.acc.unique().tolist(),
-            )
-        else:
-            entrez_descriptions = ReferenceSource.objects.all()
-            entrez_descriptions = pd.DataFrame(
-                [
-                    {
-                        "accession": source.accid,
-                        "description": source.description,
-                        "taxid": source.taxid.taxid,
-                    }
-                    for source in entrez_descriptions
-                ]
-            )
-
-        print("Retrieved entrez descriptions")
-        print(f"Number of entrez descriptions: {len(entrez_descriptions)}")
-        
-        # Enrich with lineage and taxonomy data
-        print("Enriching references with taxonomic lineage...")
         try:
-            entrez_descriptions = entrez_connection.enrich_references_dataframe(
-                entrez_descriptions
+            outdir = utils.get_temp_dir()
+            os.makedirs(outdir, exist_ok=True)
+            metadadata_constants = Televir_Metadata_Constants()
+
+            # entrez direct interface
+            entrez_connection = EntrezWrapper(
+                user.username,
+                bindir=metadadata_constants.get_software_bin_directory("entrez_direct"),
+                outdir=outdir,
+                outfile="entrez_output.tsv",
+                query_type="fetch_accession_description",
+                chunksize=500,
             )
-            print("Successfully enriched references with lineage data")
-            if 'lineage_path' in entrez_descriptions.columns:
-                print(f"Sample lineage_path: {entrez_descriptions['lineage_path'].iloc[0]}")
-        except Exception as e:
-            print(f"Warning: Could not enrich references with lineage: {e}")
-            # Continue without lineage enrichment
-        
-        print("Registering entrez descriptions")
 
-        d = 0
+            # accids on file
+            accid_file_path = metadadata_constants.accession_to_taxid_path
+            accid_file_df = pd.read_csv(accid_file_path, sep="\t")
 
-        for taxid_str, taxid_df in entrez_descriptions.groupby("taxid"):
+            print(f"Number of accids on file: {len(accid_file_df)}")
 
+            files = accid_file_df.file.unique().tolist()
+            viros_file = [file for file in files if "virosaurus" in file]
+
+            if len(viros_file) == 0:
+                ignore_dict = {}
+            else:
+                viros_file = viros_file[0]
+
+                ignore_dict = extract_file_accids(
+                    os.path.join(
+                        Televir_Metadata_Constants.SOURCE["REF_FASTA"],
+                        viros_file,
+                    ),
+                    os.path.join(outdir, "ignore_accids.txt"),
+                    "GENE",
+                )
+
+            if options["curate"] is False:
+                entrez_descriptions = []
+                for file_source, file_df in accid_file_df.groupby("file"):
+
+                    file_descriptor = entrez_connection.run_entrez_query(
+                        query_list=file_df.acc.unique().tolist(),
+                    )
+                    file_descriptor["file"] = file_source
+                    entrez_descriptions.append(file_descriptor)
+
+                entrez_descriptions = pd.concat(entrez_descriptions, ignore_index=True)
+
+            else:
+                entrez_descriptions = ReferenceSource.objects.all()
+                entrez_descriptions = pd.DataFrame(
+                    [
+                        {
+                            "accession": source.accid,
+                            "description": source.description,
+                            "taxid": source.taxid.taxid,
+                        }
+                        for source in entrez_descriptions
+                    ]
+                )
+
+            print("Retrieved entrez descriptions")
+            print(f"Number of entrez descriptions: {len(entrez_descriptions)}")
+
+            # Enrich with lineage and taxonomy data
+            print("Enriching references with taxonomic lineage...")
             try:
-                ref_taxid = ReferenceTaxid.objects.get(taxid=taxid_str)
-            except ReferenceTaxid.DoesNotExist:
-                ref_taxid = ReferenceTaxid.objects.create(taxid=taxid_str)
+                entrez_descriptions = entrez_connection.enrich_references_dataframe(
+                    entrez_descriptions
+                )
+                print("Successfully enriched references with lineage data")
+                if 'lineage_path' in entrez_descriptions.columns:
+                    print(f"Sample lineage_path: {entrez_descriptions['lineage_path'].iloc[0]}")
+            except Exception as e:
+                print(f"Warning: Could not enrich references with lineage: {e}")
 
-            for _, row in taxid_df.iterrows():
+            print("Registering entrez descriptions")
 
-                ### register a log every 1000 taxids
-                d += 1
+            d = 0
 
-                if d % 1000 == 0:
-                    print(f"Taxid: {taxid_str}")
-                    print(f"Number of taxids processed: {d}")
+            # raise Exception("Debugging point reached")
 
-                accid_str = row.accession
-                description = row.description
+            for taxid_str, taxid_df in entrez_descriptions.groupby("taxid"):
+                if pd.isna(taxid_str):
+                    print("Skipping NaN taxid")
+                    continue
+                taxid_str = str(int(taxid_str))
 
-                if len(description) > 300:
-                    description = description[:300]
+                try:
+                    ref_taxid = ReferenceTaxid.objects.get(taxid=taxid_str)
+                except ReferenceTaxid.DoesNotExist:
+                    ref_taxid = ReferenceTaxid.objects.create(taxid=taxid_str)
 
-                files = list(accid_file_df[accid_file_df.acc == accid_str].file)
+                for _, row in taxid_df.iterrows():
+                    if pd.isna(row.accession):
+                        print("Skipping NaN accession")
+                        continue
 
-                if (
-                    sum(["virosaurus" in file for file in files]) > 0
-                    and options["curate"] is False
-                ):
-                    viros_file = [file for file in files if "virosaurus" in file][0]
+                    if pd.isna(row.description):
+                        print("Skipping NaN description")
+                        continue
 
+                    if pd.isna(row.file):
+                        print("Skipping NaN file")
+                        continue
+
+                    ### register a log every 1000 accids
+                    d += 1
+
+                    if d % 1000 == 0:
+                        print(f"Taxid: {taxid_str}")
+                        print(f"Number of taxids processed: {d}")
+
+                    accid_str = row.accession
                     simple_accid = accid_str.split(".")[0]
+
+                    description = row.description
+
+                    if len(description) > 300:
+                        description = description[:300]
+
+                    file_str = row.file
 
                     if (
                         ignore_dict.get(simple_accid, None) is not None
-                        and keep_dict.get(simple_accid, None) is None
+                        and options["curate"] is False
+                        and "viros" in file_str
                     ):
 
                         ref_source = ReferenceSource.objects.filter(accid=accid_str)
 
                         viro_maps = ReferenceSourceFileMap.objects.filter(
                             reference_source__accid=accid_str,
-                            reference_source_file__file=viros_file,
+                            reference_source_file__file=file_str,
                         )
                         viro_maps.delete()
 
@@ -228,71 +270,53 @@ class Command(BaseCommand):
                         if ref_source and not any_left.exists():
                             ref_source.delete()
 
-                        files = [file for file in files if file != viros_file]
+                        continue
 
-                ref_source = ReferenceSource.objects.filter(accid=accid_str)
+                    ref_source = ReferenceSource.objects.filter(accid=accid_str)
 
-                if ref_source.exists() is False:
-                    # Extract additional enriched data if available
-                    organism_name = row.get('organism_name', '') if 'organism_name' in row else ''
-                    lineage_json = row.get('lineage_json', '') if 'lineage_json' in row else ''
-                    lineage_path = row.get('lineage_path', '') if 'lineage_path' in row else ''
-                    
-                    ref_source = ReferenceSource.objects.create(
-                        accid=accid_str, 
-                        description=description, 
-                        taxid=ref_taxid,
-                        organism_name=organism_name,
-                        lineage_json=lineage_json,
-                        lineage_path=lineage_path
-                    )
+                    if ref_source.exists() is False:
+                        organism_name = row.get('organism_name', '') if 'organism_name' in row else ''
+                        lineage_json = row.get('lineage_json', '') if 'lineage_json' in row else ''
+                        lineage_path = row.get('lineage_path', '') if 'lineage_path' in row else ''
 
-                elif ref_source.count() > 1:
+                        ref_source = ReferenceSource.objects.create(
+                            accid=accid_str,
+                            description=description,
+                            taxid=ref_taxid,
+                            organism_name=organism_name,
+                            lineage_json=lineage_json,
+                            lineage_path=lineage_path,
+                        )
 
-                    ref_source.delete()
-                    
-                    # Extract additional enriched data if available
-                    organism_name = row.get('organism_name', '') if 'organism_name' in row else ''
-                    lineage_json = row.get('lineage_json', '') if 'lineage_json' in row else ''
-                    lineage_path = row.get('lineage_path', '') if 'lineage_path' in row else ''
-                    
-                    ref_source = ReferenceSource.objects.create(
-                        accid=accid_str, 
-                        description=description, 
-                        taxid=ref_taxid,
-                        organism_name=organism_name,
-                        lineage_json=lineage_json,
-                        lineage_path=lineage_path
-                    )
+                    elif ref_source.count() > 1:
 
-                else:
-                    ref_source = ref_source.first()
-                    
-                    # Update with enriched data if available
-                    if 'organism_name' in row and pd.notna(row.get('organism_name')):
-                        ref_source.organism_name = row['organism_name']
-                    if 'lineage_json' in row and pd.notna(row.get('lineage_json')):
-                        ref_source.lineage_json = row['lineage_json']
-                    if 'lineage_path' in row and pd.notna(row.get('lineage_path')):
-                        ref_source.lineage_path = row['lineage_path']
-                    ref_source.save()
+                        ref_source.delete()
 
-                if options["curate"]:
-                    files_associated = ReferenceSourceFileMap.objects.filter(
-                        reference_source=ref_source
-                    )
-                    for file_associated in files_associated:
-                        if file_associated.reference_source_file.file not in files:
-                            file_associated.status = (
-                                ReferenceSourceFileMap.STATUS_DEPRECATED
-                            )
-                            file_associated.save()
+                        organism_name = row.get('organism_name', '') if 'organism_name' in row else ''
+                        lineage_json = row.get('lineage_json', '') if 'lineage_json' in row else ''
+                        lineage_path = row.get('lineage_path', '') if 'lineage_path' in row else ''
 
-                if len(files) == 0:
-                    continue
+                        ref_source = ReferenceSource.objects.create(
+                            accid=accid_str,
+                            description=description,
+                            taxid=ref_taxid,
+                            organism_name=organism_name,
+                            lineage_json=lineage_json,
+                            lineage_path=lineage_path,
+                        )
 
-                # get reference source file
-                for file_str in files:
+                    else:
+                        ref_source = ref_source.first()
+
+                        if 'organism_name' in row and pd.notna(row.get('organism_name')):
+                            ref_source.organism_name = row['organism_name']
+                        if 'lineage_json' in row and pd.notna(row.get('lineage_json')):
+                            ref_source.lineage_json = row['lineage_json']
+                        if 'lineage_path' in row and pd.notna(row.get('lineage_path')):
+                            ref_source.lineage_path = row['lineage_path']
+                        ref_source.save()
+
+                    # get reference source file
                     try:
                         ref_source_file = ReferenceSourceFile.objects.get(file=file_str)
                     except ReferenceSourceFile.DoesNotExist:
@@ -300,7 +324,7 @@ class Command(BaseCommand):
                             file=file_str
                         )
 
-                    description = entrez_connection
+                    # description = entrez_connection
 
                     try:
                         _ = ReferenceSourceFileMap.objects.get(
@@ -313,3 +337,21 @@ class Command(BaseCommand):
                             reference_source=ref_source,
                             reference_source_file=ref_source_file,
                         )
+        except Exception as e:
+            print(e)
+            process_SGE.set_process_controler(
+                user,
+                process_controler.get_name_televir_reference_update(
+                    user_pk=user.pk,
+                ),
+                ProcessControler.FLAG_ERROR,
+            )
+            return
+
+        process_SGE.set_process_controler(
+            user,
+            process_controler.get_name_televir_reference_update(
+                user_pk=user.pk,
+            ),
+            ProcessControler.FLAG_FINISHED,
+        )

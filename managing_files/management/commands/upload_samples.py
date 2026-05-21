@@ -9,7 +9,7 @@ from django.conf import settings
 from managing_files.models import MetaKey, UploadFiles
 from constants.constants import Constants, TypeFile
 from utils.parse_in_files import ParseInFiles
-from utils.utils import Utils
+from utils.utils import Utils, PathUtils
 import os, ntpath
 import logging
 
@@ -55,6 +55,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         utils = Utils()
+        path_utils = PathUtils()
 
         metadata_file = options["metadata_file"]
         account = options["user_login"]
@@ -192,12 +193,12 @@ class Command(BaseCommand):
             # move the files to the right place
             sz_file_to = os.path.join(
                 getattr(settings, "MEDIA_ROOT", None),
-                utils.get_path_upload_file(user.id, TypeFile.TYPE_FILE_sample_file),
+                path_utils.get_path_upload_file(user.id, TypeFile.TYPE_FILE_sample_file),
                 metadata_file,
             )
 
             # get unique file name, as the user can upload files with same name...
-            sz_file_to, path_added = utils.get_unique_file(sz_file_to)
+            sz_file_to, path_added = path_utils.get_unique_file(sz_file_to)
 
             # Add this back in the end... to "consume" the file
             # utils.move_file(metadata_full_path, sz_file_to)
@@ -205,12 +206,12 @@ class Command(BaseCommand):
 
             if path_added is None:
                 sample_file_upload_files.path_name.name = os.path.join(
-                    utils.get_path_upload_file(user.id, TypeFile.TYPE_FILE_sample_file),
+                    path_utils.get_path_upload_file(user.id, TypeFile.TYPE_FILE_sample_file),
                     ntpath.basename(sz_file_to),
                 )
             else:
                 sample_file_upload_files.path_name.name = os.path.join(
-                    utils.get_path_upload_file(user.id, TypeFile.TYPE_FILE_sample_file),
+                    path_utils.get_path_upload_file(user.id, TypeFile.TYPE_FILE_sample_file),
                     path_added,
                     ntpath.basename(sz_file_to),
                 )
@@ -242,10 +243,10 @@ class Command(BaseCommand):
                 # move the files to the right place
                 sz_file_to = os.path.join(
                     getattr(settings, "MEDIA_ROOT", None),
-                    utils.get_path_upload_file(user.id, TypeFile.TYPE_FILE_fastq_gz),
+                    path_utils.get_path_upload_file(user.id, TypeFile.TYPE_FILE_fastq_gz),
                     fastq_upload_files.file_name,
                 )
-                sz_file_to, path_added = utils.get_unique_file(
+                sz_file_to, path_added = path_utils.get_unique_file(
                     sz_file_to
                 )  ## get unique file name, user can upload files with same name...
                 # 	utils.move_file(temp_file, sz_file_to)
@@ -263,14 +264,14 @@ class Command(BaseCommand):
 
                 if path_added is None:
                     fastq_upload_files.path_name.name = os.path.join(
-                        utils.get_path_upload_file(
+                        path_utils.get_path_upload_file(
                             user.id, TypeFile.TYPE_FILE_fastq_gz
                         ),
                         fastq_upload_files.file_name,
                     )
                 else:
                     fastq_upload_files.path_name.name = os.path.join(
-                        utils.get_path_upload_file(
+                        path_utils.get_path_upload_file(
                             user.id, TypeFile.TYPE_FILE_fastq_gz
                         ),
                         path_added,

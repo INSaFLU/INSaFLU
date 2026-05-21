@@ -3,9 +3,9 @@
 
 {% load bootstrap4 %}
 {% load querystring from django_tables2 %}
-{% load title from django_tables2 %}
+
 {% load trans blocktrans from i18n %}
-{% load django_bootstrap_breadcrumbs %}
+{% load view_breadcrumbs %}
 
 {%load html_tags %}
 
@@ -14,7 +14,7 @@
 
 
 {% block css %}
-	{% load static from staticfiles %}
+	{% load static %}
         <link rel="stylesheet" href="{% static 'css/result_table.css' %}" />
         <link rel="stylesheet" href="{% static 'css/result_detail.css' %}" />
         <link rel="stylesheet" href="{% static 'css/result_detail_buttons.css' %}" />
@@ -22,24 +22,167 @@
         <link rel="stylesheet" href="{% static 'css/televir_software_graph/collapsibleTree-0.1.6/collapsibleTree.css' %}" />
 {% endblock css %}
 
-
-{% block breadcrumbs %}
-{{block.super}}
-{% if owner %}
-{% breadcrumb "Project Index" "project-index" %}
-{% breadcrumb "TELEVIR Projects" "PIprojects_main"  %}
-{% breadcrumb project "PIproject_samples"  pk=project_index  %}
-{% breadcrumb sample "sample_main" pk1=project_index pk2=sample_index  %}
-{% else %}
-{% breadcrumb "Project Index" "project-index" %}
-
-{% endif %}
-{% endblock %}
-
-
 {% block content %}
+
+
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script type="text/javascript" src="{% static 'js/televir_projects/heatmap_clades.js' %}"></script>
+
+
+{% if crumbs %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            {% for name, url in crumbs %}
+                <li class="breadcrumb-item">
+                    <a href="{{ url }}">{{ name }}</a>
+                </li>
+            {% endfor %}
+        </ol>
+    </nav>
+{% endif %}
+
+
+<style>
+
+    #report_table {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    }
+    #report_table > thead > tr,
+    #report_table > tbody > tr {
+        border: none !important;
+    }
+
+    .collapsible-summary {
+        position: fixed;
+        top: 60px; /* Add space at the top */
+        right: -100%; /* Start off-screen */
+        width: 1000px; /* Default width */
+        height: calc(100% - 20px); /* Adjust height to account for the top space */
+        background-color: white;
+        box-shadow: -2px 0 5px rgba(0,0,0,0.5);
+        transition: right 0.3s ease, width 0.3s ease; /* Smooth transition */
+        z-index: 1000; /* Ensure it appears above other content */
+        overflow-y: auto; /* Enable scrolling if content overflows */
+        padding: 20px; /* Add padding around the content */
+    }
+
+    .collapsible-summary.show {
+        right: 0; /* Slide in */
+    }
+
+    .slider-container {
+        position: fixed;
+        top: 30px; /* Adjust based on the top space */
+        right: 320px; /* Adjust based on the default width */
+        z-index: 1001; /* Ensure it appears above other content */
+    }
+
+    .js-plotly-plot .plotly {
+        margin-bottom: 50px;
+    }
+
+    .main-svg {
+        height: 500px;
+    }
+
+    #close-summary {
+        margin-top: 10px;
+    }
+
+    .extra-column {
+    display: none;
+}
+
+.show-extra-columns .extra-column {
+    display: table-cell;
+}
+
+.group-spacer td {
+    height: 24px;
+    background: transparent;
+    border: none;
+    /* Optionally add a subtle shadow or color */
+    /* box-shadow: 0 2px 8px rgba(0,0,0,0.04); */
+}
+.group-wrapper {
+    background: #f8fafc;
+    border-radius: 32px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.04);
+    margin-bottom: 32px;
+    border: 1px solid #d7dde6ff;
+    display: table-row-group;
+}
+.group-wrapper tr:first-child td {
+    border-top-left-radius: 32px;
+    border-top-right-radius: 32px;
+}
+.group-wrapper tr:last-child td {
+    border-bottom-left-radius: 32px;
+    border-bottom-right-radius: 32px;
+}
+.custom-section-container {
+    background: #f8fafc; /* match group-wrapper */
+    border-radius: 24px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+    padding: 18px 24px;
+    margin: 12px 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 18px;
+    border: 1px solid #e3e8ee;
+}
+
+.custom-section {
+    font-size: 1rem;
+    color: #234;
+    margin-right: 18px;
+    margin-bottom: 6px;
+    flex: 1 1 auto;
+}
+
+.custom-link {
+    color: #1976d2;
+    text-decoration: underline;
+    font-weight: 500;
+}
+
+#collapseReport {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+#card-block {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+}
+
+#table {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+#accordion2 {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+#table-wrapper {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+</style>
+
+
+
 
 
 {% if owner %}
@@ -73,11 +216,11 @@
                     <div class="row">
                         <div class="col-sm-2 link-container">
                             {% for run in runs_pipeline %}
-                            <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Workflow report {{run.parameter_set.leaf.index}} </a>
+                            <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Workflow report {{run.parameter_set.leaf.software_tree.global_index}}-{{run.parameter_set.leaf.index}} </a>
 
                             {% endfor %}
                             {% for run in runs_mapping %}
-                            <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Mapping report {{run.parameter_set.leaf.index}}  </a>
+                            <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Mapping report r{{run.parameter_set.leaf.software_tree.global_index}}-{{run.parameter_set.leaf.index}}  </a>
                             {% endfor %}
                         </div>
                         {% if graph_json %}
@@ -114,36 +257,38 @@
                         </a>
                         <a href="https://insaflu.readthedocs.io/en/latest/metagenomics_virus_detection.html#televir-output-visualization-and-download" target="_blank">
                             <i class="fa fa-info-circle" aria-hidden="true"></i>
+                        </a>
                     </h5>
                 </div>
                 
                 <div class="col-sm">
+
                     <div class="float-right">
                     <a href="#" id="report_download" class="btn btn-primary dark"> 
                         <span class="hidden-phone"></span>Download as TSV </a>
                     </div>
-
                     {% if sort_performed %}
                     <div class="float-right overlap-button">
-                        <a href="#" class="summary-header btn btn-primary dark"> 
-                            <span>Read Overlap Summary</span>
-                        </a>
+                        <button id="toggle-summary" class="btn btn-primary">Read Overlap Summary</button>
                     </div>  
                     {% endif %}
+                    <div class="float-right overlap-button">
+                        <button id="toggle-extra-columns" class="btn btn-primary">Show Extra Columns</button>
+                    </div >
                 </div>
             </div>
         </div>
         {% if sort_performed %}
         <div id="summary" class="collapsible">
-            <div class="card-block collapsible-summary" style="display: none;">
-                <div style="padding: 20px; padding-bottom: 0px">
+            <div class="card-block collapsible-summary">
+                <button id="close-summary" class="btn btn-secondary">Close</button>
+                <div style="padding: 20px; padding-bottom: 0px; padding-top: 50px">
                     <div class="row">
                         <div class="col-sm">
                             <p> 
                             <p> 
                                 Shared read analysis recovered <strong>{{ groups_count }} groups of references</strong>.
                             </p> 
-
                         </div>
                     </div>
                 </div>
@@ -180,19 +325,18 @@
                             </p>
                             <p>
                                 <i class="fa fa-exclamation-circle"></i> <strong>
-                                This sorting algorith is taxonomy-blind. Groups are constructed according to a minimum shared mapped read threshold of <strong>{{ min_shared_reads }} % </strong> between between remapped hits. </strong>
+                                This sorting algorithm is taxonomy-blind. Groups are constructed according to a minimum shared mapped read threshold of <strong>{{ min_shared_reads }} % </strong> between remapped hits. </strong>
                             </p>
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
         {% endif %}
 
         <div id="collapseReport" class="collapse show" role="tabpanel" aria-labelledby="headingReport">
             <div class="card-block">
-                <div style="padding: 2px; overflow-x:auto;">    
+                <div id="table-wrapper" style="padding: 2px; overflow-x:auto;">    
                     <table class="table" width="100%" id="report_table">
                     <thead>
                         <tr class="header">
@@ -200,22 +344,22 @@
                             <th>Taxid</th>
                             <th>accID</th>
                             <th>Workflows</th>
-                            <th>Cov (%)</th>
-                            <th>Depth</th>
-                            <th>DepthC</th>
-                            <th>Mapped reads</th>
-                            <th>start prop (%)</th>
-                            <th>mapped_prop (%)</th>
-                            <th>Gaps</th>
-                            <th>Windows Covered</th>
+                            <th class = "extra-column">Cov (%)</th>
+                            <th class = "extra-column">Depth</th>
+                            <th class = "extra-column">DepthC</th>
+                            <th class = "extra-column">Mapped reads</th>
+                            <th class = "extra-column">start prop (%)</th>
+                            <th class = "extra-column">mapped_prop (%)</th>
+                            <th class = "extra-column">Gaps</th>
+                            <th class = "extra-column">Windows Covered</th>
                             {% if private_reads_available %}
-                            <th>Private reads</th>
+                            <th class = "extra-column">Private reads</th>
                             {% endif %}
                             {% if error_rate_available %}
-                            <th>Mismatch rate</th>
+                            <th class = "extra-column">Mismatch rate</th>
                             {% endif %}
-                            <th>class. success</th>
-                            <th>mapping success</th>                
+                            <th class = "extra-column">class. success</th>
+                            <th class = "extra-column">mapping success</th>                
                             <th>Warning</th>
                             {% if in_control %}
                             <th>Control</th>
@@ -223,11 +367,15 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for final_report in report_list %}
+                    {% for final_report, group_reports in report_list.items %}
+                        <tbody class="group-wrapper">
                         <tr>
                             <td colspan="100%">
                                 <div class="custom-section-container">
-                                    {% if final_report.has_multiple %}
+                                    <div style="font-weight: bold; color: #1976d2; margin-right: 12px;">
+                                        <i class="fa fa-info-circle"></i> Group Info
+                                    </div>
+                                        {% if final_report.has_multiple %}
                                     <div class="primary-row" style= "margin-top: 2px;">
                                         <button class="showSecondaryRows" type="button" group-name="{{final_report.name}}" title="Toggle Secondary Rows">
                                             <i class="fa fa-toggle-off toggle-icon"></i>
@@ -271,7 +419,7 @@
                                    
                                 </div>
                                 <script>
-                                    createHeatmap('{{ final_report.js_heatmap_data|safe }}', "plot-{{final_report.name}}");
+                                    createHeatmap('{{ final_report.overlap_heatmap_json_str|safe }}', "plot-{{final_report.name}}");
                                 </script>
 
                             </td>
@@ -285,7 +433,7 @@
                             </td>
                         </tr>
                         {% endif %}
-                        {% for value in final_report.group_list %}
+                        {% for value in group_reports %}
                         <tr class="parent {{value.row_class_name}}"  style="display: {{value.display}}" id="row_{{value.accid}}" group-name="{{final_report.name}}" first="{{value.first_in_group}}" accid>
                             <td data-title="Description" style="text-align: left;">
                                 {% if value.first_in_group %}
@@ -303,34 +451,34 @@
                             <td data-title="accID">
                                 <a href={{value.accid|link_ncbi}}>{{value.accid}}</a>
                             </td>
-                            <td data-title="Support" {% if value.found_in == "M" %} class="map-only-cell" {% endif %} >{{value.found_in}}</td>                                
-                            <td data-title="Cov" style="{% depth_color value.coverage max_coverage %}">
+                            <td data-title="Support" {% if value.found_in_str == "M" %} class="map-only-cell" {% endif %} >{{value.found_in_str |safe}}</td>                                
+                            <td data-title="Cov" style="{% depth_color value.coverage max_coverage %}" class = "extra-column">
                                 {{value.coverage|round}}</td>
-                            <td data-title="Depth" style="{% depth_color value.depth value.run_detail.max_depth %}">
+                            <td data-title="Depth" style="{% depth_color value.depth value.run_detail.max_depth %}" class = "extra-column">
                                 {{value.depth|round}}</td>
-                            <td data-title="DepthC" style="{% depth_color value.depthR value.run_detail.max_depthR %}">
+                            <td data-title="DepthC" style="{% depth_color value.depthR value.run_detail.max_depthR %}" class="extra-column">
                                 {{value.depthR|round}}</td>
-                            <td data-title="Mapped reads" style="{% depth_color value.mapped_reads value.run_detail.max_mapped %}">
+                            <td data-title="Mapped reads" style="{% depth_color value.mapped_reads value.run_detail.max_mapped %}" class = "extra-column">
                                 {{value.mapped_reads|round}}</td>
-                            <td data-title="start prop" style="{% depth_color value.ref_proportion value.run_detail.max_prop %}">
+                            <td data-title="start prop" style="{% depth_color value.ref_proportion value.run_detail.max_prop %}" class = "extra-column">
                                 {{value.ref_proportion|round_to_int}}</td>
-                            <td data-title="mapped_prop" style="{% depth_color value.mapped_proportion value.run_detail.max_prop %}">
+                            <td data-title="mapped_prop" style="{% depth_color value.mapped_proportion value.run_detail.max_prop %}" class = "extra-column">
                                 {{value.mapped_proportion|round_to_int}}</td>
-                            <td data-title="Gaps" style="{% depth_color value.ngaps value.run_detail.max_gaps %}">
+                            <td data-title="Gaps" style="{% depth_color value.ngaps value.run_detail.max_gaps %}" class="extra-column">
                                 {{value.ngaps}}</td>
-                            <td data-title="Windows Covered" style="{% depth_color_windows value.windows_covered max_windows_covered %}">
+                            <td data-title="Windows Covered" style="{% depth_color_windows value.windows_covered max_windows_covered %}" class = "extra-column">
                                 {% windows_safe value.windows_covered %}</td>
                             {% if private_reads_available %}
-                            <td data-title="Private reads" style="{% depth_color value.private_reads final_report.max_private_reads %}">
+                            <td data-title="Private reads" style="{% depth_color value.private_reads final_report.max_private_reads %}" class = "extra-column">
                                 {{value.private_reads}}</td>
                             {% endif %}
                             {% if error_rate_available %}
-                            <td data-title="Error rate" style="{% depth_color_error value.error_rate max_error_rate %}">
+                            <td data-title="Error rate" style="{% depth_color_error value.error_rate max_error_rate %}" class = "extra-column">
                                 {{value.error_rate}}</td>
                             {% endif %}
-                            <td data-title="class. success" style="{% success_count_color value.classification_success %}">
+                            <td data-title="class. success" style="{% success_count_color value.classification_success %}" class = "extra-column">
                                 {{value.classification_success}}</td>
-                            <td data-title="mapping success" style="{% success_count_color value.mapping_success %}">
+                            <td data-title="mapping success" style="{% success_count_color value.mapping_success %}" class = "extra-column">
                                 {{value.mapping_success}}</td>
                             <td data-title="Warning" style="{% flag_false_positive_color value.depth value.depthR value.coverage value.mapped_reads value.windows_covered project_index %}">
                                 {% flag_false_positive value.depth value.depthR value.coverage value.mapped_reads value.windows_covered project_index %}</td>
@@ -504,12 +652,11 @@
                             </div>
                         </td>
                         </tr>
+                    </tbody>
                     {% endfor %}
 
-                    <tr class="detail" style="background-color: #f2f2f2; padding: 0px; margin: 0px; border: 0px;">
-                        <td colspan="18" align="center" style="padding: 0px; margin: 0px">
-                            <hr class="solid" style="height: 1px; background-color: #000000; margin: 0px;">
-                        </td>
+                    <tr class="group-spacer">
+                        <td colspan="18" style="height: 24px; background: transparent; border: none;"></td>
                     </tr>
                     {% endfor %}
                     </tbody>
@@ -523,7 +670,7 @@
 {% endif %}
 
 {%endblock content %}
-{% load static from staticfiles%}
+{% load static %}
 {% block js %}
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.min.js"></script>
@@ -537,9 +684,22 @@
 <script type="text/javascript" src="{% static 'js/graph_televir/collapsibleTree-binding-0.1.7/collapsibleTree.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/televir_projects/sample_detail.js' %}"></script>
 
+<script>
 
-<script type="text/javascript">
+    if (document.getElementById('toggle-summary')) {
+        document.getElementById('toggle-summary').addEventListener('click', function() {
+            var summaryDiv = document.querySelector('.collapsible-summary');
+            summaryDiv.classList.toggle('show');
+        });
+    
+    }
 
+    if (document.getElementById('close-summary')) {
+        document.getElementById('close-summary').addEventListener('click', function() {
+            var summaryDiv = document.querySelector('.collapsible-summary');
+            summaryDiv.classList.remove('show');
+        });
+    }
 
     var buttons = document.querySelectorAll('.showSecondaryRows, .showSecondaryRows i');
     for (var b = 0; b < buttons.length; b++) {
@@ -572,9 +732,13 @@
             }
         });
     }
+    document.getElementById('toggle-extra-columns').addEventListener('click', function() {
+        var table = document.getElementById('report_table');
+        table.classList.toggle('show-extra-columns');
+    });
+
 
 </script>
-
 {% endblock js %}
 
 

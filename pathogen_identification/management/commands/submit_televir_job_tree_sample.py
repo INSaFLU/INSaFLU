@@ -1,25 +1,18 @@
 import os
-from datetime import date
-from typing import List
 
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
 from managing_files.models import ProcessControler
-from pathogen_identification.models import PIProject_Sample, Projects, SoftwareTreeNode
+from pathogen_identification.models import (PIProject_Sample, Projects,
+                                            SoftwareTree)
 from pathogen_identification.utilities.tree_deployment import (
-    Tree_Progress,
-    TreeProgressGraph,
-)
+    Tree_Progress, TreeProgressGraph)
 from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils,
-    Utils_Manager,
-)
+    SoftwareTreeUtils, Utils_Manager)
 from pathogen_identification.utilities.utilities_views import (
-    RawReferenceUtils,
-    set_control_reports,
-)
-from utils.process_SGE import ProcessSGE
+    RawReferenceUtils, set_control_reports)
+from utils.process_SGE import ProcessSched
 
 
 class Command(BaseCommand):
@@ -55,10 +48,13 @@ class Command(BaseCommand):
         ###
         # SETUP
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         user = User.objects.get(pk=options["user_id"])
         project = Projects.objects.get(pk=options["project_id"])
-        technology = project.technology
+        output_directory = options["outdir"]
+
+        if os.path.exists(output_directory) == False:
+            os.makedirs(output_directory)
 
         samples = PIProject_Sample.objects.filter(
             project=project, is_deleted=False, pk=options["sample_id"]
@@ -95,80 +91,71 @@ class Command(BaseCommand):
         utils = Utils_Manager()
         software_utils = SoftwareTreeUtils(user, project)
         ####
-        local_tree = software_utils.generate_project_tree()
-        local_paths = local_tree.get_all_graph_paths_explicit()
-
-        # pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
-        pipeline_tree = software_utils.generate_software_tree_extend(local_tree)
-        pipeline_tree_index = local_tree.software_tree_pk
-
-        # MANAGEMENT
-        matched_paths = {
-            leaf: utils.utility_manager.match_path_to_tree_safe(path, pipeline_tree)
-            for leaf, path in local_paths.items()
-        }
-
-        matched_paths = {k: v for k, v in matched_paths.items() if v is not None}
-
-        available_path_nodes = {
-            leaf: SoftwareTreeNode.objects.get(
-                software_tree__pk=pipeline_tree_index, index=path
-            )
-            for leaf, path in matched_paths.items()
-        }
-
-        available_path_nodes = {
-            leaf: utils.parameter_util.check_ParameterSet_available_to_run(
-                sample=sample, leaf=matched_path_node, project=project
-            )
-            for leaf, matched_path_node in available_path_nodes.items()
-        }
-
-        matched_paths = {
-            k: v for k, v in matched_paths.items() if available_path_nodes[k] == True
-        }
-
-        # SUBMISSION
-        print("MATCHED PATHS")
-        print(matched_paths)
-
-        module_tree = utils.module_tree(pipeline_tree, list(matched_paths.values()))
-
         try:
-            for project_sample in samples:
-                if project_sample.is_deleted:
-                    continue
-                if len(matched_paths) > 0:
-                    graph_progress = TreeProgressGraph(project_sample)
 
-                    deployment_tree = Tree_Progress(
-                        module_tree, project_sample, project
-                    )
-
-                    graph_progress.generate_graph()
-
-                    deployment_tree.cycle_process()
-
-                    graph_progress.generate_graph()
-                    set_control_reports(project.pk)
-
-                    reference_utils = RawReferenceUtils(project_sample)
-                    _ = reference_utils.create_compound_references()
-
-                    _ = process_SGE.set_submit_televir_sort_pisample_reports(
-                        user=user,
-                        pisample_pk=project_sample.pk,
-                    )
-
-                    break
-
-            process_SGE.set_process_controler(
-                user,
-                process_controler.get_name_televir_project_sample(
-                    project_pk=project.pk, sample_pk=sample.pk
-                ),
-                ProcessControler.FLAG_FINISHED,
+            if software_utils.project is None:
+                raise Exception("Project tree not found")
+            
+            #local_tree = software_utils.generate_software_tree_safe(software_utils.project)
+            #available_path_nodes = software_utils.get_available_pathnodes(local_tree)
+            available_path_nodes = software_utils.query_available_pathnodes(
+                pipeline_type=SoftwareTree.PIPELINE_TYPE_CLASSIC
             )
+
+            matched_paths = {
+                leaf_index: leaf for leaf_index, leaf in available_path_nodes.items() if utils.parameter_util.check_ParameterSet_available_to_run(
+                    sample=sample, leaf=leaf, project=project
+                ) == True
+            }
+
+            trees = list(set(leaf.software_tree for leaf in matched_paths.values()))
+            software_tree_matched_paths = {
+                stree: {
+                    leaf_index: leaf for leaf_index, leaf in matched_paths.items() if leaf.software_tree == stree
+                }
+                for stree in trees
+            }
+            for software_tree, matched_leaves in software_tree_matched_paths.items():
+                # SUBMISSION
+                pipeline_tree = software_utils.software_pipeline_tree(software_tree)
+                leaves = [pipeline_tree.match_node_to_index(node) for node in matched_leaves.values()]
+
+                module_tree = utils.module_tree(pipeline_tree, leaves)
+                
+                for project_sample in samples:
+                    if project_sample.is_deleted:
+                        continue
+                    if len(matched_paths) > 0:
+                        graph_progress = TreeProgressGraph(project_sample)
+
+                        deployment_tree = Tree_Progress(
+                            module_tree, project_sample, project, output_directory=output_directory
+                        )
+                        print("############ deployment tree")
+                        graph_progress.generate_graph()
+
+                        deployment_tree.cycle_process()
+
+                        graph_progress.generate_graph()
+                        set_control_reports(project.pk)
+
+                        reference_utils = RawReferenceUtils(project_sample)
+                        _ = reference_utils.create_compound_references()
+
+                        _ = process_SGE.set_submit_televir_sort_pisample_reports(
+                            user=user,
+                            pisample_pk=project_sample.pk,
+                        )
+
+                        break
+
+                process_SGE.set_process_controler(
+                    user,
+                    process_controler.get_name_televir_project_sample(
+                        project_pk=project.pk, sample_pk=sample.pk
+                    ),
+                    ProcessControler.FLAG_FINISHED,
+                )
 
         except Exception as e:
             print(e)
@@ -179,7 +166,7 @@ class Command(BaseCommand):
                 ),
                 ProcessControler.FLAG_ERROR,
             )
-            reference_utils = RawReferenceUtils(project_sample)
+            reference_utils = RawReferenceUtils(sample)
             _ = reference_utils.create_compound_references()
 
             raise e

@@ -8,23 +8,14 @@ from django.core.management.base import BaseCommand
 from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.deployment_main import Run_Main_from_Leaf
-from pathogen_identification.models import (
-    ParameterSet,
-    PIProject_Sample,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.models import (ParameterSet, PIProject_Sample,
+                                            RunMain, SoftwareTree,
+                                            SoftwareTreeNode)
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
-from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils,
-    Utils_Manager,
-)
+from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from pathogen_identification.utilities.utilities_views import (
-    RawReferenceUtils,
-    set_control_reports,
-)
-from utils.process_SGE import ProcessSGE
+    RawReferenceUtils, set_control_reports)
+from utils.process_SGE import ProcessSched
 
 
 class Sample_Staging:
@@ -109,7 +100,7 @@ class Command(BaseCommand):
             if mapping_run_pk is None:
                 raise Exception("mapping_run_id is required for mapping request")
         elif combined_analysis:
-            metagenomics = True
+            mapping_only = True
         else:
             screening = True
 
@@ -117,7 +108,7 @@ class Command(BaseCommand):
 
         ### PROCESS CONTROLER
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
 
         process_SGE.set_process_controler(
             user,
@@ -130,17 +121,17 @@ class Command(BaseCommand):
 
         ### UTILITIES
         utils = Utils_Manager()
-        software_utils = SoftwareTreeUtils(user, project, sample=target_sample)
+        #software_utils = SoftwareTreeUtils(user, project, sample=target_sample)
 
-        local_tree = software_utils.generate_software_tree_safe(
-            project,
-            sample=target_sample,
-            metagenomics=metagenomics,
-            screening=screening,
-            mapping_only=mapping_only,
-        )
+        #local_tree = software_utils.generate_software_tree_safe(
+        #    project,
+        #    sample=target_sample,
+        #    metagenomics=metagenomics,
+        #    screening=screening,
+        #    mapping_only=mapping_only,
+        #)
 
-        pipeline_tree_index = local_tree.software_tree_pk
+        pipeline_tree_index = matched_path_node.software_tree.pk #local_tree.software_tree_pk
         pipeline_tree_query = SoftwareTree.objects.get(pk=pipeline_tree_index)
 
         ### MANAGEMENT
@@ -203,7 +194,6 @@ class Command(BaseCommand):
                 user=user,
                 pisample_pk=target_sample.pk,
             )
-            # calculate_reports_overlaps(target_sample, force=True)
 
             process_SGE.set_process_controler(
                 user,

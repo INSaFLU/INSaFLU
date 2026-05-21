@@ -1,4 +1,3 @@
-import argparse
 import logging
 import os
 import shutil
@@ -12,9 +11,8 @@ from pathogen_identification.constants_settings import (MEDIA_ROOT,
                                                         ConstantsSettings)
 from pathogen_identification.install_registry import (Params_Illumina,
                                                       Params_Nanopore)
-from pathogen_identification.models import (FinalReport, ParameterSet,
-                                            Projects, RawReference,
-                                            RunAssembly, RunMain,
+from pathogen_identification.models import (FinalReport, Projects,
+                                            RawReference, RunAssembly, RunMain,
                                             SoftwareTreeNode)
 from pathogen_identification.modules.metadata_handler import RunMetadataHandler
 from pathogen_identification.modules.object_classes import (
@@ -28,12 +26,12 @@ from pathogen_identification.utilities.update_DBs import (
     Update_FinalReport, Update_ReferenceMap_Update)
 from pathogen_identification.utilities.utilities_general import \
     simplify_name_lower
-from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils, Utils_Manager)
+from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from pathogen_identification.utilities.utilities_views import (
-    ReportSorter, TelevirParameters, recover_assembly_contigs)
+    ReportSorter, TelevirParameters, final_report_best_cov_by_accid,
+    recover_assembly_contigs)
 from settings.constants_settings import ConstantsSettings as CS
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 
 
 class RunEngine:
@@ -188,10 +186,13 @@ class RunEngine:
         )
 
         self.remap_filtering_method = SoftwareDetailCompound(
-            [CS.PIPELINE_NAME_remap_filtering],
             method_args,
             config,
             self.prefix,
+        )
+
+        self.remap_filtering_method.register_modules(
+            [CS.PIPELINE_NAME_remap_filtering],
         )
 
         ###
@@ -209,7 +210,7 @@ class RunEngine:
         )
 
         self.static_dir_plots = os.path.join(
-            self.substructure_dir,
+            self.static_dir,
             self.dir_plots,
         )
 
@@ -386,7 +387,6 @@ class Input_Generator:
         shutil.copy(filepath, new_rpath)
         return new_rpath
 
-
     def generate_reference_method_args(self):
         parameter_set = self.reference.run.parameter_set
 
@@ -396,7 +396,7 @@ class Input_Generator:
         ps_leaves = self.utils.get_parameterset_leaves(parameter_set, pipeline_tree)
         parameter_leaf_index = ps_leaves[0]
         parameter_leaf = SoftwareTreeNode.objects.get(
-            index=parameter_leaf_index, software_tree=parameter_set.leaf.software_tree
+            pk=parameter_leaf_index, software_tree=parameter_set.leaf.software_tree
         )
 
         run_df = self.utils.get_leaf_parameters(parameter_leaf)
@@ -480,6 +480,17 @@ class Input_Generator:
         report_sorter = ReportSorter(sample, final_report, report_layout_params)
         report_sorter.sort_reports_save()
 
+        final_reports = FinalReport.objects.filter(
+            sample.sample
+        ).order_by("-coverage")
+
+        final_reports = final_report_best_cov_by_accid(final_reports)
+        report_sorter = ReportSorter(
+            sample, final_reports, report_layout_params
+        )
+        report_sorter.sort_reports_save()
+        report_sorter.reports_aggregate_register(report_layout_params)
+
 
 class Command(BaseCommand):
     help = "deploy run"
@@ -507,7 +518,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         ###
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
 
         raw_reference_id = int(options["ref_id"])
         project_pk = int(options["project_id"])

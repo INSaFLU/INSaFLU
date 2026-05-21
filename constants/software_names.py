@@ -9,6 +9,7 @@ import os
 from django.conf import settings
 
 from constants.constants import Constants
+from constants.televir_directories import Televir_Directory_Constants
 from settings.constants_settings import ConstantsSettings
 
 
@@ -51,7 +52,7 @@ class SoftwareNames(object):
     SOFTWARE_IGVTOOLS_PARAMETERS = ""
 
     SOFTWARE_SPAdes = os.path.join(
-        settings.DIR_SOFTWARE, "SPAdes-3.11.1-Linux/bin/spades.py"
+        settings.DIR_SOFTWARE, "SPAdes-4.0.0-Linux/bin/spades.py"
     )
     #     SOFTWARE_SPAdes = os.path.join(settings.DIR_SOFTWARE, "SPAdes-3.13.0-Linux/bin/spades.py")
     SOFTWARE_SPAdes_name = "SPAdes"
@@ -111,19 +112,6 @@ class SoftwareNames(object):
         "TruSeq3-PE-2.fa",
         "TruSeq3-PE.fa",
         "TruSeq3-SE.fa",
-        "SARS_CoV_2_MN908947_artic_3.fa",
-        "SARS_CoV_2_MN908947_artic_4.1.fa",
-        "SARS_CoV_2_MN908947_artic_5.3.2.fa",
-        "MPXV_MT903345_Yale_PrimalSeq_v.1.fa",
-        "MPXV_comb-ccc7sszn.fa",
-        "RSV_A_KT992094_Wang2022.fa",
-        "RSV_B_AF013254_Wang2022.fa",
-        "RSV_A_B_KT992094_AF013254_Wang2022.fa",
-        "HCoV_NL63_KF530113.1_McClure2024.fa",
-        "HCoV_OC43_KF530084.1_McClure2024.fa",
-        "HCoV_HKU1_DQ415913.1_McClure2024.fa",
-        "HCoV_229E_KF293666.1_McClure2024.fa",
-        #"MPXV_xGEN_Mpox_Amplicon_panel_no_ITR.fa",
     ]
     ### collect stat data for ILLUMINA, in form of key value
     SOFTWARE_ILLUMINA_stat = "illumina_stat"
@@ -187,7 +175,7 @@ class SoftwareNames(object):
     SOFTWARE_Medaka_name = "Medaka"
     SOFTWARE_Medaka_name_consensus = "Medaka consensus"
     SOFTWARE_Medaka_name_variants = "Medaka variants"
-    SOFTWARE_Medaka_default_model = "r941_min_high_g360"
+    SOFTWARE_Medaka_default_model = "r1041_e82_400bps_sup_v4.3.0"
     SOFTWARE_Medaka_remove_tags_model = ["_snp_", "_fast_"]
     SOFTWARE_Medaka_name_extended_consensus = (
         "Consensus Generation (Medaka) and Optional Primer Clipping (iVar)"
@@ -278,30 +266,34 @@ class SoftwareNames(object):
     )
     SOFTWARE_Alignment2phenotype_parameters = "-g S"  ## Alignment2phenotype
 
+    ########### Snippy
     SOFTWARE_SNIPPY = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/snippy")
     SOFTWARE_SNIPPY_name = "Snippy"
     SOFTWARE_SNIPPY_name_extended = (
-        "Mapping (Snippy) and Optional Primer Clipping (iVar)"
+        "INSaFLU Full Pipeline (with optional iVar primmer clipping)"
     )
     SOFTWARE_SNIPPY_VERSION = "3.2-dev"
     SOFTWARE_SNIPPY_PARAMETERS = "--mapqual 20 --mincov 10 --minfrac 0.51"
     SOFTWARE_SNIPPY_no_primer = "None"
     SOFTWARE_SNIPPY_PRIMERS = [
         SOFTWARE_SNIPPY_no_primer,
-        "SARS_CoV_2_MN908947_artic_3.fa",
-        "SARS_CoV_2_MN908947_artic_4.1.fa",
-        "SARS_CoV_2_MN908947_artic_5.3.2.fa",        
-        "MPXV_MT903345_Yale_PrimalSeq_v.1.fa",
-        "MPXV_comb-ccc7sszn.fa",
-        "RSV_A_KT992094_Wang2022.fa",
-        "RSV_B_AF013254_Wang2022.fa",
-        "RSV_A_B_KT992094_AF013254_Wang2022.fa",
-        "HCoV_NL63_KF530113.1_McClure2024.fa",
-        "HCoV_OC43_KF530084.1_McClure2024.fa",
-        "HCoV_HKU1_DQ415913.1_McClure2024.fa",
-        "HCoV_229E_KF293666.1_McClure2024.fa",                
-        #"MPXV_xGEN_Mpox_Amplicon_panel_no_ITR.fa",
     ]
+
+    ########### iVar
+
+    SOFTWARE_IVAR = os.path.join(DIR_SOFTWARE_SNIPPY, "binaries/ivar")
+    SOFTWARE_IVAR_name = "iVar"
+    SOFTWARE_IVAR_name_extended = "iVar Full Pipeline"
+    SOFTWARE_IVAR_VERSION = "1.4.2"
+    SOFTWARE_IVAR_PARAMETERS = ""
+
+    ########### IRMA
+
+    SOFTWARE_IRMA = os.path.join(settings.DIR_SOFTWARE, "irma/irma.sh")
+    SOFTWARE_IRMA_name = "IRMA"
+    SOFTWARE_IRMA_name_extended = "IRMA Full Pipeline"
+    SOFTWARE_IRMA_VERSION = "v1.2.0"
+    SOFTWARE_IRMA_PARAMETER_model_options = ["FLU"]
 
     #### VERY important, change in snippy-vcf
     #     mmp@california:/usr/local/software/insaflu/snippy/bin$ diff snippy-vcf_to_tab_add_freq snippy-vcf_to_tab_add_freq~
@@ -360,7 +352,7 @@ class SoftwareNames(object):
     SOFTWARE_COVERAGE_TO_REGIONS_PARAMETERS = ""
 
     SOFTWARE_BAMTOOLS = os.path.join(
-        settings.DIR_SOFTWARE, "bamtools/build/src/toolkit/bamtools"
+        settings.DIR_SOFTWARE, "bamtools/build/src/bamtools"
     )
     SOFTWARE_BAMTOOLS_name = "Bamtools"
     SOFTWARE_BAMTOOLS_VERSION = "2.5"
@@ -370,7 +362,7 @@ class SoftwareNames(object):
     SOFTWARE_PROKKA_name = "Prokka"
     SOFTWARE_PROKKA_VERSION = "1.2"
     SOFTWARE_PROKKA_PARAMETERS = (
-        #"--kingdom Viruses --locustag locus --genus Influenzavirus --species Influenzavirus --strain "
+        # "--kingdom Viruses --locustag locus --genus Influenzavirus --species Influenzavirus --strain "
         "--kingdom Viruses --genus Virus --locustag locus --strain "
         "ref_PREFIX_FILES_OUT --gcode " + str(Constants.TRANSLATE_TABLE_NUMBER)
     )
@@ -387,15 +379,28 @@ class SoftwareNames(object):
     SOFTWARE_CONVERT_VERSION = ""
     SOFTWARE_CONVERT_PARAMETERS = ""
 
-    vect_versions_available = ["7.453", "7.313"]
+    vect_versions_available = ["7.453", "7.313", "7.525"]
+    SOFTWARE_MAFFT_VERSION = None
+    SOFTWARE_MAFFT = None
     for version in vect_versions_available:
-        SOFTWARE_MAFFT_VERSION = version
-        SOFTWARE_MAFFT = os.path.join(
+        SOFTWARE_MAFFT_tmp = os.path.join(
             settings.DIR_SOFTWARE,
             "mafft-{}-without-extensions/scripts/mafft".format(version),
         )
-        if os.path.exists(SOFTWARE_MAFFT):
-            break
+
+        if os.path.exists(SOFTWARE_MAFFT_tmp):
+            SOFTWARE_MAFFT = os.path.join(
+                settings.DIR_SOFTWARE,
+                "mafft-{}-without-extensions/scripts/mafft".format(version),
+            )
+            SOFTWARE_MAFFT_VERSION = version
+
+    if SOFTWARE_MAFFT_VERSION is None:
+        raise Exception(
+            "Mafft version not found in the software directory: {}".format(
+                settings.DIR_SOFTWARE
+            )
+        )
 
     SOFTWARE_SET_ENV_MAFFT = "export MAFFT_BINARIES={}".format(
         os.path.join(
@@ -478,6 +483,13 @@ class SoftwareNames(object):
         settings.DIR_SOFTWARE, "aln2pheno/algn2pheno_readme.txt"
     )
 
+    ### flumut
+    SOFTWARE_FLUMUT = os.path.join(settings.DIR_SOFTWARE, "flumut/flumut.sh")
+    SOFTWARE_FLUMUT_name = "Flumut"
+
+    ### IRMA
+    SOFTWARE_IRMA = os.path.join(settings.DIR_SOFTWARE, "irma/irma.sh")
+
     ### Nextstrain
     SOFTWARE_NEXTSTRAIN_DIR = os.path.join(settings.DIR_SOFTWARE, "nextstrain/")
     SOFTWARE_NEXTSTRAIN_VERSION = "0.1"
@@ -510,10 +522,12 @@ class SoftwareNames(object):
     SOFTWARE_NEXTSTRAIN_BUILDS_ncov = "ncov"
     SOFTWARE_NEXTSTRAIN_BUILDS_mpx = "mpx"
     SOFTWARE_NEXTSTRAIN_BUILDS_mpox_clade_i = "mpox_clade-i"
+    SOFTWARE_NEXTSTRAIN_BUILDS_mpox_mpxv = "mpox_all-clades"
 
     SOFTWARE_NEXTSTRAIN_BUILDS_mpox = [
         SOFTWARE_NEXTSTRAIN_BUILDS_mpx,
-        SOFTWARE_NEXTSTRAIN_BUILDS_mpox_clade_i
+        SOFTWARE_NEXTSTRAIN_BUILDS_mpox_clade_i,
+        SOFTWARE_NEXTSTRAIN_BUILDS_mpox_mpxv,
     ]
 
     SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y = "flu_h3n2_12y"
@@ -528,7 +542,7 @@ class SoftwareNames(object):
     SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_np = "avianflu_h5n1_np"
     SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na = "avianflu_h5n1_na"
     SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_mp = "avianflu_h5n1_mp"
-    SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns = "avianflu_h5n1_ns"  
+    SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns = "avianflu_h5n1_ns"
 
     SOFTWARE_NEXTSTRAIN_BUILDS_flu = [
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y,
@@ -540,12 +554,12 @@ class SoftwareNames(object):
     SOFTWARE_NEXTSTRAIN_BUILDS_avianflu = [
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2,
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb1,
-        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pa,                
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pa,
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha,
-        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_np,        
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_np,
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na,
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_mp,
-        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns,                                
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns,
     ]
 
     SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a = "rsv_a"
@@ -556,18 +570,18 @@ class SoftwareNames(object):
         SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b,
     ]
 
-    SOFTWARE_NEXTSTRAIN_BUILDS_dengue_all = "dengue_all_genome"       
-    SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv1 = "dengue_denv1_genome"       
-    SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv2 = "dengue_denv2_genome"       
-    SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv3 = "dengue_denv3_genome"       
-    SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4 = "dengue_denv4_genome"         
+    SOFTWARE_NEXTSTRAIN_BUILDS_dengue_all = "dengue_all_genome"
+    SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv1 = "dengue_denv1_genome"
+    SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv2 = "dengue_denv2_genome"
+    SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv3 = "dengue_denv3_genome"
+    SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4 = "dengue_denv4_genome"
 
     SOFTWARE_NEXTSTRAIN_BUILDS_dengue = [
         SOFTWARE_NEXTSTRAIN_BUILDS_dengue_all,
         SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv1,
         SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv2,
         SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv3,
-        SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4
+        SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4,
     ]
 
     SOFTWARE_NEXTSTRAIN_BUILDS = [
@@ -581,20 +595,21 @@ class SoftwareNames(object):
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha,
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na,
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2,
-        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb1,        
-        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pa,        
-        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_np,        
-        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_mp,        
-        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns,        
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb1,
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pa,
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_np,
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_mp,
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns,
         SOFTWARE_NEXTSTRAIN_BUILDS_mpx,
         SOFTWARE_NEXTSTRAIN_BUILDS_mpox_clade_i,
+        SOFTWARE_NEXTSTRAIN_BUILDS_mpox_mpxv,
         SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a,
         SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b,
         SOFTWARE_NEXTSTRAIN_BUILDS_dengue_all,
         SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv1,
         SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv2,
         SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv3,
-        SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4
+        SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4,
     ]
     SOFTWARE_NEXTSTRAIN_BUILDS_DESC = [
         [SOFTWARE_NEXTSTRAIN_BUILDS_generic, "Generic"],
@@ -607,20 +622,21 @@ class SoftwareNames(object):
         [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha, "Avian Influenza (H5N1 HA)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na, "Avian Influenza (H5N1 NA)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2, "Avian Influenza (H5N1 PB2)"],
-        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb1, "Avian Influenza (H5N1 PB1)"],        
-        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pa, "Avian Influenza (H5N1 PA)"],        
-        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_np, "Avian Influenza (H5N1 NP)"],        
-        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_mp, "Avian Influenza (H5N1 MP)"],        
-        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns, "Avian Influenza (H5N1 NS)"],        
+        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb1, "Avian Influenza (H5N1 PB1)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pa, "Avian Influenza (H5N1 PA)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_np, "Avian Influenza (H5N1 NP)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_mp, "Avian Influenza (H5N1 MP)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ns, "Avian Influenza (H5N1 NS)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_mpx, "mpox (hMPXV)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_mpox_clade_i, "mpox (clade I)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_mpox_mpxv, "mpox (all clades)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a, "RSV (A)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b, "RSV (B)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_dengue_all, "Dengue (all)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv1, "Dengue (DENV1)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv2, "Dengue (DENV2)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv3, "Dengue (DENV3)"],
-        [SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4, "Dengue (DENV4)"],        
+        [SOFTWARE_NEXTSTRAIN_BUILDS_dengue_denv4, "Dengue (DENV4)"],
     ]
 
     # default build
@@ -656,7 +672,7 @@ class SoftwareNames(object):
 
     ### QC SOFTWARE
     SOFTWARE_PRINSEQ = os.path.join(
-        settings.DIR_SOFTWARE,
+        Televir_Directory_Constants.environments_directory,
         "preprocess/prinseq/bin/prinseq++",
     )
     SOFTWARE_PRINSEQ_name = "Prinseq++"
@@ -670,7 +686,7 @@ class SoftwareNames(object):
     SOFTWARE_BAMUTIL_name = "BamUtil"
     SOFTWARE_BAMUTIL_name_extended = "BamUtil - Mapping Stringency"
     SOFTWARE_BAMUTIL = os.path.join(
-        settings.DIR_SOFTWARE,
+        Televir_Directory_Constants.environments_directory,
         "preprocess/bamUtil/bin/bam",
     )
     SOFTWARE_BAMUTIL_VERSION = "1.0.15"
@@ -678,7 +694,7 @@ class SoftwareNames(object):
     SOFTWARE_MSAMTOOLS_name = "msamtools"
     SOFTWARE_MSAMTOOLS_name_extended = "msamtools - Mapping Filtering"
     SOFTWARE_MSAMTOOLS = os.path.join(
-        settings.DIR_SOFTWARE,
+        Televir_Directory_Constants.environments_directory,
         "preprocess/msamtools/bin/msamtools",
     )
     SOFTWARE_MSAMTOOLS_VERSION = "1.1.3"
@@ -688,7 +704,7 @@ class SoftwareNames(object):
     SOFTWARE_DUSTMASKER = "/usr/bin/dustmasker"
     SOFTWARE_DUSTMASKER_VERSION = "2.7.1"
 
-    SOFTWARE_DUSTMASKER_PARAM_MASK_name= "-masking"
+    SOFTWARE_DUSTMASKER_PARAM_MASK_name = "-masking"
     SOFTWARE_DUSTMASKER_PARAM_MASK_SOFT = "soft_masking"
     SOFTWARE_DUSTMASKER_PARAM_MASK_HARD = "hard_masking"
     SOFTWARE_DUSTMASKER_PARAM_MASK_NONE = "no_masking"
@@ -710,7 +726,7 @@ class SoftwareNames(object):
 
     ### CENTRIFUGE
     SOFTWARE_CENTRIFUGE = os.path.join(
-        settings.DIR_SOFTWARE,
+        Televir_Directory_Constants.environments_directory,
         "host_depletion/hostdep_env/bin/centrifuge",
     )
     SOFTWARE_CENTRIFUGE_name = "Centrifuge"
@@ -720,10 +736,39 @@ class SoftwareNames(object):
     SOFTWARE_CENTRIFUGE_parameters = "-p 4 --time -k 3 --out-fmt sam"
     SOFTWARE_CENTRIFUGE_PARAMETERS_TWO_SEQUENCES = "-p 4 --time -k 3 --out-fmt sam"
 
+    ### VOYAGER
+    SOFTWARE_VOYAGER = os.path.join(
+        Televir_Directory_Constants.environments_directory,
+        "classification/voyager-cli",
+    )
+
+    SOFTWARE_VOYAGER_name = "Voyager"
+    SOFTWARE_VOYAGER_name_extended = "Voyager"
+    SOFTWARE_VOYAGER_VERSION = "0.1.5"
+
+    ### Metaphlan
+
+    SOFTWARE_METAPHLAN = os.path.join(
+        Televir_Directory_Constants.environments_directory, "Metaphlan/metaphlan/bin"
+    )
+
+    SOFTWARE_METAPHLAN_NAME = "Metaphlan"
+    SOFTWARE_METAPHLAN_NAME_extended = "Metaphlan"
+    SOFTWARE_METAPHLAN_VERSION = "3.0.13"
+
+    SOFTWARE_METAPHLAN_DB_options = [
+        "--add_viruses",
+        "--ignore_eukaryotes",
+        "--ignore_archaea",
+        "--ignore_bacteria",
+        "--ignore_ksgbs",
+        "--ignore_usgbs",
+    ]
+
     ### BWA
     SOFTWARE_BWA = os.path.join(
-        settings.DIR_SOFTWARE,
-        "preprocess/preproc/bin/bwa",
+        Televir_Directory_Constants.environments_directory,
+        "remap/remap/bin/bwa",
     )
 
     SOFTWARE_BWA_name = "BWA"
@@ -734,9 +779,23 @@ class SoftwareNames(object):
         "mem -t 4 -M -R '@RG\tID:foo\tSM:bar\tPL:illumina'"
     )
 
+    ### BWA FILTER
+    SOFTWARE_BWA_FILTER = os.path.join(
+        Televir_Directory_Constants.environments_directory,
+        "remap/remap/bin/bwa",
+    )
+    SOFTWARE_BWA_FILTER_name = "BWA-Filter"
+    SOFTWARE_BWA_FILTER_name_extended = "BWA - Filter"
+    SOFTWARE_BWA_FILTER_VERSION = "0.7.17"
+    SOFTWARE_BWA_FILTER_parameters = "mem -t 4 -M -R '@RG\tID:foo\tSM:bar\tPL:illumina'"
+    SOFTWARE_BWA_FILTER_PARAMETERS_TWO_SEQUENCES = (
+        "mem -t 4 -M -R '@RG\tID:foo\tSM:bar\tPL:illumina'"
+    )
+
     ### KRAKEN2
     SOFTWARE_KRAKEN2 = os.path.join(
-        settings.DIR_SOFTWARE, "kraken2/kraken_env/bin/kraken2"
+        Televir_Directory_Constants.environments_directory,
+        "kraken2/kraken_env/bin/kraken2",
     )
     SOFTWARE_KRAKEN2_name = "Kraken2"
     SOFTWARE_KRAKEN2_name_extended = "Kraken2"
@@ -749,7 +808,7 @@ class SoftwareNames(object):
 
     ### KRAKENUNIQ
     SOFTARE_KRAKENUNIQ = os.path.join(
-        settings.DIR_SOFTWARE,
+        Televir_Directory_Constants.environments_directory,
         "host_depletion/hostdep_env/bin/krakenuniq",
     )
     SOFTWARE_KRAKENUNIQ_name = "Krakenuniq"
@@ -988,10 +1047,6 @@ class SoftwareNames(object):
     SOFTWARE_REMAP_PARAMS_extended = "Remapping - Management"
     SOFTWARE_REMAP_PARAMS_VERSION = "1.0.0"
 
-    SOFTWARE_METAGENOMICS_SETTINGS_name = "Metagenomics - Settings"
-    SOFTWARE_METAGENOMICS_SETTINGS_name_extended = "Metagenomics - Settings"
-    SOFTWARE_METAGENOMICS_SETTINGS_VERSION = "1.0.0"
-
     ###################################
     ###################################
     ###
@@ -1029,17 +1084,31 @@ class SoftwareNames(object):
     }
     ###
     ###################################
+    SOFTWARE_MDCG_list = [
+        SOFTWARE_SNIPPY_name,
+        SOFTWARE_IVAR_name,
+        SOFTWARE_IRMA_name,
+    ]
+
+    ### software with duplicates in project and sample
+    duplicate_softwares = [
+        SOFTWARE_SNIPPY_name,
+        SOFTWARE_IRMA_name,
+        SOFTWARE_IVAR_name,
+    ]
+    ###
 
     ### software with application in multiple pipeline_steps:
     polyvalent_software = [
+        SOFTWARE_BWA_FILTER_name,
         SOFTWARE_CENTRIFUGE_name,
-        SOFTWARE_SNIPPY_name,
         SOFTWARE_BWA_name,
         SOFTWARE_BOWTIE2_REMAP_name,
         SOFTWARE_KRAKEN2_name,
         SOFTWARE_MINIMAP2_REMAP_ONT_name,
         SOFTWARE_MSAMTOOLS_name,
     ]
+
     # pipeline_steps per software, for software with multiple pipeline_steps.
 
     polyvalent_software_pipelines = {
@@ -1073,6 +1142,10 @@ class SoftwareNames(object):
         SOFTWARE_MSAMTOOLS_name: [
             ConstantsSettings.PIPELINE_NAME_remap_filtering,
             ConstantsSettings.PIPELINE_NAME_map_filtering,
+        ],
+        SOFTWARE_BWA_FILTER_name: [
+            ConstantsSettings.PIPELINE_NAME_extra_qc,
+            ConstantsSettings.PIPELINE_NAME_host_depletion,
         ],
     }
 
@@ -1225,6 +1298,49 @@ class SoftwareNames(object):
 
     def get_snippy_parameters(self):
         return self.SOFTWARE_SNIPPY_PARAMETERS
+
+    """
+    get bwa mem software"""
+
+    def get_bwa(self):
+        return self.SOFTWARE_BWA
+
+    def get_bwa_mem_name(self):
+        return self.SOFTWARE_BWA_name
+
+    """
+    return iVar software
+    """
+
+    def get_ivar(self):
+        return self.SOFTWARE_IVAR
+
+    def get_ivar_name(self):
+        return self.SOFTWARE_IVAR_name
+
+    def get_ivar_name_extended(self):
+        return self.SOFTWARE_IVAR_name_extended
+
+    def get_ivar_version(self):
+        return self.SOFTWARE_IVAR_VERSION
+
+    def get_ivar_parameters(self):
+        return self.SOFTWARE_IVAR_PARAMETERS
+
+    """
+    return IRMA software"""
+
+    def get_irma(self):
+        return self.SOFTWARE_IRMA
+
+    def get_irma_name(self):
+        return self.SOFTWARE_IRMA_name
+
+    def get_irma_name_extended(self):
+        return self.SOFTWARE_IRMA_name_extended
+
+    def get_irma_version(self):
+        return self.SOFTWARE_IRMA_VERSION
 
     """
     return snippy-vcf_to_tab software. Add FRED
@@ -1411,10 +1527,10 @@ class SoftwareNames(object):
     """
     return Coverage software
     """
-    #     def get_coverage(self): return self.SOFTWARE_COVERAGE
-    #     def get_coverage_name(self): return self.SOFTWARE_COVERAGE_name
-    #     def get_coverage_version(self): return self.SOFTWARE_COVERAGEVERSION
-    #     def get_coverage_parameters(self): return self.SOFTWARE_COVERAGE_PARAMETERS
+    # def get_coverage(self): return self.SOFTWARE_COVERAGE
+    # def get_coverage_name(self): return self.SOFTWARE_COVERAGE_name
+    # def get_coverage_version(self): return self.SOFTWARE_COVERAGEVERSION
+    # def get_coverage_parameters(self): return self.SOFTWARE_COVERAGE_PARAMETERS
 
     """
     return Prokka software

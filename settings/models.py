@@ -3,7 +3,8 @@ from django.db import models
 
 from datasets.models import Dataset
 from managing_files.models import Project, ProjectSample, Sample
-from pathogen_identification.models import PIProject_Sample as TelevirProjectSample
+from pathogen_identification.models import \
+    PIProject_Sample as TelevirProjectSample
 from pathogen_identification.models import Projects as TelevirProject
 
 # Create your models here.
@@ -168,6 +169,10 @@ class Software(models.Model):
         :return True if it is software type
         """
         return self.type_of_software == Software.TYPE_SOFTWARE
+    
+    @property
+    def parameter_set(self):
+        return self.parameter.all()
 
 
 class Parameter(models.Model):
@@ -184,6 +189,8 @@ class Parameter(models.Model):
     PARAMETER_char_list = 4  ### combo list
     PARAMETER_check_box = 5  ### check box
     PARAMETER_none = 6  ### This case is when some "software/procedure" doesn't have parameters at all
+    PARAMETER_radio_button = 7  ### radio button
+    PARAMETER_multiple_choice = 8  ### multiple choice
     ### It is only has one parameter. Example: "Generate consensus"
     ### "Generate consensus" -> it is used for set ON/OFF consensus in the AllConsensus File
 
@@ -294,6 +301,12 @@ class Parameter(models.Model):
 
     def is_char_list(self):
         return self.type_data == Parameter.PARAMETER_char_list
+
+    def is_radio_button(self):
+        return self.type_data == Parameter.PARAMETER_radio_button
+
+    def is_multiple_choice(self):
+        return self.type_data == Parameter.PARAMETER_multiple_choice
 
     def is_check_box(self):
         return self.type_data == Parameter.PARAMETER_check_box

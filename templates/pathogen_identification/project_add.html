@@ -1,13 +1,8 @@
 {% extends '_layouts/base.html' %}
 
 
-{% load django_bootstrap_breadcrumbs %}
+{% load view_breadcrumbs %}
 
-{% block breadcrumbs %}
-{{ block.super }}
-{% breadcrumb "TELEVIR Projects" "PIprojects_main" %}
-{% breadcrumb "Create a project" "project-add" %}
-{% endblock %}
 
 {% block content %}
 
@@ -46,7 +41,7 @@
 
 {% block js %}
 
-{% load static from staticfiles %}
+{% load static %}
 <script type="text/javascript" src="{% static 'js/televir_projects/warning_messages.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/pathogen_identification/PIProject-add.js' %}"></script>
 

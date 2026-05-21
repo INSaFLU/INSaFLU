@@ -14,21 +14,17 @@ from scipy.stats import kstest
 from constants.software_names import SoftwareNames
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.modules.object_classes import (
-    Bedgraph,
-    MappingStats,
-    Read_class,
-    Remap_Target,
-    RunCMD,
-    SoftwareDetail,
-    SoftwareRemap,
-)
+from pathogen_identification.modules.object_classes import (Bedgraph,
+                                                            MappingStats,
+                                                            Read_class,
+                                                            Remap_Target,
+                                                            RunCMD,
+                                                            SoftwareDetail,
+                                                            SoftwareRemap)
 from pathogen_identification.utilities.televir_bioinf import DustMasker
 from pathogen_identification.utilities.televir_parameters import RemapParams
 from pathogen_identification.utilities.utilities_general import (
-    plot_dotplot,
-    read_paf_coordinates,
-)
+    plot_dotplot, read_paf_coordinates)
 
 pd.options.mode.chained_assignment = None
 np.warnings.filterwarnings("ignore")
@@ -179,6 +175,8 @@ class coverage_parse:
 
                 for ctg in bedp.contig.unique():
                     bp = bedp[bedp.contig == ctg].copy()
+                    if ctg not in self.ctgl:
+                        self.logger.error(f"Contig {ctg} not found in fasta file.")
                     ctgsize = self.ctgl[ctg]
                     nwindows = self.calculate_windows(ctgsize)
 
@@ -424,19 +422,32 @@ class Remap_Bwa(RemapMethod_init):
     def remap(self):
         """
         Remap reads to reference using bwa."""
-        if self.type == CS.SINGLE_END:
-            self.remap_SE()
-        elif self.type == CS.PAIR_END:
-            self.remap_PE()
-        else:
-            raise ValueError
+        try:
+            if self.type == CS.SINGLE_END:
+                self.remap_SE()
+            elif self.type == CS.PAIR_END:
+                self.remap_PE()
+            else:
+                raise ValueError
+        except Exception as e:
+            import traceback
+
+            traceback.print_exc()
+            print(e)
+            raise e
 
     def remap_SE(self):
         """
 
         Remap reads to reference using bwa for single end reads."""
         temp_sam = os.path.join(self.outdir, self.prefix + ".sam")
-        cmd_01 = [
+        cmd_index = [
+            "bwa",
+            "index",
+            self.reference,
+        ]
+
+        cmd_map = [
             "bwa",
             "mem",
             self.args,
@@ -455,14 +466,20 @@ class Remap_Bwa(RemapMethod_init):
             self.outbam,
             temp_sam,
         ]
-        self.cmd.run_script(cmd_01)
-        self.cmd.run_script(cmd_samtools)
+        self.cmd.run_script_software(cmd_index)
+        self.cmd.run_script_software(cmd_map)
+        self.cmd.run_script_software(cmd_samtools)
 
     def remap_PE(self):
         """
         Remap reads to reference using bwa for paired end reads."""
         temp_sam = os.path.join(self.outdir, self.prefix + ".sam")
-        cmd = [
+        cmd_index = [
+            "bwa",
+            "index",
+            self.reference,
+        ]
+        cmd_map = [
             "bwa",
             "mem",
             self.args,
@@ -482,8 +499,9 @@ class Remap_Bwa(RemapMethod_init):
             self.outbam,
             temp_sam,
         ]
-        self.cmd.run_script(cmd)
-        self.cmd.run_script(cmd_samtools)
+        self.cmd.run_script_software(cmd_index)
+        self.cmd.run_script_software(cmd_map)
+        self.cmd.run_script_software(cmd_samtools)
 
 
 class Remap_Minimap2(RemapMethod_init):
@@ -694,7 +712,6 @@ class Remapping:
         self.logdir = log_dir
 
         self.cmd = RunCMD(bin, logdir=log_dir, prefix=prefix, task="remapping_instance")
-        print("REMMAP DIR", self.rdir)
         os.makedirs(self.rdir, exist_ok=True)
 
         self.reference_file = f"{self.rdir}/{self.prefix}_{target.acc_simple}_ref.fa"
@@ -893,21 +910,30 @@ class Remapping:
 
         return rnumber
 
+    def summarize_reads_map(self):
+        self.report = self.calculate_mapping_statistics()
+        self.get_mapped_reads_number()
+        self.plot_coverage()
+
+    def summarize_contigs_map(self):
+        self.plot_dotplot_from_paf()
+        self.get_mapped_contig_names()
+        self.generate_mapped_contigs_fasta()
+        self.index_mapped_contigs_fasta()
+
     def summarize(self):
         """
         Summarizes remapping results.
         generate report on read mapping to reference file.
         get number and name and length of mapped contigs.
         """
-        self.report = self.calculate_mapping_statistics()
-        self.get_mapped_contig_names()
-        self.get_mapped_reads_number()
+        if self.check_remap_status_bam():
+            self.summarize_reads_map()
 
-        self.plot_coverage()
-        self.plot_dotplot_from_paf()
+        if self.check_remap_status_paf():
+            self.summarize_contigs_map()
+
         self.remapping_successful = True
-        self.generate_mapped_contigs_fasta()
-        self.index_mapped_contigs_fasta()
 
     def get_reference_contig_name(self):
         contig_names = []
@@ -986,24 +1012,30 @@ class Remapping:
 
         self.index_reference()
 
-        if not self.check_mapping_output_exists():
-            self.remap_deploy()
-
-        if self.check_mapping_output_exists():
-            try:
-                self.remap_reads_post_process()
+        try:
+            if not self.check_mapping_output_exists():
+                self.remap_deploy()
+                self.process_bam()
+            if not self.check_remap_status_paf():
                 self.assembly_to_reference_map()
-                self.summarize()
-            except Exception as e:
-                self.logger.error(e)
-                self.logger.error("Remapping failed.")
-                return self
+            if self.check_remap_status_bam():
+                self.remap_reads_post_process()
+
+            self.summarize()
+
+        except Exception as e:
+            import traceback
+
+            traceback.print_exc()
+            self.logger.error(e)
+            self.logger.error("Remapping failed.")
+            return self
 
         else:
-            # self.logger.error(
-            #    f"Mapping output not found or unsuccesful after deploying on \
-            #        target(s): {self.target.accid_in_file}, file: {self.r1}, reference: {self.target.file}"
-            # )
+            self.logger.error(
+                f"Mapping output succesful for \
+                   target(s): {self.target.accid_in_file}, file: {self.r1}, reference: {self.target.file}"
+            )
             return
 
     def remap_reads_post_process(self):
@@ -1014,21 +1046,26 @@ class Remapping:
         3) index bam file.
         4) get number of mapped reads."""
         try:
-            self.process_bam()
-            self.generate_vcf()
-            self.get_genomecoverage()
-            self.get_mapped_reads_unique_no_header()
-            self.filter_sam_file_mapped()
-            self.subset_mapped_reads()
-            self.mapped_reads_to_fasta()
+            # self.process_bam()
+            if self.check_remap_status_bam():
+                self.generate_vcf()
+                self.get_genomecoverage()
+                self.get_mapped_reads_unique_no_header()
+                self.filter_sam_file_mapped()
+                self.subset_mapped_reads()
+                self.mapped_reads_to_fasta()
+
         except Exception as e:
             self.logger.error(e)
 
     def process_bam(self):
+
         self.filter_bamfile_read_names()
         self.filter_bamfile()
-        self.sort_bam()
-        self.index_sorted_bam()
+
+        if self.check_remap_status_bam():
+            self.sort_bam()
+            self.index_sorted_bam()
 
     def filter_bamfile(self):
         self.read_map_filtered_bam = self.read_map_bam
@@ -1038,7 +1075,6 @@ class Remapping:
                 self.filter_mapping_bamutil(filter)
 
             if filter.name == SoftwareNames.SOFTWARE_MSAMTOOLS_name:
-                print("############# FILTERING BAM FILE : msamtools")
                 self.filter_mapping_msamtools(filter)
 
         self.filter_bam_unmapped()
@@ -1135,7 +1171,7 @@ class Remapping:
         software.args = process_parameter_floats(software.args)
 
         cmd = [
-            "msamtools",
+            os.path.join(self.cmd.bin, "msamtools"),
             "filter -b ",
             software.args,
             self.read_map_filtered_bam,
@@ -1143,21 +1179,21 @@ class Remapping:
             temp_file,
         ]
 
-        print("".join(cmd))
-
         try:
-            self.cmd.run_script_software(cmd)
+            self.cmd.run_script(cmd)
 
         except Exception as e:
+
             self.logger.error("Bam filtering failed.")
             self.logger.error(e)
             if os.path.isfile(temp_file):
                 os.remove(temp_file)
             return
 
-        if os.path.isfile(temp_file) and os.path.getsize(temp_file) > 100:
+        if os.path.isfile(temp_file):
             os.remove(self.read_map_filtered_bam)
-            shutil.move(temp_file, self.read_map_filtered_bam)
+
+            shutil.copy(temp_file, self.read_map_filtered_bam)
 
         return
 
@@ -1167,7 +1203,7 @@ class Remapping:
         """
 
         if not self.check_remap_status_bam():
-            self.logger.error("Bam file not found.")
+            self.logger.error("Bam file not found or Empty.")
             return
 
         if self.check_vcf_exists():
@@ -1214,7 +1250,7 @@ class Remapping:
     def check_mapping_output_exists(self):
         if (
             self.check_remap_status_bam()
-            or self.check_remap_status_sam()
+            # or self.check_remap_status_sam()
             or self.check_remap_status_paf()
         ):
             return True
@@ -1398,6 +1434,7 @@ class Remapping:
         ):
             return True
         else:
+            self.logger.error("Assembly map file not found or empty.")
             return False
 
     def filter_samfile_read_names(self, same=True, output_sam=""):
@@ -1484,7 +1521,7 @@ class Remapping:
             cmd = f"samtools sort {self.read_map_filtered_bam} -o {self.read_map_sorted_bam}"
             self.cmd.run(cmd)
         else:
-            self.logger.error("BAM file not found")
+            self.logger.error("BAM file not found or empty.")
             raise FileNotFoundError
 
     def index_sorted_bam(self):
@@ -1515,6 +1552,7 @@ class Remapping:
                     self.number_of_reads_mapped = self.number_of_reads_mapped * 2
 
         except FileNotFoundError:
+            print(f"File {self.mapped_reads_file} not found.")
             self.number_of_reads_mapped = 0
 
     def subset_mapped_reads_r1(self, tempfile=""):
@@ -1600,12 +1638,15 @@ class Remapping:
     def extract_mapping_stats(self) -> MappingStats:
         """
         read stats as pd data frame, pass to class"""
-
-        stats_df = pd.read_csv(
-            self.read_map_sorted_bam_stats, sep="\t", header=None, index_col=0
-        ).rename(columns={0: "stat", 1: "value", 2: "comment"})
-        error_rate = stats_df.loc["error rate:", "value"]
-        quality_avg = stats_df.loc["average quality:", "value"]
+        try:
+            stats_df = pd.read_csv(
+                self.read_map_sorted_bam_stats, sep="\t", header=None, index_col=0
+            ).rename(columns={0: "stat", 1: "value", 2: "comment"})
+            error_rate = float(stats_df.loc["error rate:", "value"])
+            quality_avg = float(stats_df.loc["average quality:", "value"])
+        except pd.errors.EmptyDataError:
+            error_rate = 0.0
+            quality_avg = 0.0
 
         return MappingStats(error_rate, quality_avg)
 
@@ -1750,10 +1791,6 @@ class Mapping_Instance:
 
     def export_mapping_files(self, destination):
         """move files to media directory"""
-        print("exporting mapping files")
-        print("class. success_", self.classification_success)
-        print("mapping success", self.mapping_success)
-        print("destination", destination)
 
         if self.mapping_success != "none":
             # self.reference.move_igv_files(destination)
@@ -2215,6 +2252,7 @@ class Mapping_Manager(Tandem_Remap):
         return False
 
     def update_mapped_instance_safe(self, mapped_instance: Mapping_Instance):
+
         if self.verify_mapped_instance(mapped_instance):
             if self.validate_mapped_instance_taxid(mapped_instance):
 

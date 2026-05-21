@@ -3,9 +3,9 @@
 
 {% load bootstrap4 %}
 {% load querystring from django_tables2 %}
-{% load title from django_tables2 %}
+
 {% load trans blocktrans from i18n %}
-{% load django_bootstrap_breadcrumbs %}
+{% load view_breadcrumbs %}
 
 {%load html_tags %}
 
@@ -13,23 +13,12 @@
 {%load report_colors %}
 
 {% block css %}
-	{% load static from staticfiles %}
+	{% load static %}
         <link rel="stylesheet" href="{% static 'css/result_table.css' %}" />
         <link rel="stylesheet" href="{% static 'css/result_detail.css' %}" />
         <link rel="stylesheet" href="{% static 'css/result_detail_buttons.css' %}" />
 {% endblock css %}
 
-{% block breadcrumbs %}
-{{block.super}}
-{% breadcrumb "TELEVIR Projects" "PIprojects_main"  %}
-{% breadcrumb project "PIproject_samples"  pk=project_index  %}
-{% if sample %}
-{% breadcrumb sample "sample_main" pk1=project_index pk2=sample_index  %}
-{% breadcrumb "Sample Results All" "" %}
-{% else %}
-{% breadcrumb "Project Results All" "" %}
-{% endif %}
-{% endblock %}
 
 {% block content %}
 
@@ -165,8 +154,11 @@
                                 <th>mapped_prop (%)</th>
                                 <th> Gaps </th>
                                 <th>Windows Covered</th>
+                                {% if error_rate_available %}
+                                <th>Mismatch rate</th>
+                                {% endif %}
                                 <th>class. success</th>
-                                <th>mapping success</th>                
+                                <th>mapping success</th>
                                 <th>Warning</th>
                                 <th>Control</th>
                             </tr>
@@ -202,6 +194,10 @@
                                     {{value.ngaps}}</td>
                                 <td data-title="Windows Covered">
                                     {% windows_safe value.windows_covered %}</td>
+                                {% if error_rate_available %}
+                                <td data-title="Error rate" style="{% depth_color_error value.error_rate max_error_rate %}">
+                                    {{value.error_rate}}</td>
+                                {% endif %}
                                 <td data-title="class. success" style="{% success_count_color value.classification_success %}">
                                     {{value.classification_success}}</td>
                                 <td data-title="mapping success" style="{% success_count_color value.mapping_success %}">

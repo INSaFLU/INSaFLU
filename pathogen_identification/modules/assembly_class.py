@@ -404,7 +404,7 @@ class Assembly_class:
         if number_of_sequences > 0:
             return True
         else:
-            print("Number of sequences in assebly: {}".format(number_of_sequences))
+            print("Number of sequences in assembly: {}".format(number_of_sequences))
             return False
 
     def assembly_file_check_fasta_gz(self):
@@ -493,8 +493,6 @@ class Assembly_class:
         )
 
         self.assembly_exists = self.assembly_file_check_fasta_gz()
-
-        print(subdirectory, final_file, self.assembly_file_fasta_gz)
 
         if self.assembly_exists:
             if os.path.exists(final_file) is False:

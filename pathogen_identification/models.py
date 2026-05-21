@@ -1,5 +1,6 @@
 import codecs
 import datetime
+import json
 import os
 from typing import Any, List, Optional
 
@@ -18,13 +19,16 @@ from django.utils.translation import gettext_lazy as _
 from pkg_resources import packaging
 
 from constants.constants import Constants
-from constants.constants import Televir_Directory_Constants as Televir_Directories
+from constants.constants import \
+    Televir_Directory_Constants as Televir_Directories
 from managing_files.models import Project as InsaFluProject
 from managing_files.models import Reference as InsaFluReference
 from managing_files.models import Sample
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from pathogen_identification.data_classes import IntermediateFiles
-
+from settings.constants_settings import ConstantsSettings as CS
+from constants.constants_taxonomy import TaxonConstants
 # Create your models here.
 
 no_space_validator = RegexValidator(
@@ -33,6 +37,22 @@ no_space_validator = RegexValidator(
     code="invalid_username",
     inverse_match=True,
 )
+
+
+class Taxon(models.Model):
+    taxid = models.IntegerField(unique=True, db_index=True)
+    name = models.CharField(max_length=255, db_index=True)
+    rank = models.CharField(max_length=50, db_index=True, default=TaxonConstants.NO_RANK)
+    rank_raw = models.CharField(max_length=50, db_index=True, default=TaxonConstants.NO_RANK)
+    lineage_path = models.CharField(max_length=1000, blank=True, null=True)
+
+    parent = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="children"
+    )
 
 
 class Projects(models.Model):
@@ -110,11 +130,29 @@ class Projects(models.Model):
         samples = [project_sample.sample.pk for project_sample in project_samples]
         return samples
 
+class ProjectTag(models.Model):
+    name = models.CharField(max_length=100, db_index=True, blank=False, null=False)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
+    is_deleted = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.name
+
+class ProjectTagAssignment(models.Model):
+    tag = models.ForeignKey(ProjectTag, on_delete=models.CASCADE)
+    project = models.ForeignKey(Projects, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
 
 class SoftwareTree(models.Model):
     """"""
+    PIPELINE_TYPE_OTHER = 0
+    PIPELINE_TYPE_NONE = 1
+    PIPELINE_TYPE_CLASSIC = 2
+    PIPELINE_TYPE_MAPPING = 3
+    PIPELINE_TYPE_SCREENING = 4
 
-    model = models.IntegerField(default=0)
+
     version = models.IntegerField(default=0)
     date_created = models.DateTimeField(auto_now_add=True, blank=True, null=True)
 
@@ -130,6 +168,8 @@ class SoftwareTree(models.Model):
     project = models.ForeignKey(
         Projects, on_delete=models.CASCADE, blank=True, null=True
     )
+    
+    pipeline_type = models.IntegerField(default=PIPELINE_TYPE_OTHER)
 
     class Meta:
         ordering = ["global_index"]
@@ -137,6 +177,18 @@ class SoftwareTree(models.Model):
     def get_current_version(self):
         return self.version
 
+    def set_pipeline_type(self):
+        nodes = SoftwareTreeNode.objects.filter(software_tree=self, node_type = "module")
+        unique_pipeline_names = nodes.values_list("name", flat=True).distinct()
+
+        if set(unique_pipeline_names).issubset(set(CS.vect_pipeline_televir_classic)):
+            self.pipeline_type = self.PIPELINE_TYPE_CLASSIC
+        elif set(unique_pipeline_names).issubset(set(CS.vect_pipeline_televir_mapping_only)):
+            self.pipeline_type = self.PIPELINE_TYPE_MAPPING
+        elif set(unique_pipeline_names).issubset(set(CS.vect_pipeline_televir_screening)):
+            self.pipeline_type = self.PIPELINE_TYPE_SCREENING
+
+        self.save()
 
 class SoftwareTreeNode(models.Model):
     INTERNAL_node = 0
@@ -163,6 +215,7 @@ class SoftwareTreeNode(models.Model):
     parent = models.ForeignKey(
         "self", on_delete=models.CASCADE, blank=True, null=True, related_name="children"
     )
+    
     node_type = models.CharField(
         max_length=200,
         db_index=True,
@@ -173,15 +226,22 @@ class SoftwareTreeNode(models.Model):
         default=INTERNAL_node
     )  ### if it is a software, a parameter or a parameter value
 
+    available = models.BooleanField(default=False)  ### if this node is available to run with the current sample and project
+  
     class Meta:
         ordering = ["name"]
 
+    @property
+    def is_leaf(self):
+        return self.node_place == SoftwareTreeNode.LEAF_node
+    
     def get_descendants(self, include_self: bool = True):
         """return all descendants of this node"""
 
         nodes = SoftwareTreeNode.objects.filter(
             software_tree=self.software_tree
         ).values_list("id", flat=True)
+        
         edges = [
             (node.parent, node.id)
             for node in SoftwareTreeNode.objects.filter(
@@ -326,7 +386,12 @@ class PIProject_Sample(models.Model):
             str(self.project.pk),
             str(self.sample.pk),
         )
-
+    
+    @property
+    def media_dir_if_exists(self):
+        if os.path.exists(self.media_dir):
+            return self.media_dir
+        return None
 
 class ParameterSet(models.Model):
     STATUS_NOT_STARTED = 0
@@ -682,15 +747,32 @@ class RunMain(models.Model):
         return FinalReport.objects.filter(run=self).order_by("-coverage")
 
     def intermediate_reports_get(self) -> IntermediateFiles:
-        contig_classification = ContigClassification.objects.get(run=self)
-        read_classification = ReadClassification.objects.get(run=self)
-        run_remap = RunRemapMain.objects.get(run=self)
+        try:
+            contig_classification = ContigClassification.objects.get(run=self)
+            contig_classification_report = (
+                contig_classification.contig_classification_report
+            )
+        except ContigClassification.DoesNotExist:
+            contig_classification_report = None
+        try:
+            read_classification = ReadClassification.objects.get(run=self)
+            read_classification_report = read_classification.read_classification_report
+        except ReadClassification.DoesNotExist:
+            read_classification_report = None
+        try:
+            run_remap = RunRemapMain.objects.get(run=self)
+            remap_main_report = run_remap.merged_log
+            database_matches = run_remap.remap_plan
+
+        except RunRemapMain.DoesNotExist:
+            remap_main_report = None
+            database_matches = None
 
         intermediate_reports = IntermediateFiles(
-            read_classification_report=read_classification.read_classification_report,
-            contig_classification_report=contig_classification.contig_classification_report,
-            remap_main_report=run_remap.merged_log,
-            database_matches=run_remap.remap_plan,
+            read_classification_report=read_classification_report,
+            contig_classification_report=contig_classification_report,
+            remap_main_report=remap_main_report,
+            database_matches=database_matches,
         )
 
         return intermediate_reports
@@ -772,13 +854,17 @@ class RunMain(models.Model):
                 classification_source=None
             )
 
-        raw_references_mapped = raw_references_mapped.order_by(
-            "taxid", "status"
-        ).distinct("taxid")
+        raw_references_mapped = raw_references_mapped.order_by("taxid", "status")
+
+        if mapping_only is False:
+            raw_references_mapped = raw_references_mapped.distinct("taxid")
 
         raw_references_mapped = sorted(
             raw_references_mapped,
-            key=lambda x: float(x.read_counts if x.read_counts else 0),
+            key=lambda x: (
+                float(x.classification_source_safe if x.classification_source else 0),
+                float(x.read_counts if x.read_counts else 0),
+            ),
             reverse=True,
         )
 
@@ -939,6 +1025,35 @@ class RunAssembly(models.Model):
         self.save()
 
 
+
+class ClassifierOutput(models.Model):
+
+    run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)
+    software_name = models.CharField(max_length=100, blank=True, null=True)
+
+
+    class Meta:
+        ordering = [
+            "run",
+        ]
+
+    def __str__(self):
+        return self.software_name
+
+
+class ClassifierOutputFile(models.Model):
+
+    classifier_output = models.ForeignKey(ClassifierOutput, blank=True, null=True, on_delete=models.CASCADE)
+    file_path = models.CharField(max_length=1000, blank=True, null=True)
+
+    class Meta:
+        ordering = [
+            "classifier_output",
+        ]
+
+    def __str__(self):
+        return self.file_path
+
 class ReadClassification(models.Model):
     run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)
     sample = models.ForeignKey(
@@ -1036,6 +1151,16 @@ class RawReference(models.Model):
     panel = models.ForeignKey(
         ReferencePanel, on_delete=models.CASCADE, blank=True, null=True
     )
+
+    @property
+    def classification_source_safe(self):
+        if self.classification_source is None:
+            return "0"
+
+        if self.classification_source == "none":
+            return "0"
+
+        return self.classification_source
 
     @property
     def classification_source_str(self):
@@ -1262,6 +1387,19 @@ class TeleFluProject(models.Model):
 
         return TeleFluSample.objects.filter(teleflu_project=self).count()
 
+    @property
+    def nworkflows(self):
+
+        return TelefluMapping.objects.filter(teleflu_project=self).count()
+
+    @property
+    def mapping_or_queued(self):
+        mappings = TelefluMapping.objects.filter(teleflu_project=self)
+        for mapping in mappings:
+            if mapping.queued_or_running_mappings_exist:
+                return True
+        return False
+
 
 class TeleFluSample(models.Model):
     televir_sample = models.ForeignKey(PIProject_Sample, on_delete=models.CASCADE)
@@ -1389,15 +1527,26 @@ class TelefluMapping(models.Model):
                 "error_rate": "N/A",
             }
 
-            mapped = False
             success = False
 
-            refs = RawReference.objects.filter(
+            mapping_status = "Not started"
+
+            refs_all = RawReference.objects.filter(
                 Q(accid__in=accids)
                 & Q(run__parameter_set__sample=sample)
                 & Q(run__parameter_set__leaf__index=self.leaf.index)
                 & Q(status=RawReference.STATUS_MAPPED)
             ).distinct()
+
+            refs = refs_all.filter(run__status=RunMain.STATUS_FINISHED)
+            refs_queued = refs_all.filter(
+                Q(run__status__in=[RunMain.STATUS_PREP, RunMain.STATUS_PREP])
+                | Q(run__parameter_set__status=ParameterSet.STATUS_QUEUED)
+            )
+            refs_running = refs_all.filter(
+                Q(run__status=RunMain.STATUS_RUNNING)
+                | Q(run__parameter_set__status=ParameterSet.STATUS_RUNNING)
+            )
 
             reports = FinalReport.objects.filter(
                 run__parameter_set__sample=sample,
@@ -1406,13 +1555,19 @@ class TelefluMapping(models.Model):
             )
 
             if refs.exists():
+                mapping_status = "Finished"
+            elif refs_queued.exists():
+                mapping_status = "Queued"
+            elif refs_running.exists():
+                mapping_status = "Running"
+
+            if refs.exists():
                 mapped_samples += 1
-                mapped = True
                 if reports.exists():
                     success = True
                     success_samples += 1
 
-            sample_summary[sample.name]["mapped"] = mapped
+            sample_summary[sample.name]["mapped"] = mapping_status
             sample_summary[sample.name]["success"] = success
 
             if reports.exists():
@@ -1447,8 +1602,18 @@ class TelefluMappedSample(models.Model):
     )
 
 
+
+
+
 class ReferenceTaxid(models.Model):
     taxid = models.CharField(max_length=100, blank=True, null=True)
+
+    tax_genus = models.ForeignKey(Taxon, on_delete=models.CASCADE, blank=True, null=True, related_name="tax_genus")
+    tax_family = models.ForeignKey(Taxon, on_delete=models.CASCADE, blank=True, null=True, related_name="tax_family")
+    tax_order = models.ForeignKey(Taxon, on_delete=models.CASCADE, blank=True, null=True, related_name="tax_order")
+    tax_class = models.ForeignKey(Taxon, on_delete=models.CASCADE, blank=True, null=True, related_name="tax_class")
+    tax_phylum = models.ForeignKey(Taxon, on_delete=models.CASCADE, blank=True, null=True, related_name="tax_phylum")
+    tax_domain = models.ForeignKey(Taxon, on_delete=models.CASCADE, blank=True, null=True, related_name="tax_domain")
 
     def __str__(self):
         return self.taxid
@@ -1461,6 +1626,7 @@ class ReferenceSourceFile(models.Model):
     description = models.CharField(max_length=300, blank=True, null=True)
     is_deleted = models.BooleanField(default=False)
     creation_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    is_cache = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.file}"
@@ -1690,6 +1856,17 @@ class ReferenceMap_Main(models.Model):
     def __str__(self):
         return self.reference
 
+    @property
+    def has_data(self):
+        return (
+            self.bam_file_path is not None
+            and self.bai_file_path is not None
+            and self.fasta_file_path is not None
+            and self.fai_file_path is not None
+            and self.mapped_subset_r1 is not None
+            and self.mapped_subset_r1_fasta is not None
+        )
+
     def delete_data(self):
         if self.bam_file_path:
             if os.path.isfile(self.bam_file_path):
@@ -1816,7 +1993,7 @@ class FinalReport(models.Model):
             control_reports = FinalReport.objects.filter(
                 sample__project=self.sample.project,
                 control_flag=FinalReport.CONTROL_FLAG_SOURCE,
-                run__parameter_set__leaf__index=self.run.parameter_set.leaf.index,
+                taxid=self.taxid,
             )
 
             if control_reports.exists() == False:
@@ -1852,9 +2029,101 @@ class FinalReport(models.Model):
         relative_proportion = self.control_relative_mapped
 
         if relative_proportion is not None:
-            return f"{control_flag_str} \n (x{relative_proportion:.2f})"
+            return f"{control_flag_str} \n (x{relative_proportion:.3f})"
 
         return control_flag_str
+
+
+class ReportAggregate(models.Model):
+
+    sample = models.ForeignKey(
+        PIProject_Sample, blank=True, null=True, on_delete=models.CASCADE
+    )
+    run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)
+    runs = models.ManyToManyField(RunMain, blank=True, related_name="aggregated_runs")
+
+    date_created = models.DateTimeField(auto_now_add=True,  db_index=True, null = True)
+
+    max_error_rate = models.FloatField(blank=True, null=True)
+    error_rate_available = models.BooleanField(default=False)
+    max_quality_avg = models.FloatField(blank=True, null=True)
+    quality_avg_available = models.BooleanField(default=False)
+    max_mapped_proportion = models.FloatField(blank=True, null=True)
+    max_coverage = models.FloatField(blank=True, null=True)
+    max_windows_covered = models.FloatField(blank=True, null=True)
+
+    shared_proportion_threshold = models.FloatField(blank=True, null=True)
+    tree_plot_path = models.CharField(max_length=200, blank=True, null=True)
+    tree_plot_exists = models.BooleanField(default=False)
+
+    overlap_heatmap_json = models.JSONField(blank=True, null=True)
+    overlap_heatmap_path = models.CharField(max_length=200, blank=True, null=True)
+    overlap_heatmap_exists = models.BooleanField(default=False)
+
+    overlap_pca_path = models.CharField(max_length=200, blank=True, null=True)
+    overlap_pca_exists = models.BooleanField(default=False)
+
+    reports_available = models.BooleanField(default=False)
+    sort_performed = models.BooleanField(default=False)
+
+    @property
+    def reports_analyzed(self):
+        return [
+            report for group in self.report_groups.all() for report in group.reports.all()
+        ]
+
+
+    @property
+    def n_reports_analyzed(self):
+        return sum(
+            group.reports.all().count() for group in self.report_groups.all()
+        )
+
+
+class ReportGroup(models.Model):
+
+    aggregator = models.ForeignKey(
+        ReportAggregate, blank=True, null=True, on_delete=models.CASCADE, related_name="report_groups"
+    )
+    name = models.CharField(max_length=100, blank=True, null=True)
+    total_counts = models.IntegerField(blank=True, null=True)
+    private_counts = models.IntegerField(blank=True, null=True)
+    private_counts_exist = models.BooleanField(default=False)
+    private_reads_available = models.BooleanField(default=False)
+
+    shared_proportion = models.FloatField(blank=True, null=True)
+    private_proportion = models.FloatField(blank=True, null=True)
+
+    max_private_reads = models.IntegerField(blank=True, null=True)
+    max_coverage = models.FloatField(blank=True, null=True)
+
+    analysis_empty = models.BooleanField(default=False)
+    has_multiple = models.BooleanField(default=False)
+    toggle = models.CharField(max_length=100, blank=True, null=True)
+
+    overlap_heatmap_json = models.JSONField(blank=True, null=True)
+    reports = models.ManyToManyField(FinalReport, blank=True, related_name="aggregated_reports")
+
+    @property
+    def js_heatmap_ready(self):
+        return self.overlap_heatmap_json is not None
+
+    @property
+    def sort_performed(self):
+        return self.analysis_empty == False
+
+    @property
+    def overlap_heatmap_json_str(self):
+        if self.overlap_heatmap_json is None:
+            return None
+        return json.dumps(self.overlap_heatmap_json)
+
+class GroupReportData(models.Model):
+    report = models.ForeignKey(FinalReport, blank=True, null=True, on_delete=models.CASCADE)
+    report_group = models.ForeignKey(ReportGroup, blank=True, null=True, on_delete=models.CASCADE)
+    private_reads = models.IntegerField(blank=True, null=True)
+    found_in = models.ManyToManyField(RunMain, blank=True, related_name="compound_runs")
+    data_exists = models.BooleanField(default=False)
 
 
 class RawReferenceCompoundModel(models.Model):

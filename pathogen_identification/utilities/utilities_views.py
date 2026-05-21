@@ -4,25 +4,29 @@ import os
 from typing import Dict, List, Optional, Union
 
 import pandas as pd
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Q
 from django.db.models.query import QuerySet
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 
 from constants.constants import Constants
-from fluwebvirus.settings import STATIC_ROOT
+from fluwebvirus.settings import MEDIA_URL, STATIC_ROOT
+from managing_files.models import Sample as INSaFLU_Sample
 from pathogen_identification.constants_settings import \
     ConstantsSettings as PIConstantsSettings
 from pathogen_identification.models import (ContigClassification, FinalReport,
-                                            ParameterSet, PIProject_Sample,
-                                            Projects, RawReference,
+                                            GroupReportData, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference,
                                             RawReferenceCompoundModel,
                                             ReadClassification,
                                             ReferenceMap_Main, ReferencePanel,
                                             ReferenceSourceFileMap,
+                                            ReportAggregate, ReportGroup,
                                             RunAssembly, RunDetail, RunMain,
-                                            SoftwareTree, SoftwareTreeNode)
+                                            RunReadsRegister, SoftwareTree,
+                                            SoftwareTreeNode, TelevirRunQC)
 from pathogen_identification.utilities.clade_objects import Clade
 from pathogen_identification.utilities.overlap_manager import \
     ReadOverlapManager
@@ -33,6 +37,381 @@ from pathogen_identification.utilities.utilities_general import (
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
+
+
+class QCSoftware:
+    """
+    Class to manage QC software
+    """
+
+    def __init__(self, software: str, parameters: str):
+        self.software = software
+        self._parameters = parameters
+
+    @property
+    def parameters(self):
+        """
+        get parameters, remove any paths to keep only basename
+        """
+        if self._parameters is None:
+            return None
+
+        # remove pwd
+        if not "/" in self._parameters:
+            return self._parameters
+        parameters = self._parameters.split(" ")
+        for i, param in enumerate(parameters):
+            if "/" in param:
+                parameters[i] = os.path.basename(param)
+        parameters = " ".join(parameters)
+
+        return parameters
+
+    def __str__(self):
+        return f"QCSoftware(software={self.software}, parameters={self.parameters})"
+
+    def __eq__(self, other):
+        if not isinstance(other, QCSoftware):
+            return False
+        return self.software == other.software and self.parameters == other.parameters
+
+    def __hash__(self):
+        return hash((self.software, self.parameters))
+
+
+class MultipleQCSoftware:
+    """
+    Class to manage multiple QC software
+    """
+
+    def __init__(self, software: List[QCSoftware]):
+        self.software = software
+
+    def add_software(self, software: QCSoftware):
+        """
+        Add software to the list
+        """
+        if software not in self.software:
+            self.software.append(software)
+
+    def __str__(self):
+        return f"MultipleQCSoftware(software={self.software})"
+
+    def __eq__(self, other):
+        if not isinstance(other, MultipleQCSoftware):
+            return False
+        return set(self.software) == set(other.software)
+
+    def __hash__(self):
+        return hash(frozenset(self.software))
+
+    def __len__(self):
+        return len(self.software)
+
+    def __getitem__(self, index):
+        if index >= len(self.software):
+            raise IndexError("Index out of range")
+        return self.software[index]
+
+
+class ProcessedSample:
+    """
+    Class to process sample
+    """
+
+    def __init__(self, sample: PIProject_Sample):
+        self.sample = sample
+        self.process_type = None
+        self.qc = False
+        self.host_depletion = False
+        self.enrichment = False
+        self.software_qc: Optional[MultipleQCSoftware] = None
+        self.software_enrichment = None
+        self.software_host_depletion = None
+        self._parameters_enrichment = None
+        self._parameters_host_depletion = None
+
+        self.processed_path_r1 = None
+        self.processed_path_r2 = None
+
+    def __str__(self):
+        return f"ProcessedSample(sample={self.sample}, qc={self.qc}, host_depletion={self.host_depletion}, enrichment={self.enrichment})"
+
+    def __eq__(self, other):
+        if not isinstance(other, ProcessedSample):
+            return False
+        return (
+            self.sample.sample == other.sample.sample
+            and self.software_qc == other.software_qc
+            and self.process_type == other.process_type
+            and self.software_qc == other.software_qc
+        )
+
+    def __hash__(self):
+        return hash(
+            (
+                self.sample.sample,
+                self.software_qc,
+                self.process_type,
+                self.software_qc,
+            )
+        )
+
+    @property
+    def parameters_enrichment(self):
+        """
+        get parameters, remove any paths to keep only basename
+        """
+        if self._parameters_enrichment is None:
+            return None
+
+        # remove pwd
+        if not "/" in self._parameters_enrichment:
+            return self._parameters_enrichment
+        parameters = self._parameters_enrichment.split(" ")
+        for i, param in enumerate(parameters):
+            if "/" in param:
+                parameters[i] = os.path.basename(param)
+        parameters = " ".join(parameters)
+
+        return parameters
+
+    @property
+    def parameters_host_depletion(self):
+        """
+        get parameters, remove any paths to keep only basename
+        """
+        if self._parameters_host_depletion is None:
+            return None
+
+        # remove pwd
+        if not "/" in self._parameters_host_depletion:
+            return self._parameters_host_depletion
+        parameters = self._parameters_host_depletion.split(" ")
+        for i, param in enumerate(parameters):
+            if "/" in param:
+                parameters[i] = os.path.basename(param)
+        parameters = " ".join(parameters)
+
+        return parameters
+
+    @property
+    def processed_r1_download(self):
+        """
+        return processed r1 download
+        """
+        if self.processed_path_r1 is None:
+            return None
+
+        # remove pwd
+        processed_path_r1_download = self.processed_path_r1.split("media/")[-1]
+
+        processed_path_r1_download = os.path.join(
+            MEDIA_URL,
+            processed_path_r1_download,
+        )
+
+        return processed_path_r1_download
+
+    @property
+    def processed_r2_download(self):
+        """
+        return processed r2 download
+        """
+        if self.processed_path_r2 is None:
+            return "None"
+
+        # remove pwd
+        processed_path_r2_download = self.processed_path_r2.split("media/")[-1]
+
+        processed_path_r2_download = os.path.join(
+            MEDIA_URL,
+            processed_path_r2_download,
+        )
+
+        return processed_path_r2_download
+
+
+class SampleReadsRetrieve:
+
+    def __init__(self, sample: INSaFLU_Sample):
+        self.sample = sample
+        self.utils = Utils_Manager()
+
+    def parameter_set_processed_reads(
+        self, parameter_set: ParameterSet
+    ) -> List[ProcessedSample]:
+        """
+        get processed reads from parameter set
+        """
+        processed_samples: List[ProcessedSample] = []
+        params_df = self.utils.get_leaf_parameters(parameter_set.leaf)
+        params_df.set_index("module", inplace=True)
+
+        registered_runs = RunReadsRegister.objects.filter(
+            run__parameter_set=parameter_set,
+        )
+
+        if registered_runs.count() == 0:
+            return []
+
+        for run in registered_runs:
+
+            if ConstantsSettings.PIPELINE_NAME_host_depletion in params_df.index:
+                if os.path.exists(run.depleted_reads_r1) is False:
+                    continue
+
+                host_depletion_software = params_df.loc[
+                    ConstantsSettings.PIPELINE_NAME_host_depletion, "software"
+                ]
+                host_depletion_parameters = params_df.loc[
+                    ConstantsSettings.PIPELINE_NAME_host_depletion, "value"
+                ]
+
+                psample = ProcessedSample(
+                    sample=run.run.parameter_set.sample,
+                )
+
+                psample.host_depletion = True
+                psample.process_type = ConstantsSettings.PIPELINE_NAME_host_depletion
+                psample.software_host_depletion = host_depletion_software
+                psample._parameters_host_depletion = host_depletion_parameters
+                psample.processed_path_r1 = run.depleted_reads_r1
+
+                if ConstantsSettings.PIPELINE_NAME_viral_enrichment in params_df.index:
+
+                    enrichment_software = params_df.loc[
+                        ConstantsSettings.PIPELINE_NAME_viral_enrichment, "software"
+                    ]
+                    enrichment_parameters = params_df.loc[
+                        ConstantsSettings.PIPELINE_NAME_viral_enrichment, "value"
+                    ]
+
+                    psample.enrichment = True
+                    psample.process_type = f"{ConstantsSettings.PIPELINE_NAME_viral_enrichment} + {psample.process_type}"
+                    psample.software_enrichment = enrichment_software
+                    psample._parameters_enrichment = enrichment_parameters
+
+                if ConstantsSettings.PIPELINE_NAME_extra_qc in params_df.index:
+                    psample.process_type = f"{ConstantsSettings.PIPELINE_NAME_extra_qc} + {psample.process_type}"
+                    psample.qc = True
+
+                    qc_block = params_df.loc[
+                        params_df.index == ConstantsSettings.PIPELINE_NAME_extra_qc
+                    ]
+
+                    psample.qc = True
+                    qc_multiple = MultipleQCSoftware([])
+                    for row in qc_block.iterrows():
+                        qc_software = row[1]["software"]
+                        qc_parameters = row[1]["value"]
+                        software_qc = QCSoftware(qc_software, qc_parameters)
+                        qc_multiple.add_software(software_qc)
+                    psample.software_qc = qc_multiple
+
+                if os.path.exists(run.depleted_reads_r2):
+                    psample.processed_path_r2 = run.depleted_reads_r2
+
+                processed_samples.append(psample)
+
+            elif ConstantsSettings.PIPELINE_NAME_viral_enrichment in params_df.index:
+                if os.path.exists(run.enriched_reads_r1) is False:
+                    continue
+
+                enrichment_software = params_df.loc[
+                    ConstantsSettings.PIPELINE_NAME_viral_enrichment, "software"
+                ]
+                enrichment_parameters = params_df.loc[
+                    ConstantsSettings.PIPELINE_NAME_viral_enrichment, "value"
+                ]
+
+                psample = ProcessedSample(
+                    sample=run.run.parameter_set.sample,
+                )
+
+                psample.enrichment = True
+                psample.process_type = ConstantsSettings.PIPELINE_NAME_viral_enrichment
+                psample.software_enrichment = enrichment_software
+                psample._parameters_enrichment = enrichment_parameters
+
+                if ConstantsSettings.PIPELINE_NAME_extra_qc in params_df.index:
+                    psample.process_type = f"{ConstantsSettings.PIPELINE_NAME_extra_qc} + {psample.process_type}"
+                    psample.qc = True
+
+                    qc_block = params_df.loc[
+                        params_df.index == ConstantsSettings.PIPELINE_NAME_extra_qc
+                    ]
+
+                    psample.qc = True
+                    qc_multiple = MultipleQCSoftware([])
+                    for row in qc_block.iterrows():
+                        qc_software = row[1]["software"]
+                        qc_parameters = row[1]["value"]
+                        software_qc = QCSoftware(qc_software, qc_parameters)
+                        qc_multiple.add_software(software_qc)
+                    psample.software_qc = qc_multiple
+
+                psample.processed_path_r1 = run.enriched_reads_r1
+                if os.path.exists(run.enriched_reads_r2):
+                    psample.processed_path_r2 = run.enriched_reads_r2
+                processed_samples.append(psample)
+
+            elif ConstantsSettings.PIPELINE_NAME_extra_qc in params_df.index:
+                if os.path.exists(run.qc_reads_r1) is False:
+                    continue
+
+                psample = ProcessedSample(
+                    sample=run.run.parameter_set.sample,
+                )
+
+                qc_block = params_df.loc[
+                    params_df.index == ConstantsSettings.PIPELINE_NAME_extra_qc
+                ]
+
+                psample.qc = True
+                psample.process_type = ConstantsSettings.PIPELINE_NAME_extra_qc
+                qc_multiple = MultipleQCSoftware([])
+                for row in qc_block.iterrows():
+                    qc_software = row[1]["software"]
+                    qc_parameters = row[1]["value"]
+                    software_qc = QCSoftware(qc_software, qc_parameters)
+                    qc_multiple.add_software(software_qc)
+                psample.software_qc = qc_multiple
+
+                psample.processed_path_r1 = run.qc_reads_r1
+                if os.path.exists(run.qc_reads_r2):
+                    psample.processed_path_r2 = run.qc_reads_r2
+                processed_samples.append(psample)
+
+        # get unique processed samples
+        processed_samples = list(set(processed_samples))
+        return processed_samples
+
+    @property
+    def processed_reads(self) -> List[ProcessedSample]:
+        """
+        get processed reads
+        """
+
+        # get parameter sets
+        parameter_sets = ParameterSet.objects.filter(
+            sample__sample=self.sample,
+            status=ParameterSet.STATUS_FINISHED,
+            leaf__software_tree__global_index__gt=0,
+        ).distinct("leaf__index", "leaf__software_tree__global_index")
+
+        if parameter_sets.count() == 0:
+            return []
+
+        processed_samples: List[ProcessedSample] = []
+
+        for parameter_set in parameter_sets:
+            processed_samples += self.parameter_set_processed_reads(parameter_set)
+
+        # get unique processed samples
+        processed_samples = list(set(processed_samples))
+
+        return processed_samples
 
 
 class SampleReferenceManager:
@@ -68,19 +447,19 @@ class SampleReferenceManager:
     def proxy_tree_prepare(self):
         try:
             software_tree = SoftwareTree.objects.get(
-                model=-1,
                 version=0,
                 technology=self.sample.project.technology,
                 owner=self.sample.project.owner,
                 project=self.sample.project,
+                pipeline_type=SoftwareTree.PIPELINE_TYPE_NONE,
             )
         except SoftwareTree.DoesNotExist:
             software_tree = SoftwareTree.objects.create(
-                model=-1,
                 version=0,
                 technology=self.sample.project.technology,
                 owner=self.sample.project.owner,
                 project=self.sample.project,
+                pipeline_type=SoftwareTree.PIPELINE_TYPE_NONE,
             )
             software_tree.save()
 
@@ -145,6 +524,14 @@ class SampleReferenceManager:
             )
             parameter_set_management.save()
 
+        except ParameterSet.MultipleObjectsReturned:
+            parameter_set_management = ParameterSet.objects.filter(
+                sample__project=self.sample.project,
+                sample=self.sample,
+                leaf=self.software_tree_node_storage,
+                status=ParameterSet.STATUS_PROXIED,
+            ).first()
+
     @property
     def parameter_set_storage(self):
         return ParameterSet.objects.get(
@@ -189,17 +576,18 @@ class SampleReferenceManager:
         """
         mapping run from leaf
         """
-
         try:
-            parameter_set = ParameterSet.objects.get(
-                sample=self.sample,
-                leaf=leaf,
-                project=self.sample.project,
-            )
+            with transaction.atomic():
 
-            if parameter_set.status == ParameterSet.STATUS_FINISHED:
-                parameter_set.status = ParameterSet.STATUS_QUEUED
-                parameter_set.save()
+                parameter_set = ParameterSet.objects.get(
+                    sample=self.sample,
+                    leaf=leaf,
+                    project=self.sample.project,
+                )
+
+                if parameter_set.status == ParameterSet.STATUS_FINISHED:
+                    parameter_set.status = ParameterSet.STATUS_QUEUED
+                    parameter_set.save()
 
         except ParameterSet.DoesNotExist:
             parameter_set = ParameterSet.objects.create(
@@ -209,6 +597,36 @@ class SampleReferenceManager:
                 project=self.sample.project,
             )
             parameter_set.save()
+
+        except ParameterSet.MultipleObjectsReturned:
+            parameter_set = ParameterSet.objects.filter(
+                sample=self.sample,
+                leaf=leaf,
+                project=self.sample.project,
+            ).first()
+            if parameter_set.status == ParameterSet.STATUS_FINISHED:
+                parameter_set.status = ParameterSet.STATUS_QUEUED
+                parameter_set.save()
+
+        except IntegrityError:
+            # Handle IntegrityError if it occurs, e.g., duplicate entry
+            parameter_set = ParameterSet.objects.filter(
+                sample=self.sample,
+                leaf=leaf,
+                project=self.sample.project,
+            ).first()
+            if parameter_set is None:
+                parameter_set = ParameterSet.objects.create(
+                    sample=self.sample,
+                    leaf=leaf,
+                    status=ParameterSet.STATUS_PROXIED,
+                    project=self.sample.project,
+                )
+            else:
+                if parameter_set.status == ParameterSet.STATUS_FINISHED:
+                    parameter_set.status = ParameterSet.STATUS_QUEUED
+                    parameter_set.save()
+
         except Exception as e:
             print(e)
 
@@ -293,14 +711,14 @@ class RunMainWrapper:
 
         return " ".join(software_name_list)
 
-    def get_pipeline_software(self, pipeline_name: str):
+    @staticmethod
+    def process_software_name(software_name: str) -> str:
+        """
+        process software name
+        """
 
-        software_name = "None"
-
-        if pipeline_name in self.params_df.index:
-
-            software_name = self.params_df.loc[pipeline_name, "software"]
-            software_name = str(software_name)
+        if software_name == "None":
+            return "None"
 
         if "(" in software_name:
             software_name = software_name.split("(")[0]
@@ -308,7 +726,28 @@ class RunMainWrapper:
         if "_" in software_name:
             software_name = software_name.split("_")[0]
 
-        return self.capitalize_software(software_name)
+        return RunMainWrapper.capitalize_software(software_name)
+
+    def get_pipeline_software(self, pipeline_name: str):
+
+        software_names = "None"
+
+        if pipeline_name in self.params_df.index:
+
+            softwares_column = self.params_df.loc[pipeline_name, "software"]
+
+            if isinstance(softwares_column, str):
+                softwares_column = [softwares_column]
+
+            software_names = list(softwares_column)
+
+            for i, software in enumerate(softwares_column):
+
+                software_names[i] = self.process_software_name(software)
+
+            software_names = "; ".join(software_names)
+
+        return software_names
 
     def progress_display(self) -> str:
 
@@ -319,14 +758,52 @@ class RunMainWrapper:
 
         return mark_safe(run_log)
 
-    def run_progess_tracker(self) -> str:
+    @property
+    def qc_performed(self) -> bool:
+        return TelevirRunQC.objects.filter(run=self.record, performed=True).exists()
 
-        finished_preprocessing = self.record.report != "initial"
-        finished_assembly = RunAssembly.objects.filter(run=self.record).count() > 0
-        finished_classification = (
+    @property
+    def enrichemnt_performed(self) -> bool:
+        return self.record.enrichment_performed
+
+    @property
+    def depletion_performed(self) -> bool:
+        return self.record.host_depletion_performed
+
+    @property
+    def assembly_performed(self) -> bool:
+        return RunAssembly.objects.filter(run=self.record).exists()
+
+    @property
+    def classification_performed(self) -> bool:
+        return (
             ContigClassification.objects.filter(run=self.record).exists()
             and ReadClassification.objects.filter(run=self.record).exists()
         )
+
+    @property
+    def remapping_performed(self) -> bool:
+        return ReferenceMap_Main.objects.filter(run=self.record).exists()
+
+    @property
+    def is_running(self) -> bool:
+        return self.record.status == RunMain.STATUS_RUNNING
+
+    @property
+    def is_finished(self) -> bool:
+        return self.record.status == RunMain.STATUS_FINISHED
+
+    def run_progess_tracker(self) -> str:
+
+        object_to_step_dict = {
+            ConstantsSettings.PIPELINE_NAME_extra_qc: self.qc_performed,
+            ConstantsSettings.PIPELINE_NAME_viral_enrichment: self.enrichemnt_performed,
+            ConstantsSettings.PIPELINE_NAME_host_depletion: self.depletion_performed,
+            ConstantsSettings.PIPELINE_NAME_assembly: self.assembly_performed,
+            ConstantsSettings.PIPELINE_NAME_contig_classification: self.classification_performed,
+            ConstantsSettings.PIPELINE_NAME_read_classification: self.classification_performed,
+            ConstantsSettings.PIPELINE_NAME_remapping: self.remapping_performed,
+        }
 
         finished_processing = (
             self.record.parameter_set.status == ParameterSet.STATUS_FINISHED
@@ -351,62 +828,36 @@ class RunMainWrapper:
         )
 
         if finished_processing or finished_remapping:
-
             return report_link
 
-        else:
-            runlog = " <a " + 'href="#" >'
-            if finished_preprocessing:
-                runlog += '<i class="fa fa-check"'
-                runlog += 'title="Preprocessing finished"></i>'
+        # Initialize progress tracker
+        progress_html = ""
+
+        # Iterate through the steps in the params_df
+        for step in self.params_df.index:
+            step_status = object_to_step_dict.get(step, None)
+
+            if step_status is None:
+                # If the step is not mapped, skip it
+                continue
+
+            if step_status:
+                # Step is completed
+                progress_html += (
+                    f'<i class="fa fa-check" title="{step} completed"></i> '
+                )
+            elif self.is_running:
+                # Step is running
+                progress_html += (
+                    f'<i class="fa fa-cog fa-spin" title="{step} running"></i> '
+                )
             else:
-                runlog += '<i class="fa fa-cog"'
-                runlog += 'title="Preprocessing running."></i>'
+                # Step is pending
+                progress_html += (
+                    f'<i class="fa fa-circle-o" title="{step} pending"></i> '
+                )
 
-            runlog += "</a>"
-
-            ###
-
-            runlog += " <a " + 'href="#" >'
-
-            if finished_assembly:
-                runlog += '<i class="fa fa-check"'
-                runlog += 'title="Assembly finished"></i>'
-            else:
-                runlog += '<i class="fa fa-cog"'
-                if finished_preprocessing:
-                    runlog += 'title="Assembly running."></i>'
-                else:
-                    runlog += 'title="Assembly." style="color: gray;"></i>'
-            runlog += "</a>"
-
-            ###
-
-            runlog += " <a " + 'href="#" >'
-
-            if finished_classification:
-                runlog += '<i class="fa fa-check"'
-                runlog += 'title="Classification finished"></i>'
-            else:
-                runlog += '<i class="fa fa-cog"'
-                if finished_assembly:
-                    runlog += 'title="Classification running."></i>'
-                else:
-                    runlog += 'title="Classification." style="color: gray;"></i>'
-            runlog += "</a>"
-
-            runlog += " <a " + 'href="#" >'
-
-            runlog += '<i class="fa fa-cog"'
-            if finished_classification:
-                runlog += 'title="Mapping to references."></i>'
-            else:
-                runlog += 'title="Validation mapping" style="color: gray;"></i>'
-            runlog += "</a>"
-
-            return runlog
-
-        return ""
+        return mark_safe(progress_html)
 
 
 class EmptyRemapMain:
@@ -455,6 +906,7 @@ class FinalReportWrapper:
         self.first_in_group = False
         self.row_class_name = "secondary-row"
         self.display = "none"
+        self.report_pk = report.pk
 
     @staticmethod
     def prep_for_static(filepath: str) -> str:
@@ -483,7 +935,19 @@ class FinalReportCompound:
                 except Exception as e:
                     raise e
 
-        self.found_in = self.get_identical_reports_ps(report)
+        self.found_in = (
+            RawReference.objects.filter(
+            run__project__pk=report.run.project.pk,
+            run__sample__pk=report.sample.pk,
+            taxid=report.taxid,
+            )
+            .exclude(run__run_type=RunMain.RUN_TYPE_STORAGE)
+            .distinct("run")
+            .values_list("run", flat=True)
+        )
+
+        self.report_pk = report.pk
+        self.found_in_str = self.get_identical_reports_ps(report)
         self.run_detail = self.get_report_rundetail(report)
         self.run_main = self.get_report_runmain(report)
         self.run_index = self.run_main.pk
@@ -501,19 +965,42 @@ class FinalReportCompound:
         self.private_reads = private_reads
 
     def get_identical_reports_ps(self, report: FinalReport) -> str:
-        references_found_in = RawReference.objects.filter(
-            run__project__pk=report.run.project.pk,
-            run__run_type=RunMain.RUN_TYPE_PIPELINE,
-            run__sample__pk=report.sample.pk,
-            taxid=report.taxid,
+        """
+        return text indicator of  all other runs this accession taxonomic id is found.
+        """
+        references_found_in = (
+            RawReference.objects.filter(
+                run__project__pk=report.run.project.pk,
+                # run__run_type=RunMain.RUN_TYPE_PIPELINE,
+                run__sample__pk=report.sample.pk,
+                taxid=report.taxid,
+            )
+            .exclude(run__run_type=RunMain.RUN_TYPE_STORAGE)
+            .distinct("run")
         )
 
-        sets = set([r.run.parameter_set.leaf.index for r in references_found_in])
+        sets = set([r.run.parameter_set.leaf.pk for r in references_found_in])
+
+        strings_return = []
+
+        for ref in references_found_in:
+
+            index_string = f"{ref.run.parameter_set.leaf.software_tree.global_index}-{ref.run.parameter_set.leaf.index}"
+
+            if ref.run.run_type in [
+                RunMain.RUN_TYPE_MAP_REQUEST,
+                RunMain.RUN_TYPE_PANEL_MAPPING,
+            ]:
+                index_string = "r" + index_string
+
+            if ref.run == report.run:
+                index_string = f"<b>{index_string}</b>"
+            strings_return.append(index_string)
 
         if len(sets) == 0:
             return "M"
 
-        return ", ".join([str(s) for s in sets])
+        return ", ".join([str(s) for s in strings_return])
 
     def check_data_exists(self, report: FinalReport) -> bool:
         if report.run is None:
@@ -531,7 +1018,7 @@ class FinalReportGroup:
     analysis_empty = False
 
     name: str
-    total_counts: str
+    total_counts_str: str
     private_counts: int
     shared_proportion: float
     private_proportion: float
@@ -551,7 +1038,8 @@ class FinalReportGroup:
         analysis_empty=False,
     ):
         self.name = name
-        self.total_counts = f"total counts {total_counts}"
+        self.total_counts = total_counts
+        self.total_counts_str = f"total counts {total_counts}"
         self.private_counts = private_counts
         self.shared_proportion = shared_proportion
         self.private_proportion = round(private_proportion, 2)
@@ -737,6 +1225,86 @@ def recover_assembly_contigs(run_main: RunMain, run_assembly: RunAssembly):
             run_assembly.assembly_contigs = assembly_contigs
             run_assembly.save()
 
+class ReportList:
+    def __init__(self, reports: List[FinalReport]):
+        self.reports = [FinalReportWrapper(report) for report in reports]
+
+    def __iter__(self):
+        return iter(self.reports)
+
+    def __len__(self):
+        return len(self.reports)
+    
+    def __getitem__(self, index):
+        return self.reports[index]
+
+
+    def set_private_reads(self, report_group: ReportGroup):
+        """
+        Set private reads for each report.
+        """
+        for report in self.reports:
+            report_data = GroupReportData.objects.get(
+                report__pk = report.report_pk, 
+                report_group = report_group
+            )
+            report.private_reads = report_data.private_reads
+
+        return self
+
+    def sort_group_by_private_reads(self):
+        """
+        sort group by private reads
+        """
+        self.reports.sort(key=lambda x: x.private_reads, reverse=True)
+
+        if len(self.reports) == 0:
+            return self
+
+        self.reports[0].first_in_group = True
+        self.reports[0].row_class_name = "primary-row"
+        self.reports[0].display = "table-row"
+
+        return self
+
+class EmptyRuns:
+
+    def all(self):
+        return self
+
+    def filter(self, *args, **kwargs):
+        return []
+
+    def exclude(self, *args, **kwargs):
+        return []
+
+    def __len__(self):
+        return 0
+
+class ReportAggregateEmpty:
+
+    def __init__(self):
+        self.error_rate_available = False
+        self.max_error_rate = 0
+        self.quality_avg_available = 0
+        self.max_quality_avg = 0
+        self.max_mapped_proportion = 0
+        self.max_coverage = 0
+        self.max_windows_covered = 0
+        self.overlap_heatmap_path = None
+        self.overlap_heatmap_json = None
+        self.runs= EmptyRuns()
+        self.sort_performed = False
+        self.shared_proportion_threshold= 0
+        self.clade_heatmap_json = None
+        self.tree_plot_path= None
+        self.overlap_pca_exists = False
+        self.overlap_pca_path = None
+
+    @property
+    def n_reports_analyzed(self):
+        return 0
+
 
 class ReportSorter:
     analysis_filename = "overlap_analysis_{}.tsv"
@@ -780,7 +1348,7 @@ class ReportSorter:
 
         self.level = level
 
-        self.reports_availble = len(reports) > 0
+        self.reports_available = len(reports) > 0
 
         self.media_dir = sample.media_dir
 
@@ -829,10 +1397,14 @@ class ReportSorter:
         self.logger = logging.getLogger(__name__)
         self.logger.info("ReportSorter: {}".format(self.media_dir))
         self.logger.setLevel(logging.DEBUG)
+    
+    @property
+    def sort_performed(self):
+        return self.analysis_empty == False
 
     def build_tree(self):
 
-        if self.reports_availble:
+        if self.reports_available:
             self.overlap_manager.build_tree()
 
     def update_max_error_rate(self, report: FinalReport):
@@ -1161,12 +1733,101 @@ class ReportSorter:
         self.update_report_excluded_dicts(self.overlap_manager)
 
         return clades
+    
+    def reports_aggregate_register(self, report_layout_params: LayoutParams, run_main: Optional[RunMain] = None):
+        """
+        register in table
+        """
+        sorted_reports = self.get_reports_compound()
+        excluded_reports_exist = self.check_excluded_exist()
+        empty_reports = self.get_reports_empty()
+
+        if excluded_reports_exist and self.analysis_empty is False:
+
+            if len(empty_reports.group_list) > 0:
+                sorted_reports.append(empty_reports)
+
+        # check has control_flag present
+        # has_controlled_flag = False if sample_main.is_control else True
+        #########
+        self.build_tree()
+        clade_heatmap_json = self.clade_heatmap_json(
+            to_keep=[report_group.name for report_group in sorted_reports]
+        )
+
+        #########
+        private_reads_available = False
+        for group in sorted_reports:
+            if group.reports_have_private_reads():
+                private_reads_available = True
+                break
+
+        from django.db import transaction
+        with transaction.atomic():
+            report_aggregate = ReportAggregate.objects.create(
+                sample = self.sample,
+                run = run_main,
+                max_error_rate = self.max_error_rate,
+                error_rate_available = self.error_rate_available,
+                max_quality_avg = self.max_quality_avg,
+                quality_avg_available = self.quality_avg_available,
+                max_mapped_proportion = self.max_mapped_prop,
+                max_coverage = self.max_coverage,
+                max_windows_covered = self.max_windows_covered,
+                shared_proportion_threshold = report_layout_params.shared_proportion_threshold,
+                tree_plot_path = self.tree_plot_path,
+                tree_plot_exists = self.tree_plot_exists,
+                overlap_heatmap_path = self.overlap_heatmap_path,
+                overlap_heatmap_json = clade_heatmap_json,
+                overlap_heatmap_exists = self.overlap_heatmap_exists,
+                overlap_pca_path = self.overlap_pca_path,
+                overlap_pca_exists = self.overlap_pca_exists,
+                reports_available = self.reports_available,
+                sort_performed = self.sort_performed,
+            )
+
+            report_aggregate.save()
+        
+            for group in sorted_reports:
+                report_group = ReportGroup.objects.create(
+                    aggregator=report_aggregate,
+                    name=group.name,
+                    total_counts=group.total_counts, 
+                    private_counts = group.private_counts,
+                    private_counts_exist = group.private_counts_exist,
+                    private_reads_available = private_reads_available,
+                    shared_proportion = group.shared_proportion,
+                    private_proportion = group.private_proportion,
+                    max_private_reads = group.max_private_reads,
+                    max_coverage = group.max_coverage,
+                    analysis_empty = group.analysis_empty,
+                    has_multiple = group.has_multiple,
+                    toggle = group.toggle,
+                    overlap_heatmap_json = group.js_heatmap_data,
+                )
+                report_group.save()
+
+                for report in group.group_list:
+                    report_group.reports.add(FinalReport.objects.get(pk=report.report_pk))
+
+                    report_data = GroupReportData.objects.create(
+                        report = FinalReport.objects.get(pk=report.report_pk),
+                        report_group = report_group,
+                        private_reads = report.private_reads,
+                        data_exists = report.data_exists,
+                    )
+                    report_data.save()
+
+                    for run in report.found_in:
+                        report_data.found_in.add(run)
+                        report_aggregate.runs.add(run)
+
 
     def sort_reports_save(self, force=False):
         """
         Return sorted reports
         """
-        if self.reports_availble is False:
+        if self.reports_available is False:
             return self.return_no_analysis()
 
         try:
@@ -1196,6 +1857,7 @@ class ReportSorter:
             group_list.sort(key=lambda x: x.coverage, reverse=True)
             name = group_df.clade.iloc[0]
             if len(group_list):
+
                 clades_to_keep.append(name)
                 if len(group_list) > 1:
 
@@ -1342,7 +2004,7 @@ class ReportSorter:
 
     def prep_heatmap_data_within_clade(
         self, report_group: FinalReportGroup, distance_matrix: pd.DataFrame
-    ):
+    ) -> List[Dict[str, Union[str, float]]]:
         """
         prepare heatmap data to be used to create javascript heatmap"""
 
@@ -1358,7 +2020,9 @@ class ReportSorter:
 
         return json_data
 
-    def prep_heatmap_data(self, distance_matrix: pd.DataFrame):
+    def prep_heatmap_data(self, distance_matrix: pd.DataFrame) -> List[Dict[str, Union[str, float]]]:
+        """
+        """
 
         distance_matrix = distance_matrix.fillna(0)
 
@@ -1381,7 +2045,7 @@ class ReportSorter:
             for col, value in row.items():
                 json_data.append({"x": ix, "y": col, "value": value})
 
-        json_data = json.dumps(json_data)
+        #json_data = json.dumps(json_data)
 
         return json_data
 
@@ -1395,11 +2059,16 @@ class ReportSorter:
             return report_groups
 
         for report_group in report_groups:
-            json_data = self.prep_heatmap_data_within_clade(
-                report_group, distance_matrix
-            )
-            report_group.js_heatmap_data = json_data
-            report_group.js_heatmap_ready = True
+            try:
+                json_data = self.prep_heatmap_data_within_clade(
+                    report_group, distance_matrix
+                )
+                report_group.js_heatmap_data = json_data
+                report_group.js_heatmap_ready = True
+            except Exception as e:
+
+                report_group.js_heatmap_ready = False
+                report_group.js_heatmap_data = None
 
         return report_groups
 
@@ -1437,7 +2106,7 @@ class ReportSorter:
         """
         Return sorted reports
         """
-        if self.reports_availble is False:
+        if self.reports_available is False:
             return self.return_no_analysis()
 
         if self.metadata_df.empty:
@@ -1477,6 +2146,42 @@ class ReportSorter:
             report_group.group_list = new_list
 
         return reports
+
+    def get_compound_pandas_report(self) -> pd.DataFrame:
+        """
+        Return pandas dataframe of reports
+        """
+        if not self.reports_available:
+            return pd.DataFrame()
+
+        if not self.check_analyzed():
+            return pd.DataFrame()
+
+        reports = self.get_reports_compound()
+        if len(reports) == 0:
+            return pd.DataFrame()
+
+        data = []
+        for report_group in reports:
+            group_name = report_group.name
+            for report in report_group.group_list:
+                data.append(
+                    {
+                        "sample": self.sample.name,
+                        "name": group_name,
+                        "accid": report.accid,
+                        "description": report.description,
+                        "taxid": report.taxid,
+                        "coverage": report.coverage,
+                        "private_reads": report.private_reads,
+                        "mapped_proportion": report.mapped_proportion,
+                        "windows_covered": report.windows_covered,
+                        "error_rate": report.error_rate,
+                        "quality_avg": report.quality_avg,
+                    }
+                )
+        df = pd.DataFrame(data)
+        return df
 
     def check_excluded_exist(self) -> bool:
         """return True if there are excluded reports"""
@@ -2331,6 +3036,21 @@ class RawReferenceUtils:
 
         run_references_tables = run_references_tables[run_references_tables.taxid != 0]
 
+        return run_references_tables
+
+    @staticmethod
+    def simplify_by_description(df: pd.DataFrame):
+        if "description" not in df.columns:
+            return df
+
+        df["description_first"] = df["description"].str.split(" ").str[0]
+
+        df = df.sort_values("standard_score", ascending=False)
+        df = df.drop_duplicates(subset=["description_first"], keep="first")
+
+        df.drop(columns=["description_first"], inplace=True)
+
+        return df
         return run_references_tables
 
     @staticmethod

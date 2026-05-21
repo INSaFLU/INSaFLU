@@ -8,26 +8,15 @@ from django.core.management.base import BaseCommand
 from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.deployment_main import Run_Main_from_Leaf
-from pathogen_identification.models import (
-    ParameterSet,
-    PIProject_Sample,
-    RawReference,
-    ReferencePanel,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.models import (ParameterSet, PIProject_Sample,
+                                            RawReference, ReferencePanel,
+                                            RunMain, SoftwareTree,
+                                            SoftwareTreeNode)
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
-from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils,
-    Utils_Manager,
-)
+from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from pathogen_identification.utilities.utilities_views import (
-    RawReferenceUtils,
-    SampleReferenceManager,
-    set_control_reports,
-)
-from utils.process_SGE import ProcessSGE
+    RawReferenceUtils, SampleReferenceManager, set_control_reports)
+from utils.process_SGE import ProcessSched
 
 
 class Sample_Staging:
@@ -115,26 +104,14 @@ class Command(BaseCommand):
             reference.panel = run_panel_copy
             reference.save()
 
-        metagenomics = False
-        mapping_only = False
-        screening = False
-
         combined_analysis = options["combined_analysis"]
         mapping_request = options["mapping_request"]
         mapping_run_pk = panel_mapping_run.pk
 
-        if mapping_request:
-            mapping_only = True
-            if mapping_run_pk is None:
-                raise Exception("mapping_run_id is required for mapping request")
-        elif combined_analysis:
-            metagenomics = True
-        else:
-            screening = True
 
         ### PROCESS CONTROLER
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
 
         process_SGE.set_process_controler(
             user,
@@ -147,17 +124,9 @@ class Command(BaseCommand):
 
         ### UTILITIES
         utils = Utils_Manager()
-        software_utils = SoftwareTreeUtils(user, project, sample=target_sample)
 
-        local_tree = software_utils.generate_software_tree_safe(
-            project,
-            sample=target_sample,
-            metagenomics=metagenomics,
-            screening=screening,
-            mapping_only=mapping_only,
-        )
-
-        pipeline_tree_index = local_tree.software_tree_pk
+        
+        pipeline_tree_index = matched_path_node.software_tree.pk #local_tree.software_tree_pk
         pipeline_tree_query = SoftwareTree.objects.get(pk=pipeline_tree_index)
 
         ### MANAGEMENT
@@ -206,7 +175,7 @@ class Command(BaseCommand):
 
                 submission_dict[target_sample].append(run)
 
-                for sample, runs in submission_dict.items():
+                for _, runs in submission_dict.items():
                     for run in runs:
                         run.Submit()
 

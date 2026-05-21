@@ -5,6 +5,7 @@ function get_process(){
 	
 	var name = $("#id_user_name").text().replace(/^\s+|\s+$/g, '');
 	var lst_split = name.split(" ");
+	var csrf_token = $("#main_tab").attr("csrf-token");
 	if ((lst_split.length == 3 & lst_split[0] == 'demo' & lst_split[1] == '-' & lst_split[2] == 'Logout') |
 		(lst_split.length == 1 & lst_split[0] == '')){
 		$('#info_pocess_id').text(message)

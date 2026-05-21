@@ -14,18 +14,26 @@ from django.conf import settings
 from django.db import transaction
 from django.http import JsonResponse
 from django.utils.safestring import mark_safe
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.views.decorators.csrf import csrf_protect
 
-from constants.constants import (Constants, FileExtensions, FileType, TypeFile,
-                                 TypePath)
+from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import (DataSet, MetaKey, ProcessControler, Project,
-                                   ProjectSample, Reference, Sample,
-                                   UploadFiles, VaccineStatus)
+from managing_files.models import (
+    DataSet,
+    MetaKey,
+    Primer,
+    ProcessControler,
+    Project,
+    ProjectSample,
+    Reference,
+    Sample,
+    UploadFiles,
+    VaccineStatus,
+)
 from pathogen_identification.models import ParameterSet, PIProject_Sample
 from pathogen_identification.models import Projects as Televir_Project
 from settings.constants_settings import ConstantsSettings
@@ -33,7 +41,7 @@ from settings.default_parameters import DefaultParameters
 from settings.default_software_project_sample import DefaultProjectSoftware
 from utils.collect_extra_data import CollectExtraData
 from utils.parse_in_files import ParseInFiles
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 from utils.result import Coverage, DecodeObjects
 from utils.software import Software
 from utils.utils import Utils
@@ -54,7 +62,7 @@ def set_check_box_values(request):
     """
     manage check boxes through ajax
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
         utils = Utils()
 
@@ -157,7 +165,7 @@ def show_phylo_canvas(request):
     manage check boxes through ajax
     """
 
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
         utils = Utils()
         key_with_project_id = "project_id"
@@ -230,9 +238,12 @@ def show_phylo_canvas(request):
                         not os.path.exists(file_name_root_json)
                         or os.path.getsize(file_name_root_json) == 0
                     ):
-                        with open(
-                            file_name_root_json, "w", encoding="utf-8"
-                        ) as handle_write, open(file_name_root_sample) as handle_in_csv:
+                        with (
+                            open(
+                                file_name_root_json, "w", encoding="utf-8"
+                            ) as handle_write,
+                            open(file_name_root_sample) as handle_in_csv,
+                        ):
                             reader = csv.DictReader(handle_in_csv)
                             all_data = json.loads(json.dumps(list(reader)))
                             dt_result = {}
@@ -285,7 +296,7 @@ def show_variants_as_a_table(request):
     """
     return table with variants
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
         key_with_project_id = "project_id"
         if key_with_project_id in request.GET:
@@ -305,6 +316,7 @@ def show_variants_as_a_table(request):
                             )
                         )
                     )
+
                     data["static_table_filter"] = mark_safe(
                         request.build_absolute_uri(
                             os.path.join(settings.STATIC_URL, "vendor/tablefilter")
@@ -320,7 +332,7 @@ def show_aln2pheno(request):
     """
     return table with variants
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
         key_with_project_id = "project_id"
         if key_with_project_id in request.GET:
@@ -354,12 +366,48 @@ def show_aln2pheno(request):
 
 
 @csrf_protect
+def show_flumut(request):
+    """
+    return table with variants
+    """
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        data = {"is_ok": False}
+        key_with_project_id = "project_id"
+        if key_with_project_id in request.GET:
+            project_id = int(request.GET.get(key_with_project_id))
+            try:
+                project = Project.objects.get(id=project_id)
+                out_file = project.get_global_file_by_project(
+                    TypePath.MEDIA_ROOT,
+                    Project.PROJECT_FILE_NAME_Flumut_markers_report,
+                )
+                if os.path.exists(out_file) and os.stat(out_file).st_size > 0:
+                    data["is_ok"] = True
+                    data["url_path_flumut"] = mark_safe(
+                        request.build_absolute_uri(
+                            project.get_global_file_by_project(
+                                TypePath.MEDIA_URL,
+                                Project.PROJECT_FILE_NAME_Flumut_markers_report,
+                            )
+                        )
+                    )
+                    data["static_table_filter"] = mark_safe(
+                        request.build_absolute_uri(
+                            os.path.join(settings.STATIC_URL, "vendor/tablefilter")
+                        )
+                    )
+            except Project.DoesNotExist:
+                pass
+        return JsonResponse(data)
+
+
+@csrf_protect
 def show_coverage_as_a_table(request):
     """
     return table with coverage
     """
 
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
         key_with_project_id = "project_id"
         key_client_width = "client_width"
@@ -371,6 +419,14 @@ def show_coverage_as_a_table(request):
                 default_software = DefaultProjectSoftware()
                 utils = Utils()
                 project = Project.objects.get(id=project_id)
+                project_mdcg = default_software.get_software_project_mdcg_illumina(
+                    project
+                )
+                show_coverage_modal = (
+                    'href="#coverageModal"'
+                    if project_mdcg.name == SoftwareNames.SOFTWARE_SNIPPY_name
+                    else ""
+                )
 
                 ### get all elements and gene names
                 geneticElement = utils.get_elements_and_genes(
@@ -445,7 +501,8 @@ def show_coverage_as_a_table(request):
                                 sequence_name, Coverage.COVERAGE_MORE_9
                             )
                         )
-                        href_sample = '<a href="#coverageModal" id="id_table-coverage_{}_{}" data-toggle="modal" class="tip" project_sample_id="{}" sequence="{}" title="{}"></a>'.format(
+                        href_sample = '<a {} id="id_table-coverage_{}_{}" data-toggle="modal" class="tip" project_sample_id="{}" sequence="{}" title="{}"></a>'.format(
+                            show_coverage_modal,
                             count_projects,
                             count_sequences,
                             project_sample.id,
@@ -454,14 +511,19 @@ def show_coverage_as_a_table(request):
                                 project_sample.sample.name, sequence_name
                             ),
                         )
-                        content += '<td id="id_table-coverage_content_{}_{}" class="table-coverage-image" value_data="{}" '.format(
-                            count_projects, count_sequences, coverage_value
-                        ) + 'value_data_average="{}" color_graphic="{}" size="{}" value_limit_coverage="{}">{}</td>'.format(
-                            coverage_value_average,
-                            coverage.get_color(sequence_name, limit_to_mask_consensus),
-                            size_elements,
-                            coverage.get_middle_limit(),
-                            href_sample,
+                        content += (
+                            '<td id="id_table-coverage_content_{}_{}" class="table-coverage-image" value_data="{}" '.format(
+                                count_projects, count_sequences, coverage_value
+                            )
+                            + 'value_data_average="{}" color_graphic="{}" size="{}" value_limit_coverage="{}">{}</td>'.format(
+                                coverage_value_average,
+                                coverage.get_color(
+                                    sequence_name, limit_to_mask_consensus
+                                ),
+                                size_elements,
+                                coverage.get_middle_limit(),
+                                href_sample,
+                            )
                         )
                         count_sequences += 1
 
@@ -486,7 +548,7 @@ def show_msa_nucleotide(request):
     """
     manage msa nucleotide alignments
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         software = Software()
         utils = Utils()
         data = {"is_ok": False}
@@ -524,11 +586,11 @@ def show_msa_nucleotide(request):
                     last_name_seq = None
                     if not file_name_gff3 is None:
                         last_name_seq = utils.get_last_name_from_fasta(file_name_fasta)
-
                     if os.path.exists(file_name_fasta):
                         file_name_fasta = project.get_global_file_by_project(
                             TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_MAFFT
                         )
+
                         data["alignment_fasta_show_id"] = mark_safe(
                             request.build_absolute_uri(file_name_fasta)
                         )
@@ -616,7 +678,7 @@ def show_msa_protein(request):
     """
     manage check boxes through ajax
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
         key_with_project_id = "project_id"
         if key_with_project_id in request.GET:
@@ -698,7 +760,7 @@ def show_count_variations(request):
     """
     get chart information
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
         key_with_project_id = "project_id"
         if key_with_project_id in request.GET:
@@ -710,9 +772,7 @@ def show_count_variations(request):
                 data["data_less_50"] = []  ## number of variations less than 50
                 data["data_50_var_90_50"] = []  ##number of variations 50<var<90
 
-                data_out = (
-                    []
-                )  ## [[#<50, 50<var<90, sample name], [#<50, 50<var<90, sample name], ....]
+                data_out = []  ## [[#<50, 50<var<90, sample name], [#<50, 50<var<90, sample name], ....]
                 for project_sample in project.project_samples.all():
                     if project_sample.is_deleted:
                         continue
@@ -756,7 +816,7 @@ def get_cds_from_element(request):
     """
     return the cds's for a specific element, can be more than one
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
         key_with_project_id = "project_id"
         if key_with_project_id in request.GET:
@@ -785,7 +845,7 @@ def get_image_coverage(request):
     """
     get image coverage
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
         key_with_project_sample_id = "project_sample_id"
         key_element = "element"
@@ -821,11 +881,10 @@ def update_project_pangolin(request):
     """
     get image coverage
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
         key_with_project_id = "project_id"
         if key_with_project_id in request.GET:
-
             project_id = request.GET[key_with_project_id]
             try:
                 project = Project.objects.get(pk=project_id)
@@ -837,7 +896,7 @@ def update_project_pangolin(request):
                 metaKeyAndValue = MetaKeyAndValue()
                 manageDatabase = ManageDatabase()
                 try:
-                    process_SGE = ProcessSGE()
+                    process_SGE = ProcessSched()
                     project = Project.objects.get(id=project_id)
                     taskID = process_SGE.set_collect_update_pangolin_lineage(
                         project, request.user
@@ -860,11 +919,59 @@ def update_project_pangolin(request):
 
 
 @csrf_protect
+def update_project_mutation_report(request):
+    """
+    get image coverage
+    """
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        data = {"is_ok": False}
+        key_with_project_id = "project_id"
+        if key_with_project_id in request.GET:
+            project_id = request.GET[key_with_project_id]
+            try:
+                project = Project.objects.get(pk=int(project_id))
+            except Project.DoesNotExist:
+                import traceback
+
+                traceback.print_exc()
+                return JsonResponse(data)
+
+            try:
+                ### need to send a message to recalculate the global files
+                metaKeyAndValue = MetaKeyAndValue()
+                manageDatabase = ManageDatabase()
+                try:
+                    process_SGE = ProcessSched()
+                    project = Project.objects.get(id=project_id)
+                    taskID = process_SGE.set_collect_update_mutation_report(
+                        project, request.user
+                    )
+
+                    manageDatabase.set_project_metakey(
+                        project,
+                        request.user,
+                        metaKeyAndValue.get_meta_key(
+                            MetaKeyAndValue.META_KEY_Queue_TaskID_Project,
+                            project.id,
+                        ),
+                        MetaKeyAndValue.META_VALUE_Queue,
+                        taskID,
+                    )
+
+                    data = {"is_ok": True}
+                except Exception as e:
+                    data = {"is_ok": False}
+            except ProjectSample.DoesNotExist as e:
+                pass
+        return JsonResponse(data)
+
+
+@csrf_protect
 def show_igv(request):
     """
     get data for IGV
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
         key_with_project_sample_id = "project_sample_id"
         if key_with_project_sample_id in request.GET:
@@ -872,21 +979,29 @@ def show_igv(request):
                 project_sample = ProjectSample.objects.get(
                     id=request.GET.get(key_with_project_sample_id)
                 )
+                default_project_software = DefaultProjectSoftware()
+
+                software_mdcg = (
+                    default_project_software.get_software_project_sample_mdcg_illumina(
+                        project_sample=project_sample,
+                    )
+                )
+
                 if project_sample.is_sample_illumina():
                     path_name_bam = project_sample.get_file_output(
                         TypePath.MEDIA_URL,
                         FileType.FILE_BAM,
-                        SoftwareNames.SOFTWARE_SNIPPY_name,
+                        software_mdcg.name,
                     )
                     path_name_bai = project_sample.get_file_output(
                         TypePath.MEDIA_URL,
                         FileType.FILE_BAM_BAI,
-                        SoftwareNames.SOFTWARE_SNIPPY_name,
+                        software_mdcg.name,
                     )
                     path_name_vcf = project_sample.get_file_output(
                         TypePath.MEDIA_URL,
                         FileType.FILE_VCF,
-                        SoftwareNames.SOFTWARE_SNIPPY_name,
+                        software_mdcg.name,
                     )
                 else:
                     path_name_bam = project_sample.get_file_output(
@@ -983,7 +1098,7 @@ def validate_project_reference_name(request):
     """
     test if exist this project name
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         project_name = request.GET.get("project_name")
         request.session[Constants.PROJECT_NAME_SESSION] = project_name
 
@@ -1004,7 +1119,7 @@ def validate_reference_name(request):
     """
     test if exist this reference name
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         reference_name = request.GET.get("reference_name")
 
         data = {
@@ -1020,12 +1135,32 @@ def validate_reference_name(request):
 
 
 @csrf_protect
+def validate_primer_name(request):
+    """
+    test if this primer name exists
+    """
+    if request.is_ajax():
+        primer_name = request.GET.get("primer_name")
+
+        data = {
+            "is_taken": Primer.objects.filter(
+                name__iexact=primer_name,
+                is_deleted=False,
+                owner__username=request.user.username,
+            ).exists()
+        }
+        if data["is_taken"]:
+            data["error_message"] = _("There is already a primer set with this name.")
+        return JsonResponse(data)
+
+
+@csrf_protect
 def add_single_value_database(request):
     """
     add a single value to a table in database
     possible tables to add: TagName, DataSet, VaccineStatus
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False, "message": "Fail in the system..."}
         key_type_data = "type_data"
         key_value = "value"
@@ -1086,7 +1221,7 @@ def remove_single_value_database(request):
     """
     test if is prossible to remove
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False, "message": "Fail in the system..."}
         key_type_data = "type_data"
         key_value = "value"
@@ -1204,12 +1339,11 @@ def remove_reference(request):
     """
     remove a reference. It can only be removed if not belongs to any deleted project
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
         reference_id_a = "reference_id"
 
         if reference_id_a in request.GET:
-
             ## some pre-requisites
             if not request.user.is_active or not request.user.is_authenticated:
                 return JsonResponse(data)
@@ -1245,16 +1379,76 @@ def remove_reference(request):
 
 @transaction.atomic
 @csrf_protect
+def remove_primer(request):
+    """
+    remove a primer. It can only be removed if the is no active project using that as parameter
+    """
+    if request.is_ajax():
+        data = {"is_ok": False}
+        primer_id_a = "primer_id"
+
+        if primer_id_a in request.GET:
+            ## some pre-requisites
+            if not request.user.is_active or not request.user.is_authenticated:
+                data = {"is_ok": False, "reason": "User not authenticated"}
+                return JsonResponse(data)
+            try:
+                profile = Profile.objects.get(user__pk=request.user.pk)
+            except Profile.DoesNotExist:
+                data = {
+                    "is_ok": False,
+                    "reason": "User " + request.user + " does not exist",
+                }
+                return JsonResponse(data)
+            if profile.only_view_project:
+                data = {
+                    "is_ok": False,
+                    "reason": "User " + request.user + " cannot modify data",
+                }
+                return JsonResponse(data)
+
+            primer_id = request.GET[primer_id_a]
+            try:
+                primer = Primer.objects.get(pk=primer_id)
+            except Profile.DoesNotExist:
+                data = {
+                    "is_ok": False,
+                    "reason": "Primer " + primer_id + " does not exist",
+                }
+                return JsonResponse(data)
+
+            ## different owner
+            if primer.owner.pk != request.user.pk:
+                data = {
+                    "is_ok": False,
+                    "reason": "Primer owner different from the owner of this primer",
+                }
+                return JsonResponse(data)
+
+            # TODO Need to go to all projects from this user and see
+            # if there is any project using the primer as parameter
+
+            ### now you can remove
+            primer.is_deleted = True
+            primer.is_deleted_in_file_system = False
+            primer.date_deleted = datetime.now()
+            primer.save()
+            data = {"is_ok": True}
+
+        return JsonResponse(data)
+
+
+@transaction.atomic
+@csrf_protect
 def remove_sample(request):
     """
     remove a sample, It can only be removed if not belongs to any deleted project
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False, "present_in_televir_project": False}
 
         sample_id_a = "sample_id"
         if sample_id_a in request.GET:
-
             ## some pre-requisites
             if not request.user.is_active or not request.user.is_authenticated:
                 return JsonResponse(data)
@@ -1321,7 +1515,7 @@ def remove_sample(request):
                         break
 
             ## refresh sample list for this user
-            process_SGE = ProcessSGE()
+            process_SGE = ProcessSched()
             process_SGE.set_create_sample_list_by_user(sample.owner, [])
 
             data = {"is_ok": True}
@@ -1335,12 +1529,11 @@ def swap_technology(request):
     Swaps technology of a sample, and rerun the preprocessing step.
     It can only be performed if not belongs to any non-deleted project
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False, "present_in_televir_project": False, "message": "Start"}
 
         sample_id_a = "sample_id"
         if sample_id_a in request.GET:
-
             ## some pre-requisites
             if not request.user.is_active or not request.user.is_authenticated:
                 data["message"] = "User not authenticated"
@@ -1401,9 +1594,9 @@ def swap_technology(request):
 
             ### now you can swap technology
             try:
-                process_SGE = ProcessSGE()
-                (job_name_wait, job_name) = request.user.profile.get_name_sge_seq(
-                    Profile.SGE_PROCESS_clean_sample, Profile.SGE_SAMPLE
+                process_SGE = ProcessSched()
+                (job_name_wait, job_name) = request.user.profile.get_name_slurm_seq(
+                    Constants.PROCESS_clean_sample, Constants.PROCESS_SAMPLE
                 )
                 if (
                     sample.get_type_technology()
@@ -1452,12 +1645,11 @@ def remove_project(request):
     """
     remove a project.
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
         project_id_a = "project_id"
 
         if project_id_a in request.GET:
-
             ## some pre-requisites
             if not request.user.is_active or not request.user.is_authenticated:
                 return JsonResponse(data)
@@ -1493,7 +1685,17 @@ def remove_project(request):
                 project_sample.save()
 
             ## refresh sample and project list for this user
-            process_SGE = ProcessSGE()
+            process_SGE = ProcessSched()
+            ### kill any processes that may be running
+            # try:
+            process_SGE.kill_project_samples(
+                request.user.pk, project, project.project_samples.all()
+            )
+            # except Exception as e:
+            #    #data = {"is_ok": False, "message_number_of_changes" : "Error " + str(e), "message" : "Error " + str(e)}
+            #    data = {"is_ok": False}
+            #    return JsonResponse(data)
+
             process_SGE.set_create_sample_list_by_user(request.user, [])
             process_SGE.set_create_project_list_by_user(request.user)
             data = {"is_ok": True}
@@ -1506,7 +1708,7 @@ def remove_televir_project(request):
     """
     remove a project.
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
         project_id_a = "project_id"
 
@@ -1563,12 +1765,11 @@ def remove_televir_project_sample(request):
     """
     remove a project sample.
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
         project_sample_id_a = "project_sample_id"
 
         if project_sample_id_a in request.GET:
-
             ## some pre-requisites
             if not request.user.is_active or not request.user.is_authenticated:
                 return JsonResponse(data)
@@ -1605,12 +1806,11 @@ def remove_project_sample(request):
     """
     remove a project sample.
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
         project_sample_id_a = "project_sample_id"
 
         if project_sample_id_a in request.GET:
-
             ## some pre-requisites
             if not request.user.is_active or not request.user.is_authenticated:
                 return JsonResponse(data)
@@ -1641,7 +1841,7 @@ def remove_project_sample(request):
             metaKeyAndValue = MetaKeyAndValue()
             manageDatabase = ManageDatabase()
             try:
-                process_SGE = ProcessSGE()
+                process_SGE = ProcessSched()
                 taskID = process_SGE.set_collect_global_files(
                     project_sample.project, request.user
                 )
@@ -1672,12 +1872,11 @@ def remove_uploaded_file(request):
     """
     remove a project.
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
         uploaded_file_id_a = "uploaded_file_id"
 
         if uploaded_file_id_a in request.GET:
-
             ## some pre-requisites
             if not request.user.is_active or not request.user.is_authenticated:
                 return JsonResponse(data)
@@ -1720,7 +1919,7 @@ def remove_uploaded_files(request):
     """
     remove fastq files, all not processed
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         number_files_removed = 0
         data = {"is_ok": False}
         data["number_files_removed"] = number_files_removed
@@ -1744,7 +1943,6 @@ def remove_uploaded_files(request):
             type_file__name=TypeFile.TYPE_FILE_fastq_gz,
         )
         for uploaded_file in query_set:
-
             ### now you can remove
             uploaded_file.is_deleted = True
             uploaded_file.is_deleted_in_file_system = False
@@ -1771,7 +1969,7 @@ def remove_unattached_samples(request):
     """
     remove unattached samples
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         number_samples_removed = 0
         data = {"is_ok": False}
         data["number_samples_removed"] = number_samples_removed
@@ -1828,7 +2026,7 @@ def relink_uploaded_files(request):
     """
     relink fastq files that are not yet linked
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
         data["message_number_files_relinked"] = "No files were linked."
 
@@ -1871,7 +2069,7 @@ def unlock_sample_file(request):
     """
     unlock sample list files, drop all samples not processed yet
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         number_of_changes = 0
         data = {"is_ok": False}
         data["number_of_changes"] = number_of_changes
@@ -1898,7 +2096,6 @@ def unlock_sample_file(request):
             is_deleted=False, is_processed=False, owner=request.user, type_file=metaKey
         )
         for uploadfile in lst_files:
-
             ## teste the number files already processed
             if uploadfile.number_files_processed == uploadfile.number_files_to_process:
                 continue
@@ -1923,7 +2120,7 @@ def get_process_running(request):
     """
     get process running and to run for a specific user
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
 
         ## some pre-requisites
@@ -1959,8 +2156,8 @@ def submit_sge(request):
     """
     get process running and to run for a specific user
     """
-    if request.is_ajax():
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
-        process_SGE = ProcessSGE()
-        process_SGE.submit_dummy_sge()
+        process_SGE = ProcessSched()
+        process_SGE.submit_dummy_job()
         return JsonResponse(data)

@@ -11,35 +11,25 @@ from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from constants.constants import TypePath
 from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RunMain, SoftwareTree,
+                                            SoftwareTreeNode)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.modules.run_main import RunMainTree_class
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.update_DBs import (
-    Update_Assembly,
-    Update_Classification,
-    Update_Metagenomics,
-    Update_Remap,
-    Update_RunMain_Initial,
-    Update_RunMain_Secondary,
-    get_run_parents,
-)
-from pathogen_identification.utilities.utilities_general import simplify_name_lower
+    Update_Assembly, Update_Classification, Update_Metagenomics, Update_Remap,
+    Update_RunMain_Initial, Update_RunMain_Secondary, get_run_parents)
+from pathogen_identification.utilities.utilities_general import \
+    simplify_name_lower
 from pathogen_identification.utilities.utilities_pipeline import (
-    SoftwareTreeUtils,
-    Utils_Manager,
-)
-from pathogen_identification.utilities.utilities_views import ReportSorter
+    Parameter_DB_Utility, SoftwareTreeUtils, Utils_Manager)
+from pathogen_identification.utilities.utilities_views import (
+    ReportSorter, final_report_best_cov_by_accid)
 from settings.constants_settings import ConstantsSettings as SettingsConstants
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 
 
 class PathogenIdentificationDeploymentCore:
@@ -55,11 +45,6 @@ class PathogenIdentificationDeploymentCore:
         threads: int = 3,
     ):
         self.sample = sample
-        # self.project = sample.project
-        # self.project_pk = sample.project.pk
-        # self.project_name = sample.project.name
-        # self.username = sample.project.owner.username
-        # self.technology = sample.project.technology
         self.prefix = prefix
 
         self.deployment_root_dir = deployment_root_dir
@@ -303,12 +288,19 @@ class PathogenIdentification_SingleDeployment(PathogenIdentificationDeploymentCo
         self.parameter_set = ParameterSet.objects.get(pk=pk)
         self.tree_makup = self.parameter_set.leaf.software_tree.global_index
 
-    def configure_params(self):
+    @property
+    def pipeline_type(self):
+        try: 
+            return self.parameter_set.leaf.software_tree.pipeline_type
+        except AttributeError:
+            return None
+
+    def configure_params(self) -> bool:
         """get pipeline parameters from database"""
 
         software_tree_utils = SoftwareTreeUtils(self.project.owner, self.project)
 
-        all_paths = software_tree_utils.get_all_technology_pipelines(self.tree_makup)
+        all_paths = software_tree_utils.get_all_technology_pipelines(pipeline_type=self.pipeline_type)
 
         self.run_params_db = all_paths.get(self.pipeline_index, None)
 
@@ -403,7 +395,7 @@ class Run_Main_from_Leaf:
         self.pk = self.parameter_set.pk
 
         self.container = PathogenIdentification_SingleDeployment(
-            pipeline_index=pipeline_leaf.index,
+            pipeline_index=pipeline_leaf.pk,
             sample=input_data,
             prefix=prefix,
             deployment_root_dir=odir,
@@ -506,10 +498,7 @@ class Run_Main_from_Leaf:
                     self.container.run_engine.remap_params.manual_references_include
                     is True
                 ):
-                    self.container.run_engine.metadata_tool.get_manual_references(
-                        self.sample,
-                        max_accids=self.container.run_engine.remap_params.max_accids,
-                    )
+                    self.container.run_engine.metadata_tool.get_manual_references(self.sample)
 
         except Exception as e:
             print(e)
@@ -520,7 +509,7 @@ class Run_Main_from_Leaf:
 
     def set_run_process_running(self):
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         process_SGE.set_process_controler(
             self.user,
             process_controler.get_name_televir_run(
@@ -533,7 +522,7 @@ class Run_Main_from_Leaf:
 
     def set_run_process_error(self):
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         process_SGE.set_process_controler(
             self.user,
             process_controler.get_name_televir_run(
@@ -546,7 +535,7 @@ class Run_Main_from_Leaf:
 
     def set_run_process_finished(self):
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         process_SGE.set_process_controler(
             self.user,
             process_controler.get_name_televir_run(
@@ -606,6 +595,7 @@ class Run_Main_from_Leaf:
             )
             if not db_updated:
                 return False
+        
         except Exception as e:
             print(traceback.format_exc())
             print(e)
@@ -675,8 +665,6 @@ class Run_Main_from_Leaf:
 
     def register_error(self):
         self.set_run_process_error()
-        print("REGISTERING ERROR")
-        print("RUN PS PK", self.pk)
 
         new_run = ParameterSet.objects.get(pk=self.pk)
         new_run.register_error()
@@ -706,19 +694,35 @@ class Run_Main_from_Leaf:
         if final_reports.exists() is False:
             return
 
-        report_sorter = ReportSorter(self.sample, final_reports, report_layout_params)
 
-        try:
+        runs = RunMain.objects.filter(parameter_set=self.parameter_set).exclude(run_type=RunMain.RUN_TYPE_STORAGE)
+        
+        for run in runs:
+
+            final_report = FinalReport.objects.filter(
+                sample=self.parameter_set.sample, run=run
+            ).order_by("-coverage")
+            #
+            report_sorter = ReportSorter(
+                self.parameter_set.sample, final_report, report_layout_params
+            )
             report_sorter.sort_reports_save()
-        except Exception as e:
-            print(e)
-            print(traceback.format_exc())
+            report_sorter.reports_aggregate_register(report_layout_params, run)
 
-            print("Error in report sorter")
-            return
+        final_reports = FinalReport.objects.filter(
+            sample=self.parameter_set.sample,
+        ).order_by("-coverage")
+
+        final_reports = final_report_best_cov_by_accid(final_reports)
+        report_sorter = ReportSorter(
+            self.parameter_set.sample, final_reports, report_layout_params
+        )
+        report_sorter.sort_reports_save()
+        report_sorter.reports_aggregate_register(report_layout_params)
 
     def register_completion(self):
         self.set_run_process_finished()
+        self.run_reference_overlap_analysis()
         new_run = ParameterSet.objects.get(pk=self.pk)
         new_run.register_finished()
 
@@ -751,7 +755,6 @@ class Run_Main_from_Leaf:
 
             if run_success:
                 self.register_completion()
-                self.run_reference_overlap_analysis()
                 self.update_project_change_date()
 
             else:

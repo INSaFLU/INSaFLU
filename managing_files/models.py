@@ -7,11 +7,11 @@ from django.conf import settings
 # from django.db.models import Manager as GeoManager
 from django.contrib.auth.models import User
 # Create your models here.
-from django.contrib.gis.db.models import GeoManager  # #  change to django  2.x
+# from django.contrib.gis.db.models import GeoManager  # #  change to django  2.x
 from django.contrib.gis.db.models import PointField
 from django.db import models
 from django.utils.safestring import mark_safe
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 from constants.constants import Constants, FileExtensions, FileType, TypePath
 from constants.constants_mixed_infection import ConstantsMixedInfection
@@ -23,6 +23,11 @@ from settings.constants_settings import ConstantsSettings
 
 
 def reference_directory_path(instance, filename):
+    # file will be uploaded to MEDIA_ROOT/<filename>
+    return "uploads/generic_data/user_{0}/{1}".format(instance.owner.id, filename)
+
+
+def primer_directory_path(instance, filename):
     # file will be uploaded to MEDIA_ROOT/<filename>
     return "uploads/generic_data/user_{0}/{1}".format(instance.owner.id, filename)
 
@@ -74,12 +79,149 @@ class MetaKey(models.Model):
         ]
 
 
+class Primer(models.Model):
+    constants = Constants()
+
+    name = models.CharField(
+        max_length=200, db_index=True, verbose_name="Primer set name"
+    )
+    creation_date = models.DateTimeField(
+        auto_now_add=True, verbose_name="Uploaded Date"
+    )
+
+    ## Size 100K
+    primer_fasta = ContentTypeRestrictedFileField(
+        upload_to=primer_directory_path,
+        content_types=["application/octet-stream"],
+        max_upload_size=settings.MAX_REF_FASTA_FILE,
+        blank=True,
+        null=True,
+        max_length=500,
+    )
+    primer_fasta_name = models.CharField(
+        max_length=200, default="", verbose_name="Fasta file"
+    )
+    hash_primer_fasta = models.CharField(max_length=50, blank=True, null=True)
+
+    ## Size 100K
+    primer_pairs = ContentTypeRestrictedFileField(
+        upload_to=primer_directory_path,
+        content_types=["application/octet-stream"],
+        max_upload_size=settings.MAX_REF_FASTA_FILE,
+        blank=True,
+        null=True,
+        max_length=500,
+    )
+    primer_pairs_name = models.CharField(
+        max_length=200, default="", verbose_name="Tabular file with primer pairs"
+    )
+    hash_primer_pairs = models.CharField(max_length=50, blank=True, null=True)
+
+    owner = models.ForeignKey(
+        User, related_name="primer", blank=True, null=True, on_delete=models.CASCADE
+    )
+    is_deleted = models.BooleanField(default=False, verbose_name="Deleted")
+
+    description = models.CharField(
+        max_length=500, default="", blank=True, null=True, verbose_name="Description"
+    )
+
+    ### if is deleted in file system
+    is_deleted_in_file_system = models.BooleanField(
+        default=False
+    )  ## if this file was removed in file system
+    date_deleted = models.DateTimeField(
+        blank=True, null=True, verbose_name="Date attached"
+    )  ## this date has the time of deleted by web page
+
+    def __str__(self):
+        return self.name
+
+    def get_primer_fasta(self, type_path):
+        """
+        get a path, type_path, from MEDIA_URL or MEDIA_ROOT
+        """
+        path_to_find = self.primer_fasta.name
+        if type_path == TypePath.MEDIA_ROOT:
+            if not path_to_find.startswith("/"):
+                path_to_find = os.path.join(
+                    getattr(settings, "MEDIA_ROOT", None), path_to_find
+                )
+        else:
+            path_to_find = os.path.join(
+                getattr(settings, "MEDIA_URL", None), path_to_find
+            )
+        return path_to_find
+
+    def get_primer_fasta_web(self):
+        """
+        return web link for reference
+        """
+        out_file = self.get_primer_fasta(TypePath.MEDIA_ROOT)
+        if os.path.exists(out_file):
+            return mark_safe(
+                '<a href="{}" download="{}"> {}</a>'.format(
+                    self.get_primer_fasta(TypePath.MEDIA_URL),
+                    os.path.basename(self.get_primer_fasta(TypePath.MEDIA_ROOT)),
+                    self.constants.short_name(
+                        self.primer_fasta_name, Constants.SHORT_NAME_LENGTH
+                    ),
+                )
+            )
+        return _("File not available.")
+
+    def get_primer_pairs(self, type_path):
+        """
+        get a path, type_path, from MEDIA_URL or MEDIA_ROOT
+        """
+        path_to_find = self.primer_pairs.name
+        if type_path == TypePath.MEDIA_ROOT:
+            if not path_to_find.startswith("/"):
+                path_to_find = os.path.join(
+                    getattr(settings, "MEDIA_ROOT", None), path_to_find
+                )
+        else:
+            path_to_find = os.path.join(
+                getattr(settings, "MEDIA_URL", None), path_to_find
+            )
+        return path_to_find
+
+    def get_primer_pairs_web(self):
+        """
+        return web link for reference
+        """
+        out_file = self.get_primer_pairs(TypePath.MEDIA_ROOT)
+        if os.path.exists(out_file):
+            return mark_safe(
+                '<a href="{}" download="{}"> {}</a>'.format(
+                    self.get_primer_pairs(TypePath.MEDIA_URL),
+                    os.path.basename(self.get_primer_pairs(TypePath.MEDIA_ROOT)),
+                    self.constants.short_name(
+                        self.primer_pairs_name, Constants.SHORT_NAME_LENGTH
+                    ),
+                )
+            )
+        return _("File not available.")
+
+    class Meta:
+        verbose_name = "Primer"
+        verbose_name_plural = "Primers"
+        ordering = [
+            "-creation_date",
+        ]
+        indexes = [
+            models.Index(fields=["name"], name="primer_name_idx"),
+        ]
+
+
 class Reference(models.Model):
     constants = Constants()
 
     ### species
     SPECIES_SARS_COV_2 = "SARS_COV_2"
     SPECIES_MPXV = "MPXV"
+    SPECIES_DENGUE = "DENGUE"
+    SPECIES_WNV = "WNV"
     SPECIES_INFLUENZA = "INFLUENZA"
     SPECIES_RSV = "RSV"
     SPECIES_NOT_SET = "NOT_SET"
@@ -523,7 +665,7 @@ class Sample(models.Model):
     )
     geo_local = PointField(null=True, blank=True, srid=4326)
     ## 4326 which means latitude and longitude
-    geo_manager = GeoManager()
+    # geo_manager = GeoManager()
 
     ### Type/Subtype Virus
     identify_virus = models.ManyToManyField(IdentifyVirus)
@@ -1001,6 +1143,24 @@ class Project(models.Model):
     PROJECT_FILE_NAME_Aln2pheno_flagged_carabelli = "aln2pheno_flagged_mutation_report_EpitopeResidues_Carabelli_2023.tsv"  ### has results of aln2pheno
     PROJECT_FILE_NAME_Aln2pheno_zip = "aln2pheno.zip"  ### has results of aln2pheno
 
+    PROJECT_FILE_NAME_Flumut_mutation_report = (
+        "flumut_mutation_report.tsv"  ### has results of flumut
+    )
+    PROJECT_FILE_NAME_Flumut_markers_report = (
+        "flumut_markers_report.tsv"  ### has results of flumut
+    )
+    PROJECT_FILE_NAME_Flumut_litterature_report = (
+        "flumut_litterature_report.tsv"  ### has results of flumut
+    )
+    PROJECT_FILE_NAME_flumut_excel = (
+        "flumut_full_report.xlsx"  ### has results of flumut
+    )
+
+    PROJECT_FILE_NAME_flumut_version = "flumut_version.txt"  ### has results of flumut
+
+    PROJECT_FILE_NAME_IRMA_OUTPUT_zipped = "irma_output.zip"  ### has results of irma
+    PROJECT_FILE_NAME_IRMA_MIXED_POSITIONS_folder = "irma_mixed_variants"
+
     PROJECT_FILE_NAME_all_files_zipped = "AllFiles.zip"  ### Several files zipped
 
     ## put the type file here to clean if there isn't enough sequences to create the trees and alignments
@@ -1328,6 +1488,18 @@ class ProjectSample(models.Model):
 
     def __str__(self):
         return self.project.name
+
+    @property
+    def name(self):
+        return self.sample.name
+
+    @property
+    def reference_fasta(self):
+        return self.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT)
+
+    @property
+    def reference_gbk(self):
+        return self.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT)
 
     def get_global_file_by_element(
         self, type_path, prefix_file_name, sequence_name, extension
@@ -1819,6 +1991,9 @@ class ProcessControler(models.Model):
     def get_name_collect_all_projects_user(self, user):
         return "{}{}".format(ProcessControler.PREFIX_COLLECT_ALL_PROJECTS_USER, user.pk)
 
+    def get_name_televir_reference_update(self, user_pk):
+        return "televir_reference_update_{}".format(user_pk)
+
     def get_name_televir_project(self, project_pk):
         return "{}{}".format(ProcessControler.PREFIX_TELEVIR_PROJECT, project_pk)
 
@@ -1831,7 +2006,7 @@ class ProcessControler(models.Model):
         return "{}_combined_metagen_{}_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, sample_pk, leaf_pk
         )
-    
+
     def get_name_televir_project_sample_panel_map(self, sample_pk, leaf_pk):
         return "{}_televir_panel_map_{}_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, sample_pk, leaf_pk
@@ -1851,7 +2026,7 @@ class ProcessControler(models.Model):
         return "{}_teleflu_ref_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, ref_id
         )
-    
+
     def get_name_file_televir_teleflu_ref_create(self, ref_id):
         return "{}_teleflu_file_ref_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, ref_id
@@ -1889,7 +2064,7 @@ class ProcessControler(models.Model):
         return "{}_add_references_to_sample_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, sample_pk
         )
-    
+
     def get_name_update_televir_project(self, project_id):
         return "{}_update_project_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, project_id

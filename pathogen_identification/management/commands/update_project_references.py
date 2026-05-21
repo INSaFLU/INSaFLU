@@ -1,18 +1,14 @@
 import traceback
-from datetime import date
 
 from django.conf import settings
-from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
 from managing_files.models import ProcessControler
 from pathogen_identification.models import PIProject_Sample, Projects
 from pathogen_identification.utilities.tree_deployment import TreeProgressGraph
 from pathogen_identification.utilities.utilities_views import (
-    RawReferenceUtils,
-    calculate_reports_overlaps,
-)
-from utils.process_SGE import ProcessSGE
+    RawReferenceUtils, calculate_reports_overlaps)
+from utils.process_SGE import ProcessSched
 
 
 class Command(BaseCommand):
@@ -34,7 +30,7 @@ class Command(BaseCommand):
         all_project_samples = PIProject_Sample.objects.filter(
             is_deleted=False, project__is_deleted=False, project=project
         )
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         process_controler = ProcessControler()
 
         process_SGE.set_process_controler(

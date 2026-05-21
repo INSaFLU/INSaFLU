@@ -50,6 +50,22 @@
 
 }
 
+.spinner-container {
+    display: flex; /* Align children horizontally */
+    justify-content: center; /* Center the spinner */
+    align-items: center; /* Center the spinner */
+    height: 100%; /* Fill the height of the container */
+    margin-left: 10px; /* Add some space to the left */
+}
+
+.nworkflows {
+    font-size: 1.4em;
+    color: #333;
+    align-self: center;
+    margin-left: 15px;
+    font-weight: bold;
+}
+
 .teleflu-panel-container {
     align-items: center;
     font-size: 0.8em; /* This will make the font size smaller */

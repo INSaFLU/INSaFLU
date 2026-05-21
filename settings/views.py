@@ -1,9 +1,11 @@
 from braces.views import LoginRequiredMixin
 from django.contrib import messages
 from django.db import transaction
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
+from django.utils.functional import cached_property
 from django.views.generic import ListView, TemplateView, UpdateView
-
+from view_breadcrumbs import BaseBreadcrumbMixin
+from constants.constants import Constants
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
 from datasets.manage_database import ManageDatabase as ManageDatasetDatabase
@@ -22,14 +24,20 @@ from settings.default_software import DefaultSoftware
 from settings.forms import SoftwareForm
 from settings.models import Parameter, Software
 from settings.tables import SoftwaresTable
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 from utils.utils import ShowInfoMainPage
 
 # Create your views here.
 
 
-class index(TemplateView):
+class index(BaseBreadcrumbMixin, TemplateView):
     template_name = "settings/index.html"
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Settings Index", reverse("settings-index")),
+        ]
 
     def get_context_data(self, **kwargs):
         context = super(index, self).get_context_data(**kwargs)
@@ -48,7 +56,7 @@ class Maintenance(TemplateView):
     template_name = "settings/maintenance.html"
 
 
-class PIMetagenSampleView(LoginRequiredMixin, ListView):
+class PIMetagenSampleView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
     """
     Home page
     """
@@ -56,6 +64,46 @@ class PIMetagenSampleView(LoginRequiredMixin, ListView):
     #     model = Software
     #     context_object_name = 'software'
     template_name = "settings/settings.html"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            (
+                "Project Index",
+                reverse("project-index"),
+            ),
+            (
+                "TELEVIR Projects",
+                reverse("PIproject_samples", kwargs={"pk": self.kwargs["project_id"]}),
+            ),
+            (
+                self.kwargs["project_name"],
+                reverse("PIproject_samples", kwargs={"pk": self.kwargs["project_id"]}),
+            ),
+            (
+                self.kwargs["sample_name"],
+                reverse("PIproject_sample", kwargs={"pk": self.kwargs["sample_id"]}),
+            ),
+            (
+                "References Management",
+                reverse(
+                    "sample_references_management",
+                    kwargs={"pk": self.kwargs["sample_id"]},
+                ),
+            ),
+        ]
+
+    def setup(self, request, *args, **kwargs):
+        super(PIMetagenSampleView, self).setup(request, *args, **kwargs)
+        sample_id = int(self.kwargs.get("sample", 0))
+        sample = PIProject_Sample.objects.get(pk=sample_id)
+        project_id = sample.project.pk
+        self.kwargs["project_id"] = project_id
+        self.kwargs["project_name"] = sample.project.name
+        self.kwargs["sample_id"] = sample_id
+        self.kwargs["sample_name"] = sample.name
 
     def get_queryset(self):
         """overwrite queryset to not get all software itens available in Software table"""
@@ -150,7 +198,7 @@ class PIMetagenSampleView(LoginRequiredMixin, ListView):
         return context
 
 
-class PISettingsView(LoginRequiredMixin, ListView):
+class PISettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
     """
     Home page
     """
@@ -158,6 +206,18 @@ class PISettingsView(LoginRequiredMixin, ListView):
     #     model = Software
     #     context_object_name = 'software'
     template_name = "settings/settings.html"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Settings Index", reverse("settings-index")),
+            (
+                "Settings Pathogen Identification",
+                reverse("pathogenID_pipeline", args=(0,)),
+            ),
+        ]
 
     def get_queryset(self):
         """overwrite queryset to not get all software itens available in Software table"""
@@ -200,6 +260,7 @@ class PISettingsView(LoginRequiredMixin, ListView):
                     parameter__televir_project=project,
                     parameter__televir_project_sample=None,
                     pipeline_step=software.pipeline_step,
+                    technology__name=project.technology,
                 )
 
             except Software.MultipleObjectsReturned:
@@ -258,6 +319,7 @@ class PISettingsView(LoginRequiredMixin, ListView):
                     parameter__televir_project=project,
                     parameter__televir_project_sample=None,
                     pipeline_step=software.pipeline_step,
+                    technology__name=project.technology,
                 )
 
             except Software.MultipleObjectsReturned:
@@ -331,21 +393,39 @@ class PISettingsView(LoginRequiredMixin, ListView):
             televir_project = Televir_Project.objects.get(pk=int(self.kwargs["level"]))
 
         ### test all defaults first, if exist in database
-        print("############## 1.")
         default_software = DefaultSoftware()
         default_software.test_all_defaults_once(
             self.request.user
         )  ## the user can have defaults yet
-        print("############## done.")
         ### project parameters
+        print(televir_project)
         if televir_project:
             # if not self.check_project_params_exist(televir_project):
+            software_primed = self.check_project_params_exist(televir_project)
             self.duplicate_software_params_global_project_if_missing(televir_project)
             # else:
             self.update_software_params_global_project(televir_project)
 
             technologies = [televir_project.technology]
-
+            print(software_primed)
+            if software_primed == False:
+                from pathogen_identification.utilities.utilities_pipeline import \
+                    SoftwareTreeUtils
+                software_utils = SoftwareTreeUtils(televir_project.owner, televir_project, None)
+                software_utils.set_technology(televir_project.technology)
+                software_utils.deactivate_all_nodes()
+                _ = software_utils.get_sample_pathnodes(
+                    screening=False,
+                    mapping_only=True,
+                )
+                _ = software_utils.get_sample_pathnodes(
+                    screening=True,
+                    mapping_only=False,
+                )
+                _ = software_utils.get_sample_pathnodes(
+                    screening=False,
+                    mapping_only=False,
+                )
         else:
             technologies = ConstantsSettings.vect_technology
 
@@ -358,7 +438,6 @@ class PISettingsView(LoginRequiredMixin, ListView):
         ### IMPORTANT, must have technology__name, because old versions don't
         constant_settings = PICS()
         condensed_pipeline_names = constant_settings.vect_pipeline_names_condensed
-        print("###################")
 
         for technology in technologies:  ## run over all technology
             vect_pipeline_step = []
@@ -468,15 +547,35 @@ class PISettingsGroupsView(PISettingsView):
         ### project parameters
         if televir_project:
             # if not self.check_project_params_exist(televir_project):
+            software_primed = self.check_project_params_exist(televir_project)
             self.duplicate_software_params_global_project_if_missing(televir_project)
             # else:
             self.update_software_params_global_project(televir_project)
 
             technologies = [televir_project.technology]
+            print(software_primed)
+            if software_primed == False:
+                from pathogen_identification.utilities.utilities_pipeline import \
+                    SoftwareTreeUtils
+                software_utils = SoftwareTreeUtils(televir_project.owner, televir_project, None)
+                software_utils.set_technology(televir_project.technology)
+                software_utils.deactivate_all_nodes()
+                _ = software_utils.get_sample_pathnodes(
+                    screening=False,
+                    mapping_only=True,
+                )
+                _ = software_utils.get_sample_pathnodes(
+                    screening=True,
+                    mapping_only=False,
+                )
+                _ = software_utils.get_sample_pathnodes(
+                    screening=False,
+                    mapping_only=False,
+                )
 
         else:
             technologies = ConstantsSettings.vect_technology
-
+        
         all_tables = []  ## order by Technology, Group, PipelineStep, table
         ## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],
         ##    [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...], etc
@@ -568,6 +667,7 @@ class PISettingsGroupsView(PISettingsView):
                             vect_pipeline_step,
                         ]
                     )
+            
             ## if there is software for the pipeline step
             if len(groups_tables) > 0:
                 all_tables.append(
@@ -596,7 +696,7 @@ class PISettingsGroupsView(PISettingsView):
         return context
 
 
-class QCSettingsView(LoginRequiredMixin, ListView):
+class QCSettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
     """
     Home page
     """
@@ -604,6 +704,18 @@ class QCSettingsView(LoginRequiredMixin, ListView):
     #     model = Software
     #     context_object_name = 'software'
     template_name = "settings/settings.html"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Settings Index", reverse("settings-index")),
+            (
+                "Settings Pathogen Identification",
+                reverse("pathogenID_pipeline", args=(0,)),
+            ),
+        ]
 
     def get_queryset(self):
         """overwrite queryset to not get all software itens available in Software table"""
@@ -672,10 +784,19 @@ class QCSettingsView(LoginRequiredMixin, ListView):
         return context
 
 
-class SettingsView(LoginRequiredMixin, ListView):
+class SettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
     """
     Home page
     """
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Settings Index", reverse("settings-index")),
+            ("Settings RefMap", reverse("settings")),
+        ]
 
     #     model = Software
     #     context_object_name = 'software'
@@ -783,11 +904,37 @@ def post_process_args(form, software: Software):
     return form
 
 
-class UpdateParametersView(LoginRequiredMixin, UpdateView):
+class UpdateParametersView(BaseBreadcrumbMixin, LoginRequiredMixin, UpdateView):
     model = Software
     form_class = SoftwareForm
     success_url = reverse_lazy("settings-index")
     template_name = "settings/software_update.html"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+
+        software = Software.objects.get(pk=self.object.pk)
+        settings_return_to = reverse_lazy("settings-index")
+        if software.type_of_use in [
+            Software.TYPE_OF_USE_televir_global,
+            Software.TYPE_OF_USE_televir_settings,
+        ]:
+            settings_return_to = reverse_lazy("pathogenID_pipeline", args=(0,))
+        
+        if software.type_of_use in [
+            Software.TYPE_OF_USE_televir_project,
+            Software.TYPE_OF_USE_televir_project_settings,
+        ]:
+
+            settings_return_to = reverse_lazy("project-settings", args=(software.parameter.first().televir_project.pk,))
+
+        return [
+            ("Settings Index", reverse("settings-index")),
+            ("Settings", settings_return_to),
+            ("Update parameters", reverse("software-update", kwargs={"pk": software.pk}))
+        ]
 
     ## Other solution to get the reference
     ## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1
@@ -797,6 +944,7 @@ class UpdateParametersView(LoginRequiredMixin, UpdateView):
         """
         kw = super(UpdateParametersView, self).get_form_kwargs()
         kw["request"] = self.request  # the trick!
+        
         return kw
 
     def get_success_url(self):
@@ -842,12 +990,19 @@ class UpdateParametersView(LoginRequiredMixin, UpdateView):
                 if not parameter.can_change:
                     continue
                 if parameter.get_unique_id() in form.cleaned_data:
-                    value_from_form = "{}".format(
-                        form.cleaned_data[parameter.get_unique_id()]
-                    )
+                    if parameter.is_multiple_choice():
+                        value_from_form = form.cleaned_data[parameter.get_unique_id()]
+                        value_from_form = ";".join(value_from_form)
+                    else:
+                        value_from_form = "{}".format(
+                            form.cleaned_data[parameter.get_unique_id()]
+                        )
                     if value_from_form != parameter.parameter:
                         b_change = True
-                        parameter.parameter = value_from_form
+                        if value_from_form == "":
+                            parameter.parameter = "None"
+                        else:
+                            parameter.parameter = value_from_form
                         parameter.save()
 
             if b_change:
@@ -874,10 +1029,27 @@ class UpdateParametersView(LoginRequiredMixin, UpdateView):
     form_valid_message = ""  ## need to have this
 
 
-class UpdateParametersTelevirProjView(LoginRequiredMixin, UpdateView):
+class UpdateParametersTelevirProjView(
+    BaseBreadcrumbMixin, LoginRequiredMixin, UpdateView
+):
     model = Software
     form_class = SoftwareForm
     template_name = "settings/software_update.html"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        
+        return [
+            ("Settings Index", reverse("settings-index")),
+            (
+                "Project Settings",
+                reverse("pathogenID_pipeline", kwargs={"level": self.kwargs["pk_televir_project"]}),
+            ),
+            ("Software Settings", "")
+
+        ]
 
     ## Other solution to get the reference
     ## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1
@@ -947,6 +1119,14 @@ class UpdateParametersTelevirProjView(LoginRequiredMixin, UpdateView):
                         form.cleaned_data[parameter.get_unique_id()]
                     )
                     if value_from_form != parameter.parameter:
+                        if value_from_form == "":
+                            parameter.parameter = "None"
+                        else:
+                            if parameter.is_multiple_choice():
+                                value_from_form = form.cleaned_data[
+                                    parameter.get_unique_id()
+                                ]
+                                value_from_form = ";".join(value_from_form)
                         b_change = True
                         parameter.parameter = value_from_form
                         parameter.save()
@@ -979,10 +1159,21 @@ class UpdateParametersTelevirProjView(LoginRequiredMixin, UpdateView):
     form_valid_message = ""  ## need to have this
 
 
-class UpdateParametersProjView(LoginRequiredMixin, UpdateView):
+class UpdateParametersProjView(BaseBreadcrumbMixin, LoginRequiredMixin, UpdateView):
     model = Software
     form_class = SoftwareForm
     template_name = "settings/software_update.html"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Project Index", reverse("project-index")),
+            ("Projects", reverse("projects")),
+            ("Project settings", reverse("project-settings", self.kwargs["pk_proj"])),
+            ("Update parameters", reverse("software-update", kwargs={"pk": self.kwargs["pk"]})),
+        ]
 
     ## Other solution to get the reference
     ## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1
@@ -1076,10 +1267,23 @@ class UpdateParametersProjView(LoginRequiredMixin, UpdateView):
     form_valid_message = ""  ## need to have this
 
 
-class UpdateParametersDatasetView(LoginRequiredMixin, UpdateView):
+class UpdateParametersDatasetView(BaseBreadcrumbMixin, LoginRequiredMixin, UpdateView):
     model = Software
     form_class = SoftwareForm
     template_name = "settings/software_update.html"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return [
+            ("Project Index", reverse("project-index")),
+            ("Projects", reverse("projects")),
+            (
+                "Datasets",
+                reverse("dataset-settings", self.kwargs["pk_dataset"]),
+            ),
+        ]
 
     ## Other solution to get the reference
     ## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1
@@ -1156,7 +1360,7 @@ class UpdateParametersDatasetView(LoginRequiredMixin, UpdateView):
                         # Now update the meetadata, if there are dataset_consensus
                         metaKeyAndValue = MetaKeyAndValue()
                         manageDatabase = ManageDatasetDatabase()
-                        process_SGE = ProcessSGE()
+                        process_SGE = ProcessSched()
 
                         ### get the user
                         user = dataset.owner
@@ -1213,10 +1417,32 @@ class UpdateParametersDatasetView(LoginRequiredMixin, UpdateView):
     form_valid_message = ""  ## need to have this
 
 
-class UpdateParametersProjSampleView(LoginRequiredMixin, UpdateView):
+class UpdateParametersProjSampleView(
+    BaseBreadcrumbMixin, LoginRequiredMixin, UpdateView
+):
     model = Software
     form_class = SoftwareForm
     template_name = "settings/software_update.html"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return (
+            [
+                ("Project Index", reverse("project-index")),
+                ("Projects", reverse("projects")),
+                (
+                    "Show project results",
+                    reverse(
+                        "show-sample-project-results",
+                        kwargs={"pk": self.kwargs["pk_proj_sample"]},
+                    ),
+                ),
+                ("Project sample settings", reverse("sample-project-settings")),
+                ("Update parameters", reverse("software-update", kwargs={"pk": self.kwargs["pk"]})),
+            ],
+        )
 
     ## Other solution to get the reference
     ## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1
@@ -1291,7 +1517,7 @@ class UpdateParametersProjSampleView(LoginRequiredMixin, UpdateView):
             ### re-run data
             metaKeyAndValue = MetaKeyAndValue()
             manageDatabase = ManageDatabase()
-            process_SGE = ProcessSGE()
+            process_SGE = ProcessSched()
 
             ### change flag to nor finished
             project_sample.is_finished = False
@@ -1302,8 +1528,8 @@ class UpdateParametersProjSampleView(LoginRequiredMixin, UpdateView):
 
             ### create a task to perform the analysis of snippy and freebayes
             try:
-                (job_name_wait, job_name) = user.profile.get_name_sge_seq(
-                    Profile.SGE_PROCESS_projects, Profile.SGE_GLOBAL
+                (job_name_wait, job_name) = user.profile.get_name_slurm_seq(
+                    Constants.PROCESS_projects, Constants.PROCESS_GLOBAL
                 )
                 if project_sample.is_sample_illumina():
                     taskID = process_SGE.set_second_stage_snippy(
@@ -1325,20 +1551,6 @@ class UpdateParametersProjSampleView(LoginRequiredMixin, UpdateView):
                     taskID,
                 )
 
-                ### need to collect global files again
-                taskID = process_SGE.set_collect_global_files(
-                    project_sample.project, user
-                )
-                manageDatabase.set_project_metakey(
-                    project_sample.project,
-                    user,
-                    metaKeyAndValue.get_meta_key(
-                        MetaKeyAndValue.META_KEY_Queue_TaskID_Project,
-                        project_sample.project.id,
-                    ),
-                    MetaKeyAndValue.META_VALUE_Queue,
-                    taskID,
-                )
             except:
                 pass
 
@@ -1374,10 +1586,30 @@ class UpdateParametersProjSampleView(LoginRequiredMixin, UpdateView):
     form_valid_message = ""  ## need to have this
 
 
-class UpdateParametersSampleView(LoginRequiredMixin, UpdateView):
+class UpdateParametersSampleView(BaseBreadcrumbMixin, LoginRequiredMixin, UpdateView):
     model = Software
     form_class = SoftwareForm
     template_name = "settings/software_update.html"
+
+    add_home = True
+
+    @cached_property
+    def crumbs(self):
+        return (
+            [
+                ("Project Index", reverse("project-index")),
+                ("Projects", reverse("projects")),
+                (
+                    "Show project results",
+                    reverse(
+                        "show-sample-project-results",
+                        kwargs={"pk": self.kwargs["pk_sample"]},
+                    ),
+                ),
+                ("Project sample settings", reverse("sample-project-settings", kwargs={"pk": self.kwargs["pk_sample"]})),
+                ("Update parameters", reverse("software-update", kwargs={"pk" : self.kwargs["pk"]})),
+            ],
+        )
 
     ## Other solution to get the reference
     ## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1
@@ -1458,12 +1690,12 @@ class UpdateParametersSampleView(LoginRequiredMixin, UpdateView):
         if b_change_value:
             ### re-run data
             manageDatabase = ManageDatabase()
-            process_SGE = ProcessSGE()
+            process_SGE = ProcessSched()
 
             ### create a task to perform the analysis of NanoFilt
             try:
-                (job_name_wait, job_name) = sample.owner.profile.get_name_sge_seq(
-                    Profile.SGE_PROCESS_clean_sample, Profile.SGE_SAMPLE
+                (job_name_wait, job_name) = sample.owner.profile.get_name_slurm_seq(
+                    Constants.PROCESS_clean_sample, Constants.PROCESS_SAMPLE
                 )
                 if sample.is_type_fastq_gz_sequencing():
                     taskID = process_SGE.set_run_trimmomatic_species(
@@ -1482,7 +1714,8 @@ class UpdateParametersSampleView(LoginRequiredMixin, UpdateView):
                     MetaKeyAndValue.META_VALUE_Queue,
                     taskID,
                 )
-            except:
+            except Exception as e:
+                print("Error: ", e)
                 sample.is_sample_in_the_queue = False
                 sample.save()
                 pass

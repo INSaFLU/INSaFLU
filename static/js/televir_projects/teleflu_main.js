@@ -154,8 +154,8 @@ var load_teleflu_workflows = function () {
                     // Append the div to the workflow container
                     workflowContainerAction.append(spinnerContainer);
                 }
+                
                 /// Summary List
-
                 var sampleSummary = workflow.sample_summary;
                 var summaryList = document.createElement('div');
                 summaryList.className = 'summary-list workfow-' + workflow.node;
@@ -183,8 +183,9 @@ var load_teleflu_workflows = function () {
                     var sampleNameCell = document.createElement('td');
                     sampleNameCell.innerHTML = sample;
                     row.appendChild(sampleNameCell);
-
-                    var mappedIndicator = sampleSummary[sample].mapped ? '<span style="color: green;">&#x2714;</span>' : '<span style="color: red;">&#x2718;</span>';
+                    
+                    var mappedIndicator = sampleSummary[sample].mapped
+                    //var mappedIndicator = sampleSummary[sample].mapped ? '<span style="color: green;">&#x2714;</span>' : '<span style="color: red;">&#x2718;</span>';
                     var successIndicator = sampleSummary[sample].success ? '<span style="color: green;">&#x2714;</span>' : '<span style="color: red;">&#x2718;</span>';
                     var coverageIndicator = sampleSummary[sample].coverage;
                     var windowsCoveredIndicator = sampleSummary[sample].windows_covered;
@@ -230,7 +231,7 @@ var load_teleflu_workflows = function () {
 
 
             $(".workflow-summary").click(function () {
-                var node= $(this).attr('node');
+                var node = $(this).attr('node');
                 var summaryList = $('.summary-list.workfow-' + node)[0];
                 // Toggle list visibility on click
                 if (summaryList.style.display === 'none') {

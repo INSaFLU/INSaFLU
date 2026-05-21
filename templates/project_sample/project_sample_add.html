@@ -2,29 +2,16 @@
 
 {% load bootstrap4 %}
 {% load querystring from django_tables2 %}
-{% load title from django_tables2 %}
+
 {% load trans blocktrans from i18n %}
-{% load django_bootstrap_breadcrumbs %}
+{% load view_breadcrumbs %}
 
 {% block css %}
-	{% load static from staticfiles %}
+	{% load static %}
 		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
 {% endblock css %}
 
-{% block breadcrumbs %}
 
-    {% if televir_sample %}
-	{{ block.super }}
-    {% breadcrumb "Project Index" "project-index" %}
-	{% breadcrumb "TELEVIR Projects" "PIprojects_main" %}
-	{% breadcrumb "Add samples to project" "add-sample-project" %}
-    {% else %}
-	{{ block.super }}
-    {% breadcrumb "Project Index" "project-index" %}
-	{% breadcrumb "Projects" "projects" %}
-	{% breadcrumb "Add samples to project" "add-sample-project" %}
-    {% endif %}
-{% endblock %}
 
 {% block content %}
 
@@ -71,9 +58,9 @@
 		              <tr>
 		                {% for column in table.columns %}
 		                   {% if column.orderable %}
-		                    	<th {{ column.attrs.th.as_html }}><a href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header|title }}</a></th>
+		                    	<th {{ column.attrs.th.as_html }}><a href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header }}</a></th>
 		                    {% else %}
-		                    	<th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
+		                    	<th {{ column.attrs.th.as_html }}>{{ column.header }}</th>
 		                    {% endif %}
 		                {% endfor %}
 		              </tr>
@@ -151,12 +138,6 @@
 		$('#modal_show_settings_allert').modal('show')
 	});
 	
-/* 		$('#post-form').on('submit', function(event){
-		event.preventDefault();
-		console.log("form submitted!")  // sanity check
-		create_post();
-	}); */
-	
 	/// set wait screen
 	$('#id_submit_all').click(function() { 
 		wait_screen();
@@ -172,7 +153,7 @@
 	
 </script>
  		
-{% load static from staticfiles %}
+{% load static %}
 <!-- Custom scripts for all pages-->
 <script type="text/javascript" src="{% static 'js/check-box-general.js' %}"></script>
 	

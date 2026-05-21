@@ -2,9 +2,9 @@
 
 {% load bootstrap4 %}
 {% load querystring from django_tables2 %}
-{% load title from django_tables2 %}
+
 {% load trans blocktrans from i18n %}
-{% load django_bootstrap_breadcrumbs %}
+{% load view_breadcrumbs %}
 {% load static %}
 {% load custom_tags %}
 
@@ -15,13 +15,6 @@
 	<div id="id_messages_remove"></div>
 </div>
 {% endblock %}
-
-{% block breadcrumbs %}
-{{ block.super }}
-{% breadcrumb "References Index" "references-index" %}
-{% breadcrumb "Manage References" "" %}
-{% endblock %}
-
 
 
 {% block extra_nav %}
@@ -40,6 +33,17 @@
 
     <link rel="stylesheet" href="{% static 'css/televir_references_nav.css' %}">
 {% endblock %}
+
+
+{% if reference_update_running %}
+<div class="alert alert-warning" role="alert">
+    <strong>Reference update is currently running.</strong> Please wait until it finishes before deploying pathogen identification
+</div>
+{% elif master_files_missing %}
+<div class="alert alert-info" role="alert">
+    <strong>No TELEVIR reference files found.</strong> To register TELEVIR references, run the command <code>docker exec -it -d insaflu-server register-televir-references</code> in the terminal.
+</div>
+{% endif %}
 
 <div class="table-responsive">
     <table class="table table-striped table-bordered table-hover">
@@ -109,9 +113,9 @@
 
 
 {% block js %}
-{% load static from staticfiles %}
+{% load static %}
 
-{% load static from staticfiles %}
+{% load static %}
 
 <script type="text/javascript" src="{% static 'js/televir_projects/reference_files.js' %}"></script>
 

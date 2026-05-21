@@ -1,10 +1,10 @@
 {% extends '_layouts/base.html' %}
 
-{% load django_bootstrap_breadcrumbs %}
+{% load view_breadcrumbs %}
 {% load static %}
 
 {% block css %}
-{% load static from staticfiles %}
+{% load static %}
 <link rel="stylesheet" href="{% static 'css/settings-index.css' %}" type="text/css" />
 {% endblock css %}
 
@@ -116,7 +116,6 @@
 {% block js %}
 <script type="text/javascript">
     $(document).on("click", "a", function(e){
-        console.log("clicked");
         $('#id-deploy-explify-button').on('click', function(){
 
             var rpip_file = document.getElementById("rpip_table");

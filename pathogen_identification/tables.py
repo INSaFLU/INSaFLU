@@ -4,23 +4,24 @@ from typing import DefaultDict
 import django_tables2 as tables
 from crequest.middleware import CrequestMiddleware
 from django.conf import settings
+from django.db.models import Q
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 from constants.constants import Constants
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (ContigClassification, FinalReport,
-                                            ParameterSet, PIProject_Sample,
-                                            Projects, RawReference,
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference,
                                             RawReferenceCompoundModel,
-                                            ReadClassification,
-                                            ReferenceContigs, RunAssembly,
-                                            RunMain, SampleQC, TeleFluProject,
-                                            TelevirRunQC)
+                                            ReferenceContigs,
+                                            ReferenceSourceFile,
+                                            ReferenceSourceFileMap, RunMain,
+                                            SampleQC, TeleFluProject)
 from pathogen_identification.utilities.reference_utils import (
     check_file_reference_submitted, check_reference_exists)
 from pathogen_identification.utilities.televir_parameters import \
@@ -30,25 +31,48 @@ from pathogen_identification.utilities.utilities_general import (
 from pathogen_identification.utilities.utilities_views import (
     RawReferenceCompound, RunMainWrapper)
 from settings.constants_settings import ConstantsSettings as SettingsCS
-from settings.models import Parameter, Software
+from settings.models import Parameter
 
 
 class ProjectTable(tables.Table):
     #   Renders a normal value as an internal hyperlink to another page.
     #   account_number = tables.LinkColumn('customer-detail', args=[A('pk')])
     description = tables.Column(verbose_name="Description", orderable=False)
-    settings = tables.Column(empty_values=(), orderable=False)
-
-    samples = tables.Column("#Samples", orderable=False, empty_values=())
+    settings = tables.Column(
+        empty_values=(),
+        orderable=False,
+        attrs={
+            "th": {"style": "background-color: #dce4f0; text-align: center;"},
+            "td": {"style": "text-align: center;"},
+        },
+    )
+    results = tables.Column(
+        "Project Samples",
+        orderable=False,
+        empty_values=(),
+        attrs={
+            "th": {"style": "background-color: #dce4f0; text-align: center;"},
+            "td": {"style": "text-align: center;"},
+        },
+    )
     last_change_date = tables.Column("Last Change date", empty_values=())
     creation_date = tables.Column("Creation date", empty_values=())
-    results = tables.Column("Project Samples", orderable=False, empty_values=())
     technology = tables.Column(
         verbose_name="Technology", orderable=False, empty_values=()
     )
-    finished_processes = tables.Column("Finished", orderable=False, empty_values=())
-    running_processes = tables.Column("Running", orderable=False, empty_values=())
-    queued_processes = tables.Column("Queued", orderable=False, empty_values=())
+    processes = tables.Column(
+        "Processes",
+        orderable=False,
+        empty_values=(),
+        attrs={
+            "th": {"style": "background-color: #eaf5ff; text-align: center;"},
+            "td": {
+                "style": "text-align: center;",
+                "title": "Running / Queued / Finished",
+            },
+        },
+    )
+
 
     class Meta:
         model = Projects
@@ -56,26 +80,23 @@ class ProjectTable(tables.Table):
         fields = (
             "name",
             "results",
-            "samples",
             "last_change_date",
             "creation_date",
             "description",
             "technology",
-            "running_processes",
         )
-        attrs = {"class": "table-striped table-bordered"}
+        attrs = {
+            "class": "table-striped table-bordered",
+        }
         empty_text = "There are no Projects to show..."
 
         sequence = (
             "name",
             "results",
             "settings",
-            "samples",
             "description",
             "technology",
-            "running_processes",
-            "queued_processes",
-            "finished_processes",
+            "processes",
         )
 
     def render_technology(self, record):
@@ -84,31 +105,29 @@ class ProjectTable(tables.Table):
         """
         return record.technology
 
+    def render_processes(self, record):
+        return (
+            f"{self.render_running_processes(record)} / "
+            f"{self.render_queued_processes(record)} / "
+            f"{self.render_finished_processes(record)}"
+        )
+
     def render_running_processes(self, record):
         """
         return number of running processes in this project"""
 
-        running = 0
         parameter_sets = ParameterSet.objects.filter(
-            project=record, sample__sample__is_deleted=False
-        )
-        for parameter_set in parameter_sets:
-            if parameter_set.status == ParameterSet.STATUS_RUNNING:
-                running += 1
-
-        return running
+            project=record, sample__sample__is_deleted=False, status=ParameterSet.STATUS_RUNNING
+        ).count()
+        return parameter_sets
 
     def render_queued_processes(self, record):
         """
         return number of queued processes in this project"""
 
-        queued = 0
-        parameter_sets = ParameterSet.objects.filter(
-            project=record, sample__sample__is_deleted=False
-        )
-        for parameter_set in parameter_sets:
-            if parameter_set.status == ParameterSet.STATUS_QUEUED:
-                queued += 1
+        queued = ParameterSet.objects.filter(
+            project=record, sample__sample__is_deleted=False, status=ParameterSet.STATUS_QUEUED
+        ).count()
 
         mapping_runs = RunMain.objects.filter(
             project=record,
@@ -125,15 +144,11 @@ class ProjectTable(tables.Table):
         """
         return number of finished processes in this project"""
 
-        finished = 0
         parameter_sets = ParameterSet.objects.filter(
-            project=record, sample__sample__is_deleted=False
-        )
-        for parameter_set in parameter_sets:
-            if parameter_set.status == ParameterSet.STATUS_FINISHED:
-                finished += 1
-
-        return finished
+            project=record, sample__sample__is_deleted=False, status=ParameterSet.STATUS_FINISHED
+        ).count()
+    
+        return parameter_sets
 
     def render_settings(self, record):
         color = ""
@@ -141,7 +156,7 @@ class ProjectTable(tables.Table):
             televir_project__pk=record.pk
         ).exists()
 
-        if project_settings_exist:
+        if project_settings_exist == True:
             color = 'style="color: purple;"'
 
         parameters = (
@@ -151,7 +166,7 @@ class ProjectTable(tables.Table):
             + f'<span ><i class="padding-button-table fa fa-pencil padding-button-table" {color}></i></span></a>'
         )
 
-        if project_settings_exist:
+        if project_settings_exist == True:
             parameters = parameters + (
                 '<a href="#id_reset_modal" id="id_reset_parameters_modal" data-toggle="modal" data-toggle="tooltip" title="Reset"'
                 + ' ref_name="'
@@ -167,22 +182,33 @@ class ProjectTable(tables.Table):
         """
         return a reference name
         """
+        add_remove = ""
+
+        nsamples = PIProject_Sample.objects.filter(
+            project__id=record.id, is_deleted=False
+        ).count()
+
         results = (
             "<a href="
             + reverse("PIproject_samples", args=[record.pk])
             + ' data-toggle="tooltip" title="See Results">'
-            + "Samples</a>"
+            + f"{nsamples} Samples</a>"
         )
 
-        return mark_safe(results)
+        return mark_safe(
+            results
+            + " | "
+            + " <a href="
+            + reverse("add-sample-PIproject", args=[record.pk])
+            + ' data-toggle="tooltip" title="Add samples" ><i class="fa fa-plus-square"></i> Add</a>'  # 		return mark_safe(tip_info + " ({}/{}/{}) ".format(n_processed, n_processing, n_error) + '<a href=# id="id_add_sample_message"' +\
+            + add_remove
+        )
 
     def render_name(self, record):
-
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
 
         ## there's nothing to show
-        count = ParameterSet.objects.filter(project__id=record.id).count()
         project_sample = record.name
 
         project_sample = (
@@ -190,6 +216,16 @@ class ProjectTable(tables.Table):
             + reverse("PIproject_samples", args=[record.pk])
             + ' data-toggle="tooltip" title="See Results">'
             + "{}</a>".format(record.name)
+        )
+
+        add_tags_project = (
+            f'<a href="#id_add_tags_modal" style="float: right; margin-left: 10px;" id="id_add_tags" project_pk="{record.pk}" data-toggle="modal" data-toggle="tooltip" title="Add tags">'
+            + '<i class="fa fa-plus-square"></i></a>'
+        )
+
+        manage_project_tags = (
+            f'<a href="#id_manage_tags_modal" style="float: right;" id="id_manage_tags" project_pk="{record.pk}" data-toggle="modal" data-toggle="tooltip" title="Manage tags">'
+            + '<i class="fa fa-tags"></i></a>'
         )
 
         if user.username == Constants.USER_ANONYMOUS:
@@ -203,26 +239,12 @@ class ProjectTable(tables.Table):
                 + str(record.pk)
                 + '"><i class="fa fa-trash"></i></span> </a>'
                 + project_sample
+                + add_tags_project
+                + manage_project_tags
             )
+    
+
         return project_sample
-
-    def render_samples(self, record):
-        """
-        return a reference name
-        """
-        add_remove = ""
-
-        nsamples = PIProject_Sample.objects.filter(
-            project__id=record.id, is_deleted=False
-        ).count()
-
-        return mark_safe(
-            "{}".format(nsamples)
-            + " <a href="
-            + reverse("add-sample-PIproject", args=[record.pk])
-            + ' data-toggle="tooltip" title="Add samples" ><i class="fa fa-plus-square"></i> Add</a>'  # 		return mark_safe(tip_info + " ({}/{}/{}) ".format(n_processed, n_processing, n_error) + '<a href=# id="id_add_sample_message"' +\
-            + add_remove
-        )
 
     def render_creation_date(self, **kwargs):
         record = kwargs.pop("record")
@@ -370,13 +392,19 @@ class SampleTableOne(tables.Table):
             },
         },
     )
-    report = tables.Column(
-        verbose_name="Sample Report", orderable=False, empty_values=(), attrs=cell_attrs
+    combined = tables.Column(
+        verbose_name="Reports",
+        orderable=False, empty_values=(), attrs= {
+            "th":  {
+                "style": "text-align: center;"
+            }
+        }
     )
     runs = tables.Column(
         verbose_name="Workflows", orderable=False, empty_values=(), attrs=cell_attrs
     )
-    deploy = tables.Column(
+    
+    sample_management = tables.Column(
         verbose_name="Run", orderable=False, empty_values=(), attrs=cell_attrs
     )
 
@@ -384,18 +412,6 @@ class SampleTableOne(tables.Table):
         "Sorting", orderable=False, empty_values=(), attrs=cell_attrs
     )
 
-    select_ref = tables.CheckBoxColumn(
-        verbose_name="Select Samples",
-        accessor="pk",
-        orderable=False,
-        attrs={
-            "th": {
-                "style": "background-color: #dce4f0; text-align: center;",
-            },
-            "td": {"style": "background-color: #dce4f0; text-align: center;"},
-            "th__input": {"id": "checkBoxAll"},
-        },
-    )
 
     ref_management = tables.Column(
         "References",
@@ -407,38 +423,14 @@ class SampleTableOne(tables.Table):
         },
     )
 
-    combinations = tables.Column(
-        verbose_name="Combinations",
-        orderable=False,
-        empty_values=(),
+    select_ref = tables.CheckBoxColumn(
+        accessor="pk",
         attrs={
-            "td": {"style": ""},
-            "th": {"style": "background-color: #eaf5ff; text-align: center;"},
-        },
-    )
-    mapping_runs = tables.Column(
-        "Mapping Runs",
-        orderable=False,
-        empty_values=(),
-        attrs={
-            "th": {"style": "background-color: #eaf5ff; text-align: center;"},
-        },
-    )
-
-    running_processes = tables.Column(
-        "Running",
-        orderable=False,
-        empty_values=(),
-        attrs={
-            "th": {"style": "background-color: #eaf5ff; text-align: center;"},
-        },
-    )
-    queued_processes = tables.Column(
-        "Queued",
-        orderable=False,
-        empty_values=(),
-        attrs={
-            "th": {"style": "background-color: #eaf5ff; text-align: center;"},
+            "th": {
+                "style": "background-color: #dce4f0; text-align: center;",
+            },
+            "td": {"style": "background-color: #dce4f0; text-align: center;"},
+            "th__input": {"id": "checkBoxAll"},
         },
     )
 
@@ -451,16 +443,12 @@ class SampleTableOne(tables.Table):
         fields = (
             "set_control",
             "name",
-            "report",
+            "combined",
             "runs",
-            "deploy",
+            "sample_management",
             "sorting",
             "ref_management",
             "select_ref",
-            "combinations",
-            "mapping_runs",
-            "running_processes",
-            "queued_processes",
         )
 
     def render_set_control(self, record: PIProject_Sample):
@@ -488,7 +476,7 @@ class SampleTableOne(tables.Table):
                 + '"><i class="fa fa-circle-o"></i></span> </a>'
             )
 
-    def render_report(self, record):
+    def render_combined(self, record):
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
 
@@ -507,7 +495,7 @@ class SampleTableOne(tables.Table):
         if user.username == record.project.owner.username:
             return mark_safe(record_name)
 
-    def render_runs(self, record):
+    def render_runs(self, record: PIProject_Sample):
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
 
@@ -516,34 +504,43 @@ class SampleTableOne(tables.Table):
             + reverse("sample_main", args=[record.project.pk, record.pk])
             + '">'
             + " <fa class='fa fa-reorder'></fa>"
-            + " Workflow Panel"
+            + f" Workflow Panel" 
             + "</a>"
+            + f" | {self.render_finished_processes(record)}"
         )
         if user.username == Constants.USER_ANONYMOUS:
             return mark_safe("report")
         if user.username == record.project.owner.username:
             return mark_safe(record_name)
 
-    def render_deploy(self, record: PIProject_Sample):
+    def render_sample_management(self, record: PIProject_Sample):
 
+        deployment_management = self.render_deploy(record)
+        processes = self.render_processes(record)
+
+        return mark_safe(
+                    f"""
+            {deployment_management} |  {processes}
+        """
+        )
+    def render_deploy(self, record: PIProject_Sample):
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
 
+        deployment_management = '<a><i class="fa fa-bug"></i></span> </a>'
+
+
+        if user.username != record.project.owner.username:
+            return mark_safe(deployment_management)
+        
         active_runs = ParameterSet.objects.filter(
             sample=record,
             status__in=[ParameterSet.STATUS_RUNNING, ParameterSet.STATUS_QUEUED],
         )
 
-        record_name = '<a><i class="fa fa-bug"></i></span> </a>'
+        deployment_management = '<a><i class="fa fa-bug"></i></span> </a>'
 
-        TELEVIR_DEPLOY_URL = "submit_televir_project_sample"
-        if CS.DEPLOYMENT_DEFAULT == CS.DEPLOYMENT_TYPE_PIPELINE:
-            TELEVIR_DEPLOY_URL = "submit_televir_runs_project_sample"
-
-        if user.username != record.project.owner.username:
-            return mark_safe(record_name)
-
-        record_name = (
+        deployment_management = (
             '<a href="#" id="deploypi_sample_btn" class="sample-deploy" data-toggle="modal" data-toggle="tooltip" title="Run Televir Classic Workflow"'
             + ' ref_name="'
             + record.name
@@ -551,7 +548,7 @@ class SampleTableOne(tables.Table):
             + str(record.pk)
             + '" deploy-url="'
             + reverse(
-                TELEVIR_DEPLOY_URL,
+                "submit_televir_project_sample",
             )
             + '"'
             + '"><i class="fa fa-flask"></i></span> </a>'
@@ -565,16 +562,15 @@ class SampleTableOne(tables.Table):
             > 0
             and CS.METAGENOMICS
         ):
-
             ## encase following butons in a tooltip
             metagen_buttons = " <span class='tooltip-wrap' data-toggle='tooltip' style='display: inline-block; visibility: visible;' >"
 
             metagen_buttons = metagen_buttons + "</span>"
 
-            record_name += metagen_buttons
+            deployment_management += metagen_buttons
 
         if active_runs.count() > 0:
-            record_name += (
+            deployment_management += (
                 '<a href="#id_kill_modal" id="id_kill_reference_modal" data-toggle="modal" data-toggle="tooltip" title="Cancel"'
                 + ' ref_name="'
                 + record.name
@@ -583,7 +579,8 @@ class SampleTableOne(tables.Table):
                 + '"><i class="fa fa-power-off"></i></span> </a>'
             )
 
-        return mark_safe(record_name)
+
+        return mark_safe(deployment_management)
 
     def render_name(self, record: PIProject_Sample):
         from crequest.middleware import CrequestMiddleware
@@ -592,7 +589,6 @@ class SampleTableOne(tables.Table):
         user = current_request.user
 
         ### get the link for sample, to expand data
-        sample_name = record.sample.name
         sample_name = (
             '<a href="'
             + reverse(
@@ -620,7 +616,7 @@ class SampleTableOne(tables.Table):
 
         return mark_safe(sample_name)
 
-    def render_sorting(self, record):
+    def render_sorting(self, record: PIProject_Sample):
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
 
@@ -630,7 +626,7 @@ class SampleTableOne(tables.Table):
         ### check if sorting
         process_controler = ProcessControler()
 
-        process = ProcessControler.objects.filter(
+        process_running = ProcessControler.objects.filter(
             owner__id=user.pk,
             name=process_controler.get_name_televir_project_sample_sort(
                 sample_pk=record.pk
@@ -639,32 +635,24 @@ class SampleTableOne(tables.Table):
             is_error=False,
         )
 
-        if process.exists():
+        process_finished = ProcessControler.objects.filter(
+            owner__id=user.pk,
+            name=process_controler.get_name_televir_project_sample_sort(
+                sample_pk=record.pk
+            ),
+            is_finished=True,
+            is_error=False,
+        )
+
+        if process_running.exists() and not process_finished.exists():
             request_sorting = "<i class='fa fa-spinner fa-spin' title='Sorting'></i>"
             return mark_safe(request_sorting)
 
         ### check if sorted
-
-        sample_runs = RunMain.objects.filter(sample=record)
-
-        ## return empty square if no report
-        if sample_runs.count() == 0:
-            return mark_safe('<i class="fa fa-square-o" title="Empty"></i>')
-        ## check sorted
-
         report_layout_params = TelevirParameters.get_report_layout_params(
             project_pk=record.project.pk
         )
-        media_dir = None
-
-        for run in sample_runs:
-            try:
-                media_dir = infer_run_media_dir(run)
-                media_dir = os.path.dirname(media_dir)
-                break
-            except:
-                continue
-
+        media_dir = record.media_dir_if_exists
         if media_dir is None:
             return mark_safe('<i class="fa fa-square-o" title="Empty"></i>')
 
@@ -728,10 +716,6 @@ class SampleTableOne(tables.Table):
 
         return mark_safe(references_management_button)
 
-    report = tables.LinkColumn(
-        "sample_main", text="Report", args=[tables.A("project__pk"), tables.A("pk")]
-    )
-
     def render_combinations(self, record: PIProject_Sample):
         return RunMain.objects.filter(
             sample__name=record.name,
@@ -760,9 +744,17 @@ class SampleTableOne(tables.Table):
 
         mapping_runs = RunMain.objects.filter(
             sample=record,
-            run_type=RunMain.RUN_TYPE_MAP_REQUEST,
-            status=RunMain.STATUS_PREP,
-            parameter_set__status=ParameterSet.STATUS_PROXIED,
+            run_type__in=[
+                RunMain.RUN_TYPE_MAP_REQUEST,
+                RunMain.RUN_TYPE_COMBINED_MAPPING,
+                RunMain.RUN_TYPE_MAP_REQUEST,
+                RunMain.RUN_TYPE_PANEL_MAPPING,
+            ],
+            parameter_set__status__in=[
+                ParameterSet.STATUS_PROXIED,
+                ParameterSet.STATUS_QUEUED,
+                ParameterSet.STATUS_NOT_STARTED,
+            ],
         ).count()
 
         queued += mapping_runs
@@ -790,13 +782,22 @@ class SampleTableOne(tables.Table):
             ],
         ).count()
 
+    def render_processes(self, record):
+        return (
+            f"{self.render_running_processes(record)} / "
+            f"{self.render_queued_processes(record)}"
+        )
 
-from pathogen_identification.models import (ReferenceSourceFile,
-                                            ReferenceSourceFileMap)
+    def render_finished_processes(self, record):
+        """
+        return number of finished processes in this project"""
+
+        return f"{self.render_combinations(record)}::{self.render_mapping_runs(record)}"
+
+
 
 
 class ReferenceSourceFileTable(tables.Table):
-
     filename = tables.Column(verbose_name="Name", empty_values=())
     description = tables.Column(verbose_name="Description", empty_values=())
     owner = tables.Column(verbose_name="Owner", empty_values=())
@@ -807,7 +808,6 @@ class ReferenceSourceFileTable(tables.Table):
         attrs = {"class": "paleblue"}
 
     def render_filename(self, record: ReferenceSourceFile):
-
         if record.owner is None:
             return record.file
 
@@ -835,7 +835,6 @@ class ReferenceSourceFileTable(tables.Table):
         return record.owner.username
 
     def render_references(self, record: ReferenceSourceFile):
-
         current_refs = ReferenceSourceFileMap.objects.filter(
             reference_source_file=record
         ).count()
@@ -861,7 +860,6 @@ class ReferenceSourceFileTable(tables.Table):
 
 
 class TelevirReferencesTable(tables.Table):
-
     description = tables.Column(verbose_name="Description")
     accid = tables.Column(verbose_name="Accession ID")
     taxid = tables.Column(verbose_name="TaxID")
@@ -900,8 +898,14 @@ class TelevirReferencesTable(tables.Table):
         return record.reference_source.taxid
 
     def render_source(self, record: ReferenceSourceFileMap):
+        
         records_same_accid = ReferenceSourceFileMap.objects.filter(
-            reference_source__accid=record.reference_source.accid
+            reference_source_file__owner__in=[
+                self.user_id
+            ]
+            | Q(reference_source_file__owner__isnull=True)
+        ).filter(
+            Q(reference_source__accid=record.reference_source.accid)
         ).distinct("reference_source_file")
         files_flat = [
             record.reference_source_file.file for record in records_same_accid
@@ -909,14 +913,12 @@ class TelevirReferencesTable(tables.Table):
         return ", ".join(files_flat)
 
     def render_create_teleflu_reference(self, record: ReferenceSourceFileMap):
-
         user = CrequestMiddleware.get_request().user
 
         if check_reference_exists(record.reference_source.accid, user.pk):
             return ""
 
         if check_file_reference_submitted(ref_id=record.id, user_id=self.user_id):
-
             return '<i class="fa fa-spinner fa-spin"></i>'
 
         return mark_safe(
@@ -1240,7 +1242,6 @@ class TeleFluInsaFLuProjectTable(tables.Table):
 
 
 class CompoundReferenceTable(tables.Table):
-
     select_ref = tables.CheckBoxColumn(
         accessor="pk",
         orderable=False,
@@ -1376,14 +1377,13 @@ class CompoundRefereceScoreWithScreening(CompoundReferenceScore):
     )
 
     def render_screenig(self, record: RawReferenceCompoundModel):
-
         return record.screening_count
 
 
 class RawReferenceTable_Basic(tables.Table):
     taxid = tables.Column(verbose_name="Taxid")
-    accid = tables.Column(verbose_name="Taxid representativde Accession id")
-    description = tables.Column(verbose_name="Taxid representative Description")
+    accid = tables.Column(verbose_name="Accession id")
+    description = tables.Column(verbose_name="Description")
     status = tables.Column(
         verbose_name="Status",
     )
@@ -1433,7 +1433,6 @@ class RawReferenceTable_Basic(tables.Table):
 
 
 class RawReferenceTable(RawReferenceTable_Basic):
-
     classification_source = tables.Column(
         verbose_name="Classification Source",
     )
@@ -1460,7 +1459,6 @@ class RawReferenceTable(RawReferenceTable_Basic):
         )
 
     def render_classification_source(self, record):
-
         if record.classification_source == "1":
             return "reads"
 
@@ -1611,7 +1609,6 @@ class RunMappingTable(tables.Table):
     runtime = tables.Column(verbose_name="Runtime", orderable=False, empty_values=())
 
     class Meta:
-
         attrs = {
             "class": "paleblue",
         }
@@ -1645,7 +1642,6 @@ class RunMappingTable(tables.Table):
         return f"{prefix}{record.parameter_set.leaf.index}"
 
     def render_enrichment(self, record: RunMainWrapper):
-
         method_name = record.get_pipeline_software(
             SettingsCS.PIPELINE_NAME_viral_enrichment
         )
@@ -1653,7 +1649,6 @@ class RunMappingTable(tables.Table):
         return mark_safe(method_name)
 
     def render_host_depletion(self, record: RunMainWrapper):
-
         method_name = record.get_pipeline_software(
             SettingsCS.PIPELINE_NAME_host_depletion
         )
@@ -1690,25 +1685,21 @@ class RunMappingTable(tables.Table):
             return mark_safe('<i class="fa fa-times"></i>')
 
     def render_extra_filtering(self, record: RunMainWrapper):
-
         method_name = record.get_pipeline_software(SettingsCS.PIPELINE_NAME_extra_qc)
 
         return mark_safe(method_name)
 
     def render_mapping(self, record: RunMainWrapper):
-
         method_name = record.get_pipeline_software(
             SettingsCS.PIPELINE_NAME_request_mapping
         )
         return mark_safe(method_name)
 
     def render_runtime(self, record: RunMainWrapper):
-
         return mark_safe(record.runtime)
 
 
 class RunMainTable(tables.Table):
-
     name = tables.Column(verbose_name="Run")
     report = tables.Column(verbose_name="Report", orderable=False, empty_values=())
     success = tables.Column(verbose_name="Confirmed", orderable=False, empty_values=())
@@ -1809,7 +1800,6 @@ class RunMainTable(tables.Table):
         )
 
     def render_report(self, record: RunMainWrapper):
-
         if record.user.username == Constants.USER_ANONYMOUS:
             return mark_safe("report")
 
@@ -1830,7 +1820,6 @@ class RunMainTable(tables.Table):
             return mark_safe('<i class="fa fa-times"></i>')
 
     def render_runtime(self, record: RunMainWrapper):
-
         return mark_safe(record.runtime)
 
     def render_name(self, record: RunMainWrapper):
@@ -1849,7 +1838,6 @@ class RunMainTable(tables.Table):
         return f"{prefix}{record.parameter_set.leaf.index}"
 
     def render_enrichment(self, record: RunMainWrapper):
-
         method_name = record.get_pipeline_software(
             SettingsCS.PIPELINE_NAME_viral_enrichment
         )
@@ -1857,7 +1845,6 @@ class RunMainTable(tables.Table):
         return mark_safe(method_name)
 
     def render_host_depletion(self, record: RunMainWrapper):
-
         method_name = record.get_pipeline_software(
             SettingsCS.PIPELINE_NAME_host_depletion
         )
@@ -1865,19 +1852,16 @@ class RunMainTable(tables.Table):
         return mark_safe(method_name)
 
     def render_extra_filtering(self, record: RunMainWrapper):
-
         method_name = record.get_pipeline_software(SettingsCS.PIPELINE_NAME_extra_qc)
 
         return mark_safe(method_name)
 
     def render_assembly_method(self, record: RunMainWrapper):
-
         method_name = record.get_pipeline_software(SettingsCS.PIPELINE_NAME_assembly)
 
         return mark_safe(method_name)
 
     def render_contig_classification(self, record: RunMainWrapper):
-
         method_name = record.get_pipeline_software(
             SettingsCS.PIPELINE_NAME_contig_classification
         )
@@ -1885,7 +1869,6 @@ class RunMainTable(tables.Table):
         return mark_safe(method_name)
 
     def render_read_classification(self, record: RunMainWrapper):
-
         method_name = record.get_pipeline_software(
             SettingsCS.PIPELINE_NAME_read_classification
         )
@@ -1893,7 +1876,6 @@ class RunMainTable(tables.Table):
         return mark_safe(method_name)
 
     def render_remapping(self, record: RunMainWrapper):
-
         method_name = record.get_pipeline_software(SettingsCS.PIPELINE_NAME_remapping)
 
         return mark_safe(method_name)

@@ -9,9 +9,10 @@ import logging
 from django.contrib.auth.models import User
 from django.core.management import BaseCommand
 
+from constants.meta_key_and_values import MetaKeyAndValue
+from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProjectSample
-from pathogen_identification.models import TeleFluProject
-from pathogen_identification.utilities.reference_utils import create_teleflu_igv_report
+from utils.process_SGE import ProcessSched
 from utils.software_minion import SoftwareMinion
 
 
@@ -44,6 +45,10 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         software_minion = SoftwareMinion()
+        process_SGE = ProcessSched()
+        manageDatabase = ManageDatabase()
+        metaKeyAndValue = MetaKeyAndValue()
+
         project_sample_id = options["project_sample_id"]
         user_id = options["user_id"]
         self.stdout.write("Starting for project_sample_id: " + str(project_sample_id))
@@ -70,7 +75,22 @@ class Command(BaseCommand):
             #        insaflu_project=project_sample.project
             #    )
             #    create_teleflu_igv_report(teleflu_project.pk)
+                                ### need to collect global files again
+            
 
+            taskID = process_SGE.set_collect_global_files(
+                project_sample.project, project_sample.project.owner
+            )
+            manageDatabase.set_project_metakey(
+                project_sample.project,
+                project_sample.project.owner,
+                metaKeyAndValue.get_meta_key(
+                    MetaKeyAndValue.META_KEY_Queue_TaskID_Project,
+                    project_sample.project.id,
+                ),
+                MetaKeyAndValue.META_VALUE_Queue,
+                taskID,
+            )
             self.stdout.write("End")
         except ProjectSample.DoesNotExist as e:
             self.stdout.write(
@@ -78,3 +98,6 @@ class Command(BaseCommand):
             )
         except User.DoesNotExist as e:
             self.stdout.write("Error: User id '{}' does not exist.".format(user_id))
+
+        except Exception as e:
+            self.stdout.write("Error: {}".format(str(e)))

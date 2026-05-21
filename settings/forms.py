@@ -10,13 +10,16 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import (Button, ButtonHolder, Div, Fieldset, Layout,
                                  Submit)
 from django import forms
+from django.conf import settings
+from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils.html import escape
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
+from constants.constants import Constants
 from constants.software_names import SoftwareNames
 from datasets.models import Dataset
-from managing_files.models import Project, ProjectSample
+from managing_files.models import Primer, Project, ProjectSample
 from pathogen_identification.constants_settings import \
     ConstantsSettings as PICS
 from pathogen_identification.models import Projects as TelevirProject
@@ -55,6 +58,7 @@ class SoftwareForm(forms.ModelForm):
         self.televir_utiltity.get_software_list()
         self.televir_utiltity.get_software_db_dict()
         self.televir_utiltity.get_host_dbs()
+        self.televir_utiltity.get_filter_dbs()
         ###
         if not pk_project is None:
             kwargs.pop("pk_project")
@@ -97,6 +101,7 @@ class SoftwareForm(forms.ModelForm):
         dt_fields = {}
         vect_divs = []
         for parameter in paramers:
+
             if not parameter.can_change or parameter.is_null():
                 dt_fields[parameter.get_unique_id()] = forms.CharField(
                     disabled=True,
@@ -138,7 +143,54 @@ class SoftwareForm(forms.ModelForm):
                         )
                     )
                 dt_fields[parameter.get_unique_id()].help_text = escape(help_text)
+
+            elif parameter.is_multiple_choice():  # Update this condition if needed
+                ## already selected
+
+                selected = parameter.parameter.split(";") if parameter.parameter else []
+
+                if (
+                    parameter.software.name_extended
+                    == SoftwareNames.SOFTWARE_BWA_FILTER_name_extended
+                ):
+
+                    list_data = [
+                        [data_[0], data_[1]]
+                        for data_ in self.televir_utiltity.get_from_filter_dbs(
+                            parameter.software.name.lower(), []
+                        )
+                    ]
+
+                elif parameter.software.name == SoftwareNames.SOFTWARE_METAPHLAN_NAME:
+                    list_data = [
+                        [data_, data_]
+                        for data_ in SoftwareNames.SOFTWARE_METAPHLAN_DB_options
+                    ]
+                else:
+                    raise Exception(
+                        "Error: Software {} not implemented.".format(
+                            parameter.software.name
+                        )
+                    )
+
+                ## setup multiple choice widget
+                dt_fields[parameter.get_unique_id()] = forms.MultipleChoiceField(
+                    choices=list_data, widget=forms.CheckboxSelectMultiple
+                )
+                dt_fields[parameter.get_unique_id()].help_text = escape(
+                    parameter.description
+                )
+                dt_fields[parameter.get_unique_id()].label = parameter.name
+                dt_fields[parameter.get_unique_id()].initial = selected
+                dt_fields[parameter.get_unique_id()].widget.attrs.update(
+                    {"class": "checkbox-inline"}
+                )
+                dt_fields[parameter.get_unique_id()].widget.attrs.update(
+                    {"style": "margin-right: 10px;"}
+                )
+
             ### this is use for Medaka and Trimmomatic
+
             elif parameter.is_char_list():
                 if parameter.software.name == SoftwareNames.SOFTWARE_NEXTSTRAIN_name:
                     list_data = [
@@ -153,6 +205,37 @@ class SoftwareForm(forms.ModelForm):
                             [data_, data_]
                             for data_ in SoftwareNames.SOFTWARE_SNIPPY_PRIMERS
                         ]
+                        # Add own sets
+                        for primer in Primer.objects.filter(
+                            owner__id=self.request.user.id, is_deleted=False
+                        ).order_by("-name"):
+                            list_data.append(
+                                [
+                                    os.path.join(
+                                        settings.BASE_DIR,
+                                        settings.MEDIA_ROOT,
+                                        primer.primer_fasta.name,
+                                    ),
+                                    primer.primer_fasta_name,
+                                ]
+                            )
+                        # Add system sets
+                        for primer in Primer.objects.filter(
+                            owner__id=User.objects.get(
+                                username=Constants.DEFAULT_USER
+                            ).id,
+                            is_deleted=False,
+                        ).order_by("-name"):
+                            list_data.append(
+                                [
+                                    os.path.join(
+                                        settings.BASE_DIR,
+                                        settings.MEDIA_ROOT,
+                                        primer.primer_fasta.name,
+                                    ),
+                                    primer.primer_fasta_name,
+                                ]
+                            )
                     else:
                         list_data = [
                             [data_, data_]
@@ -163,19 +246,82 @@ class SoftwareForm(forms.ModelForm):
                     and parameter.software.name
                     == SoftwareNames.SOFTWARE_TRIMMOMATIC_name
                 ):
-                    list_data = [
-                        [data_, data_]
-                        for data_ in SoftwareNames.SOFTWARE_TRIMMOMATIC_addapter_vect_available
-                    ]
-                elif (
-                    parameter.name == DefaultParameters.SNIPPY_PRIMER_NAME
-                    and parameter.software.name == SoftwareNames.SOFTWARE_SNIPPY_name
-                    and parameter.software.name == SoftwareNames.SOFTWARE_SNIPPY_name
-                ):
+                    list_data = []
+                    for (
+                        data_
+                    ) in SoftwareNames.SOFTWARE_TRIMMOMATIC_addapter_vect_available:
+                        if (
+                            data_
+                            != SoftwareNames.SOFTWARE_TRIMMOMATIC_addapter_not_apply
+                        ):
+                            list_data.append(
+                                [
+                                    os.path.join(
+                                        settings.DIR_SOFTWARE,
+                                        "trimmomatic/adapters",
+                                        data_,
+                                    ),
+                                    data_,
+                                ]
+                            )
+                        else:
+                            list_data.append([data_, data_])
+                    # Add own sets
+                    for primer in Primer.objects.filter(
+                        owner__id=self.request.user.id, is_deleted=False
+                    ).order_by("-name"):
+                        list_data.append(
+                            [primer.primer_fasta, primer.primer_fasta_name]
+                        )
+                    # Add system sets
+                    for primer in Primer.objects.filter(
+                        owner__id=User.objects.get(username=Constants.DEFAULT_USER).id,
+                        is_deleted=False,
+                    ).order_by("-name"):
+                        list_data.append(
+                            [
+                                os.path.join(
+                                    settings.BASE_DIR,
+                                    settings.MEDIA_ROOT,
+                                    primer.primer_fasta.name,
+                                ),
+                                primer.primer_fasta_name,
+                            ]
+                        )
+                elif parameter.name == DefaultParameters.SNIPPY_PRIMER_NAME:
                     list_data = [
                         [data_, data_]
                         for data_ in SoftwareNames.SOFTWARE_SNIPPY_PRIMERS
                     ]
+                    # Add own sets
+                    for primer in Primer.objects.filter(
+                        owner__id=self.request.user.id, is_deleted=False
+                    ).order_by("-name"):
+                        list_data.append(
+                            [
+                                os.path.join(
+                                    settings.BASE_DIR,
+                                    settings.MEDIA_ROOT,
+                                    primer.primer_fasta.name,
+                                ),
+                                primer.primer_fasta_name,
+                            ]
+                        )
+                    # Add system sets
+                    for primer in Primer.objects.filter(
+                        owner__id=User.objects.get(username=Constants.DEFAULT_USER).id,
+                        is_deleted=False,
+                    ).order_by("-name"):
+                        list_data.append(
+                            [
+                                os.path.join(
+                                    settings.BASE_DIR,
+                                    settings.MEDIA_ROOT,
+                                    primer.primer_fasta.name,
+                                ),
+                                primer.primer_fasta_name,
+                            ]
+                        )
                 elif (
                     parameter.name == DefaultParameters.MASK_CLEAN_HUMAN_READS
                     and parameter.software.name
@@ -206,6 +352,7 @@ class SoftwareForm(forms.ModelForm):
                     and parameter.software.pipeline_step.name
                     in self.televir_utiltity.steps_db_dependant
                 ):
+
                     if (
                         parameter.software.pipeline_step.name
                         == ConstantsSettings.PIPELINE_NAME_host_depletion

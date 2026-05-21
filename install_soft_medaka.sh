@@ -34,12 +34,12 @@ cd ..
 rm samtools-1.9.tar.bz2
 
 #Install BCFTools
-wget https://github.com/samtools/bcftools/releases/download/1.9/bcftools-1.9.tar.bz2
-tar -vxjf bcftools-1.9.tar.bz2
-cd bcftools-1.9
+wget https://github.com/samtools/bcftools/releases/download/1.1/bcftools-1.1.tar.bz2
+tar -vxjf bcftools-1.1.tar.bz2
+cd bcftools-1.1
 make
 cd ..
-rm bcftools-1.9.tar.bz2
+rm bcftools-1.1.tar.bz2
 
 ### links
 cd ../bin

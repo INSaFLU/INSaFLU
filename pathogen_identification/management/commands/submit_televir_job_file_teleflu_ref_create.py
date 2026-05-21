@@ -1,11 +1,10 @@
-from typing import List
-
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
 from managing_files.models import ProcessControler
-from pathogen_identification.utilities.reference_utils import file_reference_to_insaflu
-from utils.process_SGE import ProcessSGE
+from pathogen_identification.utilities.reference_utils import \
+    file_reference_to_insaflu
+from utils.process_SGE import ProcessSched
 
 
 class Command(BaseCommand):
@@ -40,7 +39,7 @@ class Command(BaseCommand):
 
         # PROCESS CONTROLER
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
 
         process_SGE.set_process_controler(
             user,
@@ -65,8 +64,7 @@ class Command(BaseCommand):
 
         else:
             print("Process does not exist")
-
-        # UTILITIES
+            
 
         try:
             success, ref_id = file_reference_to_insaflu(ref_id, user_id)

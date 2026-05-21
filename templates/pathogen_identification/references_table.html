@@ -3,9 +3,9 @@
 
 {% load bootstrap4 %}
 {% load querystring from django_tables2 %}
-{% load title from django_tables2 %}
+
 {% load trans blocktrans from i18n %}
-{% load django_bootstrap_breadcrumbs %}
+{% load view_breadcrumbs %}
 
 {% load static %}
 
@@ -18,7 +18,7 @@
 
 
 {% block css %}
-	{% load static from staticfiles %}
+	{% load static %}
 		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
     <link rel="stylesheet" href="{% static 'css/televir_software_graph/collapsibleTree-0.1.6/collapsibleTree.css' %}" />
     <link rel="stylesheet" href="{% static 'css/reference_management.css' %}">
@@ -26,22 +26,8 @@
 
 {% endblock css %}
 
-{% block breadcrumbs %}
-{{block.super}}
-{% if owner %}
-{% breadcrumb "Project Index" "project-index" %}
-{% breadcrumb "TELEVIR Projects" "PIprojects_main"  %}
-{% breadcrumb project_name "PIproject_samples" pk=project_index %}
-{% breadcrumb sample_name "sample_main" pk1=project_index pk2=sample_index  %}
-{% breadcrumb "References Management" "sample_references_management" pk1=sample_index %}
-{% else %}
-{% breadcrumb "Project Index" "project-index" %}
-
-{% endif %}
-{% endblock %}
 
 {% block content %}
-
 
 <div id="accordion1" role="tablist" aria-multiselectable="true">
   <div class="card">
@@ -73,7 +59,7 @@
                       <div class="col-sm-2 workflow-link-panel centered-links">
                         <ul>
                             {% for run in runs %}
-                            <li><a href="{% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}">Workflow report {{run.parameter_set.leaf.index}}</a></li>
+                            <li><a href="{% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}">Workflow report {{run.parameter_set.leaf.software_tree.global_index}}-{{run.parameter_set.leaf.index}}</a></li>
                             {% endfor %}
                         </ul>
                       </div>
@@ -244,9 +230,9 @@
                     <th>
                       <button id="clearSelections" class="clear-selections-btn" title="Clear selection">x</button>                    </th>
                   {% elif column.orderable %}
-                      <th {{ column.attrs.th.as_html }}><a href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header|title }}</a></th>
+                      <th {{ column.attrs.th.as_html }}><a href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header }}</a></th>
                   {% else %}
-                    <th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
+                    <th {{ column.attrs.th.as_html }}>{{ column.header }}</th>
                   {% endif %}
                 {% endfor %}
               </tr>
@@ -514,7 +500,7 @@
 
 {% block js %}
 
-{% load static from staticfiles %}
+{% load static %}
 <!-- Custom scripts for all pages-->
 <script type="text/javascript" src="{% static 'js/check-box-general.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/graph_televir/htmlwidgets-1.6.2/htmlwidgets.js' %}"></script>

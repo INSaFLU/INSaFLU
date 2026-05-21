@@ -43,7 +43,7 @@ $ qconf -Aq grid_add_queue_queue_2.txt
 $ qconf -dq <a queue name>
 
 ### show all queues
-$ qstat -f
+$ squeue -f
 
 ### show all info
 $ qconf -sq <queue name>

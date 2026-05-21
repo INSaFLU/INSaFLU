@@ -10,7 +10,7 @@
 	<title>INSaFLU - Instituto Nacional de Saúde Doutor Ricardo Jorge</title>
 	<!-- Bootstrap core CSS-->
 
-	{% load static from staticfiles %}
+	{% load static %}
 	<link rel="stylesheet" href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet"
 		type="text/css">
 	<!-- Custom fonts for this template-->
@@ -53,6 +53,12 @@
             <span class="nav-link-text">Home</span>
           </a>
         </li>
+        <li class="nav-item {% if nav_primer %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="Primer Management">
+			<a class="nav-link " href="{% url 'primer' %}">
+			  <i class="fa fa-fw fa-align-left "></i>
+			  <span class="nav-link-text ">Primers</span>
+			</a>
+		</li>		
         <li class="nav-item {% if nav_reference %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="References Management">
           <a class="nav-link " href="{% url 'references-index' %}">
             <i class="fa fa-fw fa-bug "></i>
@@ -176,17 +182,14 @@
 
 			{% if nav_modal %} <div class="container"> {% endif %}
 				{% if not not_show_breadcrumbs %}
-				{% load django_bootstrap_breadcrumbs %}
+				{% load view_breadcrumbs %}
 				{% block breadcrumbs %}
-				{% clear_breadcrumbs %}
-				{% breadcrumb "Home" "/" %}
-				{% endblock breadcrumbs %}
 				{% render_breadcrumbs %}
+				{% endblock breadcrumbs %}
 				{% endif %}
 
 				{% block header %}{% endblock header %}
 				{% block extra_nav %}{% endblock %}
-
 				{% block content %}{% endblock content %}
 				<p> </p>
 				{% if nav_modal %} </div> {% endif %}
@@ -244,7 +247,7 @@
 
 
 	<!-- Bootstrap core JavaScript-->
-	{% load static from staticfiles %}
+	{% load static %}
 	<script type="text/javascript" src="{% static 'vendor/jquery/jquery.min.js' %}"></script>
 	<script type="text/javascript" src="{% static 'vendor/popper/popper.min.js' %}"></script>
 	<script type="text/javascript" src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>

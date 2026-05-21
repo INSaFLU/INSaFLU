@@ -4,20 +4,18 @@ Created on 03/05/2020
 @author: mmp
 """
 
-from curses.ascii import SO
-
 from django.contrib.auth.models import User
+from django.db import transaction
 
+from constants.constants import Constants
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from pathogen_identification.utilities.utilities_pipeline import (
-    Utility_Pipeline_Manager,
-    Utils_Manager,
-)
+    Utility_Pipeline_Manager, Utils_Manager)
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.models import Parameter, Software, SoftwareDefaultTest
-from utils.lock_atomic_transaction import LockedAtomicTransaction
 
 
 class DefaultSoftware(object):
@@ -40,7 +38,7 @@ class DefaultSoftware(object):
         test if exist, if not persist in database
         """
         try:
-            software_test = SoftwareDefaultTest.objects.get(
+            SoftwareDefaultTest.objects.get(
                 user=user, televir_pipelines_available=True
             )
 
@@ -64,7 +62,7 @@ class DefaultSoftware(object):
 
     def test_televir_software_available(self):
         """test if televir software is available"""
-        user_system = User.objects.get(username="system")
+        user_system = User.objects.get(username=Constants.DEFAULT_USER)
 
         # self.test_all_defaults_pathogen_identification_once(user_system)
 
@@ -76,26 +74,29 @@ class DefaultSoftware(object):
 
     def remove_all_parameters(self, user):
         """remove all parameters"""
-        user_software = Software.objects.filter(owner=user)
-        user_parameter = Parameter.objects.filter(software__in=user_software)
-        with LockedAtomicTransaction(Parameter):
+        user_software = Software.objects.select_for_update().filter(owner=user)
+        user_parameter = Parameter.objects.select_for_update().filter(
+            software__in=user_software
+        )
+
+        with transaction.atomic():
             user_parameter.delete()
 
-        with LockedAtomicTransaction(Software):
+        with transaction.atomic():
             user_software.delete()
 
     def remove_all_software(self, user):
         """remove all software"""
-        user_software = Software.objects.filter(owner=user)
-        with LockedAtomicTransaction(Software):
+        user_software = Software.objects.select_for_update().filter(owner=user)
+        with transaction.atomic():
             user_software.delete()
 
     def remove_all_televir_global_software(self, user):
         """remove all software"""
-        user_software = Software.objects.filter(
+        user_software = Software.objects.select_for_update().filter(
             owner=user, type_of_use=Software.TYPE_OF_USE_televir_global
         )
-        with LockedAtomicTransaction(Software):
+        with transaction.atomic():
             user_software.delete()
 
     def remove_all_televir_global_Parameters(self, user):
@@ -104,23 +105,23 @@ class DefaultSoftware(object):
             software__type_of_use=Software.TYPE_OF_USE_televir_global,
             software__owner=user,
         )
-        with LockedAtomicTransaction(Parameter):
+        with transaction.atomic():
             user_parameter.delete()
 
     def remove_all_televir_project_Parameters(self, user):
-        user_project_parameter = Parameter.objects.filter(
+        user_project_parameter = Parameter.objects.select_for_update().filter(
             software__type_of_use=Software.TYPE_OF_USE_televir_project,
             software__owner=user,
         )
-        with LockedAtomicTransaction(Parameter):
+        with transaction.atomic():
             user_project_parameter.delete()
 
     def remove_all_televir_project_software(self, user):
         """remove all software"""
-        user_software = Software.objects.filter(
+        user_software = Software.objects.select_for_update().filter(
             owner=user, type_of_use=Software.TYPE_OF_USE_televir_project
         )
-        with LockedAtomicTransaction(Software):
+        with transaction.atomic():
             user_software.delete()
 
     def remove_all_televir_global(self, user):
@@ -157,7 +158,6 @@ class DefaultSoftware(object):
 
         try:
             SoftwareDefaultTest.objects.get(user=user, is_tested_all_defaults=True)
-
         except SoftwareDefaultTest.DoesNotExist:
             self.test_all_defaults(user)
             if not SoftwareDefaultTest.objects.filter(user=user).exists():
@@ -194,13 +194,36 @@ class DefaultSoftware(object):
             ),
             user,
         )
+
         self.test_default_db(
             SoftwareNames.SOFTWARE_SNIPPY_name,
             self.default_parameters.get_snippy_default(
                 user, Software.TYPE_OF_USE_global, ConstantsSettings.TECHNOLOGY_illumina
             ),
             user,
+            SoftwareNames.SOFTWARE_SNIPPY_name_extended,
         )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_IVAR_name,
+            self.default_parameters.get_ivar_default(
+                user, Software.TYPE_OF_USE_global, ConstantsSettings.TECHNOLOGY_illumina
+            ),
+            user,
+            SoftwareNames.SOFTWARE_IVAR_name_extended,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_IRMA_name,
+            self.default_parameters.get_irma_default(
+                user,
+                Software.TYPE_OF_USE_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            ),
+            user,
+            SoftwareNames.SOFTWARE_IRMA_name_extended,
+        )
+
         self.test_default_db(
             SoftwareNames.SOFTWARE_FREEBAYES_name,
             self.default_parameters.get_freebayes_default(
@@ -427,6 +450,30 @@ class DefaultSoftware(object):
                 user,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_minion,
+            ),
+            user,
+        )
+
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_BWA_FILTER_name,
+            self.default_parameters.get_bwa_filter_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_extra_qc,
+            ),
+            user,
+        )
+
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_BWA_FILTER_name,
+            self.default_parameters.get_bwa_filter_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_extra_qc,
             ),
             user,
         )
@@ -678,6 +725,86 @@ class DefaultSoftware(object):
             user,
         )
 
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_KRAKEN2_name,
+            self.default_parameters.get_kraken2_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_contig_classification,
+                is_to_run=False,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_KRAKEN2_name,
+            self.default_parameters.get_kraken2_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_read_classification,
+                is_to_run=False,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_KRAKEN2_name,
+            self.default_parameters.get_kraken2_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_contig_classification,
+                is_to_run=False,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_KRAKEN2_name,
+            self.default_parameters.get_kraken2_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_viral_enrichment,
+                is_to_run=False,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name,
+            self.default_parameters.get_bowtie2_remap_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_BWA_name,
+            self.default_parameters.get_bwa_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_request_mapping,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_BWA_name,
+            self.default_parameters.get_bwa_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_remapping,
+            ),
+            user,
+        )
+
         if PICS.TEST_SOFTWARE:
             self.test_defaults_test_televir(user)
         if PICS.METAGENOMICS:
@@ -737,25 +864,8 @@ class DefaultSoftware(object):
             user,
         )
 
-        self.test_default_db(
-            SoftwareNames.SOFTWARE_METAGENOMICS_SETTINGS_name,
-            self.default_parameters.get_metagenomics_settings_defaults(
-                user,
-                Software.TYPE_OF_USE_televir_settings,
-                ConstantsSettings.TECHNOLOGY_illumina,
-            ),
-            user,
-        )
 
-        self.test_default_db(
-            SoftwareNames.SOFTWARE_METAGENOMICS_SETTINGS_name,
-            self.default_parameters.get_metagenomics_settings_defaults(
-                user,
-                Software.TYPE_OF_USE_televir_settings,
-                ConstantsSettings.TECHNOLOGY_minion,
-            ),
-            user,
-        )
+
 
     def test_defaults_test_televir(self, user):
         """
@@ -791,63 +901,7 @@ class DefaultSoftware(object):
         #    user,
         # )
 
-        self.test_default_db(
-            SoftwareNames.SOFTWARE_KRAKEN2_name,
-            self.default_parameters.get_kraken2_default(
-                user,
-                Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_illumina,
-                pipeline_step=ConstantsSettings.PIPELINE_NAME_contig_classification,
-                is_to_run=False,
-            ),
-            user,
-        )
-
-        self.test_default_db(
-            SoftwareNames.SOFTWARE_KRAKEN2_name,
-            self.default_parameters.get_kraken2_default(
-                user,
-                Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_minion,
-                pipeline_step=ConstantsSettings.PIPELINE_NAME_read_classification,
-                is_to_run=False,
-            ),
-            user,
-        )
-
-        self.test_default_db(
-            SoftwareNames.SOFTWARE_KRAKEN2_name,
-            self.default_parameters.get_kraken2_default(
-                user,
-                Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_minion,
-                pipeline_step=ConstantsSettings.PIPELINE_NAME_contig_classification,
-                is_to_run=False,
-            ),
-            user,
-        )
-
-        self.test_default_db(
-            SoftwareNames.SOFTWARE_KRAKEN2_name,
-            self.default_parameters.get_kraken2_default(
-                user,
-                Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_illumina,
-                pipeline_step=ConstantsSettings.PIPELINE_NAME_viral_enrichment,
-                is_to_run=False,
-            ),
-            user,
-        )
-
-        self.test_default_db(
-            SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name,
-            self.default_parameters.get_bowtie2_remap_default(
-                user,
-                Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_illumina,
-            ),
-            user,
-        )
+        return
 
     def assess_db_dependency_met(self, vect_parameters, software_name):
         """for pipeline steps where sequence dbs are required, check that they exist."""
@@ -855,10 +909,22 @@ class DefaultSoftware(object):
             vect_parameters[0].software.type_of_use
             == Software.TYPE_OF_USE_televir_global
         ):
+            
+            if vect_parameters[0].software.name == SoftwareNames.SOFTWARE_BWA_FILTER_name:
+
+                return self.televir_utiltity.check_software_db_available(
+                    software_name = software_name
+                )
+
             if (
                 vect_parameters[0].software.pipeline_step.name
                 in self.televir_utiltity.steps_db_dependant
             ):
+                if (
+                    vect_parameters[0].software.name
+                    == SoftwareNames.SOFTWARE_METAPHLAN_NAME
+                ):
+                    return True
                 if not self.televir_utiltity.check_software_db_available(
                     software_name=software_name,
                 ):
@@ -866,13 +932,16 @@ class DefaultSoftware(object):
 
         return True
 
-    def test_default_db(self, software_name, vect_parameters, user):
+    def test_default_db(self, software_name, vect_parameters, user, name_extended=None):
         """
         test if exist, if not persist in database
         """
         type_of_use = Software.TYPE_OF_USE_global
 
         if not self.assess_db_dependency_met(vect_parameters, software_name):
+            return
+        
+        if vect_parameters == None:
             return
 
         ## lock because more than one process can duplicate software names
@@ -881,6 +950,20 @@ class DefaultSoftware(object):
             type_of_use = vect_parameters[0].software.type_of_use
         except:
             pass
+
+        if name_extended is None:
+            self.test_default_persist_general(
+                software_name, vect_parameters, user, type_of_use
+            )
+        else:
+            self.test_default_persist_specific(
+                software_name, vect_parameters, user, name_extended, type_of_use
+            )
+
+    def test_default_persist_general(
+        self, software_name, vect_parameters, user, type_of_use
+    ):
+
         try:
 
             software_queried = Software.objects.get(
@@ -896,6 +979,61 @@ class DefaultSoftware(object):
 
         except Software.MultipleObjectsReturned:
             ## keep the first one, delete the rest
+            print("Multiple software found for:", software_name)
+            software_query = (
+                Software.objects.filter(
+                    name=software_name,
+                    owner=user,
+                    type_of_use=vect_parameters[0].software.type_of_use,
+                    technology__name=vect_parameters[0].software.technology.name,
+                    version_parameters=self.default_parameters.get_software_parameters_version(
+                        software_name
+                    ),
+                    pipeline_step__name=vect_parameters[0].software.pipeline_step,
+                    parameter__televir_project=None,
+                    parameter__televir_project_sample=None,
+                )
+                .distinct("id")
+                .order_by("id")
+            )
+
+            if software_query.count() > 1:
+                software = software_query.exclude(pk=software_query.last().pk)
+                software = Software.objects.select_for_update().filter(
+                    pk__in=software.values_list("pk", flat=True)
+                )
+
+                parameters = Parameter.objects.select_for_update().filter(
+                    software__in=software
+                )
+                with transaction.atomic():
+                    parameters.delete()
+                with transaction.atomic():
+                    software.delete()
+
+        except Software.DoesNotExist:  ### if not exist save it
+            self.default_parameters.persist_parameters(vect_parameters, type_of_use)
+
+    def test_default_persist_specific(
+        self, software_name, vect_parameters, user, name_extended, type_of_use
+    ):
+
+        try:
+
+            _ = Software.objects.get(
+                name=software_name,
+                owner=user,
+                type_of_use=vect_parameters[0].software.type_of_use,
+                technology__name=vect_parameters[0].software.technology.name,
+                version_parameters=self.default_parameters.get_software_parameters_version(
+                    software_name
+                ),
+                pipeline_step__name=vect_parameters[0].software.pipeline_step,
+                name_extended=name_extended,
+            )
+
+        except Software.MultipleObjectsReturned:
+            ## keep the first one, delete the rest
             software_query = Software.objects.filter(
                 name=software_name,
                 owner=user,
@@ -905,6 +1043,7 @@ class DefaultSoftware(object):
                     software_name
                 ),
                 pipeline_step__name=vect_parameters[0].software.pipeline_step,
+                name_extended=name_extended,
                 parameter__televir_project=None,
                 parameter__televir_project_sample=None,
             ).order_by("id")
@@ -913,17 +1052,18 @@ class DefaultSoftware(object):
                 software = software_query.exclude(pk=software_query.last().pk)
 
                 parameters = Parameter.objects.filter(software__in=software)
-                with LockedAtomicTransaction(Parameter):
-                    parameters.delete()
-                with LockedAtomicTransaction(Software):
-                    software.delete()
+                try:
+                    with transaction.atomic():
+                        parameters.delete()
+                        software.delete()
+                except:
+                    pass
 
-        except Software.DoesNotExist:  ### if not exist save it
-
+        except Software.DoesNotExist:
             self.default_parameters.persist_parameters(vect_parameters, type_of_use)
 
     def get_trimmomatic_parameters(self, user):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_TRIMMOMATIC_name,
             user,
             Software.TYPE_OF_USE_qc,
@@ -934,8 +1074,8 @@ class DefaultSoftware(object):
         )
         return "" if result is None else result
 
-    def get_snippy_parameters(self, user):
-        result = self.default_parameters.get_parameters(
+    def get_snippy_parameters(self, user, is_to_run=False):
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_SNIPPY_name,
             user,
             Software.TYPE_OF_USE_global,
@@ -943,11 +1083,40 @@ class DefaultSoftware(object):
             None,
             None,
             ConstantsSettings.TECHNOLOGY_illumina,
+            is_to_run=is_to_run,
+            software_name_extended=SoftwareNames.SOFTWARE_SNIPPY_name_extended,
         )
         return "" if result is None else result
 
+    def get_ivar_parameters(self, user):
+        result = self.default_parameters.get_parameters_parsed(
+            SoftwareNames.SOFTWARE_IVAR_name,
+            user,
+            Software.TYPE_OF_USE_global,
+            None,
+            None,
+            None,
+            ConstantsSettings.TECHNOLOGY_illumina,
+            software_name_extended=SoftwareNames.SOFTWARE_IVAR_name_extended,
+        )
+        return "" if result is None else result
+
+    def get_irma_parameters(self, user):
+        result = self.default_parameters.get_parameters_parsed(
+            SoftwareNames.SOFTWARE_IRMA_name,
+            user,
+            Software.TYPE_OF_USE_global,
+            None,
+            None,
+            None,
+            ConstantsSettings.TECHNOLOGY_illumina,
+            software_name_extended=SoftwareNames.SOFTWARE_IRMA_name_extended,
+        )
+
+        return "" if result is None else result
+
     def get_freebayes_parameters(self, user):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_FREEBAYES_name,
             user,
             Software.TYPE_OF_USE_global,
@@ -959,7 +1128,7 @@ class DefaultSoftware(object):
         return "" if result is None else result
 
     def get_nanofilt_parameters(self, user):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_NanoFilt_name,
             user,
             Software.TYPE_OF_USE_qc,
@@ -971,7 +1140,7 @@ class DefaultSoftware(object):
         return "" if result is None else result
 
     def get_mask_consensus_threshold_parameters(self, user, technology_name):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name,
             user,
             Software.TYPE_OF_USE_global,
@@ -983,7 +1152,7 @@ class DefaultSoftware(object):
         return "" if result is None else result
 
     def get_clean_human_reads_parameters(self, user, technology_name):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_name,
             user,
             Software.TYPE_OF_USE_global,
@@ -995,7 +1164,7 @@ class DefaultSoftware(object):
         return "" if result is None else result
 
     def get_limit_coverage_ONT_parameters(self, user):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name,
             user,
             Software.TYPE_OF_USE_global,
@@ -1007,7 +1176,7 @@ class DefaultSoftware(object):
         return "" if result is None else result
 
     def get_vcf_freq_ONT_parameters(self, user):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name,
             user,
             Software.TYPE_OF_USE_global,
@@ -1019,7 +1188,7 @@ class DefaultSoftware(object):
         return "" if result is None else result
 
     def get_medaka_parameters_consensus(self, user):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_Medaka_name_consensus,
             user,
             Software.TYPE_OF_USE_global,
@@ -1031,7 +1200,7 @@ class DefaultSoftware(object):
         return "" if result is None else result
 
     def get_samtools_parameters_depth_ONT(self, user):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT,
             user,
             Software.TYPE_OF_USE_global,
@@ -1043,7 +1212,7 @@ class DefaultSoftware(object):
         return "" if result is None else result
 
     def get_abricate_parameters(self, user, technology_name):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_ABRICATE_name,
             user,
             Software.TYPE_OF_USE_qc,
@@ -1058,7 +1227,7 @@ class DefaultSoftware(object):
     ### PATHOGEN DETECTION PARAMETERS
 
     def get_remap_parameters(self, user, technology_name):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_REMAP_PARAMS_name,
             user,
             Software.TYPE_OF_USE_televir_settings,
@@ -1070,7 +1239,7 @@ class DefaultSoftware(object):
         return "" if result is None else result
 
     def get_prinseq_parameters(self, user, technology_name):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_PRINSEQ_name,
             user,
             Software.TYPE_OF_USE_televir_global,
@@ -1081,8 +1250,22 @@ class DefaultSoftware(object):
         )
         return "" if result is None else result
 
+    def get_bwa_filter_parameters(self, user, technology_name, pipeline_step):
+        result = self.default_parameters.get_parameters_parsed(
+            SoftwareNames.SOFTWARE_BWA_FILTER_name,
+            user,
+            Software.TYPE_OF_USE_televir_global,
+            None,
+            None,
+            None,
+            technology_name,
+            pipeline_step=pipeline_step,
+            software_name_extended=SoftwareNames.SOFTWARE_BWA_FILTER_name_extended,
+        )
+        return "" if result is None else result
+
     def get_bamutil_parameters(self, user, technology_name):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_BAMUTIL_name,
             user,
             Software.TYPE_OF_USE_televir_global,
@@ -1094,7 +1277,7 @@ class DefaultSoftware(object):
         return "" if result is None else result
 
     def get_dustmasker_parameters(self, user, technology_name, pipeline_step=None):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_DUSTMASKER_name,
             user,
             Software.TYPE_OF_USE_televir_global,
@@ -1106,20 +1289,9 @@ class DefaultSoftware(object):
         )
         return "" if result is None else result
 
-    def get_metagenomics_settings_parameters(self, user, technology_name):
-        result = self.default_parameters.get_parameters(
-            SoftwareNames.SOFTWARE_METAGENOMICS_SETTINGS_name,
-            user,
-            Software.TYPE_OF_USE_televir_settings,
-            None,
-            None,
-            None,
-            technology_name,
-        )
-        return "" if result is None else result
 
     def get_msamtools_parameters(self, user, technology_name, pipeline_step=None):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_MSAMTOOLS_name,
             user,
             Software.TYPE_OF_USE_televir_global,
@@ -1132,7 +1304,7 @@ class DefaultSoftware(object):
         return "" if result is None else result
 
     def get_televir_report_layout_parameters(self, user, technology_name):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_televir_report_layout_name,
             user,
             Software.TYPE_OF_USE_televir_settings,
@@ -1144,7 +1316,7 @@ class DefaultSoftware(object):
         return "" if result is None else result
 
     def get_kaiju_parameters(self, user, technology_name):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_KAIJU_name,
             user,
             Software.TYPE_OF_USE_televir_global,
@@ -1156,7 +1328,7 @@ class DefaultSoftware(object):
         return "" if result is None else result
 
     def get_centrifuge_parameters(self, user, technology_name, pipeline_step=None):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_CENTRIFUGE_name,
             user,
             Software.TYPE_OF_USE_televir_global,
@@ -1168,8 +1340,32 @@ class DefaultSoftware(object):
         )
         return "" if result is None else result
 
+    def get_metaphlan_parameters(self, user, technology_name):
+        result = self.default_parameters.get_parameters_parsed(
+            SoftwareNames.SOFTWARE_METAPHLAN_NAME,
+            user,
+            Software.TYPE_OF_USE_televir_global,
+            None,
+            None,
+            None,
+            technology_name,
+        )
+        return "" if result is None else result
+
+    def get_voyager_parameters(self, user, technology_name):
+        result = self.default_parameters.get_parameters_parsed(
+            SoftwareNames.SOFTWARE_VOYAGER_name,
+            user,
+            Software.TYPE_OF_USE_televir_global,
+            None,
+            None,
+            None,
+            technology_name,
+        )
+        return "" if result is None else result
+
     def get_bwa_parameters(self, user, technology_name, pipeline_step=None):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_BWA_name,
             user,
             Software.TYPE_OF_USE_televir_global,
@@ -1182,7 +1378,7 @@ class DefaultSoftware(object):
         return "" if result is None else result
 
     def get_kraken2_parameters(self, user, technology_name, pipeline_step=None):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_KRAKEN2_name,
             user,
             Software.TYPE_OF_USE_televir_global,
@@ -1195,7 +1391,7 @@ class DefaultSoftware(object):
         return "" if result is None else result
 
     def get_diamond_parameters(self, user, technology_name):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_DIAMOND_name,
             user,
             Software.TYPE_OF_USE_televir_global,
@@ -1207,7 +1403,7 @@ class DefaultSoftware(object):
         return "" if result is None else result
 
     def get_blast_parameters(self, user, technology_name):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_BLAST_name,
             user,
             Software.TYPE_OF_USE_televir_global,
@@ -1219,7 +1415,7 @@ class DefaultSoftware(object):
         return "" if result is None else result
 
     def get_krakenuniq_parameters(self, user, technology_name):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_KRAKENUNIQ_name,
             user,
             Software.TYPE_OF_USE_televir_global,
@@ -1231,7 +1427,7 @@ class DefaultSoftware(object):
         return "" if result is None else result
 
     def get_desamba_parameters(self, user, technology_name):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_DESAMBA_name,
             user,
             Software.TYPE_OF_USE_televir_global,
@@ -1243,7 +1439,7 @@ class DefaultSoftware(object):
         return "" if result is None else result
 
     def get_raven_parameters(self, user, technology_name):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_RAVEN_name,
             user,
             Software.TYPE_OF_USE_televir_global,
@@ -1255,7 +1451,7 @@ class DefaultSoftware(object):
         return "" if result is None else result
 
     def get_spades_parameters(self, user, technology_name):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_SPAdes_name,
             user,
             Software.TYPE_OF_USE_televir_global,
@@ -1267,7 +1463,7 @@ class DefaultSoftware(object):
         return "" if result is None else result
 
     def get_fastviromeexplorer_parameters(self, user, technology_name):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_FASTVIROMEEXPLORER_name,
             user,
             Software.TYPE_OF_USE_televir_global,
@@ -1279,7 +1475,7 @@ class DefaultSoftware(object):
         return "" if result is None else result
 
     def get_snippy_pi_parameters(self, user, technology_name):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_SNIPPY_PI_name,
             user,
             Software.TYPE_OF_USE_televir_global,
@@ -1291,7 +1487,7 @@ class DefaultSoftware(object):
         return "" if result is None else result
 
     def get_minimap2_remap_ont_parameters(self, user):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name,
             user,
             Software.TYPE_OF_USE_televir_global,
@@ -1303,7 +1499,7 @@ class DefaultSoftware(object):
         return "" if result is None else result
 
     def get_bowtie2_deplete_parameters(self, user, technology_name):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_BOWTIE2_DEPLETE_name,
             user,
             Software.TYPE_OF_USE_televir_global,
@@ -1315,7 +1511,7 @@ class DefaultSoftware(object):
         return "" if result is None else result
 
     def get_bowtie2_remap_parameters(self, user, technology_name, pipeline_step=None):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name,
             user,
             Software.TYPE_OF_USE_televir_global,
@@ -1328,7 +1524,7 @@ class DefaultSoftware(object):
         return "" if result is None else result
 
     def get_minimap2_deplete_ont_parameters(self, user):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ONT_name,
             user,
             Software.TYPE_OF_USE_televir_global,
@@ -1340,7 +1536,7 @@ class DefaultSoftware(object):
         return "" if result is None else result
 
     def get_minimap2_remap_illumina_parameters(self, user):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ILLU_name,
             user,
             Software.TYPE_OF_USE_televir_global,
@@ -1352,7 +1548,7 @@ class DefaultSoftware(object):
         return "" if result is None else result
 
     def get_minimap2_map_assembly_parameters(self, user):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_MINIMAP2_MAP_ASSEMBLY_name,
             user,
             Software.TYPE_OF_USE_televir_global,
@@ -1364,7 +1560,7 @@ class DefaultSoftware(object):
         return "" if result is None else result
 
     def get_minimap2_deplete_illumina(self, user):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ILLU_name,
             user,
             Software.TYPE_OF_USE_televir_global,
@@ -1376,7 +1572,7 @@ class DefaultSoftware(object):
         return "" if result is None else result
 
     def get_nextstrain_parameters(self, user):
-        result = self.default_parameters.get_parameters(
+        result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_NEXTSTRAIN_name,
             user,
             Software.TYPE_OF_USE_global,
@@ -1441,7 +1637,36 @@ class DefaultSoftware(object):
                 user,
             )
             return self.get_trimmomatic_parameters(user)
+
+        if software_name == SoftwareNames.SOFTWARE_IVAR_name:
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_IVAR_name,
+                self.default_parameters.get_ivar_default(
+                    user,
+                    Software.TYPE_OF_USE_global,
+                    ConstantsSettings.TECHNOLOGY_illumina,
+                    pipeline_step=ConstantsSettings.PIPELINE_NAME_variant_detection,
+                ),
+                user,
+                SoftwareNames.SOFTWARE_IVAR_name_extended,
+            )
+            return self.get_ivar_parameters(user)
+
+        if software_name == SoftwareNames.SOFTWARE_IRMA_name:
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_IRMA_name,
+                self.default_parameters.get_irma_default(
+                    user,
+                    Software.TYPE_OF_USE_global,
+                    ConstantsSettings.TECHNOLOGY_illumina,
+                ),
+                user,
+                SoftwareNames.SOFTWARE_IRMA_name_extended,
+            )
+            return self.get_irma_parameters(user)
+
         if software_name == SoftwareNames.SOFTWARE_SNIPPY_name:
+
             self.test_default_db(
                 SoftwareNames.SOFTWARE_SNIPPY_name,
                 self.default_parameters.get_snippy_default(
@@ -1451,6 +1676,7 @@ class DefaultSoftware(object):
                     pipeline_step=ConstantsSettings.PIPELINE_NAME_variant_detection,
                 ),
                 user,
+                SoftwareNames.SOFTWARE_SNIPPY_name_extended,
             )
 
             return self.get_snippy_parameters(user)
@@ -1558,8 +1784,8 @@ class DefaultSoftware(object):
             )
             return self.get_nextstrain_parameters(user)
 
-        ##########################################
-        ############### TELEVIR SOFTWARE #########
+        ################################################
+        ############### TELEVIR SOFTWARE ###############
 
         if software_name == SoftwareNames.SOFTWARE_REMAP_PARAMS_name:
 
@@ -1577,6 +1803,9 @@ class DefaultSoftware(object):
             )
             return self.get_prinseq_parameters(user, technology_name)
 
+        if software_name == SoftwareNames.SOFTWARE_BWA_FILTER_name:
+            return self.get_bwa_filter_parameters(user, technology_name, pipeline_step)
+
         if software_name == SoftwareNames.SOFTWARE_BAMUTIL_name:
 
             return self.get_bamutil_parameters(user, technology_name)
@@ -1587,10 +1816,6 @@ class DefaultSoftware(object):
                 user, technology_name, pipeline_step=pipeline_step
             )
 
-        if software_name == SoftwareNames.SOFTWARE_METAGENOMICS_SETTINGS_name:
-
-            return self.get_metagenomics_settings_parameters(user, technology_name)
-
         if software_name == SoftwareNames.SOFTWARE_MSAMTOOLS_name:
 
             return self.get_msamtools_parameters(user, technology_name)
@@ -1600,10 +1825,15 @@ class DefaultSoftware(object):
             return self.get_televir_report_layout_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_CENTRIFUGE_name:
-
             return self.get_centrifuge_parameters(
                 user, technology_name, pipeline_step=pipeline_step
             )
+
+        if software_name == SoftwareNames.SOFTWARE_METAPHLAN_NAME:
+            return self.get_metaphlan_parameters(user, technology_name)
+
+        if software_name == SoftwareNames.SOFTWARE_VOYAGER_name:
+            return self.get_voyager_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name:
 
@@ -1690,6 +1920,8 @@ class DefaultSoftware(object):
         vect_software = []
         vect_software.append(self.software_names.get_trimmomatic_name())
         vect_software.append(self.software_names.get_snippy_name())
+        vect_software.append(self.software_names.get_ivar_name())
+        vect_software.append(self.software_names.get_irma_name())
         vect_software.append(self.software_names.get_freebayes_name())
         vect_software.append(self.software_names.get_NanoFilt_name())
         vect_software.append(

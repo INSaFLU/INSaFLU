@@ -8,15 +8,14 @@ from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
 from managing_files.models import ProcessControler
-from pathogen_identification.models import (
-    ReferenceSource,
-    ReferenceSourceFile,
-    ReferenceSourceFileMap,
-    ReferenceTaxid,
-)
-from pathogen_identification.utilities.reference_utils import raw_reference_to_insaflu
+from pathogen_identification.models import (ReferenceSource,
+                                            ReferenceSourceFile,
+                                            ReferenceSourceFileMap,
+                                            ReferenceTaxid)
+from pathogen_identification.utilities.reference_utils import \
+    raw_reference_to_insaflu
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 
 
 class Command(BaseCommand):
@@ -66,7 +65,7 @@ class Command(BaseCommand):
 
         # PROCESS CONTROLER
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
 
         process_SGE.set_process_controler(
             user,
@@ -125,9 +124,14 @@ class Command(BaseCommand):
                         metadata_table["Accession ID"] == record.id
                     ]["Description"].values[0]
 
-                    taxid = ReferenceTaxid.objects.get_or_create(
-                        taxid=taxid,
-                    )[0]
+                    try:
+                        taxid, _ = ReferenceTaxid.objects.get_or_create(
+                            taxid=taxid,
+                        )
+                    except ReferenceTaxid.MultipleObjectsReturned:
+                        taxid = ReferenceTaxid.objects.filter(
+                            taxid=taxid,
+                        ).first()
 
                     reference_source = ReferenceSource.objects.create(
                         accid=record.id,

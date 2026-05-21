@@ -5,7 +5,8 @@ import os
 from abc import abstractmethod
 from typing import List
 
-from sqlalchemy import Boolean, Column, MetaData, String, Table, create_engine
+from sqlalchemy import (Boolean, Column, Integer, MetaData, String, Table,
+                        create_engine, text)
 
 
 class software_item:
@@ -49,7 +50,11 @@ class Utility_Repository:
 
         # self.connection = self.engine.connect()
         self.metadata = MetaData()
-        # self.create_tables()
+
+        if not self.check_tables_exists():
+            # self.delete_tables()
+            # self.clear_tables()
+            self.create_tables()
 
     def setup_engine(self, install_type):
         if not os.path.exists(self.db_path):
@@ -68,7 +73,7 @@ class Utility_Repository:
     def setup_engine_docker(self):
         self.engine = create_engine(
             f"{self.dbtype_local}:////"
-            + os.path.join(*self.db_path.split("/"), "utility_docker.db")
+            + os.path.join(*self.db_path.split("/"), "utility_local.db")
         )
 
     def setup_engine_posrgres(self):
@@ -77,6 +82,40 @@ class Utility_Repository:
         self.engine = create_engine(
             f"postgresql+psycopg2://{config('DB_USER')}:{config('DB_PASSWORD')}@{config('DB_HOST')}:{config('DB_PORT')}/{config('DB_NAME')}"
         )
+
+    def engine_execute_return_table(self, string: str):
+        sql = text(string)
+
+        rows = None
+
+        with self.engine.connect() as conn:
+            result = conn.execute(sql)
+            #conn.commit()
+            rows = result.fetchall()
+
+        return rows
+
+    def check_table_exists(self, table_name):
+        """
+        Check if a table exists in the database
+        """
+        find = self.engine.execute(
+            f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table_name}'"
+        ).fetchall()
+
+        if len(find) > 0:
+            return True
+        else:
+            return False
+
+    def check_tables_exists(self):
+        """
+        Check if the tables exist in the database
+        """
+        for table_name in self.tables:
+            if not self.check_table_exists(table_name):
+                return False
+        return True
 
     def create_software_table(self):
         self.software = Table(
@@ -245,7 +284,7 @@ class Utility_Repository:
         else:
             return False
 
-    def check_exists(self, table_name, field, id):
+    def check_exists(self, table_name: str, id: str):
         """
         Check if a record exists in a table
         """
@@ -256,13 +295,11 @@ class Utility_Repository:
         check_list = [f"'{i}'" for i in check_list]
         check_list = ",".join(check_list)
 
-        software_list = self.engine.execute(f"SELECT * FROM {table_name}")
+        find = self.engine_execute_return_table(
+            f"SELECT * FROM {table_name} WHERE name='{id}'"
+        )
 
-        find = self.engine.execute(
-            f"SELECT * FROM {table_name} WHERE {field} IN ({check_list})"
-        ).fetchall()
         find = len(find) > 0
-
         if find:
             return True
         else:

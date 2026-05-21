@@ -1,6 +1,6 @@
 {% extends '_layouts/base.html' %}
 {% load querystring from django_tables2 %}
-{% load django_bootstrap_breadcrumbs %}
+{% load view_breadcrumbs %}
 {% load bootstrap4 %}
 
 {%load html_tags%}
@@ -13,18 +13,6 @@
 	<div id="id_messages_remove"></div>
 </div>
 {% endblock %}
-
-
-
-{% block breadcrumbs %}
-{{block.super}}
-{% breadcrumb "Project Index" "project-index" %}
-{% breadcrumb "TELEVIR Projects" "PIprojects_main"  %}
-{% breadcrumb project "PIproject_samples"  pk=project_index  %}
-{% breadcrumb teleflu_project_name "teleflu_project"  pk=teleflu_project_index  %}
-{% breadcrumb mapping_id "" %}
-{% endblock %}
-
 
 {% block content %}
 
@@ -53,8 +41,6 @@
             {% endfor %}
         ]
     };
-
-    console.log(options);
 
     var igvDiv = document.getElementById("igvDiv");
     igv.createBrowser(igvDiv, options);

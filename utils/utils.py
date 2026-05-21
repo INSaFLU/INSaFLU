@@ -13,6 +13,8 @@ import os
 import random
 import re
 import stat
+from typing import Optional
+from pathlib import Path
 
 import pandas
 from Bio import SeqIO
@@ -28,6 +30,7 @@ from constants.software_names import SoftwareNames
 from datasets.models import DatasetConsensus
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProjectSample
+
 ## from Bio.Alphabet import IUPAC    version 1.78 doesn't have Bio.Alphabet
 from utils.result import FeatureLocationSimple, Gene, GeneticElement
 
@@ -40,7 +43,7 @@ from statistics import mean
 from django.conf import settings
 from django.core.mail import send_mail
 from django.db import transaction
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from pysam import pysam
 
 from utils.result import CountHits, DecodeObjects, MaskingConsensus
@@ -48,7 +51,21 @@ from utils.result import CountHits, DecodeObjects, MaskingConsensus
 # from utils.parse_out_files import ParseOutFiles
 
 
-class Utils(object):
+def check_file_empty(file, comment="@"):
+    if not os.path.exists(file):
+        return True
+
+    with open(file, "r") as f:
+        lines = f.readlines()
+
+    lines = [l for l in lines if not l.startswith(comment)]
+    if len(lines) == 0:
+        return True
+    else:
+        return False
+
+
+class PathUtils(object):
     """
     class docs
     """
@@ -63,7 +80,8 @@ class Utils(object):
         """
         pass
 
-    def get_path_to_reference_file(self, user_id, ref_id):
+    @staticmethod
+    def get_path_to_reference_file(user_id, ref_id):
         """
         get the path to reference
         """
@@ -73,7 +91,19 @@ class Utils(object):
             "refId_{0}".format(ref_id),
         )
 
-    def get_path_to_teleflu_reference_file(self, user_id, ref_id):
+    @staticmethod
+    def get_path_to_primer_file(user_id, primer_id):
+        """
+        get the path to primer
+        """
+        return os.path.join(
+            Constants.DIR_PROCESSED_FILES_PRIMER,
+            "userId_{0}".format(user_id),
+            "primerId_{0}".format(primer_id),
+        )
+
+    @staticmethod
+    def get_path_to_teleflu_reference_file(user_id, ref_id):
         """
         get the path to reference
         """
@@ -83,7 +113,8 @@ class Utils(object):
             "refId_{0}".format(ref_id),
         )
 
-    def get_path_to_user_televir_references(self, user_id):
+    @staticmethod
+    def get_path_to_user_televir_references(user_id):
         """
         get the path to reference
         """
@@ -96,7 +127,8 @@ class Utils(object):
 
         return user_televir_ref_dir
 
-    def get_path_to_consensus_file(self, user_id, ref_id):
+    @staticmethod
+    def get_path_to_consensus_file(user_id, ref_id):
         """
         get the path to reference
         """
@@ -106,7 +138,8 @@ class Utils(object):
             "consensusId_{0}".format(ref_id),
         )
 
-    def get_path_to_fastq_file(self, user_id, sample_id):
+    @staticmethod
+    def get_path_to_fastq_file(user_id, sample_id):
         """
         get the path to sample
         """
@@ -116,29 +149,40 @@ class Utils(object):
             "sampleId_{0}".format(sample_id),
         )
 
-    def get_sample_list_by_user(self, user_id, type_path, extension):
+
+
+    @staticmethod
+    def get_user_sample_list_path(user_id, type_path, extension):
         """
         get the path to sample
         """
-        return os.path.join(
-            getattr(settings, type_path, None),
-            Constants.DIR_PROCESSED_FILES_FASTQ,
+        
+        if getattr(settings, type_path, None) is None:
+            raise Exception("Type path '{}' is not defined in settings.".format(type_path))
+        
+        return Path(getattr(settings, type_path)).joinpath(
+            Constants.DIR_PROCESSED_FILES_MULTIPLE_SAMPLES,
             "userId_{0}".format(user_id),
             Constants.SAMPLE_LIST_all_samples + extension,
         )
 
-    def get_project_list_by_user(self, user_id, type_path, extension):
+    @staticmethod
+    def get_project_list_by_user(user_id, type_path, extension):
         """
         get the path to sample
         """
-        return os.path.join(
-            getattr(settings, type_path, None),
+
+        if getattr(settings, type_path, None) is None:
+            raise Exception("Type path '{}' is not defined in settings.".format(type_path))
+        
+        return Path(getattr(settings, type_path)).joinpath(
             Constants.DIR_PROCESSED_FILES_PROJECT,
             "user_{0}".format(user_id),
             Constants.PROJECTS_LIST_all_samples + extension,
         )
 
-    def get_path_upload_file(self, user_id, type_file):
+    @staticmethod
+    def get_path_upload_file(user_id, type_file):
         """
         user_id ->
         type_file -> TypeFile.TYPE_FILE_sample_file, TypeFile.TYPE_FILE_fastq_gz
@@ -148,13 +192,14 @@ class Utils(object):
             file_path = "fastq_files"
         if type_file == TypeFile.TYPE_FILE_dataset_file_metadata:
             file_path = "tsv_dataset_file"
-        return os.path.join(
-            Constants.DIR_PROCESSED_FILES_MULTIPLE_SAMPLES,
-            "userId_{0}".format(user_id),
-            "{}".format(file_path),
-        )
 
-    def get_unique_file(self, file_name):
+        return Constants.DIR_PROCESSED_FILES_MULTIPLE_SAMPLES.joinpath(
+            "userId_{0}".format(user_id),
+            file_path,
+        )
+    
+    @staticmethod
+    def get_unique_file(file_name):
         """
         get unique file name from a file_name
         return '<path file_name>/<file_name>'
@@ -174,7 +219,24 @@ class Utils(object):
             temp_file_name = os.path.join(path_added, ntpath.basename(file_name))
         return os.path.join(main_path, temp_file_name.replace(" ", "_")), path_added
 
-    def get_temp_file(self, file_name, sz_type):
+
+class Utils(object):
+    """
+    class docs
+    """
+
+    ## logging
+    logger_debug = logging.getLogger("fluWebVirus.debug")
+    logger_production = logging.getLogger("fluWebVirus.production")
+
+    def __init__(self):
+        """
+        Constructor
+        """
+        pass
+
+
+    def get_temp_file(self, file_name, sz_type) -> str:
         """
         return a temp file name
         """
@@ -629,7 +691,7 @@ class Utils(object):
                 return n_number_locus
         raise IOError(_("Error: the file is not in GenBank format."))
 
-    def get_elements_and_genes(self, genbank_name):
+    def get_elements_and_genes(self, genbank_name) -> GeneticElement:
         """
         return a dictonary with elements and vect genes
         vect_genes = [[pos_start, pos_end, name, strand 1|-1], [...], ...]
@@ -721,7 +783,7 @@ class Utils(object):
         return vect_elements
 
     @transaction.atomic
-    def get_elements_and_cds_from_db(self, reference, user):
+    def get_elements_and_cds_from_db(self, reference, user) -> Optional[GeneticElement]:
         """
         return geneticElement
         """
@@ -957,6 +1019,7 @@ class Utils(object):
         vcf_hanlder = pysam.VariantFile(vcf_file, "r")
         if FREQ in vcf_hanlder.header.info:
             vcf_hanlder.close()
+            os.system("cp {} {}".format(vcf_file, vcf_file_out))
             return
 
         vcf_hanlder_write = pysam.VariantFile(vcf_file_out, "w")
@@ -1594,6 +1657,31 @@ class Utils(object):
                     )
                 SeqIO.write(vect_sequences, output_file_handle, "fasta")
 
+    def clean_fasta_file_new_name(self, in_file, out_file, keep_segs={}):
+        """
+        clean fasta file from '-'
+        """
+        if not os.path.exists(in_file):
+            return
+
+        with open(out_file, "w+") as output_file_handle:
+            vect_sequences = []
+            with open(in_file, "r") as file_handle:
+                for seq_record in SeqIO.parse(file_handle, "fasta"):
+                    if seq_record.id not in keep_segs.keys():
+                        continue
+                    # Take the current sequence
+                    # vect_sequences.append(SeqRecord(Seq(str(seq_record.seq).upper().replace('-', ''), IUPAC.ambiguous_dna), id=seq_record.id, description="", name=""))
+                    vect_sequences.append(
+                        SeqRecord(
+                            Seq(str(seq_record.seq).upper().replace("-", "")),
+                            id=keep_segs[seq_record.id],
+                            description="",
+                            name="",
+                        )
+                    )
+                SeqIO.write(vect_sequences, output_file_handle, "fasta")
+
     def from_genbank_to_bed(self, file_in, file_out):
         """
         from genbank to bed
@@ -2005,14 +2093,14 @@ class Utils(object):
                         r10_min_high_g340, r941_min_fast_g303,
                         r941_min_high_g303, r941_min_high_g330,
                         r941_min_high_g340_rle, r941_min_high_g344,
-                        r941_min_high_g351, r941_min_high_g360,
+                        r941_min_high_g351, r1041_e82_400bps_sup_v4.3.0,
                         r941_prom_fast_g303, r941_prom_high_g303,
                         r941_prom_high_g330, r941_prom_high_g344,
                         r941_prom_high_g360, r941_prom_high_g4011,
                         r941_prom_snp_g303, r941_prom_snp_g322,
                         r941_prom_snp_g360, r941_prom_variant_g303,
                         r941_prom_variant_g322, r941_prom_variant_g360}
-                        (default: r941_min_high_g360)
+                        (default: r1041_e82_400bps_sup_v4.3.0)
         --threads THREADS     Number of threads used by inference. (default: 1)
 
         Medaka models are named to indicate:

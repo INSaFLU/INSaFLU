@@ -1,10 +1,10 @@
 {% extends '_layouts/base.html' %}
 
 {% load crispy_forms_tags %}
-{% load django_bootstrap_breadcrumbs %}
+{% load view_breadcrumbs %}
 
 {% block css %}
-	{% load static from staticfiles %}
+	{% load static %}
 		<link rel="stylesheet" href="{% static 'css/gijgo_1.6.1.css' %}" type="text/css" />
 		<link rel="stylesheet" href="{% static 'css/error_add_html.css' %}" type="text/css" />
 		<link rel="stylesheet" href="{% static 'css/sample-add.css' %}" type="text/css" />
@@ -16,13 +16,6 @@
 		<div id="id_messages_remove"></div>
 	</div>
 {% endblock extra_messages %}
-
-<!-- Breadcrumbs-->
-{% block breadcrumbs %}
-	{{ block.super }}
-	{% breadcrumb "Samples" "samples" %}
-	{% breadcrumb "Add a single sample" "sample-add" %}
-{% endblock %}
 
 <!-- Main content-->
 {% block content %}
@@ -90,7 +83,7 @@
 
  {% block js %}
  
- 	 {% load static from staticfiles %}
+ 	 {% load static %}
  	 		<!-- Custom scripts for all pages-->
 	    	<script type="text/javascript" src="{% static 'js/gijgo_1.6.1.js' %}"></script>
 	    	<script type="text/javascript" src="{% static 'js/sample_add.js' %}"></script>

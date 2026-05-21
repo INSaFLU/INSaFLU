@@ -2,13 +2,13 @@
 
 {% load bootstrap4 %}
 {% load querystring from django_tables2 %}
-{% load title from django_tables2 %}
+
 {% load trans blocktrans from i18n %}
-{% load django_bootstrap_breadcrumbs %}
+{% load view_breadcrumbs %}
 {% load define_action %}
 
 {% block css %}
-	{% load static from staticfiles %}
+	{% load static %}
 		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
 		<link rel="stylesheet" href="{% static 'css/main-page.css' %}" type="text/css" />
 {% endblock css %}
@@ -19,41 +19,6 @@
 		<div id="id_messages_set_default"></div>
 	</div>
 {% endblock extra_messages %}
-
-{% block breadcrumbs %}
-	{{ block.super }}
-	
-	<!-- can edit settings in project sample or to overall projects -->
-	{% if project_settings %}
-		{% breadcrumb "Projects" "projects" %}
-		{% breadcrumb "Project settings" "project-settings" %}
-	{% elif project_sample_settings %}
-		{% breadcrumb "Projects" "projects" %}
-		{% breadcrumb "Show project results" "show-sample-project-results" project_sample.project.pk %}
-		{% breadcrumb "Project sample settings" "sample-project-settings" %}
-	{% elif sample_settings %}
-		{% breadcrumb "Samples" "samples" %}
-		{% breadcrumb "Samples settings" "sample-settings" sample.pk %}
-	{% elif qc_settings %}	<!-- Default settings QC -->
-		{% breadcrumb "Settings Index" "settings-index" %}
-		{% breadcrumb "Settings QC" "settings_qc" %}
-	{% elif settings_pathogenid %}	<!-- Default settings QC -->
-		{% breadcrumb "Settings Index" "settings-index" %}
-		{% breadcrumb "Settings Pathogen Identification" "pathogenID_pipeline" %}	
-    {% elif settings_pathid_project %}	<!-- Default settings QC -->
-        {% breadcrumb "Project Index" "project-index" %}
-        {% breadcrumb "TELEVIR Projects" "PIprojects_main" %}
-		{% breadcrumb project_name "PIproject_samples" project_id %}	
-		{% if settings_pathid_sample %}
-			{% breadcrumb sample_name "PIproject_sample_settings" sample_id %}
-			{% breadcrumb "References Management" "sample_references_management" sample_id %}
-		{% endif %}
-		{% breadcrumb "Settings" "pathogenID_pipeline" project_id %}
-    {% else %}	<!-- Default settings -->
-		{% breadcrumb "Settings Index" "settings-index" %}
-		{% breadcrumb "Settings RefMap" "settings" %}
-	{% endif %}
-{% endblock %}
 
 {% block content %}
 
@@ -73,12 +38,13 @@
 				<p class="insa-description-process" style="text-align: center;">Please choose <strong>your software settings</strong> 
 					before uploading new samples to your account.</p>
 			{% else %}
-				<p class="insa-description-process" style="text-align: center;">Please choose <strong>your software settings</strong></p>
+				<p class="insa-description-process" style="text-align: center;">Please choose <strong>your software settings</strong> {{ setup_note }} </p> 
 			{% endif %}
 		
 			<!-- NAV tabs -->
 			<div >
-				<ul id="main_tab" class="nav nav-tabs p-0 justify-content-end justify-content-md-center" role="tablist">
+				<ul id="main_tab" class="nav nav-tabs p-0 justify-content-end justify-content-md-center" role="tablist" csrf-token ="{{ csrf_token }}">
+					
 					{% for unique_software_id, software, vect_pipeline in all_softwares %}
 						<li class="nav-item"><a class="nav-link fa fa-align-justify"
 							href="#{{unique_software_id}}" role="tab" data-toggle="tab"
@@ -129,7 +95,7 @@
 										             
 										              	<tr>
 										                	{% for column in table.columns %}
-										                    	<th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
+										                    	<th {{ column.attrs.th.as_html }}>{{ column.header }}</th>
 										               	 	{% endfor %}
 										              	</tr>
 										            </thead>
@@ -173,31 +139,19 @@
 				to the conditions you are working with, e.g., default end’s trimming size for ONT may be
 				too restrictive depending on design of your tiling amplicon multiplex PCR method and on
 				your sequencing protocol (if reads are or not already trimmed/clipped).</p>
+			
 		{% endif %}
 		<!-- End length softwares to show -->
 		
 		<!--  Go back  function -->	
-		{% if project_settings %}
-			<br>
-			<a id="id_go_back_button" href="{% url 'projects' %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>	
-		{% elif project_sample_settings %}
-			<br>
-			<a id="id_go_back_button" href="{% url 'show-sample-project-results' project_sample.project.pk %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>
-		{% elif sample_settings %}
-			<br>
-			<a id="id_go_back_button" href="{% url 'samples' %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>
-		{% elif settings_pathogenid %}
-            <br> 
-            <a id="id_go_back_button" href="{% url 'settings-index' %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>
-        {% elif settings_pathid_project %}
-				{% if settings_pathid_sample %}
-					<br> 
-					<a id="id_go_back_button" href="{% url 'sample_references_management' sample_id %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>
-				{% else %}
-					<br> 
-					<a id="id_go_back_button" href="{% url 'PIprojects_main' %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>
-				{% endif %}
-        {% endif %}
+		<br>
+		<button style="cursor:pointer;" class= "btn btn-small btn-primary">
+		{% if is_setup %}
+		<a id="reverse_button" class="btn-small btn-primary dark" href="{% url 'projects' %}" ><i class="fa fa-check"></i> Finish </a>
+		{% else %}
+		<a id="id_go_back_button" ><i class="fa fa-arrow-left"></i> Go back</a>
+		{% endif %}
+		</button>
 		
 		<!-- Set default Modal -->
 		<div class="modal fade" id="id_set_default_modal" >
@@ -352,6 +306,10 @@
 		/// set wait screen
 		$('#id_go_back_button').on('click', function(){
 			wait_screen();
+		});
+		$('#reverse_button').on('click', function(){
+			wait_screen();
+			window.history.back();
 		});
 	</script>
 	

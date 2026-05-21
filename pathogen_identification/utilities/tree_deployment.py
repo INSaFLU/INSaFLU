@@ -11,36 +11,29 @@ from django.db.models import QuerySet
 
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from fluwebvirus.settings import STATIC_ROOT
-from pathogen_identification.constants_settings import ConstantsSettings as PIConstants
-from pathogen_identification.deployment_main import PathogenIdentificationDeploymentCore
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PIConstants
+from pathogen_identification.deployment_main import \
+    PathogenIdentificationDeploymentCore
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RunMain, SoftwareTree,
+                                            SoftwareTreeNode)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunMainTree_class
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.update_DBs_tree import (
-    Update_Assembly,
-    Update_Classification,
-    Update_Remap,
-    Update_RunMain_Initial,
-    Update_RunMain_Secondary,
-)
+    Update_Assembly, Update_Classification, Update_Remap,
+    Update_RunMain_Initial, Update_RunMain_Secondary)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Pipeline_Makeup,
-    PipelineTree,
-    Utils_Manager,
-)
-from pathogen_identification.utilities.utilities_views import ReportSorter
+    PipelineTree, Utils_Manager)
+from pathogen_identification.utilities.utilities_views import (
+    ReportSorter, final_report_best_cov_by_accid)
 from settings.constants_settings import ConstantsSettings
 from utils.utils import Utils
+from pathogen_identification.televir_pipeline_makeup import Pipeline_Makeup
 
 
 def logger_copy(x, memo):
@@ -127,17 +120,35 @@ class Tree_Node:
 
     def run_reference_overlap_analysis(self):
         # run = RunMain.objects.filter(parameter_set=self.parameter_set).first()
-        final_report = FinalReport.objects.filter(
-            sample=self.parameter_set.sample,  # run=run
-        ).order_by("-coverage")
-        #
+
         report_layout_params = TelevirParameters.get_report_layout_params(
             project_pk=self.parameter_set.project.pk
         )
+
+        runs = RunMain.objects.filter(parameter_set=self.parameter_set).exclude(run_type=RunMain.RUN_TYPE_STORAGE)
+        
+        for run in runs:
+
+            final_report = FinalReport.objects.filter(
+                sample=self.parameter_set.sample, run=run
+            ).order_by("-coverage")
+            #
+            report_sorter = ReportSorter(
+                self.parameter_set.sample, final_report, report_layout_params
+            )
+            report_sorter.sort_reports_save()
+            report_sorter.reports_aggregate_register(report_layout_params, run)
+
+        final_reports = FinalReport.objects.filter(
+            sample=self.parameter_set.sample
+        ).order_by("-coverage")
+
+        final_reports = final_report_best_cov_by_accid(final_reports)
         report_sorter = ReportSorter(
-            self.parameter_set.sample, final_report, report_layout_params
+            self.parameter_set.sample, final_reports, report_layout_params
         )
         report_sorter.sort_reports_save()
+        report_sorter.reports_aggregate_register(report_layout_params)
 
     def receive_run_manager(self, run_manager: PathogenIdentification_TreeDeployment):
         run_manager.prefix = f"run_leaf_{self.node_index}"
@@ -151,20 +162,17 @@ class Tree_Node:
     def _is_node_leaf(self):
         return len(self.children) == 0
 
-    def generate_software_tree_node_entry(self, pipe_tree: PipelineTree):
+    def generate_software_tree_node_entry(self, pipe_tree: PipelineTree) -> Optional[SoftwareTreeNode]:
         if not self._is_node_leaf():
             return
+        node_pk = pipe_tree.index_to_pk.get(self.node_index)
 
-        node_metadata = pipe_tree.node_index.loc[self.node_index].node
-        software_tree = SoftwareTree.objects.get(pk=self.software_tree_pk)
+        if node_pk is None:
 
+            raise ValueError("Node primary key not found")
         try:
             tree_node = SoftwareTreeNode.objects.get(
-                software_tree=software_tree,
-                index=self.node_index,
-                name=node_metadata[0],
-                value=node_metadata[1],
-                node_type=node_metadata[2],
+                pk=node_pk
             )
         except SoftwareTreeNode.DoesNotExist:
             tree_node = None
@@ -174,7 +182,6 @@ class Tree_Node:
     def setup_parameterset(
         self, project: Projects, sample: PIProject_Sample, node: SoftwareTreeNode
     ):
-        utils_manager = Utils_Manager()
 
         try:
             parameter_set = ParameterSet.objects.get(
@@ -229,7 +236,7 @@ class Tree_Node:
         self.parameter_set.status = ParameterSet.STATUS_ERROR
         self.parameter_set.save()
 
-        self.run_manager.delete_run()
+        # self.run_manager.delete_run()
 
         return True
 
@@ -272,8 +279,6 @@ class Tree_Node:
             )
             arguments_list.append(node_metadata)
 
-            # ps_track.append(ps_visited)
-
         arguments_df = pd.DataFrame(
             arguments_list, columns=["parameter", "value", "flag", "leaves"]
         )
@@ -285,10 +290,18 @@ class Tree_Node:
 
         module_df = arguments_df[arguments_df.flag == "module"]
         module = module_df.parameter.values[0]
-        software = module_df.value.values[0]
+        software = module_df.value.values
         parameters_df = arguments_df[arguments_df.flag == "param"]
 
-        parameters_df["software"] = software
+        software_lower_case_dict = {software.lower(): software for software in software}
+
+        def match_to_software(param_name):
+            lower_case_name = "_".join(param_name.split("_")[:-1]).lower()
+            if lower_case_name in software_lower_case_dict.keys():
+                return software_lower_case_dict[lower_case_name]
+            return lower_case_name
+
+        parameters_df["software"] = parameters_df["parameter"].apply(match_to_software)
         parameters_df["module"] = module
 
         return parameters_df
@@ -336,7 +349,10 @@ class ClassificationMonitor(ABC):
 class ClassificationMonitor_ContigOnly(ClassificationMonitor):
     @check_planned
     def ready_to_merge(self, node: Tree_Node):
-        if node.run_manager.run_engine.contig_classification_performed:
+        if (
+            node.run_manager.run_engine.contig_classification_performed
+            and node.run_manager.classification_updated == False
+        ):
             return True
 
         return False
@@ -357,6 +373,7 @@ class ClassificationMonitor_ContigAndReads(ClassificationMonitor):
         if (
             node.run_manager.run_engine.contig_classification_performed
             and node.run_manager.run_engine.read_classification_performed
+            and node.run_manager.classification_updated == False
         ):
             return True
 
@@ -378,7 +395,10 @@ class ClassificationMonitor_ContigAndReads(ClassificationMonitor):
 class ClassificationMonitor_ReadsOnly(ClassificationMonitor):
     @check_planned
     def ready_to_merge(self, node: Tree_Node):
-        if node.run_manager.run_engine.read_classification_performed:
+        if (
+            node.run_manager.run_engine.read_classification_performed
+            and node.run_manager.classification_updated == False
+        ):
             return True
 
         return False
@@ -430,6 +450,7 @@ class Tree_Progress:
         pipe_tree: PipelineTree,
         sample: PIProject_Sample,
         project: Projects,
+        output_directory: Optional[str] = None,
     ):
         pipe_tree.nodes_df = pd.DataFrame(
             pipe_tree.nodes_compress, columns=["node", "branch"]
@@ -451,12 +472,17 @@ class Tree_Progress:
         )
         self.updated_classification = False
 
+        if output_directory is not None:
+            self.output_directory = output_directory
+        else:
+            utils = Utils()
+            temp_dir = utils.get_temp_dir()
+            self.output_directory = temp_dir
+
         self.initialize_nodes()
         self.determine_current_module_from_nodes()
 
     def setup_deployment_manager(self):
-        utils = Utils()
-        temp_dir = utils.get_temp_dir()
 
         prefix = f"{self.sample.sample.pk}_{self.sample.sample.name}"
 
@@ -470,10 +496,7 @@ class Tree_Progress:
 
         deployment_manager = PathogenIdentification_TreeDeployment(
             self.sample,
-            # self.project,
-            # self.project.owner.username,
-            # self.project.technology,
-            deployment_root_dir=temp_dir,
+            deployment_root_dir=self.output_directory,
             dir_branch=deployment_directory_structure,
             threads=PIConstants.DEPLOYMENT_THREADS,
         )
@@ -492,7 +515,15 @@ class Tree_Progress:
         for leaf in node.leaves:
             leaf_node = self.spawn_node_child_prepped(node, leaf)
             self.register_node(leaf_node)
-            self.update_node_dbs(leaf_node)
+            update_success = self.update_node_dbs(leaf_node)
+
+            if not update_success:
+                self.logger.warning(f"Node {leaf_node.node_index} failed to update databases")
+                leaf_node = self.spawn_node_child(node, leaf)
+                # self.submit_node_run(leaf_node)
+                _ = leaf_node.register_failed(
+                    self.project, self.sample, self.tree
+                )
 
             node.run_manager.classification_updated = (
                 leaf_node.run_manager.classification_updated
@@ -571,9 +602,9 @@ class Tree_Progress:
 
         return child
 
-    def spawn_node_child(self, node: Tree_Node, child: int) -> Tree_Node:
+    def spawn_node_child(self, node: Tree_Node, child_index: int) -> Tree_Node:
         new_node = Tree_Node(
-            self.tree, child, node.software_tree_pk, sample=self.sample
+            self.tree, child_index, node.software_tree_pk, sample=self.sample
         )
 
         run_manager_copy = copy.deepcopy(node.run_manager)
@@ -605,6 +636,7 @@ class Tree_Progress:
         return registraction_success
 
     def update_node_dbs(self, node: Tree_Node, step="initial"):
+
         try:
             db_updated = Update_RunMain_Initial(
                 node.run_manager.run_engine, node.parameter_set
@@ -618,11 +650,12 @@ class Tree_Progress:
                 or node.run_manager.run_engine.depletion_performed
             ):
                 node.run_manager.run_engine.export_sequences()
-                db_updated = Update_RunMain_Secondary(
-                    node.run_manager.run_engine, node.parameter_set
-                )
-                if not db_updated:
-                    return False
+
+            db_updated = Update_RunMain_Secondary(
+                node.run_manager.run_engine, node.parameter_set
+            )
+            if not db_updated:
+                return False
 
             if (
                 node.run_manager.run_engine.assembly_performed
@@ -644,6 +677,7 @@ class Tree_Progress:
                 node.run_manager.run_engine.plan_remap_prep_safe()
                 node.run_manager.run_engine.export_intermediate_reports()
                 node.run_manager.run_engine.generate_output_data_classes()
+                node.run_manager.run_engine.export_classification_reports()
                 db_updated = Update_Classification(
                     node.run_manager.run_engine, node.parameter_set
                 )
@@ -651,7 +685,6 @@ class Tree_Progress:
                     return False
 
                 node.run_manager.classification_updated = True
-
             if node.run_manager.run_engine.remapping_performed:
                 node.run_manager.run_engine.export_final_reports()
                 node.run_manager.run_engine.Summarize()
@@ -665,9 +698,11 @@ class Tree_Progress:
 
             return True
         except Exception as e:
+            import traceback
+
+            traceback.print_exc()
             self.logger.error("Error updating node dbs, returning false.")
             self.logger.error(e)
-            traceback.print_exc()
             return False
 
     def register_node_safe(self, node: Tree_Node):
@@ -919,6 +954,7 @@ class Tree_Progress:
         new_nodes = []
 
         for node in nodes_to_update:
+
             node.run_manager.run_engine.update_mapped_instances(mapped_instances_shared)
             new_nodes.append(node)
 
@@ -960,9 +996,12 @@ class Tree_Progress:
             node.run_manager.run_main()
             return True
         except Exception as e:
-            print("error")
-            print(e)
+            import traceback
+
             traceback.print_exc()
+
+            self.logger.error("Node failed to run, registering as failed.")
+            self.logger.error(e)
 
             return False
 
@@ -992,7 +1031,7 @@ class Tree_Progress:
             for leaf in node.leaves:
                 leaf_node = self.spawn_node_child(node, leaf)
                 _ = leaf_node.register_running(self.project, self.sample, self.tree)
-
+                leaf_node.run_reference_overlap_analysis()
                 _ = self.register_finished(leaf_node)
 
     def calculate_report_overlaps_runs(self):
@@ -1024,6 +1063,7 @@ class Tree_Progress:
         }
 
         if self.current_module in ["end"]:
+            
             return
 
         if self.current_module == "root":
@@ -1031,16 +1071,13 @@ class Tree_Progress:
             self.update_tree_nodes()
             return
 
-        self.logger.info(f"CURRENT MODULE, {self.current_module}")
         action = map_actions[self.current_module]
 
         action()
 
         for node in self.current_nodes:
-            if (
-                self.classification_monitor.ready_to_merge(node)
-                and node.run_manager.classification_updated == False
-            ):
+            if self.classification_monitor.ready_to_merge(node):
+                self.logger.info(f"Node {node.node_index} ready to merge, planning remap prep.")
                 node.run_manager.run_engine.plan_remap_prep_safe()
 
             self.update_node_leaves_dbs(node)
@@ -1086,8 +1123,9 @@ class Tree_Progress:
             current_module = self.get_current_module()
 
         self.register_leaves_finished()
+        
 
-        print("DONE")
+        self.logger.info("DONE")
         return
 
     def stacked_changes_log(self):
@@ -1267,29 +1305,29 @@ class TreeProgressGraph:
                         ]
                     )
 
-            network_df = pd.DataFrame(
-                network_df,
-                columns=[
-                    "parent",
-                    "child",
-                    "module",
-                    "software_parent",
-                    "software_child",
-                    "colour",
-                ],
-            )
+        network_df = pd.DataFrame(
+            network_df,
+            columns=[
+                "parent",
+                "child",
+                "module",
+                "software_parent",
+                "software_child",
+                "colour",
+            ],
+        )
 
-            unique_nodes = list(network_df["child"].values) + list(
-                network_df["parent"].values
-            )
-            unique_nodes = list(set(unique_nodes))
+        unique_nodes = list(network_df["child"].values) + list(
+            network_df["parent"].values
+        )
+        unique_nodes = list(set(unique_nodes))
 
-            # replace node names with numbers paste to software
+        # replace node names with numbers paste to software
 
-            node_dict = {node: i for i, node in enumerate(unique_nodes)}
-            node_dict["NA"] = "NA"
+        node_dict = {node: i for i, node in enumerate(unique_nodes)}
+        node_dict["NA"] = "NA"
 
-            network_df = network_df.apply(merge_names, axis=1)
+        network_df = network_df.apply(merge_names, axis=1)
 
         return network_df
 
@@ -1299,7 +1337,6 @@ class TreeProgressGraph:
         """
         setup the trees for the progress graph
         """
-        pipeline_utils = Utils_Manager()
 
         technologies = [ps.project.technology for ps in existing_parameter_sets]
         if len(set(technologies)) > 1:
@@ -1311,17 +1348,6 @@ class TreeProgressGraph:
         tree_list = [ps.leaf.software_tree for ps in existing_parameter_sets]
         trees_pk_list = [tree.pk for tree in tree_list]
         trees_pk_list = list(set(trees_pk_list))
-
-        software_tree_dict = {
-            tree_pk: SoftwareTree.objects.get(pk=tree_pk) for tree_pk in trees_pk_list
-        }
-
-        # pipetrees_dict = {
-        #    tree_pk: pipeline_utils.parameter_util.convert_softwaretree_to_pipeline_tree(
-        #        tree
-        #    )
-        #    for tree_pk, tree in software_tree_dict.items()
-        # }
 
         stacked_df_dict = {}
 
@@ -1405,15 +1431,6 @@ class TreeProgressGraph:
 
         return test_df
 
-    def get_tree_progress_df(self, tree: PipelineTree):
-        ## setup a deployment and record the progress
-
-        deployment_tree = Tree_Progress(tree, self.sample, self.project)
-
-        stacked_df = deployment_tree.stacked_changes_log()
-        #
-
-        return stacked_df
 
     @staticmethod
     def extract_graph_data(html_filepath) -> Optional[str]:

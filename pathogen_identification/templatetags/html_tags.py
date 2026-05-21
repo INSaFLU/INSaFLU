@@ -3,6 +3,7 @@ import os
 
 from django import template
 from django.utils.safestring import mark_safe
+
 from pathogen_identification.models import FinalReport
 
 register = template.Library()
@@ -87,9 +88,9 @@ def difference_str_to_int(a, b):
 
     if "," in a:
         a = a.replace(",", "")
-    
 
     return int(a) - int(b)
+
 
 @register.simple_tag
 def difference_str_int_to_str(a, b):
@@ -102,10 +103,11 @@ def difference_str_int_to_str(a, b):
 
     if "," in a:
         a = a.replace(",", "")
-    
-    diff= int(a) - int(b)
+
+    diff = int(a) - int(b)
 
     return f"{diff:,}"
+
 
 @register.simple_tag
 def difference_str_to_str(a, b):
@@ -115,9 +117,13 @@ def difference_str_to_str(a, b):
     if "," in b:
         b = b.replace(",", "")
 
+    if a == "" or b == "":
+        return 0
+
     diff = int(a) - int(b)
 
     return diff
+
 
 @register.simple_tag
 def difference_str_to_str_format(a, b):
@@ -136,9 +142,14 @@ def difference_str_to_str_format(a, b):
 def difference_str_to_percent(a, b, c):
     if "," in a:
         a = a.replace(",", "")
-    
+
     if "," in b:
         b = b.replace(",", "")
+
+    if c is None or c == "":
+        return None
+    if b is None or b == "":
+        return None
 
     diff = int(b) - int(c)
 
@@ -166,4 +177,5 @@ def windows_safe(windows_covered):
     if windows_covered:
         return windows_covered
     else:
+        return "not calculated"
         return "not calculated"

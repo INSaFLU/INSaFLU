@@ -133,7 +133,7 @@ class Command(BaseCommand):
 
         #### set obsolete some softwares because of parameters
         self.stdout.write("Set obsolete softwares because of parameters...")
-        default_parameters = DefaultParameters()
+        default_parameters = DefaultParameters(prep_televir_dbs=False)
         default_parameters.set_software_obsolete()
 
         #### set obsolete some softwares because of parameters

@@ -2,9 +2,9 @@
 
 {% load bootstrap4 %}
 {% load querystring from django_tables2 %}
-{% load title from django_tables2 %}
+
 {% load trans blocktrans from i18n %}
-{% load django_bootstrap_breadcrumbs %}
+{% load view_breadcrumbs %}
 {% load static %}
 {% load custom_tags %}
 
@@ -15,13 +15,6 @@
 	<div id="id_messages_remove"></div>
 </div>
 {% endblock %}
-
-{% block breadcrumbs %}
-{{ block.super }}
-{% breadcrumb "References Index" "references-index" %}
-{% breadcrumb "Manage References" "" %}
-{% endblock %}
-
 
 {% block extra_nav %}
 <nav style="border-radius: 5px; background-color: #f8f9fa; padding: 10px; margin-left: 20px; margin-bottom: 30px; margin-right: 20px;">

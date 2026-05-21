@@ -3,17 +3,15 @@ Ceated on 06/05/2022
 @author: joao santos
 """
 
+from pathlib import Path
 from typing import Dict, List
 
-import networkx as nx
 from django.conf import settings
 
-from extend_user.models import Profile
+from constants.constants import Constants   
 from fluwebvirus.settings import MEDIA_ROOT, STATIC_ROOT, TelevirSetup
-from pathogen_identification.utilities.mapping_flags import (
-    MapFlagProbes,
-    MapFlagViruses,
-)
+from pathogen_identification.utilities.mapping_flags import (MapFlagProbes,
+                                                             MapFlagViruses)
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -24,9 +22,10 @@ class ConstantsSettings:
 
     media_directory = MEDIA_ROOT
     static_directory = STATIC_ROOT
+    local_assembly_store = Path(MEDIA_ROOT) / "assembly_store"
     televir_subdirectory = "televir_projects"
     run_files_zipped = "run.zip"
-    PAGINATE_NUMBER = 10
+    PAGINATE_NUMBER = 20
     TELEVIR_REFERENCE_PAGINATE_NUMBER = 15
     test_subdirectory = "temp_objects_tests"
 
@@ -59,6 +58,7 @@ class ConstantsSettings:
     ################################### Pipeline steps
 
     PIPELINE_STEPS_DB_DEPENDENT = [
+        CS.PIPELINE_NAME_extra_qc,
         CS.PIPELINE_NAME_viral_enrichment,
         CS.PIPELINE_NAME_host_depletion,
         CS.PIPELINE_NAME_read_classification,
@@ -89,8 +89,9 @@ class ConstantsSettings:
     ]
 
     ################################### Pipeline steps aggregate
-
+    
     PIPELINE_STEPS_AGGREGATE = [
+        CS.PIPELINE_NAME_extra_qc,
         CS.PIPELINE_NAME_remap_filtering,
         CS.PIPELINE_NAME_map_filtering,
     ]
@@ -109,9 +110,9 @@ class ConstantsSettings:
     #################################### Process Types
 
     PROCESS_TYPE_DEPLOYMENT = (
-        Profile.SGE_PROCESS_dont_care
+        Constants.PROCESS_dont_care
         if TelevirSetup.CURRENT_SETUP == TelevirSetup.SETUP_DEVELOP
-        else Profile.SGE_PROCESS_televir
+        else Constants.PROCESS_televir
     )
 
     ################################### Threads
@@ -219,7 +220,6 @@ class ConstantsSettings:
             not in [
                 CS.PIPELINE_NAME_metagenomics_screening,
                 CS.PIPELINE_NAME_request_mapping,
-                CS.PIPELINE_NAME_metagenomics_settings,
             ]
         ]
 

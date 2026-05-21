@@ -145,11 +145,9 @@ $('.sort-sample').on('click', function () {
 $(document).on("click", "a", function (e) {
 
     /// set wait screen
-    //var id_ = $(this).attr('id');
     var href = $(this).attr('href');
     var onclick = $(this).attr('onclick');
     var id_ = $(this).attr('id');
-    // check if href is defined
 
     if (typeof href !== 'undefined' && onclick !== 'undefined' && id_ !== 'undefined') {
         
@@ -202,6 +200,9 @@ $('#checkBoxAll').on('change', function () {
 
 
 $(document).ready(function () {
+
+    sessionStorage.removeItem('checkedRows');
+
     var checkedRows = JSON.parse(sessionStorage.getItem('checkedRows')) || [];
 
     checkedRows.forEach(function (sample_id) {

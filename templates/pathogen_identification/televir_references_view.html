@@ -2,9 +2,9 @@
 
 {% load bootstrap4 %}
 {% load querystring from django_tables2 %}
-{% load title from django_tables2 %}
+
 {% load trans blocktrans from i18n %}
-{% load django_bootstrap_breadcrumbs %}
+{% load view_breadcrumbs %}
 {% load static %}
 {% load custom_tags %}
 
@@ -15,13 +15,6 @@
 	<div id="id_messages_remove"></div>
 </div>
 {% endblock %}
-
-{% block breadcrumbs %}
-{{ block.super }}
-{% breadcrumb "References Index" "references-index" %}
-{% breadcrumb "Manage References" "" %}
-{% endblock %}
-
 
 {% block extra_nav %}
 <nav class="nav-style">
@@ -35,6 +28,7 @@
 
 
 {% block content %}
+
 
 <style>
 
@@ -70,6 +64,13 @@
 
     <link rel="stylesheet" href="{% static 'css/televir_references_nav.css' %}">
 {% endblock %}
+
+
+{% if reference_update_running %}
+<div class="alert alert-warning" role="alert">
+    <strong>Reference update is currently running.</strong> Please wait until it finishes before deploying pathogen identification
+</div>
+{% endif %}
 
 <!-- Adjusted Summary Section with Flexbox -->
 <div class="container-fluid">
@@ -107,9 +108,9 @@
                         <tr>
                             {% for column in files_table.columns %}
                             {% if column.orderable %}
-                                <th {{ column.attrs.th.as_html }}><a href="{% querystring files_table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header|title }}</a></th>
+                                <th {{ column.attrs.th.as_html }}><a href="{% querystring files_table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header }}</a></th>
                             {% else %}
-                                <th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
+                                <th {{ column.attrs.th.as_html }}>{{ column.header }}</th>
                             {% endif %}                    
                             {% endfor %}
                         </tr>
@@ -209,7 +210,6 @@
                     'csrfmiddlewaretoken': '{{ csrf_token }}'
                 },
                 success: function(data) {
-                    console.log(data);
                     if (data['is_ok'] == true) {
                         if (data['exists'] == true) {
                             alert('Reference already exists');
@@ -223,7 +223,6 @@
                     }
                 },
                 error: function(data) {
-                    console.log(data);
                     alert('Error: ' + data['message']);
                 }
             });

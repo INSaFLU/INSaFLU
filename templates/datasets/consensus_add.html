@@ -1,10 +1,10 @@
 {% extends '_layouts/base.html' %}
 
 {% load crispy_forms_tags %}
-{% load django_bootstrap_breadcrumbs %}
+{% load view_breadcrumbs %}
 
 {% block css %}
-	{% load static from staticfiles %}
+	{% load static %}
 		<!-- pre-define in-house css for main page-->
 		<link rel="stylesheet" href="{% static 'css/main-page.css' %}" type="text/css" />
 		<link rel="stylesheet" href="{% static 'css/error_add_html.css' %}" type="text/css" />
@@ -12,7 +12,7 @@
 
 <!-- Breadcrumbs-->
 {% block breadcrumbs %}
-	{{ block.super }}
+	{{ block.super }} 
 	{% breadcrumb "Consensus" "consensus" %}
 	{% breadcrumb "Add consensus" "consensus-add" %}
 {% endblock %}
@@ -66,7 +66,7 @@
 
 {% block js %}
 
-	{% load static from staticfiles %}
+	{% load static %}
 		<!-- Custom scripts for all pages-->
 		<script type="text/javascript" src="{% static 'js/reference_add.js' %}"></script>
 

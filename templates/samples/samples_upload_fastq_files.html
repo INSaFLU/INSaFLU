@@ -1,17 +1,10 @@
 {% extends '_layouts/base.html' %}
 
 {% load crispy_forms_tags %}
-{% load django_bootstrap_breadcrumbs %}
+{% load view_breadcrumbs %}
 
 {% block css %}
 {% endblock css %}
-
-{% block breadcrumbs %}
-	{{ block.super }}
-	{% breadcrumb "Samples" "samples" %}
-	{% breadcrumb "Add fastq files" "sample-add-fastq" %}
-	{% breadcrumb "Upload 'fastq' files" "sample-upload-fastq" %}
-{% endblock %}
 
 {% block content %}
 
@@ -78,7 +71,7 @@
 {% endblock %}
 
  {% block js %}
- 	 {% load static from staticfiles %}
+ 	 {% load static %}
  	 	<script type="text/javascript" src="{% static 'jQuery_File_Upload/js/vendor/jquery.ui.widget.js' %}"></script>
 		<script type="text/javascript" src="{% static 'jQuery_File_Upload/js/jquery.iframe-transport.js' %}"></script>
 		<script type="text/javascript" src="{% static 'jQuery_File_Upload/js/jquery.fileupload.js' %}"></script>

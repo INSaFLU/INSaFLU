@@ -2,9 +2,9 @@
 
 {% load bootstrap4 %}
 {% load querystring from django_tables2 %}
-{% load title from django_tables2 %}
+
 {% load trans blocktrans from i18n %}
-{% load django_bootstrap_breadcrumbs %}
+{% load view_breadcrumbs %}
 
 {% block extra_messages %}
 <!-- set the messages -->
@@ -13,13 +13,24 @@
 </div>
 {% endblock %}
 
-{% block breadcrumbs %}
-{{ block.super }}
-{% breadcrumb "Project Index" "project-index" %}
-{% breadcrumb "TELEVIR Projects" "PIprojects_main" %}
-{% endblock %}
-
 {% block content %}
+
+<style>
+	.table tbody tr {
+		margin-bottom: 10px; /* Add space between rows */
+		border-radius: 10px; /* Make rows rounder */
+		border: 1px solid #ddd; /* Add a border to rows */
+		overflow: hidden; /* Ensure content stays within rounded corners */
+	}
+	
+	.table tbody tr td {
+		padding: 15px; /* Add padding inside cells */
+	}
+	
+	.table tbody tr:hover {
+		background-color: #f9f9f9; /* Highlight row on hover */
+	}
+</style>
 
 {% if table.page or show_paginatior %}
 <div class="table-container">
@@ -46,12 +57,15 @@
                         </form>
 
 						<button class="btn btn-small btn-primary dark">
-							
 							<a href="{% url 'televir_reference_files' %}" class="text-white">
 								<i class="fa fa-book"></i>  Reference Management
 							</a>
 						</button>
-
+						<button class="btn btn-small btn-primary dark">
+							<a href="#id_user_tags_modal" id="id_project_tags_link" class="text-white" data-toggle="modal" data-toggle="tooltip" title="User Tags">
+								<i class="fa fa-tag"></i>  Project Tags
+							</a>
+						</button>
 					</th>
 
 				</tr>
@@ -60,10 +74,10 @@
 					{% for column in table.columns %}
 					{% if column.orderable %}
 					<th {{ column.attrs.th.as_html }}><a
-							href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header|title }}</a>
+							href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header }}</a>
 					</th>
 					{% else %}
-					<th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
+					<th {{ column.attrs.th.as_html }}>{{ column.header }}</th>
 					{% endif %}
 					{% endfor %}
 				</tr>
@@ -163,50 +177,92 @@
 	</div>
 </div>
 
-<!-- The upload Files for analysis modal -->
-<div class="modal fade" id="id_merge_televir_explify_modal">
-	<div class="modal-dialog">
+<!-- The user tags modal -->
+<div class="modal fade" id="id_user_tags_modal">
+	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 
 			<!-- Modal Header -->
 			<div class="modal-header alert alert-warning">
-				<h4 class="modal-title-remove">Merge Explify File</h4>
+				<h4 class="modal-title-remove">Project Tags</h4>
 				<button type="button" class="close" data-dismiss="modal">&times;</button>
 			</div>
 
 			<!-- Modal body -->
-			<div class="modal-body mx-auto mw-100">
-				<div id="id-modal-body-deploy-merge-explify" deploy-merge-explify-url="{% url 'explify_merge' %}">
-					<label id="id-settings-reset" class="col-form-label">Folder Name</label>
+			<div class="modal-body mw-100">
+				<div id="id-modal-body-project-tags" user-tags-url="{% url 'get_user_tags' %}">
+					<div class="row">
+						<div class="col-12">
+							<!-- Tags will be dynamically loaded here -->
+						</div>
+					</div>
 				</div>
 			</div>
 			<!-- Modal footer -->
-			<div class="modal-footer" id="id-modal-footer-deloy_merge_explify">
-				<div id="rpip_file">
-					<label> RPIP File </label>
-					
-					<input type="file" name="table_rpip" id="rpip_table" class="form-control" required>
-				</div>
-				<div id="upip_file">
-					<label> UPIP File </label>
-					<input type="file" name="table_upip" id="upip_table" class="form-control" required>
-					<input type="hidden" name="project_id" id="project_id" value="{{ project_id }}">
-				</div>
-				<button id="id-deploy-explify-button" type="button" class="btn btn-primary" data-dismiss="modal">Deploy</button>
-				<button id="id-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal"
-					aria-hidden="true">Cancel</button>
+			<div class="modal-footer" id="id-modal-footer-remove">
+				<button id="id-new-tag-button" type="button" class="btn btn-primary">Create new tag</button>
 			</div>
 		</div>
 	</div>
 </div>
 
+<!-- The add tags to project modal -->
+<div class="modal fade" id="id_add_tags_modal">
+	<div class="modal-dialog">
+		<div class="modal-content">
+
+			<!-- Modal Header -->
+			<div class="modal-header alert alert-warning">
+				<h4 class="modal-title-remove">Add Tags to Project</h4>
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+			</div>
+
+			<!-- Modal body -->
+			<div class="modal-body mw-100">
+				<div id="id-modal-body-add-tags" tag_candidates_url="{% url 'project_tag_candidates' %}">
+					<div class="row">
+						<div class="col-12">
+							<!-- Tags will be dynamically loaded here -->
+						</div>
+					</div>
+				</div>
+			</div>
+
+		</div>
+	</div>
+</div>
+
+<!-- The display project tags modal -->
+<div class="modal fade" id="id_manage_tags_modal">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+
+			<!-- Modal Header -->
+			<div class="modal-header alert alert-warning">
+				<h4 class="modal-title-remove">Project Tags</h4>
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+			</div>
+
+			<!-- Modal body -->
+			<div class="modal-body mw-100">
+				<div id="id-modal-body-display-project-tags" project-tags-url="{% url 'get_project_tags' %}">
+					<div class="row">
+						<div class="col-12">
+							<!-- Tags will be dynamically loaded here -->
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
 
 {% endblock content %}
 
 
 {% block js %}
 
-{% load static from staticfiles %}
+{% load static %}
 <script type="text/javascript" src="{% static 'js/televir_projects/remove_projects.js' %}"></script>
 
 <script>
@@ -217,17 +273,185 @@
 		$('#id-reset-button').click(function () {
 			$.unblockUI();
 		});
-        $('#id-remove-button').click(function () {
-            $.unblockUI();
-        });
-        $('#id-deploy-explify-button').click(function () {
-            $.unblockUI();
-        });
+		$('#id-remove-button').click(function () {
+			$.unblockUI();
+		});
+		$('#id-deploy-explify-button').click(function () {
+			$.unblockUI();
+		});
 		// unblock when click in button class close
 		$('.close').click(function () {
 			$.unblockUI();
 		});
 	});
+
+	$(document).on("click", "#id_manage_tags", function () {
+		url = $('#id-modal-body-display-project-tags').attr('project-tags-url');
+		project_id = $(this).attr('project_pk');
+		$.ajax({
+			url: url,
+			method: "POST",
+			data: {
+				project_id: project_id,
+				csrfmiddlewaretoken: '{{ csrf_token }}'
+			},
+			success: function (data) {
+				let tagsHtml = '';
+				data.tags.forEach(tag => {
+					tagsHtml += `
+						<div class="col-12 mb-3">
+							<div class="card">
+								<div class="card-body d-flex align-items-center justify-content-between p-3">
+									<div>
+										<h6 class="card-title mb-1">${tag.name}</h6>
+										<p class="card-text small text-muted mb-0">${tag.description || 'No description'}</p>
+									</div>
+									<button class="btn btn-danger btn-sm" data-tag-id="${tag.id}" onclick="removeTag(${tag.id})">x</button>
+								</div>
+							</div>
+						</div>
+					`;
+				});
+				$('#id-modal-body-display-project-tags .row .col-12').html(tagsHtml);
+			},
+			error: function (xhr, errmsg, err) {
+				alert(errmsg);
+				console.log(xhr.status + ": " + xhr.responseText);
+			}
+		});
+	});
+
+
+	$(document).on("click", "#id_add_tags", function () {
+		url = $('#id-modal-body-add-tags').attr('tag_candidates_url');
+		project_id = $(this).attr('project_pk');
+		$.ajax({
+			url: url,
+			method: "POST",
+            data : {
+				project_id : project_id,
+				csrfmiddlewaretoken: '{{ csrf_token }}'
+			},
+			success: function (data) {
+				let tagsHtml = '';
+				data.tags.forEach(tag => {
+					tagsHtml += `
+						<div class="col-12 mb-3">
+							<div class="card">
+								<div class="card-body d-flex align-items-center justify-content-between p-3">
+									<div>
+										<h6 class="card-title mb-1">${tag.name}</h6>
+									</div>
+									<button  class="btn btn-small btn-primary" ">
+									<a id="add_tag_to_project" href="#" tag_id="${tag.id}" class="add_tag text-white" data-toggle="tooltip" title="Add tag to project">
+										<i class="fa fa-plus"></i>
+									</a>
+									</button>
+								</div>
+							</div>
+						</div>
+					`;
+				});
+				$('#id-modal-body-add-tags .row .col-12').html(tagsHtml);
+				$('.add_tag').click(function () {
+
+					let tagId = $(this).attr('tag_id');
+					let tagCard = $(this).closest('.col-12.mb-3');
+					$.ajax({
+						url: "{% url 'assign_tag_to_project' %}",
+						method: "POST",
+						data: {
+							project_id: project_id,
+							tag_id: tagId,
+							csrfmiddlewaretoken: '{{ csrf_token }}'
+						},
+						success: function (data) {
+							if (data['is_ok']) {
+								alert("Tag added to project successfully!");
+								// Optionally, refresh the tags list
+								tagCard.remove();
+							} else {
+								alert("Error adding tag to project: " + data.error);
+							}
+						},
+						error: function (xhr, errmsg, err) {
+							alert(errmsg);
+							console.log(xhr.status + ": " + xhr.responseText);
+						}
+					});
+				});
+			},
+			error: function (xhr, errmsg, err) {
+				alert(errmsg);
+				console.log(xhr.status + ": " + xhr.responseText);
+			}
+		});
+	});
+
+	$(document).on("click", "#id_project_tags_link", function () {
+		url = $('#id-modal-body-project-tags').attr('user-tags-url');
+		$.ajax({
+			url: url,
+			method: "POST",
+			data: {
+				csrfmiddlewaretoken: '{{ csrf_token }}'
+			},
+			success: function (data) {
+				let tagsHtml = '';
+				data.tags.forEach(tag => {
+					tagsHtml += `
+						<div class="col-12 mb-3">
+							<div class="card">
+								<div class="card-body d-flex align-items-center justify-content-between p-3">
+									<div>
+										<h6 class="card-title mb-1">${tag.name}</h6>
+										<p class="card-text small text-muted mb-0">${tag.description || 'No description'}</p>
+									</div>
+									<button class="btn btn-danger btn-sm" data-tag-id="${tag.id}" onclick="removeTag(${tag.id})">x</button>
+								</div>
+							</div>
+						</div>
+					`;
+				});
+				$('#id-modal-body-project-tags .row .col-12').html(tagsHtml);
+			},
+			error: function (xhr, errmsg, err) {
+				alert(errmsg);
+				console.log(xhr.status + ": " + xhr.responseText);
+			}
+		});
+	});
+
+
+	$(document).on("click", "#id-new-tag-button", function () {
+		let tagName = prompt("Enter the name of the new tag:");
+		if (tagName) {
+			let tagDescription = prompt("Enter a description for the new tag (optional):");
+			$.ajax({
+				url: "{% url 'create_user_project_tag' %}",
+				method: "POST",
+				data: {
+					name: tagName,
+					description: tagDescription,
+					csrfmiddlewaretoken: '{{ csrf_token }}'
+				},
+				success: function (data) {
+					if (data['is_ok']) {
+						alert("Tag created successfully!");
+						// Optionally, refresh the tags list
+						$("#id_project_tags_link").click();
+					} else {
+						alert("Error creating tag: " + data.error);
+					}
+				},
+				error: function (xhr, errmsg, err) {
+					alert(errmsg);
+					console.log(xhr.status + ": " + xhr.responseText);
+				}
+			});
+		}
+	});
+
 
 	/// set wait screen
 	$(document).on("click", "a", function (e) {
@@ -272,7 +496,6 @@
 
 
     $('#id-reset-button').on('click', function(){
-        console.log("removing");
 
         $.ajax({
             url: $('#id-modal-body-reset-parameters').attr("remove-single-value-url"),
@@ -307,50 +530,6 @@
         });
     });
 
-
-	$('#id-deploy-explify-button').on('click', function(){
-
-		var rpip_file = document.getElementById("rpip_table");
-		var upip_file = document.getElementById("upip_table");
-		var project_pk = $('#id-modal-body-deploy-merge-explify').attr('pk');
-		
-		var formData = new FormData();
-
-		formData.append('rpip_file', rpip_file.files[0]);
-		formData.append('upip_file', upip_file.files[0]);
-		formData.append('project_id', project_pk);
-		formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-
-		$.ajax({
-			url: $('#id-modal-body-deploy-merge-explify').attr("deploy-merge-explify-url"),
-			type: 'POST',
-			processData: false,
-			contentType: false,
-			data : formData, // data sent with the post request
-
-			success: function(data) {
-				if (data['is_ok']) {
-					/// remove line
-					document.getElementById($('#id-modal-body-deploy-merge-explify').attr('tr_to_remove')).remove();
-					document.location.reload();
-					/// add message with informaton
-
-					$('#id_messages_set_control').append('<div class="alert alert-dismissible alert-success">' +
-						'Project \'' + $('#id-modal-body-deploy-merge-explify').attr('project_name') + '\' merge explify file successfully.' +
-						'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-						'</div>');
-				}
-				else {
-					/// add message with informaton
-					$('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-						'Project \'' + $('#id-modal-body-deploy-merge-explify').attr('project_name') + '\' merge explify file failed.' +
-						'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-						'</div>');
-				}
-			}
-		})
-	}
-	)
 
 </script>
 

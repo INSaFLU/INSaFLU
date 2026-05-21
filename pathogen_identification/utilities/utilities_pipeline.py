@@ -27,6 +27,15 @@ from pathogen_identification.televir_pipeline_makeup import Pipeline_Makeup
 
 tree = lambda: defaultdict(tree)
 
+
+def make_tree(lst):
+    d = tree()
+    for x in lst:
+        curr = d
+        for item in x:
+            curr = curr[item]
+    return d
+
 class PipelineTree:
 
     technology: str

@@ -32,7 +32,7 @@ from managing_files.models import (
 )
 from utils.process_SGE import ProcessSched
 from utils.result import ProcessResults, SingleResult
-from utils.utils import Utils
+from utils.utils import Utils, PathUtils
 
 
 class ParseInFiles(object):
@@ -1183,6 +1183,7 @@ class ParseInFiles(object):
         """
 
         utils = Utils()
+        path_utils = PathUtils()
         upload_files = self.get_upload_samples_file(user)
         if upload_files == None:
             return  ## there's no files to match
@@ -1273,7 +1274,7 @@ class ParseInFiles(object):
                 ## link the files to the right place
                 sz_file_to = os.path.join(
                     getattr(settings, "MEDIA_ROOT", None),
-                    utils.get_path_to_fastq_file(user.id, sample.id),
+                    path_utils.get_path_to_fastq_file(user.id, sample.id),
                     sample.candidate_file_name_1,
                 )
                 utils.link_file(
@@ -1284,7 +1285,7 @@ class ParseInFiles(object):
                     sz_file_to,
                 )
                 sample.path_name_1.name = os.path.join(
-                    utils.get_path_to_fastq_file(user.id, sample.id),
+                    path_utils.get_path_to_fastq_file(user.id, sample.id),
                     sample.candidate_file_name_1,
                 )
                 sample.file_name_1 = sample.candidate_file_name_1
@@ -1313,7 +1314,7 @@ class ParseInFiles(object):
 
                     sz_file_to = os.path.join(
                         getattr(settings, "MEDIA_ROOT", None),
-                        utils.get_path_to_fastq_file(user.id, sample.id),
+                        path_utils.get_path_to_fastq_file(user.id, sample.id),
                         sample.candidate_file_name_2,
                     )
                     utils.link_file(
@@ -1324,7 +1325,7 @@ class ParseInFiles(object):
                         sz_file_to,
                     )
                     sample.path_name_2.name = os.path.join(
-                        utils.get_path_to_fastq_file(user.id, sample.id),
+                        path_utils.get_path_to_fastq_file(user.id, sample.id),
                         sample.candidate_file_name_2,
                     )
                     sample.file_name_2 = sample.candidate_file_name_2

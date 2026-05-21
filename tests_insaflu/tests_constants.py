@@ -5,7 +5,7 @@ Created on Oct 28, 2017
 '''
 import unittest
 from constants.constantsTestsCase import ConstantsTestsCase
-from utils.utils import Utils
+from utils.utils import PathUtils
 from constants.constants import Constants, FileType
 from django.conf import settings 
 import os
@@ -26,8 +26,11 @@ class Test(unittest.TestCase):
 
 
 	def testgetPathToReferenceFile(self):
-		utils = Utils()
-		self.assertTrue(getattr(settings, "MEDIA_ROOT", None) + "/" + Constants.DIR_PROCESSED_FILES_REFERENCE + "/userID_10/refID_20", 
+		utils = PathUtils()
+		self.assertTrue(os.path.join(
+			getattr(settings, "MEDIA_ROOT", None),
+			Constants.DIR_PROCESSED_FILES_REFERENCE,
+			"/userID_10/refID_20"),
 			utils.get_path_to_reference_file(10, 20))
 
 

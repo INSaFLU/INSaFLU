@@ -90,7 +90,7 @@ from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSched
 from utils.software import Software
 from utils.support_django_template import get_link_for_dropdown_item
-from utils.utils import ShowInfoMainPage, Utils
+from utils.utils import ShowInfoMainPage, Utils, PathUtils
 
 
 def remove_pre_static(path: str) -> str:
@@ -2169,9 +2169,10 @@ class UploadReferencePanel(
         ###
         software = Software()
         utils = Utils()
+        path_utils = PathUtils()
 
         reference_metadata_table = check_metadata_table_clean(metadata_file)
-        user_televir_ref_dir = utils.get_path_to_user_televir_references(
+        user_televir_ref_dir = path_utils.get_path_to_user_televir_references(
             self.request.user.id
         )
 

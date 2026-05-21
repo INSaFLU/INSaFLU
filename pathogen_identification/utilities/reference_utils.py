@@ -34,7 +34,7 @@ from pathogen_identification.utilities.utilities_general import (
     detect_id_columns, rename_columns_to_standard, simplify_name)
 from settings.default_software_project_sample import DefaultProjectSoftware
 from utils.software import Software
-from utils.utils import Utils
+from utils.utils import Utils, PathUtils
 
 ################################################################################
 ############                                      ##############################
@@ -488,6 +488,7 @@ def create_combined_reference(
     This function takes a list of references and creates a combined fasta file
     """
     utils = Utils()
+    path_utils = PathUtils()
     references = RawReference.objects.filter(id__in=reference_ids)
     references = [reference for reference in references]
 
@@ -511,7 +512,7 @@ def create_combined_reference(
     ### move the files to the right place
     final_data_path = os.path.join(
         settings.MEDIA_ROOT,
-        utils.get_path_to_teleflu_reference_file(user_id, metaref.id),
+        path_utils.get_path_to_teleflu_reference_file(user_id, metaref.id),
     )
 
     sz_file_to = os.path.join(
@@ -706,6 +707,7 @@ def generate_insaflu_reference(
     reference_fasta: str, name: str, final_fasta_name: str, user: User
 ) -> Tuple[bool, int]:
     utils = Utils()
+    path_utils = PathUtils()
     software = Software()
     final_gb_name = final_fasta_name.replace(".fasta", ".gbk")
 
@@ -729,7 +731,7 @@ def generate_insaflu_reference(
 
     ## move the files to the right place
     final_data_path = os.path.join(
-        settings.MEDIA_ROOT, utils.get_path_to_reference_file(user.id, reference.id)
+        settings.MEDIA_ROOT, path_utils.get_path_to_reference_file(user.id, reference.id)
     )
     os.makedirs(final_data_path, exist_ok=True)
 
@@ -754,7 +756,7 @@ def generate_insaflu_reference(
     with open(sz_file_to, "rb") as f:
         reference.reference_fasta.save(os.path.basename(sz_file_to), f, save=True)
     reference.reference_fasta.name = os.path.join(
-        utils.get_path_to_reference_file(user.id, reference.id),
+        path_utils.get_path_to_reference_file(user.id, reference.id),
         reference.reference_fasta_name,
     )
 
@@ -774,7 +776,7 @@ def generate_insaflu_reference(
         reference.reference_genbank.save(os.path.basename(sz_file_to), f, save=True)
 
     reference.reference_genbank.name = os.path.join(
-        utils.get_path_to_reference_file(user.id, reference.id),
+        path_utils.get_path_to_reference_file(user.id, reference.id),
         reference.reference_genbank_name,
     )
     reference.save()

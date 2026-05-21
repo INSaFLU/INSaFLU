@@ -17,7 +17,7 @@ from django.utils.translation import gettext_lazy as _
 from constants.constants import Constants, FileExtensions, TypePath
 from manage_virus.constants_virus import ConstantsVirus
 from utils.parse_out_files import ParseOutFiles
-from utils.utils import Utils
+from utils.utils import Utils, PathUtils
 
 from .models import IdentifyVirus, SeqVirus, Tags, UploadFile
 
@@ -29,6 +29,7 @@ class UploadFiles(object):
 
     constants = Constants()
     utils = Utils()
+    path_utils = PathUtils()
 
     ACCESSION = "Accesion"
     DESCRIPTION = "Description"
@@ -336,19 +337,19 @@ class UploadFiles(object):
                 ## move the files to the right place
                 sz_file_to = os.path.join(
                     getattr(settings, "MEDIA_ROOT", None),
-                    self.utils.get_path_to_reference_file(user.id, reference.id),
+                    self.path_utils.get_path_to_reference_file(user.id, reference.id),
                     reference.reference_fasta_name,
                 )
                 self.utils.copy_file(file, sz_file_to)
                 reference.reference_fasta.name = os.path.join(
-                    self.utils.get_path_to_reference_file(user.id, reference.id),
+                    self.path_utils.get_path_to_reference_file(user.id, reference.id),
                     reference.reference_fasta_name,
                 )
 
                 ### genbank files
                 sz_file_to = os.path.join(
                     getattr(settings, "MEDIA_ROOT", None),
-                    self.utils.get_path_to_reference_file(user.id, reference.id),
+                    self.path_utils.get_path_to_reference_file(user.id, reference.id),
                     reference.reference_genbank_name,
                 )
                 if gbk_file_name is None:
@@ -362,7 +363,7 @@ class UploadFiles(object):
                     self.utils.copy_file(gbk_file_name, sz_file_to)
 
                 reference.reference_genbank.name = os.path.join(
-                    self.utils.get_path_to_reference_file(user.id, reference.id),
+                    self.path_utils.get_path_to_reference_file(user.id, reference.id),
                     reference.reference_genbank_name,
                 )
                 reference.hash_reference_genbank = self.utils.md5sum(sz_file_to)
@@ -459,24 +460,24 @@ class UploadFiles(object):
                 ## move the files to the right place
                 sz_file_to = os.path.join(
                     getattr(settings, "MEDIA_ROOT", None),
-                    self.utils.get_path_to_primer_file(user.id, primer.id),
+                    self.path_utils.get_path_to_primer_file(user.id, primer.id),
                     primer.primer_fasta_name,
                 )
                 self.utils.copy_file(file, sz_file_to)
                 primer.primer_fasta.name = os.path.join(
-                    self.utils.get_path_to_primer_file(user.id, primer.id),
+                    self.path_utils.get_path_to_primer_file(user.id, primer.id),
                     primer.primer_fasta_name,
                 )
 
                 ### genbank files
                 sz_file_to = os.path.join(
                     getattr(settings, "MEDIA_ROOT", None),
-                    self.utils.get_path_to_primer_file(user.id, primer.id),
+                    self.path_utils.get_path_to_primer_file(user.id, primer.id),
                     primer.primer_pairs_name,
                 )
                 self.utils.copy_file(pair_file, sz_file_to)
                 primer.primer_pairs.name = os.path.join(
-                    self.utils.get_path_to_primer_file(user.id, primer.id),
+                    self.path_utils.get_path_to_primer_file(user.id, primer.id),
                     primer.primer_pairs_name,
                 )
                 primer.save()

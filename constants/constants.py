@@ -13,7 +13,7 @@ from decouple import config
 
 from constants.televir_directories import Televir_Directory_Constants
 from settings.constants_settings import ConstantsSettings as CS
-
+from pathlib import Path
 
 
 class Televir_Metadata_Constants:
@@ -172,8 +172,8 @@ class Constants(object):
     ## start expand tag name rows
     START_EXPAND_SAMPLE_TAG_NAMES_ROWS = 4
 
-    DIR_PROCESSED_FILES_UPLOADS = "uploads"
-    DIR_PROCESSED_PROCESSED = "processed"
+    DIR_PROCESSED_FILES_UPLOADS = Path('uploads')
+    DIR_PROCESSED_PROCESSED = Path('processed')
 
     ### queue names
     QUEUE_NAMES = ["queue_1.q", "queue_2.q"]
@@ -216,17 +216,17 @@ class Constants(object):
     SEPARATOR_TAB = "\t"
 
     ## DIR_PROCESSED_FILES_FROM_WEB/userId_<id>/refId_<id>
-    DIR_PROCESSED_FILES_REFERENCE = DIR_PROCESSED_FILES_UPLOADS + "/references"
-    DIR_PROCESSED_FILES_PRIMER = DIR_PROCESSED_FILES_UPLOADS + "/primers"
+    DIR_PROCESSED_FILES_REFERENCE = DIR_PROCESSED_FILES_UPLOADS / "references"
+    DIR_PROCESSED_FILES_PRIMER = DIR_PROCESSED_FILES_UPLOADS / "primers"
     DIR_PROCESSED_FILES_TELEFLU_REFERENCE = (
-        DIR_PROCESSED_FILES_UPLOADS + "/teleflu_references"
+        DIR_PROCESSED_FILES_UPLOADS / "teleflu_references"
     )
-    DIR_TELEVIR_UPLOAD_FILES = DIR_PROCESSED_FILES_UPLOADS + "/televir_references"
-    DIR_PROCESSED_FILES_CONSENSUS = DIR_PROCESSED_FILES_UPLOADS + "/consensus"
-    DIR_PROCESSED_FILES_FASTQ = DIR_PROCESSED_FILES_UPLOADS + "/fastq"
+    DIR_TELEVIR_UPLOAD_FILES = DIR_PROCESSED_FILES_UPLOADS / "televir_references"
+    DIR_PROCESSED_FILES_CONSENSUS = DIR_PROCESSED_FILES_UPLOADS / "consensus"
+    DIR_PROCESSED_FILES_FASTQ = DIR_PROCESSED_FILES_UPLOADS / "fastq"
     DIR_PROCESSED_FILES_PROJECT = "projects/result"
     DIR_PROCESSED_FILES_MULTIPLE_SAMPLES = (
-        DIR_PROCESSED_FILES_UPLOADS + "/multiple_samples"
+        DIR_PROCESSED_FILES_UPLOADS / "multiple_samples"
     )
     DIR_PROCESSED_FILES_DATASETS = "datasets/result"
 

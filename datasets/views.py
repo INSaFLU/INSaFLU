@@ -48,7 +48,7 @@ from utils.session_variables import (clean_check_box_in_session,
                                      is_all_check_box_in_session)
 from utils.software import Software
 from utils.support_django_template import get_link_for_dropdown_item
-from utils.utils import ShowInfoMainPage, Utils
+from utils.utils import ShowInfoMainPage, Utils, PathUtils
 
 
 class DatasetsView(LoginRequiredMixin, ListView):
@@ -1027,6 +1027,7 @@ class UploadNewConsensusView(
     def form_valid(self, form):
         software = Software()
         utils = Utils()
+        path_utils = PathUtils()
 
         ### test anonymous account
         try:
@@ -1122,7 +1123,7 @@ class UploadNewConsensusView(
                         ## move the files to the right place
                         sz_file_to = os.path.join(
                             settings.MEDIA_ROOT,
-                            utils.get_path_to_consensus_file(
+                            path_utils.get_path_to_consensus_file(
                                 self.request.user.id, consensus.id
                             ),
                             consensus.consensus_fasta_name,
@@ -1133,7 +1134,7 @@ class UploadNewConsensusView(
                             SeqIO.write([record], handle_out, "fasta")
                         consensus.hash_reference_fasta = utils.md5sum(sz_file_to)
                         consensus.consensus_fasta.name = os.path.join(
-                            utils.get_path_to_consensus_file(
+                            path_utils.get_path_to_consensus_file(
                                 self.request.user.id, consensus.id
                             ),
                             consensus.consensus_fasta_name,
@@ -1599,6 +1600,7 @@ class AddSingleMetadataDatasetFile(
             pass
 
         utils = Utils()
+        path_utils = PathUtils()
         software = Software()
         path_name = form.cleaned_data["path_name"]
 
@@ -1643,12 +1645,12 @@ class AddSingleMetadataDatasetFile(
             ## move the files to the right place
             sz_file_to = os.path.join(
                 getattr(settings, "MEDIA_ROOT", None),
-                utils.get_path_upload_file(
+                path_utils.get_path_upload_file(
                     self.request.user.id, TypeFile.TYPE_FILE_dataset_file_metadata
                 ),
                 upload_files.file_name,
             )
-            sz_file_to, path_added = utils.get_unique_file(
+            sz_file_to, path_added = path_utils.get_unique_file(
                 sz_file_to
             )  ## get unique file name, user can upload files with same name...
             utils.move_file(
@@ -1660,14 +1662,14 @@ class AddSingleMetadataDatasetFile(
             software.dos_2_unix(sz_file_to)
             if path_added is None:
                 upload_files.path_name.name = os.path.join(
-                    utils.get_path_upload_file(
+                    path_utils.get_path_upload_file(
                         self.request.user.id, TypeFile.TYPE_FILE_dataset_file_metadata
                     ),
                     ntpath.basename(sz_file_to),
                 )
             else:
                 upload_files.path_name.name = os.path.join(
-                    utils.get_path_upload_file(
+                    path_utils.get_path_upload_file(
                         self.request.user.id, TypeFile.TYPE_FILE_dataset_file_metadata
                     ),
                     path_added,

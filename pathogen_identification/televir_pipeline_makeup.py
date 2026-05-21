@@ -39,13 +39,6 @@ def excluded_steps_decorator(function):
     return wrapped
 
 
-def make_tree(lst):
-    d = tree()
-    for x in lst:
-        curr = d
-        for item in x:
-            curr = curr[item]
-    return d
 
 
 def differences_tuple_list(lista, listb):

@@ -39,8 +39,6 @@ def excluded_steps_decorator(function):
     return wrapped
 
 
-
-
 def differences_tuple_list(lista, listb):
     """
     Return the differences between two lists
@@ -94,27 +92,22 @@ class Pipeline_Graph_Metagenomics(PipelineTreeBase):
                 self.VIRAL_ENRICHMENT_SPECIAL_STEP,
                 CS.PIPELINE_NAME_host_depletion,
             ],
-            #self.READ_CLASSIFICATION_SPECIAL_STEP: [
-            #    CS.PIPELINE_NAME_read_classification,
-            #],
+
             CS.PIPELINE_NAME_remap_filtering: [
                 CS.PIPELINE_NAME_contig_classification,
                 CS.PIPELINE_NAME_read_classification,
-                #self.READ_CLASSIFICATION_SPECIAL_STEP,
                 CS.PIPELINE_NAME_host_depletion,
             ],
             CS.PIPELINE_NAME_remapping: [
                 CS.PIPELINE_NAME_remap_filtering,
                 CS.PIPELINE_NAME_contig_classification,
                 CS.PIPELINE_NAME_read_classification,
-                #self.READ_CLASSIFICATION_SPECIAL_STEP,
                 CS.PIPELINE_NAME_host_depletion,
                 self.VIRAL_ENRICHMENT_SPECIAL_STEP,
             ],
             CS.PIPELINE_NAME_map_filtering: [
                 self.ROOT,
                 CS.PIPELINE_NAME_extra_qc,
-                #self.READ_CLASSIFICATION_SPECIAL_STEP,
                 CS.PIPELINE_NAME_host_depletion,
                 self.VIRAL_ENRICHMENT_SPECIAL_STEP,
             ],
@@ -127,7 +120,6 @@ class Pipeline_Graph_Metagenomics(PipelineTreeBase):
             CS.PIPELINE_NAME_request_mapping: [
                 self.ROOT,
                 CS.PIPELINE_NAME_extra_qc,
-                # self.ASSEMBLY_SPECIAL_STEP,
                 self.MAP_FILTERING_SPECIAL_STEP,
                 CS.PIPELINE_NAME_host_depletion,
                 self.VIRAL_ENRICHMENT_SPECIAL_STEP,
@@ -136,7 +128,6 @@ class Pipeline_Graph_Metagenomics(PipelineTreeBase):
                 self.ROOT,
                 CS.PIPELINE_NAME_extra_qc,
                 self.MAP_FILTERING_SPECIAL_STEP,
-                # self.ASSEMBLY_SPECIAL_STEP,
                 CS.PIPELINE_NAME_host_depletion,
                 self.VIRAL_ENRICHMENT_SPECIAL_STEP,
             ],
@@ -145,7 +136,6 @@ class Pipeline_Graph_Metagenomics(PipelineTreeBase):
                 CS.PIPELINE_NAME_metagenomics_screening,
                 CS.PIPELINE_NAME_remapping,
                 CS.PIPELINE_NAME_contig_classification,
-                #self.READ_CLASSIFICATION_SPECIAL_STEP,
                 CS.PIPELINE_NAME_read_classification,
             ],
         }

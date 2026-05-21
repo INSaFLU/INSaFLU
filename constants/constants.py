@@ -88,7 +88,7 @@ class Televir_Metadata_Constants:
         CS.PIPELINE_NAME_remap_filtering: {"default": "remap/remap"},
         CS.PIPELINE_NAME_read_quality_analysis: {"default": "preprocess/preproc"},
         CS.PIPELINE_NAME_extra_qc: {"default": "preprocess/preproc"},
-        CS.PIPELINE_NAME_assembly: {"default": "assembly/assembly"},
+        CS.PIPELINE_NAME_assembly: {"default": "assembly/assembly_env"},
     }
 
     @property

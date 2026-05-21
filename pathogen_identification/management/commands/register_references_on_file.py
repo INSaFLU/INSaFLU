@@ -158,6 +158,20 @@ class Command(BaseCommand):
 
         print("Retrieved entrez descriptions")
         print(f"Number of entrez descriptions: {len(entrez_descriptions)}")
+        
+        # Enrich with lineage and taxonomy data
+        print("Enriching references with taxonomic lineage...")
+        try:
+            entrez_descriptions = entrez_connection.enrich_references_dataframe(
+                entrez_descriptions
+            )
+            print("Successfully enriched references with lineage data")
+            if 'lineage_path' in entrez_descriptions.columns:
+                print(f"Sample lineage_path: {entrez_descriptions['lineage_path'].iloc[0]}")
+        except Exception as e:
+            print(f"Warning: Could not enrich references with lineage: {e}")
+            # Continue without lineage enrichment
+        
         print("Registering entrez descriptions")
 
         d = 0
@@ -219,19 +233,49 @@ class Command(BaseCommand):
                 ref_source = ReferenceSource.objects.filter(accid=accid_str)
 
                 if ref_source.exists() is False:
+                    # Extract additional enriched data if available
+                    organism_name = row.get('organism_name', '') if 'organism_name' in row else ''
+                    lineage_json = row.get('lineage_json', '') if 'lineage_json' in row else ''
+                    lineage_path = row.get('lineage_path', '') if 'lineage_path' in row else ''
+                    
                     ref_source = ReferenceSource.objects.create(
-                        accid=accid_str, description=description, taxid=ref_taxid
+                        accid=accid_str, 
+                        description=description, 
+                        taxid=ref_taxid,
+                        organism_name=organism_name,
+                        lineage_json=lineage_json,
+                        lineage_path=lineage_path
                     )
 
                 elif ref_source.count() > 1:
 
                     ref_source.delete()
+                    
+                    # Extract additional enriched data if available
+                    organism_name = row.get('organism_name', '') if 'organism_name' in row else ''
+                    lineage_json = row.get('lineage_json', '') if 'lineage_json' in row else ''
+                    lineage_path = row.get('lineage_path', '') if 'lineage_path' in row else ''
+                    
                     ref_source = ReferenceSource.objects.create(
-                        accid=accid_str, description=description, taxid=ref_taxid
+                        accid=accid_str, 
+                        description=description, 
+                        taxid=ref_taxid,
+                        organism_name=organism_name,
+                        lineage_json=lineage_json,
+                        lineage_path=lineage_path
                     )
 
                 else:
                     ref_source = ref_source.first()
+                    
+                    # Update with enriched data if available
+                    if 'organism_name' in row and pd.notna(row.get('organism_name')):
+                        ref_source.organism_name = row['organism_name']
+                    if 'lineage_json' in row and pd.notna(row.get('lineage_json')):
+                        ref_source.lineage_json = row['lineage_json']
+                    if 'lineage_path' in row and pd.notna(row.get('lineage_path')):
+                        ref_source.lineage_path = row['lineage_path']
+                    ref_source.save()
 
                 if options["curate"]:
                     files_associated = ReferenceSourceFileMap.objects.filter(

@@ -193,8 +193,12 @@ class Command(BaseCommand):
             # Enrich with lineage and taxonomy data
             print("Enriching references with taxonomic lineage...")
             try:
+                lineages = entrez_connection.fetch_lineage(
+                    entrez_descriptions["taxid"].astype(str).unique().tolist()
+                )
+                entrez_connection.persist_lineages(lineages)
                 entrez_descriptions = entrez_connection.enrich_references_dataframe(
-                    entrez_descriptions
+                    entrez_descriptions, lineages=lineages
                 )
                 print("Successfully enriched references with lineage data")
                 if 'lineage_path' in entrez_descriptions.columns:
@@ -275,16 +279,12 @@ class Command(BaseCommand):
                     ref_source = ReferenceSource.objects.filter(accid=accid_str)
 
                     if ref_source.exists() is False:
-                        organism_name = row.get('organism_name', '') if 'organism_name' in row else ''
-                        lineage_json = row.get('lineage_json', '') if 'lineage_json' in row else ''
-                        lineage_path = row.get('lineage_path', '') if 'lineage_path' in row else ''
+                        lineage_path = row.get('lineage_path', '') or ''
 
                         ref_source = ReferenceSource.objects.create(
                             accid=accid_str,
                             description=description,
                             taxid=ref_taxid,
-                            organism_name=organism_name,
-                            lineage_json=lineage_json,
                             lineage_path=lineage_path,
                         )
 
@@ -292,28 +292,21 @@ class Command(BaseCommand):
 
                         ref_source.delete()
 
-                        organism_name = row.get('organism_name', '') if 'organism_name' in row else ''
-                        lineage_json = row.get('lineage_json', '') if 'lineage_json' in row else ''
-                        lineage_path = row.get('lineage_path', '') if 'lineage_path' in row else ''
+                        lineage_path = row.get('lineage_path', '') or ''
 
                         ref_source = ReferenceSource.objects.create(
                             accid=accid_str,
                             description=description,
                             taxid=ref_taxid,
-                            organism_name=organism_name,
-                            lineage_json=lineage_json,
                             lineage_path=lineage_path,
                         )
 
                     else:
                         ref_source = ref_source.first()
 
-                        if 'organism_name' in row and pd.notna(row.get('organism_name')):
-                            ref_source.organism_name = row['organism_name']
-                        if 'lineage_json' in row and pd.notna(row.get('lineage_json')):
-                            ref_source.lineage_json = row['lineage_json']
-                        if 'lineage_path' in row and pd.notna(row.get('lineage_path')):
-                            ref_source.lineage_path = row['lineage_path']
+                        lineage_path = row.get('lineage_path')
+                        if pd.notna(lineage_path):
+                            ref_source.lineage_path = lineage_path
                         ref_source.save()
 
                     # get reference source file

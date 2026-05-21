@@ -3,15 +3,20 @@ import os
 import urllib.error
 from abc import ABC, abstractmethod
 from typing import List, Dict, Tuple
-import json
-
-import pandas as pd
 from Bio import Entrez
 from django.contrib.auth.models import User
+from dataclasses import dataclass
+from typing import Optional
 
 
 def split_query(query: List[str], chunksize: int) -> List[List[str]]:
     return [query[i : i + chunksize] for i in range(0, len(query), chunksize)]
+
+@dataclass
+class LineageNode:
+    taxid: str = ""
+    name: str = ""
+    rank: str = "no rank"
 
 
 class EntrezQuery(ABC):
@@ -490,18 +495,18 @@ class EntrezWrapper:
                     # Parse LineageEx if present
                     if "LineageEx" in record:
                         for taxon in record["LineageEx"]:
-                            lineage_nodes.append({
-                                "taxid": str(taxon.get("TaxId", "")),
-                                "name": taxon.get("ScientificName", ""),
-                                "rank": taxon.get("Rank", "no rank")
-                            })
+                            lineage_nodes.append(LineageNode(
+                                taxid=str(taxon.get("TaxId", "")),
+                                name=taxon.get("ScientificName", ""),
+                                rank=taxon.get("Rank", "no rank")
+                            ))
                     
                     # Add the record itself as the leaf node
-                    lineage_nodes.append({
-                        "taxid": taxid,
-                        "name": record.get("ScientificName", ""),
-                        "rank": record.get("Rank", "no rank")
-                    })
+                    lineage_nodes.append(LineageNode(
+                        taxid=taxid,
+                        name=record.get("ScientificName", ""),
+                        rank=record.get("Rank", "no rank")
+                    ))
                     
                     lineages[taxid] = lineage_nodes
             except Exception as e:
@@ -509,6 +514,107 @@ class EntrezWrapper:
                 continue
         
         return lineages
+
+    def persist_lineages(self, lineages: Dict[str, List[LineageNode]]) -> None:
+        """
+        Persist taxonomic lineages as Taxon objects in DB.
+
+        Builds a deduplicated node registry and adjacency list, then BFS from
+        roots to create/update Taxon objects. Updates ReferenceTaxid rank-level FKs.
+
+        Args:
+            lineages: taxid -> list of LineageNode from root to leaf
+        """
+        from collections import deque
+        from pathogen_identification.models import Taxon, ReferenceTaxid
+        from constants.constants_taxonomy import TaxonConstants
+
+        RANK_TO_FIELD = {
+            TaxonConstants.RANK_DOMAIN: "tax_domain",
+            TaxonConstants.RANK_PHYLUM: "tax_phylum",
+            TaxonConstants.RANK_CLASS: "tax_class",
+            TaxonConstants.RANK_ORDER: "tax_order",
+            TaxonConstants.RANK_FAMILY: "tax_family",
+            TaxonConstants.RANK_GENUS: "tax_genus",
+        }
+
+        node_info = {}
+        children = {}
+        all_child_taxids = set()
+
+        for leaf_taxid, lineage_list in lineages.items():
+            prev = None
+            for node in lineage_list:
+                tid = node.taxid
+                if not tid:
+                    continue
+                if tid not in node_info:
+                    node_info[tid] = node
+                if prev is not None:
+                    children.setdefault(prev, set()).add(tid)
+                    all_child_taxids.add(tid)
+                prev = tid
+
+        roots = sorted(set(node_info) - all_child_taxids)
+        queue = deque()
+        taxon_map = {}
+
+        for root_tid in roots:
+            queue.append((root_tid, None))
+
+        while queue:
+            tid, parent_taxon = queue.popleft()
+            node = node_info[tid]
+
+            taxon, _ = Taxon.objects.get_or_create(
+                taxid=int(tid),
+                defaults={
+                    "name": node.name,
+                    "rank": node.rank,
+                    "parent": parent_taxon,
+                },
+            )
+
+            changed = False
+            if taxon.name != node.name:
+                taxon.name = node.name
+                changed = True
+            if taxon.rank != node.rank:
+                taxon.rank = node.rank
+                changed = True
+            if taxon.parent != parent_taxon:
+                taxon.parent = parent_taxon
+                changed = True
+            if changed:
+                taxon.save()
+
+            taxon_map[tid] = taxon
+
+            for child_tid in children.get(tid, set()):
+                queue.append((child_tid, taxon))
+
+        for leaf_taxid, lineage_list in lineages.items():
+            if not leaf_taxid:
+                continue
+            try:
+                ref_taxid_obj = ReferenceTaxid.objects.get(taxid=leaf_taxid)
+            except ReferenceTaxid.DoesNotExist:
+                continue
+
+            changed = False
+            for node in lineage_list:
+                tid = node.taxid
+                if not tid:
+                    continue
+                normalized_rank = TaxonConstants.normalize_rank(node.rank)
+                field = RANK_TO_FIELD.get(normalized_rank)
+                if field is not None:
+                    taxon = taxon_map.get(tid)
+                    if taxon is not None and getattr(ref_taxid_obj, field) != taxon:
+                        setattr(ref_taxid_obj, field, taxon)
+                        changed = True
+            if changed:
+                ref_taxid_obj.save()
 
     def search_organism_name(self, names: List[str], use_fuzzy: bool = True) -> Dict[str, Dict]:
         """
@@ -573,53 +679,42 @@ class EntrezWrapper:
         
         return results
 
-    def enrich_references_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
+    def enrich_references_dataframe(
+        self,
+        df: pd.DataFrame,
+        lineages: Dict[str, List[LineageNode]] | None = None,
+    ) -> pd.DataFrame:
         """
-        Add lineage and taxonomy info to reference DataFrame.
+        Add lineage path to reference DataFrame.
 
         Assumes input df has columns: taxid, accession, description
 
+        Args:
+            df: Input DataFrame
+            lineages: Optional pre-fetched lineages (avoids double fetch)
+
         Returns:
-            DataFrame with additional columns:
-            - organism_name
-            - lineage_json
+            DataFrame with additional column:
             - lineage_path (human-readable)
         """
         if df.empty:
             return df
-        
-        # Extract unique taxids
-        taxids = df['taxid'].astype(str).unique().tolist()
-        
-        # Fetch lineages
-        lineages = self.fetch_lineage(taxids)
-        
-        # Create mapping dictionaries for vectorized assignment
-        organism_names = {}
-        lineage_jsons = {}
-        lineage_paths = {}
-        
-        for taxid_str, lineage_list in lineages.items():
-            # Extract organism name (last entry's name)
-            organism_name = lineage_list[-1].get('name', '') if lineage_list else ''
-            organism_names[taxid_str] = organism_name
-            
-            # Store as JSON
-            lineage_jsons[taxid_str] = json.dumps(lineage_list)
-            
-            # Build human-readable path
-            names = [node.get('name', '') for node in lineage_list]
-            lineage_path = ' > '.join(filter(None, names))
-            lineage_paths[taxid_str] = lineage_path
-        
-        # Apply to dataframe using map
-        df['organism_name'] = df['taxid'].astype(str).map(lambda x: organism_names.get(x, ''))
-        df['lineage_json'] = df['taxid'].astype(str).map(lambda x: lineage_jsons.get(x, ''))
-        df['lineage_path'] = df['taxid'].astype(str).map(lambda x: lineage_paths.get(x, ''))
-        
-        return df
 
-        return None
+        if lineages is None:
+            taxids = df["taxid"].astype(str).unique().tolist()
+            lineages = self.fetch_lineage(taxids)
+
+        lineage_paths = {}
+
+        for taxid_str, lineage_list in lineages.items():
+            names = [node.name for node in lineage_list]
+            lineage_paths[taxid_str] = " > ".join(filter(None, names))
+
+        df["lineage_path"] = df["taxid"].astype(str).map(
+            lambda x: lineage_paths.get(x, "")
+        )
+
+        return df
 
     def run_taxid_description_queries_biopy(self, query: List[str]) -> None:
         """

@@ -18,24 +18,7 @@ from pathogen_identification.constants_settings import \
     ConstantsSettings as PICS
 from utils.utils import Utils
 
-# http://www.socher.org/index.php/Main/HowToInstallSunGridEngineOnUbuntu
-# https://peteris.rocks/blog/sun-grid-engine-installation-on-ubuntu-server/
 
-
-# /usr/share/gridengine/scripts/init_cluster
-
-
-# => Spool directory: /var/spool/gridengine/spooldb
-# => Initial manager user: sgeadmin
-
-## logs
-# <qmaster_spool_dir>/messages
-# <qmaster_spool_dir>/schedd/messages
-# <execd_spool_dir>/<hostname>/messages
-
-
-## default configuration
-# /etc/default/gridengine
 class ProcessSched(object):
     utils: Utils = Utils()
 

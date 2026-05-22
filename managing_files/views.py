@@ -2298,12 +2298,13 @@ class ProjectsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
         csv_file = self.path_utils.get_project_list_by_user(
             self.request.user.id, "MEDIA_ROOT", FileExtensions.FILE_CSV
         )
-        if os.path.exists(csv_file):
-            context["list_project_file_csv"] = mark_safe(
-                '<a rel="nofollow" href="'
-                + self.path_utils.get_project_list_by_user(
+        csv_url = self.path_utils.get_project_list_by_user(
                     self.request.user.id, "MEDIA_URL", FileExtensions.FILE_CSV
                 )
+        
+        if os.path.exists(csv_file):
+            context["list_project_file_csv"] = mark_safe(
+                f'<a rel="nofollow" href="{csv_url}"'
                 + '" download="'
                 + os.path.basename(csv_file)
                 + '" class="dropdown-item"> Download - '
@@ -2313,12 +2314,12 @@ class ProjectsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
         tsv_file = self.path_utils.get_project_list_by_user(
             self.request.user.id, "MEDIA_ROOT", FileExtensions.FILE_TSV
         )
-        if os.path.exists(tsv_file):
-            context["list_project_file_tsv"] = mark_safe(
-                '<a rel="nofollow" href="'
-                + self.path_utils.get_project_list_by_user(
+        tsv_url = self.path_utils.get_project_list_by_user(
                     self.request.user.id, "MEDIA_URL", FileExtensions.FILE_TSV
                 )
+        if os.path.exists(tsv_file):
+            context["list_project_file_tsv"] = mark_safe(
+                f'<a rel="nofollow" href="{tsv_url}"'
                 + '" download="'
                 + os.path.basename(tsv_file)
                 + '" class="dropdown-item"> Download - '

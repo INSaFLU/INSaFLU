@@ -2,11 +2,15 @@ import http.client
 import os
 import urllib.error
 from abc import ABC, abstractmethod
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, TYPE_CHECKING
 from Bio import Entrez
 from django.contrib.auth.models import User
 from dataclasses import dataclass
 from typing import Optional
+import pandas as pd
+
+if TYPE_CHECKING:
+    from pathogen_identification.models import Taxon
 
 
 def split_query(query: List[str], chunksize: int) -> List[List[str]]:
@@ -465,16 +469,56 @@ class EntrezWrapper:
 
     # NEW METHODS FOR LINEAGE & NAME RESOLUTION
 
-    def fetch_lineage(self, taxids: List[str], use_cache: bool = True) -> Dict[str, List[Dict]]:
+    def fetch_lineage(self, taxid: str) -> List[LineageNode]:
+        """
+        Fetch taxonomic lineage for a single taxid.
+
+        Args:
+            taxid: Single NCBI taxonomy ID (as string)
+
+        Returns:
+            List of LineageNode from root to leaf
+        """
+        try:
+            handle = Entrez.efetch(db="Taxonomy", id=taxid, retmode="xml")
+            records = Entrez.read(handle)
+            
+            if not records:
+                return []
+            
+            record = records[0]
+            lineage_nodes = []
+            
+            # Parse LineageEx if present (ancestors)
+            if "LineageEx" in record:
+                for taxon in record["LineageEx"]:
+                    lineage_nodes.append(LineageNode(
+                        taxid=str(taxon.get("TaxId", "")),
+                        name=taxon.get("ScientificName", ""),
+                        rank=taxon.get("Rank", "no rank")
+                    ))
+            
+            # Add the record itself as the leaf node
+            lineage_nodes.append(LineageNode(
+                taxid=taxid,
+                name=record.get("ScientificName", ""),
+                rank=record.get("Rank", "no rank")
+            ))
+            
+            return lineage_nodes
+        except Exception as e:
+            print(f"Error fetching lineage for taxid {taxid}: {e}")
+            return []
+
+    def fetch_lineages(self, taxids: List[str]) -> Dict[str, List[LineageNode]]:
         """
         Fetch taxonomic lineages for multiple taxids.
 
         Args:
             taxids: List of NCBI taxonomy IDs (as strings)
-            use_cache: Whether to use cached lineages from database
 
         Returns:
-            Dict mapping taxid → list of {rank, name, taxid} dicts
+            Dict mapping taxid -> list of LineageNode from root to leaf
         """
         lineages = {}
         
@@ -482,61 +526,28 @@ class EntrezWrapper:
         chunks = split_query(taxids, self.chunksize)
         
         for chunk in chunks:
-            try:
-                # Use Biopython to fetch lineage
-                handle = Entrez.efetch(db="Taxonomy", id=",".join(chunk), retmode="xml")
-                records = Entrez.read(handle)
-                
-                # Extract lineage from each record
-                for record in records:
-                    taxid = str(record.get("TaxId", ""))
-                    lineage_nodes = []
-                    
-                    # Parse LineageEx if present
-                    if "LineageEx" in record:
-                        for taxon in record["LineageEx"]:
-                            lineage_nodes.append(LineageNode(
-                                taxid=str(taxon.get("TaxId", "")),
-                                name=taxon.get("ScientificName", ""),
-                                rank=taxon.get("Rank", "no rank")
-                            ))
-                    
-                    # Add the record itself as the leaf node
-                    lineage_nodes.append(LineageNode(
-                        taxid=taxid,
-                        name=record.get("ScientificName", ""),
-                        rank=record.get("Rank", "no rank")
-                    ))
-                    
-                    lineages[taxid] = lineage_nodes
-            except Exception as e:
-                print(f"Error fetching lineage for chunk {chunk}: {e}")
-                continue
+            for taxid in chunk:
+                lineage = self.fetch_lineage(taxid)
+                if lineage:
+                    lineages[taxid] = lineage
         
         return lineages
 
-    def persist_lineages(self, lineages: Dict[str, List[LineageNode]]) -> None:
+    def persist_lineages(self, lineages: Dict[str, List[LineageNode]]) -> Dict[str, "Taxon"]:
         """
         Persist taxonomic lineages as Taxon objects in DB.
 
         Builds a deduplicated node registry and adjacency list, then BFS from
-        roots to create/update Taxon objects. Updates ReferenceTaxid rank-level FKs.
+        roots to create/update Taxon objects.
 
         Args:
             lineages: taxid -> list of LineageNode from root to leaf
+
+        Returns:
+            Dict mapping taxid -> Taxon object for later use
         """
         from collections import deque
-        from pathogen_identification.models import Taxon, ReferenceTaxid
-        from constants.constants_taxonomy import TaxonConstants
-
-        RANK_TO_FIELD = {
-            TaxonConstants.RANK_DOMAIN: "tax_domain",
-            TaxonConstants.RANK_PHYLUM: "tax_phylum",
-            TaxonConstants.RANK_CLASS: "tax_class",
-            TaxonConstants.RANK_ORDER: "tax_order",
-            TaxonConstants.RANK_FAMILY: "tax_family",
-            TaxonConstants.RANK_GENUS: "tax_genus",
-        }
+        from pathogen_identification.models import Taxon
 
         node_info = {}
         children = {}
@@ -593,28 +604,55 @@ class EntrezWrapper:
             for child_tid in children.get(tid, set()):
                 queue.append((child_tid, taxon))
 
-        for leaf_taxid, lineage_list in lineages.items():
-            if not leaf_taxid:
-                continue
-            try:
-                ref_taxid_obj = ReferenceTaxid.objects.get(taxid=leaf_taxid)
-            except ReferenceTaxid.DoesNotExist:
-                continue
+        return taxon_map
 
-            changed = False
-            for node in lineage_list:
-                tid = node.taxid
-                if not tid:
-                    continue
-                normalized_rank = TaxonConstants.normalize_rank(node.rank)
-                field = RANK_TO_FIELD.get(normalized_rank)
-                if field is not None:
-                    taxon = taxon_map.get(tid)
-                    if taxon is not None and getattr(ref_taxid_obj, field) != taxon:
-                        setattr(ref_taxid_obj, field, taxon)
-                        changed = True
-            if changed:
-                ref_taxid_obj.save()
+    def link_referencetaxid_to_lineage(
+        self, 
+        ref_taxid_str: str, 
+        lineage: List[LineageNode],
+        taxon_map: Dict[str, "Taxon"]
+    ) -> None:
+        """
+        Update ReferenceTaxid rank-level fields from a lineage.
+
+        Call this after ReferenceTaxid object has been created in the database.
+
+        Args:
+            ref_taxid_str: ReferenceTaxid taxid as string
+            lineage: List of LineageNode from root to leaf
+            taxon_map: Dict of taxid -> Taxon objects from persist_lineages()
+        """
+        from pathogen_identification.models import ReferenceTaxid
+        from constants.constants_taxonomy import TaxonConstants
+
+        RANK_TO_FIELD = {
+            TaxonConstants.RANK_DOMAIN: "tax_domain",
+            TaxonConstants.RANK_PHYLUM: "tax_phylum",
+            TaxonConstants.RANK_CLASS: "tax_class",
+            TaxonConstants.RANK_ORDER: "tax_order",
+            TaxonConstants.RANK_FAMILY: "tax_family",
+            TaxonConstants.RANK_GENUS: "tax_genus",
+        }
+
+        try:
+            ref_taxid_obj = ReferenceTaxid.objects.get(taxid=ref_taxid_str)
+        except ReferenceTaxid.DoesNotExist:
+            return
+
+        changed = False
+        for node in lineage:
+            tid = node.taxid
+            if not tid:
+                continue
+            normalized_rank = TaxonConstants.normalize_rank(node.rank)
+            field = RANK_TO_FIELD.get(normalized_rank)
+            if field is not None:
+                taxon = taxon_map.get(tid)
+                if taxon is not None and getattr(ref_taxid_obj, field) != taxon:
+                    setattr(ref_taxid_obj, field, taxon)
+                    changed = True
+        if changed:
+            ref_taxid_obj.save()
 
     def search_organism_name(self, names: List[str], use_fuzzy: bool = True) -> Dict[str, Dict]:
         """
@@ -679,42 +717,6 @@ class EntrezWrapper:
         
         return results
 
-    def enrich_references_dataframe(
-        self,
-        df: pd.DataFrame,
-        lineages: Dict[str, List[LineageNode]] | None = None,
-    ) -> pd.DataFrame:
-        """
-        Add lineage path to reference DataFrame.
-
-        Assumes input df has columns: taxid, accession, description
-
-        Args:
-            df: Input DataFrame
-            lineages: Optional pre-fetched lineages (avoids double fetch)
-
-        Returns:
-            DataFrame with additional column:
-            - lineage_path (human-readable)
-        """
-        if df.empty:
-            return df
-
-        if lineages is None:
-            taxids = df["taxid"].astype(str).unique().tolist()
-            lineages = self.fetch_lineage(taxids)
-
-        lineage_paths = {}
-
-        for taxid_str, lineage_list in lineages.items():
-            names = [node.name for node in lineage_list]
-            lineage_paths[taxid_str] = " > ".join(filter(None, names))
-
-        df["lineage_path"] = df["taxid"].astype(str).map(
-            lambda x: lineage_paths.get(x, "")
-        )
-
-        return df
 
     def run_taxid_description_queries_biopy(self, query: List[str]) -> None:
         """

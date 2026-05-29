@@ -1674,6 +1674,7 @@ class ReferenceSource(models.Model):
     )
     accid = models.CharField(max_length=100, blank=True, null=True)
     description = models.CharField(max_length=300, blank=True, null=True)
+    lineage_path = models.CharField(max_length=1000, blank=True, null=True)
 
     def __str__(self):
         return self.accid

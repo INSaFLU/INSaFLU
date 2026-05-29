@@ -189,6 +189,19 @@ class Command(BaseCommand):
 
             print("Retrieved entrez descriptions")
             print(f"Number of entrez descriptions: {len(entrez_descriptions)}")
+
+            # Fetch and persist taxonomic lineages
+            print("Fetching taxonomic lineages...")
+            try:
+                lineages = entrez_connection.fetch_lineages(
+                    entrez_descriptions["taxid"].astype(str).unique().tolist()
+                )
+                taxon_map = entrez_connection.persist_lineages(lineages)
+                print(f"Successfully persisted {len(taxon_map)} taxon nodes")
+            except Exception as e:
+                print(f"Warning: Could not fetch/persist lineages: {e}")
+                lineages = {}
+
             print("Registering entrez descriptions")
 
             d = 0
@@ -261,20 +274,50 @@ class Command(BaseCommand):
 
                     ref_source = ReferenceSource.objects.filter(accid=accid_str)
 
+                    # Build lineage_path from lineages dict
+                    taxid_str_key = str(int(taxid_str))
+                    lineage_path = ""
+                    if taxid_str_key in lineages:
+                        lineage_nodes = lineages[taxid_str_key]
+                        names = [node.name for node in lineage_nodes]
+                        lineage_path = " > ".join(filter(None, names))
+
                     if ref_source.exists() is False:
                         ref_source = ReferenceSource.objects.create(
-                            accid=accid_str, description=description, taxid=ref_taxid
+                            accid=accid_str,
+                            description=description,
+                            taxid=ref_taxid,
+                            lineage_path=lineage_path,
                         )
 
                     elif ref_source.count() > 1:
 
                         ref_source.delete()
+
                         ref_source = ReferenceSource.objects.create(
-                            accid=accid_str, description=description, taxid=ref_taxid
+                            accid=accid_str,
+                            description=description,
+                            taxid=ref_taxid,
+                            lineage_path=lineage_path,
                         )
 
                     else:
                         ref_source = ref_source.first()
+
+                        if lineage_path:
+                            ref_source.lineage_path = lineage_path
+                        ref_source.save()
+
+                    # Link ReferenceTaxid to taxonomy hierarchy if possible
+                    if taxid_str_key in lineages and 'taxon_map' in locals():
+                        try:
+                            entrez_connection.link_referencetaxid_to_lineage(
+                                taxid_str_key,
+                                lineages[taxid_str_key],
+                                taxon_map
+                            )
+                        except Exception as e:
+                            print(f"Warning: Could not link ReferenceTaxid {taxid_str_key} to lineage: {e}")
 
                     # get reference source file
                     try:

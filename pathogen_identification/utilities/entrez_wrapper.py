@@ -508,9 +508,29 @@ class EntrezWrapper:
             print(f"Error fetching lineage for taxid {taxid}: {e}")
             return []
 
-    def fetch_lineages(self, taxids: List[str]) -> Dict[str, List[LineageNode]]:
+    def fetch_lineages(self, taxids: List[str], strategy: str = "biopy") -> Dict[str, List[LineageNode]]:
         """
-        Fetch taxonomic lineages for multiple taxids.
+        Fetch taxonomic lineages for multiple taxids using specified strategy.
+
+        Args:
+            taxids: List of NCBI taxonomy IDs (as strings)
+            strategy: "biopy" (Biopython batch - recommended) or "binary" (NCBI binaries)
+
+        Returns:
+            Dict mapping taxid -> list of LineageNode from root to leaf
+        """
+        if strategy == "binary":
+            return self.fetch_lineages_binary(taxids)
+        else:
+            return self.fetch_lineages_biopy(taxids)
+
+    def fetch_lineages_biopy(self, taxids: List[str]) -> Dict[str, List[LineageNode]]:
+        """
+        Fetch taxonomic lineages using Biopython (recommended).
+        
+        Batches requests to minimize API calls while respecting rate limits.
+        Single Entrez.efetch call with comma-separated IDs is more efficient
+        than per-taxid fetching.
 
         Args:
             taxids: List of NCBI taxonomy IDs (as strings)
@@ -524,10 +544,102 @@ class EntrezWrapper:
         chunks = split_query(taxids, self.chunksize)
         
         for chunk in chunks:
-            for taxid in chunk:
-                lineage = self.fetch_lineage(taxid)
-                if lineage:
-                    lineages[taxid] = lineage
+            try:
+                # Single batch call fetches multiple taxids at once
+                handle = Entrez.efetch(
+                    db="Taxonomy",
+                    id=",".join(chunk),
+                    retmode="xml"
+                )
+                records = Entrez.read(handle)
+                
+                # Extract lineage from each record
+                for record in records:
+                    taxid = str(record.get("TaxId", ""))
+                    lineage_nodes = []
+                    
+                    # Parse LineageEx if present (ancestors)
+                    if "LineageEx" in record:
+                        for taxon in record["LineageEx"]:
+                            lineage_nodes.append(LineageNode(
+                                taxid=str(taxon.get("TaxId", "")),
+                                name=taxon.get("ScientificName", ""),
+                                rank=taxon.get("Rank", "no rank")
+                            ))
+                    
+                    # Add the record itself as the leaf node
+                    lineage_nodes.append(LineageNode(
+                        taxid=taxid,
+                        name=record.get("ScientificName", ""),
+                        rank=record.get("Rank", "no rank")
+                    ))
+                    
+                    lineages[taxid] = lineage_nodes
+            except Exception as e:
+                print(f"Error fetching lineage for chunk {chunk} via Biopython: {e}")
+                continue
+        
+        return lineages
+
+    def fetch_lineages_binary(self, taxids: List[str]) -> Dict[str, List[LineageNode]]:
+        """
+        Fetch taxonomic lineages using NCBI EDirect binaries.
+        
+        Uses binary utilities (esearch, efetch, xtract). More trustworthy
+        but requires EDirect to be installed.
+
+        Args:
+            taxids: List of NCBI taxonomy IDs (as strings)
+
+        Returns:
+            Dict mapping taxid -> list of LineageNode from root to leaf
+        """
+        import subprocess
+        
+        lineages = {}
+        
+        try:
+            # Build command using NCBI binaries
+            taxid_list = ",".join(taxids)
+            cmd = (
+                f"echo '{taxid_list}' | "
+                f"efetch -db taxonomy -format xml | "
+                f"xtract -pattern 'Taxon' -element TaxId,ScientificName,Rank "
+                f"    -pattern 'LineageEx' -element LineageEx/Taxon -block 'Taxon' "
+                f"    -element TaxId,ScientificName,Rank"
+            )
+            
+            result = subprocess.run(
+                cmd,
+                shell=True,
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+            
+            if result.returncode != 0:
+                print(f"Error running binary command: {result.stderr}")
+                print("Falling back to Biopython strategy")
+                return self.fetch_lineages_biopy(taxids)
+            
+            # Parse output
+            for line in result.stdout.strip().split("\n"):
+                if not line:
+                    continue
+                parts = line.split("\t")
+                if len(parts) >= 3:
+                    taxid, name, rank = parts[0], parts[1], parts[2]
+                    if taxid not in lineages:
+                        lineages[taxid] = []
+                    lineages[taxid].append(LineageNode(
+                        taxid=taxid,
+                        name=name,
+                        rank=rank
+                    ))
+        except Exception as e:
+            print(f"Error fetching lineage via binary: {e}")
+            print("Falling back to Biopython strategy")
+            return self.fetch_lineages_biopy(taxids)
         
         return lineages
 
@@ -661,57 +773,51 @@ class EntrezWrapper:
             use_fuzzy: Enable fuzzy matching for partial matches
 
         Returns:
-            Dict mapping input_name → {taxid, canonical_name, confidence, source}
+            Dict mapping input_name → {taxid, canonical_name, rank, confidence, source}
         """
-        results = {}
+        # Define result template with default values
+        default_result = {
+            "taxid": None,
+            "canonical_name": None,
+            "rank": None,
+            "confidence": "error",
+            "source": "failed"
+        }
+        
+        results = {name: default_result.copy() for name in names}
         
         for name in names:
-            # Try direct NCBI search
             try:
+                # Try direct NCBI search
                 handle = Entrez.esearch(db="Taxonomy", term=name, retmax=1)
                 search_result = Entrez.read(handle)
                 
-                if search_result["IdList"]:
-                    taxid = search_result["IdList"][0]
-                    
-                    # Fetch details for this taxid
-                    handle = Entrez.efetch(db="Taxonomy", id=taxid, retmode="xml")
-                    fetch_result = Entrez.read(handle)
-                    
-                    if fetch_result:
-                        record = fetch_result[0]
-                        results[name] = {
-                            "taxid": taxid,
-                            "canonical_name": record.get("ScientificName", ""),
-                            "rank": record.get("Rank", ""),
-                            "confidence": "high",
-                            "source": "ncbi"
-                        }
-                    else:
-                        results[name] = {
-                            "taxid": None,
-                            "canonical_name": None,
-                            "rank": None,
-                            "confidence": "low",
-                            "source": "failed"
-                        }
+                if not search_result["IdList"]:
+                    results[name]["confidence"] = "none"
+                    results[name]["source"] = "not_found"
+                    continue
+                
+                # Found a taxid - fetch details
+                taxid = search_result["IdList"][0]
+                handle = Entrez.efetch(db="Taxonomy", id=taxid, retmode="xml")
+                fetch_result = Entrez.read(handle)
+                
+                if fetch_result:
+                    record = fetch_result[0]
+                    # Update only the fields that were successfully fetched
+                    results[name]["taxid"] = taxid
+                    results[name]["canonical_name"] = record.get("ScientificName", "")
+                    results[name]["rank"] = record.get("Rank", "")
+                    results[name]["confidence"] = "high"
+                    results[name]["source"] = "ncbi"
                 else:
-                    results[name] = {
-                        "taxid": None,
-                        "canonical_name": None,
-                        "rank": None,
-                        "confidence": "none",
-                        "source": "not_found"
-                    }
+                    results[name]["confidence"] = "low"
+                    results[name]["source"] = "failed_fetch"
+                    
             except Exception as e:
                 print(f"Error searching for organism name '{name}': {e}")
-                results[name] = {
-                    "taxid": None,
-                    "canonical_name": None,
-                    "rank": None,
-                    "confidence": "error",
-                    "source": "exception"
-                }
+                results[name]["confidence"] = "error"
+                results[name]["source"] = "exception"
         
         return results
 

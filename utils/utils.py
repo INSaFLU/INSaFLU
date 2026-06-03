@@ -23,6 +23,7 @@ from Bio.Seq import MutableSeq, Seq
 from Bio.SeqFeature import CompoundLocation
 from Bio.SeqRecord import SeqRecord
 from django.conf import settings
+from typing import Optional
 
 from constants.constants import Constants, FileExtensions, TypeFile, TypePath
 from constants.meta_key_and_values import MetaKeyAndValue
@@ -90,6 +91,16 @@ class PathUtils(object):
             "userId_{0}".format(user_id),
             "refId_{0}".format(ref_id),
         )
+    
+    @staticmethod
+    def media_path_serve(full_path: Optional[str]) -> str:
+        """
+        return the path to serve a file in media
+        """
+        if full_path is None:
+            return ""
+        return full_path.replace(settings.MEDIA_ROOT, settings.MEDIA_URL)
+
 
     @staticmethod
     def get_path_to_primer_file(user_id, primer_id):

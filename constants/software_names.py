@@ -683,6 +683,14 @@ class SoftwareNames(object):
     SOFTWARE_PRINSEQ_lc_entropy = "--lc_entropy"
     SOFTWARE_PRINSEQ_lc_dust = "--lc_dust"
 
+    SOFTWARE_GATK4_VERSION = "4.6.2.0"
+    SOFTWARE_GATK4 = os.path.join(
+        Televir_Directory_Constants.environments_directory,
+        "remap/remap_env/bin/gatk",
+    )
+    SOFTWARE_GATK4_name = "GATK4"
+    SOFTWARE_GATK4_name_extended = "GATK4 - Mapping Stringency"
+    
     SOFTWARE_BAMUTIL_name = "BamUtil"
     SOFTWARE_BAMUTIL_name_extended = "BamUtil - Mapping Stringency"
     SOFTWARE_BAMUTIL = os.path.join(
@@ -1107,6 +1115,7 @@ class SoftwareNames(object):
         SOFTWARE_KRAKEN2_name,
         SOFTWARE_MINIMAP2_REMAP_ONT_name,
         SOFTWARE_MSAMTOOLS_name,
+        SOFTWARE_GATK4_name,
     ]
 
     # pipeline_steps per software, for software with multiple pipeline_steps.
@@ -1140,6 +1149,10 @@ class SoftwareNames(object):
             ConstantsSettings.PIPELINE_NAME_read_classification,
         ],
         SOFTWARE_MSAMTOOLS_name: [
+            ConstantsSettings.PIPELINE_NAME_remap_filtering,
+            ConstantsSettings.PIPELINE_NAME_map_filtering,
+        ],
+        SOFTWARE_GATK4_name: [
             ConstantsSettings.PIPELINE_NAME_remap_filtering,
             ConstantsSettings.PIPELINE_NAME_map_filtering,
         ],

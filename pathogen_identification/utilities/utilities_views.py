@@ -1020,7 +1020,7 @@ class FinalReportGroup:
     name: str
     total_counts_str: str
     private_counts: int
-    shared_proportion: float
+    max_shared_proportion: float
     private_proportion: float
     group_list: List[FinalReportWrapper]
 
@@ -1041,7 +1041,7 @@ class FinalReportGroup:
         self.total_counts = total_counts
         self.total_counts_str = f"total counts {total_counts}"
         self.private_counts = private_counts
-        self.shared_proportion = shared_proportion
+        self.max_shared_proportion = shared_proportion
         self.private_proportion = round(private_proportion, 2)
         self.group_list = group_list
         self.heatmap_path = heatmap_path
@@ -1796,13 +1796,13 @@ class ReportSorter:
                     private_counts = group.private_counts,
                     private_counts_exist = group.private_counts_exist,
                     private_reads_available = private_reads_available,
-                    shared_proportion = group.shared_proportion,
+                    shared_proportion = group.max_shared_proportion,
                     private_proportion = group.private_proportion,
                     max_private_reads = group.max_private_reads,
                     max_coverage = group.max_coverage,
                     analysis_empty = group.analysis_empty,
                     has_multiple = group.has_multiple,
-                    toggle = group.toggle,
+                    toggle = group.toggle if len(group.group_list) > 1 else "on",
                     overlap_heatmap_json = group.js_heatmap_data,
                 )
                 report_group.save()
@@ -2147,41 +2147,6 @@ class ReportSorter:
 
         return reports
 
-    def get_compound_pandas_report(self) -> pd.DataFrame:
-        """
-        Return pandas dataframe of reports
-        """
-        if not self.reports_available:
-            return pd.DataFrame()
-
-        if not self.check_analyzed():
-            return pd.DataFrame()
-
-        reports = self.get_reports_compound()
-        if len(reports) == 0:
-            return pd.DataFrame()
-
-        data = []
-        for report_group in reports:
-            group_name = report_group.name
-            for report in report_group.group_list:
-                data.append(
-                    {
-                        "sample": self.sample.name,
-                        "name": group_name,
-                        "accid": report.accid,
-                        "description": report.description,
-                        "taxid": report.taxid,
-                        "coverage": report.coverage,
-                        "private_reads": report.private_reads,
-                        "mapped_proportion": report.mapped_proportion,
-                        "windows_covered": report.windows_covered,
-                        "error_rate": report.error_rate,
-                        "quality_avg": report.quality_avg,
-                    }
-                )
-        df = pd.DataFrame(data)
-        return df
 
     def check_excluded_exist(self) -> bool:
         """return True if there are excluded reports"""

@@ -453,9 +453,7 @@ class EntrezWrapper:
             os.system(cmd)
 
         output_path = os.path.join(self.outdir, self.outfile)
-        with open(output_path, "r") as f:
-            print("########### read")
-            print(f.read())
+
         import traceback
         try:
             df = self.bin_query.read_output(output_path)

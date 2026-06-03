@@ -2,12 +2,11 @@ import codecs
 import datetime
 import json
 import os
-from typing import Any, List, Optional
+from typing import List, Optional
 
 import networkx as nx
 import numpy as np
 import pandas as pd
-from django import forms
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
@@ -29,6 +28,7 @@ from pathogen_identification.constants_settings import \
 from pathogen_identification.data_classes import IntermediateFiles
 from settings.constants_settings import ConstantsSettings as CS
 from constants.constants_taxonomy import TaxonConstants
+from utils.utils import PathUtils
 # Create your models here.
 
 no_space_validator = RegexValidator(
@@ -1571,6 +1571,13 @@ class TelefluMapping(models.Model):
             sample_summary[sample.name]["success"] = success
 
             if reports.exists():
+                report = reports[0]
+                try:
+                    reference_map = ReferenceMap_Main.objects.get(
+                        run=report.run, accid=report.accid
+                    )
+                except ReferenceMap_Main.DoesNotExist:
+                    reference_map = None
                 sample_summary[sample.name]["coverage"] = round(reports[0].coverage, 3)
                 sample_summary[sample.name]["windows_covered"] = reports[
                     0
@@ -1588,6 +1595,9 @@ class TelefluMapping(models.Model):
                 sample_summary[sample.name]["error_rate"] = round(
                     reports[0].error_rate, 3
                 )
+                sample_summary[sample.name]['bam_file'] = PathUtils.media_path_serve(reports[0].bam_path)
+                sample_summary[sample.name]['bam_file_idx'] = PathUtils.media_path_serve(reports[0].bai_path)
+                sample_summary[sample.name]['run_link'] = reverse("run_detail", kwargs={"run_id": report.run.pk})
 
         return sample_summary, mapped_samples, success_samples
 

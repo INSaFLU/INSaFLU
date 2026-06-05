@@ -932,6 +932,13 @@ class TelevirRunQC(models.Model):
             "run",
         ]
 
+class TelevirRunQcStack(models.Model):
+    run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)
+    qc_reports = models.CharField(max_length=1000, blank=True, null=True)  # qc reports separated by comma
+    input_reads = models.IntegerField(blank=True, null=True)
+    output_reads = models.IntegerField(blank=True, null=True, default = 0)
+    output_reads_percent = models.FloatField(blank=True, null=True, default = 0)
+    
 
 class RunDetail(models.Model):
     name = models.CharField(
@@ -2090,6 +2097,14 @@ class ReportAggregate(models.Model):
             group.reports.all().count() for group in self.report_groups.all()
         )
 
+from dataclasses import dataclass
+@dataclass
+class TaxonEmpty: 
+    name: str = "None"
+    taxid: str = "None"
+    genus: str = "None"
+    order: str = "None"
+
 
 class ReportGroup(models.Model):
 
@@ -2114,6 +2129,16 @@ class ReportGroup(models.Model):
 
     overlap_heatmap_json = models.JSONField(blank=True, null=True)
     reports = models.ManyToManyField(FinalReport, blank=True, related_name="aggregated_reports")
+
+    main_species = models.ForeignKey(Taxon, blank=True, null=True, on_delete=models.CASCADE)
+    main_species_percentage = models.FloatField(blank=True, null=True)
+
+
+    @property
+    def private_counts_safe(self):
+        if self.private_counts is None:
+            return 0
+        return self.private_counts
 
     @property
     def js_heatmap_ready(self):

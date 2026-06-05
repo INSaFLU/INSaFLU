@@ -234,8 +234,8 @@ def retrieve_reference_sequence(nucleotide_id, output_path, gzipped=True) -> boo
             with open(tmp_path, 'w') as f:
                 f.write(fasta_data)
 
-        if os.path.exists(tmp_path):
-            raise FileExistsError(f"Output file {tmp_path} already exists.")
+        if os.path.exists(output_path):
+            raise FileExistsError(f"Output file {output_path} already exists.")
 
         utils.move_file(tmp_path, output_path)
 

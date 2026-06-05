@@ -1228,6 +1228,7 @@ def recover_assembly_contigs(run_main: RunMain, run_assembly: RunAssembly):
 class ReportList:
     def __init__(self, reports: List[FinalReport]):
         self.reports = [FinalReportWrapper(report) for report in reports]
+        self.private_reads = 0
 
     def __iter__(self):
         return iter(self.reports)
@@ -1251,6 +1252,7 @@ class ReportList:
             report.private_reads = report_data.private_reads
 
         return self
+    
 
     def sort_group_by_private_reads(self):
         """
@@ -1763,6 +1765,8 @@ class ReportSorter:
                 break
 
         from django.db import transaction
+        from pathogen_identification.models import Taxon, ReferenceTaxid
+
         with transaction.atomic():
             report_aggregate = ReportAggregate.objects.create(
                 sample = self.sample,
@@ -1806,21 +1810,39 @@ class ReportSorter:
                     overlap_heatmap_json = group.js_heatmap_data,
                 )
                 report_group.save()
+                taxa = []
 
                 for report in group.group_list:
-                    report_group.reports.add(FinalReport.objects.get(pk=report.report_pk))
+                    actual_report = FinalReport.objects.get(pk=report.report_pk)
+                    report_group.reports.add(actual_report)
 
                     report_data = GroupReportData.objects.create(
-                        report = FinalReport.objects.get(pk=report.report_pk),
+                        report = actual_report,
                         report_group = report_group,
-                        private_reads = report.private_reads,
-                        data_exists = report.data_exists,
+                        private_reads = report.private_reads, # report wrapper
+                        data_exists = report.data_exists, # compouns report
                     )
                     report_data.save()
 
-                    for run in report.found_in:
+                    for run in report.found_in: # compouns report
                         report_data.found_in.add(run)
                         report_aggregate.runs.add(run)
+
+                    taxa.append(actual_report.taxid)
+                
+                references = {
+                    taxa: ReferenceTaxid.objects.get(taxid=taxid) for taxid in taxa
+                }
+                species = {
+                    taxid: Taxon.objects.get(reference_taxid=references[taxid], rank="species") for taxid in taxa
+                }
+                from collections import Counter
+                species_counter = Counter(species.values())
+                most_common_species, most_common_count = species_counter.most_common(1)[0]
+                if most_common_count / len(species) > 0.5:
+                    report_group.main_species = most_common_species
+                    report_group.main_species_percentage = most_common_count / len(species)
+                    report_group.save()
 
 
     def sort_reports_save(self, force=False):

@@ -900,9 +900,7 @@ class TelevirReferencesTable(tables.Table):
     def render_source(self, record: ReferenceSourceFileMap):
         
         records_same_accid = ReferenceSourceFileMap.objects.filter(
-            reference_source_file__owner__in=[
-                self.user_id
-            ]
+            Q(reference_source_file__owner= self.user_id)
             | Q(reference_source_file__owner__isnull=True)
         ).filter(
             Q(reference_source__accid=record.reference_source.accid)

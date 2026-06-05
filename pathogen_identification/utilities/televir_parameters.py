@@ -81,6 +81,7 @@ class TelevirParameters:
         else:
             raise Exception(f"Unknown technology {project.technology}")
 
+
     @staticmethod
     def retrieve_project_software(software_name: str, project: Projects):
         """

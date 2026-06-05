@@ -1831,7 +1831,7 @@ class ReportSorter:
                     taxa.append(actual_report.taxid)
                 
                 references = {
-                    taxa: ReferenceTaxid.objects.get(taxid=taxid) for taxid in taxa
+                    taxid: ReferenceTaxid.objects.get(taxid=taxid) for taxid in taxa
                 }
                 species = {
                     taxid: Taxon.objects.get(reference_taxid=references[taxid], rank="species") for taxid in taxa

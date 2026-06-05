@@ -1080,7 +1080,7 @@ class Remapping:
                 self.filter_mapping_msamtools(filter)
 
             if filter.name == SoftwareNames.SOFTWARE_GATK4_name:
-                self.markdup_bam_gatk(remove_duplicates=False, sorted_bam = False)
+                self.markdup_bam_gatk(remove_duplicates=True, sorted_bam = False)
 
         self.filter_bam_unmapped()
 

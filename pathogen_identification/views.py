@@ -2830,7 +2830,9 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
         # group reports by main species and sort by private reads availability
         report_taxa = {
             species: {
-                "report_groups": [sorted_reports[rg] for rg in report_groups if rg.main_species == species],
+                "report_groups": {
+                    rg: sorted_reports[rg] for rg in report_groups if rg.main_species == species
+                },
                 "total_private_counts": sum(
                     rg.private_counts_safe for rg in report_groups if rg.main_species == species
                 )
@@ -3046,6 +3048,25 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
             for report_group in report_groups
         }
 
+
+        reported_taxa = {
+            report_group: report_group.main_species for report_group in report_groups
+        }
+
+        # group reports by main species and sort by private reads availability
+        report_taxa = {
+            species: {
+                "report_groups": {
+                    rg: sorted_reports[rg] for rg in report_groups if rg.main_species == species
+                },
+                "total_private_counts": sum(
+                    rg.private_counts_safe for rg in report_groups if rg.main_species == species
+                )
+                }
+            for species in set(reported_taxa.values())
+        }
+
+
         private_reads_available = any(
             report_group.private_reads_available for report_group in report_groups
         )
@@ -3084,7 +3105,7 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
             "tree_plot_path": latest_report_aggregate.tree_plot_path,
             "project_index": project_pk,
             "sample_index": sample_pk,
-            "report_list": sorted_reports,
+            "report_list": report_taxa,
             "runs_pipeline": runs_pipeline,
             "runs_mapping": runs_mapping,
             "runs_number": runs_exist,

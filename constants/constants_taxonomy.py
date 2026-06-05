@@ -58,6 +58,14 @@ class TaxonConstants:
         "phylum": RANK_PHYLUM,
         "division": RANK_PHYLUM,
 
+        "class": RANK_CLASS,
+
+        "order": RANK_ORDER,
+
+        "family": RANK_FAMILY,
+
+        "genus": RANK_GENUS,
+
         "species": RANK_SPECIES,
 
         "no rank": NO_RANK,

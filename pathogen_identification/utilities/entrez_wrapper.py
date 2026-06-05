@@ -666,19 +666,27 @@ class EntrezWrapper:
         all_child_taxids = set()
 
         for leaf_taxid, lineage_list in lineages.items():
+            print(f"  [DEBUG persist] lineage for taxid {leaf_taxid}: {len(lineage_list)} nodes")
+            for n in lineage_list:
+                print(f"    node: tid={n.taxid!r}, name={n.name!r}, rank={n.rank!r}")
             prev = None
             for node in lineage_list:
                 tid = node.taxid
                 if not tid:
+                    print(f"    SKIP empty tid, prev stays {prev!r}")
                     continue
                 if tid not in node_info:
                     node_info[tid] = node
                 if prev is not None:
                     children.setdefault(prev, set()).add(tid)
                     all_child_taxids.add(tid)
+                    print(f"    children[{prev}] += {{{tid}}}")
                 prev = tid
 
         roots = sorted(set(node_info) - all_child_taxids)
+        print(f"  [DEBUG persist] node_info keys: {sorted(node_info.keys())}")
+        print(f"  [DEBUG persist] all_child_taxids: {sorted(all_child_taxids)}")
+        print(f"  [DEBUG persist] roots: {roots}")
         queue = deque()
         taxon_map = {}
 
@@ -688,6 +696,7 @@ class EntrezWrapper:
         while queue:
             tid, parent_taxon = queue.popleft()
             node = node_info[tid]
+            print(f"  [DEBUG persist] BFS create: tid={tid}, name={node.name!r}, rank={node.rank!r}, parent_taxid={parent_taxon.taxid if parent_taxon else None}")
 
             taxon, _ = Taxon.objects.get_or_create(
                 taxid=int(tid),
@@ -714,8 +723,10 @@ class EntrezWrapper:
             taxon_map[tid] = taxon
 
             for child_tid in children.get(tid, set()):
+                print(f"  [DEBUG persist]   enqueue child: {child_tid}")
                 queue.append((child_tid, taxon))
 
+        print(f"  [DEBUG persist] final taxon_map keys: {sorted(taxon_map.keys())}")
         return taxon_map
 
     def link_referencetaxid_to_lineage(
@@ -755,14 +766,24 @@ class EntrezWrapper:
         for node in lineage:
             tid = node.taxid
             if not tid:
+                print(f"  [DEBUG] SKIP (empty tid): rank={node.rank!r}, name={node.name!r}")
                 continue
             normalized_rank = TaxonConstants.normalize_rank(node.rank)
             field = RANK_TO_FIELD.get(normalized_rank)
+            in_map = tid in taxon_map
+            print(f"  [DEBUG] tid={tid!r}, rank={node.rank!r} -> norm={normalized_rank!r} -> field={field!r}, in_taxon_map={in_map}")
             if field is not None:
                 taxon = taxon_map.get(tid)
                 if taxon is not None and getattr(ref_taxid_obj, field) != taxon:
+                    print(f"  [DEBUG]   -> SETTING {field} to Taxon(taxid={taxon.taxid})")
                     setattr(ref_taxid_obj, field, taxon)
                     changed = True
+                else:
+                    reason = "taxon is None" if taxon is None else f"field already {getattr(ref_taxid_obj, field)}"
+                    print(f"  [DEBUG]   -> SKIP ({reason})")
+            else:
+                print(f"  [DEBUG]   -> SKIP (no matching field in RANK_TO_FIELD)")
+        print(f"  [DEBUG] lineage processed, changed={changed}, final fields: dom={ref_taxid_obj.tax_domain}, phy={ref_taxid_obj.tax_phylum}, cla={ref_taxid_obj.tax_class}, ord={ref_taxid_obj.tax_order}, fam={ref_taxid_obj.tax_family}, gen={ref_taxid_obj.tax_genus}")
         if changed:
             ref_taxid_obj.save()
 

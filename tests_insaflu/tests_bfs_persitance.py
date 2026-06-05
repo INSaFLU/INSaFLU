@@ -1,379 +1,553 @@
 """
-Diagnostic test suite for BFS lineage persistence.
+Diagnostic Test Suite: BFS Lineage Persistence
 
-Tests diagnose why only phylum is being registered when full taxonomy is created.
+PROBLEM: Taxon objects are created correctly, but ReferenceTaxid is
+only registering tax_phylum. All other rank fields (tax_domain,
+tax_class, tax_order, tax_family, tax_genus) are NOT being set.
 
-all tests use pure Python mocks
+Mock functions EXACTLY mirror the real code paths:
+  - simulate_persist_lineages        → persist_lineages()
+  - simulate_link_referencetaxid_to_lineage → link_referencetaxid_to_lineage()
+
+Differences from real code:
+  - Uses MockTaxon/MockReferenceTaxid instead of Django models
+  - No DB reads/writes
+  - Returns fields_set list instead of saving to DB
 """
 
-import sys
-from pathlib import Path
-from unittest.mock import MagicMock
+import pytest
+from unittest.mock import Mock, MagicMock
 from dataclasses import dataclass
-from typing import Dict, List
-from collections import deque
-
-# Add parent directory to path for imports
-INSAFLU_DIR = Path(__file__).parent.parent.absolute()
-sys.path.insert(0, str(INSAFLU_DIR))
+from collections import defaultdict, deque
 
 
-# MOCK DATA
+# Mock TaxonConstants (mirrors constants/constants_taxonomy.py) 
 
-
-@dataclass
-class LineageNode:
-    """Mock LineageNode matching pathogen_identification.utilities.entrez_wrapper"""
-    taxid: str = ""
-    name: str = ""
-    rank: str = "no rank"
-
-
-def ecoli_lineage() -> Dict[str, List[LineageNode]]:
-    """E. coli full taxonomy lineage: domain -> species"""
-    return {
-        "562": [  # E. coli taxid
-            LineageNode("2", "Bacteria", "superkingdom"),
-            LineageNode("1239", "Proteobacteria", "phylum"),
-            LineageNode("28211", "Gammaproteobacteria", "class"),
-            LineageNode("91347", "Enterobacterales", "order"),
-            LineageNode("543", "Enterobacteriaceae", "family"),
-            LineageNode("561", "Escherichia", "genus"),
-            LineageNode("562", "Escherichia coli", "species")
-        ]
-    }
-
-
-class MockTaxonConstants:
-    """Mock TaxonConstants"""
+class TaxonConstants:
     RANK_DOMAIN = "domain"
+    RANK_KINGDOM = "kingdom"
     RANK_PHYLUM = "phylum"
     RANK_CLASS = "class"
     RANK_ORDER = "order"
     RANK_FAMILY = "family"
     RANK_GENUS = "genus"
-    
-    RANK_MAPPING = {
-        "superkingdom": RANK_DOMAIN,
+    RANK_SPECIES = "species"
+    NO_RANK = "no rank"
+
+    RANK_SYNONYMS = {
         "domain": RANK_DOMAIN,
+        "superkingdom": RANK_DOMAIN,
+        "kingdom": RANK_KINGDOM,
         "phylum": RANK_PHYLUM,
+        "division": RANK_PHYLUM,
         "class": RANK_CLASS,
         "order": RANK_ORDER,
         "family": RANK_FAMILY,
         "genus": RANK_GENUS,
-        "species": "species",
+        "species": RANK_SPECIES,
+        "no rank": NO_RANK,
+        "clade": NO_RANK,
     }
-    
+
     @staticmethod
-    def normalize_rank(value: str) -> str:
-        """Normalize NCBI ranks to standard names"""
-        return MockTaxonConstants.RANK_MAPPING.get(value, value)
+    def normalize_rank(rank_str):
+        if rank_str is None:
+            return TaxonConstants.NO_RANK
+        normalized = TaxonConstants.RANK_SYNONYMS.get(
+            rank_str.lower(), TaxonConstants.NO_RANK
+        )
+        return normalized
 
 
-# TEST SUITE
+# Field mapping (mirrors the RANK_TO_FIELD inside link_referencetaxid_to_lineage)
 
-class TestBFSPersistence:
-    """Diagnostic tests for BFS lineage persistence"""
-    
-    def test_rank_normalization_converts_superkingdom_to_domain(self):
-        """
-        TEST 1: Verify rank normalization converts 'superkingdom' -> 'domain'.
-        
-        Traces:
-        - TaxonConstants.normalize_rank() is called for each node
-        - 'superkingdom' is correctly converted to 'domain'
-        - Conversion happens BEFORE RANK_TO_FIELD lookup
-        
-        Expected output: normalize_rank called with ['superkingdom', 'phylum']
-                         Both should map to RANK_TO_FIELD keys
-        """
-        print("\n" + "="*70)
-        print("TEST 1: Rank Normalization (superkingdom -> domain)")
-        print("="*70)
-        
-        # Test the actual normalization
-        superkingdom_normalized = MockTaxonConstants.normalize_rank("superkingdom")
-        phylum_normalized = MockTaxonConstants.normalize_rank("phylum")
-        
-        print(f"\nRank conversions:")
-        print(f"  - 'superkingdom' -> '{superkingdom_normalized}'")
-        print(f"  - 'phylum' -> '{phylum_normalized}'")
-        
-        # THEN: Verify conversions
-        assert superkingdom_normalized == "domain", \
-            f"'superkingdom' should normalize to 'domain', got '{superkingdom_normalized}'"
-        assert phylum_normalized == "phylum", \
-            f"'phylum' should normalize to 'phylum', got '{phylum_normalized}'"
-        
-        print("\n✓ PASS: Rank normalization working correctly\n")
-    
-    def test_rank_to_field_mapping_completeness(self):
-        """
-        TEST 2: Verify RANK_TO_FIELD has entries for ALL expected ranks.
-        
-        Traces:
-        - RANK_TO_FIELD dict is defined correctly in link_referencetaxid_to_lineage()
-        - Has entries for: domain, phylum, class, order, family, genus
-        - No missing entries = no ranks skipped
-        
-        Expected output: All 6 ranks present in mapping
-        """
-        print("\n" + "="*70)
-        print("TEST 2: RANK_TO_FIELD Mapping Completeness")
-        print("="*70)
-        
-        # This is the RANK_TO_FIELD dict from link_referencetaxid_to_lineage()
-        RANK_TO_FIELD = {
-            MockTaxonConstants.RANK_DOMAIN: "tax_domain",
-            MockTaxonConstants.RANK_PHYLUM: "tax_phylum",
-            MockTaxonConstants.RANK_CLASS: "tax_class",
-            MockTaxonConstants.RANK_ORDER: "tax_order",
-            MockTaxonConstants.RANK_FAMILY: "tax_family",
-            MockTaxonConstants.RANK_GENUS: "tax_genus",
-        }
-        
-        expected_ranks = ["domain", "phylum", "class", "order", "family", "genus"]
-        actual_ranks = list(RANK_TO_FIELD.keys())
-        
-        print(f"\nRANK_TO_FIELD mapping:")
-        for rank, field in RANK_TO_FIELD.items():
-            print(f"  - '{rank}' -> '{field}'")
-        
-        print(f"\nExpected ranks: {expected_ranks}")
-        print(f"Actual ranks: {actual_ranks}")
-        
-        # THEN: Verify completeness
-        missing = set(expected_ranks) - set(actual_ranks)
-        assert not missing, \
-            f"Missing ranks in RANK_TO_FIELD: {missing}. Only these present: {actual_ranks}"
-        
-        print("\n✓ PASS: RANK_TO_FIELD mapping is complete\n")
-    
-    def test_bfs_creates_all_nodes_in_lineage(self):
-        """
-        TEST 3: Verify BFS creates Taxon objects for ALL nodes.
-        
-        Traces:
-        - All 7 nodes are created as Taxon objects
-        - Each node added to taxon_map
-        - Parent relationships preserved
-        
-        Expected output: 7 Taxon objects created, taxon_map has 7 entries
-        """
-        print("\n" + "="*70)
-        print("TEST 3: BFS Creates All Nodes in Lineage (E. coli)")
-        print("="*70)
-        
-        lineage_data = ecoli_lineage()
-        lineages = lineage_data
-        print(f"Input: E. coli lineage with {len(lineage_data['562'])} nodes")
-        
-        # MOCK: Simulate BFS logic from persist_lineages()
-        node_info = {}
-        children = {}
-        all_child_taxids = set()
+RANK_TO_FIELD = {
+    TaxonConstants.RANK_DOMAIN: "tax_domain",
+    TaxonConstants.RANK_PHYLUM: "tax_phylum",
+    TaxonConstants.RANK_CLASS: "tax_class",
+    TaxonConstants.RANK_ORDER: "tax_order",
+    TaxonConstants.RANK_FAMILY: "tax_family",
+    TaxonConstants.RANK_GENUS: "tax_genus",
+}
 
-        # Build node registry and children adjacency
-        for leaf_taxid, lineage_list in lineages.items():
-            prev = None
-            for node in lineage_list:
-                tid = node.taxid
-                if not tid:
-                    continue
-                if tid not in node_info:
-                    node_info[tid] = node
-                if prev is not None:
-                    children.setdefault(prev, set()).add(tid)
-                    all_child_taxids.add(tid)
-                prev = tid
+ALL_RANK_FIELDS = [
+    "tax_domain", "tax_phylum", "tax_class",
+    "tax_order", "tax_family", "tax_genus",
+]
 
-        # Find roots and BFS
-        roots = sorted(set(node_info) - all_child_taxids)
-        queue = deque()
-        taxon_map = {}
 
-        for root_tid in roots:
-            queue.append((root_tid, None))
+@dataclass
+class LineageNode:
+    """Mirrors dataclass in entrez_wrapper.py"""
+    taxid: str = ""
+    name: str = ""
+    rank: str = "no rank"
 
-        created_count = 0
-        while queue:
-            tid, parent_taxon = queue.popleft()
-            node = node_info[tid]
-            
-            # Mock Taxon creation
-            mock_taxon = MagicMock()
-            mock_taxon.taxid = int(tid)
-            mock_taxon.name = node.name
-            mock_taxon.rank = node.rank
-            mock_taxon.parent = parent_taxon
-            
-            created_count += 1
-            taxon_map[tid] = mock_taxon
 
-            for child_tid in children.get(tid, set()):
-                queue.append((child_tid, mock_taxon))
-        
-        # THEN: Verify results
-        print(f"\nResults:")
-        print(f"  - Taxon objects created: {created_count}")
-        print(f"  - taxon_map entries: {len(taxon_map)}")
-        print(f"  - taxon_map keys: {sorted(taxon_map.keys())}")
-        print(f"  - Expected keys: ['1239', '2', '28211', '28211', '543', '561', '562']")
-        
-        assert created_count == 7, f"Expected 7 Taxon objects, got {created_count}"
-        assert len(taxon_map) == 7, f"Expected taxon_map size 7, got {len(taxon_map)}"
-        assert "562" in taxon_map, "Leaf node (562) missing from taxon_map"
-        assert "2" in taxon_map, "Root node (2) missing from taxon_map"
-        
-        print("\n PASS: All nodes created and mapped correctly\n")
-    
-    def test_taxon_map_contains_all_lineage_nodes(self):
-        """
-        TEST 4: Verify taxon_map has entries for ALL lineage nodes.
-        
-        Traces:
-        - taxon_map keys match ALL node taxids in lineage
-        - No missing nodes = no gaps between BFS creation and linking
-        - All nodes available for link_referencetaxid_to_lineage() lookup
-        
-        Expected output: taxon_map has all 7 taxids
-        """
-        print("\n" + "="*70)
-        print("TEST 4: Taxon Map Contains All Lineage Nodes")
-        print("="*70)
-        
-        # Create mock taxon_map (as would be returned by persist_lineages)
-        taxon_map = {}
-        for node_taxid in ["2", "1239", "28211", "91347", "543", "561", "562"]:
-            mock_taxon = MagicMock()
-            mock_taxon.taxid = int(node_taxid)
-            taxon_map[node_taxid] = mock_taxon
-        
-        # Extract all node taxids from lineage
-        lineage_data = ecoli_lineage()
-        lineage = lineage_data["562"]
-        lineage_node_taxids = [node.taxid for node in lineage]
-        
-        print(f"\nLineage nodes: {lineage_node_taxids}")
-        print(f"taxon_map keys: {sorted(taxon_map.keys())}")
-        
-        # WHEN: We try to lookup each node in taxon_map
-        missing_taxids = []
-        for node_taxid in lineage_node_taxids:
-            taxon = taxon_map.get(node_taxid)
-            if taxon is None:
-                missing_taxids.append(node_taxid)
-        
-        # THEN: All nodes must be found
-        assert not missing_taxids, \
-            f"Missing taxids in taxon_map: {missing_taxids}. Map only has: {list(taxon_map.keys())}"
-        
-        print("\n PASS: All lineage nodes present in taxon_map\n")
-    
-    def test_all_rank_fields_assigned_to_reference_taxid(self):
-        """
-        TEST 5 (KEY): Verify ALL rank fields are assigned, not just phylum.
-        
-        This is THE KEY DIAGNOSTIC TEST that shows which fields are being set.
-        
-        Traces:
-        - link_referencetaxid_to_lineage() processes all lineage nodes
-        - setattr() is called for domain, phylum, class, order, family, genus
-        - ReferenceTaxid has all 6 fields populated (not just phylum!)
-        
-        Expected output: 
-          - All 7 lineage nodes processed
-          - 6 fields set (tax_domain, tax_phylum, tax_class, tax_order, tax_family, tax_genus)
-          - NOT just tax_phylum!
-        """
-        print("\n" + "="*70)
-        print("TEST 5 (CRITICAL): All Rank Fields Assigned to ReferenceTaxid")
-        print("="*70)
-        
-        lineage_data = ecoli_lineage()
-        lineage = lineage_data["562"]
-        print(f"\nInput lineage ({len(lineage)} nodes):")
-        for node in lineage:
-            norm_rank = MockTaxonConstants.normalize_rank(node.rank)
-            print(f"  - taxid={node.taxid}, rank={node.rank} -> normalized={norm_rank}")
-        
-        # Create mock ReferenceTaxid
-        ref_taxid_obj = MagicMock()
-        ref_taxid_obj.tax_domain = None
-        ref_taxid_obj.tax_phylum = None
-        ref_taxid_obj.tax_class = None
-        ref_taxid_obj.tax_order = None
-        ref_taxid_obj.tax_family = None
-        ref_taxid_obj.tax_genus = None
-        
-        # Create mock taxon_map with all nodes
-        taxon_map = {}
-        for node in lineage:
-            mock_taxon = MagicMock()
-            mock_taxon.taxid = int(node.taxid)
-            mock_taxon.name = node.name
-            mock_taxon.rank = MockTaxonConstants.normalize_rank(node.rank)
-            taxon_map[node.taxid] = mock_taxon
-        
-        print(f"\ntaxon_map entries: {len(taxon_map)}")
-        for tid, taxon in sorted(taxon_map.items()):
-            print(f"  - tid={tid}, rank={taxon.rank}")
-        
-        # SIMULATE: link_referencetaxid_to_lineage logic
-        RANK_TO_FIELD = {
-            MockTaxonConstants.RANK_DOMAIN: "tax_domain",
-            MockTaxonConstants.RANK_PHYLUM: "tax_phylum",
-            MockTaxonConstants.RANK_CLASS: "tax_class",
-            MockTaxonConstants.RANK_ORDER: "tax_order",
-            MockTaxonConstants.RANK_FAMILY: "tax_family",
-            MockTaxonConstants.RANK_GENUS: "tax_genus",
-        }
-        
-        changed = False
-        for node in lineage:
+class MockTaxon:
+    """Mirrors Django Taxon model"""
+    def __init__(self, taxid, name, rank, parent=None):
+        self.taxid = taxid
+        self.name = name
+        self.rank = rank
+        self.parent = parent
+
+    def __repr__(self):
+        return f"Taxon(taxid={self.taxid}, rank='{self.rank}')"
+
+
+class MockReferenceTaxid:
+    """Mirrors Django ReferenceTaxid model"""
+    def __init__(self, **kwargs):
+        for field in ALL_RANK_FIELDS:
+            setattr(self, field, kwargs.get(field, None))
+
+    def __repr__(self):
+        sets = {f: getattr(self, f) for f in ALL_RANK_FIELDS}
+        return f"ReferenceTaxid({sets})"
+
+
+
+def simulate_persist_lineages(lineages):
+    """
+    EXACT mirror of entrez_wrapper.py persist_lineages().
+
+    Args:
+        lineages: Dict[str, List[LineageNode]] — leaf taxid -> lineage list
+
+    Returns:
+        taxon_map: Dict[str, MockTaxon] — tid string -> MockTaxon
+    """
+    node_info = {}
+    children = {}
+    all_child_taxids = set()
+
+    for leaf_taxid, lineage_list in lineages.items():
+        prev = None
+        for node in lineage_list:
             tid = node.taxid
             if not tid:
                 continue
-            normalized_rank = MockTaxonConstants.normalize_rank(node.rank)
-            field = RANK_TO_FIELD.get(normalized_rank)
-            if field is not None:
-                taxon = taxon_map.get(tid)
-                if taxon is not None and getattr(ref_taxid_obj, field) != taxon:
-                    setattr(ref_taxid_obj, field, taxon)
-                    changed = True
-        
-        if changed:
-            ref_taxid_obj.save()
-        
-        # THEN: Check which fields were set
-        set_fields = {}
-        for field in ["tax_domain", "tax_phylum", "tax_class", "tax_order", "tax_family", "tax_genus"]:
-            current_value = getattr(ref_taxid_obj, field)
-            if current_value is not None:
-                set_fields[field] = current_value
-        
-        print(f"\nFields SET on ReferenceTaxid:")
-        if set_fields:
-            for field, value in sorted(set_fields.items()):
-                print(f"  ✓ {field}")
-        else:
-            print(f"  (none)")
-        
-        print(f"\nFields NOT set:")
-        all_fields = ["tax_domain", "tax_phylum", "tax_class", "tax_order", "tax_family", "tax_genus"]
-        not_set = [f for f in all_fields if f not in set_fields]
-        for field in not_set:
-            print(f"  ✗ {field}")
-        
-        # DIAGNOSE: Did we only set phylum?
-        if len(set_fields) == 1 and "tax_phylum" in set_fields:
-            print(f"\n  DIAGNOSIS: Only phylum was set! BFS might be stopping after phylum.")
-            print(f"    Check if lineage is being truncated or if RANK_TO_FIELD lookup is failing.\n")
-        elif len(set_fields) == 0:
-            print(f"\n  WARNING: No fields were set! link_referencetaxid_to_lineage might have exited early.\n")
-        else:
-            print(f"\n PASS: {len(set_fields)} fields set as expected!\n")
-        
-        # Assert at least some fields should be set
-        assert len(set_fields) > 0, \
-            f"No fields were set on ReferenceTaxid! Expected 6 fields (domain, phylum, class, order, family, genus)"
+            if tid not in node_info:
+                node_info[tid] = node
+            if prev is not None:
+                children.setdefault(prev, set()).add(tid)
+                all_child_taxids.add(tid)
+            prev = tid
+
+    roots = sorted(set(node_info) - all_child_taxids)
+    queue = deque()
+    taxon_map = {}
+
+    for root_tid in roots:
+        queue.append((root_tid, None))
+
+    while queue:
+        tid, parent_taxon = queue.popleft()
+        node = node_info[tid]
+
+        taxon_obj = MockTaxon(
+            taxid=int(tid),
+            name=node.name,
+            rank=node.rank,
+            parent=parent_taxon,
+        )
+        taxon_map[tid] = taxon_obj
+
+        for child_tid in children.get(tid, set()):
+            queue.append((child_tid, taxon_obj))
+
+    return taxon_map
+
+
+def simulate_link_referencetaxid_to_lineage(
+    ref_taxid_obj, lineage, taxon_map):
+    """
+    EXACT mirror of entrez_wrapper.py link_referencetaxid_to_lineage().
+
+    Args:
+        ref_taxid_obj: MockReferenceTaxid instance
+        lineage: List[LineageNode] — specific lineage for this taxid
+        taxon_map: Dict[str, MockTaxon] — from simulate_persist_lineages()
+
+    Returns:
+        fields_set: List of field names that were assigned
+    """
+    fields_set = []
+    for node in lineage:
+        tid = node.taxid
+        if not tid:
+            continue
+        normalized_rank = TaxonConstants.normalize_rank(node.rank)
+        field = RANK_TO_FIELD.get(normalized_rank)
+        if field is not None:
+            taxon = taxon_map.get(tid)
+            if taxon is not None and getattr(ref_taxid_obj, field) != taxon:
+                setattr(ref_taxid_obj, field, taxon)
+                fields_set.append(field)
+    return fields_set
+
+
+def run_full_pipeline(lineages):
+    """
+    Run persist + link for all lineages in a single call.
+
+    Returns dict of leaf_taxid -> fields_set for each lineage.
+    """
+    taxon_map = simulate_persist_lineages(lineages)
+    results = {}
+    for leaf_tid, lineage_list in lineages.items():
+        ref = MockReferenceTaxid()
+        fields = simulate_link_referencetaxid_to_lineage(
+            ref, lineage_list, taxon_map
+        )
+        results[leaf_tid] = {
+            "ref": ref,
+            "fields_set": fields,
+            "taxon_map": taxon_map,
+        }
+    return results
+
+
+def ecoli_lineage():
+    """Standard E. coli full lineage (all 6 ranks present)."""
+    return [
+        LineageNode(taxid="2", name="Bacteria", rank="superkingdom"),
+        LineageNode(taxid="1239", name="Proteobacteria", rank="phylum"),
+        LineageNode(taxid="28211", name="Gammaproteobacteria", rank="class"),
+        LineageNode(taxid="91347", name="Enterobacterales", rank="order"),
+        LineageNode(taxid="543", name="Enterobacteriaceae", rank="family"),
+        LineageNode(taxid="561", name="Escherichia", rank="genus"),
+        LineageNode(taxid="562", name="Escherichia coli", rank="species"),
+    ]
+
+
+def virus_lineage():
+    """Virus lineage with only domain/family/genus (typical)."""
+    return [
+        LineageNode(taxid="10239", name="Viruses", rank="superkingdom"),
+        LineageNode(taxid="11118", name="Flaviviridae", rank="family"),
+        LineageNode(taxid="11051", name="Flavivirus", rank="genus"),
+        LineageNode(taxid="12637", name="Dengue virus", rank="species"),
+    ]
+
+
+def lineage_with_cellular_organisms():
+    """NCBI-style lineage with 'cellular organisms' no-rank root."""
+    return [
+        LineageNode(taxid="131567", name="cellular organisms", rank="no rank"),
+        LineageNode(taxid="2", name="Bacteria", rank="superkingdom"),
+        LineageNode(taxid="1239", name="Proteobacteria", rank="phylum"),
+        LineageNode(taxid="28211", name="Gammaproteobacteria", rank="class"),
+        LineageNode(taxid="91347", name="Enterobacterales", rank="order"),
+        LineageNode(taxid="543", name="Enterobacteriaceae", rank="family"),
+        LineageNode(taxid="561", name="Escherichia", rank="genus"),
+        LineageNode(taxid="562", name="Escherichia coli", rank="species"),
+    ]
+
+
+def lineage_with_empty_taxid_in_middle():
+    """Domain node OK, but an intermediate node has empty taxid."""
+    return [
+        LineageNode(taxid="2", name="Bacteria", rank="superkingdom"),
+        LineageNode(taxid="", name="", rank=""),  # ← empty taxid
+        LineageNode(taxid="1239", name="Proteobacteria", rank="phylum"),
+        LineageNode(taxid="28211", name="Gammaproteobacteria", rank="class"),
+        LineageNode(taxid="91347", name="Enterobacterales", rank="order"),
+        LineageNode(taxid="543", name="Enterobacteriaceae", rank="family"),
+        LineageNode(taxid="561", name="Escherichia", rank="genus"),
+        LineageNode(taxid="562", name="Escherichia coli", rank="species"),
+    ]
+
+
+def lineage_with_empty_taxid_at_root():
+    """The root/domain node has an empty taxid."""
+    return [
+        LineageNode(taxid="", name="", rank=""),  # ← empty taxid
+        LineageNode(taxid="1239", name="Proteobacteria", rank="phylum"),
+        LineageNode(taxid="28211", name="Gammaproteobacteria", rank="class"),
+        LineageNode(taxid="91347", name="Enterobacterales", rank="order"),
+        LineageNode(taxid="543", name="Enterobacteriaceae", rank="family"),
+        LineageNode(taxid="561", name="Escherichia", rank="genus"),
+        LineageNode(taxid="562", name="Escherichia coli", rank="species"),
+    ]
+
+
+#  TESTS
+
+class TestRankNormalization:
+    """Rank normalization and mapping are correct (foundational)."""
+
+    def test_superkingdom_to_domain(self):
+        result = TaxonConstants.normalize_rank("superkingdom")
+        assert result == TaxonConstants.RANK_DOMAIN
+
+    def test_phylum_stays_phylum(self):
+        assert TaxonConstants.normalize_rank("phylum") == "phylum"
+
+    def test_class_stays_class(self):
+        assert TaxonConstants.normalize_rank("class") == "class"
+
+    def test_order_stays_order(self):
+        assert TaxonConstants.normalize_rank("order") == "order"
+
+    def test_family_stays_family(self):
+        assert TaxonConstants.normalize_rank("family") == "family"
+
+    def test_genus_stays_genus(self):
+        assert TaxonConstants.normalize_rank("genus") == "genus"
+
+    def test_no_rank_stays_no_rank(self):
+        assert TaxonConstants.normalize_rank("no rank") == "no rank"
+
+    def test_none_returns_no_rank(self):
+        assert TaxonConstants.normalize_rank(None) == "no rank"
+
+    def test_unknown_rank_returns_no_rank(self):
+        assert TaxonConstants.normalize_rank("bogus") == "no rank"
+
+
+class TestRANK_TO_FIELD:
+    """RANK_TO_FIELD has all 6 needed mappings."""
+
+    def test_all_mappings_present(self):
+        required = {
+            TaxonConstants.RANK_DOMAIN: "tax_domain",
+            TaxonConstants.RANK_PHYLUM: "tax_phylum",
+            TaxonConstants.RANK_CLASS: "tax_class",
+            TaxonConstants.RANK_ORDER: "tax_order",
+            TaxonConstants.RANK_FAMILY: "tax_family",
+            TaxonConstants.RANK_GENUS: "tax_genus",
+        }
+        for rank, expected_field in required.items():
+            assert rank in RANK_TO_FIELD, f"Missing rank: {rank}"
+            assert RANK_TO_FIELD[rank] == expected_field, \
+                f"{rank} → {RANK_TO_FIELD[rank]}, expected {expected_field}"
+
+
+class TestPersistLineages:
+    """simulate_persist_lineages (mirrors real persist_lineages())."""
+
+    def test_creates_all_nodes(self):
+        lineages = {"562": ecoli_lineage()}
+        taxon_map = simulate_persist_lineages(lineages)
+        assert len(taxon_map) == 7  # 7 nodes for E. coli
+
+    def test_rank_stored_raw_not_normalized(self):
+        lineages = {"562": ecoli_lineage()}
+        taxon_map = simulate_persist_lineages(lineages)
+        # Real code stores node.rank as-is (no normalization)
+        assert taxon_map["2"].rank == "superkingdom"
+
+    def test_empty_taxid_skipped_from_map(self):
+        lineages = {"562": lineage_with_empty_taxid_in_middle()}
+        taxon_map = simulate_persist_lineages(lineages)
+        assert "" not in taxon_map  # empty taxid never stored
+
+    def test_all_nodes_except_empty_present(self):
+        lineages = {"562": lineage_with_empty_taxid_in_middle()}
+        taxon_map = simulate_persist_lineages(lineages)
+        expected = {"2", "1239", "28211", "91347", "543", "561", "562"}
+        for tid in expected:
+            assert tid in taxon_map, f"Missing taxid {tid} in taxon_map"
+
+    def test_empty_root_reattaches_children(self):
+        lineages = {"562": lineage_with_empty_taxid_at_root()}
+        taxon_map = simulate_persist_lineages(lineages)
+        # root node empty -> not in taxon_map
+        assert "" not in taxon_map
+        # but all subsequent nodes should be present
+        expected = {"1239", "28211", "91347", "543", "561", "562"}
+        for tid in expected:
+            assert tid in taxon_map, f"Missing taxid {tid} in taxon_map"
+
+    def test_no_rank_node_present_in_map(self):
+        lineages = {"562": lineage_with_cellular_organisms()}
+        taxon_map = simulate_persist_lineages(lineages)
+        assert "131567" in taxon_map
+
+    def test_shared_ancestors_deduplicated(self):
+        # Two E. coli strains sharing the same lineage
+        lineages = {
+            "562": ecoli_lineage(),
+            "316385": [
+                LineageNode(taxid="2", name="Bacteria", rank="superkingdom"),
+                LineageNode(taxid="1239", name="Proteobacteria", rank="phylum"),
+                LineageNode(taxid="28211", name="Gammaproteobacteria", rank="class"),
+                LineageNode(taxid="91347", name="Enterobacterales", rank="order"),
+                LineageNode(taxid="543", name="Enterobacteriaceae", rank="family"),
+                LineageNode(taxid="561", name="Escherichia", rank="genus"),
+                LineageNode(taxid="316385", name="Escherichia coli O157:H7", rank="species"),
+            ],
+        }
+        taxon_map = simulate_persist_lineages(lineages)
+        assert len(taxon_map) == 8  # 7 shared + 1 extra leaf
+        assert "562" in taxon_map
+        assert "316385" in taxon_map
+
+    def test_bfs_adjacency_maintains_parent_chain(self):
+        lineages = {"562": ecoli_lineage()}
+        taxon_map = simulate_persist_lineages(lineages)
+        # BFS starts from root, so leaf should have proper ancestors
+        leaf = taxon_map["562"]
+        assert leaf.parent is not None
+        assert leaf.parent.taxid == 561
+
+
+class TestLinkReferenceTaxid:
+    """simulate_link_referencetaxid_to_lineage (mirrors real method)."""
+
+    def test_all_six_fields_set_for_complete_lineage(self):
+        lineages = {"562": ecoli_lineage()}
+        taxon_map = simulate_persist_lineages(lineages)
+        ref = MockReferenceTaxid()
+        fields_set = simulate_link_referencetaxid_to_lineage(
+            ref, lineages["562"], taxon_map
+        )
+        assert len(fields_set) == 6, \
+            f"Expected 6 fields, got {len(fields_set)}: {fields_set}"
+        for field in ALL_RANK_FIELDS:
+            assert getattr(ref, field) is not None, f"{field} was not set"
+
+    def test_virus_sets_only_available_ranks(self):
+        lineages = {"12637": virus_lineage()}
+        taxon_map = simulate_persist_lineages(lineages)
+        ref = MockReferenceTaxid()
+        fields_set = simulate_link_referencetaxid_to_lineage(
+            ref, lineages["12637"], taxon_map
+        )
+        # Virus: superkingdom → family → genus → species
+        # Should set: tax_domain, tax_family, tax_genus
+        assert "tax_domain" in fields_set
+        assert "tax_family" in fields_set
+        assert "tax_genus" in fields_set
+        # Should NOT set: phylum, class, order
+        assert "tax_phylum" not in fields_set
+        assert "tax_class" not in fields_set
+        assert "tax_order" not in fields_set
+        assert len(fields_set) == 3
+
+    def test_cellular_organisms_root_still_sets_all_fields(self):
+        lineages = {"562": lineage_with_cellular_organisms()}
+        taxon_map = simulate_persist_lineages(lineages)
+        ref = MockReferenceTaxid()
+        fields_set = simulate_link_referencetaxid_to_lineage(
+            ref, lineages["562"], taxon_map
+        )
+        assert len(fields_set) == 6, \
+            f"Expected 6 fields, got {len(fields_set)}: {fields_set}"
+
+    def test_empty_taxid_in_middle_reconnects_chain(self):
+        lineages = {"562": lineage_with_empty_taxid_in_middle()}
+        taxon_map = simulate_persist_lineages(lineages)
+        ref = MockReferenceTaxid()
+        fields_set = simulate_link_referencetaxid_to_lineage(
+            ref, lineages["562"], taxon_map
+        )
+        # The empty taxid node is between "Bacteria" (tax_domain) and
+        # "Proteobacteria" (tax_phylum). BFS reconnects adjacency, so
+        # all 6 ranked nodes should be reachable → all 6 fields set.
+        assert len(fields_set) == 6, \
+            f"Expected 6 fields, got {len(fields_set)}: {fields_set}"
+
+    def test_empty_root_skips_domain_field(self):
+        lineages = {"562": lineage_with_empty_taxid_at_root()}
+        taxon_map = simulate_persist_lineages(lineages)
+        ref = MockReferenceTaxid()
+        fields_set = simulate_link_referencetaxid_to_lineage(
+            ref, lineages["562"], taxon_map
+        )
+        # Domain/superkingdom node had empty taxid → not in taxon_map
+        # → tax_domain cannot be set. But phylum/class/order/family/genus
+        # are all present and set.
+        assert "tax_domain" not in fields_set, \
+            "tax_domain should NOT be set (empty root taxid was never persisted)"
+        assert "tax_phylum" in fields_set
+        assert "tax_class" in fields_set
+        assert "tax_order" in fields_set
+        assert "tax_family" in fields_set
+        assert "tax_genus" in fields_set
+        assert len(fields_set) == 5, \
+            f"Expected 5 fields, got {len(fields_set)}: {fields_set}"
+
+    def test_node_missing_from_taxon_map_silently_skipped(self):
+        # Simulate: taxon_map deliberately missing a mid-lineage taxid
+        lineages = {"562": ecoli_lineage()}
+        taxon_map = simulate_persist_lineages(lineages)
+        # Remove class node from taxon_map to simulate BFS unreachability
+        del taxon_map["28211"]
+        ref = MockReferenceTaxid()
+        fields_set = simulate_link_referencetaxid_to_lineage(
+            ref, lineages["562"], taxon_map
+        )
+        assert "tax_class" not in fields_set
+        assert "tax_domain" in fields_set
+        assert "tax_phylum" in fields_set
+        assert "tax_order" in fields_set
+        assert "tax_family" in fields_set
+        assert "tax_genus" in fields_set
+        assert len(fields_set) == 5
+
+    def test_field_not_overwritten_when_same_object(self):
+        lineages = {"562": ecoli_lineage()}
+        taxon_map = simulate_persist_lineages(lineages)
+        # Pre-set one field to the same object it would get
+        ref = MockReferenceTaxid(
+            tax_domain=taxon_map["2"]  # same object that would be set
+        )
+        fields_set = simulate_link_referencetaxid_to_lineage(
+            ref, lineages["562"], taxon_map
+        )
+        # getattr guard: if existing field == taxon → skip
+        assert "tax_domain" not in fields_set, \
+            "tax_domain should NOT be in fields_set (already same object)"
+        assert len(fields_set) == 5
+
+
+class TestFullPipeline:
+    """End-to-end: persist then link for realistic scenarios."""
+
+    def test_ecoli_e2e_all_six(self):
+        results = run_full_pipeline({"562": ecoli_lineage()})
+        fields = results["562"]["fields_set"]
+        assert len(fields) == 6
+
+    def test_virus_e2e_three(self):
+        results = run_full_pipeline({"12637": virus_lineage()})
+        fields = results["12637"]["fields_set"]
+        assert len(fields) == 3
+
+    def test_cellular_organisms_e2e_all_six(self):
+        results = run_full_pipeline({"562": lineage_with_cellular_organisms()})
+        fields = results["562"]["fields_set"]
+        assert len(fields) == 6
+
+    def test_empty_middle_e2e_all_six(self):
+        results = run_full_pipeline({"562": lineage_with_empty_taxid_in_middle()})
+        fields = results["562"]["fields_set"]
+        assert len(fields) == 6
+
+    def test_empty_root_e2e_five_only(self):
+        results = run_full_pipeline({"562": lineage_with_empty_taxid_at_root()})
+        fields = results["562"]["fields_set"]
+        assert len(fields) == 5
+        assert "tax_domain" not in fields
+
+    def test_two_organisms_shared_ancestors(self):
+        strain2_lineage = [
+            LineageNode(taxid="2", name="Bacteria", rank="superkingdom"),
+            LineageNode(taxid="1239", name="Proteobacteria", rank="phylum"),
+            LineageNode(taxid="28211", name="Gammaproteobacteria", rank="class"),
+            LineageNode(taxid="91347", name="Enterobacterales", rank="order"),
+            LineageNode(taxid="543", name="Enterobacteriaceae", rank="family"),
+            LineageNode(taxid="561", name="Escherichia", rank="genus"),
+            LineageNode(taxid="316385", name="Escherichia coli O157:H7", rank="species"),
+        ]
+        results = run_full_pipeline({
+            "562": ecoli_lineage(),
+            "316385": strain2_lineage,
+        })
+        assert len(results["562"]["fields_set"]) == 6
+        assert len(results["316385"]["fields_set"]) == 6
+        # Both should share the same ancestor taxon objects
+        assert results["562"]["ref"].tax_domain is results["316385"]["ref"].tax_domain

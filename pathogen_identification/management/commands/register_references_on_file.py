@@ -222,7 +222,7 @@ class Command(BaseCommand):
                     ref_taxid = ReferenceTaxid.objects.create(taxid=taxid_str)
 
                 # Link ReferenceTaxid to taxonomy hierarchy if possible
-                if lineages.get(taxid_str, None) is not None:
+                if lineages.get(taxid_str) is not None:
                     try:
                         entrez_connection.link_referencetaxid_to_lineage(
                             taxid_str,

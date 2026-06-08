@@ -1834,7 +1834,7 @@ class ReportSorter:
                     taxid: ReferenceTaxid.objects.get(taxid=taxid) for taxid in taxa
                 }
                 species = {
-                    taxid: Taxon.objects.get(reference_taxid=references[taxid], rank="species") for taxid in taxa
+                    taxid: ref.tax_species for taxid, ref in references.items()
                 }
                 from collections import Counter
                 species_counter = Counter(species.values())
@@ -1843,7 +1843,6 @@ class ReportSorter:
                     report_group.main_species = most_common_species
                     report_group.main_species_percentage = most_common_count / len(species)
                     report_group.save()
-
 
     def sort_reports_save(self, force=False):
         """

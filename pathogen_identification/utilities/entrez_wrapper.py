@@ -742,6 +742,7 @@ class EntrezWrapper:
             TaxonConstants.RANK_ORDER: "tax_order",
             TaxonConstants.RANK_FAMILY: "tax_family",
             TaxonConstants.RANK_GENUS: "tax_genus",
+            TaxonConstants.RANK_SPECIES: "tax_species",
         }
 
         try:

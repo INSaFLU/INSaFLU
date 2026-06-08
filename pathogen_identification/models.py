@@ -1625,6 +1625,7 @@ class TelefluMappedSample(models.Model):
 class ReferenceTaxid(models.Model):
     taxid = models.CharField(max_length=100, blank=True, null=True)
 
+    tax_species = models.ForeignKey(Taxon, on_delete=models.CASCADE, blank=True, null=True, related_name="tax_species")
     tax_genus = models.ForeignKey(Taxon, on_delete=models.CASCADE, blank=True, null=True, related_name="tax_genus")
     tax_family = models.ForeignKey(Taxon, on_delete=models.CASCADE, blank=True, null=True, related_name="tax_family")
     tax_order = models.ForeignKey(Taxon, on_delete=models.CASCADE, blank=True, null=True, related_name="tax_order")

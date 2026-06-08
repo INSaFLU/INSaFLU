@@ -727,8 +727,8 @@ class EntrezWrapper:
         print(f"  [DEBUG persist] final taxon_map keys: {sorted(taxon_map.keys())}")
         return taxon_map
 
+    @staticmethod
     def link_referencetaxid_to_lineage(
-        self, 
         ref_taxid_str: str, 
         lineage: List[LineageNode],
         taxon_map: Dict[str, "Taxon"]
@@ -765,24 +765,16 @@ class EntrezWrapper:
         for node in lineage:
             tid = node.taxid
             if not tid:
-                print(f"  [DEBUG] SKIP (empty tid): rank={node.rank!r}, name={node.name!r}")
                 continue
             normalized_rank = TaxonConstants.normalize_rank(node.rank)
             field = RANK_TO_FIELD.get(normalized_rank)
-            in_map = tid in taxon_map
-            print(f"  [DEBUG] tid={tid!r}, rank={node.rank!r} -> norm={normalized_rank!r} -> field={field!r}, in_taxon_map={in_map}")
-            if field is not None:
+
+            if field:
                 taxon = taxon_map.get(tid)
-                if taxon is not None and getattr(ref_taxid_obj, field) != taxon:
-                    print(f"  [DEBUG]   -> SETTING {field} to Taxon(taxid={taxon.taxid})")
+                if taxon and getattr(ref_taxid_obj, field) != taxon:
                     setattr(ref_taxid_obj, field, taxon)
                     changed = True
-                else:
-                    reason = "taxon is None" if taxon is None else f"field already {getattr(ref_taxid_obj, field)}"
-                    print(f"  [DEBUG]   -> SKIP ({reason})")
-            else:
-                print(f"  [DEBUG]   -> SKIP (no matching field in RANK_TO_FIELD)")
-        print(f"  [DEBUG] lineage processed, changed={changed}, final fields: dom={ref_taxid_obj.tax_domain}, phy={ref_taxid_obj.tax_phylum}, cla={ref_taxid_obj.tax_class}, ord={ref_taxid_obj.tax_order}, fam={ref_taxid_obj.tax_family}, gen={ref_taxid_obj.tax_genus}")
+
         if changed:
             ref_taxid_obj.save()
 

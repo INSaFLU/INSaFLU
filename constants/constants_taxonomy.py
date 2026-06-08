@@ -49,32 +49,34 @@ class TaxonConstants:
 
     NO_RANK = "no rank"
 
+
     RANK_SYNONYMS_ALLOWED = {
-        "domain": RANK_DOMAIN,
         "superkingdom": RANK_DOMAIN,
         "kingdom": RANK_KINGDOM,
+
         "phylum": RANK_PHYLUM,
         "division": RANK_PHYLUM,
-<<<<<<< HEAD
+        "superphylum": RANK_PHYLUM,
+        "subphylum": RANK_PHYLUM,
 
         "class": RANK_CLASS,
+        "subclass": RANK_CLASS,
+        "superclass": RANK_CLASS,
 
         "order": RANK_ORDER,
+        "superorder": RANK_ORDER,
+        "suborder": RANK_ORDER,
 
         "family": RANK_FAMILY,
+        "superfamily": RANK_FAMILY,
+        "subfamily": RANK_FAMILY,
 
         "genus": RANK_GENUS,
+        "subgenus": RANK_GENUS,
 
-=======
-        "class": RANK_CLASS,
-        "order": RANK_ORDER,
-        "family": RANK_FAMILY,
-        "genus": RANK_GENUS,
->>>>>>> upstream/ubuntu-develop
         "species": RANK_SPECIES,
-        "no rank": NO_RANK,
-        "clade": NO_RANK,
     }
+
 
     # Abbreviation -> canonical name
     ABBREV_MAP = {

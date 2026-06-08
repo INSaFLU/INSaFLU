@@ -124,6 +124,11 @@
 
     /* visually indent groups under species header */
     .group-wrapper {
+        display: none;
+    }
+
+
+    .group-wrapper.show {
         background: #ffffff;
         border-radius: 12px;
         box-shadow: 0 4px 10px rgba(0,0,0,0.03);
@@ -132,6 +137,7 @@
         display: table-row-group;
         transform: translateY(0);
     }
+
 
     /* ensure first/last rows of group card keep rounded corners */
     .group-wrapper tr:first-child td {
@@ -213,22 +219,6 @@
     border: none;
     /* Optionally add a subtle shadow or color */
     /* box-shadow: 0 2px 8px rgba(0,0,0,0.04); */
-}
-.group-wrapper {
-    background: #f8fafc;
-    border-radius: 32px;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.04);
-    margin-bottom: 32px;
-    border: 1px solid #d7dde6ff;
-    display: table-row-group;
-}
-.group-wrapper tr:first-child td {
-    border-top-left-radius: 32px;
-    border-top-right-radius: 32px;
-}
-.group-wrapper tr:last-child td {
-    border-bottom-left-radius: 32px;
-    border-bottom-right-radius: 32px;
 }
 .custom-section-container {
     background: #f8fafc; /* match group-wrapper */
@@ -475,18 +465,18 @@
                         </tr>
                     </thead>
                     <tbody>
-                    {%for species, species_bundle in report_list.items%}
-                        <tr class="species-section collapsed">
+                    {%for species_bundle in report_list%}
+                        <tr class="species-section collapsed" data-species="{{ species_bundle.species.taxid }}">
                             <td colspan="100%">
                                 <div class="species-header d-flex align-items-center justify-content-between">
                                     <!-- species-level collapse/expand toggle (start collapsed) -->
                                     <button type="button" class="btn btn-sm btn-outline-secondary species-toggle-btn" aria-expanded="false" title="Expand species">
-                                        <i class="fa fa-chevron-down" aria-hidden="true"></i>
+                                        <i class="fa fa-chevron-up" aria-hidden="true"></i>
                                     </button>
                                     <div class="species-title">
-                                        <h3 class="mb-0">Species: {{ species }}</h3>
-                                        {% if species_bundle.description %}
-                                            <p class="mb-0 text-muted small">{{ species_bundle.description }}</p>
+                                        <h3 class="mb-0">Species: {{ species_bundle.species.name }}</h3>
+                                        {% if species_bundle.species.taxid is not None %}
+                                        <p class="mb-0 text-muted small">taxID: {{ species_bundle.species.taxid }}</p>
                                         {% endif %}
                                     </div>
                                     <div class="species-meta">
@@ -500,7 +490,7 @@
                             </td>
                         </tr>
                         {% for final_report, group_reports in species_bundle.report_groups.items %}
-                            <tbody class="group-wrapper">
+                            <tbody class="group-wrapper" display="none;" group-name="{{final_report.name}}" data-species="{{ species_bundle.species.taxid }}">
                             <tr>
                                 <td colspan="100%">
                                     <div class="custom-section-container">
@@ -786,11 +776,6 @@
                             </tr>
                         </tbody>
                         {% endfor %}
-                    </tbody>
-                    <tr class="group-spacer">
-                        <td colspan="18" style="height: 24px; background: transparent; border: none;"></td>
-                    </tr>
-                        
                     {% endfor %}
                     <tr class="group-spacer">
                         <td colspan="18" style="height: 24px; background: transparent; border: none;"></td>
@@ -874,64 +859,99 @@
         table.classList.toggle('show-extra-columns');
     });
 
-    function initSpeciesToggles(){
-        var buttons = document.querySelectorAll('.species-toggle-btn');
-        function applyCollapse(tr, collapsed) {
-            var btn = tr.querySelector('.species-toggle-btn');
-            var icon = btn && btn.querySelector('i');
-            if (collapsed) {
-                tr.classList.add('collapsed');
-                if (btn) { btn.setAttribute('aria-expanded','false'); btn.setAttribute('title','Expand species'); }
-                if (icon) { icon.classList.remove('fa-chevron-up'); icon.classList.add('fa-chevron-down'); }
-            } else {
-                tr.classList.remove('collapsed');
-                if (btn) { btn.setAttribute('aria-expanded','true'); btn.setAttribute('title','Collapse species'); }
-                if (icon) { icon.classList.remove('fa-chevron-down'); icon.classList.add('fa-chevron-up'); }
-            }
 
-            var node = tr.nextElementSibling;
-            while (node) {
-                if (node.classList && node.classList.contains('species-section')) break;
-                if (typeof node.dataset._origDisplay === 'undefined') {
-                    var cs = window.getComputedStyle(node);
-                    node.dataset._origDisplay = (cs && cs.display) ? cs.display : '';
+    document.addEventListener("DOMContentLoaded", function () {
+
+        document.querySelectorAll(".species-toggle-btn").forEach(function (btn) {
+
+            btn.addEventListener("click", function () {
+
+                const speciesRow = btn.closest(".species-section");
+                const speciesId = speciesRow.dataset.species;
+
+                const expanded = btn.getAttribute("aria-expanded") === "true";
+                const newExpanded = !expanded;
+
+                console.log(
+                    `Toggling species ${speciesId} -> expanded=${newExpanded}`
+                );
+
+                document
+                    .querySelectorAll(
+                        `.group-wrapper[data-species="${speciesId}"]`
+                    )
+                    .forEach(function (tbody) {
+
+                        console.log(
+                            `  Toggling group: ${tbody.getAttribute("group-name")}`
+                        );
+
+                        tbody.style.display = newExpanded
+                            ? "table-row-group"
+                            : "none";
+                    });
+
+                const icon = btn.querySelector("i");
+
+                if (icon) {
+                    icon.classList.remove(
+                        "fa-chevron-down",
+                        "fa-chevron-up"
+                    );
+
+                    icon.classList.add(
+                        newExpanded
+                            ? "fa-chevron-up"
+                            : "fa-chevron-down"
+                    );
                 }
-                if (collapsed) {
-                    node.classList.add('species-hidden');
-                    node.setAttribute('aria-hidden','true');
+
+                btn.setAttribute("aria-expanded", newExpanded);
+
+                if (!newExpanded) {
+
+                    const groupName = tbody.getAttribute("group-name");
+
+                    tbody.style.display = "none";
+
+                    document.querySelectorAll(
+                        '.secondary-row[group-name="' + groupName + '"]'
+                    ).forEach(function(row) {
+
+                        if (row.classList.contains('parent')) {
+                            row.style.display = 'none';
+
+                            const innerRow = nextTr(row);
+
+                            if ($(innerRow).hasClass('active')) {
+                                $(innerRow).removeClass('active');
+                            }
+                        }
+                    });
+
+                    const button = tbody.querySelector('.showSecondaryRows');
+
+                    if (button) {
+                        const icon = button.querySelector('.toggle-icon');
+
+                        if (icon) {
+                            icon.classList.remove('fa-toggle-on');
+                            icon.classList.add('fa-toggle-off');
+                        }
+                    }
+
                 } else {
-                    node.classList.remove('species-hidden');
-                    node.removeAttribute('aria-hidden');
-                    node.style.display = node.dataset._origDisplay || '';
+
+                    tbody.style.display = "table-row-group";
+
                 }
-                node = node.nextElementSibling;
-            }
-        }
 
-        buttons.forEach(function(btn){
-            btn.addEventListener('click', function(e){
-                var tr = btn.closest('tr.species-section');
-                if (!tr) return;
-                var shouldCollapse = !tr.classList.contains('collapsed');
-                applyCollapse(tr, shouldCollapse);
+
             });
+
         });
 
-        // initialize existing species rows that have .collapsed class
-        var allSpecies = document.querySelectorAll('tr.species-section');
-        allSpecies.forEach(function(tr){
-            if (tr.classList.contains('collapsed')) {
-                applyCollapse(tr, true);
-            }
-        });
-    }
- 
-     // init on DOMContentLoaded and also after other scripts may manipulate DOM
-     if (document.readyState === 'loading') {
-         document.addEventListener('DOMContentLoaded', initSpeciesToggles);
-     } else {
-         initSpeciesToggles();
-     }
+    });
 
 </script>
 {% endblock js %}

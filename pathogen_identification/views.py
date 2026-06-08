@@ -3022,8 +3022,9 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         }
 
         # group reports by main species and sort by private reads availability
-        report_taxa = {
-            species: {
+        report_taxa = [
+            {
+                "species": species,
                 "report_groups": {
                     rg: sorted_reports[rg] for rg in report_groups if rg.main_species == species
                 },
@@ -3031,8 +3032,18 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
                     rg.private_counts_safe for rg in report_groups if rg.main_species == species
                 )
                 }
-            for species in set(reported_taxa.values())
-        }
+            for species in set(reported_taxa.values()) if species is not None
+        ]
+
+        report_taxa.append({
+            "species": {"name": "Unassigned", "taxid": None},
+            "report_groups": {
+                rg: sorted_reports[rg] for rg in report_groups if rg.main_species is None
+            },
+            "total_private_counts": sum(
+                rg.private_counts_safe for rg in report_groups if rg.main_species is None
+            )
+        })
 
 
         private_reads_available = any(

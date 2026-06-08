@@ -63,7 +63,7 @@ def collect_parameters_project(project: Projects):
             node_leaves = ps.get_leaf_descendants()
             leaf_node = node_leaves[0]
             leaf_node_index = leaf_node.index
-            params = pipeline_utils.generate_leaf_parameters(leaf_node)
+            params = pipeline_utils.get_leaf_parameters(leaf_node)
             params["leaves"] = leaf_node_index
 
             if params is None:

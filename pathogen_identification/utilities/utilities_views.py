@@ -1020,7 +1020,7 @@ class FinalReportGroup:
     name: str
     total_counts_str: str
     private_counts: int
-    shared_proportion: float
+    max_shared_proportion: float
     private_proportion: float
     group_list: List[FinalReportWrapper]
 
@@ -1041,7 +1041,7 @@ class FinalReportGroup:
         self.total_counts = total_counts
         self.total_counts_str = f"total counts {total_counts}"
         self.private_counts = private_counts
-        self.shared_proportion = shared_proportion
+        self.max_shared_proportion = shared_proportion
         self.private_proportion = round(private_proportion, 2)
         self.group_list = group_list
         self.heatmap_path = heatmap_path
@@ -1228,6 +1228,7 @@ def recover_assembly_contigs(run_main: RunMain, run_assembly: RunAssembly):
 class ReportList:
     def __init__(self, reports: List[FinalReport]):
         self.reports = [FinalReportWrapper(report) for report in reports]
+        self.private_reads = 0
 
     def __iter__(self):
         return iter(self.reports)
@@ -1251,6 +1252,7 @@ class ReportList:
             report.private_reads = report_data.private_reads
 
         return self
+    
 
     def sort_group_by_private_reads(self):
         """
@@ -1763,6 +1765,8 @@ class ReportSorter:
                 break
 
         from django.db import transaction
+        from pathogen_identification.models import Taxon, ReferenceTaxid
+
         with transaction.atomic():
             report_aggregate = ReportAggregate.objects.create(
                 sample = self.sample,
@@ -1796,32 +1800,49 @@ class ReportSorter:
                     private_counts = group.private_counts,
                     private_counts_exist = group.private_counts_exist,
                     private_reads_available = private_reads_available,
-                    shared_proportion = group.shared_proportion,
+                    shared_proportion = group.max_shared_proportion,
                     private_proportion = group.private_proportion,
                     max_private_reads = group.max_private_reads,
                     max_coverage = group.max_coverage,
                     analysis_empty = group.analysis_empty,
                     has_multiple = group.has_multiple,
-                    toggle = group.toggle,
+                    toggle = group.toggle if len(group.group_list) > 1 else "on",
                     overlap_heatmap_json = group.js_heatmap_data,
                 )
                 report_group.save()
+                taxa = []
 
                 for report in group.group_list:
-                    report_group.reports.add(FinalReport.objects.get(pk=report.report_pk))
+                    actual_report = FinalReport.objects.get(pk=report.report_pk)
+                    report_group.reports.add(actual_report)
 
                     report_data = GroupReportData.objects.create(
-                        report = FinalReport.objects.get(pk=report.report_pk),
+                        report = actual_report,
                         report_group = report_group,
-                        private_reads = report.private_reads,
-                        data_exists = report.data_exists,
+                        private_reads = report.private_reads, # report wrapper
+                        data_exists = report.data_exists, # compouns report
                     )
                     report_data.save()
 
-                    for run in report.found_in:
+                    for run in report.found_in: # compouns report
                         report_data.found_in.add(run)
                         report_aggregate.runs.add(run)
 
+                    taxa.append(actual_report.taxid)
+                
+                references = {
+                    taxid: ReferenceTaxid.objects.get(taxid=taxid) for taxid in taxa
+                }
+                species = {
+                    taxid: ref.tax_species for taxid, ref in references.items()
+                }
+                from collections import Counter
+                species_counter = Counter(species.values())
+                most_common_species, most_common_count = species_counter.most_common(1)[0]
+                if most_common_count / len(species) > 0.5:
+                    report_group.main_species = most_common_species
+                    report_group.main_species_percentage = most_common_count / len(species)
+                    report_group.save()
 
     def sort_reports_save(self, force=False):
         """
@@ -2147,41 +2168,6 @@ class ReportSorter:
 
         return reports
 
-    def get_compound_pandas_report(self) -> pd.DataFrame:
-        """
-        Return pandas dataframe of reports
-        """
-        if not self.reports_available:
-            return pd.DataFrame()
-
-        if not self.check_analyzed():
-            return pd.DataFrame()
-
-        reports = self.get_reports_compound()
-        if len(reports) == 0:
-            return pd.DataFrame()
-
-        data = []
-        for report_group in reports:
-            group_name = report_group.name
-            for report in report_group.group_list:
-                data.append(
-                    {
-                        "sample": self.sample.name,
-                        "name": group_name,
-                        "accid": report.accid,
-                        "description": report.description,
-                        "taxid": report.taxid,
-                        "coverage": report.coverage,
-                        "private_reads": report.private_reads,
-                        "mapped_proportion": report.mapped_proportion,
-                        "windows_covered": report.windows_covered,
-                        "error_rate": report.error_rate,
-                        "quality_avg": report.quality_avg,
-                    }
-                )
-        df = pd.DataFrame(data)
-        return df
 
     def check_excluded_exist(self) -> bool:
         """return True if there are excluded reports"""

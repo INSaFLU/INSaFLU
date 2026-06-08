@@ -2,12 +2,11 @@ import codecs
 import datetime
 import json
 import os
-from typing import Any, List, Optional
+from typing import List, Optional
 
 import networkx as nx
 import numpy as np
 import pandas as pd
-from django import forms
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
@@ -29,6 +28,7 @@ from pathogen_identification.constants_settings import \
 from pathogen_identification.data_classes import IntermediateFiles
 from settings.constants_settings import ConstantsSettings as CS
 from constants.constants_taxonomy import TaxonConstants
+from utils.utils import PathUtils
 # Create your models here.
 
 no_space_validator = RegexValidator(
@@ -260,6 +260,16 @@ class SoftwareTreeNode(models.Model):
 
         return SoftwareTreeNode.objects.filter(id__in=descendants)
 
+
+class LeafParameter(models.Model):
+    leaf = models.ForeignKey(SoftwareTreeNode, on_delete=models.CASCADE)
+    module = models.CharField(max_length=200, blank=True, null=True)
+    software_name = models.CharField(max_length=200, blank=True, null=True)
+    parameter_name = models.CharField(max_length=200, blank=True, null=True)
+    parameter_value = models.CharField(max_length=200, blank=True, null=True)
+
+    class Meta:
+        ordering = ["leaf", "module", "software_name", "parameter_name"]
 
 class PIProject_Sample(models.Model):
     """
@@ -933,6 +943,29 @@ class TelevirRunQC(models.Model):
         ]
 
 
+
+class TelevirRunQcStack(models.Model):
+    run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)
+    # one to many qc_reports
+    qc_reports = models.ManyToManyField(TelevirRunQC, blank=True)
+    performed = models.BooleanField(default=False)
+    input_reads = models.IntegerField(blank=True, null=True)
+    output_reads = models.IntegerField(blank=True, null=True, default = 0)
+    output_reads_percent = models.FloatField(blank=True, null=True, default = 0)
+
+    @property
+    def output_reads_str(self):
+        return f"{self.output_reads:,}"
+    
+    @property
+    def output_reads_percent_str(self):
+        return f"{self.output_reads_percent:.2f}%"
+    
+    @property
+    def reports(self):
+        return self.qc_reports.all()
+
+
 class RunDetail(models.Model):
     name = models.CharField(
         max_length=100, db_index=True, blank=True, null=True
@@ -1571,6 +1604,13 @@ class TelefluMapping(models.Model):
             sample_summary[sample.name]["success"] = success
 
             if reports.exists():
+                report = reports[0]
+                try:
+                    reference_map = ReferenceMap_Main.objects.get(
+                        run=report.run, accid=report.accid
+                    )
+                except ReferenceMap_Main.DoesNotExist:
+                    reference_map = None
                 sample_summary[sample.name]["coverage"] = round(reports[0].coverage, 3)
                 sample_summary[sample.name]["windows_covered"] = reports[
                     0
@@ -1588,6 +1628,9 @@ class TelefluMapping(models.Model):
                 sample_summary[sample.name]["error_rate"] = round(
                     reports[0].error_rate, 3
                 )
+                sample_summary[sample.name]['bam_file'] = PathUtils.media_path_serve(reports[0].bam_path)
+                sample_summary[sample.name]['bam_file_idx'] = PathUtils.media_path_serve(reports[0].bai_path)
+                sample_summary[sample.name]['run_link'] = reverse("run_detail", kwargs={"run_id": report.run.pk})
 
         return sample_summary, mapped_samples, success_samples
 
@@ -1608,6 +1651,7 @@ class TelefluMappedSample(models.Model):
 class ReferenceTaxid(models.Model):
     taxid = models.CharField(max_length=100, blank=True, null=True)
 
+    tax_species = models.ForeignKey(Taxon, on_delete=models.CASCADE, blank=True, null=True, related_name="tax_species")
     tax_genus = models.ForeignKey(Taxon, on_delete=models.CASCADE, blank=True, null=True, related_name="tax_genus")
     tax_family = models.ForeignKey(Taxon, on_delete=models.CASCADE, blank=True, null=True, related_name="tax_family")
     tax_order = models.ForeignKey(Taxon, on_delete=models.CASCADE, blank=True, null=True, related_name="tax_order")
@@ -2080,6 +2124,14 @@ class ReportAggregate(models.Model):
             group.reports.all().count() for group in self.report_groups.all()
         )
 
+from dataclasses import dataclass
+@dataclass
+class TaxonEmpty: 
+    name: str = "None"
+    taxid: str = "None"
+    genus: str = "None"
+    order: str = "None"
+
 
 class ReportGroup(models.Model):
 
@@ -2104,6 +2156,16 @@ class ReportGroup(models.Model):
 
     overlap_heatmap_json = models.JSONField(blank=True, null=True)
     reports = models.ManyToManyField(FinalReport, blank=True, related_name="aggregated_reports")
+
+    main_species = models.ForeignKey(Taxon, blank=True, null=True, on_delete=models.CASCADE)
+    main_species_percentage = models.FloatField(blank=True, null=True)
+
+
+    @property
+    def private_counts_safe(self):
+        if self.private_counts is None:
+            return 0
+        return self.private_counts
 
     @property
     def js_heatmap_ready(self):

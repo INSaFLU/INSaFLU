@@ -64,10 +64,28 @@ def get_run_parents(run_class: RunEngine_class, parameter_set: ParameterSet) -> 
 
 
 def Update_Run_QC(run_class: RunEngine_class, parameter_set: ParameterSet):
+
+    from pathogen_identification.models import TelevirRunQC, TelevirRunQcStack
+
     sample, runmain, _ = get_run_parents(run_class, parameter_set)
 
     if sample is None or runmain is None:
         return
+    
+
+    qc_stack, created = TelevirRunQcStack.objects.get_or_create(run=runmain)
+
+    if len(run_class.preprocess_method.software_list) == 0:
+        return
+    
+    input_reads = int(run_class.preprocess_method.software_list[0].reads_before_processing)
+    output_reads = int(run_class.preprocess_method.software_list[-1].reads_after_processing)
+    output_reads_percent = 0 if input_reads == 0 else output_reads / input_reads * 100
+
+    qc_stack.input_reads = input_reads
+    qc_stack.output_reads = output_reads
+    qc_stack.output_reads_percent = output_reads_percent
+    qc_stack.performed = True
 
     for method in run_class.preprocess_method.software_list:
         try:
@@ -89,6 +107,10 @@ def Update_Run_QC(run_class: RunEngine_class, parameter_set: ParameterSet):
                 ),
             )
             RunQC.save()
+
+            qc_stack.qc_reports.add(RunQC)
+    
+    qc_stack.save()
 
 
 def Update_project(project_directory_path, user: str = "admin"):
@@ -858,16 +880,11 @@ def Update_Run_Classification(run_class: RunEngine_class, parameter_set: Paramet
             software_name=run_class.read_classification_results.method,
         )
         classifier_output.save()
-        
-    if os.path.exists(run_class.read_classification_drone.classifier.full_report_path):
+    
+    if os.path.exists(run_class.read_classification_drone.classifier.report_path):
         ClassifierOutputFile.objects.update_or_create(
             classifier_output=classifier_output,
-            file_path=run_class.read_classification_drone.classifier.full_report_path
-        )
-    if os.path.exists(run_class.read_classification_drone.classifier.report_suffix):
-        ClassifierOutputFile.objects.update_or_create(
-            classifier_output=classifier_output,
-            file_path=run_class.read_classification_drone.classifier.report_suffix
+            file_path=run_class.read_classification_drone.classifier.report_path
         )
 
     try:
@@ -918,16 +935,11 @@ def Update_Run_Classification(run_class: RunEngine_class, parameter_set: Paramet
             software_name=contig_classification.method,
         )
         classifier_output.save()
-        
-    if os.path.exists(run_class.contig_classification_drone.classifier.full_report_path):
+    
+    if os.path.exists(run_class.contig_classification_drone.classifier.report_path):
         ClassifierOutputFile.objects.update_or_create(
             classifier_output=classifier_output,
-            file_path=run_class.contig_classification_drone.classifier.full_report_path
-        )
-    if os.path.exists(run_class.contig_classification_drone.classifier.report_suffix):
-        ClassifierOutputFile.objects.update_or_create(
-            classifier_output=classifier_output,
-            file_path=run_class.contig_classification_drone.classifier.report_suffix
+            file_path=run_class.contig_classification_drone.classifier.report_path
         )
 
     for _ref, row in run_class.raw_targets.iterrows():

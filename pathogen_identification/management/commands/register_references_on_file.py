@@ -108,8 +108,9 @@ class Command(BaseCommand):
                 "Reference update is already running. Use --force to override and run again."
             )
             return
-
-        ### SETUP
+        
+        #############
+        ### SETUP ###
         process_SGE.set_process_controlers(
             user,
             process_controler.get_name_televir_reference_update(user_pk=user.pk),
@@ -201,6 +202,7 @@ class Command(BaseCommand):
             except Exception as e:
                 print(f"Warning: Could not fetch/persist lineages: {e}")
                 lineages = {}
+                taxon_map = {}
 
             print("Registering entrez descriptions")
 
@@ -218,6 +220,18 @@ class Command(BaseCommand):
                     ref_taxid = ReferenceTaxid.objects.get(taxid=taxid_str)
                 except ReferenceTaxid.DoesNotExist:
                     ref_taxid = ReferenceTaxid.objects.create(taxid=taxid_str)
+
+                # Link ReferenceTaxid to taxonomy hierarchy if possible
+                if lineages.get(taxid_str) is not None:
+                    try:
+                        entrez_connection.link_referencetaxid_to_lineage(
+                            taxid_str,
+                            lineages[taxid_str],
+                            taxon_map
+                        )
+                    except Exception as e:
+                        print(f"Warning: Could not link ReferenceTaxid {taxid_str} to lineage: {e}")
+
 
                 for _, row in taxid_df.iterrows():
                     if pd.isna(row.accession):
@@ -275,10 +289,9 @@ class Command(BaseCommand):
                     ref_source = ReferenceSource.objects.filter(accid=accid_str)
 
                     # Build lineage_path from lineages dict
-                    taxid_str_key = str(int(taxid_str))
                     lineage_path = ""
-                    if taxid_str_key in lineages:
-                        lineage_nodes = lineages[taxid_str_key]
+                    if lineages.get(taxid_str, None) is not None:
+                        lineage_nodes = lineages[taxid_str]
                         names = [node.name for node in lineage_nodes]
                         lineage_path = " > ".join(filter(None, names))
 
@@ -308,16 +321,6 @@ class Command(BaseCommand):
                             ref_source.lineage_path = lineage_path
                         ref_source.save()
 
-                    # Link ReferenceTaxid to taxonomy hierarchy if possible
-                    if taxid_str_key in lineages and 'taxon_map' in locals():
-                        try:
-                            entrez_connection.link_referencetaxid_to_lineage(
-                                taxid_str_key,
-                                lineages[taxid_str_key],
-                                taxon_map
-                            )
-                        except Exception as e:
-                            print(f"Warning: Could not link ReferenceTaxid {taxid_str_key} to lineage: {e}")
 
                     # get reference source file
                     try:

@@ -350,6 +350,9 @@ class DefaultSoftware(object):
             user,
         )
 
+        ####
+        #### for software with multiple pipeline steps, test all pipeline steps
+
         self.test_default_db(
             SoftwareNames.SOFTWARE_MSAMTOOLS_name,
             self.default_parameters.get_msamtools_defaults(
@@ -391,6 +394,55 @@ class DefaultSoftware(object):
             ),
             user,
         )
+
+        #######
+        #######
+
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_GATK4_name,
+            self.default_parameters.get_gatk4_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_GATK4_name,
+            self.default_parameters.get_gatk4_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_map_filtering,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_GATK4_name,
+            self.default_parameters.get_gatk4_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_GATK4_name,
+            self.default_parameters.get_gatk4_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_map_filtering,
+            ),
+            user,
+        )
+
+        #######
+        #######
 
         self.test_default_db(
             SoftwareNames.SOFTWARE_DUSTMASKER_name,
@@ -1302,6 +1354,19 @@ class DefaultSoftware(object):
             pipeline_step=pipeline_step,
         )
         return "" if result is None else result
+    
+    def get_gatk4_parameters(self, user, technology_name, pipeline_step=None):
+        result = self.default_parameters.get_parameters_parsed(
+            SoftwareNames.SOFTWARE_GATK4_name,
+            user,
+            Software.TYPE_OF_USE_televir_global,
+            None,
+            None,
+            None,
+            technology_name,
+            pipeline_step=pipeline_step,
+        )
+        return "" if result is None else result
 
     def get_televir_report_layout_parameters(self, user, technology_name):
         result = self.default_parameters.get_parameters_parsed(
@@ -1819,6 +1884,10 @@ class DefaultSoftware(object):
         if software_name == SoftwareNames.SOFTWARE_MSAMTOOLS_name:
 
             return self.get_msamtools_parameters(user, technology_name)
+
+        if software_name == SoftwareNames.SOFTWARE_GATK4_name:
+            
+            return self.get_gatk4_parameters(user, technology_name, pipeline_step)
 
         if software_name == SoftwareNames.SOFTWARE_televir_report_layout_name:
 

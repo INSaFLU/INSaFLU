@@ -453,9 +453,7 @@ class EntrezWrapper:
             os.system(cmd)
 
         output_path = os.path.join(self.outdir, self.outfile)
-        with open(output_path, "r") as f:
-            print("########### read")
-            print(f.read())
+
         import traceback
         try:
             df = self.bin_query.read_output(output_path)
@@ -755,6 +753,7 @@ class EntrezWrapper:
             TaxonConstants.RANK_ORDER: "tax_order",
             TaxonConstants.RANK_FAMILY: "tax_family",
             TaxonConstants.RANK_GENUS: "tax_genus",
+            TaxonConstants.RANK_SPECIES: "tax_species",
         }
 
         try:

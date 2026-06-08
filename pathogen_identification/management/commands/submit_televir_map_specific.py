@@ -399,7 +399,7 @@ class Input_Generator:
             pk=parameter_leaf_index, software_tree=parameter_set.leaf.software_tree
         )
 
-        run_df = self.utils.get_leaf_parameters(parameter_leaf)
+        run_df = self.utils.generate_leaf_parameters(parameter_leaf)
 
         self.method_args = run_df[run_df.module == CS.PIPELINE_NAME_remapping]
 

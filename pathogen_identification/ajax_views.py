@@ -1993,7 +1993,7 @@ def load_teleflu_workflows(request):
                 continue
 
             params_df = utils_manager.get_leaf_parameters(mapping.leaf)
-            node_info = node_info = teleflu_node_info(params_df, mapping.leaf)
+            node_info = teleflu_node_info(params_df, mapping.leaf)
 
             samples_mapped = mapping.mapped_samples
 

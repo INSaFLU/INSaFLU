@@ -2019,7 +2019,7 @@ class ReferenceManagement(BaseBreadcrumbMixin, LoginRequiredMixin, generic.Creat
                         tag_search
                     )
                 )
-            )
+            ) 
 
         summary = {
             "total": references.count(),
@@ -2717,24 +2717,16 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
         sample_main = run_main_pipeline.sample
         #
         is_classification = run_main_pipeline.run_type == RunMain.RUN_TYPE_PIPELINE
-        #
         ########
 
         ########
-        remapping_performed = True
-        if run_main_pipeline.run_type == RunMain.RUN_TYPE_PIPELINE:
-            parameter_utils = Parameter_DB_Utility()
-            remapping_performed = parameter_utils.check_parameter_set_contains_module(
-                run_main_pipeline.parameter_set.leaf, CS.PIPELINE_NAME_remapping
-            )
+        parameter_utils = Parameter_DB_Utility()
+        remapping_performed = parameter_utils.check_parameter_set_contains_module(
+            run_main_pipeline.parameter_set.leaf, CS.PIPELINE_NAME_remapping
+        )
 
-        if is_classification is True:
-            raw_references = run_main_pipeline.references_sorted()
-            raw_reference_table = RawReferenceTable(raw_references)
-
-        else:
-            raw_references = run_main_pipeline.references_sorted(mapping_only=True)
-            raw_reference_table = RawReferenceTable_Basic(raw_references)
+        raw_references = run_main_pipeline.references_sorted(mapping_only = not is_classification)
+        raw_reference_table = RawReferenceTable(raw_references)
 
         from pathogen_identification.models import (ClassifierOutput,
                                                     ClassifierOutputFile)
@@ -2746,51 +2738,18 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
         }
         
 
-
         #####
         run_detail = RunDetail.objects.get(sample=sample_main, run=run_main_pipeline)
         #
-        run_qc = TelevirRunQC.objects.filter(run=run_main_pipeline)
-        #
         from pathogen_identification.utilities.utilities_pipeline import \
             Utils_Manager
+        from pathogen_identification.models import TelevirRunQcStack
 
         utils_manager = Utils_Manager()
         params_df = utils_manager.get_leaf_parameters(
             run_main_pipeline.parameter_set.leaf
         )
-
-        qc_reports = [
-            RunQC_report(
-                performed=run_qc.performed,
-                method=run_qc.method,
-                args=run_qc.args,
-                input_reads=run_qc.input_reads,
-                output_reads=run_qc.output_reads,
-                output_reads_percent=run_qc.output_reads_percent,
-            )
-            for run_qc in run_qc
-        ]
-
-        if run_qc.exists() is False:
-            qc_reports = [
-                RunQC_report(
-                    performed=False,
-                    method="None",
-                    args="None",
-                    input_reads=run_detail.input,
-                    output_reads=run_detail.input,
-                    output_reads_percent="1",
-                )
-            ]
-
-        output_reads = int(qc_reports[-1].output_reads.replace(",", ""))
-        output_reads_percent = (
-            output_reads / int(qc_reports[0].input_reads.replace(",", "")) * 100
-        )
-        output_reads = f"{output_reads:,}"
-        output_reads_percent = f"{output_reads_percent:.2f}"
-
+        run_qc = TelevirRunQcStack.objects.get(run=run_main_pipeline)
         #
         try:
             run_assembly = RunAssembly.objects.get(
@@ -2832,6 +2791,23 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
             for report_group in report_groups
         }
 
+        reported_taxa = {
+            report_group: report_group.main_species for report_group in report_groups
+        }
+
+        # group reports by main species and sort by private reads availability
+        report_taxa = {
+            species: {
+                "report_groups": {
+                    rg: sorted_reports[rg] for rg in report_groups if rg.main_species == species
+                },
+                "total_private_counts": sum(
+                    rg.private_counts_safe for rg in report_groups if rg.main_species == species
+                )
+                }
+            for species in set(reported_taxa.values())
+        }
+
         private_reads_available = any(
             report_group.private_reads_available for report_group in report_groups
         )
@@ -2855,7 +2831,6 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
         )
 
         ### Reads Processing
-        # ret = SampleReadsRetrieve(sample)
         sample_retrieve = SampleReadsRetrieve(sample_main.sample)
         parameter_set = run_main_pipeline.parameter_set
         
@@ -2883,9 +2858,9 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
             "sample": sample_name,
             "run_main": run_main_pipeline,
             "run_detail": run_detail,
-            "output_reads": output_reads,
-            "output_reads_percent": output_reads_percent,
-            "qc_reports": qc_reports,
+            "output_reads": run_qc.output_reads_str,
+            "output_reads_percent": run_qc.output_reads_percent_str,
+            "qc_reports": run_qc.reports,
             "assembly": run_assembly,
             "contig_classification": contig_classification,
             "read_classification": read_classification,
@@ -3041,6 +3016,25 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
             for report_group in report_groups
         }
 
+
+        reported_taxa = {
+            report_group: report_group.main_species for report_group in report_groups
+        }
+
+        # group reports by main species and sort by private reads availability
+        report_taxa = {
+            species: {
+                "report_groups": {
+                    rg: sorted_reports[rg] for rg in report_groups if rg.main_species == species
+                },
+                "total_private_counts": sum(
+                    rg.private_counts_safe for rg in report_groups if rg.main_species == species
+                )
+                }
+            for species in set(reported_taxa.values())
+        }
+
+
         private_reads_available = any(
             report_group.private_reads_available for report_group in report_groups
         )
@@ -3079,7 +3073,7 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
             "tree_plot_path": latest_report_aggregate.tree_plot_path,
             "project_index": project_pk,
             "sample_index": sample_pk,
-            "report_list": sorted_reports,
+            "report_list": report_taxa,
             "runs_pipeline": runs_pipeline,
             "runs_mapping": runs_mapping,
             "runs_number": runs_exist,

@@ -261,6 +261,16 @@ class SoftwareTreeNode(models.Model):
         return SoftwareTreeNode.objects.filter(id__in=descendants)
 
 
+class LeafParameter(models.Model):
+    leaf = models.ForeignKey(SoftwareTreeNode, on_delete=models.CASCADE)
+    module = models.CharField(max_length=200, blank=True, null=True)
+    software_name = models.CharField(max_length=200, blank=True, null=True)
+    parameter_name = models.CharField(max_length=200, blank=True, null=True)
+    parameter_value = models.CharField(max_length=200, blank=True, null=True)
+
+    class Meta:
+        ordering = ["leaf", "module", "software_name", "parameter_name"]
+
 class PIProject_Sample(models.Model):
     """
     Main sample information. Connects to the RunMain and QC models.
@@ -932,13 +942,29 @@ class TelevirRunQC(models.Model):
             "run",
         ]
 
+
+
 class TelevirRunQcStack(models.Model):
     run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)
-    qc_reports = models.CharField(max_length=1000, blank=True, null=True)  # qc reports separated by comma
+    # one to many qc_reports
+    qc_reports = models.ManyToManyField(TelevirRunQC, blank=True)
+    performed = models.BooleanField(default=False)
     input_reads = models.IntegerField(blank=True, null=True)
     output_reads = models.IntegerField(blank=True, null=True, default = 0)
     output_reads_percent = models.FloatField(blank=True, null=True, default = 0)
+
+    @property
+    def output_reads_str(self):
+        return f"{self.output_reads:,}"
     
+    @property
+    def output_reads_percent_str(self):
+        return f"{self.output_reads_percent:.2f}%"
+    
+    @property
+    def reports(self):
+        return self.qc_reports.all()
+
 
 class RunDetail(models.Model):
     name = models.CharField(

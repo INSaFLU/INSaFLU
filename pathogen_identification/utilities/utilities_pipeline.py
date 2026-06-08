@@ -2177,7 +2177,7 @@ class Utils_Manager:
 
         utility_repository.dump_tables(logdir)
 
-    def get_leaf_parameters(self, parameter_leaf: SoftwareTreeNode) -> pd.DataFrame:
+    def generate_leaf_parameters(self, parameter_leaf: SoftwareTreeNode) -> pd.DataFrame:
         """ """
         pipeline_tree = self.parameter_util.convert_softwaretree_to_pipeline_tree(
             parameter_leaf.software_tree
@@ -2190,7 +2190,45 @@ class Utils_Manager:
 
         all_paths = pipeline_tree.get_all_graph_paths()
 
+        self.register_leaf_parameters(parameter_leaf, all_paths[parameter_leaf_index])
+
         return all_paths[parameter_leaf_index]
+    
+    def register_leaf_parameters(self, parameter_leaf: SoftwareTreeNode, parameters_df: pd.DataFrame):
+        """ """
+        from pathogen_identification.models import LeafParameter
+
+        if LeafParameter.objects.filter(leaf=parameter_leaf).exists():
+            self.logger.warning(f"Leaf {parameter_leaf} already has parameters registered. Skipping registration.")
+            return 
+
+        for _, row in parameters_df.iterrows():
+            LeafParameter.objects.create(
+                leaf=parameter_leaf,
+                module = row['module'],
+                software_name = row['software_name'],
+                parameter_name = row['parameter'],
+                parameter_value = row['value'],
+            )
+
+    def get_leaf_parameters(self, parameter_leaf: SoftwareTreeNode) -> pd.DataFrame:
+        """ """
+        from pathogen_identification.models import LeafParameter
+
+        if not LeafParameter.objects.filter(leaf=parameter_leaf).exists():
+            self.logger.warning(f"Leaf {parameter_leaf} does not have parameters registered. Returning empty dataframe.")
+            return pd.DataFrame(columns=['module', 'software_name', 'parameter', 'value'])
+
+        leaf_parameters = LeafParameter.objects.filter(leaf=parameter_leaf)
+
+        parameters_df = pd.DataFrame(leaf_parameters.values('module', 'software_name', 'parameter_name', 'parameter_value')).rename(
+            columns={
+                'parameter_name': 'parameter',
+                'parameter_value': 'value'
+            }
+        )
+
+        return parameters_df
 
     def get_parameterset_leaves(
         self, parameterset: ParameterSet, pipeline_tree: PipelineTree

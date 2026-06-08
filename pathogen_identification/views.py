@@ -2741,47 +2741,15 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
         #####
         run_detail = RunDetail.objects.get(sample=sample_main, run=run_main_pipeline)
         #
-        run_qc = TelevirRunQC.objects.filter(run=run_main_pipeline)
-        #
         from pathogen_identification.utilities.utilities_pipeline import \
             Utils_Manager
+        from pathogen_identification.models import TelevirRunQcStack
 
         utils_manager = Utils_Manager()
         params_df = utils_manager.get_leaf_parameters(
             run_main_pipeline.parameter_set.leaf
         )
-
-        qc_reports = [
-            RunQC_report(
-                performed=run_qc.performed,
-                method=run_qc.method,
-                args=run_qc.args,
-                input_reads=run_qc.input_reads,
-                output_reads=run_qc.output_reads,
-                output_reads_percent=run_qc.output_reads_percent,
-            )
-            for run_qc in run_qc
-        ]
-
-        if run_qc.exists() is False:
-            qc_reports = [
-                RunQC_report(
-                    performed=False,
-                    method="None",
-                    args="None",
-                    input_reads=run_detail.input,
-                    output_reads=run_detail.input,
-                    output_reads_percent="1",
-                )
-            ]
-
-        output_reads = int(qc_reports[-1].output_reads.replace(",", ""))
-        output_reads_percent = (
-            output_reads / int(qc_reports[0].input_reads.replace(",", "")) * 100
-        )
-        output_reads = f"{output_reads:,}"
-        output_reads_percent = f"{output_reads_percent:.2f}"
-
+        run_qc = TelevirRunQcStack.objects.get(run=run_main_pipeline)
         #
         try:
             run_assembly = RunAssembly.objects.get(
@@ -2890,9 +2858,9 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
             "sample": sample_name,
             "run_main": run_main_pipeline,
             "run_detail": run_detail,
-            "output_reads": output_reads,
-            "output_reads_percent": output_reads_percent,
-            "qc_reports": qc_reports,
+            "output_reads": run_qc.output_reads_str,
+            "output_reads_percent": run_qc.output_reads_percent_str,
+            "qc_reports": run_qc.reports,
             "assembly": run_assembly,
             "contig_classification": contig_classification,
             "read_classification": read_classification,

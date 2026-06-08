@@ -1355,7 +1355,7 @@ class TreeProgressGraph:
             node_leaves = ps.get_leaf_descendants()
             leaf_node = node_leaves[0]
             leaf_node_index = leaf_node.index
-            node_params = self.pipeline_utils.get_leaf_parameters(leaf_node)
+            node_params = self.pipeline_utils.generate_leaf_parameters(leaf_node)
             node_params = node_params[["module", "software"]]
             node_params = node_params.set_index("module")
             node_params = node_params.T

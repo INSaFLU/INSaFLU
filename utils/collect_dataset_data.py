@@ -568,6 +568,7 @@ class CollectExtraDatasetData(object):
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_wnv_all,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_wnv_1a,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_wnv_2,
+            #SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_measles,
         ]
 
         build_to_ignore = False
@@ -752,7 +753,12 @@ class CollectExtraDatasetData(object):
             # This one can have extra parameters such as strain (default: h3n2, h1n1, etc...) and segment (default: ha)
             tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_flu_051225(
                 alignments=sequences_file, metadata=metadata_file, strain="h3n2"
-            )            
+            )     
+        elif build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_051225_na:
+            # This one can have extra parameters such as strain (default: h3n2, h1n1, etc...) and segment (default: ha)
+            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_flu_051225(
+                alignments=sequences_file, metadata=metadata_file, strain="h3n2", segment="na"
+            )                        
         elif build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y:
             tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_flu(
                 alignments=sequences_file, metadata=metadata_file, strain="h1n1pdm"
@@ -761,7 +767,12 @@ class CollectExtraDatasetData(object):
             # This one can have extra parameters such as strain (default: h3n2, h1n1, etc...) and segment (default: ha)
             tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_flu_051225(
                 alignments=sequences_file, metadata=metadata_file, strain="h1n1pdm"
-            )               
+            )  
+        elif build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_051225_na:
+            # This one can have extra parameters such as strain (default: h3n2, h1n1, etc...) and segment (default: ha)
+            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_flu_051225(
+                alignments=sequences_file, metadata=metadata_file, strain="h1n1pdm", segment="na"
+            )                          
         elif build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y:
             tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_flu(
                 alignments=sequences_file, metadata=metadata_file, strain="vic"
@@ -769,7 +780,11 @@ class CollectExtraDatasetData(object):
         elif build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_051225:
             tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_flu_051225(
                 alignments=sequences_file, metadata=metadata_file, strain="vic"
-            )            
+            )     
+        elif build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_051225_na:
+            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_flu_051225(
+                alignments=sequences_file, metadata=metadata_file, strain="vic", segment="na"
+            )                        
         elif build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y:
             tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_flu(
                 alignments=sequences_file, metadata=metadata_file, strain="yam"
@@ -902,6 +917,12 @@ class CollectExtraDatasetData(object):
                     alignments=sequences_file, metadata=metadata_file, strain="lineage-2"
                 )
             )            
+        #elif build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_measles:
+        #    tree_file, alignment_file, auspice_zip = (
+        #        self.software.run_nextstrain_measles(
+        #            alignments=sequences_file, metadata=metadata_file
+        #        )
+        #    )    
         elif build in [
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic_time,

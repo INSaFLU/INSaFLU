@@ -130,6 +130,15 @@ VECT_NEXTSTRAIN_mandatory_wnv = [
 		NEXTSTRAIN_lineage,
 	]	
 
+#VECT_NEXTSTRAIN_mandatory_measles = [
+#		NEXTSTRAIN_accession,
+#		NEXTSTRAIN_genbank_accession,
+#		NEXTSTRAIN_strain,
+#		NEXTSTRAIN_date,
+#		NEXTSTRAIN_region,
+#		NEXTSTRAIN_host, 
+#	]	
+
 DICT_MANDATORY_FIELDS = {
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_ncov : VECT_NEXTSTRAIN_mandatory_ncov,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpx : VECT_NEXTSTRAIN_mandatory_mpx,
@@ -139,10 +148,13 @@ DICT_MANDATORY_FIELDS = {
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic_time : VECT_NEXTSTRAIN_mandatory_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y : VECT_NEXTSTRAIN_mandatory_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_051225 : VECT_NEXTSTRAIN_mandatory_generic,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_051225_na : VECT_NEXTSTRAIN_mandatory_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y : VECT_NEXTSTRAIN_mandatory_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_051225 : VECT_NEXTSTRAIN_mandatory_generic,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_051225_na : VECT_NEXTSTRAIN_mandatory_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y : VECT_NEXTSTRAIN_mandatory_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_051225 : VECT_NEXTSTRAIN_mandatory_generic,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_051225_na : VECT_NEXTSTRAIN_mandatory_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y : VECT_NEXTSTRAIN_mandatory_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha : VECT_NEXTSTRAIN_mandatory_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na : VECT_NEXTSTRAIN_mandatory_generic,
@@ -162,6 +174,7 @@ DICT_MANDATORY_FIELDS = {
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_wnv_all : VECT_NEXTSTRAIN_mandatory_wnv,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_wnv_1a : VECT_NEXTSTRAIN_mandatory_wnv,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_wnv_2 : VECT_NEXTSTRAIN_mandatory_wnv,
+	#SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_measles : VECT_NEXTSTRAIN_mandatory_measles,
 }
 
 
@@ -246,6 +259,12 @@ DICT_NEXTSTRAIN_default_wnv_2 = {
 		NEXTSTRAIN_lineage : '2',
 	}
 
+#DICT_NEXTSTRAIN_default_measles = {
+#		NEXTSTRAIN_genbank_accession : "?",
+#		NEXTSTRAIN_region : "?",
+#		NEXTSTRAIN_host : "Homo sapiens", 
+#	}
+
 DICT_MANDATORY_FIELDS_DEFAULTS = {
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_ncov : DICT_NEXTSTRAIN_default_ncov,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpx : DICT_NEXTSTRAIN_default_mpx,
@@ -253,10 +272,13 @@ DICT_MANDATORY_FIELDS_DEFAULTS = {
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpox_mpxv : DICT_NEXTSTRAIN_default_mpox_mpxv,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y : DICT_NEXTSTRAIN_default_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_051225 : DICT_NEXTSTRAIN_default_generic,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_051225_na : DICT_NEXTSTRAIN_default_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y : DICT_NEXTSTRAIN_default_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_051225 : DICT_NEXTSTRAIN_default_generic,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_051225_na : DICT_NEXTSTRAIN_default_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y : DICT_NEXTSTRAIN_default_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_051225 : DICT_NEXTSTRAIN_default_generic,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_051225_na : DICT_NEXTSTRAIN_default_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y : DICT_NEXTSTRAIN_default_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha : DICT_NEXTSTRAIN_default_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na : DICT_NEXTSTRAIN_default_generic,
@@ -278,6 +300,7 @@ DICT_MANDATORY_FIELDS_DEFAULTS = {
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_wnv_all : DICT_NEXTSTRAIN_default_wnv_all,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_wnv_1a : DICT_NEXTSTRAIN_default_wnv_1A,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_wnv_2 : DICT_NEXTSTRAIN_default_wnv_2,
+	#SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_measles : DICT_NEXTSTRAIN_default_measles
 }
 
 ### if None pass

@@ -502,6 +502,9 @@ class SoftwareNames(object):
     SOFTWARE_NEXTSTRAIN_05_12_2025 = os.path.join(
         settings.DIR_SOFTWARE, "nextstrain/nextstrain_05_12_2025.sh"
     )
+    SOFTWARE_NEXTSTRAIN_06_2026 = os.path.join(
+        settings.DIR_SOFTWARE, "nextstrain/nextstrain_06_2026.sh"
+    )    
 
     ### Several types of builds for NEXTSTRAIN
     SOFTWARE_NEXTSTRAIN_BUILDS_BASE = os.path.join(
@@ -522,10 +525,13 @@ class SoftwareNames(object):
 
     SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y = "flu_h3n2_12y"
     SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_051225 = "flu_h3n2_051225"
+    SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_051225_na = "flu_h3n2_051225_na"
     SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y = "flu_h1n1pdm_12y"
     SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_051225 = "flu_h1n1pdm_051225"
+    SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_051225_na = "flu_h1n1pdm_051225_na"
     SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y = "flu_vic_12y"
     SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_051225 = "flu_vic_051225"
+    SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_051225_na = "flu_vic_051225_na"
     SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y = "flu_yam_12y"
 
     SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2 = "avianflu_h5n1_pb2"
@@ -540,10 +546,13 @@ class SoftwareNames(object):
     SOFTWARE_NEXTSTRAIN_BUILDS_flu = [
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_051225,
+        SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_051225_na,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_051225,
+        SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_051225_na,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_051225,
+        SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_051225_na,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y,
     ]
 
@@ -584,16 +593,21 @@ class SoftwareNames(object):
     SOFTWARE_NEXTSTRAIN_BUILDS_wnv_1a = "wnv_1a"
     SOFTWARE_NEXTSTRAIN_BUILDS_wnv_2 = "wnv_2"
 
+    # SOFTWARE_NEXTSTRAIN_BUILDS_measles = "measles"
+
     SOFTWARE_NEXTSTRAIN_BUILDS = [
         SOFTWARE_NEXTSTRAIN_BUILDS_generic,
         SOFTWARE_NEXTSTRAIN_BUILDS_generic_time,
         SOFTWARE_NEXTSTRAIN_BUILDS_ncov,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_051225,
+        SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_051225_na,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_051225,
+        SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_051225_na,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_051225,
+        SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_051225_na,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y,
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha,
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na,
@@ -616,18 +630,22 @@ class SoftwareNames(object):
         SOFTWARE_NEXTSTRAIN_BUILDS_wnv_all,
         SOFTWARE_NEXTSTRAIN_BUILDS_wnv_1a,
         SOFTWARE_NEXTSTRAIN_BUILDS_wnv_2,
+        # SOFTWARE_NEXTSTRAIN_BUILDS_measles
     ]
     SOFTWARE_NEXTSTRAIN_BUILDS_DESC = [
         [SOFTWARE_NEXTSTRAIN_BUILDS_generic, "Generic"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_generic_time, "Generic with Time Tree"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_ncov, "SARS-CoV-2"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y, "Influenza (H3N2 HA 12years)"],
-        [SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_051225, "Influenza (H3N2 HA) NEW"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_051225, "Influenza (H3N2 HA)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_051225_na, "Influenza (H3N2 NA)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y, "Influenza (H1N1PDM HA 12years)"],
-        [SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_051225, "Influenza (H1N1PDM HA) NEW"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_051225, "Influenza (H1N1PDM HA)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_051225_na, "Influenza (H1N1PDM NA)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y, "Influenza (Vic HA 12years)"],
-        [SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_051225, "Influenza (Vic HA) NEW"],
-        [SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y, "Influenza (Yam HA 12years)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_051225, "Influenza (Vic HA)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_051225_na, "Influenza (Vic NA)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y, "Influenza (Yam HA) OLD"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha, "Avian Influenza (H5N1 HA)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na, "Avian Influenza (H5N1 NA)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2, "Avian Influenza (H5N1 PB2)"],
@@ -649,6 +667,7 @@ class SoftwareNames(object):
         [SOFTWARE_NEXTSTRAIN_BUILDS_wnv_all, "West Nile Virus (all)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_wnv_1a, "West Nile Virus (1a)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_wnv_2, "West Nile Virus (2)"],
+        # [SOFTWARE_NEXTSTRAIN_BUILDS_measles, "Measles"],
     ]
 
     SOFTWARE_NEXTSTRAIN_BUILDS_REF_DICT = {
@@ -658,10 +677,13 @@ class SoftwareNames(object):
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y: SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y,
         # To void cross-hits we keep just one h3n2 as reference
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_051225: SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y,
+        SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_051225_na: SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_051225_na,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y: SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_051225: SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y,
+        SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_051225_na: SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_051225_na,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y: SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_051225: SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y,
+        SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_051225_na: SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_051225_na,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y: SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y,
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha: SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha,
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na: SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na,
@@ -684,6 +706,7 @@ class SoftwareNames(object):
         SOFTWARE_NEXTSTRAIN_BUILDS_wnv_all: SOFTWARE_NEXTSTRAIN_BUILDS_wnv_all,
         SOFTWARE_NEXTSTRAIN_BUILDS_wnv_1a: SOFTWARE_NEXTSTRAIN_BUILDS_wnv_1a,
         SOFTWARE_NEXTSTRAIN_BUILDS_wnv_2: SOFTWARE_NEXTSTRAIN_BUILDS_wnv_2,
+        # SOFTWARE_NEXTSTRAIN_BUILDS_measles: SOFTWARE_NEXTSTRAIN_BUILDS_measles
     }
 
     # default build

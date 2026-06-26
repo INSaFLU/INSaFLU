@@ -1252,10 +1252,13 @@ class ShowDatasetsConsensusView(LoginRequiredMixin, ListView):
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_ncov: Reference.SPECIES_SARS_COV_2,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y: Reference.SPECIES_INFLUENZA,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_051225: Reference.SPECIES_INFLUENZA,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_051225_na: Reference.SPECIES_INFLUENZA,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y: Reference.SPECIES_INFLUENZA,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_051225: Reference.SPECIES_INFLUENZA,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_051225_na: Reference.SPECIES_INFLUENZA,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y: Reference.SPECIES_INFLUENZA,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_051225: Reference.SPECIES_INFLUENZA,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_051225_na: Reference.SPECIES_INFLUENZA,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y: Reference.SPECIES_INFLUENZA,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha: Reference.SPECIES_INFLUENZA,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na: Reference.SPECIES_INFLUENZA,
@@ -1278,6 +1281,7 @@ class ShowDatasetsConsensusView(LoginRequiredMixin, ListView):
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_wnv_all: Reference.SPECIES_WNV,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_wnv_1a: Reference.SPECIES_WNV,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_wnv_2: Reference.SPECIES_WNV,
+            #SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_measles: Reference.SPECIES_MEASLES,
         }
 
         build = "NA"

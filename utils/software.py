@@ -5747,6 +5747,7 @@ class Software(object):
 
         # copy the base nexstrain folder to a temp folder
         # TODO Make a function copy_folder in utils
+
         build = "seasonal-flu"
         cmd = (
             "cp -r "
@@ -5774,18 +5775,19 @@ class Software(object):
         # add sequences.fasta and metadata.tsv to data folder
         self.utils.copy_file(
             alignments,
-            os.path.join(temp_dir, "data", strain, "ha.fasta"),
+            os.path.join(temp_dir, "data", strain, segment+".fasta"),
         )
         self.utils.copy_file(
             metadata, 
-            os.path.join(temp_dir, "data", strain, "metadata_ha.tsv")
+            os.path.join(temp_dir, "data", strain, "metadata.tsv")
         )
 
         # Now run Nextstrain
-        cmd = "{} build --native {} --configfile profiles/insaflu_{}_ha.yaml --cores {} 2> {}/stderr.txt > {}/stdout.txt".format(
-            SoftwareNames.SOFTWARE_NEXTSTRAIN_05_12_2025,
+        cmd = "{} build {} --configfile profiles/insaflu_{}_{}.yaml --cores {} 2> {}/stderr.txt > {}/stdout.txt".format(
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_06_2026,
             temp_dir,
             strain,
+            segment,
             str(cores),
             temp_dir,
             temp_dir,
@@ -5803,7 +5805,7 @@ class Software(object):
         cmd = "{} --tree {} --output-tree {}".format(
             os.path.join(settings.DIR_SOFTWARE, "nextstrain/auspice_tree_to_table.sh"),
             os.path.join(
-                temp_dir, "auspice", strain + "_ha.json"
+                temp_dir, "auspice", strain + "_"+segment+".json"
             ),
             tree_file,
         )
@@ -5855,7 +5857,7 @@ class Software(object):
         alignment_file = self.utils.get_temp_file("aligned.fasta", sz_type="fasta")
         self.utils.move_file(
             os.path.join(
-                temp_dir, "builds", strain, "ha", "aligned.fasta"
+                temp_dir, "builds", strain, segment, "aligned.fasta"
             ),
             alignment_file,
         )
@@ -6029,6 +6031,121 @@ class Software(object):
         )
 
         self.utils.remove_dir(temp_dir)
+
+        return [tree_file, alignment_file, auspice_zip]
+
+
+    def run_nextstrain_measles(
+        self, alignments, metadata, cores=1
+    ):
+        """
+        run nextstrain
+        :param  alignments: sequence file with nucleotides
+        :param  metadata: tabbed table file with properties
+        :param  cores: the number of cores to be used in nextstrain (defaults to 1)
+        :out temp folder with all data (including results)
+        """
+
+        # Create a temp folder
+        temp_dir = self.utils.get_temp_dir()
+
+        # copy the base nexstrain folder to a temp folder
+        # TODO Make a function copy_folder in utils
+        build = "measles"
+        cmd = (
+            "cp -r "
+            + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE
+            + "/"
+            + build
+            + "/phylogenetic"
+            + "/* "
+            + temp_dir
+        )
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise Exception(
+                "Fail to copy nexstrain folder "
+                + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE
+                + "/"
+                + build
+                + "/* "
+                + temp_dir
+            )
+
+        # add sequences.fasta and metadata.tsv to data folder
+        self.utils.copy_file(
+            alignments,
+            os.path.join(temp_dir, "results", "sequences.fasta"),
+        )
+        self.utils.copy_file(
+            metadata, 
+            os.path.join(temp_dir, "results", "metadata.tsv")
+        )
+
+        self.utils.remove_temp_file(os.path.join(temp_dir, "Snakefile"))
+
+        self.utils.copy_file(os.path.join(temp_dir, "Snakefile_insaflu"),
+                        os.path.join(temp_dir, "Snakefile"))
+
+        cmd = "mkdir -p {}".format(
+            os.path.join(temp_dir, "auspice", "logs"),
+        )
+        exit_status = os.system(cmd)
+
+        # Now run Nextstrain
+        cmd = "{} build --native {} --cores {} 2> {}/auspice/logs/stderr.txt > {}/auspice/logs/stdout.txt".format(
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_05_12_2025,
+            temp_dir,
+            str(cores),
+            temp_dir,
+            temp_dir,
+        )
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise CmdException(
+                message="Fail to run nextstrain.", cmd=cmd, output_path=temp_dir
+            )
+
+        tree_file = self.utils.get_temp_file("treefile.nwk", sz_type="nwk")
+        # Convert json to tree
+        cmd = "{} --tree {} --output-tree {}".format(
+            os.path.join(settings.DIR_SOFTWARE, "nextstrain/auspice_tree_to_table.sh"),
+            os.path.join(
+                temp_dir, "auspice", "measles_genome.json"
+            ),
+            tree_file,
+        )
+
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise CmdException(
+                message="Fail to run conversion of json to tree.",
+                cmd=cmd,
+                output_path=temp_dir,
+            )
+
+
+        # Collect results
+        zip_out = self.zip_files_in_path(os.path.join(temp_dir, "auspice"))
+        auspice_zip = self.utils.get_temp_file("tempfile.zip", sz_type="zip")
+        self.utils.move_file(zip_out, auspice_zip)
+
+        # results/aligned_h3n2_ha_12y.fasta
+        alignment_file = self.utils.get_temp_file("aligned.fasta", sz_type="fasta")
+        self.utils.move_file(
+            os.path.join(
+                temp_dir, "results", "genome", "aligned.fasta"
+            ),
+            alignment_file,
+        )
+
+        #self.utils.remove_dir(temp_dir)
 
         return [tree_file, alignment_file, auspice_zip]
 

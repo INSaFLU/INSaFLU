@@ -658,11 +658,18 @@ def deploy_ProjectPI(request):
                 runs_to_deploy = software_utils.check_and_set_runs_to_deploy_sample(sample)
 
                 if len(runs_to_deploy) > 0:
+                    (job_name_wait, job_name) = user.profile.get_name_slurm_seq(
+                        PICS.PROCESS_TYPE_DEPLOYMENT, Constants.PROCESS_REGULAR
+                    )
+
                     for sample, _ in runs_to_deploy.items():
+
                         taskID = process_SGE.set_submit_televir_sample(
                             user=user,
                             project_pk=project.pk,
                             sample_pk=sample.pk,
+                            job_name=job_name,
+                            vect_job_name_wait=[job_name_wait]
                         )
 
                     data["is_deployed"] = True
@@ -780,11 +787,18 @@ def submit_televir_project_sample(request):
 
         try:
             if len(runs_to_deploy) > 0:
+
+                (job_name_wait, job_name) = user.profile.get_name_slurm_seq(
+                    PICS.PROCESS_TYPE_DEPLOYMENT, Constants.PROCESS_REGULAR
+                )
+
                 for sample, _ in runs_to_deploy.items():
                     _ = process_SGE.set_submit_televir_sample(
                         user=request.user,
                         project_pk=project.pk,
                         sample_pk=sample.pk,
+                        job_name = job_name,
+                        vect_job_name_wait=[job_name_wait]
                     )
 
                 data["is_deployed"] = True

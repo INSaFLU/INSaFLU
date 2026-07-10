@@ -17,6 +17,9 @@ from pathlib import Path
 
 
 class Televir_Metadata_Constants:
+
+    MODEL_PORT = 8000
+
     SOURCE = {
         "ENVSDIR": Televir_Directory_Constants.environments_directory,
         "CONDA": Televir_Directory_Constants.conda_directory,
@@ -207,9 +210,7 @@ class Constants(object):
     PROCESS_televir = "tv"
     ## set_televir_map_specific
     PROCESS_mapping = "m"
-    ## set_televir
-
-    
+    ## set_televir    
 
     ### separators
     SEPARATOR_COMMA = ","

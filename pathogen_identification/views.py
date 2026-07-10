@@ -2898,7 +2898,7 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
         context["files"] = {}
         # 1. parameters
         params_file_path = run_main_pipeline.params_file_path
-        params_df.drop(columns=["leaves"]).to_csv(
+        params_df.to_csv(
             params_file_path, index=False, sep="\t", header=True
         )
         if os.path.exists(params_file_path):

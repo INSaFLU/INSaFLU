@@ -1096,7 +1096,7 @@ class ProcessSched(object):
             raise Exception("Fail to submit the job.")
         return job_id
 
-    def set_submit_televir_sample(self, user, project_pk: int, sample_pk: int):
+    def set_submit_televir_sample(self, user, project_pk: int, sample_pk: int, job_name, vect_job_name_wait):
         """
         submit the job to televir
         """
@@ -1117,16 +1117,14 @@ class ProcessSched(object):
         self.logger_production.info("Processing: " + ";".join(vect_command))
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         queue_name = user.profile.queue_name_slurm
-        (job_name_wait, job_name) = user.profile.get_name_slurm_seq(
-            PICS.PROCESS_TYPE_DEPLOYMENT, Constants.PROCESS_LINK
-        )
+
         path_file = self.set_script_run_slurm(
             outdir_job,
             queue_name,
             vect_command,
             job_name,
             True,
-            [job_name_wait],
+            vect_job_name_wait,
         )
         try:
             job_id = self.submit_job(path_file)
@@ -1175,7 +1173,7 @@ class ProcessSched(object):
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         queue_name = user.profile.queue_name_slurm
         (job_name_wait, job_name) = user.profile.get_name_slurm_seq(
-            Constants.PROCESS_televir, Constants.PROCESS_LINK
+            Constants.PROCESS_televir, Constants.PROCESS_REGULAR
         )
         path_file = self.set_script_run_slurm(
             outdir_job,
@@ -1219,7 +1217,7 @@ class ProcessSched(object):
         outdir_job = self.utils.get_temp_dir()
 
         vect_command = [
-            "python3 {} submit_televir_sample_panel_run --user_id {} --sample_id {} --leaf_id {} {} {} {}-o {}".format(
+            "python3 {} submit_televir_sample_panel_run --user_id {} --sample_id {} --leaf_id {} {} {} {} -o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user_pk,
                 sample_pk,
@@ -1235,7 +1233,7 @@ class ProcessSched(object):
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         queue_name = user.profile.queue_name_slurm
         (job_name_wait, job_name) = user.profile.get_name_slurm_seq(
-            Constants.PROCESS_televir, Constants.PROCESS_LINK
+            Constants.PROCESS_televir, Constants.PROCESS_mapping
         )
         path_file = self.set_script_run_slurm(
             outdir_job,

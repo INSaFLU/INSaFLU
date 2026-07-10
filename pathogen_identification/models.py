@@ -1661,6 +1661,38 @@ class ReferenceTaxid(models.Model):
 
     def __str__(self):
         return self.taxid
+    
+    @property
+    def lineage(self):
+        lineage = []
+        if self.tax_domain:
+            lineage.append(self.tax_domain.name)
+        if self.tax_phylum:
+            lineage.append(self.tax_phylum.name)
+        if self.tax_class:
+            lineage.append(self.tax_class.name)
+        if self.tax_order:
+            lineage.append(self.tax_order.name)
+        if self.tax_family:
+            lineage.append(self.tax_family.name)
+        if self.tax_genus:
+            lineage.append(self.tax_genus.name)
+        if self.tax_species:
+            lineage.append(self.tax_species.name)
+
+        return ";".join(lineage)
+    
+    @property
+    def family(self):
+        return self.tax_family.name if self.tax_family else None
+    
+    @property
+    def genus(self):
+        return self.tax_genus.name if self.tax_genus else None
+    
+    @property
+    def species(self):
+        return self.tax_species.name if self.tax_species else None
 
 
 class ReferenceSourceFile(models.Model):

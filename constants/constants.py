@@ -19,6 +19,9 @@ from pathlib import Path
 class Televir_Metadata_Constants:
 
     MODEL_PORT = 8000
+    RECALL_MODEL = "gp_clf"
+    TARGET_RECALL = 0.95
+    RECALL_MODEL_TAX_LEVEL = "family"
 
     SOURCE = {
         "ENVSDIR": Televir_Directory_Constants.environments_directory,

@@ -1765,7 +1765,7 @@ class ReportSorter:
                 break
 
         from django.db import transaction
-        from pathogen_identification.models import Taxon, ReferenceTaxid
+        from pathogen_identification.models import ReferenceTaxid
 
         with transaction.atomic():
             report_aggregate = ReportAggregate.objects.create(

@@ -5,7 +5,7 @@ import requests
 
 class MLAPIClient:
     def __init__(self, timeout: int = 30):
-        base_url = f"http://localhost:{Televir_Metadata_Constants.MODEL_PORT}"
+        base_url = f"http://insaflu-ml-app:{Televir_Metadata_Constants.MODEL_PORT}"
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
 
@@ -33,20 +33,23 @@ class MLAPIClient:
     def predict_recall_cutoff(
         self,
         rows: list[dict[str, Any]],
-        model: str = "gp_clf",
-        tax_level: str = "order",
-        target_recall: float | None = None,
+        model: str = Televir_Metadata_Constants.RECALL_MODEL,
+        tax_level: str = Televir_Metadata_Constants.RECALL_MODEL_TAX_LEVEL,
+        target_recall: float | None = Televir_Metadata_Constants.TARGET_RECALL,
         confidence: float | None = None,
     ) -> dict[str, Any]:
+
         body: dict[str, Any] = {
             "model": model,
             "rows": rows,
             "tax_level": tax_level,
         }
+
         if target_recall is not None:
             body["target_recall"] = target_recall
         if confidence is not None:
             body["confidence"] = confidence
+
         return self._post("/predict_recall_cutoff_from_table", body)
 
     def predict_clustering_threshold(self, features: dict[str, Any]) -> dict[str, Any]:
@@ -54,3 +57,4 @@ class MLAPIClient:
 
     def predict_composition_stop_traversal(self, features: dict[str, float]) -> dict[str, Any]:
         return self._post("/predict_composition_stop_traversal", {"features": features})
+

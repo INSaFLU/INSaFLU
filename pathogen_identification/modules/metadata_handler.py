@@ -5,6 +5,7 @@ from typing import Dict, List, Optional
 import pandas as pd
 
 from pathogen_identification.models import (PIProject_Sample, RawReference,
+                                            ReferenceTaxid, Taxond,
                                             RawReferenceCompoundModel,
                                             ReferenceSource,
                                             ReferenceSourceFileMap, RunMain)
@@ -13,7 +14,7 @@ from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
 from pathogen_identification.utilities.utilities_general import (merge_classes,
                                                                  simplify_name)
 from pathogen_identification.utilities.utilities_views import RawReferenceUtils
-
+from constants.constants_taxonomy import TaxonConstants
 
 def determine_taxid_in_file(taxid, df: pd.DataFrame):
     """
@@ -177,8 +178,6 @@ class RunMetadataHandler:
     def merge_sample_references_ensemble(
         self,
         sample_registered: PIProject_Sample,
-        max_taxids: Optional[int] = None,
-        max_remap: int = 15,
     ):
 
         reference_utils = RawReferenceUtils(sample_registered)
@@ -186,9 +185,6 @@ class RunMetadataHandler:
         compound_refs: List[RawReferenceCompoundModel] = (
             reference_utils.query_sample_compound_references_regressive()
         )
-
-        if max_taxids is not None:
-            compound_refs = compound_refs[:max_taxids]
 
         remap_plan = []
         # remap_targets = []
@@ -262,6 +258,10 @@ class RunMetadataHandler:
             report_1,
             report_2,
         )
+
+        if self.rclass.empty is False:
+            taxid_cutoff = self._predict_cutoff(self.rclass)
+            self.rclass = self.rclass.sort_values(by="counts", ascending=False).head(taxid_cutoff)
 
         if self.merged_targets.empty:
             self.merge_reports_clean(
@@ -767,7 +767,7 @@ class RunMetadataHandler:
         self.rclass = self.results_collect_metadata(report_1)
         self.aclass = self.results_collect_metadata(report_2)
 
-    def get_taxid_representative_accid(self, taxid: int) -> str:
+    def get_taxid_representative_accid(self, taxid: int) -> Optional[str]:
         """
         Return representative accession for a given taxid.
         """
@@ -779,6 +779,50 @@ class RunMetadataHandler:
             return "-"
         else:
             return sources[0].accid
+    
+    @staticmethod
+    def _get_taxid_taxonomy(taxid: str, level= TaxonConstants.RANK_FAMILY) -> Optional[str]:
+        """
+        Return the taxonomy for a given taxid at a given level.
+        """
+        try:
+            reference_taxid = ReferenceTaxid.objects.get(taxid=taxid)
+            
+            if level == TaxonConstants.RANK_FAMILY:
+                return reference_taxid.family
+            elif level == TaxonConstants.RANK_GENUS:
+                return reference_taxid.genus
+            elif level == TaxonConstants.RANK_SPECIES:
+                return reference_taxid.species
+            else:
+                raise ValueError(f"Invalid level: {level}")
+        except ReferenceTaxid.DoesNotExist:
+            return None
+    
+    @staticmethod
+    def _predict_cutoff(merged_table: pd.DataFrame) -> int:
+        """
+        Predict cutoff for a given merged table."""
+
+        if any(x not in merged_table.columns for x in ["taxid", "counts"]):
+            raise ValueError("Merged table must contain 'taxid' and 'counts' columns.")
+
+        rows = [
+            {
+                "taxid": row.taxid, 
+                "family": RunMetadataHandler._get_taxid_taxonomy(row.taxid, level=TaxonConstants.RANK_FAMILY),
+                "total_uniq_reads": row.counts,
+            }
+            for _, row in merged_table.iterrows()
+        ]
+
+        from pathogen_identification.utilities.ml_api_client import MLAPIClient
+
+        ml_api_client = MLAPIClient()
+        cutoff_dict = ml_api_client.predict_recall_cutoff(rows)
+        cut_off_perc = len(merged_table) * cutoff_dict["predicted_cutoff"]
+        return int(cut_off_perc)
+
 
     def merge_reports_clean(
         self,
@@ -806,7 +850,7 @@ class RunMetadataHandler:
             raw_targets = raw_targets.merge(taxid_descriptions, on="taxid", how="left")
 
         raw_targets["status"] = (
-            False  # raw_targets["taxid"].isin(targets["taxid"].to_list())
+            False  #
         )
 
         self.raw_targets = raw_targets

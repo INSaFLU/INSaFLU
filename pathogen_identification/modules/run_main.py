@@ -1513,7 +1513,7 @@ class RunMainTree_class(Run_Deployment_Methods):
         # reference_table = reference_utils.sample_reference_tables()
 
         self.metadata_tool.merge_sample_references_ensemble(
-            self.sample_registered, max_remap=1
+            self.sample_registered
         )
 
         self.prep_REMAPPING()
@@ -1594,8 +1594,6 @@ class RunMainTree_class(Run_Deployment_Methods):
     def plan_combined_remapping(self):
         self.metadata_tool.merge_sample_references_ensemble(
             self.sample_registered,
-            max_taxids=self.remap_params.max_taxids,
-            max_remap=self.remap_params.max_accids,
         )
 
         self.import_from_remap_prep()

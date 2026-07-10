@@ -2247,6 +2247,9 @@ class RawReferenceCompound:
         self.standard_score = 0
         self.ensemble_ranking = None
         self.global_ranking = None
+        self.reads_counts = 0
+        self.contig_counts = 0
+
 
         if raw_reference.run.sample is not None:
             self.find_across_sample(raw_reference.run.sample)
@@ -2762,6 +2765,8 @@ class RawReferenceUtils:
             compound_ref.standard_score = max(score["standard_score"])
             compound_ref.global_ranking = min(score["global_ranking"])
             compound_ref.ensemble_ranking = min(score["ensemble_ranking"])
+            compound_ref.reads_counts = max(score["read_counts"])
+            compound_ref.contig_counts = max(score["contig_counts"])
 
     def update_scores_compound_references(
         self, compount_refs: List[RawReferenceCompound]
@@ -2883,6 +2888,8 @@ class RawReferenceUtils:
             compound_ref_model.standard_score = compound_ref.standard_score
             compound_ref_model.global_ranking = compound_ref.global_ranking
             compound_ref_model.ensemble_ranking = compound_ref.ensemble_ranking
+            compound_ref_model.reads_counts = compound_ref.reads_counts
+            compound_ref_model.contig_counts = compound_ref.contig_counts
             compound_ref_model.manual_insert = compound_ref.manual_insert
             compound_ref_model.mapped_final_report = compound_ref.mapped_final_report
             compound_ref_model.mapped_raw_reference = compound_ref.mapped_raw_reference

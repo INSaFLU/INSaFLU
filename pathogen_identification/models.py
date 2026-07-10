@@ -2242,6 +2242,8 @@ class RawReferenceCompoundModel(models.Model):
     standard_score = models.FloatField(blank=True, null=True)
     global_ranking = models.IntegerField(blank=True, null=True)
     ensemble_ranking = models.IntegerField(blank=True, null=True)
+    read_counts = models.IntegerField(default=0)
+    contig_counts = models.IntegerField(default=0)
     run_count = models.IntegerField(default=0)
     screening_count = models.IntegerField(default=0)
 

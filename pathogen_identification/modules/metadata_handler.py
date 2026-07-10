@@ -5,7 +5,7 @@ from typing import Dict, List, Optional
 import pandas as pd
 
 from pathogen_identification.models import (PIProject_Sample, RawReference,
-                                            ReferenceTaxid, Taxond,
+                                            ReferenceTaxid, Taxon,
                                             RawReferenceCompoundModel,
                                             ReferenceSource,
                                             ReferenceSourceFileMap, RunMain)
@@ -250,7 +250,7 @@ class RunMetadataHandler:
         self,
         report_1: pd.DataFrame,
         report_2: pd.DataFrame,
-        max_remap: int = 15,
+        max_remap: int = 2,
         taxid_limit: int = 12,
     ):
 
@@ -265,7 +265,7 @@ class RunMetadataHandler:
 
         if self.merged_targets.empty:
             self.merge_reports_clean(
-                taxid_limit=taxid_limit,
+                taxid_limit=1000,
             )
 
         #######
@@ -430,9 +430,6 @@ class RunMetadataHandler:
         self.accid_register(df)
 
         df = self.db_get_taxid_descriptions(df)
-        # df = self.entrez_get_taxid_descriptions(df)
-        # df = self.entrez_conn.entrez_get_taxid_descriptions(df)
-        # df = self.merge_report_to_metadata_description(df)
 
         df = df.reset_index(drop=True)
 

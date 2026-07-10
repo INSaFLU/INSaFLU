@@ -177,7 +177,7 @@ class RunMetadataHandler:
 
     def merge_sample_references_ensemble(
         self,
-        sample_registered: PIProject_Sample,
+        sample_registered: PIProject_Sample, 
     ):
 
         reference_utils = RawReferenceUtils(sample_registered)

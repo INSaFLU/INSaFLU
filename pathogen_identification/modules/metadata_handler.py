@@ -174,6 +174,9 @@ class RunMetadataHandler:
                 )
 
                 accids_replete += 1
+    
+    #def filter(compound_refs: List[RawReferenceCompoundModel], project_pk: int) -> List[RawReferenceCompoundModel]:
+
 
     def merge_sample_references_ensemble(
         self,
@@ -181,7 +184,8 @@ class RunMetadataHandler:
     ):
 
         reference_utils = RawReferenceUtils(sample_registered)
-        ### ############################################################# ###
+        ##################################################################
+        ##################################################################
         compound_refs: List[RawReferenceCompoundModel] = (
             reference_utils.query_sample_compound_references_regressive()
         )
@@ -252,6 +256,7 @@ class RunMetadataHandler:
         report_2: pd.DataFrame,
         max_remap: int = 2,
         taxid_limit: int = 12,
+        project_pk: Optional[int] = None
     ):
 
         self.process_reports(
@@ -260,7 +265,7 @@ class RunMetadataHandler:
         )
 
         if self.rclass.empty is False:
-            taxid_cutoff = self._predict_cutoff(self.rclass)
+            taxid_cutoff = self._predict_cutoff(self.rclass, project_pk)
             self.rclass = self.rclass.sort_values(by="counts", ascending=False).head(taxid_cutoff)
 
         if self.merged_targets.empty:
@@ -797,7 +802,7 @@ class RunMetadataHandler:
             return None
     
     @staticmethod
-    def _predict_cutoff(merged_table: pd.DataFrame) -> int:
+    def _predict_cutoff(merged_table: pd.DataFrame, project_pk: Optional[int]) -> int:
         """
         Predict cutoff for a given merged table."""
 
@@ -808,15 +813,26 @@ class RunMetadataHandler:
             {
                 "taxid": row.taxid, 
                 "family": RunMetadataHandler._get_taxid_taxonomy(row.taxid, level=TaxonConstants.RANK_FAMILY),
+                "order": RunMetadataHandler._get_taxid_taxonomy(row.taxid, level=TaxonConstants.RANK_ORDER),
                 "total_uniq_reads": row.counts,
             }
             for _, row in merged_table.iterrows()
         ]
+        rows = sorted(rows, key=lambda x: x["total_uniq_reads"], reverse=True)
 
         from pathogen_identification.utilities.ml_api_client import MLAPIClient
+        from pathogen_identification.utilities.televir_parameters import TelevirParameters
+        from constants.software_names import SoftwareNames
+
+        model_type = TelevirParameters.get_recall_model(project_pk=project_pk)
+
+        if model_type == SoftwareNames.SOFTWARE_REMAP_PARAMS_recall_default_model:
+            remap_params = TelevirParameters.get_remap_software(project_pk=project_pk)
+            return remap_params.max_taxids
 
         ml_api_client = MLAPIClient()
-        cutoff_dict = ml_api_client.predict_recall_cutoff(rows)
+        cutoff_dict = ml_api_client.predict_recall_cutoff(rows, model= model_type)
+
         cut_off_perc = len(merged_table) * cutoff_dict["predicted_cutoff"]
         return int(cut_off_perc)
 

@@ -2765,7 +2765,7 @@ class RawReferenceUtils:
             compound_ref.standard_score = max(score["standard_score"])
             compound_ref.global_ranking = min(score["global_ranking"])
             compound_ref.ensemble_ranking = min(score["ensemble_ranking"])
-            compound_ref.reads_counts = max(score["read_counts"])
+            compound_ref.reads_counts = sum(score["read_counts"])
             compound_ref.contig_counts = max(score["contig_counts"])
 
     def update_scores_compound_references(
@@ -2888,7 +2888,7 @@ class RawReferenceUtils:
             compound_ref_model.standard_score = compound_ref.standard_score
             compound_ref_model.global_ranking = compound_ref.global_ranking
             compound_ref_model.ensemble_ranking = compound_ref.ensemble_ranking
-            compound_ref_model.reads_counts = compound_ref.reads_counts
+            compound_ref_model.read_counts = compound_ref.reads_counts
             compound_ref_model.contig_counts = compound_ref.contig_counts
             compound_ref_model.manual_insert = compound_ref.manual_insert
             compound_ref_model.mapped_final_report = compound_ref.mapped_final_report
@@ -2909,6 +2909,8 @@ class RawReferenceUtils:
                 standard_score=compound_ref.standard_score,
                 global_ranking=compound_ref.global_ranking,
                 ensemble_ranking=compound_ref.ensemble_ranking,
+                read_counts=compound_ref.reads_counts,
+                contig_counts = compound_ref.contig_counts,
                 manual_insert=compound_ref.manual_insert,
                 mapped_final_report=compound_ref.mapped_final_report,
                 mapped_raw_reference=compound_ref.mapped_raw_reference,

@@ -2719,6 +2719,39 @@ class DefaultParameters(object):
         )
         vect_parameters.append(parameter)
 
+        parameter = Parameter()
+        parameter.name = SoftwareNames.SOFTWARE_REMAP_PARAMS_clustering_model_type
+        parameter.parameter = SoftwareNames.SOFTWARE_REMAP_PARAMS_clustering_default_model
+        parameter.type_data = Parameter.PARAMETER_radio_button
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True
+        parameter.sequence_out = 4
+        parameter.range_available = ""
+        parameter.range_max = ""
+        parameter.range_min = ""
+        parameter.description = "Composition Clustering Model to Use - tree construction and hit clustering."
+        vect_parameters.append(parameter)
+
+
+        parameter = Parameter()
+        parameter.name = SoftwareNames.SOFTWARE_REMAP_PARAMS_recall_model_type
+        parameter.parameter = SoftwareNames.SOFTWARE_REMAP_PARAMS_recall_default_model
+        parameter.type_data = Parameter.PARAMETER_radio_button
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True
+        parameter.sequence_out = 5
+        parameter.range_available = ""
+        parameter.range_max = ""
+        parameter.range_min = ""
+        parameter.description = "Recall Filter Model to Use."
+        vect_parameters.append(parameter)
+
         return vect_parameters
 
     def get_prinseq_defaults(

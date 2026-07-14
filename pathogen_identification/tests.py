@@ -990,7 +990,7 @@ class MetadataManagementTests(TestCase):
         )
 
         metadata_tool.match_and_select_targets(
-            reads_report, contig_report, max_remap=3, taxid_limit=3
+            reads_report, contig_report, max_remap=3, taxid_limit=3, project_pk = self.project_ont.pk
         )
 
         self.assertTrue(metadata_tool.merged_targets.shape[0] == 2)
@@ -1004,7 +1004,7 @@ class MetadataManagementTests(TestCase):
             pd.DataFrame(columns=["taxid", "counts"]),
             contig_report,
             max_remap=3,
-            taxid_limit=3,
+            taxid_limit=3, project_pk = self.project_ont.pk
         )
 
         self.assertTrue(metadata_tool.merged_targets.iloc[0]["source"] == "contigs")
@@ -1016,6 +1016,7 @@ class MetadataManagementTests(TestCase):
             contig_report,
             max_remap=3,
             taxid_limit=3,
+            project_pk = self.project_ont.pk
         )
 
         self.assertTrue(metadata_tool.merged_targets.iloc[0]["source"] == "contigs")
@@ -1030,6 +1031,7 @@ class MetadataManagementTests(TestCase):
             self.contig_report,
             max_remap=3,
             taxid_limit=3,
+            project_pk = self.project_ont.pk
         )
 
         self.assertTrue(len(metadata_tool.remap_targets) == 1)

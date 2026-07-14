@@ -144,6 +144,45 @@ class SoftwareForm(forms.ModelForm):
                     )
                 dt_fields[parameter.get_unique_id()].help_text = escape(help_text)
 
+            elif parameter.is_radio_button():
+                if parameter.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_recall_model_type:
+                    from pathogen_identification.utilities.ml_api_client import MLAPIClient
+                    client = MLAPIClient()
+                    models= client.models_recall_cutoff()
+                    model_list = [
+                        [SoftwareNames.SOFTWARE_REMAP_PARAMS_recall_default_model, SoftwareNames.SOFTWARE_REMAP_PARAMS_recall_default_model]
+                    ]
+                    list_data = model_list + [
+                        [
+                            c.get('model_type', ''), f"{c.get('description', '')} {c.get('date_trained', '')}"
+                         ] for c in models_clustering.values()
+                         ]                    
+
+                elif parameter.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_clustering_model_type:
+                    from pathogen_identification.utilities.ml_api_client import MLAPIClient
+                    client = MLAPIClient()
+                    models_clustering= client.models_composition()
+                    model_list = [
+                        [SoftwareNames.SOFTWARE_REMAP_PARAMS_clustering_default_model, SoftwareNames.SOFTWARE_REMAP_PARAMS_clustering_default_model]
+                    ]
+                    list_data = model_list + [
+                        [
+                            c.get('model_type', ''), f"{c.get('description', '')} {c.get('date_trained', '')}"
+                         ] for c in models_clustering.values()
+                         ]
+
+                else:
+                    list_data = [[parameter.parameter, parameter.parameter]]
+                
+                dt_fields[parameter.get_unique_id()] = forms.ChoiceField(
+                    choices=list_data, widget=forms.RadioSelect
+                )
+                dt_fields[parameter.get_unique_id()].help_text = escape(parameter.description)
+                dt_fields[parameter.get_unique_id()].label = parameter.name
+                dt_fields[parameter.get_unique_id()].initial = parameter.parameter
+                dt_fields[parameter.get_unique_id()].widget.attrs.update({"class": "checkbox-inline"})
+                dt_fields[parameter.get_unique_id()].widget.attrs.update({"style": "margin-right: 10px;"})
+
             elif parameter.is_multiple_choice():  # Update this condition if needed
                 ## already selected
 
@@ -160,6 +199,8 @@ class SoftwareForm(forms.ModelForm):
                             parameter.software.name.lower(), []
                         )
                     ]
+
+
 
                 elif parameter.software.name == SoftwareNames.SOFTWARE_METAPHLAN_NAME:
                     list_data = [

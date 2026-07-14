@@ -254,6 +254,7 @@ class RunEngine:
             pd.DataFrame(columns=["qseqid", "taxid"]),
             self.max_remap,
             self.taxid_limit,
+            self.project_pk,
         )
 
     def deploy_REMAPPING(self):

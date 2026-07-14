@@ -1161,6 +1161,7 @@ class RunEngine_class(Run_Deployment_Methods):
                 self.contig_classification_drone.classification_report,
                 self.remap_params.max_accids,
                 self.remap_params.max_taxids,
+                self.project_pk,
             )
             self.aclass_summary = self.metadata_tool.aclass
             self.rclass_summary = self.metadata_tool.rclass
@@ -1495,6 +1496,7 @@ class RunMainTree_class(Run_Deployment_Methods):
                 self.contig_classification_drone.classification_report,
                 self.remap_params.max_accids,
                 self.remap_params.max_taxids,
+                self.project_pk,
             )
             self.import_from_remap_prep()
 
@@ -1579,6 +1581,7 @@ class RunMainTree_class(Run_Deployment_Methods):
             self.contig_classification_drone.classification_report,
             max_remap=self.remap_params.max_accids,
             taxid_limit=self.remap_params.max_taxids,
+            project_pk = self.project_pk,
         )
 
         self.import_from_remap_prep()

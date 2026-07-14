@@ -651,6 +651,10 @@ class SoftwareNames(object):
     SOFTWARE_REMAP_PARAMS_max_accids = "--max-accids"
     SOFTWARE_REMAP_PARAMS_include_manual = "--include-manual"
     SOFTWARE_REMAP_PARAMS_include_manual_options = ["OFF", "ON"]
+    SOFTWARE_REMAP_PARAMS_recall_model_type = "--recall-model"
+    SOFTWARE_REMAP_PARAMS_clustering_model_type = "--clustering-model"
+    SOFTWARE_REMAP_PARAMS_recall_default_model = "Fixed"
+    SOFTWARE_REMAP_PARAMS_clustering_default_model = "Fixed"
 
     SOFTWARE_COMBINED_min_score = "--min-score"
     SOFTWARE_COMBINED_include_screening = "--screening"

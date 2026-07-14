@@ -146,30 +146,41 @@ class SoftwareForm(forms.ModelForm):
 
             elif parameter.is_radio_button():
                 if parameter.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_recall_model_type:
-                    from pathogen_identification.utilities.ml_api_client import MLAPIClient
-                    client = MLAPIClient()
-                    models= client.models_recall_cutoff()
-                    model_list = [
+                    list_data = [
                         [SoftwareNames.SOFTWARE_REMAP_PARAMS_recall_default_model, SoftwareNames.SOFTWARE_REMAP_PARAMS_recall_default_model]
                     ]
-                    list_data = model_list + [
-                        [
-                            c.get('model_type', ''), f"{c.get('description', '')} {c.get('date_trained', '')}"
-                         ] for c in models_clustering.values()
-                         ]                    
+
+
+                    try:
+                        from pathogen_identification.utilities.ml_api_client import MLAPIClient
+
+                        client = MLAPIClient()
+                        models_recall= client.models_recall_cutoff()
+                        list_data = model_list + [
+                            [
+                                c.get('model_type', ''), f"{c.get('description', '')} {c.get('date_trained', '')}"
+                            ] for c in models_recall.values()
+                            ]
+                    except Exception as e:
+                        pass          
 
                 elif parameter.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_clustering_model_type:
                     from pathogen_identification.utilities.ml_api_client import MLAPIClient
-                    client = MLAPIClient()
-                    models_clustering= client.models_composition()
-                    model_list = [
+                    list_data = [
                         [SoftwareNames.SOFTWARE_REMAP_PARAMS_clustering_default_model, SoftwareNames.SOFTWARE_REMAP_PARAMS_clustering_default_model]
                     ]
-                    list_data = model_list + [
-                        [
-                            c.get('model_type', ''), f"{c.get('description', '')} {c.get('date_trained', '')}"
-                         ] for c in models_clustering.values()
-                         ]
+
+                    try:
+
+                        client = MLAPIClient()
+                        models_clustering= client.models_composition()
+                        list_data = list_data + [
+                            [
+                                c.get('model_type', ''), f"{c.get('description', '')} {c.get('date_trained', '')}"
+                            ] for c in models_clustering.values()
+                            ]
+                    except Exception as e:
+                        pass
 
                 else:
                     list_data = [[parameter.parameter, parameter.parameter]]

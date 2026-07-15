@@ -1,10 +1,13 @@
-import itertools
 import itertools as it
 import logging
 import os
+import re as _re
+import shutil
+import subprocess
+import tempfile
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -13,12 +16,10 @@ import seaborn as sns
 from Bio import Phylo
 from Bio.Phylo.TreeConstruction import DistanceMatrix, DistanceTreeConstructor
 from scipy.spatial.distance import pdist, squareform
+from scipy.stats import entropy as scipy_entropy
 
-from pathogen_identification.modules.object_classes import Temp_File
 from pathogen_identification.utilities.clade_objects import Clade, CladeFilter
 from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
-from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
-from utils.utils import Utils
 
 ## pairwise matrix by individual reads
 
@@ -223,10 +224,8 @@ def pairwise_shared_reads_old(read_profile_matrix: pd.DataFrame) -> pd.DataFrame
 
 class MappingResultsParser:
 
-    read_profile_matrix: pd.DataFrame
     read_profile_matrix_filtered: pd.DataFrame
     overlap_matrix: pd.DataFrame
-    total_read_counts: pd.Series
     accid_statistics_filename: str = "accid_statistics_{}.tsv"
     min_freq: float = 0
     max_reads: int
@@ -242,8 +241,6 @@ class MappingResultsParser:
         self.media_dir = media_dir
         self.pid = pid
         self.max_reads = max_reads
-
-        self.parsed = False
 
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
@@ -264,90 +261,6 @@ class MappingResultsParser:
             return metadata[metadata["filename"] == filename]["accid"].values[0]
         except IndexError:
             return read_name
-
-    @staticmethod
-    def readname_from_fasta(fastafile) -> list:
-        """
-        Read in fasta file and return list of read names
-        """
-        read_names = []
-        with open(fastafile) as f:
-            for line in f:
-                if line[0] == ">":
-                    read_names.append(line[1:].strip())
-        return read_names
-
-    def get_accid_readname_dict(self):
-        """
-        Return dictionary of read names and descriptions
-        """
-        readname_dict = {}
-        utils = Utils()
-        temp_dir = utils.get_temp_dir()
-        televir_bioinf = TelevirBioinf()
-
-        for _, row in self.metadata.iterrows():
-
-            accid = row["accid"]
-            bam = row["bam"]
-
-            temp_file = Temp_File(temp_dir)
-            with temp_file as tpf:
-                read_names = televir_bioinf.get_mapped_reads_list(bam, tpf)
-
-            if accid in readname_dict:
-                readname_dict[accid] += read_names
-            else:
-                readname_dict[accid] = read_names
-        return readname_dict
-
-    @staticmethod
-    def all_reads_set(files_readnames: List[list]) -> list:
-        all_reads = list(it.chain.from_iterable(files_readnames))
-        all_reads = list(set(all_reads))
-
-        return all_reads
-
-    @staticmethod
-    def render_binary_profile(accid: str, readname_dict: dict, all_reads: list) -> list:
-        """
-        Return list of 1s and 0s for presence/absence of read in accid
-        """
-        acc_read_dict = {read: 1 for read in readname_dict[accid]}
-
-        return [acc_read_dict.get(read, 0) for read in all_reads]
-
-    def read_profile_dict_get(self, readname_dict: dict, all_reads: list) -> dict:
-        """
-        Return dictionary of read profiles for all accids
-        """
-        read_profile_dict = {}
-        for accid in readname_dict.keys():
-            read_profile_dict[accid] = self.render_binary_profile(
-                accid, readname_dict, all_reads
-            )
-
-        return read_profile_dict
-
-    @staticmethod
-    def transform_dataframe(read_profile_dict: dict) -> pd.DataFrame:
-        """
-        Return dataframe of read profiles
-        """
-        return pd.DataFrame(read_profile_dict).T
-
-    def generate_read_matrix(self):
-        """
-        Generate read matrix
-        """
-        self.logger.info("generating read matrix")
-
-        readname_dict = self.get_accid_readname_dict()
-        all_reads = self.all_reads_set(list(readname_dict.values()))
-        read_profile_dict = self.read_profile_dict_get(readname_dict, all_reads)
-        read_profile_matrix = self.transform_dataframe(read_profile_dict)
-        ## create list of duplicated rows
-        return read_profile_matrix
 
     def get_accession_total_counts(self, accid: str):
         """
@@ -417,28 +330,6 @@ class MappingResultsParser:
 
         return read_profile_matrix_filtered
 
-    def parse_for_data(self):
-
-        if self.parsed:
-            return
-
-        self.read_profile_matrix: pd.DataFrame = self.generate_read_matrix()
-
-        self.total_read_counts = self.read_profile_matrix.sum(axis=0)
-
-        self.read_profile_matrix_filtered: pd.DataFrame = self.filter_read_matrix(
-            self.read_profile_matrix
-        )
-
-        self.overlap_matrix: pd.DataFrame = pairwise_shared_count(
-            self.read_profile_matrix_filtered
-        )
-
-        self.prep_accid_table()
-
-        self.parsed = True
-
-
 class ReadOverlapManager(MappingResultsParser):
     distance_matrix_filename: str = "distance_matrix_{}.tsv"
     shared_prop_matrix_filename: str = "shared_prop_matrix_{}.tsv"
@@ -457,6 +348,7 @@ class ReadOverlapManager(MappingResultsParser):
         pid: str,
         force_tree_rebuild: bool = False,
         max_reads: int = 500000,
+        clustering_model_type: str = "Fixed",
     ):
 
         super().__init__(metadata_df, media_dir, pid, max_reads=max_reads)
@@ -464,7 +356,8 @@ class ReadOverlapManager(MappingResultsParser):
         self.clade_filter = CladeFilter(reference_clade=reference_clade)
         self.excluded_leaves = []
         self.force_tree_rebuild = force_tree_rebuild
-        self.parsed = False
+        self.clustering_model_type = clustering_model_type
+        self._accid_statistics_df = None
 
         self.metadata["filename"] = self.metadata["file"].apply(
             lambda x: x.split("/")[-1]
@@ -526,8 +419,7 @@ class ReadOverlapManager(MappingResultsParser):
 
     def build_tree(self):
 
-        self.parse_for_data()
-
+        self.generate_distance_matrix()
         self.generate_shared_proportion_matrix()
         self.generate_clade_shared_proportion_matrix()
 
@@ -695,7 +587,7 @@ class ReadOverlapManager(MappingResultsParser):
                 _,
                 _,
             ) = clade_private_proportions(
-                self.read_profile_matrix, list(duplicate_group)
+                self.read_profile_matrix_filtered, list(duplicate_group)
             )
 
             accid_df.loc[accid_df.accid.isin(duplicate_group), "private_reads"] = (
@@ -722,25 +614,80 @@ class ReadOverlapManager(MappingResultsParser):
 
         return True
 
+    def _binary_path(self) -> str:
+        from constants.constants import \
+            Televir_Metadata_Constants as Deployment_Params
+        return Deployment_Params().get_software_binary("mapping_to_matrix")
+
+    def _symlink_bams_to_temp(self, temp_dir: str) -> Dict[str, str]:
+        accid_to_src = {}
+        for _, row in self.metadata.iterrows():
+            accid = row["accid"]
+            bam = row["bam"]
+            if not os.path.isfile(bam):
+                self.logger.warning(f"BAM not found for {accid}: {bam}")
+                continue
+            link_path = os.path.join(temp_dir, f"{accid}.bam")
+            os.symlink(bam, link_path)
+            accid_to_src[accid] = bam
+        return accid_to_src
+
+    def _run_mapping_to_matrix(self, output_dir: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        binary = self._binary_path()
+        os.makedirs(output_dir, exist_ok=True)
+        cmd = [
+            binary,
+            "--input-directory", output_dir,
+            "--max-reads", str(self.max_reads),
+            "--frequency-threshold", str(self.min_freq) if self.min_freq > 0 else "0.1",
+            "--output-directory", output_dir,
+            "--no-cluster-analysis",
+        ]
+
+        self.logger.info(f"Running mapping_to_matrix: {' '.join(cmd)}")
+        result = subprocess.run(cmd, capture_output=True, text=True)
+
+        if result.returncode != 0:
+            self.logger.error(f"mapping_to_matrix failed:\n{result.stderr}")
+            raise RuntimeError(f"mapping_to_matrix failed: {result.stderr}")
+
+        distance_path = os.path.join(output_dir, "distance_matrix.tsv")
+        presence_path = os.path.join(output_dir, "presence_absence_matrix.tsv")
+
+        distance_matrix = pd.read_csv(distance_path, sep="\t", index_col=0)
+        presence_matrix = pd.read_csv(presence_path, sep="\t", index_col=0)
+
+        distance_matrix.columns = distance_matrix.columns.str.replace(r"\.bam$", "", regex=True)
+        distance_matrix.index = distance_matrix.index.str.replace(r"\.bam$", "", regex=True)
+        presence_matrix.columns = presence_matrix.columns.str.replace(r"\.bam$", "", regex=True)
+        presence_matrix.index = presence_matrix.index.str.replace(r"\.bam$", "", regex=True)
+
+        return distance_matrix, presence_matrix
+
     def generate_distance_matrix(self, force=False):
-        """
-        Generate distance matrix
-        """
         if os.path.isfile(self.distance_matrix_path) and not force:
             distance_matrix = pd.read_csv(self.distance_matrix_path, index_col=0)
         else:
-            self.parse_for_data()
-            distance_matrix = pairwise_shared_reads_distance(
-                self.read_profile_matrix_filtered
-            )
+            with tempfile.TemporaryDirectory() as tmpdir:
+                self._symlink_bams_to_temp(tmpdir)
+                distance_matrix, presence_matrix = self._run_mapping_to_matrix(tmpdir)
+                self.read_profile_matrix_filtered = presence_matrix
+                self.total_read_counts = presence_matrix.sum(axis=0)
+                self.overlap_matrix = pairwise_shared_count(presence_matrix)
+                self.prep_accid_table()
+                self._accid_statistics_df = None
 
         if not self.check_all_accessions_in_distance_matrix(distance_matrix):
-            self.parse_for_data()
-            distance_matrix = pairwise_shared_reads_distance(
-                self.read_profile_matrix_filtered
-            )
+            with tempfile.TemporaryDirectory() as tmpdir:
+                self._symlink_bams_to_temp(tmpdir)
+                distance_matrix, presence_matrix = self._run_mapping_to_matrix(tmpdir)
+                self.read_profile_matrix_filtered = presence_matrix
+                self.total_read_counts = presence_matrix.sum(axis=0)
+                self.overlap_matrix = pairwise_shared_count(presence_matrix)
+                self.prep_accid_table()
+                self._accid_statistics_df = None
 
-        try:  # Written only on job submisision. File not written on query.
+        try:
             distance_matrix.to_csv(self.distance_matrix_path)
         except:
             pass
@@ -815,12 +762,8 @@ class ReadOverlapManager(MappingResultsParser):
         return int(self.read_profile_matrix_filtered.loc[leaves].sum().sum())
 
     def get_accession_private_counts(self, duplicate_group: tuple) -> int:
-        """
-        Get private counts for accession
-        """
-
-        duplicate_group_counts = self.read_profile_matrix.loc[
-            self.read_profile_matrix.index.isin(duplicate_group) == True
+        duplicate_group_counts = self.read_profile_matrix_filtered.loc[
+            self.read_profile_matrix_filtered.index.isin(duplicate_group) == True
         ].sum(axis=0)
 
         duplicate_counts_as_bool = duplicate_group_counts > 0
@@ -867,7 +810,7 @@ class ReadOverlapManager(MappingResultsParser):
                     _,
                     _,
                     proportion_private,
-                ) = clade_private_proportions(self.read_profile_matrix, leaves)
+                ) = clade_private_proportions(self.read_profile_matrix_filtered, leaves)
 
                 private_sort[clade.name] = proportion_private
 
@@ -1006,7 +949,6 @@ class ReadOverlapManager(MappingResultsParser):
         plt.savefig(self.overlap_pca_plot_path)
 
     def node_statistics(self) -> dict:
-        self.parse_for_data()
         self.update_excluded_leaves(self.read_profile_matrix_filtered)
 
         node_stats_dict = {}
@@ -1037,7 +979,7 @@ class ReadOverlapManager(MappingResultsParser):
                 private_reads,
                 total_reads,
                 proportion_private,
-            ) = clade_private_proportions(self.read_profile_matrix, leaves)
+            ) = clade_private_proportions(self.read_profile_matrix_filtered, leaves)
             total_proportion = total_reads / self.read_profile_matrix_filtered.shape[1]
 
             clade_counts = self.clade_total_counts(leaves)
@@ -1355,14 +1297,247 @@ class ReadOverlapManager(MappingResultsParser):
 
         return leaf_clades_df
 
+    # ── ML-based clustering ──────────────────────────────────────────
+
+    def _ml_client(self):
+        from pathogen_identification.utilities.ml_api_client import MLAPIClient
+        return MLAPIClient()
+
+    def _get_accid_statistics(self) -> pd.DataFrame:
+        if self._accid_statistics_df is None:
+            self._accid_statistics_df = pd.read_csv(self.accid_statistics_path, sep="\t")
+        return self._accid_statistics_df
+
+    def _best_taxid_for_leaf(self, leaf: str) -> Optional[int]:
+        row = self.metadata[self.metadata["accid"] == leaf]
+        if row.empty:
+            return None
+        return int(row.iloc[0].get("taxid", None)) if "taxid" in row.columns else None
+
+    def _best_taxid_for_leaves(self, leaves: list) -> Optional[int]:
+        """Return best taxid across a set of leaves (by coverage from accid_statistics)."""
+        try:
+            accid_df = self._get_accid_statistics()
+            subset = accid_df[accid_df["accid"].isin(leaves)]
+            if subset.empty:
+                return None
+            subset = subset.sort_values("read_count", ascending=False)
+            return int(subset.iloc[0]["taxid"]) if "accid" in subset.columns else None
+        except Exception:
+            return None
+
+    def _node_features(
+        self,
+        clade: Phylo.BaseTree.Clade,
+        leaves: List[str],
+        distance_matrix: pd.DataFrame,
+    ) -> Dict[str, float]:
+        features: Dict[str, float] = {}
+
+        features["n_leaves"] = float(len(leaves))
+
+        shared_df = self.clade_shared_by_pair(leaves)
+        if shared_df.empty:
+            features["Min_Shared"] = 0.0
+        else:
+            features["Min_Shared"] = float(shared_df["proportion_max"].min())
+
+        if len(leaves) <= 1:
+            features["Min_Dist"] = 0.0
+        else:
+            sub = distance_matrix.reindex(index=leaves, columns=leaves)
+            vals = sub.values[np.triu_indices_from(sub.values, k=1)]
+            features["Min_Dist"] = float(vals.min()) if len(vals) > 0 else 0.0
+
+        try:
+            accid_df = self._get_accid_statistics()
+            leaf_taxids = (
+                accid_df[accid_df["accid"].isin(leaves)]["taxid"]
+                if "taxid" in accid_df.columns
+                else pd.Series(dtype=float)
+            )
+        except Exception:
+            leaf_taxids = pd.Series(dtype=float)
+
+        if leaf_taxids.empty:
+            features["tax_diversity"] = 0.0
+        else:
+            counts = leaf_taxids.value_counts()
+            probs = counts / counts.sum()
+            features["tax_diversity"] = float(scipy_entropy(probs, base=2))
+
+        return features
+
+    def _predict_stop_traversal(
+        self, features: Dict[str, float], model_type: str
+    ) -> Tuple[Optional[bool], float]:
+        try:
+            client = self._ml_client()
+            result = client.predict_composition_stop_traversal(features, model=model_type)
+            return bool(result["stop_traversal"]), float(result.get("probability", 0.0))
+        except Exception:
+            self.logger.warning("ML API unavailable, falling back to fixed traversal")
+            return None, 0.0
+
+    def _traverse_with_fixed(
+        self,
+        clade: Phylo.BaseTree.Clade,
+        distance_matrix: pd.DataFrame,
+        results: List[Dict[str, Any]],
+        min_shared_threshold: Optional[float] = None,
+    ):
+        if min_shared_threshold is None:
+            min_shared_threshold = self.clade_filter.reference_clade.shared_proportion_min
+
+        leaves = [l.name for l in self.tree_manager.get_node_leaves(clade) if l.name]
+
+        if not leaves:
+            return
+
+        shared_df = self.clade_shared_by_pair(leaves)
+        min_shared = float(shared_df["proportion_max"].min()) if not shared_df.empty else 0.0
+
+        best_taxid = self._best_taxid_for_leaves(leaves)
+
+        if min_shared >= min_shared_threshold or clade.is_terminal():
+            results.append(
+                {
+                    "node": clade.name or f"clade_{len(results)}",
+                    "n_leaves": len(leaves),
+                    "leaves": leaves,
+                    "best_taxid_match": best_taxid,
+                }
+            )
+        else:
+            for child in clade.clades:
+                if child.is_terminal():
+                    taxid = self._best_taxid_for_leaf(child.name)
+                    results.append(
+                        {
+                            "node": child.name or f"leaf_{child.name}",
+                            "n_leaves": 1,
+                            "leaves": [child.name],
+                            "best_taxid_match": taxid,
+                        }
+                    )
+                else:
+                    self._traverse_with_fixed(
+                        child, distance_matrix, results, min_shared_threshold=min_shared_threshold
+                    )
+
+    def _traverse_with_prediction(
+        self,
+        clade: Phylo.BaseTree.Clade,
+        distance_matrix: pd.DataFrame,
+        model_type: str,
+        results: Optional[List[Dict[str, Any]]] = None,
+    ):
+        if results is None:
+            results = []
+
+        if self.clustering_model_type == "Fixed":
+            self._traverse_with_fixed(clade, distance_matrix, results)
+        else:
+            self._traverse_with_api_prediction(clade, distance_matrix, model_type, results)
+
+    def _traverse_with_api_prediction(
+        self,
+        clade: Phylo.BaseTree.Clade,
+        distance_matrix: pd.DataFrame,
+        model_type: str,
+        results: Optional[List[Dict[str, Any]]] = None,
+    ):
+        if results is None:
+            results = []
+
+        leaves = [l.name for l in self.tree_manager.get_node_leaves(clade) if l.name]
+
+        if not leaves:
+            return results
+
+        features = self._node_features(clade, leaves, distance_matrix)
+        stop, prob = self._predict_stop_traversal(features, model_type)
+
+        if stop is None:
+            raise RuntimeError("ML API unavailable and no fallback model provided.")
+
+        best_taxid = self._best_taxid_for_leaves(leaves)
+
+        if stop or clade.is_terminal():
+            results.append(
+                {
+                    "node": clade.name or f"clade_{len(results)}",
+                    "n_leaves": len(leaves),
+                    "leaves": leaves,
+                    "best_taxid_match": best_taxid,
+                }
+            )
+        else:
+            for child in clade.clades:
+                if child.is_terminal():
+                    taxid = self._best_taxid_for_leaf(child.name)
+                    results.append(
+                        {
+                            "node": child.name or f"leaf_{child.name}",
+                            "n_leaves": 1,
+                            "leaves": [child.name],
+                            "best_taxid_match": taxid,
+                        }
+                    )
+                else:
+                    self._traverse_with_api_prediction(child, distance_matrix, model_type, results)
+
+        return results
+
+    def predict_clades_composition(self, model_type: str) -> pd.DataFrame:
+        distance_matrix = self.generate_distance_matrix(force=self.force_tree_rebuild)
+
+        cluster_results: List[Dict[str, Any]] = []
+        root = self.tree_manager.tree.root
+        self._traverse_with_prediction(root, distance_matrix, model_type, cluster_results)
+
+        rows = []
+        for cluster in cluster_results:
+            for leaf in cluster["leaves"]:
+                rows.append(
+                    {
+                        "leaf": leaf,
+                        "clade": cluster["node"],
+                        "total_counts": cluster.get("n_leaves", 0),
+                        "private_counts": 0,
+                        "private_proportion": 0.0,
+                        "shared_proportion": 0.0,
+                    }
+                )
+
+        leaf_clades_df = pd.DataFrame(
+            rows,
+            columns=["leaf", "clade", "total_counts", "private_counts", "private_proportion", "shared_proportion"],
+        )
+
+        try:
+            accids_df = self._get_accid_statistics()
+            leaf_clades_df = leaf_clades_df.merge(accids_df, right_on="accid", left_on="leaf", how="left")
+        except Exception:
+            pass
+
+        if "clade" in leaf_clades_df.columns:
+            leaf_clades_df["clade"] = leaf_clades_df["clade"].fillna(leaf_clades_df["leaf"])
+
+        sort_cols = [c for c in ["total_counts", "clade", "read_count"] if c in leaf_clades_df.columns]
+        if sort_cols:
+            leaf_clades_df.sort_values(by=sort_cols, ascending=[False, True, False], inplace=True)
+        leaf_clades_df.reset_index(drop=True, inplace=True)
+
+        return leaf_clades_df
+
     def get_leaf_clades(self, force=False) -> pd.DataFrame:
+        #if self.clustering_model_type and self.clustering_model_type != "Fixed":
+        
+        return self.predict_clades_composition(self.clustering_model_type)
 
-        statistics_dict_all = self.get_node_statistics(force=force)
-
-        selected_clades = self.filter_clades(statistics_dict_all)
-
-        leaf_clades = self.tree_manager.leaf_clades_clean(selected_clades)
-
-        clades = self.leaf_clades_to_pandas(leaf_clades, statistics_dict_all)
-
-        return clades
+        #statistics_dict_all = self.get_node_statistics(force=force)
+        #selected_clades = self.filter_clades(statistics_dict_all)
+        #leaf_clades = self.tree_manager.leaf_clades_clean(selected_clades)
+        #clades = self.leaf_clades_to_pandas(leaf_clades, statistics_dict_all)
+        #return clades

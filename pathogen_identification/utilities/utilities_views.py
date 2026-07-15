@@ -1357,6 +1357,8 @@ class ReportSorter:
         self.metadata_df = self.prep_metadata_df()
         self.fasta_files = self.metadata_df.file.tolist()
 
+        self.clustering_model_type = TelevirParameters.get_clustering_model(self.sample.project.pk)
+
         self.overlap_manager = ReadOverlapManager(
             self.metadata_df,
             self.reference_clade,
@@ -1364,6 +1366,7 @@ class ReportSorter:
             str(self.sample.pk),
             force_tree_rebuild=force,
             max_reads=PIConstantsSettings.MAX_READS_INPUT,
+            clustering_model_type=self.clustering_model_type,
         )
 
         self.all_clades_df_path = os.path.join(self.media_dir, self.all_clade_filename)

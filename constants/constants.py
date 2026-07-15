@@ -7,13 +7,13 @@ Created on Oct 13, 2017
 import os
 from abc import ABC
 from enum import Enum
+from pathlib import Path
 from typing import Dict
 
 from decouple import config
 
 from constants.televir_directories import Televir_Directory_Constants
 from settings.constants_settings import ConstantsSettings as CS
-from pathlib import Path
 
 
 class Televir_Metadata_Constants:
@@ -41,6 +41,11 @@ class Televir_Metadata_Constants:
     }
 
     REFERENCE_MAIN = Televir_Directory_Constants.ref_fasta_directory
+
+    MAPPING_TO_MATRIX_DIR = os.path.join(
+        os.environ.get("DIR_SOFTWARE", config("DIR_SOFTWARE", default="/usr/local/software/insaflu")),
+        "mapping_to_matrix"
+    )
 
     BINARIES = {
         "SOURCE": Televir_Directory_Constants.conda_directory,
@@ -134,7 +139,6 @@ class Televir_Metadata_Constants:
         return os.path.join(
             self.BINARIES["ROOT"], self.BINARIES["software"][software], "bin", software
         )
-
 
 class Constants(object):
     """

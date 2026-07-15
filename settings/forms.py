@@ -156,12 +156,14 @@ class SoftwareForm(forms.ModelForm):
 
                         client = MLAPIClient()
                         models_recall= client.models_recall_cutoff()
-                        list_data = model_list + [
+                        print(models_recall)
+                        list_data = list_data + [
                             [
                                 c.get('model_type', ''), f"{c.get('description', '')} {c.get('date_trained', '')}"
                             ] for c in models_recall.values()
                             ]
                     except Exception as e:
+                        print(f"Error: {e}")
                         pass          
 
                 elif parameter.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_clustering_model_type:
@@ -179,12 +181,14 @@ class SoftwareForm(forms.ModelForm):
                                 c.get('model_type', ''), f"{c.get('description', '')} {c.get('date_trained', '')}"
                             ] for c in models_clustering.values()
                             ]
+                        
                     except Exception as e:
                         pass
 
                 else:
                     list_data = [[parameter.parameter, parameter.parameter]]
                 
+                print("LIST DATA: ", list_data)
                 dt_fields[parameter.get_unique_id()] = forms.ChoiceField(
                     choices=list_data, widget=forms.RadioSelect
                 )

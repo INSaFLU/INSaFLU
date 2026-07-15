@@ -34,7 +34,7 @@ urlpatterns = [
         name="insaflu_project_igv",
     ),
     path(
-        "teleflu_workflow_igv/<int:pk>",
+        "teleflu_project/teleflu_workflow_igv/<int:pk>",
         PIviews.TelefluMappingIGV.as_view(),
         name="teleflu_workflow_igv",
     ),
@@ -129,6 +129,31 @@ urlpatterns = [
         name="add_panels_to_sample",
     ),
     re_path(
+        r"get_user_tags",
+        PIajax_views.get_user_tags,
+        name="get_user_tags",
+    ),
+    re_path(
+        r"get_project_tags",
+        PIajax_views.get_project_tags,
+        name="get_project_tags",
+    ),
+    re_path(
+        r"create_tag",
+        PIajax_views.create_user_project_tag,
+        name="create_user_project_tag",
+    ),
+    re_path(
+        r"project_tag_candidates",
+        PIajax_views.possible_project_tags,
+        name="project_tag_candidates"
+    ),
+    re_path(
+        r"assign_tag_to_project",
+        PIajax_views.assign_tag_to_project,
+        name="assign_tag_to_project",
+    ),
+    re_path(
         r"add_panels_to_project",
         PIajax_views.add_panels_to_project,
         name="add_panels_to_project",
@@ -157,11 +182,6 @@ urlpatterns = [
         "Project_samples/<int:pk>/add_sample_project",
         PIviews.AddSamples_PIProjectsView.as_view(),
         name="add-sample-PIproject",
-    ),
-    path(
-        "Project/<int:pk>/show_project_settings",
-        views.ProjectsSettingsView.as_view(),
-        name="PIproject-settings",
     ),
     re_path(
         r"Project/(?P<pk>\d+)/select_project_type",
@@ -364,7 +384,7 @@ urlpatterns = [
         name="deploy_metagenomics_televir_project_sample",
     ),
     path(
-        "ajax/select_all_samples_televir_project",
+        "Projects/ajax/select_all_samples_televir_project",
         PIajax_views.get_all_samples_selected,
         name="select_all_samples_televir_project",
     ),

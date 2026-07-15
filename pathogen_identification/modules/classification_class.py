@@ -10,7 +10,10 @@ from typing import Any, Type
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.modules.object_classes import RunCMD, SoftwareDetail
+from pathogen_identification.modules.object_classes import (RunCMD,
+                                                            SoftwareDetail)
+from utils.utils import check_file_empty
+
 
 
 def read_sam_file(
@@ -38,19 +41,6 @@ def read_sam_file(
 
     return pd.DataFrame(data, columns=columns_to_keep)
 
-
-def check_report_empty(file, comment="@"):
-    if not os.path.exists(file):
-        return True
-
-    with open(file, "r") as f:
-        lines = f.readlines()
-
-    lines = [l for l in lines if not l.startswith(comment)]
-    if len(lines) == 0:
-        return True
-    else:
-        return False
 
 
 class Classifier_init(ABC):
@@ -89,6 +79,17 @@ class Classifier_init(ABC):
         self.full_report_path = os.path.join(
             self.out_path, self.prefix + self.full_report_suffix
         )
+
+    def export_reports(self, output_dir):
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        if os.path.exists(self.report_path):
+            shutil.copy(self.report_path, output_dir)
+            self.report_path = os.path.join(output_dir, os.path.basename(self.report_path))
+        if os.path.exists(self.full_report_path):
+            shutil.copy(self.full_report_path, output_dir)
+            self.full_report_path = os.path.join(output_dir, os.path.basename(self.full_report_path))
 
     def filter_samfile_read_names(self, same=True, output_sam="", sep=",", idx=0):
         if not output_sam:
@@ -141,6 +142,19 @@ class Classifier_init(ABC):
         except:
             pass
 
+    def check_report_empty_decorator(func):
+        """
+        Decorator to check if report is empty before trying to read it.
+        """
+
+        def wrapper(self, *args, **kwargs):
+            if check_file_empty(self.report_path):
+                return pd.DataFrame(columns=["qseqid", "acc"])
+            else:
+                return func(self, *args, **kwargs)
+
+        return wrapper
+
     @abstractmethod
     def run_SE(self, threads: str = "3"):
         pass
@@ -148,13 +162,26 @@ class Classifier_init(ABC):
     @abstractmethod
     def run_PE(self, threads: str = "3"):
         pass
+    
+    def get_report(self) -> pd.DataFrame:
+        
+        if check_file_empty(self.report_path):
+            return pd.DataFrame(columns=["qseqid", "acc"])
+        
+        return self._get_report()
 
     @abstractmethod
-    def get_report(self) -> pd.DataFrame:
+    def _get_report(self) -> pd.DataFrame:
         pass
 
-    @abstractmethod
     def get_report_simple(self) -> pd.DataFrame:
+        if check_file_empty(self.report_path):
+            return pd.DataFrame(columns=["qseqid", "acc"])
+        
+        return self._get_report_simple()
+
+    @abstractmethod
+    def _get_report_simple(self) -> pd.DataFrame:
         pass
 
 
@@ -197,9 +224,7 @@ class run_kaiju(Classifier_init):
         cmd = f"kaiju -t {self.nodes} -f {self.db_path} -i {self.query_path} -j {self.r2} -o {self.report_path} -z {threads} {self.args}"
         self.cmd.run(cmd)
 
-    def get_report(self) -> pd.DataFrame:
-        if check_report_empty(self.report_path):
-            return pd.DataFrame(columns=["qseqid", "acc"])
+    def _get_report(self) -> pd.DataFrame:
 
         return pd.read_csv(self.report_path, sep="\t", header=None).rename(
             columns={
@@ -211,9 +236,7 @@ class run_kaiju(Classifier_init):
             }
         )
 
-    def get_report_simple(self) -> pd.DataFrame:
-        if check_report_empty(self.report_path):
-            return pd.DataFrame(columns=["qseqid", "acc"])
+    def _get_report_simple(self) -> pd.DataFrame:
 
         return pd.read_csv(
             self.report_path, sep="\t", header=None, usecols=[1, 2], comment="@"
@@ -278,9 +301,7 @@ class run_FastViromeExplorer(Classifier_init):
 
         self.cmd.run_java(cmd)
 
-    def get_report(self) -> pd.DataFrame:
-        if check_report_empty(self.report_path):
-            return pd.DataFrame(columns=["qseqid", "acc"])
+    def _get_report(self) -> pd.DataFrame:
 
         return pd.read_csv(self.report_path, sep="\t", header=None).rename(
             columns={
@@ -298,13 +319,10 @@ class run_FastViromeExplorer(Classifier_init):
             }
         )
 
-    def get_report_simple(self) -> pd.DataFrame:
+    def _get_report_simple(self) -> pd.DataFrame:
         """
         read classifier output, return only query and reference sequence id columns.
         """
-
-        if check_report_empty(self.report_path):
-            return pd.DataFrame(columns=["qseqid", "acc"])
 
         return pd.read_csv(
             self.report_path, sep="\t", header=None, usecols=[0, 2], comment="@"
@@ -372,10 +390,10 @@ class run_CLARK(Classifier_init):
         report["taxid"] = report["taxid"].astype(float).astype(int)
         return report
 
-    def get_report(self) -> pd.DataFrame:
+    def _get_report(self) -> pd.DataFrame:
         return self.read_report()
 
-    def get_report_simple(self) -> pd.DataFrame:
+    def _get_report_simple(self) -> pd.DataFrame:
         """
         read classifier output, return only query and reference sequence id columns.
         """
@@ -436,13 +454,10 @@ class run_blast(Classifier_init):
     def run_PE(self, threads: int = 3, *args, **kwargs):
         self.run_PE(threads)
 
-    def get_report(self) -> pd.DataFrame:
+    def _get_report(self) -> pd.DataFrame:
         """
         read classifier output. return pandas dataframe with standard query sequence id and accession column names.
         """
-
-        if check_report_empty(self.report_path):
-            return pd.DataFrame(columns=["qseqid", "acc"])
 
         return pd.read_csv(self.report_path, sep="\t", header=None).rename(
             columns={
@@ -461,12 +476,10 @@ class run_blast(Classifier_init):
             }
         )
 
-    def get_report_simple(self) -> pd.DataFrame:
+    def _get_report_simple(self) -> pd.DataFrame:
         """
         read classifier output, return only query and reference sequence id columns.
         """
-        if check_report_empty(self.report_path):
-            return pd.DataFrame(columns=["qseqid", "acc"])
 
         return pd.read_csv(
             self.report_path, sep="\t", header=None, usecols=[0, 1]
@@ -525,12 +538,10 @@ class run_blast_p(Classifier_init):
         self.cmd.run(cmd)
         os.remove(temp_read)
 
-    def get_report(self) -> pd.DataFrame:
+    def _get_report(self) -> pd.DataFrame:
         """
         read classifier output. return pandas dataframe with standard query sequence id and accession column names.
         """
-        if check_report_empty(self.report_path):
-            return pd.DataFrame(columns=["qseqid", "acc"])
 
         return pd.read_csv(self.report_path, sep="\t", header=None).rename(
             columns={
@@ -549,12 +560,10 @@ class run_blast_p(Classifier_init):
             }
         )
 
-    def get_report_simple(self) -> pd.DataFrame:
+    def _get_report_simple(self) -> pd.DataFrame:
         """
         read classifier output, return only query and reference sequence id columns.
         """
-        if check_report_empty(self.report_path):
-            return pd.DataFrame(columns=["qseqid", "acc"])
 
         return pd.read_csv(
             self.report_path, sep="\t", header=None, usecols=[0, 1]
@@ -670,12 +679,10 @@ class run_voyager(Classifier_init):
 
         self.cmd.run_bash(cmd)
 
-    def get_report(self) -> pd.DataFrame:
+    def _get_report(self) -> pd.DataFrame:
         """
         read classifier output. return pandas dataframe with standard query sequence id and accession column names.
         """
-        if check_report_empty(self.report_path):
-            return pd.DataFrame(columns=["qseqid", "acc"])
 
         report = self.parse_json_taxonomy(self.report_path)
 
@@ -683,12 +690,10 @@ class run_voyager(Classifier_init):
 
         return report
 
-    def get_report_simple(self) -> pd.DataFrame:
+    def _get_report_simple(self) -> pd.DataFrame:
         """
         read classifier output, return only query and reference sequence id columns.
         """
-        if check_report_empty(self.report_path):
-            return pd.DataFrame(columns=["qseqid", "acc"])
 
         report = self.parse_json_taxonomy(self.report_path)
 
@@ -872,17 +877,13 @@ class run_metaphlan(Classifier_init):
 
         self.cmd.run_python(merge_output_cmd)
 
-    def get_report(self) -> pd.DataFrame:
-        if check_report_empty(self.report_path):
-            return pd.DataFrame(columns=["description", "taxid", "abundance"])
+    def _get_report(self) -> pd.DataFrame:
 
         report = self.parse_metaphlan_output_as_tree(self.report_path)
 
         return report
 
-    def get_report_simple(self) -> pd.DataFrame:
-        if check_report_empty(self.report_path):
-            return pd.DataFrame(columns=["qseqid", "acc"])
+    def _get_report_simple(self) -> pd.DataFrame:
 
         report = self.parse_metaphlan_output_as_tree(self.report_path)
 
@@ -976,16 +977,13 @@ class run_centrifuge(Classifier_init):
 
         self.cmd.run(cmd)
 
-    def get_report(self) -> pd.DataFrame:
+    def _get_report(self) -> pd.DataFrame:
         """
         read classifier output. return pandas dataframe with standard query sequence id and accession column names.
         """
-        if check_report_empty(self.report_path):
-            return pd.DataFrame(columns=["qseqid", "acc"])
 
-        from pathogen_identification.utilities.classifier_processor import (
-            CentrifugeOutputProcessor,
-        )
+        from pathogen_identification.utilities.classifier_processor import \
+            CentrifugeOutputProcessor
 
         centrifuge_processor = CentrifugeOutputProcessor(self.report_path)
         centrifuge_processor.from_file().process().prep_final_report()
@@ -997,13 +995,10 @@ class run_centrifuge(Classifier_init):
 
         return report
 
-    def get_report_simple(self) -> pd.DataFrame:
+    def _get_report_simple(self) -> pd.DataFrame:
         """
         read classifier output, return only query and reference sequence id columns.
         """
-        if check_report_empty(self.full_report_path):
-            return pd.DataFrame(columns=["qseqid", "acc"])
-
         report = pd.read_csv(
             self.full_report_path, sep="\t", header=None, usecols=[0, 2, 6]
         ).rename(columns={0: "qseqid", 2: "taxid", 6: "acc"})
@@ -1046,12 +1041,10 @@ class run_deSamba(Classifier_init):
     def run_PE(self, threads: int = 3, **kwargs):
         pass
 
-    def get_report(self) -> pd.DataFrame:
+    def _get_report(self) -> pd.DataFrame:
         """
         read classifier output. return pandas dataframe with standard query sequence id and accession column names.
         """
-        if check_report_empty(self.report_path):
-            return pd.DataFrame(columns=["qseqid", "acc"])
 
         return pd.read_csv(self.report_path, sep="\t", header=None).rename(
             columns={
@@ -1063,11 +1056,11 @@ class run_deSamba(Classifier_init):
             }
         )
 
-    def get_report_simple(self) -> pd.DataFrame:
+    def _get_report_simple(self) -> pd.DataFrame:
         """
         read classifier output, return only query and reference sequence id columns.
         """
-        if check_report_empty(self.report_path):
+        if check_file_empty(self.report_path):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
         report = pd.read_csv(
@@ -1143,7 +1136,7 @@ class run_kraken2(Classifier_init):
         """
         run paired read files classification.
         """
-        cmd = f"kraken2 --threads 4 --db {self.db_path} --fastq-input --gzip-compressed --output {self.out_path} {self.query_path} {self.r2}"
+        cmd = f"kraken2 --threads 4 --db {self.db_path} --gzip-compressed --output {self.out_path} {self.query_path} {self.r2}"
         cmd = [
             "kraken2",
             "--threads",
@@ -1169,16 +1162,13 @@ class run_kraken2(Classifier_init):
 
         self.cmd.run_script_software(cmd)
 
-    def get_report(self) -> pd.DataFrame:
+    def _get_report(self) -> pd.DataFrame:
         """
         read classifier output. return pandas dataframe with standard query sequence id and accession column names.
         """
-        if check_report_empty(self.report_path):
-            return pd.DataFrame(columns=["qseqid", "acc"])
 
-        from pathogen_identification.utilities.classifier_processor import (
-            KrakenOutputProcessor,
-        )
+        from pathogen_identification.utilities.classifier_processor import \
+            KrakenOutputProcessor
 
         kraken_processor = KrakenOutputProcessor(self.report_path)
         kraken_processor.from_file().process().prep_final_report()
@@ -1196,13 +1186,10 @@ class run_kraken2(Classifier_init):
         #    }
         # )
 
-    def get_report_simple(self) -> pd.DataFrame:
+    def _get_report_simple(self) -> pd.DataFrame:
         """
         read classifier output, return only query and reference sequence id columns.
         """
-        if check_report_empty(self.full_report_path):
-            return pd.DataFrame(columns=["qseqid", "acc"])
-
         report = pd.read_csv(
             self.full_report_path,
             sep="\t",
@@ -1282,9 +1269,7 @@ class run_diamond(Classifier_init):
 
         return acc
 
-    def get_report(self) -> pd.DataFrame:
-        if check_report_empty(self.report_path):
-            return pd.DataFrame(columns=["qseqid", "acc"])
+    def _get_report(self) -> pd.DataFrame:
 
         report = pd.read_csv(self.report_path, sep="\t", header=None).rename(
             columns={
@@ -1305,12 +1290,10 @@ class run_diamond(Classifier_init):
         report["prot_acc"] = report["prot_acc"].apply(self.acc_name_simplify)
         return report
 
-    def get_report_simple(self) -> pd.DataFrame:
+    def _get_report_simple(self) -> pd.DataFrame:
         """
         read classifier output, return only query and reference sequence id columns.
         """
-        if check_report_empty(self.report_path):
-            return pd.DataFrame(columns=["qseqid", "acc"])
 
         report = pd.read_csv(
             self.report_path, sep="\t", header=None, usecols=[0, 1], comment="@"
@@ -1358,9 +1341,8 @@ class run_krakenuniq(Classifier_init):
         ]
         self.cmd.run(cmd)
 
-    def get_report(self) -> pd.DataFrame:
-        if check_report_empty(self.report_path):
-            return pd.DataFrame(columns=["qseqid", "acc"])
+    def _get_report(self) -> pd.DataFrame:
+
 
         return pd.read_csv(self.report_path, sep="\t", header=None).rename(
             columns={
@@ -1372,13 +1354,10 @@ class run_krakenuniq(Classifier_init):
             }
         )
 
-    def get_report_simple(self) -> pd.DataFrame:
+    def _get_report_simple(self) -> pd.DataFrame:
         """
         read classifier output, return only query and reference sequence id columns.
         """
-
-        if check_report_empty(self.report_path):
-            return pd.DataFrame(columns=["qseqid", "acc"])
 
         return pd.read_csv(
             self.report_path, sep="\t", header=None, usecols=[1, 2], comment="@"
@@ -1398,9 +1377,7 @@ class run_minimap2_illumina(Classifier_init):
         cmd = f"minimap2 -a -t {threads} {self.args} {self.db_path} {self.query_path} {self.r2} > {self.report_path}"
         self.cmd.run(cmd)
 
-    def get_report(self) -> pd.DataFrame:
-        if check_report_empty(self.report_path):
-            return pd.DataFrame(columns=["qseqid", "acc"])
+    def _get_report(self) -> pd.DataFrame:
 
         return pd.read_csv(self.report_path, sep="\t", header=None).rename(
             columns={
@@ -1418,12 +1395,12 @@ class run_minimap2_illumina(Classifier_init):
             }
         )
 
-    def get_report_simple(self) -> pd.DataFrame:
+    def _get_report_simple(self) -> pd.DataFrame:
         """
         read classifier output, return only query and reference sequence id columns.
         """
 
-        if check_report_empty(self.report_path):
+        if check_file_empty(self.report_path):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
         report = pd.read_csv(
@@ -1469,9 +1446,7 @@ class run_bowtie2(Classifier_init):
         Process arguments to remove preset and mode option flags"""
         self.args = self.args.replace("[preset]", "").replace("[mode]", "")
 
-    def get_report(self) -> pd.DataFrame:
-        if check_report_empty(self.report_path):
-            return pd.DataFrame(columns=["qseqid", "acc"])
+    def _get_report(self) -> pd.DataFrame:
 
         return pd.read_csv(self.report_path, sep="\t", header=None).rename(
             columns={
@@ -1489,11 +1464,11 @@ class run_bowtie2(Classifier_init):
             }
         )
 
-    def get_report_simple(self) -> pd.DataFrame:
+    def _get_report_simple(self) -> pd.DataFrame:
         """
         read classifier output, return only query and reference sequence id columns.
         """
-        if check_report_empty(self.report_path):
+        if check_file_empty(self.report_path):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
         return pd.read_csv(
@@ -1530,9 +1505,7 @@ class run_bwa_mem(Classifier_init):
         self.cmd.run(cmd)
         self.filter_secondary_alignments()
 
-    def get_report(self) -> pd.DataFrame:
-        if check_report_empty(self.report_path):
-            return pd.DataFrame(columns=["qseqid", "acc"])
+    def _get_report(self) -> pd.DataFrame:
 
         return pd.read_csv(self.report_path, sep="\t", header=None).rename(
             columns={
@@ -1550,12 +1523,12 @@ class run_bwa_mem(Classifier_init):
             }
         )
 
-    def get_report_simple(self) -> pd.DataFrame:
+    def _get_report_simple(self) -> pd.DataFrame:
         """
         read classifier output, return only query and reference sequence id columns.
         """
 
-        if check_report_empty(self.report_path):
+        if check_file_empty(self.report_path):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
         report = pd.read_csv(
@@ -1667,10 +1640,7 @@ class run_bwa_mem_iterative(Classifier_init):
             for read in reads_to_keep:
                 f.write(f"{read}\n")
 
-    def get_report(self) -> pd.DataFrame:
-
-        if check_report_empty(self.report_path):
-            return pd.DataFrame(columns=["qseqid", "acc"])
+    def _get_report(self) -> pd.DataFrame:
 
         report = pd.read_csv(self.report_path, sep="\t", header=None).rename(
             columns={0: "qseqid"}
@@ -1680,9 +1650,9 @@ class run_bwa_mem_iterative(Classifier_init):
         report["qseqid"] = report["qseqid"].apply(lambda x: x.split(" ")[0])
         return report
 
-    def get_report_simple(self) -> pd.DataFrame:
+    def _get_report_simple(self) -> pd.DataFrame:
 
-        return self.get_report()
+        return self._get_report()
 
 
 class run_bowtie2_ONT(Classifier_init):
@@ -1698,9 +1668,7 @@ class run_bowtie2_ONT(Classifier_init):
         cmd = f"bowtie2 -a --threads {threads} --sam-nohead --sam-nosq --no-unal {self.args} -x {self.db_path} -1 {self.query_path} -2 {self.r2} -S {self.report_path}"
         self.cmd.run(cmd)
 
-    def get_report(self) -> pd.DataFrame:
-        if check_report_empty(self.report_path):
-            return pd.DataFrame(columns=["qseqid", "acc"])
+    def _get_report(self) -> pd.DataFrame:
 
         return pd.read_csv(self.report_path, sep="\t", header=None).rename(
             columns={
@@ -1718,12 +1686,12 @@ class run_bowtie2_ONT(Classifier_init):
             }
         )
 
-    def get_report_simple(self) -> pd.DataFrame:
+    def _get_report_simple(self) -> pd.DataFrame:
         """
         read classifier output, return only query and reference sequence id columns.
         """
 
-        if check_report_empty(self.report_path):
+        if check_file_empty(self.report_path):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
         report = pd.read_csv(
@@ -1747,9 +1715,8 @@ class run_minimap2_ONT(Classifier_init):
         cmd = f"minimap2 -t {threads} {self.args} {self.db_path} {self.query_path} {self.r2} > {self.report_path} "
         self.cmd.run(cmd)
 
-    def get_report(self) -> pd.DataFrame:
-        if check_report_empty(self.report_path):
-            return pd.DataFrame(columns=["qseqid", "acc"])
+    def _get_report(self) -> pd.DataFrame:
+
 
         return pd.read_csv(self.report_path, sep="\t", header=None).rename(
             columns={
@@ -1767,17 +1734,11 @@ class run_minimap2_ONT(Classifier_init):
             }
         )
 
-    def get_report_simple(self) -> pd.DataFrame:
+    def _get_report_simple(self) -> pd.DataFrame:
         """
         read classifier output, return only query and reference sequence id columns.
         """
 
-        if check_report_empty(self.report_path):
-            return pd.DataFrame(columns=["qseqid", "acc"])
-
-        # report = pd.read_csv(
-        #    self.report_path, sep="\t", header=None, usecols=[0, 2], comment="@"
-        # ).rename(columns={0: "qseqid", 2: "acc"})
 
         report = read_sam_file(
             self.report_path, sep="\t", columns_to_keep=[0, 2]
@@ -1799,9 +1760,7 @@ class run_minimap2_asm(Classifier_init):
     def run_PE(self, threads: int = 3):
         pass
 
-    def get_report(self) -> pd.DataFrame:
-        if check_report_empty(self.report_path):
-            return pd.DataFrame(columns=["qseqid", "acc"])
+    def _get_report(self) -> pd.DataFrame:
 
         return pd.read_csv(self.report_path, sep="\t", header=None).rename(
             columns={
@@ -1820,13 +1779,10 @@ class run_minimap2_asm(Classifier_init):
             }
         )
 
-    def get_report_simple(self) -> pd.DataFrame:
+    def _get_report_simple(self) -> pd.DataFrame:
         """
         read classifier output, return only query and reference sequence id columns.
         """
-
-        if check_report_empty(self.report_path):
-            return pd.DataFrame(columns=["qseqid", "acc"])
 
         return pd.read_csv(
             self.report_path, sep="\t", header=None, usecols=[0, 5, 10], comment="@"
@@ -1844,10 +1800,10 @@ class Empty_classifier(Classifier_init):
     def run_PE(self, threads: int = 3):
         pass
 
-    def get_report(self) -> pd.DataFrame:
+    def _get_report(self) -> pd.DataFrame:
         return pd.DataFrame(columns=["qseqid", "acc"])
 
-    def get_report_simple(self) -> pd.DataFrame:
+    def _get_report_simple(self) -> pd.DataFrame:
         return pd.DataFrame(columns=["qseqid", "acc"])
 
 
@@ -2049,24 +2005,7 @@ class Classifier:
         else:
             return True
 
-    def get_report(self) -> pd.DataFrame:
-        """
-        check that classifier report exists and use pandas to read full report.
-        """
-        if self.check_classifier_output() and self.check_classifier_output_size():
-            return self.classifier.get_report()
-        else:
-            return None
 
-    def get_report_simple(self) -> pd.DataFrame:
-        """
-        return only query and reference sequence id columns from classifier output.
-        """
-        return self.classifier.get_report_simple()
-        # try:
-        #    return self.classifier.get_report_simple()
-        # except Exception as e:
-        #    return pd.DataFrame(columns=["qseqid", "acc"])
 
     def collect_report(self, output_type="classification") -> pd.DataFrame:
         """
@@ -2075,13 +2014,13 @@ class Classifier:
         """
         if output_type == "classification":
             if self.classifier.method_name == run_centrifuge.method_name:
-                self.classification_report = self.get_report()
+                self.classification_report = self.classifier.get_report()
             elif self.classifier.method_name == run_kraken2.method_name:
-                self.classification_report = self.get_report()
+                self.classification_report = self.classifier.get_report()
             else:
-                self.classification_report = self.get_report_simple()
+                self.classification_report = self.classifier.get_report_simple()
         else:
-            self.classification_report = self.get_report_simple()
+            self.classification_report = self.classifier.get_report_simple()
 
         if "qseqid" in self.classification_report.columns:
 

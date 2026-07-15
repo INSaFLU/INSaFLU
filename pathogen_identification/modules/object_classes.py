@@ -13,12 +13,8 @@ import pandas as pd
 from numpy import ERR_CALL
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import (
-    ParameterSet,
-    RunDetail,
-    RunMain,
-    RunReadsRegister,
-)
+from pathogen_identification.models import (ParameterSet, RunDetail, RunMain,
+                                            RunReadsRegister)
 from pathogen_identification.utilities.utilities_general import fastqc_parse
 
 matplotlib.use("Agg")
@@ -1198,6 +1194,20 @@ class SoftwareUnit:
             return True
         else:
             return False
+    
+
+    @staticmethod
+    def get_runs(ps_pk: int):
+        try:
+            parameter_set = ParameterSet.objects.get(pk=ps_pk)
+        except ParameterSet.DoesNotExist:
+            return []
+
+        runs = RunMain.objects.filter(
+            parameter_set__pk=ps_pk
+        )
+
+        return runs
 
     @staticmethod
     def find_qc_reads(ps_pk: int) -> Tuple[str, str, str]:
@@ -1205,16 +1215,7 @@ class SoftwareUnit:
         Find reads
         """
 
-        try:
-            parameter_set = ParameterSet.objects.get(pk=ps_pk)
-        except ParameterSet.DoesNotExist:
-            return ("", "", "")
-
-        runs = RunMain.objects.filter(
-            parameter_set__leaf__index=parameter_set.leaf.index,
-            parameter_set__leaf__software_tree__global_index=parameter_set.leaf.software_tree.global_index,
-            parameter_set__sample=parameter_set.sample
-        )
+        runs = SoftwareUnit.get_runs(ps_pk)
 
         for run_main in runs:
             try:
@@ -1240,16 +1241,8 @@ class SoftwareUnit:
         Find reads
         """
 
-        try:
-            parameter_set = ParameterSet.objects.get(pk=ps_pk)
-        except ParameterSet.DoesNotExist:
-            return ("", "")
 
-        runs = RunMain.objects.filter(
-            parameter_set__leaf__index=parameter_set.leaf.index,
-            parameter_set__leaf__software_tree__global_index=parameter_set.leaf.software_tree.global_index,
-            parameter_set__sample=parameter_set.sample
-        )
+        runs = SoftwareUnit.get_runs(ps_pk)
 
         for run_main in runs:
 
@@ -1280,16 +1273,7 @@ class SoftwareUnit:
         Find reads
         """
 
-        try:
-            parameter_set = ParameterSet.objects.get(pk=ps_pk)
-        except ParameterSet.DoesNotExist:
-            return ("", "")
-
-        runs = RunMain.objects.filter(
-            parameter_set__leaf__index=parameter_set.leaf.index,
-            parameter_set__leaf__software_tree__global_index=parameter_set.leaf.software_tree.global_index,
-            parameter_set__sample=parameter_set.sample
-        )
+        runs = SoftwareUnit.get_runs(ps_pk)
 
         for run_main in runs:
             try:
@@ -1565,6 +1549,14 @@ class SoftwareDetailCompound:
 
         self.software_list: List[SoftwareDetail] = []
 
+    @property
+    def leaves(self):
+        leaves = []
+        for software in self.software_list:
+            leaves.extend(software.leaves)
+        return list(set(leaves))
+
+
     def register_modules(self, modules: List[str]):
         """
         Register modules to software list.
@@ -1583,15 +1575,9 @@ class SoftwareDetailCompound:
             )
             self.software_list.append(software)
 
-    def check_exists(self):
+    def check_software_exists(self):
         return any([x.check_exists() for x in self.software_list])
 
-    @property
-    def leaves(self):
-        leaves = []
-        for software in self.software_list:
-            leaves.extend(software.leaves)
-        return list(set(leaves))
 
     def retrieve_qc_reads(self) -> Tuple[str, str, str]:
         """

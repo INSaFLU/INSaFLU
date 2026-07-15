@@ -32,7 +32,7 @@ from managing_files.models import (
 )
 from utils.collect_extra_data import CollectExtraData
 from utils.parse_in_files import ParseInFiles
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 from utils.result import Coverage, DecodeObjects
 from utils.utils import Utils
 
@@ -51,26 +51,26 @@ class Test(TestCase):
 
     def test_set_script_run_sge(self):
         """ """
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         out_dir = self.utils.get_temp_dir()
         self.assertEquals(
             None,
             process_SGE.set_script_run_slurm(
-                out_dir, Constants.QUEUE_SGE_NAME_GLOBAL, [], "job_name"
+                out_dir, Constants.QUEUE_NAME_GLOBAL, [], "job_name"
             ),
         )
         self.utils.remove_dir(out_dir)
 
     def test_set_script_run_sge_1(self):
         """ """
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         out_dir = self.utils.get_temp_dir()
         vect_command = ["vai.te e vira-te"]
         path_file = process_SGE.set_script_run_slurm(
-            out_dir, Constants.QUEUE_SGE_NAME_GLOBAL, vect_command, "job_name"
+            out_dir, Constants.QUEUE_NAME_GLOBAL, vect_command, "job_name"
         )
         self.assertEquals(
-            os.path.join(out_dir, ProcessSGE.FILE_NAME_SCRIPT_SGE), path_file
+            os.path.join(out_dir, ProcessSched.FILE_NAME_SCRIPT_SLURM), path_file
         )
         self.assertTrue(os.path.getsize(path_file) > 70)
         self.utils.remove_dir(out_dir)
@@ -79,7 +79,7 @@ class Test(TestCase):
         """
         submit a job
         """
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         out_dir = self.utils.get_temp_dir()
         temp_file = self.utils.get_temp_file_from_dir(out_dir, "test_sge", ".txt")
         if os.path.exists(temp_file):
@@ -92,10 +92,10 @@ class Test(TestCase):
         vect_command.append("date >> " + temp_file)
         vect_command.append('echo "end" >> ' + temp_file)
         path_file = process_SGE.set_script_run_slurm(
-            out_dir, Constants.QUEUE_SGE_NAME_GLOBAL, vect_command, "job_name"
+            out_dir, Constants.QUEUE_NAME_GLOBAL, vect_command, "job_name"
         )
         try:
-            sge_id = process_SGE.submitte_job(path_file)
+            sge_id = process_SGE.submit_job(path_file)
         except:
             self.fail("Fail to submit the task")
         self.assertTrue(sge_id != None)
@@ -118,7 +118,7 @@ class Test(TestCase):
         """
         submit a job
         """
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         out_dir = self.utils.get_temp_dir()
         temp_file = self.utils.get_temp_file_from_dir(out_dir, "test_sge", ".txt")
         if os.path.exists(temp_file):
@@ -131,10 +131,10 @@ class Test(TestCase):
         vect_command.append("date >> " + temp_file)
         vect_command.append('echo "end" >> ' + temp_file)
         path_file = process_SGE.set_script_run_slurm(
-            out_dir, Constants.QUEUE_SGE_NAME_GLOBAL, vect_command, "job_name", True
+            out_dir, Constants.QUEUE_NAME_GLOBAL, vect_command, "job_name", True
         )
         try:
-            sge_id = process_SGE.submitte_job(path_file)
+            sge_id = process_SGE.submit_job(path_file)
         except:
             self.fail("Fail to submit the task")
         self.assertTrue(sge_id != None)
@@ -158,7 +158,7 @@ class Test(TestCase):
         """
         submit a job
         """
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         out_dir = self.utils.get_temp_dir()
         temp_file = self.utils.get_temp_file_from_dir(out_dir, "test_sge", ".txt")
         if os.path.exists(temp_file):
@@ -172,10 +172,10 @@ class Test(TestCase):
         vect_command.append('echo "end" >> ' + temp_file)
         vect_command.append("rm xpto_xpt")
         path_file = process_SGE.set_script_run_slurm(
-            out_dir, Constants.QUEUE_SGE_NAME_GLOBAL, vect_command, "job_name", True
+            out_dir, Constants.QUEUE_NAME_GLOBAL, vect_command, "job_name", True
         )
         try:
-            sge_id = process_SGE.submitte_job(path_file)
+            sge_id = process_SGE.submit_job(path_file)
         except:
             self.fail("Fail to submit the task")
         self.assertTrue(sge_id != None)
@@ -358,7 +358,7 @@ class Test(TestCase):
 
         ## launch the process
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         out_dir = self.utils.get_temp_dir()
         temp_file = self.utils.get_temp_file_from_dir(out_dir, "test_sge", ".txt")
         if os.path.exists(temp_file):
@@ -376,10 +376,10 @@ class Test(TestCase):
             )
         ]
         path_file = process_SGE.set_script_run_slurm(
-            out_dir, Constants.QUEUE_SGE_NAME_GLOBAL, vect_command, "job_name"
+            out_dir, Constants.QUEUE_NAME_GLOBAL, vect_command, "job_name"
         )
         try:
-            sge_id = process_SGE.submitte_job(path_file)
+            sge_id = process_SGE.submit_job(path_file)
             if not sge_id is None:
                 process_SGE.set_process_controlers(
                     user, process_controler.get_name_project(project), sge_id

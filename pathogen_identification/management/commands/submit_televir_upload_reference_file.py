@@ -15,7 +15,7 @@ from pathogen_identification.models import (ReferenceSource,
 from pathogen_identification.utilities.reference_utils import \
     raw_reference_to_insaflu
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 
 
 class Command(BaseCommand):
@@ -65,7 +65,7 @@ class Command(BaseCommand):
 
         # PROCESS CONTROLER
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
 
         process_SGE.set_process_controler(
             user,

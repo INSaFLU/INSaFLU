@@ -1,7 +1,11 @@
+import logging
 import ntpath
 import os
+import time
+from pathlib import Path
 from typing import List, Optional, Tuple
 
+import pandas as pd
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
@@ -9,43 +13,237 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.temp import NamedTemporaryFile
 from django.db.models import Q
+from django.db import transaction
 
 from constants.constants import Constants, FileExtensions, FileType, TypePath
-from constants.software_names import SoftwareNames
-from constants.televir_directories import Televir_Directory_Constants
 from managing_files.models import ProcessControler
 from managing_files.models import ProjectSample as InsafluProjectSample
 from managing_files.models import Reference
-from pathogen_identification.models import (
-    MetaReference,
-    ParameterSet,
-    PIProject_Sample,
-    RawReference,
-    RawReferenceMap,
-    ReferenceMap_Main,
-    ReferenceSourceFileMap,
-    TelefluMapping,
-    TeleFluProject,
-    TeleFluSample,
-)
+from pathogen_identification.models import (MetaReference, PIProject_Sample,
+                                            RawReference, RawReferenceMap,
+                                            ReferenceMap_Main, ReferenceSource,
+                                            ReferenceSourceFile,
+                                            ReferenceSourceFileMap,
+                                            ReferenceTaxid, TelefluMapping,
+                                            TeleFluProject, TeleFluSample)
+from pathogen_identification.utilities.ncbi_tools import (LocalAssembly,
+                                                          NCBITools, Passport,
+                                                          ReferenceData)
 from pathogen_identification.utilities.televir_bioinf import TelevirBioinf
-from pathogen_identification.utilities.utilities_general import simplify_name
+from pathogen_identification.utilities.utilities_general import (
+    detect_id_columns, rename_columns_to_standard, simplify_name)
 from settings.default_software_project_sample import DefaultProjectSoftware
 from utils.software import Software
-from utils.utils import Utils
+from utils.utils import Utils, PathUtils
+
+################################################################################
+############                                      ##############################
+############   RECOVER ASSEMBLIES                 ##############################
+############                                      ##############################
+################################################################################
+
+class RateLimiter:
+    """
+    Simple rate limiter to prevent hitting NCBI API rate limits.
+    """
+    def __init__(self, delay_between_calls: float = 0.5):
+        self.delay = delay_between_calls
+        self.last_call = 0
+    
+    def wait(self):
+        elapsed = time.time() - self.last_call
+        if elapsed < self.delay:
+            time.sleep(self.delay - elapsed)
+        self.last_call = time.time()
 
 
-class ReferenceMapWrapper:
+# Global rate limiter instance
+_rate_limiter = RateLimiter(delay_between_calls=0.5)
 
-    def __init__(self, source_map: ReferenceSourceFileMap, user: User):
-        self.source_map = source_map
-        self.description = source_map.reference_source.description
-        self.taxid = source_map.reference_source.taxid
-        self.accid = source_map.reference_source.accid
-        self.file = source_map.reference_source_file.file
-        self.id = source_map.pk
-        self.user = user
 
+class AssemblyStore:
+    """
+    Class to manage assembly storage and retrieval.
+    """
+    def __init__(self, store_path: Path):
+        self.store_path = store_path
+        os.makedirs(self.store_path, exist_ok=True)
+
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.DEBUG)
+        handler = logging.StreamHandler()
+        handler.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        self.logger.addHandler(handler)
+        self.logger.propagate = False
+
+        self.ncbi = NCBITools()
+
+    def register_assembly(self, local_assembly: LocalAssembly, cache = False):
+        """
+        Register a local assembly by adding it to the database.
+        """
+        
+        try: 
+            with transaction.atomic():
+
+                taxid = ReferenceTaxid.objects.get_or_create(
+                    taxid=str(local_assembly.taxid)
+                )
+
+                reference_source_file = ReferenceSourceFile.objects.get_or_create(
+                    file = local_assembly.file_path,
+                    owner = None, 
+                    description = local_assembly.description,
+                    is_cache = cache
+                )
+
+                reference_source = ReferenceSource.objects.get_or_create(
+                    taxid = taxid,
+                    accid = str(local_assembly.accession),
+                    description = local_assembly.description,
+                )
+
+                source_map = ReferenceSourceFileMap.objects.get_or_create(
+                    reference_source = reference_source, 
+                    reference_source_file = reference_source_file
+                )
+
+            self.logger.info(f"Registered assembly for taxid {local_assembly.taxid} and accession {local_assembly.accession}")
+
+        except Exception as e:
+            self.logger.error(f"Error registering assembly: {e}")
+
+
+    def get_assembly_path(self, taxid: str) -> str:
+
+        return str(self.store_path / taxid)
+
+    def retrieve_local_assembly(self, passport: Passport) -> Optional[LocalAssembly]:
+        """
+        Check if the assembly for the given taxid exists in the assembly store.
+        """
+        taxid_subdir = self.get_assembly_path(str(passport.taxid))
+
+        # Assuming the first file is the assembly file
+        assembly_file = os.path.join(taxid_subdir, f"{passport.prefix}_sequence.fasta.gz")
+
+        if not os.path.exists(assembly_file):
+            self.logger.warning(f"No assembly file found for taxid {passport.taxid} and accession {passport.accession}")
+            return None
+        accid = passport.accession
+
+        return LocalAssembly(taxid=passport.taxid, accession=accid, file_path=assembly_file) if assembly_file else None
+
+
+    def retrieve_assembly(self, passport: Passport, reference_data: Optional[ReferenceData] = None, include_term: Optional[str] = None, exclude_term: Optional[str] = None) -> Optional[LocalAssembly]:
+        """
+        Retrieve the assembly for the given taxid, either from local storage or NCBI.
+        """
+        # First, check if the assembly is available locally
+        local_assembly = self.retrieve_local_assembly(passport)
+
+        if local_assembly:
+            self.logger.info(f"Using local assembly for taxid {passport.taxid}: {local_assembly.file_path}")
+            return local_assembly
+        
+        # If not found locally, fetch from NCBI
+        self.logger.info(f"Fetching assembly for taxid {passport.taxid} from NCBI...")
+        #
+        if reference_data is None: 
+            reference_data = self.ncbi.query_sequence_databases(passport, include_term=include_term, exclude_term=exclude_term)
+        assembly_dir = self.get_assembly_path(str(passport.taxid))
+        os.makedirs(assembly_dir, exist_ok=True)
+
+        assembly_file_path = os.path.join(assembly_dir, f"{reference_data.prefix}_sequence.fasta.gz")
+        success_dl = self.ncbi.retrieve_sequence_databases(reference_data, assembly_file_path, gzipped=True)
+
+        if not success_dl:
+            self.logger.error(f"Failed to download assembly for passport {passport.taxid}")
+            return None
+        
+        return LocalAssembly(taxid=passport.taxid, accession=reference_data.accession, file_path=assembly_file_path)
+
+    def match_taxid_to_assembly(
+        self,
+        df: pd.DataFrame,
+        include_term: Optional[str] = None,
+        exclude_term: Optional[str] = None
+    ) -> List[LocalAssembly]:
+        """
+        Match taxids from the classification output to their respective assemblies.
+        Tracks failed taxids for later retry or debugging.
+        """
+        
+        ids = detect_id_columns(df)
+        if ids['taxid_col']:
+            df = rename_columns_to_standard(df, taxid_col=ids['taxid_col'], accid_col=ids['accid_col'])
+        else:
+            raise ValueError(
+                "The classification output file must contain a taxonomic ID column "
+                "[taxid, taxID or taxon]."
+            )
+
+        if not ids['taxid_col'] and not ids['accid_col']:
+            raise ValueError(
+                "The classification output file must contain a taxonomic ID column "
+                "[taxid, taxID or taxon] or an accession column "
+                "[assembly_accession, accession, accID or accid]."
+            )
+
+        rate_limiter = RateLimiter(delay_between_calls=0.5)
+        assemblies_retrieved = []
+        
+        for index, row in df.iterrows():
+            rate_limiter.wait()
+            taxid = str(int(row['taxid'])) if ids['taxid_col'] and pd.notna(row.get('taxid')) else None
+
+            accession = str(row['accid']) if ids['accid_col'] and pd.notna(row.get('accid')) else None
+            if taxid is None and accession is None:
+                self.logger.warning(f"Skipping row {index} due to missing taxid and accession.")
+                continue
+            
+            try:
+                self.logger.info(f"Processing taxid {taxid}...")
+                reference = None
+
+                if 'nucleotide_id' in row and 'assembly_id' in row:
+                    if row['nucleotide_id'] is not None and not pd.isna(row['nucleotide_id']):
+                        reference = ReferenceData(
+                            taxid=taxid,
+                            accession=accession,
+                            nucleotide_id=str(int(row['nucleotide_id'])),
+                            assembly_id=None
+                        )
+                    elif row['assembly_id'] is not None and not pd.isna(row['assembly_id']):
+                        reference = ReferenceData(
+                            taxid=taxid,
+                            accession=accession,
+                            nucleotide_id=None,
+                            assembly_id=str(int(row['assembly_id']))
+                        )
+                passport = Passport(taxid=taxid, accession=accession)
+                local_assembly = self.retrieve_assembly(passport, reference_data=reference, include_term=include_term, exclude_term=exclude_term)
+
+                if local_assembly:
+                    assemblies_retrieved.append(local_assembly)
+
+            except Exception as e:
+                self.logger.error(f"Error processing row {index}: {e}")
+                raise Exception(f"Error processing row {index}: {e}")
+
+        return assemblies_retrieved
+    
+    def register_assemblies(self, assemblies: List[LocalAssembly], cache = False):
+        for assembly in assemblies:
+            self.register_assembly(assembly, cache = cache)
+
+####################################################################################
+###################                                    #############################
+################### TELEFLU FOCUS REFERENCE MANAGEMENT #############################
+###################                                    #############################
+####################################################################################
 
 def remove_unwanted_chars(description: str):
     unwanted_chars = [",", "}", "{", "[", "]", "(", ")", ":", ";", " ", "'"]
@@ -274,7 +472,6 @@ def create_metaReference(references: List[RawReference]):
     return metaref
 
 
-import os
 
 
 def check_metaReference_exists_from_ids(reference_ids: List[int]):
@@ -291,6 +488,7 @@ def create_combined_reference(
     This function takes a list of references and creates a combined fasta file
     """
     utils = Utils()
+    path_utils = PathUtils()
     references = RawReference.objects.filter(id__in=reference_ids)
     references = [reference for reference in references]
 
@@ -314,7 +512,7 @@ def create_combined_reference(
     ### move the files to the right place
     final_data_path = os.path.join(
         settings.MEDIA_ROOT,
-        utils.get_path_to_teleflu_reference_file(user_id, metaref.id),
+        path_utils.get_path_to_teleflu_reference_file(user_id, metaref.id),
     )
 
     sz_file_to = os.path.join(
@@ -416,21 +614,6 @@ def check_reference_exists(accid, user_id):
     return False
 
 
-def check_raw_reference_submitted(ref_id, user_id):
-    user = User.objects.get(pk=user_id)
-    process_controler = ProcessControler()
-
-    process = ProcessControler.objects.filter(
-        owner__id=user.pk,
-        name=process_controler.get_name_raw_televir_teleflu_ref_create(
-            ref_id=ref_id,
-        ),
-        is_finished=False,
-        is_error=False,
-    )
-    return process.exists()
-
-
 def check_file_reference_submitted(ref_id, user_id):
     # user = User.objects.get(pk=user_id)
     process_controler = ProcessControler()
@@ -524,6 +707,7 @@ def generate_insaflu_reference(
     reference_fasta: str, name: str, final_fasta_name: str, user: User
 ) -> Tuple[bool, int]:
     utils = Utils()
+    path_utils = PathUtils()
     software = Software()
     final_gb_name = final_fasta_name.replace(".fasta", ".gbk")
 
@@ -547,7 +731,7 @@ def generate_insaflu_reference(
 
     ## move the files to the right place
     final_data_path = os.path.join(
-        settings.MEDIA_ROOT, utils.get_path_to_reference_file(user.id, reference.id)
+        settings.MEDIA_ROOT, path_utils.get_path_to_reference_file(user.id, reference.id)
     )
     os.makedirs(final_data_path, exist_ok=True)
 
@@ -572,7 +756,7 @@ def generate_insaflu_reference(
     with open(sz_file_to, "rb") as f:
         reference.reference_fasta.save(os.path.basename(sz_file_to), f, save=True)
     reference.reference_fasta.name = os.path.join(
-        utils.get_path_to_reference_file(user.id, reference.id),
+        path_utils.get_path_to_reference_file(user.id, reference.id),
         reference.reference_fasta_name,
     )
 
@@ -592,7 +776,7 @@ def generate_insaflu_reference(
         reference.reference_genbank.save(os.path.basename(sz_file_to), f, save=True)
 
     reference.reference_genbank.name = os.path.join(
-        utils.get_path_to_reference_file(user.id, reference.id),
+        path_utils.get_path_to_reference_file(user.id, reference.id),
         reference.reference_genbank_name,
     )
     reference.save()
@@ -710,6 +894,11 @@ def create_teleflu_igv_report(teleflu_project_pk: int) -> bool:
         print(e)
         return False
 
+
+
+#########################################################################
+#########################################################################
+########## TELEVIR STACKED IGV REFERENCE MANAGEMENT #####################
 
 def filter_reference_maps_select(
     sample: PIProject_Sample, leaf_id: int, reference: List[str]

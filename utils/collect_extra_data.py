@@ -32,12 +32,12 @@ from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software_project_sample import DefaultProjectSoftware
 from utils.parse_out_files import ParseOutFiles
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 from utils.result import Coverage, DecodeObjects, Result, SoftwareDesc
 from utils.software import Contigs2Sequences, Software
 from utils.software_pangolin import SoftwarePangolin
 from utils.tree import CreateTree
-from utils.utils import Utils
+from utils.utils import Utils, PathUtils
 
 
 class CollectExtraData(object):
@@ -66,6 +66,7 @@ class CollectExtraData(object):
     SAMPLE_LIST_list_settings = 2  ## list of samples with settings
 
     utils = Utils()
+    path_utils = PathUtils()
     software = Software()
     software_pangolin = SoftwarePangolin()
     logger_debug = logging.getLogger("fluWebVirus.debug")
@@ -81,7 +82,7 @@ class CollectExtraData(object):
         """ """
         ### make it running
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         process_SGE.set_process_controler(
             user,
             process_controler.get_name_project(project),
@@ -101,7 +102,7 @@ class CollectExtraData(object):
         """
         ### make it running
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         process_SGE.set_process_controler(
             user,
             process_controler.get_name_project(project),
@@ -121,7 +122,7 @@ class CollectExtraData(object):
         """
         ### make it running
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         process_SGE.set_process_controler(
             user,
             process_controler.get_name_project(project),
@@ -150,7 +151,7 @@ class CollectExtraData(object):
         """
         ### get the taskID and seal it
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         try:
             ## run pangolin and collect output
             file_pangolin_output = project.get_global_file_by_project(
@@ -248,7 +249,7 @@ class CollectExtraData(object):
         """
         ### get the taskID and seal it
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         try:
             # Just go through all process samples for this project,
             # if there is consensus for that sample, classify with abricate
@@ -283,7 +284,7 @@ class CollectExtraData(object):
         """
         ### get the taskID and seal it
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         try:
             ## test SARS cov
             species_tag = self.software.get_species_tag(project.reference)
@@ -607,7 +608,7 @@ class CollectExtraData(object):
         """
         ### get the taskID and seal it
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         manage_database = ManageDatabase()
         metaKeyAndValue = MetaKeyAndValue()
 
@@ -684,7 +685,7 @@ class CollectExtraData(object):
         metaKeyAndValue = MetaKeyAndValue()
         manage_database = ManageDatabase()
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
 
         #### create variation graph, png and html
         ## Obsolete, is to make a html graph, now it is with chart.js
@@ -2821,7 +2822,7 @@ class CollectExtraData(object):
         out_file = self._collect_sample_list(
             lst_samples, Constants.SEPARATOR_COMMA, b_test
         )
-        csv_file = self.utils.get_sample_list_by_user(
+        csv_file = self.path_utils.get_user_sample_list_path(
             user.id, "MEDIA_ROOT", FileExtensions.FILE_CSV
         )
         if out_file is None:
@@ -2832,7 +2833,7 @@ class CollectExtraData(object):
         out_file = self._collect_sample_list(
             lst_samples, Constants.SEPARATOR_TAB, b_test
         )
-        tsv_file = self.utils.get_sample_list_by_user(
+        tsv_file = self.path_utils.get_user_sample_list_path(
             user.id, "MEDIA_ROOT", FileExtensions.FILE_TSV
         )
         if out_file is None:
@@ -3107,7 +3108,7 @@ class CollectExtraData(object):
         out_file = self._collect_project_list(
             lst_projects, Constants.SEPARATOR_COMMA, b_test
         )
-        csv_file = self.utils.get_project_list_by_user(
+        csv_file = self.path_utils.get_project_list_by_user(
             user.id, "MEDIA_ROOT", FileExtensions.FILE_CSV
         )
         if out_file is None:
@@ -3118,7 +3119,7 @@ class CollectExtraData(object):
         out_file = self._collect_project_list(
             lst_projects, Constants.SEPARATOR_TAB, b_test
         )
-        tsv_file = self.utils.get_project_list_by_user(
+        tsv_file = self.path_utils.get_project_list_by_user(
             user.id, "MEDIA_ROOT", FileExtensions.FILE_TSV
         )
         if out_file is None:

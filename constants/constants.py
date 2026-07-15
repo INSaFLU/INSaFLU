@@ -13,9 +13,16 @@ from decouple import config
 
 from constants.televir_directories import Televir_Directory_Constants
 from settings.constants_settings import ConstantsSettings as CS
+from pathlib import Path
 
 
 class Televir_Metadata_Constants:
+
+    MODEL_PORT = 8000
+    RECALL_MODEL = "gp_clf"
+    TARGET_RECALL = 0.95
+    RECALL_MODEL_TAX_LEVEL = "family"
+
     SOURCE = {
         "ENVSDIR": Televir_Directory_Constants.environments_directory,
         "CONDA": Televir_Directory_Constants.conda_directory,
@@ -33,7 +40,7 @@ class Televir_Metadata_Constants:
         "input_protein_accession_to_taxid_path": "protein_acc2taxid.tsv",
     }
 
-    REFERENCE_MAIN = "/televir/mngs_benchmark/ref_fasta/"
+    REFERENCE_MAIN = Televir_Directory_Constants.ref_fasta_directory
 
     BINARIES = {
         "SOURCE": Televir_Directory_Constants.conda_directory,
@@ -87,7 +94,7 @@ class Televir_Metadata_Constants:
         CS.PIPELINE_NAME_remap_filtering: {"default": "remap/remap"},
         CS.PIPELINE_NAME_read_quality_analysis: {"default": "preprocess/preproc"},
         CS.PIPELINE_NAME_extra_qc: {"default": "preprocess/preproc"},
-        CS.PIPELINE_NAME_assembly: {"default": "assembly/assembly"},
+        CS.PIPELINE_NAME_assembly: {"default": "assembly/assembly_env"},
     }
 
     @property
@@ -171,32 +178,59 @@ class Constants(object):
     ## start expand tag name rows
     START_EXPAND_SAMPLE_TAG_NAMES_ROWS = 4
 
-    DIR_PROCESSED_FILES_UPLOADS = "uploads"
-    DIR_PROCESSED_PROCESSED = "processed"
+    DIR_PROCESSED_FILES_UPLOADS = Path('uploads')
+    DIR_PROCESSED_PROCESSED = Path('processed')
 
     ### queue names
-    QUEUE_SGE_NAMES = ["queue_1.q", "queue_2.q"]
-    QUEUE_SGE_NAME_GLOBAL = "all.q"
-    QUEUE_SGE_NAME_FAST = "fast.q"  ## jobs that are fast to run
-    QUEUE_SGE_NAME_INSA = "insa.q"  ## insa queue
+    QUEUE_NAMES = ["queue_1.q", "queue_2.q"]
+    QUEUE_NAME_GLOBAL = "all.q"
+    QUEUE_NAME_FAST = "fast.q"  ## jobs that are fast to run
+    QUEUE_NAME_INSA = "insa.q"  ## insa queue
     ##    QUEUE_SGE_NAME_EMAIL = 'email.q' direct for now...
+
+    ### three types of numbering
+    PROCESS_GLOBAL = "g"  ## runs on projects
+    PROCESS_SAMPLE = "s"  ## runs on samples
+    PROCESS_LINK = "l"
+    PROCESS_REGULAR = "r"
+
+    ### Type of process, it is possible to track the process by this name
+    PROCESS_dont_care = "d"
+    PROCESS_clean_sample = "c"
+    ## set_run_trimmomatic_species; set_run_clean_minion
+    PROCESS_collect_all_samples = "sl"
+    ## set_create_sample_list_by_user
+    PROCESS_collect_all_projects = "pl"
+    ## set_create_project_list_by_user
+    ## related with projects...
+    PROCESS_projects = "ps"
+    ## set_second_stage_snippy; set_second_stage_medaka;
+    ## collect_global_files
+    PROCESS_datasets = "ds"
+    ## process datasets;
+    PROCESS_link_files = "l"
+    ## set_link_files
+    PROCESS_televir = "tv"
+    ## set_televir_map_specific
+    PROCESS_mapping = "m"
+    ## set_televir    
 
     ### separators
     SEPARATOR_COMMA = ","
     SEPARATOR_TAB = "\t"
 
     ## DIR_PROCESSED_FILES_FROM_WEB/userId_<id>/refId_<id>
-    DIR_PROCESSED_FILES_REFERENCE = DIR_PROCESSED_FILES_UPLOADS + "/references"
-    DIR_PROCESSED_FILES_PRIMER = DIR_PROCESSED_FILES_UPLOADS + "/primers"
+    DIR_PROCESSED_FILES_REFERENCE = DIR_PROCESSED_FILES_UPLOADS / "references"
+    DIR_PROCESSED_FILES_PRIMER = DIR_PROCESSED_FILES_UPLOADS / "primers"
     DIR_PROCESSED_FILES_TELEFLU_REFERENCE = (
-        DIR_PROCESSED_FILES_UPLOADS + "/teleflu_references"
+        DIR_PROCESSED_FILES_UPLOADS / "teleflu_references"
     )
-    DIR_TELEVIR_UPLOAD_FILES = DIR_PROCESSED_FILES_UPLOADS + "/televir_references"
-    DIR_PROCESSED_FILES_CONSENSUS = DIR_PROCESSED_FILES_UPLOADS + "/consensus"
-    DIR_PROCESSED_FILES_FASTQ = DIR_PROCESSED_FILES_UPLOADS + "/fastq"
+    DIR_TELEVIR_UPLOAD_FILES = DIR_PROCESSED_FILES_UPLOADS / "televir_references"
+    DIR_PROCESSED_FILES_CONSENSUS = DIR_PROCESSED_FILES_UPLOADS / "consensus"
+    DIR_PROCESSED_FILES_FASTQ = DIR_PROCESSED_FILES_UPLOADS / "fastq"
     DIR_PROCESSED_FILES_PROJECT = "projects/result"
     DIR_PROCESSED_FILES_MULTIPLE_SAMPLES = (
-        DIR_PROCESSED_FILES_UPLOADS + "/multiple_samples"
+        DIR_PROCESSED_FILES_UPLOADS / "multiple_samples"
     )
     DIR_PROCESSED_FILES_DATASETS = "datasets/result"
 
@@ -369,6 +403,66 @@ class Constants(object):
         "V": "B",
         "N": "N",
     }
+
+    @staticmethod
+    def get_process_cpu(process_type):
+        """
+        get the number of CPU to use in a process type
+        """
+        if process_type == Constants.PROCESS_dont_care:
+            return 1
+        if process_type == Constants.PROCESS_clean_sample:
+            return 4
+        if process_type == Constants.PROCESS_collect_all_samples:
+            return 4
+        if process_type == Constants.PROCESS_collect_all_projects:
+            return 4
+        if process_type == Constants.PROCESS_projects:
+            return 4
+        if process_type == Constants.PROCESS_datasets:
+            return 4
+        if process_type == Constants.PROCESS_link_files:
+            return 1
+        if process_type == Constants.PROCESS_televir:
+            return 4
+        if process_type == Constants.PROCESS_mapping:
+             return 2
+    
+        return 1
+    
+
+    @staticmethod
+    def get_process_memory(process_type):
+        """
+        get the number of memory to use in a process type
+        """
+        if process_type == Constants.PROCESS_dont_care:
+            return 4
+        if process_type == Constants.PROCESS_clean_sample:
+            return 16
+        if process_type == Constants.PROCESS_collect_all_samples:
+            return 16
+        if process_type == Constants.PROCESS_collect_all_projects:
+            return 16
+        if process_type == Constants.PROCESS_projects:
+            return 16
+        if process_type == Constants.PROCESS_datasets:
+            return 16
+        if process_type == Constants.PROCESS_link_files:
+            return 4
+        if process_type == Constants.PROCESS_televir:
+            return 16
+        if process_type == Constants.PROCESS_mapping:
+            return 8
+        return 4
+    
+    @staticmethod
+    def get_process_mem_string(process_type):
+        """
+        get the memory string to use in a process type
+        """
+        memory = Constants.get_process_memory(process_type)
+        return "{}G".format(memory)
 
     def get_extensions_by_file_type(self, file_name, file_type):
         """

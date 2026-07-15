@@ -11,36 +11,29 @@ from django.db.models import QuerySet
 
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from fluwebvirus.settings import STATIC_ROOT
-from pathogen_identification.constants_settings import ConstantsSettings as PIConstants
-from pathogen_identification.deployment_main import PathogenIdentificationDeploymentCore
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PIConstants
+from pathogen_identification.deployment_main import \
+    PathogenIdentificationDeploymentCore
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RunMain, SoftwareTree,
+                                            SoftwareTreeNode)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunMainTree_class
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.update_DBs_tree import (
-    Update_Assembly,
-    Update_Classification,
-    Update_Remap,
-    Update_RunMain_Initial,
-    Update_RunMain_Secondary,
-)
+    Update_Assembly, Update_Classification, Update_Remap,
+    Update_RunMain_Initial, Update_RunMain_Secondary)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Pipeline_Makeup,
-    PipelineTree,
-    Utils_Manager,
-)
-from pathogen_identification.utilities.utilities_views import ReportSorter
+    PipelineTree, Utils_Manager)
+from pathogen_identification.utilities.utilities_views import (
+    ReportSorter, final_report_best_cov_by_accid)
 from settings.constants_settings import ConstantsSettings
 from utils.utils import Utils
+from pathogen_identification.televir_pipeline_makeup import Pipeline_Makeup
 
 
 def logger_copy(x, memo):
@@ -127,17 +120,35 @@ class Tree_Node:
 
     def run_reference_overlap_analysis(self):
         # run = RunMain.objects.filter(parameter_set=self.parameter_set).first()
-        final_report = FinalReport.objects.filter(
-            sample=self.parameter_set.sample,  # run=run
-        ).order_by("-coverage")
-        #
+
         report_layout_params = TelevirParameters.get_report_layout_params(
             project_pk=self.parameter_set.project.pk
         )
+
+        runs = RunMain.objects.filter(parameter_set=self.parameter_set).exclude(run_type=RunMain.RUN_TYPE_STORAGE)
+        
+        for run in runs:
+
+            final_report = FinalReport.objects.filter(
+                sample=self.parameter_set.sample, run=run
+            ).order_by("-coverage")
+            #
+            report_sorter = ReportSorter(
+                self.parameter_set.sample, final_report, report_layout_params
+            )
+            report_sorter.sort_reports_save()
+            report_sorter.reports_aggregate_register(report_layout_params, run)
+
+        final_reports = FinalReport.objects.filter(
+            sample=self.parameter_set.sample
+        ).order_by("-coverage")
+
+        final_reports = final_report_best_cov_by_accid(final_reports)
         report_sorter = ReportSorter(
-            self.parameter_set.sample, final_report, report_layout_params
+            self.parameter_set.sample, final_reports, report_layout_params
         )
         report_sorter.sort_reports_save()
+        report_sorter.reports_aggregate_register(report_layout_params)
 
     def receive_run_manager(self, run_manager: PathogenIdentification_TreeDeployment):
         run_manager.prefix = f"run_leaf_{self.node_index}"
@@ -151,20 +162,17 @@ class Tree_Node:
     def _is_node_leaf(self):
         return len(self.children) == 0
 
-    def generate_software_tree_node_entry(self, pipe_tree: PipelineTree):
+    def generate_software_tree_node_entry(self, pipe_tree: PipelineTree) -> Optional[SoftwareTreeNode]:
         if not self._is_node_leaf():
             return
+        node_pk = pipe_tree.index_to_pk.get(self.node_index)
 
-        node_metadata = pipe_tree.node_index.loc[self.node_index].node
-        software_tree = SoftwareTree.objects.get(pk=self.software_tree_pk)
+        if node_pk is None:
 
+            raise ValueError("Node primary key not found")
         try:
             tree_node = SoftwareTreeNode.objects.get(
-                software_tree=software_tree,
-                index=self.node_index,
-                name=node_metadata[0],
-                value=node_metadata[1],
-                node_type=node_metadata[2],
+                pk=node_pk
             )
         except SoftwareTreeNode.DoesNotExist:
             tree_node = None
@@ -174,7 +182,6 @@ class Tree_Node:
     def setup_parameterset(
         self, project: Projects, sample: PIProject_Sample, node: SoftwareTreeNode
     ):
-        utils_manager = Utils_Manager()
 
         try:
             parameter_set = ParameterSet.objects.get(
@@ -443,6 +450,7 @@ class Tree_Progress:
         pipe_tree: PipelineTree,
         sample: PIProject_Sample,
         project: Projects,
+        output_directory: Optional[str] = None,
     ):
         pipe_tree.nodes_df = pd.DataFrame(
             pipe_tree.nodes_compress, columns=["node", "branch"]
@@ -464,12 +472,17 @@ class Tree_Progress:
         )
         self.updated_classification = False
 
+        if output_directory is not None:
+            self.output_directory = output_directory
+        else:
+            utils = Utils()
+            temp_dir = utils.get_temp_dir()
+            self.output_directory = temp_dir
+
         self.initialize_nodes()
         self.determine_current_module_from_nodes()
 
     def setup_deployment_manager(self):
-        utils = Utils()
-        temp_dir = utils.get_temp_dir()
 
         prefix = f"{self.sample.sample.pk}_{self.sample.sample.name}"
 
@@ -483,10 +496,7 @@ class Tree_Progress:
 
         deployment_manager = PathogenIdentification_TreeDeployment(
             self.sample,
-            # self.project,
-            # self.project.owner.username,
-            # self.project.technology,
-            deployment_root_dir=temp_dir,
+            deployment_root_dir=self.output_directory,
             dir_branch=deployment_directory_structure,
             threads=PIConstants.DEPLOYMENT_THREADS,
         )
@@ -592,9 +602,9 @@ class Tree_Progress:
 
         return child
 
-    def spawn_node_child(self, node: Tree_Node, child: int) -> Tree_Node:
+    def spawn_node_child(self, node: Tree_Node, child_index: int) -> Tree_Node:
         new_node = Tree_Node(
-            self.tree, child, node.software_tree_pk, sample=self.sample
+            self.tree, child_index, node.software_tree_pk, sample=self.sample
         )
 
         run_manager_copy = copy.deepcopy(node.run_manager)
@@ -667,6 +677,7 @@ class Tree_Progress:
                 node.run_manager.run_engine.plan_remap_prep_safe()
                 node.run_manager.run_engine.export_intermediate_reports()
                 node.run_manager.run_engine.generate_output_data_classes()
+                node.run_manager.run_engine.export_classification_reports()
                 db_updated = Update_Classification(
                     node.run_manager.run_engine, node.parameter_set
                 )
@@ -674,7 +685,6 @@ class Tree_Progress:
                     return False
 
                 node.run_manager.classification_updated = True
-
             if node.run_manager.run_engine.remapping_performed:
                 node.run_manager.run_engine.export_final_reports()
                 node.run_manager.run_engine.Summarize()
@@ -990,8 +1000,8 @@ class Tree_Progress:
 
             traceback.print_exc()
 
-            print("Node failed to run, registering as failed.")
-            print(e)
+            self.logger.error("Node failed to run, registering as failed.")
+            self.logger.error(e)
 
             return False
 
@@ -1021,7 +1031,7 @@ class Tree_Progress:
             for leaf in node.leaves:
                 leaf_node = self.spawn_node_child(node, leaf)
                 _ = leaf_node.register_running(self.project, self.sample, self.tree)
-
+                leaf_node.run_reference_overlap_analysis()
                 _ = self.register_finished(leaf_node)
 
     def calculate_report_overlaps_runs(self):
@@ -1053,6 +1063,7 @@ class Tree_Progress:
         }
 
         if self.current_module in ["end"]:
+            
             return
 
         if self.current_module == "root":
@@ -1060,13 +1071,13 @@ class Tree_Progress:
             self.update_tree_nodes()
             return
 
-        self.logger.info(f"CURRENT MODULE, {self.current_module}")
         action = map_actions[self.current_module]
 
         action()
 
         for node in self.current_nodes:
             if self.classification_monitor.ready_to_merge(node):
+                self.logger.info(f"Node {node.node_index} ready to merge, planning remap prep.")
                 node.run_manager.run_engine.plan_remap_prep_safe()
 
             self.update_node_leaves_dbs(node)
@@ -1112,8 +1123,9 @@ class Tree_Progress:
             current_module = self.get_current_module()
 
         self.register_leaves_finished()
+        
 
-        print("DONE")
+        self.logger.info("DONE")
         return
 
     def stacked_changes_log(self):
@@ -1343,7 +1355,7 @@ class TreeProgressGraph:
             node_leaves = ps.get_leaf_descendants()
             leaf_node = node_leaves[0]
             leaf_node_index = leaf_node.index
-            node_params = self.pipeline_utils.get_leaf_parameters(leaf_node)
+            node_params = self.pipeline_utils.generate_leaf_parameters(leaf_node)
             node_params = node_params[["module", "software"]]
             node_params = node_params.set_index("module")
             node_params = node_params.T
@@ -1419,15 +1431,6 @@ class TreeProgressGraph:
 
         return test_df
 
-    def get_tree_progress_df(self, tree: PipelineTree):
-        ## setup a deployment and record the progress
-
-        deployment_tree = Tree_Progress(tree, self.sample, self.project)
-
-        stacked_df = deployment_tree.stacked_changes_log()
-        #
-
-        return stacked_df
 
     @staticmethod
     def extract_graph_data(html_filepath) -> Optional[str]:

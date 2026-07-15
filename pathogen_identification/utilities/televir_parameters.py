@@ -81,6 +81,7 @@ class TelevirParameters:
         else:
             raise Exception(f"Unknown technology {project.technology}")
 
+
     @staticmethod
     def retrieve_project_software(software_name: str, project: Projects):
         """
@@ -223,6 +224,58 @@ class TelevirParameters:
         report_layout_params = TelevirParameters.layout_config_get(flag_build_params)
 
         return report_layout_params.flag_build
+    
+
+    @staticmethod
+    def get_recall_model(project_pk:Optional[int]) -> str:
+        """
+        Get recall model
+        """
+        if project_pk is None:
+            return SoftwareNames.SOFTWARE_REMAP_PARAMS_recall_default_model
+        project = Projects.objects.get(pk=project_pk)
+
+        (
+            remap_params,
+            _,
+        ) = TelevirParameters.retrieve_project_software(
+            SoftwareNames.SOFTWARE_REMAP_PARAMS_name, project
+        )
+
+        recall_model = SoftwareNames.SOFTWARE_REMAP_PARAMS_recall_default_model
+
+        for param in remap_params:
+            if param.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_recall_model_type:
+                if param.parameter is not None:
+                    recall_model = param.parameter
+
+        return recall_model
+
+    @staticmethod
+    def get_clustering_model(project_pk: Optional[int]) -> str:
+        """
+        Get clustering model
+        """
+
+        if project_pk is None:
+            return SoftwareNames.SOFTWARE_REMAP_PARAMS_clustering_default_model
+        project = Projects.objects.get(pk=project_pk)
+
+        (
+            remap_params,
+            _,
+        ) = TelevirParameters.retrieve_project_software(
+            SoftwareNames.SOFTWARE_REMAP_PARAMS_name, project
+        )
+
+        clustering_model = SoftwareNames.SOFTWARE_REMAP_PARAMS_clustering_default_model
+
+        for param in remap_params:
+            if param.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_clustering_model_type:
+                if param.parameter is not None:
+                    clustering_model = param.parameter
+
+        return clustering_model
 
     @staticmethod
     def get_report_layout_params(

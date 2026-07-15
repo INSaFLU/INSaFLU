@@ -40,7 +40,7 @@ from utils.lock_atomic_transaction import LockedAtomicTransaction
 from utils.mixed_infections_management import MixedInfectionsManagement
 from utils.parse_coverage_file import GetCoverage
 from utils.parse_out_files import ParseOutFiles
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 from utils.result import (CountHits, DecodeObjects, KeyValue, MaskingConsensus,
                           Result, ResultAverageAndNumberReads, SoftwareDesc)
 from utils.utils import Utils
@@ -3989,7 +3989,7 @@ class Software(object):
 
     def run_fastq_and_trimmomatic_and_identify_species(self, sample, user):
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         process_SGE.set_process_controler(
             user,
             process_controler.get_name_sample(sample),
@@ -4168,7 +4168,7 @@ class Software(object):
         """ """
         ### make it running
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         process_SGE.set_process_controler(
             user,
             process_controler.get_name_project_sample(project_sample),
@@ -4205,7 +4205,7 @@ class Software(object):
         meta_key_project_sample = (
             metaKeyAndValue.get_meta_key_queue_by_project_sample_id(project_sample.id)
         )
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         process_controler = ProcessControler()
 
         manageDatabase.set_project_sample_metakey(
@@ -4249,7 +4249,7 @@ class Software(object):
         """
 
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         manageDatabase = ManageDatabase()
         result_all = Result()
         ### metakey for this process

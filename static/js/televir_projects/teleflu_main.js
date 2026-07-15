@@ -185,7 +185,6 @@ var load_teleflu_workflows = function () {
                     row.appendChild(sampleNameCell);
                     
                     var mappedIndicator = sampleSummary[sample].mapped
-                    //var mappedIndicator = sampleSummary[sample].mapped ? '<span style="color: green;">&#x2714;</span>' : '<span style="color: red;">&#x2718;</span>';
                     var successIndicator = sampleSummary[sample].success ? '<span style="color: green;">&#x2714;</span>' : '<span style="color: red;">&#x2718;</span>';
                     var coverageIndicator = sampleSummary[sample].coverage;
                     var windowsCoveredIndicator = sampleSummary[sample].windows_covered;
@@ -194,15 +193,55 @@ var load_teleflu_workflows = function () {
                     var start_proportion = sampleSummary[sample].start_prop;
                     var mapped_proportion = sampleSummary[sample].mapped_prop;
                     var error_rate = sampleSummary[sample].error_rate;
+                    var bamFile = sampleSummary[sample].bam_file;
+                    var bamFileIdx = sampleSummary[sample].bam_file_idx;
+                    var runLink = sampleSummary[sample].run_link;
 
                     var indicatorValues = [mappedIndicator, successIndicator, coverageIndicator, windowsCoveredIndicator,
-                        depthIndicator, mappedReadsIndicator, start_proportion, mapped_proportion, error_rate];
+                        depthIndicator, mappedReadsIndicator, start_proportion, mapped_proportion, error_rate]; 
 
                     indicatorValues.forEach(function(value) {
                         var cell = document.createElement('td');
                         cell.innerHTML = value;
                         row.appendChild(cell);
                     });
+
+                    // download bam and bai files if they exist
+                    if (bamFile && bamFileIdx) {
+                        var bamCell = document.createElement('td');
+                        var bamLink = document.createElement('a');
+                        bamLink.href = bamFile;
+                        bamLink.textContent = 'BAM';
+                        bamLink.setAttribute('download', sample + '.bam');
+                        bamCell.appendChild(bamLink);
+
+                        var baiLink = document.createElement('a');
+                        baiLink.href = bamFileIdx;
+                        baiLink.textContent = 'BAI';
+                        baiLink.setAttribute('download', sample + '.bai');
+                        bamCell.appendChild(document.createTextNode(' | ')); // Separator
+                        bamCell.appendChild(baiLink);
+
+                        row.appendChild(bamCell);
+                    } else {
+                        var noDataCell = document.createElement('td');
+                        noDataCell.textContent = 'No BAM/BAI';
+                        row.appendChild(noDataCell);
+                    }
+
+                    // Add link to run details if it exists
+                    if (runLink) {
+                        var runCell = document.createElement('td');
+                        var runAnchor = document.createElement('a');
+                        runAnchor.href = runLink;
+                        runAnchor.textContent = 'Run Details';
+                        runCell.appendChild(runAnchor);
+                        row.appendChild(runCell);
+                    } else {
+                        var noRunCell = document.createElement('td');
+                        noRunCell.textContent = 'No Run Link';
+                        row.appendChild(noRunCell);
+                    }
 
                     table.appendChild(row);
                 }

@@ -26,7 +26,7 @@ from utils.coverage import DrawAllCoverage
 from utils.mixed_infections_management import MixedInfectionsManagement
 from utils.parse_coverage_file import GetCoverage
 from utils.parse_out_files import ParseOutFiles
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 from utils.result import (CountHits, DecodeObjects, KeyValue, MaskingConsensus,
                           Result, ResultAverageAndNumberReads, SoftwareDesc)
 from utils.software import Software
@@ -59,7 +59,7 @@ class SoftwareMinion(object):
         Global processing, RabbitQC, NanoStat, NanoFilt and GetSpecies
         """
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         process_SGE.set_process_controler(
             user,
             process_controler.get_name_sample(sample),
@@ -678,7 +678,7 @@ class SoftwareMinion(object):
         """
         ### make it running
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         manageDatabase = ManageDatabase()
         result_all = Result()
 

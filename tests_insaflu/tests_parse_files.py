@@ -10,7 +10,7 @@ from utils.parse_in_files import ParseInFiles, UploadFilesByDjangoQ
 from django.contrib.auth.models import User
 from managing_files.models import UploadFiles, MetaKey, Sample
 from django.conf import settings
-from utils.utils import Utils
+from utils.utils import Utils, PathUtils
 from django.test.utils import override_settings
 import os
 
@@ -18,6 +18,7 @@ class Test(TestCase):
 
 	### static
 	utils = Utils()
+	path_utils = PathUtils()
 	
 	def setUp(self):
 		self.baseDirectory = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS)
@@ -1006,12 +1007,12 @@ class Test(TestCase):
 			user.set_password(ConstantsTestsCase.TEST_USER_NAME)
 			user.save()
 		
-		sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), self.utils.get_path_upload_file(user.id,\
+		sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), self.path_utils.get_path_upload_file(user.id,\
 													TypeFile.TYPE_FILE_sample_file), os.path.basename(txt_file))
-		sz_file_to, path_added = self.utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
+		sz_file_to, path_added = self.path_utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
 		self.utils.copy_file(txt_file, sz_file_to)
 		### test unique name repeated
-		sz_file_to_temp, path_added = self.utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
+		sz_file_to_temp, path_added = self.path_utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
 		self.assertTrue(self.utils.is_integer(sz_file_to_temp.split('/')[-2]))
 		
 		try:

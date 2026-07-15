@@ -11,31 +11,6 @@ class Profile(models.Model):
     has the name of the institution of the account
     """
 
-    ### three types of numbering
-    SGE_GLOBAL = "g"  ## runs on projects
-    SGE_SAMPLE = "s"  ## runs on samples
-    SGE_LINK = "l"
-    SGE_REGULAR = "r"
-
-    ### Type of process, it is possible to track the process by this name
-    SGE_PROCESS_dont_care = "d"
-    SGE_PROCESS_clean_sample = "c"
-    ## set_run_trimmomatic_species; set_run_clean_minion
-    SGE_PROCESS_collect_all_samples = "sl"
-    ## set_create_sample_list_by_user
-    SGE_PROCESS_collect_all_projects = "pl"
-    ## set_create_project_list_by_user
-    ## related with projects...
-    SGE_PROCESS_projects = "ps"
-    ## set_second_stage_snippy; set_second_stage_medaka;
-    ## collect_global_files
-    SGE_PROCESS_datasets = "ds"
-    ## process datasets;
-    SGE_PROCESS_link_files = "l"
-    ## set_link_files
-    SGE_PROCESS_televir = "tv"
-    ## set_televir
-
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     institution = models.TextField(max_length=100, blank=True)
     email_confirmed = models.BooleanField(default=False)
@@ -44,7 +19,7 @@ class Profile(models.Model):
     only_view_project = models.BooleanField(default=False)
 
     ### queue name to process snippy
-    queue_name_sge = models.CharField(max_length=20, blank=True, null=True)
+    queue_name_slurm = models.CharField(max_length=20, blank=True, null=True)
 
     ## some limits by user
     max_references = models.IntegerField(default=30)
@@ -58,15 +33,15 @@ class Profile(models.Model):
     sge_seq_id_r = models.IntegerField(default=1)  ### regular
 
     def add_sge_seq_id(self, key_):
-        if key_ == self.SGE_GLOBAL:
+        if key_ == Constants.PROCESS_GLOBAL:
             self.sge_seq_id_g += 1
             self.save()
             return self.sge_seq_id_g
-        elif key_ == self.SGE_SAMPLE:
+        elif key_ == Constants.PROCESS_SAMPLE:
             self.sge_seq_id_s += 1
             self.save()
             return self.sge_seq_id_g
-        elif key_ == self.SGE_LINK:
+        elif key_ == Constants.PROCESS_LINK:
             self.sge_seq_id_l += 1
             self.save()
             return self.sge_seq_id_l
@@ -82,7 +57,7 @@ class Profile(models.Model):
         return prefix name"""
         return "job_{}_{}_{}".format(type_of_process, self.user.pk, key_)
 
-    def get_name_sge_seq(self, type_of_process=SGE_PROCESS_dont_care, key_="name"):
+    def get_name_slurm_seq(self, type_of_process=Constants.PROCESS_dont_care, key_="name"):
         """
         job_name = "job_name_<user_id>_<seq_id>"
         return, (current name, next name)
@@ -111,7 +86,7 @@ def create_user_profile(sender, instance, created, **kwargs):
             profile.only_view_project = True  ## security reasons
 
         ### get a queue name	give two different queue names to the user
-        profile.queue_name_sge = Constants.QUEUE_SGE_NAMES[profile.pk & 0x01]
+        profile.queue_name_slurm = Constants.QUEUE_NAMES[profile.pk & 0x01]
         profile.save()
 
 

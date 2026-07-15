@@ -209,7 +209,6 @@ class ProjectTable(tables.Table):
         user = current_request.user
 
         ## there's nothing to show
-        count = ParameterSet.objects.filter(project__id=record.id).count()
         project_sample = record.name
 
         project_sample = (
@@ -217,6 +216,16 @@ class ProjectTable(tables.Table):
             + reverse("PIproject_samples", args=[record.pk])
             + ' data-toggle="tooltip" title="See Results">'
             + "{}</a>".format(record.name)
+        )
+
+        add_tags_project = (
+            f'<a href="#id_add_tags_modal" style="float: right; margin-left: 10px;" id="id_add_tags" project_pk="{record.pk}" data-toggle="modal" data-toggle="tooltip" title="Add tags">'
+            + '<i class="fa fa-plus-square"></i></a>'
+        )
+
+        manage_project_tags = (
+            f'<a href="#id_manage_tags_modal" style="float: right;" id="id_manage_tags" project_pk="{record.pk}" data-toggle="modal" data-toggle="tooltip" title="Manage tags">'
+            + '<i class="fa fa-tags"></i></a>'
         )
 
         if user.username == Constants.USER_ANONYMOUS:
@@ -230,7 +239,11 @@ class ProjectTable(tables.Table):
                 + str(record.pk)
                 + '"><i class="fa fa-trash"></i></span> </a>'
                 + project_sample
+                + add_tags_project
+                + manage_project_tags
             )
+    
+
         return project_sample
 
     def render_creation_date(self, **kwargs):
@@ -887,12 +900,11 @@ class TelevirReferencesTable(tables.Table):
     def render_source(self, record: ReferenceSourceFileMap):
         
         records_same_accid = ReferenceSourceFileMap.objects.filter(
+            Q(reference_source_file__owner= self.user_id)
+            | Q(reference_source_file__owner__isnull=True)
+        ).filter(
             Q(reference_source__accid=record.reference_source.accid)
-            & Q(reference_source_file__owner__in=[
-                self.user_id
-            ]) | Q(reference_source_file__owner__isnull=True)
         ).distinct("reference_source_file")
-        
         files_flat = [
             record.reference_source_file.file for record in records_same_accid
         ]

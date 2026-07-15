@@ -7,10 +7,9 @@ Created on 04/05/2020
 import os
 
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Button, ButtonHolder, Div, Fieldset, Layout, Submit
+from crispy_forms.layout import (Button, ButtonHolder, Div, Fieldset, Layout,
+                                 Submit)
 from django import forms
-from django.conf import settings
-from django.contrib.auth.models import User
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.urls import reverse
@@ -21,12 +20,12 @@ from constants.constants import Constants
 from constants.software_names import SoftwareNames
 from datasets.models import Dataset
 from managing_files.models import Primer, Project, ProjectSample
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from pathogen_identification.models import Projects as TelevirProject
 from pathogen_identification.modules.remap_class import Remap_Bowtie2
-from pathogen_identification.utilities.utilities_pipeline import (
-    Utility_Pipeline_Manager,
-)
+from pathogen_identification.utilities.utilities_pipeline import \
+    Utility_Pipeline_Manager
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.models import Parameter, Sample, Software
@@ -145,8 +144,59 @@ class SoftwareForm(forms.ModelForm):
                     )
                 dt_fields[parameter.get_unique_id()].help_text = escape(help_text)
 
+            elif parameter.is_radio_button():
+                if parameter.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_recall_model_type:
+                    list_data = [
+                        [SoftwareNames.SOFTWARE_REMAP_PARAMS_recall_default_model, SoftwareNames.SOFTWARE_REMAP_PARAMS_recall_default_model]
+                    ]
+
+
+                    try:
+                        from pathogen_identification.utilities.ml_api_client import MLAPIClient
+
+                        client = MLAPIClient()
+                        models_recall= client.models_recall_cutoff()
+                        list_data = model_list + [
+                            [
+                                c.get('model_type', ''), f"{c.get('description', '')} {c.get('date_trained', '')}"
+                            ] for c in models_recall.values()
+                            ]
+                    except Exception as e:
+                        pass          
+
+                elif parameter.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_clustering_model_type:
+                    from pathogen_identification.utilities.ml_api_client import MLAPIClient
+                    list_data = [
+                        [SoftwareNames.SOFTWARE_REMAP_PARAMS_clustering_default_model, SoftwareNames.SOFTWARE_REMAP_PARAMS_clustering_default_model]
+                    ]
+
+                    try:
+
+                        client = MLAPIClient()
+                        models_clustering= client.models_composition()
+                        list_data = list_data + [
+                            [
+                                c.get('model_type', ''), f"{c.get('description', '')} {c.get('date_trained', '')}"
+                            ] for c in models_clustering.values()
+                            ]
+                    except Exception as e:
+                        pass
+
+                else:
+                    list_data = [[parameter.parameter, parameter.parameter]]
+                
+                dt_fields[parameter.get_unique_id()] = forms.ChoiceField(
+                    choices=list_data, widget=forms.RadioSelect
+                )
+                dt_fields[parameter.get_unique_id()].help_text = escape(parameter.description)
+                dt_fields[parameter.get_unique_id()].label = parameter.name
+                dt_fields[parameter.get_unique_id()].initial = parameter.parameter
+                dt_fields[parameter.get_unique_id()].widget.attrs.update({"class": "checkbox-inline"})
+                dt_fields[parameter.get_unique_id()].widget.attrs.update({"style": "margin-right: 10px;"})
+
             elif parameter.is_multiple_choice():  # Update this condition if needed
                 ## already selected
+
                 selected = parameter.parameter.split(";") if parameter.parameter else []
 
                 if (
@@ -160,6 +210,8 @@ class SoftwareForm(forms.ModelForm):
                             parameter.software.name.lower(), []
                         )
                     ]
+
+
 
                 elif parameter.software.name == SoftwareNames.SOFTWARE_METAPHLAN_NAME:
                     list_data = [
@@ -352,6 +404,7 @@ class SoftwareForm(forms.ModelForm):
                     and parameter.software.pipeline_step.name
                     in self.televir_utiltity.steps_db_dependant
                 ):
+
                     if (
                         parameter.software.pipeline_step.name
                         == ConstantsSettings.PIPELINE_NAME_host_depletion

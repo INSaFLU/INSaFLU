@@ -26,22 +26,14 @@ from constants.constants import Constants, FileExtensions, TypeFile, TypePath
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.nextclade_links import get_constext_nextclade
 from constants.software_names import SoftwareNames
-from datasets.forms import (
-    AddConsensusDatasetForm,
-    AddProjectsDatasetForm,
-    AddReferencesDatasetForm,
-    ConsensusForm,
-    DatastesUploadDescriptionMetadataForm,
-)
-from datasets.models import Consensus, Dataset, DatasetConsensus, MetaKey, UploadFiles
-from datasets.tables import (
-    AddDatasetFromCvsFileTableMetadata,
-    ConsensusTable,
-    DatasetConsensusTable,
-    DatasetTable,
-    ProjectTable,
-    ReferenceTable,
-)
+from datasets.forms import (AddConsensusDatasetForm, AddProjectsDatasetForm,
+                            AddReferencesDatasetForm, ConsensusForm,
+                            DatastesUploadDescriptionMetadataForm)
+from datasets.models import (Consensus, Dataset, DatasetConsensus, MetaKey,
+                             UploadFiles)
+from datasets.tables import (AddDatasetFromCvsFileTableMetadata,
+                             ConsensusTable, DatasetConsensusTable,
+                             DatasetTable, ProjectTable, ReferenceTable)
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project, ProjectSample, Reference
@@ -50,15 +42,13 @@ from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.models import Parameter
 from settings.models import Software as SoftwareSettings
 from settings.tables import SoftwaresTable
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 from utils.result import DecodeObjects
-from utils.session_variables import (
-    clean_check_box_in_session,
-    is_all_check_box_in_session,
-)
+from utils.session_variables import (clean_check_box_in_session,
+                                     is_all_check_box_in_session)
 from utils.software import Software
 from utils.support_django_template import get_link_for_dropdown_item
-from utils.utils import ShowInfoMainPage, Utils
+from utils.utils import ShowInfoMainPage, Utils, PathUtils
 
 
 class DatasetsView(LoginRequiredMixin, ListView):
@@ -382,7 +372,7 @@ class AddDatasetsReferencesView(
 
             ## need to run metadata
             try:
-                process_SGE = ProcessSGE()
+                process_SGE = ProcessSched()
                 taskID = (
                     process_SGE.set_collect_dataset_global_files_for_update_metadata(
                         dataset, self.request.user
@@ -418,7 +408,7 @@ class AddDatasetsConsensusView(
     def crumbs(self):
         return [
             ("Datasets", reverse("datasets")),
-            ("Add Consensus to dataset", reverse("add-consensus-dataset")),
+            ("Add Consensus to dataset", ""),
         ]
 
     if settings.DEBUG:
@@ -629,7 +619,7 @@ class AddDatasetsConsensusView(
 
                 ## need to run metadata
                 try:
-                    process_SGE = ProcessSGE()
+                    process_SGE = ProcessSched()
                     taskID = process_SGE.set_collect_dataset_global_files_for_update_metadata(
                         dataset, self.request.user
                     )
@@ -664,8 +654,7 @@ class AddDatasetsProjectsView(
         return [
             ("Datasets", reverse("datasets")),
             (
-                "Add Consensus from projects",
-                reverse("add-consensus-from-projects-dataset"),
+                "Add Consensus from projects", ""
             ),
         ]
 
@@ -971,7 +960,7 @@ class AddDatasetsProjectsView(
 
                 ## need to run metadata
                 try:
-                    process_SGE = ProcessSGE()
+                    process_SGE = ProcessSched()
                     taskID = process_SGE.set_collect_dataset_global_files_for_update_metadata(
                         dataset, self.request.user
                     )
@@ -1038,6 +1027,7 @@ class UploadNewConsensusView(
     def form_valid(self, form):
         software = Software()
         utils = Utils()
+        path_utils = PathUtils()
 
         ### test anonymous account
         try:
@@ -1133,7 +1123,7 @@ class UploadNewConsensusView(
                         ## move the files to the right place
                         sz_file_to = os.path.join(
                             settings.MEDIA_ROOT,
-                            utils.get_path_to_consensus_file(
+                            path_utils.get_path_to_consensus_file(
                                 self.request.user.id, consensus.id
                             ),
                             consensus.consensus_fasta_name,
@@ -1144,7 +1134,7 @@ class UploadNewConsensusView(
                             SeqIO.write([record], handle_out, "fasta")
                         consensus.hash_reference_fasta = utils.md5sum(sz_file_to)
                         consensus.consensus_fasta.name = os.path.join(
-                            utils.get_path_to_consensus_file(
+                            path_utils.get_path_to_consensus_file(
                                 self.request.user.id, consensus.id
                             ),
                             consensus.consensus_fasta_name,
@@ -1399,7 +1389,7 @@ class UpdateMetadataDataset(
             ),
             (
                 "Upload metadata",
-                reverse("upload-metadata", kwargs={"pk": self.kwargs.get("pk")}),
+                reverse("dataset-update-metadata", kwargs={"pk": self.kwargs.get("pk")}),
             ),
         ]
 
@@ -1610,6 +1600,7 @@ class AddSingleMetadataDatasetFile(
             pass
 
         utils = Utils()
+        path_utils = PathUtils()
         software = Software()
         path_name = form.cleaned_data["path_name"]
 
@@ -1654,12 +1645,12 @@ class AddSingleMetadataDatasetFile(
             ## move the files to the right place
             sz_file_to = os.path.join(
                 getattr(settings, "MEDIA_ROOT", None),
-                utils.get_path_upload_file(
+                path_utils.get_path_upload_file(
                     self.request.user.id, TypeFile.TYPE_FILE_dataset_file_metadata
                 ),
                 upload_files.file_name,
             )
-            sz_file_to, path_added = utils.get_unique_file(
+            sz_file_to, path_added = path_utils.get_unique_file(
                 sz_file_to
             )  ## get unique file name, user can upload files with same name...
             utils.move_file(
@@ -1671,14 +1662,14 @@ class AddSingleMetadataDatasetFile(
             software.dos_2_unix(sz_file_to)
             if path_added is None:
                 upload_files.path_name.name = os.path.join(
-                    utils.get_path_upload_file(
+                    path_utils.get_path_upload_file(
                         self.request.user.id, TypeFile.TYPE_FILE_dataset_file_metadata
                     ),
                     ntpath.basename(sz_file_to),
                 )
             else:
                 upload_files.path_name.name = os.path.join(
-                    utils.get_path_upload_file(
+                    path_utils.get_path_upload_file(
                         self.request.user.id, TypeFile.TYPE_FILE_dataset_file_metadata
                     ),
                     path_added,
@@ -1688,7 +1679,7 @@ class AddSingleMetadataDatasetFile(
 
             # This part was commented before... maybe comment it again?
             try:
-                process_SGE = ProcessSGE()
+                process_SGE = ProcessSched()
                 # taskID =  process_SGE.set_read_sample_file_with_metadata(upload_files, self.request.user)
                 taskID = (
                     process_SGE.set_collect_dataset_global_files_for_update_metadata(

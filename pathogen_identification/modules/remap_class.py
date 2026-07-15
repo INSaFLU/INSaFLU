@@ -14,21 +14,17 @@ from scipy.stats import kstest
 from constants.software_names import SoftwareNames
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.modules.object_classes import (
-    Bedgraph,
-    MappingStats,
-    Read_class,
-    Remap_Target,
-    RunCMD,
-    SoftwareDetail,
-    SoftwareRemap,
-)
+from pathogen_identification.modules.object_classes import (Bedgraph,
+                                                            MappingStats,
+                                                            Read_class,
+                                                            Remap_Target,
+                                                            RunCMD,
+                                                            SoftwareDetail,
+                                                            SoftwareRemap)
 from pathogen_identification.utilities.televir_bioinf import DustMasker
 from pathogen_identification.utilities.televir_parameters import RemapParams
 from pathogen_identification.utilities.utilities_general import (
-    plot_dotplot,
-    read_paf_coordinates,
-)
+    plot_dotplot, read_paf_coordinates)
 
 pd.options.mode.chained_assignment = None
 np.warnings.filterwarnings("ignore")
@@ -1065,6 +1061,8 @@ class Remapping:
     def process_bam(self):
 
         self.filter_bamfile_read_names()
+
+        self.markdup_bam_gatk()
         self.filter_bamfile()
 
         if self.check_remap_status_bam():
@@ -1080,6 +1078,9 @@ class Remapping:
 
             if filter.name == SoftwareNames.SOFTWARE_MSAMTOOLS_name:
                 self.filter_mapping_msamtools(filter)
+
+            if filter.name == SoftwareNames.SOFTWARE_GATK4_name:
+                self.markdup_bam_gatk(remove_duplicates=True, sorted_bam = False)
 
         self.filter_bam_unmapped()
 
@@ -1441,7 +1442,10 @@ class Remapping:
             self.logger.error("Assembly map file not found or empty.")
             return False
 
-    def filter_samfile_read_names(self, same=True, output_sam=""):
+    def read_names_make_safe(self, same=True, output_sam=""):
+        """
+        Filter sam file for read names that contain special characters that can cause issues with downstream tools.
+        """
         if not output_sam:
             output_sam = os.path.join(self.rdir, f"temp{randint(1,1999)}.sam")
 
@@ -1488,23 +1492,50 @@ class Remapping:
         if not self.check_remap_status_sam():
             self.convert_bam_to_sam()
 
-        self.filter_samfile_read_names()
+        self.read_names_make_safe()
 
         self.convert_sam_to_bam()
+        
+    def markdup_bam_gatk(self, same=True, remove_duplicates=False, sorted_bam = False):
+        """
+        Mark duplicates in bam file using gatk markdup for single end reads.
+        Ensure sorting by read name for markdup to work with single end reads.
+        Ensure read names are safe for downstream tools.
+        """
+        if not self.check_remap_status_bam():
+            self.logger.error("BAM file not found for duplicate marking.")
+            return
 
-    def remove_duplicates_samfile(self, same=True):
-        cmd = f"samtools rmdup -s {self.read_map_sam} {self.read_map_sam_rmdup}"
+        if sorted_bam is False:
+            temp_sorted_bam = os.path.join(
+                self.rdir, f"temp{randint(1,1999)}.sorted.bam"
+            )
 
-        self.cmd.run(cmd)
+            cmd_sort = f"samtools sort -n {self.read_map_bam} -o {temp_sorted_bam}"
+            self.cmd.run(cmd_sort)
 
-        if not os.path.isfile(self.read_map_sam_rmdup):
+        else:
+            temp_sorted_bam = self.read_map_bam
+
+        temp_markdup_bam = os.path.join(
+            self.rdir, f"temp{randint(1,1999)}.markdup.bam"
+        )
+
+        cmd_markdup = f"gatk MarkDuplicates -I {temp_sorted_bam} -O {temp_markdup_bam} -M {temp_markdup_bam}.metrics --REMOVE_DUPLICATES={str(remove_duplicates).upper()}"
+        self.cmd.run(cmd_markdup)
+
+        if not os.path.isfile(temp_markdup_bam):
             self.logger.error(
-                "Duplicate removal failed for file {}".format(self.read_map_sam)
+                "Duplicate marking failed for file {}".format(self.read_map_bam)
             )
             return
+
         if same:
-            os.remove(self.read_map_sam)
-            os.rename(self.read_map_sam_rmdup, self.read_map_sam)
+            os.remove(self.read_map_bam)
+            os.rename(temp_markdup_bam, self.read_map_bam)
+
+        os.remove(temp_sorted_bam)
+        
 
     def convert_sam_to_bam(self):
         if self.check_remap_status_sam():
@@ -1642,12 +1673,15 @@ class Remapping:
     def extract_mapping_stats(self) -> MappingStats:
         """
         read stats as pd data frame, pass to class"""
-
-        stats_df = pd.read_csv(
-            self.read_map_sorted_bam_stats, sep="\t", header=None, index_col=0
-        ).rename(columns={0: "stat", 1: "value", 2: "comment"})
-        error_rate = stats_df.loc["error rate:", "value"]
-        quality_avg = stats_df.loc["average quality:", "value"]
+        try:
+            stats_df = pd.read_csv(
+                self.read_map_sorted_bam_stats, sep="\t", header=None, index_col=0
+            ).rename(columns={0: "stat", 1: "value", 2: "comment"})
+            error_rate = float(stats_df.loc["error rate:", "value"])
+            quality_avg = float(stats_df.loc["average quality:", "value"])
+        except pd.errors.EmptyDataError:
+            error_rate = 0.0
+            quality_avg = 0.0
 
         return MappingStats(error_rate, quality_avg)
 

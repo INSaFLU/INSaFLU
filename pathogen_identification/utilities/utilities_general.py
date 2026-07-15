@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup
 matplotlib.use("Agg")
 
 import zipfile
-from typing import Optional
+from typing import Dict, Optional
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -18,6 +18,65 @@ from django.contrib.auth.models import User
 from fluwebvirus.settings import MEDIA_ROOT
 from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.models import Projects, RunMain
+
+
+def rename_columns_to_standard(
+    df: pd.DataFrame,
+    taxid_col: Optional[str] = None,
+    accid_col: Optional[str] = None
+) -> pd.DataFrame:
+    """
+    Rename columns to standard names ('taxid', 'accid').
+    
+    Args:
+        df: Input DataFrame
+        taxid_col: Actual taxid column name (if detected)
+        accid_col: Actual accession column name (if detected)
+    
+    Returns:
+        DataFrame with standardized column names
+    """
+    df = df.copy()
+    
+    if taxid_col and taxid_col != 'taxid':
+        if 'taxid' not in df.columns:
+            df.rename(columns={taxid_col: 'taxid'}, inplace=True)
+
+    if accid_col and accid_col != 'accid':
+        if 'accid' not in df.columns:
+            df.rename(columns={accid_col: 'accid'}, inplace=True)
+    
+    return df
+
+
+def detect_id_columns(df: pd.DataFrame) -> Dict[str, Optional[str]]:
+    """
+    Detect taxonomic ID and accession columns in a DataFrame.
+    
+    Supported taxid columns: 'taxid', 'TaxID', 'taxon'
+    Supported accession columns: 'assembly_accession', 'accession', 'accID', 'accid'
+    
+    Args:
+        df: Input DataFrame
+    
+    Returns:
+        Dictionary with 'taxid_col' and 'accid_col' keys
+    """
+    base_columns = [col for col in df.columns if not any(col.endswith(f'.{i}') for i in range(100))]
+    
+    taxid_col = None
+    for col in ['taxid', 'TaxID', 'taxon', 'taxID']:
+        if col in base_columns:
+            taxid_col = col
+            break
+    
+    accid_col = None
+    for col in ['assembly_accession', 'accession', 'accID', 'accid', 'accession_id']:
+        if col in base_columns:
+            accid_col = col
+            break
+    
+    return {'taxid_col': taxid_col, 'accid_col': accid_col}
 
 
 def generate_zip_file(file_list: list, zip_file_path: str) -> str:

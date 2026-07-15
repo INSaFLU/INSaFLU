@@ -4,17 +4,15 @@ Created on 03/05/2020
 @author: mmp
 """
 
-from curses.ascii import SO
-
 from django.contrib.auth.models import User
-from django.db import DatabaseError, transaction
+from django.db import transaction
 
+from constants.constants import Constants
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import ConstantsSettings as PICS
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PICS
 from pathogen_identification.utilities.utilities_pipeline import (
-    Utility_Pipeline_Manager,
-    Utils_Manager,
-)
+    Utility_Pipeline_Manager, Utils_Manager)
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.models import Parameter, Software, SoftwareDefaultTest
@@ -40,7 +38,7 @@ class DefaultSoftware(object):
         test if exist, if not persist in database
         """
         try:
-            software_test = SoftwareDefaultTest.objects.get(
+            SoftwareDefaultTest.objects.get(
                 user=user, televir_pipelines_available=True
             )
 
@@ -64,7 +62,7 @@ class DefaultSoftware(object):
 
     def test_televir_software_available(self):
         """test if televir software is available"""
-        user_system = User.objects.get(username="system")
+        user_system = User.objects.get(username=Constants.DEFAULT_USER)
 
         # self.test_all_defaults_pathogen_identification_once(user_system)
 
@@ -352,6 +350,9 @@ class DefaultSoftware(object):
             user,
         )
 
+        ####
+        #### for software with multiple pipeline steps, test all pipeline steps
+
         self.test_default_db(
             SoftwareNames.SOFTWARE_MSAMTOOLS_name,
             self.default_parameters.get_msamtools_defaults(
@@ -393,6 +394,55 @@ class DefaultSoftware(object):
             ),
             user,
         )
+
+        #######
+        #######
+
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_GATK4_name,
+            self.default_parameters.get_gatk4_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_GATK4_name,
+            self.default_parameters.get_gatk4_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_map_filtering,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_GATK4_name,
+            self.default_parameters.get_gatk4_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_GATK4_name,
+            self.default_parameters.get_gatk4_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_map_filtering,
+            ),
+            user,
+        )
+
+        #######
+        #######
 
         self.test_default_db(
             SoftwareNames.SOFTWARE_DUSTMASKER_name,
@@ -1304,6 +1354,19 @@ class DefaultSoftware(object):
             pipeline_step=pipeline_step,
         )
         return "" if result is None else result
+    
+    def get_gatk4_parameters(self, user, technology_name, pipeline_step=None):
+        result = self.default_parameters.get_parameters_parsed(
+            SoftwareNames.SOFTWARE_GATK4_name,
+            user,
+            Software.TYPE_OF_USE_televir_global,
+            None,
+            None,
+            None,
+            technology_name,
+            pipeline_step=pipeline_step,
+        )
+        return "" if result is None else result
 
     def get_televir_report_layout_parameters(self, user, technology_name):
         result = self.default_parameters.get_parameters_parsed(
@@ -1821,6 +1884,10 @@ class DefaultSoftware(object):
         if software_name == SoftwareNames.SOFTWARE_MSAMTOOLS_name:
 
             return self.get_msamtools_parameters(user, technology_name)
+
+        if software_name == SoftwareNames.SOFTWARE_GATK4_name:
+            
+            return self.get_gatk4_parameters(user, technology_name, pipeline_step)
 
         if software_name == SoftwareNames.SOFTWARE_televir_report_layout_name:
 

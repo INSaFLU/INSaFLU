@@ -1304,6 +1304,13 @@ class DefaultParameters(object):
                 Software.TYPE_OF_USE_televir_global,
                 software.technology.name,
             )
+        
+        elif software.name == SoftwareNames.SOFTWARE_GATK4_name:
+            return self.get_gatk4_defaults(
+                software.owner,
+                Software.TYPE_OF_USE_televir_global,
+                software.technology.name,
+            )
 
         elif software.name == SoftwareNames.SOFTWARE_PRINSEQ_name:
             return self.get_prinseq_defaults(
@@ -2414,6 +2421,64 @@ class DefaultParameters(object):
 
         return vect_parameters
 
+
+
+    def get_gatk4_defaults(
+        self,
+        user,
+        type_of_use,
+        technology_name,
+        sample=None,
+        is_to_run=False,
+        pipeline_step=None,
+    ):
+        """
+        remapping parameters, namely:
+            max number of taxids to map against.
+            max number of acccids to map for each taxid.
+            minimum coverage?
+        """
+        software = Software()
+        software.name = SoftwareNames.SOFTWARE_GATK4_name
+        software.name_extended = SoftwareNames.SOFTWARE_GATK4_name_extended
+        software.type_of_use = type_of_use
+        software.type_of_software = Software.TYPE_INSAFLU_PARAMETER
+        software.version = SoftwareNames.SOFTWARE_GATK4_VERSION
+        software.version_parameters = self.get_software_parameters_version(
+            software.name
+        )
+        software.technology = self.get_technology(technology_name)
+        software.can_be_on_off_in_pipeline = (
+            True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
+        )
+        software.is_to_run = is_to_run
+
+        ###  small description of software
+        software.help_text = ""
+
+        ###  which part of pipeline is going to run
+        if not pipeline_step:
+            pipeline_step = ConstantsSettings.PIPELINE_NAME_remap_filtering
+        software.pipeline_step = self._get_pipeline(pipeline_step)
+
+        software.owner = user
+        vect_parameters = []
+
+        parameter = Parameter()
+        parameter.name = "--REMOVE_DUPLICATES"
+        parameter.parameter = "true"
+        parameter.type_data = Parameter.PARAMETER_char_list
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = False
+        parameter.is_to_run = True  ### by default it's True
+        parameter.sequence_out = 1
+        parameter.description = "Remove duplicates: whether to remove duplicates before variant calling. (Defaults to true)"
+        vect_parameters.append(parameter)
+
+        return vect_parameters
+
     def get_msamtools_defaults(
         self,
         user,
@@ -2652,6 +2717,39 @@ class DefaultParameters(object):
         parameter.description = (
             "Include manual curation in the pipeline. (Defaults to OFF)"
         )
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = SoftwareNames.SOFTWARE_REMAP_PARAMS_clustering_model_type
+        parameter.parameter = SoftwareNames.SOFTWARE_REMAP_PARAMS_clustering_default_model
+        parameter.type_data = Parameter.PARAMETER_radio_button
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True
+        parameter.sequence_out = 4
+        parameter.range_available = ""
+        parameter.range_max = ""
+        parameter.range_min = ""
+        parameter.description = "Composition Clustering Model to Use - tree construction and hit clustering."
+        vect_parameters.append(parameter)
+
+
+        parameter = Parameter()
+        parameter.name = SoftwareNames.SOFTWARE_REMAP_PARAMS_recall_model_type
+        parameter.parameter = SoftwareNames.SOFTWARE_REMAP_PARAMS_recall_default_model
+        parameter.type_data = Parameter.PARAMETER_radio_button
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True
+        parameter.sequence_out = 5
+        parameter.range_available = ""
+        parameter.range_max = ""
+        parameter.range_min = ""
+        parameter.description = "Recall Filter Model to Use."
         vect_parameters.append(parameter)
 
         return vect_parameters
@@ -4227,7 +4325,7 @@ class DefaultParameters(object):
 
         parameter = Parameter()
         parameter.name = "--confidence"
-        parameter.parameter = "0.5"
+        parameter.parameter = "0.2"
         parameter.type_data = Parameter.PARAMETER_float
         parameter.software = software
         parameter.sample = sample
@@ -4235,9 +4333,9 @@ class DefaultParameters(object):
         parameter.can_change = True if PI_ConstantsSettings.METAGENOMICS else False
         parameter.is_to_run = True  ### by default it's True
         parameter.sequence_out = 2
-        parameter.range_available = "[0.4:1.0]"
+        parameter.range_available = "[0.0:1.0]"
         parameter.range_max = "1.0"
-        parameter.range_min = "0.4"
+        parameter.range_min = "0.0"
         parameter.description = "confidence threshold for reporting a taxon"
         vect_parameters.append(parameter)
 

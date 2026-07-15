@@ -44,7 +44,7 @@ from pathogen_identification.utilities.utilities_views import (
 from pathogen_identification.views import inject__added_references
 from settings.constants_settings import ConstantsSettings as CS
 from settings.default_software_project_sample import DefaultProjectSoftware
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 from utils.software import Software
 from utils.utils import Utils
 
@@ -65,7 +65,7 @@ def submit_sample_metagenomics_televir(request):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False, "is_deployed": False, "no_references": False}
 
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
 
         sample_id = int(request.POST["sample_id"])
         sample = PIProject_Sample.objects.get(id=int(sample_id))
@@ -116,7 +116,7 @@ def submit_sample_screening_televir(request):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False, "is_deployed": False}
 
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
 
         sample_id = int(request.POST["sample_id"])
         sample = PIProject_Sample.objects.get(id=int(sample_id))
@@ -179,7 +179,7 @@ def check_reference_mapped(sample_id, reference: RawReference):
 def deploy_remap(
     sample: PIProject_Sample, project: Projects, reference_id_list: list = []
 ):
-    process_SGE = ProcessSGE()
+    process_SGE = ProcessSched()
 
     data = {"is_ok": True, "is_deployed": False, "is_empty": False, "message": ""}
     user = sample.project.owner
@@ -399,7 +399,7 @@ def available_televir_files(request):
 @require_POST
 def submit_sample_mapping_panels(request):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         user = request.user
         data = {
             "is_ok": True,
@@ -462,7 +462,7 @@ def submit_samples_mapping_panels(request):
             "message": "",
         }
 
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
 
         project_id = int(request.POST["project_id"])
         project = Projects.objects.get(id=int(project_id))
@@ -629,7 +629,7 @@ def deploy_ProjectPI(request):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False, "is_deployed": False}
 
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
 
         project_id = int(request.POST["project_id"])
         project = Projects.objects.get(id=int(project_id))
@@ -658,11 +658,18 @@ def deploy_ProjectPI(request):
                 runs_to_deploy = software_utils.check_and_set_runs_to_deploy_sample(sample)
 
                 if len(runs_to_deploy) > 0:
+                    (job_name_wait, job_name) = user.profile.get_name_slurm_seq(
+                        PICS.PROCESS_TYPE_DEPLOYMENT, Constants.PROCESS_REGULAR
+                    )
+
                     for sample, _ in runs_to_deploy.items():
+
                         taskID = process_SGE.set_submit_televir_sample(
                             user=user,
                             project_pk=project.pk,
                             sample_pk=sample.pk,
+                            job_name=job_name,
+                            vect_job_name_wait=[job_name_wait]
                         )
 
                     data["is_deployed"] = True
@@ -685,7 +692,7 @@ def deploy_ProjectPI_combined_runs(request):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False, "is_deployed": False}
 
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
 
         project_id = int(request.POST["project_id"])
         project = Projects.objects.get(id=int(project_id))
@@ -764,7 +771,7 @@ def submit_televir_project_sample(request):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         try:
             data = {"is_ok": False, "is_deployed": False}
-            process_SGE = ProcessSGE()
+            process_SGE = ProcessSched()
             user = request.user
 
             sample_id = int(request.POST["sample_id"])
@@ -780,11 +787,18 @@ def submit_televir_project_sample(request):
 
         try:
             if len(runs_to_deploy) > 0:
+
+                (job_name_wait, job_name) = user.profile.get_name_slurm_seq(
+                    PICS.PROCESS_TYPE_DEPLOYMENT, Constants.PROCESS_REGULAR
+                )
+
                 for sample, _ in runs_to_deploy.items():
                     _ = process_SGE.set_submit_televir_sample(
                         user=request.user,
                         project_pk=project.pk,
                         sample_pk=sample.pk,
+                        job_name = job_name,
+                        vect_job_name_wait=[job_name_wait]
                     )
 
                 data["is_deployed"] = True
@@ -807,7 +821,7 @@ def Project_explify_merge(request):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False, "is_deployed": False}
 
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         user = request.user
         utils: Utils = Utils()
         try:
@@ -884,7 +898,7 @@ def Project_explify_merge_external(request):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False, "is_deployed": False}
 
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         user = request.user
         utils: Utils = Utils()
         try:
@@ -955,7 +969,7 @@ def Update_televir_project(request):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False, "is_deployed": False}
 
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         user = request.user
 
         project_id = int(request.POST["project_id"])
@@ -987,7 +1001,7 @@ def Project_explify_delete_external(request):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False, "is_deployed": False}
 
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         user = request.user
         utils: Utils = Utils()
         try:
@@ -1013,7 +1027,7 @@ def kill_televir_project_sample(request):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False, "is_deployed": False}
 
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         user = request.user
 
         sample_id = int(request.POST["sample_id"])
@@ -1060,7 +1074,7 @@ def kill_televir_project_tree_sample(request):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False, "is_deployed": False}
 
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         user = request.user
 
         sample_id = int(request.POST["sample_id"])
@@ -1112,7 +1126,7 @@ def kill_televir_project_all_sample(request):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False, "is_deployed": False, "is_empty": True}
 
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         user = request.user
 
         project_id = int(request.POST["project_id"])
@@ -1174,7 +1188,7 @@ def sort_report_projects(request):
     """
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False, "is_deployed": False}
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         samples = PIProject_Sample.objects.filter(
             project__pk=int(request.POST["project_id"])
         )
@@ -1219,7 +1233,7 @@ def sort_report_sample(request):
     """
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False, "is_deployed": False}
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         sample = PIProject_Sample.objects.get(pk=int(request.POST["sample_id"]))
 
         project = sample.project
@@ -1335,7 +1349,7 @@ def create_insaflu_reference_from_filemap(request):
         ref_id = int(request.POST["ref_id"])
         user_id = int(request.POST["user_id"])
         user = User.objects.get(id=user_id)
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
 
         try:
             reference = ReferenceSourceFileMap.objects.get(id=ref_id)
@@ -1621,7 +1635,7 @@ def create_insaflu_project(request):
         data = {"is_ok": False, "is_error": False, "exists": False}
         teleflu_project_id = int(request.POST["project_id"])
         teleflu_project = TeleFluProject.objects.get(pk=teleflu_project_id)
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
 
         if teleflu_project.insaflu_project is not None:
             data["exists"] = True
@@ -1639,6 +1653,141 @@ def create_insaflu_project(request):
             data["is_error"] = True
             return JsonResponse(data)
 
+
+#########################################################################
+##################### TELEVIR PROJECT TAGS ##############################
+#########################################################################
+from pathogen_identification.models import ProjectTag, ProjectTagAssignment
+
+
+@csrf_protect
+def get_user_tags(request):
+    """
+    Get all tags for the current user
+    """
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        data = {"is_ok": False, "tags": []}
+
+        user = request.user
+        tags = ProjectTag.objects.filter(owner=user, is_deleted=False)
+
+        for tag in tags:
+            data["tags"].append({"id": tag.id, "name": tag.name})
+
+        data["is_ok"] = True
+        return JsonResponse(data)
+
+
+@csrf_protect
+def get_project_tags(request):
+    """
+    Get all tags for a specific project
+    """
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        data = {"is_ok": False, "tags": []}
+
+        user = request.user
+        project_id = int(request.POST.get("project_id", 0))
+        project = Projects.objects.filter(id=project_id, owner=user).first()
+
+        if project:
+            tags = ProjectTagAssignment.objects.filter(project=project).select_related("tag")
+            for tag_assignment in tags:
+                data["tags"].append({"id": tag_assignment.tag.id, "name": tag_assignment.tag.name})
+
+            data["is_ok"] = True
+        return JsonResponse(data)
+
+@csrf_protect
+def delete_tag(request):
+    """
+    Delete a tag for the current user
+    """
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        data = {"is_ok": False}
+
+        user = request.user
+        tag_id = int(request.POST.get("tag_id", 0))
+        tag = ProjectTag.objects.filter(id=tag_id, owner=user, is_deleted=False).first()
+
+        if tag:
+            tag.is_deleted = True
+            tag.save()
+            data["is_ok"] = True
+
+        return JsonResponse(data)
+
+@csrf_protect
+def create_user_project_tag(request):
+    """
+    Create a new tag for the current user
+    """
+
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        data = {"is_ok": False}
+
+        user = request.user
+        tag_name = request.POST.get("name", "").strip()
+
+        if tag_name == "":
+            n_user_tags = ProjectTag.objects.filter(owner=user, is_deleted=False).count()
+            tag_name = f"Tag {n_user_tags + 1}"
+            if ProjectTag.objects.filter(name=tag_name, owner=user, is_deleted=False).exists():
+                tag_name = f""
+
+        if tag_name:
+            tag = ProjectTag.objects.create(name=tag_name, owner=user)
+            data["is_ok"] = True
+            data["tag"] = {"id": tag.id, "name": tag.name}
+
+        return JsonResponse(data)
+
+
+@csrf_protect
+def possible_project_tags(request):
+    """
+    tags not yet assigned to this project"""
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        data = {"is_ok": False, "tags": []}
+        print(request.POST)
+        user = request.user
+        project_id = int(request.POST.get("project_id", 0))
+        project = Projects.objects.filter(id=project_id, owner=user).first()
+
+        if project:
+            assigned_tags = ProjectTagAssignment.objects.filter(project=project).values_list("tag_id", flat=True)
+            possible_tags = ProjectTag.objects.filter(owner=user, is_deleted=False).exclude(id__in=assigned_tags)
+
+            for tag in possible_tags:
+                data["tags"].append({"id": tag.id, "name": tag.name})
+
+            data["is_ok"] = True
+        return JsonResponse(data)
+
+@csrf_protect
+def assign_tag_to_project(request):
+    """
+    Assign a tag to a project for the current user
+    """
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        data = {"is_ok": False}
+
+        user = request.user
+        project_id = int(request.POST.get("project_id", 0))
+        tag_id = int(request.POST.get("tag_id", 0))
+
+        project = Projects.objects.filter(id=project_id, owner=user).first()
+        tag = ProjectTag.objects.filter(id=tag_id, owner=user, is_deleted=False).first()
+
+        if project and tag:
+            ProjectTagAssignment.objects.create(tag=tag, project=project)
+            data["is_ok"] = True
+
+        return JsonResponse(data)
+
+#########################################################################
+##################### TELEVIR FOCUS FUNCTIONS (TELEFLU) #################
+#########################################################################
 
 @csrf_protect
 def set_teleflu_check_box_values(request):
@@ -1858,7 +2007,7 @@ def load_teleflu_workflows(request):
                 continue
 
             params_df = utils_manager.get_leaf_parameters(mapping.leaf)
-            node_info = node_info = teleflu_node_info(params_df, mapping.leaf)
+            node_info = teleflu_node_info(params_df, mapping.leaf)
 
             samples_mapped = mapping.mapped_samples
 
@@ -1929,7 +2078,7 @@ def map_teleflu_workflow_samples(request):
         )
 
         references_to_map = teleflu_project.raw_reference.references
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
 
         if len(samples_to_map) == 0:
             data["is_empty"] = True
@@ -1980,7 +2129,7 @@ def stack_igv_teleflu_workflow(request):
             data["is_error"] = True
             return JsonResponse(data)
 
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         process_controler = ProcessControler()
 
         if ProcessControler.objects.filter(
@@ -2106,7 +2255,7 @@ def deploy_televir_map(request):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False, "is_deployed": False}
 
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         user = request.user
 
         reference_id = int(request.POST["reference_id"])

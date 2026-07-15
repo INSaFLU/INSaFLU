@@ -48,7 +48,9 @@ from managing_files.tables import (AddSamplesFromCvsFileTable,
                                    ReferenceTable, SampleTable,
                                    SampleToProjectsTable,
                                    ShowProjectSamplesResults)
-from pathogen_identification.models import PIProject_Sample, TeleFluProject
+from pathogen_identification.models import PIProject_Sample
+from pathogen_identification.models import Projects as TelevirProject
+from pathogen_identification.models import TeleFluProject
 from pathogen_identification.utilities.utilities_views import \
     SampleReadsRetrieve
 from settings.constants_settings import ConstantsSettings
@@ -57,14 +59,14 @@ from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.models import Software as SoftwareSettings
 from settings.tables import SoftwaresTable
 from utils.collect_extra_data import CollectExtraData
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 from utils.result import DecodeObjects
 from utils.session_variables import (clean_check_box_in_session,
                                      is_all_check_box_in_session)
 from utils.software import Software, SoftwareFlumut
 from utils.software_pangolin import SoftwarePangolin
 from utils.support_django_template import get_link_for_dropdown_item
-from utils.utils import ShowInfoMainPage, Utils
+from utils.utils import ShowInfoMainPage, Utils, PathUtils
 
 # http://www.craigderington.me/generic-list-view-with-django-tables/
 
@@ -249,6 +251,7 @@ class ReferenceAddView(
 
         software = Software()
         utils = Utils()
+        path_utils = PathUtils()
         name = form.cleaned_data["name"]
         scentific_name = form.cleaned_data["isolate_name"]
         reference_fasta = form.cleaned_data["reference_fasta"]
@@ -317,7 +320,7 @@ class ReferenceAddView(
         ## move the files to the right place
         sz_file_to = os.path.join(
             settings.MEDIA_ROOT,
-            utils.get_path_to_reference_file(self.request.user.id, reference.id),
+            path_utils.get_path_to_reference_file(self.request.user.id, reference.id),
             reference.reference_fasta_name,
         )
         software.dos_2_unix(
@@ -333,7 +336,7 @@ class ReferenceAddView(
         )
         reference.hash_reference_fasta = utils.md5sum(sz_file_to)
         reference.reference_fasta.name = os.path.join(
-            utils.get_path_to_reference_file(self.request.user.id, reference.id),
+            path_utils.get_path_to_reference_file(self.request.user.id, reference.id),
             reference.reference_fasta_name,
         )
 
@@ -341,7 +344,7 @@ class ReferenceAddView(
         ## genbank file
         sz_file_to = os.path.join(
             settings.MEDIA_ROOT,
-            utils.get_path_to_reference_file(self.request.user.id, reference.id),
+            path_utils.get_path_to_reference_file(self.request.user.id, reference.id),
             reference.reference_genbank_name,
         )
         if reference_genbank is None:
@@ -355,7 +358,7 @@ class ReferenceAddView(
         software.dos_2_unix(sz_file_to)
         reference.hash_reference_genbank = utils.md5sum(sz_file_to)
         reference.reference_genbank.name = os.path.join(
-            utils.get_path_to_reference_file(self.request.user.id, reference.id),
+            path_utils.get_path_to_reference_file(self.request.user.id, reference.id),
             reference.reference_genbank_name,
         )
         reference.save()
@@ -529,6 +532,7 @@ class PrimerAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView)
 
         software = Software()
         utils = Utils()
+        path_utils = PathUtils()
         name = form.cleaned_data["name"]
         primer_fasta = form.cleaned_data["primer_fasta"]
         primer_pairs = form.cleaned_data["primer_pairs"]
@@ -550,7 +554,7 @@ class PrimerAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView)
         ## move the files to the right place
         sz_file_to = os.path.join(
             settings.MEDIA_ROOT,
-            utils.get_path_to_primer_file(self.request.user.id, primer.id),
+            path_utils.get_path_to_primer_file(self.request.user.id, primer.id),
             primer.primer_fasta_name,
         )
         software.dos_2_unix(os.path.join(settings.MEDIA_ROOT, primer.primer_fasta.name))
@@ -564,7 +568,7 @@ class PrimerAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView)
         )
         primer.hash_primer_fasta = utils.md5sum(sz_file_to)
         primer.primer_fasta.name = os.path.join(
-            utils.get_path_to_primer_file(self.request.user.id, primer.id),
+            path_utils.get_path_to_primer_file(self.request.user.id, primer.id),
             primer.primer_fasta_name,
         )
 
@@ -572,7 +576,7 @@ class PrimerAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView)
         ## genbank file
         sz_file_to = os.path.join(
             settings.MEDIA_ROOT,
-            utils.get_path_to_primer_file(self.request.user.id, primer.id),
+            path_utils.get_path_to_primer_file(self.request.user.id, primer.id),
             primer.primer_pairs_name,
         )
         utils.move_file(
@@ -582,7 +586,7 @@ class PrimerAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView)
         software.dos_2_unix(sz_file_to)
         primer.hash_primer_pairs = utils.md5sum(sz_file_to)
         primer.primer_pairs.name = os.path.join(
-            utils.get_path_to_primer_file(self.request.user.id, primer.id),
+            path_utils.get_path_to_primer_file(self.request.user.id, primer.id),
             primer.primer_pairs_name,
         )
         primer.save()
@@ -601,6 +605,7 @@ class PrimerAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView)
 class SamplesView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
     model = Sample
     utils = Utils()
+    path_utils = PathUtils()
     template_name = "samples/samples.html"
     context_object_name = "samples"
 
@@ -653,21 +658,21 @@ class SamplesView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
             context[search_key] = tag_search
 
         ## list of all samples in CSV and TSV
-        csv_file = self.utils.get_sample_list_by_user(
+        csv_file = self.path_utils.get_user_sample_list_path(
             self.request.user.id, "MEDIA_ROOT", FileExtensions.FILE_CSV
         )
         if os.path.exists(csv_file):
             context["list_samples_file_csv"] = get_link_for_dropdown_item(
-                self.utils.get_sample_list_by_user(
+                self.path_utils.get_user_sample_list_path(
                     self.request.user.id, "MEDIA_URL", FileExtensions.FILE_CSV
                 )
             )
-        tsv_file = self.utils.get_sample_list_by_user(
+        tsv_file = self.path_utils.get_user_sample_list_path(
             self.request.user.id, "MEDIA_ROOT", FileExtensions.FILE_TSV
         )
         if os.path.exists(tsv_file):
             context["list_samples_file_tsv"] = get_link_for_dropdown_item(
-                self.utils.get_sample_list_by_user(
+                self.path_utils.get_user_sample_list_path(
                     self.request.user.id, "MEDIA_URL", FileExtensions.FILE_TSV
                 )
             )
@@ -767,6 +772,7 @@ class SamplesAddView(
             pass
 
         utils = Utils()
+        path_utils = PathUtils()
         name = form.cleaned_data["name"]
         lat = form.cleaned_data["lat"]
         lng = form.cleaned_data["lng"]
@@ -817,7 +823,7 @@ class SamplesAddView(
         ## move the files to the right place
         sz_file_to = os.path.join(
             getattr(settings, "MEDIA_ROOT", None),
-            utils.get_path_to_fastq_file(self.request.user.id, sample.id),
+            path_utils.get_path_to_fastq_file(self.request.user.id, sample.id),
             sample.file_name_1,
         )
         utils.move_file(
@@ -827,14 +833,14 @@ class SamplesAddView(
             sz_file_to,
         )
         sample.path_name_1.name = os.path.join(
-            utils.get_path_to_fastq_file(self.request.user.id, sample.id),
+            path_utils.get_path_to_fastq_file(self.request.user.id, sample.id),
             sample.file_name_1,
         )
 
         if sample.exist_file_2():
             sz_file_to = os.path.join(
                 getattr(settings, "MEDIA_ROOT", None),
-                utils.get_path_to_fastq_file(self.request.user.id, sample.id),
+                path_utils.get_path_to_fastq_file(self.request.user.id, sample.id),
                 sample.file_name_2,
             )
             utils.move_file(
@@ -844,7 +850,7 @@ class SamplesAddView(
                 sz_file_to,
             )
             sample.path_name_2.name = os.path.join(
-                utils.get_path_to_fastq_file(self.request.user.id, sample.id),
+                path_utils.get_path_to_fastq_file(self.request.user.id, sample.id),
                 sample.file_name_2,
             )
 
@@ -854,7 +860,7 @@ class SamplesAddView(
         if form.cleaned_data["type_of_fastq"] == -1:
             sz_file_to = os.path.join(
                 getattr(settings, "MEDIA_ROOT", None),
-                utils.get_path_to_fastq_file(self.request.user.id, sample.id),
+                path_utils.get_path_to_fastq_file(self.request.user.id, sample.id),
                 sample.file_name_1,
             )
             (is_fastq, type_of_fastq) = utils.is_fastq_gz(sz_file_to)
@@ -868,9 +874,9 @@ class SamplesAddView(
 
         ### create a task to perform the analysis of fastq and trimmomatic
         try:
-            process_SGE = ProcessSGE()
-            (job_name_wait, job_name) = self.request.user.profile.get_name_sge_seq(
-                Profile.SGE_PROCESS_clean_sample, Profile.SGE_SAMPLE
+            process_SGE = ProcessSched()
+            (job_name_wait, job_name) = self.request.user.profile.get_name_slurm_seq(
+                Constants.PROCESS_clean_sample, Constants.PROCESS_SAMPLE
             )
             if sample.is_type_fastq_gz_sequencing():  ### default is Illumina
                 taskID = process_SGE.set_run_trimmomatic_species(
@@ -1222,6 +1228,7 @@ class SamplesUploadDescriptionFileView(
             pass
 
         utils = Utils()
+        path_utils = PathUtils()
         software = Software()
         path_name = form.cleaned_data["path_name"]
 
@@ -1255,12 +1262,12 @@ class SamplesUploadDescriptionFileView(
             ## move the files to the right place
             sz_file_to = os.path.join(
                 getattr(settings, "MEDIA_ROOT", None),
-                utils.get_path_upload_file(
+                path_utils.get_path_upload_file(
                     self.request.user.id, TypeFile.TYPE_FILE_sample_file
                 ),
                 upload_files.file_name,
             )
-            sz_file_to, path_added = utils.get_unique_file(
+            sz_file_to, path_added = path_utils.get_unique_file(
                 sz_file_to
             )  ## get unique file name, user can upload files with same name...
             utils.move_file(
@@ -1272,14 +1279,14 @@ class SamplesUploadDescriptionFileView(
             software.dos_2_unix(sz_file_to)
             if path_added is None:
                 upload_files.path_name.name = os.path.join(
-                    utils.get_path_upload_file(
+                    path_utils.get_path_upload_file(
                         self.request.user.id, TypeFile.TYPE_FILE_sample_file
                     ),
                     ntpath.basename(sz_file_to),
                 )
             else:
                 upload_files.path_name.name = os.path.join(
-                    utils.get_path_upload_file(
+                    path_utils.get_path_upload_file(
                         self.request.user.id, TypeFile.TYPE_FILE_sample_file
                     ),
                     path_added,
@@ -1288,7 +1295,7 @@ class SamplesUploadDescriptionFileView(
             upload_files.save()
 
             try:
-                process_SGE = ProcessSGE()
+                process_SGE = ProcessSched()
                 taskID = process_SGE.set_read_sample_file(
                     upload_files, self.request.user
                 )
@@ -1375,6 +1382,7 @@ class SamplesUploadDescriptionFileViewMetadata(
             pass
 
         utils = Utils()
+        path_utils = PathUtils()
         software = Software()
         path_name = form.cleaned_data["path_name"]
 
@@ -1407,12 +1415,12 @@ class SamplesUploadDescriptionFileViewMetadata(
             ## move the files to the right place
             sz_file_to = os.path.join(
                 getattr(settings, "MEDIA_ROOT", None),
-                utils.get_path_upload_file(
+                path_utils.get_path_upload_file(
                     self.request.user.id, TypeFile.TYPE_FILE_sample_file_metadata
                 ),
                 upload_files.file_name,
             )
-            sz_file_to, path_added = utils.get_unique_file(
+            sz_file_to, path_added = path_utils.get_unique_file(
                 sz_file_to
             )  ## get unique file name, user can upload files with same name...
             utils.move_file(
@@ -1424,14 +1432,14 @@ class SamplesUploadDescriptionFileViewMetadata(
             software.dos_2_unix(sz_file_to)
             if path_added is None:
                 upload_files.path_name.name = os.path.join(
-                    utils.get_path_upload_file(
+                    path_utils.get_path_upload_file(
                         self.request.user.id, TypeFile.TYPE_FILE_sample_file_metadata
                     ),
                     ntpath.basename(sz_file_to),
                 )
             else:
                 upload_files.path_name.name = os.path.join(
-                    utils.get_path_upload_file(
+                    path_utils.get_path_upload_file(
                         self.request.user.id, TypeFile.TYPE_FILE_sample_file_metadata
                     ),
                     path_added,
@@ -1440,7 +1448,7 @@ class SamplesUploadDescriptionFileViewMetadata(
             upload_files.save()
 
             try:
-                process_SGE = ProcessSGE()
+                process_SGE = ProcessSched()
                 taskID = process_SGE.set_read_sample_file_with_metadata(
                     upload_files, self.request.user
                 )
@@ -1607,6 +1615,7 @@ class SamplesUploadFastQView(
     success_url = reverse_lazy("sample-add-fastq")
     template_name = "samples/samples_upload_fastq_files.html"
     utils = Utils()
+    path_utils = PathUtils()
 
     add_home = True
 
@@ -1669,7 +1678,6 @@ class SamplesUploadFastQView(
         data = {}  ## return data
         try:
             if form.is_valid():
-                utils = Utils()
                 ## doesn't work like that
                 # upload_files = form.save()
 
@@ -1684,18 +1692,18 @@ class SamplesUploadFastQView(
                     return JsonResponse(data)
 
                 upload_files = UploadFiles()
-                upload_files.file_name = utils.clean_name(
+                upload_files.file_name = self.utils.clean_name(
                     ntpath.basename(path_name.name)
                 )
                 ## move the files to the right place
                 sz_file_to = os.path.join(
                     getattr(settings, "MEDIA_ROOT", None),
-                    self.utils.get_path_upload_file(
+                    self.path_utils.get_path_upload_file(
                         self.request.user.id, TypeFile.TYPE_FILE_fastq_gz
                     ),
                     upload_files.file_name,
                 )
-                sz_file_to, path_added = self.utils.get_unique_file(
+                sz_file_to, path_added = self.path_utils.get_unique_file(
                     sz_file_to
                 )  ## get unique file name, user can upload files with same name...
 
@@ -1721,14 +1729,14 @@ class SamplesUploadFastQView(
 
                 if path_added is None:
                     upload_files.path_name.name = os.path.join(
-                        self.utils.get_path_upload_file(
+                        self.path_utils.get_path_upload_file(
                             self.request.user.id, TypeFile.TYPE_FILE_fastq_gz
                         ),
                         ntpath.basename(sz_file_to),
                     )
                 else:
                     upload_files.path_name.name = os.path.join(
-                        self.utils.get_path_upload_file(
+                        self.path_utils.get_path_upload_file(
                             self.request.user.id, TypeFile.TYPE_FILE_fastq_gz
                         ),
                         path_added,
@@ -1773,7 +1781,7 @@ class SamplesUploadFastQView(
         ## if is last file send a message to link files with sample csv file
         if "is_valid" in data and data["is_valid"]:
             try:
-                process_SGE = ProcessSGE()
+                process_SGE = ProcessSched()
                 taskID = process_SGE.set_link_files(self.request.user)
             except:
                 data = {
@@ -2232,6 +2240,7 @@ class SamplesDetailView(BaseBreadcrumbMixin, LoginRequiredMixin, DetailView):
 
 class ProjectsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
     utils = Utils()
+    path_utils = PathUtils()
     model = Project
     template_name = "project/projects.html"
     context_object_name = "projects"
@@ -2286,30 +2295,31 @@ class ProjectsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
 
         ## project list
         ## list of all samples in CSV and TSV
-        csv_file = self.utils.get_project_list_by_user(
+        csv_file = self.path_utils.get_project_list_by_user(
             self.request.user.id, "MEDIA_ROOT", FileExtensions.FILE_CSV
         )
-        if os.path.exists(csv_file):
-            context["list_project_file_csv"] = mark_safe(
-                '<a rel="nofollow" href="'
-                + self.utils.get_project_list_by_user(
+        csv_url = self.path_utils.get_project_list_by_user(
                     self.request.user.id, "MEDIA_URL", FileExtensions.FILE_CSV
                 )
+        
+        if os.path.exists(csv_file):
+            context["list_project_file_csv"] = mark_safe(
+                f'<a rel="nofollow" href="{csv_url}"'
                 + '" download="'
                 + os.path.basename(csv_file)
                 + '" class="dropdown-item"> Download - '
                 + os.path.basename(csv_file)
                 + "</a>"
             )
-        tsv_file = self.utils.get_project_list_by_user(
+        tsv_file = self.path_utils.get_project_list_by_user(
             self.request.user.id, "MEDIA_ROOT", FileExtensions.FILE_TSV
         )
-        if os.path.exists(tsv_file):
-            context["list_project_file_tsv"] = mark_safe(
-                '<a rel="nofollow" href="'
-                + self.utils.get_project_list_by_user(
+        tsv_url = self.path_utils.get_project_list_by_user(
                     self.request.user.id, "MEDIA_URL", FileExtensions.FILE_TSV
                 )
+        if os.path.exists(tsv_file):
+            context["list_project_file_tsv"] = mark_safe(
+                f'<a rel="nofollow" href="{tsv_url}"'
                 + '" download="'
                 + os.path.basename(tsv_file)
                 + '" class="dropdown-item"> Download - '
@@ -2547,7 +2557,7 @@ class ProjectCreateView(
             self.request.user, project, None, None
         )  ## the user can have defaults yet
 
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         process_SGE.set_create_project_list_by_user(self.request.user)
 
         messages.success(
@@ -2744,7 +2754,7 @@ class AddSamplesProjectsView(
         if form.is_valid():
             metaKeyAndValue = MetaKeyAndValue()
             manageDatabase = ManageDatabase()
-            process_SGE = ProcessSGE()
+            process_SGE = ProcessSched()
 
             ### get project sample..
             context = self.get_context_data()
@@ -2837,8 +2847,8 @@ class AddSamplesProjectsView(
                         (
                             job_name_wait,
                             job_name,
-                        ) = self.request.user.profile.get_name_sge_seq(
-                            Profile.SGE_PROCESS_projects, Profile.SGE_GLOBAL
+                        ) = self.request.user.profile.get_name_slurm_seq(
+                            Constants.PROCESS_projects, Constants.PROCESS_GLOBAL
                         )
                     if sample.is_type_fastq_gz_sequencing():
                         taskID = process_SGE.set_second_stage_snippy(

@@ -4,10 +4,8 @@ from datetime import datetime
 from operator import itemgetter
 
 from django.conf import settings
-
 # from django.db.models import Manager as GeoManager
 from django.contrib.auth.models import User
-
 # Create your models here.
 # from django.contrib.gis.db.models import GeoManager  # #  change to django  2.x
 from django.contrib.gis.db.models import PointField
@@ -222,6 +220,8 @@ class Reference(models.Model):
     ### species
     SPECIES_SARS_COV_2 = "SARS_COV_2"
     SPECIES_MPXV = "MPXV"
+    SPECIES_DENGUE = "DENGUE"
+    SPECIES_WNV = "WNV"
     SPECIES_INFLUENZA = "INFLUENZA"
     SPECIES_RSV = "RSV"
     SPECIES_NOT_SET = "NOT_SET"

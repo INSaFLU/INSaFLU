@@ -9,10 +9,10 @@ from pathogen_identification.models import (FinalReport, PIProject_Sample,
                                             Projects)
 from pathogen_identification.templatetags.report_colors import \
     flag_false_positive
-from pathogen_identification.utilities.explify_merge import (
+from pathogen_identification.utilities.deprec_utils.explify_merge import (
     get_illumina_found, merge_panels, process_televir, read_panel)
 from pathogen_identification.utilities.utilities_general import get_project_dir
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 
 
 class Command(BaseCommand):
@@ -54,7 +54,7 @@ class Command(BaseCommand):
         ###
         # SETUP
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
 
         project = Projects.objects.filter(
             is_deleted=False, pk=options["project_id"]

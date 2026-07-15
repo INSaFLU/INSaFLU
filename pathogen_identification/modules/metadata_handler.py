@@ -4,23 +4,17 @@ from typing import Dict, List, Optional
 
 import pandas as pd
 
-from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import (
-    PIProject_Sample,
-    RawReference,
-    RawReferenceCompoundModel,
-    ReferenceSource,
-    ReferenceSourceFileMap,
-    RunMain,
-)
+from pathogen_identification.models import (PIProject_Sample, RawReference,
+                                            ReferenceTaxid, Taxon,
+                                            RawReferenceCompoundModel,
+                                            ReferenceSource,
+                                            ReferenceSourceFileMap, RunMain)
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
-from pathogen_identification.utilities.utilities_general import (
-    merge_classes,
-    simplify_name,
-)
+from pathogen_identification.utilities.utilities_general import (merge_classes,
+                                                                 simplify_name)
 from pathogen_identification.utilities.utilities_views import RawReferenceUtils
-
+from constants.constants_taxonomy import TaxonConstants
 
 def determine_taxid_in_file(taxid, df: pd.DataFrame):
     """
@@ -115,7 +109,7 @@ class RunMetadataHandler:
             [[0, 0, 0]], columns=["input", "output", "removed"]
         )
 
-    def get_manual_references(self, sample: PIProject_Sample, max_accids: int = 15):
+    def get_manual_references(self, sample: PIProject_Sample):
         """
         Get manual references for a given sample. update map request with references.
         """
@@ -180,22 +174,21 @@ class RunMetadataHandler:
                 )
 
                 accids_replete += 1
+    
+    #def filter(compound_refs: List[RawReferenceCompoundModel], project_pk: int) -> List[RawReferenceCompoundModel]:
+
 
     def merge_sample_references_ensemble(
         self,
-        sample_registered: PIProject_Sample,
-        max_taxids: Optional[int] = None,
-        max_remap: int = 15,
+        sample_registered: PIProject_Sample, 
     ):
 
         reference_utils = RawReferenceUtils(sample_registered)
-        ### ############################################################# ###
+        ##################################################################
+        ##################################################################
         compound_refs: List[RawReferenceCompoundModel] = (
             reference_utils.query_sample_compound_references_regressive()
         )
-
-        if max_taxids is not None:
-            compound_refs = compound_refs[:max_taxids]
 
         remap_plan = []
         # remap_targets = []
@@ -261,8 +254,9 @@ class RunMetadataHandler:
         self,
         report_1: pd.DataFrame,
         report_2: pd.DataFrame,
-        max_remap: int = 15,
+        max_remap: int = 2,
         taxid_limit: int = 12,
+        project_pk: Optional[int] = None
     ):
 
         self.process_reports(
@@ -270,9 +264,13 @@ class RunMetadataHandler:
             report_2,
         )
 
+        if self.rclass.empty is False:
+            taxid_cutoff = self._predict_cutoff(self.rclass, project_pk)
+            self.rclass = self.rclass.sort_values(by="counts", ascending=False).head(taxid_cutoff)
+
         if self.merged_targets.empty:
             self.merge_reports_clean(
-                taxid_limit=taxid_limit,
+                taxid_limit=1000,
             )
 
         #######
@@ -349,7 +347,7 @@ class RunMetadataHandler:
         return references_table
 
     @staticmethod
-    def filter_taxids_not_in_db(df) -> pd.DataFrame:
+    def check_taxids_not_in_db(df) -> pd.DataFrame:
 
         def get_refs_existing(taxid):
             try:
@@ -364,8 +362,23 @@ class RunMetadataHandler:
                 return False
 
         df["has_refs"] = df["taxid"].apply(get_refs_existing)
+
+        return df
+    
+    def retrieve_taxids_ncbi(self, df: pd.DataFrame) -> pd.DataFrame:
+
+        from pathogen_identification.constants_settings import \
+            ConstantsSettings
+        from pathogen_identification.utilities.reference_utils import \
+            AssemblyStore
+
+        assembly_store = AssemblyStore(ConstantsSettings.local_assembly_store)
+        assemblies = assembly_store.match_taxid_to_assembly(df[df["has_refs"] == False])
+        assembly_store.register_assemblies(assemblies, cache = True)
+        df = self.check_taxids_not_in_db(df)
         df = df[df["has_refs"] == True]
         df.drop(columns=["has_refs"], inplace=True)
+
         return df
 
     def register_taxid_accids(self, taxid: str, accids: List[str]):
@@ -414,14 +427,14 @@ class RunMetadataHandler:
 
         df = self.map_hit_report(df)
 
-        df = self.filter_taxids_not_in_db(df)
+        df = self.check_taxids_not_in_db(df)
+
+        df = self.retrieve_taxids_ncbi(df)
+
 
         self.accid_register(df)
 
         df = self.db_get_taxid_descriptions(df)
-        # df = self.entrez_get_taxid_descriptions(df)
-        # df = self.entrez_conn.entrez_get_taxid_descriptions(df)
-        # df = self.merge_report_to_metadata_description(df)
 
         df = df.reset_index(drop=True)
 
@@ -502,10 +515,12 @@ class RunMetadataHandler:
         self.logger.info("Finished retrieving metadata")
 
     def get_protacc_taxid(self, df: pd.DataFrame) -> pd.DataFrame:
+        print("prot_accesions")
         query_list = df.prot_acc.unique().tolist()
         self.entrez_conn.bin_query = self.entrez_conn.bin_query_factory.get_query(
             "fetch_protein_accession_taxon"
         )
+        
         output = self.entrez_conn.run_entrez_query(query_list)
         self.entrez_conn.bin_query = self.entrez_conn.bin_query_factory.get_query(
             "fetch_taxid_description"
@@ -754,7 +769,7 @@ class RunMetadataHandler:
         self.rclass = self.results_collect_metadata(report_1)
         self.aclass = self.results_collect_metadata(report_2)
 
-    def get_taxid_representative_accid(self, taxid: int) -> str:
+    def get_taxid_representative_accid(self, taxid: int) -> Optional[str]:
         """
         Return representative accession for a given taxid.
         """
@@ -766,6 +781,61 @@ class RunMetadataHandler:
             return "-"
         else:
             return sources[0].accid
+    
+    @staticmethod
+    def _get_taxid_taxonomy(taxid: str, level= TaxonConstants.RANK_FAMILY) -> Optional[str]:
+        """
+        Return the taxonomy for a given taxid at a given level.
+        """
+        try:
+            reference_taxid = ReferenceTaxid.objects.get(taxid=taxid)
+            
+            if level == TaxonConstants.RANK_FAMILY:
+                return reference_taxid.family
+            elif level == TaxonConstants.RANK_GENUS:
+                return reference_taxid.genus
+            elif level == TaxonConstants.RANK_SPECIES:
+                return reference_taxid.species
+            else:
+                raise ValueError(f"Invalid level: {level}")
+        except ReferenceTaxid.DoesNotExist:
+            return None
+    
+    @staticmethod
+    def _predict_cutoff(merged_table: pd.DataFrame, project_pk: Optional[int]) -> int:
+        """
+        Predict cutoff for a given merged table."""
+
+        if any(x not in merged_table.columns for x in ["taxid", "counts"]):
+            raise ValueError("Merged table must contain 'taxid' and 'counts' columns.")
+
+        rows = [
+            {
+                "taxid": row.taxid, 
+                "family": RunMetadataHandler._get_taxid_taxonomy(row.taxid, level=TaxonConstants.RANK_FAMILY),
+                "order": RunMetadataHandler._get_taxid_taxonomy(row.taxid, level=TaxonConstants.RANK_ORDER),
+                "total_uniq_reads": row.counts,
+            }
+            for _, row in merged_table.iterrows()
+        ]
+        rows = sorted(rows, key=lambda x: x["total_uniq_reads"], reverse=True)
+
+        from pathogen_identification.utilities.ml_api_client import MLAPIClient
+        from pathogen_identification.utilities.televir_parameters import TelevirParameters
+        from constants.software_names import SoftwareNames
+
+        model_type = TelevirParameters.get_recall_model(project_pk=project_pk)
+
+        if model_type == SoftwareNames.SOFTWARE_REMAP_PARAMS_recall_default_model:
+            remap_params = TelevirParameters.get_remap_software(project_pk=project_pk)
+            return remap_params.max_taxids
+
+        ml_api_client = MLAPIClient()
+        cutoff_dict = ml_api_client.predict_recall_cutoff(rows, model= model_type)
+
+        cut_off_perc = len(merged_table) * cutoff_dict["predicted_cutoff"]
+        return int(cut_off_perc)
+
 
     def merge_reports_clean(
         self,
@@ -793,7 +863,7 @@ class RunMetadataHandler:
             raw_targets = raw_targets.merge(taxid_descriptions, on="taxid", how="left")
 
         raw_targets["status"] = (
-            False  # raw_targets["taxid"].isin(targets["taxid"].to_list())
+            False  #
         )
 
         self.raw_targets = raw_targets

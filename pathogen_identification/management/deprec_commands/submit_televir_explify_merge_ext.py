@@ -5,11 +5,11 @@ from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
 from managing_files.models import ProcessControler
-from pathogen_identification.utilities.explify_merge import (
+from pathogen_identification.utilities.deprec_utils.explify_merge import (
     get_illumina_found, merge_panels, process_televir, read_panel)
 from pathogen_identification.utilities.utilities_general import \
     get_services_dir
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 
 
 class Command(BaseCommand):
@@ -51,7 +51,7 @@ class Command(BaseCommand):
         ###
         # SETUP
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
 
         user_pk = options["user_id"]
         user = User.objects.get(pk=user_pk)

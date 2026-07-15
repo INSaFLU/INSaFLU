@@ -43,9 +43,7 @@ def collect_parameters(queryset_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def collect_parameters_project(project: Projects):
-    utils = Utils_Manager()
-    technology = project.technology
-    user = project.owner
+
     pipeline_utils = Utils_Manager()
 
     samples = PIProject_Sample.objects.filter(project=project)

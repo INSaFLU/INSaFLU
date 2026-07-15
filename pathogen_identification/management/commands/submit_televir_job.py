@@ -8,10 +8,11 @@ from django.core.management.base import BaseCommand
 from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.deployment_main import Run_Main_from_Leaf
-from pathogen_identification.models import PIProject_Sample, Projects
+from pathogen_identification.models import (PIProject_Sample, Projects,
+                                            SoftwareTree)
 from pathogen_identification.utilities.utilities_pipeline import (
     SoftwareTreeUtils, Utils_Manager)
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 
 
 class Sample_Staging:
@@ -58,7 +59,7 @@ class Command(BaseCommand):
 
         ### PROCESS CONTROLER
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
 
         process_SGE.set_process_controler(
             user,
@@ -84,8 +85,7 @@ class Command(BaseCommand):
             #local_tree = software_utils.generate_software_tree_safe(software_utils.project)
             #available_path_nodes = software_utils.get_available_pathnodes(local_tree)
             available_path_nodes = software_utils.query_available_pathnodes(
-                screening=False,
-                mapping_only=False,
+                pipeline_type=SoftwareTree.PIPELINE_TYPE_CLASSIC
             )
             for sample in submission_dict.keys():
 

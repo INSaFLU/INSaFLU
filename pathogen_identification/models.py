@@ -1,12 +1,12 @@
 import codecs
 import datetime
+import json
 import os
-from typing import Any, List, Optional
+from typing import List, Optional
 
 import networkx as nx
 import numpy as np
 import pandas as pd
-from django import forms
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
@@ -27,6 +27,8 @@ from pathogen_identification.constants_settings import \
     ConstantsSettings as PICS
 from pathogen_identification.data_classes import IntermediateFiles
 from settings.constants_settings import ConstantsSettings as CS
+from constants.constants_taxonomy import TaxonConstants
+from utils.utils import PathUtils
 # Create your models here.
 
 no_space_validator = RegexValidator(
@@ -35,6 +37,22 @@ no_space_validator = RegexValidator(
     code="invalid_username",
     inverse_match=True,
 )
+
+
+class Taxon(models.Model):
+    taxid = models.IntegerField(unique=True, db_index=True)
+    name = models.CharField(max_length=255, db_index=True)
+    rank = models.CharField(max_length=50, db_index=True, default=TaxonConstants.NO_RANK)
+    rank_raw = models.CharField(max_length=50, db_index=True, default=TaxonConstants.NO_RANK)
+    lineage_path = models.CharField(max_length=1000, blank=True, null=True)
+
+    parent = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="children"
+    )
 
 
 class Projects(models.Model):
@@ -112,6 +130,19 @@ class Projects(models.Model):
         samples = [project_sample.sample.pk for project_sample in project_samples]
         return samples
 
+class ProjectTag(models.Model):
+    name = models.CharField(max_length=100, db_index=True, blank=False, null=False)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
+    is_deleted = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.name
+
+class ProjectTagAssignment(models.Model):
+    tag = models.ForeignKey(ProjectTag, on_delete=models.CASCADE)
+    project = models.ForeignKey(Projects, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
 
 class SoftwareTree(models.Model):
     """"""
@@ -150,16 +181,12 @@ class SoftwareTree(models.Model):
         nodes = SoftwareTreeNode.objects.filter(software_tree=self, node_type = "module")
         unique_pipeline_names = nodes.values_list("name", flat=True).distinct()
 
-        print("Setting pipeline type")
-        print(list(unique_pipeline_names))
-
         if set(unique_pipeline_names).issubset(set(CS.vect_pipeline_televir_classic)):
             self.pipeline_type = self.PIPELINE_TYPE_CLASSIC
         elif set(unique_pipeline_names).issubset(set(CS.vect_pipeline_televir_mapping_only)):
             self.pipeline_type = self.PIPELINE_TYPE_MAPPING
         elif set(unique_pipeline_names).issubset(set(CS.vect_pipeline_televir_screening)):
             self.pipeline_type = self.PIPELINE_TYPE_SCREENING
-        print(self.pipeline_type)
 
         self.save()
 
@@ -188,6 +215,7 @@ class SoftwareTreeNode(models.Model):
     parent = models.ForeignKey(
         "self", on_delete=models.CASCADE, blank=True, null=True, related_name="children"
     )
+    
     node_type = models.CharField(
         max_length=200,
         db_index=True,
@@ -199,21 +227,21 @@ class SoftwareTreeNode(models.Model):
     )  ### if it is a software, a parameter or a parameter value
 
     available = models.BooleanField(default=False)  ### if this node is available to run with the current sample and project
-
-
+  
     class Meta:
         ordering = ["name"]
 
     @property
     def is_leaf(self):
         return self.node_place == SoftwareTreeNode.LEAF_node
-
+    
     def get_descendants(self, include_self: bool = True):
         """return all descendants of this node"""
 
         nodes = SoftwareTreeNode.objects.filter(
             software_tree=self.software_tree
         ).values_list("id", flat=True)
+        
         edges = [
             (node.parent, node.id)
             for node in SoftwareTreeNode.objects.filter(
@@ -232,6 +260,16 @@ class SoftwareTreeNode(models.Model):
 
         return SoftwareTreeNode.objects.filter(id__in=descendants)
 
+
+class LeafParameter(models.Model):
+    leaf = models.ForeignKey(SoftwareTreeNode, on_delete=models.CASCADE)
+    module = models.CharField(max_length=200, blank=True, null=True)
+    software_name = models.CharField(max_length=200, blank=True, null=True)
+    parameter_name = models.CharField(max_length=200, blank=True, null=True)
+    parameter_value = models.CharField(max_length=200, blank=True, null=True)
+
+    class Meta:
+        ordering = ["leaf", "module", "software_name", "parameter_name"]
 
 class PIProject_Sample(models.Model):
     """
@@ -905,6 +943,29 @@ class TelevirRunQC(models.Model):
         ]
 
 
+
+class TelevirRunQcStack(models.Model):
+    run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)
+    # one to many qc_reports
+    qc_reports = models.ManyToManyField(TelevirRunQC, blank=True)
+    performed = models.BooleanField(default=False)
+    input_reads = models.IntegerField(blank=True, null=True)
+    output_reads = models.IntegerField(blank=True, null=True, default = 0)
+    output_reads_percent = models.FloatField(blank=True, null=True, default = 0)
+
+    @property
+    def output_reads_str(self):
+        return f"{self.output_reads:,}"
+    
+    @property
+    def output_reads_percent_str(self):
+        return f"{self.output_reads_percent:.2f}%"
+    
+    @property
+    def reports(self):
+        return self.qc_reports.all()
+
+
 class RunDetail(models.Model):
     name = models.CharField(
         max_length=100, db_index=True, blank=True, null=True
@@ -996,6 +1057,35 @@ class RunAssembly(models.Model):
 
         self.save()
 
+
+
+class ClassifierOutput(models.Model):
+
+    run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)
+    software_name = models.CharField(max_length=100, blank=True, null=True)
+
+
+    class Meta:
+        ordering = [
+            "run",
+        ]
+
+    def __str__(self):
+        return self.software_name
+
+
+class ClassifierOutputFile(models.Model):
+
+    classifier_output = models.ForeignKey(ClassifierOutput, blank=True, null=True, on_delete=models.CASCADE)
+    file_path = models.CharField(max_length=1000, blank=True, null=True)
+
+    class Meta:
+        ordering = [
+            "classifier_output",
+        ]
+
+    def __str__(self):
+        return self.file_path
 
 class ReadClassification(models.Model):
     run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)
@@ -1514,6 +1604,13 @@ class TelefluMapping(models.Model):
             sample_summary[sample.name]["success"] = success
 
             if reports.exists():
+                report = reports[0]
+                try:
+                    reference_map = ReferenceMap_Main.objects.get(
+                        run=report.run, accid=report.accid
+                    )
+                except ReferenceMap_Main.DoesNotExist:
+                    reference_map = None
                 sample_summary[sample.name]["coverage"] = round(reports[0].coverage, 3)
                 sample_summary[sample.name]["windows_covered"] = reports[
                     0
@@ -1531,6 +1628,9 @@ class TelefluMapping(models.Model):
                 sample_summary[sample.name]["error_rate"] = round(
                     reports[0].error_rate, 3
                 )
+                sample_summary[sample.name]['bam_file'] = PathUtils.media_path_serve(reports[0].bam_path)
+                sample_summary[sample.name]['bam_file_idx'] = PathUtils.media_path_serve(reports[0].bai_path)
+                sample_summary[sample.name]['run_link'] = reverse("run_detail", kwargs={"run_id": report.run.pk})
 
         return sample_summary, mapped_samples, success_samples
 
@@ -1545,11 +1645,54 @@ class TelefluMappedSample(models.Model):
     )
 
 
+
+
+
 class ReferenceTaxid(models.Model):
     taxid = models.CharField(max_length=100, blank=True, null=True)
 
+    tax_species = models.ForeignKey(Taxon, on_delete=models.CASCADE, blank=True, null=True, related_name="tax_species")
+    tax_genus = models.ForeignKey(Taxon, on_delete=models.CASCADE, blank=True, null=True, related_name="tax_genus")
+    tax_family = models.ForeignKey(Taxon, on_delete=models.CASCADE, blank=True, null=True, related_name="tax_family")
+    tax_order = models.ForeignKey(Taxon, on_delete=models.CASCADE, blank=True, null=True, related_name="tax_order")
+    tax_class = models.ForeignKey(Taxon, on_delete=models.CASCADE, blank=True, null=True, related_name="tax_class")
+    tax_phylum = models.ForeignKey(Taxon, on_delete=models.CASCADE, blank=True, null=True, related_name="tax_phylum")
+    tax_domain = models.ForeignKey(Taxon, on_delete=models.CASCADE, blank=True, null=True, related_name="tax_domain")
+
     def __str__(self):
         return self.taxid
+    
+    @property
+    def lineage(self):
+        lineage = []
+        if self.tax_domain:
+            lineage.append(self.tax_domain.name)
+        if self.tax_phylum:
+            lineage.append(self.tax_phylum.name)
+        if self.tax_class:
+            lineage.append(self.tax_class.name)
+        if self.tax_order:
+            lineage.append(self.tax_order.name)
+        if self.tax_family:
+            lineage.append(self.tax_family.name)
+        if self.tax_genus:
+            lineage.append(self.tax_genus.name)
+        if self.tax_species:
+            lineage.append(self.tax_species.name)
+
+        return ";".join(lineage)
+    
+    @property
+    def family(self):
+        return self.tax_family.name if self.tax_family else None
+    
+    @property
+    def genus(self):
+        return self.tax_genus.name if self.tax_genus else None
+    
+    @property
+    def species(self):
+        return self.tax_species.name if self.tax_species else None
 
 
 class ReferenceSourceFile(models.Model):
@@ -1559,6 +1702,7 @@ class ReferenceSourceFile(models.Model):
     description = models.CharField(max_length=300, blank=True, null=True)
     is_deleted = models.BooleanField(default=False)
     creation_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    is_cache = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.file}"
@@ -1606,6 +1750,7 @@ class ReferenceSource(models.Model):
     )
     accid = models.CharField(max_length=100, blank=True, null=True)
     description = models.CharField(max_length=300, blank=True, null=True)
+    lineage_path = models.CharField(max_length=1000, blank=True, null=True)
 
     def __str__(self):
         return self.accid
@@ -1966,6 +2111,116 @@ class FinalReport(models.Model):
         return control_flag_str
 
 
+class ReportAggregate(models.Model):
+
+    sample = models.ForeignKey(
+        PIProject_Sample, blank=True, null=True, on_delete=models.CASCADE
+    )
+    run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)
+    runs = models.ManyToManyField(RunMain, blank=True, related_name="aggregated_runs")
+
+    date_created = models.DateTimeField(auto_now_add=True,  db_index=True, null = True)
+
+    max_error_rate = models.FloatField(blank=True, null=True)
+    error_rate_available = models.BooleanField(default=False)
+    max_quality_avg = models.FloatField(blank=True, null=True)
+    quality_avg_available = models.BooleanField(default=False)
+    max_mapped_proportion = models.FloatField(blank=True, null=True)
+    max_coverage = models.FloatField(blank=True, null=True)
+    max_windows_covered = models.FloatField(blank=True, null=True)
+
+    shared_proportion_threshold = models.FloatField(blank=True, null=True)
+    tree_plot_path = models.CharField(max_length=200, blank=True, null=True)
+    tree_plot_exists = models.BooleanField(default=False)
+
+    overlap_heatmap_json = models.JSONField(blank=True, null=True)
+    overlap_heatmap_path = models.CharField(max_length=200, blank=True, null=True)
+    overlap_heatmap_exists = models.BooleanField(default=False)
+
+    overlap_pca_path = models.CharField(max_length=200, blank=True, null=True)
+    overlap_pca_exists = models.BooleanField(default=False)
+
+    reports_available = models.BooleanField(default=False)
+    sort_performed = models.BooleanField(default=False)
+
+    @property
+    def reports_analyzed(self):
+        return [
+            report for group in self.report_groups.all() for report in group.reports.all()
+        ]
+
+
+    @property
+    def n_reports_analyzed(self):
+        return sum(
+            group.reports.all().count() for group in self.report_groups.all()
+        )
+
+from dataclasses import dataclass
+@dataclass
+class TaxonEmpty: 
+    name: str = "None"
+    taxid: str = "None"
+    genus: str = "None"
+    order: str = "None"
+
+
+class ReportGroup(models.Model):
+
+    aggregator = models.ForeignKey(
+        ReportAggregate, blank=True, null=True, on_delete=models.CASCADE, related_name="report_groups"
+    )
+    name = models.CharField(max_length=100, blank=True, null=True)
+    total_counts = models.IntegerField(blank=True, null=True)
+    private_counts = models.IntegerField(blank=True, null=True)
+    private_counts_exist = models.BooleanField(default=False)
+    private_reads_available = models.BooleanField(default=False)
+
+    shared_proportion = models.FloatField(blank=True, null=True)
+    private_proportion = models.FloatField(blank=True, null=True)
+
+    max_private_reads = models.IntegerField(blank=True, null=True)
+    max_coverage = models.FloatField(blank=True, null=True)
+
+    analysis_empty = models.BooleanField(default=False)
+    has_multiple = models.BooleanField(default=False)
+    toggle = models.CharField(max_length=100, blank=True, null=True)
+
+    overlap_heatmap_json = models.JSONField(blank=True, null=True)
+    reports = models.ManyToManyField(FinalReport, blank=True, related_name="aggregated_reports")
+
+    main_species = models.ForeignKey(Taxon, blank=True, null=True, on_delete=models.CASCADE)
+    main_species_percentage = models.FloatField(blank=True, null=True)
+
+
+    @property
+    def private_counts_safe(self):
+        if self.private_counts is None:
+            return 0
+        return self.private_counts
+
+    @property
+    def js_heatmap_ready(self):
+        return self.overlap_heatmap_json is not None
+
+    @property
+    def sort_performed(self):
+        return self.analysis_empty == False
+
+    @property
+    def overlap_heatmap_json_str(self):
+        if self.overlap_heatmap_json is None:
+            return None
+        return json.dumps(self.overlap_heatmap_json)
+
+class GroupReportData(models.Model):
+    report = models.ForeignKey(FinalReport, blank=True, null=True, on_delete=models.CASCADE)
+    report_group = models.ForeignKey(ReportGroup, blank=True, null=True, on_delete=models.CASCADE)
+    private_reads = models.IntegerField(blank=True, null=True)
+    found_in = models.ManyToManyField(RunMain, blank=True, related_name="compound_runs")
+    data_exists = models.BooleanField(default=False)
+
+
 class RawReferenceCompoundModel(models.Model):
 
     sample = models.ForeignKey(
@@ -1987,6 +2242,8 @@ class RawReferenceCompoundModel(models.Model):
     standard_score = models.FloatField(blank=True, null=True)
     global_ranking = models.IntegerField(blank=True, null=True)
     ensemble_ranking = models.IntegerField(blank=True, null=True)
+    read_counts = models.IntegerField(default=0)
+    contig_counts = models.IntegerField(default=0)
     run_count = models.IntegerField(default=0)
     screening_count = models.IntegerField(default=0)
 

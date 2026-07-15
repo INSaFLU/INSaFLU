@@ -6,7 +6,7 @@ Created on Nov 27, 2017
 import unittest, os, filecmp
 from datetime import datetime
 from django.conf import settings 
-from utils.utils import Utils
+from utils.utils import Utils, PathUtils
 from constants.constantsTestsCase import ConstantsTestsCase
 from utils.result import CountHits
 from managing_files.manage_database import ManageDatabase
@@ -24,6 +24,7 @@ class Test(unittest.TestCase):
 
 	constants_tests_case = ConstantsTestsCase()
 	utils = Utils()
+	path_utils = PathUtils()
 	
 	def setUp(self):
 		self.baseDirectory = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS)
@@ -697,13 +698,13 @@ class Test(unittest.TestCase):
 		#################################3
 		## test collect samples
 		collect_extra_data.collect_sample_list(user, True)
-		csv_file = self.utils.get_sample_list_by_user(user.id, "MEDIA_ROOT", FileExtensions.FILE_CSV)
+		csv_file = self.path_utils.get_user_sample_list_path(user.id, "MEDIA_ROOT", FileExtensions.FILE_CSV)
 		self.assertTrue(os.path.exists(csv_file))
 		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "AllSamples_1.csv")
 		self.assertTrue(os.path.exists(expected_file_samples))
 		self.assertTrue(filecmp.cmp(csv_file, expected_file_samples))
 		
-		tsv_file = self.utils.get_sample_list_by_user(user.id, "MEDIA_ROOT", FileExtensions.FILE_TSV)
+		tsv_file = self.path_utils.get_user_sample_list_path(user.id, "MEDIA_ROOT", FileExtensions.FILE_TSV)
 		self.assertTrue(os.path.exists(tsv_file))
 		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "AllSamples_1.tsv")
 		self.assertTrue(os.path.exists(expected_file_samples))
@@ -712,13 +713,13 @@ class Test(unittest.TestCase):
 		#########################################
 		## test collect projects
 		collect_extra_data.collect_project_list(user, True)
-		csv_file = self.utils.get_project_list_by_user(user.id, "MEDIA_ROOT", FileExtensions.FILE_CSV)
+		csv_file = self.path_utils.get_project_list_by_user(user.id, "MEDIA_ROOT", FileExtensions.FILE_CSV)
 		self.assertTrue(os.path.exists(csv_file))
 		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "AllProjects_1.csv")
 		self.assertTrue(os.path.exists(expected_file_samples))
 		self.assertTrue(filecmp.cmp(csv_file, expected_file_samples))
 		
-		tsv_file = self.utils.get_project_list_by_user(user.id, "MEDIA_ROOT", FileExtensions.FILE_TSV)
+		tsv_file = self.path_utils.get_project_list_by_user(user.id, "MEDIA_ROOT", FileExtensions.FILE_TSV)
 		self.assertTrue(os.path.exists(tsv_file))
 		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "AllProjects_1.tsv")
 		self.assertTrue(os.path.exists(expected_file_samples))

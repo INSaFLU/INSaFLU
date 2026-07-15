@@ -44,14 +44,137 @@
 
 <style>
 
+    .species-toggle-btn {
+        margin-right: 12px;
+        flex: 0 0 auto;
+        height: 32px;
+        padding: 4px 8px;
+    }
+    .species-section.collapsed .species-header {
+        opacity: 0.95;
+    }
+    /* visually indicate collapsed header */
+    .species-section.collapsed .species-title,
+    .species-section.collapsed .species-meta {
+        filter: grayscale(.02);
+    }
+
+    .species-hidden { display: none !important; }
+    /* Species header inside table: full-width row with flex layout */
+    .species-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 6px 0;
+        /* allow inner pieces to wrap on narrow screens */
+        flex-wrap: wrap;
+        /* make header sit clear from previous content */
+        margin-top: 12px;
+    }
+    /* ensure the td that contains the header gives the header room */
+    .species-section td {
+        padding: 6px 0;
+    }
+
+    /* title / description */
+    .species-title h3 { margin: 0; }
+    .species-title p { margin: 0; }
+
+    /* larger, non-floating private reads */
+    .species-meta {
+        white-space: nowrap;
+        font-size: 1.05rem; /* slightly larger */
+        margin-left: 12px;
+    }
+    .species-meta .badge {
+        font-size: 1rem;
+        padding: 6px 10px;
+        line-height: 1;
+        display: inline-block;
+    }
+
+    /* keep existing visual treatment */
+    #report_table {
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+    }
+    #report_table > thead > tr,
+    #report_table > tbody > tr {
+        border: none !important;
+    }
+
+    /* NEW: stronger species "card" look */
+    .species-header {
+        background: #f6fbff; /* subtle tint to separate header */
+        border: 1px solid #e3e8ee;
+        border-radius: 10px;
+        padding: 12px 16px;
+        box-shadow: 0 6px 18px rgba(19, 42, 66, 0.04);
+    }
+
+    /* spacer row immediately after species header to provide breathing room */
+    .species-spacer td {
+        height: 12px;
+        background: transparent;
+        border: none;
+    }
+
+    /* visually indent groups under species header */
+    .group-wrapper {
+        padding-left: 20px;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+        margin-bottom: 20px;
+        border: 1px solid #e6edf3;
+        display: none;
+        transform: translateY(0);    }
+
+
+    .group-wrapper.show {
+        margin-left: 20px;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+        margin-bottom: 20px;
+        border: 1px solid #e6edf3;
+        display: table-row-group;
+        transform: translateY(0);
+    }
+
+    /* ensure first/last rows of group card keep rounded corners */
+    .group-wrapper tr:first-child td {
+        border-top-left-radius: 12px;
+        border-top-right-radius: 12px;
+    }
+    .group-wrapper tr:last-child td {
+        border-bottom-left-radius: 12px;
+        border-bottom-right-radius: 12px;
+    }
+
+    /* keep compact title/description spacing */
+    .species-title h3 { margin-bottom: 4px; font-size: 1.05rem; }
+    .species-title p { margin-bottom: 0; color: #6b7280; font-size: 0.9rem; }
+
+    /* keep previous extra-column handling */
+    .extra-column { display: none; }
+    .show-extra-columns .extra-column { display: table-cell; }
+
+
     #report_table {
     border: none !important;
     box-shadow: none !important;
     background: transparent !important;
     }
+    
     #report_table > thead > tr,
     #report_table > tbody > tr {
         border: none !important;
+    }
+    .table tbody+tbody {
+        border-top: none; 
     }
 
     .collapsible-summary {
@@ -93,91 +216,75 @@
 
     .extra-column {
     display: none;
-}
+    }
 
-.show-extra-columns .extra-column {
-    display: table-cell;
-}
+    .show-extra-columns .extra-column {
+        display: table-cell;
+    }
 
-.group-spacer td {
-    height: 24px;
-    background: transparent;
-    border: none;
-    /* Optionally add a subtle shadow or color */
-    /* box-shadow: 0 2px 8px rgba(0,0,0,0.04); */
-}
-.group-wrapper {
-    background: #f8fafc;
-    border-radius: 32px;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.04);
-    margin-bottom: 32px;
-    border: 1px solid #d7dde6ff;
-    display: table-row-group;
-}
-.group-wrapper tr:first-child td {
-    border-top-left-radius: 32px;
-    border-top-right-radius: 32px;
-}
-.group-wrapper tr:last-child td {
-    border-bottom-left-radius: 32px;
-    border-bottom-right-radius: 32px;
-}
-.custom-section-container {
-    background: #f8fafc; /* match group-wrapper */
-    border-radius: 24px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-    padding: 18px 24px;
-    margin: 12px 0;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 18px;
-    border: 1px solid #e3e8ee;
-}
+    .group-spacer td {
+        height: 4px;
+        background: transparent;
+        border: none;
+        /* Optionally add a subtle shadow or color */
+        /* box-shadow: 0 2px 8px rgba(0,0,0,0.04); */
+    }
+    .custom-section-container {
+        background: #f8fafc; /* match group-wrapper */
+        border-radius: 24px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+        padding: 18px 24px;
+        margin: 12px 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 18px;
+        border: 1px solid #e3e8ee;
+    }
 
-.custom-section {
-    font-size: 1rem;
-    color: #234;
-    margin-right: 18px;
-    margin-bottom: 6px;
-    flex: 1 1 auto;
-}
+    .custom-section {
+        font-size: 1rem;
+        color: #234;
+        margin-right: 18px;
+        margin-bottom: 6px;
+        flex: 1 1 auto;
+    }
 
-.custom-link {
-    color: #1976d2;
-    text-decoration: underline;
-    font-weight: 500;
-}
+    .custom-link {
+        color: #1976d2;
+        text-decoration: underline;
+        font-weight: 500;
+    }
 
-#collapseReport {
-    border: none !important;
-    background: transparent !important;
-    box-shadow: none !important;
-}
+    #collapseReport {
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
 
-#card-block {
-    background: transparent !important;
-    box-shadow: none !important;
-    border: none !important;
-}
+    #card-block {
+        background: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
 
-#table {
-    border: none !important;
-    background: transparent !important;
-    box-shadow: none !important;
-}
+    #table {
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
 
-#accordion2 {
-    border: none !important;
-    background: transparent !important;
-    box-shadow: none !important;
-}
+    #accordion2 {
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
 
-#table-wrapper {
-    border: none !important;
-    background: transparent !important;
-    box-shadow: none !important;
-}
+    #table-wrapper {
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
 
 </style>
 
@@ -367,296 +474,320 @@
                         </tr>
                     </thead>
                     <tbody>
-                    {% for final_report in report_list %}
-                        <tbody class="group-wrapper">
-                        <tr>
+                    {%for species_bundle in report_list%}
+                        <tr class="species-section collapsed" data-species="{{ species_bundle.species.taxid }}">
                             <td colspan="100%">
-                                <div class="custom-section-container">
-                                    <div style="font-weight: bold; color: #1976d2; margin-right: 12px;">
-                                        <i class="fa fa-info-circle"></i> Group Info
+                                <div class="species-header d-flex align-items-center justify-content-between">
+                                    <!-- species-level collapse/expand toggle (start collapsed) -->
+                                    <button type="button" class="btn btn-sm btn-outline-secondary species-toggle-btn" aria-expanded="false" title="Expand species">
+                                        <i class="fa fa-chevron-up" aria-hidden="true"></i>
+                                    </button>
+                                    <div class="species-title">
+                                        <h3 class="mb-0">Species: {{ species_bundle.species.name }}</h3>
+                                        {% if species_bundle.species.taxid is not None %}
+                                        <p class="mb-0 text-muted small">taxID: {{ species_bundle.species.taxid }}</p>
+                                        {% endif %}
                                     </div>
-                                        {% if final_report.has_multiple %}
-                                    <div class="primary-row" style= "margin-top: 2px;">
-                                        <button class="showSecondaryRows" type="button" group-name="{{final_report.name}}" title="Toggle Secondary Rows">
-                                            <i class="fa fa-toggle-off toggle-icon"></i>
-                                        </button>                                        
-                                    </div>
-                                     {% else %}
-                                     <div class="primary-row" style="visibility: hidden; ">
-                                        <button class="showSecondaryRows" type="button" style="visibility: hidden;">
-                                            <i class="fa fa-toggle-off toggle-icon"></i>
-                                        </button>                                        
-                                    </div>
-                                    {% endif %}
-                                    <!-- First section -->
-                                    <div class="custom-section" id="info_{{ final_report.name }}">
-                                        {{final_report.name}}
-                                    </div>
-                                    {% if final_report.private_counts_exist %}
-                                    <!-- Second section -->
-                                    <div class="custom-section">
-                                        private reads: {{final_report.private_counts}}
-                                    </div>
-                                    {% endif %}
-                                    <!-- Third section -->
-                                    <div class="custom-section">
-                                        private reads proportion: {{final_report.private_proportion}}
-                                    </div>
-                                    <!-- Forth section -->
-                                    <div class="custom-section">
-                                        Group size {{final_report.group_list|length}}
-                                    </div>
-                                    <div class="custom-section">
-                                        <a href="#" id="showButton" class="custom-link">Read Overlap</a>
+                                    <div class="species-meta">
+                                        {% if species_bundle.total_private_counts %}
+                                            <span class="badge badge-primary">
+                                                Private reads: {{ species_bundle.total_private_counts|default:"0" }}
+                                            </span>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </td>
                         </tr>
-                        {% if final_report.js_heatmap_ready %}
-                        <tr class="row-to-toggle" id="rowToToggle" style="display: none;">
-                            <td colspan="16">
-                                <div id="plot-{{final_report.name}}" class="plot-container">
-                                   
-                                </div>
-                                <script>
-                                    createHeatmap('{{ final_report.js_heatmap_data|safe }}', "plot-{{final_report.name}}");
-                                </script>
+                        {% for final_report, group_reports in species_bundle.report_groups.items %}
+                            <tbody class="group-wrapper" display="none;" group-name="{{final_report.name}}" data-species="{{ species_bundle.species.taxid }}">
+                            <tr>
+                                <td colspan="100%">
+                                    <div class="custom-section-container">
+                                        <div style="font-weight: bold; color: #1976d2; margin-right: 12px;">
+                                            <i class="fa fa-info-circle"></i> Group Info
+                                        </div>
+                                            {% if final_report.has_multiple %}
+                                        <div class="primary-row" style= "margin-top: 2px;">
+                                            <button class="showSecondaryRows" type="button" group-name="{{final_report.name}}" title="Toggle Secondary Rows">
+                                                <i class="fa fa-toggle-off toggle-icon"></i>
+                                            </button>                                        
+                                        </div>
+                                        {% else %}
+                                        <div class="primary-row" style="visibility: hidden; ">
+                                            <button class="showSecondaryRows" type="button" style="visibility: hidden;">
+                                                <i class="fa fa-toggle-off toggle-icon"></i>
+                                            </button>                                        
+                                        </div>
+                                        {% endif %}
+                                        <!-- First section -->
+                                        <div class="custom-section" id="info_{{ final_report.name }}">
+                                            {{final_report.name}}
+                                        </div>
+                                        {% if final_report.private_counts_exist %}
+                                        <!-- Second section -->
+                                        <div class="custom-section">
+                                            private reads: {{final_report.private_counts}}
+                                        </div>
+                                        {% endif %}
+                                        <!-- Third section -->
+                                        <div class="custom-section">
+                                            private reads proportion: {{final_report.private_proportion}}
+                                        </div>
+                                        <!-- Forth section -->
+                                        <div class="custom-section">
+                                            Group size {{final_report.group_list|length}}
+                                        </div>
+                                        <div class="custom-section">
+                                            <a href="#" id="showButton" class="custom-link">Read Overlap</a>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% if final_report.js_heatmap_ready %}
+                            <tr class="row-to-toggle" id="rowToToggle" style="display: none;">
+                                <td colspan="16">
+                                    <div id="plot-{{final_report.name}}" class="plot-container">
+                                    
+                                    </div>
+                                    <script>
+                                        createHeatmap('{{ final_report.overlap_heatmap_json_str|safe }}', "plot-{{final_report.name}}");
+                                    </script>
 
-                            </td>
-                        </tr>
-                        {% elif final_report.heatmap_exists %}
-                        <tr class="row-to-toggle" id="rowToToggle" style="display: none;">
-                            <td colspan="100%">
-                                <div id="plot" class="plot-container">
-                                    <img src={{final_report.heatmap_path}} alt="Image">
-                                </div>
-                            </td>
-                        </tr>
-                        {% endif %}
-                        {% for value in final_report.group_list %}
-                        <tr class="parent {{value.row_class_name}}"  style="display: {{value.display}}" id="row_{{value.accid}}" group-name="{{final_report.name}}" first="{{value.first_in_group}}" accid>
-                            <td data-title="Description" style="text-align: left;">
-                                {% if value.first_in_group %}
-                                {% if final_report.has_multiple %}
-                                        <i class="fa fa-empty sort-icon"  title="Best Coverage"></i>
-                                {% else %}
-                                        <i class="fa fa-empty sort-icon"  title="Best Coverage"></i>
-                                
+                                </td>
+                            </tr>
+                            {% elif final_report.heatmap_exists %}
+                            <tr class="row-to-toggle" id="rowToToggle" style="display: none;">
+                                <td colspan="100%">
+                                    <div id="plot" class="plot-container">
+                                        <img src={{final_report.heatmap_path}} alt="Image">
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% for value in group_reports %}
+                            <tr class="parent {{value.row_class_name}}"  style="display: {{value.display}}" id="row_{{value.accid}}" group-name="{{final_report.name}}" first="{{value.first_in_group}}" accid>
+                                <td data-title="Description" style="text-align: left;">
+                                    {% if value.first_in_group %}
+                                    {% if final_report.has_multiple %}
+                                            <i class="fa fa-empty sort-icon"  title="Best Coverage"></i>
+                                    {% else %}
+                                            <i class="fa fa-empty sort-icon"  title="Best Coverage"></i>
+                                    
+                                    {% endif %}
+                                    
+                                    {% endif %}
+                                    <a href="#" id="plot_show" >{{value.description}}</a>
+                                </td>                         
+                                <td data-title="Taxid">{{value.taxid}}</td>
+                                <td data-title="accID">
+                                    <a href={{value.accid|link_ncbi}}>{{value.accid}}</a>
+                                </td>
+                                <td data-title="Support" {% if value.found_in_str == "M" %} class="map-only-cell" {% endif %} >{{value.found_in_str |safe}}</td>                                
+                                <td data-title="Cov" style="{% depth_color value.coverage max_coverage %}" class = "extra-column">
+                                    {{value.coverage|round}}</td>
+                                <td data-title="Depth" style="{% depth_color value.depth value.run_detail.max_depth %}" class = "extra-column">
+                                    {{value.depth|round}}</td>
+                                <td data-title="DepthC" style="{% depth_color value.depthR value.run_detail.max_depthR %}" class="extra-column">
+                                    {{value.depthR|round}}</td>
+                                <td data-title="Mapped reads" style="{% depth_color value.mapped_reads value.run_detail.max_mapped %}" class = "extra-column">
+                                    {{value.mapped_reads|round}}</td>
+                                <td data-title="start prop" style="{% depth_color value.ref_proportion value.run_detail.max_prop %}" class = "extra-column">
+                                    {{value.ref_proportion|round_to_int}}</td>
+                                <td data-title="mapped_prop" style="{% depth_color value.mapped_proportion value.run_detail.max_prop %}" class = "extra-column">
+                                    {{value.mapped_proportion|round_to_int}}</td>
+                                <td data-title="Gaps" style="{% depth_color value.ngaps value.run_detail.max_gaps %}" class="extra-column">
+                                    {{value.ngaps}}</td>
+                                <td data-title="Windows Covered" style="{% depth_color_windows value.windows_covered max_windows_covered %}" class = "extra-column">
+                                    {% windows_safe value.windows_covered %}</td>
+                                {% if private_reads_available %}
+                                <td data-title="Private reads" style="{% depth_color value.private_reads final_report.max_private_reads %}" class = "extra-column">
+                                    {{value.private_reads}}</td>
                                 {% endif %}
-                                
+                                {% if error_rate_available %}
+                                <td data-title="Error rate" style="{% depth_color_error value.error_rate max_error_rate %}" class = "extra-column">
+                                    {{value.error_rate}}</td>
                                 {% endif %}
-                                <a href="#" id="plot_show" >{{value.description}}</a>
-                            </td>                         
-                            <td data-title="Taxid">{{value.taxid}}</td>
-                            <td data-title="accID">
-                                <a href={{value.accid|link_ncbi}}>{{value.accid}}</a>
-                            </td>
-                            <td data-title="Support" {% if value.found_in == "M" %} class="map-only-cell" {% endif %} >{{value.found_in |safe}}</td>                                
-                            <td data-title="Cov" style="{% depth_color value.coverage max_coverage %}" class = "extra-column">
-                                {{value.coverage|round}}</td>
-                            <td data-title="Depth" style="{% depth_color value.depth value.run_detail.max_depth %}" class = "extra-column">
-                                {{value.depth|round}}</td>
-                            <td data-title="DepthC" style="{% depth_color value.depthR value.run_detail.max_depthR %}" class="extra-column">
-                                {{value.depthR|round}}</td>
-                            <td data-title="Mapped reads" style="{% depth_color value.mapped_reads value.run_detail.max_mapped %}" class = "extra-column">
-                                {{value.mapped_reads|round}}</td>
-                            <td data-title="start prop" style="{% depth_color value.ref_proportion value.run_detail.max_prop %}" class = "extra-column">
-                                {{value.ref_proportion|round_to_int}}</td>
-                            <td data-title="mapped_prop" style="{% depth_color value.mapped_proportion value.run_detail.max_prop %}" class = "extra-column">
-                                {{value.mapped_proportion|round_to_int}}</td>
-                            <td data-title="Gaps" style="{% depth_color value.ngaps value.run_detail.max_gaps %}" class="extra-column">
-                                {{value.ngaps}}</td>
-                            <td data-title="Windows Covered" style="{% depth_color_windows value.windows_covered max_windows_covered %}" class = "extra-column">
-                                {% windows_safe value.windows_covered %}</td>
-                            {% if private_reads_available %}
-                            <td data-title="Private reads" style="{% depth_color value.private_reads final_report.max_private_reads %}" class = "extra-column">
-                                {{value.private_reads}}</td>
-                            {% endif %}
-                            {% if error_rate_available %}
-                            <td data-title="Error rate" style="{% depth_color_error value.error_rate max_error_rate %}" class = "extra-column">
-                                {{value.error_rate}}</td>
-                            {% endif %}
-                            <td data-title="class. success" style="{% success_count_color value.classification_success %}" class = "extra-column">
-                                {{value.classification_success}}</td>
-                            <td data-title="mapping success" style="{% success_count_color value.mapping_success %}" class = "extra-column">
-                                {{value.mapping_success}}</td>
-                            <td data-title="Warning" style="{% flag_false_positive_color value.depth value.depthR value.coverage value.mapped_reads value.windows_covered project_index %}">
-                                {% flag_false_positive value.depth value.depthR value.coverage value.mapped_reads value.windows_covered project_index %}</td>
-                            {% if in_control %}
-                            <td data-title="Control" style="{% flag_control_color value.control_flag %}">
-                                {{ value.control_flag_str }}</td>
-                            {% endif %}
-                        </tr>
-                        <tr class="collapse-report" group-name="{{final_report.name}}">
-                        <td colspan="18">
-                            <div class="table__wrapper">
-                            <table class="table table-inner">
-                                <tbody>
-                                    <tr class="detail">
-                                        <td colspan="5" align="center">
-                                            <p>Database: {{value.ref_db|strip_ext}}</p>
-                                        </td>
-                                        <td colspan="2" align="center">
-                                            <a href={{value.accid|link_ncbi}}>NCBI</a>
-                                        </td>
-                                        <td colspan="2" align="center">
-                                            <p>length: {{value.reference_length}}</p>
-                                        </td>
-                                        <td colspan="3" align="center">
-                                            <p>contig string: {{value.reference_contig_str}}</p>
-                                        </td>
-                                        <td colspan="1" align="center">
-                                            <div>
-                                                <form id="download_reference_{{value.accid}}" action="{% url 'download_file_igv' %}"
-                                                    method="POST">
-                                                    {% csrf_token %}
-                                                    <input type=submit value=".fa" name="btn1">
-                                                    <input type="hidden" name="file_path" value="{{value.reference_path}}">
-                                                </form>
-                                            </div>
-                                        </td>
-                        
-                                        <td colspan="1" align="center">
-                        
-                                            <div>
-                                                <form id="download_reference_index_{{value.accid}}" action="{% url 'download_file_igv' %}"
-                                                    method="POST">
-                                                    {% csrf_token %}
-                                                    <input type=submit value=".fai" name="btn2">
-                                                    <input type="hidden" name="file_path" value="{{value.reference_index_path}}">
-                                                </form>
-                                            </div>
-                                        </td>
-                                    </tr>
-        
-                                    {% if value.coverage > 0 %}
-                                    <tr class="igv_tab" id="igv_display_{{value.accid}}">
-                                        <td colspan="18" align="center">
-                                            <div class="card-block">
-                                                <div class="container-fluid">
-                                                    <div class="igv-loader" id="loader_igv_{{value.accid}}"><img src="{{ spinner_url }}"/></div>
-                                                    <div id="show_igv_{{value.accid}}"  show-igv-url="{% url 'show_igv' %}"></div>
+                                <td data-title="class. success" style="{% success_count_color value.classification_success %}" class = "extra-column">
+                                    {{value.classification_success}}</td>
+                                <td data-title="mapping success" style="{% success_count_color value.mapping_success %}" class = "extra-column">
+                                    {{value.mapping_success}}</td>
+                                <td data-title="Warning" style="{% flag_false_positive_color value.depth value.depthR value.coverage value.mapped_reads value.windows_covered project_index %}">
+                                    {% flag_false_positive value.depth value.depthR value.coverage value.mapped_reads value.windows_covered project_index %}</td>
+                                {% if in_control %}
+                                <td data-title="Control" style="{% flag_control_color value.control_flag %}">
+                                    {{ value.control_flag_str }}</td>
+                                {% endif %}
+                            </tr>
+                            <tr class="collapse-report" group-name="{{final_report.name}}">
+                            <td colspan="18">
+                                <div class="table__wrapper">
+                                <table class="table table-inner">
+                                    <tbody>
+                                        <tr class="detail">
+                                            <td colspan="5" align="center">
+                                                <p>Database: {{value.ref_db|strip_ext}}</p>
+                                            </td>
+                                            <td colspan="2" align="center">
+                                                <a href={{value.accid|link_ncbi}}>NCBI</a>
+                                            </td>
+                                            <td colspan="2" align="center">
+                                                <p>length: {{value.reference_length}}</p>
+                                            </td>
+                                            <td colspan="3" align="center">
+                                                <p>contig string: {{value.reference_contig_str}}</p>
+                                            </td>
+                                            <td colspan="1" align="center">
+                                                <div>
+                                                    <form id="download_reference_{{value.accid}}" action="{% url 'download_file_igv' %}"
+                                                        method="POST">
+                                                        {% csrf_token %}
+                                                        <input type=submit value=".fa" name="btn1">
+                                                        <input type="hidden" name="file_path" value="{{value.reference_path}}">
+                                                    </form>
                                                 </div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr class="detail">
-                                        <td colspan="1" align="center">
-                                            <p>Mapping Coverage</p>
-                                        </td>
-                                        <td colspan="11" align="center">
-                                            <img src="{% static value.run_main.static_dir %}/{{ value.covplot }}"="200"="250" alt="">
-                                        </td>
-                                        <td colspan="1" align="center">
-                        
-                                            <div style="position:relative height=100%" >
-                                                <button class="igv_browse btn btn-primary" id="igv_browse" type="button" project_pk="{{project_index}}" sample_pk="{{sample_index}}" sample_name="{{ sample }}"
-                                                run_pk="{{value.run_index}}" accid="{{value.accid}}" show-igv-url="{% url 'igv_browser' %}" reference_id="{{value.unique_id}}" >IGV</button>
-                                            </div>
-                                            {% if value.data_exists %}
-                                            <div id="cov_div" >
-                                                <br>
-                                                <form id="download_bam_{{value.accid}}" action="{% url 'download_file_igv' %}"
+                                            </td>
+                            
+                                            <td colspan="1" align="center">
+                            
+                                                <div>
+                                                    <form id="download_reference_index_{{value.accid}}" action="{% url 'download_file_igv' %}"
+                                                        method="POST">
+                                                        {% csrf_token %}
+                                                        <input type=submit value=".fai" name="btn2">
+                                                        <input type="hidden" name="file_path" value="{{value.reference_index_path}}">
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+            
+                                        {% if value.coverage > 0 %}
+                                        <tr class="igv_tab" id="igv_display_{{value.accid}}">
+                                            <td colspan="18" align="center">
+                                                <div class="card-block">
+                                                    <div class="container-fluid">
+                                                        <div class="igv-loader" id="loader_igv_{{value.accid}}"><img src="{{ spinner_url }}"/></div>
+                                                        <div id="show_igv_{{value.accid}}"  show-igv-url="{% url 'show_igv' %}"></div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr class="detail">
+                                            <td colspan="1" align="center">
+                                                <p>Mapping Coverage</p>
+                                            </td>
+                                            <td colspan="11" align="center">
+                                                <img src="{% static value.run_main.static_dir %}/{{ value.covplot }}"="200"="250" alt="">
+                                            </td>
+                                            <td colspan="1" align="center">
+                            
+                                                <div style="position:relative height=100%" >
+                                                    <button class="igv_browse btn btn-primary" id="igv_browse" type="button" project_pk="{{project_index}}" sample_pk="{{sample_index}}" sample_name="{{ sample }}"
+                                                    run_pk="{{value.run_index}}" accid="{{value.accid}}" show-igv-url="{% url 'igv_browser' %}" reference_id="{{value.unique_id}}" >IGV</button>
+                                                </div>
+                                                {% if value.data_exists %}
+                                                <div id="cov_div" >
+                                                    <br>
+                                                    <form id="download_bam_{{value.accid}}" action="{% url 'download_file_igv' %}"
+                                                        method="POST">
+                                                        {% csrf_token %}
+                                                        <input type=submit value=".bam" name="btn1">
+                                                        <input type="hidden" name="file_path" value="{{value.bam_path}}">
+                                                    </form>
+                                                    <br>
+                                                    <form id="download_bai_{{value.accid}}" action="{% url 'download_file_igv' %}"
+                                                        method="POST">
+                                                        {% csrf_token %}
+                                                        <input type=submit value=".bai" name="btn2">
+                                                        <input type="hidden" name="file_path" value="{{value.bai_path}}">
+                                                    </form>
+                                                </div>
+                                                {% endif %}
+                            
+                                            </td>
+                                            <td colspan="1" align="center">
+                                                {% if value.data_exists %}
+                                                <div id="cov_div" style="position:relative height=100%">
+                                                    <br>
+                                                    <form id="download_mapped_r1_{{value.accid}}" action="{% url 'download_refmap_files' %}"
+                                                        method="POST">
+                                                        {% csrf_token %}
+                                                        <input type=submit value="mapped reads r1 (.fa)" name="btn3">
+                                                        <input type="hidden" name="file" value="mapped_subset_r1">
+                                                        <input type="hidden" name="taxid" value="{{value.taxid}}">
+                                                        <input type="hidden" name="run" value="{{value.run.pk}}">
+                                                        <input type="hidden" name="accid" value="{{value.accid}}">
+                                                        
+                                                    </form>
+                                                    {% if value.run_main.sample.sample.is_valid_2 %}
+                                                    <br>
+                                                    <form id="download_mapped_r2_{{value.accid}}" action="{% url 'download_refmap_files' %}"
                                                     method="POST">
                                                     {% csrf_token %}
-                                                    <input type=submit value=".bam" name="btn1">
-                                                    <input type="hidden" name="file_path" value="{{value.bam_path}}">
-                                                </form>
-                                                <br>
-                                                <form id="download_bai_{{value.accid}}" action="{% url 'download_file_igv' %}"
-                                                    method="POST">
-                                                    {% csrf_token %}
-                                                    <input type=submit value=".bai" name="btn2">
-                                                    <input type="hidden" name="file_path" value="{{value.bai_path}}">
-                                                </form>
-                                            </div>
-                                            {% endif %}
-                        
-                                        </td>
-                                        <td colspan="1" align="center">
-                                            {% if value.data_exists %}
-                                            <div id="cov_div" style="position:relative height=100%">
-                                                <br>
-                                                <form id="download_mapped_r1_{{value.accid}}" action="{% url 'download_refmap_files' %}"
-                                                    method="POST">
-                                                    {% csrf_token %}
-                                                    <input type=submit value="mapped reads r1 (.fa)" name="btn3">
-                                                    <input type="hidden" name="file" value="mapped_subset_r1">
+                                                    <input type=submit value="mapped reads r2 (.fa)" name="btn3">
+                                                    <input type="hidden" name="file" value="mapped_subset_r2">
                                                     <input type="hidden" name="taxid" value="{{value.taxid}}">
                                                     <input type="hidden" name="run" value="{{value.run.pk}}">
                                                     <input type="hidden" name="accid" value="{{value.accid}}">
-                                                    
-                                                </form>
-                                                {% if value.run_main.sample.sample.is_valid_2 %}
+                                                    </form>
+                                                    {% endif %}
+                                                </div>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+            
+                                        {% endif %}
+                                        {% if value.refa_dotplot_exists == True %}
+                                        <tr class="detail ">
+                                            <td colspan="1" align="center">
+                                                <p>Assembly to reference dotplot</p>
+                                            </td>
+                            
+                                            <td colspan="11" align="center">
+                                                <img src="{% static value.run_main.static_dir %}/{{ value.refa_dotplot }}"="200"="250" alt="">
+                                            </td>
+                                            <td colspan="1" align="center" style="position:relative">
+                                                {% if value.data_exists %}
+                                                <div>
+                                                    <a style="position:relative"
+                                                        href={% url 'scaffold_remap' pk1=project_index pk2=sample_index pk3=value.run_index reference=value.simple_id %}>Sample
+                                                        remap</a>
+                                                </div>
                                                 <br>
-                                                <form id="download_mapped_r2_{{value.accid}}" action="{% url 'download_refmap_files' %}"
-                                                method="POST">
-                                                {% csrf_token %}
-                                                <input type=submit value="mapped reads r2 (.fa)" name="btn3">
-                                                <input type="hidden" name="file" value="mapped_subset_r2">
-                                                <input type="hidden" name="taxid" value="{{value.taxid}}">
-                                                <input type="hidden" name="run" value="{{value.run.pk}}">
-                                                <input type="hidden" name="accid" value="{{value.accid}}">
+                                                <form id="remap_paf_{{value.accid}}" action="{% url 'download_file_igv' %}" method="POST">
+                                                    {% csrf_token %}
+                                                    <input type=submit value=".paf" name="btn1">
+                                                    <input type="hidden" name="file_path" value="{{value.reference_assembly_paf}}">
+                                                </form>
+                                                <br>
+                                                <form id="mapped_scaffolds_{{value.accid}}" action="{% url 'download_file_igv' %}"
+                                                    method="POST">
+                                                    {% csrf_token %}
+                                                    <input type=submit value=".fa" name="btn2">
+                                                    <input type="hidden" name="file_path" value="{{value.mapped_scaffolds_path}}">
+                                                </form>
+                                                <br>
+                                                <form id="mapped_scaffolds_index_{{value.accid}}" action="{% url 'download_file_igv' %}"
+                                                    method="POST">
+                                                    {% csrf_token %}
+                                                    <input type=submit value=".fai" name="btn3">
+                                                    <input type="hidden" name="file_path" value="{{value.mapped_scaffolds_index_path}}">
                                                 </form>
                                                 {% endif %}
-                                            </div>
-                                            {% endif %}
-                                        </td>
-                                    </tr>
-        
-                                    {% endif %}
-                                    {% if value.refa_dotplot_exists == True %}
-                                    <tr class="detail ">
-                                        <td colspan="1" align="center">
-                                            <p>Assembly to reference dotplot</p>
-                                        </td>
-                        
-                                        <td colspan="11" align="center">
-                                            <img src="{% static value.run_main.static_dir %}/{{ value.refa_dotplot }}"="200"="250" alt="">
-                                        </td>
-                                        <td colspan="1" align="center" style="position:relative">
-                                            {% if value.data_exists %}
-                                            <div>
-                                                <a style="position:relative"
-                                                    href={% url 'scaffold_remap' pk1=project_index pk2=sample_index pk3=value.run_index reference=value.simple_id %}>Sample
-                                                    remap</a>
-                                            </div>
-                                            <br>
-                                            <form id="remap_paf_{{value.accid}}" action="{% url 'download_file_igv' %}" method="POST">
-                                                {% csrf_token %}
-                                                <input type=submit value=".paf" name="btn1">
-                                                <input type="hidden" name="file_path" value="{{value.reference_assembly_paf}}">
-                                            </form>
-                                            <br>
-                                            <form id="mapped_scaffolds_{{value.accid}}" action="{% url 'download_file_igv' %}"
-                                                method="POST">
-                                                {% csrf_token %}
-                                                <input type=submit value=".fa" name="btn2">
-                                                <input type="hidden" name="file_path" value="{{value.mapped_scaffolds_path}}">
-                                            </form>
-                                            <br>
-                                            <form id="mapped_scaffolds_index_{{value.accid}}" action="{% url 'download_file_igv' %}"
-                                                method="POST">
-                                                {% csrf_token %}
-                                                <input type=submit value=".fai" name="btn3">
-                                                <input type="hidden" name="file_path" value="{{value.mapped_scaffolds_index_path}}">
-                                            </form>
-                                            {% endif %}
-                        
-                                        </td>
-                                    </tr>
-                                    {% endif %}
-          
-                                </tbody>
-                            </table>
-                            </div>
-                        </td>
-                        </tr>
-                    </tbody>
+                            
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+            
+                                    </tbody>
+                                </table>
+                                </div>
+                            </td>
+                            </tr>
+                        </tbody>
+                        {% endfor %}
                     {% endfor %}
-
                     <tr class="group-spacer">
-                        <td colspan="18" style="height: 24px; background: transparent; border: none;"></td>
+                        <td colspan="18" ></td>
                     </tr>
                     {% endfor %}
                     </tbody>
@@ -685,6 +816,7 @@
 <script type="text/javascript" src="{% static 'js/televir_projects/sample_detail.js' %}"></script>
 
 <script>
+
     if (document.getElementById('toggle-summary')) {
         document.getElementById('toggle-summary').addEventListener('click', function() {
             var summaryDiv = document.querySelector('.collapsible-summary');
@@ -699,7 +831,6 @@
             summaryDiv.classList.remove('show');
         });
     }
-
 
     var buttons = document.querySelectorAll('.showSecondaryRows, .showSecondaryRows i');
     for (var b = 0; b < buttons.length; b++) {
@@ -737,6 +868,99 @@
         table.classList.toggle('show-extra-columns');
     });
 
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+        document.querySelectorAll(".species-toggle-btn").forEach(function (btn) {
+
+            btn.addEventListener("click", function () {
+
+                const speciesRow = btn.closest(".species-section");
+                const speciesId = speciesRow.dataset.species;
+
+                const expanded = btn.getAttribute("aria-expanded") === "true";
+                const newExpanded = !expanded;
+
+                console.log(
+                    `Toggling species ${speciesId} -> expanded=${newExpanded}`
+                );
+
+                document
+                    .querySelectorAll(
+                        `.group-wrapper[data-species="${speciesId}"]`
+                    )
+                    .forEach(function (tbody) {
+
+                        console.log(
+                            `  Toggling group: ${tbody.getAttribute("group-name")}`
+                        );
+
+                        tbody.style.display = newExpanded
+                            ? "table-row-group"
+                            : "none";
+                    });
+
+                const icon = btn.querySelector("i");
+
+                if (icon) {
+                    icon.classList.remove(
+                        "fa-chevron-down",
+                        "fa-chevron-up"
+                    );
+
+                    icon.classList.add(
+                        newExpanded
+                            ? "fa-chevron-up"
+                            : "fa-chevron-down"
+                    );
+                }
+
+                btn.setAttribute("aria-expanded", newExpanded);
+
+                if (!newExpanded) {
+
+                    const groupName = tbody.getAttribute("group-name");
+
+                    tbody.style.display = "none";
+
+                    document.querySelectorAll(
+                        '.secondary-row[group-name="' + groupName + '"]'
+                    ).forEach(function(row) {
+
+                        if (row.classList.contains('parent')) {
+                            row.style.display = 'none';
+
+                            const innerRow = nextTr(row);
+
+                            if ($(innerRow).hasClass('active')) {
+                                $(innerRow).removeClass('active');
+                            }
+                        }
+                    });
+
+                    const button = tbody.querySelector('.showSecondaryRows');
+
+                    if (button) {
+                        const icon = button.querySelector('.toggle-icon');
+
+                        if (icon) {
+                            icon.classList.remove('fa-toggle-on');
+                            icon.classList.add('fa-toggle-off');
+                        }
+                    }
+
+                } else {
+
+                    tbody.style.display = "table-row-group";
+
+                }
+
+
+            });
+
+        });
+
+    });
 
 </script>
 {% endblock js %}

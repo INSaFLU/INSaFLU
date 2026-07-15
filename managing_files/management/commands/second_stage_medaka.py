@@ -12,7 +12,7 @@ from django.core.management import BaseCommand
 from constants.meta_key_and_values import MetaKeyAndValue
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProjectSample
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 from utils.software_minion import SoftwareMinion
 
 
@@ -45,7 +45,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         software_minion = SoftwareMinion()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         manageDatabase = ManageDatabase()
         metaKeyAndValue = MetaKeyAndValue()
 

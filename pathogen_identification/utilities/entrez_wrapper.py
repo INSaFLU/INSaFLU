@@ -2,15 +2,25 @@ import http.client
 import os
 import urllib.error
 from abc import ABC, abstractmethod
-from typing import List
-
-import pandas as pd
+from typing import List, Dict, Tuple, TYPE_CHECKING
 from Bio import Entrez
 from django.contrib.auth.models import User
+from dataclasses import dataclass
+from typing import Optional
+import pandas as pd
+
+if TYPE_CHECKING:
+    from pathogen_identification.models import Taxon
 
 
 def split_query(query: List[str], chunksize: int) -> List[List[str]]:
     return [query[i : i + chunksize] for i in range(0, len(query), chunksize)]
+
+@dataclass
+class LineageNode:
+    taxid: str = ""
+    name: str = ""
+    rank: str = "no rank"
 
 
 class EntrezQuery(ABC):
@@ -25,7 +35,7 @@ class EntrezQuery(ABC):
         pass
 
     @abstractmethod
-    def read_output(self, outptuf_path: str) -> List[str]:
+    def read_output(self, output_path: str) -> pd.DataFrame:
         pass
 
     @property
@@ -143,10 +153,28 @@ class EntrezFetchAccessionDescription(EntrezQuery):
 
         return " ".join(cmd)
 
+    def process_query_output(self, output_path: str) -> None:
+        """
+        Process the output of the query. some rows have the taxid column repeated, ending wwith 4 columns instead of 3
+        """
+        outdir = os.path.dirname(output_path)
+        tmp_duplicate_file = os.path.join(outdir, "tmp_duplicate_taxids.txt")
+        tmp_file = os.path.join(outdir, "tmp_file.txt")
+        os.system(f"awk -F'\t' 'NF==4' {output_path} > {tmp_duplicate_file}")
+        os.system(f"awk -F'\t' 'NF==3' {output_path} > {tmp_file}")
+        os.system("cut -f2,3,4 " + tmp_duplicate_file + " >> " + tmp_file)
+        os.system("mv " + tmp_file + " " + output_path)
+        os.system("rm " + tmp_duplicate_file)
+        os.system("rm " + tmp_file)
+
+
+
     def read_output(self, output_path: str) -> pd.DataFrame:
         """
         Read output from Entrez query using pandas
         """
+
+        self.process_query_output(output_path)
 
         df = pd.read_csv(
             output_path,
@@ -156,6 +184,37 @@ class EntrezFetchAccessionDescription(EntrezQuery):
         )
         return df
 
+
+class EntrezFetchTaxidLineage(EntrezQuery):
+    """Fetch taxonomic lineage for TaxIDs via NCBI Taxonomy"""
+    name: str = "fetch_taxid_lineage"
+    db = "taxonomy"
+    output_columns = ["taxid", "rank", "name"]
+
+    def query(self, query: List[str]) -> str:
+        # This is a Biopython-based query, not a binary command
+        # Placeholder for consistency with interface
+        return ""
+
+    def read_output(self, output_path: str) -> pd.DataFrame:
+        """Return empty DataFrame - this is handled by fetch_lineage method"""
+        return pd.DataFrame()
+
+
+class EntrezSearchOrganismByName(EntrezQuery):
+    """Search NCBI Taxonomy database by organism name"""
+    name: str = "search_organism_by_name"
+    db = "taxonomy"
+    output_columns = ["input_name", "taxid", "canonical_name", "rank", "confidence"]
+
+    def query(self, query: List[str]) -> str:
+        # This is a Biopython-based query, not a binary command
+        # Placeholder for consistency with interface
+        return ""
+
+    def read_output(self, output_path: str) -> pd.DataFrame:
+        """Return empty DataFrame - this is handled by search_organism_name method"""
+        return pd.DataFrame()
 
 class EntrezQueryFactory:
     def __init__(self, bindir: str):
@@ -168,6 +227,10 @@ class EntrezQueryFactory:
             return EntrezFetchAccessionDescription(self.bindir)
         elif name == "fetch_protein_accession_taxon":
             return EntrezFetchProteinAccession_Taxon(self.bindir)
+        elif name == "fetch_taxid_lineage":
+            return EntrezFetchTaxidLineage(self.bindir)
+        elif name == "search_organism_by_name":
+            return EntrezSearchOrganismByName(self.bindir)
         else:
             raise ValueError("Invalid query name")
 
@@ -375,24 +438,7 @@ class EntrezWrapper:
 
         return df
 
-    def process_query_output(self, output_path: str) -> pd.DataFrame:
-        """
-        Process the output of the query. some rows have the taxid column repeated, ending wwith 4 columns instead of 3
-        """
 
-        tmp_duplicate_file = os.path.join(self.outdir, "tmp_duplicate_taxids.txt")
-        tmp_file = os.path.join(self.outdir, "tmp_file.txt")
-        os.system(f"awk -F'\t' 'NF==4' {output_path} > {tmp_duplicate_file}")
-        os.system(f"awk -F'\t' 'NF==3' {output_path} > {tmp_file}")
-        os.system("cut -f2,3,4 " + tmp_duplicate_file + " >> " + tmp_file)
-        os.system("mv " + tmp_file + " " + output_path)
-        os.system("rm " + tmp_duplicate_file)
-        os.system("rm " + tmp_file)
-
-    def filter_query_output(self, output_path: str) -> pd.DataFrame:
-        tmp_file = os.path.join(self.outdir, "tmp_file.txt")
-        os.system(f"awk -F'\t' 'NF==3' {output_path} > {tmp_file}")
-        os.system("mv " + tmp_file + " " + output_path)
 
     def run_queries_binaries(self, query: List[str]) -> None:
         """
@@ -403,22 +449,379 @@ class EntrezWrapper:
             os.remove(self.output_path)
 
         for cmd in cmds:
+            print(cmd)
             os.system(cmd)
 
         output_path = os.path.join(self.outdir, self.outfile)
-        self.process_query_output(output_path)
+
+        import traceback
         try:
-            df = pd.read_csv(output_path, sep="\t", header=None)
+            df = self.bin_query.read_output(output_path)
             df.columns = self.bin_query.output_columns
-        except pd.errors.ParserError:
-            self.filter_query_output(output_path)
-            df = pd.read_csv(output_path, sep="\t", header=None)
+
         except pd.errors.EmptyDataError:
+            traceback.print_exc()
             df = pd.DataFrame(columns=self.bin_query.output_columns)
 
         df.to_csv(self.output_path, sep="\t", index=False)
 
-        return None
+    # NEW METHODS FOR LINEAGE & NAME RESOLUTION
+
+    def fetch_lineage(self, taxid: str) -> List[LineageNode]:
+        """
+        Fetch taxonomic lineage for a single taxid.
+
+        Args:
+            taxid: Single NCBI taxonomy ID (as string)
+
+        Returns:
+            List of LineageNode from root to leaf
+        """
+        try:
+            handle = Entrez.efetch(db="Taxonomy", id=taxid, retmode="xml")
+            records = Entrez.read(handle)
+            
+            if not records:
+                return []
+            
+            record = records[0]
+            lineage_nodes = []
+            
+            # Parse LineageEx if present (ancestors)
+            if "LineageEx" in record:
+                for taxon in record["LineageEx"]:
+                    lineage_nodes.append(LineageNode(
+                        taxid=str(taxon.get("TaxId", "")),
+                        name=taxon.get("ScientificName", ""),
+                        rank=taxon.get("Rank", "no rank")
+                    ))
+            
+            # Add the record itself as the leaf node
+            lineage_nodes.append(LineageNode(
+                taxid=taxid,
+                name=record.get("ScientificName", ""),
+                rank=record.get("Rank", "no rank")
+            ))
+            
+            return lineage_nodes
+        except Exception as e:
+            print(f"Error fetching lineage for taxid {taxid}: {e}")
+            return []
+
+    def fetch_lineages(self, taxids: List[str], strategy: str = "biopy") -> Dict[str, List[LineageNode]]:
+        """
+        Fetch taxonomic lineages for multiple taxids using specified strategy.
+
+        Args:
+            taxids: List of NCBI taxonomy IDs (as strings)
+            strategy: "biopy" (Biopython batch - recommended) or "binary" (NCBI binaries)
+
+        Returns:
+            Dict mapping taxid -> list of LineageNode from root to leaf
+        """
+        if strategy == "binary":
+            return self.fetch_lineages_binary(taxids)
+        else:
+            return self.fetch_lineages_biopy(taxids)
+
+    def fetch_lineages_biopy(self, taxids: List[str]) -> Dict[str, List[LineageNode]]:
+        """
+        Fetch taxonomic lineages using Biopython (recommended).
+        
+        Batches requests to minimize API calls while respecting rate limits.
+        Single Entrez.efetch call with comma-separated IDs is more efficient
+        than per-taxid fetching.
+
+        Args:
+            taxids: List of NCBI taxonomy IDs (as strings)
+
+        Returns:
+            Dict mapping taxid -> list of LineageNode from root to leaf
+        """
+        lineages = {}
+        
+        # Chunk taxids to respect NCBI rate limits
+        chunks = split_query(taxids, self.chunksize)
+        
+        for chunk in chunks:
+            try:
+                # Single batch call fetches multiple taxids at once
+                handle = Entrez.efetch(
+                    db="Taxonomy",
+                    id=",".join(chunk),
+                    retmode="xml"
+                )
+                records = Entrez.read(handle)
+                
+                # Extract lineage from each record
+                for record in records:
+                    taxid = str(record.get("TaxId", ""))
+                    lineage_nodes = []
+                    
+                    # Parse LineageEx if present (ancestors)
+                    if "LineageEx" in record:
+                        for taxon in record["LineageEx"]:
+                            lineage_nodes.append(LineageNode(
+                                taxid=str(taxon.get("TaxId", "")),
+                                name=taxon.get("ScientificName", ""),
+                                rank=taxon.get("Rank", "no rank")
+                            ))
+                    
+                    # Add the record itself as the leaf node
+                    lineage_nodes.append(LineageNode(
+                        taxid=taxid,
+                        name=record.get("ScientificName", ""),
+                        rank=record.get("Rank", "no rank")
+                    ))
+                    
+                    lineages[taxid] = lineage_nodes
+            except Exception as e:
+                print(f"Error fetching lineage for chunk {chunk} via Biopython: {e}")
+                continue
+        
+        return lineages
+
+    def fetch_lineages_binary(self, taxids: List[str]) -> Dict[str, List[LineageNode]]:
+        """
+        Fetch taxonomic lineages using NCBI EDirect binaries.
+        
+        Uses binary utilities (esearch, efetch, xtract). More trustworthy
+        but requires EDirect to be installed.
+
+        Args:
+            taxids: List of NCBI taxonomy IDs (as strings)
+
+        Returns:
+            Dict mapping taxid -> list of LineageNode from root to leaf
+        """
+        import subprocess
+        
+        lineages = {}
+        
+        try:
+            # Build command using NCBI binaries
+            taxid_list = ",".join(taxids)
+            cmd = (
+                f"echo '{taxid_list}' | "
+                f"efetch -db taxonomy -format xml | "
+                f"xtract -pattern 'Taxon' -element TaxId,ScientificName,Rank "
+                f"    -pattern 'LineageEx' -element LineageEx/Taxon -block 'Taxon' "
+                f"    -element TaxId,ScientificName,Rank"
+            )
+            
+            result = subprocess.run(
+                cmd,
+                shell=True,
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+            
+            if result.returncode != 0:
+                print(f"Error running binary command: {result.stderr}")
+                print("Falling back to Biopython strategy")
+                return self.fetch_lineages_biopy(taxids)
+            
+            # Parse output
+            for line in result.stdout.strip().split("\n"):
+                if not line:
+                    continue
+                parts = line.split("\t")
+                if len(parts) >= 3:
+                    taxid, name, rank = parts[0], parts[1], parts[2]
+                    if taxid not in lineages:
+                        lineages[taxid] = []
+                    lineages[taxid].append(LineageNode(
+                        taxid=taxid,
+                        name=name,
+                        rank=rank
+                    ))
+        except Exception as e:
+            print(f"Error fetching lineage via binary: {e}")
+            print("Falling back to Biopython strategy")
+            return self.fetch_lineages_biopy(taxids)
+        
+        return lineages
+
+    def persist_lineages(self, lineages: Dict[str, List[LineageNode]]) -> Dict[str, "Taxon"]:
+        """
+        Persist taxonomic lineages as Taxon objects in DB.
+
+        Builds a deduplicated node registry and adjacency list, then BFS from
+        roots to create/update Taxon objects.
+
+        Args:
+            lineages: taxid -> list of LineageNode from root to leaf
+
+        Returns:
+            Dict mapping taxid -> Taxon object for later use
+        """
+        from collections import deque
+        from pathogen_identification.models import Taxon
+
+        node_info = {}
+        children = {}
+        all_child_taxids = set()
+
+        for leaf_taxid, lineage_list in lineages.items():
+            prev = None
+            for node in lineage_list:
+                tid = node.taxid
+                if not tid:
+                    continue
+                if tid not in node_info:
+                    node_info[tid] = node
+                if prev is not None:
+                    children.setdefault(prev, set()).add(tid)
+                    all_child_taxids.add(tid)
+                prev = tid
+
+        roots = sorted(set(node_info) - all_child_taxids)
+        queue = deque()
+        taxon_map = {}
+
+        for root_tid in roots:
+            queue.append((root_tid, None))
+
+        while queue:
+            tid, parent_taxon = queue.popleft()
+            node = node_info[tid]
+
+            taxon, _ = Taxon.objects.get_or_create(
+                taxid=int(tid),
+                defaults={
+                    "name": node.name,
+                    "rank": node.rank,
+                    "parent": parent_taxon,
+                },
+            )
+
+            changed = False
+            if taxon.name != node.name:
+                taxon.name = node.name
+                changed = True
+            if taxon.rank != node.rank:
+                taxon.rank = node.rank
+                changed = True
+            if taxon.parent != parent_taxon:
+                taxon.parent = parent_taxon
+                changed = True
+            if changed:
+                taxon.save()
+
+            taxon_map[tid] = taxon
+
+            for child_tid in children.get(tid, set()):
+                queue.append((child_tid, taxon))
+
+        return taxon_map
+
+    def link_referencetaxid_to_lineage(
+        self, 
+        ref_taxid_str: str, 
+        lineage: List[LineageNode],
+        taxon_map: Dict[str, "Taxon"]
+    ) -> None:
+        """
+        Update ReferenceTaxid rank-level fields from a lineage.
+
+        Call this after ReferenceTaxid object has been created in the database.
+
+        Args:
+            ref_taxid_str: ReferenceTaxid taxid as string
+            lineage: List of LineageNode from root to leaf
+            taxon_map: Dict of taxid -> Taxon objects from persist_lineages()
+        """
+        from pathogen_identification.models import ReferenceTaxid
+        from constants.constants_taxonomy import TaxonConstants
+
+        RANK_TO_FIELD = {
+            TaxonConstants.RANK_DOMAIN: "tax_domain",
+            TaxonConstants.RANK_PHYLUM: "tax_phylum",
+            TaxonConstants.RANK_CLASS: "tax_class",
+            TaxonConstants.RANK_ORDER: "tax_order",
+            TaxonConstants.RANK_FAMILY: "tax_family",
+            TaxonConstants.RANK_GENUS: "tax_genus",
+            TaxonConstants.RANK_SPECIES: "tax_species",
+        }
+
+        try:
+            ref_taxid_obj = ReferenceTaxid.objects.get(taxid=ref_taxid_str)
+        except ReferenceTaxid.DoesNotExist:
+            return
+
+        changed = False
+        for node in lineage:
+            tid = node.taxid
+            if not tid:
+                continue
+            normalized_rank = TaxonConstants.normalize_rank(node.rank)
+            field = RANK_TO_FIELD.get(normalized_rank)
+            if field is not None:
+                taxon = taxon_map.get(tid)
+                if taxon is not None and getattr(ref_taxid_obj, field) != taxon:
+                    setattr(ref_taxid_obj, field, taxon)
+                    changed = True
+        if changed:
+            ref_taxid_obj.save()
+
+    def search_organism_name(self, names: List[str], use_fuzzy: bool = True) -> Dict[str, Dict]:
+        """
+        Search for organisms by name. Tries exact match first, then NCBI search.
+
+        Args:
+            names: List of organism names (can be messy, abbreviated, etc.)
+            use_fuzzy: Enable fuzzy matching for partial matches
+
+        Returns:
+            Dict mapping input_name → {taxid, canonical_name, rank, confidence, source}
+        """
+        # Define result template with default values
+        default_result = {
+            "taxid": None,
+            "canonical_name": None,
+            "rank": None,
+            "confidence": "error",
+            "source": "failed"
+        }
+        
+        results = {name: default_result.copy() for name in names}
+        
+        for name in names:
+            try:
+                # Try direct NCBI search
+                handle = Entrez.esearch(db="Taxonomy", term=name, retmax=1)
+                search_result = Entrez.read(handle)
+                
+                if not search_result["IdList"]:
+                    results[name]["confidence"] = "none"
+                    results[name]["source"] = "not_found"
+                    continue
+                
+                # Found a taxid - fetch details
+                taxid = search_result["IdList"][0]
+                handle = Entrez.efetch(db="Taxonomy", id=taxid, retmode="xml")
+                fetch_result = Entrez.read(handle)
+                
+                if fetch_result:
+                    record = fetch_result[0]
+                    # Update only the fields that were successfully fetched
+                    results[name]["taxid"] = taxid
+                    results[name]["canonical_name"] = record.get("ScientificName", "")
+                    results[name]["rank"] = record.get("Rank", "")
+                    results[name]["confidence"] = "high"
+                    results[name]["source"] = "ncbi"
+                else:
+                    results[name]["confidence"] = "low"
+                    results[name]["source"] = "failed_fetch"
+                    
+            except Exception as e:
+                print(f"Error searching for organism name '{name}': {e}")
+                results[name]["confidence"] = "error"
+                results[name]["source"] = "exception"
+        
+        return results
+
 
     def run_taxid_description_queries_biopy(self, query: List[str]) -> None:
         """

@@ -78,9 +78,9 @@ $('#id-save-button').on('click', function(){
 					'aria-expanded="false" title="Add Consensus/References/Projects" style="margin-left: 8px;">Add Sequences</button>' +
 					'<div class="dropdown-menu" x-placement="bottom-start" style="position: absolute; ' +
 					'transform: translate3d(0px, 38px, 0px); top: 0px; left: 0px; will-change: transform;">' +
-					'<a rel="nofollow" class="dropdown-item" href="/datasets/datasets/' + data['id'] + '/add_references_dataset"> ' +
-					'Add References</a><a rel="nofollow" class="dropdown-item" href="/datasets/datasets/' + data['id'] + '/add_projects_dataset">' +
-					' Add Consensus from Projects</a><a rel="nofollow" class="dropdown-item" href="/datasets/datasets/' + data['id'] + '/add_consensus_dataset">' +
+					'<a rel="nofollow" class="dropdown-item" href="/datasets/' + data['id'] + '/add_references_dataset"> ' +
+					'Add References</a><a rel="nofollow" class="dropdown-item" href="/datasets/' + data['id'] + '/add_projects_dataset">' +
+					' Add Consensus from Projects</a><a rel="nofollow" class="dropdown-item" href="/datasets/' + data['id'] + '/add_consensus_dataset">' +
 					' Add your own Consensus</a></div>' +
 					//'<td class="results"><a rel="nofollow" href="/datasets/' + data['id'] + '/show_dataset_settings" data-toggle="tooltip" title="Dataset settings">' +
 					//'<span ><i class="fa fa-magic padding-button-table"></i></span></a></td>' +

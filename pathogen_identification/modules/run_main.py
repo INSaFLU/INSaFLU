@@ -14,31 +14,16 @@ from pathogen_identification.modules.assembly_class import Assembly_class
 from pathogen_identification.modules.classification_class import Classifier
 from pathogen_identification.modules.metadata_handler import RunMetadataHandler
 from pathogen_identification.modules.object_classes import (
-    Assembly_results,
-    Contig_classification_results,
-    Read_class,
-    Read_classification_results,
-    Remap_main,
-    Remap_Target,
-    Run_detail_report,
-    RunCMD,
-    RunQC_report,
-    Sample_runClass,
-    SoftwareDetail,
-    SoftwareDetailCompound,
-    SoftwareDetailCompoundPreprocess,
-    SoftwareRemap,
-    SoftwareUnit,
-)
+    Assembly_results, Contig_classification_results, Read_class,
+    Read_classification_results, Remap_main, Remap_Target, Run_detail_report,
+    RunCMD, RunQC_report, Sample_runClass, SoftwareDetail,
+    SoftwareDetailCompound, SoftwareDetailCompoundPreprocess, SoftwareRemap,
+    SoftwareUnit)
 from pathogen_identification.modules.preprocess_class import Preprocess
-from pathogen_identification.modules.remap_class import (
-    Mapping_Instance,
-    Mapping_Manager,
-)
+from pathogen_identification.modules.remap_class import (Mapping_Instance,
+                                                         Mapping_Manager)
 from pathogen_identification.utilities.televir_parameters import (
-    RemapParams,
-    TelevirParameters,
-)
+    RemapParams, TelevirParameters)
 from pathogen_identification.utilities.utilities_views import RawReferenceUtils
 from settings.constants_settings import ConstantsSettings as CS
 
@@ -186,7 +171,7 @@ class RunDetail_main:
         self.check_preprocess_exists()
 
     def check_preprocess_exists(self):
-        self.quality_control = self.preprocess_method.check_exists()
+        self.quality_control = self.preprocess_method.check_software_exists()
 
     def set_depletion_check(self, config: dict, method_args: pd.DataFrame):
         self.depletion_method = SoftwareDetail(
@@ -319,7 +304,7 @@ class RunDetail_main:
         self.check_remap_filtering_exists()
 
     def check_remap_filtering_exists(self):
-        self.remapping_filtering = self.remap_filtering_method.check_exists()
+        self.remapping_filtering = self.remap_filtering_method.check_software_exists()
 
     def set_settings_dict(self):
         self.settings_dict = {
@@ -952,7 +937,7 @@ class Run_Deployment_Methods(RunDetail_main):
 
     def deploy_REMAPPING(self):
 
-        self.logger.info(
+        print(
             f"{self.prefix} remapping # targets: {len(self.metadata_tool.remap_targets)}"
         )
 
@@ -981,6 +966,12 @@ class Run_Deployment_Methods(RunDetail_main):
             self.log_dir,
             self.media_dir_logdir,
         )
+    
+    def export_classification_reports(self):
+        classification_report_dir = os.path.join(self.media_dir, "classification_reports")
+
+        self.read_classification_drone.classifier.export_reports(classification_report_dir)
+        self.contig_classification_drone.classifier.export_reports(classification_report_dir)
 
     def export_final_reports(self):
         # main report
@@ -1170,6 +1161,7 @@ class RunEngine_class(Run_Deployment_Methods):
                 self.contig_classification_drone.classification_report,
                 self.remap_params.max_accids,
                 self.remap_params.max_taxids,
+                self.project_pk,
             )
             self.aclass_summary = self.metadata_tool.aclass
             self.rclass_summary = self.metadata_tool.rclass
@@ -1187,6 +1179,8 @@ class RunEngine_class(Run_Deployment_Methods):
             self.deploy_REMAPPING()
             self.report = self.remap_manager.report
             self.export_final_reports()
+            print("## Remap Performed")
+            print(self.report)
 
         self.Update_exec_time()
 
@@ -1494,11 +1488,15 @@ class RunMainTree_class(Run_Deployment_Methods):
             self.deploy_READ_CLASSIFICATION()
             self.deploy_CONTIG_CLASSIFICATION()
 
+            print("######## READ CLASSIGFICATION REPORT")
+            print(self.read_classification_drone.classification_report.head())
+
             self.metadata_tool.match_and_select_targets(
                 self.read_classification_drone.classification_report,
                 self.contig_classification_drone.classification_report,
                 self.remap_params.max_accids,
                 self.remap_params.max_taxids,
+                self.project_pk,
             )
             self.import_from_remap_prep()
 
@@ -1517,7 +1515,7 @@ class RunMainTree_class(Run_Deployment_Methods):
         # reference_table = reference_utils.sample_reference_tables()
 
         self.metadata_tool.merge_sample_references_ensemble(
-            self.sample_registered, max_remap=1
+            self.sample_registered
         )
 
         self.prep_REMAPPING()
@@ -1575,11 +1573,15 @@ class RunMainTree_class(Run_Deployment_Methods):
 
     def plan_remap_prep(self):
 
+        print("Planning remap preparation")
+        print(self.read_classification_drone.classification_report.head())
+
         self.metadata_tool.match_and_select_targets(
             self.read_classification_drone.classification_report,
             self.contig_classification_drone.classification_report,
             max_remap=self.remap_params.max_accids,
             taxid_limit=self.remap_params.max_taxids,
+            project_pk = self.project_pk,
         )
 
         self.import_from_remap_prep()
@@ -1595,8 +1597,6 @@ class RunMainTree_class(Run_Deployment_Methods):
     def plan_combined_remapping(self):
         self.metadata_tool.merge_sample_references_ensemble(
             self.sample_registered,
-            max_taxids=self.remap_params.max_taxids,
-            max_remap=self.remap_params.max_accids,
         )
 
         self.import_from_remap_prep()

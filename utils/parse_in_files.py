@@ -30,9 +30,9 @@ from managing_files.models import (
     UploadFiles,
     VaccineStatus,
 )
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 from utils.result import ProcessResults, SingleResult
-from utils.utils import Utils
+from utils.utils import Utils, PathUtils
 
 
 class ParseInFiles(object):
@@ -1147,7 +1147,7 @@ class ParseInFiles(object):
 
         ### make it running
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         process_SGE.set_process_controler(
             user,
             process_controler.get_name_link_files_user(user),
@@ -1183,6 +1183,7 @@ class ParseInFiles(object):
         """
 
         utils = Utils()
+        path_utils = PathUtils()
         upload_files = self.get_upload_samples_file(user)
         if upload_files == None:
             return  ## there's no files to match
@@ -1273,7 +1274,7 @@ class ParseInFiles(object):
                 ## link the files to the right place
                 sz_file_to = os.path.join(
                     getattr(settings, "MEDIA_ROOT", None),
-                    utils.get_path_to_fastq_file(user.id, sample.id),
+                    path_utils.get_path_to_fastq_file(user.id, sample.id),
                     sample.candidate_file_name_1,
                 )
                 utils.link_file(
@@ -1284,7 +1285,7 @@ class ParseInFiles(object):
                     sz_file_to,
                 )
                 sample.path_name_1.name = os.path.join(
-                    utils.get_path_to_fastq_file(user.id, sample.id),
+                    path_utils.get_path_to_fastq_file(user.id, sample.id),
                     sample.candidate_file_name_1,
                 )
                 sample.file_name_1 = sample.candidate_file_name_1
@@ -1313,7 +1314,7 @@ class ParseInFiles(object):
 
                     sz_file_to = os.path.join(
                         getattr(settings, "MEDIA_ROOT", None),
-                        utils.get_path_to_fastq_file(user.id, sample.id),
+                        path_utils.get_path_to_fastq_file(user.id, sample.id),
                         sample.candidate_file_name_2,
                     )
                     utils.link_file(
@@ -1324,7 +1325,7 @@ class ParseInFiles(object):
                         sz_file_to,
                     )
                     sample.path_name_2.name = os.path.join(
-                        utils.get_path_to_fastq_file(user.id, sample.id),
+                        path_utils.get_path_to_fastq_file(user.id, sample.id),
                         sample.candidate_file_name_2,
                     )
                     sample.file_name_2 = sample.candidate_file_name_2
@@ -1353,12 +1354,12 @@ class ParseInFiles(object):
         for sample in vect_sample_to_trimmomatic:
             try:
                 if process_name is None:
-                    (job_name_wait, process_name) = user.profile.get_name_sge_seq(
-                        Profile.SGE_PROCESS_clean_sample, Profile.SGE_SAMPLE
+                    (job_name_wait, process_name) = user.profile.get_name_slurm_seq(
+                        Constants.PROCESS_clean_sample, Constants.PROCESS_SAMPLE
                     )
                 ## here can be direct because came from a django
 
-                process_SGE = ProcessSGE()
+                process_SGE = ProcessSched()
                 if sample.is_type_fastq_gz_sequencing():
                     taskID = process_SGE.set_run_trimmomatic_species(
                         sample, user, process_name
@@ -1403,7 +1404,7 @@ class UploadFilesByDjangoQ(object):
         """
         ### make it running
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         process_SGE.set_process_controler(
             user,
             process_controler.get_name_upload_files(upload_files),
@@ -1459,7 +1460,7 @@ class UpdateMetadataFileByDjangoQ(object):
         """
         ### make it running
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         process_SGE.set_process_controler(
             user,
             process_controler.get_name_upload_files(upload_files),

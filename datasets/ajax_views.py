@@ -22,7 +22,7 @@ from datasets.models import Consensus, Dataset, DatasetConsensus
 from extend_user.models import Profile
 from settings.default_parameters import DefaultParameters
 from settings.models import Parameter, Software
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 from utils.utils import Utils
 
 ### Logger
@@ -81,7 +81,7 @@ def remove_dataset(request):
                 dataset_consensus.save()
 
             # Kill any process associated to this dataset...
-            process_SGE = ProcessSGE()
+            process_SGE = ProcessSched()
             process_SGE.kill_dataset(request.user.pk, dataset)
 
             data = {"is_ok": True}
@@ -467,7 +467,7 @@ def dataset_rebuild(request):
                 dataset.save()
                 ## need to run processing
                 try:
-                    process_SGE = ProcessSGE()
+                    process_SGE = ProcessSched()
                     process_SGE.set_collect_dataset_global_files(dataset, request.user)
                     data["is_ok"] = True
                     data["message"] = "alls well that ends well."

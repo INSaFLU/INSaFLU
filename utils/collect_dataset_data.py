@@ -24,7 +24,7 @@ from utils.data_columns import DataColumns
 from utils.exceptions import CmdException
 from utils.parse_in_files_nextstrain import ParseNextStrainFiles
 from utils.parse_out_files import ParseOutFiles
-from utils.process_SGE import ProcessSGE
+from utils.process_SGE import ProcessSched
 from utils.software import Software
 from utils.utils import Utils
 
@@ -61,7 +61,7 @@ class CollectExtraDatasetData(object):
 
         ### make it running
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         process_SGE.set_process_controler(
             user,
             process_controler.get_name_dataset(dataset),
@@ -91,7 +91,7 @@ class CollectExtraDatasetData(object):
 
         ### make it running
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         process_SGE.set_process_controler(
             user,
             process_controler.get_name_dataset(dataset),
@@ -115,7 +115,7 @@ class CollectExtraDatasetData(object):
         """
         ### get the taskID and seal it
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
         manage_database = ManageDatabase()
         metaKeyAndValue = MetaKeyAndValue()
 
@@ -189,7 +189,7 @@ class CollectExtraDatasetData(object):
         metaKeyAndValue = MetaKeyAndValue()
         manage_database = ManageDatabase()
         process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        process_SGE = ProcessSched()
 
         try:
             count = 0

@@ -1357,7 +1357,8 @@ class ReportSorter:
         self.metadata_df = self.prep_metadata_df()
         self.fasta_files = self.metadata_df.file.tolist()
 
-        self.clustering_model_type = TelevirParameters.get_clustering_model(self.sample.project.pk)
+        self.clustering_model_type = TelevirParameters.get_clustering_model(self.sample.project.pk) 
+        print(f"Clustering model type for project {self.sample.project.pk}: {self.clustering_model_type}")
 
         self.overlap_manager = ReadOverlapManager(
             self.metadata_df,
@@ -1732,7 +1733,8 @@ class ReportSorter:
         """
         ### time operations
         self.logger.info("generating tree")
-
+        self.build_tree()
+        self.logger.info("getting leaf clades")
         clades = self.overlap_manager.get_leaf_clades(force=force)
 
         self.update_report_excluded_dicts(self.overlap_manager)
@@ -1859,6 +1861,7 @@ class ReportSorter:
         except AttributeError as e:
             print(e)
             return self.return_no_analysis()
+
 
         overlap_analysis = self.read_overlap_analysis(force=True)
         self.overlap_manager.plot_pca_full(overlap_analysis)

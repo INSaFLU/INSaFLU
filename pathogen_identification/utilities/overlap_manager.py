@@ -419,7 +419,7 @@ class ReadOverlapManager(MappingResultsParser):
 
     def build_tree(self):
 
-        self.generate_distance_matrix()
+        self.generate_tree()
         self.generate_shared_proportion_matrix()
         self.generate_clade_shared_proportion_matrix()
 
@@ -655,12 +655,17 @@ class ReadOverlapManager(MappingResultsParser):
         presence_path = os.path.join(output_dir, "presence_absence_matrix.tsv")
 
         distance_matrix = pd.read_csv(distance_path, sep="\t", index_col=0)
-        presence_matrix = pd.read_csv(presence_path, sep="\t", index_col=0)
 
-        distance_matrix.columns = distance_matrix.columns.str.replace(r"\.bam$", "", regex=True)
-        distance_matrix.index = distance_matrix.index.str.replace(r"\.bam$", "", regex=True)
-        presence_matrix.columns = presence_matrix.columns.str.replace(r"\.bam$", "", regex=True)
-        presence_matrix.index = presence_matrix.index.str.replace(r"\.bam$", "", regex=True)
+        # skip first line it is buffered and not a valid header
+        presence_matrix = pd.read_csv(presence_path, sep="\t", index_col=0, skiprows=1, header=None)
+
+        # remove path and .bam extension from index
+        distance_matrix.index = distance_matrix.index.astype(str).str.replace(r"\.bam$", "", regex=True)
+        distance_matrix.index = distance_matrix.index.astype(str).str.replace(r".*/", "", regex=True)
+        distance_matrix.columns = distance_matrix.columns.astype(str).str.replace(r"\.bam$", "", regex=True)
+        distance_matrix.columns = distance_matrix.columns.astype(str).str.replace(r".*/", "", regex=True)
+
+        presence_matrix.set_index(distance_matrix.index, inplace=True)
 
         return distance_matrix, presence_matrix
 
@@ -1490,7 +1495,7 @@ class ReadOverlapManager(MappingResultsParser):
         return results
 
     def predict_clades_composition(self, model_type: str) -> pd.DataFrame:
-        distance_matrix = self.generate_distance_matrix(force=self.force_tree_rebuild)
+        distance_matrix = self.generate_distance_matrix(force=True)
 
         cluster_results: List[Dict[str, Any]] = []
         root = self.tree_manager.tree.root
@@ -1533,6 +1538,7 @@ class ReadOverlapManager(MappingResultsParser):
 
     def get_leaf_clades(self, force=False) -> pd.DataFrame:
         #if self.clustering_model_type and self.clustering_model_type != "Fixed":
+        print(f"Using ML model for clade prediction: {self.clustering_model_type}")
         
         return self.predict_clades_composition(self.clustering_model_type)
 

@@ -817,6 +817,7 @@ class RunMetadataHandler:
                 "family": RunMetadataHandler._get_taxid_taxonomy(row.taxid, level=TaxonConstants.RANK_FAMILY),
                 "order": RunMetadataHandler._get_taxid_taxonomy(row.taxid, level=TaxonConstants.RANK_ORDER),
                 "total_uniq_reads": float(row.counts),
+                "best_match_is_best": True
             }
             for _, row in merged_table.iterrows()
         ]
@@ -833,7 +834,14 @@ class RunMetadataHandler:
             return remap_params.max_taxids
 
         ml_api_client = MLAPIClient()
-        cutoff_dict = ml_api_client.predict_recall_cutoff(rows, model= model_type)
+
+        try:
+            cutoff_dict = ml_api_client.predict_recall_cutoff(rows, model= model_type)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            print(f"Error predicting cutoff: {e}. Using default cutoff of 15.")
+
 
         cut_off_perc = len(merged_table) * cutoff_dict["predicted_cutoff"]
         return int(cut_off_perc)

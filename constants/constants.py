@@ -42,10 +42,6 @@ class Televir_Metadata_Constants:
 
     REFERENCE_MAIN = Televir_Directory_Constants.ref_fasta_directory
 
-    MAPPING_TO_MATRIX_DIR = os.path.join(
-        os.environ.get("DIR_SOFTWARE", config("DIR_SOFTWARE", default="/usr/local/software/insaflu")),
-        "mapping_to_matrix"
-    )
 
     BINARIES = {
         "SOURCE": Televir_Directory_Constants.conda_directory,
@@ -80,6 +76,7 @@ class Televir_Metadata_Constants:
             "bwa-mem": "remap/remap",
             "bowtie2": "remap/remap",
             "bowtie2_remap": "remap/remap",
+            "mapping_to_matrix": "M2M",
             "minimap2": "hostDepletion/hostdep_env",
             "minimap2_asm": "hostDepletion/hostdep_env",
             "minimap2_illu": "hostDepletion/hostdep_env",

@@ -2,8 +2,31 @@ from typing import Any
 from constants.constants import Televir_Metadata_Constants
 import requests
 
+from typing import Any
+
+import requests
+
+
+class MLAPIError(Exception):
+    """Error raised when the ML API returns a non-2xx response."""
+
+    def __init__(self, status_code: int, detail: str, response_body: Any = None):
+        self.status_code = status_code
+        self.detail = detail
+        self.response_body = response_body
+        super().__init__(f"HTTP {status_code}: {detail}")
+
 
 class MLAPIClient:
+    """Python client for the INSaFLU ML API.
+
+    Models are referenced by composite keys ``{tax_level}_{category}_{variant}``,
+    e.g. ``"order_recall_gp_clf"`` or ``"genus_composition_xgb"``.
+
+    The API auto-discovers models by scanning the ``models/`` directory for pickle
+    bundles containing ``model_category``, ``tax_level``, and ``model_type`` fields.
+    """
+
     def __init__(self, timeout: int = 30):
         base_url = f"http://insaflu-ml-app:{Televir_Metadata_Constants.MODEL_PORT}"
         self.base_url = base_url.rstrip("/")
@@ -27,15 +50,26 @@ class MLAPIClient:
             if "composition" in model_info.get('model_type', ''):
                 composition_models[model_info.get('model_type', '')] = model_info
         return composition_models
+    
+    
+    def _raise_for_response(self, r: requests.Response):
+        try:
+            err_body = r.json()
+            detail = err_body.get("detail", r.text)
+        except Exception:
+            detail = r.text
+        raise MLAPIError(r.status_code, detail, err_body if isinstance(detail, (dict, list)) else None)
 
     def _get(self, path: str, params: dict | None = None) -> dict[str, Any]:
         r = requests.get(f"{self.base_url}{path}", params=params, timeout=self.timeout)
-        r.raise_for_status()
+        if not r.ok:
+            self._raise_for_response(r)
         return r.json()
 
     def _post(self, path: str, body: dict | None = None) -> dict[str, Any]:
         r = requests.post(f"{self.base_url}{path}", json=body, timeout=self.timeout)
-        r.raise_for_status()
+        if not r.ok:
+            self._raise_for_response(r)
         return r.json()
 
     def health(self) -> dict[str, Any]:
@@ -67,8 +101,7 @@ class MLAPIClient:
         """POST /predict_recall_cutoff_from_table — predict recall cutoff from raw table rows.
 
         Args:
-            rows: List of dicts with keys ``taxid``, ``total_uniq_reads``, ``best_match_is_best``,
-                  plus a column matching the model's ``tax_level`` (e.g. ``order``, ``family``).
+            rows: List of dicts with keys ``taxid``, ``total_uniq_reads``, ``order``, ``family``.
             model: Full composite key from ``GET /models`` (e.g. ``"order_recall_gp_clf"``).
             target_recall: Optional target recall threshold.
             confidence: Optional confidence level for probability-guided cutoff.

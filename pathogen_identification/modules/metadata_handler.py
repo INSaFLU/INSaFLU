@@ -813,7 +813,7 @@ class RunMetadataHandler:
 
         rows = [
             {
-                "taxid": row.taxid, 
+                "taxid": int(row.taxid), 
                 "family": RunMetadataHandler._get_taxid_taxonomy(row.taxid, level=TaxonConstants.RANK_FAMILY),
                 "order": RunMetadataHandler._get_taxid_taxonomy(row.taxid, level=TaxonConstants.RANK_ORDER),
                 "total_uniq_reads": row.counts,

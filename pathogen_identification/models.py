@@ -1682,6 +1682,11 @@ class ReferenceTaxid(models.Model):
 
         return ";".join(lineage)
     
+
+    @property
+    def order(self):
+        return self.tax_order.name if self.tax_order else None
+
     @property
     def family(self):
         return self.tax_family.name if self.tax_family else None

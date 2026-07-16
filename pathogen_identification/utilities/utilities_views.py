@@ -2762,6 +2762,7 @@ class RawReferenceUtils:
         Update the standard score for a compound reference based on accid"""
 
         score = self.merged_table[self.merged_table.accid == compound_ref.accid]
+        score = score.fillna(0)
 
         if score.shape[0] > 0:
             # compound_ref.standard_score = score.iloc[0]["standard_score"]
@@ -2769,7 +2770,7 @@ class RawReferenceUtils:
             compound_ref.global_ranking = min(score["global_ranking"])
             compound_ref.ensemble_ranking = min(score["ensemble_ranking"])
             compound_ref.reads_counts = sum(score["read_counts"])
-            compound_ref.contig_counts = max(score["contig_counts"])
+            compound_ref.contig_counts = sum(score["contig_counts"])
 
     def update_scores_compound_references(
         self, compount_refs: List[RawReferenceCompound]

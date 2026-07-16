@@ -790,7 +790,9 @@ class RunMetadataHandler:
         try:
             reference_taxid = ReferenceTaxid.objects.get(taxid=taxid)
             
-            if level == TaxonConstants.RANK_FAMILY:
+            if level == TaxonConstants.RANK_ORDER:
+                return reference_taxid.order
+            elif level == TaxonConstants.RANK_FAMILY:
                 return reference_taxid.family
             elif level == TaxonConstants.RANK_GENUS:
                 return reference_taxid.genus

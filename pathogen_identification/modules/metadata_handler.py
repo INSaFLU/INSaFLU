@@ -842,7 +842,6 @@ class RunMetadataHandler:
             traceback.print_exc()
             print(f"Error predicting cutoff: {e}. Using default cutoff of 15.")
 
-
         cut_off_perc = len(merged_table) * cutoff_dict["predicted_cutoff"]
         return int(cut_off_perc)
 

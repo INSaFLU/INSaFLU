@@ -87,11 +87,9 @@ def Update_project(project_directory_path, user: str = "admin"):
         )
 
     except Projects.DoesNotExist:
-        print("project_name: ", project_name)
         project = Projects(
             name=project_name,
             full_path=project_directory_path,
-            project_type=Projects.INHOUSE,
             created_by=user,
         )
         project.save()
@@ -714,8 +712,6 @@ def Update_Run_Detail_noCheck(run_class: RunEngine_class, parameter_set: Paramet
         return
 
     run_detail_exists = RunDetail.objects.filter(run=runmain, sample=sample).exists()
-    print("############ Update_Run_Detail_noCheck ############")
-    print(sample, runmain, run_detail_exists)
 
     if run_detail_exists:
         run_detail = RunDetail.objects.get(run=runmain, sample=sample)
@@ -1113,12 +1109,8 @@ def Update_FinalReport(run_class, runmain, sample):
 
 
 def Update_Targets(run_class: RunEngine_class, runmain):
-    print("UPDATING TARGETS")
-    print(len(run_class.metadata_tool.remap_targets))
-    print(runmain.pk)
-    for target in run_class.metadata_tool.remap_targets:
 
-        print(target.taxid, target.accid)
+    for target in run_class.metadata_tool.remap_targets:
 
         try:
             raw_reference = RawReference.objects.get(
@@ -1189,9 +1181,6 @@ def Update_ReferenceMap(
         taxid=ref_map.reference.target.taxid,
     )
 
-    print("remap_targets")
-    print(run.parameter_set.leaf.index)
-
     if remap_targets.exists():
         for target in remap_targets:
             target.status = RawReference.STATUS_MAPPED
@@ -1204,14 +1193,7 @@ def Update_ReferenceMap(
             run=run,
         )
 
-        print("ReferenceMap_Main exists")
     except ReferenceMap_Main.DoesNotExist:
-
-        print("Creating REFMAP_MAIN")
-        print(ref_map.reference.read_map_sorted_bam)
-        print(
-            ref_map.reference.mapped_subset_r1_fasta,
-        )
 
         if ref_map.mapping_success is not "none":
 

@@ -711,7 +711,7 @@ class ReadOverlapManager(MappingResultsParser):
             tree: a tree structure generated from the distance matrix
         """
         # Generate the distance matrix
-        distance_matrix = self.generate_distance_matrix(force=self.force_tree_rebuild)
+        distance_matrix = self.generate_distance_matrix(force=True)
 
         # Generate the tree from the distance matrix
         tree = self.tree_from_distance_matrix(distance_matrix)

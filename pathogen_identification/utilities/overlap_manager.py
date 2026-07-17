@@ -23,6 +23,36 @@ from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
 
 ## pairwise matrix by individual reads
 
+from collections import Counter
+
+import numpy as np
+
+
+def shannon_diversity(proportions: list[float]) -> float:
+    """
+    Calculate Shannon diversity index given a list of proportions.
+    """
+    return -sum(p * (p if p == 0 else np.log(p)) for p in proportions)
+
+
+def shannon_diversity_from_counts(counts: list[int]) -> float:
+    """
+    Calculate Shannon diversity index given a list of counts.
+    """
+    total = sum(counts)
+    if total == 0:
+        return 0.0
+    proportions = [count / total for count in counts]
+    return shannon_diversity(proportions)
+
+def shannon_diversity_from_list(taxa: list[str]) -> float:
+    """
+    Calculate Shannon diversity index given a list of taxa.
+    """
+    if not taxa:
+        return 0.0
+    counts = Counter(taxa)
+    return shannon_diversity_from_counts(list(counts.values()))
 
 def pairwise_shared_count(
     read_profile_matrix: pd.DataFrame,
@@ -540,7 +570,6 @@ class ReadOverlapManager(MappingResultsParser):
         Generate shared proportion matrix
         """
         clade_shared_proportion_matrix = self.between_clade_shared_reads()
-
         clade_shared_proportion_matrix.to_csv(self.clade_shared_prop_matrix_path)
 
     ####################
@@ -621,7 +650,8 @@ class ReadOverlapManager(MappingResultsParser):
 
     def _symlink_bams_to_temp(self, temp_dir: str) -> Dict[str, str]:
         accid_to_src = {}
-        for _, row in self.metadata.iterrows():
+        
+        for _, row in self.metadata.drop_duplicates('accid').iterrows():
             accid = row["accid"]
             bam = row["bam"]
             if not os.path.isfile(bam):
@@ -723,8 +753,11 @@ class ReadOverlapManager(MappingResultsParser):
     ####################
 
     def clade_shared_by_pair(self, leaves: list) -> pd.DataFrame:
+        print("Leaves:", leaves)
+        print(self.read_profile_matrix_filtered.shape)
         group = self.read_profile_matrix_filtered.loc[leaves]
         group_pairwise_shared = pairwise_shared_count(group)
+        print(group_pairwise_shared)
 
         group_pairwise_shared /= group.sum(axis=1)
 
@@ -757,6 +790,8 @@ class ReadOverlapManager(MappingResultsParser):
                 "proportion_std",
             ],
         )
+
+        print(combinations)
 
         return combinations
 
@@ -1342,6 +1377,8 @@ class ReadOverlapManager(MappingResultsParser):
         features["n_leaves"] = float(len(leaves))
 
         shared_df = self.clade_shared_by_pair(leaves)
+        print("Shared DF shape:", shared_df.shape)
+        print("Shared DF head:", shared_df.head())
         if shared_df.empty:
             features["Min_Shared"] = 0.0
         else:
@@ -1353,23 +1390,31 @@ class ReadOverlapManager(MappingResultsParser):
             sub = distance_matrix.reindex(index=leaves, columns=leaves)
             vals = sub.values[np.triu_indices_from(sub.values, k=1)]
             features["Min_Dist"] = float(vals.min()) if len(vals) > 0 else 0.0
+        
+        print("Calculating tax_diversity for leaves:", leaves)
+        print(features)
+        print("metadata: ", self.metadata.head())
+
 
         try:
-            accid_df = self._get_accid_statistics()
-            leaf_taxids = (
-                accid_df[accid_df["accid"].isin(leaves)]["taxid"]
-                if "taxid" in accid_df.columns
-                else pd.Series(dtype=float)
-            )
-        except Exception:
-            leaf_taxids = pd.Series(dtype=float)
 
-        if leaf_taxids.empty:
+            from pathogen_identification.modules.metadata_handler import RunMetadataHandler
+
+            accid_df = self._get_accid_statistics()
+            accid_df['taxid'] = accid_df['accid'].apply(lambda x: RunMetadataHandler.get_accid_taxid(x) if pd.notnull(x) else None)
+            accid_df['family'] = accid_df['taxid'].apply(lambda x: RunMetadataHandler._get_taxid_taxonomy(x, 'family') if pd.notnull(x) else None)
+            accid_df['order'] = accid_df['taxid'].apply(lambda x: RunMetadataHandler._get_taxid_taxonomy(x, 'order') if pd.notnull(x) else None)
+            print(accid_df.head())
+        except Exception:
+            print("Error retrieving taxids for leaves:", leaves)
+
+        if accid_df.empty:
             features["tax_diversity"] = 0.0
         else:
-            counts = leaf_taxids.value_counts()
-            probs = counts / counts.sum()
-            features["tax_diversity"] = float(scipy_entropy(probs, base=2))
+
+            features["tax_diversity"] = shannon_diversity_from_list(
+                accid_df['family'].dropna().tolist()
+            )
 
         return features
 
@@ -1461,7 +1506,9 @@ class ReadOverlapManager(MappingResultsParser):
             return results
 
         features = self._node_features(clade, leaves, distance_matrix)
+        print(features)
         stop, prob = self._predict_stop_traversal(features, model_type)
+        print(stop, prob)
 
         if stop is None:
             raise RuntimeError("ML API unavailable and no fallback model provided.")
@@ -1496,7 +1543,7 @@ class ReadOverlapManager(MappingResultsParser):
 
     def predict_clades_composition(self, model_type: str) -> pd.DataFrame:
         distance_matrix = self.generate_distance_matrix(force=True)
-
+        print(distance_matrix)
         cluster_results: List[Dict[str, Any]] = []
         root = self.tree_manager.tree.root
         self._traverse_with_prediction(root, distance_matrix, model_type, cluster_results)

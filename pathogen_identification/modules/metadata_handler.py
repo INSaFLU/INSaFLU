@@ -768,6 +768,18 @@ class RunMetadataHandler:
     ):
         self.rclass = self.results_collect_metadata(report_1)
         self.aclass = self.results_collect_metadata(report_2)
+    
+    @staticmethod
+    def get_accid_taxid(accid: str) -> Optional[int]:
+        """
+        Return taxid for a given accid.
+        """
+
+        try:
+            source = ReferenceSource.objects.get(accid=accid)
+            return source.taxid.taxid
+        except ReferenceSource.DoesNotExist:
+            return None
 
     def get_taxid_representative_accid(self, taxid: int) -> Optional[str]:
         """

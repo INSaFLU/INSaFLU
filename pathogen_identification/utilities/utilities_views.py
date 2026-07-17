@@ -1753,14 +1753,19 @@ class ReportSorter:
 
             if len(empty_reports.group_list) > 0:
                 sorted_reports.append(empty_reports)
+        
+        print(f"sorted_reports: {[report_group.name for report_group in sorted_reports]}")
 
         # check has control_flag present
         # has_controlled_flag = False if sample_main.is_control else True
         #########
         self.build_tree()
+        print("building tree and generating clade heatmap json")
         clade_heatmap_json = self.clade_heatmap_json(
             to_keep=[report_group.name for report_group in sorted_reports]
         )
+
+        print(f"clade_heatmap_json: {clade_heatmap_json}")
 
         #########
         private_reads_available = False
@@ -2215,8 +2220,11 @@ def calculate_reports_overlaps(sample: PIProject_Sample, force=False):
         sample, final_reports, report_layout_params, force=force
     )
 
+    print("ReportSorter: build_tree")
     report_sorter.build_tree()
+    print("ReportSorter: sort_reports_save")
     report_sorter.sort_reports_save()
+    report_sorter.reports_aggregate_register(report_layout_params)
 
 
 def final_report_best_cov_by_accid(reports: QuerySet) -> QuerySet:

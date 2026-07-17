@@ -3,44 +3,75 @@
 import datetime
 import os
 from abc import abstractmethod
-from typing import List
+from typing import List, Optional
 
 from sqlalchemy import (Boolean, Column, Integer, MetaData, String, Table,
                         create_engine, text)
 
 
-class software_item:
-    def __init__(self, name, path, database, installed, env_path) -> None:
+class SoftwareItem:
+    def __init__(
+        self, name, path, database, installed, env_path, 
+        tag: str = "undefined", db_version: Optional[str] = None, 
+        needs_update: bool = False, binary_name: Optional[str] = None
+    ) -> None:
         self.name = name
         self.path = path
         self.database = database
         self.installed = installed
         self.env_path = env_path
         self.date = datetime.datetime.now().strftime("%Y-%m-%d")
+        self.tag = tag
+        self.db_version = db_version
+        self.needs_update = needs_update
+        self.binary_name = binary_name
 
     def __repr__(self) -> str:
         return f"({self.name}, {self.path}, {self.database}, {self.installed}, {self.env_path})"
 
 
-class database_item:
-    def __init__(self, name, path, installed, software: str = "none") -> None:
+class DatabaseItem:
+    def __init__(self, name, path, installed, software: str = "none",
+                 version: Optional[str] = None, source_url: Optional[str] = None, 
+                 file_mod_date: Optional[str] = None, description: Optional[str] = None,
+                 db_category: Optional[str] = None, db_name: Optional[str] = None,
+                 db_type: Optional[str] = None) -> None:
         self.name = name
         self.path = path
         self.installed = installed
         self.software = software
         self.date = datetime.datetime.now().strftime("%Y-%m-%d")
+        self.version = version
+        self.source_url = source_url
+        self.file_mod_date = file_mod_date
+        self.description = description
+        self._parse_name_fields(name, db_category, db_name, db_type)
+
+    def _parse_name_fields(self, name: str, db_category: Optional[str], 
+                           db_name: Optional[str], db_type: Optional[str]):
+        if '/' in name and db_category is None:
+            parts = name.split('/', 1)
+            self.db_category = parts[0]
+            self.db_name = parts[1]
+        else:
+            self.db_name = db_name if db_name else name
+            self.db_category = db_category if db_category else self.software
+        self.db_type = db_type if db_type else self.software
 
     def __repr__(self) -> str:
         return f"({self.name}, {self.path}, {self.installed})"
 
 
+
 class Utility_Repository:
     """Communicates with sql database to add a software dbs"""
 
-    database_item = database_item
-    software_item = software_item
+    database_item = SoftwareItem
+    software_item = DatabaseItem
     dbtype_local: str = "sqlite"
-
+    SOFTWARE_TABLE_NAME: str = "software"
+    DATABASE_TABLE_NAME: str = "database"
+    
     tables: list = ["software", "database"]
 
     def __init__(self, db_path="", install_type="local") -> None:
@@ -119,33 +150,44 @@ class Utility_Repository:
 
     def create_software_table(self):
         self.software = Table(
-            "software",
+            self.SOFTWARE_TABLE_NAME,
             self.metadata,
-            Column("name", String),
+            Column("name", String, primary_key=True),
             Column("path", String),
             Column("database", String),
             Column("installed", Boolean),
+            Column("tag", String, default="undefined"),
             Column("env_path", String),
             Column("date", String),
+            Column("db_version", String),
+            Column("needs_update", Boolean),
         )
 
         self.engine.execute(
-            "CREATE TABLE IF NOT EXISTS software (name TEXT, path TEXT, database TEXT, installed BOOLEAN, env_path TEXT, date TEXT)"
+            "CREATE TABLE IF NOT EXISTS software (name TEXT PRIMARY KEY, path TEXT, database TEXT, installed BOOLEAN, tag TEXT, env_path TEXT, date TEXT, db_version TEXT, needs_update BOOLEAN)"
         )
 
     def create_database_table(self):
         self.database = Table(
-            "database",
+            self.DATABASE_TABLE_NAME,
             self.metadata,
+            Column("id", Integer, primary_key=True, autoincrement=True),
             Column("name", String),
+            Column("db_category", String),
+            Column("db_name", String),
+            Column("db_type", String),
             Column("path", String),
             Column("installed", Boolean),
             Column("software", String),
             Column("date", String),
+            Column("version", String),
+            Column("source_url", String),
+            Column("file_mod_date", String),
+            Column("description", String),
         )
 
         self.engine.execute(
-            "CREATE TABLE IF NOT EXISTS database (name TEXT, path TEXT, installed BOOLEAN, software TEXT, date TEXT)"
+            "CREATE TABLE IF NOT EXISTS database (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, db_category TEXT, db_name TEXT, db_type TEXT, path TEXT, installed BOOLEAN, software TEXT, date TEXT, version TEXT, source_url TEXT, file_mod_date TEXT, description TEXT)"
         )
 
     def delete_tables(self):

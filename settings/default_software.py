@@ -37,11 +37,11 @@ class DefaultSoftware(object):
         """
         test if exist, if not persist in database
         """
+
         try:
             SoftwareDefaultTest.objects.get(
                 user=user, televir_pipelines_available=True
             )
-
             return True
 
         except SoftwareDefaultTest.DoesNotExist:
